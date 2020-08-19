@@ -30,6 +30,7 @@ import org.openmuc.jmbus.DecodingException;
 import org.openmuc.jmbus.SecondaryAddress;
 import org.openmuc.jmbus.VariableDataStructure;
 import org.openmuc.jmbus.wireless.WMBusMessage;
+import net.solarnetwork.node.io.mbus.MBusData;
 import net.solarnetwork.node.io.mbus.MBusDataDescription;
 import net.solarnetwork.node.io.mbus.MBusDataRecord;
 import net.solarnetwork.node.io.mbus.MBusDataType;
@@ -64,6 +65,23 @@ public class JMBusConversion {
 	 */
 	public static MBusSecondaryAddress from(SecondaryAddress address) {
 		return new MBusSecondaryAddress(address.asByteArray());
+	}
+
+	public static MBusData from(VariableDataStructure vds) {
+		try {
+			final MBusData data = new MBusData(new Date());
+			vds.decode();
+			for ( DataRecord record : vds.getDataRecords() ) {
+				final MBusDataRecord rec = from(record);
+				if ( rec != null ) {
+					data.dataRecords.add(rec);
+				}
+			}
+		} catch ( DecodingException e ) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	/**

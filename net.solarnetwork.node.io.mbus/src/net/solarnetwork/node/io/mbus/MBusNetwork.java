@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.mbus;
 
+import java.io.IOException;
 import net.solarnetwork.node.Identifiable;
 
 /**
@@ -31,5 +32,24 @@ import net.solarnetwork.node.Identifiable;
  * @version 1.0
  */
 public interface MBusNetwork extends Identifiable {
+
+	/**
+	 * Read data from the connection
+	 * 
+	 * @param address
+	 *        Primary address
+	 * @return M-Bus data
+	 */
+	MBusData read(int address) throws IOException;
+
+	/**
+	 * Create a connection to a wired M-Bus network. The returned connection
+	 * will not be opened and must be closed when finished being used.
+	 * 
+	 * @param address
+	 *        Primary address
+	 * @return a new connection
+	 */
+	MBusConnection createConnection(int address);
 
 }
