@@ -214,7 +214,7 @@ public class MBusDatumDataSource extends MBusDeviceDatumDataSourceSupport
 
 	@Override
 	public String getDisplayName() {
-		return "Generic Wireless M-Bus Device";
+		return "Generic M-Bus Device";
 	}
 
 	private String getSampleMessage(MBusData sample) {

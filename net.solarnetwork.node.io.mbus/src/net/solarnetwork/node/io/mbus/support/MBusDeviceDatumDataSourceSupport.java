@@ -157,8 +157,8 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 		MBusData currSample = null;
 		synchronized ( dataLock ) {
 			// Check latest sample to see if it's current enough to use
-			final long lastReadDiff = System.currentTimeMillis() - latestData.getDataTimestamp();
-			if ( lastReadDiff > sampleCacheMs ) {
+			if ( latestData == null
+					|| ((System.currentTimeMillis() - latestData.getDataTimestamp()) > sampleCacheMs) ) {
 				try {
 					currSample = performRead();
 				} catch ( IOException e ) {
@@ -207,8 +207,7 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
 		results.add(
 				new BasicTextFieldSettingSpecifier("mBusNetwork.propertyFilters['UID']", "M-Bus Port"));
-		results.add(new BasicTextFieldSettingSpecifier("secondaryAddress", ""));
-		results.add(new BasicTextFieldSettingSpecifier("key", "", true));
+		results.add(new BasicTextFieldSettingSpecifier("address", ""));
 		return results;
 	}
 

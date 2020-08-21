@@ -61,12 +61,12 @@ public class JMBusSerialMBusNetwork extends JMBusMBusNetwork implements SettingS
 
 	@Override
 	public String getSettingUID() {
-		return "net.solarnetwork.node.io.mbus";
+		return "net.solarnetwork.node.io.mbus.serial";
 	}
 
 	@Override
 	public String getDisplayName() {
-		return "M-Bus port";
+		return "M-Bus Serial Connection";
 	}
 
 	@Override

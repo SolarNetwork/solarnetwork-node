@@ -209,7 +209,7 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 
 	@Override
 	public String getSettingUID() {
-		return "net.solarnetwork.node.datum.mbus";
+		return "net.solarnetwork.node.datum.mbus.wireless";
 	}
 
 	@Override

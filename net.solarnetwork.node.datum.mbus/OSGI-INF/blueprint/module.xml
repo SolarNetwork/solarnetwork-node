@@ -28,7 +28,9 @@
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.datum.mbus.WMBusDatumDataSource</value>
+				<value>net.solarnetwork.node.datum.mbus.MBusDatumDataSource</value>
+				<value>net.solarnetwork.node.datum.mbus.MBusPropertyConfig</value>
+				<value>net.solarnetwork.node.io.mbus.support.MBusDeviceDatumDataSourceSupport</value>
 			</list>
 		</property>
 	</bean>
@@ -38,6 +40,20 @@
 		<property name="delegate" ref="messageSource"/>
 	</bean>	
 
+	<bean id="messageSourceWireless" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.datum.mbus.WMBusDatumDataSource</value>
+				<value>net.solarnetwork.node.datum.mbus.MBusPropertyConfig</value>
+				<value>net.solarnetwork.node.io.mbus.support.WMBusDeviceDatumDataSourceSupport</value>
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="jobMessageSourceWireless" class="net.solarnetwork.node.util.PrefixedMessageSource">
+		<property name="prefix" value="multiDatumDataSource."/>
+		<property name="delegate" ref="messageSourceWireless"/>
+	</bean>	
 
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
@@ -53,7 +69,7 @@
 	
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-			<property name="displayName" value="M-Bus device"/>
+			<property name="displayName" value="M-Bus Device"/>
 			<property name="factoryUID" value="net.solarnetwork.node.datum.mbus"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
@@ -96,7 +112,85 @@
 			</property>
 			<property name="jobDetail">
 				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-					<property name="name" value="modbusDatumLoggerJob"/>
+					<property name="name" value="mBusDatumLoggerJob"/>
+					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
+					<property name="jobDataAsMap">
+						<map>
+							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
+							<entry key="datumDataSource">
+								<bean class="net.solarnetwork.node.datum.mbus.MBusDatumDataSource">
+									<property name="eventAdmin" ref="eventAdmin"/>
+									<property name="datumMetadataService" ref="datumMetadataService"/>
+									<property name="messageSource" ref="jobMessageSource"/>
+									<property name="mBusNetwork">
+										<bean class="net.solarnetwork.util.DynamicServiceTracker">
+											<property name="bundleContext" ref="bundleContext"/>
+											<property name="serviceClassName" 
+												value="net.solarnetwork.node.io.mbus.MBusNetwork"/>
+											<property name="propertyFilters">
+												<map>
+													<entry key="UID" value="M-Bus Port"/>
+												</map>
+											</property>
+										</bean>	
+									</property>
+								</bean>
+							</entry>
+						</map>
+					</property>
+				</bean>
+			</property>
+		</bean>
+	</osgix:managed-service-factory>
+
+	<!-- Published Services (Wireless) -->
+	
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="M-Bus (Wireless) Device"/>
+			<property name="factoryUID" value="net.solarnetwork.node.datum.mbus.wireless"/>
+			<property name="messageSource" ref="messageSourceWireless"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.mbus" autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.mbus.wireless"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
+			<property name="trigger">
+				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
+					<property name="name" value="mbusDatumLoggerTrigger"/>
+					<property name="cronExpression" value="5 * * * * ?"/>
+					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+					<property name="randomSecond" value="true"/>
+				</bean>
+			</property>
+			<property name="serviceProviderConfigurations">
+				<map>
+					<entry key="datumDataSource">
+						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
+							<property name="interfaces">
+								<list>
+									<value>net.solarnetwork.node.DatumDataSource</value>
+								</list>
+							</property>
+							<property name="properties">
+								<map>
+									<entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralNodeDatum"/>
+								</map>
+							</property>
+						</bean>
+					</entry>
+				</map>
+			</property>
+			<property name="jobDetail">
+				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+					<property name="name" value="wMBusDatumLoggerJob"/>
 					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
 					<property name="jobDataAsMap">
 						<map>
@@ -105,7 +199,7 @@
 								<bean class="net.solarnetwork.node.datum.mbus.WMBusDatumDataSource">
 									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="datumMetadataService" ref="datumMetadataService"/>
-									<property name="messageSource" ref="jobMessageSource"/>
+									<property name="messageSource" ref="jobMessageSourceWireless"/>
 									<property name="wMBusNetwork">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>
@@ -113,7 +207,7 @@
 												value="net.solarnetwork.node.io.mbus.WMBusNetwork"/>
 											<property name="propertyFilters">
 												<map>
-													<entry key="UID" value="M-Bus Port"/>
+													<entry key="UID" value="M-Bus (Wireless) Port"/>
 												</map>
 											</property>
 										</bean>	
