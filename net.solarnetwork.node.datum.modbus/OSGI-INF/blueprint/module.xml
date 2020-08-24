@@ -30,6 +30,7 @@
 			<list>
 				<value>net.solarnetwork.node.datum.modbus.ModbusDatumDataSource</value>
 				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.node.support.DatumDataSourceSupport</value>
 			</list>
 		</property>
 	</bean>
@@ -49,6 +50,8 @@
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.support.ExpressionService"/>
 	</bean>
+	
+	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler" filter="(function=node)"/>
 
 	<!-- Published Services -->
 	
@@ -60,7 +63,8 @@
 		</bean>
 	</service>
 	
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.modbus" autowire-on-update="true">
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.modbus" 
+			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
@@ -68,7 +72,8 @@
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.modbus"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
+		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail"
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 			<property name="trigger">
 				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
 					<property name="name" value="modbusDatumLoggerTrigger"/>
@@ -107,6 +112,8 @@
 									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="datumMetadataService" ref="datumMetadataService"/>
 									<property name="messageSource" ref="jobMessageSource"/>
+									<property name="taskScheduler" ref="taskScheduler"/>
+									<property name="expressionServices" ref="expressionServices"/>
 									<property name="modbusNetwork">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>
@@ -119,7 +126,18 @@
 											</property>
 										</bean>	
 									</property>
-									<property name="expressionServices" ref="expressionServices"/>
+									<property name="samplesTransformService">
+										<bean class="net.solarnetwork.util.DynamicServiceTracker">
+											<property name="bundleContext" ref="bundleContext"/>
+											<property name="serviceClassName" 
+												value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
+											<property name="propertyFilters">
+												<map>
+													<entry key="UID" value=""/>
+												</map>
+											</property>
+										</bean>	
+									</property>
 								</bean>
 							</entry>
 						</map>

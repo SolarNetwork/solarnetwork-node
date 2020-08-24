@@ -50,9 +50,9 @@ import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
-import net.solarnetwork.node.io.modbus.support.ModbusDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWordOrder;
+import net.solarnetwork.node.io.modbus.support.ModbusDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
@@ -60,8 +60,10 @@ import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.support.ExpressionService;
 import net.solarnetwork.support.ExpressionServiceExpression;
+import net.solarnetwork.support.ServiceLifecycleObserver;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.IntRange;
 import net.solarnetwork.util.IntRangeSet;
@@ -76,8 +78,9 @@ import net.solarnetwork.util.StringUtils;
  * @author matt
  * @version 2.0
  */
-public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport implements
-		DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, ModbusConnectionAction<ModbusData> {
+public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
+		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider,
+		ModbusConnectionAction<ModbusData>, SettingsChangeObserver, ServiceLifecycleObserver {
 
 	/** The datum metadata key for a virtual meter sample value. */
 	public static final String VIRTUAL_METER_VALUE_KEY = "vm-value";
@@ -115,6 +118,21 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 	}
 
 	@Override
+	public void configurationChanged(Map<String, Object> properties) {
+		startSubSampling(this);
+	}
+
+	@Override
+	public void serviceDidStartup() {
+		startSubSampling(this);
+	}
+
+	@Override
+	public void serviceDidShutdown() {
+		stopSubSampling();
+	}
+
+	@Override
 	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
 		return Collections.emptyMap();
 	}
@@ -126,6 +144,16 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 
 	@Override
 	public GeneralNodeDatum readCurrentDatum() {
+		return readCurrentDatum(null);
+	}
+
+	@Override
+	protected void readSubSampleDatum(DatumDataSource<? extends GeneralNodeDatum> dataSource) {
+		GeneralNodeDatum datum = readCurrentDatum(SUB_SAMPLE_PROPS);
+		log.debug("Got sub-sample datum: {}", datum);
+	}
+
+	private GeneralNodeDatum readCurrentDatum(Map<String, ?> xformProps) {
 		final long start = System.currentTimeMillis();
 		final ModbusData currSample = getCurrentSample();
 		if ( currSample == null ) {
@@ -137,6 +165,10 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 		populateDatumProperties(currSample, d, propConfigs);
 		populateDatumProperties(currSample, d, virtualMeterConfigs);
 		populateDatumProperties(currSample, d, expressionConfigs);
+		d = applySamplesTransformer(d, xformProps);
+		if ( d == null ) {
+			return null;
+		}
 		if ( currSample.getDataTimestamp() >= start ) {
 			// we read from the device
 			postDatumCapturedEvent(d);
@@ -487,6 +519,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 		wordOrderSpec.setValueTitles(wordOrderTitles);
 		results.add(wordOrderSpec);
 
+		results.addAll(getSubSampleSettingSpecifiers());
+
 		VirtualMeterConfig[] meterConfs = getVirtualMeterConfigs();
 		List<VirtualMeterConfig> meterConfsList = (meterConfs != null ? Arrays.asList(meterConfs)
 				: Collections.<VirtualMeterConfig> emptyList());
@@ -622,8 +656,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 									break;
 
 								case ReadInputRegister:
-									m.saveDataArray(conn.readWords(
-											ModbusReadFunction.ReadInputRegister, start, len), start);
+									m.saveDataArray(conn.readWords(ModbusReadFunction.ReadInputRegister,
+											start, len), start);
 									break;
 							}
 							start += len;
@@ -638,8 +672,9 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport im
 						for ( int start = range.getMin(), stop = start
 								+ range.length(); start < stop; ) {
 							int len = Math.min(range.length(), maxReadLen);
-							m.saveDataArray(conn.readWords(ModbusReadFunction.ReadHoldingRegister,
-									start, len), start);
+							m.saveDataArray(
+									conn.readWords(ModbusReadFunction.ReadHoldingRegister, start, len),
+									start);
 							start += len;
 						}
 					}
