@@ -114,6 +114,8 @@ public enum ModbusDataType {
 	/**
 	 * Convert the (new) standard {@code ModbusDataType} to this enum.
 	 * 
+	 * @param type
+	 *        the type to convert
 	 * @return the converted data type
 	 */
 	public ModbusDataType forModbusDataType(net.solarnetwork.node.io.modbus.ModbusDataType type) {
