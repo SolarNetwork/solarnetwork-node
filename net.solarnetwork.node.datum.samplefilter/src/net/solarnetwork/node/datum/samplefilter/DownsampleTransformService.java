@@ -66,6 +66,7 @@ import net.solarnetwork.node.support.BaseIdentifiable;
  * <li>
  * <li>Each status sample property will be transformed into the last seen
  * value.</li>
+ * </ul>
  * 
  * @author matt
  * @version 1.0
