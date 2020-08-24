@@ -23,6 +23,7 @@
 package net.solarnetwork.node.datum.samplefilter;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -36,6 +37,7 @@ import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.support.BaseIdentifiable;
 
@@ -85,8 +87,13 @@ public class DownsampleTransformService extends BaseIdentifiable
 	public static final Map<String, Object> SUB_SAMPLE_PROPS = Collections.singletonMap(SUB_SAMPLE_PROP,
 			Boolean.TRUE);
 
+	/** The {@code decimalScale} property default value. */
+	public static final int DEFAULT_DECIMAL_SCALE = 3;
+
 	private final ConcurrentMap<String, List<GeneralDatumSamples>> subSamplesBySource = new ConcurrentHashMap<>(
 			8, 0.9f, 4);
+
+	private int decimalScale = DEFAULT_DECIMAL_SCALE;
 
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
@@ -117,9 +124,26 @@ public class DownsampleTransformService extends BaseIdentifiable
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(2);
 
-		results.add(new BasicTitleSettingSpecifier("uid", getUid()));
+		results.add(new BasicTitleSettingSpecifier("status", statusValue()));
+		results.add(new BasicTextFieldSettingSpecifier("uid", null));
+		results.add(new BasicTextFieldSettingSpecifier("decimalScale",
+				String.valueOf(DEFAULT_DECIMAL_SCALE)));
 
 		return results;
+	}
+
+	public String statusValue() {
+		StringBuffer buf = new StringBuffer();
+		for ( Map.Entry<String, List<GeneralDatumSamples>> me : subSamplesBySource.entrySet() ) {
+			if ( buf.length() > 0 ) {
+				buf.append(", ");
+			}
+			List<GeneralDatumSamples> list = me.getValue();
+			synchronized ( list ) {
+				buf.append(me.getKey()).append(": ").append(list.size()).append(" samples");
+			}
+		}
+		return buf.toString();
 	}
 
 	private class Agg {
@@ -151,7 +175,8 @@ public class DownsampleTransformService extends BaseIdentifiable
 		}
 
 		private BigDecimal average() {
-			return total.divide(new BigDecimal(count));
+			return total.divide(new BigDecimal(count), decimalScale, RoundingMode.HALF_UP)
+					.stripTrailingZeros();
 		}
 	}
 
@@ -215,6 +240,33 @@ public class DownsampleTransformService extends BaseIdentifiable
 			out.setStatus(stat);
 		}
 		return out;
+	}
+
+	/**
+	 * Get the decimal scale.
+	 * 
+	 * @return the scale
+	 */
+	public int getDecimalScale() {
+		return decimalScale;
+	}
+
+	/**
+	 * Set the decimal scale.
+	 * 
+	 * <p>
+	 * This is the maximum decimal scale to round averaged results to.
+	 * </p>
+	 * 
+	 * @param decimalScale
+	 *        the scale to set; if less than {@literal 0} then {@literal 0} will
+	 *        be used
+	 */
+	public void setDecimalScale(int decimalScale) {
+		if ( decimalScale < 0 ) {
+			decimalScale = 0;
+		}
+		this.decimalScale = decimalScale;
 	}
 
 }
