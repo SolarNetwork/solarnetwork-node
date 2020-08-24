@@ -173,7 +173,10 @@
 		</bean>
 	</service>
 	
-	<service interface="net.solarnetwork.node.GeneralDatumSamplesTransformService">
+	<service interface="net.solarnetwork.node.GeneralDatumSamplesTransformService" ranking="10">
+		<service-properties>
+			<entry key="role" value="global"/>
+		</service-properties>
 		<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService">
 			<property name="sampleTransformers" ref="sampleTransformers"/>
 		</bean>

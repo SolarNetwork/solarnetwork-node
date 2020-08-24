@@ -39,7 +39,8 @@ import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
  * @version 1.0
  * @since 1.66
  */
-public class SimpleGeneralDatumSamplesTransformService implements GeneralDatumSamplesTransformService {
+public class SimpleGeneralDatumSamplesTransformService extends BaseIdentifiable
+		implements GeneralDatumSamplesTransformService {
 
 	private final Map<String, Object> staticParameters;
 	private List<GeneralDatumSamplesTransformer> sampleTransformers;
