@@ -95,5 +95,20 @@
 			<property name="messageSource" ref="sourceThrottleMessageSource"/>
 		</bean>
 	</osgix:managed-service-factory>
+	
+	<service>
+		<interfaces>
+			<value>net.solarnetwork.node.GeneralDatumSamplesTransformService</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+		</interfaces>
+		<bean class="net.solarnetwork.node.datum.samplefilter.DownsampleTransformService">
+			<property name="uid" value="Downsampler"/>
+			<property name="messageSource">
+				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+					<property name="basename" value="net.solarnetwork.node.datum.samplefilter.DownsampleTransformService"/>
+				</bean>
+			</property>
+		</bean>
+	</service>
 
 </blueprint>
