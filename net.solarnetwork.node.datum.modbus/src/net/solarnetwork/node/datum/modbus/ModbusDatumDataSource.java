@@ -169,7 +169,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		if ( d == null ) {
 			return null;
 		}
-		if ( currSample.getDataTimestamp() >= start ) {
+		if ( currSample.getDataTimestamp() >= start || isSubSampling() ) {
 			// we read from the device
 			postDatumCapturedEvent(d);
 		}

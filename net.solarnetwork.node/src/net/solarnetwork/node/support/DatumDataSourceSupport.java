@@ -265,6 +265,17 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	}
 
 	/**
+	 * Test if sub-sampling is currently active.
+	 * 
+	 * @return {@literal true} if sub-sampling is active
+	 * @since 1.1
+	 */
+	protected boolean isSubSampling() {
+		ScheduledFuture<?> f = this.subSampleFuture;
+		return f != null && !f.isDone();
+	}
+
+	/**
 	 * Apply the configured samples transformer service to a given datum.
 	 * 
 	 * @param datum
