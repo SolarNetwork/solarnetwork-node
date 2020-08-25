@@ -55,6 +55,8 @@ public interface SerialNetwork extends Identifiable {
 	 * The {@link SerialConnection} passed will already be opened, and it will
 	 * be closed automatically after the action is complete.
 	 * 
+	 * @param <T>
+	 *        the action result type
 	 * @param action
 	 *        the callback whose result to return
 	 * @return the result of calling

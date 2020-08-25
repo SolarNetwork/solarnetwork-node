@@ -105,9 +105,9 @@ public abstract class SerialDeviceDatumDataSourceSupport extends DatumDataSource
 
 	/**
 	 * Get the device info data as a Map. This method will call
-	 * {@link #readMeterInfo(SerialConnection)}. The map is cached so subsequent
-	 * calls will not attempt to read from the device. Note the returned map
-	 * cannot be modified.
+	 * {@link #readDeviceInfo(SerialConnection)}. The map is cached so
+	 * subsequent calls will not attempt to read from the device. Note the
+	 * returned map cannot be modified.
 	 * 
 	 * @return the device info, or <em>null</em>
 	 * @see #readDeviceInfo(SerialConnection)
@@ -139,10 +139,14 @@ public abstract class SerialDeviceDatumDataSourceSupport extends DatumDataSource
 	 * {@link SerialNetwork#performAction(SerialConnectionAction)} if one can be
 	 * obtained.
 	 * 
+	 * @param <T>
+	 *        the action result type
 	 * @param action
 	 *        the connection action
 	 * @return the result of the callback, or <em>null</em> if the action is
 	 *         never invoked
+	 * @throws IOException
+	 *         if any IO error occurs
 	 */
 	protected final <T> T performAction(final SerialConnectionAction<T> action) throws IOException {
 		T result = null;
