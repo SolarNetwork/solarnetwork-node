@@ -261,7 +261,7 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
 	 * 
-	 * @param sampleCacheSecondsMs
+	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
 	public void setSampleCacheMs(long sampleCacheMs) {
@@ -271,7 +271,7 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport
 	/**
 	 * Set the source ID to use for returned datum.
 	 * 
-	 * @param soruceId
+	 * @param sourceId
 	 *        the source ID to use; defaults to {@literal PVI-3800}
 	 */
 	public void setSourceId(String sourceId) {
