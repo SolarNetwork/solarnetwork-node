@@ -45,7 +45,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 
 /**
- * {@ilnk DatumDataSource} for Elkor WattsOn meters.
+ * {@link DatumDataSource} for Elkor WattsOn meters.
  * 
  * @author matt
  * @version 1.1
@@ -189,7 +189,7 @@ public class WattsOnDatumDataSource extends ModbusDataDatumDataSourceSupport<Wat
 	/**
 	 * Set the source ID to use for returned datum.
 	 * 
-	 * @param soruceId
+	 * @param sourceId
 	 *        the source ID to use; defaults to {@literal modbus}
 	 */
 	public void setSourceId(String sourceId) {
