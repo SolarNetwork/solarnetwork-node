@@ -182,7 +182,7 @@ public class PowerGatePlusDatumDataSource extends ModbusDataDatumDataSourceSuppo
 	/**
 	 * Set the source ID to use for returned datum.
 	 * 
-	 * @param soruceId
+	 * @param sourceId
 	 *        the source ID to use; defaults to {@literal modbus}
 	 */
 	public void setSourceId(String sourceId) {
