@@ -260,7 +260,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
 	 * 
-	 * @param sampleCacheSecondsMs
+	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
 	public void setSampleCacheMs(long sampleCacheMs) {
@@ -270,7 +270,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	/**
 	 * Set the source ID to use for returned datum.
 	 * 
-	 * @param soruceId
+	 * @param sourceId
 	 *        the source ID to use; defaults to {@literal modbus}
 	 */
 	public void setSourceId(String sourceId) {
