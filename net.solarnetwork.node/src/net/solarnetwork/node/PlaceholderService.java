@@ -23,6 +23,7 @@
 package net.solarnetwork.node;
 
 import java.util.Map;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * API for a service that can resolve "placeholder" variables in strings.
@@ -39,7 +40,7 @@ public interface PlaceholderService {
 	 * @param s
 	 *        the string to resolve placeholders in
 	 * @param parameters
-	 *        parameters to use while resolving placeholders
+	 *        parameters to use while resolving placeholders, or {@literal null}
 	 * @return the resolved string, or {@literal null} if {@code s} is
 	 *         {@literal null}
 	 */
@@ -52,5 +53,24 @@ public interface PlaceholderService {
 	 *        the parameters to register
 	 */
 	void registerParameters(Map<String, ?> parameters);
+
+	/**
+	 * Helper to resolve placeholders from an optional
+	 * {@link PlaceholderService}.
+	 * 
+	 * @param service
+	 *        the optional service
+	 * @param s
+	 *        the string to resolve placeholders
+	 * @param parameters
+	 *        to use while resolving placeholders, or {@literal null}
+	 * @return the resolved string, or {@literal null} if {@code s} is
+	 *         {@literal null}
+	 */
+	static String resolvePlaceholders(OptionalService<PlaceholderService> service, String s,
+			Map<String, ?> parameters) {
+		PlaceholderService ps = OptionalService.service(service);
+		return (ps != null ? ps.resolvePlaceholders(s, parameters) : s);
+	}
 
 }
