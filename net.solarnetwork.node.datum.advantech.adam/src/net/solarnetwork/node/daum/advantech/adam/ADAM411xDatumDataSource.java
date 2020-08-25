@@ -237,7 +237,7 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 	/**
 	 * Set the source ID to use for returned datum.
 	 * 
-	 * @param soruceId
+	 * @param sourceId
 	 *        the source ID to use; defaults to {@literal ADAM-411x}
 	 */
 	public void setSourceId(String sourceId) {

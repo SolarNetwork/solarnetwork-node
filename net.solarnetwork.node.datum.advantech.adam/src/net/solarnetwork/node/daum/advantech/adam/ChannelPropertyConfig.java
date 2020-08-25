@@ -262,7 +262,7 @@ public class ChannelPropertyConfig extends GeneralDatumSamplePropertyConfig<Inte
 	 * Set the channel to read data from.
 	 * 
 	 * <p>
-	 * This is an alias for {@link #setConfig(Integer)}.
+	 * This is an alias for {@link #setConfig(Object)}.
 	 * </p>
 	 * 
 	 * @param channelNumber
