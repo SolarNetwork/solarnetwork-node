@@ -48,8 +48,8 @@ import net.solarnetwork.util.DynamicServiceTracker;
 import net.solarnetwork.util.StringUtils;
 
 /**
- * SMA {@link DatumDataSource} for {@link PowerDatum}, using the {@code yasdi4j}
- * library.
+ * SMA {@link DatumDataSource} for {@link ACEnergyDatum}, using the
+ * {@code yasdi4j} library.
  * 
  * <p>
  * This class is not generally not thread-safe. Only one thread should execute
