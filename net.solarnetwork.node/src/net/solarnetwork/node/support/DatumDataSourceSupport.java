@@ -40,7 +40,6 @@ import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
-import net.solarnetwork.node.Identifiable;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -55,7 +54,7 @@ import net.solarnetwork.util.OptionalService;
  * @version 1.1
  * @since 1.51
  */
-public class DatumDataSourceSupport implements Identifiable {
+public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * A transform properties instance that can be used to signal "sub-sampling"
@@ -73,9 +72,6 @@ public class DatumDataSourceSupport implements Identifiable {
 	private static final ConcurrentMap<String, GeneralDatumMetadata> SOURCE_METADATA_CACHE = new ConcurrentHashMap<String, GeneralDatumMetadata>(
 			4);
 
-	private String uid;
-	private String groupUID;
-	private MessageSource messageSource;
 	private OptionalService<DatumMetadataService> datumMetadataService;
 	private OptionalService<EventAdmin> eventAdmin;
 	private TaskScheduler taskScheduler = null;
@@ -185,10 +181,7 @@ public class DatumDataSourceSupport implements Identifiable {
 	 * @return list of setting specifiers
 	 */
 	protected List<SettingSpecifier> getIdentifiableSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
-		results.add(new BasicTextFieldSettingSpecifier("uid", null));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
-		return results;
+		return baseIdentifiableSettings("");
 	}
 
 	/**
@@ -297,50 +290,29 @@ public class DatumDataSourceSupport implements Identifiable {
 		return datum;
 	}
 
-	/**
-	 * {@inheritDoc}
-	 * 
-	 * <p>
-	 * This is an alias for {@link #getUID()}.
-	 * </p>
-	 */
 	@Override
 	public String getUID() {
-		return getUid();
+		return super.getUID();
 	}
 
-	/**
-	 * Get a unique ID for this service.
-	 * 
-	 * @return the service unique ID
-	 */
+	@Override
 	public String getUid() {
-		return uid;
+		return super.getUid();
 	}
 
-	/**
-	 * Set the unique ID for this service.
-	 * 
-	 * @param uid
-	 *        the unique ID
-	 */
+	@Override
 	public void setUid(String uid) {
-		this.uid = uid;
+		super.setUid(uid);
 	}
 
 	@Override
 	public String getGroupUID() {
-		return groupUID;
+		return super.getGroupUID();
 	}
 
-	/**
-	 * Set a unique group ID for this service.
-	 * 
-	 * @param groupUID
-	 *        the group ID to use
-	 */
+	@Override
 	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
+		super.setGroupUID(groupUID);
 	}
 
 	/**
@@ -362,23 +334,14 @@ public class DatumDataSourceSupport implements Identifiable {
 		this.eventAdmin = eventAdmin;
 	}
 
-	/**
-	 * Get the configured {@link MessageSource}.
-	 * 
-	 * @return the message source, or {@literal null}
-	 */
+	@Override
 	public MessageSource getMessageSource() {
-		return messageSource;
+		return super.getMessageSource();
 	}
 
-	/**
-	 * Set a {@link MessageSource} to use for resolving localized messages.
-	 * 
-	 * @param messageSource
-	 *        the message source to use
-	 */
+	@Override
 	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
+		super.setMessageSource(messageSource);
 	}
 
 	/**
