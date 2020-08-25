@@ -97,6 +97,11 @@ public class SettingsPlaceholderService implements PlaceholderService {
 
 				@Override
 				public Object get(Object key) {
+					// method argument takes highest precedence
+					if ( parameters != null && parameters.containsKey(key) ) {
+						return parameters.get(key);
+					}
+					// DAO takes second precedence
 					if ( kp != null ) {
 						for ( KeyValuePair p : kp ) {
 							if ( key.equals(p.getKey()) ) {
@@ -104,6 +109,7 @@ public class SettingsPlaceholderService implements PlaceholderService {
 							}
 						}
 					}
+					// static takes lowest precedence
 					return (props != null ? props.get(key) : null);
 				}
 

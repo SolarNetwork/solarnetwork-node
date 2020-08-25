@@ -27,6 +27,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -119,6 +120,22 @@ public class SettingsPlaceholderServiceTests {
 
 		// THEN
 		assertThat("Resolved static placeholders with default", result, equalTo(" != bar"));
+	}
+
+	@Test
+	public void resolveWithParametersArgument() {
+		// GIVEN
+		expect(settingDao.getSettingValues(SettingsPlaceholderService.SETTING_KEY)).andReturn(null);
+
+		// WHEN
+		replayAll();
+		Map<String, Object> params = new HashMap<>(4);
+		params.put("a", "eh");
+		params.put("foo", "boo");
+		String result = service.resolvePlaceholders("{a} != {foo} != {b}", params);
+
+		// THEN
+		assertThat("Resolved static placeholders with default", result, equalTo("eh != boo != two"));
 	}
 
 	@Test
