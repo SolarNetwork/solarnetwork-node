@@ -252,6 +252,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * needed eg unit testing.
 	 * 
 	 * @param rng
+	 *        the random number generator
 	 */
 	public void setRNG(Random rng) {
 		this.rng = rng;
