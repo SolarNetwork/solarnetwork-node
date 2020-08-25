@@ -289,7 +289,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Set the source ID to use for returned datum.
 	 * 
-	 * @param soruceId
+	 * @param sourceId
 	 *        the source ID to use
 	 */
 	public void setSourceId(String sourceId) {
