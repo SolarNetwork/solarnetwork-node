@@ -328,10 +328,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	 * Retrieves the eGauge file from the specified URL and returns the register
 	 * names found inside.
 	 * 
-	 * @param queryUrl
-	 *        the eGauge path to get the file from
 	 * @return the register names found in the file
-	 * @throws XmlEGaugeClientException
 	 */
 	public List<String> getRegisterNames() {
 		if ( getBaseUrl() == null ) {
