@@ -87,6 +87,16 @@ public class SettingsPlaceholderService implements PlaceholderService {
 
 	@Override
 	public String resolvePlaceholders(String s, Map<String, ?> parameters) {
+		// don't try to resolve null/empty input
+		if ( s == null || s.isEmpty() ) {
+			return s;
+		}
+
+		// short-circuit check if there even are any placeholders to resolve
+		if ( !StringUtils.NAMES_PATTERN.matcher(s).find() ) {
+			return s;
+		}
+
 		String resolved = s;
 
 		List<KeyValuePair> kp = settingValues();
@@ -158,7 +168,10 @@ public class SettingsPlaceholderService implements PlaceholderService {
 		}
 	}
 
-	private synchronized Map<String, Object> loadStaticProps() {
+	private synchronized Map<String, ?> loadStaticProps() {
+		if ( this.staticProps != null ) {
+			return this.staticProps;
+		}
 		Map<String, Object> params = new HashMap<>(16);
 		Path p = this.staticPropertiesPath;
 		if ( p != null ) {

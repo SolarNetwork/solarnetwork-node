@@ -24,6 +24,7 @@ package net.solarnetwork.node.support.test;
 
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -65,6 +66,37 @@ public class SettingsPlaceholderServiceTests {
 	@After
 	public void teardown() {
 		EasyMock.verify(settingDao);
+	}
+
+	@Test
+	public void nullInput() {
+		// WHEN
+		replayAll();
+		String result = service.resolvePlaceholders(null, null);
+
+		// THEN
+		assertThat("Resolved null output on null input", result, nullValue());
+	}
+
+	@Test
+	public void emptyInput() {
+		// WHEN
+		replayAll();
+		String result = service.resolvePlaceholders("", null);
+
+		// THEN
+		assertThat("Resolved empty output on empty input", result, equalTo(""));
+	}
+
+	@Test
+	public void noPlaceholdersInput() {
+		// WHEN
+		replayAll();
+		String input = "this is not the string you are looking for";
+		String result = service.resolvePlaceholders(input, null);
+
+		// THEN
+		assertThat("Resolved output matches input because no placeholders", result, equalTo(input));
 	}
 
 	@Test
@@ -151,4 +183,5 @@ public class SettingsPlaceholderServiceTests {
 		params.put("bim", "bam");
 		service.registerParameters(params);
 	}
+
 }
