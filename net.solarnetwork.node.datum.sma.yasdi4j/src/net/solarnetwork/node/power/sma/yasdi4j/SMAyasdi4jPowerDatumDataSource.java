@@ -57,7 +57,7 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		implements DatumDataSource<ACEnergyDatum>, SettingSpecifierProvider {
@@ -151,7 +151,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 				return null;
 			}
 
-			datum.setSourceId(getSourceId());
+			datum.setSourceId(resolvePlaceholders(getSourceId()));
 
 			if ( this.pvWattsChannelNames != null && this.pvWattsChannelNames.size() > 0 ) {
 				// we sum up all channels into a single value

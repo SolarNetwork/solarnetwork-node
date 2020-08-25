@@ -53,7 +53,7 @@ import net.solarnetwork.util.StringUtils;
  * {@link DatumDataSource} for a SunSpec compatible inverter.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
@@ -129,7 +129,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 			d.populateDcModulesProperties(mppt);
 		}
 
-		d.setSourceId(getSourceId());
+		d.setSourceId(resolvePlaceholders(getSourceId()));
 		if ( currSample.getDataTimestamp() >= start ) {
 			// we read from the device
 			postDatumCapturedEvent(d);

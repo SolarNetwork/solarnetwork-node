@@ -44,7 +44,7 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * {@link DatumDataSource} for a SunSpec compatible power meter.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
@@ -98,7 +98,7 @@ public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSup
 		if ( this.includePhaseMeasurements ) {
 			d.populatePhaseMeasurementProperties(data);
 		}
-		d.setSourceId(getSourceId());
+		d.setSourceId(resolvePlaceholders(getSourceId()));
 		if ( currSample.getDataTimestamp() >= start ) {
 			// we read from the device
 			postDatumCapturedEvent(d);

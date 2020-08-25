@@ -156,7 +156,7 @@ import net.solarnetwork.util.StringUtils;
  * </pre>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSupport
 		implements DatumDataSource<ACEnergyDatum>,
@@ -326,7 +326,7 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 		}
 
 		GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
-		datum.setSourceId(this.sourceId);
+		datum.setSourceId(resolvePlaceholders(sourceId));
 
 		// Issue GetData command for each channel we're interested in
 		Number pvVolts = getNumericDataValue(dataCollector, this.pvVoltsChannelName, Float.class);
