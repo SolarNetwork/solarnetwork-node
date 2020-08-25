@@ -290,7 +290,7 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	/**
 	 * Set the data type as a string value.
 	 * 
-	 * @param dataType
+	 * @param key
 	 *        the type to set
 	 */
 	public void setDataTypeKey(String key) {
@@ -379,7 +379,7 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 * relative to the least significant bit of the full message data value.
 	 * 
 	 * <p>
-	 * This is an alias for {@link #setConfig(Integer)}.
+	 * This is an alias for {@link #setConfig(Object)}.
 	 * </p>
 	 * 
 	 * @param bitOffset

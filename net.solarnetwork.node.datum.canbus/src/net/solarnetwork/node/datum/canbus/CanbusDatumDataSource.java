@@ -448,7 +448,7 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 	/**
 	 * Set the source ID to use for returned datum.
 	 * 
-	 * @param soruceId
+	 * @param sourceId
 	 *        the source ID to use
 	 */
 	public void setSourceId(String sourceId) {
@@ -496,7 +496,7 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 	 * 
 	 * <p>
 	 * This path accepts one string format parameter: the configured
-	 * {@Link #getBusName()} value.
+	 * {@link #getBusName()} value.
 	 * </p>
 	 * 
 	 * @param debugLogPath
