@@ -19,6 +19,7 @@
 			<list>
 				<value>net.solarnetwork.node.control.jf2.lata.LATAController</value>
 				<value>net.solarnetwork.node.io.serial.support.SerialDeviceSupport</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
 		</property>
 	</bean>

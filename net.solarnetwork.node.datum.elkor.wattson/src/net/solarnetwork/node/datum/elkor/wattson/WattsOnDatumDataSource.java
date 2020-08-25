@@ -48,7 +48,7 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * {@ilnk DatumDataSource} for Elkor WattsOn meters.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class WattsOnDatumDataSource extends ModbusDataDatumDataSourceSupport<WattsOnData>
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
@@ -128,7 +128,7 @@ public class WattsOnDatumDataSource extends ModbusDataDatumDataSourceSupport<Wat
 			if ( this.includePhaseMeasurements ) {
 				d.populatePhaseMeasurementProperties(currSample);
 			}
-			d.setSourceId(this.sourceId);
+			d.setSourceId(resolvePlaceholders(sourceId));
 			if ( currSample.getDataTimestamp() >= start ) {
 				// we read from the device
 				postDatumCapturedEvent(d);

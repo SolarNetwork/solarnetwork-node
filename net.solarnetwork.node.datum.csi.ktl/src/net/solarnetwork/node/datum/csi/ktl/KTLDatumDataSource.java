@@ -59,7 +59,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * 
  * @author matt
  * @author maxieduncan
- * @version 1.2
+ * @version 1.3
  */
 public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTData> implements
 		DatumDataSource<GeneralNodePVEnergyDatum>, MultiDatumDataSource<GeneralNodePVEnergyDatum>,
@@ -109,7 +109,7 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 				return null;
 			}
 			KTLDatum d = new KTLDatum(currSample);
-			d.setSourceId(this.sourceId);
+			d.setSourceId(resolvePlaceholders(sourceId));
 			if ( currSample.getDataTimestamp() >= start ) {
 				// we read from the device
 				postDatumCapturedEvent(d);

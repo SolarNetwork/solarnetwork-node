@@ -91,7 +91,7 @@ public class DTSConsumptionDatumDataSource extends ModbusDeviceDatumDataSourceSu
 							if ( hectoWh != null ) {
 								d.setWattHourReading(hectoWh * 100L);
 							}
-							d.setSourceId(sourceId);
+							d.setSourceId(resolvePlaceholders(sourceId));
 							return (d.getWattHourReading() != null ? d : null);
 						}
 					});

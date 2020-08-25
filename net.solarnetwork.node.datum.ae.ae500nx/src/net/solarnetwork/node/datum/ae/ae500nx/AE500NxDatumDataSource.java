@@ -51,7 +51,7 @@ import net.solarnetwork.util.StringUtils;
  * {@link DatumDataSource} for the AE 500NX series inverter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class AE500NxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE500NxData>
 		implements DatumDataSource<GeneralNodePVEnergyDatum>,
@@ -100,7 +100,7 @@ public class AE500NxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE5
 				return null;
 			}
 			AE500NxDatum d = new AE500NxDatum(currSample);
-			d.setSourceId(this.sourceId);
+			d.setSourceId(resolvePlaceholders(sourceId));
 			if ( currSample.getDataTimestamp() >= start ) {
 				// we read from the device
 				postDatumCapturedEvent(d);

@@ -76,7 +76,7 @@ import net.solarnetwork.util.StringUtils;
  * Generic Modbus device datum data source.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider,
@@ -161,7 +161,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		}
 		GeneralNodeDatum d = new GeneralNodeDatum();
 		d.setCreated(new Date(currSample.getDataTimestamp()));
-		d.setSourceId(sourceId);
+		d.setSourceId(resolvePlaceholders(sourceId));
 		populateDatumProperties(currSample, d, propConfigs);
 		populateDatumProperties(currSample, d, virtualMeterConfigs);
 		populateDatumProperties(currSample, d, expressionConfigs);

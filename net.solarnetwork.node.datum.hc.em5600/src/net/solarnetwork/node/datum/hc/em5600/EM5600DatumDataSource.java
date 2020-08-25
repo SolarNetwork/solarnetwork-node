@@ -52,7 +52,7 @@ import net.solarnetwork.util.StringUtils;
  * EM5600 series watt meter.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM5600Data> implements
 		DatumDataSource<ACEnergyDatum>, MultiDatumDataSource<ACEnergyDatum>, SettingSpecifierProvider {
@@ -142,7 +142,7 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 				return null;
 			}
 			EM5600Datum d = new EM5600Datum(currSample, ACPhase.Total, backwards);
-			d.setSourceId(sourceId);
+			d.setSourceId(resolvePlaceholders(sourceId));
 			if ( currSample.getDataTimestamp() >= start ) {
 				// we read from the device
 				postDatumCapturedEvent(d);
@@ -192,7 +192,7 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 		}
 		if ( isCapturePhaseA() || postCapturedEvent ) {
 			EM5600Datum d = new EM5600Datum(currSample, ACPhase.PhaseA, backwards);
-			d.setSourceId(getSourceMapping().get(ACPhase.PhaseA));
+			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseA)));
 			if ( postCapturedEvent ) {
 				// we read from the meter
 				postDatumCapturedEvent(d);
@@ -206,7 +206,7 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 		}
 		if ( isCapturePhaseB() || postCapturedEvent ) {
 			EM5600Datum d = new EM5600Datum(currSample, ACPhase.PhaseB, backwards);
-			d.setSourceId(getSourceMapping().get(ACPhase.PhaseB));
+			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseB)));
 			if ( postCapturedEvent ) {
 				// we read from the meter
 				postDatumCapturedEvent(d);
@@ -220,7 +220,7 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 		}
 		if ( isCapturePhaseC() || postCapturedEvent ) {
 			EM5600Datum d = new EM5600Datum(currSample, ACPhase.PhaseC, backwards);
-			d.setSourceId(getSourceMapping().get(ACPhase.PhaseC));
+			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseC)));
 			if ( postCapturedEvent ) {
 				// we read from the meter
 				postDatumCapturedEvent(d);

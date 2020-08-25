@@ -93,7 +93,7 @@ import net.solarnetwork.util.StringUtils;
  * </pre>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class EnaSolarXMLDatumDataSource extends XmlServiceSupport
 		implements DatumDataSource<GeneralNodePVEnergyDatum>, SettingSpecifierProvider {
@@ -124,7 +124,7 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport
 		if ( isCachedSampleExpired() ) {
 			datum = new EnaSolarPowerDatum();
 			datum.setCreated(new Date());
-			datum.setSourceId(sourceId);
+			datum.setSourceId(resolvePlaceholders(sourceId));
 			sampleException = null;
 			for ( String url : urls ) {
 				try {

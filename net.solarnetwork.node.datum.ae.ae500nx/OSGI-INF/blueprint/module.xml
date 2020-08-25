@@ -20,6 +20,11 @@
 		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
 	</bean>
 
+	<bean id="placeholderService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
+	</bean>
+	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
@@ -99,6 +104,7 @@
 								<bean class="net.solarnetwork.node.datum.ae.ae500nx.AE500NxDatumDataSource">
 									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="messageSource" ref="jobMessageSource"/>
+									<property name="placeholderService" ref="placeholderService"/>
 									<property name="modbusNetwork">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>

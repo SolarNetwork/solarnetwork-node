@@ -37,6 +37,7 @@ import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.node.io.serial.SerialNetwork;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
@@ -59,9 +60,9 @@ import net.solarnetwork.util.StringUtils;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.2
  */
-public abstract class SerialDeviceSupport {
+public abstract class SerialDeviceSupport extends BaseIdentifiable {
 
 	/** Key for the device name, as a String. */
 	public static final String INFO_KEY_DEVICE_NAME = "Name";
@@ -82,10 +83,7 @@ public abstract class SerialDeviceSupport {
 	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = "Manufacture Date";
 
 	private Map<String, Object> deviceInfo;
-	private String uid;
-	private String groupUID;
 	private OptionalService<SerialNetwork> serialNetwork;
-	private MessageSource messageSource;
 	private OptionalService<EventAdmin> eventAdmin;
 
 	/** A class-level logger. */
@@ -153,7 +151,7 @@ public abstract class SerialDeviceSupport {
 				});
 				deviceInfo = info;
 			} catch ( Exception e ) {
-				log.warn("Communcation problem with {}: {}", uid, e.getMessage());
+				log.warn("Communcation problem with {}: {}", getUid(), e.getMessage());
 			}
 		}
 		return (info == null ? null : Collections.unmodifiableMap(info));
@@ -236,29 +234,29 @@ public abstract class SerialDeviceSupport {
 		ea.postEvent(event);
 	}
 
-	/**
-	 * Get a UID value. Returns {@link #getUid()}.
-	 * 
-	 * @return UID
-	 */
+	@Override
 	public String getUID() {
-		return getUid();
+		return super.getUID();
 	}
 
+	@Override
 	public String getUid() {
-		return uid;
+		return super.getUid();
 	}
 
+	@Override
 	public void setUid(String uid) {
-		this.uid = uid;
+		super.setUid(uid);
 	}
 
+	@Override
 	public String getGroupUID() {
-		return groupUID;
+		return super.getGroupUID();
 	}
 
+	@Override
 	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
+		super.setGroupUID(groupUID);
 	}
 
 	public OptionalService<SerialNetwork> getSerialNetwork() {
@@ -293,8 +291,9 @@ public abstract class SerialDeviceSupport {
 	 * 
 	 * @return the message source, or {@literal null}
 	 */
+	@Override
 	public MessageSource getMessageSource() {
-		return messageSource;
+		return super.getMessageSource();
 	}
 
 	/**
@@ -303,7 +302,9 @@ public abstract class SerialDeviceSupport {
 	 * @param messageSource
 	 *        the message source to use
 	 */
+	@Override
 	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
+		super.setMessageSource(messageSource);
 	}
+
 }

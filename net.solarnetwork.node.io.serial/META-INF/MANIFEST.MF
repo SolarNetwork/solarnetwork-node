@@ -5,19 +5,19 @@ Bundle-SymbolicName: net.solarnetwork.node.io.serial
 Bundle-Description: SolarNode API for serial network communication. Another 
  plugin that implements this API must be provided, for example the RXTX 
  plugin.
-Bundle-Version: 2.0.1
+Bundle-Version: 2.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: 
  net.solarnetwork.node.io.serial;version="2.0.0",
- net.solarnetwork.node.io.serial.support;version="1.0.0"
+ net.solarnetwork.node.io.serial.support;version="1.1.0"
 Import-Package: 
- net.solarnetwork.node;version="1.16.0",
- net.solarnetwork.node.settings;version="1.1.0",
- net.solarnetwork.node.settings.support;version="1.0.0",
- net.solarnetwork.node.support;version="1.12.0",
- net.solarnetwork.node.util;version="1.5.0",
+ net.solarnetwork.node;version="[1.16,2.0)",
+ net.solarnetwork.node.settings;version="[1.1,2.0)",
+ net.solarnetwork.node.settings.support;version="[1.0,2.0)",
+ net.solarnetwork.node.support;version="[1.21,2.0)",
+ net.solarnetwork.node.util;version="[1.5,2.0)",
  net.solarnetwork.util;version="[1.40,2.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.context;version="[4.2,5.0)"
+ org.springframework.context;version="[4.3,5.0)"

@@ -11,6 +11,11 @@
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
 
+	<bean id="placeholderService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
+	</bean>
+	
 	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
@@ -95,6 +100,7 @@
 								<bean class="net.solarnetwork.node.datum.elkor.wattson.WattsOnDatumDataSource">
 									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="messageSource" ref="jobMessageSource"/>
+									<property name="placeholderService" ref="placeholderService"/>
 									<property name="modbusNetwork">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>

@@ -24,6 +24,8 @@ package net.solarnetwork.node.datum.panasonic.battery;
 
 import java.util.List;
 import java.util.Locale;
+import org.joda.time.DateTime;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.EnergyStorageDatum;
 import net.solarnetwork.node.domain.GeneralNodeEnergyStorageDatum;
@@ -33,8 +35,6 @@ import net.solarnetwork.node.hw.panasonic.battery.BatteryData;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import org.joda.time.DateTime;
-import org.springframework.context.MessageSource;
 
 /**
  * {@link DatumDataSource} implementation for
@@ -46,7 +46,8 @@ import org.springframework.context.MessageSource;
  * 
  * <dl class="class-properties">
  * <dt>messageSource</dt>
- * <dd>The {@link MessageSource} to use with {@link SettingSpecifierProvider}.</dd>
+ * <dd>The {@link MessageSource} to use with
+ * {@link SettingSpecifierProvider}.</dd>
  * 
  * <dt>sampleCacheMs</dt>
  * <dd>The maximum number of milliseconds to cache data read from the battery
@@ -54,10 +55,10 @@ import org.springframework.context.MessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class PanasonicBatteryDatumDataSource extends BatteryAPISupport implements
-		DatumDataSource<GeneralNodeEnergyStorageDatum>, SettingSpecifierProvider {
+public class PanasonicBatteryDatumDataSource extends BatteryAPISupport
+		implements DatumDataSource<GeneralNodeEnergyStorageDatum>, SettingSpecifierProvider {
 
 	private String email;
 	private String deviceID;
@@ -143,7 +144,7 @@ public class PanasonicBatteryDatumDataSource extends BatteryAPISupport implement
 			return null;
 		}
 		PanasonicBatteryDatum d = new PanasonicBatteryDatum(currSample);
-		d.setSourceId(getSourceId());
+		d.setSourceId(resolvePlaceholders(getSourceId()));
 		if ( currSample.getDate() != null && currSample.getDate().getMillis() >= start ) {
 			// we read from the meter
 			postDatumCapturedEvent(d, EnergyStorageDatum.class);
@@ -163,6 +164,7 @@ public class PanasonicBatteryDatumDataSource extends BatteryAPISupport implement
 		return "Panasonic Battery API Battery";
 	}
 
+	@Override
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
@@ -178,10 +180,10 @@ public class PanasonicBatteryDatumDataSource extends BatteryAPISupport implement
 		List<SettingSpecifier> results = super.getSettingSpecifiers();
 		results.add(new BasicTextFieldSettingSpecifier("deviceID", ""));
 		results.add(new BasicTextFieldSettingSpecifier("email", ""));
-		results.add(new BasicTextFieldSettingSpecifier("sourceId",
-				String.valueOf(defaults.getSourceId())));
-		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs", String.valueOf(defaults
-				.getSampleCacheMs())));
+		results.add(
+				new BasicTextFieldSettingSpecifier("sourceId", String.valueOf(defaults.getSourceId())));
+		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
+				String.valueOf(defaults.getSampleCacheMs())));
 		return results;
 	}
 

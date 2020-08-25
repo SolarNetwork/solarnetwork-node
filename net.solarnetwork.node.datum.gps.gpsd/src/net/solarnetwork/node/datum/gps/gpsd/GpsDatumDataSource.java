@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.datum.gps.gpsd;
 
-import static net.solarnetwork.domain.Identifiable.UID_PROPERTY;
 import static net.solarnetwork.util.StringUtils.delimitedStringFromMap;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -159,7 +158,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 			return null;
 		}
 		TpvGpsDatum d = new TpvGpsDatum(tpv);
-		d.setSourceId(sourceId);
+		d.setSourceId(resolvePlaceholders(sourceId));
 		return d;
 	}
 

@@ -35,6 +35,7 @@ import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.util.ClassUtils;
 import net.solarnetwork.util.OptionalService;
 
@@ -42,9 +43,9 @@ import net.solarnetwork.util.OptionalService;
  * Supporting class for {@link BatteryAPIClient} use.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public class BatteryAPISupport {
+public class BatteryAPISupport extends BaseIdentifiable {
 
 	// the client to use
 	private BatteryAPIClient client = new SimpleBatteryAPIClient();
@@ -52,8 +53,6 @@ public class BatteryAPISupport {
 	// an optional EventAdmin service
 	private OptionalService<EventAdmin> eventAdmin;
 
-	private String uid;
-	private String groupUID;
 	private String errorMessage;
 
 	/** A class-level logger to use. */
@@ -190,12 +189,14 @@ public class BatteryAPISupport {
 	 * 
 	 * @return The unique ID.
 	 */
+	@Override
 	public String getUid() {
-		return uid;
+		return super.getUid();
 	}
 
+	@Override
 	public void setUid(String uid) {
-		this.uid = uid;
+		super.setUid(uid);
 	}
 
 	/**
@@ -204,8 +205,9 @@ public class BatteryAPISupport {
 	 * 
 	 * @return The unique ID.
 	 */
+	@Override
 	public String getUID() {
-		return getUid();
+		return super.getUID();
 	}
 
 	/**
@@ -213,12 +215,14 @@ public class BatteryAPISupport {
 	 * 
 	 * @return The group ID.
 	 */
+	@Override
 	public String getGroupUID() {
-		return groupUID;
+		return super.getGroupUID();
 	}
 
+	@Override
 	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
+		super.setGroupUID(groupUID);
 	}
 
 	/**
