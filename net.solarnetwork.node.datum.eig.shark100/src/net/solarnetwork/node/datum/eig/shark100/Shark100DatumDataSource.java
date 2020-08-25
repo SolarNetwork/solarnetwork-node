@@ -190,7 +190,7 @@ public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Sh
 	/**
 	 * Set the source ID to use for returned datum.
 	 * 
-	 * @param soruceId
+	 * @param sourceId
 	 *        the source ID to use; defaults to {@literal modbus}
 	 */
 	public void setSourceId(String sourceId) {
