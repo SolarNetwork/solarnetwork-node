@@ -163,8 +163,8 @@ public class SamplesTransformerSupport {
 	/**
 	 * Test if any configuration in a set matches a string value.
 	 * 
-	 * @param pats
-	 *        the regular expressions to use
+	 * @param configs
+	 *        the configurations to use
 	 * @param value
 	 *        the value to test
 	 * @param emptyPatternMatches

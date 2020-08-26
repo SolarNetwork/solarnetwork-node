@@ -24,11 +24,14 @@ package net.solarnetwork.node.support;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.Identifiable;
+import net.solarnetwork.node.PlaceholderService;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.support.BasicIdentifiable;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * Basic implementation of {@link Identifiable} and
@@ -39,11 +42,13 @@ import net.solarnetwork.support.BasicIdentifiable;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 1.67
  */
 public abstract class BaseIdentifiable extends net.solarnetwork.support.BasicIdentifiable
 		implements Identifiable, net.solarnetwork.domain.Identifiable {
+
+	private OptionalService<PlaceholderService> placeholderService;
 
 	/**
 	 * Get settings for the configurable properties of
@@ -85,6 +90,34 @@ public abstract class BaseIdentifiable extends net.solarnetwork.support.BasicIde
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "uid", defaultUid));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "groupUid", defaultGroupUid));
 		return results;
+	}
+
+	/**
+	 * Resolve placeholders using the configured {@link PlaceholderService}.
+	 * 
+	 * @param s
+	 *        the string to resolve placeholder values on
+	 * @return the resolved string, or {@literal null} if {@code s} is
+	 *         {@literal null}
+	 * @since 1.3
+	 */
+	protected String resolvePlaceholders(String s) {
+		return resolvePlaceholders(s, null);
+	}
+
+	/**
+	 * Resolve placeholders using the configured {@link PlaceholderService}.
+	 * 
+	 * @param s
+	 *        the string to resolve placeholder values on
+	 * @param parameters
+	 *        optional parameters to use, or {@literal null}
+	 * @return the resolved string, or {@literal null} if {@code s} is
+	 *         {@literal null}
+	 * @since 1.3
+	 */
+	protected String resolvePlaceholders(String s, Map<String, ?> parameters) {
+		return PlaceholderService.resolvePlaceholders(placeholderService, s, parameters);
 	}
 
 	/**
@@ -173,6 +206,27 @@ public abstract class BaseIdentifiable extends net.solarnetwork.support.BasicIde
 	@Override
 	public void setMessageSource(MessageSource messageSource) {
 		super.setMessageSource(messageSource);
+	}
+
+	/**
+	 * Get the placeholder service to use.
+	 * 
+	 * @return the service
+	 * @since 1.3
+	 */
+	public OptionalService<PlaceholderService> getPlaceholderService() {
+		return placeholderService;
+	}
+
+	/**
+	 * Set the placeholder service to use.
+	 * 
+	 * @param placeholderService
+	 *        the service to set
+	 * @since 1.3
+	 */
+	public void setPlaceholderService(OptionalService<PlaceholderService> placeholderService) {
+		this.placeholderService = placeholderService;
 	}
 
 }

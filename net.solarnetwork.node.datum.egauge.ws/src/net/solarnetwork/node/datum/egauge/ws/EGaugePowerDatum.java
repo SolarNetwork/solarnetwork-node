@@ -25,7 +25,8 @@ package net.solarnetwork.node.datum.egauge.ws;
 import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
 
 /**
- * Extension of {@link PowerDatum} to map eGauge data appropriately.
+ * Extension of {@link GeneralNodePVEnergyDatum} to map eGauge data
+ * appropriately.
  * 
  * @author maxieduncan
  * @version 1.2

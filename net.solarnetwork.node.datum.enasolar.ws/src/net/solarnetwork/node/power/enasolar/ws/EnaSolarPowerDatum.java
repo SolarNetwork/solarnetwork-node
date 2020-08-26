@@ -22,12 +22,13 @@
 
 package net.solarnetwork.node.power.enasolar.ws;
 
-import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
 
 /**
- * Extension of {@link PowerDatum} to map EnaSolar data appropriately.
+ * Extension of {@link GeneralNodePVEnergyDatum} to map EnaSolar data
+ * appropriately.
  * 
  * @author matt
  * @version 1.2
@@ -151,7 +152,7 @@ public class EnaSolarPowerDatum extends GeneralNodePVEnergyDatum {
 	 * Set the DC input voltage, in volts. This is an alias for
 	 * {@code #setDCVoltage(Float)}.
 	 * 
-	 * @param power
+	 * @param value
 	 *        the input voltage, in volts
 	 */
 	public void setInputVoltage(Float value) {

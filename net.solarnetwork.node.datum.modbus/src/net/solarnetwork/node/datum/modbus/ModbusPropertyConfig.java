@@ -279,7 +279,6 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	 * This is an alias for {@link #setPropertyType(GeneralDatumSamplesType)},
 	 * and ignores a {@literal null} argument.
 	 * </p>
-	 * </p>
 	 * 
 	 * @param datumPropertyType
 	 *        the datum property type to set
@@ -450,7 +449,7 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	 * 
 	 * @param dataType
 	 *        the type to set
-	 * @deprecated use {@link #setDataTypeKey(String)
+	 * @deprecated use {@link #setDataTypeKey(String)}
 	 */
 	@Deprecated
 	public void setDataTypeValue(String dataType) {
@@ -474,8 +473,8 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	/**
 	 * Set the data type as a string value.
 	 * 
-	 * @param dataType
-	 *        the type to set
+	 * @param key
+	 *        the type key to set
 	 */
 	public void setDataTypeKey(String key) {
 		setDataType(ModbusDataType.forKey(key));
@@ -530,7 +529,8 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	 * Set the register address to start reading data from.
 	 * 
 	 * <p>
-	 * This is an alias for {@link #setConfig(Integer)}.
+	 * This is an alias for
+	 * {@link GeneralDatumSamplePropertyConfig#setConfig(Object)}.
 	 * </p>
 	 * 
 	 * @param address

@@ -96,4 +96,35 @@
 		</bean>
 	</osgix:managed-service-factory>
 
+
+	<!-- 
+		Downsampler Filter Service
+	 -->
+	 
+	<bean id="downsamplerMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basename" value="net.solarnetwork.node.datum.samplefilter.DownsampleTransformService"/>
+	</bean>
+
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Downsampler Datum Filter"/>
+			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.downsample"/>
+			<property name="messageSource" ref="downsamplerMessageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.downsample" 
+			autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.GeneralDatumSamplesTransformService</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.samplefilter.downsample"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.datum.samplefilter.DownsampleTransformService">
+			<property name="messageSource" ref="downsamplerMessageSource"/>
+		</bean>
+	</osgix:managed-service-factory>
+
 </blueprint>

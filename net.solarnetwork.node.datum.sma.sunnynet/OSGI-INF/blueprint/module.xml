@@ -17,6 +17,11 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
+	<bean id="placeholderService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
+	</bean>
+	
 	<reference id="locationServiceRef" availability="optional" interface="net.solarnetwork.node.LocationService">
 		<reference-listener ref="locationService" bind-method="onBind" unbind-method="onUnbind"/>
 	</reference>
@@ -52,6 +57,7 @@
 		<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
 			<property name="delegate">
 				<bean class="net.solarnetwork.node.power.impl.sma.sunnynet.SMASunnyNetPowerDatumDataSource">
+					<property name="placeholderService" ref="placeholderService"/>
 					<property name="dataCollectorFactory">
 						<bean class="net.solarnetwork.util.DynamicServiceTracker">
 							<property name="bundleContext" ref="bundleContext"/>

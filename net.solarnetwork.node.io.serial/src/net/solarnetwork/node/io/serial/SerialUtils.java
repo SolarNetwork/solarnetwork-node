@@ -63,6 +63,8 @@ public final class SerialUtils {
 	 * 
 	 * @param data
 	 *        the data array
+	 * @param offset
+	 *        the offset within {@code data} to read from
 	 * @return the parsed float, or <em>null</em> if not available or parsed
 	 *         float is {@code NaN}
 	 */

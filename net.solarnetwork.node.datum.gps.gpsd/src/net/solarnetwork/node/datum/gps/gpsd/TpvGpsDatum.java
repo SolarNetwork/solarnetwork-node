@@ -28,7 +28,7 @@ import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.io.gpsd.domain.TpvReportMessage;
 
 /**
- * Datum for a {@Link TpvReportMessage}.
+ * Datum for a {@link TpvReportMessage}.
  * 
  * @author matt
  * @version 1.0
@@ -37,6 +37,9 @@ public class TpvGpsDatum extends GeneralNodeDatum {
 
 	/**
 	 * Constructor.
+	 * 
+	 * @param tpv
+	 *        the report data
 	 */
 	public TpvGpsDatum(TpvReportMessage tpv) {
 		super();

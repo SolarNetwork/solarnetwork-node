@@ -21,6 +21,7 @@
 		<beans:prop key="taskScheduler.poolSize">2</beans:prop>
 		<beans:prop key="jobScheduler.poolSize">10</beans:prop>
 		<beans:prop key="job.backup.cron">0 3 0 ? * SAT</beans:prop>
+		<beans:prop key="placeholders.dir">conf/placeholders.d</beans:prop>
 	</osgix:cm-properties>
 	
 	<!-- Service References -->
@@ -173,7 +174,10 @@
 		</bean>
 	</service>
 	
-	<service interface="net.solarnetwork.node.GeneralDatumSamplesTransformService">
+	<service interface="net.solarnetwork.node.GeneralDatumSamplesTransformService" ranking="10">
+		<service-properties>
+			<entry key="role" value="global"/>
+		</service-properties>
 		<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService">
 			<property name="sampleTransformers" ref="sampleTransformers"/>
 		</bean>
@@ -332,5 +336,19 @@
 		<argument ref="eventAdmin"/>
 		<property name="taskScheduler" ref="taskScheduler"/>
 	</bean>
+	
+	<!-- PlaceholderService -->
+	
+	<service interface="net.solarnetwork.node.PlaceholderService">
+		<bean class="net.solarnetwork.node.support.SettingsPlaceholderService">
+			<argument>
+				<bean class="net.solarnetwork.util.DynamicServiceTracker">
+					<property name="bundleContext" ref="bundleContext"/>
+					<property name="serviceClassName" value="net.solarnetwork.node.dao.SettingDao"/>
+				</bean>
+			</argument>
+			<property name="staticPropertiesPath" value="${placeholders.dir}"/>
+		</bean>
+	</service>
 	
 </blueprint>

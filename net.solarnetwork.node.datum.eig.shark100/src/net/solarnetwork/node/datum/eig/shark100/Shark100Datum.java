@@ -45,6 +45,10 @@ public class Shark100Datum extends GeneralNodeACEnergyDatum implements ACEnergyD
 	 * 
 	 * @param data
 	 *        the sample data
+	 * @param phase
+	 *        the phase
+	 * @param backwards
+	 *        {@literal true} to reverse the current direction
 	 */
 	public Shark100Datum(Shark100DataAccessor data, ACPhase phase, boolean backwards) {
 		super();

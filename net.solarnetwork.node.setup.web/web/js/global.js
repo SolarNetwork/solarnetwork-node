@@ -438,4 +438,31 @@ $(document).ready(function() {
 			input.value = 'true';
 		}
 	});
+	$('a.reset').on('click', function(event) {
+		event.preventDefault();
+		$('#reset-modal').modal('show');
+	});
+	$('#reset-modal').ajaxForm({
+		dataType: 'json',
+		beforeSubmit: function(formData, jqForm, options) {
+			$('#reset-modal .modal-footer button').attr('disabled', 'disabled');
+			return true;
+		},
+		success: function(json, status, xhr, form) {
+			var modal = $('#reset-modal');
+			if ( json && json.success === true ) {
+				modal.find('.start').hide();
+				modal.find('.success').show();
+				setTimeout(function() {
+					SolarNode.tryGotoURL(SolarNode.context.path('/a/home'));
+				}, 10000);
+			} else {
+				SolarNode.error(json.message, $('#reset-modal .modal-body.start'));
+			}
+		},
+		error: function(xhr, status, statusText) {
+			var json = $.parseJSON(xhr.responseText);
+			SolarNode.error(json.message, $('#reset-modal .modal-body.start'));
+		}
+	});
 });

@@ -44,8 +44,12 @@ public class PM3200Datum extends GeneralNodeACEnergyDatum implements ACEnergyDat
 	/**
 	 * Construct with a sample.
 	 * 
-	 * @param sample
-	 *        the sample
+	 * @param data
+	 *        the accessor
+	 * @param phase
+	 *        the phase
+	 * @param backwards
+	 *        {@literal true} to reverse current direction
 	 */
 	public PM3200Datum(PM3200DataAccessor data, ACPhase phase, boolean backwards) {
 		super();

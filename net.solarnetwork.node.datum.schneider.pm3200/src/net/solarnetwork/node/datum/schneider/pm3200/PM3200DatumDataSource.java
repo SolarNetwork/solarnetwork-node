@@ -48,7 +48,7 @@ import net.solarnetwork.util.StringUtils;
  * PM3200 series kWh meter.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.2
  */
 public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM3200Data>
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
@@ -131,7 +131,7 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 	@Override
 	public GeneralNodeACEnergyDatum readCurrentDatum() {
 		final long start = System.currentTimeMillis();
-		final String sourceId = getSourceMapping().get(ACPhase.Total);
+		final String sourceId = resolvePlaceholders(getSourceMapping().get(ACPhase.Total));
 		try {
 			final PM3200Data currSample = getCurrentSample();
 			if ( currSample == null ) {
@@ -164,7 +164,7 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 		try {
 			currSample = getCurrentSample();
 		} catch ( IOException e ) {
-			log.error("Communication problem readiong from PM3200 device: {}", e.getMessage());
+			log.error("Communication problem reading from PM3200 device: {}", e.getMessage());
 			return results;
 		}
 		if ( currSample == null ) {
@@ -173,7 +173,7 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 		final boolean postCapturedEvent = (currSample.getDataTimestamp() >= start);
 		if ( isCaptureTotal() || postCapturedEvent ) {
 			PM3200Datum d = new PM3200Datum(currSample, ACPhase.Total, backwards);
-			d.setSourceId(getSourceMapping().get(ACPhase.Total));
+			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.Total)));
 			if ( postCapturedEvent ) {
 				// we read from the meter
 				postDatumCapturedEvent(d);
@@ -184,7 +184,7 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 		}
 		if ( isCapturePhaseA() || postCapturedEvent ) {
 			PM3200Datum d = new PM3200Datum(currSample, ACPhase.PhaseA, backwards);
-			d.setSourceId(getSourceMapping().get(ACPhase.PhaseA));
+			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseA)));
 			if ( postCapturedEvent ) {
 				// we read from the meter
 				postDatumCapturedEvent(d);
@@ -195,7 +195,7 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 		}
 		if ( isCapturePhaseB() || postCapturedEvent ) {
 			PM3200Datum d = new PM3200Datum(currSample, ACPhase.PhaseB, backwards);
-			d.setSourceId(getSourceMapping().get(ACPhase.PhaseB));
+			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseB)));
 			if ( postCapturedEvent ) {
 				// we read from the meter
 				postDatumCapturedEvent(d);
@@ -206,7 +206,7 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 		}
 		if ( isCapturePhaseC() || postCapturedEvent ) {
 			PM3200Datum d = new PM3200Datum(currSample, ACPhase.PhaseC, backwards);
-			d.setSourceId(getSourceMapping().get(ACPhase.PhaseC));
+			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseC)));
 			if ( postCapturedEvent ) {
 				// we read from the meter
 				postDatumCapturedEvent(d);

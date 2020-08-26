@@ -52,7 +52,7 @@ import net.solarnetwork.util.StringUtils;
  * with the SDM series watt meter.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.2
  */
 public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData>
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
@@ -114,7 +114,7 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 	@Override
 	public GeneralNodeACEnergyDatum readCurrentDatum() {
 		final long start = System.currentTimeMillis();
-		final String sourceId = getSourceMapping().get(ACPhase.Total);
+		final String sourceId = resolvePlaceholders(getSourceMapping().get(ACPhase.Total));
 		try {
 			final SDMData currSample = getCurrentSample();
 			if ( currSample == null ) {
@@ -147,7 +147,7 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 		try {
 			currSample = getCurrentSample();
 		} catch ( IOException e ) {
-			log.error("Communication problem readiong from SDM device: {}", e.getMessage());
+			log.error("Communication problem reading from SDM device: {}", e.getMessage());
 			return results;
 		}
 		if ( currSample == null ) {
@@ -156,7 +156,7 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 		final boolean postCapturedEvent = (currSample.getDataTimestamp() >= start);
 		if ( isCaptureTotal() || postCapturedEvent ) {
 			SDMDatum d = new SDMDatum(currSample, ACPhase.Total, backwards);
-			d.setSourceId(getSourceMapping().get(ACPhase.Total));
+			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.Total)));
 			if ( postCapturedEvent ) {
 				// we read from the meter
 				postDatumCapturedEvent(d);
@@ -167,7 +167,7 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 		}
 		if ( currSample.supportsPhase(ACPhase.PhaseA) && (isCapturePhaseA() || postCapturedEvent) ) {
 			SDMDatum d = new SDMDatum(currSample, ACPhase.PhaseA, backwards);
-			d.setSourceId(getSourceMapping().get(ACPhase.PhaseA));
+			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseA)));
 			if ( postCapturedEvent ) {
 				// we read from the meter
 				postDatumCapturedEvent(d);
@@ -178,7 +178,7 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 		}
 		if ( currSample.supportsPhase(ACPhase.PhaseB) && (isCapturePhaseB() || postCapturedEvent) ) {
 			SDMDatum d = new SDMDatum(currSample, ACPhase.PhaseB, backwards);
-			d.setSourceId(getSourceMapping().get(ACPhase.PhaseB));
+			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseB)));
 			if ( postCapturedEvent ) {
 				// we read from the meter
 				postDatumCapturedEvent(d);
@@ -189,7 +189,7 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 		}
 		if ( currSample.supportsPhase(ACPhase.PhaseC) && (isCapturePhaseC() || postCapturedEvent) ) {
 			SDMDatum d = new SDMDatum(currSample, ACPhase.PhaseC, backwards);
-			d.setSourceId(getSourceMapping().get(ACPhase.PhaseC));
+			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseC)));
 			if ( postCapturedEvent ) {
 				// we read from the meter
 				postDatumCapturedEvent(d);
@@ -386,7 +386,7 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 	/**
 	 * Get the configured device type.
 	 * 
-	 * @return
+	 * @return the device type
 	 */
 	public SDMDeviceType getDeviceType() {
 		return getSample().getDeviceType();
@@ -442,7 +442,7 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 	/**
 	 * Set the backwards setting.
 	 * 
-	 * @param backwards
+	 * @param value
 	 *        {@literal true} if should interpret the meter data as "backwards"
 	 *        in terms of the direction of current
 	 */

@@ -45,12 +45,12 @@ import net.solarnetwork.node.domain.GeneralNodeDatum;
  * {@link GeneralNodeDatum} domain objects.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class JdbcGeneralNodeDatumDao extends AbstractJdbcDatumDao<GeneralNodeDatum> {
 
 	/** The default tables version. */
-	public static final int DEFAULT_TABLES_VERSION = 2;
+	public static final int DEFAULT_TABLES_VERSION = 3;
 
 	/** The table name for datum. */
 	public static final String TABLE_GENERAL_NODE_DATUM = "sn_general_node_datum";

@@ -1,5 +1,9 @@
 # Core SolarNode Framework Changelog
 
+## 1.75 - 2020-06-24
+
+ * Add support for the `SystemReset` instruction to perform a "factory reset".
+
 ## 1.73.1 - 2020-01-23
 
  * Add support for a `jobScheduler.poolSize` configuration property in the `net.solarnetwork.node.core`

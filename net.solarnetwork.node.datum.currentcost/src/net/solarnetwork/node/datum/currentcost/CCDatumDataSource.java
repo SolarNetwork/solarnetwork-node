@@ -67,7 +67,7 @@ import net.solarnetwork.util.ByteUtils;
  * </p>
  * 
  * @author matt
- * @version 3.0
+ * @version 3.1
  */
 public class CCDatumDataSource extends CCSupport implements DatumDataSource<GeneralNodeDatum>,
 		MultiDatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
@@ -201,7 +201,7 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 		if ( datum == null ) {
 			return null;
 		}
-		String addr = addressValue(datum, ampIndex);
+		String addr = resolvePlaceholders(addressValue(datum, ampIndex));
 		if ( getAddressSourceMapping() != null && getAddressSourceMapping().containsKey(addr) ) {
 			addr = getAddressSourceMapping().get(addr);
 		}
@@ -236,7 +236,7 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 		if ( datum == null ) {
 			return null;
 		}
-		String addr = datum.getDeviceAddress() + ".T";
+		String addr = resolvePlaceholders(datum.getDeviceAddress() + ".T");
 		if ( getAddressSourceMapping() != null && getAddressSourceMapping().containsKey(addr) ) {
 			addr = getAddressSourceMapping().get(addr);
 		}

@@ -122,7 +122,7 @@ import net.solarnetwork.util.StringUtils;
  * </pre>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class OsStatDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
@@ -165,7 +165,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		// Cache has expired so initiate new instance and cache
 		GeneralNodeDatum result = new GeneralNodeDatum();
 		result.setCreated(new Date());
-		result.setSourceId(sourceId);
+		result.setSourceId(resolvePlaceholders(sourceId));
 
 		for ( String action : actions ) {
 			List<Map<String, String>> data = commandRunner.executeAction(action);

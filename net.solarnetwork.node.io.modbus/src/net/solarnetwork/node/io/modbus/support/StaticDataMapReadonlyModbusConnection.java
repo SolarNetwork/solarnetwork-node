@@ -46,6 +46,9 @@ public class StaticDataMapReadonlyModbusConnection extends ModbusConnectionSuppo
 
 	/**
 	 * Construct with the data.
+	 * 
+	 * @param data
+	 *        the starting data
 	 */
 	public StaticDataMapReadonlyModbusConnection(IntShortMap data) {
 		super();

@@ -25,8 +25,18 @@
 		<property name="serviceClassName" value="net.solarnetwork.node.DatumMetadataService"/>
 	</bean>
 		
+	<bean id="placeholderService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
+	</bean>
+
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basename" value="net.solarnetwork.node.datum.egauge.ws.EGaugeDatumDataSource"/>
+		<property name="basenames">
+			<array>
+				<value>net.solarnetwork.node.datum.egauge.ws.EGaugeDatumDataSource</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+			</array>
+		</property>
 		<property name="parentMessageSource">
 			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
 				<property name="prefix" value="client."/>
@@ -116,6 +126,7 @@
 										<bean class="net.solarnetwork.node.datum.egauge.ws.client.XmlEGaugeClient" init-method="init">
 											<property name="messageSource" ref="xmlClientMessageSource"/>
 											<property name="expressionServices" ref="expressionServices"/>
+											<property name="placeholderService" ref="placeholderService"/>
 										</bean>
 									</property>
 								</bean>

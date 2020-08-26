@@ -74,7 +74,7 @@ public interface ModbusReference {
 	 *        an optional set of enum prefixes to restrict the result to; if not
 	 *        provided then all enum values will be included
 	 * @return the range set, never {@literal null}
-	 * @see createRegisterAddressSet
+	 * @see #createAddressSet(ModbusReference[], Set)
 	 * @since 2.0
 	 */
 	static <T extends Enum<?> & ModbusReference> IntRangeSet createAddressSet(Class<T> clazz,

@@ -45,6 +45,8 @@ public class ION6200Datum extends GeneralNodeACEnergyDatum implements ACEnergyDa
 	 * 
 	 * @param data
 	 *        the sample data
+	 * @param phase
+	 *        the phase
 	 * @param backwards
 	 *        if {@literal true} then treat the meter as being installed
 	 *        backwards with respect to the current direction; in this case

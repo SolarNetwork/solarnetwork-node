@@ -89,6 +89,8 @@ public class ExpressionConfig extends GeneralDatumSamplePropertyConfig<String> {
 	 * 
 	 * @param prefix
 	 *        a setting key prefix to use
+	 * @param expressionServices
+	 *        the available expression services
 	 * @return the settings, never {@literal null}
 	 */
 	public static List<SettingSpecifier> settings(String prefix,
@@ -245,7 +247,8 @@ public class ExpressionConfig extends GeneralDatumSamplePropertyConfig<String> {
 	 * Set the expression.
 	 * 
 	 * <p>
-	 * This is an alias for {@link #setConfig(String)}.
+	 * This is an alias for
+	 * {@link GeneralDatumSamplePropertyConfig#setConfig(Object)}.
 	 * </p>
 	 * 
 	 * @param expression
@@ -297,7 +300,6 @@ public class ExpressionConfig extends GeneralDatumSamplePropertyConfig<String> {
 	 * <p>
 	 * This is an alias for {@link #setPropertyType(GeneralDatumSamplesType)},
 	 * and ignores a {@literal null} argument.
-	 * </p>
 	 * </p>
 	 * 
 	 * @param datumPropertyType

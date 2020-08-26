@@ -45,8 +45,8 @@ public class EM5600Datum extends GeneralNodeACEnergyDatum implements ACEnergyDat
 	/**
 	 * Construct with a sample.
 	 * 
-	 * @param sample
-	 *        the sample
+	 * @param data
+	 *        the accessor
 	 * @param phase
 	 *        the phase
 	 * @param backwards

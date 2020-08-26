@@ -52,7 +52,7 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * {@link DatumDataSource} for the PM5100 series meter.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
@@ -126,7 +126,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		if ( this.includePhaseMeasurements ) {
 			d.populatePhaseMeasurementProperties(currSample);
 		}
-		d.setSourceId(this.sourceId);
+		d.setSourceId(resolvePlaceholders(sourceId));
 		if ( currSample.getDataTimestamp() >= start ) {
 			// we read from the device
 			postDatumCapturedEvent(d);
@@ -260,7 +260,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
 	 * 
-	 * @param sampleCacheSecondsMs
+	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
 	public void setSampleCacheMs(long sampleCacheMs) {
@@ -270,7 +270,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	/**
 	 * Set the source ID to use for returned datum.
 	 * 
-	 * @param soruceId
+	 * @param sourceId
 	 *        the source ID to use; defaults to {@literal modbus}
 	 */
 	public void setSourceId(String sourceId) {

@@ -49,6 +49,7 @@ public interface SerialConnectionAction<T> {
 	 *        the connection
 	 * @return the result
 	 * @throws IOException
+	 *         if any IO error occurs
 	 */
 	T doWithConnection(SerialConnection conn) throws IOException;
 

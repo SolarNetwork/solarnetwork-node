@@ -50,7 +50,7 @@ import net.solarnetwork.node.support.DatumDataSourceSupport;
  * </p>
  * 
  * @author robert
- * @version 1.1
+ * @version 1.2
  */
 public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
@@ -106,7 +106,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		GeneralNodeACEnergyDatum prev = this.lastsample.get();
 		GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
 		datum.setCreated(new Date());
-		datum.setSourceId(sourceId);
+		datum.setSourceId(resolvePlaceholders(sourceId));
 
 		// the values for most datum variables are calculated here
 		calcVariables(datum);
@@ -252,6 +252,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * needed eg unit testing.
 	 * 
 	 * @param rng
+	 *        the random number generator
 	 */
 	public void setRNG(Random rng) {
 		this.rng = rng;

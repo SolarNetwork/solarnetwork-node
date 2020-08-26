@@ -14,6 +14,11 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
+	<bean id="placeholderService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
+	</bean>
+	
 	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
@@ -31,6 +36,7 @@
 				<value>net.solarnetwork.node.datum.currentcost.CCDatumDataSource</value>
 				<value>net.solarnetwork.node.hw.currentcost.CCSupport</value>
 				<value>net.solarnetwork.node.io.serial.support.SerialDeviceSupport</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
 		</property>
 	</bean>
@@ -79,6 +85,7 @@
 								<bean class="net.solarnetwork.node.datum.currentcost.CCDatumDataSource">
 									<property name="datumMetadataService" ref="datumMetadataService"/>
 									<property name="messageSource" ref="jobMessageSource"/>
+									<property name="placeholderService" ref="placeholderService"/>
 									<property name="serialNetwork">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>

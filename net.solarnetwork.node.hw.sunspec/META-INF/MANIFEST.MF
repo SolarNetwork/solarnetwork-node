@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SunSpec Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.sunspec
 Bundle-Description: Hardware support for SunSpec devices.
-Bundle-Version: 2.2.0
+Bundle-Version: 2.3.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.hw.sunspec
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -20,11 +20,13 @@ Import-Package:
  net.solarnetwork.node.io.modbus.support;version="[3.0,4.0)",
  net.solarnetwork.node.settings;version="[1.10,2.0)",
  net.solarnetwork.node.settings.support;version="[1.8.1,2.0)",
- net.solarnetwork.node.support;version="[1.14.1,2.0)",
+ net.solarnetwork.node.support;version="[1.21,2.0)",
  net.solarnetwork.node.util;version="[1.7.2,2.0)",
  net.solarnetwork.util;version="[1.40,2.0)",
  org.joda.time;version="[2.4,3.0)",
  org.joda.time.base;version="[2.4,3.0)",
  org.joda.time.format;version="[2.4,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",
- org.slf4j;version="[1.7,2.0)"
+ org.slf4j;version="[1.7,2.0)",
+ org.springframework.context;version="[4.3,5.0)"
+ 

@@ -46,7 +46,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * with the PVI-XXTL series inverter.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITLData>
 		implements DatumDataSource<GeneralNodePVEnergyDatum>,
@@ -95,7 +95,7 @@ public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITL
 				return null;
 			}
 			PVITLDatum d = new PVITLDatum(currSample);
-			d.setSourceId(this.sourceId);
+			d.setSourceId(resolvePlaceholders(sourceId));
 			if ( currSample.getDataTimestamp() >= start ) {
 				// we read from the device
 				postDatumCapturedEvent(d);
@@ -181,7 +181,7 @@ public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITL
 	/**
 	 * Set the source ID to use for returned datum.
 	 * 
-	 * @param soruceId
+	 * @param sourceId
 	 *        the source ID to use; defaults to {@literal modbus}
 	 */
 	public void setSourceId(String sourceId) {

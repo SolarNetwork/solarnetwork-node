@@ -60,6 +60,7 @@ import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupInfo;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.setup.InvalidVerificationCodeException;
@@ -71,6 +72,7 @@ import net.solarnetwork.node.setup.web.support.AssociateNodeCommand;
 import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
 import net.solarnetwork.support.RemoteServiceException;
 import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.OptionalServiceCollection;
 import net.solarnetwork.web.domain.Response;
 
 /**
@@ -78,7 +80,7 @@ import net.solarnetwork.web.domain.Response;
  * 
  * @author maxieduncan
  * @author matt
- * @version 1.6
+ * @version 1.7
  */
 @Controller
 @SessionAttributes({ NodeAssociationController.KEY_DETAILS, NodeAssociationController.KEY_IDENTITY })
@@ -106,6 +108,14 @@ public class NodeAssociationController extends BaseSetupController {
 	 */
 	public static final String KEY_USER = "user";
 
+	/**
+	 * The model attribute for a list of {@link SettingSpecifierProvider}
+	 * instances.
+	 * 
+	 * @since 1.7
+	 */
+	public static final String KEY_PROVIDERS = "providers";
+
 	private static final String KEY_SETTINGS_SERVICE = "settingsService";
 	private static final String KEY_BACKUP_MANAGER = "backupManager";
 	private static final String KEY_BACKUP_SERVICE = "backupService";
@@ -132,6 +142,9 @@ public class NodeAssociationController extends BaseSetupController {
 	@Resource(name = "networkLinks")
 	private Map<String, String> networkURLs = new HashMap<String, String>(4);
 
+	@Resource(name = "associationSettingProviders")
+	private OptionalServiceCollection<SettingSpecifierProvider> settingProviders;
+
 	/**
 	 * Node association entry point.
 	 * 
@@ -143,6 +156,27 @@ public class NodeAssociationController extends BaseSetupController {
 	public String setupForm(Model model) {
 		model.addAttribute("command", new AssociateNodeCommand());
 		model.addAttribute(KEY_NETWORK_URL_MAP, networkURLs);
+
+		List<SettingSpecifierProvider> providers = null;
+		if ( settingProviders != null ) {
+			Iterable<SettingSpecifierProvider> iterable = settingProviders.services();
+			if ( iterable != null ) {
+				providers = new ArrayList<>(8);
+				for ( SettingSpecifierProvider provider : iterable ) {
+					providers.add(provider);
+				}
+			}
+		}
+		if ( providers == null ) {
+			providers = Collections.emptyList();
+		}
+		model.addAttribute(KEY_PROVIDERS, providers);
+
+		final SettingsService settingsService = settingsServiceTracker.service();
+		if ( settingsService != null ) {
+			model.addAttribute(KEY_SETTINGS_SERVICE, settingsService);
+		}
+
 		return PAGE_ENTER_CODE;
 	}
 
@@ -437,6 +471,18 @@ public class NodeAssociationController extends BaseSetupController {
 
 	public void setNetworkURLs(Map<String, String> networkURLs) {
 		this.networkURLs = networkURLs;
+	}
+
+	/**
+	 * Set the setting provider collection.
+	 * 
+	 * @param settingProviders
+	 *        the providers to set
+	 * @since 1.7
+	 */
+	public void setSettingProviders(
+			OptionalServiceCollection<SettingSpecifierProvider> settingProviders) {
+		this.settingProviders = settingProviders;
 	}
 
 }

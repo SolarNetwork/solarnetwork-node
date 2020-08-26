@@ -39,7 +39,7 @@ import net.solarnetwork.util.ByteUtils;
  * 
  * <p>
  * Serial parameters known to work on Linux using <code>/dev/USB</code>:
- * <p>
+ * </p>
  * 
  * <pre>
  * baud               4800

@@ -96,5 +96,11 @@
 		<property name="serviceClassName" value="org.springframework.security.web.util.matcher.RequestMatcher"/>
 		<property name="serviceFilter" value="(mode=csrf-ignore)"/>
 	</bean>
+	
+	<bean id="associationSettingProviders" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.settings.SettingSpecifierProvider"/>
+		<property name="serviceFilter" value="(on-association=true)"/>
+	</bean>
 
 </beans>

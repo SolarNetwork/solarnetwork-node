@@ -69,7 +69,7 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * to be returned by the {@code url}.
  * 
  * @author maxieduncan
- * @version 1.1
+ * @version 1.2
  */
 public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
@@ -154,7 +154,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 		EGaugePowerDatum datum = new EGaugePowerDatum();
 		datum.setCreated(new Date());
-		datum.setSourceId(getSourceId());
+		datum.setSourceId(resolvePlaceholders(getSourceId()));
 
 		try {
 			populateDatum(datum);
@@ -328,10 +328,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	 * Retrieves the eGauge file from the specified URL and returns the register
 	 * names found inside.
 	 * 
-	 * @param queryUrl
-	 *        the eGauge path to get the file from
 	 * @return the register names found in the file
-	 * @throws XmlEGaugeClientException
 	 */
 	public List<String> getRegisterNames() {
 		if ( getBaseUrl() == null ) {

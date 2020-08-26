@@ -38,10 +38,10 @@ import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.66
  */
-public interface GeneralDatumSamplesTransformService {
+public interface GeneralDatumSamplesTransformService extends Identifiable {
 
 	/**
 	 * Transform a samples instance.

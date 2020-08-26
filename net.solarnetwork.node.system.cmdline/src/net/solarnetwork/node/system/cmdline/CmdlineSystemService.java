@@ -22,9 +22,11 @@
 
 package net.solarnetwork.node.system.cmdline;
 
+import static net.solarnetwork.util.StringUtils.delimitedStringFromCollection;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
@@ -41,13 +43,14 @@ import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * SystemService implementation using OS command line actions to perform
  * functions.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class CmdlineSystemService
 		implements SystemService, SettingSpecifierProvider, FeedbackInstructionHandler {
@@ -58,8 +61,16 @@ public class CmdlineSystemService
 	/** The default value for the {@code rebootCommand} property. */
 	public static final String DEFAULT_REBOOT_COMMAND = "sudo reboot";
 
+	/** The default value for the {@code resetCommand} property. */
+	public static final String DEFAULT_RESET_COMMAND = "sudo systemctl start sn-reset";
+
+	/** The default value for the {@code resetAooCommand} property. */
+	public static final String DEFAULT_RESET_APP_COMMAND = "sudo systemctl start sn-reset-app";
+
 	private String exitCommand = DEFAULT_EXIT_COMMAND;
 	private String rebootCommand = DEFAULT_REBOOT_COMMAND;
+	private String resetCommand = DEFAULT_RESET_COMMAND;
+	private String resetAppCommand = DEFAULT_RESET_APP_COMMAND;
 
 	private BundleContext bundleContext;
 	private MessageSource messageSource;
@@ -155,20 +166,55 @@ public class CmdlineSystemService
 		shutdownThread.start();
 	}
 
+	@Override
+	public void reset(boolean applicationOnly) {
+		if ( shutdownThread != null ) {
+			return;
+		}
+		log.warn("Reboot requested");
+		shutdownThread = new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				if ( applicationOnly ) {
+					log.warn("Reset application sequence initiated");
+				} else {
+					log.warn("Reset sequence initiated");
+				}
+
+				// pause slightly at start to give time for original calling thread time to complete
+				try {
+					Thread.sleep(1000);
+				} catch ( Exception e ) {
+					// ignore
+				}
+
+				handleOSCommand(applicationOnly ? resetAppCommand : resetCommand);
+			}
+		}, "System Service Reset");
+		shutdownThread.start();
+	}
+
 	private void handleOSCommand(String command) {
 		if ( command == null ) {
 			return;
 		}
-		ProcessBuilder pb = new ProcessBuilder(command.split("\\s+"));
+		List<String> arguments = Arrays.asList(command.split("\\s+"));
+		handleOSCommand(arguments);
+	}
+
+	private void handleOSCommand(List<String> arguments) {
+		ProcessBuilder pb = new ProcessBuilder(arguments);
 		try {
 			Process pr = pb.start();
 			logInputStream(pr.getInputStream(), false);
 			logInputStream(pr.getErrorStream(), true);
 			pr.waitFor();
 			if ( pr.exitValue() == 0 ) {
-				log.debug("Command [{}] executed", command);
+				log.debug("Command [{}] executed", delimitedStringFromCollection(arguments, " "));
 			} else {
-				log.error("Error executing [{}], exit status: {}", command, pr.exitValue());
+				log.error("Error executing [{}], exit status: {}",
+						delimitedStringFromCollection(arguments, " "), pr.exitValue());
 			}
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
@@ -185,17 +231,31 @@ public class CmdlineSystemService
 				Scanner sc = new Scanner(src);
 				try {
 					while ( sc.hasNextLine() ) {
-						if ( errorStream ) {
-							log.error(sc.nextLine());
-						} else {
-							log.info(sc.nextLine());
-						}
+						handleInputStreamLine(errorStream, sc.nextLine());
 					}
 				} finally {
 					sc.close();
 				}
 			}
 		}).start();
+	}
+
+	/**
+	 * Handle a line of input from the OS command process.
+	 * 
+	 * @param errorStream
+	 *        {@literal true} if the line is from STDERR, {@literal false} from
+	 *        STDOUT
+	 * @param line
+	 *        the line
+	 * @since 1.2
+	 */
+	protected void handleInputStreamLine(boolean errorStream, String line) {
+		if ( errorStream ) {
+			log.error(line);
+		} else {
+			log.info(line);
+		}
 	}
 
 	// FeedbackInstructionHandler
@@ -219,6 +279,10 @@ public class CmdlineSystemService
 			reboot();
 		} else if ( TOPIC_RESTART.equals(topic) ) {
 			exit(true);
+		} else if ( TOPIC_RESET.equals(topic) ) {
+			String appOnly = (instruction != null ? instruction.getParameterValue("applicationOnly")
+					: null);
+			reset(StringUtils.parseBoolean(appOnly));
 		}
 
 		return status != null ? status.newCopyWithState(InstructionState.Completed)
@@ -297,6 +361,28 @@ public class CmdlineSystemService
 	 */
 	public void setRebootCommand(String rebootCommand) {
 		this.rebootCommand = rebootCommand;
+	}
+
+	/**
+	 * Set the OS command to use to reset the whole device.
+	 * 
+	 * @param resetCommand
+	 *        the command to set
+	 * @since 1.2
+	 */
+	public void setResetCommand(String resetCommand) {
+		this.resetCommand = resetCommand;
+	}
+
+	/**
+	 * Set the OS command to use to reset the application.
+	 * 
+	 * @param resetAppCommand
+	 *        the command to set
+	 * @since 1.2
+	 */
+	public void setResetAppCommand(String resetAppCommand) {
+		this.resetAppCommand = resetAppCommand;
 	}
 
 }

@@ -50,50 +50,50 @@ import net.solarnetwork.util.StringUtils;
  * Web service based support for EnaSolar inverters.
  * 
  * This service can read from two different XML services provided by EnaSolar
- * inverters. First is the {@bold deviceinfo.xml} form. This expects to access a
+ * inverters. First is the <b>deviceinfo.xml</b> form. This expects to access a
  * URL that returns XML in the following form:
  * 
  * <pre>
- * &lt;info time="16180F57">
- *  &lt;data key="vendor" value="EnaSolar" />
- *  &lt;data key="model" value="2" />
- *  &lt;data key="acOutputVolts" value="241.1" />
- *  &lt;data key="pvVolts" value="304.3" />
- *  &lt;data key="pvPower" value="0.681" />
- *  &lt;data key="acPower" value="0.628" />
- *  &lt;data key="kWattHoursToday" value="17.94" />
- *  &lt;data key="decaWattHoursTotal" value="0000167A" />
- * &lt;/info>
+ * &lt;info time="16180F57"&gt;
+ *  &lt;data key="vendor" value="EnaSolar" /&gt;
+ *  &lt;data key="model" value="2" /&gt;
+ *  &lt;data key="acOutputVolts" value="241.1" /&gt;
+ *  &lt;data key="pvVolts" value="304.3" /&gt;
+ *  &lt;data key="pvPower" value="0.681" /&gt;
+ *  &lt;data key="acPower" value="0.628" /&gt;
+ *  &lt;data key="kWattHoursToday" value="17.94" /&gt;
+ *  &lt;data key="decaWattHoursTotal" value="0000167A" /&gt;
+ * &lt;/info&gt;
  * </pre>
  * 
- * The second is the {@bold data.xml} and {@bold meters.xml} form. The first URL
+ * The second is the <b>data.xml</b> and <b>meters.xml</b> form. The first URL
  * should return XML in the following form:
  * 
  * <pre>
- * &lt;response>
- *   &lt;EnergyToday>0000&lt;/EnergyToday>
- *   &lt;EnergyYesterday>01ED&lt;/EnergyYesterday>
- *   &lt;DU>0000&lt;/DU>
- *   &lt;EnergyLifetime>000BA446&lt;/EnergyLifetime>
- *   &lt;HoursExportedToday>0&lt;/HoursExportedToday>
- *   &lt;HoursExportedYesterday>493&lt;/HoursExportedYesterday>
- *   &lt;HoursExportedLifetime>000A032E&lt;/HoursExportedLifetime>
- *   &lt;DaysProducing>03F5&lt;/DaysProducing>
- * &lt;/response>
+ * &lt;response&gt;
+ *   &lt;EnergyToday&gt;0000&lt;/EnergyToday&gt;
+ *   &lt;EnergyYesterday&gt;01ED&lt;/EnergyYesterday&gt;
+ *   &lt;DU&gt;0000&lt;/DU&gt;
+ *   &lt;EnergyLifetime&gt;000BA446&lt;/EnergyLifetime&gt;
+ *   &lt;HoursExportedToday&gt;0&lt;/HoursExportedToday&gt;
+ *   &lt;HoursExportedYesterday&gt;493&lt;/HoursExportedYesterday&gt;
+ *   &lt;HoursExportedLifetime&gt;000A032E&lt;/HoursExportedLifetime&gt;
+ *   &lt;DaysProducing&gt;03F5&lt;/DaysProducing&gt;
+ * &lt;/response&gt;
  * </pre>
  * 
  * and the second URL in the following form:
  * 
  * <pre>
- * &lt;response>
- *   &lt;OutputPower>0&lt;/OutputPower>
- *   &lt;InputVoltage>0&lt;/InputVoltage>
- *   &lt;OutputVoltage>0&lt;/OutputVoltage>
- * &lt;/response>
+ * &lt;response&gt;
+ *   &lt;OutputPower&gt;0&lt;/OutputPower&gt;
+ *   &lt;InputVoltage&gt;0&lt;/InputVoltage&gt;
+ *   &lt;OutputVoltage&gt;0&lt;/OutputVoltage&gt;
+ * &lt;/response&gt;
  * </pre>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class EnaSolarXMLDatumDataSource extends XmlServiceSupport
 		implements DatumDataSource<GeneralNodePVEnergyDatum>, SettingSpecifierProvider {
@@ -124,7 +124,7 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport
 		if ( isCachedSampleExpired() ) {
 			datum = new EnaSolarPowerDatum();
 			datum.setCreated(new Date());
-			datum.setSourceId(sourceId);
+			datum.setSourceId(resolvePlaceholders(sourceId));
 			sampleException = null;
 			for ( String url : urls ) {
 				try {

@@ -63,7 +63,7 @@ import net.solarnetwork.util.DynamicServiceTracker;
 import net.solarnetwork.util.StringUtils;
 
 /**
- * Implementation of {@link GenerationDataSource} for SMA controllers.
+ * Implementation of {@link DatumDataSource} for SMA controllers.
  * 
  * <p>
  * In limited testing, the following
@@ -82,7 +82,7 @@ import net.solarnetwork.util.StringUtils;
  * <dd>false</dd>
  * 
  * <dt>dtr</dt>
- * <dd>false</dt>
+ * <dd>false</dd>
  * 
  * <dt>receiveThreshold</dt>
  * <dd>-1</dd>
@@ -106,8 +106,7 @@ import net.solarnetwork.util.StringUtils;
  * <dl class="class-properties">
  * <dt>dataCollectorFactory</dt>
  * <dd>The factory for creating {@link ConversationalDataCollector} instances
- * with. {@link GenericObjectFactory#getObject()} will be called on each
- * invocation of {@link #readCurrentPowerDatum()}.</dd>
+ * with.</dd>
  * 
  * <dt>synOnlineWaitMs</dt>
  * <dd>Number of milliseconds to wait after issuing the SynOnline command. A
@@ -156,7 +155,7 @@ import net.solarnetwork.util.StringUtils;
  * </pre>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSupport
 		implements DatumDataSource<ACEnergyDatum>,
@@ -227,7 +226,7 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 	/**
 	 * Get the default serial parameters used for SMA inverters.
 	 * 
-	 * @return
+	 * @return the serial port parameters
 	 */
 	public static final SerialPortBeanParameters getDefaultSerialParameters() {
 		return (SerialPortBeanParameters) DEFAULT_SERIAL_PARAMS.clone();
@@ -326,7 +325,7 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 		}
 
 		GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
-		datum.setSourceId(this.sourceId);
+		datum.setSourceId(resolvePlaceholders(sourceId));
 
 		// Issue GetData command for each channel we're interested in
 		Number pvVolts = getNumericDataValue(dataCollector, this.pvVoltsChannelName, Float.class);

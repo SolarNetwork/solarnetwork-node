@@ -23,20 +23,26 @@
 package net.solarnetwork.node.support;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledFuture;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
+import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.DatumMetadataService;
-import net.solarnetwork.node.Identifiable;
+import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.OptionalService;
@@ -46,10 +52,19 @@ import net.solarnetwork.util.OptionalService;
  * {@link net.solarnetwork.node.MultiDatumDataSource} implementations to extend.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.51
  */
-public class DatumDataSourceSupport implements Identifiable {
+public class DatumDataSourceSupport extends BaseIdentifiable {
+
+	/**
+	 * A transform properties instance that can be used to signal "sub-sampling"
+	 * mode to the transform service.2
+	 * 
+	 * @since 1.1
+	 */
+	public static final Map<String, Object> SUB_SAMPLE_PROPS = Collections.singletonMap("subsample",
+			Boolean.TRUE);
 
 	/**
 	 * A global cache of source-based metadata, so only changes to metadata need
@@ -58,11 +73,17 @@ public class DatumDataSourceSupport implements Identifiable {
 	private static final ConcurrentMap<String, GeneralDatumMetadata> SOURCE_METADATA_CACHE = new ConcurrentHashMap<String, GeneralDatumMetadata>(
 			4);
 
-	private String uid;
-	private String groupUID;
-	private MessageSource messageSource;
+	/** The {@code subSampleStartDelay} property default value. */
+	public static final long DEFAULT_SUBSAMPLE_START_DELAY = 15000L;
+
 	private OptionalService<DatumMetadataService> datumMetadataService;
 	private OptionalService<EventAdmin> eventAdmin;
+	private TaskScheduler taskScheduler = null;
+	private Long subSampleFrequency = null;
+	private long subSampleStartDelay = DEFAULT_SUBSAMPLE_START_DELAY;
+	private OptionalService<GeneralDatumSamplesTransformService> samplesTransformService;
+
+	private ScheduledFuture<?> subSampleFuture;
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -165,56 +186,154 @@ public class DatumDataSourceSupport implements Identifiable {
 	 * @return list of setting specifiers
 	 */
 	protected List<SettingSpecifier> getIdentifiableSettingSpecifiers() {
+		return baseIdentifiableSettings("");
+	}
+
+	/**
+	 * Get setting specifiers for the sub-sample supporting properties.
+	 * 
+	 * @return list of setting specifiers
+	 * @since 1.1
+	 */
+	protected List<SettingSpecifier> getSubSampleSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
-		results.add(new BasicTextFieldSettingSpecifier("uid", null));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
+		results.add(new BasicTextFieldSettingSpecifier("samplesTransformService.propertyFilters['UID']",
+				null));
+		results.add(new BasicTextFieldSettingSpecifier("subSampleFrequency", null));
+		results.add(new BasicTextFieldSettingSpecifier("subSampleStartDelay",
+				String.valueOf(DEFAULT_SUBSAMPLE_START_DELAY)));
 		return results;
 	}
 
 	/**
-	 * {@inheritDoc}
+	 * Schedule sub-sampling with the given data source.
+	 * 
+	 * @param dataSource
+	 *        the data source
+	 * @return the scheduled future or {@literal null} if sub-sampling support
+	 *         is not configured; canceling this will stop the sub-sampling task
+	 * @see #stopSubSampling()
+	 * @since 1.1
+	 */
+	protected synchronized ScheduledFuture<?> startSubSampling(
+			DatumDataSource<? extends GeneralNodeDatum> dataSource) {
+		stopSubSampling();
+		final long freq = (subSampleFrequency != null ? subSampleFrequency.longValue() : 0);
+		if ( taskScheduler == null || freq < 1 ) {
+			return null;
+		}
+		log.info("Starting sub-sampling @ {}ms, after {}ms delay in {}", freq, subSampleStartDelay,
+				this);
+		ScheduledFuture<?> f = taskScheduler.scheduleAtFixedRate(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					readSubSampleDatum(dataSource);
+				} catch ( Exception e ) {
+					log.warn("Error reading sub-sample datum for {}: {}", DatumDataSourceSupport.this,
+							e);
+				}
+			}
+		}, new Date(System.currentTimeMillis() + subSampleStartDelay), freq);
+		this.subSampleFuture = f;
+		return f;
+	}
+
+	/**
+	 * Read a sub-sample datum value.
 	 * 
 	 * <p>
-	 * This is an alias for {@link #getUID()}.
+	 * This method is invoked by a task scheduled after calling
+	 * {@link #startSubSampling(DatumDataSource)}. It simply calls
+	 * {@link DatumDataSource#readCurrentDatum()}. Extending classes may want to
+	 * override this behavior.
 	 * </p>
+	 * 
+	 * @param dataSource
+	 *        the data source previously passed to
+	 *        {@link #startSubSampling(DatumDataSource)}
+	 * @since 1.1
 	 */
+	protected void readSubSampleDatum(DatumDataSource<? extends GeneralNodeDatum> dataSource) {
+		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+		log.debug("Got sub-sample datum: {}", datum);
+	}
+
+	/**
+	 * Stop any running sub-sampling task.
+	 * 
+	 * @see DatumDataSourceSupport#startSubSampling(DatumDataSource)
+	 * @since 1.1
+	 */
+	protected synchronized void stopSubSampling() {
+		if ( subSampleFuture != null ) {
+			log.info("Stopping sub-sampling in {}", this);
+			subSampleFuture.cancel(true);
+			this.subSampleFuture = null;
+		}
+	}
+
+	/**
+	 * Test if sub-sampling is currently active.
+	 * 
+	 * @return {@literal true} if sub-sampling is active
+	 * @since 1.1
+	 */
+	protected boolean isSubSampling() {
+		ScheduledFuture<?> f = this.subSampleFuture;
+		return f != null && !f.isDone();
+	}
+
+	/**
+	 * Apply the configured samples transformer service to a given datum.
+	 * 
+	 * @param datum
+	 *        the datum to possibly filter
+	 * @param props
+	 *        optional transform properties to pass to
+	 *        {@link GeneralDatumSamplesTransformService#transformSamples(Datum, GeneralDatumSamples, Map)}
+	 * @return the same datum, possibly transformed, or {@literal null} if the
+	 *         datum has been filtered out completely
+	 * @since 1.1
+	 */
+	protected GeneralNodeDatum applySamplesTransformer(GeneralNodeDatum datum, Map<String, ?> props) {
+		GeneralDatumSamplesTransformService xformService = OptionalService
+				.service(getSamplesTransformService());
+		if ( xformService != null ) {
+			GeneralDatumSamples out = xformService.transformSamples(datum, datum.getSamples(), props);
+			if ( out == null ) {
+				return null;
+			} else if ( out != datum.getSamples() ) {
+				datum.setSamples(out);
+			}
+		}
+		return datum;
+	}
+
 	@Override
 	public String getUID() {
-		return getUid();
+		return super.getUID();
 	}
 
-	/**
-	 * Get a unique ID for this service.
-	 * 
-	 * @return the service unique ID
-	 */
+	@Override
 	public String getUid() {
-		return uid;
+		return super.getUid();
 	}
 
-	/**
-	 * Set the unique ID for this service.
-	 * 
-	 * @param uid
-	 *        the unique ID
-	 */
+	@Override
 	public void setUid(String uid) {
-		this.uid = uid;
+		super.setUid(uid);
 	}
 
 	@Override
 	public String getGroupUID() {
-		return groupUID;
+		return super.getGroupUID();
 	}
 
-	/**
-	 * Set a unique group ID for this service.
-	 * 
-	 * @param groupUID
-	 *        the group ID to use
-	 */
+	@Override
 	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
+		super.setGroupUID(groupUID);
 	}
 
 	/**
@@ -236,23 +355,14 @@ public class DatumDataSourceSupport implements Identifiable {
 		this.eventAdmin = eventAdmin;
 	}
 
-	/**
-	 * Get the configured {@link MessageSource}.
-	 * 
-	 * @return the message source, or {@literal null}
-	 */
+	@Override
 	public MessageSource getMessageSource() {
-		return messageSource;
+		return super.getMessageSource();
 	}
 
-	/**
-	 * Set a {@link MessageSource} to use for resolving localized messages.
-	 * 
-	 * @param messageSource
-	 *        the message source to use
-	 */
+	@Override
 	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
+		super.setMessageSource(messageSource);
 	}
 
 	/**
@@ -273,4 +383,95 @@ public class DatumDataSourceSupport implements Identifiable {
 	public void setDatumMetadataService(OptionalService<DatumMetadataService> datumMetadataService) {
 		this.datumMetadataService = datumMetadataService;
 	}
+
+	/**
+	 * Get the task scheduler.
+	 * 
+	 * @return the task scheduler
+	 * @since 1.1
+	 */
+	public TaskScheduler getTaskScheduler() {
+		return taskScheduler;
+	}
+
+	/**
+	 * Set the task scheduler.
+	 * 
+	 * @param taskScheduler
+	 *        the task scheduler to set
+	 * @since 1.1
+	 */
+	public void setTaskScheduler(TaskScheduler taskScheduler) {
+		this.taskScheduler = taskScheduler;
+	}
+
+	/**
+	 * Get a sub-sample frequency at which to request datum.
+	 * 
+	 * @return the sub-sample frequency, in milliseconds, or {@literal null} or
+	 *         anything less than {@literal 1} to disable sub-sampling
+	 * @since 1.1
+	 */
+	public Long getSubSampleFrequency() {
+		return subSampleFrequency;
+	}
+
+	/**
+	 * Set a sub-sample frequency at which to request datum.
+	 * 
+	 * <p>
+	 * This is designed to work with a
+	 * {@link #setSamplesTransformService(OptionalService)} transformer that
+	 * performs down-sampling of higher frequency data.
+	 * 
+	 * @param subSampleFrequency
+	 *        the frequency, to set, in milliseconds
+	 * @since 1.1
+	 */
+	public void setSubSampleFrequency(Long subSampleFrequency) {
+		this.subSampleFrequency = subSampleFrequency;
+	}
+
+	/**
+	 * Get the sub-sample start delay.
+	 * 
+	 * @return the delay, in milliseconds
+	 */
+	public long getSubSampleStartDelay() {
+		return subSampleStartDelay;
+	}
+
+	/**
+	 * Set the sub-sample start delay.
+	 * 
+	 * @param subSampleStartDelay
+	 *        the sub-sample start delay to set, in milliseconds
+	 * @since 1.1
+	 */
+	public void setSubSampleStartDelay(long subSampleStartDelay) {
+		this.subSampleStartDelay = subSampleStartDelay;
+	}
+
+	/**
+	 * Get a samples transformer to use.
+	 * 
+	 * @return the service
+	 * @since 1.1
+	 */
+	public OptionalService<GeneralDatumSamplesTransformService> getSamplesTransformService() {
+		return samplesTransformService;
+	}
+
+	/**
+	 * Set a samples transformer to use.
+	 * 
+	 * @param samplesTransformService
+	 *        the service to set
+	 * @since 1.1
+	 */
+	public void setSamplesTransformService(
+			OptionalService<GeneralDatumSamplesTransformService> samplesTransformService) {
+		this.samplesTransformService = samplesTransformService;
+	}
+
 }

@@ -50,9 +50,9 @@ import net.solarnetwork.util.OptionalService;
  * Supporting methods for HTTP client operations.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
-public abstract class HttpClientSupport {
+public abstract class HttpClientSupport extends BaseIdentifiable {
 
 	/** A HTTP Accept header value for any text type. */
 	public static final String ACCEPT_TEXT = "text/*";
@@ -72,8 +72,6 @@ public abstract class HttpClientSupport {
 	private int connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
 	private IdentityService identityService = null;
 	private OptionalService<SSLService> sslService = null;
-	private String uid;
-	private String groupUID;
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -356,24 +354,29 @@ public abstract class HttpClientSupport {
 		this.sslService = sslService;
 	}
 
+	@Override
 	public String getUID() {
 		return getUid();
 	}
 
+	@Override
 	public String getUid() {
-		return uid;
+		return super.getUid();
 	}
 
+	@Override
 	public void setUid(String uid) {
-		this.uid = uid;
+		super.setUid(uid);
 	}
 
+	@Override
 	public String getGroupUID() {
-		return groupUID;
+		return super.getGroupUID();
 	}
 
+	@Override
 	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
+		super.setGroupUID(groupUID);
 	}
 
 }

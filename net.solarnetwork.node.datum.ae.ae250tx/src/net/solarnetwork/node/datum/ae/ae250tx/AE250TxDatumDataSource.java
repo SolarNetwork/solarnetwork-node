@@ -32,8 +32,8 @@ import org.joda.time.format.DateTimeFormat;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
-import net.solarnetwork.node.hw.ae.inverter.AE250TxData;
-import net.solarnetwork.node.hw.ae.inverter.AE250TxDataAccessor;
+import net.solarnetwork.node.hw.ae.inverter.tx.AE250TxData;
+import net.solarnetwork.node.hw.ae.inverter.tx.AE250TxDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -45,7 +45,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * {@link DatumDataSource} for the AE 250TX series inverter.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.3
  */
 public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE250TxData>
 		implements DatumDataSource<GeneralNodePVEnergyDatum>,
@@ -94,7 +94,7 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 				return null;
 			}
 			AE250TxDatum d = new AE250TxDatum(currSample);
-			d.setSourceId(this.sourceId);
+			d.setSourceId(resolvePlaceholders(sourceId));
 			if ( currSample.getDataTimestamp() >= start ) {
 				// we read from the device
 				postDatumCapturedEvent(d);
@@ -176,7 +176,7 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 	/**
 	 * Set the source ID to use for returned datum.
 	 * 
-	 * @param soruceId
+	 * @param sourceId
 	 *        the source ID to use; defaults to {@literal modbus}
 	 */
 	public void setSourceId(String sourceId) {

@@ -50,6 +50,7 @@ public interface ModbusConnectionAction<T> {
 	 *        the connection
 	 * @return the result
 	 * @throws IOException
+	 *         if any IO error occurs
 	 */
 	T doWithConnection(ModbusConnection conn) throws IOException;
 

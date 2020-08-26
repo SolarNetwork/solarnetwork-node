@@ -88,6 +88,8 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	 * Get setting specifiers for the {@literal unitId} and
 	 * {@literal modbusNetwork.propertyFilters['UID']} properties.
 	 * 
+	 * @param prefix
+	 *        the setting prefix to prepend
 	 * @return list of setting specifiers
 	 * @since 1.2
 	 */
@@ -145,9 +147,9 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get the device info data as a Map. This method will call
-	 * {@link #readMeterInfo(ModbusConnection)}. The map is cached so subsequent
-	 * calls will not attempt to read from the device. Note the returned map
-	 * cannot be modified.
+	 * {@link #readDeviceInfo(ModbusConnection)}. The map is cached so
+	 * subsequent calls will not attempt to read from the device. Note the
+	 * returned map cannot be modified.
 	 * 
 	 * @return the device info, or <em>null</em>
 	 * @see #readDeviceInfo(ModbusConnection)
@@ -176,13 +178,17 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	 * Perform some work with a Modbus {@link ModbusConnection}. This method
 	 * attempts to obtain a {@link ModbusNetwork} from the configured
 	 * {@code modbusNetwork} service, calling
-	 * {@link ModbusNetwork#performAction(ModbusConnectionAction)} if one can be
-	 * obtained.
+	 * {@link ModbusNetwork#performAction(int, ModbusConnectionAction)} if one
+	 * can be obtained.
 	 * 
+	 * @param <T>
+	 *        the result type
 	 * @param action
 	 *        the connection action
 	 * @return the result of the callback, or <em>null</em> if the action is
 	 *         never invoked
+	 * @throws IOException
+	 *         if any IO error occurs
 	 */
 	protected final <T> T performAction(final ModbusConnectionAction<T> action) throws IOException {
 		T result = null;

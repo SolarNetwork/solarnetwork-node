@@ -136,7 +136,7 @@ public class SourceThrottlingSamplesTransformer extends SamplesTransformerSuppor
 	/**
 	 * Set the frequency seconds to limit samples to.
 	 * 
-	 * @param defaultFrequencySeconds
+	 * @param frequencySeconds
 	 *        the frequency seconds to set
 	 */
 	public void setFrequencySeconds(int frequencySeconds) {

@@ -25,13 +25,13 @@ package net.solarnetwork.node.datum.ae.ae250tx;
 import java.util.Date;
 import net.solarnetwork.node.domain.ACEnergyDatum;
 import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
-import net.solarnetwork.node.hw.ae.inverter.AE250TxDataAccessor;
+import net.solarnetwork.node.hw.ae.inverter.tx.AE250TxDataAccessor;
 
 /**
  * Datum for the AE 250TX inverter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class AE250TxDatum extends GeneralNodePVEnergyDatum {
 
