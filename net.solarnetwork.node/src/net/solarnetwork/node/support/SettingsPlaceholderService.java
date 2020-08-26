@@ -145,7 +145,15 @@ public class SettingsPlaceholderService implements PlaceholderService {
 	private List<KeyValuePair> settingValues() {
 		SettingDao dao = service(settingDao);
 		if ( dao != null ) {
-			return dao.getSettingValues(SETTING_KEY);
+			try {
+				return dao.getSettingValues(SETTING_KEY);
+			} catch ( Exception e ) {
+				Throwable t = e;
+				while ( t.getCause() != null ) {
+					t = t.getCause();
+				}
+				log.warn("Exception loading placeholder values from SettingDao: {}", t.toString());
+			}
 		}
 		return null;
 	}
