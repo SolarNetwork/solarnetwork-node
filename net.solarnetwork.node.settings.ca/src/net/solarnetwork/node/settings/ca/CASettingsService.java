@@ -106,6 +106,7 @@ import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
 import net.solarnetwork.node.settings.FactorySettingSpecifierProvider;
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.SettingResourceHandler;
@@ -216,8 +217,8 @@ public class CASettingsService
 	 * Callback when a {@link SettingSpecifierProviderFactory} has been
 	 * un-registered.
 	 * 
-	 * @param config
-	 *        the configuration object
+	 * @param provider
+	 *        the provider object
 	 * @param properties
 	 *        the service properties
 	 */
@@ -298,8 +299,8 @@ public class CASettingsService
 	/**
 	 * Callback when a {@link SettingSpecifierProvider} has been un-registered.
 	 * 
-	 * @param config
-	 *        the configuration object
+	 * @param provider
+	 *        the provider object
 	 * @param properties
 	 *        the service properties
 	 */
@@ -1266,27 +1267,53 @@ public class CASettingsService
 	public InstructionStatus processInstructionWithFeedback(Instruction instruction) {
 		final String topic = (instruction != null ? instruction.getTopic() : null);
 		if ( TOPIC_UPDATE_SETTING.equals(topic) ) {
-			final String key = instruction.getParameterValue(PARAM_UPDATE_SETTING_KEY);
-			final String type = instruction.getParameterValue(PARAM_UPDATE_SETTING_TYPE);
-			final String value = instruction.getParameterValue(PARAM_UPDATE_SETTING_VALUE);
-			final String flags = instruction.getParameterValue(PARAM_UPDATE_SETTING_FLAGS);
-			if ( key != null && !key.trim().isEmpty() ) {
-				Set<SettingFlag> flagSet = null;
-				if ( flags != null ) {
-					try {
-						flagSet = SettingFlag.setForMask(Integer.parseInt(flags));
-					} catch ( NumberFormatException e ) {
-						// ignore this
-					}
-				}
-				Setting s = new Setting(key, type, value, flagSet);
-				settingDao.storeSetting(s);
+			final InstructionStatus status = (instruction != null ? instruction.getStatus() : null);
+			// support passing any number of settings, which must be defined in parameter order
+			final String[] keys = instruction.getAllParameterValues(PARAM_UPDATE_SETTING_KEY);
+			final String[] types = instruction.getAllParameterValues(PARAM_UPDATE_SETTING_TYPE);
+			final String[] values = instruction.getAllParameterValues(PARAM_UPDATE_SETTING_VALUE);
+			final String[] flagValues = instruction.getAllParameterValues(PARAM_UPDATE_SETTING_FLAGS);
+			if ( keys != null ) {
+				List<Setting> added = new ArrayList<>(2);
 				try {
-					applyImportedSettings(Collections.singletonList(s));
+					for ( int i = 0; i < keys.length; i++ ) {
+						final String key = keys[i];
+						final String type = types[i];
+						final String value = values[i];
+						final String flags = (flagValues != null && flagValues.length >= keys.length
+								? flagValues[i]
+								: null);
+						Set<SettingFlag> flagSet = null;
+						if ( flags != null ) {
+							try {
+								flagSet = SettingFlag.setForMask(Integer.parseInt(flags));
+							} catch ( NumberFormatException e ) {
+								// ignore this
+							}
+						}
+						Setting s = new Setting(key, type, value, flagSet);
+						settingDao.storeSetting(s);
+						added.add(s);
+					}
+					applyImportedSettings(added);
+				} catch ( ArrayIndexOutOfBoundsException e ) {
+					Map<String, Object> resultParams = new LinkedHashMap<>();
+					resultParams.put(InstructionStatus.ERROR_CODE_RESULT_PARAM, "CASS.001");
+					resultParams.put(InstructionStatus.MESSAGE_RESULT_PARAM, String.format(
+							"Invalid settings parameters: must have equal number of keys/types/values but found %d/%d/%d.",
+							keys.length, (types != null ? types.length : 0),
+							(values != null ? values.length : 0)));
+					return (status != null
+							? status.newCopyWithState(InstructionState.Declined, resultParams)
+							: new BasicInstructionStatus(instruction.getId(), InstructionState.Declined,
+									new Date(), null, resultParams));
 				} catch ( IOException e ) {
-					log.warn("Error applying updated setting {}/{} value {} to runtime: {}", s.getKey(),
-							s.getType(), s.getValue(), e.toString());
+					log.warn("Error applying updated settings values {}: {}", added, e.toString());
 				}
+				return (status != null ? status.newCopyWithState(InstructionState.Completed)
+						: new BasicInstructionStatus(instruction.getId(), InstructionState.Completed,
+								new Date()));
+
 			}
 		}
 		return null;
