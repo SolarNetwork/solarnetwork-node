@@ -24,6 +24,7 @@ package net.solarnetwork.node.support;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -72,10 +73,14 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	private static final ConcurrentMap<String, GeneralDatumMetadata> SOURCE_METADATA_CACHE = new ConcurrentHashMap<String, GeneralDatumMetadata>(
 			4);
 
+	/** The {@code subSampleStartDelay} property default value. */
+	public static final long DEFAULT_SUBSAMPLE_START_DELAY = 15000L;
+
 	private OptionalService<DatumMetadataService> datumMetadataService;
 	private OptionalService<EventAdmin> eventAdmin;
 	private TaskScheduler taskScheduler = null;
 	private Long subSampleFrequency = null;
+	private long subSampleStartDelay = DEFAULT_SUBSAMPLE_START_DELAY;
 	private OptionalService<GeneralDatumSamplesTransformService> samplesTransformService;
 
 	private ScheduledFuture<?> subSampleFuture;
@@ -195,6 +200,8 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 		results.add(new BasicTextFieldSettingSpecifier("samplesTransformService.propertyFilters['UID']",
 				null));
 		results.add(new BasicTextFieldSettingSpecifier("subSampleFrequency", null));
+		results.add(new BasicTextFieldSettingSpecifier("subSampleStartDelay",
+				String.valueOf(DEFAULT_SUBSAMPLE_START_DELAY)));
 		return results;
 	}
 
@@ -215,6 +222,8 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 		if ( taskScheduler == null || freq < 1 ) {
 			return null;
 		}
+		log.info("Starting sub-sampling @ {}ms, after {}ms delay in {}", freq, subSampleStartDelay,
+				this);
 		ScheduledFuture<?> f = taskScheduler.scheduleAtFixedRate(new Runnable() {
 
 			@Override
@@ -226,7 +235,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 							e);
 				}
 			}
-		}, freq);
+		}, new Date(System.currentTimeMillis() + subSampleStartDelay), freq);
 		this.subSampleFuture = f;
 		return f;
 	}
@@ -259,6 +268,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 */
 	protected synchronized void stopSubSampling() {
 		if ( subSampleFuture != null ) {
+			log.info("Stopping sub-sampling in {}", this);
 			subSampleFuture.cancel(true);
 			this.subSampleFuture = null;
 		}
@@ -420,6 +430,26 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 */
 	public void setSubSampleFrequency(Long subSampleFrequency) {
 		this.subSampleFrequency = subSampleFrequency;
+	}
+
+	/**
+	 * Get the sub-sample start delay.
+	 * 
+	 * @return the delay, in milliseconds
+	 */
+	public long getSubSampleStartDelay() {
+		return subSampleStartDelay;
+	}
+
+	/**
+	 * Set the sub-sample start delay.
+	 * 
+	 * @param subSampleStartDelay
+	 *        the sub-sample start delay to set, in milliseconds
+	 * @since 1.1
+	 */
+	public void setSubSampleStartDelay(long subSampleStartDelay) {
+		this.subSampleStartDelay = subSampleStartDelay;
 	}
 
 	/**
