@@ -27,6 +27,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -160,6 +161,7 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
 						GeneralNodeDatum datum = null;
 						if ( data != null ) {
 							datum = new GeneralNodeDatum();
+							datum.setCreated(new Date());
 							datum.putInstantaneousSampleValue("co2", data.getCo2());
 							datum.putInstantaneousSampleValue(AtmosphericDatum.HUMIDITY_KEY,
 									data.getHumidity());
@@ -204,7 +206,7 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
 		}
 		GeneralNodeDatum data = sample.getResult();
 		StringBuilder buf = new StringBuilder();
-		buf.append("co2 = ").append(data.getInstantaneousSampleBigDecimal("co2"));
+		buf.append("CO2 = ").append(data.getInstantaneousSampleBigDecimal("co2"));
 		buf.append(", T = ")
 				.append(data.getInstantaneousSampleBigDecimal(AtmosphericDatum.TEMPERATURE_KEY));
 		buf.append(", H = ")
