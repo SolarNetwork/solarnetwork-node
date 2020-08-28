@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Gas Sensing Solutions Hardware Support
-Bundle-Description: Hardware support for GSS devices.
+Bundle-Name: GSS Hardware Support
+Bundle-Description: Hardware support for Gas Sensing Solutions devices.
 Bundle-SymbolicName: net.solarnetwork.node.hw.gss
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
