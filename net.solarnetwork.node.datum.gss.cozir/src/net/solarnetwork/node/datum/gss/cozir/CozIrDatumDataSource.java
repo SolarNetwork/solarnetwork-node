@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.gss.cozir;
 
+import static net.solarnetwork.util.OptionalService.service;
 import java.io.IOException;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -32,23 +33,37 @@ import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import org.quartz.JobDataMap;
+import org.quartz.JobKey;
+import org.quartz.Scheduler;
+import org.quartz.Trigger;
+import org.quartz.TriggerKey;
+import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.PlaceholderService;
 import net.solarnetwork.node.domain.AtmosphericDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.hw.gss.co2.CozIrData;
 import net.solarnetwork.node.hw.gss.co2.CozIrHelper;
+import net.solarnetwork.node.hw.gss.co2.CozIrUtils;
 import net.solarnetwork.node.hw.gss.co2.FirmwareVersion;
 import net.solarnetwork.node.hw.gss.co2.MeasurementType;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.node.io.serial.support.SerialDeviceDatumDataSourceSupport;
+import net.solarnetwork.node.job.JobUtils;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicCronExpressionSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.support.ServiceLifecycleObserver;
 import net.solarnetwork.util.CachedResult;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * Data source for CozIR series CO2 sensors.
@@ -57,12 +72,41 @@ import net.solarnetwork.util.CachedResult;
  * @version 1.0
  */
 public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
-		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
+		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, SettingsChangeObserver,
+		ServiceLifecycleObserver, CozIrService {
+
+	public static final String DEFAULT_SERIAL_PORT = "Serial Port";
+	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000L;
+	public static final String DEFAULT_SOURCE_ID = "CozIR";
+	public static final String DEFAULT_CO2_CALIBRATION_SCHEDULE = "0 0 5 ? * MON";
+	public static final String DEFAULT_ALTITUDE = "{altitude:10}";
+
+	/**
+	 * The name used to schedule the calibration jobs as.
+	 */
+	public static final String CALIBRATION_JOB_NAME = "CO2Calibration";
+
+	/**
+	 * The group name used to schedule the calibration jobs as.
+	 */
+	public static final String COZIR_JOB_GROUP = "CozIR";
+
+	/**
+	 * The key used for the calibration job.
+	 */
+	public static final JobKey CALIBRATION_JOB_KEY = new JobKey(CALIBRATION_JOB_NAME, COZIR_JOB_GROUP);
 
 	private final AtomicReference<CachedResult<GeneralNodeDatum>> sample;
 
-	private long sampleCacheMs = 5000;
-	private String sourceId = "CozIR";
+	private long sampleCacheMs = DEFAULT_SAMPLE_CACHE_MS;
+	private String sourceId = DEFAULT_SOURCE_ID;
+	private String co2CalibrationSchedule = DEFAULT_CO2_CALIBRATION_SCHEDULE;
+	private String altitude = DEFAULT_ALTITUDE;
+	private OptionalService<Scheduler> scheduler;
+
+	private ScheduledFuture<?> altitudeCalibrationFuture;
+	private Trigger scheduledCalibrationTrigger;
+	private final int resolvedAltitude = -1;
 
 	/**
 	 * Default constructor.
@@ -80,6 +124,26 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
 	public CozIrDatumDataSource(AtomicReference<CachedResult<GeneralNodeDatum>> sample) {
 		super();
 		this.sample = sample;
+	}
+
+	@Override
+	public void serviceDidStartup() {
+		rescheduleCalibrationJob();
+		updateAltitudeCompensation();
+	}
+
+	@Override
+	public void serviceDidShutdown() {
+		unscheduleCalibrationJob(scheduledCalibrationTrigger);
+	}
+
+	@Override
+	public void configurationChanged(Map<String, Object> properties) {
+		int configuredAltitude = resolveAltitude();
+		if ( configuredAltitude != resolvedAltitude ) {
+			updateAltitudeCompensation();
+		}
+		rescheduleCalibrationJob();
 	}
 
 	@Override
@@ -111,13 +175,15 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
 
 		results.addAll(getIdentifiableSettingSpecifiers());
 
-		CozIrDatumDataSource defaults = new CozIrDatumDataSource();
 		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['UID']",
-				"Serial Port"));
+				DEFAULT_SERIAL_PORT));
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
-				String.valueOf(defaults.getSampleCacheMs())));
+				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
 
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", DEFAULT_SOURCE_ID));
+		results.add(new BasicTextFieldSettingSpecifier("altitude", DEFAULT_ALTITUDE));
+		results.add(new BasicCronExpressionSettingSpecifier("co2CalibrationSchedule",
+				DEFAULT_CO2_CALIBRATION_SCHEDULE));
 
 		return results;
 	}
@@ -217,6 +283,117 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
 		return buf.toString();
 	}
 
+	private synchronized void rescheduleCalibrationJob() {
+		unscheduleCalibrationJob(scheduledCalibrationTrigger);
+		scheduledCalibrationTrigger = null;
+
+		final Scheduler s = service(scheduler);
+		if ( s == null ) {
+			return;
+		}
+
+		final String schedule = getCo2CalibrationSchedule();
+		final String jobDesc = calibrationJobDescription(sourceId);
+		final TriggerKey triggerKey = triggerKey(sourceId);
+		final JobDataMap props = new JobDataMap();
+		props.put("service", this);
+		Trigger trigger = JobUtils.scheduleJob(s, CozIrCo2CalibrationJob.class, CALIBRATION_JOB_KEY,
+				jobDesc, schedule, triggerKey, props);
+		this.scheduledCalibrationTrigger = trigger;
+	}
+
+	private void unscheduleCalibrationJob(Trigger trigger) {
+		if ( trigger == null ) {
+			return;
+		}
+
+		Scheduler s = service(scheduler);
+		if ( s == null ) {
+			return;
+		}
+		try {
+			JobUtils.unscheduleJob(s, trigger.getDescription(), trigger.getKey());
+		} catch ( Exception e ) {
+			// ignore
+		}
+	}
+
+	private String calibrationJobDescription(String sourceId) {
+		return String.format("CozIR calibration [%s]", sourceId);
+	}
+
+	private TriggerKey triggerKey(String sourceId) {
+		return new TriggerKey(sourceId, COZIR_JOB_GROUP);
+	}
+
+	private int resolveAltitude() {
+		int resolvedAltitude;
+		try {
+			resolvedAltitude = Integer.parseInt(resolvePlaceholders(altitude));
+		} catch ( NumberFormatException e ) {
+			log.warn(
+					"Configured altitude [{}] does not resolve to an integer: falling back to default of 0m",
+					altitude);
+			resolvedAltitude = 0;
+		}
+		return resolvedAltitude;
+	}
+
+	private class CalibrateAltitudeTask implements Runnable, SerialConnectionAction<Void> {
+
+		@Override
+		public void run() {
+			try {
+				performAction(this);
+			} catch ( IOException e ) {
+				log.error("Communication error calibrating altitude on CozIR {}: {}", sourceId,
+						e.toString());
+			}
+		}
+
+		@Override
+		public Void doWithConnection(SerialConnection conn) throws IOException {
+			final int resolvedAltitude = resolveAltitude();
+			log.info("Calibrating CozIR altitude for {}m", resolvedAltitude);
+			CozIrHelper helper = new CozIrHelper(conn);
+			helper.setAltitudeCompensation(
+					CozIrUtils.altitudeCompensationValueForAltitudeInMeters(resolvedAltitude));
+			;
+			return null;
+		}
+
+	}
+
+	private synchronized void updateAltitudeCompensation() {
+		TaskScheduler taskScheduler = getTaskScheduler();
+		Runnable task = new CalibrateAltitudeTask();
+		if ( altitudeCalibrationFuture != null ) {
+			altitudeCalibrationFuture.cancel(true);
+			altitudeCalibrationFuture = null;
+		}
+		if ( taskScheduler != null ) {
+			log.info("Scheduling altitude calibration for 15s from now.");
+			altitudeCalibrationFuture = taskScheduler.schedule(task,
+					new Date(System.currentTimeMillis() + 15000L));
+		} else {
+			task.run();
+		}
+	}
+
+	@Override
+	public void calibrateAsCo2FreshAirLevel() throws IOException {
+		log.info("Calibrating CozIR {} CO2 sensor to fresh-air level", sourceId);
+		performAction(new SerialConnectionAction<Void>() {
+
+			@Override
+			public Void doWithConnection(SerialConnection conn) throws IOException {
+				CozIrHelper helper = new CozIrHelper(conn);
+				helper.calibrateAsCo2FreshAirLevel();
+				return null;
+			}
+		});
+	}
+
 	/**
 	 * Get the sample cache maximum age, in milliseconds.
 	 * 
@@ -244,6 +421,63 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
 	 */
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
+	}
+
+	/**
+	 * Get the CO2 calibration schedule to use.
+	 * 
+	 * @return the cron schedule
+	 */
+	public String getCo2CalibrationSchedule() {
+		return co2CalibrationSchedule;
+	}
+
+	/**
+	 * Set the CO2 calibration schedule to use.
+	 * 
+	 * @param co2CalibrationSchedule
+	 *        the cron schedule to set
+	 */
+	public void setCo2CalibrationSchedule(String co2CalibrationSchedule) {
+		this.co2CalibrationSchedule = co2CalibrationSchedule;
+	}
+
+	/**
+	 * Set the altitude to use for configuring the CO2 compensation value of the
+	 * sensor.
+	 * 
+	 * <p>
+	 * This is configured as a string to allow for placeholders via the
+	 * configured {@link PlaceholderService}. After resolving any placeholders
+	 * an integer value is expected representing the altitude of the sensor, in
+	 * meters.
+	 * </p>
+	 * 
+	 * @param altitude
+	 *        the altitude to set, as a decimal number; placeholders are
+	 *        supported
+	 */
+	public void setAltitude(String altitude) {
+		this.altitude = altitude;
+	}
+
+	/**
+	 * Get the scheduler.
+	 * 
+	 * @return the scheduler
+	 */
+	public OptionalService<Scheduler> getScheduler() {
+		return scheduler;
+	}
+
+	/**
+	 * Set the scheduler.
+	 * 
+	 * @param scheduler
+	 *        the scheduler
+	 */
+	public void setScheduler(OptionalService<Scheduler> scheduler) {
+		this.scheduler = scheduler;
 	}
 
 }

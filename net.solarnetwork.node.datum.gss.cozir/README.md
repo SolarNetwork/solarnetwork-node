@@ -28,6 +28,8 @@ Each device configuration contains the following overall settings:
 | Serial Port        | The service name of the [Serial Port][rxtx] component to use. |
 | Sample Maximum Age | A minimum time to cache captured data, in milliseconds. |
 | Source ID          | The SolarNetwork source ID to assign to captured datum. |
+| Altitude           | The altitude the sensor is at, in meters above sea level. [Placeholders][placeholders] are supported. |
+| CO2 Calibration Schedule | A [cron schedule][cron] that determines when the CO2 sensor is calibrated to _fresh air_ level. |
 
 ## Overall device settings notes
 
@@ -47,6 +49,10 @@ Each device configuration contains the following overall settings:
 	used to avoid reading data unnecessarily. This setting also helps in highly
 	dynamic configurations where other plugins request the current values from
 	the device frequently.</dd>
+	<dt>CO2 Calibration Schedule</dt>
+	<dd>The CO2 sensor must be re-calibrated once in a while. This schedule invokes the "calibrate 
+	to fresh air" function of the sensor, so should be run when the CO2 level is closest to a normal
+	outdoor value as possible, for example at an early morning hour.</dd>
 </dl>
 
 ## Serial Port settings
@@ -63,4 +69,5 @@ referenced by the **Serial Port** setting must match the settings configured on 
 | Flow control | None  |
 
 [cron]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Cron-Job-Syntax
+[placeholders]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Placeholders
 [rxtx]: ../net.solarnetwork.node.io.serial.rxtx/
