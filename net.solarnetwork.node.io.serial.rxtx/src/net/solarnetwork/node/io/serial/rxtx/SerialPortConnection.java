@@ -128,8 +128,8 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 			return;
 		}
 		try {
-			log.debug("Closing serial port {}", this.serialPort);
 			if ( in != null ) {
+				log.debug("Closing serial port {} InputStream", this.serialPort);
 				try {
 					in.close();
 				} catch ( IOException e ) {
@@ -139,6 +139,7 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 				}
 			}
 			if ( out != null ) {
+				log.debug("Closing serial port {} OutputStream", this.serialPort);
 				try {
 					out.close();
 				} catch ( IOException e ) {
@@ -147,6 +148,7 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 							e.getMessage());
 				}
 			}
+			log.debug("Closing serial port {}", this.serialPort);
 			serialPort.close();
 			log.trace("Serial port {} closed", this.serialPort);
 		} finally {
