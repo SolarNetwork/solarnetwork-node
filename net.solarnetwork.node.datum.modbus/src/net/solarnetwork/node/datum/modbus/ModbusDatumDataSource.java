@@ -717,8 +717,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 					t = t.getCause();
 				}
 				log.debug("Error reading from Modbus device {}", modbusDeviceName(), t);
-				log.warn("Communication problem reading source from Modbus device {}: {}", this.sourceId,
-						modbusDeviceName(), t.getMessage());
+				log.warn("Communication problem reading source {} from Modbus device {}: {}",
+						this.sourceId, modbusDeviceName(), t.getMessage());
 			}
 		} else {
 			currSample = sample.copy();
