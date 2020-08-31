@@ -99,7 +99,7 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 		CommPortIdentifier portId = getCommPortIdentifier(serialParams.getSerialPort());
 		try {
 			serialPort = (SerialPort) portId.open(serialParams.getCommPortAppName(), 2000);
-			setupSerialPortParameters(serialPort, this);
+			setupSerialPortParameters(serialPort, eventLog.isTraceEnabled() ? this : null);
 		} catch ( PortInUseException e ) {
 			throw new IOException("Serial port " + serialParams.getSerialPort() + " in use", e);
 		} catch ( TooManyListenersException e ) {
