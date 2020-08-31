@@ -28,9 +28,10 @@ import java.util.concurrent.Callable;
  * Extension of {@link Callable} to provide a way to notify between blocking IO
  * operations.
  * 
+ * @param <T>
+ *        the result type
  * @author matt
  * @version 1.0
- * @param <T>
  */
 public interface AbortableCallable<T> extends Callable<T> {
 

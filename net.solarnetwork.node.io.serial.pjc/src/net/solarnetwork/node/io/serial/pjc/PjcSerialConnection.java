@@ -50,7 +50,7 @@ import purejavacomm.SerialPortEventListener;
 import purejavacomm.UnsupportedCommOperationException;
 
 /**
- * PureJavaComm implementation of {@link SerailConnection}.
+ * PureJavaComm implementation of {@link SerialConnection}.
  * 
  * @author matt
  * @version 1.0
@@ -76,13 +76,10 @@ public class PjcSerialConnection implements SerialConnection, SerialPortEventLis
 	/**
 	 * Constructor.
 	 * 
-	 * @param serialParams
+	 * @param params
 	 *        the parameters to use with the SerialPort
 	 * @param executor
 	 *        A thread pool to use for I/O tasks with timeouts.
-	 * @param maxWait
-	 *        the maximum number of milliseconds to wait when waiting to read
-	 *        data
 	 */
 	public PjcSerialConnection(SerialPortBeanParameters params, ExecutorService executor) {
 		this.serialParams = params;
