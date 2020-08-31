@@ -33,6 +33,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
+import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
@@ -58,7 +59,8 @@ public class SerialPortNetwork implements SerialNetwork, SettingSpecifierProvide
 	private TimeUnit unit = TimeUnit.SECONDS;
 	private MessageSource messageSource;
 
-	private final ExecutorService executor = Executors.newCachedThreadPool();
+	private final ExecutorService executor = Executors
+			.newSingleThreadExecutor(new CustomizableThreadFactory("RXTX-SerialPort-"));
 	private final ReentrantLock lock = new ReentrantLock(true); // use fair lock to prevent starvation
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
