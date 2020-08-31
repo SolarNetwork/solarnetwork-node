@@ -296,6 +296,8 @@ public class ModbusTransactionUtils {
 	 *        {@literal true} for headless (serial) mode
 	 * @param address
 	 *        the address to start writing to
+	 * @param count
+	 *        the number of Modbus 16-bit registers to read
 	 * @return a newly created request instance
 	 * @throws UnsupportedOperationException
 	 *         if the function is not supported
@@ -412,8 +414,6 @@ public class ModbusTransactionUtils {
 	 *        the function to use
 	 * @param address
 	 *        the 0-based Modbus register address to start reading from
-	 * @param count
-	 *        the number of Modbus 16-bit registers to read
 	 * @param values
 	 *        the signed 16-bit values to write
 	 */
