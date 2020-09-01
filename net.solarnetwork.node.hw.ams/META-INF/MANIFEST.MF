@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: ams AG Hardware Support
+Bundle-SymbolicName: net.solarnetwork.node.hw.ams
+Bundle-Description: Hardware support for ams AG devices.
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Automatic-Module-Name: net.solarnetwork.node.hw.ams
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Import-Package: 
+ io.dvlopt.linux.i2c;version="[1.0,2.0)",
+ net.solarnetwork.domain;version="[1.24,2.0)",
+ org.slf4j;version="[1.7,2.0)"
