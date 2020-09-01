@@ -93,7 +93,7 @@ public enum Register implements CodedValue {
 	 * 
 	 * @param code
 	 *        the code
-	 * @return the status, never {@literal null} and set to {@link #Medium} if
+	 * @return the status, never {@literal null} and set to {@link #Enable} if
 	 *         not any other valid code
 	 */
 	public static Register forCode(int code) {
