@@ -72,13 +72,14 @@ import net.solarnetwork.node.io.canbus.socketcand.msg.FrameMessageImpl;
 import net.solarnetwork.node.io.canbus.support.MeasurementHelper;
 import net.solarnetwork.util.StaticOptionalService;
 import net.solarnetwork.util.StaticOptionalServiceCollection;
-import systems.uom.ucum.internal.UCUMServiceProvider;
+import systems.uom.ucum.spi.UCUMServiceProvider;
+import tech.units.indriya.spi.DefaultServiceProvider;
 
 /**
  * Test cases for the {@link CanbusDatumDataSource} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class CanbusDatumDataSourceTests {
 
@@ -99,7 +100,8 @@ public class CanbusDatumDataSourceTests {
 		dataSource.setEventAdmin(new StaticOptionalService<EventAdmin>(eventAdmin));
 		dataSource.setDatumMetadataService(new StaticOptionalService<>(datumMetadataService));
 		dataSource.setMeasurementHelper(new MeasurementHelper(new StaticOptionalServiceCollection<>(
-				Arrays.asList(new IndriyaMeasurementServiceProvider(new UCUMServiceProvider())))));
+				Arrays.asList(new IndriyaMeasurementServiceProvider(new UCUMServiceProvider()),
+						new IndriyaMeasurementServiceProvider(new DefaultServiceProvider())))));
 	}
 
 	@After
@@ -201,7 +203,7 @@ public class CanbusDatumDataSourceTests {
 		Event evt = eventCaptor.getValue();
 		assertThat("Event generated", evt, notNullValue());
 		assertThat("Event topic", evt.getTopic(), equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
-		Map<String, Object> expectedData = Collections.singletonMap("watts", new BigDecimal("17"));
+		Map<String, Object> expectedData = Collections.singletonMap("watts", 17);
 		assertDatumCapturedEvent(evt, start, TEST_SOURCE, expectedData);
 
 		assertThat("Datum captured", d, notNullValue());
@@ -301,7 +303,7 @@ public class CanbusDatumDataSourceTests {
 		Event evt = eventCaptor.getValue();
 		assertThat("Event generated", evt, notNullValue());
 		assertThat("Event topic", evt.getTopic(), equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
-		Map<String, Object> expectedData = singletonMap("torque", new BigDecimal("17"));
+		Map<String, Object> expectedData = singletonMap("torque", 17);
 		assertDatumCapturedEvent(evt, start, TEST_SOURCE, expectedData);
 
 		assertThat("Datum captured", d, notNullValue());
@@ -397,7 +399,7 @@ public class CanbusDatumDataSourceTests {
 		Event evt = eventCaptor.getValue();
 		assertThat("Event generated", evt, notNullValue());
 		assertThat("Event topic", evt.getTopic(), equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
-		Map<String, Object> expectedData = Collections.singletonMap("watts", new BigDecimal("2842398"));
+		Map<String, Object> expectedData = Collections.singletonMap("watts", 2842398);
 		assertDatumCapturedEvent(evt, start, TEST_SOURCE, expectedData);
 
 		assertThat("Datum captured", d, notNullValue());

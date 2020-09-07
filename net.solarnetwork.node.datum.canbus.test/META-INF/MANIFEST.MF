@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: CAN Bus Datum Source Tests
 Bundle-SymbolicName: net.solarnetwork.node.datum.canbus.test
-Bundle-Version: 1.0.0
+Bundle-Version: 1.0.1
 Fragment-Host: net.solarnetwork.node.datum.canbus;bundle-version="1.0.0"
 Automatic-Module-Name: net.solarnetwork.node.datum.canbus.test
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -17,4 +17,6 @@ Import-Package:
  org.junit;version="[4.5,5.0)",
  org.junit.runner;version="[4.5,5.0)",
  org.springframework.util;version="[4.2,5.0)",
- systems.uom.ucum.internal;version="[2.0,3.0)"
+ systems.uom.ucum.spi;version="[2.0.2,3.0)",
+ tech.units.indriya.quantity;version="[2.0.4,3.0)",
+ tech.units.indriya.spi;version="[2.0.4,3.0)"
