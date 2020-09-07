@@ -77,7 +77,8 @@ public class MeasurementHelperTests {
 	@Before
 	public void setup() {
 		measurementProviders = new StaticOptionalServiceCollection<>(
-				asList(new IndriyaMeasurementServiceProvider(new UCUMServiceProvider())));
+				asList(new IndriyaMeasurementServiceProvider(new UCUMServiceProvider()),
+						new IndriyaMeasurementServiceProvider(new DefaultServiceProvider())));
 		helper = new MeasurementHelper(measurementProviders);
 	}
 

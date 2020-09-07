@@ -71,6 +71,7 @@ import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StaticOptionalService;
 import net.solarnetwork.util.StaticOptionalServiceCollection;
 import systems.uom.ucum.spi.UCUMServiceProvider;
+import tech.units.indriya.spi.DefaultServiceProvider;
 
 /**
  * Simulate the effects of CAN bus messages on a {@link CanbusDatumDataSource}.
@@ -95,7 +96,8 @@ public class CanbusDatumDataSourceSimulator {
 	private final Map<String, CanbusDatumDataSource> dataSources;
 	private final MeasurementHelper measurementHelper = new MeasurementHelper(
 			new StaticOptionalServiceCollection<>(
-					Arrays.asList(new IndriyaMeasurementServiceProvider(new UCUMServiceProvider()))));
+					Arrays.asList(new IndriyaMeasurementServiceProvider(new UCUMServiceProvider()),
+							new IndriyaMeasurementServiceProvider(new DefaultServiceProvider()))));
 
 	/**
 	 * Constructor.

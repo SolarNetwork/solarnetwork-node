@@ -37,7 +37,7 @@
 			<bean class="net.solarnetwork.util.DynamicServiceTracker">
 				<property name="bundleContext" ref="bundleContext"/>
 				<property name="serviceClassName" value="net.solarnetwork.javax.measure.MeasurementServiceProvider"/>
-				<property name="serviceFilter" value="(service.name=UCUM)"/>
+				<property name="serviceFilter" value="(|(service.name=UCUM)(service.name=Default))"/>
 			</bean>
 		</argument>
 	</bean>

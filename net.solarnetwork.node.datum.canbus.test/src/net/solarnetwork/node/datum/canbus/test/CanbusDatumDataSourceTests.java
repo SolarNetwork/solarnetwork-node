@@ -73,6 +73,7 @@ import net.solarnetwork.node.io.canbus.support.MeasurementHelper;
 import net.solarnetwork.util.StaticOptionalService;
 import net.solarnetwork.util.StaticOptionalServiceCollection;
 import systems.uom.ucum.spi.UCUMServiceProvider;
+import tech.units.indriya.spi.DefaultServiceProvider;
 
 /**
  * Test cases for the {@link CanbusDatumDataSource} class.
@@ -99,7 +100,8 @@ public class CanbusDatumDataSourceTests {
 		dataSource.setEventAdmin(new StaticOptionalService<EventAdmin>(eventAdmin));
 		dataSource.setDatumMetadataService(new StaticOptionalService<>(datumMetadataService));
 		dataSource.setMeasurementHelper(new MeasurementHelper(new StaticOptionalServiceCollection<>(
-				Arrays.asList(new IndriyaMeasurementServiceProvider(new UCUMServiceProvider())))));
+				Arrays.asList(new IndriyaMeasurementServiceProvider(new UCUMServiceProvider()),
+						new IndriyaMeasurementServiceProvider(new DefaultServiceProvider())))));
 	}
 
 	@After
