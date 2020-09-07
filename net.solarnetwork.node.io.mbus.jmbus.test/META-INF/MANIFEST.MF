@@ -17,4 +17,5 @@ Import-Package:
  org.springframework.test.annotation;version="[4.2,5.0)",
  org.springframework.test.context;version="[4.2,5.0)",
  org.springframework.test.context.junit4;version="[4.2,5.0)",
- org.springframework.test.context.support;version="[4.2,5.0)"
+ org.springframework.test.context.support;version="[4.2,5.0)",
+ org.springframework.util;version="[4.2,5.0)"

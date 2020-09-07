@@ -25,6 +25,7 @@ package net.solarnetwork.node.io.mbus.jmbus.test;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import static org.springframework.util.FileCopyUtils.copyToByteArray;
 import java.io.IOException;
 import java.util.Date;
 import java.util.HashMap;
@@ -98,8 +99,8 @@ public class WMBusNetworkTests {
 	 */
 	@BeforeClass
 	public static void prepareConnection() throws IOException, DecodingException {
-		final byte[] bytes = WMBusNetworkTests.class.getResourceAsStream("wmbus-message.bin")
-				.readAllBytes();
+		final byte[] bytes = copyToByteArray(
+				WMBusNetworkTests.class.getResourceAsStream("wmbus-message.bin"));
 		final byte[] key = { (byte) 0xAB, (byte) 0xAB, (byte) 0xAB, (byte) 0xAB, (byte) 0xAB,
 				(byte) 0xAB, (byte) 0xAB, (byte) 0xAB, (byte) 0xAB, (byte) 0xAB, (byte) 0xAB,
 				(byte) 0xAB, (byte) 0xAB, (byte) 0xAB, (byte) 0xAB, (byte) 0xAB };
@@ -110,8 +111,8 @@ public class WMBusNetworkTests {
 
 	@Test
 	public void receiveMessage() throws IOException, DecodingException {
-		final byte[] bytes = WMBusNetworkTests.class.getResourceAsStream("wmbus-message.bin")
-				.readAllBytes();
+		final byte[] bytes = copyToByteArray(
+				WMBusNetworkTests.class.getResourceAsStream("wmbus-message.bin"));
 		final WMBusMessage msg = WMBusMessageDecoder.decode(bytes, 0, keyMap);
 
 		final MBusData expected = new MBusData(new Date());
