@@ -1,5 +1,5 @@
 /* ==================================================================
- * TcpMBusNetwork.java - 8/05/2020 3:36:08 pm
+ * MBusMessageHandler.java - 01/07/2020 13:33:43 pm
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -20,16 +20,17 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.mbus.jmbus;
-
-import net.solarnetwork.node.io.mbus.MBusNetwork;
+package net.solarnetwork.node.io.mbus;
 
 /**
- * TCP jMBus implementation of {@link MBusNetwork}.
+ *
+ * Interface for classes that handle MBus messages
  * 
- * @author matt
+ * @author alex
  * @version 1.0
  */
-public class TcpMBusNetwork extends AbstractMBusNetwork {
+public interface MBusMessageHandler {
+
+	public void handleMessage(MBusMessage message);
 
 }

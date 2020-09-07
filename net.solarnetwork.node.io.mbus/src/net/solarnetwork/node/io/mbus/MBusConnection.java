@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.mbus;
 
 import java.io.Closeable;
+import java.io.IOException;
 
 /**
  * High level M-Bus device connection API.
@@ -31,5 +32,21 @@ import java.io.Closeable;
  * @version 1.0
  */
 public interface MBusConnection extends Closeable {
+
+	/**
+	 * Open the connection, if it is not already open. The connection must be
+	 * opened before calling any of the other methods in this API.
+	 * 
+	 * @throws IOException
+	 *         if the connection cannot be opened
+	 */
+	public void open() throws IOException;
+
+	/**
+	 * Read data from the connection
+	 * 
+	 * @return M-Bus data
+	 */
+	public MBusData read();
 
 }

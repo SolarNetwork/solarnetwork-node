@@ -1,5 +1,5 @@
 /* ==================================================================
- * MBusNetworkImpl.java - 8/05/2020 12:42:56 pm
+ * WMBusConnection.java - 29/06/2020 11:51:53 AM
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -20,17 +20,26 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.mbus.jmbus;
+package net.solarnetwork.node.io.mbus;
 
-import net.solarnetwork.node.io.mbus.MBusNetwork;
-import net.solarnetwork.node.support.BaseIdentifiable;
+import java.io.Closeable;
+import java.io.IOException;
 
 /**
- * Abstract jMBus implementation of {@link MBusNetwork}.
+ * High level Wireless M-Bus device connection API.
  * 
- * @author matt
+ * @author alex
  * @version 1.0
  */
-public class AbstractMBusNetwork extends BaseIdentifiable implements MBusNetwork {
+public interface WMBusConnection extends Closeable {
+
+	/**
+	 * Open the connection, if it is not already open. The connection must be
+	 * opened before calling any of the other methods in this API.
+	 * 
+	 * @throws IOException
+	 *         if the connection cannot be opened
+	 */
+	public void open(MBusMessageHandler messageHandler) throws IOException;
 
 }

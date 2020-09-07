@@ -1,5 +1,5 @@
 /* ==================================================================
- * MBusNetwork.java - 8/05/2020 12:18:18 pm
+ * JMBusSerialWMBusParameters.java - 06/07/2020 09:31:19 am
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -20,36 +20,53 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.mbus;
-
-import java.io.IOException;
-import net.solarnetwork.node.Identifiable;
+package net.solarnetwork.node.io.mbus.jmbus;
 
 /**
- * High level M-Bus network API.
  * 
- * @author matt
+ * Java bean for JMBus serial WMBus parameters
+ * 
+ * @author alex
  * @version 1.0
  */
-public interface MBusNetwork extends Identifiable {
+public class JMBusSerialParameters {
+
+	private String portName = "/dev/ttyS0";
+	private int baudRate = 9600;
 
 	/**
-	 * Read data from the connection
+	 * Set port name
 	 * 
-	 * @param address
-	 *        Primary address
-	 * @return M-Bus data
+	 * @param portName
 	 */
-	MBusData read(int address) throws IOException;
+	public void setPortName(String portName) {
+		this.portName = portName;
+	}
 
 	/**
-	 * Create a connection to a wired M-Bus network. The returned connection
-	 * will not be opened and must be closed when finished being used.
+	 * Get the port name
 	 * 
-	 * @param address
-	 *        Primary address
-	 * @return a new connection
+	 * @return port name
 	 */
-	MBusConnection createConnection(int address);
+	public String getPortName() {
+		return portName;
+	}
 
+	/**
+	 * Set the baud rate
+	 * 
+	 * @param baudRate
+	 */
+	public void setBaudRate(int baudRate) {
+		this.baudRate = baudRate;
+	}
+
+	/**
+	 * Get the baud rate
+	 * 
+	 * @return baud rate
+	 */
+	public int getBaudRate() {
+		return baudRate;
+	}
 }

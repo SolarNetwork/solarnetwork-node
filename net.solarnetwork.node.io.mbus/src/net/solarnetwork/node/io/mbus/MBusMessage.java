@@ -1,5 +1,5 @@
 /* ==================================================================
- * MBusNetwork.java - 8/05/2020 12:18:18 pm
+ * MBusMessage.java - 01/07/2020 13:34:05 pm
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -22,34 +22,39 @@
 
 package net.solarnetwork.node.io.mbus;
 
-import java.io.IOException;
-import net.solarnetwork.node.Identifiable;
+import java.util.Date;
 
 /**
- * High level M-Bus network API.
  * 
- * @author matt
+ * A class representing an MBus Message
+ * 
+ * @author alex
  * @version 1.0
  */
-public interface MBusNetwork extends Identifiable {
+public class MBusMessage extends MBusData {
 
-	/**
-	 * Read data from the connection
-	 * 
-	 * @param address
-	 *        Primary address
-	 * @return M-Bus data
-	 */
-	MBusData read(int address) throws IOException;
+	public boolean moreRecordsFollow = false;
 
-	/**
-	 * Create a connection to a wired M-Bus network. The returned connection
-	 * will not be opened and must be closed when finished being used.
-	 * 
-	 * @param address
-	 *        Primary address
-	 * @return a new connection
-	 */
-	MBusConnection createConnection(int address);
+	public MBusMessage(MBusData data) {
+		super(data);
+	}
 
+	public MBusMessage(Date receivedTime) {
+		super(receivedTime);
+	}
+
+	@Override
+	public boolean equals(Object o) {
+		if ( o == this ) {
+			return true;
+		}
+
+		if ( !(o instanceof MBusData) ) {
+			return false;
+		}
+
+		MBusMessage m = (MBusMessage) o;
+
+		return super.equals(this) && m.moreRecordsFollow == this.moreRecordsFollow;
+	}
 }

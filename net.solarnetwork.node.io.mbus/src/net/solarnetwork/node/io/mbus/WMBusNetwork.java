@@ -1,5 +1,5 @@
 /* ==================================================================
- * MBusNetwork.java - 8/05/2020 12:18:18 pm
+ * WMBusNetwork.java - 29/06/2020 12:44:48 pm
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -22,34 +22,22 @@
 
 package net.solarnetwork.node.io.mbus;
 
-import java.io.IOException;
 import net.solarnetwork.node.Identifiable;
 
 /**
- * High level M-Bus network API.
+ * High level Wireless M-Bus network API.
  * 
- * @author matt
+ * @author alex
  * @version 1.0
  */
-public interface MBusNetwork extends Identifiable {
+public interface WMBusNetwork extends Identifiable {
 
 	/**
-	 * Read data from the connection
-	 * 
-	 * @param address
-	 *        Primary address
-	 * @return M-Bus data
-	 */
-	MBusData read(int address) throws IOException;
-
-	/**
-	 * Create a connection to a wired M-Bus network. The returned connection
+	 * Create a connection to a wireless M-Bus network. The returned connection
 	 * will not be opened and must be closed when finished being used.
 	 * 
-	 * @param address
-	 *        Primary address
 	 * @return a new connection
 	 */
-	MBusConnection createConnection(int address);
+	WMBusConnection createConnection(MBusSecondaryAddress address, byte[] key);
 
 }

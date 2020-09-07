@@ -1,5 +1,5 @@
 /* ==================================================================
- * TcpMBusNetworkTests.java - 8/05/2020 3:37:45 pm
+ * MBusDataType.java - 09/07/2020 13:03:08 PM
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -20,30 +20,19 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.mbus.jmbus.test;
-
-import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
-import org.junit.Test;
-import net.solarnetwork.node.io.mbus.jmbus.TcpMBusNetwork;
+package net.solarnetwork.node.io.mbus;
 
 /**
- * Test cases for the {@link TcpMBusNetwork} class.
+ * An enumeration of M-Bus data types.
  * 
- * @author matt
+ * @author alex
  * @version 1.0
  */
-public class TcpMBusNetworkTests {
-
-	@Test
-	public void construct() {
-		// GIVEN
-
-		// WHEN
-		TcpMBusNetwork mbus = new TcpMBusNetwork();
-
-		// THEN
-		assertThat("Instance created", mbus, notNullValue());
-	}
-
+public enum MBusDataType {
+	Date,
+	String,
+	Double,
+	Long,
+	BCD,
+	None,
 }

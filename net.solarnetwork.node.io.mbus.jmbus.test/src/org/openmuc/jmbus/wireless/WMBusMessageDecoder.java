@@ -1,7 +1,7 @@
 /* ==================================================================
- * SerialMBusNetwork.java - 8/05/2020 3:37:01 pm
+ * WMBusMessageDecoder.java - 01/07/2020 10:27:10 AM
  * 
- * Copyright 2020 SolarNetwork.net Dev Team
+ * Copyright 2017 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -20,16 +20,24 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.io.mbus.jmbus;
+package org.openmuc.jmbus.wireless;
 
-import net.solarnetwork.node.io.mbus.MBusNetwork;
+import java.util.Map;
+import org.openmuc.jmbus.DecodingException;
+import org.openmuc.jmbus.SecondaryAddress;
 
 /**
- * Serial jMBus implementation of {@link MBusNetwork}.
  * 
- * @author matt
+ * Make the {@link WMBusMessage.decode} method publicly available
+ * 
+ * @author alex
  * @version 1.0
  */
-public class SerialMBusNetwork extends AbstractMBusNetwork {
+public class WMBusMessageDecoder {
+
+	public static WMBusMessage decode(byte[] buffer, Integer signalStrengthInDBm,
+			Map<SecondaryAddress, byte[]> keyMap) throws DecodingException {
+		return WMBusMessage.decode(buffer, signalStrengthInDBm, keyMap);
+	}
 
 }
