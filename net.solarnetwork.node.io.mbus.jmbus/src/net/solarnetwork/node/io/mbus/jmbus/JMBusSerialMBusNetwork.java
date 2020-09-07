@@ -44,7 +44,7 @@ public class JMBusSerialMBusNetwork extends JMBusMBusNetwork implements SettingS
 
 	public JMBusSerialMBusNetwork() {
 		super();
-		setUid("M-Bus Network");
+		setUid("M-Bus Port");
 	}
 
 	private static JMBusSerialParameters getDefaultSerialParametersInstance() {

@@ -31,6 +31,7 @@
 				<value>net.solarnetwork.node.datum.mbus.MBusDatumDataSource</value>
 				<value>net.solarnetwork.node.datum.mbus.MBusPropertyConfig</value>
 				<value>net.solarnetwork.node.io.mbus.support.MBusDeviceDatumDataSourceSupport</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
 		</property>
 	</bean>
@@ -46,6 +47,7 @@
 				<value>net.solarnetwork.node.datum.mbus.WMBusDatumDataSource</value>
 				<value>net.solarnetwork.node.datum.mbus.MBusPropertyConfig</value>
 				<value>net.solarnetwork.node.io.mbus.support.WMBusDeviceDatumDataSourceSupport</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
 		</property>
 	</bean>

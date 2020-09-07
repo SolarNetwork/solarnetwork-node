@@ -25,7 +25,7 @@
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="M-Bus Serial Connection"/>
 			<property name="factoryUID" value="net.solarnetwork.node.io.mbus.serial"/>
-			<property name="messageSource" ref="messageSource"/>
+			<property name="messageSource" ref="messageSourceSerial"/>
 		</bean>
 	</service>
 
@@ -56,7 +56,7 @@
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="M-Bus (Wireless) Serial Connection"/>
 			<property name="factoryUID" value="net.solarnetwork.node.io.mbus.wireless.serial"/>
-			<property name="messageSource" ref="messageSource"/>
+			<property name="messageSource" ref="messageSourceWirelessSerial"/>
 		</bean>
 	</service>
 

@@ -46,7 +46,7 @@ public class JMBusSerialWMBusNetwork extends JMBusWMBusNetwork implements Settin
 
 	public JMBusSerialWMBusNetwork() {
 		super();
-		setUid("Wireless M-Bus Network");
+		setUid("M-Bus (Wireless) Port");
 	}
 
 	private static JMBusSerialParameters getDefaultSerialParametersInstance() {
