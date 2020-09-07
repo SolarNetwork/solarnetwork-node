@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
+	
+	<!-- Serial Wired M-Bus Network -->
+	
+	<bean id="messageSourceSerial" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.io.mbus.jmbus.JMBusSerialMBusNetwork</value>
+			</list>
+		</property>
+	</bean>
+	
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="M-Bus Serial Connection"/>
+			<property name="factoryUID" value="net.solarnetwork.node.io.mbus.serial"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
+
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.mbus.serial" autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.io.mbus.MBusNetwork</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.io.mbus.serial"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.io.mbus.jmbus.JMBusSerialMBusNetwork">
+			<property name="messageSource" ref="messageSourceSerial"/>
+		</bean>
+	</osgix:managed-service-factory>
+	
+	<!-- Serial Wireless M-Bus Network -->
+	
+	<bean id="messageSourceWirelessSerial" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.io.mbus.jmbus.JMBusSerialWMBusNetwork</value>
+			</list>
+		</property>
+	</bean>
+	
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="M-Bus (Wireless) Serial Connection"/>
+			<property name="factoryUID" value="net.solarnetwork.node.io.mbus.wireless.serial"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
+
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.mbus.wireless.serial" autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.io.mbus.WMBusNetwork</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.io.mbus.wireless.serial"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.io.mbus.jmbus.JMBusSerialWMBusNetwork">
+			<property name="messageSource" ref="messageSourceWirelessSerial"/>
+		</bean>
+	</osgix:managed-service-factory>
+	
+</blueprint>

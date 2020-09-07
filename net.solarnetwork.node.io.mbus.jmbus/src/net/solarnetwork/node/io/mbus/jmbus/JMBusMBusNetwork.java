@@ -1,0 +1,97 @@
+/* ==================================================================
+ * JMBusMBusNetwork.java - 13/08/2020 10:36:38 am
+ * 
+ * Copyright 2020 SolarNetwork.net Dev Team
+ * 
+ * This program is free software; you can redistribute it and/or 
+ * modify it under the terms of the GNU General Public License as 
+ * published by the Free Software Foundation; either version 2 of 
+ * the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License 
+ * along with this program; if not, write to the Free Software 
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ * 02111-1307 USA
+ * ==================================================================
+ */
+
+package net.solarnetwork.node.io.mbus.jmbus;
+
+import java.io.IOException;
+import org.openmuc.jmbus.VariableDataStructure;
+import net.solarnetwork.node.io.mbus.MBusConnection;
+import net.solarnetwork.node.io.mbus.MBusData;
+import net.solarnetwork.node.io.mbus.MBusNetwork;
+import net.solarnetwork.node.support.BaseIdentifiable;
+
+/**
+ * Abstract jMBus implementation of {@link MBusNetwork}.
+ * 
+ * @author alex
+ * @version 1.0
+ */
+public abstract class JMBusMBusNetwork extends BaseIdentifiable implements MBusNetwork {
+
+	@Override
+	public MBusConnection createConnection(int address) {
+		return new JMBusMBusConnection(address);
+	}
+
+	protected abstract org.openmuc.jmbus.MBusConnection createJMBusConnection() throws IOException;
+
+	@Override
+	public MBusData read(int address) throws IOException {
+		final MBusConnection conn = createConnection(address);
+		if ( conn == null ) {
+			return null;
+		}
+		conn.open();
+		return conn.read();
+	}
+
+	/**
+	 * 
+	 * Connection class
+	 */
+	private class JMBusMBusConnection implements MBusConnection {
+
+		private int address;
+		private org.openmuc.jmbus.MBusConnection conn;
+
+		private JMBusMBusConnection(int address) {
+			this.address = address;
+		}
+
+		@Override
+		public void open() throws IOException {
+			if ( conn == null ) {
+				this.conn = createJMBusConnection();
+			}
+		}
+
+		@Override
+		public synchronized void close() {
+			if ( conn != null ) {
+				conn.close();
+				conn = null;
+			}
+		}
+
+		@Override
+		public MBusData read() {
+			try {
+				final VariableDataStructure data = conn.read(address);
+				if ( data == null )
+					return null;
+				return JMBusConversion.from(data);
+			} catch ( IOException e ) {
+				return null;
+			}
+		}
+	}
+}

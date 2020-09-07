@@ -1,0 +1,27 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Generic M-Bus Datum Source
+Bundle-Description: Collect data from arbitrary M-Bus devices.
+Bundle-SymbolicName: net.solarnetwork.node.datum.mbus
+Automatic-Module-Name: net.solarnetwork.node.datum.mbus
+Bundle-Version: 0.2.0
+Bundle-Vendor: SolarNetwork
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Import-Package: 
+ net.solarnetwork.domain;version="[1.20,2.0)",
+ net.solarnetwork.node;version="[1.29,2.0)",
+ net.solarnetwork.node.domain;version="[1.18,2.0)",
+ net.solarnetwork.node.io.mbus;version="[0.2,1.0)",
+ net.solarnetwork.node.io.mbus.support;version="[0.2,1.0)",
+ net.solarnetwork.node.job;version="[1.13.4,2.0)",
+ net.solarnetwork.node.settings;version="[1.12,2.0)",
+ net.solarnetwork.node.settings.support;version="[1.11,2.0)",
+ net.solarnetwork.node.support;version="[1.20,2.0)",
+ net.solarnetwork.node.util;version="[1.7.2,2.0)",
+ net.solarnetwork.util;version="[1.40,2.0)",
+ org.joda.time;version="[2.4,3.0)",
+ org.joda.time.format;version="[2.4,3.0)",
+ org.slf4j;version="[1.7,2.0)",
+ org.springframework.beans;version="[4.2,5.0)",
+ org.springframework.context.support;version="[4.2,5.0)",
+ org.springframework.scheduling.quartz;version="[4.2,5.0)"
