@@ -70,7 +70,7 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 	 *        the datum property type
 	 * @param dataType
 	 *        the mbus data type
-	 * @param description
+	 * @param dataDescription
 	 *        the mbus data description
 	 */
 	public MBusPropertyConfig(String name, GeneralDatumSamplesType datumPropertyType,
@@ -87,7 +87,7 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 	 *        the datum property type
 	 * @param dataType
 	 *        the mbus data type
-	 * @param description
+	 * @param dataDescription
 	 *        the mbus data description
 	 * @param unitMultiplier
 	 *        the unit multiplier
@@ -238,7 +238,6 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 	 * This is an alias for {@link #setPropertyType(GeneralDatumSamplesType)},
 	 * and ignores a {@literal null} argument.
 	 * </p>
-	 * </p>
 	 * 
 	 * @param datumPropertyType
 	 *        the datum property type to set
@@ -324,7 +323,7 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 	/**
 	 * Get the data type as a key value.
 	 * 
-	 * @return the ype as a key
+	 * @return the data type as a key
 	 */
 	public String getDataTypeKey() {
 		MBusDataType type = getDataType();
@@ -334,8 +333,8 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 	/**
 	 * Set the data type as a string value.
 	 * 
-	 * @param dataType
-	 *        the type to set
+	 * @param key
+	 *        the data type to set as a key value
 	 */
 	public void setDataTypeKey(String key) {
 		setDataType(MBusDataType.valueOf(key));
@@ -361,7 +360,7 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 	 * Set the data description to read for.
 	 * 
 	 * <p>
-	 * This is an alias for {@link #setConfig(MBusDataDescription)}.
+	 * This is an alias for {@link #setConfig(Object)}.
 	 * </p>
 	 * 
 	 * @param desc
@@ -384,8 +383,8 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 	/**
 	 * Set the data description as a string value.
 	 * 
-	 * @param dataDescription
-	 *        the description to set
+	 * @param key
+	 *        the data description key to set
 	 */
 	public void setDataDescriptionKey(String key) {
 		setDataDescription(MBusDataDescription.valueOf(key));
