@@ -244,7 +244,7 @@ public class MBusDatumDataSource extends MBusDeviceDatumDataSourceSupport
 		results.add(0,
 				new BasicTitleSettingSpecifier("sample", getSampleMessage(getCurrentSample()), true));
 
-		results.addAll(getWMBusNetworkSettingSpecifiers());
+		results.addAll(getMBusNetworkSettingSpecifiers());
 
 		MBusDatumDataSource defaults = new MBusDatumDataSource();
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
