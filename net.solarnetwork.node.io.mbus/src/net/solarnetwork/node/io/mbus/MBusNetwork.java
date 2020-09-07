@@ -39,6 +39,8 @@ public interface MBusNetwork extends Identifiable {
 	 * @param address
 	 *        Primary address
 	 * @return M-Bus data
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	MBusData read(int address) throws IOException;
 

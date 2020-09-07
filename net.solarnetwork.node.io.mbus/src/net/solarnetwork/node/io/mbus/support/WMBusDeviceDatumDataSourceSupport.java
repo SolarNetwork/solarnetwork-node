@@ -103,14 +103,15 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 	/**
 	 * Set the {@link MBusSecondaryAddress} to use.
 	 * 
-	 * @param address
-	 *        the MBus secondary address
+	 * @param key
+	 *        the encryption key, encoded in hex
 	 */
 	public void setKey(String key) {
 		try {
 			this.key = Hex.decodeHex(key);
 			reconfigureConnection();
 		} catch ( DecoderException e ) {
+			// ignore
 		}
 	}
 

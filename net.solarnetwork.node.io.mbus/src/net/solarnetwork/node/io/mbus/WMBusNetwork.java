@@ -36,6 +36,10 @@ public interface WMBusNetwork extends Identifiable {
 	 * Create a connection to a wireless M-Bus network. The returned connection
 	 * will not be opened and must be closed when finished being used.
 	 * 
+	 * @param address
+	 *        the secondary address to connect to
+	 * @param key
+	 *        the encryption key
 	 * @return a new connection
 	 */
 	WMBusConnection createConnection(MBusSecondaryAddress address, byte[] key);

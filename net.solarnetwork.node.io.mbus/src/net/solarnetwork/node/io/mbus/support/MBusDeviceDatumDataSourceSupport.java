@@ -136,13 +136,14 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 	 * 
 	 * <p>
 	 * This method attempts to obtain a {@link MBusNetwork} from the configured
-	 * {@code modbusNetwork} service, calling {@link MBusNetwork#read()} if one
-	 * can be obtained.
+	 * {@code modbusNetwork} service, calling {@link MBusNetwork#read(int)} if
+	 * one can be obtained.
 	 * </p>
 	 * 
 	 * @return the result of the read, or {@literal null} if the read is never
 	 *         invoked
 	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	protected final MBusData performRead() throws IOException {
 		MBusData result = null;
@@ -189,7 +190,7 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
 	 * 
-	 * @param sampleCacheSecondsMs
+	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
 	public void setSampleCacheMs(long sampleCacheMs) {

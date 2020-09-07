@@ -37,6 +37,8 @@ public interface WMBusConnection extends Closeable {
 	 * Open the connection, if it is not already open. The connection must be
 	 * opened before calling any of the other methods in this API.
 	 * 
+	 * @param messageHandler
+	 *        the handler to call with the opened connection
 	 * @throws IOException
 	 *         if the connection cannot be opened
 	 */

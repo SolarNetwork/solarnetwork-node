@@ -40,7 +40,7 @@ public class MBusSecondaryAddress {
 	private byte[] address = INVALID_ADDRESS;
 
 	/**
-	 * Construct from a hex address
+	 * Construct from a hex address.
 	 * 
 	 * @param hexAddress
 	 *        A hex string representing 8 bytes
@@ -56,9 +56,10 @@ public class MBusSecondaryAddress {
 	}
 
 	/**
-	 * Construct from raw bytes
+	 * Construct from raw bytes.
 	 * 
 	 * @param bytes
+	 *        the raw MBus secondary address data
 	 */
 	public MBusSecondaryAddress(byte[] bytes) {
 		if ( bytes.length == SIZE ) {
