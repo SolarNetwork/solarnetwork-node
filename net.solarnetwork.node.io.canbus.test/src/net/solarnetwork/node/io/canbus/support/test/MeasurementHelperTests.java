@@ -58,6 +58,7 @@ import net.solarnetwork.util.StaticOptionalServiceCollection;
 import systems.uom.ucum.spi.UCUMServiceProvider;
 import tech.units.indriya.ComparableUnit;
 import tech.units.indriya.quantity.Quantities;
+import tech.units.indriya.spi.DefaultServiceProvider;
 import tech.units.indriya.unit.Units;
 
 /**
@@ -168,8 +169,8 @@ public class MeasurementHelperTests {
 
 		final Unit<Frequency> rpm = Units.HERTZ.divide(60);
 
-		// the following returns the DefaultFormatService class
-		UnitFormat uf = sp.getFormatService().getUnitFormat();
+		// use explicit DefaultServiceProvider
+		UnitFormat uf = new DefaultServiceProvider().getFormatService().getUnitFormat();
 		Unit<?> unit = uf.parse("Hz/60");
 		assertThat("Unit is RPM", unit, equalTo(rpm));
 
