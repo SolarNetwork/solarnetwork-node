@@ -20,4 +20,5 @@ Import-Package:
  net.solarnetwork.util;version="[1.43,2.0)",
  org.apache.commons.codec;version="[1.11,2.0)",
  org.apache.commons.codec.binary;version="[1.11,2.0)",
- org.slf4j;version="[1.7,2.0)"
+ org.slf4j;version="[1.7,2.0)",
+ org.springframework.context;version="[4.2,5.0)"
