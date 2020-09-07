@@ -72,6 +72,7 @@ public class MBusDatumDataSourceTests {
 		mbusConnection = EasyMock.createMock(MBusConnection.class);
 
 		dataSource = new MBusDatumDataSource();
+		dataSource.setAddress(1);
 		dataSource.setSourceId(TEST_SOURCE_ID);
 		dataSource.setMBusNetwork(new StaticOptionalService<MBusNetwork>(mbusNetwork));
 	}
