@@ -38,6 +38,7 @@ public class JMBusSerialParameters {
 	 * Set port name
 	 * 
 	 * @param portName
+	 *        the port name to set
 	 */
 	public void setPortName(String portName) {
 		this.portName = portName;
@@ -56,6 +57,7 @@ public class JMBusSerialParameters {
 	 * Set the baud rate
 	 * 
 	 * @param baudRate
+	 *        the baud rate to set
 	 */
 	public void setBaudRate(int baudRate) {
 		this.baudRate = baudRate;

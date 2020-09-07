@@ -41,6 +41,7 @@ public class JMBusWirelessParameters {
 	 * Set the manufacturer
 	 * 
 	 * @param manufacturer
+	 *        the manufacturer to set
 	 */
 	public void setManufacturer(WMBusManufacturer manufacturer) {
 		this.manufacturer = manufacturer;
@@ -50,6 +51,7 @@ public class JMBusWirelessParameters {
 	 * Set the manufacturer from a String
 	 * 
 	 * @param manufacturer
+	 *        the manufacturer string value to set
 	 */
 	public void setManufacturerString(String manufacturer) {
 		manufacturer = manufacturer.toLowerCase();
@@ -93,6 +95,7 @@ public class JMBusWirelessParameters {
 	 * Set the mode
 	 * 
 	 * @param mode
+	 *        the mode to set
 	 */
 	public void setMode(WMBusMode mode) {
 		this.mode = mode;
@@ -102,6 +105,7 @@ public class JMBusWirelessParameters {
 	 * Set the mode from a String
 	 * 
 	 * @param mode
+	 *        the most to set, as a string
 	 */
 	public void setModeString(String mode) {
 		mode = mode.toLowerCase();
