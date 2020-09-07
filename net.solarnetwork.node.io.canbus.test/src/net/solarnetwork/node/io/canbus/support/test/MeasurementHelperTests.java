@@ -55,7 +55,7 @@ import net.solarnetwork.node.io.canbus.support.JaxbSnKcdParser;
 import net.solarnetwork.node.io.canbus.support.MeasurementHelper;
 import net.solarnetwork.util.OptionalServiceCollection;
 import net.solarnetwork.util.StaticOptionalServiceCollection;
-import systems.uom.ucum.internal.UCUMServiceProvider;
+import systems.uom.ucum.spi.UCUMServiceProvider;
 import tech.units.indriya.ComparableUnit;
 import tech.units.indriya.quantity.Quantities;
 import tech.units.indriya.unit.Units;
@@ -64,7 +64,7 @@ import tech.units.indriya.unit.Units;
  * Test cases for the {@link MeasurementHelper} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class MeasurementHelperTests {
 

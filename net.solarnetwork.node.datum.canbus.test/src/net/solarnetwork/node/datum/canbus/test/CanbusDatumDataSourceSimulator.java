@@ -70,7 +70,7 @@ import net.solarnetwork.util.JsonUtils;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StaticOptionalService;
 import net.solarnetwork.util.StaticOptionalServiceCollection;
-import systems.uom.ucum.internal.UCUMServiceProvider;
+import systems.uom.ucum.spi.UCUMServiceProvider;
 
 /**
  * Simulate the effects of CAN bus messages on a {@link CanbusDatumDataSource}.
@@ -84,7 +84,7 @@ import systems.uom.ucum.internal.UCUMServiceProvider;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class CanbusDatumDataSourceSimulator {
 
