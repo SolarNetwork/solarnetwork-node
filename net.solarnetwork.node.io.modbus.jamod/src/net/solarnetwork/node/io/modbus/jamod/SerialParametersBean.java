@@ -47,6 +47,7 @@ public class SerialParametersBean extends SerialParameters {
 	 * Set the parity as a String value.
 	 * 
 	 * @param parity
+	 *        the parity string value to set
 	 */
 	public void setParityString(String parity) {
 		setParity(parity);

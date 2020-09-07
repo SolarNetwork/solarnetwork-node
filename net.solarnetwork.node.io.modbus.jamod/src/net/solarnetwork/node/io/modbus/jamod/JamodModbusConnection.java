@@ -41,14 +41,16 @@ import net.wimpi.modbus.net.SerialConnection;
 public class JamodModbusConnection extends AbstractModbusConnection implements ModbusConnection {
 
 	private final SerialConnection connection;
+	private final String name;
 
 	public JamodModbusConnection(SerialConnection conn, int unitId) {
-		this(conn, unitId, true);
+		this(conn, unitId, true, "UNKNOWN");
 	}
 
-	public JamodModbusConnection(SerialConnection conn, int unitId, boolean headless) {
+	public JamodModbusConnection(SerialConnection conn, int unitId, boolean headless, String name) {
 		super(unitId, headless);
 		this.connection = conn;
+		this.name = name;
 	}
 
 	final SerialConnection getSerialConnection() {
@@ -57,13 +59,7 @@ public class JamodModbusConnection extends AbstractModbusConnection implements M
 
 	@Override
 	public String toString() {
-		String portName;
-		try {
-			portName = connection.getSerialPort().getName();
-		} catch ( RuntimeException e ) {
-			portName = "UNKNOWN";
-		}
-		return "JamodModbusConnection{port=" + portName + ",unit=" + getUnitId() + '}';
+		return "JamodModbusConnection{port=" + name + ",unit=" + getUnitId() + '}';
 	}
 
 	@Override

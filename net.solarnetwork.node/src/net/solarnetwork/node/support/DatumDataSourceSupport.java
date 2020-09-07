@@ -231,8 +231,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 				try {
 					readSubSampleDatum(dataSource);
 				} catch ( Exception e ) {
-					log.warn("Error reading sub-sample datum for {}: {}", DatumDataSourceSupport.this,
-							e);
+					log.warn("Error reading sub-sample datum for {}", DatumDataSourceSupport.this, e);
 				}
 			}
 		}, new Date(System.currentTimeMillis() + subSampleStartDelay), freq);

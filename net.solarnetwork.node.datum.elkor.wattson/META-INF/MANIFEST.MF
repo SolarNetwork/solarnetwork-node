@@ -2,6 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Elkor WattsOn Meter Data Source
 Bundle-SymbolicName: net.solarnetwork.node.datum.elkor.wattson
+Bundle-Description: Collect data from Electro Elkor WattsOn series meter devices.
 Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.elkor.wattson

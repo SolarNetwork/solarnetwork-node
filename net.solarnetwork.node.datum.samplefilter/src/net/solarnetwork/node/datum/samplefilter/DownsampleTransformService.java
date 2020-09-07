@@ -22,16 +22,14 @@
 
 package net.solarnetwork.node.datum.samplefilter;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import net.solarnetwork.domain.AggregateDatumProperty;
+import net.solarnetwork.domain.AggregateDatumSamples;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.domain.Datum;
@@ -90,10 +88,18 @@ public class DownsampleTransformService extends BaseIdentifiable
 	/** The {@code decimalScale} property default value. */
 	public static final int DEFAULT_DECIMAL_SCALE = 3;
 
-	private final ConcurrentMap<String, List<GeneralDatumSamples>> subSamplesBySource = new ConcurrentHashMap<>(
+	/** The {@code minPropertyFormat} property default value. */
+	public static final String DEFAULT_MIN_FORMAT = "%s_min";
+
+	/** The {@code maxPropertyFormat} property default value. */
+	public static final String DEFAULT_MAX_FORMAT = "%s_max";
+
+	private final ConcurrentMap<String, AggregateDatumSamples> subSamplesBySource = new ConcurrentHashMap<>(
 			8, 0.9f, 4);
 
 	private int decimalScale = DEFAULT_DECIMAL_SCALE;
+	private String minPropertyFormat = DEFAULT_MIN_FORMAT;
+	private String maxPropertyFormat = DEFAULT_MAX_FORMAT;
 
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
@@ -102,13 +108,13 @@ public class DownsampleTransformService extends BaseIdentifiable
 			return samples;
 		}
 		final boolean sub = (parameters != null && parameters.containsKey(SUB_SAMPLE_PROP));
-		List<GeneralDatumSamples> subSamples = subSamplesBySource.computeIfAbsent(datum.getSourceId(),
-				k -> new ArrayList<>(16));
-		synchronized ( subSamples ) {
-			subSamples.add(samples);
+		AggregateDatumSamples agg = subSamplesBySource.computeIfAbsent(datum.getSourceId(),
+				k -> new AggregateDatumSamples());
+		synchronized ( agg ) {
+			agg.addSample(samples);
 			if ( !sub ) {
-				GeneralDatumSamples out = downsample(subSamples);
-				subSamples.clear();
+				GeneralDatumSamples out = downsample(agg);
+				subSamplesBySource.remove(datum.getSourceId());
 				return out;
 			}
 		}
@@ -128,117 +134,49 @@ public class DownsampleTransformService extends BaseIdentifiable
 		results.add(new BasicTextFieldSettingSpecifier("uid", null));
 		results.add(new BasicTextFieldSettingSpecifier("decimalScale",
 				String.valueOf(DEFAULT_DECIMAL_SCALE)));
+		results.add(new BasicTextFieldSettingSpecifier("minPropertyFormat", DEFAULT_MIN_FORMAT));
+		results.add(new BasicTextFieldSettingSpecifier("maxPropertyFormat", DEFAULT_MAX_FORMAT));
 
 		return results;
 	}
 
 	public String statusValue() {
 		StringBuffer buf = new StringBuffer();
-		for ( Map.Entry<String, List<GeneralDatumSamples>> me : subSamplesBySource.entrySet() ) {
+		for ( Map.Entry<String, AggregateDatumSamples> me : subSamplesBySource.entrySet() ) {
 			if ( buf.length() > 0 ) {
 				buf.append(", ");
 			}
-			List<GeneralDatumSamples> list = me.getValue();
-			synchronized ( list ) {
-				buf.append(me.getKey()).append(": ").append(list.size()).append(" samples");
+			AggregateDatumSamples agg = me.getValue();
+			synchronized ( agg ) {
+				buf.append(me.getKey()).append(": ").append(agg.addedSampleCount()).append(" samples");
 			}
 		}
 		return buf.toString();
 	}
 
-	private class Agg {
-
-		private int count;
-		private BigDecimal total;
-		private BigDecimal min;
-		private BigDecimal max;
-
-		private Agg(BigDecimal val) {
-			super();
-			this.count = 1;
-			this.total = (val == null ? BigDecimal.ZERO : val);
-			this.min = total;
-			this.max = total;
-		}
-
-		private void accumulate(BigDecimal val) {
-			count++;
-			if ( val == null ) {
-				val = BigDecimal.ZERO;
-			}
-			total = total.add(val);
-			if ( val.compareTo(min) < 0 ) {
-				min = val;
-			} else if ( val.compareTo(max) > 0 ) {
-				max = val;
-			}
-		}
-
-		private BigDecimal average() {
-			return total.divide(new BigDecimal(count), decimalScale, RoundingMode.HALF_UP)
-					.stripTrailingZeros();
-		}
-	}
-
-	private GeneralDatumSamples downsample(List<GeneralDatumSamples> subSamples) {
-		Map<String, Agg> inst = null;
-		Map<String, Number> accu = null;
-		Map<String, Object> stat = null;
+	private GeneralDatumSamples downsample(AggregateDatumSamples s) {
 		GeneralDatumSamples out = new GeneralDatumSamples();
-		for ( GeneralDatumSamples s : subSamples ) {
-			if ( s.getInstantaneous() != null ) {
-				for ( String name : s.getInstantaneous().keySet() ) {
-					BigDecimal v = s.getInstantaneousSampleBigDecimal(name);
-					if ( v != null ) {
-						if ( inst == null ) {
-							inst = new LinkedHashMap<>(8);
-						}
-						Agg a = inst.get(name);
-						if ( a == null ) {
-							a = new Agg(v);
-							inst.put(name, a);
-						} else {
-							a.accumulate(v);
-						}
-					}
-				}
-			}
-			if ( s.getAccumulating() != null ) {
-				for ( Map.Entry<String, Number> me : s.getAccumulating().entrySet() ) {
-					if ( accu == null ) {
-						accu = new LinkedHashMap<>(8);
-					}
-					accu.put(me.getKey(), me.getValue());
-				}
-			}
-			if ( s.getStatus() != null ) {
-				for ( Map.Entry<String, Object> me : s.getStatus().entrySet() ) {
-					if ( stat == null ) {
-						stat = new LinkedHashMap<>(8);
-					}
-					stat.put(me.getKey(), me.getValue());
-				}
-			}
-			if ( s.getTags() != null ) {
-				if ( out.getTags() == null ) {
-					out.setTags(new LinkedHashSet<>(8));
-				}
-				out.getTags().addAll(s.getTags());
+		if ( s.getInstantaneous() != null ) {
+			for ( Map.Entry<String, AggregateDatumProperty> me : s.getInstantaneous().entrySet() ) {
+				out.putInstantaneousSampleValue(me.getKey(), me.getValue().average(decimalScale));
+				out.putInstantaneousSampleValue(String.format(minPropertyFormat, me.getKey()),
+						me.getValue().getMin());
+				out.putInstantaneousSampleValue(String.format(maxPropertyFormat, me.getKey()),
+						me.getValue().getMax());
 			}
 		}
-		if ( inst != null ) {
-			for ( Map.Entry<String, Agg> me : inst.entrySet() ) {
-				out.putInstantaneousSampleValue(me.getKey(), me.getValue().average());
-				out.putInstantaneousSampleValue(String.format("%s_min", me.getKey()), me.getValue().min);
-				out.putInstantaneousSampleValue(String.format("%s_max", me.getKey()), me.getValue().max);
+		if ( s.getAccumulating() != null ) {
+			for ( Map.Entry<String, AggregateDatumProperty> me : s.getAccumulating().entrySet() ) {
+				out.putAccumulatingSampleValue(me.getKey(), me.getValue().last());
 			}
 		}
-		if ( accu != null ) {
-			out.setAccumulating(accu);
+		if ( s.getStatus() != null ) {
+			out.setStatus(s.getStatus());
 		}
-		if ( stat != null ) {
-			out.setStatus(stat);
+		if ( s.getTags() != null ) {
+			out.setTags(s.getTags());
 		}
+
 		return out;
 	}
 
@@ -267,6 +205,56 @@ public class DownsampleTransformService extends BaseIdentifiable
 			decimalScale = 0;
 		}
 		this.decimalScale = decimalScale;
+	}
+
+	/**
+	 * Get the property name format for "minimum" computed values.
+	 * 
+	 * @return the format; defaults to {@link #DEFAULT_MIN_FORMAT}
+	 * @since 1.1
+	 */
+	public String getMinPropertyFormat() {
+		return minPropertyFormat;
+	}
+
+	/**
+	 * Set the property name format for "minimum" computed values.
+	 * 
+	 * <p>
+	 * This accepts a standard {@link String#format(String, Object...)} style
+	 * formatting template.
+	 * 
+	 * @param minPropertyFormat
+	 *        the format to set
+	 * @since 1.1
+	 */
+	public void setMinPropertyFormat(String minPropertyFormat) {
+		this.minPropertyFormat = minPropertyFormat;
+	}
+
+	/**
+	 * Get the property name format for "maximum" computed values.
+	 * 
+	 * @return the format; defaults to {@link #DEFAULT_MIN_FORMAT}
+	 * @since 1.1
+	 */
+	public String getMaxPropertyFormat() {
+		return maxPropertyFormat;
+	}
+
+	/**
+	 * Set the property name format for "maximum" computed values.
+	 * 
+	 * <p>
+	 * This accepts a standard {@link String#format(String, Object...)} style
+	 * formatting template.
+	 * 
+	 * @param maxPropertyFormat
+	 *        the format to set
+	 * @since 1.1
+	 */
+	public void setMaxPropertyFormat(String maxPropertyFormat) {
+		this.maxPropertyFormat = maxPropertyFormat;
 	}
 
 }

@@ -22,18 +22,24 @@
 
 package net.solarnetwork.node.io.modbus.jamod;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
+import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
+import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
 import net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.wimpi.modbus.net.SerialConnection;
-import net.wimpi.modbus.util.SerialParameters;
 
 /**
  * Jamod implementation of {@link ModbusNetwork} using a serial connection.
@@ -82,44 +88,51 @@ public class JamodSerialModbusNetwork extends AbstractModbusNetwork implements S
 
 	@Override
 	public ModbusConnection createConnection(int unitId) {
-		JamodModbusConnection mbconn = new JamodModbusConnection(
-				new LockingSerialConnection(serialParams), unitId, isHeadless());
+		JamodModbusConnection mbconn = new JamodModbusConnection(new SerialConnection(serialParams),
+				unitId, isHeadless(), serialParams.getPortName());
 		mbconn.setRetries(getRetries());
-		return mbconn;
+		return new LockingSerialConnection(mbconn);
 	}
 
 	/**
 	 * Internal extension of {@link SerialConnection} that utilizes a
 	 * {@link Lock} to serialize access to the connection between threads.
 	 */
-	private class LockingSerialConnection extends SerialConnection {
+	private class LockingSerialConnection implements ModbusConnection {
+
+		private final AtomicBoolean open = new AtomicBoolean(false);
+		private final ModbusConnection delegate;
 
 		/**
-		 * Construct with {@link SerialParameters}.
+		 * Construct with delegate.
 		 * 
 		 * @param parameters
 		 *        the parameters
 		 */
-		private LockingSerialConnection(SerialParameters parameters) {
-			super(parameters);
+		private LockingSerialConnection(ModbusConnection delegate) {
+			this.delegate = delegate;
 		}
 
 		@Override
-		public void open() throws Exception {
-			if ( !isOpen() ) {
+		public void open() throws IOException, LockTimeoutException {
+			if ( open.compareAndSet(false, true) ) {
 				acquireLock();
-				super.open();
+				try {
+					delegate.open();
+				} catch ( Exception e ) {
+					releaseLock();
+				}
 			}
 		}
 
 		@Override
 		public void close() {
-			try {
-				if ( isOpen() ) {
-					super.close();
+			if ( open.compareAndSet(true, false) ) {
+				try {
+					delegate.close();
+				} finally {
+					releaseLock();
 				}
-			} finally {
-				releaseLock();
 			}
 		}
 
@@ -128,6 +141,74 @@ public class JamodSerialModbusNetwork extends AbstractModbusNetwork implements S
 			releaseLock(); // as a catch-all
 			super.finalize();
 		}
+
+		@Override
+		public int getUnitId() {
+			return delegate.getUnitId();
+		}
+
+		@Override
+		public BitSet readDiscreetValues(int address, int count) {
+			return delegate.readDiscreetValues(address, count);
+		}
+
+		@Override
+		public BitSet readDiscreetValues(int[] addresses, int count) {
+			return delegate.readDiscreetValues(addresses, count);
+		}
+
+		@Override
+		public void writeDiscreetValues(int[] addresses, BitSet bits) {
+			delegate.writeDiscreetValues(addresses, bits);
+		}
+
+		@Override
+		public BitSet readInputDiscreteValues(int address, int count) {
+			return delegate.readInputDiscreteValues(address, count);
+		}
+
+		@Override
+		public short[] readWords(ModbusReadFunction function, int address, int count) {
+			return delegate.readWords(function, address, count);
+		}
+
+		@Override
+		public int[] readWordsUnsigned(ModbusReadFunction function, int address, int count) {
+			return delegate.readWordsUnsigned(function, address, count);
+		}
+
+		@Override
+		public void writeWords(ModbusWriteFunction function, int address, short[] values) {
+			delegate.writeWords(function, address, values);
+		}
+
+		@Override
+		public void writeWords(ModbusWriteFunction function, int address, int[] values) {
+			delegate.writeWords(function, address, values);
+		}
+
+		@Override
+		public byte[] readBytes(ModbusReadFunction function, int address, int count) {
+			return delegate.readBytes(function, address, count);
+		}
+
+		@Override
+		public void writeBytes(ModbusWriteFunction function, int address, byte[] values) {
+			delegate.writeBytes(function, address, values);
+		}
+
+		@Override
+		public String readString(ModbusReadFunction function, int address, int count, boolean trim,
+				Charset charset) {
+			return delegate.readString(function, address, count, trim, charset);
+		}
+
+		@Override
+		public void writeString(ModbusWriteFunction function, int address, String value,
+				Charset charset) {
+			delegate.writeString(function, address, value, charset);
+		}
+
 	}
 
 	// SettingSpecifierProvider
