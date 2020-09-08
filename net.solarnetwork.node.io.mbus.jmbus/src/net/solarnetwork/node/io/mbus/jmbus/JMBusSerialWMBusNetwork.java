@@ -81,6 +81,24 @@ public class JMBusSerialWMBusNetwork extends JMBusWMBusNetwork implements Settin
 	}
 
 	@Override
+	protected String getNetworkDescription() {
+		if ( serialParams != null && serialParams.getPortName() != null ) {
+			return serialParams.getPortName();
+		} else if ( getUid() != null ) {
+			return getUid();
+		}
+		return super.toString();
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder buf = new StringBuilder("JMBusSerialWMBusNetwork{");
+		buf.append(getNetworkDescription());
+		buf.append("}");
+		return buf.toString();
+	}
+
+	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		JMBusSerialWMBusNetwork defaults = new JMBusSerialWMBusNetwork();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);

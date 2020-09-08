@@ -42,7 +42,25 @@ public abstract class JMBusMBusNetwork extends BaseIdentifiable implements MBusN
 		return new JMBusMBusConnection(address);
 	}
 
+	/**
+	 * Create a jMBus connection instance.
+	 * 
+	 * @return the connection instance
+	 * @throws IOException
+	 *         if the connection cannot be created
+	 */
 	protected abstract org.openmuc.jmbus.MBusConnection createJMBusConnection() throws IOException;
+
+	/**
+	 * Get a description of the network for display purposes.
+	 * 
+	 * <p>
+	 * A good description might be the serial port device name, for example.
+	 * </p>
+	 * 
+	 * @return a description, never {@literal null}
+	 */
+	protected abstract String getNetworkDescription();
 
 	@Override
 	public MBusData read(int address) throws IOException {
@@ -60,11 +78,22 @@ public abstract class JMBusMBusNetwork extends BaseIdentifiable implements MBusN
 	 */
 	private class JMBusMBusConnection implements MBusConnection {
 
-		private int address;
+		private final int address;
 		private org.openmuc.jmbus.MBusConnection conn;
 
 		private JMBusMBusConnection(int address) {
 			this.address = address;
+		}
+
+		@Override
+		public String toString() {
+			StringBuilder builder = new StringBuilder();
+			builder.append("JMBusMBusConnection{");
+			builder.append(address);
+			builder.append("@");
+			builder.append(getNetworkDescription());
+			builder.append("}");
+			return builder.toString();
 		}
 
 		@Override

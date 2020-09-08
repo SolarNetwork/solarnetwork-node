@@ -45,10 +45,28 @@ import net.solarnetwork.node.support.BaseIdentifiable;
 public abstract class JMBusWMBusNetwork extends BaseIdentifiable implements WMBusNetwork, WMBusListener {
 
 	private org.openmuc.jmbus.wireless.WMBusConnection connection;
-	private ConcurrentMap<org.openmuc.jmbus.SecondaryAddress, Set<MBusMessageHandler>> listeners = new ConcurrentHashMap<org.openmuc.jmbus.SecondaryAddress, Set<MBusMessageHandler>>();
+	private final ConcurrentMap<org.openmuc.jmbus.SecondaryAddress, Set<MBusMessageHandler>> listeners = new ConcurrentHashMap<org.openmuc.jmbus.SecondaryAddress, Set<MBusMessageHandler>>();
 
+	/**
+	 * Create a jMBus wireless connection instance.
+	 * 
+	 * @return the connection instance
+	 * @throws IOException
+	 *         if the connection cannot be created
+	 */
 	protected abstract org.openmuc.jmbus.wireless.WMBusConnection createJMBusConnection()
 			throws IOException;
+
+	/**
+	 * Get a description of the network for display purposes.
+	 * 
+	 * <p>
+	 * A good description might be the serial port device name, for example.
+	 * </p>
+	 * 
+	 * @return a description, never {@literal null}
+	 */
+	protected abstract String getNetworkDescription();
 
 	private synchronized org.openmuc.jmbus.wireless.WMBusConnection getOrCreateConnection()
 			throws IOException {
@@ -95,13 +113,26 @@ public abstract class JMBusWMBusNetwork extends BaseIdentifiable implements WMBu
 	private class JMBusWMBusConnection implements WMBusConnection {
 
 		private final SecondaryAddress address;
-		private byte[] key;
+		private final byte[] key;
 		private org.openmuc.jmbus.wireless.WMBusConnection conn;
 		private MBusMessageHandler messageHandler = null;
 
 		private JMBusWMBusConnection(MBusSecondaryAddress address, byte[] key) {
 			this.address = JMBusConversion.to(address);
 			this.key = key;
+		}
+
+		@Override
+		public String toString() {
+			StringBuilder builder = new StringBuilder();
+			builder.append("JMBusWMBusConnection{");
+			if ( address != null ) {
+				builder.append(address.getDeviceId());
+			}
+			builder.append("@");
+			builder.append(getNetworkDescription());
+			builder.append("}");
+			return builder.toString();
 		}
 
 		@Override

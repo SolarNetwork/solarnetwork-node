@@ -84,6 +84,11 @@ public class WMBusNetworkTests {
 			return new MockConnection();
 		}
 
+		@Override
+		protected String getNetworkDescription() {
+			return "mock";
+		}
+
 	}
 
 	private static JMBusWMBusNetwork network = new MockJMBusWMBusNetwork();

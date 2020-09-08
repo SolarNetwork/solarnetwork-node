@@ -70,6 +70,24 @@ public class JMBusSerialMBusNetwork extends JMBusMBusNetwork implements SettingS
 	}
 
 	@Override
+	protected String getNetworkDescription() {
+		if ( serialParams != null && serialParams.getPortName() != null ) {
+			return serialParams.getPortName();
+		} else if ( getUid() != null ) {
+			return getUid();
+		}
+		return super.toString();
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder buf = new StringBuilder("JMBusSerialMBusNetwork{");
+		buf.append(getNetworkDescription());
+		buf.append("}");
+		return buf.toString();
+	}
+
+	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		JMBusSerialMBusNetwork defaults = new JMBusSerialMBusNetwork();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
