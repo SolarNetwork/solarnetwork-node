@@ -151,8 +151,7 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 	 * 
 	 * <p>
 	 * This method attempts to obtain a {@link MBusNetwork} from the configured
-	 * {@code modbusNetwork} service, calling {@link MBusNetwork#read(int)} if
-	 * one can be obtained.
+	 * service, calling {@link MBusNetwork#read(int)} if one can be obtained.
 	 * </p>
 	 * 
 	 * @return the result of the read, or {@literal null} if the read is never
@@ -183,7 +182,7 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 						t = t.getCause();
 					}
 					log.debug("Error reading from M-Bus device {}", mBusDeviceName(), t);
-					log.warn("Communication problem reading source from Modbus device {}: {}",
+					log.warn("Communication problem reading source {} from M-Bus device {}: {}",
 							getSourceId(), mBusDeviceName(), t.getMessage());
 				}
 			} else {
