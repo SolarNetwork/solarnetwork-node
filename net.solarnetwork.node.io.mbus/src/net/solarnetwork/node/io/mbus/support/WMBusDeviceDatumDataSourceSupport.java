@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.mbus.support;
 
+import static net.solarnetwork.util.OptionalService.service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,6 +52,20 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 	// Latest complete data
 	private MBusData latestData = null;
 	private final Object dataLock = new Object();
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder(getClass().getSimpleName());
+		builder.append("{");
+		WMBusNetwork network = service(wmbusNetwork);
+		if ( network != null ) {
+			builder.append(network.toString());
+		} else {
+			builder.append(Integer.toHexString(hashCode()));
+		}
+		builder.append("}");
+		return builder.toString();
+	}
 
 	/**
 	 * Get the configured {@link WMBusNetwork}.

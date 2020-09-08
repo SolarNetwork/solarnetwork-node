@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.mbus.support;
 
+import static net.solarnetwork.util.OptionalService.service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +49,20 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder(getClass().getSimpleName());
+		builder.append("{");
+		MBusNetwork network = service(mbusNetwork);
+		if ( network != null ) {
+			builder.append(network.toString());
+		} else {
+			builder.append(Integer.toHexString(hashCode()));
+		}
+		builder.append("}");
+		return builder.toString();
+	}
 
 	/**
 	 * Get the configured {@link MBusNetwork}.
