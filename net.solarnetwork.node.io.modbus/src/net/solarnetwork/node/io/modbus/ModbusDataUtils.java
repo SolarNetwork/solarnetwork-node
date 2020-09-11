@@ -747,7 +747,7 @@ public final class ModbusDataUtils {
 	 * @return the parsed integer
 	 * @since 2.1
 	 */
-	public static int toUInt16(final short lo) {
+	public static int toUnsignedInt16(final short lo) {
 		return (lo & 0xFFFF);
 	}
 
@@ -759,7 +759,7 @@ public final class ModbusDataUtils {
 	 * @return the parsed integer, never {@literal null}
 	 */
 	public static Integer parseUnsignedInt16(final short lo) {
-		return toUInt16(lo);
+		return toUnsignedInt16(lo);
 	}
 
 	/**
