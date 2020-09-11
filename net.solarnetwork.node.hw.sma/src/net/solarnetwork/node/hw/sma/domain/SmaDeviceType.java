@@ -1,0 +1,145 @@
+/* ==================================================================
+ * SmaDeviceType.java - 11/09/2020 10:33:56 AM
+ * 
+ * Copyright 2020 SolarNetwork.net Dev Team
+ * 
+ * This program is free software; you can redistribute it and/or 
+ * modify it under the terms of the GNU General Public License as 
+ * published by the Free Software Foundation; either version 2 of 
+ * the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License 
+ * along with this program; if not, write to the Free Software 
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ * 02111-1307 USA
+ * ==================================================================
+ */
+
+package net.solarnetwork.node.hw.sma.domain;
+
+import net.solarnetwork.domain.CodedValue;
+
+/**
+ * Enumeration of WebBox supported device types.
+ * 
+ * <p>
+ * These device types are for Modbus profile versions <b>prior</b> to 1.30.
+ * </p>
+ * 
+ * @author matt
+ * @version 1.0
+ */
+public enum SmaDeviceType implements CodedValue {
+
+	SunnyWebBox(47, "WebBox"),
+
+	SunnyBoyN000US(268, "SB n000US"),
+
+	SunnyBoyNn000TLUS12(269, "SB nn000TL-US-12"),
+
+	SunnyCentral500CP(160, "SC 500CP"),
+
+	SunnyCentral500CPJP(253, "SC 500CP-JP"),
+
+	SunnyCentral500CPUS(262, "SC 500CP-US"),
+
+	SunnyCentral500CPUS600V(271, "SC 500CP-US 600V"),
+
+	SunnyCentral500HE20(202, "SC 520HE-20"),
+
+	SunnyCentral630CP(159, "SC 630CP"),
+
+	SunnyCentral630CPJP(122, "SC 630CP-JP"),
+
+	SunnyCentral630CPUS(261, "SC 630CP-US"),
+
+	SunnyCentral630HE20(201, "SC 630HE-20"),
+
+	SunnyCentral720CP(165, "SC 720CP"),
+
+	SunnyCentral720CPUS(263, "SC 720CP-US"),
+
+	SunnyCentral720HE(203, "SC 720HE-20"),
+
+	SunnyCentral760CPUS(264, "SC 760CP-US"),
+
+	SunnyCentral760CP(164, "SC 760CP"),
+
+	SunnyCentral800CP(158, "SC 800CP"),
+
+	SunnyCentral800CPUS(260, "SC 800CP-US"),
+
+	SunnyCentral800HE(200, "SC 800HE-20"),
+
+	SunnyCentral850CP(254, "SC 850CP"),
+
+	SunnyCentral850CPUS(256, "SC 850CP-US"),
+
+	SunnyCentral900CP(255, "SC 900CP"),
+
+	SunnyCentral900CPUS(257, "SC 900CP-US"),
+
+	SunnyCentral250HE(230, "SC 250HE-11"),
+
+	SunnyCentral400HE(228, "SC 400HE-11"),
+
+	SunnyCentral500HE(227, "SC 500HE-10 / SC 500HE-11"),
+
+	SunnyCentral630HE11(166, "SC 630HE-11"),
+
+	SunnyCentral500HEUS(157, "SC 500HE-US"),
+
+	SunnyCentra250US(155, "SC 250-US"),
+
+	SunnyCentral500US(156, "SC 500-US"),
+
+	SunnyTripower(128, "STP nn000TL-10"),
+
+	SunnyIsland(67, "SI 2nnn"),
+
+	SunnyIslandUS(69, "SI 5048 / SI nnnn-US-10"),
+
+	SunnyIslandH10(137, "SI n.0H-10"),
+
+	Optiprotect(198, "Optiprotect"),
+
+	SunnyCentralStringMonitor(187, "Sunny Central String-Monitor Controller"),
+
+	SunnyCentralStringMonitorUS(190, "Sunny Central String-Monitor-US"),
+
+	SunnyStringMonitor(171, "Sunny String-Monitor"),
+
+	MeteoStation(232, "SMA Meteo Station"),
+
+	SunnySensorbox(81, "Sunny Sensorbox"),
+
+	;
+
+	private final int code;
+	private final String description;
+
+	private SmaDeviceType(int code, String description) {
+		this.code = code;
+		this.description = description;
+	}
+
+	@Override
+	public int getCode() {
+		return code;
+	}
+
+	/**
+	 * Get a description.
+	 * 
+	 * @return the description, e.g. "SB n000US"
+	 */
+	public String getDescription() {
+		return description;
+	}
+
+}
