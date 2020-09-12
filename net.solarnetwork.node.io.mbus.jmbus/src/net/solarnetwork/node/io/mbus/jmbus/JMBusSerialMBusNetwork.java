@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.openmuc.jmbus.MBusConnection;
 import org.openmuc.jmbus.MBusConnection.MBusSerialBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.mbus.WMBusNetwork;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -39,6 +41,9 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * @version 1.0
  */
 public class JMBusSerialMBusNetwork extends JMBusMBusNetwork implements SettingSpecifierProvider {
+
+	/** A class-level logger. */
+	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	private JMBusSerialParameters serialParams = getDefaultSerialParametersInstance();
 

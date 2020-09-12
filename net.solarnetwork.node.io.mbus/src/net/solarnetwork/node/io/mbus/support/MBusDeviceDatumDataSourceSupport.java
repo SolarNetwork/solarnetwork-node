@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.io.mbus.MBusConnection;
 import net.solarnetwork.node.io.mbus.MBusData;
 import net.solarnetwork.node.io.mbus.MBusNetwork;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -38,10 +37,11 @@ import net.solarnetwork.util.OptionalService;
 
 public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSupport {
 
+	private static final long DEFAULT_SAMPLE_CACHE_MS = 5000;
+
 	private OptionalService<MBusNetwork> mbusNetwork;
 	private int address;
-	private MBusConnection connection = null;
-	private long sampleCacheMs;
+	private long sampleCacheMs = DEFAULT_SAMPLE_CACHE_MS;
 
 	// Latest complete data
 	private MBusData latestData = null;
@@ -100,7 +100,6 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 	 */
 	public void setAddress(int address) {
 		this.address = address;
-		reconfigureConnection();
 	}
 
 	/**
@@ -123,28 +122,6 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 	}
 
 	public abstract String getSourceId();
-
-	/**
-	 * Reconfigure connection to network
-	 */
-	private void reconfigureConnection() {
-		if ( connection != null ) {
-			try {
-				connection.close();
-			} catch ( IOException e ) {
-			}
-		}
-		MBusNetwork device = mbusNetwork();
-		if ( device != null && address > 0 ) {
-			connection = device.createConnection(address);
-			try {
-				connection.open();
-			} catch ( IOException e ) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-	}
 
 	/**
 	 * Perform a read from M-Bus {@link MBusNetwork}.
@@ -224,6 +201,8 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 		results.add(
 				new BasicTextFieldSettingSpecifier("mBusNetwork.propertyFilters['UID']", "M-Bus Port"));
 		results.add(new BasicTextFieldSettingSpecifier("address", ""));
+		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
+				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
 		return results;
 	}
 
