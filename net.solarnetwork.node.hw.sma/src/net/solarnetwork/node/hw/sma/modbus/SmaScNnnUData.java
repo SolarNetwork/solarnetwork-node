@@ -42,9 +42,27 @@ public class SmaScNnnUData extends SmaDeviceData implements SmaScNnnUDataAccesso
 
 	/**
 	 * Constructor.
+	 * 
+	 * @param deviceKind
+	 *        the device kind
 	 */
 	public SmaScNnnUData(SmaDeviceKind deviceKind) {
 		super();
+		this.deviceKind = deviceKind;
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param deviceKind
+	 *        the device kind
+	 * @param data
+	 *        some initial data to use
+	 * @param addr
+	 *        the starting Modbus register address of {@code data}
+	 */
+	public SmaScNnnUData(SmaDeviceKind deviceKind, short[] data, int addr) {
+		super(data, addr);
 		this.deviceKind = deviceKind;
 	}
 

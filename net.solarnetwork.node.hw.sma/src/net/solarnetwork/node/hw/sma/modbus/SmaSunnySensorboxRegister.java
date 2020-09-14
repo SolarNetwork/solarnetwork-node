@@ -25,6 +25,7 @@ package net.solarnetwork.node.hw.sma.modbus;
 import static java.util.Arrays.asList;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int32;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt64;
 import static net.solarnetwork.node.io.modbus.ModbusReference.createAddressSet;
 import java.util.HashSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
@@ -38,48 +39,40 @@ import net.solarnetwork.util.IntRangeSet;
  * devices.
  * 
  * <p>
- * This covers device ID {@literal 190}, or {@literal 97} profile 1.30 or later.
- * These devices <b>do not</b> support the {@link SmaCommonDeviceRegister}
- * values.
+ * This covers device ID {@literal 81}. These devices <b>do not</b> support the
+ * {@link SmaCommonDeviceRegister} values.
  * </p>
  * 
  * @author matt
  * @version 1.0
  */
-public enum SmaScStringMonitorUsRegister implements ModbusReference {
+public enum SmaSunnySensorboxRegister implements ModbusReference {
+
+	/** Device class enumeration (MainModel). */
+	MainModel(30051, UInt32),
 
 	/** Serial number of the device. */
 	SerialNumber(30057, UInt32),
 
-	/** Operating state. */
-	OperatingState(30241, UInt32),
+	/** Operating time (SMA h-On), in seconds. */
+	OperatingTime(30521, UInt64),
 
-	/** The SMU ID (SSM Identifier). */
-	SmuId(30245, UInt32),
+	/** Environment temperature (TmpAmb C), dCel. */
+	AmbientTemperature(34609, Int32),
 
-	/** String current of string 1 (IString 1), in mA. */
-	CurrentString1(31793, Int32),
+	/** Total irradiation on sensor surface (IntSolIrr), in W/m2. */
+	Irradiance(34613, UInt32),
 
-	/** String current of string 2 (IString 2), in mA. */
-	CurrentString2(31795, Int32),
+	/** Wind speed (WindVel m/s), in m/s. */
+	WindSpeed(34615, UInt32),
 
-	/** String current of string 3 (IString 3), in mA. */
-	CurrentString3(31797, Int32),
+	/** PV module temperature (TmpMdul C), in dCel. */
+	ModuleTemperature(34621, Int32),
 
-	/** String current of string 4 (IString 4), in mA. */
-	CurrentString4(31799, Int32),
-
-	/** String current of string 5 (IString 5), in mA. */
-	CurrentString5(31801, Int32),
-
-	/** String current of string 6 (IString 6), in mA. */
-	CurrentString6(31803, Int32),
-
-	/** String current of string 7 (IString 7), in mA. */
-	CurrentString7(31805, Int32),
-
-	/** String current of string 8 (IString 8), in mA. */
-	CurrentString8(31807, Int32),
+	/**
+	 * Total irradiation on external sensor/pyranometer (ExlSolIrr), in W/m2.
+	 */
+	ExternalIrradiance(34623, UInt32),
 
 	;
 
@@ -89,14 +82,14 @@ public enum SmaScStringMonitorUsRegister implements ModbusReference {
 
 	/** A register address set for general device information. */
 	public static final IntRangeSet INFO_REGISTER_ADDRESS_SET = createAddressSet(
-			SmaScStringMonitorUsRegister.class, new HashSet<>(asList(SerialNumber.name(), SmuId.name())))
-					.immutableCopy();
+			SmaSunnySensorboxRegister.class,
+			new HashSet<>(asList(MainModel.name(), SerialNumber.name()))).immutableCopy();
 
 	/** A register address set for device data. */
 	public static final IntRangeSet DATA_REGISTER_ADDRESS_SET;
 	static {
 		IntRangeSet set = new IntRangeSet();
-		for ( IntRange r : createAddressSet(SmaScStringMonitorUsRegister.class, null).ranges() ) {
+		for ( IntRange r : createAddressSet(SmaSunnySensorboxRegister.class, null).ranges() ) {
 			if ( !INFO_REGISTER_ADDRESS_SET.contains(r.getMin()) ) {
 				set.addRange(r);
 			}
@@ -104,11 +97,11 @@ public enum SmaScStringMonitorUsRegister implements ModbusReference {
 		DATA_REGISTER_ADDRESS_SET = set.immutableCopy();
 	}
 
-	private SmaScStringMonitorUsRegister(int address, ModbusDataType dataType) {
+	private SmaSunnySensorboxRegister(int address, ModbusDataType dataType) {
 		this(address, dataType, dataType.getWordLength());
 	}
 
-	private SmaScStringMonitorUsRegister(int address, ModbusDataType dataType, int wordLength) {
+	private SmaSunnySensorboxRegister(int address, ModbusDataType dataType, int wordLength) {
 		this.address = address;
 		this.dataType = dataType;
 		this.wordLength = wordLength;

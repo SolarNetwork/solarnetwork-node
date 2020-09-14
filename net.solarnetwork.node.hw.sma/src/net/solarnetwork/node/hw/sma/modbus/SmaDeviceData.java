@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.sma.modbus;
 
+import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import net.solarnetwork.node.hw.sma.domain.SmaCommonStatusCode;
@@ -30,6 +31,7 @@ import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.util.NumberUtils;
 
 /**
  * Base {@link ModbusData} for SMA devices.
@@ -50,6 +52,26 @@ public abstract class SmaDeviceData extends ModbusData implements SmaDeviceDataA
 	 */
 	public SmaDeviceData() {
 		super();
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param data
+	 *        some initial data to use
+	 * @param addr
+	 *        the starting Modbus register address of {@code data}
+	 */
+	public SmaDeviceData(short[] data, int addr) {
+		super();
+		performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				m.saveDataArray(data, addr);
+				return true;
+			}
+		});
 	}
 
 	/**
@@ -133,7 +155,7 @@ public abstract class SmaDeviceData extends ModbusData implements SmaDeviceDataA
 	 */
 	public SmaCommonStatusCode getStatusCode(ModbusReference ref, SmaCommonStatusCode unknownValue,
 			SmaCommonStatusCode... treatAsUnknown) {
-		Number n = getNumber(ref);
+		Number n = filterNotNumber(getNumber(ref), ref);
 		if ( n == null ) {
 			return unknownValue;
 		}
@@ -147,6 +169,80 @@ public abstract class SmaDeviceData extends ModbusData implements SmaDeviceDataA
 			}
 		}
 		return (c != SmaCommonStatusCode.Unknown ? c : unknownValue);
+	}
+
+	/**
+	 * Filter out "not a number" values.
+	 * 
+	 * @param n
+	 *        the number to filter
+	 * @param ref
+	 *        the register being filtered
+	 * @return either {@code n} or {@literal null} if {@code n} is
+	 *         {@literal null} or represents "not a number"
+	 */
+	public static Number filterNotNumber(Number n, ModbusReference ref) {
+		if ( n == null ) {
+			return n;
+		}
+		return SmaModbusConstants.isNaN(n, ref.getDataType()) ? null : n;
+	}
+
+	/**
+	 * Get a temperature register value.
+	 * 
+	 * @param ref
+	 *        the register to get the value from
+	 * @return the temperature, or {@literal null}
+	 */
+	public BigDecimal getTemperatureValue(ModbusReference ref) {
+		return getTemperatureValue(ref, null);
+	}
+
+	/**
+	 * Get a temperature register value.
+	 * 
+	 * @param ref
+	 *        the register to get the value from
+	 * @param unknownValue
+	 *        the value to use if the register has no value
+	 * @return the temperature, or {@literal null}
+	 */
+	public BigDecimal getTemperatureValue(ModbusReference ref, BigDecimal unknownValue) {
+		return getFixedScaleValue(ref, 1, unknownValue);
+	}
+
+	/**
+	 * Get a temperature register value.
+	 * 
+	 * @param ref
+	 *        the register to get the value from
+	 * @param scale
+	 *        the fix scale (i.e. 0..3)
+	 * @return the fixed scale, or {@literal null}
+	 */
+	public BigDecimal getFixedScaleValue(ModbusReference ref, int scale) {
+		return getFixedScaleValue(ref, scale, null);
+	}
+
+	/**
+	 * Get a temperature register value.
+	 * 
+	 * @param ref
+	 *        the register to get the value from
+	 * @param scale
+	 *        the fix scale (i.e. 0..3)
+	 * @param unknownValue
+	 *        the value to use if the register has no value
+	 * @return the temperature, or {@literal null}
+	 */
+	public BigDecimal getFixedScaleValue(ModbusReference ref, int scale, BigDecimal unknownValue) {
+		Number n = filterNotNumber(getNumber(ref), ref);
+		BigDecimal d = NumberUtils.bigDecimalForNumber(n);
+		if ( d == null ) {
+			return unknownValue;
+		}
+		return d.movePointLeft(scale);
 	}
 
 }

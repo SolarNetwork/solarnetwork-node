@@ -1,5 +1,5 @@
 /* ==================================================================
- * SmaScStringMonitorUsData.java - 14/09/2020 11:31:07 AM
+ * SmaSunnySensorboxData.java - 15/09/2020 7:02:16 AM
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -22,27 +22,29 @@
 
 package net.solarnetwork.node.hw.sma.modbus;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.node.hw.sma.domain.SmaCommonStatusCode;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceType;
-import net.solarnetwork.node.hw.sma.domain.SmaScStringMonitorUsDataAccessor;
+import net.solarnetwork.node.hw.sma.domain.SmaSunnySensorboxDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.util.NumberUtils;
 
 /**
- * {@link SmaDeviceData} for Sunny Central String Monitor US devices.
+ * {@link SmaDeviceData} for Sunny Sensorbox devices.
  * 
  * @author matt
  * @version 1.0
  */
-public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStringMonitorUsDataAccessor {
+public class SmaSunnySensorboxData extends SmaDeviceData implements SmaSunnySensorboxDataAccessor {
 
 	/**
 	 * Constructor.
 	 */
-	public SmaScStringMonitorUsData() {
+	public SmaSunnySensorboxData() {
 		super();
 	}
 
@@ -54,7 +56,7 @@ public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStri
 	 * @param addr
 	 *        the starting Modbus register address of {@code data}
 	 */
-	public SmaScStringMonitorUsData(short[] data, int addr) {
+	public SmaSunnySensorboxData(short[] data, int addr) {
 		super(data, addr);
 	}
 
@@ -64,13 +66,13 @@ public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStri
 	 * @param other
 	 *        the meter data to copy
 	 */
-	public SmaScStringMonitorUsData(ModbusData other) {
+	public SmaSunnySensorboxData(ModbusData other) {
 		super(other);
 	}
 
 	@Override
-	public SmaScStringMonitorUsData copy() {
-		return new SmaScStringMonitorUsData(this);
+	public SmaSunnySensorboxData copy() {
+		return new SmaSunnySensorboxData(this);
 	}
 
 	/**
@@ -82,7 +84,7 @@ public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStri
 	@Override
 	public final void readInformationData(final ModbusConnection conn) {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
-				SmaScStringMonitorUsRegister.INFO_REGISTER_ADDRESS_SET, MAX_RESULTS);
+				SmaSunnySensorboxRegister.INFO_REGISTER_ADDRESS_SET, MAX_RESULTS);
 	}
 
 	/**
@@ -94,43 +96,57 @@ public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStri
 	@Override
 	public final void readDeviceData(final ModbusConnection conn) {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
-				SmaScStringMonitorUsRegister.DATA_REGISTER_ADDRESS_SET, MAX_RESULTS);
+				SmaSunnySensorboxRegister.DATA_REGISTER_ADDRESS_SET, MAX_RESULTS);
 	}
 
 	@Override
 	public SmaDeviceKind getDeviceKind() {
-		return SmaDeviceType.SunnyCentralStringMonitorUS;
+		return SmaDeviceType.SunnySensorbox;
 	}
 
 	@Override
 	public DeviceOperatingState getDeviceOperatingState() {
-		SmaCommonStatusCode c = getOperatingState();
-		if ( c != null ) {
-			switch (c) {
-				case Operation:
-					return DeviceOperatingState.Normal;
-
-				case Warning:
-				case Error:
-					return DeviceOperatingState.Fault;
-
-				case Disruption:
-					return DeviceOperatingState.Recovery;
-
-				default:
-					// nothing to do
-			}
-		}
-		return DeviceOperatingState.Unknown;
+		return null;
 	}
 
 	@Override
-	public SmaCommonStatusCode getOperatingState() {
-		Number n = getNumber(SmaScStringMonitorUsRegister.OperatingState);
-		if ( n == null ) {
-			return SmaCommonStatusCode.Unknown;
-		}
-		return SmaCommonStatusCode.forCode(n.intValue());
+	public Long getDeviceClass() {
+		Number n = getNumber(SmaSunnySensorboxRegister.MainModel);
+		return (n instanceof Long ? (Long) n : n != null ? n.longValue() : null);
+	}
+
+	@Override
+	public BigInteger getOperatingTime() {
+		Number n = getNumber(SmaSunnySensorboxRegister.OperatingTime);
+		return (n instanceof BigInteger ? (BigInteger) n
+				: n != null ? new BigInteger(n.toString()) : null);
+	}
+
+	@Override
+	public BigDecimal getTemperature() {
+		return getTemperatureValue(SmaSunnySensorboxRegister.AmbientTemperature);
+	}
+
+	@Override
+	public BigDecimal getIrradiance() {
+		Number n = getNumber(SmaSunnySensorboxRegister.Irradiance);
+		return NumberUtils.bigDecimalForNumber(n);
+	}
+
+	@Override
+	public BigDecimal getWindSpeed() {
+		return getFixedScaleValue(SmaSunnySensorboxRegister.WindSpeed, 1);
+	}
+
+	@Override
+	public BigDecimal getModuleTemperature() {
+		return getTemperatureValue(SmaSunnySensorboxRegister.ModuleTemperature);
+	}
+
+	@Override
+	public BigDecimal getExternalIrradiance() {
+		Number n = getNumber(SmaSunnySensorboxRegister.ExternalIrradiance);
+		return NumberUtils.bigDecimalForNumber(n);
 	}
 
 }

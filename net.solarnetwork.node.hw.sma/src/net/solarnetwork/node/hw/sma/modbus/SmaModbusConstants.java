@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.sma.modbus;
 
 import java.math.BigInteger;
+import net.solarnetwork.node.io.modbus.ModbusDataType;
 
 /**
  * SMA defined constants for the Modbus protocol.
@@ -46,5 +47,32 @@ public final class SmaModbusConstants {
 
 	/** NaN value for UInt64 value. */
 	public static final BigInteger NAN_UINT64 = new BigInteger("FFFFFFFFFFFFFFFF", 16);
+
+	/**
+	 * Test if a given number is a "not a number" value.
+	 * 
+	 * @param n
+	 *        the number to test
+	 * @param t
+	 *        the data type of the number
+	 * @return {@literal true} if {@code n} is a "not a number" value
+	 */
+	public static boolean isNaN(final Number n, final ModbusDataType t) {
+		if ( n == null ) {
+			return true;
+		}
+		if ( t == ModbusDataType.Int16 && n.shortValue() == NAN_INT16 ) {
+			return true;
+		} else if ( t == ModbusDataType.UInt16 && n.shortValue() == NAN_UINT16 ) {
+			return true;
+		} else if ( t == ModbusDataType.Int32 && n.intValue() == NAN_INT32 ) {
+			return true;
+		} else if ( t == ModbusDataType.UInt32 && n.intValue() == NAN_UINT32 ) {
+			return true;
+		} else if ( t == ModbusDataType.UInt64 && n.equals(NAN_UINT64) ) {
+			return true;
+		}
+		return false;
+	}
 
 }

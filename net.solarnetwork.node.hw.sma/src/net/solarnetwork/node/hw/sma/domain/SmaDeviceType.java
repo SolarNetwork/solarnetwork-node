@@ -36,73 +36,73 @@ public enum SmaDeviceType implements SmaDeviceKind {
 
 	SunnyWebBox(47, "WebBox"),
 
-	SunnyBoyN000US(268, "SB n000US"),
+	SunnyBoyN000US(268, "Sunny Boy n000US"),
 
-	SunnyBoyNn000TLUS12(269, "SB nn000TL-US-12"),
+	SunnyBoyNn000TLUS12(269, "Sunny Boy nn000TL-US-12"),
 
-	SunnyCentral500CP(160, "SC 500CP"),
+	SunnyCentral500CP(160, "Sunny Central  500CP"),
 
-	SunnyCentral500CPJP(253, "SC 500CP-JP"),
+	SunnyCentral500CPJP(253, "Sunny Central  500CP-JP"),
 
-	SunnyCentral500CPUS(262, "SC 500CP-US"),
+	SunnyCentral500CPUS(262, "Sunny Central  500CP-US"),
 
-	SunnyCentral500CPUS600V(271, "SC 500CP-US 600V"),
+	SunnyCentral500CPUS600V(271, "Sunny Central  500CP-US 600V"),
 
-	SunnyCentral500HE20(202, "SC 520HE-20"),
+	SunnyCentral500HE20(202, "Sunny Central  520HE-20"),
 
-	SunnyCentral630CP(159, "SC 630CP"),
+	SunnyCentral630CP(159, "Sunny Central  630CP"),
 
-	SunnyCentral630CPJP(122, "SC 630CP-JP"),
+	SunnyCentral630CPJP(122, "Sunny Central  630CP-JP"),
 
-	SunnyCentral630CPUS(261, "SC 630CP-US"),
+	SunnyCentral630CPUS(261, "Sunny Central  630CP-US"),
 
-	SunnyCentral630HE20(201, "SC 630HE-20"),
+	SunnyCentral630HE20(201, "Sunny Central  630HE-20"),
 
-	SunnyCentral720CP(165, "SC 720CP"),
+	SunnyCentral720CP(165, "Sunny Central  720CP"),
 
-	SunnyCentral720CPUS(263, "SC 720CP-US"),
+	SunnyCentral720CPUS(263, "Sunny Central  720CP-US"),
 
-	SunnyCentral720HE(203, "SC 720HE-20"),
+	SunnyCentral720HE(203, "Sunny Central  720HE-20"),
 
-	SunnyCentral760CPUS(264, "SC 760CP-US"),
+	SunnyCentral760CPUS(264, "Sunny Central  760CP-US"),
 
-	SunnyCentral760CP(164, "SC 760CP"),
+	SunnyCentral760CP(164, "Sunny Central  760CP"),
 
-	SunnyCentral800CP(158, "SC 800CP"),
+	SunnyCentral800CP(158, "Sunny Central  800CP"),
 
-	SunnyCentral800CPUS(260, "SC 800CP-US"),
+	SunnyCentral800CPUS(260, "Sunny Central  800CP-US"),
 
-	SunnyCentral800HE(200, "SC 800HE-20"),
+	SunnyCentral800HE(200, "Sunny Central  800HE-20"),
 
-	SunnyCentral850CP(254, "SC 850CP"),
+	SunnyCentral850CP(254, "Sunny Central  850CP"),
 
-	SunnyCentral850CPUS(256, "SC 850CP-US"),
+	SunnyCentral850CPUS(256, "Sunny Central  850CP-US"),
 
-	SunnyCentral900CP(255, "SC 900CP"),
+	SunnyCentral900CP(255, "Sunny Central  900CP"),
 
-	SunnyCentral900CPUS(257, "SC 900CP-US"),
+	SunnyCentral900CPUS(257, "Sunny Central  900CP-US"),
 
-	SunnyCentral250HE(230, "SC 250HE-11"),
+	SunnyCentral250HE(230, "Sunny Central  250HE-11"),
 
-	SunnyCentral400HE(228, "SC 400HE-11"),
+	SunnyCentral400HE(228, "Sunny Central  400HE-11"),
 
-	SunnyCentral500HE(227, "SC 500HE-10 / SC 500HE-11"),
+	SunnyCentral500HE(227, "Sunny Central  500HE-10 / SC 500HE-11"),
 
-	SunnyCentral630HE11(166, "SC 630HE-11"),
+	SunnyCentral630HE11(166, "Sunny Central  630HE-11"),
 
-	SunnyCentral500HEUS(157, "SC 500HE-US"),
+	SunnyCentral500HEUS(157, "Sunny Central  500HE-US"),
 
-	SunnyCentral250US(155, "SC 250-US"),
+	SunnyCentral250US(155, "Sunny Central  250-US"),
 
-	SunnyCentral500US(156, "SC 500-US"),
+	SunnyCentral500US(156, "Sunny Central  500-US"),
 
-	SunnyTripower(128, "STP nn000TL-10"),
+	SunnyTripower(128, "Sunny Tripower nn000TL-10"),
 
-	SunnyIsland(67, "SI 2nnn"),
+	SunnyIsland(67, "Sunny Island  2nnn"),
 
-	SunnyIslandUS(69, "SI 5048 / SI nnnn-US-10"),
+	SunnyIslandUS(69, "Sunny Island  5048 / SI nnnn-US-10"),
 
-	SunnyIslandH10(137, "SI n.0H-10"),
+	SunnyIslandH10(137, "Sunny Island  n.0H-10"),
 
 	Optiprotect(198, "Optiprotect"),
 

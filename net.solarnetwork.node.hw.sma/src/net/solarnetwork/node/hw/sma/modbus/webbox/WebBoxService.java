@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.hw.sma.modbus.webbox;
 
+import static net.solarnetwork.node.hw.sma.modbus.SmaCommonDeviceRegister.SerialNumber;
+import static net.solarnetwork.node.io.modbus.ModbusDataUtils.encodeUnsignedInt32;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,7 +34,9 @@ import java.util.concurrent.ConcurrentMap;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceDataAccessor;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceType;
+import net.solarnetwork.node.hw.sma.modbus.SmaScNnnUData;
 import net.solarnetwork.node.hw.sma.modbus.SmaScStringMonitorUsData;
+import net.solarnetwork.node.hw.sma.modbus.SmaSunnySensorboxData;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport;
 
@@ -134,6 +138,7 @@ public class WebBoxService extends ModbusDataDatumDataSourceSupport<WebBoxData>
 			// not a known device ID
 			return null;
 		}
+		final short[] serialNumberData = encodeUnsignedInt32(ref.getSerialNumber());
 		switch (deviceType) {
 			case SunnyWebBox:
 				return this;
@@ -141,13 +146,19 @@ public class WebBoxService extends ModbusDataDatumDataSourceSupport<WebBoxData>
 			case SunnyCentral250US:
 				return deviceDataMap.computeIfAbsent(ref.getUnitId(), k -> {
 					return new WebBoxDataDevice<>(ref.getUnitId(), deviceType,
-							new SmaScStringMonitorUsData());
+							new SmaScNnnUData(deviceType, serialNumberData, SerialNumber.getAddress()));
 				});
 
 			case SunnyCentralStringMonitorUS:
 				return deviceDataMap.computeIfAbsent(ref.getUnitId(), k -> {
 					return new WebBoxDataDevice<>(ref.getUnitId(), deviceType,
-							new SmaScStringMonitorUsData());
+							new SmaScStringMonitorUsData(serialNumberData, SerialNumber.getAddress()));
+				});
+
+			case SunnySensorbox:
+				return deviceDataMap.computeIfAbsent(ref.getUnitId(), k -> {
+					return new WebBoxDataDevice<>(ref.getUnitId(), deviceType,
+							new SmaSunnySensorboxData(serialNumberData, SerialNumber.getAddress()));
 				});
 
 			default:
