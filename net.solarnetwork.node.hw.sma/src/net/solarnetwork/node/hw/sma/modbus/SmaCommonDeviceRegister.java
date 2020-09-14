@@ -20,23 +20,26 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.sma.modbus.webbox;
+package net.solarnetwork.node.hw.sma.modbus;
 
+import static java.util.Arrays.asList;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int32;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt64;
+import static net.solarnetwork.node.io.modbus.ModbusReference.createAddressSet;
+import java.util.HashSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
- * Enumeration of common Modbus register mappings for the SMA WebBox devices
- * (unit ID 3-247).
+ * Enumeration of common Modbus register mappings for the SMA devices.
  * 
  * @author matt
  * @version 1.0
  */
-public enum WebBoxCommonDeviceRegister implements ModbusReference {
+public enum SmaCommonDeviceRegister implements ModbusReference {
 
 	/** Serial number of the WebBox. */
 	SerialNumber(30057, UInt32),
@@ -116,11 +119,23 @@ public enum WebBoxCommonDeviceRegister implements ModbusReference {
 	/** The starting Modbus address for the connected device list. */
 	public static final int DEVICE_UNIT_IDS_STARTING_ADDRESS = 42109;
 
-	private WebBoxCommonDeviceRegister(int address, ModbusDataType dataType) {
+	/** A register address set for general device information. */
+	public static final IntRangeSet INFO_REGISTER_ADDRESS_SET = createAddressSet(
+			SmaCommonDeviceRegister.class, new HashSet<>(asList(SerialNumber.name()))).immutableCopy();
+
+	/** A register address set for device data. */
+	public static final IntRangeSet DATA_REGISTER_ADDRESS_SET;
+	static {
+		IntRangeSet set = createAddressSet(SmaCommonDeviceRegister.class, null);
+		set.removeAll(INFO_REGISTER_ADDRESS_SET);
+		DATA_REGISTER_ADDRESS_SET = set.immutableCopy();
+	}
+
+	private SmaCommonDeviceRegister(int address, ModbusDataType dataType) {
 		this(address, dataType, dataType.getWordLength());
 	}
 
-	private WebBoxCommonDeviceRegister(int address, ModbusDataType dataType, int wordLength) {
+	private SmaCommonDeviceRegister(int address, ModbusDataType dataType, int wordLength) {
 		this.address = address;
 		this.dataType = dataType;
 		this.wordLength = wordLength;

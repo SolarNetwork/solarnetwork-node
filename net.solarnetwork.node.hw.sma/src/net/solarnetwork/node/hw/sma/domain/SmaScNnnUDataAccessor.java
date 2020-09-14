@@ -1,5 +1,5 @@
 /* ==================================================================
- * SmaDeviceDataAccessor.java - 11/09/2020 4:25:16 PM
+ * SmaScNnnUDataAccessor.java - 14/09/2020 2:31:25 PM
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -22,48 +22,55 @@
 
 package net.solarnetwork.node.hw.sma.domain;
 
-import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.DataAccessor;
 
 /**
- * {@link DataAccessor} API for all SMA devices.
+ * {@link DataAccessor} for Sunny Central nnnU inverters, for example the SC
+ * 250-US.
  * 
  * @author matt
  * @version 1.0
  */
-public interface SmaDeviceDataAccessor extends DataAccessor {
+public interface SmaScNnnUDataAccessor extends SmaDeviceCommonDataAccessor {
+
+	@Override
+	default boolean hasCommonDataAccessorSupport() {
+		return true;
+	}
 
 	/**
-	 * Test if this device supports the {@link SmaDeviceCommonDataAccessor} API.
+	 * Get the time until grid connection attempt, in seconds.
 	 * 
-	 * <p>
-	 * One can also simply test for adherence to the
-	 * {@link SmaDeviceCommonDataAccessor} API.
-	 * </p>
-	 * 
-	 * @return {@literal true} if this device supports the common API
+	 * @return the seconds until grid connection attempt
 	 */
-	boolean hasCommonDataAccessorSupport();
+	Long getGridReconnectTime();
 
 	/**
-	 * Get the device serial number.
+	 * Get the recommended action.
 	 * 
-	 * @return the serial number
+	 * @return the recommended action, or {@literal null}
 	 */
-	Long getSerialNumber();
+	SmaCommonStatusCode getRecommendedAction();
 
 	/**
-	 * Get the kind of device this accessor provides access to.
+	 * Get the grid contactor status.
 	 * 
-	 * @return the device kind
+	 * @return the grid contactor status
 	 */
-	SmaDeviceKind getDeviceKind();
+	SmaCommonStatusCode getGridContactorStatus();
 
 	/**
-	 * Get the device operating state.
+	 * Get the SMA operating state.
 	 * 
-	 * @return the device operating state
+	 * @return the operating state
 	 */
-	DeviceOperatingState getDeviceOperatingState();
+	SmaCommonStatusCode getOperatingState();
+
+	/**
+	 * Get the error value.
+	 * 
+	 * @return the error, or {@literal null}
+	 */
+	SmaCommonStatusCode getError();
 
 }

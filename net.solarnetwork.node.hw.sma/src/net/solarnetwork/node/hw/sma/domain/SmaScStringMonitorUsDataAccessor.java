@@ -1,5 +1,5 @@
 /* ==================================================================
- * SmaDeviceDataAccessor.java - 11/09/2020 4:25:16 PM
+ * SmaScStringMonitorUsDataAccessor.java - 14/09/2020 8:55:54 AM
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -22,48 +22,26 @@
 
 package net.solarnetwork.node.hw.sma.domain;
 
-import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.DataAccessor;
 
 /**
- * {@link DataAccessor} API for all SMA devices.
+ * {@link DataAccessor} for Sunny Central String Monitor US devices.
  * 
  * @author matt
  * @version 1.0
  */
-public interface SmaDeviceDataAccessor extends DataAccessor {
+public interface SmaScStringMonitorUsDataAccessor extends SmaDeviceDataAccessor {
+
+	@Override
+	default boolean hasCommonDataAccessorSupport() {
+		return false;
+	}
 
 	/**
-	 * Test if this device supports the {@link SmaDeviceCommonDataAccessor} API.
+	 * Get the SMA operating state.
 	 * 
-	 * <p>
-	 * One can also simply test for adherence to the
-	 * {@link SmaDeviceCommonDataAccessor} API.
-	 * </p>
-	 * 
-	 * @return {@literal true} if this device supports the common API
+	 * @return the operating state
 	 */
-	boolean hasCommonDataAccessorSupport();
-
-	/**
-	 * Get the device serial number.
-	 * 
-	 * @return the serial number
-	 */
-	Long getSerialNumber();
-
-	/**
-	 * Get the kind of device this accessor provides access to.
-	 * 
-	 * @return the device kind
-	 */
-	SmaDeviceKind getDeviceKind();
-
-	/**
-	 * Get the device operating state.
-	 * 
-	 * @return the device operating state
-	 */
-	DeviceOperatingState getDeviceOperatingState();
+	SmaCommonStatusCode getOperatingState();
 
 }

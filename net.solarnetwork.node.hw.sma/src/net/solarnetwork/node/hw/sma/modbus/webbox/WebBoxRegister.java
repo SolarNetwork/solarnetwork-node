@@ -23,9 +23,11 @@
 package net.solarnetwork.node.hw.sma.modbus.webbox;
 
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
+import static net.solarnetwork.node.io.modbus.ModbusReference.createAddressSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
+import net.solarnetwork.util.IntRangeSet;
 
 /**
  * Enumeration of Modbus register mappings for the SMA WebBox gateway (the
@@ -54,6 +56,10 @@ public enum WebBoxRegister implements ModbusReference {
 
 	/** The starting Modbus address for the connected device list. */
 	public static final int DEVICE_UNIT_IDS_STARTING_ADDRESS = 42109;
+
+	/** A register address set for general WebBox information. */
+	public static final IntRangeSet INFO_REGISTER_ADDRESS_SET = createAddressSet(WebBoxRegister.class,
+			null).immutableCopy();
 
 	private WebBoxRegister(int address, ModbusDataType dataType) {
 		this(address, dataType, dataType.getWordLength());

@@ -1,5 +1,5 @@
 /* ==================================================================
- * SmaDeviceDataAccessor.java - 11/09/2020 4:25:16 PM
+ * WebBoxDevice.java - 14/09/2020 9:52:00 AM
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -20,30 +20,26 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.sma.domain;
+package net.solarnetwork.node.hw.sma.modbus.webbox;
 
-import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.node.domain.DataAccessor;
+import net.solarnetwork.node.hw.sma.domain.SmaDeviceDataAccessor;
+import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
+import net.solarnetwork.node.io.modbus.ModbusConnection;
 
 /**
- * {@link DataAccessor} API for all SMA devices.
+ * API for a device connected to a WebBox.
  * 
  * @author matt
  * @version 1.0
  */
-public interface SmaDeviceDataAccessor extends DataAccessor {
+public interface WebBoxDevice {
 
 	/**
-	 * Test if this device supports the {@link SmaDeviceCommonDataAccessor} API.
+	 * Get the Modbus unit ID of this device.
 	 * 
-	 * <p>
-	 * One can also simply test for adherence to the
-	 * {@link SmaDeviceCommonDataAccessor} API.
-	 * </p>
-	 * 
-	 * @return {@literal true} if this device supports the common API
+	 * @return
 	 */
-	boolean hasCommonDataAccessorSupport();
+	int getUnitId();
 
 	/**
 	 * Get the device serial number.
@@ -60,10 +56,25 @@ public interface SmaDeviceDataAccessor extends DataAccessor {
 	SmaDeviceKind getDeviceKind();
 
 	/**
-	 * Get the device operating state.
+	 * Get a data accessor for this device.
 	 * 
-	 * @return the device operating state
+	 * @return the data accessor
 	 */
-	DeviceOperatingState getDeviceOperatingState();
+	SmaDeviceDataAccessor getDeviceDataAccessor();
 
+	/**
+	 * Read the informational registers from the device.
+	 * 
+	 * @param conn
+	 *        the connection
+	 */
+	void readInformationData(final ModbusConnection conn);
+
+	/**
+	 * Read the data registers from the device.
+	 * 
+	 * @param conn
+	 *        the connection
+	 */
+	void readDeviceData(final ModbusConnection conn);
 }

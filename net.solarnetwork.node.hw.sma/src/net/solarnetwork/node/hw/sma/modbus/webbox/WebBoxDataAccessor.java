@@ -1,5 +1,5 @@
 /* ==================================================================
- * SmaDeviceDataAccessor.java - 11/09/2020 4:25:16 PM
+ * WebBoxDataAccessor.java - 14/09/2020 9:56:46 AM
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -20,50 +20,41 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.sma.domain;
+package net.solarnetwork.node.hw.sma.modbus.webbox;
 
-import net.solarnetwork.domain.DeviceOperatingState;
+import java.util.Collection;
 import net.solarnetwork.node.domain.DataAccessor;
+import net.solarnetwork.node.hw.sma.domain.SmaDeviceDataAccessor;
 
 /**
- * {@link DataAccessor} API for all SMA devices.
+ * {@link DataAccessor} for WebBox devices themselves (the actual WebBox, not
+ * the devices connected to the WebBox).
  * 
  * @author matt
  * @version 1.0
  */
-public interface SmaDeviceDataAccessor extends DataAccessor {
+public interface WebBoxDataAccessor extends SmaDeviceDataAccessor {
 
 	/**
-	 * Test if this device supports the {@link SmaDeviceCommonDataAccessor} API.
+	 * Get the version number of the SMA Modbus profile.
 	 * 
-	 * <p>
-	 * One can also simply test for adherence to the
-	 * {@link SmaDeviceCommonDataAccessor} API.
-	 * </p>
-	 * 
-	 * @return {@literal true} if this device supports the common API
+	 * @return the profile version number
 	 */
-	boolean hasCommonDataAccessorSupport();
+	Long getModbusProfileVersion();
 
 	/**
-	 * Get the device serial number.
+	 * Get the counter value that is incremented when data in the Modbus profile
+	 * changes.
 	 * 
-	 * @return the serial number
+	 * @return the data change counter
 	 */
-	Long getSerialNumber();
+	Long getModbusDataChangeCounter();
 
 	/**
-	 * Get the kind of device this accessor provides access to.
+	 * Get a collection of all available references to devices managed by this
+	 * WebBox.
 	 * 
-	 * @return the device kind
+	 * @return the collection of device references, never {@literal null}
 	 */
-	SmaDeviceKind getDeviceKind();
-
-	/**
-	 * Get the device operating state.
-	 * 
-	 * @return the device operating state
-	 */
-	DeviceOperatingState getDeviceOperatingState();
-
+	Collection<WebBoxDeviceReference> availableDeviceReferences();
 }

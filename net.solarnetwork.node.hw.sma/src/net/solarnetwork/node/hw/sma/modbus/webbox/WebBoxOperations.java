@@ -1,5 +1,5 @@
 /* ==================================================================
- * SmaDeviceDataAccessor.java - 11/09/2020 4:25:16 PM
+ * WebBoxOperations.java - 14/09/2020 9:43:36 AM
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -20,50 +20,30 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.hw.sma.domain;
+package net.solarnetwork.node.hw.sma.modbus.webbox;
 
-import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.node.domain.DataAccessor;
+import java.util.Collection;
 
 /**
- * {@link DataAccessor} API for all SMA devices.
+ * API of operations for integrating with a WebBox.
  * 
  * @author matt
  * @version 1.0
  */
-public interface SmaDeviceDataAccessor extends DataAccessor {
+public interface WebBoxOperations {
 
 	/**
-	 * Test if this device supports the {@link SmaDeviceCommonDataAccessor} API.
+	 * Get data accessor for the WebBox itself.
 	 * 
-	 * <p>
-	 * One can also simply test for adherence to the
-	 * {@link SmaDeviceCommonDataAccessor} API.
-	 * </p>
-	 * 
-	 * @return {@literal true} if this device supports the common API
+	 * @return the data accessor for the WebBox itself
 	 */
-	boolean hasCommonDataAccessorSupport();
+	WebBoxDataAccessor getDataAccessor();
 
 	/**
-	 * Get the device serial number.
+	 * Get a collection of all available devices managed by this WebBox.
 	 * 
-	 * @return the serial number
+	 * @return the collection of devices, never {@literal null}
 	 */
-	Long getSerialNumber();
-
-	/**
-	 * Get the kind of device this accessor provides access to.
-	 * 
-	 * @return the device kind
-	 */
-	SmaDeviceKind getDeviceKind();
-
-	/**
-	 * Get the device operating state.
-	 * 
-	 * @return the device operating state
-	 */
-	DeviceOperatingState getDeviceOperatingState();
+	Collection<WebBoxDevice> availableDevices();
 
 }

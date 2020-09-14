@@ -1,5 +1,5 @@
 /* ==================================================================
- * SmaDeviceDataAccessor.java - 11/09/2020 4:25:16 PM
+ * SmaDeviceKind.java - 14/09/2020 9:48:37 AM
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -22,48 +22,26 @@
 
 package net.solarnetwork.node.hw.sma.domain;
 
-import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.node.domain.DataAccessor;
+import net.solarnetwork.domain.CodedValue;
 
 /**
- * {@link DataAccessor} API for all SMA devices.
+ * API for an SMA device kind.
+ * 
+ * <p>
+ * This API is designed so that multiple {@link CodedValue} implementations can
+ * be used, as SMA redesigned the codes assigned to devices.
+ * </p>
  * 
  * @author matt
  * @version 1.0
  */
-public interface SmaDeviceDataAccessor extends DataAccessor {
+public interface SmaDeviceKind extends CodedValue {
 
 	/**
-	 * Test if this device supports the {@link SmaDeviceCommonDataAccessor} API.
+	 * Get a description of this device kind.
 	 * 
-	 * <p>
-	 * One can also simply test for adherence to the
-	 * {@link SmaDeviceCommonDataAccessor} API.
-	 * </p>
-	 * 
-	 * @return {@literal true} if this device supports the common API
+	 * @return a description, never {@literal null}
 	 */
-	boolean hasCommonDataAccessorSupport();
-
-	/**
-	 * Get the device serial number.
-	 * 
-	 * @return the serial number
-	 */
-	Long getSerialNumber();
-
-	/**
-	 * Get the kind of device this accessor provides access to.
-	 * 
-	 * @return the device kind
-	 */
-	SmaDeviceKind getDeviceKind();
-
-	/**
-	 * Get the device operating state.
-	 * 
-	 * @return the device operating state
-	 */
-	DeviceOperatingState getDeviceOperatingState();
+	String getDescription();
 
 }

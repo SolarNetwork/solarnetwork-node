@@ -22,8 +22,6 @@
 
 package net.solarnetwork.node.hw.sma.domain;
 
-import net.solarnetwork.domain.CodedValue;
-
 /**
  * Enumeration of WebBox supported device types.
  * 
@@ -34,7 +32,7 @@ import net.solarnetwork.domain.CodedValue;
  * @author matt
  * @version 1.0
  */
-public enum SmaDeviceType implements CodedValue {
+public enum SmaDeviceType implements SmaDeviceKind {
 
 	SunnyWebBox(47, "WebBox"),
 
@@ -94,7 +92,7 @@ public enum SmaDeviceType implements CodedValue {
 
 	SunnyCentral500HEUS(157, "SC 500HE-US"),
 
-	SunnyCentra250US(155, "SC 250-US"),
+	SunnyCentral250US(155, "SC 250-US"),
 
 	SunnyCentral500US(156, "SC 500-US"),
 
@@ -133,13 +131,28 @@ public enum SmaDeviceType implements CodedValue {
 		return code;
 	}
 
-	/**
-	 * Get a description.
-	 * 
-	 * @return the description, e.g. "SB n000US"
-	 */
+	@Override
 	public String getDescription() {
 		return description;
+	}
+
+	/**
+	 * Get an enumeration value for a code value.
+	 * 
+	 * @param code
+	 *        the code
+	 * @return the enumeration, never {@literal null} and set to {@link #None}
+	 *         if not any other valid code
+	 * @throws IllegalArgumentException
+	 *         if {@literal code} is not a valid value
+	 */
+	public static SmaDeviceType forCode(int code) {
+		for ( SmaDeviceType v : values() ) {
+			if ( v.code == code ) {
+				return v;
+			}
+		}
+		throw new IllegalArgumentException("The device ID " + code + " is not a supported type.");
 	}
 
 }
