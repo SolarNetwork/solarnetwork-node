@@ -22,7 +22,11 @@
 
 package net.solarnetwork.node.hw.sma.domain;
 
+import java.util.Map;
 import net.solarnetwork.domain.DeviceOperatingState;
+import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
 import net.solarnetwork.node.domain.DataAccessor;
 
 /**
@@ -65,5 +69,26 @@ public interface SmaDeviceDataAccessor extends DataAccessor {
 	 * @return the device operating state
 	 */
 	DeviceOperatingState getDeviceOperatingState();
+
+	/**
+	 * Populate data into a {@link GeneralDatumSamples} object.
+	 * 
+	 * @param samples
+	 *        the samples to populate with data
+	 * @param parameters
+	 *        optional parameters to modify the data population; implementation
+	 *        specific
+	 */
+	void populateDatumSamples(MutableGeneralDatumSamplesOperations samples, Map<String, ?> parameters);
+
+	/**
+	 * Get optional metadata about the device.
+	 * 
+	 * @param parameters
+	 *        optional parameters to modify the data population; implementation
+	 *        specific
+	 * @return the device metadata, or {@literal null}
+	 */
+	GeneralDatumMetadata getDatumMetadata(Map<String, ?> parameters);
 
 }

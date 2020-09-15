@@ -23,8 +23,10 @@
 package net.solarnetwork.node.hw.sma.modbus;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.hw.sma.domain.SmaCommonStatusCode;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceDataAccessor;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
@@ -109,6 +111,18 @@ public abstract class SmaDeviceData extends ModbusData implements SmaDeviceDataA
 	}
 
 	@Override
+	public GeneralDatumMetadata getDatumMetadata(Map<String, ?> parameters) {
+		GeneralDatumMetadata meta = new GeneralDatumMetadata();
+		Map<String, Object> info = getDeviceInfo();
+		if ( info != null ) {
+			for ( Map.Entry<String, Object> me : info.entrySet() ) {
+				meta.putInfoValue(me.getKey(), me.getValue());
+			}
+		}
+		return meta;
+	}
+
+	@Override
 	public Long getSerialNumber() {
 		return getUnsignedInt32(SmaCommonDeviceRegister.SerialNumber.getAddress());
 	}
@@ -189,27 +203,137 @@ public abstract class SmaDeviceData extends ModbusData implements SmaDeviceDataA
 	}
 
 	/**
-	 * Get a temperature register value.
+	 * Get a deci-Celsius temperature register value.
 	 * 
 	 * @param ref
 	 *        the register to get the value from
-	 * @return the temperature, or {@literal null}
+	 * @return the temperature in degrees Celsius, or {@literal null}
 	 */
 	public BigDecimal getTemperatureValue(ModbusReference ref) {
 		return getTemperatureValue(ref, null);
 	}
 
 	/**
-	 * Get a temperature register value.
+	 * Get a deci-Celsius temperature register value.
 	 * 
 	 * @param ref
 	 *        the register to get the value from
 	 * @param unknownValue
 	 *        the value to use if the register has no value
-	 * @return the temperature, or {@literal null}
+	 * @return the temperature in degrees Celsius, or {@literal null}
 	 */
 	public BigDecimal getTemperatureValue(ModbusReference ref, BigDecimal unknownValue) {
 		return getFixedScaleValue(ref, 1, unknownValue);
+	}
+
+	/**
+	 * Get a mA current register value.
+	 * 
+	 * @param ref
+	 *        the register to get the value from
+	 * @return the temperature in A, or {@literal null}
+	 */
+	public Float getCurrentValue(ModbusReference ref) {
+		return getCurrentValue(ref, null);
+	}
+
+	/**
+	 * Get a mA current register value.
+	 * 
+	 * @param ref
+	 *        the register to get the value from
+	 * @param unknownValue
+	 *        the value to use if the register has no value
+	 * @return the temperature in A, or {@literal null}
+	 */
+	public Float getCurrentValue(ModbusReference ref, Float unknownValue) {
+		BigDecimal d = getFixedScaleValue(ref, 3);
+		return (d != null ? d.setScale(3, RoundingMode.HALF_UP).floatValue() : unknownValue);
+	}
+
+	/**
+	 * Get a dV voltage register value.
+	 * 
+	 * @param ref
+	 *        the register to get the value from
+	 * @return the voltage in V, or {@literal null}
+	 */
+	public Float getVoltageValue(ModbusReference ref) {
+		return getVoltageValue(ref, null);
+	}
+
+	/**
+	 * Get a dV voltage register value.
+	 * 
+	 * @param ref
+	 *        the register to get the value from
+	 * @param unknownValue
+	 *        the value to use if the register has no value
+	 * @return the voltage in V, or {@literal null}
+	 */
+	public Float getVoltageValue(ModbusReference ref, Float unknownValue) {
+		BigDecimal d = getFixedScaleValue(ref, 2);
+		return (d != null ? d.setScale(2, RoundingMode.HALF_UP).floatValue() : unknownValue);
+	}
+
+	/**
+	 * Get a W power register value.
+	 * 
+	 * @param ref
+	 *        the register to get the value from
+	 * @return the power in W, or {@literal null}
+	 */
+	public Integer getPowerValue(ModbusReference ref) {
+		return getPowerValue(ref, null);
+	}
+
+	/**
+	 * Get a W power register value.
+	 * 
+	 * @param ref
+	 *        the register to get the value from
+	 * @param unknownValue
+	 *        the value to use if the register has no value
+	 * @return the power in W, or {@literal null}
+	 */
+	public Integer getPowerValue(ModbusReference ref, Integer unknownValue) {
+		Number n = filterNotNumber(getNumber(ref), ref);
+		if ( n instanceof Integer ) {
+			return (Integer) n;
+		} else if ( n != null ) {
+			return n.intValue();
+		}
+		return unknownValue;
+	}
+
+	/**
+	 * Get a Wh energy register value.
+	 * 
+	 * @param ref
+	 *        the register to get the value from
+	 * @return the energy in Wh, or {@literal null}
+	 */
+	public Long getEnergyValue(ModbusReference ref) {
+		return getEnergyValue(ref, null);
+	}
+
+	/**
+	 * Get a Wh energy register value.
+	 * 
+	 * @param ref
+	 *        the register to get the value from
+	 * @param unknownValue
+	 *        the value to use if the register has no value
+	 * @return the energy in Wh, or {@literal null}
+	 */
+	public Long getEnergyValue(ModbusReference ref, Long unknownValue) {
+		Number n = filterNotNumber(getNumber(ref), ref);
+		if ( n instanceof Long ) {
+			return (Long) n;
+		} else if ( n != null ) {
+			return n.longValue();
+		}
+		return unknownValue;
 	}
 
 	/**

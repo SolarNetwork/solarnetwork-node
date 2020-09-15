@@ -49,7 +49,7 @@ public class SmaSunnySensorboxRegisterTests {
 		IntRangeSet orig = SmaSunnySensorboxRegister.INFO_REGISTER_ADDRESS_SET;
 		List<IntRange> covering = CollectionUtils.coveringIntRanges(orig, 64);
 		log.debug("Info range set: {}", covering);
-		assertThat("Info covered ranges", covering, contains(rangeOf(30057, 30058)));
+		assertThat("Info covered ranges", covering, contains(rangeOf(30051, 30058)));
 	}
 
 	@Test
@@ -58,8 +58,7 @@ public class SmaSunnySensorboxRegisterTests {
 		List<IntRange> covering = CollectionUtils.coveringIntRanges(orig, 64);
 		log.debug("Data range set: {}", covering);
 		assertThat("Data covered ranges", covering,
-				contains(rangeOf(30193, 30248), rangeOf(30257, 30266), rangeOf(30513, 30528),
-						rangeOf(30769, 30814), rangeOf(30835, 30842), rangeOf(34101, 34126)));
+				contains(rangeOf(30521, 30524), rangeOf(34609, 34624)));
 	}
 
 }

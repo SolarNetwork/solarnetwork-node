@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.hw.sma.domain;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import net.solarnetwork.node.domain.DataAccessor;
 
 /**
@@ -72,5 +74,96 @@ public interface SmaScNnnUDataAccessor extends SmaDeviceCommonDataAccessor {
 	 * @return the error, or {@literal null}
 	 */
 	SmaCommonStatusCode getError();
+
+	/**
+	 * Get the SMA error number.
+	 * 
+	 * @return the error number
+	 */
+	Long getSmaError();
+
+	/**
+	 * Get the DC switch status.
+	 * 
+	 * @return the status, or {@literal null}
+	 */
+	SmaCommonStatusCode getDcSwitchStatus();
+
+	/**
+	 * Get the AC switch status.
+	 * 
+	 * @return the status, or {@literal null}
+	 */
+	SmaCommonStatusCode getAcSwitchStatus();
+
+	/**
+	 * Get the AC switch disconnector status.
+	 * 
+	 * @return the status, or {@literal null}
+	 */
+	SmaCommonStatusCode getAcSwitchDisconnectorStatus();
+
+	/**
+	 * Get the grid current, line 1.
+	 * 
+	 * @return the current, in A
+	 */
+	Float getGridCurrentLine1();
+
+	/**
+	 * Get the grid current, line 2.
+	 * 
+	 * @return the current, in A
+	 */
+	Float getGridCurrentLine2();
+
+	/**
+	 * Get the grid current, line 3.
+	 * 
+	 * @return the current, in A
+	 */
+	Float getGridCurrentLine3();
+
+	/**
+	 * Get the active power limit status.
+	 * 
+	 * @return the status, or {@literal null}
+	 */
+	SmaCommonStatusCode getActivePowerLimitStatus();
+
+	/**
+	 * Get the active power target value.
+	 * 
+	 * @return the active power target value, in integer percentage (0-100)
+	 */
+	Integer getActivePowerTargetPercent();
+
+	/**
+	 * Get the operating time of the cabinet fan.
+	 * 
+	 * @return the operating time, in seconds
+	 */
+	BigInteger getCabinetFan2OperatingTime();
+
+	/**
+	 * Get the operating time of the heat sink fan.
+	 * 
+	 * @return the operating time, in seconds
+	 */
+	BigInteger getHeatSinkFanOperatingTime();
+
+	/**
+	 * Get the instantaneous cabinet temperature.
+	 * 
+	 * @return the temperature, in degrees Celsius
+	 */
+	BigDecimal getTemperatureCabinet2();
+
+	/**
+	 * Get the instantaneous transformer temperature.
+	 * 
+	 * @return the temperature, in degrees Celsius
+	 */
+	BigDecimal getTemperatureTransformer();
 
 }

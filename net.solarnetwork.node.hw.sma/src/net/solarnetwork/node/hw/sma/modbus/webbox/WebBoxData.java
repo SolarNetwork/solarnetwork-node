@@ -23,7 +23,9 @@
 package net.solarnetwork.node.hw.sma.modbus.webbox;
 
 import java.util.Collection;
+import java.util.Map;
 import net.solarnetwork.domain.DeviceOperatingState;
+import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
 import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceType;
@@ -75,6 +77,7 @@ public class WebBoxData extends SmaDeviceData implements WebBoxDataAccessor {
 	 * @param conn
 	 *        the connection
 	 */
+	@Override
 	public final void readInformationData(final ModbusConnection conn) {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				WebBoxRegister.INFO_REGISTER_ADDRESS_SET, MAX_RESULTS);
@@ -86,6 +89,7 @@ public class WebBoxData extends SmaDeviceData implements WebBoxDataAccessor {
 	 * @param conn
 	 *        the connection
 	 */
+	@Override
 	public final void readDeviceData(final ModbusConnection conn) {
 		performUpdates(new ModbusDataUpdateAction() {
 
@@ -130,6 +134,13 @@ public class WebBoxData extends SmaDeviceData implements WebBoxDataAccessor {
 	@Override
 	public Collection<WebBoxDeviceReference> availableDeviceReferences() {
 		return deviceReferences;
+	}
+
+	@Override
+	public void populateDatumSamples(MutableGeneralDatumSamplesOperations samples,
+			Map<String, ?> parameters) {
+		// TODO Auto-generated method stub
+
 	}
 
 }

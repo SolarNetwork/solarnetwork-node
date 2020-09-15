@@ -1,5 +1,5 @@
 /* ==================================================================
- * SmaScStringMonitorUsRegisterTests.java - 15/09/2020 6:17:30 AM
+ * SmaScStringMonitorControllerRegisterTests.java - 15/09/2020 9:56:14 AM
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -29,37 +29,37 @@ import java.util.List;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.hw.sma.modbus.SmaScStringMonitorUsRegister;
+import net.solarnetwork.node.hw.sma.modbus.SmaScStringMonitorControllerRegister;
 import net.solarnetwork.util.CollectionUtils;
 import net.solarnetwork.util.IntRange;
 import net.solarnetwork.util.IntRangeSet;
 
 /**
- * Test cases for the {@link SmaScStringMonitorUsRegister} class.
+ * Test cases for the {@link SmaScStringMonitorControllerRegister} class.
  * 
  * @author matt
  * @version 1.0
  */
-public class SmaScStringMonitorUsRegisterTests {
+public class SmaScStringMonitorControllerRegisterTests {
 
-	private static final Logger log = LoggerFactory.getLogger(SmaScStringMonitorUsRegisterTests.class);
+	private static final Logger log = LoggerFactory
+			.getLogger(SmaScStringMonitorControllerRegisterTests.class);
 
 	@Test
 	public void infoRegisterSet() {
-		IntRangeSet orig = SmaScStringMonitorUsRegister.INFO_REGISTER_ADDRESS_SET;
+		IntRangeSet orig = SmaScStringMonitorControllerRegister.INFO_REGISTER_ADDRESS_SET;
 		List<IntRange> covering = CollectionUtils.coveringIntRanges(orig, 64);
 		log.debug("Info range set: {}", covering);
-		assertThat("Info covered ranges", covering,
-				contains(rangeOf(30057, 30058), rangeOf(30245, 30246)));
+		assertThat("Info covered ranges", covering, contains(rangeOf(30057, 30058)));
 	}
 
 	@Test
 	public void dataRegisterSet() {
-		IntRangeSet orig = SmaScStringMonitorUsRegister.DATA_REGISTER_ADDRESS_SET;
+		IntRangeSet orig = SmaScStringMonitorControllerRegister.DATA_REGISTER_ADDRESS_SET;
 		List<IntRange> covering = CollectionUtils.coveringIntRanges(orig, 64);
 		log.debug("Data range set: {}", covering);
-		assertThat("Data covered ranges", covering,
-				contains(rangeOf(30241, 30242), rangeOf(31793, 31808)));
+		assertThat("Data covered ranges", covering, contains(rangeOf(30197, 30244),
+				rangeOf(30521, 30524), rangeOf(31283, 31314), rangeOf(32051, 32052)));
 	}
 
 }

@@ -22,9 +22,14 @@
 
 package net.solarnetwork.node.hw.sma.modbus;
 
+import static net.solarnetwork.domain.GeneralDatumSamplesType.Accumulating;
+import static net.solarnetwork.domain.GeneralDatumSamplesType.Instantaneous;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Map;
 import net.solarnetwork.domain.DeviceOperatingState;
+import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
+import net.solarnetwork.node.domain.AtmosphericDatum;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceType;
 import net.solarnetwork.node.hw.sma.domain.SmaSunnySensorboxDataAccessor;
@@ -75,6 +80,20 @@ public class SmaSunnySensorboxData extends SmaDeviceData implements SmaSunnySens
 		return new SmaSunnySensorboxData(this);
 	}
 
+	@Override
+	public void populateDatumSamples(MutableGeneralDatumSamplesOperations samples,
+			Map<String, ?> parameters) {
+		samples.putSampleValue(Instantaneous, AtmosphericDatum.IRRADIANCE_KEY, getIrradiance());
+		samples.putSampleValue(Instantaneous, AtmosphericDatum.IRRADIANCE_KEY + "_ex",
+				getExternalIrradiance());
+		samples.putSampleValue(Instantaneous, AtmosphericDatum.TEMPERATURE_KEY, getTemperature());
+		samples.putSampleValue(Instantaneous, AtmosphericDatum.TEMPERATURE_KEY + "_module",
+				getModuleTemperature());
+		samples.putSampleValue(Instantaneous, AtmosphericDatum.WIND_SPEED_KEY, getWindSpeed());
+
+		samples.putSampleValue(Accumulating, "opTime", getOperatingTime());
+	}
+
 	/**
 	 * Read the informational registers from the device.
 	 * 
@@ -111,13 +130,15 @@ public class SmaSunnySensorboxData extends SmaDeviceData implements SmaSunnySens
 
 	@Override
 	public Long getDeviceClass() {
-		Number n = getNumber(SmaSunnySensorboxRegister.MainModel);
+		Number n = filterNotNumber(getNumber(SmaSunnySensorboxRegister.MainModel),
+				SmaSunnySensorboxRegister.MainModel);
 		return (n instanceof Long ? (Long) n : n != null ? n.longValue() : null);
 	}
 
 	@Override
 	public BigInteger getOperatingTime() {
-		Number n = getNumber(SmaSunnySensorboxRegister.OperatingTime);
+		Number n = filterNotNumber(getNumber(SmaSunnySensorboxRegister.OperatingTime),
+				SmaSunnySensorboxRegister.OperatingTime);
 		return (n instanceof BigInteger ? (BigInteger) n
 				: n != null ? new BigInteger(n.toString()) : null);
 	}
@@ -129,7 +150,8 @@ public class SmaSunnySensorboxData extends SmaDeviceData implements SmaSunnySens
 
 	@Override
 	public BigDecimal getIrradiance() {
-		Number n = getNumber(SmaSunnySensorboxRegister.Irradiance);
+		Number n = filterNotNumber(getNumber(SmaSunnySensorboxRegister.Irradiance),
+				SmaSunnySensorboxRegister.Irradiance);
 		return NumberUtils.bigDecimalForNumber(n);
 	}
 
@@ -145,7 +167,8 @@ public class SmaSunnySensorboxData extends SmaDeviceData implements SmaSunnySens
 
 	@Override
 	public BigDecimal getExternalIrradiance() {
-		Number n = getNumber(SmaSunnySensorboxRegister.ExternalIrradiance);
+		Number n = filterNotNumber(getNumber(SmaSunnySensorboxRegister.ExternalIrradiance),
+				SmaSunnySensorboxRegister.ExternalIrradiance);
 		return NumberUtils.bigDecimalForNumber(n);
 	}
 

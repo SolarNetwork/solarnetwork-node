@@ -1,5 +1,5 @@
 /* ==================================================================
- * SmaScStringMonitorUsData.java - 14/09/2020 11:31:07 AM
+ * SmaScStringMonitorControllerData.java - 15/09/2020 10:23:22 AM
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -23,8 +23,10 @@
 package net.solarnetwork.node.hw.sma.modbus;
 
 import static java.lang.String.format;
+import static net.solarnetwork.domain.GeneralDatumSamplesType.Accumulating;
 import static net.solarnetwork.domain.GeneralDatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.GeneralDatumSamplesType.Status;
+import java.math.BigInteger;
 import java.util.Map;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
@@ -33,23 +35,28 @@ import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.hw.sma.domain.SmaCommonStatusCode;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceType;
-import net.solarnetwork.node.hw.sma.domain.SmaScStringMonitorUsDataAccessor;
+import net.solarnetwork.node.hw.sma.domain.SmaScStringMonitorControllerDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 
 /**
- * {@link SmaDeviceData} for Sunny Central String Monitor US devices.
+ * FIXME
+ * 
+ * <p>
+ * TODO
+ * </p>
  * 
  * @author matt
  * @version 1.0
  */
-public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStringMonitorUsDataAccessor {
+public class SmaScStringMonitorControllerData extends SmaDeviceData
+		implements SmaScStringMonitorControllerDataAccessor {
 
 	/**
 	 * Constructor.
 	 */
-	public SmaScStringMonitorUsData() {
+	public SmaScStringMonitorControllerData() {
 		super();
 	}
 
@@ -61,7 +68,7 @@ public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStri
 	 * @param addr
 	 *        the starting Modbus register address of {@code data}
 	 */
-	public SmaScStringMonitorUsData(short[] data, int addr) {
+	public SmaScStringMonitorControllerData(short[] data, int addr) {
 		super(data, addr);
 	}
 
@@ -71,31 +78,39 @@ public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStri
 	 * @param other
 	 *        the meter data to copy
 	 */
-	public SmaScStringMonitorUsData(ModbusData other) {
+	public SmaScStringMonitorControllerData(ModbusData other) {
 		super(other);
 	}
 
 	@Override
-	public SmaScStringMonitorUsData copy() {
-		return new SmaScStringMonitorUsData(this);
+	public SmaScStringMonitorControllerData copy() {
+		return new SmaScStringMonitorControllerData(this);
 	}
 
 	@Override
 	public void populateDatumSamples(MutableGeneralDatumSamplesOperations samples,
 			Map<String, ?> parameters) {
 		final String currentFmt = ACEnergyDatum.CURRENT_KEY + "_%d";
-		samples.putSampleValue(Instantaneous, format(currentFmt, 1), getCurrentString1());
-		samples.putSampleValue(Instantaneous, format(currentFmt, 2), getCurrentString2());
-		samples.putSampleValue(Instantaneous, format(currentFmt, 3), getCurrentString3());
-		samples.putSampleValue(Instantaneous, format(currentFmt, 4), getCurrentString4());
-		samples.putSampleValue(Instantaneous, format(currentFmt, 5), getCurrentString5());
-		samples.putSampleValue(Instantaneous, format(currentFmt, 6), getCurrentString6());
-		samples.putSampleValue(Instantaneous, format(currentFmt, 7), getCurrentString7());
-		samples.putSampleValue(Instantaneous, format(currentFmt, 8), getCurrentString8());
+		samples.putSampleValue(Instantaneous, format(currentFmt, 1), getCurrentGroup1());
+		samples.putSampleValue(Instantaneous, format(currentFmt, 2), getCurrentGroup2());
+		samples.putSampleValue(Instantaneous, format(currentFmt, 3), getCurrentGroup3());
+		samples.putSampleValue(Instantaneous, format(currentFmt, 4), getCurrentGroup4());
+		samples.putSampleValue(Instantaneous, format(currentFmt, 5), getCurrentGroup5());
+		samples.putSampleValue(Instantaneous, format(currentFmt, 6), getCurrentGroup6());
 
-		samples.putSampleValue(Status, "smu_id", getStringMonitoringUnitId());
+		samples.putSampleValue(Accumulating, "opTime", getOperatingTime());
 
-		SmaCommonStatusCode state = getOperatingState();
+		SmaCommonStatusCode state = getError();
+		if ( state != null ) {
+			samples.putSampleValue(Status, "error", state.getCode());
+		}
+
+		Long code = getSmuWarningCode();
+		if ( code != null ) {
+			samples.putSampleValue(Status, "ssmuWarn", code);
+		}
+
+		state = getOperatingState();
 		if ( state != null ) {
 			samples.putSampleValue(Status, Datum.OP_STATES, state.getCode());
 		}
@@ -115,7 +130,7 @@ public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStri
 	@Override
 	public final void readInformationData(final ModbusConnection conn) {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
-				SmaScStringMonitorUsRegister.INFO_REGISTER_ADDRESS_SET, MAX_RESULTS);
+				SmaScStringMonitorControllerRegister.INFO_REGISTER_ADDRESS_SET, MAX_RESULTS);
 	}
 
 	/**
@@ -127,12 +142,12 @@ public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStri
 	@Override
 	public final void readDeviceData(final ModbusConnection conn) {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
-				SmaScStringMonitorUsRegister.DATA_REGISTER_ADDRESS_SET, MAX_RESULTS);
+				SmaScStringMonitorControllerRegister.DATA_REGISTER_ADDRESS_SET, MAX_RESULTS);
 	}
 
 	@Override
 	public SmaDeviceKind getDeviceKind() {
-		return SmaDeviceType.SunnyCentralStringMonitorUS;
+		return SmaDeviceType.SunnyCentralStringMonitor;
 	}
 
 	@Override
@@ -167,50 +182,57 @@ public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStri
 	}
 
 	@Override
-	public Long getStringMonitoringUnitId() {
-		Number n = filterNotNumber(getNumber(SmaScStringMonitorUsRegister.SmuId),
-				SmaScStringMonitorUsRegister.SmuId);
+	public Long getEventId() {
+		Number n = getNumber(SmaScStringMonitorControllerRegister.Event);
 		return (n instanceof Long ? (Long) n : n != null ? n.longValue() : null);
 	}
 
 	@Override
-	public Float getCurrentString1() {
-		return getCurrentValue(SmaScStringMonitorUsRegister.CurrentString1);
+	public SmaCommonStatusCode getError() {
+		return getStatusCode(SmaScStringMonitorControllerRegister.ErrorState);
 	}
 
 	@Override
-	public Float getCurrentString2() {
-		return getCurrentValue(SmaScStringMonitorUsRegister.CurrentString2);
+	public BigInteger getOperatingTime() {
+		Number n = getNumber(SmaSunnySensorboxRegister.OperatingTime);
+		return (n instanceof BigInteger ? (BigInteger) n
+				: n != null ? new BigInteger(n.toString()) : null);
 	}
 
 	@Override
-	public Float getCurrentString3() {
-		return getCurrentValue(SmaScStringMonitorUsRegister.CurrentString3);
+	public Float getCurrentGroup1() {
+		return getCurrentValue(SmaScStringMonitorControllerRegister.CurrentGroup1);
 	}
 
 	@Override
-	public Float getCurrentString4() {
-		return getCurrentValue(SmaScStringMonitorUsRegister.CurrentString4);
+	public Float getCurrentGroup2() {
+		return getCurrentValue(SmaScStringMonitorControllerRegister.CurrentGroup2);
 	}
 
 	@Override
-	public Float getCurrentString5() {
-		return getCurrentValue(SmaScStringMonitorUsRegister.CurrentString5);
+	public Float getCurrentGroup3() {
+		return getCurrentValue(SmaScStringMonitorControllerRegister.CurrentGroup3);
 	}
 
 	@Override
-	public Float getCurrentString6() {
-		return getCurrentValue(SmaScStringMonitorUsRegister.CurrentString6);
+	public Float getCurrentGroup4() {
+		return getCurrentValue(SmaScStringMonitorControllerRegister.CurrentGroup4);
 	}
 
 	@Override
-	public Float getCurrentString7() {
-		return getCurrentValue(SmaScStringMonitorUsRegister.CurrentString7);
+	public Float getCurrentGroup5() {
+		return getCurrentValue(SmaScStringMonitorControllerRegister.CurrentGroup5);
 	}
 
 	@Override
-	public Float getCurrentString8() {
-		return getCurrentValue(SmaScStringMonitorUsRegister.CurrentString8);
+	public Float getCurrentGroup6() {
+		return getCurrentValue(SmaScStringMonitorControllerRegister.CurrentGroup6);
+	}
+
+	@Override
+	public Long getSmuWarningCode() {
+		Number n = getNumber(SmaScStringMonitorControllerRegister.SmuWarning);
+		return (n instanceof Long ? (Long) n : n != null ? n.longValue() : null);
 	}
 
 }

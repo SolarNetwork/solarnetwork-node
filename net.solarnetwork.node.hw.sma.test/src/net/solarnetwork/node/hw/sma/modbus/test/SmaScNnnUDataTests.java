@@ -26,9 +26,11 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
+import java.math.BigInteger;
 import org.junit.Test;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.hw.sma.domain.SmaCommonStatusCode;
+import net.solarnetwork.node.hw.sma.domain.SmaDeviceCommonDataAccessor;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceType;
 import net.solarnetwork.node.hw.sma.domain.SmaScNnnUDataAccessor;
 import net.solarnetwork.node.hw.sma.modbus.SmaScNnnUData;
@@ -83,5 +85,47 @@ public class SmaScNnnUDataTests {
 		assertThat("Reconnect time", acc.getGridReconnectTime(), equalTo(0L));
 		assertThat("Operating state", acc.getOperatingState(), equalTo(SmaCommonStatusCode.Operation));
 		assertThat("Recommended action Invalid mapped to null", acc.getRecommendedAction(), nullValue());
+	}
+
+	@Test
+	public void readData_2() {
+		// GIVEN
+		SmaScNnnUData d = new SmaScNnnUData(SmaDeviceType.SunnyCentral250US);
+		ModbusConnection conn = TestUtils.testDataConnection(getClass(), "data-sc250us-02.txt");
+
+		// WHEN
+		d.readDeviceData(conn);
+
+		// THEN
+		SmaDeviceCommonDataAccessor acc = d;
+		assertThat("Data updated", acc.getDataTimestamp(), greaterThan(0L));
+		assertThat("Device kind maintained", acc.getDeviceKind(),
+				equalTo(SmaDeviceType.SunnyCentral250US));
+
+		assertThat("DeviceOperatingState", acc.getDeviceOperatingState(),
+				equalTo(DeviceOperatingState.Normal));
+
+		assertThat("Active energy exported", acc.getActiveEnergyExported(), equalTo(2578704900L));
+
+		assertThat("Active power", acc.getActivePower(), equalTo(4600));
+		assertThat("Active power max", acc.getActivePowerMaximum(), equalTo(250000));
+		assertThat("Active power permanent limit", acc.getActivePowerPermanentLimit(), equalTo(250000));
+		assertThat("Active power target", acc.getActivePowerTarget(), nullValue());
+		assertThat("Apparent power", acc.getApparentPower(), nullValue());
+		assertThat("Cabinet temp", acc.getCabinetTemperature(), equalTo(38.1f));
+		assertThat("Current", acc.getCurrent(), equalTo(5.3f));
+		assertThat("DC current", acc.getDcCurrent(), equalTo(15.5f));
+		assertThat("DC power", acc.getDcPower(), equalTo(6400));
+		assertThat("DC voltage", acc.getDcVoltage(), equalTo(415.4f));
+		assertThat("External temp", acc.getExternalTemperature(), nullValue());
+		assertThat("Feed-in time", acc.getFeedInTime(), equalTo(new BigInteger("120642120")));
+		assertThat("Frequency", acc.getFrequency(), equalTo(59.97f));
+		assertThat("Heat sink temp", acc.getHeatSinkTemperature(), equalTo(54.6f));
+		assertThat("Voltage AB", acc.getLineVoltageLine1Line2(), equalTo(285.5f));
+		assertThat("Voltage BC", acc.getLineVoltageLine2Line3(), equalTo(285.8f));
+		assertThat("Voltage CA", acc.getLineVoltageLine3Line1(), equalTo(285.0f));
+		assertThat("Operating time", acc.getOperatingTime(), equalTo(new BigInteger("259553880")));
+		assertThat("Reactive power", acc.getReactivePower(), equalTo(0));
+		assertThat("Voltage", acc.getVoltage(), equalTo(285.5f));
 	}
 }

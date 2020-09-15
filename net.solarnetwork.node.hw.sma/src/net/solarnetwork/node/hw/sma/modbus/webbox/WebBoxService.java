@@ -35,6 +35,7 @@ import net.solarnetwork.node.hw.sma.domain.SmaDeviceDataAccessor;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceType;
 import net.solarnetwork.node.hw.sma.modbus.SmaScNnnUData;
+import net.solarnetwork.node.hw.sma.modbus.SmaScStringMonitorControllerData;
 import net.solarnetwork.node.hw.sma.modbus.SmaScStringMonitorUsData;
 import net.solarnetwork.node.hw.sma.modbus.SmaSunnySensorboxData;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -147,6 +148,13 @@ public class WebBoxService extends ModbusDataDatumDataSourceSupport<WebBoxData>
 				return deviceDataMap.computeIfAbsent(ref.getUnitId(), k -> {
 					return new WebBoxDataDevice<>(ref.getUnitId(), deviceType,
 							new SmaScNnnUData(deviceType, serialNumberData, SerialNumber.getAddress()));
+				});
+
+			case SunnyCentralStringMonitor:
+				return deviceDataMap.computeIfAbsent(ref.getUnitId(), k -> {
+					return new WebBoxDataDevice<>(ref.getUnitId(), deviceType,
+							new SmaScStringMonitorControllerData(serialNumberData,
+									SerialNumber.getAddress()));
 				});
 
 			case SunnyCentralStringMonitorUS:

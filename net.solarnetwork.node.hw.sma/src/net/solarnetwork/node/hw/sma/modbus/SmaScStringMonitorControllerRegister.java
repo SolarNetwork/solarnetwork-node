@@ -1,5 +1,5 @@
 /* ==================================================================
- * SmaScNnnUDeviceRegister.java - 12/09/2020 12:25:06 PM
+ * SmaScStringMonitorControllerRegister.java - 15/09/2020 9:38:11 AM
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -22,10 +22,12 @@
 
 package net.solarnetwork.node.hw.sma.modbus;
 
+import static java.util.Arrays.asList;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int32;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt64;
 import static net.solarnetwork.node.io.modbus.ModbusReference.createAddressSet;
+import java.util.HashSet;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
@@ -33,74 +35,55 @@ import net.solarnetwork.util.IntRange;
 import net.solarnetwork.util.IntRangeSet;
 
 /**
- * Enumeration of Modbus register mappings for SMA SC nnnU series devices.
+ * Enumeration of Modbus register mappings for SMA SC String Monitor Controller
+ * series devices.
  * 
  * <p>
- * This covers device ID {@literal 155}, or {@literal 87} profile 1.30 or later.
- * These devices all support the {@link SmaCommonDeviceRegister} values.
+ * This covers device ID {@literal 187}, or {@literal 129} profile 1.30 or
+ * later. These devices <b>do not</b> support the
+ * {@link SmaCommonDeviceRegister} values.
  * </p>
  * 
  * @author matt
  * @version 1.0
  */
-public enum SmaScNnnURegister implements ModbusReference {
+public enum SmaScStringMonitorControllerRegister implements ModbusReference {
 
-	/** Time until grid connection attempt (TmsRmg), in seconds. */
-	GridConnectTimeRemaining(30199, UInt32),
+	/** Serial number of the device. */
+	SerialNumber(30057, UInt32),
 
-	/** Recommended action enumeration (Prio). */
-	RecommendedAction(30211, UInt32),
+	/** Event ID for current event (ErrNo). */
+	Event(30197, UInt32),
 
-	/** Grid contactor status enumeration (GdCtcStt). */
-	GridContactorStatus(30217, UInt32),
-
-	/** Operating state enumeration (mode). */
+	/** Operating state. */
 	OperatingState(30241, UInt32),
 
 	/** Error state enumeration (Error). */
 	ErrorState(30243, UInt32),
 
-	/** Current event number for manufacturer (ErrNoSma). */
-	SmaErrorId(30247, UInt32),
+	/** Operating time (SMA h-On), in seconds. */
+	OperatingTime(30521, UInt64),
 
-	/** DC switch in cabinet state enumeration (DcSwStt). */
-	DcSwitchState(30257, UInt32),
+	/** String current of string group 1 (MeanCurGr1), in mA. */
+	CurrentGroup1(31283, Int32),
 
-	/** AC switch 1 in cabinet state enumeration (AcSwStt). */
-	AcSwitchState(30261, UInt32),
+	/** String current of string group 2 (MeanCurGr2), in mA. */
+	CurrentGroup2(31289, Int32),
 
-	/** AC switch-disconnector in cabinet state enumeration (DInErrAcScir). */
-	AcSwitchDisconnectState(30265, UInt32),
+	/** String current of string group 3 (MeanCurGr3), in mA. */
+	CurrentGroup3(31295, Int32),
 
-	/** Grid current line 1 (IacL1), in mA. */
-	GridCurrentLine1(30797, UInt32),
+	/** String current of string group 4 (MeanCurGr4), in mA. */
+	CurrentGroup4(31301, Int32),
 
-	/** Grid current line 2 (IacL2), in mA. */
-	GridCurrentLine2(30799, UInt32),
+	/** String current of string group 5 (MeanCurGr5), in mA. */
+	CurrentGroup5(31307, Int32),
 
-	/** Grid current line 3 (IacL3), in mA. */
-	GridCurrentLine3(30801, UInt32),
+	/** String current of string group 6 (MeanCurGr6), in mA. */
+	CurrentGroup6(31313, Int32),
 
-	/** Operating mode of active power limitation enumeration (P-WMod). */
-	ActivePowerLimitationOperatingMode(30835, UInt32),
-
-	/** Active power target value (PWNom), in percentage. */
-	ActivePowerTargetPercent(30839, UInt32),
-
-	/** AC voltages average of all string voltages (Vac), in cV. */
-	AcVoltageTotal(30841, UInt32),
-
-	/** Operating time interior fan 2 (CntFanCab2), in seconds. */
-	Fan2OperatingTime(34101, UInt64),
-
-	/** OPerating time heat sink fan (CntFanHs), in seconds. */
-	HeatSinkFanOperatingTime(34105, UInt64),
-
-	/** Interior temperature 2 (TmpCab2), in dCel. */
-	InteriorTemperature2(34115, Int32),
-
-	/** Transformer temperature (TmpTrf), in dCel. */
-	TransformerTemperature(34115, Int32),
+	/** SMU warning code for string error (SSMUWrnCode). */
+	SmuWarning(32051, UInt32),
 
 	;
 
@@ -109,26 +92,28 @@ public enum SmaScNnnURegister implements ModbusReference {
 	private final int wordLength;
 
 	/** A register address set for general device information. */
-	public static final IntRangeSet INFO_REGISTER_ADDRESS_SET = SmaCommonDeviceRegister.INFO_REGISTER_ADDRESS_SET;
+	public static final IntRangeSet INFO_REGISTER_ADDRESS_SET = createAddressSet(
+			SmaScStringMonitorControllerRegister.class, new HashSet<>(asList(SerialNumber.name())))
+					.immutableCopy();
 
 	/** A register address set for device data. */
 	public static final IntRangeSet DATA_REGISTER_ADDRESS_SET;
 	static {
 		IntRangeSet set = new IntRangeSet();
-		for ( IntRange r : SmaCommonDeviceRegister.DATA_REGISTER_ADDRESS_SET.ranges() ) {
-			set.addRange(r);
-		}
-		for ( IntRange r : createAddressSet(SmaScNnnURegister.class, null).ranges() ) {
-			set.addRange(r);
+		for ( IntRange r : createAddressSet(SmaScStringMonitorControllerRegister.class, null)
+				.ranges() ) {
+			if ( !INFO_REGISTER_ADDRESS_SET.contains(r.getMin()) ) {
+				set.addRange(r);
+			}
 		}
 		DATA_REGISTER_ADDRESS_SET = set.immutableCopy();
 	}
 
-	private SmaScNnnURegister(int address, ModbusDataType dataType) {
+	private SmaScStringMonitorControllerRegister(int address, ModbusDataType dataType) {
 		this(address, dataType, dataType.getWordLength());
 	}
 
-	private SmaScNnnURegister(int address, ModbusDataType dataType, int wordLength) {
+	private SmaScStringMonitorControllerRegister(int address, ModbusDataType dataType, int wordLength) {
 		this.address = address;
 		this.dataType = dataType;
 		this.wordLength = wordLength;
