@@ -55,7 +55,7 @@ import net.solarnetwork.util.IntShortMap;
  * Test cases for the {@link ModelDataFactory} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ModelDataFactoryTests {
 
@@ -69,7 +69,7 @@ public class ModelDataFactoryTests {
 	}
 
 	@Test
-	public void createIntegerMeterModel() {
+	public void createIntegerMeterModel() throws IOException {
 		expect(conn.getUnitId()).andReturn(1).anyTimes();
 
 		// find base address

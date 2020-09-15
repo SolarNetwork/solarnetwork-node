@@ -49,7 +49,7 @@ import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnec
  * Test cases for reading AE500Nx sample data.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class AE500NxData_03Tests {
 
@@ -65,7 +65,7 @@ public class AE500NxData_03Tests {
 	private AE500NxData data;
 
 	@Before
-	public void setup() {
+	public void setup() throws IOException {
 		data = new AE500NxData();
 		data.readConfigurationData(conn);
 	}

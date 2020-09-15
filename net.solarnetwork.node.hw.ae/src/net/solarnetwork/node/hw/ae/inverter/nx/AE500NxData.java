@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.ae.inverter.nx;
 
 import static net.solarnetwork.domain.Bitmaskable.setForBitmask;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -42,7 +43,7 @@ import net.solarnetwork.util.NumberUtils;
  * Data object for the AE 500NX series inverter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.1
  */
 public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
@@ -102,8 +103,10 @@ public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readConfigurationData(final ModbusConnection conn) {
+	public final void readConfigurationData(final ModbusConnection conn) throws IOException {
 		// we actually read ALL registers here, so our snapshot timestamp includes everything
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				AE500NxRegister.getRegisterAddressSet(), MAX_RESULTS);
@@ -114,8 +117,10 @@ public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readInverterData(final ModbusConnection conn) {
+	public final void readInverterData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				AE500NxRegister.getInverterRegisterAddressSet(), MAX_RESULTS);
 	}
@@ -125,8 +130,10 @@ public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readStatusData(final ModbusConnection conn) {
+	public final void readStatusData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				AE500NxRegister.getStatusRegisterAddressSet(), MAX_RESULTS);
 	}
