@@ -80,7 +80,7 @@ public class DownsampleTransformService extends BaseIdentifiable
 
 	/**
 	 * A transform properties instance that can be used to signal "sub-sampling"
-	 * mode to the transform service.2
+	 * mode to the transform service.
 	 */
 	public static final Map<String, Object> SUB_SAMPLE_PROPS = Collections.singletonMap(SUB_SAMPLE_PROP,
 			Boolean.TRUE);
