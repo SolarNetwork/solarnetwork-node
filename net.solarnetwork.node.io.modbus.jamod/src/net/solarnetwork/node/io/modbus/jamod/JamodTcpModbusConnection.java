@@ -39,7 +39,7 @@ import net.wimpi.modbus.net.TCPMasterConnection;
  * Jamod TCP implementation of {@link ModbusConnection}.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class JamodTcpModbusConnection extends AbstractModbusConnection implements ModbusConnection {
 
@@ -86,9 +86,7 @@ public class JamodTcpModbusConnection extends AbstractModbusConnection implement
 
 	@Override
 	public void close() {
-		if ( connection.isConnected() ) {
-			connection.close();
-		}
+		connection.close();
 	}
 
 	private ModbusTCPTransaction createTransaction() {

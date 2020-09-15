@@ -36,7 +36,7 @@ import net.wimpi.modbus.net.SerialConnection;
  * Jamod serial implementation of {@link ModbusConnection}.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class JamodModbusConnection extends AbstractModbusConnection implements ModbusConnection {
 
@@ -77,9 +77,7 @@ public class JamodModbusConnection extends AbstractModbusConnection implements M
 
 	@Override
 	public void close() {
-		if ( connection.isOpen() ) {
-			connection.close();
-		}
+		connection.close();
 	}
 
 	private ModbusSerialTransaction createTransaction() {

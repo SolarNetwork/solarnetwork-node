@@ -36,7 +36,7 @@ import net.wimpi.modbus.net.UDPMasterConnection;
  * Jamod UDP implementation of {@link ModbusConnection}.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class JamodUdpModbusConnection extends AbstractModbusConnection implements ModbusConnection {
 
@@ -83,9 +83,7 @@ public class JamodUdpModbusConnection extends AbstractModbusConnection implement
 
 	@Override
 	public void close() {
-		if ( connection.isConnected() ) {
-			connection.close();
-		}
+		connection.close();
 	}
 
 	private ModbusUDPTransaction createTransaction() {
