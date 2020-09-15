@@ -26,6 +26,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import net.solarnetwork.domain.CodedValue;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.hw.sma.domain.SmaCommonStatusCode;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceDataAccessor;
@@ -200,6 +201,20 @@ public abstract class SmaDeviceData extends ModbusData implements SmaDeviceDataA
 			return n;
 		}
 		return SmaModbusConstants.isNaN(n, ref.getDataType()) ? null : n;
+	}
+
+	/**
+	 * Get the code out of a {@link CodedValue}.
+	 * 
+	 * @param value
+	 *        the coded value
+	 * @return the code, or {@literal null} if {@code value} is {@literal null}
+	 */
+	public static Integer codedValueCode(CodedValue value) {
+		if ( value == null ) {
+			return null;
+		}
+		return value.getCode();
 	}
 
 	/**

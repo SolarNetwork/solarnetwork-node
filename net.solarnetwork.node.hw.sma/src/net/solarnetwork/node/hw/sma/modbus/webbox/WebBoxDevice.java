@@ -22,9 +22,9 @@
 
 package net.solarnetwork.node.hw.sma.modbus.webbox;
 
+import java.io.IOException;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceDataAccessor;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
-import net.solarnetwork.node.io.modbus.ModbusConnection;
 
 /**
  * API for a device connected to a WebBox.
@@ -63,18 +63,15 @@ public interface WebBoxDevice {
 	SmaDeviceDataAccessor getDeviceDataAccessor();
 
 	/**
-	 * Read the informational registers from the device.
+	 * Refresh the device data.
 	 * 
-	 * @param conn
-	 *        the connection
+	 * @param maxAge
+	 *        if greater than {@literal 0} then only refresh the data if it is
+	 *        older than this many milliseconds (or never refreshed before)
+	 * @return a <b>read-only</b> snapshot of the current sample data
+	 * @throws IOException
+	 *         if any error occurs
 	 */
-	void readInformationData(final ModbusConnection conn);
+	SmaDeviceDataAccessor refreshData(long maxAge) throws IOException;
 
-	/**
-	 * Read the data registers from the device.
-	 * 
-	 * @param conn
-	 *        the connection
-	 */
-	void readDeviceData(final ModbusConnection conn);
 }

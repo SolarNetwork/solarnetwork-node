@@ -101,9 +101,7 @@ public class SmaScStringMonitorControllerData extends SmaDeviceData
 		samples.putSampleValue(Accumulating, "opTime", getOperatingTime());
 
 		SmaCommonStatusCode state = getError();
-		if ( state != null ) {
-			samples.putSampleValue(Status, "error", state.getCode());
-		}
+		samples.putSampleValue(Status, "error", codedValueCode(state));
 
 		Long code = getSmuWarningCode();
 		if ( code != null ) {
@@ -111,9 +109,7 @@ public class SmaScStringMonitorControllerData extends SmaDeviceData
 		}
 
 		state = getOperatingState();
-		if ( state != null ) {
-			samples.putSampleValue(Status, Datum.OP_STATES, state.getCode());
-		}
+		samples.putSampleValue(Status, Datum.OP_STATES, codedValueCode(state));
 
 		DeviceOperatingState dos = getDeviceOperatingState();
 		if ( dos != null ) {

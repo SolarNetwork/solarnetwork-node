@@ -96,9 +96,7 @@ public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStri
 		samples.putSampleValue(Status, "smu_id", getStringMonitoringUnitId());
 
 		SmaCommonStatusCode state = getOperatingState();
-		if ( state != null ) {
-			samples.putSampleValue(Status, Datum.OP_STATES, state.getCode());
-		}
+		samples.putSampleValue(Status, Datum.OP_STATES, codedValueCode(state));
 
 		DeviceOperatingState dos = getDeviceOperatingState();
 		if ( dos != null ) {

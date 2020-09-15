@@ -97,41 +97,27 @@ public class SmaScNnnUData extends SmaCommonDeviceData implements SmaScNnnUDataA
 		samples.putSampleValue(Instantaneous, "gridReconnectTime", getGridReconnectTime());
 
 		SmaCommonStatusCode state = getOperatingState();
-		if ( state != null ) {
-			samples.putSampleValue(Status, Datum.OP_STATES, state.getCode());
-		}
+		samples.putSampleValue(Status, Datum.OP_STATES, codedValueCode(state));
 
 		state = getRecommendedAction();
-		if ( state != null ) {
-			samples.putSampleValue(Status, "recommendedAction", state.getCode());
-		}
+		samples.putSampleValue(Status, "recommendedAction", codedValueCode(state));
 
 		state = getGridContactorStatus();
-		if ( state != null ) {
-			samples.putSampleValue(Status, "gridContactorStatus", state.getCode());
-		}
+		samples.putSampleValue(Status, "gridContactorStatus", codedValueCode(state));
 
 		state = getError();
-		if ( state != null ) {
-			samples.putSampleValue(Status, "error", state.getCode());
-		}
+		samples.putSampleValue(Status, "error", codedValueCode(state));
 
 		samples.putSampleValue(Status, "smaError", getSmaError());
 
 		state = getDcSwitchStatus();
-		if ( state != null ) {
-			samples.putSampleValue(Status, "dcSwitch", state.getCode());
-		}
+		samples.putSampleValue(Status, "dcSwitch", codedValueCode(state));
 
 		state = getAcSwitchStatus();
-		if ( state != null ) {
-			samples.putSampleValue(Status, "acSwitch", state.getCode());
-		}
+		samples.putSampleValue(Status, "acSwitch", codedValueCode(state));
 
 		state = getAcSwitchDisconnectorStatus();
-		if ( state != null ) {
-			samples.putSampleValue(Status, "acSwitchDisconnector", state.getCode());
-		}
+		samples.putSampleValue(Status, "acSwitchDisconnector", codedValueCode(state));
 
 		samples.putSampleValue(Instantaneous, ACPhase.PhaseA.withKey(ACEnergyDatum.CURRENT_KEY),
 				getGridCurrentLine1());
@@ -141,9 +127,7 @@ public class SmaScNnnUData extends SmaCommonDeviceData implements SmaScNnnUDataA
 				getGridCurrentLine3());
 
 		state = getActivePowerLimitStatus();
-		if ( state != null ) {
-			samples.putSampleValue(Status, "activePowerLimitStatus", state.getCode());
-		}
+		samples.putSampleValue(Status, "activePowerLimitStatus", codedValueCode(state));
 
 		samples.putSampleValue(Instantaneous, "activePowerLimit", getActivePowerTarget());
 
@@ -206,7 +190,7 @@ public class SmaScNnnUData extends SmaCommonDeviceData implements SmaScNnnUDataA
 
 	@Override
 	public SmaCommonStatusCode getOperatingState() {
-		return getStatusCode(SmaScNnnURegister.OperatingState);
+		return getStatusCode(SmaScNnnURegister.OperatingState, null);
 	}
 
 	@Override
@@ -223,7 +207,7 @@ public class SmaScNnnUData extends SmaCommonDeviceData implements SmaScNnnUDataA
 
 	@Override
 	public SmaCommonStatusCode getGridContactorStatus() {
-		return getStatusCode(SmaScNnnURegister.GridContactorStatus);
+		return getStatusCode(SmaScNnnURegister.GridContactorStatus, null);
 	}
 
 	@Override
@@ -240,17 +224,17 @@ public class SmaScNnnUData extends SmaCommonDeviceData implements SmaScNnnUDataA
 
 	@Override
 	public SmaCommonStatusCode getDcSwitchStatus() {
-		return getStatusCode(SmaScNnnURegister.DcSwitchState);
+		return getStatusCode(SmaScNnnURegister.DcSwitchState, null);
 	}
 
 	@Override
 	public SmaCommonStatusCode getAcSwitchStatus() {
-		return getStatusCode(SmaScNnnURegister.AcSwitchState);
+		return getStatusCode(SmaScNnnURegister.AcSwitchState, null);
 	}
 
 	@Override
 	public SmaCommonStatusCode getAcSwitchDisconnectorStatus() {
-		return getStatusCode(SmaScNnnURegister.AcSwitchDisconnectState);
+		return getStatusCode(SmaScNnnURegister.AcSwitchDisconnectState, null);
 	}
 
 	@Override
@@ -270,7 +254,7 @@ public class SmaScNnnUData extends SmaCommonDeviceData implements SmaScNnnUDataA
 
 	@Override
 	public SmaCommonStatusCode getActivePowerLimitStatus() {
-		return getStatusCode(SmaScNnnURegister.ActivePowerLimitationOperatingMode);
+		return getStatusCode(SmaScNnnURegister.ActivePowerLimitationOperatingMode, null);
 	}
 
 	@Override

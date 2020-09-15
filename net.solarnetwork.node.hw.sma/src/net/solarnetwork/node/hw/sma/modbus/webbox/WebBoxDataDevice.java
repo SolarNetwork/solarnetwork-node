@@ -22,10 +22,14 @@
 
 package net.solarnetwork.node.hw.sma.modbus.webbox;
 
+import java.io.IOException;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceDataAccessor;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
 import net.solarnetwork.node.hw.sma.modbus.SmaDeviceData;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
+import net.solarnetwork.node.io.modbus.ModbusNetwork;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * Implementation of {@link WebBoxDevice} based on a {@link SmaDeviceData}
@@ -36,6 +40,7 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
  */
 public class WebBoxDataDevice<T extends SmaDeviceData & SmaDeviceDataAccessor> implements WebBoxDevice {
 
+	private final OptionalService<ModbusNetwork> modbusNetwork;
 	private final int unitId;
 	private final SmaDeviceKind deviceKind;
 	private final T data;
@@ -43,17 +48,32 @@ public class WebBoxDataDevice<T extends SmaDeviceData & SmaDeviceDataAccessor> i
 	/**
 	 * Constructor.
 	 * 
+	 * @param modbusNetwork
+	 *        the Modbus network to use
 	 * @param unitId
 	 *        the Modbus unit ID
 	 * @param deviceKind
 	 *        the device kind
 	 * @param data
 	 *        the data
+	 * @throws IllegalArgumentException
+	 *         any argument is {@literal null}
 	 */
-	public WebBoxDataDevice(int unitId, SmaDeviceKind deviceKind, T data) {
+	public WebBoxDataDevice(OptionalService<ModbusNetwork> modbusNetwork, int unitId,
+			SmaDeviceKind deviceKind, T data) {
 		super();
+		if ( modbusNetwork == null ) {
+			throw new IllegalArgumentException("The modbusNetwork argument must not be null.");
+		}
+		this.modbusNetwork = modbusNetwork;
 		this.unitId = unitId;
+		if ( deviceKind == null ) {
+			throw new IllegalArgumentException("The deviceKind argument must not be null.");
+		}
 		this.deviceKind = deviceKind;
+		if ( data == null ) {
+			throw new IllegalArgumentException("The data argument must not be null.");
+		}
 		this.data = data;
 	}
 
@@ -79,14 +99,26 @@ public class WebBoxDataDevice<T extends SmaDeviceData & SmaDeviceDataAccessor> i
 	}
 
 	@Override
-	public void readInformationData(ModbusConnection conn) {
-		data.readInformationData(conn);
+	public synchronized SmaDeviceDataAccessor refreshData(long maxAge) throws IOException {
+		if ( maxAge > 0 ) {
+			long now = System.currentTimeMillis();
+			long ts = data.getDataTimestamp();
+			if ( ts > 0 && ts + maxAge > now ) {
+				// data has not expired
+				return data.copy();
+			}
+		}
+		ModbusNetwork modbus = OptionalService.service(modbusNetwork);
+		if ( modbus == null ) {
+			return data.copy();
+		}
+		return modbus.performAction(unitId, new ModbusConnectionAction<SmaDeviceDataAccessor>() {
 
+			@Override
+			public SmaDeviceDataAccessor doWithConnection(ModbusConnection conn) throws IOException {
+				data.readDeviceData(conn);
+				return data.copy();
+			}
+		});
 	}
-
-	@Override
-	public void readDeviceData(ModbusConnection conn) {
-		data.readDeviceData(conn);
-	}
-
 }

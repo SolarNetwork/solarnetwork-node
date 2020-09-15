@@ -97,13 +97,8 @@ public class WebBoxService extends ModbusDataDatumDataSourceSupport<WebBoxData>
 	}
 
 	@Override
-	public void readInformationData(ModbusConnection conn) {
-		getSample().readInformationData(conn);
-	}
-
-	@Override
-	public void readDeviceData(ModbusConnection conn) {
-		getSample().readDeviceData(conn);
+	public SmaDeviceDataAccessor refreshData(long maxAge) throws IOException {
+		return getCurrentSample();
 	}
 
 	@Override
@@ -146,26 +141,26 @@ public class WebBoxService extends ModbusDataDatumDataSourceSupport<WebBoxData>
 
 			case SunnyCentral250US:
 				return deviceDataMap.computeIfAbsent(ref.getUnitId(), k -> {
-					return new WebBoxDataDevice<>(ref.getUnitId(), deviceType,
+					return new WebBoxDataDevice<>(getModbusNetwork(), ref.getUnitId(), deviceType,
 							new SmaScNnnUData(deviceType, serialNumberData, SerialNumber.getAddress()));
 				});
 
 			case SunnyCentralStringMonitor:
 				return deviceDataMap.computeIfAbsent(ref.getUnitId(), k -> {
-					return new WebBoxDataDevice<>(ref.getUnitId(), deviceType,
+					return new WebBoxDataDevice<>(getModbusNetwork(), ref.getUnitId(), deviceType,
 							new SmaScStringMonitorControllerData(serialNumberData,
 									SerialNumber.getAddress()));
 				});
 
 			case SunnyCentralStringMonitorUS:
 				return deviceDataMap.computeIfAbsent(ref.getUnitId(), k -> {
-					return new WebBoxDataDevice<>(ref.getUnitId(), deviceType,
+					return new WebBoxDataDevice<>(getModbusNetwork(), ref.getUnitId(), deviceType,
 							new SmaScStringMonitorUsData(serialNumberData, SerialNumber.getAddress()));
 				});
 
 			case SunnySensorbox:
 				return deviceDataMap.computeIfAbsent(ref.getUnitId(), k -> {
-					return new WebBoxDataDevice<>(ref.getUnitId(), deviceType,
+					return new WebBoxDataDevice<>(getModbusNetwork(), ref.getUnitId(), deviceType,
 							new SmaSunnySensorboxData(serialNumberData, SerialNumber.getAddress()));
 				});
 
