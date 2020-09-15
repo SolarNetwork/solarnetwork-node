@@ -128,7 +128,7 @@ public class DownsampleTransformService extends BaseIdentifiable
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(2);
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(6);
 
 		results.add(new BasicTitleSettingSpecifier("status", statusValue()));
 		results.add(new BasicTextFieldSettingSpecifier("uid", null));
