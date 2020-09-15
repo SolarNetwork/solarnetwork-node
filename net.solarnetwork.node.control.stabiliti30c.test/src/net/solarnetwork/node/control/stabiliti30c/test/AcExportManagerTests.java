@@ -122,7 +122,8 @@ public class AcExportManagerTests {
 		return EasyMock.anyObject(ModbusConnectionAction.class);
 	}
 
-	private void expectReadDeviceInfo(int[] data, int[] serialNumber, int[] commsVersion) {
+	private void expectReadDeviceInfo(int[] data, int[] serialNumber, int[] commsVersion)
+			throws IOException {
 		final int[] read1 = new int[49];
 		arraycopy(data, Stabiliti30cRegister.StatusFaultActive0.getAddress(), read1, 0, 49);
 		expect(conn.readWords(ReadHoldingRegister, Stabiliti30cRegister.StatusFaultActive0.getAddress(),
@@ -154,7 +155,7 @@ public class AcExportManagerTests {
 				2)).andReturn(shortArray(commsVersion));
 	}
 
-	private void expectReadControlData(int[] data, int controlCommand) {
+	private void expectReadControlData(int[] data, int controlCommand) throws IOException {
 		final int[] read5 = new int[51];
 		arraycopy(data, Stabiliti30cRegister.ControlWatchdogSeconds.getAddress(), read5, 0, 51);
 		expect(conn.readWords(ReadHoldingRegister,
@@ -183,7 +184,7 @@ public class AcExportManagerTests {
 				.andReturn(shortArray(new int[] { controlCommand }));
 	}
 
-	private void expectReadRuntimeData(int[] data) {
+	private void expectReadRuntimeData(int[] data) throws IOException {
 		final int[] read8 = new int[49];
 		arraycopy(data, Stabiliti30cRegister.StatusFaultActive0.getAddress(), read8, 0, 4);
 		expect(conn.readWords(ReadHoldingRegister, Stabiliti30cRegister.StatusFaultActive0.getAddress(),

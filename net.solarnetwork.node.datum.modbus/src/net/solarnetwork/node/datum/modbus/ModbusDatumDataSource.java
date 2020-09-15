@@ -607,7 +607,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		sample.performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
-			public boolean updateModbusData(MutableModbusData m) {
+			public boolean updateModbusData(MutableModbusData m) throws IOException {
 				final int maxReadLen = maxReadWordCount;
 				Map<ModbusReadFunction, List<ModbusPropertyConfig>> functionMap = getReadFunctionSets(
 						propConfigs);

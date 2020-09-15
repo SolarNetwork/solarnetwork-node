@@ -25,6 +25,7 @@ package net.solarnetwork.node.hw.sunspec.test;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +40,7 @@ import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
  * Test cases for the {@link ModelData} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ModelDataTests {
 
@@ -121,14 +122,18 @@ public class ModelDataTests {
 	private ModelData getTestDataInstance() {
 		final int baseAddress = ModelRegister.BaseAddress.getAddress();
 		ModelData data = new ModelData(baseAddress + 2);
-		data.performUpdates(new ModbusDataUpdateAction() {
+		try {
+			data.performUpdates(new ModbusDataUpdateAction() {
 
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				m.saveDataArray(COMMON_MODEL_02, baseAddress + 2);
-				return true;
-			}
-		});
+				@Override
+				public boolean updateModbusData(MutableModbusData m) {
+					m.saveDataArray(COMMON_MODEL_02, baseAddress + 2);
+					return true;
+				}
+			});
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
 		return data;
 	}
 
