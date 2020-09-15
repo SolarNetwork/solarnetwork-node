@@ -212,7 +212,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	}
 
 	@Override
-	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
+	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) throws IOException {
 		try {
 			T sample = getCurrentSample(conn);
 			return sample.getDeviceInfo();
