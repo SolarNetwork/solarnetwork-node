@@ -37,7 +37,7 @@ import net.solarnetwork.node.io.modbus.ModbusNetwork;
  * object.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 2.9
  */
 public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & DataAccessor>
@@ -137,8 +137,10 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	 *        the Modbus connection
 	 * @param sample
 	 *        the sample to refresh
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	protected void readDeviceInfoFirstTime(ModbusConnection connection, T sample) {
+	protected void readDeviceInfoFirstTime(ModbusConnection connection, T sample) throws IOException {
 		refreshDeviceInfo(connection, sample);
 	}
 
@@ -154,8 +156,10 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	 *        the Modbus connection
 	 * @param sample
 	 *        the sample to refresh
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	protected abstract void refreshDeviceInfo(ModbusConnection connection, T sample);
+	protected abstract void refreshDeviceInfo(ModbusConnection connection, T sample) throws IOException;
 
 	/**
 	 * Refresh the device data.
@@ -171,8 +175,10 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	 *        the Modbus connection
 	 * @param sample
 	 *        the sample to refresh
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	protected abstract void refreshDeviceData(ModbusConnection connection, T sample);
+	protected abstract void refreshDeviceData(ModbusConnection connection, T sample) throws IOException;
 
 	/**
 	 * Create s snapshot copy of the sample data.

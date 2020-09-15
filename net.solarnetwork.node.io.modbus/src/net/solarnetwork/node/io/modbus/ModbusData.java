@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.modbus;
 
+import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
@@ -49,7 +50,7 @@ import net.solarnetwork.util.IntShortMap;
  * </p>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  * @since 2.3
  */
 public class ModbusData implements DataAccessor {
@@ -633,8 +634,10 @@ public class ModbusData implements DataAccessor {
 	 * @param action
 	 *        the callback to perform the updates on
 	 * @return this object to allow method chaining
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final ModbusData performUpdates(ModbusDataUpdateAction action) {
+	public final ModbusData performUpdates(ModbusDataUpdateAction action) throws IOException {
 		synchronized ( dataRegisters ) {
 			final long now = System.currentTimeMillis();
 			if ( action.updateModbusData(new MutableModbusDataView(dataRegisters)) ) {
@@ -754,7 +757,7 @@ public class ModbusData implements DataAccessor {
 		 * @return {@literal true} if {@code dataTimestamp} should be updated to
 		 *         the current time
 		 */
-		public boolean updateModbusData(MutableModbusData m);
+		public boolean updateModbusData(MutableModbusData m) throws IOException;
 	}
 
 	/**
@@ -960,8 +963,11 @@ public class ModbusData implements DataAccessor {
 	 *        the Modbus registers to read, where each {@link IntRange} in the
 	 *        set defines <i>inclusive</i> address ranges to read
 	 * @since 1.6
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void refreshData(final ModbusConnection conn, final IntRangeSet rangeSet) {
+	public final void refreshData(final ModbusConnection conn, final IntRangeSet rangeSet)
+			throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister, rangeSet, 64);
 	}
 
@@ -978,9 +984,11 @@ public class ModbusData implements DataAccessor {
 	 * @param maxRangeLength
 	 *        the maximum length of any combined range in the resulting set
 	 * @since 1.6
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public final void refreshData(final ModbusConnection conn, final ModbusReadFunction readFunction,
-			final IntRangeSet rangeSet, final int maxRangeLength) {
+			final IntRangeSet rangeSet, final int maxRangeLength) throws IOException {
 		final List<IntRange> ranges = CollectionUtils.coveringIntRanges(rangeSet, maxRangeLength);
 		refreshData(conn, readFunction, ranges);
 	}
@@ -996,13 +1004,15 @@ public class ModbusData implements DataAccessor {
 	 *        the Modbus registers to read, where each {@link IntRange} in the
 	 *        set defines <i>inclusive</i> address ranges to read
 	 * @since 2.0
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public final void refreshData(final ModbusConnection conn, final ModbusReadFunction readFunction,
-			final Collection<IntRange> ranges) {
+			final Collection<IntRange> ranges) throws IOException {
 		performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
-			public boolean updateModbusData(MutableModbusData m) {
+			public boolean updateModbusData(MutableModbusData m) throws IOException {
 				refreshData(conn, readFunction, ranges, m);
 				return true;
 			}
@@ -1021,9 +1031,11 @@ public class ModbusData implements DataAccessor {
 	 * @param m
 	 *        the mutable data to update
 	 * @since 2.0
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public final void refreshData(final ModbusConnection conn, final ModbusReadFunction readFunction,
-			final Collection<IntRange> ranges, final MutableModbusData m) {
+			final Collection<IntRange> ranges, final MutableModbusData m) throws IOException {
 		for ( IntRange r : ranges ) {
 			short[] data = conn.readWords(readFunction, r.getMin(), r.length());
 			m.saveDataArray(data, r.getMin());

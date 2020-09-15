@@ -45,7 +45,7 @@ import net.wimpi.modbus.net.SerialConnection;
  * Jamod implementation of {@link ModbusNetwork} using a serial connection.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class JamodSerialModbusNetwork extends AbstractModbusNetwork implements SettingSpecifierProvider {
 
@@ -148,64 +148,69 @@ public class JamodSerialModbusNetwork extends AbstractModbusNetwork implements S
 		}
 
 		@Override
-		public BitSet readDiscreetValues(int address, int count) {
+		public BitSet readDiscreetValues(int address, int count) throws IOException {
 			return delegate.readDiscreetValues(address, count);
 		}
 
 		@Override
-		public BitSet readDiscreetValues(int[] addresses, int count) {
+		public BitSet readDiscreetValues(int[] addresses, int count) throws IOException {
 			return delegate.readDiscreetValues(addresses, count);
 		}
 
 		@Override
-		public void writeDiscreetValues(int[] addresses, BitSet bits) {
+		public void writeDiscreetValues(int[] addresses, BitSet bits) throws IOException {
 			delegate.writeDiscreetValues(addresses, bits);
 		}
 
 		@Override
-		public BitSet readInputDiscreteValues(int address, int count) {
+		public BitSet readInputDiscreteValues(int address, int count) throws IOException {
 			return delegate.readInputDiscreteValues(address, count);
 		}
 
 		@Override
-		public short[] readWords(ModbusReadFunction function, int address, int count) {
+		public short[] readWords(ModbusReadFunction function, int address, int count)
+				throws IOException {
 			return delegate.readWords(function, address, count);
 		}
 
 		@Override
-		public int[] readWordsUnsigned(ModbusReadFunction function, int address, int count) {
+		public int[] readWordsUnsigned(ModbusReadFunction function, int address, int count)
+				throws IOException {
 			return delegate.readWordsUnsigned(function, address, count);
 		}
 
 		@Override
-		public void writeWords(ModbusWriteFunction function, int address, short[] values) {
+		public void writeWords(ModbusWriteFunction function, int address, short[] values)
+				throws IOException {
 			delegate.writeWords(function, address, values);
 		}
 
 		@Override
-		public void writeWords(ModbusWriteFunction function, int address, int[] values) {
+		public void writeWords(ModbusWriteFunction function, int address, int[] values)
+				throws IOException {
 			delegate.writeWords(function, address, values);
 		}
 
 		@Override
-		public byte[] readBytes(ModbusReadFunction function, int address, int count) {
+		public byte[] readBytes(ModbusReadFunction function, int address, int count) throws IOException {
 			return delegate.readBytes(function, address, count);
 		}
 
 		@Override
-		public void writeBytes(ModbusWriteFunction function, int address, byte[] values) {
+		public void writeBytes(ModbusWriteFunction function, int address, byte[] values)
+				throws IOException {
 			delegate.writeBytes(function, address, values);
 		}
 
 		@Override
 		public String readString(ModbusReadFunction function, int address, int count, boolean trim,
-				Charset charset) {
+				Charset charset) throws IOException {
 			return delegate.readString(function, address, count, trim, charset);
 		}
 
 		@Override
-		public void writeString(ModbusWriteFunction function, int address, String value,
-				Charset charset) {
+		public void writeString(ModbusWriteFunction function, int address, String value, Charset charset)
+				throws IOException {
 			delegate.writeString(function, address, value, charset);
 		}
 

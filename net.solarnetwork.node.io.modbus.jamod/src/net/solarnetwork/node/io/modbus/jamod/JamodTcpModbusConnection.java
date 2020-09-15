@@ -103,74 +103,77 @@ public class JamodTcpModbusConnection extends AbstractModbusConnection implement
 	}
 
 	@Override
-	public BitSet readDiscreetValues(final int[] addresses, final int count) {
+	public BitSet readDiscreetValues(final int[] addresses, final int count) throws IOException {
 		return ModbusTransactionUtils.readDiscreetValues(createTransaction(), addresses, count,
 				getUnitId(), isHeadless());
 	}
 
 	@Override
-	public BitSet readDiscreetValues(final int address, final int count) {
+	public BitSet readDiscreetValues(final int address, final int count) throws IOException {
 		return ModbusTransactionUtils.readDiscreteValues(createTransaction(), address, count,
 				getUnitId(), isHeadless());
 	}
 
 	@Override
-	public void writeDiscreetValues(final int[] addresses, final BitSet bits) {
+	public void writeDiscreetValues(final int[] addresses, final BitSet bits) throws IOException {
 		ModbusTransactionUtils.writeDiscreetValues(createTransaction(), addresses, bits, getUnitId(),
 				isHeadless());
 	}
 
 	@Override
-	public BitSet readInputDiscreteValues(final int address, final int count) {
+	public BitSet readInputDiscreteValues(final int address, final int count) throws IOException {
 		return ModbusTransactionUtils.readInputDiscreteValues(createTransaction(), address, count,
 				getUnitId(), isHeadless());
 	}
 
 	@Override
-	public short[] readWords(ModbusReadFunction function, int address, int count) {
+	public short[] readWords(ModbusReadFunction function, int address, int count) throws IOException {
 		return ModbusTransactionUtils.readWords(createTransaction(), getUnitId(), isHeadless(), function,
 				address, count);
 	}
 
 	@Override
-	public void writeWords(ModbusWriteFunction function, int address, short[] values) {
+	public void writeWords(ModbusWriteFunction function, int address, short[] values)
+			throws IOException {
 		ModbusTransactionUtils.writeWords(createTransaction(), getUnitId(), isHeadless(), function,
 				address, values);
 	}
 
 	@Override
-	public int[] readWordsUnsigned(ModbusReadFunction function, int address, int count) {
+	public int[] readWordsUnsigned(ModbusReadFunction function, int address, int count)
+			throws IOException {
 		return ModbusTransactionUtils.readWordsUnsigned(createTransaction(), getUnitId(), isHeadless(),
 				function, address, count);
 	}
 
 	@Override
-	public void writeWords(ModbusWriteFunction function, int address, int[] values) {
+	public void writeWords(ModbusWriteFunction function, int address, int[] values) throws IOException {
 		ModbusTransactionUtils.writeWords(createTransaction(), getUnitId(), isHeadless(), function,
 				address, values);
 	}
 
 	@Override
-	public byte[] readBytes(ModbusReadFunction function, int address, int count) {
+	public byte[] readBytes(ModbusReadFunction function, int address, int count) throws IOException {
 		return ModbusTransactionUtils.readBytes(createTransaction(), getUnitId(), isHeadless(), function,
 				address, count);
 	}
 
 	@Override
-	public void writeBytes(ModbusWriteFunction function, int address, byte[] values) {
+	public void writeBytes(ModbusWriteFunction function, int address, byte[] values) throws IOException {
 		ModbusTransactionUtils.writeBytes(createTransaction(), getUnitId(), isHeadless(), function,
 				address, values);
 	}
 
 	@Override
 	public String readString(ModbusReadFunction function, int address, int count, boolean trim,
-			Charset charset) {
+			Charset charset) throws IOException {
 		return ModbusTransactionUtils.readString(createTransaction(), getUnitId(), isHeadless(),
 				function, address, count, trim, charset);
 	}
 
 	@Override
-	public void writeString(ModbusWriteFunction function, int address, String value, Charset charset) {
+	public void writeString(ModbusWriteFunction function, int address, String value, Charset charset)
+			throws IOException {
 		ModbusTransactionUtils.writeString(createTransaction(), getUnitId(), isHeadless(), function,
 				address, value, charset);
 	}
