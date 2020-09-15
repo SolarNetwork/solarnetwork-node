@@ -25,6 +25,7 @@ package net.solarnetwork.node.hw.sma.modbus;
 import static net.solarnetwork.domain.GeneralDatumSamplesType.Accumulating;
 import static net.solarnetwork.domain.GeneralDatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.GeneralDatumSamplesType.Status;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -139,13 +140,13 @@ public class SmaCommonDeviceData extends SmaDeviceData implements SmaDeviceCommo
 	}
 
 	@Override
-	public void readInformationData(ModbusConnection conn) {
+	public void readInformationData(ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				SmaCommonDeviceRegister.INFO_REGISTER_ADDRESS_SET, MAX_RESULTS);
 	}
 
 	@Override
-	public void readDeviceData(ModbusConnection conn) {
+	public void readDeviceData(ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				SmaCommonDeviceRegister.DATA_REGISTER_ADDRESS_SET, MAX_RESULTS);
 	}

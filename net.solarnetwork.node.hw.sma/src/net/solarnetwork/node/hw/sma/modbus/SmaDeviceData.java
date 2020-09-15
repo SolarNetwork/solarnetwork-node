@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.sma.modbus;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.LinkedHashMap;
@@ -67,14 +68,18 @@ public abstract class SmaDeviceData extends ModbusData implements SmaDeviceDataA
 	 */
 	public SmaDeviceData(short[] data, int addr) {
 		super();
-		performUpdates(new ModbusDataUpdateAction() {
+		try {
+			performUpdates(new ModbusDataUpdateAction() {
 
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				m.saveDataArray(data, addr);
-				return true;
-			}
-		});
+				@Override
+				public boolean updateModbusData(MutableModbusData m) {
+					m.saveDataArray(data, addr);
+					return true;
+				}
+			});
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
@@ -133,16 +138,20 @@ public abstract class SmaDeviceData extends ModbusData implements SmaDeviceDataA
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public abstract void readInformationData(final ModbusConnection conn);
+	public abstract void readInformationData(final ModbusConnection conn) throws IOException;
 
 	/**
 	 * Read the data registers from the device.
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public abstract void readDeviceData(final ModbusConnection conn);
+	public abstract void readDeviceData(final ModbusConnection conn) throws IOException;
 
 	/**
 	 * Get a status code register value.

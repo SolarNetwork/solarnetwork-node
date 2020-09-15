@@ -54,7 +54,7 @@ public class WebBoxServiceDevice extends WebBoxService implements SettingSpecifi
 		Collection<WebBoxDevice> devices = availableDevices();
 		if ( devices != null ) {
 			for ( WebBoxDevice d : devices ) {
-				results.add(new BasicTitleSettingSpecifier("device", getDeviceMessage(d), true));
+				results.add(new BasicTitleSettingSpecifier("device", d.getDeviceDescription(), true));
 			}
 		}
 
@@ -73,11 +73,6 @@ public class WebBoxServiceDevice extends WebBoxService implements SettingSpecifi
 			log.debug("Error reading info: {}", e.getMessage());
 		}
 		return (msg == null ? "N/A" : msg);
-	}
-
-	private String getDeviceMessage(net.solarnetwork.node.hw.sma.modbus.webbox.WebBoxDevice d) {
-		return String.format("%s (%d) @ %d - %d", d.getDeviceKind().getDescription(),
-				d.getDeviceKind().getCode(), d.getUnitId(), d.getSerialNumber());
 	}
 
 }

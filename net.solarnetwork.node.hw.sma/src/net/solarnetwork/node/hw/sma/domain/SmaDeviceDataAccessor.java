@@ -91,4 +91,26 @@ public interface SmaDeviceDataAccessor extends DataAccessor {
 	 */
 	GeneralDatumMetadata getDatumMetadata(Map<String, ?> parameters);
 
+	/**
+	 * Get a description of the data in this accessor.
+	 * 
+	 * @return the description, never {@literal null}
+	 */
+	default String getDataDescription() {
+		StringBuilder buf = new StringBuilder();
+		DeviceOperatingState opState = getDeviceOperatingState();
+		if ( opState != null ) {
+			buf.append(opState);
+		}
+		if ( this instanceof SmaDeviceCommonDataAccessor ) {
+			SmaDeviceCommonDataAccessor common = (SmaDeviceCommonDataAccessor) this;
+			buf.append("; W = ").append(common.getActivePower());
+			buf.append("; Wh = ").append(common.getActiveEnergyExported());
+			buf.append("; dcVoltage = ").append(common.getDcVoltage());
+			buf.append("; dcCurrent = ").append(common.getDcCurrent());
+			buf.append("; temp = ").append(common.getCabinetTemperature());
+			buf.append("; event = ").append(common.getEventId());
+		}
+		return buf.toString();
+	}
 }

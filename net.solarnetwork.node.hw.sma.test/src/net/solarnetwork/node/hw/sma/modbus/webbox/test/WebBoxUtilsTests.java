@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.sma.modbus.webbox.test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.hamcrest.Matchers;
@@ -46,7 +47,7 @@ import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 public class WebBoxUtilsTests {
 
 	@Test
-	public void parseDeviceReference_ModbusData() {
+	public void parseDeviceReference_ModbusData() throws IOException {
 		ModbusData d = TestUtils.testData(getClass(), "data-01.txt");
 		WebBoxDeviceReference ref = WebBoxUtils.parseDeviceReference(d,
 				WebBoxRegister.DEVICE_UNIT_IDS_STARTING_ADDRESS);
@@ -56,14 +57,14 @@ public class WebBoxUtilsTests {
 	}
 
 	@Test
-	public void readAvailableDevices() {
+	public void readAvailableDevices() throws IOException {
 		ModbusConnection conn = TestUtils.testDataConnection(getClass(), "data-01.txt");
 		ModbusData d = new ModbusData();
 		List<WebBoxDeviceReference> result = new ArrayList<>(8);
 		d.performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
-			public boolean updateModbusData(MutableModbusData m) {
+			public boolean updateModbusData(MutableModbusData m) throws IOException {
 				result.addAll(WebBoxUtils.readAvailableDevices(conn, m));
 				return false;
 			}
@@ -81,14 +82,14 @@ public class WebBoxUtilsTests {
 	}
 
 	@Test
-	public void readAvailableDevices_full() {
+	public void readAvailableDevices_full() throws IOException {
 		ModbusConnection conn = TestUtils.testDataConnection(getClass(), "data-02.txt");
 		ModbusData d = new ModbusData();
 		List<WebBoxDeviceReference> result = new ArrayList<>(8);
 		d.performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
-			public boolean updateModbusData(MutableModbusData m) {
+			public boolean updateModbusData(MutableModbusData m) throws IOException {
 				result.addAll(WebBoxUtils.readAvailableDevices(conn, m));
 				return false;
 			}

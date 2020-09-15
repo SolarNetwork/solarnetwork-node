@@ -25,6 +25,7 @@ package net.solarnetwork.node.hw.sma.modbus;
 import static java.lang.String.format;
 import static net.solarnetwork.domain.GeneralDatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.GeneralDatumSamplesType.Status;
+import java.io.IOException;
 import java.util.Map;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
@@ -104,26 +105,14 @@ public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStri
 		}
 	}
 
-	/**
-	 * Read the informational registers from the device.
-	 * 
-	 * @param conn
-	 *        the connection
-	 */
 	@Override
-	public final void readInformationData(final ModbusConnection conn) {
+	public final void readInformationData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				SmaScStringMonitorUsRegister.INFO_REGISTER_ADDRESS_SET, MAX_RESULTS);
 	}
 
-	/**
-	 * Read the registers from the device.
-	 * 
-	 * @param conn
-	 *        the connection
-	 */
 	@Override
-	public final void readDeviceData(final ModbusConnection conn) {
+	public final void readDeviceData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				SmaScStringMonitorUsRegister.DATA_REGISTER_ADDRESS_SET, MAX_RESULTS);
 	}

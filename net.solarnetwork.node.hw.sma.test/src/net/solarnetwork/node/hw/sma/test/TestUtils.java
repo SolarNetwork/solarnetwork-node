@@ -102,18 +102,24 @@ public final class TestUtils {
 	 *        the data resource to load
 	 * @return the connection
 	 * @see #parseTestData(Class, String)
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public static ModbusData testData(Class<?> clazz, String resource) {
 		Map<Integer, Integer> map = parseTestData(clazz, resource);
 		ModbusData d = new ModbusData();
-		d.performUpdates(new ModbusDataUpdateAction() {
+		try {
+			d.performUpdates(new ModbusDataUpdateAction() {
 
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				m.saveDataMap(map);
-				return true;
-			}
-		});
+				@Override
+				public boolean updateModbusData(MutableModbusData m) throws IOException {
+					m.saveDataMap(map);
+					return true;
+				}
+			});
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
 		return d;
 	}
 

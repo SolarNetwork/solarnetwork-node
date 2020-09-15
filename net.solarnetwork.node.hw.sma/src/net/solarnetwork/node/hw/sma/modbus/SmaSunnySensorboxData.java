@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.sma.modbus;
 
 import static net.solarnetwork.domain.GeneralDatumSamplesType.Accumulating;
 import static net.solarnetwork.domain.GeneralDatumSamplesType.Instantaneous;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Map;
@@ -94,26 +95,14 @@ public class SmaSunnySensorboxData extends SmaDeviceData implements SmaSunnySens
 		samples.putSampleValue(Accumulating, "opTime", getOperatingTime());
 	}
 
-	/**
-	 * Read the informational registers from the device.
-	 * 
-	 * @param conn
-	 *        the connection
-	 */
 	@Override
-	public final void readInformationData(final ModbusConnection conn) {
+	public final void readInformationData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				SmaSunnySensorboxRegister.INFO_REGISTER_ADDRESS_SET, MAX_RESULTS);
 	}
 
-	/**
-	 * Read the registers from the device.
-	 * 
-	 * @param conn
-	 *        the connection
-	 */
 	@Override
-	public final void readDeviceData(final ModbusConnection conn) {
+	public final void readDeviceData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				SmaSunnySensorboxRegister.DATA_REGISTER_ADDRESS_SET, MAX_RESULTS);
 	}

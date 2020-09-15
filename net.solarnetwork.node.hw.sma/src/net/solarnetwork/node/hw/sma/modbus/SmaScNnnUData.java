@@ -25,6 +25,7 @@ package net.solarnetwork.node.hw.sma.modbus;
 import static net.solarnetwork.domain.GeneralDatumSamplesType.Accumulating;
 import static net.solarnetwork.domain.GeneralDatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.GeneralDatumSamplesType.Status;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Map;
@@ -142,26 +143,14 @@ public class SmaScNnnUData extends SmaCommonDeviceData implements SmaScNnnUDataA
 		}
 	}
 
-	/**
-	 * Read the informational registers from the device.
-	 * 
-	 * @param conn
-	 *        the connection
-	 */
 	@Override
-	public final void readInformationData(final ModbusConnection conn) {
+	public final void readInformationData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				SmaScNnnURegister.INFO_REGISTER_ADDRESS_SET, MAX_RESULTS);
 	}
 
-	/**
-	 * Read the registers from the device.
-	 * 
-	 * @param conn
-	 *        the connection
-	 */
 	@Override
-	public final void readDeviceData(final ModbusConnection conn) {
+	public final void readDeviceData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				SmaScNnnURegister.DATA_REGISTER_ADDRESS_SET, MAX_RESULTS);
 	}

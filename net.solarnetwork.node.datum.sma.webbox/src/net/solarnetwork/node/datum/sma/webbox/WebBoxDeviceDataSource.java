@@ -34,6 +34,7 @@ import net.solarnetwork.node.hw.sma.modbus.webbox.WebBoxOperations;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.support.DatumDataSourceSupport;
 import net.solarnetwork.util.FilterableService;
 import net.solarnetwork.util.OptionalService;
@@ -62,6 +63,8 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 	private long sampleCacheMs = 5000;
 	private Integer unitId;
 
+	private SmaDeviceDataAccessor lastSample;
+
 	/**
 	 * Constructor.
 	 * 
@@ -87,6 +90,9 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<>(8);
 
+		results.add(new BasicTitleSettingSpecifier("info", infoMessage(), true));
+		results.add(new BasicTitleSettingSpecifier("sample", sampleMessage(lastSample), true));
+
 		results.addAll(getIdentifiableSettingSpecifiers());
 		results.add(
 				new BasicTextFieldSettingSpecifier("webBox.propertyFilters['UID']", DEFAULT_WEBBOX_UID));
@@ -96,13 +102,27 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 		return results;
 	}
 
+	private String infoMessage() {
+		WebBoxDevice device = webBoxDevice();
+		if ( device == null ) {
+			return "N/A";
+		}
+		return device.getDeviceDescription();
+	}
+
+	private String sampleMessage(SmaDeviceDataAccessor data) {
+		if ( data == null || data.getDataTimestamp() < 1 ) {
+			return "N/A";
+		}
+		return data.getDataDescription();
+	}
+
 	@Override
 	public Class<? extends GeneralNodeDatum> getDatumType() {
 		return GeneralNodeDatum.class;
 	}
 
-	@Override
-	public GeneralNodeDatum readCurrentDatum() {
+	private WebBoxDevice webBoxDevice() {
 		final int uId = (unitId != null ? unitId.intValue() : -1);
 		if ( uId < 3 ) {
 			return null;
@@ -115,12 +135,18 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 				.orElse(null);
 		if ( device == null ) {
 			log.warn("No WebBox device with unit ID {} available from WebBox {}", uId, ops);
-			return null;
 		}
+		return device;
+	}
+
+	@Override
+	public GeneralNodeDatum readCurrentDatum() {
+		WebBoxDevice device = webBoxDevice();
 		final long now = System.currentTimeMillis();
 		try {
 			SmaDeviceDataAccessor sample = device.refreshData(getSampleCacheMs());
 			if ( sample != null && sample.getDataTimestamp() >= now ) {
+				lastSample = sample;
 				GeneralNodeDatum d = new GeneralNodeDatum();
 				d.setCreated(new Date(sample.getDataTimestamp()));
 				d.setSourceId(resolvePlaceholders(getSourceId()));

@@ -26,11 +26,13 @@ import static java.lang.String.format;
 import static net.solarnetwork.domain.GeneralDatumSamplesType.Accumulating;
 import static net.solarnetwork.domain.GeneralDatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.GeneralDatumSamplesType.Status;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Map;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
 import net.solarnetwork.node.domain.ACEnergyDatum;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.hw.sma.domain.SmaCommonStatusCode;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
@@ -41,11 +43,7 @@ import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 
 /**
- * FIXME
- * 
- * <p>
- * TODO
- * </p>
+ * {@link DataAccessor} for Sunny Central String Monitor Controller devices.
  * 
  * @author matt
  * @version 1.0
@@ -117,26 +115,14 @@ public class SmaScStringMonitorControllerData extends SmaDeviceData
 		}
 	}
 
-	/**
-	 * Read the informational registers from the device.
-	 * 
-	 * @param conn
-	 *        the connection
-	 */
 	@Override
-	public final void readInformationData(final ModbusConnection conn) {
+	public final void readInformationData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				SmaScStringMonitorControllerRegister.INFO_REGISTER_ADDRESS_SET, MAX_RESULTS);
 	}
 
-	/**
-	 * Read the registers from the device.
-	 * 
-	 * @param conn
-	 *        the connection
-	 */
 	@Override
-	public final void readDeviceData(final ModbusConnection conn) {
+	public final void readDeviceData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				SmaScStringMonitorControllerRegister.DATA_REGISTER_ADDRESS_SET, MAX_RESULTS);
 	}

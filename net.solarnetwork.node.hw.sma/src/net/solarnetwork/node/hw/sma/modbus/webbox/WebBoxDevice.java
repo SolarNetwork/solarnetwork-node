@@ -74,4 +74,17 @@ public interface WebBoxDevice {
 	 */
 	SmaDeviceDataAccessor refreshData(long maxAge) throws IOException;
 
+	/**
+	 * Get a description of a device, that includes the device type, device ID,
+	 * unit ID, and serial number.
+	 * 
+	 * @return the description, never {@literal null}
+	 */
+	default String getDeviceDescription() {
+		return String.format("%s (%d) @ %d - %d",
+				getDeviceKind() != null ? getDeviceKind().getDescription() : "N/A",
+				getDeviceKind() != null ? getDeviceKind().getCode() : -1, getUnitId(),
+				getSerialNumber());
+	}
+
 }

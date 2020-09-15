@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.sma.modbus.webbox;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -85,9 +86,11 @@ public final class WebBoxUtils {
 	 * @param m
 	 *        the mutable data to save the device data to
 	 * @return the discovered device references
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public static Collection<WebBoxDeviceReference> readAvailableDevices(ModbusConnection conn,
-			MutableModbusData m) {
+			MutableModbusData m) throws IOException {
 		final int max = WebBoxRegister.DEVICE_UNIT_IDS_STARTING_ADDRESS + (4 * 245); // 245 == max number of references, 4 registers per ref
 		final List<WebBoxDeviceReference> refs = new ArrayList<>(8);
 		int addr = WebBoxRegister.DEVICE_UNIT_IDS_STARTING_ADDRESS;

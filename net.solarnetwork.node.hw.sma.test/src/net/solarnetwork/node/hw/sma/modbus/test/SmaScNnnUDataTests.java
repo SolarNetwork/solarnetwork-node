@@ -26,6 +26,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import java.math.BigInteger;
 import org.junit.Test;
 import net.solarnetwork.domain.DeviceOperatingState;
@@ -46,7 +47,7 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
 public class SmaScNnnUDataTests {
 
 	@Test
-	public void readInfo_1() {
+	public void readInfo_1() throws IOException {
 		// GIVEN
 		SmaScNnnUData d = new SmaScNnnUData(SmaDeviceType.SunnyCentral250US);
 		ModbusConnection conn = TestUtils.testDataConnection(getClass(), "data-sc250us-01.txt");
@@ -63,7 +64,7 @@ public class SmaScNnnUDataTests {
 	}
 
 	@Test
-	public void readData_1() {
+	public void readData_1() throws IOException {
 		// GIVEN
 		SmaScNnnUData d = new SmaScNnnUData(SmaDeviceType.SunnyCentral250US);
 		ModbusConnection conn = TestUtils.testDataConnection(getClass(), "data-sc250us-01.txt");
@@ -88,7 +89,7 @@ public class SmaScNnnUDataTests {
 	}
 
 	@Test
-	public void readData_2() {
+	public void readData_2() throws IOException {
 		// GIVEN
 		SmaScNnnUData d = new SmaScNnnUData(SmaDeviceType.SunnyCentral250US);
 		ModbusConnection conn = TestUtils.testDataConnection(getClass(), "data-sc250us-02.txt");

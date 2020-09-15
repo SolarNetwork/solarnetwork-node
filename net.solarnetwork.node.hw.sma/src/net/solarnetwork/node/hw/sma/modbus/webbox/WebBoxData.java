@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.sma.modbus.webbox;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import net.solarnetwork.domain.DeviceOperatingState;
@@ -71,30 +72,18 @@ public class WebBoxData extends SmaDeviceData implements WebBoxDataAccessor {
 		return new WebBoxData(this);
 	}
 
-	/**
-	 * Read the informational registers from the device.
-	 * 
-	 * @param conn
-	 *        the connection
-	 */
 	@Override
-	public final void readInformationData(final ModbusConnection conn) {
+	public final void readInformationData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				WebBoxRegister.INFO_REGISTER_ADDRESS_SET, MAX_RESULTS);
 	}
 
-	/**
-	 * Read the registers from the device.
-	 * 
-	 * @param conn
-	 *        the connection
-	 */
 	@Override
-	public final void readDeviceData(final ModbusConnection conn) {
+	public final void readDeviceData(final ModbusConnection conn) throws IOException {
 		performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
-			public boolean updateModbusData(MutableModbusData m) {
+			public boolean updateModbusData(MutableModbusData m) throws IOException {
 				Collection<WebBoxDeviceReference> refs = WebBoxUtils.readAvailableDevices(conn, m);
 				synchronized ( WebBoxData.this ) {
 					if ( deviceReferences != null ) {

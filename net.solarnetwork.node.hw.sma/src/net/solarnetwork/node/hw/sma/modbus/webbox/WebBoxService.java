@@ -61,12 +61,12 @@ public class WebBoxService extends ModbusDataDatumDataSourceSupport<WebBoxData>
 	}
 
 	@Override
-	protected void refreshDeviceInfo(ModbusConnection connection, WebBoxData sample) {
+	protected void refreshDeviceInfo(ModbusConnection connection, WebBoxData sample) throws IOException {
 		sample.readInformationData(connection);
 	}
 
 	@Override
-	protected void refreshDeviceData(ModbusConnection connection, WebBoxData sample) {
+	protected void refreshDeviceData(ModbusConnection connection, WebBoxData sample) throws IOException {
 		sample.readDeviceData(connection);
 	}
 

@@ -26,6 +26,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import java.math.BigDecimal;
 import org.junit.Test;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceType;
@@ -43,7 +44,7 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
 public class SmaSunnySensorboxDataTests {
 
 	@Test
-	public void readInfo_1() {
+	public void readInfo_1() throws IOException {
 		// GIVEN
 		SmaSunnySensorboxData d = new SmaSunnySensorboxData();
 		ModbusConnection conn = TestUtils.testDataConnection(getClass(), "data-sunnysensorbox-01.txt");
@@ -60,7 +61,7 @@ public class SmaSunnySensorboxDataTests {
 	}
 
 	@Test
-	public void readData_1() {
+	public void readData_1() throws IOException {
 		// GIVEN
 		SmaSunnySensorboxData d = new SmaSunnySensorboxData();
 		ModbusConnection conn = TestUtils.testDataConnection(getClass(), "data-sunnysensorbox-01.txt");
