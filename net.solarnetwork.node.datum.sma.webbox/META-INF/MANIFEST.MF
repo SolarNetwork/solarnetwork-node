@@ -1,0 +1,39 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: SMA WebBox Data Source
+Bundle-Description: Collect data from SMA devices connected to an SMA WebBox.
+Bundle-SymbolicName: net.solarnetwork.node.datum.sma.webbox
+Bundle-Version: 0.1.0
+Bundle-Vendor: SolarNetwork
+Automatic-Module-Name: net.solarnetwork.node.datum.sma.webbox
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Import-Package: 
+ net.solarnetwork.domain;version="[1.24,2.0)",
+ net.solarnetwork.node;version="[1.31,2.0)",
+ net.solarnetwork.node.dao;version="[1.10,2.0)",
+ net.solarnetwork.node.domain;version="[1.18,2.0)",
+ net.solarnetwork.node.hw.sma.domain;version="[1.0,2.0)",
+ net.solarnetwork.node.hw.sma.modbus;version="[1.0,2.0)",
+ net.solarnetwork.node.hw.sma.modbus.webbox;version="[1.0,2.0)",
+ net.solarnetwork.node.io.modbus;version="[3.0,4.0)",
+ net.solarnetwork.node.io.modbus.support;version="[3.0,4.0)",
+ net.solarnetwork.node.job;version="[1.16,2.0)",
+ net.solarnetwork.node.settings;version="[1.12,2.0)",
+ net.solarnetwork.node.settings.support;version="[1.11,2.0)",
+ net.solarnetwork.node.support;version="[1.21,2.0)",
+ net.solarnetwork.node.util;version="[1.7,2.0)",
+ net.solarnetwork.settings;version="[1.3,2.0)",
+ net.solarnetwork.util;version="[1.45,2.0)",
+ org.eclipse.gemini.blueprint.compendium.cm;version="[2.0,3.0)",
+ org.joda.time;version="[2.4,3.0)",
+ org.joda.time.base;version="[2.4,3.0)",
+ org.joda.time.format;version="[2.4,3.0)",
+ org.osgi.service.event;version="[1.2,2.0)",
+ org.quartz;version="[2.2,3.0)",
+ org.quartz.simpl;version="[2.2,3.0)",
+ org.slf4j;version="[1.7,2.0)",
+ org.springframework.beans;version="[4.3,5.0)",
+ org.springframework.context;version="[4.3,5.0)",
+ org.springframework.context.support;version="[4.3,5.0)",
+ org.springframework.core;version="[4.3,5.0)",
+ org.springframework.scheduling.quartz;version="[4.3,5.0)"
