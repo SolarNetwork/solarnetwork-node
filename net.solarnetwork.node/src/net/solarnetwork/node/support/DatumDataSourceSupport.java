@@ -52,7 +52,7 @@ import net.solarnetwork.util.OptionalService;
  * {@link net.solarnetwork.node.MultiDatumDataSource} implementations to extend.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.51
  */
 public class DatumDataSourceSupport extends BaseIdentifiable {
@@ -287,6 +287,8 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	/**
 	 * Apply the configured samples transformer service to a given datum.
 	 * 
+	 * @param <T>
+	 *        the type of datum
 	 * @param datum
 	 *        the datum to possibly filter
 	 * @param props
@@ -296,7 +298,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *         datum has been filtered out completely
 	 * @since 1.1
 	 */
-	protected GeneralNodeDatum applySamplesTransformer(GeneralNodeDatum datum, Map<String, ?> props) {
+	protected <T extends GeneralNodeDatum> T applySamplesTransformer(T datum, Map<String, ?> props) {
 		GeneralDatumSamplesTransformService xformService = OptionalService
 				.service(getSamplesTransformService());
 		if ( xformService != null ) {
