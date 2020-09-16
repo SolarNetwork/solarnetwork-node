@@ -89,7 +89,7 @@ public enum SmaScStringMonitorUsRegister implements ModbusReference {
 
 	/** A register address set for general device information. */
 	public static final IntRangeSet INFO_REGISTER_ADDRESS_SET = createAddressSet(
-			SmaScStringMonitorUsRegister.class, new HashSet<>(asList(SerialNumber.name(), SmuId.name())))
+			SmaScStringMonitorUsRegister.class, new HashSet<>(asList(SerialNumber.name())))
 					.immutableCopy();
 
 	/** A register address set for device data. */
