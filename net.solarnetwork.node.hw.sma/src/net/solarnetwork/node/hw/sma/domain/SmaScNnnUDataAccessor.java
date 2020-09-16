@@ -52,28 +52,28 @@ public interface SmaScNnnUDataAccessor extends SmaDeviceCommonDataAccessor {
 	 * 
 	 * @return the recommended action, or {@literal null}
 	 */
-	SmaCommonStatusCode getRecommendedAction();
+	SmaCodedValue getRecommendedAction();
 
 	/**
 	 * Get the grid contactor status.
 	 * 
 	 * @return the grid contactor status
 	 */
-	SmaCommonStatusCode getGridContactorStatus();
+	SmaCodedValue getGridContactorStatus();
 
 	/**
 	 * Get the SMA operating state.
 	 * 
 	 * @return the operating state
 	 */
-	SmaCommonStatusCode getOperatingState();
+	SmaCodedValue getOperatingState();
 
 	/**
 	 * Get the error value.
 	 * 
 	 * @return the error, or {@literal null}
 	 */
-	SmaCommonStatusCode getError();
+	SmaCodedValue getError();
 
 	/**
 	 * Get the SMA error number.
@@ -87,21 +87,21 @@ public interface SmaScNnnUDataAccessor extends SmaDeviceCommonDataAccessor {
 	 * 
 	 * @return the status, or {@literal null}
 	 */
-	SmaCommonStatusCode getDcSwitchStatus();
+	SmaCodedValue getDcSwitchStatus();
 
 	/**
 	 * Get the AC switch status.
 	 * 
 	 * @return the status, or {@literal null}
 	 */
-	SmaCommonStatusCode getAcSwitchStatus();
+	SmaCodedValue getAcSwitchStatus();
 
 	/**
 	 * Get the AC switch disconnector status.
 	 * 
 	 * @return the status, or {@literal null}
 	 */
-	SmaCommonStatusCode getAcSwitchDisconnectorStatus();
+	SmaCodedValue getAcSwitchDisconnectorStatus();
 
 	/**
 	 * Get the grid current, line 1.
@@ -129,7 +129,7 @@ public interface SmaScNnnUDataAccessor extends SmaDeviceCommonDataAccessor {
 	 * 
 	 * @return the status, or {@literal null}
 	 */
-	SmaCommonStatusCode getActivePowerLimitStatus();
+	SmaCodedValue getActivePowerLimitStatus();
 
 	/**
 	 * Get the active power target value.

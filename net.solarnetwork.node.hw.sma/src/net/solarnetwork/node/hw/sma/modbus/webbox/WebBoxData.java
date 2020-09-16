@@ -28,7 +28,6 @@ import java.util.Map;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
 import net.solarnetwork.node.domain.DataAccessor;
-import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceType;
 import net.solarnetwork.node.hw.sma.modbus.SmaDeviceData;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -49,7 +48,7 @@ public class WebBoxData extends SmaDeviceData implements WebBoxDataAccessor {
 	 * Constructor.
 	 */
 	public WebBoxData() {
-		super();
+		super(SmaDeviceType.SunnyWebBox);
 	}
 
 	/**
@@ -59,7 +58,7 @@ public class WebBoxData extends SmaDeviceData implements WebBoxDataAccessor {
 	 *        the meter data to copy
 	 */
 	public WebBoxData(ModbusData other) {
-		super(other);
+		super(other, SmaDeviceType.SunnyWebBox);
 		if ( other instanceof WebBoxData ) {
 			synchronized ( other ) {
 				this.deviceReferences = ((WebBoxData) other).deviceReferences;
@@ -96,11 +95,6 @@ public class WebBoxData extends SmaDeviceData implements WebBoxDataAccessor {
 				return true;
 			}
 		});
-	}
-
-	@Override
-	public SmaDeviceKind getDeviceKind() {
-		return SmaDeviceType.SunnyWebBox;
 	}
 
 	@Override

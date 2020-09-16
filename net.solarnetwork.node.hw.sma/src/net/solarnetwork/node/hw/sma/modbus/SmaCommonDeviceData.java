@@ -52,8 +52,6 @@ import net.solarnetwork.util.NumberUtils;
  */
 public class SmaCommonDeviceData extends SmaDeviceData implements SmaDeviceCommonDataAccessor {
 
-	private final SmaDeviceKind deviceKind;
-
 	/**
 	 * Constructor.
 	 * 
@@ -61,8 +59,7 @@ public class SmaCommonDeviceData extends SmaDeviceData implements SmaDeviceCommo
 	 *        the device kind
 	 */
 	public SmaCommonDeviceData(SmaDeviceKind deviceKind) {
-		super();
-		this.deviceKind = deviceKind;
+		super(deviceKind);
 	}
 
 	/**
@@ -76,8 +73,7 @@ public class SmaCommonDeviceData extends SmaDeviceData implements SmaDeviceCommo
 	 *        the starting Modbus register address of {@code data}
 	 */
 	public SmaCommonDeviceData(SmaDeviceKind deviceKind, short[] data, int addr) {
-		super(data, addr);
-		this.deviceKind = deviceKind;
+		super(deviceKind, data, addr);
 	}
 
 	/**
@@ -89,18 +85,12 @@ public class SmaCommonDeviceData extends SmaDeviceData implements SmaDeviceCommo
 	 *        the device kind
 	 */
 	public SmaCommonDeviceData(ModbusData other, SmaDeviceKind deviceKind) {
-		super(other);
-		this.deviceKind = deviceKind;
+		super(other, deviceKind);
 	}
 
 	@Override
 	public SmaScNnnUData copy() {
-		return new SmaScNnnUData(this, deviceKind);
-	}
-
-	@Override
-	public SmaDeviceKind getDeviceKind() {
-		return deviceKind;
+		return new SmaScNnnUData(this, getDeviceKind());
 	}
 
 	@Override

@@ -22,15 +22,13 @@
 
 package net.solarnetwork.node.hw.sma.domain;
 
-import net.solarnetwork.domain.CodedValue;
-
 /**
  * Common statuc code values used in various enumerations.
  * 
  * @author matt
  * @version 1.0
  */
-public enum SmaCommonStatusCode implements CodedValue {
+public enum SmaCommonStatusCode implements SmaCodedValue {
 
 	Unknown(-1),
 
@@ -56,9 +54,15 @@ public enum SmaCommonStatusCode implements CodedValue {
 
 	Stop(381),
 
+	ConstantVoltage(443, "Constant voltage"),
+
 	Warning(455),
 
 	SMA(461, "Manufacturer specification"),
+
+	TemperatureDerating(557, "Temperature derating is active"),
+
+	PowerSpecificationViaCurve(565, "Power specification via characteristic curve"),
 
 	NotSet(973, "Not set"),
 
@@ -110,6 +114,16 @@ public enum SmaCommonStatusCode implements CodedValue {
 
 	AcGrid(1396, "AC grid"),
 
+	GridMode(1440, "Grid mode"),
+
+	SeparateGridMode(1441, "Separate grid mode"),
+
+	PhaseGuard(1442, "Phase guard"),
+
+	PowerGuard(1443, "Power guard"),
+
+	FaultGaurd(1444, "Fault gaurd"),
+
 	EmergencyStop(1455, "Emergency Stop"),
 
 	Waiting(1466),
@@ -142,6 +156,8 @@ public enum SmaCommonStatusCode implements CodedValue {
 
 	WaitForElectricitySupplier(1480, "Wait for electricity supplier"),
 
+	PowerBalancing(2100, "Power limitation to avoid unbalanced load"),
+
 	;
 
 	private final int code;
@@ -162,11 +178,7 @@ public enum SmaCommonStatusCode implements CodedValue {
 		return code;
 	}
 
-	/**
-	 * Get a description.
-	 * 
-	 * @return the description, e.g. "SB n000US"
-	 */
+	@Override
 	public String getDescription() {
 		return description;
 	}

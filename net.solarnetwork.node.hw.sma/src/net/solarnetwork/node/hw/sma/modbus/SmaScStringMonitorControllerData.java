@@ -34,8 +34,8 @@ import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
 import net.solarnetwork.node.domain.ACEnergyDatum;
 import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.hw.sma.domain.SmaCodedValue;
 import net.solarnetwork.node.hw.sma.domain.SmaCommonStatusCode;
-import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceType;
 import net.solarnetwork.node.hw.sma.domain.SmaScStringMonitorControllerDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -55,7 +55,7 @@ public class SmaScStringMonitorControllerData extends SmaDeviceData
 	 * Constructor.
 	 */
 	public SmaScStringMonitorControllerData() {
-		super();
+		super(SmaDeviceType.SunnyCentralStringMonitor);
 	}
 
 	/**
@@ -67,7 +67,7 @@ public class SmaScStringMonitorControllerData extends SmaDeviceData
 	 *        the starting Modbus register address of {@code data}
 	 */
 	public SmaScStringMonitorControllerData(short[] data, int addr) {
-		super(data, addr);
+		super(SmaDeviceType.SunnyCentralStringMonitor, data, addr);
 	}
 
 	/**
@@ -77,7 +77,7 @@ public class SmaScStringMonitorControllerData extends SmaDeviceData
 	 *        the meter data to copy
 	 */
 	public SmaScStringMonitorControllerData(ModbusData other) {
-		super(other);
+		super(other, SmaDeviceType.SunnyCentralStringMonitor);
 	}
 
 	@Override
@@ -98,7 +98,7 @@ public class SmaScStringMonitorControllerData extends SmaDeviceData
 
 		samples.putSampleValue(Accumulating, "opTime", getOperatingTime());
 
-		SmaCommonStatusCode state = getError();
+		SmaCodedValue state = getError();
 		samples.putSampleValue(Status, "error", codedValueCode(state));
 
 		Long code = getSmuWarningCode();
@@ -125,11 +125,6 @@ public class SmaScStringMonitorControllerData extends SmaDeviceData
 	public final void readDeviceData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				SmaScStringMonitorControllerRegister.DATA_REGISTER_ADDRESS_SET, MAX_RESULTS);
-	}
-
-	@Override
-	public SmaDeviceKind getDeviceKind() {
-		return SmaDeviceType.SunnyCentralStringMonitor;
 	}
 
 	@Override
@@ -170,7 +165,7 @@ public class SmaScStringMonitorControllerData extends SmaDeviceData
 	}
 
 	@Override
-	public SmaCommonStatusCode getError() {
+	public SmaCodedValue getError() {
 		return getStatusCode(SmaScStringMonitorControllerRegister.ErrorState);
 	}
 

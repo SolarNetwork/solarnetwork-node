@@ -29,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import net.solarnetwork.domain.CodedValue;
 import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.node.hw.sma.domain.SmaCodedValue;
 import net.solarnetwork.node.hw.sma.domain.SmaCommonStatusCode;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceDataAccessor;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
@@ -51,23 +52,32 @@ public abstract class SmaDeviceData extends ModbusData implements SmaDeviceDataA
 	 */
 	public static final int MAX_RESULTS = 64;
 
+	private final SmaDeviceKind deviceKind;
+
 	/**
 	 * Constructor.
+	 * 
+	 * @param deviceKind
+	 *        the device kind
 	 */
-	public SmaDeviceData() {
+	public SmaDeviceData(SmaDeviceKind deviceKind) {
 		super();
+		this.deviceKind = deviceKind;
 	}
 
 	/**
 	 * Constructor.
 	 * 
+	 * @param deviceKind
+	 *        the device kind
 	 * @param data
 	 *        some initial data to use
 	 * @param addr
 	 *        the starting Modbus register address of {@code data}
 	 */
-	public SmaDeviceData(short[] data, int addr) {
+	public SmaDeviceData(SmaDeviceKind deviceKind, short[] data, int addr) {
 		super();
+		this.deviceKind = deviceKind;
 		try {
 			performUpdates(new ModbusDataUpdateAction() {
 
@@ -86,10 +96,13 @@ public abstract class SmaDeviceData extends ModbusData implements SmaDeviceDataA
 	 * Copy constructor.
 	 * 
 	 * @param other
-	 *        the meter data to copy
+	 *        the data to copy
+	 * @param deviceKind
+	 *        the device kind
 	 */
-	public SmaDeviceData(ModbusData other) {
+	public SmaDeviceData(ModbusData other, SmaDeviceKind deviceKind) {
 		super(other);
+		this.deviceKind = deviceKind;
 	}
 
 	@Override
@@ -129,6 +142,11 @@ public abstract class SmaDeviceData extends ModbusData implements SmaDeviceDataA
 	}
 
 	@Override
+	public final SmaDeviceKind getDeviceKind() {
+		return deviceKind;
+	}
+
+	@Override
 	public Long getSerialNumber() {
 		return getUnsignedInt32(SmaCommonDeviceRegister.SerialNumber.getAddress());
 	}
@@ -160,7 +178,7 @@ public abstract class SmaDeviceData extends ModbusData implements SmaDeviceDataA
 	 *        the status register to get the value of
 	 * @return the code, or {@link SmaCommonStatusCode#Unknown} if not available
 	 */
-	public SmaCommonStatusCode getStatusCode(ModbusReference ref) {
+	public SmaCodedValue getStatusCode(ModbusReference ref) {
 		return getStatusCode(ref, SmaCommonStatusCode.Unknown);
 	}
 
@@ -177,15 +195,15 @@ public abstract class SmaDeviceData extends ModbusData implements SmaDeviceDataA
 	 *        {@code unknownValue} for
 	 * @return the code
 	 */
-	public SmaCommonStatusCode getStatusCode(ModbusReference ref, SmaCommonStatusCode unknownValue,
-			SmaCommonStatusCode... treatAsUnknown) {
+	public SmaCodedValue getStatusCode(ModbusReference ref, SmaCodedValue unknownValue,
+			SmaCodedValue... treatAsUnknown) {
 		Number n = filterNotNumber(getNumber(ref), ref);
 		if ( n == null ) {
 			return unknownValue;
 		}
 		SmaCommonStatusCode c = SmaCommonStatusCode.forCode(n.intValue());
 		if ( treatAsUnknown != null ) {
-			for ( SmaCommonStatusCode t : treatAsUnknown ) {
+			for ( SmaCodedValue t : treatAsUnknown ) {
 				if ( t == c ) {
 					c = SmaCommonStatusCode.Unknown;
 					break;

@@ -50,14 +50,14 @@ public interface SmaScStringMonitorControllerDataAccessor extends SmaDeviceDataA
 	 * 
 	 * @return the operating state
 	 */
-	SmaCommonStatusCode getOperatingState();
+	SmaCodedValue getOperatingState();
 
 	/**
 	 * Get the error value.
 	 * 
 	 * @return the error, or {@literal null}
 	 */
-	SmaCommonStatusCode getError();
+	SmaCodedValue getError();
 
 	/**
 	 * Get the operating duration.

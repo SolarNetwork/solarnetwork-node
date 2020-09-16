@@ -34,6 +34,7 @@ import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
 import net.solarnetwork.node.domain.ACEnergyDatum;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.hw.sma.domain.SmaCodedValue;
 import net.solarnetwork.node.hw.sma.domain.SmaCommonStatusCode;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
 import net.solarnetwork.node.hw.sma.domain.SmaScNnnUDataAccessor;
@@ -97,7 +98,7 @@ public class SmaScNnnUData extends SmaCommonDeviceData implements SmaScNnnUDataA
 
 		samples.putSampleValue(Instantaneous, "gridReconnectTime", getGridReconnectTime());
 
-		SmaCommonStatusCode state = getOperatingState();
+		SmaCodedValue state = getOperatingState();
 		samples.putSampleValue(Status, Datum.OP_STATES, codedValueCode(state));
 
 		state = getRecommendedAction();
@@ -157,9 +158,9 @@ public class SmaScNnnUData extends SmaCommonDeviceData implements SmaScNnnUDataA
 
 	@Override
 	public DeviceOperatingState getDeviceOperatingState() {
-		SmaCommonStatusCode c = getOperatingState();
-		if ( c != null ) {
-			switch (c) {
+		SmaCodedValue c = getOperatingState();
+		if ( c instanceof SmaCommonStatusCode ) {
+			switch ((SmaCommonStatusCode) c) {
 				case Operation:
 					return DeviceOperatingState.Normal;
 
@@ -178,7 +179,7 @@ public class SmaScNnnUData extends SmaCommonDeviceData implements SmaScNnnUDataA
 	}
 
 	@Override
-	public SmaCommonStatusCode getOperatingState() {
+	public SmaCodedValue getOperatingState() {
 		return getStatusCode(SmaScNnnURegister.OperatingState, null);
 	}
 
@@ -190,17 +191,17 @@ public class SmaScNnnUData extends SmaCommonDeviceData implements SmaScNnnUDataA
 	}
 
 	@Override
-	public SmaCommonStatusCode getRecommendedAction() {
+	public SmaCodedValue getRecommendedAction() {
 		return getStatusCode(SmaScNnnURegister.RecommendedAction, null, SmaCommonStatusCode.Invalid);
 	}
 
 	@Override
-	public SmaCommonStatusCode getGridContactorStatus() {
+	public SmaCodedValue getGridContactorStatus() {
 		return getStatusCode(SmaScNnnURegister.GridContactorStatus, null);
 	}
 
 	@Override
-	public SmaCommonStatusCode getError() {
+	public SmaCodedValue getError() {
 		return getStatusCode(SmaScNnnURegister.ErrorState, null, SmaCommonStatusCode.NotSet);
 	}
 
@@ -212,17 +213,17 @@ public class SmaScNnnUData extends SmaCommonDeviceData implements SmaScNnnUDataA
 	}
 
 	@Override
-	public SmaCommonStatusCode getDcSwitchStatus() {
+	public SmaCodedValue getDcSwitchStatus() {
 		return getStatusCode(SmaScNnnURegister.DcSwitchState, null);
 	}
 
 	@Override
-	public SmaCommonStatusCode getAcSwitchStatus() {
+	public SmaCodedValue getAcSwitchStatus() {
 		return getStatusCode(SmaScNnnURegister.AcSwitchState, null);
 	}
 
 	@Override
-	public SmaCommonStatusCode getAcSwitchDisconnectorStatus() {
+	public SmaCodedValue getAcSwitchDisconnectorStatus() {
 		return getStatusCode(SmaScNnnURegister.AcSwitchDisconnectState, null);
 	}
 
@@ -242,7 +243,7 @@ public class SmaScNnnUData extends SmaCommonDeviceData implements SmaScNnnUDataA
 	}
 
 	@Override
-	public SmaCommonStatusCode getActivePowerLimitStatus() {
+	public SmaCodedValue getActivePowerLimitStatus() {
 		return getStatusCode(SmaScNnnURegister.ActivePowerLimitationOperatingMode, null);
 	}
 

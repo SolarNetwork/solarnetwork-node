@@ -42,7 +42,7 @@ public interface SmaScStringMonitorUsDataAccessor extends SmaDeviceDataAccessor 
 	 * 
 	 * @return the operating state
 	 */
-	SmaCommonStatusCode getOperatingState();
+	SmaCodedValue getOperatingState();
 
 	/**
 	 * Get the SMU ID.

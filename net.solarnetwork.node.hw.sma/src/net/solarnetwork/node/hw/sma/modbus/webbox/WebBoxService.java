@@ -34,6 +34,7 @@ import java.util.concurrent.ConcurrentMap;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceDataAccessor;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceType;
+import net.solarnetwork.node.hw.sma.modbus.SmaSbN000UsData;
 import net.solarnetwork.node.hw.sma.modbus.SmaScNnnUData;
 import net.solarnetwork.node.hw.sma.modbus.SmaScStringMonitorControllerData;
 import net.solarnetwork.node.hw.sma.modbus.SmaScStringMonitorUsData;
@@ -141,12 +142,20 @@ public class WebBoxService extends ModbusDataDatumDataSourceSupport<WebBoxData>
 			deviceType = SmaDeviceType.forCode(deviceId);
 		} catch ( IllegalArgumentException e ) {
 			// not a known device ID
+			log.warn("Unsupported SMA device ID {}", deviceId);
 			return null;
 		}
 		final short[] serialNumberData = encodeUnsignedInt32(ref.getSerialNumber());
 		switch (deviceType) {
 			case SunnyWebBox:
 				return this;
+
+			case SunnyBoyN000US:
+				return deviceDataMap.computeIfAbsent(ref.getUnitId(), k -> {
+					return new WebBoxDataDevice<>(getModbusNetwork(), ref.getUnitId(), deviceType,
+							new SmaSbN000UsData(deviceType, serialNumberData,
+									SerialNumber.getAddress()));
+				});
 
 			case SunnyCentral250US:
 				return deviceDataMap.computeIfAbsent(ref.getUnitId(), k -> {
@@ -174,6 +183,7 @@ public class WebBoxService extends ModbusDataDatumDataSourceSupport<WebBoxData>
 				});
 
 			default:
+				log.warn("Unsupported SMA device type {}", deviceType);
 				// dunno
 		}
 		return null;

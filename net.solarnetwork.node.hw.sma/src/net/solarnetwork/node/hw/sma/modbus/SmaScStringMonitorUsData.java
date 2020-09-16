@@ -31,8 +31,8 @@ import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
 import net.solarnetwork.node.domain.ACEnergyDatum;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.hw.sma.domain.SmaCodedValue;
 import net.solarnetwork.node.hw.sma.domain.SmaCommonStatusCode;
-import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceType;
 import net.solarnetwork.node.hw.sma.domain.SmaScStringMonitorUsDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -51,7 +51,7 @@ public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStri
 	 * Constructor.
 	 */
 	public SmaScStringMonitorUsData() {
-		super();
+		super(SmaDeviceType.SunnyCentralStringMonitorUS);
 	}
 
 	/**
@@ -63,7 +63,7 @@ public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStri
 	 *        the starting Modbus register address of {@code data}
 	 */
 	public SmaScStringMonitorUsData(short[] data, int addr) {
-		super(data, addr);
+		super(SmaDeviceType.SunnyCentralStringMonitorUS, data, addr);
 	}
 
 	/**
@@ -73,7 +73,7 @@ public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStri
 	 *        the meter data to copy
 	 */
 	public SmaScStringMonitorUsData(ModbusData other) {
-		super(other);
+		super(other, SmaDeviceType.SunnyCentralStringMonitorUS);
 	}
 
 	@Override
@@ -96,7 +96,7 @@ public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStri
 
 		samples.putSampleValue(Status, "smu_id", getStringMonitoringUnitId());
 
-		SmaCommonStatusCode state = getOperatingState();
+		SmaCodedValue state = getOperatingState();
 		samples.putSampleValue(Status, Datum.OP_STATES, codedValueCode(state));
 
 		DeviceOperatingState dos = getDeviceOperatingState();
@@ -133,15 +133,10 @@ public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStri
 	}
 
 	@Override
-	public SmaDeviceKind getDeviceKind() {
-		return SmaDeviceType.SunnyCentralStringMonitorUS;
-	}
-
-	@Override
 	public DeviceOperatingState getDeviceOperatingState() {
-		SmaCommonStatusCode c = getOperatingState();
-		if ( c != null ) {
-			switch (c) {
+		SmaCodedValue c = getOperatingState();
+		if ( c instanceof SmaCommonStatusCode ) {
+			switch ((SmaCommonStatusCode) c) {
 				case Operation:
 					return DeviceOperatingState.Normal;
 
@@ -160,7 +155,7 @@ public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStri
 	}
 
 	@Override
-	public SmaCommonStatusCode getOperatingState() {
+	public SmaCodedValue getOperatingState() {
 		return getStatusCode(SmaScStringMonitorUsRegister.OperatingState, null,
 				SmaCommonStatusCode.NotSet);
 	}

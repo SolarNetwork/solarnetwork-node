@@ -31,7 +31,6 @@ import java.util.Map;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
 import net.solarnetwork.node.domain.AtmosphericDatum;
-import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceType;
 import net.solarnetwork.node.hw.sma.domain.SmaSunnySensorboxDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -51,7 +50,7 @@ public class SmaSunnySensorboxData extends SmaDeviceData implements SmaSunnySens
 	 * Constructor.
 	 */
 	public SmaSunnySensorboxData() {
-		super();
+		super(SmaDeviceType.SunnySensorbox);
 	}
 
 	/**
@@ -63,7 +62,7 @@ public class SmaSunnySensorboxData extends SmaDeviceData implements SmaSunnySens
 	 *        the starting Modbus register address of {@code data}
 	 */
 	public SmaSunnySensorboxData(short[] data, int addr) {
-		super(data, addr);
+		super(SmaDeviceType.SunnySensorbox, data, addr);
 	}
 
 	/**
@@ -73,7 +72,7 @@ public class SmaSunnySensorboxData extends SmaDeviceData implements SmaSunnySens
 	 *        the meter data to copy
 	 */
 	public SmaSunnySensorboxData(ModbusData other) {
-		super(other);
+		super(other, SmaDeviceType.SunnySensorbox);
 	}
 
 	@Override
@@ -115,11 +114,6 @@ public class SmaSunnySensorboxData extends SmaDeviceData implements SmaSunnySens
 	public final void readDeviceData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				SmaSunnySensorboxRegister.DATA_REGISTER_ADDRESS_SET, MAX_RESULTS);
-	}
-
-	@Override
-	public SmaDeviceKind getDeviceKind() {
-		return SmaDeviceType.SunnySensorbox;
 	}
 
 	@Override
