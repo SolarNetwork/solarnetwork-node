@@ -41,10 +41,15 @@ import net.solarnetwork.util.OptionalService;
  */
 public class WebBoxDataDevice<T extends SmaDeviceData & SmaDeviceDataAccessor> implements WebBoxDevice {
 
+	/** The frequency at which to refrech the device info registers. */
+	public static final long INFO_READ_FREQUENCY = 60 * 60 * 1000L;
+
 	private final OptionalService<ModbusNetwork> modbusNetwork;
 	private final int unitId;
 	private final SmaDeviceKind deviceKind;
 	private final T data;
+
+	private long lastInfoRead = 0;
 
 	/**
 	 * Constructor.
@@ -128,6 +133,11 @@ public class WebBoxDataDevice<T extends SmaDeviceData & SmaDeviceDataAccessor> i
 
 			@Override
 			public SmaDeviceDataAccessor doWithConnection(ModbusConnection conn) throws IOException {
+				final long now = System.currentTimeMillis();
+				if ( lastInfoRead + INFO_READ_FREQUENCY < now ) {
+					data.readInformationData(conn);
+					lastInfoRead = now;
+				}
 				data.readDeviceData(conn);
 				return data.copy();
 			}
