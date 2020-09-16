@@ -53,6 +53,9 @@ public class Cmdline {
 
 	/**
 	 * Constructor.
+	 * 
+	 * @param serial
+	 *        the serial network to use
 	 */
 	public Cmdline(SerialNetwork serial) {
 		super();

@@ -102,6 +102,8 @@ public enum PVI3800Command implements Command {
 	 * @param data
 	 *        the command data, which must have at least {@code offset + 2}
 	 *        length
+	 * @param offset
+	 *        the offset in {@code data} to read from
 	 * @return the enum value
 	 * @throws IllegalArgumentException
 	 *         if the command is not supported

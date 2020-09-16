@@ -73,6 +73,8 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public final void readConfigurationData(final ModbusConnection conn) throws IOException {
 		// we actually read ALL registers here, so our snapshot timestamp includes everything
@@ -85,6 +87,8 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public final void readInverterData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadInputRegister,

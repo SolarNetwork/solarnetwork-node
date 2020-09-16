@@ -75,13 +75,13 @@ public enum PVITLInverterState {
 	 * @throws IllegalArgumentException
 	 *         if {@code code} is not supported
 	 */
-	public static PVITLInverterState forCode(int value) {
+	public static PVITLInverterState forCode(int code) {
 		for ( PVITLInverterState s : values() ) {
-			if ( s.code == value ) {
+			if ( s.code == code ) {
 				return s;
 			}
 		}
-		throw new IllegalArgumentException("Unsupported work mode value: " + value);
+		throw new IllegalArgumentException("Unsupported work mode value: " + code);
 	}
 
 }
