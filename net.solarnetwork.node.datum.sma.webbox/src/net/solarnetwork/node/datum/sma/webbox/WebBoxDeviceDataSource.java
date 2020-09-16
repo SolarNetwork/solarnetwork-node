@@ -158,6 +158,9 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 	@Override
 	public GeneralNodeDatum readCurrentDatum() {
 		WebBoxDevice device = webBoxDevice();
+		if ( device == null ) {
+			return null;
+		}
 		final long now = System.currentTimeMillis();
 		try {
 			SmaDeviceDataAccessor sample = device.refreshData(getSampleCacheMs());
