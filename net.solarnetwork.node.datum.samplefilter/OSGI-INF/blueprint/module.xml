@@ -16,6 +16,11 @@
 
 	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
 
+	<bean id="datumMetadataService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.DatumMetadataService"/>
+	</bean>
+		
 	<!-- 
 	 !!! SimpleFilterSamplesTransformer (property filter)
 	 -->
@@ -124,6 +129,42 @@
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.datum.samplefilter.DownsampleTransformService">
 			<property name="messageSource" ref="downsamplerMessageSource"/>
+		</bean>
+	</osgix:managed-service-factory>
+
+	<!-- 
+	 !!! Virtual Meter Filter Service
+	 -->
+
+	<bean id="virtualMeterMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<array>
+				<value>net.solarnetwork.node.datum.samplefilter.VirtualMeterSamplesTransformer</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+			</array>
+		</property>
+	</bean>
+
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Virtual Meter Filter"/>
+			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.virtmeter"/>
+			<property name="messageSource" ref="virtualMeterMessageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.virtmeter" 
+			autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.GeneralDatumSamplesTransformService</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.samplefilter.virtmeter"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.datum.samplefilter.VirtualMeterSamplesTransformer">
+			<argument ref="datumMetadataService"/>
+			<property name="messageSource" ref="virtualMeterMessageSource"/>
 		</bean>
 	</osgix:managed-service-factory>
 
