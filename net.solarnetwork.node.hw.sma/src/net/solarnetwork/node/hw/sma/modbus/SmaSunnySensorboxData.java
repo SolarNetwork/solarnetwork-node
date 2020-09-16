@@ -96,6 +96,16 @@ public class SmaSunnySensorboxData extends SmaDeviceData implements SmaSunnySens
 	}
 
 	@Override
+	public String getDataDescription() {
+		StringBuilder buf = new StringBuilder();
+		buf.append("irradiance = ").append(getIrradiance());
+		buf.append("; temp = ").append(getTemperature());
+		buf.append("; moduleTemp = ").append(getModuleTemperature());
+		buf.append("; windSpeed = ").append(getWindSpeed());
+		return buf.toString();
+	}
+
+	@Override
 	public final void readInformationData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				SmaSunnySensorboxRegister.INFO_REGISTER_ADDRESS_SET, MAX_RESULTS);

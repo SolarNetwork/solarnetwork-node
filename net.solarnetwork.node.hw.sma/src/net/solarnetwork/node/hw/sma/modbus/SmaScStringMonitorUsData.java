@@ -106,6 +106,21 @@ public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStri
 	}
 
 	@Override
+	public String getDataDescription() {
+		StringBuilder buf = new StringBuilder();
+		buf.append("SMU ID = ").append(getStringMonitoringUnitId());
+		buf.append("; I1 = ").append(getCurrentString1());
+		buf.append("; I2 = ").append(getCurrentString2());
+		buf.append("; I3 = ").append(getCurrentString3());
+		buf.append("; I4 = ").append(getCurrentString4());
+		buf.append("; I5 = ").append(getCurrentString5());
+		buf.append("; I6 = ").append(getCurrentString6());
+		buf.append("; I7 = ").append(getCurrentString7());
+		buf.append("; I8 = ").append(getCurrentString8());
+		return buf.toString();
+	}
+
+	@Override
 	public final void readInformationData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				SmaScStringMonitorUsRegister.INFO_REGISTER_ADDRESS_SET, MAX_RESULTS);
@@ -138,19 +153,16 @@ public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStri
 					return DeviceOperatingState.Recovery;
 
 				default:
-					// nothing to do
+					return DeviceOperatingState.Unknown;
 			}
 		}
-		return DeviceOperatingState.Unknown;
+		return null;
 	}
 
 	@Override
 	public SmaCommonStatusCode getOperatingState() {
-		Number n = getNumber(SmaScStringMonitorUsRegister.OperatingState);
-		if ( n == null ) {
-			return SmaCommonStatusCode.Unknown;
-		}
-		return SmaCommonStatusCode.forCode(n.intValue());
+		return getStatusCode(SmaScStringMonitorUsRegister.OperatingState, null,
+				SmaCommonStatusCode.NotSet);
 	}
 
 	@Override
