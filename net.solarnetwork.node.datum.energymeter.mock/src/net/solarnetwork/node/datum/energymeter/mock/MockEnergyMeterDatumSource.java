@@ -50,7 +50,7 @@ import net.solarnetwork.node.support.DatumDataSourceSupport;
  * </p>
  * 
  * @author robert
- * @version 1.2
+ * @version 1.3
  */
 public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
@@ -112,6 +112,8 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		calcVariables(datum);
 
 		calcWattHours(prev, datum);
+
+		datum = applySamplesTransformer(datum, null);
 
 		this.lastsample.compareAndSet(prev, datum);
 
@@ -287,6 +289,9 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 				defaults.resistanceDeviation.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("inductanceDeviation",
 				defaults.inductanceDeviation.toString()));
+		results.add(new BasicTextFieldSettingSpecifier("samplesTransformService.propertyFilters['UID']",
+				null));
+
 		return results;
 	}
 }

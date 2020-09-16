@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Modbus Toggle Control Tests
 Bundle-SymbolicName: net.solarnetwork.node.control.modbus.toggle.test
-Bundle-Version: 3.0.0
+Bundle-Version: 3.0.1
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.control.modbus.toggle;bundle-version="3.0.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8

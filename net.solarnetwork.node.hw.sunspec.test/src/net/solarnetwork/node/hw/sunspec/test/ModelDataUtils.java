@@ -38,7 +38,7 @@ import net.solarnetwork.node.test.DataUtils;
  * Helper utility methods for model data testing.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public final class ModelDataUtils {
 
@@ -90,7 +90,11 @@ public final class ModelDataUtils {
 	public static ModelData getModelDataInstance(Class<?> clazz, String resource) {
 		ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(
 				parseTestData(clazz, resource));
-		return ModelDataFactory.getInstance().getModelData(conn);
+		try {
+			return ModelDataFactory.getInstance().getModelData(conn);
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/**
@@ -118,7 +122,11 @@ public final class ModelDataUtils {
 	public static ModelData getModelDataInstance(Class<?> clazz, String resource, boolean parseOffsets) {
 		ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(
 				parseTestData(clazz, resource));
-		return ModelDataFactory.getInstance().getModelData(conn);
+		try {
+			return ModelDataFactory.getInstance().getModelData(conn);
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
 	}
 
 }

@@ -32,6 +32,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import java.util.Set;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -54,7 +55,7 @@ import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
  * Test cases for the {@link IntegerInverterModelAccessor} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class IntegerInverterModelAccessor_103_02Tests {
 
@@ -184,7 +185,7 @@ public class IntegerInverterModelAccessor_103_02Tests {
 	}
 
 	@Test
-	public void powerFactorWithDecimalScale() {
+	public void powerFactorWithDecimalScale() throws IOException {
 		ModelData data = getTestDataInstance();
 		data.performUpdates(new ModbusDataUpdateAction() {
 
@@ -202,7 +203,7 @@ public class IntegerInverterModelAccessor_103_02Tests {
 	}
 
 	@Test
-	public void powerFactorWithIntegerScaleChangesToDecimal() {
+	public void powerFactorWithIntegerScaleChangesToDecimal() throws IOException {
 		ModelData data = getTestDataInstance();
 		data.performUpdates(new ModbusDataUpdateAction() {
 

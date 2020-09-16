@@ -37,7 +37,7 @@ import net.solarnetwork.node.LockTimeoutException;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 2.0
  */
 public interface ModbusConnection extends Closeable {
@@ -80,8 +80,10 @@ public interface ModbusConnection extends Closeable {
 	 *        the count of discreet registers to read
 	 * @return BitSet, with indexes set from {@literal 0} to a {@code count - 1}
 	 * @since 1.1
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	BitSet readDiscreetValues(int address, int count);
+	BitSet readDiscreetValues(int address, int count) throws IOException;
 
 	/**
 	 * Get the values of a set of "coil" type registers, as a BitSet.
@@ -97,8 +99,10 @@ public interface ModbusConnection extends Closeable {
 	 *        the count of coils to read with each address
 	 * @return BitSet, with each {@code count} indexes for each index in the
 	 *         {@code addresses} parameter
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	BitSet readDiscreetValues(int[] addresses, int count);
+	BitSet readDiscreetValues(int[] addresses, int count) throws IOException;
 
 	/**
 	 * Write values of a set of "coil" type registers, via a BitSet.
@@ -115,8 +119,10 @@ public interface ModbusConnection extends Closeable {
 	 * @param bits
 	 *        the bits to write, each index corresponding to an index in
 	 *        {@code addresses}
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	void writeDiscreetValues(int[] addresses, BitSet bits);
+	void writeDiscreetValues(int[] addresses, BitSet bits) throws IOException;
 
 	/**
 	 * Get the values of a set of "input discrete" type registers, as a BitSet.
@@ -132,8 +138,10 @@ public interface ModbusConnection extends Closeable {
 	 * @param count
 	 *        the count of registers to read
 	 * @return BitSet, with each {@literal 0} to {@code count} indexes
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	BitSet readInputDiscreteValues(int address, int count);
+	BitSet readInputDiscreteValues(int address, int count) throws IOException;
 
 	/**
 	 * Get the values of specific 16-bit Modbus registers as an array of 16-bit
@@ -157,8 +165,10 @@ public interface ModbusConnection extends Closeable {
 	 *        the number of Modbus 16-bit registers to read
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	short[] readWords(ModbusReadFunction function, int address, int count);
+	short[] readWords(ModbusReadFunction function, int address, int count) throws IOException;
 
 	/**
 	 * Get the values of specific 16-bit Modbus registers as an array of
@@ -180,8 +190,10 @@ public interface ModbusConnection extends Closeable {
 	 *        the number of 16-bit Modbus registers to read
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	int[] readWordsUnsigned(ModbusReadFunction function, int address, int count);
+	int[] readWordsUnsigned(ModbusReadFunction function, int address, int count) throws IOException;
 
 	/**
 	 * Write 16-bit word values to 16-bit Modbus registers.
@@ -192,8 +204,10 @@ public interface ModbusConnection extends Closeable {
 	 *        the 0-based Modbus register address to start writing to
 	 * @param values
 	 *        the 16-bit values to write
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	void writeWords(ModbusWriteFunction function, int address, short[] values);
+	void writeWords(ModbusWriteFunction function, int address, short[] values) throws IOException;
 
 	/**
 	 * Write unsigned 16-bit word values to 16-bit Modbus registers.
@@ -209,8 +223,10 @@ public interface ModbusConnection extends Closeable {
 	 *        the 0-based Modbus register address to start writing to
 	 * @param values
 	 *        the unsigned 16-bit values to write
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	void writeWords(ModbusWriteFunction function, int address, int[] values);
+	void writeWords(ModbusWriteFunction function, int address, int[] values) throws IOException;
 
 	/**
 	 * Get the raw bytes of specific registers.
@@ -228,8 +244,10 @@ public interface ModbusConnection extends Closeable {
 	 * @param count
 	 *        the number of Modbus 16-bit registers to read
 	 * @return register words as an array of bytes
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	byte[] readBytes(ModbusReadFunction function, int address, int count);
+	byte[] readBytes(ModbusReadFunction function, int address, int count) throws IOException;
 
 	/**
 	 * Write raw byte values to registers.
@@ -241,8 +259,10 @@ public interface ModbusConnection extends Closeable {
 	 *        {@code values.length * 2} 16-bit registers will be written
 	 * @param values
 	 *        the byte values to write
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	void writeBytes(ModbusWriteFunction function, int address, byte[] values);
+	void writeBytes(ModbusWriteFunction function, int address, byte[] values) throws IOException;
 
 	/**
 	 * Read a set of registers as bytes and interpret as a string.
@@ -260,9 +280,11 @@ public interface ModbusConnection extends Closeable {
 	 *        the character set to interpret the bytes as
 	 * @return String from interpreting raw bytes as a string
 	 * @see #readBytes(ModbusReadFunction, int, int)
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	String readString(ModbusReadFunction function, int address, int count, boolean trim,
-			Charset charset);
+	String readString(ModbusReadFunction function, int address, int count, boolean trim, Charset charset)
+			throws IOException;
 
 	/**
 	 * Write a string as raw byte values to registers.
@@ -275,7 +297,10 @@ public interface ModbusConnection extends Closeable {
 	 *        the string value to write
 	 * @param charset
 	 *        the character set to interpret the bytes as
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	void writeString(ModbusWriteFunction function, int address, String value, Charset charset);
+	void writeString(ModbusWriteFunction function, int address, String value, Charset charset)
+			throws IOException;
 
 }

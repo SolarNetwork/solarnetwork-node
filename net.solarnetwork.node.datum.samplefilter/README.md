@@ -46,7 +46,7 @@ your rules concise.
 Each filter configuration contains the following overall settings:
 
 | Setting            | Description                                                       |
-|--------------------|-------------------------------------------------------------------|
+|:-------------------|:------------------------------------------------------------------|
 | Source ID          | The source ID(s) to filter.                                       |
 | Property Includes  | A list of property names to include, removing all others.         |
 | Limit Seconds      | A throttle limit, in seconds, to apply to included properties.    |
@@ -99,7 +99,7 @@ and **not** uploaded to SolarNetwork.
 Each filter configuration contains the following overall settings:
 
 | Setting            | Description                                                       |
-|--------------------|-------------------------------------------------------------------|
+|:-------------------|:------------------------------------------------------------------|
 | Source ID          | The source ID(s) to filter.                                       |
 | Filter ID          | A unique ID for the filter, to aid with troubleshooting.          |
 | Limit Seconds      | A throttle limit, in seconds, to apply to matching datum.         |
@@ -113,3 +113,74 @@ Each filter configuration contains the following overall settings:
 	same source ID was uploaded. If the elapsed time is less than the configured limit,
 	the datum will not be uploaded.</dd>
 </dl>
+
+# Virtual Meter Filter
+
+This component can derive an accumulating "meter reading" value out of an instantaneous property
+value over time. For example, if you have an irradiance sensor that allows you to capture
+instantaneous <code>W / m<sup>2</sup></code> power values, you could configure a virtual meter to
+generate <code>Wh / m<sup>2</sup></code> energy values. You can configure as many virtual meters as
+you like, using the <kbd>+</kbd> and <kbd>-</kbd> buttons to add/remove meter configurations.
+
+![virtual-meter](docs/solarnode-virtual-meter-filter-settings.png)
+
+Each virtual meter works with a single instantaneous datum property. The derived accumulating datum
+property will be named after that property with the time unit suffix appended. For example, an
+instantaneous `irradiance` property using the `Hours` time unit would result in an accumulating
+`irradianceHours` property. The value is calculated as an **average** between the current
+instantaneous value and the previously captured instantaneous value, multiplied by the amount of
+time that has elapsed between the two samples.
+
+Virtual meters require keeping track of the meter reading value over time along with the previously
+captured value. This plugin uses the [SolarNetwork datum metadata API][meta-api] for this, storing
+three metadata properties under a property key named for the virtual meter property name. For
+example, continuing the `irradianceHours` example, an example set of datum metadata would look like:
+
+```json
+{
+  "pm": {
+    "irradianceHours": {
+      "vm-date": 123123123123,
+      "vm-value": "1361",
+      "vm-reading": "12390980.1231"
+    }
+  }
+}
+```
+
+Each filter configuration contains the following overall settings:
+
+| Setting            | Description                                                       |
+|:-------------------|:------------------------------------------------------------------|
+| Service Name       | A unique ID for the filter, to be referenced by other components. |
+| Service Group      | An optional service group name to assign.                         |
+| Source ID          | The source ID(s) to filter.                                       |
+
+Each virtual meter configuration contains the following settings:
+
+| Setting         | Description                                                                           |
+|:----------------|:--------------------------------------------------------------------------------------|
+| Property        | The name of the instantaneous datum property to derive the virtual meter values from. |
+| Time Unit       | The time unit to record meter readings as.                                            |
+| Max Age         | The maximum time allowed between samples where the meter reading can advance.         |
+| Meter Reading   | The current meter reading value.                                                      |
+
+## Virtual meter settings notes
+
+<dl>
+	<dt>Time Unit</dt>
+	<dd>This value affects the name of the virtual meter reading property: it will be appended to the
+	end of the property name. It also affects the virtual meter reading values, as they will be calculated in
+	this time unit.</dd>
+	<dt>Max Age</dt>
+	<dd>In case the node isn't collecting samples for a period of time, this setting prevents the plugin
+	from calculating an unexpectedly large reading value jump. For example if a node was turned off for
+	a day, the first sample it captures when turned back on would otherwise advance the reading as if the
+	associated instantaneous property had been active over that entire time. With this restriction, the
+	node will record the new sample date and value, but not advance the meter reading until another sample
+	is captured within this time period.</dd>
+	<dt>Meter Reading</dt>
+	<dd>Generally this should <b>not</b> be changed, because it can impact how the values are aggregated and
+	interpreted by SolarNetwork and applications using the data.</dd>
+</dl>
+

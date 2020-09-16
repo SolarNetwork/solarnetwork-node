@@ -70,18 +70,22 @@ public class PVITLDataTests {
 
 	@Before
 	public void setup() {
-		data.performUpdates(new ModbusDataUpdateAction() {
+		try {
+			data.performUpdates(new ModbusDataUpdateAction() {
 
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				m.saveDataArray(TEST_DATA, 0);
-				return true;
-			}
-		});
+				@Override
+				public boolean updateModbusData(MutableModbusData m) {
+					m.saveDataArray(TEST_DATA, 0);
+					return true;
+				}
+			});
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Test
-	public void readConfigurationData() {
+	public void readConfigurationData() throws IOException {
 		// given
 		ModbusConnection conn = EasyMock.createMock(ModbusConnection.class);
 		PVITLData data = new PVITLData();
@@ -98,7 +102,7 @@ public class PVITLDataTests {
 	}
 
 	@Test
-	public void readInverterData() {
+	public void readInverterData() throws IOException {
 		// given
 		ModbusConnection conn = EasyMock.createMock(ModbusConnection.class);
 		PVITLData data = new PVITLData();

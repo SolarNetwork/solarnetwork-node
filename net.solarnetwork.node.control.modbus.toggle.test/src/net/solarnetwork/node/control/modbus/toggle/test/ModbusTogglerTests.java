@@ -149,7 +149,7 @@ public class ModbusTogglerTests {
 	}
 
 	@Test
-	public void processSetControlParameterOn() {
+	public void processSetControlParameterOn() throws Exception {
 		// given
 		expectModbusAction(Boolean.class);
 
@@ -169,7 +169,7 @@ public class ModbusTogglerTests {
 	}
 
 	@Test
-	public void processSetControlParameterOnHoldingRegister() {
+	public void processSetControlParameterOnHoldingRegister() throws Exception {
 		// given
 		toggler.setFunction(ModbusWriteFunction.WriteHoldingRegister);
 		expectModbusAction(Boolean.class);
@@ -189,7 +189,7 @@ public class ModbusTogglerTests {
 	}
 
 	@Test
-	public void processSetControlParameterOff() {
+	public void processSetControlParameterOff() throws Exception {
 		// given
 		expectModbusAction(Boolean.class);
 
@@ -209,7 +209,7 @@ public class ModbusTogglerTests {
 	}
 
 	@Test
-	public void processSetControlParameterOffHoldingRegister() {
+	public void processSetControlParameterOffHoldingRegister() throws Exception {
 		// given
 		toggler.setFunction(ModbusWriteFunction.WriteHoldingRegister);
 		expectModbusAction(Boolean.class);
@@ -229,7 +229,7 @@ public class ModbusTogglerTests {
 	}
 
 	@Test
-	public void currentValueOn() {
+	public void currentValueOn() throws Exception {
 		// given
 		expectModbusAction(Boolean.class);
 
@@ -252,7 +252,7 @@ public class ModbusTogglerTests {
 	}
 
 	@Test
-	public void currentValueOnHoldingRegister() {
+	public void currentValueOnHoldingRegister() throws Exception {
 		// given
 		toggler.setFunction(ModbusWriteFunction.WriteHoldingRegister);
 		expectModbusAction(Boolean.class);
@@ -275,7 +275,7 @@ public class ModbusTogglerTests {
 	}
 
 	@Test
-	public void currentValueOff() {
+	public void currentValueOff() throws Exception {
 		// given
 		expectModbusAction(Boolean.class);
 
@@ -298,7 +298,7 @@ public class ModbusTogglerTests {
 	}
 
 	@Test
-	public void currentValueOffHoldingRegister() {
+	public void currentValueOffHoldingRegister() throws Exception {
 		// given
 		toggler.setFunction(ModbusWriteFunction.WriteHoldingRegister);
 		expectModbusAction(Boolean.class);
@@ -321,7 +321,7 @@ public class ModbusTogglerTests {
 	}
 
 	@Test
-	public void currentValueOnCached() {
+	public void currentValueOnCached() throws Exception {
 		// given
 		toggler.setSampleCacheMs(TEST_CACHE_LONG_MS);
 		expectModbusAction(Boolean.class);
@@ -342,7 +342,7 @@ public class ModbusTogglerTests {
 	}
 
 	@Test
-	public void currentValueOnCachedExpired() throws InterruptedException {
+	public void currentValueOnCachedExpired() throws Exception {
 		// given
 		toggler.setSampleCacheMs(300);
 		expectModbusAction(Boolean.class).times(2);

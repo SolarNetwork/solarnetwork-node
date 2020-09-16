@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.job;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -50,7 +51,7 @@ import net.solarnetwork.util.OptionalService;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
@@ -100,13 +101,36 @@ public class DatumDataSourceManagedLoggerJob<T extends Datum> extends AbstractJo
 		}
 	}
 
+	@Override
+	protected void logThrowable(Throwable e) {
+		IOException ioEx = null;
+		Throwable t = e;
+		while ( true ) {
+			if ( t instanceof IOException ) {
+				ioEx = (IOException) t;
+			}
+			t = t.getCause();
+			if ( t == null ) {
+				break;
+			}
+		}
+		if ( ioEx != null ) {
+			log.warn("Communication problem collecting data from {}: {}",
+					multiDatumDataSource != null ? multiDatumDataSource : datumDataSource,
+					ioEx.toString());
+		} else {
+			super.logThrowable(e);
+		}
+	}
+
 	private void persistDatum(Collection<T> datumList) {
 		if ( datumList == null || datumList.size() < 1 ) {
 			return;
 		}
 		if ( log.isInfoEnabled() ) {
-			log.info("Got Datum to persist: {}", (datumList.size() == 1
-					? datumList.iterator().next().toString() : datumList.toString()));
+			log.info("Got Datum to persist: {}",
+					(datumList.size() == 1 ? datumList.iterator().next().toString()
+							: datumList.toString()));
 		}
 		DatumDao<T> dao = datumDao.service();
 		if ( dao == null ) {

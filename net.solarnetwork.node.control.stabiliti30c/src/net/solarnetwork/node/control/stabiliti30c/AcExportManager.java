@@ -48,8 +48,8 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
-import net.solarnetwork.node.io.modbus.support.ModbusDataDeviceSupport;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
+import net.solarnetwork.node.io.modbus.support.ModbusDataDeviceSupport;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
@@ -66,7 +66,7 @@ import net.solarnetwork.util.StringUtils;
  * managing AC power export.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 		implements InstructionHandler, NodeControlProvider, SettingSpecifierProvider {
@@ -125,7 +125,8 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 	}
 
 	@Override
-	protected void readDeviceInfoFirstTime(ModbusConnection connection, Stabiliti30cData sample) {
+	protected void readDeviceInfoFirstTime(ModbusConnection connection, Stabiliti30cData sample)
+			throws IOException {
 		// when reading data for the very first time, make sure Stabiliti is setup in a known "good" state
 		sample.performUpdates(new ModbusDataUpdateAction() {
 

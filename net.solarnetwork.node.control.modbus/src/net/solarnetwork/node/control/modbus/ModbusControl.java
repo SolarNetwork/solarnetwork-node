@@ -73,7 +73,7 @@ import net.solarnetwork.util.StringUtils;
  * Read and write a Modbus "coil" or "holding" type register.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifierProvider,
 		NodeControlProvider, InstructionHandler, ModbusConnectionAction<ModbusData> {
@@ -354,7 +354,7 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 			sample.performUpdates(new ModbusDataUpdateAction() {
 
 				@Override
-				public boolean updateModbusData(MutableModbusData m) {
+				public boolean updateModbusData(MutableModbusData m) throws IOException {
 					for ( ModbusWritePropertyConfig config : configs ) {
 						if ( !config.isValid() ) {
 							continue;
@@ -622,7 +622,7 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
 	 * 
-	 * @param sampleCacheSecondsMs
+	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
 	public void setSampleCacheMs(long sampleCacheMs) {
@@ -663,7 +663,7 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 	 * 
 	 * <p>
 	 * Any newly added element values will be set to new
-	 * {@link ModbusPropertyConfig} instances.
+	 * {@link ModbusWritePropertyConfig} instances.
 	 * </p>
 	 * 
 	 * @param count

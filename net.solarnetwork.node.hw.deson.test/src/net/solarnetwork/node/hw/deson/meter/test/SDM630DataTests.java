@@ -27,6 +27,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import java.util.Map;
 import org.junit.Test;
 import net.solarnetwork.node.hw.deson.meter.SDM630Register;
@@ -70,27 +71,30 @@ public class SDM630DataTests {
 	private SDMData getTestDataInstance() {
 		SDMData data = new SDMData();
 		data.setDeviceType(SDMDeviceType.SDM630);
-		data.performUpdates(new ModbusDataUpdateAction() {
+		try {
+			data.performUpdates(new ModbusDataUpdateAction() {
 
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				m.saveDataArray(TEST_DATA_30001_80, 0);
-				return true;
-			}
-		});
-		data.performControlUpdates(new ModbusDataUpdateAction() {
+				@Override
+				public boolean updateModbusData(MutableModbusData m) {
+					m.saveDataArray(TEST_DATA_30001_80, 0);
+					return true;
+				}
+			});
+			data.performControlUpdates(new ModbusDataUpdateAction() {
 
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				m.saveDataArray(
-						new int[] { 0x4040, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x47f1, 0x2000 },
-						SDM630Register.ConfigWiringMode.getAddress());
-				return true;
-			}
-		});
+				@Override
+				public boolean updateModbusData(MutableModbusData m) {
+					m.saveDataArray(new int[] { 0x4040, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+							0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+							0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+							0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x47f1, 0x2000 },
+							SDM630Register.ConfigWiringMode.getAddress());
+					return true;
+				}
+			});
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
 		return data;
 	}
 
@@ -107,7 +111,7 @@ public class SDM630DataTests {
 	}
 
 	@Test
-	public void interpretWiringMode1P2() {
+	public void interpretWiringMode1P2() throws IOException {
 		SDMData data = getTestDataInstance();
 		data.performControlUpdates(new ModbusDataUpdateAction() {
 
@@ -126,7 +130,7 @@ public class SDM630DataTests {
 	}
 
 	@Test
-	public void interpretWiringMode3P3() {
+	public void interpretWiringMode3P3() throws IOException {
 		SDMData data = getTestDataInstance();
 		data.performControlUpdates(new ModbusDataUpdateAction() {
 
@@ -145,7 +149,7 @@ public class SDM630DataTests {
 	}
 
 	@Test
-	public void interpretWiringMode3P4() {
+	public void interpretWiringMode3P4() throws IOException {
 		SDMData data = getTestDataInstance();
 		data.performControlUpdates(new ModbusDataUpdateAction() {
 

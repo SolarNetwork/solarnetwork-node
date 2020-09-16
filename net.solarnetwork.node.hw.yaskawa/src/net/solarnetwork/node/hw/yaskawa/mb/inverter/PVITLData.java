@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.yaskawa.mb.inverter;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
@@ -35,7 +36,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Implementation for accessing PVI-14TL series data.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class PVITLData extends ModbusData implements PVITLDataAccessor {
 
@@ -72,8 +73,10 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readConfigurationData(final ModbusConnection conn) {
+	public final void readConfigurationData(final ModbusConnection conn) throws IOException {
 		// we actually read ALL registers here, so our snapshot timestamp includes everything
 		refreshData(conn, ModbusReadFunction.ReadInputRegister, PVITLRegister.getRegisterAddressSet(),
 				MAX_RESULTS);
@@ -84,8 +87,10 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readInverterData(final ModbusConnection conn) {
+	public final void readInverterData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadInputRegister,
 				PVITLRegister.getInverterRegisterAddressSet(), MAX_RESULTS);
 	}

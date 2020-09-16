@@ -163,8 +163,10 @@ public abstract class ModbusDataDeviceSupport<T extends ModbusData & DataAccesso
 	 *        the Modbus connection
 	 * @param sample
 	 *        the sample to refresh
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	protected void readDeviceInfoFirstTime(ModbusConnection connection, T sample) {
+	protected void readDeviceInfoFirstTime(ModbusConnection connection, T sample) throws IOException {
 		refreshDeviceInfo(connection, sample);
 	}
 
@@ -180,8 +182,10 @@ public abstract class ModbusDataDeviceSupport<T extends ModbusData & DataAccesso
 	 *        the Modbus connection
 	 * @param sample
 	 *        the sample to refresh
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	protected abstract void refreshDeviceInfo(ModbusConnection connection, T sample);
+	protected abstract void refreshDeviceInfo(ModbusConnection connection, T sample) throws IOException;
 
 	/**
 	 * Refresh the device data.
@@ -197,8 +201,10 @@ public abstract class ModbusDataDeviceSupport<T extends ModbusData & DataAccesso
 	 *        the Modbus connection
 	 * @param sample
 	 *        the sample to refresh
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	protected abstract void refreshDeviceData(ModbusConnection connection, T sample);
+	protected abstract void refreshDeviceData(ModbusConnection connection, T sample) throws IOException;
 
 	/**
 	 * Create s snapshot copy of the sample data.

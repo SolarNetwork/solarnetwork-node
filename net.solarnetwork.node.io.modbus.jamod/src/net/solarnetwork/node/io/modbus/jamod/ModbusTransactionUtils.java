@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.modbus.jamod;
 
 import static net.solarnetwork.node.io.modbus.ModbusDataUtils.shortArray;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.BitSet;
 import org.slf4j.Logger;
@@ -56,7 +57,7 @@ import net.wimpi.modbus.util.BitVector;
  * Utility methods for Modbus actions.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ModbusTransactionUtils {
 
@@ -80,9 +81,11 @@ public class ModbusTransactionUtils {
 	 * @param headless
 	 *        {@literal true} for headless (serial) mode
 	 * @return BitSet, with indexes set from {@literal 0} to a {@code count - 1}
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public static BitSet readDiscreteValues(final ModbusTransaction trans, final int address,
-			final int count, final int unitId, final boolean headless) {
+			final int count, final int unitId, final boolean headless) throws IOException {
 		BitSet result = new BitSet(count);
 		ReadCoilsRequest req = new ReadCoilsRequest(address, count);
 		req.setUnitID(unitId);
@@ -91,7 +94,7 @@ public class ModbusTransactionUtils {
 		try {
 			trans.execute();
 		} catch ( ModbusException e ) {
-			throw new RuntimeException(e);
+			throw new IOException(e);
 		}
 		ReadCoilsResponse res = (ReadCoilsResponse) trans.getResponse();
 		if ( LOG.isTraceEnabled() ) {
@@ -126,9 +129,11 @@ public class ModbusTransactionUtils {
 	 *        {@literal true} for headless (serial) mode
 	 * @return BitSet, with each {@code count} indexes for each index in the
 	 *         {@code addresses} parameter
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public static BitSet readDiscreetValues(final ModbusTransaction trans, final int[] addresses,
-			final int count, final int unitId, final boolean headless) {
+			final int count, final int unitId, final boolean headless) throws IOException {
 		BitSet result = new BitSet(addresses.length);
 		for ( int i = 0, w = 0; i < addresses.length; i++ ) {
 			BitSet set = readDiscreteValues(trans, addresses[i], count, unitId, true);
@@ -164,9 +169,11 @@ public class ModbusTransactionUtils {
 	 *        the Modbus unit ID to use in the read request
 	 * @param headless
 	 *        {@literal true} for headless (serial) mode
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public static void writeDiscreetValues(final ModbusTransaction trans, final int[] addresses,
-			final BitSet bits, final int unitId, final boolean headless) {
+			final BitSet bits, final int unitId, final boolean headless) throws IOException {
 		for ( int i = 0; i < addresses.length; i++ ) {
 			WriteCoilRequest req = new WriteCoilRequest(addresses[i], bits.get(i));
 			req.setUnitID(unitId);
@@ -177,7 +184,7 @@ public class ModbusTransactionUtils {
 			try {
 				trans.execute();
 			} catch ( ModbusException e ) {
-				throw new RuntimeException(e);
+				throw new IOException(e);
 			}
 			WriteCoilResponse res = (WriteCoilResponse) trans.getResponse();
 			if ( LOG.isTraceEnabled() ) {
@@ -206,9 +213,11 @@ public class ModbusTransactionUtils {
 	 * @param headless
 	 *        {@literal true} for headless (serial) mode
 	 * @return BitSet, with each {@literal 0} to {@code count} indexes
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public static BitSet readInputDiscreteValues(final ModbusTransaction trans, final int address,
-			final int count, final int unitId, final boolean headless) {
+			final int count, final int unitId, final boolean headless) throws IOException {
 		BitSet result = new BitSet(count);
 		ReadInputDiscretesRequest req = new ReadInputDiscretesRequest(address, count);
 		req.setUnitID(unitId);
@@ -217,7 +226,7 @@ public class ModbusTransactionUtils {
 		try {
 			trans.execute();
 		} catch ( ModbusException e ) {
-			throw new RuntimeException(e);
+			throw new IOException(e);
 		}
 		ReadInputDiscretesResponse res = (ReadInputDiscretesResponse) trans.getResponse();
 		if ( LOG.isTraceEnabled() ) {
@@ -346,16 +355,18 @@ public class ModbusTransactionUtils {
 	 *        the number of Modbus 16-bit registers to read
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public static short[] readWords(final ModbusTransaction trans, final int unitId,
 			final boolean headless, final ModbusReadFunction function, final int address,
-			final int count) {
+			final int count) throws IOException {
 		ModbusRequest req = modbusReadRequest(function, unitId, headless, address, count);
 		trans.setRequest(req);
 		try {
 			trans.execute();
 		} catch ( ModbusException e ) {
-			throw new RuntimeException(e);
+			throw new IOException(e);
 		}
 		ModbusResponse response = trans.getResponse();
 		short[] result = new short[count];
@@ -416,10 +427,12 @@ public class ModbusTransactionUtils {
 	 *        the 0-based Modbus register address to start reading from
 	 * @param values
 	 *        the signed 16-bit values to write
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public static void writeWords(final ModbusTransaction trans, final int unitId,
 			final boolean headless, final ModbusWriteFunction function, final int address,
-			final short[] values) {
+			final short[] values) throws IOException {
 		ModbusRequest request = modbusWriteRequest(function, unitId, headless, address,
 				(values != null ? values.length : 0));
 		if ( request instanceof WriteMultipleRegistersRequest ) {
@@ -444,7 +457,7 @@ public class ModbusTransactionUtils {
 		try {
 			trans.execute();
 		} catch ( ModbusException e ) {
-			throw new RuntimeException(e);
+			throw new IOException(e);
 		}
 
 		if ( LOG.isTraceEnabled() ) {
@@ -481,10 +494,12 @@ public class ModbusTransactionUtils {
 	 *        the unsigned 16-bit values to write
 	 * @see #writeWords(ModbusTransaction, int, boolean, ModbusWriteFunction,
 	 *      int, short[])
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public static void writeWords(final ModbusTransaction trans, final int unitId,
 			final boolean headless, final ModbusWriteFunction function, final int address,
-			final int[] values) {
+			final int[] values) throws IOException {
 		writeWords(trans, unitId, headless, function, address, shortArray(values));
 	}
 
@@ -506,16 +521,18 @@ public class ModbusTransactionUtils {
 	 *        the number of 16-bit Modbus registers to read
 	 * @return array of register values; the result will have a length equal to
 	 *         {@code count}
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public static int[] readWordsUnsigned(final ModbusTransaction trans, final int unitId,
 			final boolean headless, final ModbusReadFunction function, final int address,
-			final int count) {
+			final int count) throws IOException {
 		ModbusRequest req = modbusReadRequest(function, unitId, headless, address, count);
 		trans.setRequest(req);
 		try {
 			trans.execute();
 		} catch ( ModbusException e ) {
-			throw new RuntimeException(e);
+			throw new IOException(e);
 		}
 		ModbusResponse response = trans.getResponse();
 		int[] result = new int[count];
@@ -578,17 +595,19 @@ public class ModbusTransactionUtils {
 	 *        the number of Modbus 16-bit registers to read
 	 * @return array of register bytes; the result will have a length equal to
 	 *         {@code count * 2}
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public static byte[] readBytes(final ModbusTransaction trans, final int unitId,
 			final boolean headless, final ModbusReadFunction function, final int address,
-			final int count) {
+			final int count) throws IOException {
 		byte[] result = new byte[count * 2];
 		ModbusRequest req = modbusReadRequest(function, unitId, headless, address, count);
 		trans.setRequest(req);
 		try {
 			trans.execute();
 		} catch ( ModbusException e ) {
-			throw new RuntimeException(e);
+			throw new IOException(e);
 		}
 		ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) trans.getResponse();
 		InputRegister[] registers = res.getRegisters();
@@ -625,10 +644,12 @@ public class ModbusTransactionUtils {
 	 *        the 0-based Modbus register address to start writing to
 	 * @param values
 	 *        the byte values to write
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public static void writeBytes(final ModbusTransaction trans, final int unitId,
 			final boolean headless, final ModbusWriteFunction function, final int address,
-			final byte[] values) {
+			final byte[] values) throws IOException {
 		int[] unsigned = new int[(int) Math.ceil(values.length / 2.0)];
 		for ( int i = 0; i < values.length; i += 2 ) {
 			int v = ((values[i] & 0xFF) << 8);
@@ -663,10 +684,12 @@ public class ModbusTransactionUtils {
 	 * @return String from interpreting raw bytes as a string
 	 * @see #readBytes(ModbusTransaction, int, boolean, ModbusReadFunction, int,
 	 *      int)
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public static String readString(final ModbusTransaction trans, final int unitId,
 			final boolean headless, final ModbusReadFunction function, final int address,
-			final int count, final boolean trim, final Charset charset) {
+			final int count, final boolean trim, final Charset charset) throws IOException {
 		final byte[] bytes = readBytes(trans, unitId, headless, function, address, count);
 		String result = null;
 		if ( bytes != null ) {
@@ -699,10 +722,12 @@ public class ModbusTransactionUtils {
 	 *        the string value to write
 	 * @param charset
 	 *        the character set to interpret the bytes as
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public static void writeString(final ModbusTransaction trans, final int unitId,
 			final boolean headless, final ModbusWriteFunction function, final int address,
-			final String value, final Charset charset) {
+			final String value, final Charset charset) throws IOException {
 		byte[] bytes = value.getBytes(charset);
 		writeBytes(trans, unitId, headless, function, address, bytes);
 	}

@@ -26,6 +26,7 @@ import static net.solarnetwork.node.io.modbus.ModbusDataUtils.shortArray;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import org.junit.Test;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
@@ -41,7 +42,7 @@ import net.solarnetwork.util.IntShortMap;
 public class StaticDataMapModbusConnectionTests {
 
 	@Test
-	public void writeData() {
+	public void writeData() throws IOException {
 		IntShortMap data = new IntShortMap();
 		int[] raw = new int[] { 0x1234, 0x4321, 0xFFFF, 0x1000 };
 		try (ModbusConnection conn = new StaticDataMapModbusConnection(data)) {
