@@ -78,6 +78,17 @@ public class WebBoxDataDevice<T extends SmaDeviceData & SmaDeviceDataAccessor> i
 	}
 
 	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("WebBoxDataDevice{");
+		builder.append(modbusNetwork);
+		builder.append(", unitId=");
+		builder.append(unitId);
+		builder.append("}");
+		return builder.toString();
+	}
+
+	@Override
 	public int getUnitId() {
 		return unitId;
 	}
