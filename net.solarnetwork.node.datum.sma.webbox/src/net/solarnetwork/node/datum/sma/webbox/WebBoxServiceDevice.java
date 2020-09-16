@@ -51,11 +51,16 @@ public class WebBoxServiceDevice extends WebBoxService implements SettingSpecifi
 
 		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
 
-		Collection<WebBoxDevice> devices = availableDevices();
-		if ( devices != null ) {
-			for ( WebBoxDevice d : devices ) {
-				results.add(new BasicTitleSettingSpecifier("device", d.getDeviceDescription(), true));
+		try {
+			Collection<WebBoxDevice> devices = availableDevices();
+			if ( devices != null ) {
+				for ( WebBoxDevice d : devices ) {
+					results.add(
+							new BasicTitleSettingSpecifier("device", d.getDeviceDescription(), true));
+				}
 			}
+		} catch ( RuntimeException e ) {
+			log.warn("Error getting WebBox device list: {}", e.toString());
 		}
 
 		results.addAll(getIdentifiableSettingSpecifiers());
