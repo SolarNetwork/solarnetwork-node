@@ -163,6 +163,8 @@ public abstract class ModbusDataDeviceSupport<T extends ModbusData & DataAccesso
 	 *        the Modbus connection
 	 * @param sample
 	 *        the sample to refresh
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	protected void readDeviceInfoFirstTime(ModbusConnection connection, T sample) throws IOException {
 		refreshDeviceInfo(connection, sample);

@@ -756,6 +756,8 @@ public class ModbusData implements DataAccessor {
 		 *        a mutable version of the data to update
 		 * @return {@literal true} if {@code dataTimestamp} should be updated to
 		 *         the current time
+		 * @throws IOException
+		 *         if any communication error occurs
 		 */
 		public boolean updateModbusData(MutableModbusData m) throws IOException;
 	}
