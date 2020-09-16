@@ -142,7 +142,7 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 	 * Get the meter reading as a long.
 	 * 
 	 * <p>
-	 * Because the meter reading is a {@link BigDecimal}, this method can be
+	 * Because the meter reading is a {@link BigInteger}, this method can be
 	 * used to get the number as a long. If the meter reading value is
 	 * {@literal null} this method will return {@literal 0}. If the meter
 	 * reading value is too large to fit in a long, it will be truncated.
