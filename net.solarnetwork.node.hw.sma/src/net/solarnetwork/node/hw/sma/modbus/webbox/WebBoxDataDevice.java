@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.sma.modbus.webbox;
 
+import static net.solarnetwork.util.OptionalService.service;
 import java.io.IOException;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceDataAccessor;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
@@ -81,7 +82,7 @@ public class WebBoxDataDevice<T extends SmaDeviceData & SmaDeviceDataAccessor> i
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
 		builder.append("WebBoxDataDevice{");
-		builder.append(modbusNetwork);
+		builder.append(service(modbusNetwork));
 		builder.append(", unitId=");
 		builder.append(unitId);
 		builder.append("}");
