@@ -622,7 +622,7 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
 	 * 
-	 * @param sampleCacheSecondsMs
+	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
 	public void setSampleCacheMs(long sampleCacheMs) {
@@ -663,7 +663,7 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 	 * 
 	 * <p>
 	 * Any newly added element values will be set to new
-	 * {@link ModbusPropertyConfig} instances.
+	 * {@link ModbusWritePropertyConfig} instances.
 	 * </p>
 	 * 
 	 * @param count
