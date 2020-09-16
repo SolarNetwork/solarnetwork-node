@@ -58,7 +58,7 @@ public enum SDMWiringMode {
 	/**
 	 * Get a description.
 	 * 
-	 * @return
+	 * @return the description
 	 */
 	public String getDescription() {
 		return description;

@@ -111,6 +111,8 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 	 * @param action
 	 *        the callback to perform the updates on
 	 * @return this object to allow method chaining
+	 * @throws IOException
+	 *         if any communication error occurs
 	 * @since 2.0
 	 */
 	public final SDMData performControlUpdates(ModbusDataUpdateAction action) throws IOException {
@@ -265,6 +267,8 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public final void readConfigurationData(final ModbusConnection conn) throws IOException {
 		// we actually read ALL registers here, so our snapshot timestamp includes everything
@@ -288,6 +292,8 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	public final void readMeterData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadInputRegister,
