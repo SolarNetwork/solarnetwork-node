@@ -42,6 +42,9 @@ public class SmaFirmwareVersion {
 
 	/**
 	 * Constructor.
+	 * 
+	 * @param data
+	 *        the raw version data to decode
 	 */
 	public SmaFirmwareVersion(byte[] data) {
 		super();

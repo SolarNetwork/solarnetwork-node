@@ -141,8 +141,7 @@ public enum SmaDeviceType implements SmaDeviceKind {
 	 * 
 	 * @param code
 	 *        the code
-	 * @return the enumeration, never {@literal null} and set to {@link #None}
-	 *         if not any other valid code
+	 * @return the enumeration, never {@literal null}
 	 * @throws IllegalArgumentException
 	 *         if {@literal code} is not a valid value
 	 */

@@ -37,7 +37,7 @@ public interface WebBoxDevice {
 	/**
 	 * Get the Modbus unit ID of this device.
 	 * 
-	 * @return
+	 * @return the unit ID
 	 */
 	int getUnitId();
 
