@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.sma.webbox;
 
+import static net.solarnetwork.util.OptionalService.service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -82,6 +83,19 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 	}
 
 	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("WebBoxDeviceDataSource{webBox=");
+		builder.append(service(webBox));
+		builder.append(", sourceId=");
+		builder.append(sourceId);
+		builder.append(", unitId=");
+		builder.append(unitId);
+		builder.append("}");
+		return builder.toString();
+	}
+
+	@Override
 	public String getSettingUID() {
 		return "net.solarnetwork.node.datum.sma.webbox.ds";
 	}
@@ -98,6 +112,8 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 				new BasicTextFieldSettingSpecifier("webBox.propertyFilters['UID']", DEFAULT_WEBBOX_UID));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", null));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", DEFAULT_SOURCE_ID));
+		results.add(new BasicTextFieldSettingSpecifier("samplesTransformService.propertyFilters['UID']",
+				null));
 
 		return results;
 	}
@@ -127,7 +143,7 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 		if ( uId < 3 ) {
 			return null;
 		}
-		WebBoxOperations ops = OptionalService.service(webBox);
+		WebBoxOperations ops = service(webBox);
 		if ( ops == null ) {
 			return null;
 		}
@@ -152,6 +168,7 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 				d.setSourceId(resolvePlaceholders(getSourceId()));
 				if ( d.getSourceId() != null ) {
 					sample.populateDatumSamples(d.asMutableSampleOperations(), null);
+					d = applySamplesTransformer(d, null);
 					postDatumCapturedEvent(d);
 					return d;
 				}

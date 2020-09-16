@@ -61,6 +61,15 @@ public class WebBoxService extends ModbusDataDatumDataSourceSupport<WebBoxData>
 	}
 
 	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("WebBoxService{");
+		builder.append(modbusNetwork());
+		builder.append("}");
+		return builder.toString();
+	}
+
+	@Override
 	protected void refreshDeviceInfo(ModbusConnection connection, WebBoxData sample) throws IOException {
 		sample.readInformationData(connection);
 	}
