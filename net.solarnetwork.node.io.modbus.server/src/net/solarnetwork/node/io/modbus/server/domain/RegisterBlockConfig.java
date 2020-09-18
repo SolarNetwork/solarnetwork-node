@@ -47,7 +47,7 @@ import net.solarnetwork.util.ArrayUtils;
  * </p>
  * 
  * <p>
- * <b>Note that the {@link RegisterBlockType#Coil} and
+ * <b>Note</b> that the {@link RegisterBlockType#Coil} and
  * {@link RegisterBlockType#Discrete} imply each configured measurement uses one
  * on/off register.
  * </p>

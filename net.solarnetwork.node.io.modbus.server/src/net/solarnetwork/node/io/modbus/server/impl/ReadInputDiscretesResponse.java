@@ -42,7 +42,7 @@ import net.wimpi.modbus.msg.ReadInputDiscretesRequest;
 import net.wimpi.modbus.util.BitVector;
 
 /**
- * Class implementing a <tt>ReadInputDiscretesResponse</tt>. The implementation
+ * Class implementing a <code>ReadInputDiscretesResponse</code>. The implementation
  * directly correlates with the class 1 function <i>read input discretes (FC
  * 2)</i>. It encapsulates the corresponding response message.
  * <p>
@@ -95,11 +95,11 @@ public final class ReadInputDiscretesResponse extends ModbusResponse {
 	}//setBitCount
 
 	/**
-	 * Returns the <tt>BitVector</tt> that stores the collection of bits that
+	 * Returns the <code>BitVector</code> that stores the collection of bits that
 	 * have been read.
 	 * <p>
 	 * 
-	 * @return the <tt>BitVector</tt> holding the bits that have been read.
+	 * @return the <code>BitVector</code> holding the bits that have been read.
 	 */
 	public BitVector getDiscretes() {
 		return m_Discretes;

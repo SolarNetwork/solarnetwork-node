@@ -42,7 +42,7 @@ import net.wimpi.modbus.msg.ReadCoilsRequest;
 import net.wimpi.modbus.util.BitVector;
 
 /**
- * Class implementing a <tt>ReadCoilsResponse</tt>. The implementation directly
+ * Class implementing a <code>ReadCoilsResponse</code>. The implementation directly
  * correlates with the class 1 function <i>read coils (FC 1)</i>. It
  * encapsulates the corresponding response message.
  * <p>
@@ -96,11 +96,11 @@ public final class ReadCoilsResponse extends ModbusResponse {
 	}//setBitCount
 
 	/**
-	 * Returns the <tt>BitVector</tt> that stores the collection of bits that
+	 * Returns the <code>BitVector</code> that stores the collection of bits that
 	 * have been read.
 	 * <p>
 	 * 
-	 * @return the <tt>BitVector</tt> holding the bits that have been read.
+	 * @return the <code>BitVector</code> holding the bits that have been read.
 	 */
 	public BitVector getCoils() {
 		return m_Coils;

@@ -43,7 +43,7 @@ import net.wimpi.modbus.msg.ReadMultipleRegistersRequest;
 import net.wimpi.modbus.procimg.Register;
 
 /**
- * Class implementing a <tt>ReadMultipleRegistersResponse</tt>. The
+ * Class implementing a <code>ReadMultipleRegistersResponse</code>. The
  * implementation directly correlates with the class 0 function <i>read multiple
  * registers (FC 3)</i>. It encapsulates the corresponding response message.
  *
@@ -61,7 +61,7 @@ public final class ReadMultipleRegistersResponse extends ModbusResponse {
 	 * 
 	 * @param req
 	 *        the request to construct the response for
-	 * @param regisgters
+	 * @param registers
 	 *        the registers
 	 */
 	public ReadMultipleRegistersResponse(ReadMultipleRegistersRequest req, Register[] registers) {
@@ -71,7 +71,7 @@ public final class ReadMultipleRegistersResponse extends ModbusResponse {
 	}
 
 	/**
-	 * Constructs a new <tt>ReadInputRegistersResponse</tt> instance.
+	 * Constructs a new <code>ReadInputRegistersResponse</code> instance.
 	 *
 	 * @param registers
 	 *        the Register[] holding response registers.
@@ -89,7 +89,7 @@ public final class ReadMultipleRegistersResponse extends ModbusResponse {
 	 * Returns the number of bytes that have been read.
 	 * <p>
 	 * 
-	 * @return the number of bytes that have been read as <tt>int</tt>.
+	 * @return the number of bytes that have been read as <code>int</code>.
 	 */
 	public int getByteCount() {
 		return m_ByteCount;
@@ -98,10 +98,10 @@ public final class ReadMultipleRegistersResponse extends ModbusResponse {
 	/**
 	 * Returns the number of words that have been read. The returned value
 	 * should be half of the the byte count of this
-	 * <tt>ReadMultipleRegistersResponse</tt>.
+	 * <code>ReadMultipleRegistersResponse</code>.
 	 * <p>
 	 * 
-	 * @return the number of words that have been read as <tt>int</tt>.
+	 * @return the number of words that have been read as <code>int</code>.
 	 */
 	public int getWordCount() {
 		return m_ByteCount / 2;
@@ -116,7 +116,7 @@ public final class ReadMultipleRegistersResponse extends ModbusResponse {
 	 *        the relative index of the register for which the value should be
 	 *        retrieved.
 	 *
-	 * @return the value as <tt>int</tt>.
+	 * @return the value as <code>int</code>.
 	 *
 	 * @throws IndexOutOfBoundsException
 	 *         if the index is out of bounds.
@@ -126,14 +126,14 @@ public final class ReadMultipleRegistersResponse extends ModbusResponse {
 	}//getRegisterValue
 
 	/**
-	 * Returns the <tt>Register</tt> at the given position (relative to the
+	 * Returns the <code>Register</code> at the given position (relative to the
 	 * reference used in the request).
 	 * <p>
 	 * 
 	 * @param index
-	 *        the relative index of the <tt>Register</tt>.
+	 *        the relative index of the <code>Register</code>.
 	 *
-	 * @return the register as <tt>Register</tt>.
+	 * @return the register as <code>Register</code>.
 	 *
 	 * @throws IndexOutOfBoundsException
 	 *         if the index is out of bounds.
@@ -149,7 +149,7 @@ public final class ReadMultipleRegistersResponse extends ModbusResponse {
 	/**
 	 * Returns a reference to the array of registers read.
 	 *
-	 * @return a <tt>Register[]</tt> instance.
+	 * @return a <code>Register[]</code> instance.
 	 */
 	public Register[] getRegisters() {
 		return m_Registers;

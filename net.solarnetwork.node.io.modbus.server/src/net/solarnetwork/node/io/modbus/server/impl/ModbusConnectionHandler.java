@@ -86,7 +86,7 @@ public class ModbusConnectionHandler implements Runnable {
 	 * @param closeable
 	 *        if provided, something to close when the handler is finished
 	 * @throws IllegalArgumentException
-	 *         if any argument other than {@code closeable) is {@literal null}
+	 *         if any argument other than {@code closeable} is {@literal null}
 	 */
 	public ModbusConnectionHandler(ModbusTransport transport,
 			ConcurrentMap<Integer, ModbusRegisterData> registers, String description,

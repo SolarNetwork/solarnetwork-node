@@ -43,9 +43,9 @@ import net.wimpi.modbus.msg.ReadInputRegistersRequest;
 import net.wimpi.modbus.procimg.InputRegister;
 
 /**
- * Class implementing a <tt>ReadInputRegistersRequest</tt>. The implementation
- * directly correlates with the class 0 function <i>read multiple registers (FC
- * 4)</i>. It encapsulates the corresponding response message.
+ * Class implementing a <code>ReadInputRegistersRequest</code>. The
+ * implementation directly correlates with the class 0 function <i>read multiple
+ * registers (FC 4)</i>. It encapsulates the corresponding response message.
  *
  * @author Dieter Wimberger
  * @version 1.2rc2 (14/04/2014)
@@ -62,7 +62,7 @@ public final class ReadInputRegistersResponse extends ModbusResponse {
 	 * 
 	 * @param req
 	 *        the request to construct the response for
-	 * @param regisgters
+	 * @param registers
 	 *        the registers
 	 */
 	public ReadInputRegistersResponse(ReadInputRegistersRequest req, InputRegister[] registers) {
@@ -72,7 +72,7 @@ public final class ReadInputRegistersResponse extends ModbusResponse {
 	}
 
 	/**
-	 * Constructs a new <tt>ReadInputRegistersResponse</tt> instance.
+	 * Constructs a new <code>ReadInputRegistersResponse</code> instance.
 	 *
 	 * @param registers
 	 *        the InputRegister[] holding response input registers.
@@ -88,9 +88,8 @@ public final class ReadInputRegistersResponse extends ModbusResponse {
 
 	/**
 	 * Returns the number of bytes that have been read.
-	 * <p/>
 	 *
-	 * @return the number of bytes that have been read as <tt>int</tt>.
+	 * @return the number of bytes that have been read as <code>int</code>.
 	 */
 	public int getByteCount() {
 		return m_ByteCount;
@@ -99,22 +98,20 @@ public final class ReadInputRegistersResponse extends ModbusResponse {
 	/**
 	 * Returns the number of words that have been read. The returned value
 	 * should be twice as much as the byte count of the response.
-	 * <p/>
 	 *
-	 * @return the number of words that have been read as <tt>int</tt>.
+	 * @return the number of words that have been read as <code>int</code>.
 	 */
 	public int getWordCount() {
 		return m_ByteCount / 2;
 	}//getWordCount
 
 	/**
-	 * Returns the <tt>InputRegister</tt> at the given position (relative to the
-	 * reference used in the request).
-	 * <p/>
+	 * Returns the <code>InputRegister</code> at the given position (relative to
+	 * the reference used in the request).
 	 *
 	 * @param index
-	 *        the relative index of the <tt>InputRegister</tt>.
-	 * @return the register as <tt>InputRegister</tt>.
+	 *        the relative index of the <code>InputRegister</code>.
+	 * @return the register as <code>InputRegister</code>.
 	 * @throws IndexOutOfBoundsException
 	 *         if the index is out of bounds.
 	 */
@@ -129,12 +126,11 @@ public final class ReadInputRegistersResponse extends ModbusResponse {
 	/**
 	 * Returns the value of the register at the given position (relative to the
 	 * reference used in the request) interpreted as usigned short.
-	 * <p/>
 	 *
 	 * @param index
 	 *        the relative index of the register for which the value should be
 	 *        retrieved.
-	 * @return the value as <tt>int</tt>.
+	 * @return the value as <code>int</code>.
 	 * @throws IndexOutOfBoundsException
 	 *         if the index is out of bounds.
 	 */
@@ -149,7 +145,7 @@ public final class ReadInputRegistersResponse extends ModbusResponse {
 	/**
 	 * Returns a reference to the array of input registers read.
 	 *
-	 * @return a <tt>InputRegister[]</tt> instance.
+	 * @return a <code>InputRegister[]</code> instance.
 	 */
 	public InputRegister[] getRegisters() {
 		return m_Registers;
