@@ -59,6 +59,7 @@ import net.solarnetwork.node.io.modbus.server.domain.UnitConfig;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.node.support.BaseIdentifiable;
@@ -385,6 +386,8 @@ public class ModbusServer extends BaseIdentifiable
 		}
 
 		result.addAll(baseIdentifiableSettings(null));
+		result.add(new BasicTextFieldSettingSpecifier("bindAddress", DEFAULT_BIND_ADDRESS));
+		result.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(DEFAULT_PORT)));
 
 		UnitConfig[] blockConfs = getUnitConfigs();
 		List<UnitConfig> blockConfsList = (blockConfs != null ? Arrays.asList(blockConfs)
