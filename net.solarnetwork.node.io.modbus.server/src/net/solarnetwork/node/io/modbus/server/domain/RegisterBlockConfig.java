@@ -33,6 +33,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.util.ArrayUtils;
 
@@ -74,6 +75,11 @@ public class RegisterBlockConfig {
 	public List<SettingSpecifier> settings(String prefix) {
 		List<SettingSpecifier> result = new ArrayList<>(6);
 
+		String info = registerInfo();
+		if ( info != null ) {
+			result.add(new BasicTitleSettingSpecifier("addressInfo", info, true));
+		}
+
 		result.add(new BasicTextFieldSettingSpecifier(prefix + "startAddress", "0"));
 
 		// drop-down menu for block type
@@ -102,6 +108,25 @@ public class RegisterBlockConfig {
 				}));
 
 		return result;
+	}
+
+	private String registerInfo() {
+		MeasurementConfig[] configs = getMeasurementConfigs();
+		if ( configs == null || configs.length < 1 ) {
+			return null;
+		}
+		StringBuilder buf = new StringBuilder();
+		int address = getStartAddress();
+		for ( MeasurementConfig config : configs ) {
+			if ( buf.length() > 0 ) {
+				buf.append("\n");
+			}
+			int size = config.getSize();
+			buf.append(String.format("0x%1$04x %1$05d - %2$s - %3$s (%4$d)", address,
+					config.getPropertyName(), config.getDataType(), size));
+			address += size;
+		}
+		return buf.toString();
 	}
 
 	/**

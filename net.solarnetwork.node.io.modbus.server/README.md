@@ -59,7 +59,7 @@ Register blocks are sets of contiguous Modbus registers. You configure a startin
 each measurement configuration added to the block is mapped to Modbus registers based on the size
 required by each measurement.
 
-![Register block settings](docs/solarnode-modbus-tcp-server-block-settings.png)
+![Register block settings](docs/solarnode-modbus-tcp-server-register-block-settings.png)
 
 Each register block configuration contains the following settings:
 
