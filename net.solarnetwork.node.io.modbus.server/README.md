@@ -9,7 +9,8 @@ knowledge of the Modbus services you plan to integrate with.
 The plugin can be installed via the **Plugins** page on your SolarNode. It appears under the **IO**
 category as **Modbus Server (TCP)**. Once installed, a new **Modbus Server (TCP)** component will
 appear on the **Settings** page on your SolarNode. Click on the **Manage** button to configure
-components. You'll need to add one configuration for each GPSd server you want to collect data from.
+components. You'll need to add one configuration for each port you want to expose a Modbus server
+on.
 
 # Use
 
