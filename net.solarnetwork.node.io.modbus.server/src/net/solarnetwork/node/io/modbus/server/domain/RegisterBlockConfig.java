@@ -122,8 +122,8 @@ public class RegisterBlockConfig {
 				buf.append("\n");
 			}
 			int size = config.getSize();
-			buf.append(String.format("0x%1$04x %1$05d - %2$s - %3$s (%4$d)", address,
-					config.getPropertyName(), config.getDataType(), size));
+			buf.append(String.format("0x%1$04x %1$05d - %2$s.%3$s - %4$s (%5$d)", address,
+					config.getSourceId(), config.getPropertyName(), config.getDataType(), size));
 			address += size;
 		}
 		return buf.toString();
