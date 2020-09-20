@@ -251,7 +251,8 @@ public class SocketCanbusSocket implements CanbusSocket {
 	/**
 	 * Set the socket "keep alive" flag.
 	 * 
-	 * @return {@literal true} if the socket "keep alive" flag should be used
+	 * @param socketKeepAlive
+	 *        {@literal true} if the socket "keep alive" flag should be used
 	 */
 	public void setSocketKeepAlive(boolean socketKeepAlive) {
 		this.socketKeepAlive = socketKeepAlive;
