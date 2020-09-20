@@ -15,7 +15,7 @@
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
 		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[1.58,2.0)"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.68,2.0)"/>
-		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.modbus" rev="[3.0,4.0)"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.modbus" rev="[3.2,4.0)"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>
 	</dependencies>
 </ivy-module>

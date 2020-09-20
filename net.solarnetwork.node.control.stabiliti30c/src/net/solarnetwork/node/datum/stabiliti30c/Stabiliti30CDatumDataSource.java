@@ -56,7 +56,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class Stabiliti30CDatumDataSource extends ModbusDataDatumDataSourceSupport<Stabiliti30cData>
 		implements MultiDatumDataSource<GeneralNodeEnergyDatum>, SettingSpecifierProvider {
@@ -86,12 +86,14 @@ public class Stabiliti30CDatumDataSource extends ModbusDataDatumDataSourceSuppor
 	}
 
 	@Override
-	protected void refreshDeviceInfo(ModbusConnection connection, Stabiliti30cData sample) {
+	protected void refreshDeviceInfo(ModbusConnection connection, Stabiliti30cData sample)
+			throws IOException {
 		sample.readConfigurationData(connection);
 	}
 
 	@Override
-	protected void refreshDeviceData(ModbusConnection connection, Stabiliti30cData sample) {
+	protected void refreshDeviceData(ModbusConnection connection, Stabiliti30cData sample)
+			throws IOException {
 		sample.readPowerControlData(connection);
 	}
 

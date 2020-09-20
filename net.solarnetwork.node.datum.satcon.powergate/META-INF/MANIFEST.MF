@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Satcon PowerGate Inverter Data Source
 Bundle-Description: Collect data from Satcon PowerGate series inverters.
 Bundle-SymbolicName: net.solarnetwork.node.datum.satcon.powergate
-Bundle-Version: 2.1.0
+Bundle-Version: 2.2.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.satcon.powergate
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -11,9 +11,9 @@ Import-Package:
  net.solarnetwork.domain;version="[1.18,2.0)",
  net.solarnetwork.node;version="[1.29,2.0)",
  net.solarnetwork.node.domain;version="[1.18,2.0)",
- net.solarnetwork.node.hw.satcon;version="[2.0,3.0)",
- net.solarnetwork.node.io.modbus;version="[3.0,4.0)",
- net.solarnetwork.node.io.modbus.support;version="[3.0,4.0)",
+ net.solarnetwork.node.hw.satcon;version="[2.1,3.0)",
+ net.solarnetwork.node.io.modbus;version="[3.2,4.0)",
+ net.solarnetwork.node.io.modbus.support;version="[3.1,4.0)",
  net.solarnetwork.node.job;version="[1.15,2.0)",
  net.solarnetwork.node.reactor;version="[1.6,2.0)",
  net.solarnetwork.node.reactor.support;version="[1.4.1,2.0)",

@@ -27,6 +27,7 @@ import static net.solarnetwork.node.domain.ACPhase.PhaseB;
 import static net.solarnetwork.node.domain.ACPhase.PhaseC;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -141,16 +142,20 @@ public class ION6200DataTests {
 
 	private ION6200Data getTestDataInstance() {
 		ION6200Data data = new ION6200Data();
-		data.performUpdates(new ModbusDataUpdateAction() {
+		try {
+			data.performUpdates(new ModbusDataUpdateAction() {
 
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				m.saveDataArray(TEST_INFO_1_REG_0, 0);
-				m.saveDataArray(TEST_METER_1_REG_99, 99);
-				m.saveDataArray(TEST_CONFIG_1_REG_4000, 4000);
-				return true;
-			}
-		});
+				@Override
+				public boolean updateModbusData(MutableModbusData m) {
+					m.saveDataArray(TEST_INFO_1_REG_0, 0);
+					m.saveDataArray(TEST_METER_1_REG_99, 99);
+					m.saveDataArray(TEST_CONFIG_1_REG_4000, 4000);
+					return true;
+				}
+			});
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
 		return data;
 	}
 
@@ -167,14 +172,16 @@ public class ION6200DataTests {
 		assertThat("Firmware revision", data.getFirmwareRevision(), equalTo(211));
 		assertThat("Serial number", data.getSerialNumber(), equalTo(80101592L));
 		assertThat("Volts mode", data.getVoltsMode(), equalTo(ION6200VoltsMode.FourWire));
-		assertThat("PVS", data.getUnsignedInt16(ION6200Register.ConfigProgrammableVoltageScale.getAddress()),
+		assertThat("PVS",
+				data.getUnsignedInt16(ION6200Register.ConfigProgrammableVoltageScale.getAddress()),
 				equalTo(4));
-		assertThat("PCS", data.getUnsignedInt16(ION6200Register.ConfigProgrammableCurrentScale.getAddress()),
+		assertThat("PCS",
+				data.getUnsignedInt16(ION6200Register.ConfigProgrammableCurrentScale.getAddress()),
 				equalTo(4));
-		assertThat("PnS",
-				data.getUnsignedInt16(ION6200Register.ConfigProgrammableNeutralCurrentScale.getAddress()),
-				equalTo(4));
-		assertThat("PPS", data.getUnsignedInt16(ION6200Register.ConfigProgrammablePowerScale.getAddress()),
+		assertThat("PnS", data.getUnsignedInt16(
+				ION6200Register.ConfigProgrammableNeutralCurrentScale.getAddress()), equalTo(4));
+		assertThat("PPS",
+				data.getUnsignedInt16(ION6200Register.ConfigProgrammablePowerScale.getAddress()),
 				equalTo(5));
 	}
 

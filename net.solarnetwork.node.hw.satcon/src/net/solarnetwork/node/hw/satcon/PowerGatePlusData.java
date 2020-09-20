@@ -25,6 +25,7 @@ package net.solarnetwork.node.hw.satcon;
 import static net.solarnetwork.util.NumberUtils.bigDecimalForNumber;
 import static net.solarnetwork.util.NumberUtils.scaled;
 import static net.solarnetwork.util.StringUtils.commaDelimitedStringFromCollection;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -43,7 +44,7 @@ import net.solarnetwork.util.NumberUtils;
  * Implementation for accessing Power Gate Plus data.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class PowerGatePlusData extends ModbusData implements PowerGateInverterDataAccessor {
 
@@ -80,8 +81,10 @@ public class PowerGatePlusData extends ModbusData implements PowerGateInverterDa
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readConfigurationData(final ModbusConnection conn) {
+	public final void readConfigurationData(final ModbusConnection conn) throws IOException {
 		// we actually read ALL registers here, so our snapshot timestamp includes everything
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				PowerGatePlusRegister.getRegisterAddressSet(), MAX_RESULTS);
@@ -93,8 +96,10 @@ public class PowerGatePlusData extends ModbusData implements PowerGateInverterDa
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readInverterData(final ModbusConnection conn) {
+	public final void readInverterData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				PowerGatePlusRegister.getInverterRegisterAddressSet(), MAX_RESULTS);
 	}
@@ -104,9 +109,11 @@ public class PowerGatePlusData extends ModbusData implements PowerGateInverterDa
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 * @since 1.4
 	 */
-	public final void readControlData(final ModbusConnection conn) {
+	public final void readControlData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				PowerGatePlusRegister.getControlRegisterAddressSet(), MAX_RESULTS);
 	}

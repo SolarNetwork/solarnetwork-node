@@ -66,7 +66,7 @@ import net.solarnetwork.util.StringUtils;
  * managing AC power export.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 		implements InstructionHandler, NodeControlProvider, SettingSpecifierProvider {
@@ -110,7 +110,7 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 					sample.performUpdates(new ModbusDataUpdateAction() {
 
 						@Override
-						public boolean updateModbusData(MutableModbusData m) {
+						public boolean updateModbusData(MutableModbusData m) throws IOException {
 							resetAcExportSettings(connection, sample, m);
 							return false;
 						}
@@ -131,7 +131,7 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 		sample.performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
-			public boolean updateModbusData(MutableModbusData m) {
+			public boolean updateModbusData(MutableModbusData m) throws IOException {
 				log.info("Configuring initial AC export power settings on Stabiliti {}",
 						modbusDeviceName());
 				resetAcExportSettings(connection, sample, m);
@@ -142,12 +142,14 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 	}
 
 	@Override
-	protected void refreshDeviceInfo(ModbusConnection connection, Stabiliti30cData sample) {
+	protected void refreshDeviceInfo(ModbusConnection connection, Stabiliti30cData sample)
+			throws IOException {
 		sample.readConfigurationData(connection);
 	}
 
 	@Override
-	protected void refreshDeviceData(ModbusConnection connection, Stabiliti30cData sample) {
+	protected void refreshDeviceData(ModbusConnection connection, Stabiliti30cData sample)
+			throws IOException {
 		sample.readControlData(connection);
 		sample.readPowerControlData(connection);
 	}
@@ -284,7 +286,7 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 					sample.performUpdates(new ModbusDataUpdateAction() {
 
 						@Override
-						public boolean updateModbusData(MutableModbusData m) {
+						public boolean updateModbusData(MutableModbusData m) throws IOException {
 							setAcExportSettings(connection, sample, m, targetPower, true);
 							return false;
 						}
@@ -301,7 +303,7 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 	}
 
 	private synchronized void setAcExportSettings(ModbusConnection connection, Stabiliti30cData sample,
-			MutableModbusData m, Integer targetPower, boolean manualModeEnabled) {
+			MutableModbusData m, Integer targetPower, boolean manualModeEnabled) throws IOException {
 		if ( manualModeEnabled != sample.isManualModeEnabled() ) {
 			// first set control methods to safe starting values...
 			setAcExportSettings(connection, sample, m, Stabiliti30cAcControlMethod.Idle,
@@ -316,7 +318,7 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 	}
 
 	private synchronized void resetAcExportSettings(ModbusConnection connection, Stabiliti30cData sample,
-			MutableModbusData m) {
+			MutableModbusData m) throws IOException {
 		setAcExportSettings(connection, sample, m, Stabiliti30cAcControlMethod.Idle,
 				Stabiliti30cDcControlMethod.Idle, Stabiliti30cDcControlMethod.Idle, null, null, true);
 		setAcExportSettings(connection, sample, m, Stabiliti30cAcControlMethod.Net,
@@ -326,7 +328,7 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 	private synchronized void setAcExportSettings(ModbusConnection connection, Stabiliti30cData sample,
 			MutableModbusData m, Stabiliti30cAcControlMethod p1Method,
 			Stabiliti30cDcControlMethod p2Method, Stabiliti30cDcControlMethod p3Method,
-			Integer targetPower, Boolean manualModeEnabled, boolean force) {
+			Integer targetPower, Boolean manualModeEnabled, boolean force) throws IOException {
 		Stabiliti30cControlAccessor acc = sample.controlAccessor(connection);
 
 		if ( force || sample.getP1ControlMethod() != p1Method ) {

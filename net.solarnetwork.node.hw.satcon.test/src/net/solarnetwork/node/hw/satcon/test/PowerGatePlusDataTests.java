@@ -53,22 +53,26 @@ public class PowerGatePlusDataTests {
 
 	private static PowerGatePlusData dataInstance(String resource) {
 		PowerGatePlusData data = new PowerGatePlusData();
-		data.performUpdates(new ModbusDataUpdateAction() {
+		try {
+			data.performUpdates(new ModbusDataUpdateAction() {
 
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				try {
-					m.saveDataMap(DataUtils
-							.parseModbusHexRegisterMappingLines(new BufferedReader(new InputStreamReader(
-									PowerGatePlusDataTests.class.getResourceAsStream(resource),
-									Charset.forName("UTF-8")))));
-				} catch ( IOException e ) {
-					throw new RuntimeException(e);
+				@Override
+				public boolean updateModbusData(MutableModbusData m) {
+					try {
+						m.saveDataMap(DataUtils.parseModbusHexRegisterMappingLines(
+								new BufferedReader(new InputStreamReader(
+										PowerGatePlusDataTests.class.getResourceAsStream(resource),
+										Charset.forName("UTF-8")))));
+					} catch ( IOException e ) {
+						throw new RuntimeException(e);
+					}
+					;
+					return true;
 				}
-				;
-				return true;
-			}
-		});
+			});
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
 		return data;
 	}
 

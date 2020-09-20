@@ -66,7 +66,7 @@ public interface PowerGateInverterDataAccessor extends PVEnergyDataAccessor, ACE
 	/**
 	 * Get all active faults across all groups.
 	 * 
-	 * @return
+	 * @return the faults
 	 */
 	Set<? extends Fault> getFaults();
 

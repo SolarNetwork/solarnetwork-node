@@ -125,6 +125,8 @@ public interface Stabiliti30cDataAccessor extends DataAccessor {
 
 	/**
 	 * Get the P2 current, in amps.
+	 * 
+	 * @return the current
 	 */
 	Float getP2Current();
 

@@ -53,7 +53,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Datum data source for ADAM 411x series devices.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<ADAM411xData>
 		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
@@ -82,12 +82,14 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 	}
 
 	@Override
-	protected void refreshDeviceInfo(ModbusConnection connection, ADAM411xData sample) {
+	protected void refreshDeviceInfo(ModbusConnection connection, ADAM411xData sample)
+			throws IOException {
 		sample.readConfigurationData(connection);
 	}
 
 	@Override
-	protected void refreshDeviceData(ModbusConnection connection, ADAM411xData sample) {
+	protected void refreshDeviceData(ModbusConnection connection, ADAM411xData sample)
+			throws IOException {
 		sample.readDeviceData(connection);
 	}
 

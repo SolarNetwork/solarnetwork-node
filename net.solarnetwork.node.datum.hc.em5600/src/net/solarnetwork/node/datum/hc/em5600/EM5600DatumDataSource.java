@@ -52,7 +52,7 @@ import net.solarnetwork.util.StringUtils;
  * EM5600 series watt meter.
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM5600Data> implements
 		DatumDataSource<ACEnergyDatum>, MultiDatumDataSource<ACEnergyDatum>, SettingSpecifierProvider {
@@ -94,12 +94,12 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 	}
 
 	@Override
-	protected void refreshDeviceInfo(ModbusConnection connection, EM5600Data sample) {
+	protected void refreshDeviceInfo(ModbusConnection connection, EM5600Data sample) throws IOException {
 		sample.readConfigurationData(connection);
 	}
 
 	@Override
-	protected void refreshDeviceData(ModbusConnection connection, EM5600Data sample) {
+	protected void refreshDeviceData(ModbusConnection connection, EM5600Data sample) throws IOException {
 		sample.readMeterData(connection);
 	}
 

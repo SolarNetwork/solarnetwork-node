@@ -82,7 +82,7 @@ public class KTLCTDataTests {
 	private final KTLCTData data = new KTLCTData();
 
 	@Before
-	public void setup() {
+	public void setup() throws IOException {
 		data.performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
@@ -94,7 +94,7 @@ public class KTLCTDataTests {
 	}
 
 	@Test
-	public void readConfigurationData() {
+	public void readConfigurationData() throws IOException {
 		// given
 		ModbusConnection conn = EasyMock.createMock(ModbusConnection.class);
 		KTLCTData data = new KTLCTData();
@@ -159,7 +159,7 @@ public class KTLCTDataTests {
 	}
 
 	@Test
-	public void deviceOperatingStateOff() {
+	public void deviceOperatingStateOff() throws IOException {
 		data.performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
@@ -178,7 +178,7 @@ public class KTLCTDataTests {
 	}
 
 	@Test
-	public void outputPowerLimitPercentLimited() {
+	public void outputPowerLimitPercentLimited() throws IOException {
 		data.performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
@@ -192,7 +192,7 @@ public class KTLCTDataTests {
 	}
 
 	@Test
-	public void updateDeviceOperatingStateOff() {
+	public void updateDeviceOperatingStateOff() throws IOException {
 		// given
 		ModbusConnection conn = EasyMock.createMock(ModbusConnection.class);
 		KTLCTData data = new KTLCTData();
@@ -211,7 +211,7 @@ public class KTLCTDataTests {
 	}
 
 	@Test
-	public void updateDeviceOperatingStateOn() {
+	public void updateDeviceOperatingStateOn() throws IOException {
 		// given
 		data.performUpdates(new ModbusDataUpdateAction() {
 

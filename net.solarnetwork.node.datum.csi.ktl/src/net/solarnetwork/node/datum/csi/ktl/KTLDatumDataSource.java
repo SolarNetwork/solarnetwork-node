@@ -59,7 +59,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * 
  * @author matt
  * @author maxieduncan
- * @version 1.3
+ * @version 1.4
  */
 public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTData> implements
 		DatumDataSource<GeneralNodePVEnergyDatum>, MultiDatumDataSource<GeneralNodePVEnergyDatum>,
@@ -85,12 +85,12 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 	}
 
 	@Override
-	protected void refreshDeviceInfo(ModbusConnection connection, KTLCTData sample) {
+	protected void refreshDeviceInfo(ModbusConnection connection, KTLCTData sample) throws IOException {
 		sample.readConfigurationData(connection);
 	}
 
 	@Override
-	protected void refreshDeviceData(ModbusConnection connection, KTLCTData sample) {
+	protected void refreshDeviceData(ModbusConnection connection, KTLCTData sample) throws IOException {
 		sample.readInverterData(connection);
 		sample.readControlData(connection);
 	}

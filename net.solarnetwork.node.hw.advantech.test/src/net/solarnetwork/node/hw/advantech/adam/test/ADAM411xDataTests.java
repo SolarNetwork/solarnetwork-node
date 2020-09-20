@@ -64,14 +64,18 @@ public class ADAM411xDataTests {
 	private ADAM411xData getDataInstance(String resource) {
 		Map<Integer, Integer> registers = parseTestData(resource);
 		ADAM411xData data = new ADAM411xData();
-		data.performUpdates(new ModbusDataUpdateAction() {
+		try {
+			data.performUpdates(new ModbusDataUpdateAction() {
 
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				m.saveDataMap(registers);
-				return true;
-			}
-		});
+				@Override
+				public boolean updateModbusData(MutableModbusData m) {
+					m.saveDataMap(registers);
+					return true;
+				}
+			});
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
 		return data;
 	}
 

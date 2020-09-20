@@ -59,7 +59,7 @@ public final class Stabiliti30cUtils {
 	 * <pre>
 	 * <code>
 	 * SortedSet&lt;Stabiliti30cFault&gt; faults = getFaults();
-	 * SortedSet&lt;Stabiliti30cFault&gt; faultsBySeverity = new TreeSet<>(SORT_BY_FAULT_SEVERITY);
+	 * SortedSet&lt;Stabiliti30cFault&gt; faultsBySeverity = new TreeSet&lt;&gt;(SORT_BY_FAULT_SEVERITY);
 	 * faultsBySeverity.addAll(faults);
 	 * SortedSet&lt;Stabiliti30cFault&gt; severeFaults = faults.tailSet(ABORT2_SEVERITY);
 	 * </code>

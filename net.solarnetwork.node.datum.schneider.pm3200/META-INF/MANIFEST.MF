@@ -3,15 +3,15 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Schneider Electric PM3200 Meter DataSource
 Bundle-SymbolicName: net.solarnetwork.node.datum.schneider.pm3200
 Bundle-Description: Collect consumption data from Schneider Electric PM32XX series meter devices.
-Bundle-Version: 2.1.0
+Bundle-Version: 2.2.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
  net.solarnetwork.node;version="[1.16,2.0)",
  net.solarnetwork.node.domain;version="[1.16,2.0)",
- net.solarnetwork.node.hw.schneider.meter;version="[3.0,4.0)",
- net.solarnetwork.node.io.modbus;version="[3.0,4.0)",
- net.solarnetwork.node.io.modbus.support;version="[3.0,4.0)",
+ net.solarnetwork.node.hw.schneider.meter;version="[3.1,4.0)",
+ net.solarnetwork.node.io.modbus;version="[3.2,4.0)",
+ net.solarnetwork.node.io.modbus.support;version="[3.1,4.0)",
  net.solarnetwork.node.job;version="[1.10,2.0)",
  net.solarnetwork.node.settings;version="[1.8,2.0)",
  net.solarnetwork.node.settings.support;version="[1.6,2.0)",

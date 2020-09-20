@@ -47,7 +47,7 @@ public enum SharkScale {
 	/**
 	 * Get the scale value encoding.
 	 * 
-	 * @return
+	 * @return the code
 	 */
 	public int getCode() {
 		return code;
@@ -120,13 +120,13 @@ public enum SharkScale {
 	 * @throws IllegalArgumentException
 	 *         if {@code code} is not supported
 	 */
-	public static SharkScale forCode(int value) {
+	public static SharkScale forCode(int code) {
 		for ( SharkScale s : values() ) {
-			if ( s.code == value ) {
+			if ( s.code == code ) {
 				return s;
 			}
 		}
-		throw new IllegalArgumentException("Unsupported scale value: " + value);
+		throw new IllegalArgumentException("Unsupported scale value: " + code);
 	}
 
 }

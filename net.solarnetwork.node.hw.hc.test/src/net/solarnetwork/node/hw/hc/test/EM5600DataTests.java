@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.hc.test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import org.joda.time.LocalDateTime;
 import org.junit.Test;
 import net.solarnetwork.node.hw.hc.EM5600Data;
@@ -41,7 +42,7 @@ import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 public class EM5600DataTests {
 
 	@Test
-	public void testParseDate() {
+	public void testParseDate() throws IOException {
 		EM5600Data data = new EM5600Data();
 		data.performUpdates(new ModbusDataUpdateAction() {
 
@@ -58,7 +59,7 @@ public class EM5600DataTests {
 	}
 
 	@Test
-	public void testParseBasic() {
+	public void testParseBasic() throws IOException {
 		EM5600Data data = new EM5600Data();
 		data.setUnitFactor(UnitFactor.EM5630_30A);
 		data.performUpdates(new ModbusDataUpdateAction() {

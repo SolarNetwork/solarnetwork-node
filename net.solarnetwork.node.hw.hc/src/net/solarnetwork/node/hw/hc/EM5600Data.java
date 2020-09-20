@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.hc;
 
 import static net.solarnetwork.util.NumberUtils.bigDecimalForNumber;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -38,7 +39,7 @@ import net.solarnetwork.util.NumberUtils;
  * Encapsulates raw Modbus register data from the EM5600 meters.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 
@@ -208,8 +209,10 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readConfigurationData(final ModbusConnection conn) {
+	public final void readConfigurationData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister, EM5600Register.getRegisterAddressSet(),
 				MAX_RESULTS);
 	}
@@ -219,8 +222,10 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readMeterData(final ModbusConnection conn) {
+	public final void readMeterData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				EM5600Register.getMeterRegisterAddressSet(), MAX_RESULTS);
 	}
@@ -286,9 +291,10 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 
 	/**
 	 * Set the {@link UnitFactor} to use for calculating effective values. This
-	 * defaults to {@link EM5610}.
+	 * defaults to {@link UnitFactor#EM5610}.
 	 * 
 	 * @param unitFactor
+	 *        the unit factor to set
 	 */
 	public void setUnitFactor(UnitFactor unitFactor) {
 		assert unitFactor != null;

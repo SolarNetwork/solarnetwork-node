@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.eig.meter;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
@@ -34,7 +35,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * Data object for the Shark 100 series meter.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 
@@ -102,9 +103,11 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 * @since 1.1
 	 */
-	public final void readAllData(final ModbusConnection conn) {
+	public final void readAllData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				Shark100Register.getRegisterAddressSet(), MAX_RESULTS);
 	}
@@ -114,8 +117,10 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readConfigurationData(final ModbusConnection conn) {
+	public final void readConfigurationData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				Shark100Register.getConfigRegisterAddressSet(), MAX_RESULTS);
 	}
@@ -125,8 +130,10 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readMeterData(final ModbusConnection conn) {
+	public final void readMeterData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				Shark100Register.getMeterRegisterAddressSet(), MAX_RESULTS);
 	}

@@ -27,6 +27,7 @@ import static net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cUtils.SORT_BY_F
 import static net.solarnetwork.node.io.modbus.ModbusWriteFunction.WriteHoldingRegister;
 import static net.solarnetwork.util.NumberUtils.scaled;
 import static net.solarnetwork.util.StringUtils.commaDelimitedStringFromCollection;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -44,7 +45,7 @@ import net.solarnetwork.util.IntRangeSet;
  * Implementation for Stabiliti 30C series power control system data.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class Stabiliti30cData extends ModbusData implements Stabiliti30cDataAccessor {
 
@@ -90,8 +91,10 @@ public class Stabiliti30cData extends ModbusData implements Stabiliti30cDataAcce
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readConfigurationData(final ModbusConnection conn) {
+	public final void readConfigurationData(final ModbusConnection conn) throws IOException {
 		// we actually read ALL registers here, so our snapshot timestamp includes everything
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister, REG_ADDR_SET, MAX_RESULTS);
 		readControlData(conn);
@@ -102,8 +105,10 @@ public class Stabiliti30cData extends ModbusData implements Stabiliti30cDataAcce
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readPowerControlData(final ModbusConnection conn) {
+	public final void readPowerControlData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister, PWR_CRTL_ADDR_SET, MAX_RESULTS);
 	}
 
@@ -112,8 +117,10 @@ public class Stabiliti30cData extends ModbusData implements Stabiliti30cDataAcce
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readControlData(final ModbusConnection conn) {
+	public final void readControlData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister, CRTL_REG_SET, MAX_RESULTS);
 	}
 
@@ -495,11 +502,11 @@ public class Stabiliti30cData extends ModbusData implements Stabiliti30cDataAcce
 			this.state = state;
 		}
 
-		private void update(final ModbusReference register, final int data) {
+		private void update(final ModbusReference register, final int data) throws IOException {
 			update(register, new int[] { data });
 		}
 
-		private void update(final ModbusReference register, final int[] data) {
+		private void update(final ModbusReference register, final int[] data) throws IOException {
 			final int addr = register.getAddress();
 			conn.writeWords(WriteHoldingRegister, addr, data);
 			if ( state != null ) {
@@ -508,7 +515,7 @@ public class Stabiliti30cData extends ModbusData implements Stabiliti30cDataAcce
 		}
 
 		@Override
-		public void setManualModeEnabled(boolean enabled) {
+		public void setManualModeEnabled(boolean enabled) throws IOException {
 			if ( enabled ) {
 				update(Stabiliti30cRegister.ControlUserStart, 1);
 				if ( state != null ) {
@@ -523,112 +530,112 @@ public class Stabiliti30cData extends ModbusData implements Stabiliti30cDataAcce
 		}
 
 		@Override
-		public void setWatchdogTimeout(int seconds) {
+		public void setWatchdogTimeout(int seconds) throws IOException {
 			update(Stabiliti30cRegister.ControlWatchdogSeconds, seconds);
 		}
 
 		@Override
-		public void setP1ControlMethod(Stabiliti30cAcControlMethod method) {
+		public void setP1ControlMethod(Stabiliti30cAcControlMethod method) throws IOException {
 			update(Stabiliti30cRegister.ControlP1ControlMethod, method.getCode());
 		}
 
 		@Override
-		public void setP1ActivePowerSetpoint(Integer power) {
+		public void setP1ActivePowerSetpoint(Integer power) throws IOException {
 			update(Stabiliti30cRegister.ControlP1RealPowerSetpoint, asDecaValue(power));
 		}
 
 		@Override
-		public void setP1VoltageSetpoint(Integer voltage) {
+		public void setP1VoltageSetpoint(Integer voltage) throws IOException {
 			update(Stabiliti30cRegister.ControlP1VoltageSetpoint, voltage);
 		}
 
 		@Override
-		public void setP1FrequencySetpoint(Float frequency) {
+		public void setP1FrequencySetpoint(Float frequency) throws IOException {
 			update(Stabiliti30cRegister.ControlP1FrequencySetpoint, asMilliValue(frequency));
 		}
 
 		@Override
-		public void setP1CurrentLimit(Float current) {
+		public void setP1CurrentLimit(Float current) throws IOException {
 			update(Stabiliti30cRegister.ControlP1CurrentLimit, asDeciValue(current));
 		}
 
 		@Override
-		public void setP2ControlMethod(Stabiliti30cDcControlMethod method) {
+		public void setP2ControlMethod(Stabiliti30cDcControlMethod method) throws IOException {
 			update(Stabiliti30cRegister.ControlP2ControlMethod, method.getCode());
 		}
 
 		@Override
-		public void setP2CurrentSetpoint(Float current) {
+		public void setP2CurrentSetpoint(Float current) throws IOException {
 			update(Stabiliti30cRegister.ControlP2CurrentSetpoint, asDeciValue(current));
 		}
 
 		@Override
-		public void setP2PowerSetpoint(Integer power) {
+		public void setP2PowerSetpoint(Integer power) throws IOException {
 			update(Stabiliti30cRegister.ControlP2PowerSetpoint, asDecaValue(power));
 		}
 
 		@Override
-		public void setP2VoltageMaximumLimit(Integer voltage) {
+		public void setP2VoltageMaximumLimit(Integer voltage) throws IOException {
 			update(Stabiliti30cRegister.ControlP2VoltageMax, voltage);
 		}
 
 		@Override
-		public void setP2VoltageMinimumLimit(Integer voltage) {
+		public void setP2VoltageMinimumLimit(Integer voltage) throws IOException {
 			update(Stabiliti30cRegister.ControlP2VoltageMin, voltage);
 		}
 
 		@Override
-		public void setP2ImportPowerLimit(Integer power) {
+		public void setP2ImportPowerLimit(Integer power) throws IOException {
 			update(Stabiliti30cRegister.ControlP2ImportPowerLimit, asDecaValue(power));
 		}
 
 		@Override
-		public void setP2ExportPowerLimit(Integer power) {
+		public void setP2ExportPowerLimit(Integer power) throws IOException {
 			update(Stabiliti30cRegister.ControlP2ExportPowerLimit, asDecaValue(power));
 		}
 
 		@Override
-		public void setP2CurrentLimit(Float current) {
+		public void setP2CurrentLimit(Float current) throws IOException {
 			update(Stabiliti30cRegister.ControlP2CurrentLimit, asDeciValue(current));
 		}
 
 		@Override
-		public void setP3ControlMethod(Stabiliti30cDcControlMethod method) {
+		public void setP3ControlMethod(Stabiliti30cDcControlMethod method) throws IOException {
 			update(Stabiliti30cRegister.ControlP3ControlMethod, method.getCode());
 		}
 
 		@Override
-		public void setP3MpptStartTimeOffsetSetpoint(Integer offset) {
+		public void setP3MpptStartTimeOffsetSetpoint(Integer offset) throws IOException {
 			update(Stabiliti30cRegister.ControlP3MpptStart, offset);
 		}
 
 		@Override
-		public void setP3MpptStopTimeOffsetSetpoint(Integer offset) {
+		public void setP3MpptStopTimeOffsetSetpoint(Integer offset) throws IOException {
 			update(Stabiliti30cRegister.ControlP3MpptStop, offset);
 		}
 
 		@Override
-		public void setP3MpptVoltageMinimumSetpoint(Integer voltage) {
+		public void setP3MpptVoltageMinimumSetpoint(Integer voltage) throws IOException {
 			update(Stabiliti30cRegister.ControlP3MpptVoltageMin, voltage);
 		}
 
 		@Override
-		public void setP3VoltageMaximum(Integer voltage) {
+		public void setP3VoltageMaximum(Integer voltage) throws IOException {
 			update(Stabiliti30cRegister.ControlP3VoltageMax, voltage);
 		}
 
 		@Override
-		public void setP3VoltageMinimum(Integer voltage) {
+		public void setP3VoltageMinimum(Integer voltage) throws IOException {
 			update(Stabiliti30cRegister.ControlP3VoltageMin, voltage);
 		}
 
 		@Override
-		public void setP3ImportPowerLimit(Integer power) {
+		public void setP3ImportPowerLimit(Integer power) throws IOException {
 			update(Stabiliti30cRegister.ControlP3ImportPowerLimit, asDecaValue(power));
 		}
 
 		@Override
-		public void setP3CurrentLimit(Float current) {
+		public void setP3CurrentLimit(Float current) throws IOException {
 			update(Stabiliti30cRegister.ControlP3CurrentLimit, asDeciValue(current));
 		}
 

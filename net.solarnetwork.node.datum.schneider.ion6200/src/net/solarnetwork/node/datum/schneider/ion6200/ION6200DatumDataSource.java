@@ -51,7 +51,7 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * {@link DatumDataSource} for the ION6200 series meter.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
@@ -153,7 +153,7 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	}
 
 	@Override
-	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
+	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) throws IOException {
 		sample.readConfigurationData(conn);
 		ION6200DataAccessor data = (ION6200DataAccessor) sample.copy();
 		Map<String, Object> result = new LinkedHashMap<>(4);

@@ -25,6 +25,7 @@ package net.solarnetwork.node.hw.elkor.upt;
 import static net.solarnetwork.util.CollectionUtils.coveringIntRanges;
 import static net.solarnetwork.util.NumberUtils.maximumDecimalScale;
 import static net.solarnetwork.util.NumberUtils.scaled;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -41,7 +42,7 @@ import net.solarnetwork.util.IntRange;
  * Data object for the WattsOn series meter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class WattsOnData extends ModbusData implements WattsOnDataAccessor {
 
@@ -84,12 +85,14 @@ public class WattsOnData extends ModbusData implements WattsOnDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readConfigurationData(final ModbusConnection conn) {
+	public final void readConfigurationData(final ModbusConnection conn) throws IOException {
 		performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
-			public boolean updateModbusData(MutableModbusData m) {
+			public boolean updateModbusData(MutableModbusData m) throws IOException {
 				// we actually read ALL registers here, so our snapshot timestamp includes everything
 				updateData(conn, m,
 						coveringIntRanges(WattsOnRegister.getRegisterAddressSet(), MAX_RESULTS));
@@ -103,12 +106,14 @@ public class WattsOnData extends ModbusData implements WattsOnDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readDeviceData(final ModbusConnection conn) {
+	public final void readDeviceData(final ModbusConnection conn) throws IOException {
 		performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
-			public boolean updateModbusData(MutableModbusData m) {
+			public boolean updateModbusData(MutableModbusData m) throws IOException {
 				updateData(conn, m,
 						coveringIntRanges(WattsOnRegister.getMeterRegisterAddressSet(), MAX_RESULTS));
 				return true;
@@ -116,7 +121,8 @@ public class WattsOnData extends ModbusData implements WattsOnDataAccessor {
 		});
 	}
 
-	private void updateData(ModbusConnection conn, MutableModbusData m, Collection<IntRange> ranges) {
+	private void updateData(ModbusConnection conn, MutableModbusData m, Collection<IntRange> ranges)
+			throws IOException {
 		for ( IntRange r : ranges ) {
 			short[] data = conn.readWords(ModbusReadFunction.ReadHoldingRegister, r.getMin(),
 					r.length());

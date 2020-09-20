@@ -103,13 +103,13 @@ public enum KTLCTInverterWorkMode {
 	 * @throws IllegalArgumentException
 	 *         if {@code code} is not supported
 	 */
-	public static KTLCTInverterWorkMode forCode(int value) {
+	public static KTLCTInverterWorkMode forCode(int code) {
 		for ( KTLCTInverterWorkMode s : values() ) {
-			if ( s.code == value ) {
+			if ( s.code == code ) {
 				return s;
 			}
 		}
-		throw new IllegalArgumentException("Unsupported work mode value: " + value);
+		throw new IllegalArgumentException("Unsupported work mode value: " + code);
 	}
 
 }

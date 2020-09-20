@@ -27,6 +27,7 @@ import static net.solarnetwork.node.domain.ACPhase.PhaseB;
 import static net.solarnetwork.node.domain.ACPhase.PhaseC;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -189,20 +190,24 @@ public class PM5100DataTests {
 
 	private PM5100Data getTestDataInstance() {
 		PM5100Data data = new PM5100Data();
-		data.performUpdates(new ModbusDataUpdateAction() {
+		try {
+			data.performUpdates(new ModbusDataUpdateAction() {
 
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				m.saveDataArray(TEST_DATA_REG_28, 28);
-				m.saveDataArray(TEST_DATA_REG_128, 128);
-				m.saveDataArray(TEST_DATA_REG_1636, 1636);
-				m.saveDataArray(TEST_DATA_REG_2012, 2012);
-				m.saveDataArray(TEST_DATA_REG_2998, 2998);
-				m.saveDataArray(TEST_DATA_REG_3074, 3074);
-				m.saveDataArray(TEST_DATA_REG_3202, 3202);
-				return true;
-			}
-		});
+				@Override
+				public boolean updateModbusData(MutableModbusData m) {
+					m.saveDataArray(TEST_DATA_REG_28, 28);
+					m.saveDataArray(TEST_DATA_REG_128, 128);
+					m.saveDataArray(TEST_DATA_REG_1636, 1636);
+					m.saveDataArray(TEST_DATA_REG_2012, 2012);
+					m.saveDataArray(TEST_DATA_REG_2998, 2998);
+					m.saveDataArray(TEST_DATA_REG_3074, 3074);
+					m.saveDataArray(TEST_DATA_REG_3202, 3202);
+					return true;
+				}
+			});
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
 		return data;
 	}
 

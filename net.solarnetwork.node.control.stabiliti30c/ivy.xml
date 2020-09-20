@@ -16,7 +16,7 @@
 		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[1.58,2.0)"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.68,2.0)"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.modbus" rev="[3.2,4.0)"/>
-		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.hw.idealpower" rev="[2.0,3.0)"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.hw.idealpower" rev="[2.1,3.0)"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>
 		<dependency org="org.springframework" name="spring-beans" rev="4.2.6.RELEASE"/>
 	</dependencies>

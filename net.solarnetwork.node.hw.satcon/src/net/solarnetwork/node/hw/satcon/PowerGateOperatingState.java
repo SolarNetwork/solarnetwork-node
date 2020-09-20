@@ -128,13 +128,13 @@ public enum PowerGateOperatingState {
 	 * @throws IllegalArgumentException
 	 *         if {@code code} is not supported
 	 */
-	public static PowerGateOperatingState forCode(int value) {
+	public static PowerGateOperatingState forCode(int code) {
 		for ( PowerGateOperatingState s : values() ) {
-			if ( s.code == value ) {
+			if ( s.code == code ) {
 				return s;
 			}
 		}
-		throw new IllegalArgumentException("Unsupported operating state value: " + value);
+		throw new IllegalArgumentException("Unsupported operating state value: " + code);
 	}
 
 }
