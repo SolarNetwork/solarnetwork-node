@@ -49,8 +49,7 @@ public class SmaScStringMonitorUsRegisterTests {
 		IntRangeSet orig = SmaScStringMonitorUsRegister.INFO_REGISTER_ADDRESS_SET;
 		List<IntRange> covering = CollectionUtils.coveringIntRanges(orig, 64);
 		log.debug("Info range set: {}", covering);
-		assertThat("Info covered ranges", covering,
-				contains(rangeOf(30057, 30058), rangeOf(30245, 30246)));
+		assertThat("Info covered ranges", covering, contains(rangeOf(30057, 30058)));
 	}
 
 	@Test
@@ -59,7 +58,7 @@ public class SmaScStringMonitorUsRegisterTests {
 		List<IntRange> covering = CollectionUtils.coveringIntRanges(orig, 64);
 		log.debug("Data range set: {}", covering);
 		assertThat("Data covered ranges", covering,
-				contains(rangeOf(30241, 30242), rangeOf(31793, 31808)));
+				contains(rangeOf(30241, 30246), rangeOf(31793, 31808)));
 	}
 
 }
