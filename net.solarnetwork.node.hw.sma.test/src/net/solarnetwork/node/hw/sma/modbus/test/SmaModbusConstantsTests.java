@@ -23,11 +23,11 @@
 package net.solarnetwork.node.hw.sma.modbus.test;
 
 import static net.solarnetwork.node.hw.sma.modbus.SmaModbusConstants.isNaN;
-import static net.solarnetwork.node.hw.sma.modbus.test.SmaModbusConstantsTests.TestRegisters.Int16Reg;
-import static net.solarnetwork.node.hw.sma.modbus.test.SmaModbusConstantsTests.TestRegisters.Int32Reg;
-import static net.solarnetwork.node.hw.sma.modbus.test.SmaModbusConstantsTests.TestRegisters.UInt16Reg;
-import static net.solarnetwork.node.hw.sma.modbus.test.SmaModbusConstantsTests.TestRegisters.UInt32Reg;
-import static net.solarnetwork.node.hw.sma.modbus.test.SmaModbusConstantsTests.TestRegisters.UInt64Reg;
+import static net.solarnetwork.node.hw.sma.modbus.test.TestRegisters.Int16Reg;
+import static net.solarnetwork.node.hw.sma.modbus.test.TestRegisters.Int32Reg;
+import static net.solarnetwork.node.hw.sma.modbus.test.TestRegisters.UInt16Reg;
+import static net.solarnetwork.node.hw.sma.modbus.test.TestRegisters.UInt32Reg;
+import static net.solarnetwork.node.hw.sma.modbus.test.TestRegisters.UInt64Reg;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int32;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
@@ -40,9 +40,6 @@ import org.junit.Test;
 import net.solarnetwork.node.hw.sma.modbus.SmaModbusConstants;
 import net.solarnetwork.node.hw.sma.test.TestUtils;
 import net.solarnetwork.node.io.modbus.ModbusData;
-import net.solarnetwork.node.io.modbus.ModbusDataType;
-import net.solarnetwork.node.io.modbus.ModbusReadFunction;
-import net.solarnetwork.node.io.modbus.ModbusReference;
 
 /**
  * Test cases for the {@link SmaModbusConstants} class.
@@ -51,55 +48,6 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * @version 1.0
  */
 public class SmaModbusConstantsTests {
-
-	public enum TestRegisters implements ModbusReference {
-
-		Int16Reg(0, Int16),
-
-		UInt16Reg(1, UInt16),
-
-		Int32Reg(2, Int32),
-
-		UInt32Reg(4, UInt32),
-
-		UInt64Reg(6, UInt64),
-
-		;
-
-		private final int address;
-		private final ModbusDataType dataType;
-		private final int wordLength;
-
-		private TestRegisters(int address, ModbusDataType dataType) {
-			this(address, dataType, dataType.getWordLength());
-		}
-
-		private TestRegisters(int address, ModbusDataType dataType, int wordLength) {
-			this.address = address;
-			this.dataType = dataType;
-			this.wordLength = wordLength;
-		}
-
-		@Override
-		public int getAddress() {
-			return address;
-		}
-
-		@Override
-		public ModbusDataType getDataType() {
-			return dataType;
-		}
-
-		@Override
-		public ModbusReadFunction getFunction() {
-			return ModbusReadFunction.ReadHoldingRegister;
-		}
-
-		@Override
-		public int getWordLength() {
-			return wordLength;
-		}
-	}
 
 	@Test
 	public void nan() {
