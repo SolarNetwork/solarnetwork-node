@@ -69,14 +69,10 @@ public abstract class JMBusMBusNetwork extends BaseIdentifiable implements MBusN
 
 	@Override
 	public MBusData read(int address) throws IOException {
-		final MBusConnection conn = createConnection(address);
-		if ( conn == null ) {
-			return null;
+		try (MBusConnection conn = createConnection(address)) {
+			conn.open();
+			return conn.read();
 		}
-		conn.open();
-		MBusData result = conn.read();
-		conn.close();
-		return result;
 	}
 
 	/**
