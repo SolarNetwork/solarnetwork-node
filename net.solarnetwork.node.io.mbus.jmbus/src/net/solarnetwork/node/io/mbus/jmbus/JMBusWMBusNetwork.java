@@ -29,6 +29,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import org.openmuc.jmbus.SecondaryAddress;
 import org.openmuc.jmbus.wireless.WMBusListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.mbus.MBusMessage;
 import net.solarnetwork.node.io.mbus.MBusMessageHandler;
 import net.solarnetwork.node.io.mbus.MBusSecondaryAddress;
@@ -43,6 +45,9 @@ import net.solarnetwork.node.support.BaseIdentifiable;
  * @version 1.0
  */
 public abstract class JMBusWMBusNetwork extends BaseIdentifiable implements WMBusNetwork, WMBusListener {
+
+	/** A class-level logger. */
+	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	private org.openmuc.jmbus.wireless.WMBusConnection connection;
 	private final ConcurrentMap<org.openmuc.jmbus.SecondaryAddress, Set<MBusMessageHandler>> listeners = new ConcurrentHashMap<org.openmuc.jmbus.SecondaryAddress, Set<MBusMessageHandler>>();
@@ -84,6 +89,8 @@ public abstract class JMBusWMBusNetwork extends BaseIdentifiable implements WMBu
 	@Override
 	public void newMessage(org.openmuc.jmbus.wireless.WMBusMessage message) {
 		SecondaryAddress addr = message.getSecondaryAddress();
+
+		log.debug("JMBus data received from secondary address {}: {}", addr, message);
 
 		// route message to all registered listeners
 		if ( addr != null ) {

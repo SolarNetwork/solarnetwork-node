@@ -30,6 +30,8 @@ import org.openmuc.jmbus.DecodingException;
 import org.openmuc.jmbus.SecondaryAddress;
 import org.openmuc.jmbus.VariableDataStructure;
 import org.openmuc.jmbus.wireless.WMBusMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.mbus.MBusData;
 import net.solarnetwork.node.io.mbus.MBusDataDescription;
 import net.solarnetwork.node.io.mbus.MBusDataRecord;
@@ -44,6 +46,9 @@ import net.solarnetwork.node.io.mbus.MBusSecondaryAddress;
  * @version 1.0
  */
 public class JMBusConversion {
+
+	/** A class-level logger. */
+	private static final Logger log = LoggerFactory.getLogger(JMBusConversion.class);
 
 	/**
 	 * Convert a secondary address to JMBus
@@ -70,6 +75,7 @@ public class JMBusConversion {
 	public static MBusData from(VariableDataStructure vds) {
 		try {
 			final MBusData data = new MBusData(new Date());
+			data.status = vds.getStatus();
 			vds.decode();
 			for ( DataRecord record : vds.getDataRecords() ) {
 				final MBusDataRecord rec = from(record);
@@ -77,9 +83,9 @@ public class JMBusConversion {
 					data.dataRecords.add(rec);
 				}
 			}
+			return data;
 		} catch ( DecodingException e ) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.error("Failed to decode JMBus variable data structure: {}", e.getMessage());
 		}
 		return null;
 	}
@@ -99,8 +105,7 @@ public class JMBusConversion {
 		try {
 			vds.decode();
 		} catch ( DecodingException e ) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.error("Failed to decode JMBus variable data structure: {}", e.getMessage());
 		}
 		for ( DataRecord record : vds.getDataRecords() ) {
 			final MBusDataRecord rec = from(record);

@@ -24,6 +24,8 @@ package net.solarnetwork.node.io.mbus.jmbus;
 
 import java.io.IOException;
 import org.openmuc.jmbus.VariableDataStructure;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.mbus.MBusConnection;
 import net.solarnetwork.node.io.mbus.MBusData;
 import net.solarnetwork.node.io.mbus.MBusNetwork;
@@ -36,6 +38,9 @@ import net.solarnetwork.node.support.BaseIdentifiable;
  * @version 1.0
  */
 public abstract class JMBusMBusNetwork extends BaseIdentifiable implements MBusNetwork {
+
+	/** A class-level logger. */
+	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Override
 	public MBusConnection createConnection(int address) {
@@ -64,12 +69,10 @@ public abstract class JMBusMBusNetwork extends BaseIdentifiable implements MBusN
 
 	@Override
 	public MBusData read(int address) throws IOException {
-		final MBusConnection conn = createConnection(address);
-		if ( conn == null ) {
-			return null;
+		try (MBusConnection conn = createConnection(address)) {
+			conn.open();
+			return conn.read();
 		}
-		conn.open();
-		return conn.read();
 	}
 
 	/**
@@ -115,10 +118,12 @@ public abstract class JMBusMBusNetwork extends BaseIdentifiable implements MBusN
 		public MBusData read() {
 			try {
 				final VariableDataStructure data = conn.read(address);
+				log.debug("JMBus data read from primary address {}: {}", address, data);
 				if ( data == null )
 					return null;
 				return JMBusConversion.from(data);
 			} catch ( IOException e ) {
+				log.error("Could not read from JMBus connection: {}", e.getMessage());
 				return null;
 			}
 		}
