@@ -15,6 +15,6 @@
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(runtime)">
 		<dependency org="org.osgi" name="org.osgi.core" rev="5.0.0"/>
 		<dependency org="org.osgi" name="org.osgi.compendium" rev="5.0.0"/>
-    	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.39,2.0)"/>
+    	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.39,)"/>
 	</dependencies>
 </ivy-module>
