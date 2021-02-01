@@ -34,9 +34,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.hw.yaskawa.ecb.Packet;
 import net.solarnetwork.node.hw.yaskawa.ecb.PacketUtils;
+import net.solarnetwork.node.io.serial.ConfigurableSerialNetwork;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialNetwork;
-import net.solarnetwork.node.io.serial.rxtx.SerialPortNetwork;
 import net.solarnetwork.node.support.SerialPortBeanParameters;
 
 /**
@@ -221,7 +221,16 @@ public class Cmdline {
 	 *        the arguments
 	 */
 	public static void main(String[] args) {
-		SerialPortNetwork serial = new SerialPortNetwork();
+		ConfigurableSerialNetwork serial;
+		try {
+			serial = (ConfigurableSerialNetwork) Cmdline.class.getClassLoader()
+					.loadClass("net.solarnetwork.node.io.serial.rxtx.SerialPortNetwork").newInstance();
+		} catch ( InstantiationException | IllegalAccessException | ClassNotFoundException e1 ) {
+			System.err.println("Error loading SerialPortNetwork class: " + e1);
+			System.exit(1);
+			return;
+		}
+
 		SerialPortBeanParameters serialParams = serial.getSerialParams();
 		serialParams.setSerialPort("/dev/ttyUSB0");
 		serialParams.setBaud(9600);
