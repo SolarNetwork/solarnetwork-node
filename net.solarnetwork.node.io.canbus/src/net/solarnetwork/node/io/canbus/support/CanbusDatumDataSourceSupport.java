@@ -81,9 +81,14 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	 * {@literal canbusNetwork.propertyFilters['UID']} and {@literal busName}
 	 * properties.
 	 * 
+	 * @param prefix
+	 *        the setting key prefix to use
 	 * @return list of setting specifiers
 	 */
 	public static List<SettingSpecifier> canbusDatumDataSourceSettingSpecifiers(String prefix) {
+		if ( prefix == null ) {
+			prefix = "";
+		}
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
 		results.add(
 				new BasicTextFieldSettingSpecifier(prefix + "canbusNetwork.propertyFilters['UID']", ""));
@@ -539,6 +544,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	 * 
 	 * @return the task scheduler
 	 */
+	@Override
 	public TaskScheduler getTaskScheduler() {
 		return taskScheduler;
 	}
@@ -549,6 +555,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	 * @param taskScheduler
 	 *        the task scheduler
 	 */
+	@Override
 	public void setTaskScheduler(TaskScheduler taskScheduler) {
 		this.taskScheduler = taskScheduler;
 	}

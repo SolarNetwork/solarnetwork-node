@@ -99,7 +99,7 @@ public class SocketCanbusSocketProvider implements CanbusSocketProvider, Setting
 	 * socket.
 	 * 
 	 * @return the socket timeout, in milliseconds; defaults to
-	 *         {@link #DEFAULT_SOCKET_TIMEOUT}
+	 *         {@link SocketCanbusSocket#DEFAULT_SOCKET_TIMEOUT}
 	 */
 	public int getSocketTimeout() {
 		return socketTimeout;
@@ -191,7 +191,8 @@ public class SocketCanbusSocketProvider implements CanbusSocketProvider, Setting
 	/**
 	 * Set the socket "keep alive" flag.
 	 * 
-	 * @return {@literal true} if the socket "keep alive" flag should be used
+	 * @param socketKeepAlive
+	 *        {@literal true} if the socket "keep alive" flag should be used
 	 */
 	public void setSocketKeepAlive(boolean socketKeepAlive) {
 		this.socketKeepAlive = socketKeepAlive;

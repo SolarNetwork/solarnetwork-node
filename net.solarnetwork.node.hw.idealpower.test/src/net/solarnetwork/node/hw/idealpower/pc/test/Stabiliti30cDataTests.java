@@ -27,6 +27,7 @@ import static org.easymock.EasyMock.aryEq;
 import static org.easymock.EasyMock.eq;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
@@ -64,7 +65,7 @@ public class Stabiliti30cDataTests {
 	}
 
 	@Test
-	public void pvFirmingAndDemandChargeManagementExample() {
+	public void pvFirmingAndDemandChargeManagementExample() throws IOException {
 		// GIVEN
 		conn.writeWords(eq(WriteHoldingRegister), eq(129), aryEq(new int[] { 0x0001 }));
 		conn.writeWords(eq(WriteHoldingRegister), eq(65), aryEq(new int[] { 0x0402 }));
@@ -81,7 +82,7 @@ public class Stabiliti30cDataTests {
 		data.performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
-			public boolean updateModbusData(MutableModbusData m) {
+			public boolean updateModbusData(MutableModbusData m) throws IOException {
 				Stabiliti30cControlAccessor acc = data.controlAccessor(conn, m);
 				acc.setP2ControlMethod(Stabiliti30cDcControlMethod.Net);
 				acc.setP1ControlMethod(Stabiliti30cAcControlMethod.GridPower);

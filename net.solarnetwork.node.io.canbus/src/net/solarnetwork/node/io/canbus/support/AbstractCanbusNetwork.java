@@ -247,6 +247,8 @@ public abstract class AbstractCanbusNetwork extends BaseIdentifiable
 	/**
 	 * Get a list of base network settings.
 	 * 
+	 * @param prefix
+	 *        the setting key prefix to use
 	 * @return the base network settings
 	 */
 	public static List<SettingSpecifier> getBaseNetworkSettings(String prefix) {

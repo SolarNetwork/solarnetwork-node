@@ -49,7 +49,7 @@ import net.solarnetwork.util.StringUtils;
  * implementations for SunSpec devices.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  * @since 1.1
  */
 public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDatumDataSourceSupport {
@@ -151,7 +151,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 		return (currSample != null ? currSample.getSnapshot() : null);
 	}
 
-	private ModelData modelData(ModbusConnection conn) {
+	private ModelData modelData(ModbusConnection conn) throws IOException {
 		Integer manualBaseAddress = getBaseAddress();
 		if ( manualBaseAddress != null && manualBaseAddress.intValue() >= 0 ) {
 			return ModelDataFactory.getInstance().getModelData(conn,
@@ -207,7 +207,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	}
 
 	@Override
-	protected Map<String, Object> readDeviceInfo(ModbusConnection connection) {
+	protected Map<String, Object> readDeviceInfo(ModbusConnection connection) throws IOException {
 		CommonModelAccessor data = getSample();
 		if ( data == null ) {
 			data = modelData(connection);

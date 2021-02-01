@@ -99,9 +99,11 @@ public interface CanbusSocket extends Closeable {
 	 * 
 	 * @param timeout
 	 *        an optional maximum amount of time to wait, if greater than zero
-	 * @param the
-	 *        time unit for {@code timeout}
+	 * @param unit
+	 *        the time unit for {@code timeout}
 	 * @return the next message
+	 * @throws IOException
+	 *         if any IO error occurs
 	 */
 	Message nextMessage(long timeout, TimeUnit unit) throws IOException;
 

@@ -79,13 +79,13 @@ public enum PowerGateRemoteCommand {
 	 * @throws IllegalArgumentException
 	 *         if {@code code} is not supported
 	 */
-	public static PowerGateRemoteCommand forCode(int value) {
+	public static PowerGateRemoteCommand forCode(int code) {
 		for ( PowerGateRemoteCommand s : values() ) {
-			if ( s.code == value ) {
+			if ( s.code == code ) {
 				return s;
 			}
 		}
-		throw new IllegalArgumentException("Unsupported remote command value: " + value);
+		throw new IllegalArgumentException("Unsupported remote command value: " + code);
 	}
 
 }

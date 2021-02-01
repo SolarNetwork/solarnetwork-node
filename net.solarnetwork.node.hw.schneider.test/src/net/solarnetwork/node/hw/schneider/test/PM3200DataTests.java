@@ -62,7 +62,7 @@ import net.solarnetwork.node.test.DataUtils;
  * Unit tests for the {@Link PM3200Data} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class PM3200DataTests {
 
@@ -94,31 +94,39 @@ public class PM3200DataTests {
 
 	private PM3200Data getTestDataInstance(String resource) {
 		PM3200Data data = new PM3200Data();
-		data.performUpdates(new ModbusDataUpdateAction() {
+		try {
+			data.performUpdates(new ModbusDataUpdateAction() {
 
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				m.saveDataMap(parseTestData(resource));
-				return true;
-			}
-		});
+				@Override
+				public boolean updateModbusData(MutableModbusData m) {
+					m.saveDataMap(parseTestData(resource));
+					return true;
+				}
+			});
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
 		return data;
 	}
 
 	private PM3200Data getTestDataInstance() {
 		PM3200Data data = new PM3200Data();
-		data.performUpdates(new ModbusDataUpdateAction() {
+		try {
+			data.performUpdates(new ModbusDataUpdateAction() {
 
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				m.saveDataArray(TEST_DATA_2999, 2999);
-				m.saveDataArray(TEST_DATA_3019, 3019);
-				m.saveDataArray(TEST_DATA_3053, 3053);
-				m.saveDataArray(TEST_DATA_3107, 3107);
-				m.saveDataArray(TEST_DATA_3203, 3203);
-				return true;
-			}
-		});
+				@Override
+				public boolean updateModbusData(MutableModbusData m) {
+					m.saveDataArray(TEST_DATA_2999, 2999);
+					m.saveDataArray(TEST_DATA_3019, 3019);
+					m.saveDataArray(TEST_DATA_3053, 3053);
+					m.saveDataArray(TEST_DATA_3107, 3107);
+					m.saveDataArray(TEST_DATA_3203, 3203);
+					return true;
+				}
+			});
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
 		return data;
 	}
 

@@ -37,7 +37,6 @@ import org.junit.Test;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.jamod.ModbusTransactionUtils;
 import net.solarnetwork.util.ByteUtils;
-import net.wimpi.modbus.ModbusException;
 import net.wimpi.modbus.io.ModbusTransaction;
 import net.wimpi.modbus.msg.ModbusRequest;
 import net.wimpi.modbus.msg.ReadCoilsRequest;
@@ -113,7 +112,7 @@ public class ModbusTransactionUtilsTests {
 	}
 
 	@Test
-	public void readBytes() throws ModbusException {
+	public void readBytes() throws Exception {
 		// given
 		ModbusTransaction trans = EasyMock.createMock(ModbusTransaction.class);
 

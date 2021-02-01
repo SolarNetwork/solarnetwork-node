@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.deson.meter;
 
 import static net.solarnetwork.util.CollectionUtils.coveringIntRanges;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +43,7 @@ import net.solarnetwork.util.NumberUtils;
  * Encapsulates raw Modbus register data from the SDM meters.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class SDMData extends ModbusData implements SDMDataAccessor {
 
@@ -110,9 +111,11 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 	 * @param action
 	 *        the callback to perform the updates on
 	 * @return this object to allow method chaining
+	 * @throws IOException
+	 *         if any communication error occurs
 	 * @since 2.0
 	 */
-	public final SDMData performControlUpdates(ModbusDataUpdateAction action) {
+	public final SDMData performControlUpdates(ModbusDataUpdateAction action) throws IOException {
 		synchronized ( controlRegisters ) {
 			final long now = System.currentTimeMillis();
 			if ( action.updateModbusData(new MutableModbusDataView(controlRegisters, getWordOrder())) ) {
@@ -264,8 +267,10 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readConfigurationData(final ModbusConnection conn) {
+	public final void readConfigurationData(final ModbusConnection conn) throws IOException {
 		// we actually read ALL registers here, so our snapshot timestamp includes everything
 		readMeterData(conn);
 		if ( deviceType == SDMDeviceType.SDM630 ) {
@@ -274,7 +279,7 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 			performControlUpdates(new ModbusDataUpdateAction() {
 
 				@Override
-				public boolean updateModbusData(MutableModbusData m) {
+				public boolean updateModbusData(MutableModbusData m) throws IOException {
 					refreshData(conn, ModbusReadFunction.ReadHoldingRegister, ranges, m);
 					return true;
 				}
@@ -287,8 +292,10 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readMeterData(final ModbusConnection conn) {
+	public final void readMeterData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadInputRegister,
 				SDM630Register.getMeterRegisterAddressSet(), MAX_RESULTS);
 	}

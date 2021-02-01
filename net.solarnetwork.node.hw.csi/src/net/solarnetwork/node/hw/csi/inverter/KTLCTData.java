@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.csi.inverter;
 
 import static net.solarnetwork.util.StringUtils.commaDelimitedStringFromCollection;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -41,7 +42,7 @@ import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
  * 
  * @author maxieduncan
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 
@@ -94,8 +95,10 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readConfigurationData(final ModbusConnection conn) {
+	public final void readConfigurationData(final ModbusConnection conn) throws IOException {
 		// we actually read ALL registers here, so our snapshot timestamp includes everything
 		refreshData(conn, ModbusReadFunction.ReadInputRegister, KTLCTRegister.getRegisterAddressSet(),
 				MAX_RESULTS);
@@ -107,8 +110,10 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readInverterData(final ModbusConnection conn) {
+	public final void readInverterData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadInputRegister,
 				KTLCTRegister.getInverterRegisterAddressSet(), MAX_RESULTS);
 	}
@@ -118,9 +123,11 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 * @since 1.4
 	 */
-	public final void readControlData(final ModbusConnection conn) {
+	public final void readControlData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				KTLCTRegister.getControlRegisterAddressSet(), MAX_RESULTS);
 	}
@@ -457,9 +464,12 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 	 *        the modbus connection to use
 	 * @param state
 	 *        the desired state
+	 * @throws IOException
+	 *         if any communication error occurs
 	 * @since 1.4
 	 */
-	public void setDeviceOperatingState(ModbusConnection conn, DeviceOperatingState state) {
+	public void setDeviceOperatingState(ModbusConnection conn, DeviceOperatingState state)
+			throws IOException {
 		final DeviceOperatingState currState = getDeviceOperatingState();
 		final int powerSwitchAddr = KTLCTRegister.ControlDevicePowerSwitch.getAddress();
 		final Integer update;
@@ -506,13 +516,14 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 	 *        the modbus connection to use
 	 * @param percent
 	 *        the desired output power limit, as a percentage from 0 - 1
+	 * @throws IOException
+	 *         if any communication error occurs
 	 * @since 1.4
 	 */
-	public void setOutputPowerLimitPercent(ModbusConnection conn, Float percent) {
+	public void setOutputPowerLimitPercent(ModbusConnection conn, Float percent) throws IOException {
 		final int update = (percent != null ? (int) (percent.floatValue() * 1000) : 1000);
 		final int powerLimitAddr = KTLCTRegister.ControlDevicePowerLimit.getAddress();
-		conn.writeWords(ModbusWriteFunction.WriteHoldingRegister, powerLimitAddr,
-				new int[] { update });
+		conn.writeWords(ModbusWriteFunction.WriteHoldingRegister, powerLimitAddr, new int[] { update });
 		performUpdates(new ModbusDataUpdateAction() {
 
 			@Override

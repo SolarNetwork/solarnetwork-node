@@ -169,6 +169,8 @@ public class CannelloniCanbusConnection extends BaseIdentifiable
 
 	/**
 	 * Call once after properties configured to initialize at a future date.
+	 * 
+	 * @return initialization task future
 	 */
 	public Future<?> openLater() {
 		synchronized ( this ) {

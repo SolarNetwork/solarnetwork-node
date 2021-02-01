@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.sunspec;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -39,7 +40,7 @@ import net.solarnetwork.util.IntRange;
  * Base object for model data.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ModelData extends ModbusData implements CommonModelAccessor {
 
@@ -303,8 +304,11 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	 *        the list of register addresses to read
 	 * @see #updateData(ModbusConnection, MutableModbusData, ModbusReadFunction,
 	 *      IntRange[])
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	protected static void updateData(ModbusConnection conn, MutableModbusData m, IntRange[] ranges) {
+	protected static void updateData(ModbusConnection conn, MutableModbusData m, IntRange[] ranges)
+			throws IOException {
 		updateData(conn, m, ModbusReadFunction.ReadHoldingRegister, ranges);
 	}
 
@@ -325,9 +329,11 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	 *        the Modbus read function to use
 	 * @param ranges
 	 *        the list of register addresses to read
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	protected static void updateData(ModbusConnection conn, MutableModbusData m,
-			ModbusReadFunction function, IntRange[] ranges) {
+			ModbusReadFunction function, IntRange[] ranges) throws IOException {
 		for ( IntRange r : ranges ) {
 			if ( LOG.isDebugEnabled() ) {
 				LOG.debug("Reading modbus {} range {}-{}", conn.getUnitId(), r.getMin(),
@@ -343,12 +349,14 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readCommonModelData(final ModbusConnection conn) {
+	public final void readCommonModelData(final ModbusConnection conn) throws IOException {
 		performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
-			public boolean updateModbusData(MutableModbusData m) {
+			public boolean updateModbusData(MutableModbusData m) throws IOException {
 				// load in our model header to find the common model length (65/66)
 				short[] data = conn.readWords(ModbusReadFunction.ReadHoldingRegister, baseAddress, 2);
 				m.saveDataArray(data, baseAddress);
@@ -365,8 +373,10 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	 *        the model length
 	 * @param accessor
 	 *        the accessor to associate with this model
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void addModel(int modelLength, ModelAccessor accessor) {
+	public final void addModel(int modelLength, ModelAccessor accessor) throws IOException {
 		performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
@@ -394,8 +404,10 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public void readModelData(final ModbusConnection conn) {
+	public void readModelData(final ModbusConnection conn) throws IOException {
 		readModelData(conn, getModels());
 	}
 
@@ -412,15 +424,18 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	 * @param accessors
 	 *        the models to read data for
 	 * @since 1.1
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public void readModelData(final ModbusConnection conn, final List<ModelAccessor> accessors) {
+	public void readModelData(final ModbusConnection conn, final List<ModelAccessor> accessors)
+			throws IOException {
 		if ( accessors == null ) {
 			return;
 		}
 		performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
-			public boolean updateModbusData(MutableModbusData m) {
+			public boolean updateModbusData(MutableModbusData m) throws IOException {
 				for ( ModelAccessor accessor : accessors ) {
 					updateData(conn, m, accessor.getAddressRanges(maxReadWordsCount));
 				}

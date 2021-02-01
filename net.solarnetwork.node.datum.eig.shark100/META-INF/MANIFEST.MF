@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Electro Industries/GaugeTech Shark 100 Meter Data Source
 Bundle-Description: Collect data from Electro Industries/GaugeTech Shark 100 series meter devices.
 Bundle-SymbolicName: net.solarnetwork.node.datum.eig.shark100
-Bundle-Version: 2.1.0
+Bundle-Version: 2.2.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.eig.shark100
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -11,9 +11,9 @@ Import-Package:
  net.solarnetwork.domain;version="[1.14,2.0)",
  net.solarnetwork.node;version="[1.24,2.0)",
  net.solarnetwork.node.domain;version="[1.17,2.0)",
- net.solarnetwork.node.hw.eig.meter;version="[2.0,3.0)",
- net.solarnetwork.node.io.modbus;version="[3.0,4.0)",
- net.solarnetwork.node.io.modbus.support;version="[3.0,4.0)",
+ net.solarnetwork.node.hw.eig.meter;version="[2.1,3.0)",
+ net.solarnetwork.node.io.modbus;version="[3.2,4.0)",
+ net.solarnetwork.node.io.modbus.support;version="[3.1,4.0)",
  net.solarnetwork.node.job;version="[1.13,2.0)",
  net.solarnetwork.node.settings;version="[1.10,2.0)",
  net.solarnetwork.node.settings.support;version="[1.8.1,2.0)",

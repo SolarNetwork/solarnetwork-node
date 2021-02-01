@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 import net.solarnetwork.node.LockTimeoutException;
+import net.solarnetwork.node.io.serial.ConfigurableSerialNetwork;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.node.io.serial.SerialNetwork;
@@ -48,9 +49,9 @@ import net.solarnetwork.node.support.SerialPortBeanParameters;
  * PureJavaComm implementation of {@link SerialNetwork}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class PjcSerialNetwork implements SerialNetwork, SettingSpecifierProvider {
+public class PjcSerialNetwork implements ConfigurableSerialNetwork, SettingSpecifierProvider {
 
 	private SerialPortBeanParameters serialParams = getDefaultSerialParametersInstance();
 	private String uid = "Serial Port";
@@ -246,6 +247,7 @@ public class PjcSerialNetwork implements SerialNetwork, SettingSpecifierProvider
 		this.serialParams = serialParams;
 	}
 
+	@Override
 	public SerialPortBeanParameters getSerialParams() {
 		return serialParams;
 	}

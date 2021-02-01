@@ -126,8 +126,10 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	 * @param conn
 	 *        the connection to use
 	 * @return a map with general device information populated
+	 * @throws IOException
+	 *         if any IO error occurs
 	 */
-	protected abstract Map<String, Object> readDeviceInfo(ModbusConnection conn);
+	protected abstract Map<String, Object> readDeviceInfo(ModbusConnection conn) throws IOException;
 
 	/**
 	 * Return an informational message composed of general device info. This

@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.schneider.meter;
 
 import static net.solarnetwork.util.CollectionUtils.coveringIntRanges;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Map;
@@ -38,7 +39,7 @@ import net.solarnetwork.util.IntRange;
  * Data object for the ION6200 series meter.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 2.4
  */
 public class ION6200Data extends ModbusData implements ION6200DataAccessor {
@@ -64,8 +65,9 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 	/**
 	 * Constructor.
 	 * 
-	 * @boolean megawatt {@literal true} if this data is from the Megawatt
-	 *          version of the 6200 meter
+	 * @param megawatt
+	 *        {@literal true} if this data is from the Megawatt version of the
+	 *        6200 meter
 	 */
 	public ION6200Data(boolean megawatt) {
 		super();
@@ -123,12 +125,14 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readConfigurationData(final ModbusConnection conn) {
+	public final void readConfigurationData(final ModbusConnection conn) throws IOException {
 		performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
-			public boolean updateModbusData(MutableModbusData m) {
+			public boolean updateModbusData(MutableModbusData m) throws IOException {
 				// we actually read ALL registers here, so our snapshot timestamp includes everything
 				updateData(conn, m,
 						coveringIntRanges(ION6200Register.getRegisterAddressSet(), MAX_RESULTS));
@@ -142,12 +146,14 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readMeterData(final ModbusConnection conn) {
+	public final void readMeterData(final ModbusConnection conn) throws IOException {
 		performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
-			public boolean updateModbusData(MutableModbusData m) {
+			public boolean updateModbusData(MutableModbusData m) throws IOException {
 				updateData(conn, m,
 						coveringIntRanges(ION6200Register.getMeterRegisterAddressSet(), MAX_RESULTS));
 				return true;
@@ -155,7 +161,8 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 		});
 	}
 
-	private void updateData(ModbusConnection conn, MutableModbusData m, Collection<IntRange> ranges) {
+	private void updateData(ModbusConnection conn, MutableModbusData m, Collection<IntRange> ranges)
+			throws IOException {
 		for ( IntRange r : ranges ) {
 			short[] data = conn.readWords(ModbusReadFunction.ReadHoldingRegister, r.getMin(),
 					r.length());

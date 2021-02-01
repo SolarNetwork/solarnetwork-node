@@ -47,7 +47,7 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * {@link DatumDataSource} for the Shark 100 series meter.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Shark100Data>
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
@@ -75,12 +75,14 @@ public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Sh
 	}
 
 	@Override
-	protected void refreshDeviceInfo(ModbusConnection connection, Shark100Data sample) {
+	protected void refreshDeviceInfo(ModbusConnection connection, Shark100Data sample)
+			throws IOException {
 		sample.readAllData(connection);
 	}
 
 	@Override
-	protected void refreshDeviceData(ModbusConnection connection, Shark100Data sample) {
+	protected void refreshDeviceData(ModbusConnection connection, Shark100Data sample)
+			throws IOException {
 		sample.readConfigurationData(connection);
 		sample.readMeterData(connection);
 	}

@@ -108,7 +108,11 @@ public final class ModelDataUtils {
 	 */
 	public static ModelData getModelDataInstance(Class<?> clazz, String resource) {
 		ModbusConnection conn = getStaticDataConnection(clazz, resource);
-		return ModelDataFactory.getInstance().getModelData(conn);
+		try {
+			return ModelDataFactory.getInstance().getModelData(conn);
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
 	}
 
 }

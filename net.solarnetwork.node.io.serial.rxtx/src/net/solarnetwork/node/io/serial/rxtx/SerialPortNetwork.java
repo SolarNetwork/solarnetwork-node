@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 import net.solarnetwork.node.LockTimeoutException;
+import net.solarnetwork.node.io.serial.ConfigurableSerialNetwork;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.node.io.serial.SerialNetwork;
@@ -48,9 +49,9 @@ import net.solarnetwork.node.support.SerialPortBeanParameters;
  * RXTX implementation of {@link SerialNetwork}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public class SerialPortNetwork implements SerialNetwork, SettingSpecifierProvider {
+public class SerialPortNetwork implements ConfigurableSerialNetwork, SettingSpecifierProvider {
 
 	private SerialPortBeanParameters serialParams = getDefaultSerialParametersInstance();
 	private String uid = "Serial Port";
@@ -246,6 +247,7 @@ public class SerialPortNetwork implements SerialNetwork, SettingSpecifierProvide
 		this.serialParams = serialParams;
 	}
 
+	@Override
 	public SerialPortBeanParameters getSerialParams() {
 		return serialParams;
 	}

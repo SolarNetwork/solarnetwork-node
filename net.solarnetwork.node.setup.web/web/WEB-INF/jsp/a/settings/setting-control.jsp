@@ -293,18 +293,17 @@
 						<button type="button" class="btn btn-small btn-default group-item-add">
 							<i class="icon-plus"></i>
 						</button>
-
-						<c:set var="help">
-							<setup:message key='${setting.key}.desc' messageSource='${provider.messageSource}'/>
-						</c:set>
-						<c:if test="${fn:length(help) > 0}">
-							<button type="button" class=" help-popover help-icon" tabindex="-1"
-									data-content="${fn:escapeXml(help)}"
-									data-html="true">
-								<i class="fa fa-question-circle-o" aria-hidden="true"></i>
-							</button>
-						</c:if>
 					</div>
+					<c:set var="help">
+						<setup:message key='${setting.key}.desc' messageSource='${provider.messageSource}'/>
+					</c:set>
+					<c:if test="${fn:length(help) > 0}">
+						<button type="button" class=" help-popover help-icon" tabindex="-1"
+								data-content="${fn:escapeXml(help)}"
+								data-html="true">
+							<i class="fa fa-question-circle-o" aria-hidden="true"></i>
+						</button>
+					</c:if>
 					<input type="hidden" name="${settingId}Count" id="${settingId}" value="${fn:length(setting.groupSettings)}" />
 					<script>
 					$(function() {

@@ -55,16 +55,17 @@ import net.solarnetwork.node.io.canbus.support.JaxbSnKcdParser;
 import net.solarnetwork.node.io.canbus.support.MeasurementHelper;
 import net.solarnetwork.util.OptionalServiceCollection;
 import net.solarnetwork.util.StaticOptionalServiceCollection;
-import systems.uom.ucum.internal.UCUMServiceProvider;
+import systems.uom.ucum.spi.UCUMServiceProvider;
 import tech.units.indriya.ComparableUnit;
 import tech.units.indriya.quantity.Quantities;
+import tech.units.indriya.spi.DefaultServiceProvider;
 import tech.units.indriya.unit.Units;
 
 /**
  * Test cases for the {@link MeasurementHelper} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class MeasurementHelperTests {
 
@@ -76,7 +77,8 @@ public class MeasurementHelperTests {
 	@Before
 	public void setup() {
 		measurementProviders = new StaticOptionalServiceCollection<>(
-				asList(new IndriyaMeasurementServiceProvider(new UCUMServiceProvider())));
+				asList(new IndriyaMeasurementServiceProvider(new UCUMServiceProvider()),
+						new IndriyaMeasurementServiceProvider(new DefaultServiceProvider())));
 		helper = new MeasurementHelper(measurementProviders);
 	}
 
@@ -168,8 +170,8 @@ public class MeasurementHelperTests {
 
 		final Unit<Frequency> rpm = Units.HERTZ.divide(60);
 
-		// the following returns the DefaultFormatService class
-		UnitFormat uf = sp.getFormatService().getUnitFormat();
+		// use explicit DefaultServiceProvider
+		UnitFormat uf = new DefaultServiceProvider().getFormatService().getUnitFormat();
 		Unit<?> unit = uf.parse("Hz/60");
 		assertThat("Unit is RPM", unit, equalTo(rpm));
 

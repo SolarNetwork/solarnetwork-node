@@ -125,6 +125,8 @@ public interface CanbusConnection extends Closeable {
 	 *        receive all frames
 	 * @param listener
 	 *        the listener to be notified of frame changes
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	void subscribe(int address, boolean forceExtendedAddress, Duration limit, long dataFilter,
 			CanbusFrameListener listener) throws IOException;
@@ -168,6 +170,8 @@ public interface CanbusConnection extends Closeable {
 	 *        least one value
 	 * @param listener
 	 *        the listener to be notified of frame changes
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	void subscribe(int address, boolean forceExtendedAddress, Duration limit, long identifierMask,
 			Iterable<Long> dataFilters, CanbusFrameListener listener) throws IOException;
@@ -185,6 +189,8 @@ public interface CanbusConnection extends Closeable {
 	 * @param forceExtendedAddress
 	 *        {@literal true} to force {@code address} to be treated as an
 	 *        extended address, even it if would otherwise fit
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	void unsubscribe(int address, boolean forceExtendedAddress) throws IOException;
 
@@ -197,6 +203,8 @@ public interface CanbusConnection extends Closeable {
 	 * 
 	 * @param listener
 	 *        the listener to be notified of frame changes
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	void monitor(CanbusFrameListener listener) throws IOException;
 
@@ -206,6 +214,9 @@ public interface CanbusConnection extends Closeable {
 	 * <p>
 	 * After this method is called, any registered subscriptions are resumed.
 	 * </p>
+	 * 
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
 	void unmonitor() throws IOException;
 

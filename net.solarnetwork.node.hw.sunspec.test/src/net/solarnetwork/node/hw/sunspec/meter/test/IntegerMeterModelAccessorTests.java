@@ -28,6 +28,7 @@ import static net.solarnetwork.node.domain.ACPhase.PhaseC;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import java.util.BitSet;
 import java.util.Set;
 import org.junit.Test;
@@ -49,7 +50,7 @@ import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
  * Test cases for the {@link IntegerMeterModelAccessor} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class IntegerMeterModelAccessorTests {
 
@@ -179,19 +180,23 @@ public class IntegerMeterModelAccessorTests {
 	private ModelData getTestDataInstance() {
 		final int baseAddress = ModelRegister.BaseAddress.getAddress();
 		ModelData data = new ModelData(baseAddress + 2);
-		data.performUpdates(new ModbusDataUpdateAction() {
+		try {
+			data.performUpdates(new ModbusDataUpdateAction() {
 
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				m.saveDataArray(ModelDataTests.COMMON_MODEL_02, baseAddress + 2);
-				m.saveDataArray(INT_METER_MODEL_HEADER_69, baseAddress + 69);
-				m.saveDataArray(INT_METER_MODEL_71, baseAddress + 71);
-				m.saveDataArray(END_OF_MODEL_176, baseAddress + 176);
-				return true;
-			}
-		});
-		data.addModel(IntegerMeterModelAccessor.FIXED_BLOCK_LENGTH, new IntegerMeterModelAccessor(data,
-				40069, MeterModelId.WyeConnectThreePhaseMeterInteger));
+				@Override
+				public boolean updateModbusData(MutableModbusData m) {
+					m.saveDataArray(ModelDataTests.COMMON_MODEL_02, baseAddress + 2);
+					m.saveDataArray(INT_METER_MODEL_HEADER_69, baseAddress + 69);
+					m.saveDataArray(INT_METER_MODEL_71, baseAddress + 71);
+					m.saveDataArray(END_OF_MODEL_176, baseAddress + 176);
+					return true;
+				}
+			});
+			data.addModel(IntegerMeterModelAccessor.FIXED_BLOCK_LENGTH, new IntegerMeterModelAccessor(
+					data, 40069, MeterModelId.WyeConnectThreePhaseMeterInteger));
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
 		return data;
 	}
 

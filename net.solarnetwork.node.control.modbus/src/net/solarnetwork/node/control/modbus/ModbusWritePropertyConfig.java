@@ -37,11 +37,6 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 /**
  * Configuration for a single control property to be set via Modbus.
  * 
- * <p>
- * The {@link #getConfig()} value represents the modbus address to write to. The
- * {@link #getPropertyKey()} value represents the control ID to expose.
- * </p>
- * 
  * @author matt
  * @version 1.0
  */
@@ -398,7 +393,7 @@ public class ModbusWritePropertyConfig {
 	/**
 	 * Set the data type as a string value.
 	 * 
-	 * @param dataType
+	 * @param key
 	 *        the type to set
 	 */
 	public void setDataTypeKey(String key) {
@@ -438,11 +433,6 @@ public class ModbusWritePropertyConfig {
 	/**
 	 * Get the register address to start writing data to.
 	 * 
-	 * <p>
-	 * This is an alias for {@link #getConfig()}, returning {@literal 0} if that
-	 * returns {@literal null}.
-	 * </p>
-	 * 
 	 * @return the register address
 	 */
 	public int getAddress() {
@@ -451,10 +441,6 @@ public class ModbusWritePropertyConfig {
 
 	/**
 	 * Set the register address to start writing data to.
-	 * 
-	 * <p>
-	 * This is an alias for {@link #setConfig(Integer)}.
-	 * </p>
 	 * 
 	 * @param address
 	 *        the register address to set

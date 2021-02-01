@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.advantech.adam;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -35,7 +36,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * Data object for the ADAM 411x series devices.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ADAM411xData extends ModbusData implements ADAM411xDataAccessor {
 
@@ -93,8 +94,10 @@ public class ADAM411xData extends ModbusData implements ADAM411xDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readConfigurationData(final ModbusConnection conn) {
+	public final void readConfigurationData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				ADAM411xRegister.getConfigRegisterAddressSet(), MAX_COMBINE_REGISTERS);
 	}
@@ -108,8 +111,10 @@ public class ADAM411xData extends ModbusData implements ADAM411xDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readDeviceData(final ModbusConnection conn) {
+	public final void readDeviceData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				ADAM411xRegister.getChannelWithConfigRegisterAddressSet(), MAX_COMBINE_REGISTERS);
 	}

@@ -68,14 +68,18 @@ public class WattsOnDataTests {
 	private WattsOnData getDataInstance(String resource) {
 		Map<Integer, Integer> registers = parseTestData(resource);
 		WattsOnData data = new WattsOnData();
-		data.performUpdates(new ModbusDataUpdateAction() {
+		try {
+			data.performUpdates(new ModbusDataUpdateAction() {
 
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				m.saveDataMap(registers);
-				return true;
-			}
-		});
+				@Override
+				public boolean updateModbusData(MutableModbusData m) {
+					m.saveDataMap(registers);
+					return true;
+				}
+			});
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
 		return data;
 	}
 

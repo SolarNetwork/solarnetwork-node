@@ -17,7 +17,7 @@
 		<dependency org="org.apache.servicemix.bundles" name="org.apache.servicemix.bundles.hamcrest" rev="1.3_1"/>
 		<dependency org="org.easymock" name="easymock" rev="3.1"/>
 		<dependency org="org.springframework" name="spring-test" rev="4.3.23.RELEASE"/>		
-		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[1.8.0,2.0.0)"/>
+		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[1.8.0,)"/>
 		
 		<!-- Testing support -->
     </dependencies>

@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.schneider.meter;
 
 import static net.solarnetwork.util.CollectionUtils.coveringIntRanges;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
@@ -36,7 +37,7 @@ import net.solarnetwork.util.IntRange;
  * Data object for the PM5100 series meter.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 2.4
  */
 public class PM5100Data extends ModbusData implements PM5100DataAccessor {
@@ -80,12 +81,14 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readConfigurationData(final ModbusConnection conn) {
+	public final void readConfigurationData(final ModbusConnection conn) throws IOException {
 		performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
-			public boolean updateModbusData(MutableModbusData m) {
+			public boolean updateModbusData(MutableModbusData m) throws IOException {
 				// we actually read ALL registers here, so our snapshot timestamp includes everything
 				updateData(conn, m,
 						coveringIntRanges(PM5100Register.getRegisterAddressSet(), MAX_RESULTS));
@@ -99,12 +102,14 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readMeterData(final ModbusConnection conn) {
+	public final void readMeterData(final ModbusConnection conn) throws IOException {
 		performUpdates(new ModbusDataUpdateAction() {
 
 			@Override
-			public boolean updateModbusData(MutableModbusData m) {
+			public boolean updateModbusData(MutableModbusData m) throws IOException {
 				updateData(conn, m,
 						coveringIntRanges(PM5100Register.getMeterRegisterAddressSet(), MAX_RESULTS));
 				return true;
@@ -112,7 +117,8 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 		});
 	}
 
-	private void updateData(ModbusConnection conn, MutableModbusData m, Collection<IntRange> ranges) {
+	private void updateData(ModbusConnection conn, MutableModbusData m, Collection<IntRange> ranges)
+			throws IOException {
 		for ( IntRange r : ranges ) {
 			short[] data = conn.readWords(ModbusReadFunction.ReadHoldingRegister, r.getMin(),
 					r.length());

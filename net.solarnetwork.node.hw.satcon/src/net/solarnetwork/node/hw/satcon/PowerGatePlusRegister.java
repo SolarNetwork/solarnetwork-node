@@ -296,7 +296,7 @@ public enum PowerGatePlusRegister implements ModbusReference {
 
 	/**
 	 * Get an address range set that covers all the registers defined in this
-	 * enumeration <b>except<b> controls.
+	 * enumeration <b>except</b> controls.
 	 * 
 	 * @return the range set
 	 */

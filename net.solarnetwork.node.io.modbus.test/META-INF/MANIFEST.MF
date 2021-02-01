@@ -2,9 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Modbus IO Tests
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.test
-Bundle-Version: 3.0.0
+Bundle-Version: 3.1.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.io.modbus;bundle-version="3.0.0"
+Fragment-Host: net.solarnetwork.node.io.modbus;bundle-version="[3.2,4.0)"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
  net.solarnetwork.node.test;version="[1.6,2.0)",

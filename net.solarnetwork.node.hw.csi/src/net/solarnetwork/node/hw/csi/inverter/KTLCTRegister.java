@@ -158,12 +158,12 @@ public enum KTLCTRegister implements ModbusReference {
 	 */
 	ControlDevicePowerLimit(0x1001, UInt16);
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(
-			KTLCTRegister.class, new HashSet<>(asList("Config", "Info"))).immutableCopy();
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(KTLCTRegister.class,
+			new HashSet<>(asList("Config", "Info"))).immutableCopy();
 	private static final IntRangeSet INVERTER_REGISTER_ADDRESS_SET = createAddressSet(
 			KTLCTRegister.class, new HashSet<>(asList("Inverter", "Status"))).immutableCopy();
-	private static final IntRangeSet CONTROL_REGISTER_ADDRESS_SET = createAddressSet(
-			KTLCTRegister.class, new HashSet<>(asList("Control"))).immutableCopy();
+	private static final IntRangeSet CONTROL_REGISTER_ADDRESS_SET = createAddressSet(KTLCTRegister.class,
+			new HashSet<>(asList("Control"))).immutableCopy();
 
 	private final int address;
 	private final int length;
@@ -201,7 +201,7 @@ public enum KTLCTRegister implements ModbusReference {
 
 	/**
 	 * Get an address range set that covers all the registers defined in this
-	 * enumeration <b>except<b> controls.
+	 * enumeration <b>except</b> controls.
 	 * 
 	 * @return the range set
 	 */

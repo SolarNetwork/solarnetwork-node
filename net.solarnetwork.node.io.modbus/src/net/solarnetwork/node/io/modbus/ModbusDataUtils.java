@@ -36,7 +36,7 @@ import java.util.Arrays;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 2.6
  */
 public final class ModbusDataUtils {
@@ -712,6 +712,23 @@ public final class ModbusDataUtils {
 	}
 
 	/**
+	 * Convert a 16-bit signed integer value from a raw Modbus register value.
+	 * 
+	 * <p>
+	 * This method simply returns the given argument, but provided for
+	 * completeness.
+	 * </p>
+	 * 
+	 * @param lo
+	 *        bits 15-0
+	 * @return the parsed integer
+	 * @since 2.1
+	 */
+	public static short toInt16(final short lo) {
+		return lo;
+	}
+
+	/**
 	 * Parse a 16-bit signed integer value from a raw Modbus register value.
 	 * 
 	 * @param lo
@@ -719,7 +736,19 @@ public final class ModbusDataUtils {
 	 * @return the parsed integer, never {@literal null}
 	 */
 	public static Short parseInt16(final short lo) {
-		return (short) lo;
+		return lo;
+	}
+
+	/**
+	 * Convert a 16-bit unsigned integer value from a raw Modbus register value.
+	 * 
+	 * @param lo
+	 *        bits 15-0
+	 * @return the parsed integer
+	 * @since 2.1
+	 */
+	public static int toUnsignedInt16(final short lo) {
+		return (lo & 0xFFFF);
 	}
 
 	/**
@@ -730,7 +759,21 @@ public final class ModbusDataUtils {
 	 * @return the parsed integer, never {@literal null}
 	 */
 	public static Integer parseUnsignedInt16(final short lo) {
-		return (lo & 0xFFFF);
+		return toUnsignedInt16(lo);
+	}
+
+	/**
+	 * Parse a 32-bit signed integer value from raw Modbus register values.
+	 * 
+	 * @param hi
+	 *        bits 31-16
+	 * @param lo
+	 *        bits 15-0
+	 * @return the parsed integer
+	 * @since 2.1
+	 */
+	public static int toInt32(final short hi, final short lo) {
+		return (((hi & 0xFFFF) << 16) | lo & 0xFFFF);
 	}
 
 	/**
@@ -743,7 +786,25 @@ public final class ModbusDataUtils {
 	 * @return the parsed integer, never {@literal null}
 	 */
 	public static Integer parseInt32(final short hi, final short lo) {
-		return (((hi & 0xFFFF) << 16) | lo & 0xFFFF);
+		return toInt32(hi, lo);
+	}
+
+	/**
+	 * Parse a 32-bit unsigned integer value from raw Modbus register values.
+	 * 
+	 * <p>
+	 * <b>Note</b> a {@code long} is returned to support unsigned 32-bit values.
+	 * </p>
+	 * 
+	 * @param hi
+	 *        bits 31-16
+	 * @param lo
+	 *        bits 15-0
+	 * @return the parsed integer
+	 * @since 2.1
+	 */
+	public static long toUnsignedInt32(final short hi, final short lo) {
+		return (((hi & 0xFFFFL) << 16) | lo & 0xFFFFL);
 	}
 
 	/**
@@ -760,7 +821,26 @@ public final class ModbusDataUtils {
 	 * @return the parsed integer, never {@literal null}
 	 */
 	public static Long parseUnsignedInt32(final short hi, final short lo) {
-		return (((hi & 0xFFFFL) << 16) | lo & 0xFFFFL);
+		return toUnsignedInt32(hi, lo);
+	}
+
+	/**
+	 * Parse a 64-bit signed integer value from raw Modbus register values.
+	 * 
+	 * @param h1
+	 *        bits 63-48
+	 * @param h2
+	 *        bits 47-32
+	 * @param l1
+	 *        bits 31-16
+	 * @param l2
+	 *        bits 15-0
+	 * @return the parsed integer
+	 * @since 2.1
+	 */
+	public static long toInt64(final short h1, final short h2, final short l1, final short l2) {
+		return (((h1 & 0xFFFFL) << 48) | ((h2 & 0xFFFFL) << 32) | ((l1 & 0xFFFFL) << 16)
+				| (l2 & 0xFFFFL));
 	}
 
 	/**
@@ -777,8 +857,7 @@ public final class ModbusDataUtils {
 	 * @return the parsed integer, never {@literal null}
 	 */
 	public static Long parseInt64(final short h1, final short h2, final short l1, final short l2) {
-		return (((h1 & 0xFFFFL) << 48) | ((h2 & 0xFFFFL) << 32) | ((l1 & 0xFFFFL) << 16)
-				| (l2 & 0xFFFFL));
+		return toInt64(h1, h2, l1, l2);
 	}
 
 	/**
@@ -814,12 +893,26 @@ public final class ModbusDataUtils {
 	 *        the high 16 bits
 	 * @param lo
 	 *        the low 16 bits
+	 * @return the parsed float
+	 * @since 2.1
+	 */
+	public static float toFloat32(final short hi, final short lo) {
+		int int32 = toInt32(hi, lo);
+		return Float.intBitsToFloat(int32);
+	}
+
+	/**
+	 * Parse an IEEE-754 32-bit float value from raw Modbus register values.
+	 * 
+	 * @param hi
+	 *        the high 16 bits
+	 * @param lo
+	 *        the low 16 bits
 	 * @return the parsed float, or {@literal null} if not available or parsed
 	 *         float is {@code NaN}
 	 */
 	public static Float parseFloat32(final short hi, final short lo) {
-		Integer int32 = parseInt32(hi, lo);
-		Float result = Float.intBitsToFloat(int32.intValue());
+		Float result = toFloat32(hi, lo);
 		if ( result.isNaN() ) {
 			result = null;
 		}
@@ -838,11 +931,31 @@ public final class ModbusDataUtils {
 	 *        bits 31-16
 	 * @param l2
 	 *        bits 15-0
-	 * @return the parsed float, or {@literal null} if the result is {@code NaN}
+	 * @return the parsed double
+	 * @since 2.1
+	 */
+	public static double toFloat64(final short h1, final short h2, final short l1, final short l2) {
+		long l = toInt64(h1, h2, l1, l2);
+		return Double.longBitsToDouble(l);
+	}
+
+	/**
+	 * Parse an IEEE-754 64-bit floating point value from raw Modbus register
+	 * values.
+	 * 
+	 * @param h1
+	 *        bits 63-48
+	 * @param h2
+	 *        bits 47-32
+	 * @param l1
+	 *        bits 31-16
+	 * @param l2
+	 *        bits 15-0
+	 * @return the parsed double, or {@literal null} if the result is
+	 *         {@code NaN}
 	 */
 	public static Double parseFloat64(final short h1, final short h2, final short l1, final short l2) {
-		Long l = parseInt64(h1, h2, l1, l2);
-		Double result = Double.longBitsToDouble(l);
+		Double result = toFloat64(h1, h2, l1, l2);
 		if ( result.isNaN() ) {
 			result = null;
 		}

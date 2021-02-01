@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.eig.test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -268,20 +269,24 @@ public class Shark100DataTests {
 
 	private Shark100Data getTestDataInstance() {
 		Shark100Data data = new Shark100Data();
-		data.performUpdates(new ModbusDataUpdateAction() {
+		try {
+			data.performUpdates(new ModbusDataUpdateAction() {
 
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				m.saveDataArray(TEST_DATA_REG_1, 0);
-				m.saveDataArray(TEST_DATA_REG_900, 899);
-				m.saveDataArray(TEST_DATA_REG_1000, 999);
-				m.saveDataArray(TEST_DATA_REG_1100, 1099);
-				m.saveDataArray(TEST_DATA_REG_2000, 1999);
-				m.saveDataArray(TEST_DATA_REG_30000, 29999);
-				m.saveDataArray(TEST_DATA_REG_40000, 39999);
-				return true;
-			}
-		});
+				@Override
+				public boolean updateModbusData(MutableModbusData m) {
+					m.saveDataArray(TEST_DATA_REG_1, 0);
+					m.saveDataArray(TEST_DATA_REG_900, 899);
+					m.saveDataArray(TEST_DATA_REG_1000, 999);
+					m.saveDataArray(TEST_DATA_REG_1100, 1099);
+					m.saveDataArray(TEST_DATA_REG_2000, 1999);
+					m.saveDataArray(TEST_DATA_REG_30000, 29999);
+					m.saveDataArray(TEST_DATA_REG_40000, 39999);
+					return true;
+				}
+			});
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
 		return data;
 	}
 

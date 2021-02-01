@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.ae.inverter.tx;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -37,7 +38,7 @@ import net.solarnetwork.util.NumberUtils;
  * Data object for the AE 250TX series inverter.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 
@@ -107,8 +108,10 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readConfigurationData(final ModbusConnection conn) {
+	public final void readConfigurationData(final ModbusConnection conn) throws IOException {
 		// we actually read ALL registers here, so our snapshot timestamp includes everything
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				AE250TxRegister.getRegisterAddressSet(), MAX_RESULTS);
@@ -119,8 +122,10 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readInverterData(final ModbusConnection conn) {
+	public final void readInverterData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				AE250TxRegister.getInverterRegisterAddressSet(), MAX_RESULTS);
 	}
@@ -130,8 +135,10 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	 * 
 	 * @param conn
 	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
 	 */
-	public final void readStatusData(final ModbusConnection conn) {
+	public final void readStatusData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
 				AE250TxRegister.getStatusRegisterAddressSet(), MAX_RESULTS);
 	}

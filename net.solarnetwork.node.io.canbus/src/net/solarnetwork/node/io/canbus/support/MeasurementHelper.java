@@ -72,8 +72,8 @@ public class MeasurementHelper {
 	/**
 	 * Constructor.
 	 * 
-	 * @param measurementProvider
-	 *        the measurement service provider to use
+	 * @param measurementProviders
+	 *        the measurement service providers to use
 	 * @throws IllegalArgumentException
 	 *         if {@code measurementProvider} is {@literal null}
 	 */
@@ -215,6 +215,8 @@ public class MeasurementHelper {
 	/**
 	 * Get a "normalized" unit from an arbitrary unit.
 	 * 
+	 * @param <Q>
+	 *        the quantity type
 	 * @param unit
 	 *        the unit to get a normalized variant of
 	 * @return the normalized unit

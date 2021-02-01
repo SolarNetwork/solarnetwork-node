@@ -52,7 +52,7 @@ import net.solarnetwork.util.StringUtils;
  * with the SDM series watt meter.
  * 
  * @author matt
- * @version 2.2
+ * @version 2.23
  */
 public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData>
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
@@ -97,12 +97,12 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 	}
 
 	@Override
-	protected void refreshDeviceInfo(ModbusConnection connection, SDMData sample) {
+	protected void refreshDeviceInfo(ModbusConnection connection, SDMData sample) throws IOException {
 		sample.readConfigurationData(connection);
 	}
 
 	@Override
-	protected void refreshDeviceData(ModbusConnection connection, SDMData sample) {
+	protected void refreshDeviceData(ModbusConnection connection, SDMData sample) throws IOException {
 		sample.readMeterData(connection);
 	}
 

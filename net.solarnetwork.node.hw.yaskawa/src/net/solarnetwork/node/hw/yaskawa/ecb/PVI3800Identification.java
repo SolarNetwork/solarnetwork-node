@@ -40,6 +40,8 @@ public class PVI3800Identification {
 	/**
 	 * Construct from a packet.
 	 * 
+	 * @param p
+	 *        the packet to decode
 	 * @throws IllegalArgumentException
 	 *         if the packet is not appropriate
 	 */

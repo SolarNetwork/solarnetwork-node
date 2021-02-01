@@ -72,7 +72,7 @@ public interface Message {
 	/**
 	 * Write a complete message to a writer.
 	 * 
-	 * @param writer
+	 * @param out
 	 *        the destination to write the message to
 	 * @throws IOException
 	 *         if an IO error occurs

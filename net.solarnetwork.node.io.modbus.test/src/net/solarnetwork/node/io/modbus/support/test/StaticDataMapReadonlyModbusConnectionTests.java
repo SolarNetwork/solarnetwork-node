@@ -24,6 +24,7 @@ package net.solarnetwork.node.io.modbus.support.test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import org.junit.Test;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -39,7 +40,7 @@ import net.solarnetwork.util.IntShortMap;
 public class StaticDataMapReadonlyModbusConnectionTests {
 
 	@Test
-	public void readData() {
+	public void readData() throws IOException {
 		IntShortMap data = new IntShortMap();
 		int[] raw = new int[] { 0x1234, 0x4321, 0xFFFF, 0x1000 };
 		for ( int i = 0; i < raw.length; i++ ) {
@@ -55,7 +56,7 @@ public class StaticDataMapReadonlyModbusConnectionTests {
 	}
 
 	@Test
-	public void readUnsignedData() {
+	public void readUnsignedData() throws IOException {
 		IntShortMap data = new IntShortMap();
 		int[] raw = new int[] { 0x1234, 0x4321, 0xFFFF, 0x1000 };
 		for ( int i = 0; i < raw.length; i++ ) {

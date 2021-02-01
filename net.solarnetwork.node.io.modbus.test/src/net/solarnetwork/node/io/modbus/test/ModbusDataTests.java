@@ -28,6 +28,7 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Map;
@@ -59,7 +60,7 @@ public class ModbusDataTests {
 	}
 
 	@Test
-	public void performUpdateWithTimestamp() {
+	public void performUpdateWithTimestamp() throws IOException {
 		final long now = System.currentTimeMillis();
 		ModbusData d = new ModbusData();
 		d.performUpdates(new ModbusDataUpdateAction() {
@@ -74,7 +75,7 @@ public class ModbusDataTests {
 	}
 
 	@Test
-	public void performUpdateWithoutTimestamp() {
+	public void performUpdateWithoutTimestamp() throws IOException {
 		ModbusData d = new ModbusData();
 		d.performUpdates(new ModbusDataUpdateAction() {
 
@@ -88,7 +89,7 @@ public class ModbusDataTests {
 	}
 
 	@Test
-	public void readInt32() {
+	public void readInt32() throws IOException {
 		ModbusData d = new ModbusData();
 		final long l = 123123123L;
 		d.performUpdates(new ModbusDataUpdateAction() {
@@ -105,7 +106,7 @@ public class ModbusDataTests {
 	}
 
 	@Test
-	public void readInt32SavedFromInts() {
+	public void readInt32SavedFromInts() throws IOException {
 		ModbusData d = new ModbusData();
 		final long l = 123123123L;
 		d.performUpdates(new ModbusDataUpdateAction() {
@@ -121,7 +122,7 @@ public class ModbusDataTests {
 	}
 
 	@Test
-	public void readInt32SavedFromIntegers() {
+	public void readInt32SavedFromIntegers() throws IOException {
 		ModbusData d = new ModbusData();
 		final long l = 123123123L;
 		d.performUpdates(new ModbusDataUpdateAction() {
@@ -138,7 +139,7 @@ public class ModbusDataTests {
 	}
 
 	@Test
-	public void readLargeUnsignedInt32() {
+	public void readLargeUnsignedInt32() throws IOException {
 		ModbusData d = new ModbusData();
 		final long l = (Integer.MAX_VALUE + 1231231231L) & 0xFFFFFFFFL;
 		d.performUpdates(new ModbusDataUpdateAction() {
@@ -155,7 +156,7 @@ public class ModbusDataTests {
 	}
 
 	@Test
-	public void readLargeUnsignedInt64() {
+	public void readLargeUnsignedInt64() throws IOException {
 		ModbusData d = new ModbusData();
 		final BigInteger ull = new BigInteger("AC93244488888ABB", 16);
 		d.performUpdates(new ModbusDataUpdateAction() {
@@ -174,7 +175,7 @@ public class ModbusDataTests {
 	}
 
 	@Test
-	public void readFloat32() {
+	public void readFloat32() throws IOException {
 		ModbusData d = new ModbusData();
 		final float f = RNG.nextFloat();
 		d.performUpdates(new ModbusDataUpdateAction() {
@@ -192,7 +193,7 @@ public class ModbusDataTests {
 	}
 
 	@Test
-	public void readFloat32LeastToMostSignificant() {
+	public void readFloat32LeastToMostSignificant() throws IOException {
 		ModbusData d = new ModbusData();
 		d.setWordOrder(ModbusWordOrder.LeastToMostSignificant);
 		final float f = RNG.nextFloat();
@@ -211,7 +212,7 @@ public class ModbusDataTests {
 	}
 
 	@Test
-	public void readInt64() {
+	public void readInt64() throws IOException {
 		ModbusData d = new ModbusData();
 		final long l = RNG.nextLong();
 		d.performUpdates(new ModbusDataUpdateAction() {
@@ -228,7 +229,7 @@ public class ModbusDataTests {
 	}
 
 	@Test
-	public void readInt64LeastToMostSignificant() {
+	public void readInt64LeastToMostSignificant() throws IOException {
 		ModbusData d = new ModbusData();
 		d.setWordOrder(ModbusWordOrder.LeastToMostSignificant);
 		final long l = RNG.nextLong();
@@ -246,7 +247,7 @@ public class ModbusDataTests {
 	}
 
 	@Test
-	public void readFloat64() {
+	public void readFloat64() throws IOException {
 		ModbusData d = new ModbusData();
 		final double f = RNG.nextDouble();
 		d.performUpdates(new ModbusDataUpdateAction() {
@@ -265,7 +266,7 @@ public class ModbusDataTests {
 	}
 
 	@Test
-	public void readFloat64LeastToMostSignificant() {
+	public void readFloat64LeastToMostSignificant() throws IOException {
 		ModbusData d = new ModbusData();
 		d.setWordOrder(ModbusWordOrder.LeastToMostSignificant);
 		final double f = RNG.nextDouble();
@@ -285,7 +286,7 @@ public class ModbusDataTests {
 	}
 
 	@Test
-	public void readBytes() {
+	public void readBytes() throws IOException {
 		final int len = 2 + 2 * RNG.nextInt(8); // ensures even number > 2
 		final byte[] b = new byte[len];
 		RNG.nextBytes(b);
@@ -303,7 +304,7 @@ public class ModbusDataTests {
 	}
 
 	@Test
-	public void readBytesLeastToMostSignificant() {
+	public void readBytesLeastToMostSignificant() throws IOException {
 		final int len = 2 + 2 * RNG.nextInt(8); // ensures even number > 2
 		final byte[] b = new byte[len];
 		RNG.nextBytes(b);
@@ -392,7 +393,7 @@ public class ModbusDataTests {
 	}
 
 	@Test
-	public void readSignedInt16() {
+	public void readSignedInt16() throws IOException {
 		final short s = (short) -123;
 		ModbusData d = new ModbusData();
 		d.performUpdates(new ModbusDataUpdateAction() {
@@ -408,7 +409,7 @@ public class ModbusDataTests {
 	}
 
 	@Test
-	public void debugString() {
+	public void debugString() throws IOException {
 		ModbusData d = new ModbusData();
 		d.performUpdates(new ModbusDataUpdateAction() {
 
@@ -427,7 +428,7 @@ public class ModbusDataTests {
 	}
 
 	@Test
-	public void debugStringLeadingOdd() {
+	public void debugStringLeadingOdd() throws IOException {
 		ModbusData d = new ModbusData();
 		d.performUpdates(new ModbusDataUpdateAction() {
 
@@ -445,7 +446,7 @@ public class ModbusDataTests {
 
 	@SuppressWarnings("unchecked")
 	@Test
-	public void unsignedDataMap() {
+	public void unsignedDataMap() throws IOException {
 		ModbusData d = new ModbusData();
 		d.performUpdates(new ModbusDataUpdateAction() {
 
