@@ -40,7 +40,7 @@ import net.solarnetwork.util.IntRange;
  * Base object for model data.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class ModelData extends ModbusData implements CommonModelAccessor {
 
@@ -336,8 +336,8 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 			ModbusReadFunction function, IntRange[] ranges) throws IOException {
 		for ( IntRange r : ranges ) {
 			if ( LOG.isDebugEnabled() ) {
-				LOG.debug("Reading modbus {} range {}-{}", conn.getUnitId(), r.getMin(),
-						r.getMin() + r.length());
+				LOG.debug("Reading modbus {} range {}-{} ({})", conn.getUnitId(), r.getMin(),
+						r.getMin() + r.length(), r.length());
 			}
 			short[] data = conn.readWords(function, r.getMin(), r.length());
 			m.saveDataArray(data, r.getMin());
