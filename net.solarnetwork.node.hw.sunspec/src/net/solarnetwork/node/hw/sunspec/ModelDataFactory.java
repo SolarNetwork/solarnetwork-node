@@ -59,7 +59,7 @@ import net.solarnetwork.util.ByteUtils;
  * </p>
  * 
  * @author matt
- * @version 1.6
+ * @version 1.7
  */
 public class ModelDataFactory {
 
@@ -69,7 +69,7 @@ public class ModelDataFactory {
 	 * 
 	 * @since 1.1
 	 */
-	public static final int DEFAULT_MAX_READ_WORDS_COUNT = 124;
+	public static final int DEFAULT_MAX_READ_WORDS_COUNT = 100;
 
 	/**
 	 * The name of the class-path resource with the {@code ModelAccessor}
