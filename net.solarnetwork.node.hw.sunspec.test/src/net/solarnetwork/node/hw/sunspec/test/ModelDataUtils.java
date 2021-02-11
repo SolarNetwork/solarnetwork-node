@@ -25,6 +25,7 @@ package net.solarnetwork.node.hw.sunspec.test;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.hw.sunspec.ModelData;
@@ -33,12 +34,13 @@ import net.solarnetwork.node.hw.sunspec.meter.test.IntegerMeterModelAccessorTest
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnection;
 import net.solarnetwork.node.test.DataUtils;
+import net.solarnetwork.util.IntShortMap;
 
 /**
  * Helper utility methods for model data testing.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public final class ModelDataUtils {
 
@@ -67,6 +69,37 @@ public final class ModelDataUtils {
 			log.error("Error reading modbus data resource [{}]", resource, e);
 			return new int[0];
 		}
+	}
+
+	/**
+	 * Parse modbus test data.
+	 * 
+	 * <p>
+	 * This calls {@link DataUtils#parseModbusHexRegisterLines} so the address
+	 * offsets are ignored and the returned array's data will always start at
+	 * index {@literal 0}.
+	 * </p>
+	 * 
+	 * @param clazz
+	 *        the class to load the resource from
+	 * @param resource
+	 *        the data resource to load
+	 * @return the parsed data
+	 */
+	public static IntShortMap parseOffsetTestData(Class<?> clazz, String resource) {
+		IntShortMap result = new IntShortMap();
+		try {
+			Map<Integer, Integer> m = DataUtils.parseModbusHexRegisterMappingLines(
+					new BufferedReader(new InputStreamReader(clazz.getResourceAsStream(resource))));
+			if ( m != null ) {
+				for ( Map.Entry<Integer, Integer> e : m.entrySet() ) {
+					result.put(e.getKey(), e.getValue().shortValue());
+				}
+			}
+		} catch ( IOException e ) {
+			log.error("Error reading modbus data resource [{}]", resource, e);
+		}
+		return result;
 	}
 
 	/**
@@ -120,8 +153,12 @@ public final class ModelDataUtils {
 	 * @see #parseTestData(Class, String)
 	 */
 	public static ModelData getModelDataInstance(Class<?> clazz, String resource, boolean parseOffsets) {
-		ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(
-				parseTestData(clazz, resource));
+		ModbusConnection conn;
+		if ( parseOffsets ) {
+			conn = new StaticDataMapReadonlyModbusConnection(parseOffsetTestData(clazz, resource));
+		} else {
+			conn = new StaticDataMapReadonlyModbusConnection(parseTestData(clazz, resource));
+		}
 		try {
 			return ModelDataFactory.getInstance().getModelData(conn);
 		} catch ( IOException e ) {
