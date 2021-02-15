@@ -96,11 +96,11 @@ public class SampleTransformingGeneralNodeDatumDao implements DatumDao<GeneralNo
 		if ( datum != null && xformService != null && datum.getSamples() != null ) {
 			GeneralDatumSamples samples = xformService.transformSamples(datum, datum.getSamples(), null);
 			if ( samples == null || samples.isEmpty() ) {
-				log.info("Samples transform service filtered out datum {} @ {}; will not persist",
+				log.debug("Samples transform service filtered out datum {} @ {}; will not persist",
 						datum.getSourceId(), datum.getCreated());
 				return;
 			} else if ( !samples.equals(datum.getSamples()) ) {
-				log.info("Samples transform service modified datum {} @ {} properties to {}",
+				log.debug("Samples transform service modified datum {} @ {} properties to {}",
 						datum.getSourceId(), datum.getCreated(), samples.getSampleData());
 				GeneralNodeDatum copy = (GeneralNodeDatum) datum.clone();
 				copy.setSamples(samples);

@@ -305,7 +305,7 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_READING_KEY,
 							currReading.stripTrailingZeros().toPlainString());
-					log.info(
+					log.debug(
 							"Source {} virtual meter {} adds {} from instantaneous value {} -> {} over {}ms to reach {}",
 							d.getSourceId(), meterPropName, meterValue, prevVal, currVal, msDiff,
 							currReading);

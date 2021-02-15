@@ -261,6 +261,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 								objectMapper.writeValueAsBytes(jsonData)))
 								.get(getMqttConfig().getConnectTimeoutSeconds(), TimeUnit.SECONDS);
 						postDatumUploadedEvent(data, jsonData);
+						log.info("Uploaded datum via MQTT: {}", data);
 					}
 					return DigestUtils.md5DigestAsHex(
 							String.format("%tQ;%s", data.getCreated(), data.getSourceId()).getBytes());
