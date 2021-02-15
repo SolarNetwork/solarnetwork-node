@@ -158,12 +158,13 @@ Each filter configuration contains the following overall settings:
 
 Each virtual meter configuration contains the following settings:
 
-| Setting         | Description                                                                           |
-|:----------------|:--------------------------------------------------------------------------------------|
-| Property        | The name of the instantaneous datum property to derive the virtual meter values from. |
-| Time Unit       | The time unit to record meter readings as.                                            |
-| Max Age         | The maximum time allowed between samples where the meter reading can advance.         |
-| Meter Reading   | The current meter reading value.                                                      |
+| Setting               | Description                                                                           |
+|:----------------------|:--------------------------------------------------------------------------------------|
+| Property              | The name of the instantaneous datum property to derive the virtual meter values from. |
+| Time Unit             | The time unit to record meter readings as.                                            |
+| Max Age               | The maximum time allowed between samples where the meter reading can advance.         |
+| Rolling Average Count | A count of samples to average the property value from.                                |
+| Meter Reading         | The current meter reading value.                                                      |
 
 ## Virtual meter settings notes
 
@@ -179,8 +180,14 @@ Each virtual meter configuration contains the following settings:
 	associated instantaneous property had been active over that entire time. With this restriction, the
 	node will record the new sample date and value, but not advance the meter reading until another sample
 	is captured within this time period.</dd>
+	<dt>Rolling Average Count</dt>
+	<dd>When set to something greater than <code>1</code>, then 
+	apply a rolling average of this many property samples and output that value as the <em>instantaneous</em> 
+	source property value. This has the effect of smoothing the instantaneous values to an average over the 
+	time period leading into each output sample. Defaults to <code>0</code> so no average is applied.</dd>
 	<dt>Meter Reading</dt>
 	<dd>Generally this should <b>not</b> be changed, because it can impact how the values are aggregated and
 	interpreted by SolarNetwork and applications using the data.</dd>
 </dl>
 
+[meta-api]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarIn-API#node-datum-metadata-add

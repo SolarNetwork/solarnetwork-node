@@ -85,6 +85,8 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 
 	private final ConcurrentMap<String, GeneralDatumMetadata> sourceMetas = new ConcurrentHashMap<>(8,
 			0.9f, 2);
+	private final ConcurrentMap<String, PropertySamples> sourceSamples = new ConcurrentHashMap<>(8, 0.9f,
+			2);
 	private final OptionalService<DatumMetadataService> datumMetadataService;
 	private VirtualMeterConfig[] virtualMeterConfigs;
 	private Pattern sourceId;
@@ -173,7 +175,9 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 			return samples;
 		}
 		if ( sourceId == null || sourceId.matcher(datum.getSourceId()).find() ) {
-			populateDatumProperties(datum, samples, virtualMeterConfigs);
+			GeneralDatumSamples s = new GeneralDatumSamples(samples);
+			populateDatumProperties(datum, s, virtualMeterConfigs);
+			return s;
 		}
 		return samples;
 	}
@@ -190,6 +194,19 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 						m.getPropertyInfo());
 			}
 			return m;
+		});
+	}
+
+	private PropertySamples samplesForConfig(VirtualMeterConfig config, String sourceId) {
+		if ( config.getRollingAverageCount() < 2 ) {
+			return null;
+		}
+		final String key = sourceId + "." + config.getPropertyKey();
+		return sourceSamples.compute(key, (k, v) -> {
+			if ( v == null || v.values.length != config.getRollingAverageCount() ) {
+				return new PropertySamples(config.getRollingAverageCount());
+			}
+			return v;
 		});
 	}
 
@@ -225,7 +242,8 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 						d.getSourceId(), meterPropName, config.getPropertyKey());
 				continue;
 			}
-			BigDecimal currVal = samples.getInstantaneousSampleBigDecimal(config.getPropertyKey());
+			final BigDecimal currVal = samples.getInstantaneousSampleBigDecimal(config.getPropertyKey());
+			final PropertySamples propSamples = samplesForConfig(config, d.getSourceId());
 			if ( currVal == null ) {
 				log.warn(
 						"Source {} instantaneous property [{}] not available, cannot populate virtual meter reading",
@@ -250,6 +268,9 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 					meterPropMap.put(VIRTUAL_METER_READING_KEY,
 							prevReading != null ? prevReading.toString() : config.getMeterReading());
 					pm.put(meterPropName, meterPropMap);
+					if ( propSamples != null ) {
+						propSamples.addValue(currVal);
+					}
 					log.info("Virtual meter {}.{} status: {}", d.getSourceId(), meterPropName,
 							meterPropMap);
 				} else if ( prevDate >= date ) {
@@ -263,6 +284,9 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 							d.getSourceId(), new Date(prevDate), meterPropName);
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_DATE_KEY, date);
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
+					if ( propSamples != null ) {
+						propSamples.addValue(currVal);
+					}
 				} else {
 					BigDecimal msDiff = new BigDecimal(date - prevDate);
 					msDiff.setScale(VIRTUAL_METER_SCALE);
@@ -272,10 +296,15 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 							.divide(unitMs, VIRTUAL_METER_SCALE, RoundingMode.HALF_UP);
 					BigDecimal currReading = prevReading.add(meterValue);
 					samples.putAccumulatingSampleValue(meterPropName, currReading);
+					if ( propSamples != null ) {
+						propSamples.addValue(currVal);
+						samples.putInstantaneousSampleValue(config.getPropertyKey(),
+								propSamples.averageValue(VIRTUAL_METER_SCALE));
+					}
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_DATE_KEY, date);
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_READING_KEY,
-							currReading.toString());
+							currReading.stripTrailingZeros().toPlainString());
 					log.info(
 							"Source {} virtual meter {} adds {} from instantaneous value {} -> {} over {}ms to reach {}",
 							d.getSourceId(), meterPropName, meterValue, prevVal, currVal, msDiff,
@@ -298,6 +327,47 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 					}
 				}
 			}
+		}
+	}
+
+	private static final class PropertySamples {
+
+		private final BigDecimal[] values;
+		private int head;
+
+		private PropertySamples(int size) {
+			super();
+			this.values = new BigDecimal[size];
+			this.head = -1;
+		}
+
+		private synchronized void addValue(BigDecimal value) {
+			++head;
+			if ( head >= values.length ) {
+				head = 0;
+			}
+			values[head] = value;
+		}
+
+		private synchronized BigDecimal averageValue(int scale) {
+			BigDecimal result = null;
+			int count = 0;
+			for ( int i = 0, len = values.length; i < len; i++ ) {
+				if ( values[i] == null ) {
+					continue;
+				}
+				if ( result == null ) {
+					result = values[i];
+				} else {
+					result = result.add(values[i]);
+				}
+				count++;
+			}
+			if ( result != null && count > 1 ) {
+				result = result.divide(BigDecimal.valueOf(count), scale, RoundingMode.HALF_UP)
+						.stripTrailingZeros();
+			}
+			return result;
 		}
 	}
 
