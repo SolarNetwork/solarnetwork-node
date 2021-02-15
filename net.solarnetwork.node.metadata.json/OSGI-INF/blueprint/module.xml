@@ -31,6 +31,10 @@
 	<reference id="objectMapperService" 
 		interface="net.solarnetwork.util.ObjectMapperService"
 		filter="(function=node)"/>
+		
+	<reference id="taskScheduler" 
+		interface="org.springframework.scheduling.TaskScheduler"
+		filter="(function=node)"/>
 	
 	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
 		factory-ref="objectMapperService" factory-method="getObjectMapper"/>
@@ -41,14 +45,23 @@
 		<interfaces>
 			<value>net.solarnetwork.node.DatumMetadataService</value>
 			<value>net.solarnetwork.node.settings.SettingResourceHandler</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
 		</interfaces>
-		<bean class="net.solarnetwork.node.metadata.json.JsonDatumMetadataService">
+		<bean class="net.solarnetwork.node.metadata.json.JsonDatumMetadataService" init-method="startup">
+			<osgix:managed-properties persistent-id="net.solarnetwork.node.metadata.json.JsonDatumMetadataService" 
+					autowire-on-update="true" update-method="configurationChanged"/>
 			<argument ref="settingsService"/>
+			<argument ref="taskScheduler"/>
 			<property name="objectMapper" ref="objectMapper"/>
 			<property name="identityService" ref="identityService"/>
 			<property name="sslService" ref="sslService"/>
 			<property name="baseUrl" value="/api/v1/sec/datum/meta"/>
 			<property name="settingDao" ref="settingDao"/>
+			<property name="messageSource">
+				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+					<property name="basenames" value="net.solarnetwork.node.metadata.json.JsonDatumMetadataService"/>
+				</bean>
+			</property>
 		</bean>
 	</service>
 	
