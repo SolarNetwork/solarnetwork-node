@@ -25,7 +25,8 @@ package net.solarnetwork.node;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 
 /**
- * API for manipulating {@link GeneralDatumMetadata} associated with a node.
+ * API for manipulating {@link GeneralDatumMetadata} associated with a datum
+ * source.
  * 
  * @author matt
  * @version 1.0
@@ -49,7 +50,7 @@ public interface DatumMetadataService {
 	 * 
 	 * @param sourceId
 	 *        the sourceId to get the metadta for
-	 * @return the metadata, or <em>null</em> if none available
+	 * @return the metadata, or {@literal null} if none available
 	 */
 	GeneralDatumMetadata getSourceMetadata(String sourceId);
 
