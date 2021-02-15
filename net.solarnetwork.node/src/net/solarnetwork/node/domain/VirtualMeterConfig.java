@@ -42,13 +42,14 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.77
  */
 public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInteger> {
 
 	private TimeUnit timeUnit = TimeUnit.HOURS;
 	private long maxAgeSeconds = TimeUnit.HOURS.toSeconds(1);
+	private int rollingAverageCount = 0;
 
 	public static List<SettingSpecifier> settings(String prefix, String meterReading) {
 		VirtualMeterConfig defaults = new VirtualMeterConfig();
@@ -69,6 +70,9 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxAgeSeconds",
 				String.valueOf(defaults.maxAgeSeconds)));
+
+		results.add(
+				new BasicTextFieldSettingSpecifier(prefix + "rollingAverageCount", String.valueOf(0)));
 
 		// meter reading has "live" data, not static default
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "meterReading", meterReading));
@@ -236,6 +240,34 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 	 */
 	public void setMaxAgeSeconds(long maxAgeSeconds) {
 		this.maxAgeSeconds = maxAgeSeconds;
+	}
+
+	/**
+	 * Get the instantaneous rolling average sample count.
+	 * 
+	 * @return the count; defaults to {@code 0}
+	 * @since 1.1
+	 */
+	public int getRollingAverageCount() {
+		return rollingAverageCount;
+	}
+
+	/**
+	 * Set the instantaneous rolling average sample count.
+	 * 
+	 * <p>
+	 * When set to something greater than {@literal 1}, then apply a rolling
+	 * average of this many instantaneous property samples to the transformed
+	 * output value. This has the effect of smoothing the instantaneous values
+	 * to an average over the time period leading into each output sample.
+	 * </p>
+	 * 
+	 * @param rollingAverageCount
+	 *        the count to set
+	 * @since 1.1
+	 */
+	public void setRollingAverageCount(int rollingAverageCount) {
+		this.rollingAverageCount = rollingAverageCount;
 	}
 
 }
