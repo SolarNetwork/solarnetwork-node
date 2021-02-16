@@ -87,7 +87,7 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 	 * 
 	 * <p>
 	 * This will return {@link #getReadingPropertyName()} if not empty.
-	 * Otherwise a name derived from {@link #getPropertyKey() with
+	 * Otherwise a name derived from {@link #getPropertyKey()} with
 	 * {@link #getTimeUnit()} appended will be used. The time unit will be
 	 * formatted as a capitalized word, for example {@link TimeUnit#HOURS}
 	 * becomes {@literal Hours}.
