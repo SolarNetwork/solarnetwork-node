@@ -100,14 +100,18 @@ public class VirtualMeterSamplesTransformerTests {
 
 	private void assertOutputValue(String msg, GeneralDatumSamples result, BigDecimal expectedValue,
 			BigDecimal expectedDerived) {
-		assertThat("Prop value " + msg, result.getInstantaneousSampleDouble(PROP_WATTS),
+		assertOutputValue(msg, result, PROP_WATTS, PROP_WATTS_SECONDS, expectedValue, expectedDerived);
+	}
+
+	private void assertOutputValue(String msg, GeneralDatumSamples result, String propName,
+			String readingPropName, BigDecimal expectedValue, BigDecimal expectedDerived) {
+		assertThat("Prop value " + msg, result.getInstantaneousSampleDouble(propName),
 				closeTo(expectedValue.doubleValue(), 0.1));
 		if ( expectedDerived == null ) {
 			assertThat("Meter value not available " + msg,
-					result.getAccumulatingSampleDouble(PROP_WATTS_SECONDS), nullValue());
+					result.getAccumulatingSampleDouble(readingPropName), nullValue());
 		} else {
-			assertThat("Meter value approx " + msg,
-					result.getAccumulatingSampleDouble(PROP_WATTS_SECONDS),
+			assertThat("Meter value approx " + msg, result.getAccumulatingSampleDouble(readingPropName),
 					closeTo(expectedDerived.doubleValue(), 1.0));
 		}
 
@@ -115,12 +119,19 @@ public class VirtualMeterSamplesTransformerTests {
 
 	private void assertVirtalMeterMetadata(String msg, GeneralDatumMetadata meta, long date,
 			BigDecimal expectedValue, BigDecimal expectedReading) {
-		assertThat("Virtual meter date saved (close to) " + msg, meta.getInfoLong(PROP_WATTS_SECONDS,
-				VirtualMeterSamplesTransformer.VIRTUAL_METER_DATE_KEY) - date, lessThan(2000L));
-		assertThat("Virtual meter value saved " + msg, meta.getInfoBigDecimal(PROP_WATTS_SECONDS,
+		assertVirtalMeterMetadata(msg, meta, PROP_WATTS_SECONDS, date, expectedValue, expectedReading);
+	}
+
+	private void assertVirtalMeterMetadata(String msg, GeneralDatumMetadata meta, String readingPropName,
+			long date, BigDecimal expectedValue, BigDecimal expectedReading) {
+		assertThat("Virtual meter date saved (close to) " + msg,
+				meta.getInfoLong(readingPropName, VirtualMeterSamplesTransformer.VIRTUAL_METER_DATE_KEY)
+						- date,
+				lessThan(2000L));
+		assertThat("Virtual meter value saved " + msg, meta.getInfoBigDecimal(readingPropName,
 				VirtualMeterSamplesTransformer.VIRTUAL_METER_VALUE_KEY), equalTo(expectedValue));
 		assertThat("Virtual meter reading saved " + msg,
-				meta.getInfoBigDecimal(PROP_WATTS_SECONDS,
+				meta.getInfoBigDecimal(readingPropName,
 						VirtualMeterSamplesTransformer.VIRTUAL_METER_READING_KEY),
 				equalTo(expectedReading));
 	}
@@ -150,6 +161,34 @@ public class VirtualMeterSamplesTransformerTests {
 		GeneralDatumMetadata meta = metaCaptor.getValue();
 		assertVirtalMeterMetadata("first", meta, System.currentTimeMillis(), new BigDecimal("23.4"),
 				BigDecimal.ZERO);
+	}
+
+	@Test
+	public void filter_rollingAverage_firstSample_customReadingPropertyName() {
+		// GIVEN
+		final GeneralNodeDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATTS);
+		vmConfig.setRollingAverageCount(4);
+		vmConfig.setReadingPropertyName("foobar");
+		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
+
+		// no metadata available yet
+		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(null);
+
+		// add metadata
+		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>();
+		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
+
+		// WHEN
+		replayAll();
+		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples(), null);
+
+		// THEN
+		assertOutputValue("at first sample", result, PROP_WATTS, "foobar", new BigDecimal("23.4"), null);
+
+		GeneralDatumMetadata meta = metaCaptor.getValue();
+		assertVirtalMeterMetadata("first", meta, "foobar", System.currentTimeMillis(),
+				new BigDecimal("23.4"), BigDecimal.ZERO);
 	}
 
 	@Test

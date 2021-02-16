@@ -161,6 +161,7 @@ Each virtual meter configuration contains the following settings:
 | Setting               | Description                                                                           |
 |:----------------------|:--------------------------------------------------------------------------------------|
 | Property              | The name of the instantaneous datum property to derive the virtual meter values from. |
+| Reading Property      | The name of the accumulating datum property to generate. Leave empty for a default.   |
 | Time Unit             | The time unit to record meter readings as.                                            |
 | Max Age               | The maximum time allowed between samples where the meter reading can advance.         |
 | Rolling Average Count | A count of samples to average the property value from.                                |
@@ -169,6 +170,11 @@ Each virtual meter configuration contains the following settings:
 ## Virtual meter settings notes
 
 <dl>
+	<dt>Reading Property</dt>
+	<dd>This can be used to customize the generated accumulating datum property name. If left unconfigured,
+	the accumulating datum property will be named after the Property value with the Time Unit suffix appended. 
+	For example, an instantaneous <code>irradiance</code> property using the <code>Hours</code> time unit would 
+	result in an accumulating <code>irradianceHours</code> property.</dd>
 	<dt>Time Unit</dt>
 	<dd>This value affects the name of the virtual meter reading property: it will be appended to the
 	end of the property name. It also affects the virtual meter reading values, as they will be calculated in

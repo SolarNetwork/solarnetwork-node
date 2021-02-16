@@ -232,9 +232,8 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 					|| config.getTimeUnit() == null ) {
 				continue;
 			}
-			TimeUnit timeUnit = config.getTimeUnit();
-			String tuName = timeUnit.name().substring(0, 1) + timeUnit.name().substring(1).toLowerCase();
-			String meterPropName = config.getPropertyKey() + tuName;
+			final TimeUnit timeUnit = config.getTimeUnit();
+			final String meterPropName = config.readingPropertyName();
 			if ( samples.hasSampleValue(GeneralDatumSamplesType.Accumulating, meterPropName) ) {
 				// accumulating value exists for this property already, do not overwrite
 				log.warn(
