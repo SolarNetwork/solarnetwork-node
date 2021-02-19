@@ -35,9 +35,9 @@ import net.solarnetwork.util.IntRangeSet;
  * An object to use as the "root" for {@link ExpressionService} evaluation.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
-public class ExpressionRoot {
+public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot {
 
 	/** A pattern for matching references to register numbers. */
 	public static final Pattern REGISTER_REF = Pattern.compile("regs\\[(\\d+)\\]");
@@ -70,8 +70,6 @@ public class ExpressionRoot {
 	public static final Pattern SAMPLE_RANGE_GETTER_REF = Pattern.compile(
 			"sample\\.get(?:Bytes|.*?String)\\(\\s*(\\d+?)(?:\\s*,\\s*(\\d+))?(?:\\s*,\\s*(?:true|false))?\\s*\\)");
 
-	private final GeneralNodeDatum datum;
-	private final Map<String, ?> datumProps;
 	private final ModbusData sample;
 	private final Map<Integer, Integer> sampleUnsignedData;
 
@@ -84,9 +82,7 @@ public class ExpressionRoot {
 	 *        the current Modbus sample data
 	 */
 	public ExpressionRoot(GeneralNodeDatum datum, ModbusData sample) {
-		super();
-		this.datum = datum;
-		this.datumProps = (datum != null ? datum.getSampleData() : Collections.emptyMap());
+		super(datum);
 		this.sample = sample;
 		this.sampleUnsignedData = (sample != null ? sample.getUnsignedDataMap()
 				: Collections.emptyMap());
@@ -137,24 +133,6 @@ public class ExpressionRoot {
 			}
 		}
 		return result;
-	}
-
-	/**
-	 * Get the datum.
-	 * 
-	 * @return the datum
-	 */
-	public GeneralNodeDatum getDatum() {
-		return datum;
-	}
-
-	/**
-	 * Alias for {@code datum.getSampleData()}.
-	 * 
-	 * @return the datum sample data, never {@literal null}
-	 */
-	public Map<String, ?> getProps() {
-		return datumProps;
 	}
 
 	/**

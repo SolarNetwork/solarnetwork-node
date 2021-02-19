@@ -35,6 +35,7 @@
 			<list>
 				<value>net.solarnetwork.node.datum.modbus.ModbusDatumDataSource</value>
 				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.node.domain.ExpressionConfig</value>
 				<value>net.solarnetwork.node.support.DatumDataSourceSupport</value>
 			</list>
 		</property>
