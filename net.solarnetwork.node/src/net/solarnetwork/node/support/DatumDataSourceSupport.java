@@ -326,7 +326,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * properties on a datum.
 	 * 
 	 * <p>
-	 * This method will create a new {@link ExperssionRoot} instance for the
+	 * This method will create a new {@link ExpressionRoot} instance for the
 	 * expression root object and pass that to
 	 * {@link #populateExpressionDatumProperties(GeneralNodeDatum, ExpressionConfig[], Object)}.
 	 * </p>
@@ -629,8 +629,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *        the optional {@link ExpressionService} collection to use
 	 * @since 1.3
 	 */
-	public final void setExpressionServices(
-			OptionalServiceCollection<ExpressionService> expressionServices) {
+	public void setExpressionServices(OptionalServiceCollection<ExpressionService> expressionServices) {
 		this.expressionServices = expressionServices;
 	}
 
