@@ -223,6 +223,9 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 			return;
 		}
 		insertDomainObject(datum, getSqlResource(SQL_RESOURCE_INSERT));
+		if ( log.isInfoEnabled() ) {
+			log.info("Persisting datum locally: {}", datum);
+		}
 		postDatumStoredEvent(datum);
 	}
 

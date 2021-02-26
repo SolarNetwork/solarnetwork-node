@@ -39,7 +39,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntConsumer;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
-import org.springframework.expression.ExpressionException;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.DatumDataSource;
@@ -62,14 +61,12 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.support.ExpressionService;
-import net.solarnetwork.support.ExpressionServiceExpression;
 import net.solarnetwork.support.ServiceLifecycleObserver;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.IntRange;
 import net.solarnetwork.util.IntRangeSet;
 import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.OptionalServiceCollection;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -99,9 +96,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	private long sampleCacheMs;
 	private int maxReadWordCount;
 	private ModbusPropertyConfig[] propConfigs;
-	private ExpressionConfig[] expressionConfigs;
 	private VirtualMeterConfig[] virtualMeterConfigs;
-	private OptionalServiceCollection<ExpressionService> expressionServices;
 
 	private final ModbusData sample;
 
@@ -164,7 +159,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		d.setSourceId(resolvePlaceholders(sourceId));
 		populateDatumProperties(currSample, d, propConfigs);
 		populateDatumProperties(currSample, d, virtualMeterConfigs);
-		populateDatumProperties(currSample, d, expressionConfigs);
+		populateDatumProperties(currSample, d, getExpressionConfigs());
 		d = applySamplesTransformer(d, xformProps);
 		if ( d == null ) {
 			return null;
@@ -395,42 +390,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	private void populateDatumProperties(ModbusData sample, GeneralNodeDatum d,
 			ExpressionConfig[] expressionConfs) {
-		Iterable<ExpressionService> services = (expressionServices != null
-				? expressionServices.services()
-				: null);
-		if ( services == null || expressionConfs == null || expressionConfs.length < 1 || sample == null
-				|| d == null ) {
-			return;
-		}
-		for ( ExpressionConfig config : expressionConfs ) {
-			if ( config.getName() == null || config.getName().isEmpty() || config.getExpression() == null
-					|| config.getExpression().isEmpty() ) {
-				continue;
-			}
-			final ExpressionServiceExpression expr;
-			try {
-				expr = config.getExpression(services);
-			} catch ( ExpressionException e ) {
-				log.warn("Error parsing property [{}] expression `{}`: {}", config.getName(),
-						config.getExpression(), e.getMessage());
-				return;
-			}
-
-			Object propValue = null;
-			if ( expr != null ) {
-				ExpressionRoot root = new ExpressionRoot(d, sample);
-				try {
-					propValue = expr.getService().evaluateExpression(expr.getExpression(), null, root,
-							null, Object.class);
-				} catch ( ExpressionException e ) {
-					log.warn("Error evaluating property [{}] expression `{}`: {}", config.getName(),
-							config.getExpression(), e.getMessage());
-				}
-			}
-			if ( propValue != null ) {
-				d.putSampleValue(config.getDatumPropertyType(), config.getName(), propValue);
-			}
-		}
+		populateExpressionDatumProperties(d, expressionConfs, new ExpressionRoot(d, sample));
 	}
 
 	private DatumMetadataService datumMetadataService() {
@@ -470,7 +430,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	private static Map<ModbusReadFunction, List<ModbusPropertyConfig>> getReadFunctionSets(
 			ModbusPropertyConfig[] configs) {
 		if ( configs == null ) {
-			return null;
+			return Collections.emptyMap();
 		}
 		Map<ModbusReadFunction, List<ModbusPropertyConfig>> confsByFunction = new LinkedHashMap<>(
 				configs.length);
@@ -551,8 +511,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 					}
 				}));
 
-		Iterable<ExpressionService> exprServices = (expressionServices != null
-				? expressionServices.services()
+		Iterable<ExpressionService> exprServices = (getExpressionServices() != null
+				? getExpressionServices().services()
 				: null);
 		if ( exprServices != null ) {
 			ExpressionConfig[] exprConfs = getExpressionConfigs();
@@ -634,8 +594,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 					log.debug("Reading modbus {} register ranges: {}", getUnitId(), addressRangeSet);
 					Iterable<IntRange> ranges = addressRangeSet.ranges();
 					for ( IntRange range : ranges ) {
-						for ( int start = range.getMin(), stop = start
-								+ range.length(); start < stop; ) {
+						for ( int start = range.getMin(),
+								stop = start + range.length(); start < stop; ) {
 							int len = Math.min(range.length(), maxReadLen);
 							switch (function) {
 								case ReadCoil:
@@ -669,8 +629,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 				if ( expressionRegisterSet != null ) {
 					Iterable<IntRange> ranges = expressionRegisterSet.ranges();
 					for ( IntRange range : ranges ) {
-						for ( int start = range.getMin(), stop = start
-								+ range.length(); start < stop; ) {
+						for ( int start = range.getMin(),
+								stop = start + range.length(); start < stop; ) {
 							int len = Math.min(range.length(), maxReadLen);
 							m.saveDataArray(
 									conn.readWords(ModbusReadFunction.ReadHoldingRegister, start, len),
@@ -940,8 +900,9 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 * @return the expression configurations
 	 * @since 1.5
 	 */
+	@Override
 	public ExpressionConfig[] getExpressionConfigs() {
-		return expressionConfigs;
+		return (ExpressionConfig[]) super.getExpressionConfigs();
 	}
 
 	/**
@@ -952,7 +913,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 * @since 1.5
 	 */
 	public void setExpressionConfigs(ExpressionConfig[] expressionConfigs) {
-		this.expressionConfigs = expressionConfigs;
+		super.setExpressionConfigs(expressionConfigs);
 	}
 
 	/**
@@ -961,8 +922,9 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 * @return the number of {@code expressionConfigs} elements
 	 * @since 1.5
 	 */
+	@Override
 	public int getExpressionConfigsCount() {
-		ExpressionConfig[] confs = this.expressionConfigs;
+		ExpressionConfig[] confs = getExpressionConfigs();
 		return (confs == null ? 0 : confs.length);
 	}
 
@@ -978,25 +940,10 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 *        The desired number of {@code expressionConfigs} elements.
 	 * @since 1.5
 	 */
+	@Override
 	public void setExpressionConfigsCount(int count) {
-		this.expressionConfigs = ArrayUtils.arrayWithLength(this.expressionConfigs, count,
-				ExpressionConfig.class, null);
-	}
-
-	/**
-	 * Configure an optional collection of {@link ExpressionService}.
-	 * 
-	 * <p>
-	 * Configuring these services allows expressions to be defined to calculate
-	 * dynamic datum property values at runtime.
-	 * </p>
-	 * 
-	 * @param expressionServices
-	 *        the optional {@link ExpressionService} collection to use
-	 * @since 1.5
-	 */
-	public void setExpressionServices(OptionalServiceCollection<ExpressionService> expressionServices) {
-		this.expressionServices = expressionServices;
+		setExpressionConfigs(
+				ArrayUtils.arrayWithLength(getExpressionConfigs(), count, ExpressionConfig.class, null));
 	}
 
 }

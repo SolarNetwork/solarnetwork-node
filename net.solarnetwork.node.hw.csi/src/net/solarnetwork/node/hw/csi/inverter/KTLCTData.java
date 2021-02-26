@@ -402,25 +402,25 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 
 	@Override
 	public Set<KTLCTFault0> getFaults0() {
-		Number n = getNumber(KTLCTRegister.StatusWarn);
+		Number n = getNumber(KTLCTRegister.StatusFault0);
 		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), KTLCTFault0.class) : null);
 	}
 
 	@Override
 	public Set<KTLCTFault1> getFaults1() {
-		Number n = getNumber(KTLCTRegister.StatusWarn);
+		Number n = getNumber(KTLCTRegister.StatusFault1);
 		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), KTLCTFault1.class) : null);
 	}
 
 	@Override
 	public Set<KTLCTFault2> getFaults2() {
-		Number n = getNumber(KTLCTRegister.StatusWarn);
+		Number n = getNumber(KTLCTRegister.StatusFault2);
 		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), KTLCTFault2.class) : null);
 	}
 
 	@Override
 	public Set<KTLCTPermanentFault> getPermanentFaults() {
-		Number n = getNumber(KTLCTRegister.StatusWarn);
+		Number n = getNumber(KTLCTRegister.StatusPermanentFault);
 		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), KTLCTPermanentFault.class) : null);
 	}
 

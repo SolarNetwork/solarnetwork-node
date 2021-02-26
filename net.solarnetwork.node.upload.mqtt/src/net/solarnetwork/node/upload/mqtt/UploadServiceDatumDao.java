@@ -116,11 +116,11 @@ public class UploadServiceDatumDao<T extends Datum> implements DatumDao<T> {
 					samples = xformService.transformSamples(datum, datumSamples, null);
 				}
 				if ( samples == null || samples.isEmpty() ) {
-					log.info("Samples transform service filtered out datum {} @ {}; will not persist",
+					log.debug("Samples transform service filtered out datum {} @ {}; will not persist",
 							datum.getSourceId(), datum.getCreated());
 					return;
 				} else if ( !samples.equals(datumSamples) ) {
-					log.info("Samples transform service modified datum {} @ {} properties to {}",
+					log.debug("Samples transform service modified datum {} @ {} properties to {}",
 							datum.getSourceId(), datum.getCreated(), samples.getSampleData());
 					@SuppressWarnings("unchecked")
 					T copy = (T) ((GeneralDatumSupport) datum).clone();

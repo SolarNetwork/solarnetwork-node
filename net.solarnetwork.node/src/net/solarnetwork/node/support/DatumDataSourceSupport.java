@@ -35,6 +35,7 @@ import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
+import org.springframework.expression.ExpressionException;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.domain.GeneralDatumSamples;
@@ -42,17 +43,23 @@ import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.ExpressionConfig;
+import net.solarnetwork.node.domain.ExpressionRoot;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.support.ExpressionServiceExpression;
+import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.OptionalServiceCollection;
 
 /**
  * Helper class for {@link net.solarnetwork.node.DatumDataSource} and
  * {@link net.solarnetwork.node.MultiDatumDataSource} implementations to extend.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 1.51
  */
 public class DatumDataSourceSupport extends BaseIdentifiable {
@@ -82,6 +89,8 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	private Long subSampleFrequency = null;
 	private long subSampleStartDelay = DEFAULT_SUBSAMPLE_START_DELAY;
 	private OptionalService<GeneralDatumSamplesTransformService> samplesTransformService;
+	private ExpressionConfig[] expressionConfigs;
+	private OptionalServiceCollection<ExpressionService> expressionServices;
 
 	private ScheduledFuture<?> subSampleFuture;
 
@@ -312,6 +321,80 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 		return datum;
 	}
 
+	/**
+	 * Evaluate a set of expression configurations and store the results as
+	 * properties on a datum.
+	 * 
+	 * <p>
+	 * This method will create a new {@link ExpressionRoot} instance for the
+	 * expression root object and pass that to
+	 * {@link #populateExpressionDatumProperties(GeneralNodeDatum, ExpressionConfig[], Object)}.
+	 * </p>
+	 * 
+	 * @param d
+	 *        the datum to store the results of expression evaluations on
+	 * @param expressionConfs
+	 *        the expression configurations
+	 * @see #populateExpressionDatumProperties(GeneralNodeDatum,
+	 *      ExpressionConfig[], Object)
+	 * @since 1.3
+	 */
+	protected void populateExpressionDatumProperties(final GeneralNodeDatum d,
+			final ExpressionConfig[] expressionConfs) {
+		populateExpressionDatumProperties(d, expressionConfs, new ExpressionRoot(d));
+	}
+
+	/**
+	 * Evaluate a set of expression configurations and store the results as
+	 * properties on a datum.
+	 * 
+	 * @param d
+	 *        the datum to store the results of expression evaluations on
+	 * @param expressionConfs
+	 *        the expression configurations
+	 * @param root
+	 *        the expression root object
+	 * @since 1.3
+	 */
+	protected void populateExpressionDatumProperties(final GeneralNodeDatum d,
+			final ExpressionConfig[] expressionConfs, final Object root) {
+		Iterable<ExpressionService> services = (getExpressionServices() != null
+				? getExpressionServices().services()
+				: null);
+		if ( services == null || expressionConfs == null || expressionConfs.length < 1
+				|| root == null ) {
+			return;
+		}
+		for ( ExpressionConfig config : expressionConfs ) {
+			if ( config.getName() == null || config.getName().isEmpty() || config.getExpression() == null
+					|| config.getExpression().isEmpty() ) {
+				continue;
+			}
+			final ExpressionServiceExpression expr;
+			try {
+				expr = config.getExpression(services);
+			} catch ( ExpressionException e ) {
+				log.warn("Error parsing property [{}] expression `{}`: {}", config.getName(),
+						config.getExpression(), e.getMessage());
+				return;
+			}
+
+			Object propValue = null;
+			if ( expr != null ) {
+				try {
+					propValue = expr.getService().evaluateExpression(expr.getExpression(), null, root,
+							null, Object.class);
+				} catch ( ExpressionException e ) {
+					log.warn("Error evaluating property [{}] expression `{}`: {}", config.getName(),
+							config.getExpression(), e.getMessage());
+				}
+			}
+			if ( propValue != null ) {
+				d.putSampleValue(config.getDatumPropertyType(), config.getName(), propValue);
+			}
+		}
+	}
+
 	@Override
 	public String getUID() {
 		return super.getUID();
@@ -473,6 +556,81 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	public void setSamplesTransformService(
 			OptionalService<GeneralDatumSamplesTransformService> samplesTransformService) {
 		this.samplesTransformService = samplesTransformService;
+	}
+
+	/**
+	 * Get the expression configurations.
+	 * 
+	 * @return the expression configurations
+	 * @since 1.3
+	 */
+	public ExpressionConfig[] getExpressionConfigs() {
+		return expressionConfigs;
+	}
+
+	/**
+	 * Set the expression configurations to use.
+	 * 
+	 * @param expressionConfigs
+	 *        the configs to use
+	 * @since 1.3
+	 */
+	public void setExpressionConfigs(ExpressionConfig[] expressionConfigs) {
+		this.expressionConfigs = expressionConfigs;
+	}
+
+	/**
+	 * Get the number of configured {@code expressionConfigs} elements.
+	 * 
+	 * @return the number of {@code expressionConfigs} elements
+	 * @since 1.3
+	 */
+	public int getExpressionConfigsCount() {
+		ExpressionConfig[] confs = this.expressionConfigs;
+		return (confs == null ? 0 : confs.length);
+	}
+
+	/**
+	 * Adjust the number of configured {@code ExpressionConfig} elements.
+	 * 
+	 * <p>
+	 * Any newly added element values will be set to new
+	 * {@link ExpressionConfig} instances.
+	 * </p>
+	 * 
+	 * @param count
+	 *        The desired number of {@code expressionConfigs} elements.
+	 * @since 1.5
+	 */
+	public void setExpressionConfigsCount(int count) {
+		this.expressionConfigs = ArrayUtils.arrayWithLength(this.expressionConfigs, count,
+				ExpressionConfig.class, null);
+	}
+
+	/**
+	 * Get an optional collection of {@link ExpressionService}.
+	 * 
+	 * @return the optional {@link ExpressionService} collection to use
+	 * @since 1.3
+	 */
+	public OptionalServiceCollection<ExpressionService> getExpressionServices() {
+		return expressionServices;
+	}
+
+	/**
+	 * Configure an optional collection of {@link ExpressionService}.
+	 * 
+	 * <p>
+	 * Configuring these services allows expressions to be defined to calculate
+	 * dynamic datum property values at runtime.
+	 * </p>
+	 * 
+	 * @param expressionServices
+	 *        the optional {@link ExpressionService} collection to use
+	 * @since 1.3
+	 */
+	public void setExpressionServices(OptionalServiceCollection<ExpressionService> expressionServices) {
+		this.expressionServices = expressionServices;
 	}
 
 }

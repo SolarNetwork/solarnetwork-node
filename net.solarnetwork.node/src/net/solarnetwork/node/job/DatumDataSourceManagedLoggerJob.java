@@ -84,7 +84,7 @@ public class DatumDataSourceManagedLoggerJob<T extends Datum> extends AbstractJo
 		if ( datum != null ) {
 			persistDatum(Collections.singleton(datum));
 		} else {
-			log.info("No data returned from [{}]", datumDataSource);
+			log.debug("No data returned from [{}]", datumDataSource);
 		}
 	}
 
@@ -97,7 +97,7 @@ public class DatumDataSourceManagedLoggerJob<T extends Datum> extends AbstractJo
 		if ( datum != null && datum.size() > 0 ) {
 			persistDatum(datum);
 		} else {
-			log.info("No data returned from [{}]", multiDatumDataSource);
+			log.debug("No data returned from [{}]", multiDatumDataSource);
 		}
 	}
 
@@ -127,8 +127,8 @@ public class DatumDataSourceManagedLoggerJob<T extends Datum> extends AbstractJo
 		if ( datumList == null || datumList.size() < 1 ) {
 			return;
 		}
-		if ( log.isInfoEnabled() ) {
-			log.info("Got Datum to persist: {}",
+		if ( log.isDebugEnabled() ) {
+			log.debug("Got Datum to persist: {}",
 					(datumList.size() == 1 ? datumList.iterator().next().toString()
 							: datumList.toString()));
 		}

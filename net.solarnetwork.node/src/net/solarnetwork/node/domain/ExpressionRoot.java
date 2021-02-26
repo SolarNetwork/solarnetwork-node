@@ -1,7 +1,7 @@
 /* ==================================================================
- * DatumMetadataService.java - Oct 6, 2014 12:17:53 PM
+ * ExpressionRoot.java - 20/02/2019 10:21:55 am
  * 
- * Copyright 2007-2014 SolarNetwork.net Dev Team
+ * Copyright 2019 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -20,38 +20,52 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node;
+package net.solarnetwork.node.domain;
 
-import net.solarnetwork.domain.GeneralDatumMetadata;
+import java.util.Collections;
+import java.util.Map;
 
 /**
- * API for manipulating {@link GeneralDatumMetadata} associated with a datum
- * source.
+ * An object to use as the "root" for
+ * {@link net.solarnetwork.support.ExpressionService} evaluation.
  * 
  * @author matt
  * @version 1.0
+ * @since 1.79
  */
-public interface DatumMetadataService {
+public class ExpressionRoot {
+
+	private final GeneralNodeDatum datum;
+	private final Map<String, ?> datumProps;
 
 	/**
-	 * Add metadata to a specific source. If metadata already exists for the
-	 * given source, the values will be merged such that tags are only added and
-	 * only new info values will be added.
+	 * Constructor.
 	 * 
-	 * @param sourceId
-	 *        the source ID to add to
-	 * @param meta
-	 *        the metadata to add
+	 * @param datum
+	 *        the datum currently being populated
 	 */
-	void addSourceMetadata(String sourceId, GeneralDatumMetadata meta);
+	public ExpressionRoot(GeneralNodeDatum datum) {
+		super();
+		this.datum = datum;
+		this.datumProps = (datum != null ? datum.getSampleData() : Collections.emptyMap());
+	}
 
 	/**
-	 * Find datum metadata for a given source.
+	 * Get the datum.
 	 * 
-	 * @param sourceId
-	 *        the sourceId to get the metadta for
-	 * @return the metadata, or {@literal null} if none available
+	 * @return the datum
 	 */
-	GeneralDatumMetadata getSourceMetadata(String sourceId);
+	public GeneralNodeDatum getDatum() {
+		return datum;
+	}
+
+	/**
+	 * Alias for {@code datum.getSampleData()}.
+	 * 
+	 * @return the datum sample data, never {@literal null}
+	 */
+	public Map<String, ?> getProps() {
+		return datumProps;
+	}
 
 }

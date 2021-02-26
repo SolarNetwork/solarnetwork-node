@@ -24,7 +24,9 @@ package net.solarnetwork.node.datum.deson.sdm;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -34,6 +36,7 @@ import org.joda.time.format.DateTimeFormat;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.ExpressionConfig;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.hw.deson.meter.SDMData;
 import net.solarnetwork.node.hw.deson.meter.SDMDeviceType;
@@ -41,10 +44,14 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.node.support.DatumDataSourceSupport;
+import net.solarnetwork.support.ExpressionService;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -52,7 +59,7 @@ import net.solarnetwork.util.StringUtils;
  * with the SDM series watt meter.
  * 
  * @author matt
- * @version 2.23
+ * @version 2.4
  */
 public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData>
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
@@ -157,6 +164,7 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 		if ( isCaptureTotal() || postCapturedEvent ) {
 			SDMDatum d = new SDMDatum(currSample, ACPhase.Total, backwards);
 			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.Total)));
+			populateExpressionDatumProperties(d, getExpressionConfigs());
 			if ( postCapturedEvent ) {
 				// we read from the meter
 				postDatumCapturedEvent(d);
@@ -168,6 +176,7 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 		if ( currSample.supportsPhase(ACPhase.PhaseA) && (isCapturePhaseA() || postCapturedEvent) ) {
 			SDMDatum d = new SDMDatum(currSample, ACPhase.PhaseA, backwards);
 			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseA)));
+			populateExpressionDatumProperties(d, getExpressionConfigs());
 			if ( postCapturedEvent ) {
 				// we read from the meter
 				postDatumCapturedEvent(d);
@@ -179,6 +188,7 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 		if ( currSample.supportsPhase(ACPhase.PhaseB) && (isCapturePhaseB() || postCapturedEvent) ) {
 			SDMDatum d = new SDMDatum(currSample, ACPhase.PhaseB, backwards);
 			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseB)));
+			populateExpressionDatumProperties(d, getExpressionConfigs());
 			if ( postCapturedEvent ) {
 				// we read from the meter
 				postDatumCapturedEvent(d);
@@ -190,6 +200,7 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 		if ( currSample.supportsPhase(ACPhase.PhaseC) && (isCapturePhaseC() || postCapturedEvent) ) {
 			SDMDatum d = new SDMDatum(currSample, ACPhase.PhaseC, backwards);
 			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseC)));
+			populateExpressionDatumProperties(d, getExpressionConfigs());
 			if ( postCapturedEvent ) {
 				// we read from the meter
 				postDatumCapturedEvent(d);
@@ -263,6 +274,27 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 		results.add(new BasicTextFieldSettingSpecifier("sourceMappingValue",
 				defaults.getSourceMappingValue()));
 		results.add(new BasicToggleSettingSpecifier("backwards", Boolean.valueOf(defaults.backwards)));
+
+		Iterable<ExpressionService> exprServices = (getExpressionServices() != null
+				? getExpressionServices().services()
+				: null);
+		if ( exprServices != null ) {
+			ExpressionConfig[] exprConfs = getExpressionConfigs();
+			List<ExpressionConfig> exprConfsList = (exprConfs != null ? Arrays.asList(exprConfs)
+					: Collections.<ExpressionConfig> emptyList());
+			results.add(SettingsUtil.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
+					new SettingsUtil.KeyedListCallback<ExpressionConfig>() {
+
+						@Override
+						public Collection<SettingSpecifier> mapListSettingKey(ExpressionConfig value,
+								int index, String key) {
+							BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
+									ExpressionConfig.settings(DatumDataSourceSupport.class, key + ".",
+											exprServices));
+							return Collections.<SettingSpecifier> singletonList(configGroup);
+						}
+					}));
+		}
 
 		return results;
 	}

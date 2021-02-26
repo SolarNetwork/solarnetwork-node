@@ -42,19 +42,22 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.77
  */
 public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInteger> {
 
 	private TimeUnit timeUnit = TimeUnit.HOURS;
 	private long maxAgeSeconds = TimeUnit.HOURS.toSeconds(1);
+	private int rollingAverageCount = 0;
+	private String readingPropertyName = null;
 
 	public static List<SettingSpecifier> settings(String prefix, String meterReading) {
 		VirtualMeterConfig defaults = new VirtualMeterConfig();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>();
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "name", ""));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "readingPropertyName", null));
 
 		// drop-down menu for timeUnit
 		BasicMultiValueSettingSpecifier timeUnitSpec = new BasicMultiValueSettingSpecifier(
@@ -70,10 +73,37 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxAgeSeconds",
 				String.valueOf(defaults.maxAgeSeconds)));
 
+		results.add(
+				new BasicTextFieldSettingSpecifier(prefix + "rollingAverageCount", String.valueOf(0)));
+
 		// meter reading has "live" data, not static default
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "meterReading", meterReading));
 
 		return results;
+	}
+
+	/**
+	 * Get the reading property name to use.
+	 * 
+	 * <p>
+	 * This will return {@link #getReadingPropertyName()} if not empty.
+	 * Otherwise a name derived from {@link #getPropertyKey()} with
+	 * {@link #getTimeUnit()} appended will be used. The time unit will be
+	 * formatted as a capitalized word, for example {@link TimeUnit#HOURS}
+	 * becomes {@literal Hours}.
+	 * </p>
+	 * 
+	 * @return the reading property name to use
+	 * @since 1.1
+	 */
+	public String readingPropertyName() {
+		String name = getReadingPropertyName();
+		if ( name == null || name.isEmpty() ) {
+			TimeUnit timeUnit = getTimeUnit();
+			String tuName = timeUnit.name().substring(0, 1) + timeUnit.name().substring(1).toLowerCase();
+			name = getPropertyKey() + tuName;
+		}
+		return name;
 	}
 
 	/**
@@ -236,6 +266,55 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 	 */
 	public void setMaxAgeSeconds(long maxAgeSeconds) {
 		this.maxAgeSeconds = maxAgeSeconds;
+	}
+
+	/**
+	 * Get the instantaneous rolling average sample count.
+	 * 
+	 * @return the count; defaults to {@code 0}
+	 * @since 1.1
+	 */
+	public int getRollingAverageCount() {
+		return rollingAverageCount;
+	}
+
+	/**
+	 * Set the instantaneous rolling average sample count.
+	 * 
+	 * <p>
+	 * When set to something greater than {@literal 1}, then apply a rolling
+	 * average of this many instantaneous property samples to the transformed
+	 * output value. This has the effect of smoothing the instantaneous values
+	 * to an average over the time period leading into each output sample.
+	 * </p>
+	 * 
+	 * @param rollingAverageCount
+	 *        the count to set
+	 * @since 1.1
+	 */
+	public void setRollingAverageCount(int rollingAverageCount) {
+		this.rollingAverageCount = rollingAverageCount;
+	}
+
+	/**
+	 * Get the accumulating property name to use.
+	 * 
+	 * @return the name, or {@literal null} to use a standard name
+	 * @since 1.1
+	 */
+	public String getReadingPropertyName() {
+		return readingPropertyName;
+	}
+
+	/**
+	 * Set the accumulating property name to use.
+	 * 
+	 * @param readingPropertyName
+	 *        the name to set, or {@literal null} to use a standard name
+	 * @since 1.1
+	 */
+	public void setReadingPropertyName(String readingPropertyName) {
+		this.readingPropertyName = readingPropertyName;
 	}
 
 }
