@@ -27,6 +27,7 @@ import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import java.io.BufferedReader;
@@ -82,15 +83,23 @@ public class KTLCTDataTests {
 	private final KTLCTData data = new KTLCTData();
 
 	@Before
-	public void setup() throws IOException {
-		data.performUpdates(new ModbusDataUpdateAction() {
+	public void setup() {
+		setupData(TEST_DATA);
+	}
 
-			@Override
-			public boolean updateModbusData(MutableModbusData m) {
-				m.saveDataMap(TEST_DATA);
-				return true;
-			}
-		});
+	private void setupData(Map<Integer, Integer> dataMap) {
+		try {
+			data.performUpdates(new ModbusDataUpdateAction() {
+
+				@Override
+				public boolean updateModbusData(MutableModbusData m) {
+					m.saveDataMap(dataMap);
+					return true;
+				}
+			});
+		} catch ( IOException e ) {
+			throw new RuntimeException("Error loading data " + dataMap, e);
+		}
 	}
 
 	@Test
@@ -237,5 +246,15 @@ public class KTLCTDataTests {
 		// then
 
 		verify(conn);
+	}
+
+	@Test
+	public void readPermananentFault() throws IOException {
+		// GIVEN
+		setupData(parseTestData("data-02.txt"));
+
+		// THEN
+		assertThat(data.getWorkMode(), equalTo(KTLCTInverterWorkMode.Fault));
+		assertThat(data.getPermanentFaults(), containsInAnyOrder(KTLCTPermanentFault.Fault0110));
 	}
 }
