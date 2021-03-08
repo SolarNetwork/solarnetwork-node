@@ -96,7 +96,7 @@ public abstract class ConfigurableWeatherUndergroundClientService<T extends Datu
 	}
 
 	/**
-	 * Alias for {@link @getUID()}.
+	 * Alias for {@link #getUID()}.
 	 * 
 	 * @return the UID
 	 */
