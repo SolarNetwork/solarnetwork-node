@@ -22,10 +22,10 @@
 
 package net.solarnetwork.node.weather.wu;
 
-import static net.solarnetwork.util.JsonNodeUtils.parseBigDecimalAttribute;
-import static net.solarnetwork.util.JsonNodeUtils.parseIntegerAttribute;
-import static net.solarnetwork.util.JsonNodeUtils.parseLongAttribute;
-import static net.solarnetwork.util.JsonNodeUtils.parseStringAttribute;
+import static net.solarnetwork.util.JsonUtils.parseBigDecimalAttribute;
+import static net.solarnetwork.util.JsonUtils.parseIntegerAttribute;
+import static net.solarnetwork.util.JsonUtils.parseLongAttribute;
+import static net.solarnetwork.util.JsonUtils.parseStringAttribute;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;

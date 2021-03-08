@@ -22,17 +22,19 @@
 
 package net.solarnetwork.node.weather.wu;
 
-import net.solarnetwork.domain.BasicLocation;
 import net.solarnetwork.domain.Location;
+import net.solarnetwork.domain.SimpleLocation;
 
 /**
  * Basic implementation of {@link WeatherUndergroundLocation}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class BasicWeatherUndergroundLocation extends BasicLocation
+public class BasicWeatherUndergroundLocation extends SimpleLocation
 		implements WeatherUndergroundLocation {
+
+	private static final long serialVersionUID = -7816265519353984983L;
 
 	private String identifier;
 
