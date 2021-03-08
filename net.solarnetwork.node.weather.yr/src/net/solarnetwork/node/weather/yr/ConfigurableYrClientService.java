@@ -79,7 +79,7 @@ public abstract class ConfigurableYrClientService<T extends Datum> implements Id
 	}
 
 	/**
-	 * Alias for {@link @getUID()}.
+	 * Alias for {@link #getUID()}.
 	 * 
 	 * @return the UID
 	 */
