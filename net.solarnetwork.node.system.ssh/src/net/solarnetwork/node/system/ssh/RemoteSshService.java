@@ -100,7 +100,7 @@ import net.solarnetwork.util.StringUtils;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class RemoteSshService
 		implements FeedbackInstructionHandler, SettingSpecifierProvider, CloseableService {
@@ -229,20 +229,21 @@ public class RemoteSshService
 		configs.addAll(osConfigs);
 	}
 
-	private void publishSshPublicKey() {
+	private boolean publishSshPublicKey() {
 		String publicKey = getSshPublicKey();
 		if ( publicKey == null || publicKey.length() < 1 ) {
-			return;
+			return false;
 		}
 		NodeMetadataService service = (nodeMetadataService != null ? nodeMetadataService.service()
 				: null);
 		if ( service == null ) {
 			log.debug("Cannot publish SSH public key because no NodeMetadataService available.");
-			return;
+			return false;
 		}
 		GeneralDatumMetadata meta = new GeneralDatumMetadata();
 		meta.putInfoValue(METADATA_SSH_PUBLIC_KEY, publicKey);
 		service.addNodeMetadata(meta);
+		return true;
 	}
 
 	@Override
@@ -263,9 +264,14 @@ public class RemoteSshService
 		if ( instruction != null ) {
 			if ( TOPIC_START_REMOTE_SSH.equalsIgnoreCase(instruction.getTopic()) ) {
 				// make sure current public key is published, in case it has changed
-				publishSshPublicKey();
+				boolean published = publishSshPublicKey();
 
 				result = handleStartRemoteSsh(instruction);
+				if ( result != null && result.getInstructionState() == InstructionState.Completed
+						&& !published ) {
+					// try again; the SSH key might have been generated when the service started
+					publishSshPublicKey();
+				}
 			} else if ( TOPIC_STOP_REMOTE_SSH.equalsIgnoreCase(instruction.getTopic()) ) {
 				result = handleStopRemoteSsh(instruction);
 			}
@@ -440,9 +446,10 @@ public class RemoteSshService
 			}
 			String err = FileCopyUtils.copyToString(new InputStreamReader(pr.getErrorStream()));
 			if ( err.length() > 0 ) {
-				log.error("Error getting SSH public key: {}", err);
+				log.warn("Error getting SSH public key: {}", err);
+			} else {
+				log.debug("Public SSH key: {}", key);
 			}
-			log.debug("Public SSH key: {}", key);
 			return key;
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
