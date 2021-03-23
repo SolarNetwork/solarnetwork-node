@@ -77,11 +77,16 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 		Map<String, Object> result = new LinkedHashMap<>(4);
 		Integer model = data.getModel();
 		if ( model != null ) {
+			String modelName = model.toString();
+			UnitFactor uf = getUnitFactor();
+			if ( uf != null ) {
+				modelName = uf.getDisplayName();
+			}
 			String version = data.getHardwareRevision();
 			if ( version != null ) {
-				result.put(INFO_KEY_DEVICE_MODEL, String.format("%s (version %s)", model, version));
+				result.put(INFO_KEY_DEVICE_MODEL, String.format("%s (version %s)", modelName, version));
 			} else {
-				result.put(INFO_KEY_DEVICE_MODEL, model.toString());
+				result.put(INFO_KEY_DEVICE_MODEL, modelName);
 			}
 		}
 		String sn = data.getSerialNumber();
@@ -215,6 +220,21 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 	public final void readConfigurationData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister, EM5600Register.getRegisterAddressSet(),
 				MAX_RESULTS);
+		final int model = getModel();
+		switch (model) {
+			case 5630:
+				// TODO: how tell if EM5630_5A?
+				// For now, change to 5630_30A if currently set to 5610 which is the default
+				if ( unitFactor == UnitFactor.EM5610 ) {
+					setUnitFactor(UnitFactor.EM5630_30A);
+				}
+				break;
+
+			default:
+				setUnitFactor(UnitFactor.EM5610);
+				break;
+
+		}
 	}
 
 	/**
