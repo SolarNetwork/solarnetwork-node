@@ -35,7 +35,7 @@ The SolarNode settings CSV format uses a quite general format and contains the f
 | # | Name | Description |
 |:--|:-----|:------------|
 | 1 | key  | A unique identifier for the service the setting applies to. |
-| 2 | type | A unique identifier for the setting with the service specified by `key`. |
+| 2 | type | A unique identifier for the setting with the service specified by `key`, typically using [standard property syntax](#setting-property-syntax). |
 | 3 | value | The setting value. |
 | 4 | flags | An integer bitmask of flags associated with the setting. See the [flags section](#settings-flags) for more info. |
 | 5 | modified | The date the setting was last modified, in `yyyy-MM-dd HH:mm:ss` format. |
