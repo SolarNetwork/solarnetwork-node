@@ -141,7 +141,7 @@ configured, SolarNode will generate an extra status datum property named like **
 `Label` appended. For example, here are two value labels configured for values `0` and `1`
 with labels `Normal` and `Broken`, respectively:
 
-![Value label settings](#docs/solarnode-canbus-device-message-property-value-label-settings.png)
+![Value label settings](docs/solarnode-canbus-device-message-property-value-label-settings.png)
 
 Assuming the associated **Property** setting is configured as `state`, then when the captured
 property value matches `1` a `stateLabel` property would also be populated with a value `Broken`:
