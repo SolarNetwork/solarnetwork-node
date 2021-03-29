@@ -25,6 +25,7 @@ package net.solarnetwork.node.datum.canbus;
 import static java.util.Arrays.asList;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -40,7 +41,11 @@ import net.solarnetwork.domain.ByteOrdering;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.io.canbus.KcdParser;
+import net.solarnetwork.node.io.canbus.kcd.BasicLabelType;
 import net.solarnetwork.node.io.canbus.kcd.BusType;
+import net.solarnetwork.node.io.canbus.kcd.LabelGroupType;
+import net.solarnetwork.node.io.canbus.kcd.LabelSetType;
+import net.solarnetwork.node.io.canbus.kcd.LabelType;
 import net.solarnetwork.node.io.canbus.kcd.MessageType;
 import net.solarnetwork.node.io.canbus.kcd.NetworkDefinitionType;
 import net.solarnetwork.node.io.canbus.kcd.NodeRefType;
@@ -67,7 +72,7 @@ import net.solarnetwork.util.StringUtils;
  * resource.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class KcdConfigurer extends BaseIdentifiable
 		implements SettingSpecifierProvider, SettingResourceHandler {
@@ -384,6 +389,24 @@ public class KcdConfigurer extends BaseIdentifiable
 								propConfig.setDataType(BitDataType.Float32);
 							} else if ( "double".equalsIgnoreCase(val.getType()) ) {
 								propConfig.setDataType(BitDataType.Float64);
+							}
+
+							LabelSetType labelSet = signal.getLabelSet();
+							if ( labelSet != null && labelSet.getLabelOrLabelGroup() != null ) {
+								for ( BasicLabelType label : labelSet.getLabelOrLabelGroup() ) {
+									if ( label instanceof LabelGroupType ) {
+										LabelGroupType group = (LabelGroupType) label;
+										BigInteger k = group.getFrom();
+										BigInteger to = group.getTo();
+										while ( k.compareTo(to) <= 0 ) {
+											propConfig.putValueLabel(k, group.getName());
+											k = k.add(BigInteger.ONE);
+										}
+									} else if ( label instanceof LabelType ) {
+										LabelType l = (LabelType) label;
+										propConfig.putValueLabel(l.getValue(), l.getName());
+									}
+								}
 							}
 
 							KeyValuePair[] names = signal.getLocalizedName().stream()

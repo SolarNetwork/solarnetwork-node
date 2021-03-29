@@ -131,7 +131,27 @@ Each property configuration contains the following overall settings:
 | Multiplier      | A multiplication factor to transform data values into normalized units. In CAN this is often referred to as the **slope**, represented by `m` in the linear equation `y = mx + b`. Set to `1` for no multiplier. |
 | Offset          | An offset to transform data values into normalized units. This is applied **after** the **Multiplier**, represented by `b` in the linear equation `y = mx + b`. Set to `0` for no offset. |
 | Decimal Scale   | A maximum scale (number of digits after the decimal point) to round decimal values to. This is applied after all transforms. Set to `0` to round to whole numbers. Set to `-1` to disable rounding. |
+| Value Labels    | An optional list of labels to associate with specific property values. |
 | Localized Names | An optional list of localized names to publish with the metadata for the device. |
+
+## Value labels
+
+Value labels allow you to configure descriptive labels with specific property values. When 
+configured, SolarNode will generate an extra status datum property named like **Property** with
+`Label` appended. For example, here are two value labels configured for values `0` and `1`
+with labels `Normal` and `Broken`, respectively:
+
+![Value label settings](#docs/solarnode-canbus-device-message-property-value-label-settings.png)
+
+Assuming the associated **Property** setting is configured as `state`, then when the captured
+property value matches `1` a `stateLabel` property would also be populated with a value `Broken`:
+
+```json
+{
+  "state"      : 1,
+  "stateLabel" : "Broken"
+}
+```
 
 # Datum metadata
 

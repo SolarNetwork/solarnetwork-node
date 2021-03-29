@@ -53,7 +53,7 @@ import net.solarnetwork.util.ArrayUtils;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Integer>
 		implements CanbusSignalReference {
@@ -74,6 +74,7 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	private String normalizedUnit;
 	private int bitLength = DEFAULT_BIT_LENGTH;
 	private KeyValuePair[] localizedNames;
+	private KeyValuePair[] valueLabels;
 
 	/**
 	 * Default constructor.
@@ -169,6 +170,25 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "decimalScale",
 				String.valueOf(DEFAULT_DECIMAL_SCALE)));
 
+		// value labels list
+		KeyValuePair[] labels = getValueLabels();
+		List<KeyValuePair> labelsList = (labels != null ? Arrays.asList(labels)
+				: Collections.<KeyValuePair> emptyList());
+		results.add(SettingsUtil.dynamicListSettingSpecifier(prefix + "valueLabels", labelsList,
+				new SettingsUtil.KeyedListCallback<KeyValuePair>() {
+
+					@Override
+					public Collection<SettingSpecifier> mapListSettingKey(KeyValuePair value, int index,
+							String key) {
+						List<SettingSpecifier> labelSettings = new ArrayList<>(2);
+						labelSettings.add(new BasicTextFieldSettingSpecifier(key + ".key", ""));
+						labelSettings.add(new BasicTextFieldSettingSpecifier(key + ".value", ""));
+						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
+								labelSettings);
+						return Collections.<SettingSpecifier> singletonList(configGroup);
+					}
+				}));
+
 		// localized names list
 		KeyValuePair[] names = getLocalizedNames();
 		List<KeyValuePair> namesList = (names != null ? Arrays.asList(names)
@@ -227,8 +247,19 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 		settings.add(new SettingValueBean(providerId, instanceId, prefix + "decimalScale",
 				String.valueOf(getDecimalScale())));
 
+		KeyValuePair[] labels = getValueLabels();
+		int len = (labels != null ? labels.length : 0);
+		settings.add(new SettingValueBean(providerId, instanceId, prefix + "valueLabelsCount",
+				String.valueOf(len)));
+		for ( int i = 0; i < len; i++ ) {
+			settings.add(new SettingValueBean(providerId, instanceId,
+					prefix + "valueLabels[" + i + "].key", labels[i].getKey()));
+			settings.add(new SettingValueBean(providerId, instanceId,
+					prefix + "valueLabels[" + i + "].value", labels[i].getValue()));
+		}
+
 		KeyValuePair[] names = getLocalizedNames();
-		int len = (names != null ? names.length : 0);
+		len = (names != null ? names.length : 0);
 		settings.add(new SettingValueBean(providerId, instanceId, prefix + "localizedNamesCount",
 				String.valueOf(len)));
 		for ( int i = 0; i < len; i++ ) {
@@ -439,7 +470,7 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 * @return the number of {@code localizedNames} elements
 	 */
 	public int getLocalizedNamesCount() {
-		KeyValuePair[] names = this.localizedNames;
+		KeyValuePair[] names = getLocalizedNames();
 		return (names == null ? 0 : names.length);
 	}
 
@@ -455,8 +486,8 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 *        The desired number of {@code localizedNames} elements.
 	 */
 	public void setLocalizedNamesCount(int count) {
-		this.localizedNames = ArrayUtils.arrayWithLength(this.localizedNames, count, KeyValuePair.class,
-				null);
+		setLocalizedNames(
+				ArrayUtils.arrayWithLength(this.localizedNames, count, KeyValuePair.class, null));
 	}
 
 	/**
@@ -501,6 +532,115 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 */
 	public void setParent(CanbusMessageConfig parent) {
 		this.parent = parent;
+	}
+
+	/**
+	 * Get the value labels.
+	 * 
+	 * <p>
+	 * The {@code key} of each pair is a value. The {@code value} is the
+	 * associated label to use for that value.
+	 * </p>
+	 * 
+	 * @return the labels
+	 * @since 1.1
+	 */
+	public KeyValuePair[] getValueLabels() {
+		return valueLabels;
+	}
+
+	/**
+	 * Set the value labels.
+	 * 
+	 * @param valueLabels
+	 *        the labels to use
+	 * @since 1.1
+	 */
+	public void setValueLabels(KeyValuePair[] valueLabels) {
+		this.valueLabels = valueLabels;
+	}
+
+	/**
+	 * Get the number of configured {@code valueLables} elements.
+	 * 
+	 * @return the number of {@code valueLables} elements
+	 * @since 1.1
+	 */
+	public int getValueLabelsCount() {
+		KeyValuePair[] labels = getValueLabels();
+		return (labels == null ? 0 : labels.length);
+	}
+
+	/**
+	 * Adjust the number of configured {@code valueLables} elements.
+	 * 
+	 * <p>
+	 * Any newly added element values will be set to new {@link KeyValuePair}
+	 * instances.
+	 * </p>
+	 * 
+	 * @param count
+	 *        The desired number of {@code valueLables} elements.
+	 * @since 1.1
+	 */
+	public void setValueLabelsCount(int count) {
+		setValueLabels(ArrayUtils.arrayWithLength(getValueLabels(), count, KeyValuePair.class, null));
+	}
+
+	/**
+	 * Get a mapping of values with associated labels.
+	 * 
+	 * <p>
+	 * This turns the {@code valueLabels} array into a {@code Map} of values
+	 * with associated labels. Duplicate values are ignored.
+	 * </p>
+	 * 
+	 * @return a mapping of value labels, never {@literal null}
+	 */
+	public Map<String, String> getValueLabelsMap() {
+		KeyValuePair[] names = getValueLabels();
+		if ( names == null || names.length < 1 ) {
+			return Collections.emptyMap();
+		}
+		return Arrays.stream(names)
+				.collect(toMap(KeyValuePair::getKey, KeyValuePair::getValue, (l, r) -> l));
+	}
+
+	/**
+	 * Store a value label mapping.
+	 * 
+	 * <p>
+	 * No mapping will be stored if either {@code value} or {@code label} are
+	 * {@literal null}.
+	 * </p>
+	 * 
+	 * @param value
+	 *        the value
+	 * @param label
+	 *        the label
+	 * @since 1.1
+	 */
+	public void putValueLabel(Object value, String label) {
+		if ( value == null || label == null ) {
+			return;
+		}
+		KeyValuePair[] labels = getValueLabels();
+		String valueString = value.toString();
+		if ( labels != null ) {
+			for ( KeyValuePair kv : labels ) {
+				if ( valueString.equals(kv.getKey()) ) {
+					kv.setValue(label);
+					return;
+				}
+			}
+		}
+		KeyValuePair[] newLabels = new KeyValuePair[(labels != null ? labels.length : 0) + 1];
+		if ( labels != null ) {
+			System.arraycopy(labels, 0, newLabels, 0, labels.length);
+		}
+		KeyValuePair kv = new KeyValuePair(valueString, label);
+		newLabels[newLabels.length - 1] = kv;
+		setValueLabels(newLabels);
 	}
 
 }
