@@ -27,12 +27,14 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
@@ -250,185 +252,190 @@ public class KcdConfigurer extends BaseIdentifiable
 						}
 
 						ProducerType producer = message.getProducer();
-						List<NodeRefType> nodeRefs = (producer != null ? producer.getNodeRef() : null);
-						NodeType node = (nodeRefs != null
+						List<NodeRefType> nodeRefs = (producer != null ? producer.getNodeRef()
+								: Collections.emptyList());
+						List<NodeType> resolvedNodes = (nodeRefs != null
 								? nodeRefs.stream().map(r -> r.getId())
 										.filter(s -> s != null && nodeMap.containsKey(s))
-										.map(s -> nodeMap.get(s)).findFirst().orElse(null)
+										.map(s -> nodeMap.get(s)).collect(Collectors.toList())
 								: null);
-						if ( node == null ) {
+						if ( resolvedNodes.isEmpty() ) {
 							parseMessages.add(getMessageSource().getMessage("message.noProducer",
 									new Object[] { bus.getName(), message.getId() }, locale));
 							log.warn("Bus [{}] Message [{}] has no producer node reference, skipping.",
 									bus.getName(), message.getId());
 							continue;
 						}
-
-						DatumDataSourceConfig dsConfig = sourceMessageConfigMap.get(node.getSourceId());
-						if ( dsConfig.busName == null ) {
-							// take bus name from first message for this data source
-							dsConfig.busName = bus.getName();
-						}
-						List<CanbusMessageConfig> msgConfigs = dsConfig.messageConfigs;
-
-						CanbusMessageConfig msgConfig = new CanbusMessageConfig();
-						msgConfig.setAddress(address);
-						msgConfig.setName(message.getName());
-						msgConfig.setInterval(message.getInterval());
-
-						List<SignalType> signals = message.getSignal();
-						List<CanbusPropertyConfig> propConfigs = new ArrayList<>();
-						for ( SignalType signal : signals ) {
-							// always set this; assuming all the same but if not the last message value wins
-							msgConfig.setByteOrdering("little".equalsIgnoreCase(signal.getEndianess())
-									? ByteOrdering.LittleEndian
-									: ByteOrdering.BigEndian);
-							if ( signal.getDatumProperty() == null
-									|| signal.getDatumProperty().isEmpty() ) {
-								parseMessages.add(getMessageSource().getMessage("signal.noDatumProperty",
-										new Object[] { bus.getName(), message.getId(),
-												signal.getName() },
-										locale));
-								log.info(
-										"Bus [{}] Message [{}] Signal [{}] has no datum property name; skipping",
-										bus.getName(), message.getId(), signal.getName());
-								continue;
+						for ( NodeType node : resolvedNodes ) {
+							DatumDataSourceConfig dsConfig = sourceMessageConfigMap
+									.get(node.getSourceId());
+							if ( dsConfig.busName == null ) {
+								// take bus name from first message for this data source
+								dsConfig.busName = bus.getName();
 							}
-							GeneralDatumSamplesType datumPropType = GeneralDatumSamplesType.Instantaneous;
-							if ( signal.getDatumPropertyClassification() != null
-									&& !signal.getDatumPropertyClassification().isEmpty() ) {
-								try {
-									datumPropType = GeneralDatumSamplesType
-											.valueOf(signal.getDatumPropertyClassification().charAt(0));
-								} catch ( IllegalArgumentException e ) {
-									parseMessages.add(getMessageSource().getMessage(
-											"signal.badDatumPropertyClass",
-											new Object[] { bus.getName(), message.getId(),
-													signal.getName(),
-													signal.getDatumPropertyClassification() },
-											locale));
+							List<CanbusMessageConfig> msgConfigs = dsConfig.messageConfigs;
+
+							CanbusMessageConfig msgConfig = new CanbusMessageConfig();
+							msgConfig.setAddress(address);
+							msgConfig.setName(message.getName());
+							msgConfig.setInterval(message.getInterval());
+
+							List<SignalType> signals = message.getSignal();
+							List<CanbusPropertyConfig> propConfigs = new ArrayList<>();
+							for ( SignalType signal : signals ) {
+								// always set this; assuming all the same but if not the last message value wins
+								msgConfig
+										.setByteOrdering("little".equalsIgnoreCase(signal.getEndianess())
+												? ByteOrdering.LittleEndian
+												: ByteOrdering.BigEndian);
+								if ( signal.getDatumProperty() == null
+										|| signal.getDatumProperty().isEmpty() ) {
+									parseMessages
+											.add(getMessageSource()
+													.getMessage("signal.noDatumProperty",
+															new Object[] { bus.getName(),
+																	message.getId(), signal.getName() },
+															locale));
 									log.info(
-											"Bus [{}] Message [{}] Signal [{}] has invalid datum property classification [{}]; skipping",
-											bus.getName(), message.getId(), signal.getName(),
-											signal.getDatumPropertyClassification());
+											"Bus [{}] Message [{}] Signal [{}] has no datum property name; skipping",
+											bus.getName(), message.getId(), signal.getName());
 									continue;
 								}
+								GeneralDatumSamplesType datumPropType = GeneralDatumSamplesType.Instantaneous;
+								if ( signal.getDatumPropertyClassification() != null
+										&& !signal.getDatumPropertyClassification().isEmpty() ) {
+									try {
+										datumPropType = GeneralDatumSamplesType.valueOf(
+												signal.getDatumPropertyClassification().charAt(0));
+									} catch ( IllegalArgumentException e ) {
+										parseMessages.add(getMessageSource().getMessage(
+												"signal.badDatumPropertyClass",
+												new Object[] { bus.getName(), message.getId(),
+														signal.getName(),
+														signal.getDatumPropertyClassification() },
+												locale));
+										log.info(
+												"Bus [{}] Message [{}] Signal [{}] has invalid datum property classification [{}]; skipping",
+												bus.getName(), message.getId(), signal.getName(),
+												signal.getDatumPropertyClassification());
+										continue;
+									}
+								}
+
+								CanbusPropertyConfig propConfig = new CanbusPropertyConfig(
+										signal.getDatumProperty(), datumPropType, signal.getOffset());
+								propConfig.setBitLength(signal.getLength());
+
+								ValueType val = signal.getValue();
+								if ( val == null ) {
+									parseMessages
+											.add(getMessageSource().getMessage(
+													"signal.noValue", new Object[] { bus.getName(),
+															message.getId(), signal.getName() },
+													locale));
+									log.info("Bus [{}] Message [{}] Signal [{}] has no Value; skipping",
+											bus.getName(), message.getId(), signal.getName());
+									continue;
+								}
+
+								propConfig.setSlope(bigDecimalValue(val.getSlope()));
+								propConfig.setIntercept(bigDecimalValue(val.getIntercept()));
+								propConfig.setUnit(val.getUnit());
+								propConfig.setNormalizedUnit(val.getNormalizedUnit());
+								propConfig.setDecimalScale(signal.getDecimalScale());
+								if ( "signed".equalsIgnoreCase(val.getType()) ) {
+									switch (propConfig.getBitLength()) {
+										case 8:
+											propConfig.setDataType(BitDataType.Int8);
+											break;
+
+										case 16:
+											propConfig.setDataType(BitDataType.Int16);
+											break;
+
+										case 32:
+											propConfig.setDataType(BitDataType.Int32);
+											break;
+
+										case 64:
+											propConfig.setDataType(BitDataType.Int64);
+											break;
+
+										default:
+											propConfig.setDataType(BitDataType.Integer);
+											break;
+									}
+								} else if ( "unsigned".equalsIgnoreCase(val.getType()) ) {
+									switch (propConfig.getBitLength()) {
+										case 1:
+											propConfig.setDataType(BitDataType.Bit);
+											break;
+
+										case 8:
+											propConfig.setDataType(BitDataType.UInt8);
+											break;
+
+										case 16:
+											propConfig.setDataType(BitDataType.UInt16);
+											break;
+
+										case 32:
+											propConfig.setDataType(BitDataType.UInt32);
+											break;
+
+										case 64:
+											propConfig.setDataType(BitDataType.UInt64);
+											break;
+
+										default:
+											propConfig.setDataType(BitDataType.UnsignedInteger);
+											break;
+									}
+								} else if ( "single".equalsIgnoreCase(val.getType()) ) {
+									propConfig.setDataType(BitDataType.Float32);
+								} else if ( "double".equalsIgnoreCase(val.getType()) ) {
+									propConfig.setDataType(BitDataType.Float64);
+								}
+
+								LabelSetType labelSet = signal.getLabelSet();
+								if ( labelSet != null && labelSet.getLabelOrLabelGroup() != null ) {
+									for ( BasicLabelType label : labelSet.getLabelOrLabelGroup() ) {
+										if ( label instanceof LabelGroupType ) {
+											LabelGroupType group = (LabelGroupType) label;
+											BigInteger k = group.getFrom();
+											BigInteger to = group.getTo();
+											while ( k.compareTo(to) <= 0 ) {
+												propConfig.putValueLabel(k, group.getName());
+												k = k.add(BigInteger.ONE);
+											}
+										} else if ( label instanceof LabelType ) {
+											LabelType l = (LabelType) label;
+											propConfig.putValueLabel(l.getValue(), l.getName());
+										}
+									}
+								}
+
+								KeyValuePair[] names = signal.getLocalizedName().stream()
+										.map(n -> new KeyValuePair(n.getLang(), n.getValue()))
+										.toArray(KeyValuePair[]::new);
+								if ( names.length > 0 ) {
+									propConfig.setLocalizedNames(names);
+								}
+
+								propConfigs.add(propConfig);
 							}
-
-							CanbusPropertyConfig propConfig = new CanbusPropertyConfig(
-									signal.getDatumProperty(), datumPropType, signal.getOffset());
-							propConfig.setBitLength(signal.getLength());
-
-							ValueType val = signal.getValue();
-							if ( val == null ) {
-								parseMessages
-										.add(getMessageSource()
-												.getMessage(
-														"signal.noValue", new Object[] { bus.getName(),
-																message.getId(), signal.getName() },
-														locale));
-								log.info("Bus [{}] Message [{}] Signal [{}] has no Value; skipping",
-										bus.getName(), message.getId(), signal.getName());
+							if ( propConfigs.isEmpty() ) {
+								parseMessages.add(getMessageSource().getMessage("message.noSignals",
+										new Object[] { bus.getName(), message.getId() }, locale));
+								log.warn("Bus [{}] Message [{}] has no signals, skipping", bus.getName(),
+										message.getId());
 								continue;
 							}
 
-							propConfig.setSlope(bigDecimalValue(val.getSlope()));
-							propConfig.setIntercept(bigDecimalValue(val.getIntercept()));
-							propConfig.setUnit(val.getUnit());
-							propConfig.setNormalizedUnit(val.getNormalizedUnit());
-							propConfig.setDecimalScale(signal.getDecimalScale());
-							if ( "signed".equalsIgnoreCase(val.getType()) ) {
-								switch (propConfig.getBitLength()) {
-									case 8:
-										propConfig.setDataType(BitDataType.Int8);
-										break;
-
-									case 16:
-										propConfig.setDataType(BitDataType.Int16);
-										break;
-
-									case 32:
-										propConfig.setDataType(BitDataType.Int32);
-										break;
-
-									case 64:
-										propConfig.setDataType(BitDataType.Int64);
-										break;
-
-									default:
-										propConfig.setDataType(BitDataType.Integer);
-										break;
-								}
-							} else if ( "unsigned".equalsIgnoreCase(val.getType()) ) {
-								switch (propConfig.getBitLength()) {
-									case 1:
-										propConfig.setDataType(BitDataType.Bit);
-										break;
-
-									case 8:
-										propConfig.setDataType(BitDataType.UInt8);
-										break;
-
-									case 16:
-										propConfig.setDataType(BitDataType.UInt16);
-										break;
-
-									case 32:
-										propConfig.setDataType(BitDataType.UInt32);
-										break;
-
-									case 64:
-										propConfig.setDataType(BitDataType.UInt64);
-										break;
-
-									default:
-										propConfig.setDataType(BitDataType.UnsignedInteger);
-										break;
-								}
-							} else if ( "single".equalsIgnoreCase(val.getType()) ) {
-								propConfig.setDataType(BitDataType.Float32);
-							} else if ( "double".equalsIgnoreCase(val.getType()) ) {
-								propConfig.setDataType(BitDataType.Float64);
-							}
-
-							LabelSetType labelSet = signal.getLabelSet();
-							if ( labelSet != null && labelSet.getLabelOrLabelGroup() != null ) {
-								for ( BasicLabelType label : labelSet.getLabelOrLabelGroup() ) {
-									if ( label instanceof LabelGroupType ) {
-										LabelGroupType group = (LabelGroupType) label;
-										BigInteger k = group.getFrom();
-										BigInteger to = group.getTo();
-										while ( k.compareTo(to) <= 0 ) {
-											propConfig.putValueLabel(k, group.getName());
-											k = k.add(BigInteger.ONE);
-										}
-									} else if ( label instanceof LabelType ) {
-										LabelType l = (LabelType) label;
-										propConfig.putValueLabel(l.getValue(), l.getName());
-									}
-								}
-							}
-
-							KeyValuePair[] names = signal.getLocalizedName().stream()
-									.map(n -> new KeyValuePair(n.getLang(), n.getValue()))
-									.toArray(KeyValuePair[]::new);
-							if ( names.length > 0 ) {
-								propConfig.setLocalizedNames(names);
-							}
-
-							propConfigs.add(propConfig);
+							msgConfig.setPropConfigs(
+									propConfigs.toArray(new CanbusPropertyConfig[propConfigs.size()]));
+							msgConfigs.add(msgConfig);
 						}
-						if ( propConfigs.isEmpty() ) {
-							parseMessages.add(getMessageSource().getMessage("message.noSignals",
-									new Object[] { bus.getName(), message.getId() }, locale));
-							log.warn("Bus [{}] Message [{}] has no signals, skipping", bus.getName(),
-									message.getId());
-							continue;
-						}
-
-						msgConfig.setPropConfigs(
-								propConfigs.toArray(new CanbusPropertyConfig[propConfigs.size()]));
-						msgConfigs.add(msgConfig);
 					}
 				}
 			}
