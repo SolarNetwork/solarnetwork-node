@@ -42,6 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
@@ -225,6 +226,7 @@ public class S3BackupService extends BackupServiceSupport
 			}
 		}
 		S3BackupMetadata result = null;
+		Backup listBackupItem = null;
 		try {
 			final Long nodeId = nodeId(props);
 			final String metaName = String.format(META_NAME_FORMAT, now, nodeId);
@@ -265,18 +267,18 @@ public class S3BackupService extends BackupServiceSupport
 								MimeType.valueOf("application/json;charset=UTF-8")),
 						null, null);
 				result = new S3BackupMetadata(metaRef);
+				listBackupItem = backupListItem().apply(metaRef);
 			}
 
-			if ( additionalBackupCount < 1 ) {
-				// add this backup to the cached data
-				CachedResult<List<Backup>> cached = cachedBackupList.get();
-				if ( cached != null ) {
-					List<Backup> list = cached.getResult();
-					List<Backup> newList = new ArrayList<>(list);
-					newList.add(0, result);
-					updateCachedBackupList(newList);
-				}
-			} else {
+			// add this backup to the cached data
+			CachedResult<List<Backup>> cached = cachedBackupList.get();
+			if ( cached != null && listBackupItem != null ) {
+				List<Backup> list = cached.getResult();
+				List<Backup> newList = new ArrayList<>(list);
+				newList.add(0, listBackupItem);
+				updateCachedBackupList(newList);
+			}
+			if ( additionalBackupCount > 0 ) {
 				// clean out older backups
 				List<Backup> knownBackups = getAvailableBackupsInternal();
 				List<String> backupsForNode = knownBackups.stream()
@@ -307,8 +309,9 @@ public class S3BackupService extends BackupServiceSupport
 	private void updateCachedBackupList(List<Backup> newList) {
 		CachedResult<List<Backup>> cached = cachedBackupList.get();
 		if ( cached != null ) {
-			cachedBackupList.compareAndSet(cached, new CachedResult<List<Backup>>(newList,
-					cached.getExpires() - System.currentTimeMillis(), TimeUnit.MILLISECONDS));
+			boolean updated = cachedBackupList.compareAndSet(cached, new CachedResult<List<Backup>>(
+					newList, cached.getExpires() - System.currentTimeMillis(), TimeUnit.MILLISECONDS));
+			log.debug("Cached backup list {} updated", updated ? "was" : "was not");
 		}
 	}
 
@@ -399,10 +402,7 @@ public class S3BackupService extends BackupServiceSupport
 			Set<S3ObjectReference> objs = client.listObjects(objectKeyPrefix);
 			List<Backup> result = objs.stream()
 					.filter(o -> NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(o.getKey()).find())
-					.map(o -> new SimpleBackup(
-							identityFromBackupKey(pathWithoutPrefix(o.getKey(), objectKeyPrefix)), null,
-							true))
-					.collect(Collectors.toList());
+					.map(backupListItem()).collect(Collectors.toList());
 			cachedBackupList.compareAndSet(cached,
 					new CachedResult<List<Backup>>(result, cacheSeconds, TimeUnit.SECONDS));
 			return result;
@@ -411,6 +411,11 @@ public class S3BackupService extends BackupServiceSupport
 					e.getMessage());
 			return Collections.emptyList();
 		}
+	}
+
+	private Function<S3ObjectReference, Backup> backupListItem() {
+		return o -> new SimpleBackup(
+				identityFromBackupKey(pathWithoutPrefix(o.getKey(), objectKeyPrefix)), null, true);
 	}
 
 	/**

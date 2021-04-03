@@ -43,6 +43,7 @@ import javax.measure.Unit;
 import net.solarnetwork.domain.BitDataType;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
+import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.io.canbus.CanbusData;
@@ -167,6 +168,18 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 								e);
 					}
 					if ( propVal != null ) {
+						// populate "xLabel" property if value label matches prop value
+						KeyValuePair[] valueLabels = prop.getValueLabels();
+						if ( valueLabels != null && valueLabels.length > 0 ) {
+							String propValString = propVal.toString();
+							for ( int i = 0; i < valueLabels.length; i++ ) {
+								KeyValuePair valueLabel = valueLabels[i];
+								if ( propValString.equals(valueLabel.getKey()) ) {
+									d.putStatusSampleValue(propName + "Label", valueLabel.getValue());
+									break;
+								}
+							}
+						}
 						if ( propVal instanceof Number ) {
 							propVal = prop.applyTransformations((Number) propVal);
 							propVal = normalizedAmountValue((Number) propVal, prop.getUnit(),

@@ -26,27 +26,34 @@ import static java.util.Collections.singletonMap;
 import static net.solarnetwork.util.ByteUtils.decodeHexString;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
+import static org.easymock.EasyMock.expectLastCall;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.easymock.Capture;
+import org.easymock.CaptureType;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
@@ -406,4 +413,78 @@ public class CanbusDatumDataSourceTests {
 		assertThat("Datum watts instantaneous value", d.getInstantaneousSampleBigDecimal("watts"),
 				equalTo(new BigDecimal("2842398")));
 	}
+
+	@Test
+	public void frameReceived_valueLabel() {
+		// GIVEN
+		CanbusMessageConfig message = new CanbusMessageConfig(1, ByteOrdering.BigEndian);
+		CanbusPropertyConfig propConfig = new CanbusPropertyConfig("watts",
+				GeneralDatumSamplesType.Instantaneous, 0, BitDataType.UInt8, 8, "W", null);
+		propConfig.putValueLabel("1", "One");
+		propConfig.putValueLabel("2", "Two");
+		propConfig.putValueLabel("3", "Three");
+		message.addPropConfig(propConfig);
+
+		dataSource.setSourceId(TEST_SOURCE);
+		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
+
+		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall().times(3);
+
+		// WHEN
+		replayAll();
+		List<GeneralNodeDatum> datums = new ArrayList<>(3);
+		long start = System.currentTimeMillis();
+		dataSource.canbusFrameReceived(new FrameMessageImpl(1, false, 1, 2, new byte[] { (byte) 0x2 }));
+		datums.add(dataSource.readCurrentDatum());
+		dataSource.canbusFrameReceived(new FrameMessageImpl(1, false, 3, 4, new byte[] { (byte) 0x3 }));
+		datums.add(dataSource.readCurrentDatum());
+		dataSource.canbusFrameReceived(new FrameMessageImpl(1, false, 5, 6, new byte[] { (byte) 0x4 }));
+		datums.add(dataSource.readCurrentDatum());
+
+		// THEN
+		List<Event> evts = eventCaptor.getValues();
+		assertThat("Events generated", evts, hasSize(3));
+		assertThat("Datum generated", datums, hasSize(3));
+		for ( int i = 0; i < 3; i++ ) {
+			Event evt = evts.get(i);
+			assertThat("Event topic", evt.getTopic(),
+					equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
+
+			String expectedLabel = null;
+			switch (i) {
+				case 0:
+					expectedLabel = "Two";
+					break;
+
+				case 1:
+					expectedLabel = "Three";
+					break;
+
+				default:
+					// nothing
+			}
+
+			Map<String, Object> expectedData = new LinkedHashMap<>(2);
+			expectedData.put("watts", (i + 2));
+			if ( expectedLabel != null ) {
+				expectedData.put("wattsLabel", expectedLabel);
+			}
+			assertDatumCapturedEvent(evt, start, TEST_SOURCE, expectedData);
+
+			GeneralNodeDatum d = datums.get(i);
+			assertThat("Datum captured", d, notNullValue());
+			assertThat("Datum watts instantaneous value", d.getInstantaneousSampleBigDecimal("watts"),
+					equalTo(new BigDecimal(i + 2)));
+			if ( expectedLabel != null ) {
+				assertThat("Datum watts label value for " + (i + 2),
+						d.getStatusSampleString("wattsLabel"), equalTo(expectedLabel));
+			} else {
+				assertThat("No label matched value " + (i + 2), d.getStatusSampleString("wattsLabel"),
+						nullValue());
+			}
+		}
+	}
+
 }
