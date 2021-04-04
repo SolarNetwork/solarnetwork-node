@@ -97,7 +97,7 @@ import net.solarnetwork.util.OptionalService;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class S3BackupService extends BackupServiceSupport
 		implements SettingSpecifierProvider, SettingsChangeObserver {
@@ -116,6 +116,13 @@ public class S3BackupService extends BackupServiceSupport
 	/** The default value for the {@code additionalBackupCount} property. */
 	public static final int DEFAULT_ADDITIONAL_BACKUP_COUNT = 10;
 
+	/**
+	 * The default value for the {@code storageClass} property.
+	 * 
+	 * @since 1.2
+	 */
+	public static final String DEFAULT_STORAGE_CLASS = "STANDARD";
+
 	private static final String META_NAME_FORMAT = "node-%2$d-backup-%1$tY%1$tm%1$tdT%1$tH%1$tM%1$tS";
 	private static final String META_OBJECT_KEY_PREFIX = "backup-meta/";
 	private static final String DATA_OBJECT_KEY_PREFIX = "backup-data/";
@@ -125,6 +132,7 @@ public class S3BackupService extends BackupServiceSupport
 	private OptionalService<IdentityService> identityService;
 	private int cacheSeconds;
 	private int additionalBackupCount;
+	private String storageClass;
 
 	private SdkS3Client s3Client = new SdkS3Client();
 
@@ -197,8 +205,8 @@ public class S3BackupService extends BackupServiceSupport
 		}
 		String sha256 = new String(Hex.encodeHex(digest.digest()));
 
-		return new S3ObjectMeta(contentLength, modified, S3ObjectMetadata.DEFAULT_CONTENT_TYPE,
-				singletonMap(CONTENT_SHA256_KEY, sha256));
+		return new S3ObjectMeta(contentLength, modified, storageClass,
+				S3ObjectMetadata.DEFAULT_CONTENT_TYPE, singletonMap(CONTENT_SHA256_KEY, sha256));
 	}
 
 	private void setupClient() {
@@ -521,6 +529,7 @@ public class S3BackupService extends BackupServiceSupport
 		result.add(new BasicTextFieldSettingSpecifier("regionName", DEFAULT_REGION_NAME));
 		result.add(new BasicTextFieldSettingSpecifier("bucketName", ""));
 		result.add(new BasicTextFieldSettingSpecifier("objectKeyPrefix", DEFAULT_OBJECT_KEY_PREFIX));
+		result.add(new BasicTextFieldSettingSpecifier("storageClass", DEFAULT_STORAGE_CLASS));
 		result.add(new BasicSliderSettingSpecifier("additionalBackupCount",
 				(double) DEFAULT_ADDITIONAL_BACKUP_COUNT, 0.0, 20.0, 1.0));
 		return result;
@@ -637,4 +646,26 @@ public class S3BackupService extends BackupServiceSupport
 	public void setAdditionalBackupCount(int additionalBackupCount) {
 		this.additionalBackupCount = additionalBackupCount;
 	}
+
+	/**
+	 * Get the S3 storage class to use.
+	 * 
+	 * @return the S3 storage class; defaults to {@link #DEFAULT_STORAGE_CLASS}
+	 * @since 1.2
+	 */
+	public String getStorageClass() {
+		return storageClass;
+	}
+
+	/**
+	 * Set the S3 storage class to use.
+	 * 
+	 * @param storageClass
+	 *        the S3 storage class to set
+	 * @since 1.2
+	 */
+	public void setStorageClass(String storageClass) {
+		this.storageClass = storageClass;
+	}
+
 }
