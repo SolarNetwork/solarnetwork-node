@@ -72,7 +72,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.6
+ * @version 1.7
  */
 public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements SettingDao {
 
@@ -81,7 +81,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 	private static final String DEFAULT_SQL_GET = "SELECT svalue,modified,skey,tkey,flags FROM "
 			+ SCHEMA_NAME + '.' + TABLE_SETTINGS + " WHERE skey = ?";
-	
+
 	private static final String DEFAULT_SQL_TYPED_GET_MODIFIER = " AND tkey = ?";
 
 	private static final String DEFAULT_BATCH_SQL_GET_FOR_UPDATE = "SELECT svalue,modified,skey,tkey,flags FROM "
@@ -146,7 +146,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 		// check if will delete, to emit change event
 		final String sql;
 		//check if we are taking type into consideration
-		if (type == null) {
+		if ( type == null ) {
 			sql = sqlForUpdate(sqlNonTypedGet);
 		} else {
 			sql = sqlForUpdate(sqlTypedGet);
@@ -158,7 +158,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 				PreparedStatement queryStmt = con.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY,
 						ResultSet.CONCUR_UPDATABLE, ResultSet.CLOSE_CURSORS_AT_COMMIT);
 				queryStmt.setString(1, key);
-				if (type != null) {
+				if ( type != null ) {
 					queryStmt.setString(2, type);
 				}
 				return queryStmt;

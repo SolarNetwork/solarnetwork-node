@@ -127,7 +127,7 @@ import net.solarnetwork.node.settings.support.BasicFactorySettingSpecifierProvid
  * {@link SettingDao} to persist changes between application restarts.
  * 
  * @author matt
- * @version 1.7
+ * @version 1.8
  */
 public class CASettingsService
 		implements SettingsService, BackupResourceProvider, FeedbackInstructionHandler {

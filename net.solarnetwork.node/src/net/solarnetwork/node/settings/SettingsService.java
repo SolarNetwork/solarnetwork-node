@@ -37,7 +37,7 @@ import net.solarnetwork.node.Constants;
  * Service API for settings.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public interface SettingsService {
 
@@ -164,9 +164,9 @@ public interface SettingsService {
 	 * Reset an existing factory instance to its default values.
 	 * 
 	 * @param factoryUID
-	 *        the factory UID to create the new instance for
+	 *        the factory UID to reset
 	 * @param instanceUID
-	 *        the instance UID to create the new instance for
+	 *        the instance UID to reset
 	 */
 	void resetProviderFactoryInstance(String factoryUID, String instanceUID);
 	

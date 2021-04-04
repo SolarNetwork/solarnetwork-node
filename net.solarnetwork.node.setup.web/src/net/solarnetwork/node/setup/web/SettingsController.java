@@ -75,7 +75,7 @@ import net.solarnetwork.web.support.MultipartFileResource;
  * Web controller for the settings UI.
  * 
  * @author matt
- * @version 1.7
+ * @version 1.8
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
