@@ -72,7 +72,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.6
+ * @version 1.7
  */
 public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements SettingDao {
 
@@ -80,7 +80,9 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 			+ TABLE_SETTINGS + " WHERE skey = ? ORDER BY tkey";
 
 	private static final String DEFAULT_SQL_GET = "SELECT svalue,modified,skey,tkey,flags FROM "
-			+ SCHEMA_NAME + '.' + TABLE_SETTINGS + " WHERE skey = ? AND tkey = ?";
+			+ SCHEMA_NAME + '.' + TABLE_SETTINGS + " WHERE skey = ?";
+
+	private static final String DEFAULT_SQL_TYPED_GET_MODIFIER = " AND tkey = ?";
 
 	private static final String DEFAULT_BATCH_SQL_GET_FOR_UPDATE = "SELECT svalue,modified,skey,tkey,flags FROM "
 			+ SCHEMA_NAME + '.' + TABLE_SETTINGS;
@@ -95,7 +97,8 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 			+ '.' + TABLE_SETTINGS
 			+ " WHERE SOLARNODE.BITWISE_AND(flags, ?) <> ? ORDER BY modified DESC";
 
-	private final String sqlGet = DEFAULT_SQL_GET;
+	private final String sqlNonTypedGet = DEFAULT_SQL_GET;
+	private final String sqlTypedGet = DEFAULT_SQL_GET + DEFAULT_SQL_TYPED_GET_MODIFIER;
 	private final String sqlFind = DEFAULT_SQL_FIND;
 	private final String sqlBatchGetForUpdate = DEFAULT_BATCH_SQL_GET_FOR_UPDATE;
 	private final String sqlBatchGet = DEFAULT_BATCH_SQL_GET;
@@ -106,7 +109,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 	@Override
 	public boolean deleteSetting(String key) {
-		return deleteSetting(key, "");
+		return deleteSetting(key, null);
 	}
 
 	@Override
@@ -141,7 +144,13 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 	private boolean deleteSettingInternal(final String key, final String type) {
 		// check if will delete, to emit change event
-		final String sql = sqlForUpdate(sqlGet);
+		final String sql;
+		//check if we are taking type into consideration
+		if ( type == null ) {
+			sql = sqlForUpdate(sqlNonTypedGet);
+		} else {
+			sql = sqlForUpdate(sqlTypedGet);
+		}
 		Setting setting = getJdbcTemplate().query(new PreparedStatementCreator() {
 
 			@Override
@@ -149,7 +158,9 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 				PreparedStatement queryStmt = con.prepareStatement(sql, ResultSet.TYPE_FORWARD_ONLY,
 						ResultSet.CONCUR_UPDATABLE, ResultSet.CLOSE_CURSORS_AT_COMMIT);
 				queryStmt.setString(1, key);
-				queryStmt.setString(2, type);
+				if ( type != null ) {
+					queryStmt.setString(2, type);
+				}
 				return queryStmt;
 			}
 		}, new ResultSetExtractor<Setting>() {
@@ -175,7 +186,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 	@Override
 	public String getSetting(String key, String type) {
-		List<String> res = getJdbcTemplate().query(this.sqlGet, new RowMapper<String>() {
+		List<String> res = getJdbcTemplate().query(this.sqlTypedGet, new RowMapper<String>() {
 
 			@Override
 			public String mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -250,7 +261,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 	@Override
 	public Setting readSetting(String key, String type) {
-		List<Setting> res = getJdbcTemplate().query(this.sqlGet, new RowMapper<Setting>() {
+		List<Setting> res = getJdbcTemplate().query(this.sqlTypedGet, new RowMapper<Setting>() {
 
 			@Override
 			public Setting mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -267,7 +278,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 			final int flags) {
 		final String type = (ttype == null ? "" : ttype);
 		final Timestamp now = new Timestamp(System.currentTimeMillis());
-		final String sql = sqlForUpdate(sqlGet);
+		final String sql = sqlForUpdate(sqlTypedGet);
 		// to avoid bumping modified date column when values haven't changed, we are careful here
 		// to compare before actually updating
 		getJdbcTemplate().execute(new ConnectionCallback<Boolean>() {

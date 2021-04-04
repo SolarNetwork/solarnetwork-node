@@ -75,14 +75,30 @@
 							SolarNode.Settings.deleteFactoryConfiguration({
 								button: this,
 								url: '<setup:url value="/a/settings/manage/delete"/>',
-								factoryUID: '${factory.factoryUID}',
-								instanceUID: '${instance.key}'
-							});
-						});
-						</script>
-					</div>
-				</div>
-			</fieldset>		
+										factoryUID: '${factory.factoryUID}',
+										instanceUID: '${instance.key}'
+									});
+								});
+								</script>
+								<button type="button" class="btn btn-primary" id="reset${instance.key}">
+									<fmt:message key='settings.factory.reset'>
+										<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
+										<fmt:param value="${instance.key}"/>
+									</fmt:message>
+								</button>
+								<script>
+								$('#reset${instance.key}').click(function() {
+									SolarNode.Settings.resetFactoryConfiguration({
+										button: this,
+										url: '<setup:url value="/a/settings/manage/reset"/>',
+										factoryUID: '${factory.factoryUID}',
+										instanceUID: '${instance.key}'
+									});
+								});
+								</script>
+							</div>
+						</div>
+					</fieldset>
 		</c:forEach>
 		<div class="form-actions">
 			<button type="button" class="btn btn-primary" id="submit"><fmt:message key='settings.save'/></button>
@@ -118,6 +134,16 @@ $(function() {
 	</p>
 	<button type="button" class="btn btn-danger submit">
 		<fmt:message key="delete.label"/>
+	</button>
+</div>
+<div id="alert-reset" class="alert alert-danger alert-block hidden">
+	<button type="button" class="close" data-dismiss="alert">×</button>
+	<h4><fmt:message key="settings.factory.reset.alert.title"/></h4>
+	<p>
+		<fmt:message key="settings.factory.reset.alert.msg"/>
+	</p>
+	<button type="button" class="btn btn-danger submit">
+		<fmt:message key="reset.label"/>
 	</button>
 </div>
 <form class="modal dynamic hide fade lookup-modal sn-loc-lookup-modal price-lookup-modal" 
