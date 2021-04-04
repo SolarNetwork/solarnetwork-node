@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.reactor;
@@ -31,27 +29,61 @@ import java.util.Map;
  * API for reacting to SolarNet service instruction requests.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
 public interface ReactorService {
 
 	/**
 	 * Process an instruction.
 	 * 
-	 * @param instruction the instruction to process
+	 * @param instruction
+	 *        the instruction to process
 	 * @return the status for the instruction
 	 */
 	InstructionStatus processInstruction(Instruction instruction);
-	
+
+	/**
+	 * Parse a set of encoded instructions.
+	 * 
+	 * @param instructorId
+	 *        the ID of the instructor
+	 * @param data
+	 *        the InputStream to parse for Instruction instances
+	 * @param dataType
+	 *        the data type
+	 * @param properties
+	 *        optional parsing properties and metadata
+	 * @return the parsed instructions, never {@literal null}
+	 * @since 1.1
+	 */
+	List<Instruction> parseInstructions(String instructorId, Object data, String dataType,
+			Map<String, ?> properties);
+
 	/**
 	 * Attempt to parse and process an Instruction.
 	 * 
-	 * @param instructorId the ID of the instructor
-	 * @param data the InputStream to parse for Instruction instances
-	 * @param dataType the data type
-	 * @param properties optional parsing properties and metadata
-	 * @return the status for any parsed Instruction instances, or an empty list if none parsed
+	 * @param instructorId
+	 *        the ID of the instructor
+	 * @param data
+	 *        the InputStream to parse for Instruction instances
+	 * @param dataType
+	 *        the data type
+	 * @param properties
+	 *        optional parsing properties and metadata
+	 * @return the status for any parsed Instruction instances, or an empty list
+	 *         if none parsed, never {@literal null}
 	 */
-	List<InstructionStatus> processInstruction(String instructorId, Object data, 
-			String dataType, Map<String, ?> properties);
+	List<InstructionStatus> processInstruction(String instructorId, Object data, String dataType,
+			Map<String, ?> properties);
+
+	/**
+	 * Store an Instruction instance in local storage and return its primary
+	 * key.
+	 * 
+	 * @param instruction
+	 *        the instruction to store
+	 * @return the local primary key
+	 * @since 1.1
+	 */
+	Long storeInstruction(Instruction instruction);
 }

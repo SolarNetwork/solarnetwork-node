@@ -129,7 +129,7 @@
 		<attribute>
 			<description>
 				A Map of additional properties to render as data attributes on the configured
-				wrapper element, if ""inline is also set to true.
+				wrapper element, if "inline" is also set to true.
 			</description>
 			<name>properties</name>
 			<required>false</required>

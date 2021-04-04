@@ -34,9 +34,17 @@ import net.solarnetwork.node.Identifiable;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface SerialNetwork extends Identifiable {
+
+	/**
+	 * Get the name of the serial port used by this connection.
+	 * 
+	 * @return the serial port name, or {@literal null} if not known
+	 * @since 1.1
+	 */
+	String getPortName();
 
 	/**
 	 * Perform some action that requires a {@link SerialConnection}, returning
@@ -47,6 +55,8 @@ public interface SerialNetwork extends Identifiable {
 	 * The {@link SerialConnection} passed will already be opened, and it will
 	 * be closed automatically after the action is complete.
 	 * 
+	 * @param <T>
+	 *        the action result type
 	 * @param action
 	 *        the callback whose result to return
 	 * @return the result of calling

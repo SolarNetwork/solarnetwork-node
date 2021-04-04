@@ -45,9 +45,9 @@ public interface UploadService {
 	 * Get a unique key for this service.
 	 * 
 	 * <p>
-	 * This key can be used as the {@code destination} value for
-	 * {@link DatumUpload} objects. It need be unique across other UploadService
-	 * implementations only.
+	 * This key can be used as the {@code destination} value for {@link Datum}
+	 * objects. It need be unique across other UploadService implementations
+	 * only.
 	 * </p>
 	 * 
 	 * @return unique key
@@ -59,7 +59,7 @@ public interface UploadService {
 	 * 
 	 * <p>
 	 * The returned primary key can be used as the {@code trackingId} value for
-	 * {@link DatumUpload} objects.
+	 * {@link Datum} objects.
 	 * </p>
 	 * 
 	 * <p>

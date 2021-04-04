@@ -22,16 +22,18 @@
 
 package net.solarnetwork.node.weather.yr;
 
-import net.solarnetwork.domain.BasicLocation;
 import net.solarnetwork.domain.Location;
+import net.solarnetwork.domain.SimpleLocation;
 
 /**
  * Basic implementation of {@link YrLocation}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class BasicYrLocation extends BasicLocation implements YrLocation {
+public class BasicYrLocation extends SimpleLocation implements YrLocation {
+
+	private static final long serialVersionUID = 1702713283156195024L;
 
 	private String identifier;
 

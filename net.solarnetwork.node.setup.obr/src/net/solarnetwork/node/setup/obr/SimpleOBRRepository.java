@@ -22,22 +22,39 @@
 
 package net.solarnetwork.node.setup.obr;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import org.springframework.context.MessageSource;
 
 /**
  * Simple implementation of {@link OBRRepository}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SimpleOBRRepository implements OBRRepository {
 
-	private URL url;
+	/**
+	 * The default OBR URL to use.
+	 * 
+	 * @since 1.1
+	 */
+	public static final String DEFAULT_URL = "https://data.solarnetwork.net/obr/solarnetwork/metadata.xml";
+
+	private static URL defaultUrl() {
+		try {
+			return new URL(DEFAULT_URL);
+		} catch ( MalformedURLException e ) {
+			// no way, dude
+			return null;
+		}
+	}
+
+	private URL url = defaultUrl();
 	private MessageSource messageSource;
 
 	@Override
@@ -67,7 +84,7 @@ public class SimpleOBRRepository implements OBRRepository {
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(1);
-		results.add(new BasicTextFieldSettingSpecifier("URL", ""));
+		results.add(new BasicTextFieldSettingSpecifier("URL", DEFAULT_URL));
 		return results;
 	}
 

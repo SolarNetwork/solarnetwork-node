@@ -30,9 +30,24 @@ package net.solarnetwork.node.hw.deson.meter;
  */
 public enum SDMDeviceType {
 
-	SDM120,
+	SDM120("SDM-120"),
 
-	SDM220,
+	SDM220("SDM-220"),
 
-	SDM630;
+	SDM630("SDM-630");
+
+	private final String description;
+
+	private SDMDeviceType(String description) {
+		this.description = description;
+	}
+
+	/**
+	 * Get a description of this type.
+	 * 
+	 * @return the description
+	 */
+	public String getDescription() {
+		return description;
+	}
 }

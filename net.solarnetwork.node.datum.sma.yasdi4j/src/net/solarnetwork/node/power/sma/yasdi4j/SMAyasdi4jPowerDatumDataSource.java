@@ -48,8 +48,8 @@ import net.solarnetwork.util.DynamicServiceTracker;
 import net.solarnetwork.util.StringUtils;
 
 /**
- * SMA {@link DatumDataSource} for {@link PowerDatum}, using the {@code yasdi4j}
- * library.
+ * SMA {@link DatumDataSource} for {@link ACEnergyDatum}, using the
+ * {@code yasdi4j} library.
  * 
  * <p>
  * This class is not generally not thread-safe. Only one thread should execute
@@ -57,7 +57,7 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		implements DatumDataSource<ACEnergyDatum>, SettingSpecifierProvider {
@@ -151,7 +151,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 				return null;
 			}
 
-			datum.setSourceId(getSourceId());
+			datum.setSourceId(resolvePlaceholders(getSourceId()));
 
 			if ( this.pvWattsChannelNames != null && this.pvWattsChannelNames.size() > 0 ) {
 				// we sum up all channels into a single value

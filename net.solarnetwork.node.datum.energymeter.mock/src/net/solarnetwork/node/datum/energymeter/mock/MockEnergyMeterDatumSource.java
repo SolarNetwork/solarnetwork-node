@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.datum.energymeter.mock;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -29,6 +31,7 @@ import java.util.Random;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.domain.ACEnergyDatum;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -47,7 +50,7 @@ import net.solarnetwork.node.support.DatumDataSourceSupport;
  * </p>
  * 
  * @author robert
- * @version 1.0
+ * @version 1.3
  */
 public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
@@ -103,14 +106,18 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		GeneralNodeACEnergyDatum prev = this.lastsample.get();
 		GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
 		datum.setCreated(new Date());
-		datum.setSourceId(sourceId);
+		datum.setSourceId(resolvePlaceholders(sourceId));
 
 		// the values for most datum variables are calculated here
 		calcVariables(datum);
 
 		calcWattHours(prev, datum);
 
+		datum = applySamplesTransformer(datum, null);
+
 		this.lastsample.compareAndSet(prev, datum);
+
+		postDatumCapturedEvent(datum);
 
 		return datum;
 	}
@@ -164,6 +171,8 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 
 		double phasecurrent = phasevoltage / impedance;
 		datum.setCurrent((float) phasecurrent);
+		datum.putInstantaneousSampleValue(ACEnergyDatum.CURRENT_KEY,
+				BigDecimal.valueOf(phasecurrent).setScale(6, RoundingMode.HALF_UP));
 		double current = vrms / impedance;
 
 		double reactivePower = Math.pow(current, 2) * inductiveReactance;
@@ -177,7 +186,8 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		datum.setWatts((int) watts);
 
 		double phaseAngle = Math.atan(inductiveReactance / R);
-		datum.setPowerFactor((float) Math.cos(phaseAngle));
+		datum.putInstantaneousSampleValue(ACEnergyDatum.POWER_FACTOR_KEY,
+				BigDecimal.valueOf(Math.cos(phaseAngle)).setScale(8, RoundingMode.HALF_UP));
 	}
 
 	private void calcWattHours(GeneralNodeACEnergyDatum prev, GeneralNodeACEnergyDatum datum) {
@@ -244,6 +254,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * needed eg unit testing.
 	 * 
 	 * @param rng
+	 *        the random number generator
 	 */
 	public void setRNG(Random rng) {
 		this.rng = rng;
@@ -278,6 +289,9 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 				defaults.resistanceDeviation.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("inductanceDeviation",
 				defaults.inductanceDeviation.toString()));
+		results.add(new BasicTextFieldSettingSpecifier("samplesTransformService.propertyFilters['UID']",
+				null));
+
 		return results;
 	}
 }

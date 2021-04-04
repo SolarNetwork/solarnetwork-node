@@ -25,7 +25,6 @@ package net.solarnetwork.node.setup.web;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -45,6 +44,7 @@ import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupInfo;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
+import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.web.domain.Response;
 
@@ -52,7 +52,7 @@ import net.solarnetwork.web.domain.Response;
  * Controller for backup support.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 @Controller
 @RequestMapping("/a/backups")
@@ -80,14 +80,7 @@ public class BackupController extends BaseSetupController {
 			BackupService service = backupManager.activeBackupService();
 			if ( service != null ) {
 				backups.addAll(service.getAvailableBackups());
-				Collections.sort(backups, new Comparator<Backup>() {
-
-					@Override
-					public int compare(Backup o1, Backup o2) {
-						// sort in reverse chronological order (newest to oldest)
-						return o2.getDate().compareTo(o1.getDate());
-					}
-				});
+				Collections.sort(backups, SortByNodeAndDate.DEFAULT);
 			}
 		}
 		return Response.response(backups);
@@ -96,8 +89,7 @@ public class BackupController extends BaseSetupController {
 	/**
 	 * Create a new backup.
 	 * 
-	 * @param model
-	 * @return
+	 * @return the backup
 	 */
 	@RequestMapping(value = "/create", method = RequestMethod.POST)
 	@ResponseBody
@@ -185,7 +177,10 @@ public class BackupController extends BaseSetupController {
 	 * Restore a backup.
 	 * 
 	 * @param options
-	 * @return
+	 *        the options
+	 * @param locale
+	 *        the locale
+	 * @return the restore status
 	 */
 	@RequestMapping(value = "/restore", method = RequestMethod.POST)
 	@ResponseBody

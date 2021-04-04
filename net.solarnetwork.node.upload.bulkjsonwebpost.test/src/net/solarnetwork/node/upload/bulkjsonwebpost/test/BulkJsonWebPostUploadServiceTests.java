@@ -71,11 +71,11 @@ import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.ReactorService;
 import net.solarnetwork.node.reactor.support.BasicInstruction;
 import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
+import net.solarnetwork.node.support.DatumSerializer;
+import net.solarnetwork.node.support.GeneralNodeDatumSerializer;
+import net.solarnetwork.node.support.InstructionSerializer;
+import net.solarnetwork.node.support.NodeControlInfoSerializer;
 import net.solarnetwork.node.upload.bulkjsonwebpost.BulkJsonWebPostUploadService;
-import net.solarnetwork.node.upload.bulkjsonwebpost.DatumSerializer;
-import net.solarnetwork.node.upload.bulkjsonwebpost.GeneralNodeDatumSerializer;
-import net.solarnetwork.node.upload.bulkjsonwebpost.InstructionSerializer;
-import net.solarnetwork.node.upload.bulkjsonwebpost.NodeControlInfoSerializer;
 import net.solarnetwork.util.ObjectMapperFactoryBean;
 import net.solarnetwork.util.StaticOptionalService;
 
@@ -106,7 +106,6 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		reactorService = EasyMock.createMock(ReactorService.class);
 		generalNodeDatumSerializer = new GeneralNodeDatumSerializer();
 
-		@SuppressWarnings("unchecked")
 		List<JsonSerializer<? extends Object>> serializers = Arrays.asList(
 				(JsonSerializer<?>) generalNodeDatumSerializer, new DatumSerializer(),
 				new InstructionSerializer(), new NodeControlInfoSerializer());

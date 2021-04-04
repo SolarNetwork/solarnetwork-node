@@ -43,16 +43,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.SSLService;
+import net.solarnetwork.support.SSLService;
 import net.solarnetwork.util.OptionalService;
 
 /**
  * Supporting methods for HTTP client operations.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.4
  */
-public abstract class HttpClientSupport {
+public abstract class HttpClientSupport extends BaseIdentifiable {
 
 	/** A HTTP Accept header value for any text type. */
 	public static final String ACCEPT_TEXT = "text/*";
@@ -61,7 +61,7 @@ public abstract class HttpClientSupport {
 	public static final String ACCEPT_JSON = "application/json,text/json";
 
 	/** The default value for the {@code connectionTimeout} property. */
-	public static final int DEFAULT_CONNECTION_TIMEOUT = 15000;
+	public static final int DEFAULT_CONNECTION_TIMEOUT = 55000;
 
 	/** The HTTP method GET. */
 	public static final String HTTP_METHOD_GET = "GET";
@@ -72,8 +72,6 @@ public abstract class HttpClientSupport {
 	private int connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
 	private IdentityService identityService = null;
 	private OptionalService<SSLService> sslService = null;
-	private String uid;
-	private String groupUID;
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -165,7 +163,7 @@ public abstract class HttpClientSupport {
 	 * <p>
 	 * This method also sets up the request property
 	 * {@code Accept-Encoding: gzip,deflate} so the response can be compressed.
-	 * The {@link #getInputSourceFromURLConnection(URLConnection)} automatically
+	 * The {@link #getInputStreamFromURLConnection(URLConnection)} automatically
 	 * handles compressed responses.
 	 * </p>
 	 * 
@@ -196,7 +194,7 @@ public abstract class HttpClientSupport {
 		if ( sslService != null && conn instanceof HttpsURLConnection ) {
 			SSLService service = sslService.service();
 			if ( service != null ) {
-				SSLSocketFactory factory = service.getSolarInSocketFactory();
+				SSLSocketFactory factory = service.getSSLSocketFactory();
 				if ( factory != null ) {
 					HttpsURLConnection hConn = (HttpsURLConnection) conn;
 					hConn.setSSLSocketFactory(factory);
@@ -216,8 +214,11 @@ public abstract class HttpClientSupport {
 	 * Append a URL-escaped key/value pair to a string buffer.
 	 * 
 	 * @param buf
+	 *        the buffer to append to
 	 * @param key
+	 *        the parameter key
 	 * @param value
+	 *        the parameter value
 	 */
 	protected void appendXWWWFormURLEncodedValue(StringBuilder buf, String key, Object value) {
 		if ( value == null ) {
@@ -353,24 +354,29 @@ public abstract class HttpClientSupport {
 		this.sslService = sslService;
 	}
 
+	@Override
 	public String getUID() {
 		return getUid();
 	}
 
+	@Override
 	public String getUid() {
-		return uid;
+		return super.getUid();
 	}
 
+	@Override
 	public void setUid(String uid) {
-		this.uid = uid;
+		super.setUid(uid);
 	}
 
+	@Override
 	public String getGroupUID() {
-		return groupUID;
+		return super.getGroupUID();
 	}
 
+	@Override
 	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
+		super.setGroupUID(groupUID);
 	}
 
 }

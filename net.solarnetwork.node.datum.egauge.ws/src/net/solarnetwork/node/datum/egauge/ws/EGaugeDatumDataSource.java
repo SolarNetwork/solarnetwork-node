@@ -33,25 +33,21 @@ import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
 import net.solarnetwork.node.settings.MappableSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.support.DatumDataSourceSupport;
 import net.solarnetwork.util.CachedResult;
 
 /**
- * Web service based support for eGauge inverters. Needs to be configured with
- * an {@link EGaugeClient} such as {@link XmlEGaugeClient} to retrieve the
- * content to be stored.
+ * Web service based support for eGauge inverters.
  * 
  * <p>
- * If the {@code client} configuration is the same, it should be possible to
- * share a single client between multiple instances and just configure the
- * {@code host} and {@code sourceId} properties to use different sources.
+ * Needs to be configured with an {@link EGaugeClient} such as
+ * {@link XmlEGaugeClient} to retrieve the content to be stored.
  * </p>
  * 
  * @author maxieduncan
- * @version 1.0
+ * @version 1.1
  */
 public class EGaugeDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodePVEnergyDatum>, SettingSpecifierProvider {
@@ -121,7 +117,13 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 
 	@Override
 	public EGaugePowerDatum readCurrentDatum() {
-		return getCurrentSample();
+		final long start = System.currentTimeMillis();
+		EGaugePowerDatum d = getCurrentSample();
+		if ( d != null && d.getCreated() != null && d.getCreated().getTime() >= start ) {
+			// we read from the device
+			postDatumCapturedEvent(d);
+		}
+		return d;
 	}
 
 	public void init() {
@@ -147,7 +149,7 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(defaults.sampleCacheMs)));
 
-		results.add(new BasicGroupSettingSpecifier("eGaugeClient", getClientSettings()));
+		results.addAll(getClientSettings());
 
 		return results;
 	}

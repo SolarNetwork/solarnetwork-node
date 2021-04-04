@@ -22,13 +22,13 @@
 
 package net.solarnetwork.node.setup.s3;
 
+import static java.util.Arrays.asList;
+import static org.springframework.util.StringUtils.getFilenameExtension;
 import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -37,6 +37,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -46,10 +47,11 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,12 +59,15 @@ import org.springframework.context.MessageSource;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.FileSystemUtils;
-import com.amazonaws.services.s3.model.S3Object;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.common.s3.S3Client;
+import net.solarnetwork.common.s3.S3Object;
+import net.solarnetwork.common.s3.S3ObjectReference;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.NodeMetadataService;
+import net.solarnetwork.node.PlatformPackageService;
 import net.solarnetwork.node.PlatformService;
 import net.solarnetwork.node.PlatformService.PlatformState;
 import net.solarnetwork.node.PlatformService.PlatformTask;
@@ -70,23 +75,23 @@ import net.solarnetwork.node.PlatformService.PlatformTaskStatusHandler;
 import net.solarnetwork.node.RemoteServiceException;
 import net.solarnetwork.node.SetupSettings;
 import net.solarnetwork.node.SystemService;
-import net.solarnetwork.node.backup.s3.S3BackupService;
-import net.solarnetwork.node.backup.s3.S3Client;
-import net.solarnetwork.node.backup.s3.S3ObjectReference;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
 import net.solarnetwork.node.setup.SetupException;
 import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.OptionalServiceCollection;
+import net.solarnetwork.util.ProgressListener;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * Service for provisioning node resources based on versioned resource sets.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.5
  */
 public class S3SetupManager implements FeedbackInstructionHandler {
 
@@ -107,7 +112,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	public static final String INSTRUCTION_PARAM_VERSION = "Version";
 
 	/** The default value for the {@code workDirectory} property. */
-	public static final String DEFAULT_WORK_DIRECTORY = "work/s3-setup";
+	public static final String DEFAULT_WORK_DIRECTORY = "var/work/s3-setup";
 
 	/** A prefix applied to metadata objects. */
 	public static final String META_OBJECT_KEY_PREFIX = "setup-meta/";
@@ -115,32 +120,13 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	/** A prefix applied to data objects. */
 	public static final String DATA_OBJECT_KEY_PREFIX = "setup-data/";
 
-	/**
-	 * The placeholder string in the {@code syncCommand} for the source
-	 * directory path.
-	 */
-	public static final String SOURCE_FILE_PLACEHOLDER = "__SOURCE_FILE__";
+	/** The default package timeout value. */
+	public static final long DEFAULT_PACKAGE_ACTION_TIMEOUT_SECS = TimeUnit.MINUTES.toSeconds(5);
 
-	/**
-	 * The placeholder string in the {@code syncCommand} for the destination
-	 * directory path.
-	 */
-	public static final String DESTINATION_DIRECTORY_PLACEHOLDER = "__DEST_DIR__";
-
-	/**
-	 * The default value of the {@code tarCommand} property.
-	 * 
-	 * <p>
-	 * The tar command is expected to print the names of the files as it
-	 * extracts them, which is usually done with a {@literal -v} argument.
-	 * </p>
-	 */
-	public static final List<String> DEFAULT_TAR_COMMAND = Collections.unmodifiableList(Arrays
-			.asList("tar", "xvf", SOURCE_FILE_PLACEHOLDER, "-C", DESTINATION_DIRECTORY_PLACEHOLDER));
+	/** The default value for the {@code objectKeyPrefix} property. */
+	public static final String DEFAULT_OBJECT_KEY_PREFIX = "solarnode-backups/";
 
 	private static final Pattern VERSION_PAT = Pattern.compile(".*/(\\d+)");
-	private static final Pattern TARBALL_PAT = Pattern.compile("\\.(tar|tgz|tbz2|txz)$");
-	private static final Pattern TAR_LIST_PAT = Pattern.compile("^\\w (.*)$");
 
 	private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
 			.setSerializationInclusion(JsonInclude.Include.NON_NULL);
@@ -167,18 +153,19 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	}
 
 	private S3Client s3Client;
-	private String objectKeyPrefix = S3BackupService.DEFAULT_OBJECT_KEY_PREFIX;
+	private String objectKeyPrefix = DEFAULT_OBJECT_KEY_PREFIX;
 	private SettingDao settingDao;
 	private String maxVersion = null;
 	private boolean performFirstTimeUpdate = true;
 	private String workDirectory = DEFAULT_WORK_DIRECTORY;
-	private List<String> tarCommand = DEFAULT_TAR_COMMAND;
 	private String destinationPath = defaultDestinationPath();
 	private OptionalService<NodeMetadataService> nodeMetadataService;
 	private OptionalService<PlatformService> platformService;
 	private OptionalService<SystemService> systemService;
 	private TaskExecutor taskExecutor;
 	private MessageSource messageSource;
+	private OptionalServiceCollection<PlatformPackageService> packageServices;
+	private long packageActionTimeoutSecs = DEFAULT_PACKAGE_ACTION_TIMEOUT_SECS;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -238,13 +225,19 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			}
 			S3SetupConfiguration config = getSetupConfiguration(metaKey);
 			applySetup(config);
-			return instruction.getStatus().newCopyWithState(InstructionState.Completed);
+			final InstructionStatus startingStatus = instruction.getStatus();
+			return (startingStatus != null ? startingStatus.newCopyWithState(InstructionState.Completed)
+					: new BasicInstructionStatus(instruction.getId(), InstructionState.Completed,
+							new Date()));
 		} catch ( RemoteServiceException e ) {
 			log.warn("Error accessing S3: {}", e.getMessage());
 			return statusWithError(instruction, "S3SM001", e.getMessage());
 		} catch ( IOException e ) {
-			log.warn("Communication error apply S3 setup: {}", e.getMessage());
+			log.warn("Communication error applying S3 setup: {}", e.getMessage());
 			return statusWithError(instruction, "S3SM002", e.getMessage());
+		} catch ( RuntimeException e ) {
+			log.error("Error applying S3 setup: {}", e.getMessage());
+			return statusWithError(instruction, "S3SM003", e.getMessage());
 		}
 	}
 
@@ -252,7 +245,11 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 		Map<String, Object> resultParams = new LinkedHashMap<>();
 		resultParams.put(InstructionStatus.ERROR_CODE_RESULT_PARAM, code);
 		resultParams.put(InstructionStatus.MESSAGE_RESULT_PARAM, message);
-		return instruction.getStatus().newCopyWithState(InstructionState.Declined, resultParams);
+		final InstructionStatus startingStatus = instruction.getStatus();
+		return (startingStatus != null
+				? startingStatus.newCopyWithState(InstructionState.Declined, resultParams)
+				: new BasicInstructionStatus(instruction.getId(), InstructionState.Declined, new Date(),
+						null, resultParams));
 	}
 
 	private boolean isConfigured() {
@@ -260,7 +257,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	}
 
 	private synchronized S3SetupTaskResult applySetup(S3SetupConfiguration config) throws IOException {
-		if ( config == null || config.getObjects() == null || config.getObjects().length < 1 ) {
+		if ( config == null ) {
 			return new S3SetupTaskResult(false, Collections.emptySet(), Collections.emptySet());
 		}
 		S3SetupManagerPlatformTask task = new S3SetupManagerPlatformTask(config);
@@ -300,12 +297,19 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 
 		DeletingAsset,
 
+		InstallingPackage,
+
+		DeletingPackage,
+
+		UpgradingPackages,
+
 		PostingSetupVersion,
 
 		Complete,
 	}
 
-	private class S3SetupManagerPlatformTask implements PlatformTask<S3SetupTaskResult> {
+	private class S3SetupManagerPlatformTask
+			implements PlatformTask<S3SetupTaskResult>, ProgressListener<Void> {
 
 		private final String taskId;
 		private final AtomicReference<S3SetupManagerPlatformTaskState> state;
@@ -315,18 +319,22 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 		private final S3SetupConfiguration config;
 		private int step;
 		private boolean complete;
+		private double extractPercentComplete;
 
 		public S3SetupManagerPlatformTask(S3SetupConfiguration config) {
 			super();
 			assert config != null;
 			this.taskId = UUID.randomUUID().toString();
 			this.config = config;
-			this.stepCount = config.getTotalStepCount() + 1;
+			// add +2 if any packages defined, to perform refresh/clean steps before/after
+			this.stepCount = config.getTotalStepCount() + 1
+					+ (config.getPackages() != null && config.getPackages().length > 0 ? 2 : 0);
 			state = new AtomicReference<S3SetupManagerPlatformTaskState>(
 					S3SetupManagerPlatformTaskState.Idle);
 			assetName = new AtomicReference<String>(null);
 			step = 0;
 			complete = false;
+			extractPercentComplete = 0;
 		}
 
 		@Override
@@ -334,7 +342,10 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			try {
 				Set<Path> installedFiles = applySetupObjects(config);
 				Set<Path> deletedFiles = applySetupSyncPaths(config, installedFiles);
-				deletedFiles.addAll(applySetupCleanPaths(config));
+				deletedFiles = addTo(deletedFiles, applySetupCleanPaths(config));
+
+				installedFiles = addTo(installedFiles, applySetupPackages(config));
+
 				try {
 					setState(S3SetupManagerPlatformTaskState.PostingSetupVersion, null);
 					updateNodeMetadataForInstalledVersion(config);
@@ -363,6 +374,19 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 					informStatusHandlers();
 				}
 			}
+		}
+
+		private Set<Path> addTo(Set<Path> set, Set<Path> additions) {
+			if ( additions.isEmpty() ) {
+				return set;
+			}
+			if ( set.isEmpty() ) {
+				return additions;
+			} else {
+				set.addAll(additions);
+				return set;
+			}
+
 		}
 
 		private synchronized void informStatusHandlers() {
@@ -439,7 +463,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 
 		@Override
 		public double getPercentComplete() {
-			return (double) step / (double) stepCount;
+			return (double) step / (double) stepCount + (extractPercentComplete / stepCount);
 		}
 
 		private void setState(S3SetupManagerPlatformTaskState taskState, String asset) {
@@ -475,18 +499,21 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			if ( objCount < 1 ) {
 				return Collections.emptySet();
 			}
+			final Path destBasePath = Paths.get(destinationPath);
 			Set<Path> installed = new LinkedHashSet<>();
 			for ( int i = 0; i < objCount; i++, incrementStep() ) {
+				extractPercentComplete = 0;
 				String dataObjKey = objects[i];
-				if ( !TARBALL_PAT.matcher(dataObjKey).find() ) {
-					log.warn("S3 setup resource {} not a supported type; skipping");
+				PlatformPackageService pkgService = packageServiceForArchiveFileName(dataObjKey);
+				if ( pkgService == null ) {
+					log.warn("S3 setup resource {} is not a supported type; skipping", dataObjKey);
 					continue;
 				}
 
 				setState(S3SetupManagerPlatformTaskState.DownloadingAsset, dataObjKey);
-				S3Object obj = s3Client.getObject(dataObjKey);
+				S3Object obj = s3Client.getObject(dataObjKey, null, null);
 				if ( obj == null ) {
-					log.warn("Data object {} not found, cannot apply setup", dataObjKey);
+					log.warn("S3 setup resource {} not found, cannot apply setup", dataObjKey);
 					continue;
 				}
 
@@ -499,17 +526,42 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 
 				// download the data object to the work dir
 				String dataObjFilename = DigestUtils.sha1Hex(dataObjKey);
+				String dataObjFilenameExt = getFilenameExtension(dataObjKey);
+				if ( dataObjFilenameExt != null ) {
+					dataObjFilename += "." + dataObjFilenameExt;
+				}
 				File dataObjFile = new File(workDir, dataObjFilename);
-				try (InputStream in = obj.getObjectContent();
+				try (InputStream in = obj.getInputStream();
 						OutputStream out = new BufferedOutputStream(new FileOutputStream(dataObjFile))) {
 					log.info("Downloading S3 setup resource {} -> {}", dataObjKey, dataObjFile);
-					FileCopyUtils.copy(obj.getObjectContent(), out);
+					FileCopyUtils.copy(in, out);
 
-					// extract tarball
+					// extract archive
 					setStateAndIncrementStep(S3SetupManagerPlatformTaskState.InstallingAsset,
 							dataObjKey);
-					List<Path> extractedPaths = extractTarball(dataObjFile);
-					installed.addAll(extractedPaths);
+					Future<PlatformPackageService.PlatformPackageResult<Void>> extractFuture = pkgService
+							.installPackage(dataObjFile.toPath(), destBasePath, this, null);
+					PlatformPackageService.PlatformPackageResult<Void> extractResult = extractFuture
+							.get(packageActionTimeoutSecs, TimeUnit.SECONDS);
+					if ( extractResult != null ) {
+						if ( extractResult.isSuccess() ) {
+							installed.addAll(extractResult.getExtractedPaths());
+						} else if ( extractResult.getException() != null ) {
+							if ( extractResult.getException() instanceof RuntimeException ) {
+								throw (RuntimeException) extractResult.getException();
+							} else if ( extractResult.getException() instanceof IOException ) {
+								throw (IOException) extractResult.getException();
+							} else {
+								throw new RuntimeException(extractResult.getException());
+							}
+						}
+					}
+				} catch ( InterruptedException | ExecutionException e ) {
+					throw new RuntimeException(
+							"Error extracting package [" + dataObjKey + "]: " + e.getMessage(), e);
+				} catch ( TimeoutException e ) {
+					throw new RuntimeException("Timeout waiting for package extraction of [" + dataObjKey
+							+ "] to complete");
 				} finally {
 					if ( dataObjFile.exists() ) {
 						dataObjFile.delete();
@@ -517,10 +569,108 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 				}
 			}
 			if ( !installed.isEmpty() ) {
-				log.info("Installed files from objects {}: {}", Arrays.asList(config.getObjects()),
-						installed);
+				log.info("Installed files from objects {}: {}", asList(config.getObjects()), installed);
 			}
 			return installed;
+		}
+
+		private Set<Path> applySetupPackages(S3SetupConfiguration config) throws IOException {
+			final S3SetupPackageConfiguration[] pkgConfigs = (config != null ? config.getPackages()
+					: null);
+			if ( pkgConfigs == null || pkgConfigs.length < 1 ) {
+				return Collections.emptySet();
+			}
+			final PlatformPackageService pkgService = mainPackageService();
+			if ( pkgService == null ) {
+				log.warn("No PlatformPackageService available to install packages; skipping.");
+				return Collections.emptySet();
+			}
+
+			Future<Boolean> boolTaskFuture = pkgService.refreshNamedPackages();
+			try {
+				boolTaskFuture.get(packageActionTimeoutSecs, TimeUnit.SECONDS);
+			} catch ( InterruptedException | ExecutionException e ) {
+				log.warn("Error refreshing packages; continuing anyway: {}", e.getMessage(), e);
+			} catch ( TimeoutException e ) {
+				log.warn("Timeout waiting to refresh packages; continuing anyway.");
+			} finally {
+				incrementStep();
+			}
+
+			final Path destBasePath = Paths.get(destinationPath);
+			Set<Path> installed = new LinkedHashSet<>();
+			for ( S3SetupPackageConfiguration pkgConfig : pkgConfigs ) {
+				extractPercentComplete = 0;
+				try {
+					Future<PlatformPackageService.PlatformPackageResult<Void>> taskFuture = null;
+					switch (pkgConfig.getAction()) {
+						case Install:
+							setState(S3SetupManagerPlatformTaskState.InstallingPackage,
+									pkgConfig.getName());
+							log.info("Installing package [{}]", pkgConfig.getName());
+							taskFuture = pkgService.installNamedPackage(pkgConfig.getName(),
+									pkgConfig.getVersion(), destBasePath, this, null);
+							break;
+
+						case Remove:
+							setState(S3SetupManagerPlatformTaskState.DeletingPackage,
+									pkgConfig.getName());
+							log.info("Removing package [{}]", pkgConfig.getName());
+							taskFuture = pkgService.removeNamedPackage(pkgConfig.getName(), this, null);
+							break;
+
+						case Upgrade:
+							setState(S3SetupManagerPlatformTaskState.UpgradingPackages, "");
+							log.info("Upgrading all packages");
+							taskFuture = pkgService.installNamedPackage(pkgConfig.getName(),
+									pkgConfig.getVersion(), destBasePath, this, null);
+							break;
+
+					}
+					if ( taskFuture != null ) {
+						PlatformPackageService.PlatformPackageResult<Void> taskResult = taskFuture
+								.get(packageActionTimeoutSecs, TimeUnit.SECONDS);
+						if ( taskResult != null ) {
+							if ( taskResult.isSuccess() ) {
+								installed.addAll(taskResult.getExtractedPaths());
+							} else if ( taskResult.getException() != null ) {
+								if ( taskResult.getException() instanceof RuntimeException ) {
+									throw (RuntimeException) taskResult.getException();
+								} else if ( taskResult.getException() instanceof IOException ) {
+									throw (IOException) taskResult.getException();
+								} else {
+									throw new RuntimeException(taskResult.getException());
+								}
+							}
+						}
+					}
+					incrementStep();
+				} catch ( InterruptedException | ExecutionException e ) {
+					throw new RuntimeException("Error handling " + pkgConfig.getAction()
+							+ " of package [" + pkgConfig.getName() + "]: " + e.getMessage(), e);
+				} catch ( TimeoutException e ) {
+					throw new RuntimeException("Timeout waiting for " + pkgConfig.getAction()
+							+ " of package [" + pkgConfig.getName() + "] to complete");
+				}
+			}
+
+			boolTaskFuture = pkgService.cleanup();
+			try {
+				boolTaskFuture.get(packageActionTimeoutSecs, TimeUnit.SECONDS);
+			} catch ( InterruptedException | ExecutionException e ) {
+				log.warn("Error cleaning packages; continuing anyway: {}", e.getMessage(), e);
+			} catch ( TimeoutException e ) {
+				log.warn("Timeout waiting to clean packages; continuing anyway.");
+			} finally {
+				incrementStep();
+			}
+
+			return installed;
+		}
+
+		@Override
+		public void progressChanged(Void context, double amountComplete) {
+			extractPercentComplete = amountComplete;
 		}
 
 		private Set<Path> applySetupSyncPaths(S3SetupConfiguration config, Set<Path> installedFiles)
@@ -539,8 +689,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 				incrementStep();
 			}
 			if ( !deleted.isEmpty() ) {
-				log.info("Deleted files from syncPaths {}: {}", Arrays.asList(config.getSyncPaths()),
-						deleted);
+				log.info("Deleted files from syncPaths {}: {}", asList(config.getSyncPaths()), deleted);
 			}
 			return deleted;
 		}
@@ -606,56 +755,6 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 						deleted);
 			}
 			return deleted;
-		}
-
-		private List<Path> extractTarball(File tarball) throws IOException {
-			List<String> cmd = new ArrayList<>(tarCommand.size());
-			String tarballPath = tarball.getAbsolutePath();
-			for ( String param : tarCommand ) {
-				param = param.replace(SOURCE_FILE_PLACEHOLDER, tarballPath);
-				param = param.replace(DESTINATION_DIRECTORY_PLACEHOLDER, destinationPath);
-				cmd.add(param);
-			}
-			if ( log.isDebugEnabled() ) {
-				StringBuilder buf = new StringBuilder();
-				for ( String p : cmd ) {
-					if ( buf.length() > 0 ) {
-						buf.append(' ');
-					}
-					buf.append(p);
-				}
-				log.debug("Tar command: {}", buf.toString());
-			}
-			log.info("Extracting S3 tar archive {}", tarball);
-			List<Path> extractedPaths = new ArrayList<>();
-			ProcessBuilder pb = new ProcessBuilder(cmd);
-			pb.redirectErrorStream(true); // OS X tar output list to STDERR; Linux GNU tar to STDOUT
-			Process pr = pb.start();
-			try (BufferedReader in = new BufferedReader(new InputStreamReader(pr.getInputStream()))) {
-				String line = null;
-				while ( (line = in.readLine()) != null ) {
-					Matcher m = TAR_LIST_PAT.matcher(line);
-					if ( m.matches() ) {
-						line = m.group(1);
-					}
-					Path path = FileSystems.getDefault().getPath(line).toAbsolutePath().normalize();
-					extractedPaths.add(path);
-					log.trace("Installed setup resource: {}", line);
-				}
-			}
-			try {
-				pr.waitFor();
-			} catch ( InterruptedException e ) {
-				log.warn("Interrupted waiting for tar command to complete");
-			}
-			if ( pr.exitValue() != 0 ) {
-				String output = extractedPaths.stream().map(p -> p.toString())
-						.collect(Collectors.joining("\n")).trim();
-				log.error("Tar command returned non-zero exit code {}: {}", pr.exitValue(), output);
-				throw new IOException(
-						"Tar command returned non-zero exit code " + pr.exitValue() + ": " + output);
-			}
-			return extractedPaths;
 		}
 
 	}
@@ -808,6 +907,39 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 		return versionObj;
 	}
 
+	private PlatformPackageService packageServiceForArchiveFileName(String archiveFileName) {
+		Iterable<PlatformPackageService> itr = (packageServices != null ? packageServices.services()
+				: Collections.emptyList());
+		for ( PlatformPackageService s : itr ) {
+			if ( s != null && s.handlesPackage(archiveFileName) ) {
+				return s;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * This method returns the first-available package service.
+	 * 
+	 * <p>
+	 * To ensure the desired package service is used, the
+	 * {@link OptionalServiceCollection} is assumed to return the services in a
+	 * ranked order, from highest to lowest rank.
+	 * </p>
+	 * 
+	 * @return the "main" package service, or {@literal null} if none available
+	 */
+	private PlatformPackageService mainPackageService() {
+		Iterable<PlatformPackageService> itr = (packageServices != null ? packageServices.services()
+				: Collections.emptyList());
+		for ( PlatformPackageService s : itr ) {
+			if ( s != null ) {
+				return s;
+			}
+		}
+		return null;
+	}
+
 	/**
 	 * Construct a full S3 object key that includes the configured
 	 * {@code objectKeyPrefix} from a relative path value.
@@ -902,17 +1034,14 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	}
 
 	/**
-	 * Set the command and arguments to use for extracting tar resources.
-	 * 
-	 * <p>
-	 * The arguments support {@literal __SOURCE_FILE__} and
-	 * {@literal __DEST_DIR__} placeholders that will be replaced by the input
-	 * tar file path and the value of the {@code destinationPath} property.
+	 * No-op method, for backwards compatibility.
 	 * 
 	 * @param tarCommand
+	 * @deprecated since 1.2
 	 */
+	@Deprecated
 	public void setTarCommand(List<String> tarCommand) {
-		this.tarCommand = tarCommand;
+		// ignored
 	}
 
 	/**
@@ -964,6 +1093,29 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	 */
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
+	}
+
+	/**
+	 * Set the collection of {@link PlatformPackageService} implementations to
+	 * use.
+	 * 
+	 * @param packageServices
+	 *        the services
+	 * @since 1.2
+	 */
+	public void setPackageServices(OptionalServiceCollection<PlatformPackageService> packageServices) {
+		this.packageServices = packageServices;
+	}
+
+	/**
+	 * Set a timeout, in seconds, to use for package actions.
+	 * 
+	 * @param packageActionTimeoutSecs
+	 *        the timeout to use; defaults to
+	 *        {@link #DEFAULT_PACKAGE_ACTION_TIMEOUT_SECS}
+	 */
+	public void setPackageActionTimeoutSecs(long packageActionTimeoutSecs) {
+		this.packageActionTimeoutSecs = packageActionTimeoutSecs;
 	}
 
 }

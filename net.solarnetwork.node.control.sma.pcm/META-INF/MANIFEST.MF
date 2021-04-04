@@ -5,20 +5,21 @@ Bundle-SymbolicName: net.solarnetwork.node.control.sma.pcm
 Bundle-Description: Dynamically adjust the maximum power output of SMA inverters 
  by controlling an attached SMA Power Control Module. This control can be used 
  directly and it also supports automated adjustments via the Demand Balancer control. 
-Bundle-Version: 2.2.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
- net.solarnetwork.domain;version="1.2.0",
+ net.solarnetwork.domain;version="1.17.0",
  net.solarnetwork.node;version="1.22.0",
  net.solarnetwork.node.domain;version="1.10.0",
- net.solarnetwork.node.io.modbus;version="[2.0,3.0)",
+ net.solarnetwork.node.io.modbus;version="[3.0,4.0)",
+ net.solarnetwork.node.io.modbus.support;version="[3.0,4.0)",
  net.solarnetwork.node.reactor;version="1.1.0",
  net.solarnetwork.node.settings;version="1.1.0",
  net.solarnetwork.node.settings.support;version="1.0.0",
- net.solarnetwork.node.support;version="1.14.0",
+ net.solarnetwork.node.support;version="1.18.0",
  net.solarnetwork.node.util;version="1.7.0",
- net.solarnetwork.util;version="1.26.0",
+ net.solarnetwork.util;version="[1.40,2.0)",
  org.aopalliance.aop;version="1.0.0",
  org.eclipse.gemini.blueprint.compendium.cm;version="[2.0,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",

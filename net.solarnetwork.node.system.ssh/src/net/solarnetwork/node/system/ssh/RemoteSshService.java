@@ -22,12 +22,15 @@
 
 package net.solarnetwork.node.system.ssh;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.unmodifiableSet;
+import static net.solarnetwork.node.Constants.solarNodeHome;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -43,11 +46,13 @@ import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.NodeMetadataService;
 import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
@@ -95,7 +100,7 @@ import net.solarnetwork.util.StringUtils;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.3
  */
 public class RemoteSshService
 		implements FeedbackInstructionHandler, SettingSpecifierProvider, CloseableService {
@@ -132,15 +137,20 @@ public class RemoteSshService
 	 */
 	public static final String PARAM_REVERSE_PORT = "rport";
 
-	/** The default value for the {@code command} property. */
-	public static final String DEFAULT_COMMAND = "solarssh";
+	/**
+	 * The default value for the {@code command} property.
+	 * 
+	 * <p>
+	 * This is {@link Constants#solarNodeHome()} with {@literal /bin/solarssh}.
+	 * </p>
+	 */
+	public static final String DEFAULT_COMMAND = solarNodeHome() + "/bin/solarssh";
 
 	/** The node metadata info key to publish the SSH public key to. */
 	public static final String METADATA_SSH_PUBLIC_KEY = "ssh-public-key";
 
-	private String command = DEFAULT_COMMAND;
-	private Set<String> allowedHosts = Collections
-			.unmodifiableSet(new HashSet<String>(Arrays.asList("data.solarnetwork.net")));
+	private String command;
+	private Set<String> allowedHosts;
 	private MessageSource messageSource;
 	private TaskScheduler taskScheduler;
 	private ScheduledFuture<?> maintenanceFuture;
@@ -149,6 +159,12 @@ public class RemoteSshService
 	private final Set<RemoteSshConfig> configs = new ConcurrentSkipListSet<RemoteSshConfig>();
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	public RemoteSshService() {
+		super();
+		this.allowedHosts = unmodifiableSet(new HashSet<String>(asList("data.solarnetwork.net")));
+		this.command = DEFAULT_COMMAND;
+	}
 
 	private class ConnectionMaintenanceTask implements Runnable {
 
@@ -213,20 +229,21 @@ public class RemoteSshService
 		configs.addAll(osConfigs);
 	}
 
-	private void publishSshPublicKey() {
+	private boolean publishSshPublicKey() {
 		String publicKey = getSshPublicKey();
 		if ( publicKey == null || publicKey.length() < 1 ) {
-			return;
+			return false;
 		}
 		NodeMetadataService service = (nodeMetadataService != null ? nodeMetadataService.service()
 				: null);
 		if ( service == null ) {
 			log.debug("Cannot publish SSH public key because no NodeMetadataService available.");
-			return;
+			return false;
 		}
 		GeneralDatumMetadata meta = new GeneralDatumMetadata();
 		meta.putInfoValue(METADATA_SSH_PUBLIC_KEY, publicKey);
 		service.addNodeMetadata(meta);
+		return true;
 	}
 
 	@Override
@@ -247,9 +264,14 @@ public class RemoteSshService
 		if ( instruction != null ) {
 			if ( TOPIC_START_REMOTE_SSH.equalsIgnoreCase(instruction.getTopic()) ) {
 				// make sure current public key is published, in case it has changed
-				publishSshPublicKey();
+				boolean published = publishSshPublicKey();
 
 				result = handleStartRemoteSsh(instruction);
+				if ( result != null && result.getInstructionState() == InstructionState.Completed
+						&& !published ) {
+					// try again; the SSH key might have been generated when the service started
+					publishSshPublicKey();
+				}
 			} else if ( TOPIC_STOP_REMOTE_SSH.equalsIgnoreCase(instruction.getTopic()) ) {
 				result = handleStopRemoteSsh(instruction);
 			}
@@ -280,13 +302,18 @@ public class RemoteSshService
 			configs.remove(config);
 		}
 
+		final InstructionStatus startingStatus = instruction.getStatus();
+
 		// TODO: use Executing state when connection hasn't been confirmed as connected!
 		InstructionState newState = (started ? InstructionState.Completed : InstructionState.Declined);
 		InstructionStatus result;
 		if ( resultParams.isEmpty() ) {
-			result = instruction.getStatus().newCopyWithState(newState);
+			result = (startingStatus != null ? startingStatus.newCopyWithState(newState)
+					: new BasicInstructionStatus(instruction.getId(), newState, new Date()));
 		} else {
-			result = instruction.getStatus().newCopyWithState(newState, resultParams);
+			result = (startingStatus != null ? startingStatus.newCopyWithState(newState, resultParams)
+					: new BasicInstructionStatus(instruction.getId(), newState, new Date(), null,
+							resultParams));
 		}
 		return result;
 	}
@@ -303,12 +330,16 @@ public class RemoteSshService
 		if ( stopped ) {
 			configs.remove(config);
 		}
+		final InstructionStatus startingStatus = instruction.getStatus();
 		InstructionState newState = (stopped ? InstructionState.Completed : InstructionState.Declined);
 		InstructionStatus result;
 		if ( resultParams.isEmpty() ) {
-			result = instruction.getStatus().newCopyWithState(newState);
+			result = (startingStatus != null ? startingStatus.newCopyWithState(newState)
+					: new BasicInstructionStatus(instruction.getId(), newState, new Date()));
 		} else {
-			result = instruction.getStatus().newCopyWithState(newState, resultParams);
+			result = (startingStatus != null ? startingStatus.newCopyWithState(newState, resultParams)
+					: new BasicInstructionStatus(instruction.getId(), newState, new Date(), null,
+							resultParams));
 		}
 		return result;
 	}
@@ -415,9 +446,10 @@ public class RemoteSshService
 			}
 			String err = FileCopyUtils.copyToString(new InputStreamReader(pr.getErrorStream()));
 			if ( err.length() > 0 ) {
-				log.error("Error getting SSH public key: {}", err);
+				log.warn("Error getting SSH public key: {}", err);
+			} else {
+				log.debug("Public SSH key: {}", key);
 			}
-			log.debug("Public SSH key: {}", key);
 			return key;
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);

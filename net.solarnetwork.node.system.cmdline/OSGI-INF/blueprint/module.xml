@@ -19,7 +19,16 @@
 		<interfaces>
 			<value>net.solarnetwork.node.SystemService</value>
 			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+			<value>net.solarnetwork.node.reactor.FeedbackInstructionHandler</value>
 		</interfaces>
+		<service-properties>
+			<entry key="instruction">
+				<list>
+					<value>SystemReboot</value>
+					<value>SystemRestart</value>
+				</list>
+			</entry>
+		</service-properties>
 		<bean class="net.solarnetwork.node.system.cmdline.CmdlineSystemService">
 			<osgix:managed-properties persistent-id="net.solarnetwork.node.system.cmdline.CmdlineSystemService" autowire-on-update="true"/>
 			<property name="bundleContext" ref="bundleContext"/>

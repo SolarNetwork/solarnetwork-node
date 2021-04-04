@@ -46,6 +46,11 @@ environment file with the connection settings passed to it, and generate a
 unique service unit instance name based on the connection settings. It will then
 use `systemctl` to start, stop, and list the SSH services.
 
+Additionally the `solarssh-cleaner.timer` and associated `solarssh-cleaner.service`
+units should be installed, which will close any SSH sessions left active but
+no longer working.
+
+
 ### `sudo` support
 
 The `solarssh.sh` script also relies on `sudo` when calling the `systemctl

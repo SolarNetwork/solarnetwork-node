@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode DAO JDBC Derby Test
+Bundle-Name: DAO JDBC Derby Tests
 Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc.derby.test
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork

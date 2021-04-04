@@ -22,9 +22,6 @@
 
 package net.solarnetwork.node.hw.hc;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-
 /**
  * An enumeration of energy units.
  * 
@@ -48,11 +45,9 @@ public enum EnergyUnit {
 	MegaWattHour(6);
 
 	private final int value;
-	private final int scale;
 
 	private EnergyUnit(int value) {
 		this.value = value;
-		this.scale = new BigDecimal(new BigInteger(String.valueOf(value)), value).intValueExact();
 	}
 
 	/**
@@ -64,7 +59,7 @@ public enum EnergyUnit {
 	 * @throws IllegalArgumentException
 	 *         if the value is not supported
 	 */
-	public EnergyUnit energyUnitForValue(final int v) {
+	public static EnergyUnit energyUnitForValue(final int v) {
 		switch (v) {
 			case 0:
 				return WattHour;
@@ -93,23 +88,14 @@ public enum EnergyUnit {
 	}
 
 	/**
-	 * Get the raw Modbus register value for this unit.
+	 * Get the scale factor to apply with this unit, in terms of a number of
+	 * decimal places to shift a raw Modbus register value to calculate the
+	 * actual value in standardized form.
 	 * 
-	 * @return the register value
-	 */
-	public int getValue() {
-		return value;
-	}
-
-	/**
-	 * Get the scale factor to apply with this unit, in terms of a divisor to
-	 * apply to a raw Modbus register value to calculate the actual value in
-	 * standardized form.
-	 * 
-	 * @return
+	 * @return the scale factor
 	 */
 	public int getScaleFactor() {
-		return scale;
+		return value;
 	}
 
 }

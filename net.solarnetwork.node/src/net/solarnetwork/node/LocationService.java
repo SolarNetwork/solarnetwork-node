@@ -38,12 +38,16 @@ public interface LocationService {
 	/** An unknown source, which is always available. */
 	static final String UNKNOWN_SOURCE = "Unknown";
 
-	/** An unknown location, which is always available for the UNKNOWN source. */
+	/**
+	 * An unknown location, which is always available for the UNKNOWN source.
+	 */
 	static final String UNKNOWN_LOCATION = "Unknown";
 
 	/**
 	 * Look up a Location based on a source name and location name.
 	 * 
+	 * @param <T>
+	 *        the location type
 	 * @param locationType
 	 *        the type of location to look up
 	 * @param sourceName
@@ -51,7 +55,7 @@ public interface LocationService {
 	 * @param locationName
 	 *        the location within the source (e.g. HAY2201)
 	 * @return the matching location, or <em>null</em> if not found
-	 * @deprecated see {@link #findLocations(String, Set)}
+	 * @deprecated see {@link #findLocationMetadata(String, String, Set)}
 	 */
 	@Deprecated
 	<T extends Location> Collection<? extends Location> findLocations(Class<T> locationType,
@@ -60,12 +64,14 @@ public interface LocationService {
 	/**
 	 * Get a specific Location based on an ID.
 	 * 
+	 * @param <T>
+	 *        the location type
 	 * @param locationType
 	 *        the type of location to look up
 	 * @param locationId
 	 *        the ID of the location to find
 	 * @return the location, or <em>null</em> if not found
-	 * @deprecated see {@link #getLocation(Long, String)}
+	 * @deprecated see {@link #getLocationMetadata(Long, String)}
 	 */
 	@Deprecated
 	<T extends Location> T getLocation(Class<T> locationType, Long locationId);

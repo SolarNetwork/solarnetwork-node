@@ -18,27 +18,111 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.settings;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Edit settings command object.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.1
  */
-public class SettingsCommand {
+public class SettingsCommand implements SettingsUpdates {
 
 	private String providerKey;
 	private String instanceKey;
+	private List<SettingValueBean> values;
+	private boolean force;
 
-	private List<SettingValueBean> values = new ArrayList<SettingValueBean>();
+	private final Iterable<Pattern> settingKeyPatternsToClean;
+
+	/**
+	 * Constructor.
+	 * 
+	 * <p>
+	 * The {@code values} property will be created automatically.
+	 * </p>
+	 */
+	public SettingsCommand() {
+		this(null);
+	}
+
+	/**
+	 * Construct with a "forced" setting.
+	 * 
+	 * <p>
+	 * This can be useful when configuring an instance from a factory, where the
+	 * instance only has default settings (and thus no instance settings).
+	 * </p>
+	 * 
+	 * @param force
+	 *        {@literal true} to force updating the setting
+	 */
+	public SettingsCommand(boolean force) {
+		this(null);
+		this.force = force;
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param values
+	 *        the values, or {@literal null} to have a list created
+	 *        automatically
+	 */
+	public SettingsCommand(List<SettingValueBean> values) {
+		this(values, null);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param values
+	 *        the values, or {@literal null} to have a list created
+	 *        automatically
+	 * @param settingKeyPatternsToClean
+	 *        the key patterns to clean, or {@literal null}
+	 */
+	public SettingsCommand(List<SettingValueBean> values, Iterable<Pattern> settingKeyPatternsToClean) {
+		super();
+		setValues(values != null ? values : new ArrayList<>(8));
+		this.settingKeyPatternsToClean = (settingKeyPatternsToClean != null ? settingKeyPatternsToClean
+				: Collections.emptyList());
+	}
+
+	@Override
+	public boolean hasSettingKeyPatternsToClean() {
+		if ( settingKeyPatternsToClean instanceof Collection<?> ) {
+			return !((Collection<?>) settingKeyPatternsToClean).isEmpty();
+		} else if ( settingKeyPatternsToClean != null ) {
+			Iterator<Pattern> itr = settingKeyPatternsToClean.iterator();
+			return itr.hasNext();
+		}
+		return false;
+	}
+
+	@Override
+	public boolean hasSettingValueUpdates() {
+		return (force || (values != null && !values.isEmpty()));
+	}
+
+	@Override
+	public Iterable<Pattern> getSettingKeyPatternsToClean() {
+		return settingKeyPatternsToClean;
+	}
+
+	@Override
+	public Iterable<? extends Change> getSettingValueUpdates() {
+		return getValues();
+	}
 
 	public List<SettingValueBean> getValues() {
 		return values;
@@ -62,6 +146,29 @@ public class SettingsCommand {
 
 	public void setInstanceKey(String instanceKey) {
 		this.instanceKey = instanceKey;
+	}
+
+	/**
+	 * Get the flag indicating if the update command should be forced, even if
+	 * there are no setting values.
+	 * 
+	 * @return {@literal true} if the update should be forced
+	 * @since 1.1
+	 */
+	public boolean isForce() {
+		return force;
+	}
+
+	/**
+	 * Set a flag indicating if the update command should be forced, even if
+	 * there are no setting values.
+	 * 
+	 * @param force
+	 *        {@literal true} if the update should be forced
+	 * @since 1.1
+	 */
+	public void setForce(boolean force) {
+		this.force = force;
 	}
 
 }

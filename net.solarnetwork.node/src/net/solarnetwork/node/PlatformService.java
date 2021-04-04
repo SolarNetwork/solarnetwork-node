@@ -38,14 +38,6 @@ public interface PlatformService {
 	/**
 	 * An {@link org.osgi.service.event.Event} topic for when a the platform
 	 * state has changed.
-	 * 
-	 * <p>
-	 * The properties of the event shall be any of the JavaBean properties of
-	 * the Datum supported by events (i.e. any simple Java property such as
-	 * numbers and strings). In addition, the
-	 * {@link #EVENT_DATUM_CAPTURED_DATUM_TYPE} property shall be populated with
-	 * the name of the <em>core</em> class name of the datum type.
-	 * </p>
 	 */
 	String EVENT_TOPIC_PLATFORM_STATE_CHANGED = "net/solarnetwork/node/PlatformService/STATE_CHANGED";
 
@@ -65,7 +57,7 @@ public interface PlatformService {
 	 * A message topic for task info updates.
 	 * 
 	 * <p>
-	 * The message body will contain a {@link new.solarnetwork.domain.Result}
+	 * The message body will contain a {@code new.solarnetwork.domain.Result}
 	 * with {@link PlatformTaskInfo} content.
 	 * </p>
 	 */
@@ -121,7 +113,7 @@ public interface PlatformService {
 		 * Get the amount of work that has been completed, as a fractional
 		 * percentage between {@literal 0} and {@literal 1}.
 		 * 
-		 * @return the amount of work completed, or anything < 0 if not known
+		 * @return the amount of work completed, or anything &lt; 0 if not known
 		 */
 		double getPercentComplete();
 
@@ -176,7 +168,7 @@ public interface PlatformService {
 		 * Get the amount of work that has been completed, as a fractional
 		 * percentage between {@literal 0} and {@literal 1}.
 		 * 
-		 * @return the amount of work completed, or anything < 0 if not known
+		 * @return the amount of work completed, or anything &lt; 0 if not known
 		 */
 		double getPercentComplete();
 
@@ -204,7 +196,8 @@ public interface PlatformService {
 		/**
 		 * Update the task info for a task.
 		 * 
-		 * @param info
+		 * @param status
+		 *        the status
 		 */
 		void taskStatusUpdated(PlatformTaskStatus status);
 	}
@@ -222,8 +215,6 @@ public interface PlatformService {
 		 * 
 		 * @param handler
 		 *        the handler
-		 * @param locale
-		 *        the desired locale
 		 */
 		void registerStatusHandler(PlatformTaskStatusHandler handler);
 

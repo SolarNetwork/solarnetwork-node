@@ -111,3 +111,20 @@ We can also ask for specific services to be started by creating symlinks like
 	systemctl enable rfid-server@rfid2.service
 
 which would make the system start up the server for `/dev/rfid2` on boot.
+
+## Debian packaging
+
+Build using the provided `Makefile`, then `fpm` to package, like:
+
+```sh
+$ make
+
+$ make deb
+```
+
+To specify a specific distribution target, add the `DIST` parameter, like
+
+```sh
+$ make deb DIST=buster
+```
+

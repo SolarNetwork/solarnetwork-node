@@ -22,31 +22,20 @@
 	
 	<!-- Service References -->
 	
-	<reference-list id="datumDaoCollection" availability="optional"
+	<reference-list id="datumDaoCollection" availability="optional" filter="(!(upload=false))"
 		interface="net.solarnetwork.node.dao.DatumDao"/>
 
-	<reference-list id="sampleTransformers" availability="optional" 
-		interface="net.solarnetwork.node.domain.GeneralDatumSamplesTransformer"/>
-		
 	<reference id="identityService" availability="optional"
 		interface="net.solarnetwork.node.IdentityService"/>
 	
-	<reference id="reactorServiceRef" availability="optional"
-		interface="net.solarnetwork.node.reactor.ReactorService">
-		<reference-listener ref="reactorService" bind-method="onBind" unbind-method="onUnbind"/>
-	</reference>
-	
-	<bean id="reactorService" class="net.solarnetwork.util.OptionalServiceTracker">
-		<property name="service" ref="reactorServiceRef"/>
+	<bean id="reactorService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.reactor.ReactorService"/>
 	</bean>
-
-	<reference id="sslServiceRef" availability="optional"
-		interface="net.solarnetwork.node.SSLService">
-		<reference-listener ref="sslService" bind-method="onBind" unbind-method="onUnbind"/>
-	</reference>
 	
-	<bean id="sslService" class="net.solarnetwork.util.OptionalServiceTracker">
-		<property name="service" ref="sslServiceRef"/>
+	<bean id="sslService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.support.SSLService"/>
 	</bean>
 	
 	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
@@ -54,12 +43,10 @@
 	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">
 		<property name="serializers">
 			<list>
-				<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.GeneralNodeDatumSerializer">
-					<property name="sampleTransformers" ref="sampleTransformers"/>	
-				</bean>
-				<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.DatumSerializer"/>
-				<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.InstructionSerializer"/>
-				<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.NodeControlInfoSerializer"/>
+				<bean class="net.solarnetwork.node.support.GeneralNodeDatumSerializer"/>
+				<bean class="net.solarnetwork.node.support.DatumSerializer"/>
+				<bean class="net.solarnetwork.node.support.InstructionSerializer"/>
+				<bean class="net.solarnetwork.node.support.NodeControlInfoSerializer"/>
 			</list>
 		</property>
 	</bean>
@@ -80,25 +67,6 @@
 		</interfaces>
 	</service>
 
-	<service interface="net.solarnetwork.node.DatumMetadataService">
-		<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.JsonDatumMetadataService">
-			<property name="objectMapper" ref="objectMapper"/>
-			<property name="identityService" ref="identityService"/>
-			<property name="sslService" ref="sslService"/>
-			<property name="baseUrl" value="/api/v1/sec/datum/meta"/>
-			<property name="settingDao" ref="settingDao"/>
-		</bean>
-	</service>
-	
-	<service interface="net.solarnetwork.node.NodeMetadataService">
-		<bean class="net.solarnetwork.node.upload.bulkjsonwebpost.JsonNodeMetadataService">
-			<property name="objectMapper" ref="objectMapper"/>
-			<property name="identityService" ref="identityService"/>
-			<property name="sslService" ref="sslService"/>
-			<property name="baseUrl" value="/api/v1/sec/nodes/meta"/>
-		</bean>
-	</service>
-	
 	<!-- Supporting Services -->
 	
 	<ctx:property-placeholder properties-ref="cfg"/>

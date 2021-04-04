@@ -22,14 +22,23 @@
 
 package net.solarnetwork.node.io.serial;
 
+import java.io.Closeable;
 import java.io.IOException;
 import net.solarnetwork.node.LockTimeoutException;
 
 /**
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public interface SerialConnection {
+public interface SerialConnection extends Closeable {
+
+	/**
+	 * Get the name of the serial port used by this connection.
+	 * 
+	 * @return the serial port name, or {@literal null} if not known
+	 * @since 1.1
+	 */
+	String getPortName();
 
 	/**
 	 * Open the connection, if it is not already open. The connection must be
@@ -43,6 +52,7 @@ public interface SerialConnection {
 	/**
 	 * Close the connection, if it is open.
 	 */
+	@Override
 	void close();
 
 	/**

@@ -31,7 +31,7 @@ import java.util.Iterator;
  * <p>
  * This iterator must be closed when finished using it, to correctly free up any
  * internal resources used by the instance. Once closed, {@link #iterator()}
- * should not be used again, and any {@link BackupResoruce} instanced returned
+ * should not be used again, and any {@link BackupResource} instanced returned
  * by any previously obtained {@link Iterator} instances are not considered
  * valid.
  * </p>

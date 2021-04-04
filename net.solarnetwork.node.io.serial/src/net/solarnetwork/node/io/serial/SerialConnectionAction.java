@@ -36,8 +36,9 @@ import java.io.IOException;
  * @param <T>
  *        the action return type
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
+@FunctionalInterface
 public interface SerialConnectionAction<T> {
 
 	/**
@@ -48,6 +49,7 @@ public interface SerialConnectionAction<T> {
 	 *        the connection
 	 * @return the result
 	 * @throws IOException
+	 *         if any IO error occurs
 	 */
 	T doWithConnection(SerialConnection conn) throws IOException;
 

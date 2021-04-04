@@ -23,12 +23,14 @@
 package net.solarnetwork.node.setup.auto;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Locale;
+import java.util.concurrent.Executor;
 import org.springframework.context.MessageSource;
-import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.backup.BackupResourceInfo;
 import net.solarnetwork.node.backup.BackupResourceProviderInfo;
@@ -45,17 +47,19 @@ import net.solarnetwork.node.settings.SettingsService;
  * to import a previously-exported settings CSV resource.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.3
  */
 public class SettingsImporter extends FileBackupResourceProvider {
 
-	private Resource settingsResource = new FileSystemResource("conf/auto-settings.csv");
+	private Path settingsResource = Paths.get("conf/auto-settings.csv");
+	private Path settingsResourceDir = Paths.get("conf", "auto-settings.d");
 	private SettingsService settingsService;
+	private Executor executor;
 
 	public SettingsImporter() {
 		super();
 		setResourceDirectories(new String[] { "conf" });
-		setFileNamePattern("^auto-settings\\..*");
+		setFileNamePattern("^auto-settings\\.csv$");
 	}
 
 	/**
@@ -63,28 +67,58 @@ public class SettingsImporter extends FileBackupResourceProvider {
 	 * exceptions if the resource is not available or cannot be read.
 	 */
 	public void loadSettings() {
-		if ( settingsResource == null ) {
+		Runnable task = new Runnable() {
+
+			@Override
+			public void run() {
+				loadSettingsResource();
+				loadSettingsDirResources();
+			}
+		};
+		Executor e = this.executor;
+		if ( e != null ) {
+			e.execute(task);
+		} else {
+			task.run();
+		}
+	}
+
+	private void loadSettingsResource() {
+		if ( settingsResource == null || !Files.isRegularFile(settingsResource) ) {
 			return;
 		}
-		Reader in = null;
-		try {
-			in = new InputStreamReader(settingsResource.getInputStream(), "UTF-8");
-			log.info("Auto-importing settings from {}", settingsResource);
+		loadSettingsResource(settingsResource);
+	}
+
+	private void loadSettingsResource(Path resource) {
+		try (Reader in = Files.newBufferedReader(resource, Charset.forName("UTF-8"))) {
+			log.info("Auto-importing settings from {}", resource);
 			SettingsImportOptions options = new SettingsImportOptions();
 			options.setAddOnly(true);
 			if ( settingsService != null ) {
 				settingsService.importSettingsCSV(in, options);
 			}
 		} catch ( Exception e ) {
-			log.warn("Error importing settings resource {}: {}", settingsResource, e.getMessage());
-		} finally {
-			if ( in != null ) {
-				try {
-					in.close();
-				} catch ( IOException e ) {
-					// ignore this
-				}
-			}
+			log.warn("Error importing settings resource {}: {}", resource, e.getMessage());
+		}
+	}
+
+	private void loadSettingsDirResources() {
+		if ( settingsResourceDir == null || !Files.isDirectory(settingsResourceDir) ) {
+			return;
+		}
+		try {
+			Files.list(settingsResourceDir)
+					.filter(p -> Files.isRegularFile(p)
+							&& p.getFileName().toString().toLowerCase().endsWith(".csv"))
+					.sorted((l, r) -> {
+						return l.toString().compareToIgnoreCase(r.toString());
+					}).forEachOrdered(p -> {
+						loadSettingsResource(p);
+					});
+		} catch ( IOException e ) {
+			log.warn("Error importing settings resources from directory {}: {}", settingsResourceDir,
+					e.getMessage());
 		}
 	}
 
@@ -115,12 +149,45 @@ public class SettingsImporter extends FileBackupResourceProvider {
 		return new SimpleBackupResourceInfo(resource.getProviderKey(), resource.getBackupPath(), desc);
 	}
 
+	/**
+	 * Set the settings service to use.
+	 * 
+	 * @param settingsService
+	 *        the settings service
+	 */
 	public void setSettingsService(SettingsService settingsService) {
 		this.settingsService = settingsService;
 	}
 
-	public void setSettingsResource(Resource settingsResource) {
+	/**
+	 * Set the settings resource to load.
+	 * 
+	 * @param settingsResource
+	 *        the settings resource
+	 */
+	public void setSettingsResource(Path settingsResource) {
 		this.settingsResource = settingsResource;
+	}
+
+	/**
+	 * Set the settings resource directory to load settings files from.
+	 * 
+	 * @param settingsResourceDir
+	 *        the path to a directory of {@literal *.csv} files to load
+	 * @since 1.2
+	 */
+	public void setSettingsResourceDir(Path settingsResourceDir) {
+		this.settingsResourceDir = settingsResourceDir;
+	}
+
+	/**
+	 * Set an executor to pass the loading of resources to.
+	 * 
+	 * @param executor
+	 *        an executor
+	 */
+	public void setExecutor(Executor executor) {
+		this.executor = executor;
 	}
 
 }

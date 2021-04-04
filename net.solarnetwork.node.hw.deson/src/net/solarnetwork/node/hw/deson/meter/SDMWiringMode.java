@@ -26,20 +26,24 @@ package net.solarnetwork.node.hw.deson.meter;
  * Wiring mode.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public enum SDMWiringMode {
 
-	OnePhaseTwoWire(1),
+	OnePhaseTwoWire(1, "1P-2W", "1 phase, 2 wire"),
 
-	ThreePhaseThreeWire(2),
+	ThreePhaseThreeWire(2, "3P-3W", "3 phase, 3 wire"),
 
-	ThreePhaseFourWire(3);
+	ThreePhaseFourWire(3, "3P-4W", "3 phase, 4 wire");
 
 	private int type;
+	private final String displayName;
+	private final String description;
 
-	SDMWiringMode(int type) {
+	private SDMWiringMode(int type, String displayName, String description) {
 		this.type = type;
+		this.displayName = displayName;
+		this.description = description;
 	}
 
 	/**
@@ -49,6 +53,24 @@ public enum SDMWiringMode {
 	 */
 	public int getType() {
 		return type;
+	}
+
+	/**
+	 * Get a description.
+	 * 
+	 * @return the description
+	 */
+	public String getDescription() {
+		return description;
+	}
+
+	/**
+	 * Get the display value shown by the meter for this wiring mode.
+	 * 
+	 * @return The display value.
+	 */
+	public String displayName() {
+		return displayName;
 	}
 
 	/**
@@ -76,25 +98,4 @@ public enum SDMWiringMode {
 		}
 	}
 
-	/**
-	 * Get the display value shown by the meter for this wiring mode.
-	 * 
-	 * @return The display value.
-	 */
-	public String displayString() {
-		switch (this) {
-			case OnePhaseTwoWire:
-				return "1P2";
-
-			case ThreePhaseThreeWire:
-				return "1P3";
-
-			case ThreePhaseFourWire:
-				return "1P4";
-
-			default:
-				// shouldn't get here
-				throw new RuntimeException("Unsupported wiring mode: " + this);
-		}
-	}
 }

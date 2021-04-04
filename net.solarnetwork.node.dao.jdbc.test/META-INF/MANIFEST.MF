@@ -1,14 +1,15 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode JDBC DAO Test
+Bundle-Name: JDBC DAO Tests
 Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc.test
-Bundle-Version: 1.5.0
+Bundle-Version: 1.6.0
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.dao.jdbc;bundle-version="1.20.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
  com.fasterxml.jackson.annotation;version="[2.4,3.0)",
  net.solarnetwork.node.dao.jdbc.derby;version="1.0.0",
+ net.solarnetwork.node.domain;version="1.12.0",
  net.solarnetwork.node.test;version="1.1.0",
  org.apache.commons.lang3.mutable;version="3.4.0",
  org.easymock;version="[3.1,4.0)",

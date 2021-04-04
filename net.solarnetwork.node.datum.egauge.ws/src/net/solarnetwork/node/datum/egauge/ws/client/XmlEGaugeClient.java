@@ -24,6 +24,7 @@ package net.solarnetwork.node.datum.egauge.ws.client;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.net.URLConnection;
 import java.util.ArrayList;
@@ -39,6 +40,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
+import org.springframework.expression.ExpressionException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -54,7 +56,10 @@ import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.node.support.XmlServiceSupport;
+import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.support.ExpressionServiceExpression;
 import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.OptionalServiceCollection;
 
 /**
  * XML implementation of the EGaugeClient. Instances of this can be shared
@@ -64,7 +69,7 @@ import net.solarnetwork.util.ArrayUtils;
  * to be returned by the {@code url}.
  * 
  * @author maxieduncan
- * @version 1.0
+ * @version 1.2
  */
 public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
@@ -85,6 +90,8 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	/** The list of property/register configurations. */
 	private EGaugeDatumSamplePropertyConfig[] propertyConfigs;
+
+	private OptionalServiceCollection<ExpressionService> expressionServices;
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
@@ -112,7 +119,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 						BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
 								key + ".propertyTypeKey", GeneralDatumSamplesType.Instantaneous.name());
-						// We only support two reading types currenlty
+						// We only support two reading types currently
 						Map<String, String> propTypeTitles = new LinkedHashMap<>();
 						propTypeTitles.put(
 								Character.toString(GeneralDatumSamplesType.Instantaneous.toKey()),
@@ -125,8 +132,9 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 						// Add the EGaugePropertyConfig properties
 						List<String> registerNames = getRegisterNames();
-						settingSpecifiers
-								.addAll(EGaugePropertyConfig.settings(key + ".config.", registerNames));
+						settingSpecifiers.addAll(EGaugePropertyConfig.settings(key + ".config.",
+								registerNames,
+								expressionServices != null ? expressionServices.services() : null));
 
 						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
 								settingSpecifiers);
@@ -146,12 +154,11 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 		EGaugePowerDatum datum = new EGaugePowerDatum();
 		datum.setCreated(new Date());
-		datum.setSourceId(getSourceId());
+		datum.setSourceId(resolvePlaceholders(getSourceId()));
 
 		try {
 			populateDatum(datum);
-			Map<String, ?> sampleData = datum.getSampleData();
-			if ( sampleData == null || sampleData.isEmpty() ) {
+			if ( datum.getSamples() == null || datum.getSamples().isEmpty() ) {
 				// not configured probably
 				return null;
 			}
@@ -171,64 +178,121 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		if ( configs != null ) {
 			Element xml = getXml(getUrl());
 			if ( xml != null ) {
+				List<DataRegister> registers = dataRegisters(xml);
 				for ( EGaugeDatumSamplePropertyConfig propertyConfig : configs ) {
-					populateDatumProperty(datum, propertyConfig, xml);
+					populateDatumProperty(datum, propertyConfig, registers);
 				}
 			}
 		}
 	}
 
+	private List<DataRegister> dataRegisters(Element xml) {
+		NodeList els;
+		try {
+			els = (NodeList) getXPathExpression("//r").evaluate(xml, XPathConstants.NODESET);
+		} catch ( XPathExpressionException e ) {
+			throw new RuntimeException(e);
+		}
+		final int len = (els != null ? els.getLength() : 0);
+		if ( len < 1 ) {
+			return Collections.emptyList();
+		}
+		List<DataRegister> regs = new ArrayList<>(len);
+		for ( int i = 0; i < len; i++ ) {
+			Element el = (Element) els.item(i);
+			String name = el.getAttribute("n");
+			String type = el.getAttribute("t");
+			String rType = el.getAttribute("rt");
+			BigInteger value = null;
+			BigDecimal inst = null;
+			NodeList childEls = el.getChildNodes();
+			final int childLen = (childEls != null ? childEls.getLength() : 0);
+			for ( int j = 0; j < childLen; j++ ) {
+				Element child = (Element) childEls.item(j);
+				if ( "v".equalsIgnoreCase(child.getLocalName()) ) {
+					value = new BigInteger(child.getTextContent());
+				} else if ( "i".equalsIgnoreCase(child.getLocalName()) ) {
+					inst = new BigDecimal(child.getTextContent());
+				}
+			}
+			regs.add(new DataRegister(name, type, rType, value, inst));
+		}
+		return regs;
+	}
+
 	protected void populateDatumProperty(EGaugePowerDatum datum,
-			EGaugeDatumSamplePropertyConfig propertyConfig, Element xml) {
+			EGaugeDatumSamplePropertyConfig propertyConfig, List<DataRegister> registers) {
 
 		if ( !propertyConfig.isValid() ) {
 			// no property type or key configured
 			return;
 		}
 
-		GeneralDatumSamplesType propertyType = propertyConfig.getPropertyType();
-
+		final GeneralDatumSamplesType propertyType = propertyConfig.getPropertyType();
+		final ExpressionServiceExpression expr;
 		try {
+			expr = propertyConfig
+					.getExpression(expressionServices != null ? expressionServices.services() : null);
+		} catch ( ExpressionException e ) {
+			log.warn("Error parsing property [{}] expression `{}`: {}", propertyConfig.getPropertyKey(),
+					propertyConfig.getConfig().getExpression(), e.getMessage());
+			return;
+		}
 
-			String xpathBase = "r[@n='" + propertyConfig.getConfig().getRegisterName() + "'][1]";
-			String eGaugePropertyType = (String) getXPathExpression(xpathBase + "/@t").evaluate(xml,
-					XPathConstants.STRING);
+		Number propValue = null;
 
+		if ( expr != null ) {
+			ExpressionRoot root = new ExpressionRoot(registers);
+			try {
+				propValue = expr.getService().evaluateExpression(expr.getExpression(), null, root, null,
+						BigDecimal.class);
+			} catch ( ExpressionException e ) {
+				log.warn("Error evaluating property [{}] expression `{}`: {}",
+						propertyConfig.getPropertyKey(), propertyConfig.getConfig().getExpression(),
+						e.getMessage());
+			}
+		} else {
+			final String regName = propertyConfig.getConfig().getRegisterName();
+			DataRegister reg = registers.stream().filter(r -> regName.equalsIgnoreCase(r.getName()))
+					.findFirst().orElse(null);
+			if ( reg != null ) {
+				switch (propertyType) {
+					case Instantaneous:
+						propValue = reg.getInstant();
+						break;
+
+					case Accumulating:
+						propValue = reg.getValue();
+						if ( "P".equalsIgnoreCase(reg.getType()) ) {
+							// Convert watt-seconds into watt-hours
+							propValue = new BigDecimal((BigInteger) propValue)
+									.divide(new BigDecimal(HOUR_SECONDS), RoundingMode.DOWN);
+						}
+
+						break;
+
+					default:
+						// ignore
+				}
+			}
+		}
+		if ( propValue != null ) {
 			switch (propertyType) {
 				case Instantaneous:
-					String instantenouseValue = (String) getXPathExpression(xpathBase + "/i")
-							.evaluate(xml, XPathConstants.STRING);
-
-					// Store as a BigDecimal value by default
-					datum.putInstantaneousSampleValue(propertyConfig.getPropertyKey(),
-							new BigDecimal(instantenouseValue));
+					datum.putInstantaneousSampleValue(propertyConfig.getPropertyKey(), propValue);
 					break;
+
 				case Accumulating:
-					String value = (String) getXPathExpression(xpathBase + "/v").evaluate(xml,
-							XPathConstants.STRING);
-
-					switch (eGaugePropertyType) {
-						case "P":
-							// Convert watt-seconds into watt-hours
-							BigDecimal wattHours = new BigDecimal(value)
-									.divide(new BigDecimal(HOUR_SECONDS), RoundingMode.DOWN);
-							datum.putAccumulatingSampleValue(propertyConfig.getPropertyKey(), wattHours);
-							break;
-						default:
-							// Store as a BigDecimal value by default
-							datum.putAccumulatingSampleValue(propertyConfig.getPropertyKey(),
-									new BigDecimal(value));
-					}
+					datum.putAccumulatingSampleValue(propertyConfig.getPropertyKey(), propValue);
 					break;
+
 				default:
-					throw new UnsupportedOperationException("Unsuported property type: " + propertyType);
+					// ignore
 			}
-		} catch ( XPathExpressionException e ) {
-			throw new RuntimeException(e);
 		}
 	}
 
-	protected XPathExpression getXPathExpression(String xpath) throws XPathExpressionException {
+	private XPathExpression getXPathExpression(String xpath) throws XPathExpressionException {
 		XPath xp = getXpathFactory().newXPath();
 		if ( getNsContext() != null ) {
 			xp.setNamespaceContext(getNsContext());
@@ -236,7 +300,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		return xp.compile(xpath);
 	}
 
-	protected Element getXml(String url) throws XmlEGaugeClientException {
+	private Element getXml(String url) throws XmlEGaugeClientException {
 		Document doc;
 		try {
 			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);
@@ -264,10 +328,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	 * Retrieves the eGauge file from the specified URL and returns the register
 	 * names found inside.
 	 * 
-	 * @param queryUrl
-	 *        the eGauge path to get the file from
 	 * @return the register names found in the file
-	 * @throws XmlEGaugeClientException
 	 */
 	public List<String> getRegisterNames() {
 		if ( getBaseUrl() == null ) {
@@ -433,6 +494,12 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		return buf.toString();
 	}
 
+	@Override
+	public String toString() {
+		return "XmlEGaugeClient{baseUrl=" + baseUrl + ", queryUrl=" + queryUrl + ", sourceId=" + sourceId
+				+ ", propertyConfigs=" + Arrays.toString(propertyConfigs) + "}";
+	}
+
 	public String getBaseUrl() {
 		return baseUrl;
 	}
@@ -449,10 +516,20 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		this.queryUrl = queryUrl;
 	}
 
-	@Override
-	public String toString() {
-		return "XmlEGaugeClient{baseUrl=" + baseUrl + ", queryUrl=" + queryUrl + ", sourceId=" + sourceId
-				+ ", propertyConfigs=" + Arrays.toString(propertyConfigs) + "}";
+	/**
+	 * Configure an optional collection of {@link ExpressionService}.
+	 * 
+	 * <p>
+	 * Configuring these services allows expressions to be defined to calculate
+	 * dynamic datum property values at runtime.
+	 * </p>
+	 * 
+	 * @param expressionServices
+	 *        the optional {@link ExpressionService} collection to use
+	 * @since 1.1
+	 */
+	public void setExpressionServices(OptionalServiceCollection<ExpressionService> expressionServices) {
+		this.expressionServices = expressionServices;
 	}
 
 }

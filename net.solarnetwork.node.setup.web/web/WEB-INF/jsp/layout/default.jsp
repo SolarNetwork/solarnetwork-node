@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <%@page contentType="text/html" pageEncoding="UTF-8" trimDirectiveWhitespaces="true" %>
 <%@taglib prefix="tiles" uri="http://tiles.apache.org/tags-tiles" %>
+<%@taglib prefix="tilesx" uri="http://tiles.apache.org/tags-tiles-extras" %>
 <html lang="en">
-	<tiles:useAttribute name="navloc" scope="request"/>
+	<tilesx:useAttribute name="navloc" scope="request"/>
 	<tiles:insertAttribute name="head" />
 	<body>
 		<c:import url="/WEB-INF/jsp/navbar.jsp"/>
@@ -62,6 +63,19 @@
 			    </div>
 			</div>
 		</form>
+		
+		<%-- Generic progress overlay --%>
+		<div id="generic-progress-modal" class="modal dynamic hide fade" data-backdrop="static" data-keyboard="false">
+			<div class="modal-header">
+				<h3 class="info-title" data-default-message="<fmt:message key='generic.progress.title'/>"></h3>
+			</div>
+			<div class="modal-body">
+				<p class="info-message" data-default-message="<fmt:message key='generic.progress.message'/>"></p>
+				<div class="progress progress-striped active">
+					<div class="bar"></div>
+			    </div>
+			</div>
+		</div>
 		
 		<%-- Application scoped setup resource integration support  --%>
 		<setup:resources role="USER" type="text/html" inline="true" scope="Application"/>

@@ -27,10 +27,46 @@ package net.solarnetwork.node;
  * configuration changes.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.2
  * @since 1.47
  */
 public interface SystemService {
+
+	/**
+	 * The instruction topic for a request to restart the SolarNode application.
+	 * 
+	 * <p>
+	 * In practice this could mean invoking the {@link #exit(boolean)} method,
+	 * assuming the node OS automatically restarts the application when it
+	 * exits.
+	 * </p>
+	 * 
+	 * @since 1.1
+	 */
+	String TOPIC_RESTART = "SystemRestart";
+
+	/**
+	 * The instruction topic for a request to reboot the SolarNode device.
+	 * 
+	 * <p>
+	 * In practice this could mean invoking the {@link #reboot()} method.
+	 * </p>
+	 * 
+	 * @since 1.1
+	 */
+	String TOPIC_REBOOT = "SystemReboot";
+
+	/**
+	 * The instruction topic for a request to perform a factory reset of the
+	 * SolarNode device.
+	 * 
+	 * <p>
+	 * In practice this could mean invoking the {@link #reset(boolean)} method.
+	 * </p>
+	 * 
+	 * @since 1.2
+	 */
+	String TOPIC_RESET = "SystemReset";
 
 	/**
 	 * Exit the node application, stopping the active process.
@@ -45,5 +81,16 @@ public interface SystemService {
 	 * Reboot the device the application is running on.
 	 */
 	void reboot();
+
+	/**
+	 * Perform a factory reset.
+	 * 
+	 * @param applicationOnly
+	 *        if {@literal true} then only reset SolarNode application settings;
+	 *        if {@literal false} then also reset OS-level settings (such as
+	 *        network passwords).
+	 * @since 1.2
+	 */
+	void reset(boolean applicationOnly);
 
 }

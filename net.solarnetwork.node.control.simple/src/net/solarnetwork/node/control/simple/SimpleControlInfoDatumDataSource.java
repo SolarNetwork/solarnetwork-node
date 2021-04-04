@@ -27,16 +27,17 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.NodeControlProvider;
+import net.solarnetwork.node.domain.GeneralNodeControlInfoDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 
 /**
  * Datum data source for {@link NodeControlProvider} instances. This exposes the
@@ -44,10 +45,10 @@ import org.springframework.context.MessageSource;
  * they can be queried and logged like any other datum data source.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class SimpleControlInfoDatumDataSource implements MultiDatumDataSource<GeneralNodeDatum>,
-		SettingSpecifierProvider {
+public class SimpleControlInfoDatumDataSource
+		implements MultiDatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
 
 	/**
 	 * Controls may not change freqently, so limit unchanging values to 10
@@ -111,10 +112,9 @@ public class SimpleControlInfoDatumDataSource implements MultiDatumDataSource<Ge
 				for ( List<NodeControlInfo> list : infos.values() ) {
 					GeneralNodeControlInfoDatum datum = new GeneralNodeControlInfoDatum(list);
 					GeneralNodeControlInfoDatum cached = cache.get(datum.getSourceId());
-					if ( cached == null
-							|| (cached.getCreated().getTime() + CACHE_MAX_MS) < now
-							|| (cached.getSamples() != null && !cached.getSamples().equals(
-									datum.getSamples())) ) {
+					if ( cached == null || (cached.getCreated().getTime() + CACHE_MAX_MS) < now
+							|| (cached.getSamples() != null
+									&& !cached.getSamples().equals(datum.getSamples())) ) {
 						results.add(datum);
 						cache.put(datum.getSourceId(), datum);
 					} else {

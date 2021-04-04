@@ -104,6 +104,8 @@ public class JobUtils {
 	 * @param newCronExpression
 	 *        the cron expression to re-schedule the job with, if not currently
 	 *        scheduled
+	 * @param newJobDataMap
+	 *        new job data to use with the job
 	 */
 	public static void scheduleCronJob(Scheduler scheduler, CronTrigger trigger, JobDetail jobDetail,
 			String newCronExpression, JobDataMap newJobDataMap) {

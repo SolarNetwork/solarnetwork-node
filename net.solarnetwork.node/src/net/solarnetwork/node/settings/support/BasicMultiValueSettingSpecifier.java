@@ -30,10 +30,10 @@ import net.solarnetwork.node.settings.SettingSpecifier;
  * Basic implementation of {@link MultiValueSettingSpecifier}.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
-public class BasicMultiValueSettingSpecifier extends BasicTextFieldSettingSpecifier implements
-		MultiValueSettingSpecifier {
+public class BasicMultiValueSettingSpecifier extends BasicTextFieldSettingSpecifier
+		implements MultiValueSettingSpecifier {
 
 	/**
 	 * Constructor.
@@ -49,10 +49,11 @@ public class BasicMultiValueSettingSpecifier extends BasicTextFieldSettingSpecif
 
 	@Override
 	public SettingSpecifier mappedWithPlaceholer(String template) {
-		BasicMultiValueSettingSpecifier spec = new BasicMultiValueSettingSpecifier(String.format(
-				template, getKey()), getDefaultValue());
+		BasicMultiValueSettingSpecifier spec = new BasicMultiValueSettingSpecifier(
+				String.format(template, getKey()), getDefaultValue());
 		spec.setTitle(getTitle());
 		spec.setValueTitles(getValueTitles());
+		spec.setDescriptionArguments(getDescriptionArguments());
 		return spec;
 	}
 
@@ -69,6 +70,7 @@ public class BasicMultiValueSettingSpecifier extends BasicTextFieldSettingSpecif
 				mapper.mapKey(getKey()), getDefaultValue());
 		spec.setTitle(getTitle());
 		spec.setValueTitles(getValueTitles());
+		spec.setDescriptionArguments(getDescriptionArguments());
 		return spec;
 	}
 }

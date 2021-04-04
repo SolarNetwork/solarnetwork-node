@@ -22,16 +22,47 @@
 
 package net.solarnetwork.node.domain;
 
-import net.solarnetwork.util.SerializeIgnore;
+import java.util.EnumSet;
+import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import net.solarnetwork.util.SerializeIgnore;
 
 /**
  * GeneralNodeDatum that also implements {@link ACEnergyDatum}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.3
  */
 public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements ACEnergyDatum {
+
+	/**
+	 * Populate phase-specific property values given a data accessor.
+	 * 
+	 * <p>
+	 * This method will populate the following values for phases A, B, and C:
+	 * </p>
+	 * 
+	 * <ul>
+	 * <li>{@link #setCurrent(Float, ACPhase)} with
+	 * {@link ACEnergyDataAccessor#getCurrent()}</li>
+	 * <li>{@link #setVoltage(Float, ACPhase)} with
+	 * {@link ACEnergyDataAccessor#getVoltage()}</li>
+	 * <li>{@link #setLineVoltage(Float, ACPhase)} with
+	 * {@link ACEnergyDataAccessor#getLineVoltage()}</li>
+	 * </ul>
+	 * 
+	 * @param data
+	 *        the data accessor
+	 */
+	public void populatePhaseMeasurementProperties(ACEnergyDataAccessor data) {
+		Set<ACPhase> phases = EnumSet.of(ACPhase.PhaseA, ACPhase.PhaseB, ACPhase.PhaseC);
+		for ( ACPhase phase : phases ) {
+			ACEnergyDataAccessor acc = data.accessorForPhase(phase);
+			setCurrent(acc.getCurrent(), phase);
+			setVoltage(acc.getVoltage(), phase);
+			setLineVoltage(acc.getLineVoltage(), phase);
+		}
+	}
 
 	@Override
 	@JsonIgnore
@@ -123,6 +154,30 @@ public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements 
 	}
 
 	@Override
+	public Float getCurrent(ACPhase phase) {
+		return getInstantaneousSampleFloat(phase.withKey(CURRENT_KEY));
+	}
+
+	/**
+	 * Set a phase voltage (to neutral) value.
+	 * 
+	 * <p>
+	 * This sets an instantaneous value for the
+	 * {@link ACEnergyDatum#CURRENT_KEY} key appended with <i>_P</i>, where
+	 * {@literal P} is the phase key.
+	 * </p>
+	 * 
+	 * @param current
+	 *        the phase current
+	 * @param phase
+	 *        the phase
+	 * @since 1.2
+	 */
+	public void setCurrent(Float current, ACPhase phase) {
+		putInstantaneousSampleValue(phase.withKey(CURRENT_KEY), current);
+	}
+
+	@Override
 	@JsonIgnore
 	@SerializeIgnore
 	public Float getPhaseVoltage() {
@@ -131,6 +186,69 @@ public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements 
 
 	public void setPhaseVoltage(Float phaseVoltage) {
 		putInstantaneousSampleValue(PHASE_VOLTAGE_KEY, phaseVoltage);
+	}
+
+	@Override
+	@JsonIgnore
+	@SerializeIgnore
+	public Float getVoltage(ACPhase phase) {
+		return getInstantaneousSampleFloat(phase.withKey(VOLTAGE_KEY));
+	}
+
+	/**
+	 * Set a phase voltage (to neutral) value.
+	 * 
+	 * <p>
+	 * This sets an instantaneous value for the
+	 * {@link ACEnergyDatum#VOLTAGE_KEY} key appended with <i>_P</i>, where
+	 * {@literal P} is the phase key.
+	 * </p>
+	 * 
+	 * @param phaseVoltage
+	 *        the phase voltage
+	 * @param phase
+	 *        the phase
+	 * @since 1.2
+	 */
+	public void setVoltage(Float phaseVoltage, ACPhase phase) {
+		putInstantaneousSampleValue(phase.withKey(VOLTAGE_KEY), phaseVoltage);
+	}
+
+	@Override
+	@JsonIgnore
+	@SerializeIgnore
+	public Float getLineVoltage() {
+		return getInstantaneousSampleFloat(LINE_VOLTAGE_KEY);
+	}
+
+	public void setLineVoltage(Float lineVoltage) {
+		putInstantaneousSampleValue(LINE_VOLTAGE_KEY, lineVoltage);
+	}
+
+	@Override
+	@JsonIgnore
+	@SerializeIgnore
+	public Float getLineVoltage(ACPhase phase) {
+		return getInstantaneousSampleFloat(phase.withLineKey(VOLTAGE_KEY));
+	}
+
+	/**
+	 * Set a line voltage value.
+	 * 
+	 * <p>
+	 * This sets an instantaneous value for the
+	 * {@link ACEnergyDatum#VOLTAGE_KEY} key appended with <i>_P</i>, where
+	 * {@literal P} is the phase line key.
+	 * </p>
+	 * 
+	 * @param lineVoltage
+	 *        the line voltage
+	 * @param phase
+	 *        the phase
+	 * @since 1.2
+	 */
+	public void setLineVoltage(Float lineVoltage, ACPhase phase) {
+		putInstantaneousSampleValue(phase.withLineKey(VOLTAGE_KEY), lineVoltage);
 	}
 
 	@Override
@@ -147,7 +265,7 @@ public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements 
 	/**
 	 * Get an export energy value.
 	 * 
-	 * @return An energy value, in watts, or <em>null</em> if none available.
+	 * @return An energy value, in watts, or {@literal null} if none available.
 	 * @since 1.1
 	 */
 	@JsonIgnore
@@ -160,7 +278,7 @@ public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements 
 	 * Set an export energy value.
 	 * 
 	 * @param wattHourReading
-	 *        An energy value, in watts, or <em>null</em> if none available.
+	 *        An energy value, in watts, or {@literal null} if none available.
 	 * @since 1.1
 	 */
 	public void setReverseWattHourReading(Long wattHourReading) {
@@ -168,4 +286,28 @@ public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements 
 				wattHourReading);
 	}
 
+	/**
+	 * Get a neutral current value.
+	 * 
+	 * @return the current value, in amperes, or {@literal null} if none
+	 *         available.
+	 * @since 1.3
+	 */
+	@Override
+	@JsonIgnore
+	@SerializeIgnore
+	public Float getNeutralCurrent() {
+		return getInstantaneousSampleFloat(NEUTRAL_CURRENT_KEY);
+	}
+
+	/**
+	 * Set a neutral current value.
+	 * 
+	 * @param current
+	 *        the current value to set, in amperes
+	 * @since 1.3
+	 */
+	public void setNeutralCurrent(Float current) {
+		putInstantaneousSampleValue(NEUTRAL_CURRENT_KEY, current);
+	}
 }

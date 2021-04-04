@@ -47,12 +47,12 @@ import net.solarnetwork.node.domain.GeneralLocationDatum;
  * {@link GeneralLocationDatum} domain objects.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.4
  */
 public class JdbcGeneralLocationDatumDao extends AbstractJdbcDatumDao<GeneralLocationDatum> {
 
 	/** The default tables version. */
-	public static final int DEFAULT_TABLES_VERSION = 1;
+	public static final int DEFAULT_TABLES_VERSION = 3;
 
 	/** The table name for {@link GeneralLocationDatum} data. */
 	public static final String TABLE_GENERAL_LOC_DATUM = "sn_general_loc_datum";

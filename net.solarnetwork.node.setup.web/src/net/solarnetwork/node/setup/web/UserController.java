@@ -69,12 +69,8 @@ public class UserController extends BaseSetupWebServiceController {
 	/**
 	 * Change the active user's password.
 	 * 
-	 * @param existingPassword
-	 *        The existing password.
-	 * @param newPassword
-	 *        The new password to set.
-	 * @param newPasswordAgain
-	 *        The new password, repeated.
+	 * @param userProfile
+	 *        the user profile
 	 * @return An empty response on success.
 	 */
 	@RequestMapping(value = "/change-password", method = RequestMethod.POST)
@@ -96,10 +92,12 @@ public class UserController extends BaseSetupWebServiceController {
 	}
 
 	/**
-	 * Change the active user's password.
+	 * Change the active user's username.
 	 * 
-	 * @param userProfile
-	 *        The new profile to set.
+	 * @param username
+	 *        the new username
+	 * @param usernameAgain
+	 *        the username again
 	 * @return An empty response on success.
 	 */
 	@RequestMapping(value = "/change-username", method = RequestMethod.POST)

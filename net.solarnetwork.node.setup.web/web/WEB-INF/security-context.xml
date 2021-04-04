@@ -6,20 +6,46 @@
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 		http://www.springframework.org/schema/security
-		http://www.springframework.org/schema/security/spring-security-4.1.xsd">
+		http://www.springframework.org/schema/security/spring-security-4.2.xsd">
 
 	<http security="none" pattern="/hello"/>
 	
 	<!-- Configure Spring Security -->
 	<http auto-config="true" use-expressions="true">
-		<intercept-url pattern='/*.do' access="permitAll" />
-		<intercept-url pattern='/pub/**' access="permitAll" />
-	    <intercept-url pattern="/a/**" access="hasRole('ROLE_USER')" />
+		<headers>
+			<frame-options disabled="true"/>
+		</headers>
+		<intercept-url pattern='/*.do' access="permitAll"/>
+		<intercept-url pattern='/pub/**' access="permitAll"/>
+	    <intercept-url pattern="/a/**" access="hasRole('ROLE_USER')"/>
 	    <custom-filter ref="associationFilter" before="FIRST"/>
+	    <custom-filter ref="loginKeyAuthFilter" before="LOGIN_PAGE_FILTER"/>
 		<form-login login-page="/login.do" default-target-url="/a/home"
 			authentication-failure-url="/login.do?login_error=1"/>
 		<logout logout-url="/logout" logout-success-url="/loggedout.do"/>
+		<csrf request-matcher-ref="csrfIgnoreRequestMatcher"/>
 	</http>
+		
+	<beans:bean id="sessionAuthenticationStrategy"
+		class="net.solarnetwork.node.setup.web.support.SessionAuthenticationStrategyFactoryBean"/>
+
+	<beans:bean id="loginKeyAuthFilter" class="net.solarnetwork.node.setup.web.support.LoginKeyAuthenticationFilter">
+		<beans:constructor-arg ref="loginKeyHelper"/>
+		<beans:property name="authenticationManager" ref="authenticationManager"/>
+		<beans:property name="sessionAuthenticationStrategy" ref="sessionAuthenticationStrategy"/>
+	</beans:bean>
+		
+	<beans:bean id="csrfIgnoreRequestMatcher" class="net.solarnetwork.node.setup.web.support.MethodAndIgnoreRequestMatcher">
+		<beans:constructor-arg>
+			<beans:bean class="org.springframework.security.web.util.matcher.NegatedRequestMatcher">
+				<beans:constructor-arg>
+					<beans:bean class="net.solarnetwork.node.setup.web.support.DynamicOrRequestMatcher">
+						<beans:constructor-arg ref="csrfIgnoreRequestMatchers"/>
+					</beans:bean>
+				</beans:constructor-arg>
+			</beans:bean>
+		</beans:constructor-arg>
+	</beans:bean>
 	
 	<beans:bean id="associationFilter" class="net.solarnetwork.node.setup.web.NodeAssociationFilter"/>
 

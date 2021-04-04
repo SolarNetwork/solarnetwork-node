@@ -61,7 +61,7 @@ public class NodeCertificatesController extends BaseSetupController {
 	 * 
 	 * @param model
 	 *        the view model
-	 * @return
+	 * @return the view name
 	 */
 	@RequestMapping
 	public String home(Model model) {
@@ -97,8 +97,13 @@ public class NodeCertificatesController extends BaseSetupController {
 	/**
 	 * Return a node's current certificate.
 	 * 
+	 * @param download
+	 *        {@literal true} to add a {@literal Content-Disposition} response
+	 *        header
+	 * @param asChain
+	 *        {@literal true} to download the entire chain
 	 * @return a map with the PEM encoded certificate on key {@code cert} if
-	 *         {@code download} is not <em>true</em>, otherwise the content is
+	 *         {@code download} is not {@literal true}, otherwise the content is
 	 *         returned as a file attachment
 	 */
 	@RequestMapping(value = "/nodeCert", method = RequestMethod.GET)
@@ -131,14 +136,20 @@ public class NodeCertificatesController extends BaseSetupController {
 	/**
 	 * Import a certificate reply (signed certificate chain).
 	 * 
+	 * <p>
+	 * Either a file or raw text can be imported.
+	 * </p>
+	 * 
 	 * @param file
-	 *        the CSR file to import
+	 *        the certificate file to import
+	 * @param text
+	 *        the certificate text to import
 	 * @return the destination view
 	 * @throws IOException
 	 *         if an IO error occurs
 	 */
 	@RequestMapping(value = "/import", method = RequestMethod.POST)
-	public String importSettings(@RequestParam(value = "file", required = false) MultipartFile file,
+	public String importCertificate(@RequestParam(value = "file", required = false) MultipartFile file,
 			@RequestParam(value = "text", required = false) String text) throws IOException {
 		String pem = text;
 		if ( file != null && !file.isEmpty() ) {

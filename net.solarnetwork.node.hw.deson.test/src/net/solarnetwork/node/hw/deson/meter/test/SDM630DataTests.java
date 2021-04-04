@@ -22,187 +22,190 @@
 
 package net.solarnetwork.node.hw.deson.meter.test;
 
-import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.replay;
-import static org.easymock.EasyMock.verify;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import java.util.Map;
-import org.easymock.EasyMock;
-import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
-import net.solarnetwork.node.hw.deson.meter.SDM120Data;
-import net.solarnetwork.node.hw.deson.meter.SDM630Data;
+import net.solarnetwork.node.hw.deson.meter.SDM630Register;
+import net.solarnetwork.node.hw.deson.meter.SDMData;
+import net.solarnetwork.node.hw.deson.meter.SDMDeviceType;
 import net.solarnetwork.node.hw.deson.meter.SDMWiringMode;
-import net.solarnetwork.node.io.modbus.ModbusConnection;
-import net.solarnetwork.node.io.modbus.ModbusDeviceSupport;
+import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
+import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
+import net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport;
 
 /**
  * Test cases for the {@link SDM630Data} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class SDM630DataTests {
 
-	private static final int[] TEST_DATA_30001_80 = SDM120DataTests.bytesToModbusWords(new int[] { 0x43,
-			0x64, 0xB3, 0x33, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 7 */0x41, 0x00, 0x28,
-			0xF6, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 13 */0xC4, 0xE5, 0x19, 0x9A, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 19 */0x44, 0xE5, 0x1F, 0x15, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, /* 25 */0x41, 0x90, 0xCC, 0xCD, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, /* 31 */
-			0xBF, 0x7F, 0xFC, 0xCC, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-			0x00, 0x00, 0x00, 0x00, 0x00, /* 71 */0x42, 0x47, 0xCC, 0xCD, /* 73 */0x3D, 0xC6, 0xA7, 0xF0,
-			/* 75 */0x3D, 0x13, 0x74, 0xBC, /* 77 */0x3C, 0x13, 0x74, 0xBC, /* 79 */0x00, 0x00, 0x00,
-			0x00, });
+	private static final short[] TEST_DATA_30001_80 = SDM120DataTests.bytesToModbusWords(
+	// @formatter:off
+					new int[] { 
+						/* 000 */	0x43, 0x64, 0xB3, 0x33, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+						/* 005 */	0x00, 0x00, 0x41, 0x00, 0x28, 0xF6, 0x00, 0x00, 0x00, 0x00, 
+						/* 010 */	0x00, 0x00, 0x00, 0x00, 0xC4, 0xE5, 0x19, 0x9A, 0x00, 0x00, 
+						/* 015 */	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x44, 0xE5, 0x1F, 0x15, 
+						/* 020 */	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x41, 0x90, 
+						/* 025 */	0xCC, 0xCD, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+						/* 030 */	0xBF, 0x7F, 0xFC, 0xCC, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+						/* 035 */	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+						/* 040 */	0x00, 0x00, 0x00, 0x00, 0x43, 0x64, 0xC4, 0x9C, 0x00, 0x00, 
+						/* 045 */	0x00, 0x00, 0x41, 0x5A, 0x45, 0xA2, 0x00, 0x00, 0x00, 0x00, 
+						/* 050 */	0x00, 0x00, 0x00, 0x00, 0x44, 0x9D, 0x99, 0xEC, 0x00, 0x00, 
+						/* 055 */	0x00, 0x00, 0xC4, 0x9F, 0x68, 0x42, 0x00, 0x00, 0x00, 0x00, 
+						/* 060 */	0x41, 0x90, 0xE5, 0x60, 0xBF, 0x7F, 0xFC, 0xCC, 0x00, 0x00, 
+						/* 065 */	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+						/* 070 */	0x42, 0x47, 0xCC, 0xCD, 0x3D, 0xC6, 0xA7, 0xF0, 0x3D, 0x13, 
+						/* 075 */	0x74, 0xBC, 0x3C, 0x13, 0x74, 0xBC, 0x00, 0x00, 0x00, 0x00, 
+			});
+	// @formatter:on
 
-	private static class TestSDM360Data extends SDM630Data {
+	private SDMData getTestDataInstance() {
+		SDMData data = new SDMData();
+		data.setDeviceType(SDMDeviceType.SDM630);
+		try {
+			data.performUpdates(new ModbusDataUpdateAction() {
 
-		@Override
-		public void saveDataArray(final int[] data, int addr) {
-			super.saveDataArray(data, addr);
+				@Override
+				public boolean updateModbusData(MutableModbusData m) {
+					m.saveDataArray(TEST_DATA_30001_80, 0);
+					return true;
+				}
+			});
+			data.performControlUpdates(new ModbusDataUpdateAction() {
+
+				@Override
+				public boolean updateModbusData(MutableModbusData m) {
+					m.saveDataArray(new int[] { 0x4040, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+							0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+							0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+							0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x47f1, 0x2000 },
+							SDM630Register.ConfigWiringMode.getAddress());
+					return true;
+				}
+			});
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
 		}
-
-		@Override
-		public void saveControlArray(int[] data, int addr) {
-			super.saveControlArray(data, addr);
-		}
-
-	}
-
-	private ModbusConnection conn;
-
-	@Before
-	public void setup() {
-		conn = EasyMock.createMock(ModbusConnection.class);
-	}
-
-	private SDM630Data getTestDataInstance() {
-		TestSDM360Data data = new TestSDM360Data();
-		data.saveDataArray(TEST_DATA_30001_80, 0);
 		return data;
 	}
 
 	@Test
 	public void readDeviceInfo() {
-		expect(conn.readInts(SDM630Data.ADDR_SYSTEM_WIRING_TYPE, 34))
-				.andReturn(new int[] { 0x4040, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-						0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-						0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-						0x0000, 0x0000, 0x0000, 0x0000, 0x47f1, 0x2000 });
-		replay(conn);
-
-		TestSDM360Data data = new TestSDM360Data();
-		data.readControlData(conn);
+		SDMData data = getTestDataInstance();
 
 		Map<String, Object> info = data.getDeviceInfo();
-
-		verify(conn);
-
-		Assert.assertNotNull(info);
-		Assert.assertEquals(3, info.size());
-		Assert.assertEquals("SDM-360", info.get(ModbusDeviceSupport.INFO_KEY_DEVICE_MODEL));
-		Assert.assertEquals("3 phase, 4 wire", info.get(SDM630Data.INFO_KEY_DEVICE_WIRING_TYPE));
-		Assert.assertNotNull(info.get(ModbusDeviceSupport.INFO_KEY_DEVICE_SERIAL_NUMBER));
-		Assert.assertEquals("123456.0", info.get(ModbusDeviceSupport.INFO_KEY_DEVICE_SERIAL_NUMBER));
+		assertThat("Info size", info.keySet(), hasSize(3));
+		assertThat("Info", info,
+				allOf(hasEntry(ModbusDeviceSupport.INFO_KEY_DEVICE_MODEL, "SDM-630"),
+						hasEntry(SDMData.INFO_KEY_DEVICE_WIRING_TYPE, "3 phase, 4 wire"),
+						hasEntry(ModbusDeviceSupport.INFO_KEY_DEVICE_SERIAL_NUMBER, "123456")));
 	}
 
 	@Test
-	public void interpretWiringMode1P2() {
-		expect(conn.readInts(SDM630Data.ADDR_SYSTEM_WIRING_TYPE, 34))
-				.andReturn(new int[] { 0x3f80, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-						0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-						0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-						0x0000, 0x0000, 0x0000, 0x0000, 0x47f1, 0x2000 });
-		replay(conn);
+	public void interpretWiringMode1P2() throws IOException {
+		SDMData data = getTestDataInstance();
+		data.performControlUpdates(new ModbusDataUpdateAction() {
 
-		TestSDM360Data data = new TestSDM360Data();
-		data.readControlData(conn);
-
-		verify(conn);
-
-		Assert.assertEquals(SDMWiringMode.OnePhaseTwoWire, data.getWiringMode());
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				m.saveDataArray(
+						new int[] { 0x3f80, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x47f1, 0x2000 },
+						SDM630Register.ConfigWiringMode.getAddress());
+				return true;
+			}
+		});
+		assertThat("Wiring mode", data.getWiringMode(), equalTo(SDMWiringMode.OnePhaseTwoWire));
 	}
 
 	@Test
-	public void interpretWiringMode3P3() {
-		expect(conn.readInts(SDM630Data.ADDR_SYSTEM_WIRING_TYPE, 34))
-				.andReturn(new int[] { 0x4000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-						0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-						0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-						0x0000, 0x0000, 0x0000, 0x0000, 0x47f1, 0x2000 });
-		replay(conn);
+	public void interpretWiringMode3P3() throws IOException {
+		SDMData data = getTestDataInstance();
+		data.performControlUpdates(new ModbusDataUpdateAction() {
 
-		TestSDM360Data data = new TestSDM360Data();
-		data.readControlData(conn);
-
-		verify(conn);
-
-		Assert.assertEquals(SDMWiringMode.ThreePhaseThreeWire, data.getWiringMode());
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				m.saveDataArray(
+						new int[] { 0x4000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x47f1, 0x2000 },
+						SDM630Register.ConfigWiringMode.getAddress());
+				return true;
+			}
+		});
+		assertThat("Wiring mode", data.getWiringMode(), equalTo(SDMWiringMode.ThreePhaseThreeWire));
 	}
 
 	@Test
-	public void interpretWiringMode3P4() {
-		expect(conn.readInts(SDM630Data.ADDR_SYSTEM_WIRING_TYPE, 34))
-				.andReturn(new int[] { 0x4040, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-						0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-						0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
-						0x0000, 0x0000, 0x0000, 0x0000, 0x47f1, 0x2000 });
-		replay(conn);
+	public void interpretWiringMode3P4() throws IOException {
+		SDMData data = getTestDataInstance();
+		data.performControlUpdates(new ModbusDataUpdateAction() {
 
-		TestSDM360Data data = new TestSDM360Data();
-		data.readControlData(conn);
-
-		verify(conn);
-
-		Assert.assertEquals(SDMWiringMode.ThreePhaseFourWire, data.getWiringMode());
+			@Override
+			public boolean updateModbusData(MutableModbusData m) {
+				m.saveDataArray(
+						new int[] { 0x4040, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000,
+								0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x47f1, 0x2000 },
+						SDM630Register.ConfigWiringMode.getAddress());
+				return true;
+			}
+		});
+		assertThat("Wiring mode", data.getWiringMode(), equalTo(SDMWiringMode.ThreePhaseFourWire));
 	}
 
 	@Test
 	public void interpretVoltage() {
-		SDM630Data data = getTestDataInstance();
-		Assert.assertEquals(228.7, data.getVoltage(SDM120Data.ADDR_DATA_V_NEUTRAL), 0.001);
+		SDMData data = getTestDataInstance();
+		assertThat("Voltage", data.getVoltage(), equalTo(228.768f));
 	}
 
 	@Test
 	public void interpretCurrent() {
-		SDM630Data data = getTestDataInstance();
-		Assert.assertEquals(8.01, data.getCurrent(SDM120Data.ADDR_DATA_I), 0.001);
+		SDMData data = getTestDataInstance();
+		assertThat("Current", data.getCurrent(), equalTo(13.642f));
 	}
 
 	@Test
 	public void interpretPower() {
-		SDM630Data data = getTestDataInstance();
-		Assert.assertEquals(-1833, (int) data.getPower(SDM630Data.ADDR_DATA_ACTIVE_POWER_P1));
-		Assert.assertEquals(1833, (int) data.getPower(SDM630Data.ADDR_DATA_APPARENT_POWER_P1));
-		Assert.assertEquals(18, (int) data.getPower(SDM630Data.ADDR_DATA_REACTIVE_POWER_P1));
+		SDMData data = getTestDataInstance();
+		assertThat("Active power", data.getActivePower(), equalTo(1261));
+		assertThat("Apparent power", data.getApparentPower(), equalTo(-1275));
+		assertThat("Reactive power", data.getReactivePower(), equalTo(18));
 	}
 
 	@Test
 	public void interpretPowerFactor() {
-		SDM630Data data = getTestDataInstance();
-		Assert.assertEquals(-0.9999511, data.getPowerFactor(SDM630Data.ADDR_DATA_POWER_FACTOR_P1),
-				0.001);
+		SDMData data = getTestDataInstance();
+		assertThat("Power factor", data.getPowerFactor(), equalTo(-0.9999511f));
 	}
 
 	@Test
 	public void interpretFrequency() {
-		SDM630Data data = getTestDataInstance();
-		Assert.assertEquals(49.95, data.getFrequency(SDM630Data.ADDR_DATA_FREQUENCY), 0.001);
+		SDMData data = getTestDataInstance();
+		assertThat("Frequency", data.getFrequency(), equalTo(49.95f));
 	}
 
 	@Test
 	public void interpretEnergy() {
-		SDM630Data data = getTestDataInstance();
-		Assert.assertEquals(97L, (long) data.getEnergy(SDM630Data.ADDR_DATA_ACTIVE_ENERGY_IMPORT_TOTAL));
-		Assert.assertEquals(36L, (long) data.getEnergy(SDM630Data.ADDR_DATA_ACTIVE_ENERGY_EXPORT_TOTAL));
-		Assert.assertEquals(9L,
-				(long) data.getEnergy(SDM630Data.ADDR_DATA_REACTIVE_ENERGY_IMPORT_TOTAL));
-		Assert.assertEquals(0L,
-				(long) data.getEnergy(SDM630Data.ADDR_DATA_REACTIVE_ENERGY_EXPORT_TOTAL));
+		SDMData data = getTestDataInstance();
+		assertThat("Active energy delivered", data.getActiveEnergyDelivered(), equalTo(97L));
+		assertThat("Active energy received", data.getActiveEnergyReceived(), equalTo(36L));
+		assertThat("Reactive energy delivered", data.getReactiveEnergyDelivered(), equalTo(9L));
+		assertThat("Reactive energy received", data.getReactiveEnergyReceived(), equalTo(0L));
 	}
 
 }

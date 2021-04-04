@@ -22,105 +22,37 @@
 
 package net.solarnetwork.node.hw.hc;
 
-import java.util.Arrays;
+import static net.solarnetwork.util.NumberUtils.bigDecimalForNumber;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import org.joda.time.LocalDateTime;
+import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
-import net.solarnetwork.node.io.modbus.ModbusHelper;
+import net.solarnetwork.node.io.modbus.ModbusData;
+import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.util.NumberUtils;
 
 /**
  * Encapsulates raw Modbus register data from the EM5600 meters.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.1
  */
-public class EM5600Data {
+public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 
-	// meter info
-	public static final int ADDR_SYSTEM_METER_MODEL = 0x0;
-	public static final int ADDR_SYSTEM_METER_HARDWARE_VERSION = 0x2; // length 2 ASCII characters
-	public static final int ADDR_SYSTEM_METER_SERIAL_NUMBER = 0x10; // length 4 ASCII characters
-	public static final int ADDR_SYSTEM_METER_MANUFACTURE_DATE = 0x18; // length 2 F10 encoding
+	private static final int MAX_RESULTS = 64;
 
-	// current
-	public static final int ADDR_DATA_I1 = 0x130;
-	public static final int ADDR_DATA_I2 = 0x131;
-	public static final int ADDR_DATA_I3 = 0x132;
-	public static final int ADDR_DATA_I_AVERAGE = 0x133;
-
-	// voltage
-	public static final int ADDR_DATA_V_L1_NEUTRAL = 0x136;
-	public static final int ADDR_DATA_V_L2_NEUTRAL = 0x137;
-	public static final int ADDR_DATA_V_L3_NEUTRAL = 0x138;
-	public static final int ADDR_DATA_V_NEUTRAL_AVERAGE = 0x139;
-	public static final int ADDR_DATA_V_L1_L2 = 0x13B;
-	public static final int ADDR_DATA_V_L2_L3 = 0x13C;
-	public static final int ADDR_DATA_V_L3_L1 = 0x13D;
-	public static final int ADDR_DATA_V_L_L_AVERAGE = 0x13E;
-
-	// power
-	public static final int ADDR_DATA_ACTIVE_POWER_TOTAL = 0x140;
-	public static final int ADDR_DATA_REACTIVE_POWER_TOTAL = 0x141;
-	public static final int ADDR_DATA_APPARENT_POWER_TOTAL = 0x142;
-	public static final int ADDR_DATA_POWER_FACTOR_TOTAL = 0x143;
-	public static final int ADDR_DATA_FREQUENCY = 0x144;
-	public static final int ADDR_DATA_ACTIVE_POWER_P1 = 0x145;
-	public static final int ADDR_DATA_REACTIVE_POWER_P1 = 0x146;
-	public static final int ADDR_DATA_APPARENT_POWER_P1 = 0x147;
-	public static final int ADDR_DATA_POWER_FACTOR_P1 = 0x148;
-	public static final int ADDR_DATA_ACTIVE_POWER_P2 = 0x149;
-	public static final int ADDR_DATA_REACTIVE_POWER_P2 = 0x14A;
-	public static final int ADDR_DATA_APPARENT_POWER_P2 = 0x14B;
-	public static final int ADDR_DATA_POWER_FACTOR_P2 = 0x14C;
-	public static final int ADDR_DATA_ACTIVE_POWER_P3 = 0x14D;
-	public static final int ADDR_DATA_REACTIVE_POWER_P3 = 0x14E;
-	public static final int ADDR_DATA_APPARENT_POWER_P3 = 0x14F;
-	public static final int ADDR_DATA_POWER_FACTOR_P3 = 0x150;
-	public static final int ADDR_DATA_PHASE_ROTATION = 0x151;
-
-	// energy
-	public static final int ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT = 0x160; // length 2
-	public static final int ADDR_DATA_TOTAL_ACTIVE_ENERGY_EXPORT = 0x162;
-	public static final int ADDR_DATA_TOTAL_REACTIVE_ENERGY_IMPORT = 0x164;
-	public static final int ADDR_DATA_TOTAL_REACTIVE_ENERGY_EXPORT = 0x166;
-
-	// units
-	public static final int ADDR_DATA_ENERGY_UNIT = 0x17E;
-	public static final int ADDR_DATA_PT_RATIO = 0x200A;
-	public static final int ADDR_DATA_CT_RATIO = 0x200B;
-
-	private static final int ADDR_INPUT_REG_START = ADDR_DATA_I1;
-	private static final int ADDR_INPUT_REG_END = ADDR_DATA_ENERGY_UNIT;
-
-	private final int[] inputRegisters;
-	private float ptRatio = 1;
-	private float ctRatio = 1;
-	private int energyUnit;
-	private int energyFactor;
-	private UnitFactor unitFactor = UnitFactor.EM5610;
-	private long dataTimestamp = 0;
-	private boolean backwards;
+	private UnitFactor unitFactor;
 
 	/**
 	 * Default constructor.
 	 */
 	public EM5600Data() {
 		super();
-		setEnergyUnit(0);
-		inputRegisters = new int[ADDR_INPUT_REG_END - ADDR_INPUT_REG_START + 1];
-		Arrays.fill(inputRegisters, 0);
-		this.backwards = false;
-	}
-
-	/**
-	 * Default constructor.
-	 */
-	public EM5600Data(boolean backwards) {
-		super();
-		setEnergyUnit(0);
-		inputRegisters = new int[ADDR_INPUT_REG_END - ADDR_INPUT_REG_START + 1];
-		Arrays.fill(inputRegisters, 0);
-		this.backwards = backwards;
+		this.unitFactor = UnitFactor.EM5610;
 	}
 
 	/**
@@ -130,77 +62,195 @@ public class EM5600Data {
 	 *        the object to copy
 	 */
 	public EM5600Data(EM5600Data other) {
-		super();
-		inputRegisters = other.inputRegisters.clone();
-		ptRatio = other.ptRatio;
-		ctRatio = other.ctRatio;
-		energyUnit = other.energyUnit;
-		energyFactor = other.energyFactor;
+		super(other);
 		unitFactor = other.unitFactor;
-		dataTimestamp = other.dataTimestamp;
-		backwards = other.backwards;
 	}
 
 	@Override
-	public String toString() {
-		return "EM5600Data{U=" + unitFactor + ",PTR=" + ptRatio + ",CTR=" + ctRatio + ",EU=" + energyUnit
-				+ ",EF=" + energyFactor + ",V1=" + getVoltage(ADDR_DATA_V_L1_NEUTRAL) + ",V2="
-				+ getVoltage(ADDR_DATA_V_L2_NEUTRAL) + ",V3=" + getVoltage(ADDR_DATA_V_L3_NEUTRAL)
-				+ ",A1=" + getCurrent(ADDR_DATA_I1) + ",A2=" + getCurrent(ADDR_DATA_I2) + ",A3="
-				+ getCurrent(ADDR_DATA_I3) + ",PF=" + getPowerFactor(ADDR_DATA_POWER_FACTOR_TOTAL)
-				+ ",Hz=" + getFrequency(ADDR_DATA_FREQUENCY) + ",W="
-				+ getPower(ADDR_DATA_ACTIVE_POWER_TOTAL) + ",var="
-				+ getPower(ADDR_DATA_REACTIVE_POWER_TOTAL) + ",VA="
-				+ getPower(ADDR_DATA_APPARENT_POWER_TOTAL) + ",Wh-I="
-				+ getEnergy(ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT) + ",varh-I="
-				+ getEnergy(ADDR_DATA_TOTAL_REACTIVE_ENERGY_IMPORT) + ",Wh-E="
-				+ getEnergy(ADDR_DATA_TOTAL_ACTIVE_ENERGY_EXPORT) + ",varh-E="
-				+ getEnergy(ADDR_DATA_TOTAL_REACTIVE_ENERGY_EXPORT) + "}";
+	public EM5600Data copy() {
+		return new EM5600Data(this);
 	}
 
-	/**
-	 * Read data from the meter and store it internally. If data is populated
-	 * successfully, the {@link dataTimestamp} will be updated to the current
-	 * system time. <b>Note</b> this does <b>not</b> call
-	 * {@link #readEnergyRatios(ModbusConnection)}. Those values are not
-	 * expected to change much, so those values should be called manually as
-	 * needed.
-	 * 
-	 * @param conn
-	 *        the Modbus connection
-	 */
-	public void readMeterData(final ModbusConnection conn) {
-		int[] data = conn.readInts(ADDR_DATA_I1, (ADDR_DATA_PHASE_ROTATION - ADDR_DATA_I1 + 1));
-
-		// re-read some data to get signed values... these are mixed with unsigned values
-		// so we are reading some registers twice, but in fewer transactions
-		short[] signedData = conn.readSignedShorts(ADDR_DATA_ACTIVE_POWER_TOTAL,
-				(ADDR_DATA_POWER_FACTOR_P3 - ADDR_DATA_APPARENT_POWER_TOTAL + 1));
-		final int signedDataOffset = ADDR_DATA_ACTIVE_POWER_TOTAL - ADDR_DATA_I1;
-		for ( int i = 0; i < signedData.length; i++ ) {
-			final int addr = ADDR_DATA_ACTIVE_POWER_TOTAL + i;
-			switch (addr) {
-				case ADDR_DATA_APPARENT_POWER_P1:
-				case ADDR_DATA_APPARENT_POWER_P2:
-				case ADDR_DATA_APPARENT_POWER_P3:
-				case ADDR_DATA_APPARENT_POWER_TOTAL:
-				case ADDR_DATA_FREQUENCY:
-					// these are unsigned values, so skip as they were populated in the first tx
-					continue;
-
-				default:
-					data[i + signedDataOffset] = signedData[i];
+	@Override
+	public Map<String, Object> getDeviceInfo() {
+		EM5600DataAccessor data = copy();
+		Map<String, Object> result = new LinkedHashMap<>(4);
+		Integer model = data.getModel();
+		if ( model != null ) {
+			String modelName = model.toString();
+			UnitFactor uf = getUnitFactor();
+			if ( uf != null ) {
+				modelName = uf.getDisplayName();
+			}
+			String version = data.getHardwareRevision();
+			if ( version != null ) {
+				result.put(INFO_KEY_DEVICE_MODEL, String.format("%s (version %s)", modelName, version));
+			} else {
+				result.put(INFO_KEY_DEVICE_MODEL, modelName);
 			}
 		}
-		setCurrentVoltagePower(data);
+		String sn = data.getSerialNumber();
+		if ( sn != null ) {
+			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, sn);
+		}
+		LocalDateTime date = data.getManufactureDate();
+		if ( date != null ) {
+			result.put(INFO_KEY_DEVICE_MANUFACTURE_DATE, date.toLocalDate());
+		}
+		return result;
+	}
 
-		data = conn.readInts(ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT,
-				(ADDR_DATA_ENERGY_UNIT - ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT + 1));
-		setEnergy(data);
-		dataTimestamp = System.currentTimeMillis();
+	@Override
+	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		if ( phase == ACPhase.Total ) {
+			return this;
+		}
+		return new PhaseMeterDataAccessor(phase);
+	}
+
+	@Override
+	public ACEnergyDataAccessor reversed() {
+		return new ReversedMeterDataAccessor(this);
+	}
+
+	@Override
+	public String getSerialNumber() {
+		return getAsciiString(EM5600Register.InfoSerialNumber, true);
+	}
+
+	@Override
+	public String getHardwareRevision() {
+		return getAsciiString(EM5600Register.InfoHardwareVersion, true);
+	}
+
+	@Override
+	public Integer getModel() {
+		Number n = getNumber(EM5600Register.InfoModel);
+		return (n != null ? n.intValue() : null);
+	}
+
+	@Override
+	public LocalDateTime getManufactureDate() {
+		return getDateValue(EM5600Register.InfoManufactureDate);
+	}
+
+	@Override
+	public Float getFrequency() {
+		return getFrequencyValue(EM5600Register.MeterFrequency);
+	}
+
+	@Override
+	public Float getCurrent() {
+		return getCurrentValue(EM5600Register.MeterCurrentAverage);
+	}
+
+	@Override
+	public Float getNeutralCurrent() {
+		return null;
+	}
+
+	@Override
+	public Float getVoltage() {
+		return getVoltageValue(EM5600Register.MeterVoltageLineNeutralAverage);
+	}
+
+	@Override
+	public Float getLineVoltage() {
+		return getVoltageValue(EM5600Register.MeterVoltageLineLineAverage);
+	}
+
+	@Override
+	public Float getPowerFactor() {
+		return getPowerFactorValue(EM5600Register.MeterPowerFactorTotal);
+	}
+
+	@Override
+	public Integer getActivePower() {
+		return getPowerValue(EM5600Register.MeterActivePowerTotal);
+	}
+
+	@Override
+	public Long getActiveEnergyDelivered() {
+		return getEnergyValue(EM5600Register.MeterActiveEnergyDelivered);
+	}
+
+	@Override
+	public Long getActiveEnergyReceived() {
+		return getEnergyValue(EM5600Register.MeterActiveEnergyReceived);
+	}
+
+	@Override
+	public Integer getApparentPower() {
+		return getPowerValue(EM5600Register.MeterApparentPowerTotal);
+	}
+
+	@Override
+	public Long getApparentEnergyDelivered() {
+		return null;
+	}
+
+	@Override
+	public Long getApparentEnergyReceived() {
+		return null;
+	}
+
+	@Override
+	public Integer getReactivePower() {
+		return getPowerValue(EM5600Register.MeterReactivePowerTotal);
+	}
+
+	@Override
+	public Long getReactiveEnergyDelivered() {
+		return getEnergyValue(EM5600Register.MeterReactiveEnergyDelivered);
+	}
+
+	@Override
+	public Long getReactiveEnergyReceived() {
+		return getEnergyValue(EM5600Register.MeterReactiveEnergyReceived);
 	}
 
 	/**
+	 * Read the configuration and information registers from the device.
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
+	 */
+	public final void readConfigurationData(final ModbusConnection conn) throws IOException {
+		refreshData(conn, ModbusReadFunction.ReadHoldingRegister, EM5600Register.getRegisterAddressSet(),
+				MAX_RESULTS);
+		final int model = getModel();
+		switch (model) {
+			case 5630:
+				// TODO: how tell if EM5630_5A?
+				// For now, change to 5630_30A if currently set to 5610 which is the default
+				if ( unitFactor == UnitFactor.EM5610 ) {
+					setUnitFactor(UnitFactor.EM5630_30A);
+				}
+				break;
+
+			default:
+				setUnitFactor(UnitFactor.EM5610);
+				break;
+
+		}
+	}
+
+	/**
+	 * Read the meter registers from the device.
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @throws IOException
+	 *         if any communication error occurs
+	 */
+	public final void readMeterData(final ModbusConnection conn) throws IOException {
+		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
+				EM5600Register.getMeterRegisterAddressSet(), MAX_RESULTS);
+	}
+
+	/*- TODO: remove
 	 * Read the PT ratio, and CT ratio values from the meter. If the
 	 * {@code unitFactor} is set to {@link UnitFactor#EM5610} then this method
 	 * will not actually query the meter, as the values are fixed for that
@@ -208,15 +258,10 @@ public class EM5600Data {
 	 * 
 	 * @param conn
 	 *        the Modbus connection
-	 */
+	 *
 	public void readEnergyRatios(final ModbusConnection conn) {
-		int[] eUnit = conn.readInts(ADDR_DATA_ENERGY_UNIT, 1);
-		if ( eUnit != null && eUnit.length > 0 ) {
-			// a value of 0 here means we should treat the energy unit as 1, e.g. 5610
-			int eu = eUnit[0];
-			inputRegisters[ADDR_DATA_ENERGY_UNIT - ADDR_INPUT_REG_START] = eu;
-			setEnergyUnit(eu < 0 ? 0 : eu);
-		}
+		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
+				EM5600Register.getConfigRegisterAddressSet(), 64);
 		int[] transformerRatios = conn.readInts(ADDR_DATA_PT_RATIO, 2);
 		if ( transformerRatios != null && transformerRatios.length > 1 ) {
 			int ptr = transformerRatios[0];
@@ -225,24 +270,15 @@ public class EM5600Data {
 			ctRatio = (ctr < 1 ? 1 : ctr / 10);
 		}
 	}
+	*/
 
-	/**
-	 * Get the system time for the last time data was successfully populated via
-	 * {@link #readMeterData(ModbusConnection)}.
-	 * 
-	 * @return the system time
-	 */
-	public long getDataTimestamp() {
-		return dataTimestamp;
-	}
-
-	/**
+	/*- TODO: remove
 	 * Set the raw Modbus current, voltage, and power register data. This
 	 * corresponds to the register range 0x130 - 0x151.
 	 * 
 	 * @param current
 	 *        the data
-	 */
+	 *
 	public void setCurrentVoltagePower(int[] data) {
 		if ( data == null ) {
 			return;
@@ -250,14 +286,14 @@ public class EM5600Data {
 		System.arraycopy(data, 0, inputRegisters, (ADDR_DATA_I1 - ADDR_INPUT_REG_START),
 				Math.min(data.length, (ADDR_DATA_PHASE_ROTATION - ADDR_DATA_I1 + 1)));
 	}
-
+	
 	/**
 	 * Set the raw Modbus energy register data. This corresponds to the register
 	 * range 0x160 - 0x17E.
 	 * 
 	 * @param power
 	 *        the data
-	 */
+	 *
 	public void setEnergy(int[] energy) {
 		if ( energy == null ) {
 			return;
@@ -266,44 +302,19 @@ public class EM5600Data {
 				(ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT - ADDR_INPUT_REG_START), Math.min(energy.length,
 						(ADDR_DATA_ENERGY_UNIT - ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT + 1)));
 	}
+	*/
 
-	/**
-	 * Get the value of an input register. This will not return useful data
-	 * until after {@link #readMeterData(ModbusConnection)} has been called. Use
-	 * the various {@code ADDR_*} constants to query specific supported
-	 * registers.
-	 * 
-	 * @param addr
-	 *        the input register address to get the value of
-	 * @return the register value
-	 * @throws IllegalArgumentException
-	 *         if the provided address is out of range
-	 */
-	public int getInputRegister(final int addr) {
-		inputRegisterRangeCheck(addr);
-		return inputRegisters[addr - ADDR_DATA_I1];
-	}
-
-	private void inputRegisterRangeCheck(final int addr) {
-		if ( addr < ADDR_INPUT_REG_START || addr > ADDR_INPUT_REG_END ) {
-			throw new IllegalArgumentException("Input register ddress " + addr + " out of range");
-		}
-	}
-
-	/**
-	 * Get the {@link UnitFactor} to use for calculating effective values.
-	 * 
-	 * @return the unit factor
-	 */
+	@Override
 	public UnitFactor getUnitFactor() {
 		return unitFactor;
 	}
 
 	/**
 	 * Set the {@link UnitFactor} to use for calculating effective values. This
-	 * defaults to {@link EM5610}.
+	 * defaults to {@link UnitFactor#EM5610}.
 	 * 
 	 * @param unitFactor
+	 *        the unit factor to set
 	 */
 	public void setUnitFactor(UnitFactor unitFactor) {
 		assert unitFactor != null;
@@ -311,27 +322,27 @@ public class EM5600Data {
 	}
 
 	/**
-	 * Get the effective PT ratio. This will return {@code 1} unless the
-	 * {@code unitFactor} is set to {@code EM5630_5A}, in which case it will
-	 * return {@link #getPtRatio()} which has presumably be set by reading from
-	 * the meter via {@link #readEnergyRatios(ModbusConnection)}.
-	 * 
-	 * @return effective PT ratio
-	 */
-	public float getEffectivePtRatio() {
-		return (unitFactor == UnitFactor.EM5630_5A ? ptRatio : 1);
-	}
-
-	/**
 	 * Get the effective CT ratio. This will return {@code 1} unless the
 	 * {@code unitFactor} is set to {@code EM5630_5A}, in which case it will
 	 * return {@link #getCtRatio()} which has presumably be set by reading from
-	 * the meter via {@link #readEnergyRatios(ModbusConnection)}.
+	 * the meter via {@link #readConfigurationData(ModbusConnection)}.
+	 * 
+	 * @return effective CT ratio
+	 */
+	public BigDecimal getEffectiveCtRatio() {
+		return (unitFactor == UnitFactor.EM5630_5A ? getCtRatio() : BigDecimal.ONE);
+	}
+
+	/**
+	 * Get the effective PT ratio. This will return {@code 1} unless the
+	 * {@code unitFactor} is set to {@code EM5630_5A}, in which case it will
+	 * return {@link #getPtRatio()} which has presumably be set by reading from
+	 * the meter via {@link #readConfigurationData(ModbusConnection)}.
 	 * 
 	 * @return effective PT ratio
 	 */
-	public float getEffectiveCtRatio() {
-		return (unitFactor == UnitFactor.EM5630_5A ? ctRatio : 1);
+	public BigDecimal getEffectivePtRatio() {
+		return (unitFactor == UnitFactor.EM5630_5A ? getPtRatio() : BigDecimal.ONE);
 	}
 
 	/**
@@ -341,8 +352,12 @@ public class EM5600Data {
 	 *        the register address to read
 	 * @return the value interpreted as a voltage value
 	 */
-	public float getVoltage(int addr) {
-		return (getInputRegister(addr) * getEffectivePtRatio() * unitFactor.getU().floatValue());
+	private Float getVoltageValue(EM5600Register ref) {
+		Number n = getNumber(ref);
+		if ( n != null ) {
+			n = bigDecimalForNumber(n).multiply(getEffectivePtRatio()).multiply(unitFactor.getU());
+		}
+		return (n != null ? n.floatValue() : null);
 	}
 
 	/**
@@ -352,8 +367,12 @@ public class EM5600Data {
 	 *        the register address to read
 	 * @return the value interpreted as a current value
 	 */
-	public float getCurrent(int addr) {
-		return (getInputRegister(addr) * getEffectiveCtRatio() * unitFactor.getA().floatValue());
+	private Float getCurrentValue(EM5600Register ref) {
+		Number n = getNumber(ref);
+		if ( n != null ) {
+			n = bigDecimalForNumber(n).multiply(getEffectiveCtRatio()).multiply(unitFactor.getA());
+		}
+		return (n != null ? n.floatValue() : null);
 	}
 
 	/**
@@ -363,8 +382,12 @@ public class EM5600Data {
 	 *        the register address to read
 	 * @return the value interpreted as a frequency value
 	 */
-	public float getFrequency(int addr) {
-		return (getInputRegister(addr) * 2) / 1000f;
+	private Float getFrequencyValue(EM5600Register ref) {
+		Number n = getNumber(ref);
+		if ( n != null ) {
+			n = NumberUtils.scaled(bigDecimalForNumber(n).multiply(new BigDecimal("2")), -3);
+		}
+		return (n != null ? n.floatValue() : null);
 	}
 
 	/**
@@ -374,8 +397,12 @@ public class EM5600Data {
 	 *        the register address to read
 	 * @return the value interpreted as a power factor value
 	 */
-	public float getPowerFactor(int addr) {
-		return (getInputRegister(addr) / 10000f);
+	private Float getPowerFactorValue(EM5600Register ref) {
+		Number n = getNumber(ref);
+		if ( n != null ) {
+			n = NumberUtils.scaled(n, -4);
+		}
+		return (n != null ? n.floatValue() : null);
 	}
 
 	/**
@@ -386,9 +413,13 @@ public class EM5600Data {
 	 *        the register address to read
 	 * @return the value interpreted as a power value
 	 */
-	public int getPower(int addr) {
-		return (int) Math.ceil(getInputRegister(addr) * getEffectivePtRatio() * getEffectiveCtRatio()
-				* unitFactor.getP().floatValue());
+	private Integer getPowerValue(EM5600Register ref) {
+		Number n = getNumber(ref);
+		if ( n != null ) {
+			n = NumberUtils.scaled(bigDecimalForNumber(n).multiply(getEffectivePtRatio())
+					.multiply(getEffectiveCtRatio()).multiply(unitFactor.getP()), 0);
+		}
+		return (n != null ? n.intValue() : null);
 	}
 
 	/**
@@ -398,81 +429,438 @@ public class EM5600Data {
 	 *        the register address to read
 	 * @return the value interpreted as an energy value
 	 */
-	public long getEnergy(int addr) {
-		inputRegisterRangeCheck(addr);
-		inputRegisterRangeCheck(addr + 1);
-		Long l = ModbusHelper.parseInt32(inputRegisters, addr - ADDR_INPUT_REG_START);
-		return (l == null ? 0 : l.longValue() * energyFactor);
-	}
-
-	public float getPtRatio() {
-		return ptRatio;
-	}
-
-	public float getCtRatio() {
-		return ctRatio;
-	}
-
-	public int getEnergyUnit() {
-		return energyUnit;
-	}
-
-	public void setPtRatio(int ptRatio) {
-		this.ptRatio = ptRatio;
-	}
-
-	public void setCtRatio(int ctRatio) {
-		this.ctRatio = ctRatio;
-	}
-
-	public void setEnergyUnit(int energyUnit) {
-		assert energyUnit >= 0 && energyUnit <= 6;
-		this.energyUnit = energyUnit;
-		this.energyFactor = (int) Math.pow(10, energyUnit);
-	}
-
-	/**
-	 * Get a string of data values, useful for debugging. The generated string
-	 * will contain a register address followed by two register values per line,
-	 * printed as hexidecimal integers, with a prefix and suffix line. The
-	 * register addresses will be printed as {@bold 1-based} values, to match
-	 * Schneider's documentation. For example:
-	 * 
-	 * <pre>
-	 * EM5600Data{
-	 *      3000: 0x4141, 0x727E
-	 *      3002: 0xFFC0, 0x0000
-	 *      ...
-	 *      3240: 0x0000, 0x0000
-	 * }
-	 * </pre>
-	 * 
-	 * @return debug string
-	 */
-	public String dataDebugString() {
-		final StringBuilder buf = new StringBuilder("EM5600Data{\n");
-		EM5600Data snapshot = new EM5600Data(this);
-		int[] data = snapshot.inputRegisters;
-		boolean odd = true;
-		for ( int i = 0; i < data.length; i++ ) {
-			if ( odd ) {
-				buf.append("\t").append(String.format("%5d", ADDR_INPUT_REG_START + i + 1)).append(": ");
-			}
-			buf.append(String.format("0x%04X", data[i]));
-			if ( odd ) {
-				buf.append(", ");
-			} else {
-				buf.append("\n");
-			}
-			odd = !odd;
+	private Long getEnergyValue(EM5600Register ref) {
+		Number n = getNumber(ref);
+		if ( n != null ) {
+			n = NumberUtils.scaled(bigDecimalForNumber(n), getEnergyUnit().getScaleFactor());
 		}
-		if ( !odd ) {
-			buf.append("\n");
-		}
-		buf.append("}");
-		return buf.toString();
+		return (n != null ? n.longValue() : null);
 	}
 
+	private LocalDateTime getDateValue(EM5600Register ref) {
+		Number n = getNumber(ref);
+		LocalDateTime result = null;
+		if ( n != null ) {
+			final long l = n.longValue();
+			int day = (int) ((l >> 24) & 0x1F); // 1 - 31
+			int year = 2000 + (int) ((l >> 8) & 0xFF); // 0 - 255
+			int month = ((int) l & 0xF); //1-12
+			result = new LocalDateTime(year, month, day, 0, 0, 0, 0);
+		}
+		return result;
+	}
+
+	@Override
+	public BigDecimal getCtRatio() {
+		Number n = getNumber(EM5600Register.ConfigCtRatio);
+		return (n != null && n.intValue() > 0 ? NumberUtils.scaled(n, -1) : BigDecimal.ONE);
+	}
+
+	@Override
+	public BigDecimal getPtRatio() {
+		Number n = getNumber(EM5600Register.ConfigPtRatio);
+		return (n != null && n.intValue() > 0 ? NumberUtils.scaled(n, -1) : BigDecimal.ONE);
+	}
+
+	@Override
+	public EnergyUnit getEnergyUnit() {
+		Number n = getNumber(EM5600Register.ConfigEnergyUnit);
+		EnergyUnit u;
+		if ( n != null ) {
+			u = EnergyUnit.energyUnitForValue(n.intValue());
+		} else {
+			u = EnergyUnit.WattHour;
+		}
+		return u;
+	}
+
+	private class PhaseMeterDataAccessor implements EM5600DataAccessor {
+
+		private final ACPhase phase;
+
+		private PhaseMeterDataAccessor(ACPhase phase) {
+			super();
+			this.phase = phase;
+		}
+
+		@Override
+		public Map<String, Object> getDeviceInfo() {
+			return EM5600Data.this.getDeviceInfo();
+		}
+
+		@Override
+		public String getSerialNumber() {
+			return EM5600Data.this.getSerialNumber();
+		}
+
+		@Override
+		public String getHardwareRevision() {
+			return EM5600Data.this.getHardwareRevision();
+		}
+
+		@Override
+		public Integer getModel() {
+			return EM5600Data.this.getModel();
+		}
+
+		@Override
+		public LocalDateTime getManufactureDate() {
+			return EM5600Data.this.getManufactureDate();
+		}
+
+		@Override
+		public EnergyUnit getEnergyUnit() {
+			return EM5600Data.this.getEnergyUnit();
+		}
+
+		@Override
+		public UnitFactor getUnitFactor() {
+			return EM5600Data.this.getUnitFactor();
+		}
+
+		@Override
+		public BigDecimal getCtRatio() {
+			return EM5600Data.this.getCtRatio();
+		}
+
+		@Override
+		public BigDecimal getPtRatio() {
+			return EM5600Data.this.getPtRatio();
+		}
+
+		@Override
+		public long getDataTimestamp() {
+			return EM5600Data.this.getDataTimestamp();
+		}
+
+		@Override
+		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+			return EM5600Data.this.accessorForPhase(phase);
+		}
+
+		@Override
+		public ACEnergyDataAccessor reversed() {
+			return new ReversedMeterDataAccessor(this);
+		}
+
+		@Override
+		public Float getFrequency() {
+			return EM5600Data.this.getFrequency();
+		}
+
+		@Override
+		public Float getCurrent() {
+			Float n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getCurrentValue(EM5600Register.MeterCurrentPhaseA);
+					break;
+
+				case PhaseB:
+					n = getCurrentValue(EM5600Register.MeterCurrentPhaseB);
+					break;
+
+				case PhaseC:
+					n = getCurrentValue(EM5600Register.MeterCurrentPhaseC);
+					break;
+
+				default:
+					n = EM5600Data.this.getCurrent();
+			}
+			return n;
+		}
+
+		@Override
+		public Float getNeutralCurrent() {
+			return EM5600Data.this.getNeutralCurrent();
+		}
+
+		@Override
+		public Float getVoltage() {
+			Float n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getVoltageValue(EM5600Register.MeterVoltageLineNeutralPhaseA);
+					break;
+
+				case PhaseB:
+					n = getVoltageValue(EM5600Register.MeterVoltageLineNeutralPhaseB);
+					break;
+
+				case PhaseC:
+					n = getVoltageValue(EM5600Register.MeterVoltageLineNeutralPhaseC);
+					break;
+
+				default:
+					n = EM5600Data.this.getVoltage();
+			}
+			return n;
+		}
+
+		@Override
+		public Float getLineVoltage() {
+			Float n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getVoltageValue(EM5600Register.MeterVoltageLineLinePhaseAPhaseB);
+					break;
+
+				case PhaseB:
+					n = getVoltageValue(EM5600Register.MeterVoltageLineLinePhaseBPhaseC);
+					break;
+
+				case PhaseC:
+					n = getVoltageValue(EM5600Register.MeterVoltageLineLinePhaseCPhaseA);
+					break;
+
+				default:
+					n = EM5600Data.this.getLineVoltage();
+			}
+			return n;
+		}
+
+		@Override
+		public Float getPowerFactor() {
+			return EM5600Data.this.getPowerFactor();
+		}
+
+		@Override
+		public Integer getActivePower() {
+			Integer n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getPowerValue(EM5600Register.MeterActivePowerPhaseA);
+					break;
+
+				case PhaseB:
+					n = getPowerValue(EM5600Register.MeterActivePowerPhaseB);
+					break;
+
+				case PhaseC:
+					n = getPowerValue(EM5600Register.MeterActivePowerPhaseC);
+					break;
+
+				default:
+					n = EM5600Data.this.getActivePower();
+			}
+			return n;
+		}
+
+		@Override
+		public Integer getApparentPower() {
+			return EM5600Data.this.getApparentPower();
+		}
+
+		@Override
+		public Integer getReactivePower() {
+			return EM5600Data.this.getReactivePower();
+		}
+
+		@Override
+		public Long getActiveEnergyDelivered() {
+			Long n = null;
+			if ( phase == ACPhase.Total ) {
+				n = EM5600Data.this.getActiveEnergyDelivered();
+			}
+			return n;
+		}
+
+		@Override
+		public Long getActiveEnergyReceived() {
+			Long n = null;
+			if ( phase == ACPhase.Total ) {
+				n = EM5600Data.this.getActiveEnergyReceived();
+			}
+			return n;
+		}
+
+		@Override
+		public Long getReactiveEnergyDelivered() {
+			Long n = null;
+			if ( phase == ACPhase.Total ) {
+				n = EM5600Data.this.getReactiveEnergyDelivered();
+			}
+			return n;
+		}
+
+		@Override
+		public Long getReactiveEnergyReceived() {
+			Long n = null;
+			if ( phase == ACPhase.Total ) {
+				n = EM5600Data.this.getReactiveEnergyReceived();
+			}
+			return n;
+		}
+
+		@Override
+		public Long getApparentEnergyDelivered() {
+			Long n = null;
+			if ( phase == ACPhase.Total ) {
+				n = EM5600Data.this.getApparentEnergyDelivered();
+			}
+			return n;
+		}
+
+		@Override
+		public Long getApparentEnergyReceived() {
+			Long n = null;
+			if ( phase == ACPhase.Total ) {
+				n = EM5600Data.this.getApparentEnergyReceived();
+			}
+			return n;
+		}
+
+	}
+
+	private static class ReversedMeterDataAccessor implements EM5600DataAccessor {
+
+		private final EM5600DataAccessor delegate;
+
+		private ReversedMeterDataAccessor(EM5600DataAccessor delegate) {
+			super();
+			this.delegate = delegate;
+		}
+
+		@Override
+		public Map<String, Object> getDeviceInfo() {
+			return delegate.getDeviceInfo();
+		}
+
+		@Override
+		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+			return new ReversedMeterDataAccessor((EM5600DataAccessor) delegate.accessorForPhase(phase));
+		}
+
+		@Override
+		public ACEnergyDataAccessor reversed() {
+			return delegate;
+		}
+
+		@Override
+		public String getSerialNumber() {
+			return delegate.getSerialNumber();
+		}
+
+		@Override
+		public String getHardwareRevision() {
+			return delegate.getHardwareRevision();
+		}
+
+		@Override
+		public Integer getModel() {
+			return delegate.getModel();
+		}
+
+		@Override
+		public LocalDateTime getManufactureDate() {
+			return delegate.getManufactureDate();
+		}
+
+		@Override
+		public EnergyUnit getEnergyUnit() {
+			return delegate.getEnergyUnit();
+		}
+
+		@Override
+		public UnitFactor getUnitFactor() {
+			return delegate.getUnitFactor();
+		}
+
+		@Override
+		public BigDecimal getCtRatio() {
+			return delegate.getCtRatio();
+		}
+
+		@Override
+		public BigDecimal getPtRatio() {
+			return delegate.getPtRatio();
+		}
+
+		@Override
+		public long getDataTimestamp() {
+			return delegate.getDataTimestamp();
+		}
+
+		@Override
+		public Float getFrequency() {
+			return delegate.getFrequency();
+		}
+
+		@Override
+		public Float getCurrent() {
+			return delegate.getCurrent();
+		}
+
+		@Override
+		public Float getNeutralCurrent() {
+			return delegate.getNeutralCurrent();
+		}
+
+		@Override
+		public Float getVoltage() {
+			return delegate.getVoltage();
+		}
+
+		@Override
+		public Float getLineVoltage() {
+			return delegate.getLineVoltage();
+		}
+
+		@Override
+		public Float getPowerFactor() {
+			return delegate.getPowerFactor();
+		}
+
+		@Override
+		public Integer getActivePower() {
+			Integer n = delegate.getActivePower();
+			return (n != null ? n * -1 : null);
+		}
+
+		@Override
+		public Integer getApparentPower() {
+			return delegate.getApparentPower();
+		}
+
+		@Override
+		public Integer getReactivePower() {
+			Integer n = delegate.getReactivePower();
+			return (n != null ? n * -1 : null);
+		}
+
+		@Override
+		public Long getActiveEnergyDelivered() {
+			return delegate.getActiveEnergyReceived();
+		}
+
+		@Override
+		public Long getActiveEnergyReceived() {
+			return delegate.getActiveEnergyDelivered();
+		}
+
+		@Override
+		public Long getReactiveEnergyDelivered() {
+			return delegate.getReactiveEnergyReceived();
+		}
+
+		@Override
+		public Long getReactiveEnergyReceived() {
+			return delegate.getReactiveEnergyDelivered();
+		}
+
+		@Override
+		public Long getApparentEnergyDelivered() {
+			return delegate.getApparentEnergyReceived();
+		}
+
+		@Override
+		public Long getApparentEnergyReceived() {
+			return delegate.getApparentEnergyDelivered();
+		}
+
+	}
+
+	/*- TODO: move to Datum
 	/**
 	 * Populate measurements into a {@link GeneralNodeACEnergyDatum} instance.
 	 * 
@@ -481,37 +869,37 @@ public class EM5600Data {
 	 * @param datum
 	 *        the datum to populate data into
 	 * @since 1.2
-	 */
+	 *
 	public void populateMeasurements(final ACPhase phase, final GeneralNodeACEnergyDatum datum) {
 		switch (phase) {
 			case Total:
 				populateTotalMeasurements(this, datum);
 				break;
-
+	
 			case PhaseA:
 				populatePhaseAMeasurements(this, datum);
 				break;
-
+	
 			case PhaseB:
 				populatePhaseBMeasurements(this, datum);
 				break;
-
+	
 			case PhaseC:
 				populatePhaseCMeasurements(this, datum);
 				break;
 		}
 	}
-
+	
 	private static void populateTotalMeasurements(final EM5600Data sample,
 			final GeneralNodeACEnergyDatum datum) {
 		final boolean backwards = sample.isBackwards();
-
+	
 		datum.setEffectivePowerFactor(sample.getPowerFactor(ADDR_DATA_POWER_FACTOR_TOTAL));
 		datum.setFrequency(sample.getFrequency(ADDR_DATA_FREQUENCY));
-
+	
 		Long whImport = sample.getEnergy(ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT);
 		Long whExport = sample.getEnergy(ADDR_DATA_TOTAL_ACTIVE_ENERGY_EXPORT);
-
+	
 		if ( backwards ) {
 			datum.setWattHourReading(whExport);
 			datum.setReverseWattHourReading(whImport);
@@ -519,7 +907,7 @@ public class EM5600Data {
 			datum.setWattHourReading(whImport);
 			datum.setReverseWattHourReading(whExport);
 		}
-
+	
 		datum.setApparentPower(sample.getPower(ADDR_DATA_APPARENT_POWER_TOTAL));
 		datum.setCurrent(sample.getCurrent(ADDR_DATA_I_AVERAGE));
 		datum.setPhaseVoltage(sample.getVoltage(ADDR_DATA_V_L_L_AVERAGE));
@@ -529,7 +917,7 @@ public class EM5600Data {
 		datum.setVoltage(sample.getVoltage(ADDR_DATA_V_NEUTRAL_AVERAGE));
 		datum.setWatts((backwards ? -1 : 1) * sample.getPower(ADDR_DATA_ACTIVE_POWER_TOTAL));
 	}
-
+	
 	private static void populatePhaseAMeasurements(final EM5600Data sample,
 			final GeneralNodeACEnergyDatum datum) {
 		datum.setApparentPower(sample.getPower(ADDR_DATA_APPARENT_POWER_P1));
@@ -541,7 +929,7 @@ public class EM5600Data {
 		datum.setVoltage(sample.getVoltage(ADDR_DATA_V_L1_NEUTRAL));
 		datum.setWatts((sample.isBackwards() ? -1 : 1) * sample.getPower(ADDR_DATA_ACTIVE_POWER_P1));
 	}
-
+	
 	private static void populatePhaseBMeasurements(final EM5600Data sample,
 			final GeneralNodeACEnergyDatum datum) {
 		datum.setApparentPower(sample.getPower(ADDR_DATA_APPARENT_POWER_P2));
@@ -553,7 +941,7 @@ public class EM5600Data {
 		datum.setVoltage(sample.getVoltage(ADDR_DATA_V_L2_NEUTRAL));
 		datum.setWatts((sample.isBackwards() ? -1 : 1) * sample.getPower(ADDR_DATA_ACTIVE_POWER_P2));
 	}
-
+	
 	private static void populatePhaseCMeasurements(final EM5600Data sample,
 			final GeneralNodeACEnergyDatum datum) {
 		datum.setApparentPower(sample.getPower(ADDR_DATA_APPARENT_POWER_P3));
@@ -565,24 +953,5 @@ public class EM5600Data {
 		datum.setVoltage(sample.getVoltage(ADDR_DATA_V_L3_NEUTRAL));
 		datum.setWatts((sample.isBackwards() ? -1 : 1) * sample.getPower(ADDR_DATA_ACTIVE_POWER_P3));
 	}
-
-	/**
-	 * Toggle the backwards flag.
-	 * 
-	 * @param backwards
-	 *        {@literal true} to set into "installed backwards" mode
-	 */
-	public void setBackwards(boolean backwards) {
-		this.backwards = backwards;
-	}
-
-	/**
-	 * Get the backwards flag.
-	 * 
-	 * @return backwards flag
-	 * @since 1.2
-	 */
-	public boolean isBackwards() {
-		return backwards;
-	}
+	*/
 }

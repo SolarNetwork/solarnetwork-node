@@ -43,7 +43,7 @@ import net.solarnetwork.node.control.jf2.lata.command.CommandValidationException
 import net.solarnetwork.node.control.jf2.lata.command.ToggleMode;
 import net.solarnetwork.node.domain.NodeControlInfoDatum;
 import net.solarnetwork.node.io.serial.SerialConnection;
-import net.solarnetwork.node.io.serial.SerialDeviceSupport;
+import net.solarnetwork.node.io.serial.support.SerialDeviceSupport;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;

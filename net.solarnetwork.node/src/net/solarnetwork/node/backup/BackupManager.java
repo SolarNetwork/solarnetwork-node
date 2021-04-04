@@ -65,7 +65,7 @@ public interface BackupManager extends SettingSpecifierProvider {
 	/**
 	 * Get a {@link Iterator} of {@link BackupResource} needing to be backed up.
 	 * 
-	 * @return
+	 * @return the backup resources
 	 */
 	Iterable<BackupResource> resourcesForBackup();
 
@@ -163,6 +163,7 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 * 
 	 * @param archive
 	 *        the archive input stream to import
+	 * @return the backup future
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
@@ -183,6 +184,7 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 *        the archive input stream to import
 	 * @param props
 	 *        An optional set of properties to customize the backup with.
+	 * @return the backup future
 	 * @throws IOException
 	 *         if any IO error occurs
 	 * @since 1.1

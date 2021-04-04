@@ -26,7 +26,7 @@ package net.solarnetwork.node.setup.s3;
  * Metadata about an S3 setup.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class S3SetupConfiguration {
 
@@ -38,21 +38,24 @@ public class S3SetupConfiguration {
 	private String[] objects;
 	private String[] cleanPaths;
 	private boolean restartRequired;
+	private S3SetupPackageConfiguration[] packages;
 
 	/**
-	 * Get the total count of objects * 2, sync paths, and clean paths
-	 * configured on this object.
+	 * Get the total count of objects * 2, sync paths, clean paths, and package
+	 * configurations (+1) configured on this object.
 	 * 
 	 * <p>
 	 * The object count is doubled to account for downloading, then installing
-	 * the objects.
+	 * the objects. If some package configurations are defined, then the count
+	 * of those configurations plus one is added.
 	 * </p>
 	 * 
 	 * @return the total count
 	 */
 	public int getTotalStepCount() {
 		return (syncPaths != null ? syncPaths.length : 0) + (objects != null ? objects.length * 2 : 0)
-				+ (cleanPaths != null ? cleanPaths.length : 0);
+				+ (cleanPaths != null ? cleanPaths.length : 0)
+				+ (packages != null ? packages.length : 0);
 	}
 
 	public String[] getSyncPaths() {
@@ -168,6 +171,27 @@ public class S3SetupConfiguration {
 	 */
 	public void setRestartRequired(boolean restartRequired) {
 		this.restartRequired = restartRequired;
+	}
+
+	/**
+	 * Get the list of package configurations to apply.
+	 * 
+	 * @return the list of package configurations
+	 * @since 1.1
+	 */
+	public S3SetupPackageConfiguration[] getPackages() {
+		return packages;
+	}
+
+	/**
+	 * Set the list of package configurations to apply.
+	 * 
+	 * @param packages
+	 *        the list of package configurations
+	 * @since 1.1
+	 */
+	public void setPackages(S3SetupPackageConfiguration[] packages) {
+		this.packages = packages;
 	}
 
 }

@@ -82,7 +82,7 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 * DELETE FROM solarnode.sn_some_datum p WHERE p.id IN 
 	 * (SELECT pd.id FROM solarnode.sn_some_datum pd 
 	 * INNER JOIN solarnode.sn_some_datum_upload u 
-	 * ON u.power_datum_id = pd.id WHERE pd.created < ?)
+	 * ON u.power_datum_id = pd.id WHERE pd.created &lt; ?)
 	 * </pre>
 	 * 
 	 * @param hours
@@ -116,8 +116,6 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 * to conserve memory and process the data in small batches).
 	 * </p>
 	 * 
-	 * @param destination
-	 *        the destination to look for
 	 * @param rowMapper
 	 *        a {@link RowMapper} implementation to instantiate entities from
 	 *        found rows
@@ -206,7 +204,7 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	}
 
 	/**
-	 * Store a new domain object using the {@link #getSqlInsertDatum()} SQL.
+	 * Store a new domain object using the {@link #SQL_RESOURCE_INSERT} SQL.
 	 * 
 	 * <p>
 	 * If {@link #isIgnoreMockData()} returns <em>true</em> and {@code datum} is
@@ -216,7 +214,6 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 * 
 	 * @param datum
 	 *        the datum to persist
-	 * @return the entity primary key
 	 */
 	protected void storeDomainObject(final T datum) {
 		if ( ignoreMockData && datum instanceof Mock ) {
@@ -226,6 +223,9 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 			return;
 		}
 		insertDomainObject(datum, getSqlResource(SQL_RESOURCE_INSERT));
+		if ( log.isInfoEnabled() ) {
+			log.info("Persisting datum locally: {}", datum);
+		}
 		postDatumStoredEvent(datum);
 	}
 
@@ -249,10 +249,7 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 * <p>
 	 * This method will call {@link #updateDatumUpload(long, Object, long)}
 	 * passing in {@link T#getCreated()}, {@link T#getSourceId()}, and
-	 * {@code timestamp}. As long as
-	 * {@link #updateDatumUpload(long, Object, long)} returns a value greater
-	 * than {@literal 0} then {@link #postDatumUploadedEvent(Datum)} will be
-	 * called.
+	 * {@code timestamp}.
 	 * </p>
 	 * 
 	 * @param datum
@@ -346,7 +343,7 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 
 	/**
 	 * The maximum number of rows to return in the
-	 * {@link #findDatumNotUploaded(String, RowMapper)} method.
+	 * {@link #findDatumNotUploaded(RowMapper)} method.
 	 * 
 	 * <p>
 	 * Defaults to {@link #DEFAULT_MAX_FETCH_FOR_UPLOAD}.

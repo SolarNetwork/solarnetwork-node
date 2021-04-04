@@ -21,9 +21,25 @@
 		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
 	</bean>
 
+	<bean id="placeholderService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
+	</bean>
+	
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+
 	<!-- support localized strings for the settings in the GUI -->
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames" value="net.solarnetwork.node.datum.energymeter.mock.MockEnergyMeterDatumSource"/>
+		<property name="basenames">
+			<array>
+				<value>net.solarnetwork.node.datum.energymeter.mock.MockEnergyMeterDatumSource</value>
+				<value>net.solarnetwork.node.support.DatumDataSourceSupport</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+			</array>
+		</property>
 	</bean>
 
 	<!-- support localized strings for the periodic job settings in the GUI -->
@@ -100,7 +116,21 @@
 							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
 							<entry key="datumDataSource">
 								<bean class="net.solarnetwork.node.datum.energymeter.mock.MockEnergyMeterDatumSource">
+									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="messageSource" ref="jobMessageSource"/>
+									<property name="placeholderService" ref="placeholderService"/>
+									<property name="samplesTransformService">
+										<bean class="net.solarnetwork.util.DynamicServiceTracker">
+											<property name="bundleContext" ref="bundleContext"/>
+											<property name="serviceClassName" 
+												value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
+											<property name="propertyFilters">
+												<map>
+													<entry key="UID" value=""/>
+												</map>
+											</property>
+										</bean>	
+									</property>
 								</bean>
 							</entry>
 						</map>

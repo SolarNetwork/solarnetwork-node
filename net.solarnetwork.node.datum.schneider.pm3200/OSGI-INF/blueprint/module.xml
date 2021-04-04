@@ -14,6 +14,11 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
+	<bean id="placeholderService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
+	</bean>
+	
 	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
@@ -23,9 +28,9 @@
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.consumption.schneider.pm3200.PM3200ConsumptionDatumDataSource</value>
-				<value>net.solarnetwork.node.hw.schneider.meter.PM3200Support</value>
-				<value>net.solarnetwork.node.io.modbus.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.node.datum.schneider.pm3200.PM3200DatumDataSource</value>
+				<value>net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport</value>
+				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
 			</list>
 		</property>
 	</bean>
@@ -54,6 +59,7 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.consumption.schneider.pm3200" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
+			<beans:value>net.solarnetwork.node.job.ServiceProvider</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
@@ -68,6 +74,25 @@
 					<property name="randomSecond" value="true"/>
 				</bean>
 			</property>
+			<property name="serviceProviderConfigurations">
+				<map>
+					<entry key="multiDatumDataSource">
+						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
+							<property name="interfaces">
+								<list>
+									<value>net.solarnetwork.node.DatumDataSource</value>
+									<value>net.solarnetwork.node.MultiDatumDataSource</value>
+								</list>
+							</property>
+							<property name="properties">
+								<map>
+									<entry key="datumClassName" value="net.solarnetwork.node.domain.ACEnergyDatum"/>
+								</map>
+							</property>
+						</bean>
+					</entry>
+				</map>
+			</property>
 			<property name="jobDetail">
 				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
 					<property name="name" value="pm3200DatumLoggerJob"/>
@@ -76,9 +101,10 @@
 						<map>
 							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
 							<entry key="multiDatumDataSource">
-								<bean class="net.solarnetwork.node.consumption.schneider.pm3200.PM3200ConsumptionDatumDataSource">
+								<bean class="net.solarnetwork.node.datum.schneider.pm3200.PM3200DatumDataSource">
 									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="messageSource" ref="jobMessageSource"/>
+									<property name="placeholderService" ref="placeholderService"/>
 									<property name="modbusNetwork">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>

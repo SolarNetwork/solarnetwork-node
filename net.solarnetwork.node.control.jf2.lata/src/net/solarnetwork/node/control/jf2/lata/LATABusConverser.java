@@ -25,13 +25,13 @@
 package net.solarnetwork.node.control.jf2.lata;
 
 import java.io.IOException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.control.jf2.lata.command.Command;
 import net.solarnetwork.node.control.jf2.lata.command.CommandInterface;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
-import net.solarnetwork.node.io.serial.SerialUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import net.solarnetwork.util.ByteUtils;
 
 /**
  * Extension of {@link Converser} that initializes the LATA Bus prior to sending
@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
  * 
  * <p>
  * Serial parameters known to work on Linux using <code>/dev/USB</code>:
- * <p>
+ * </p>
  * 
  * <pre>
  * baud               4800
@@ -56,6 +56,7 @@ import org.slf4j.LoggerFactory;
  * </pre>
  * 
  * @author shauryab
+ * @version 2.0
  */
 public class LATABusConverser implements SerialConnectionAction<String> {
 
@@ -100,7 +101,7 @@ public class LATABusConverser implements SerialConnectionAction<String> {
 		if ( getCommand().includesResponse() ) {
 			LOG.trace("Waiting for response", getCommand(), getCommand().getData());
 			data = conn.readMarkedMessage(MAGIC, READ_LENGTH);
-			return (data == null ? null : new String(data, SerialUtils.ASCII_CHARSET));
+			return (data == null ? null : new String(data, ByteUtils.ASCII));
 		}
 
 		return null;

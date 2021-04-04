@@ -28,7 +28,7 @@ package net.solarnetwork.node.domain;
  * average or total measurement.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.3
  */
 public interface ACEnergyDatum extends EnergyDatum {
 
@@ -93,9 +93,25 @@ public interface ACEnergyDatum extends EnergyDatum {
 	public static final String PHASE_VOLTAGE_KEY = "phaseVoltage";
 
 	/**
+	 * The {@link net.solarnetwork.domain.GeneralNodeDatumSamples} instantaneous
+	 * sample key for {@link #getLineVoltage()} values.
+	 * 
+	 * @since 1.2
+	 */
+	public static final String LINE_VOLTAGE_KEY = "lineVoltage";
+
+	/**
+	 * The {@link net.solarnetwork.domain.GeneralNodeDatumSamples} instantaneous
+	 * sample key for {@link #getNeutralCurrent()} values.
+	 * 
+	 * @since 1.3
+	 */
+	public static final String NEUTRAL_CURRENT_KEY = "neutralCurrent";
+
+	/**
 	 * Get the phase measured by this datum.
 	 * 
-	 * @return the phase, should never be <em>null</em>
+	 * @return the phase, should never be {@literal null}
 	 */
 	ACPhase getPhase();
 
@@ -104,14 +120,14 @@ public interface ACEnergyDatum extends EnergyDatum {
 	 * same value as {@link EnergyDatum#getWatts()} but has this method to be
 	 * explicit.
 	 * 
-	 * @return the real power in watts, or <em>null</em> if not available
+	 * @return the real power in watts, or {@literal null} if not available
 	 */
 	Integer getRealPower();
 
 	/**
 	 * Get the instantaneous apparent power, in volt-amperes (VA).
 	 * 
-	 * @return the apparent power in volt-amperes, or <em>null</em> if not
+	 * @return the apparent power in volt-amperes, or {@literal null} if not
 	 *         available
 	 */
 	Integer getApparentPower();
@@ -119,8 +135,8 @@ public interface ACEnergyDatum extends EnergyDatum {
 	/**
 	 * Get the instantaneous reactive power, in reactive volt-amperes (var).
 	 * 
-	 * @return the reactive power in reactive volt-amperes, or <em>null</em> if
-	 *         not available
+	 * @return the reactive power in reactive volt-amperes, or {@literal null}
+	 *         if not available
 	 */
 	Integer getReactivePower();
 
@@ -137,35 +153,113 @@ public interface ACEnergyDatum extends EnergyDatum {
 	/**
 	 * Get the instantaneous frequency, in hertz (Hz).
 	 * 
-	 * @return the frequency, or <em>null</em> if not known
+	 * @return the frequency, or {@literal null} if not known
 	 */
 	Float getFrequency();
 
 	/**
 	 * Get the instantaneous neutral voltage.
 	 * 
-	 * @return the volts, or <em>null</em> if not known
+	 * @return the volts, or {@literal null} if not known
 	 */
 	Float getVoltage();
 
 	/**
+	 * Get the instantaneous phase-to-neutral line voltage for a specific phase.
+	 * 
+	 * @param phase
+	 *        the phase
+	 * @return the volts, or {@literal null} if not known
+	 * @since 1.2
+	 */
+	Float getVoltage(ACPhase phase);
+
+	/**
 	 * Get the instantaneous current, in amps.
 	 * 
-	 * @return the amps, or <em>null</em> if not known
+	 * <p>
+	 * This method is equivalent to calling
+	 * {@code datum.getCurrent(datum.getPhase())}.
+	 * </p>
+	 * 
+	 * @return the amps, or {@literal null} if not known
 	 */
 	Float getCurrent();
 
 	/**
-	 * Get the instantaneous phase line voltage.
+	 * Get the instantaneous current, in amps, for a specific phase.
 	 * 
-	 * @return the volts, or <em>null</em> if not known
+	 * @param phase
+	 *        the phase
+	 * @return the phase
+	 * @since 1.2
+	 */
+	Float getCurrent(ACPhase phase);
+
+	/**
+	 * Get the instantaneous neutral current, in amps.
+	 * 
+	 * @return the amps, or {@literal null} if not known
+	 * @since 1.3
+	 */
+	Float getNeutralCurrent();
+
+	/**
+	 * Get the instantaneous phase-to-neutral line voltage.
+	 * 
+	 * <p>
+	 * This metnod is equivalent to calling
+	 * {@code datum.getPhaseVoltage(datum.getPhase())}.
+	 * </p>
+	 * 
+	 * @return the volts, or {@literal null} if not known
 	 */
 	Float getPhaseVoltage();
 
 	/**
+	 * Get the instantaneous phase-to-phase line voltage.
+	 * 
+	 * <p>
+	 * For the {@link #getPhase()}, this value represents the difference between
+	 * this phase and the <i>next</i> phase, in {@literal a}, {@literal b},
+	 * {@literal c} order, with {@code PhaseC} wrapping around back to
+	 * {@code PhaseA}. Thus the possible values represent:
+	 * </p>
+	 * 
+	 * <dl>
+	 * <dt>{@code PhaseA}</dt>
+	 * <dd>Vab</dd>
+	 * <dt>{@code PhaseB}</dt>
+	 * <dd>Vbc</dd>
+	 * <dt>{@code PhaseC}</dt>
+	 * <dd>Vca</dd>
+	 * </dl>
+	 * 
+	 * <p>
+	 * This metnod is equivalent to calling
+	 * {@code datum.getLineVoltage(datum.getPhase())}.
+	 * </p>
+	 * 
+	 * @return the line voltage
+	 * @since 1.2
+	 * @see #getLineVoltage(ACPhase)
+	 */
+	Float getLineVoltage();
+
+	/**
+	 * Get the instantaneous phase-to-phase line voltage for a specific phase.
+	 * 
+	 * @param phase
+	 *        the phase (first)
+	 * @return the line voltage
+	 * @since 1.2
+	 */
+	Float getLineVoltage(ACPhase phase);
+
+	/**
 	 * Get the instantaneous power factor.
 	 * 
-	 * @return the power factor, or <em>null</em> if not known
+	 * @return the power factor, or {@literal null} if not known
 	 */
 	Float getPowerFactor();
 }

@@ -58,7 +58,7 @@ public interface BackupResourceProvider {
 	Iterable<BackupResource> getBackupResources();
 
 	/**
-	 * Restore a {@link BackupResoruce}.
+	 * Restore a {@link BackupResource}.
 	 * 
 	 * @param resource
 	 *        the resource to restore

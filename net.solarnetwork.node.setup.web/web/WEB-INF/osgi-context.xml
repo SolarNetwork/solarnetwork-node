@@ -48,7 +48,7 @@
 		filter="(app=node)"/>
 	
 	<osgi:reference id="sslServiceRef" availability="optional"
-		interface="net.solarnetwork.node.SSLService">
+		interface="net.solarnetwork.support.SSLService">
 		<osgi:reference-listener ref="sslService" bind-method="onBind" unbind-method="onUnbind"/>
 	</osgi:reference>
 	
@@ -91,4 +91,16 @@
 		<bean class="net.solarnetwork.util.SimpMessageSendingOperationsFactoryBean" autowire="byType"/>
 	</osgi:service>
 	
+	<bean id="csrfIgnoreRequestMatchers" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.springframework.security.web.util.matcher.RequestMatcher"/>
+		<property name="serviceFilter" value="(mode=csrf-ignore)"/>
+	</bean>
+	
+	<bean id="associationSettingProviders" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.settings.SettingSpecifierProvider"/>
+		<property name="serviceFilter" value="(on-association=true)"/>
+	</bean>
+
 </beans>

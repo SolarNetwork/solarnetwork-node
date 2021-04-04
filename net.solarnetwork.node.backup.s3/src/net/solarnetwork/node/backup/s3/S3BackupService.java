@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.backup.s3;
 
+import static java.util.Collections.singletonMap;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,14 +42,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.context.MessageSource;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.s3.model.ObjectMetadata;
+import org.springframework.util.MimeType;
+import net.solarnetwork.common.s3.S3Client;
+import net.solarnetwork.common.s3.S3ObjectMeta;
+import net.solarnetwork.common.s3.S3ObjectMetadata;
+import net.solarnetwork.common.s3.S3ObjectRef;
+import net.solarnetwork.common.s3.S3ObjectReference;
+import net.solarnetwork.common.s3.sdk.SdkS3Client;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.RemoteServiceException;
 import net.solarnetwork.node.backup.Backup;
@@ -65,6 +70,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicSliderSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.util.CachedResult;
 import net.solarnetwork.util.OptionalService;
 
@@ -91,15 +97,18 @@ import net.solarnetwork.util.OptionalService;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class S3BackupService extends BackupServiceSupport implements SettingSpecifierProvider {
+public class S3BackupService extends BackupServiceSupport
+		implements SettingSpecifierProvider, SettingsChangeObserver {
+
+	private static final String CONTENT_SHA256_KEY = "Content-SHA256";
 
 	/** The value returned by {@link #getKey()}. */
 	public static final String SERVICE_KEY = S3BackupService.class.getName();
 
 	/** The default value for the {@code regionName} property. */
-	public static final String DEFAULT_REGION_NAME = Regions.US_WEST_2.getName();
+	public static final String DEFAULT_REGION_NAME = "us-west-2";
 
 	/** The default value for the {@code objectKeyPrefix} property. */
 	public static final String DEFAULT_OBJECT_KEY_PREFIX = "solarnode-backups/";
@@ -111,10 +120,6 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 	private static final String META_OBJECT_KEY_PREFIX = "backup-meta/";
 	private static final String DATA_OBJECT_KEY_PREFIX = "backup-data/";
 
-	private String accessToken;
-	private String accessSecret;
-	private String regionName;
-	private String bucketName;
 	private String objectKeyPrefix;
 	private MessageSource messageSource;
 	private OptionalService<IdentityService> identityService;
@@ -144,6 +149,12 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 	}
 
 	@Override
+	public void configurationChanged(Map<String, Object> properties) {
+		s3Client.configurationChanged(properties);
+		setupClient();
+	}
+
+	@Override
 	public String getKey() {
 		return SERVICE_KEY;
 	}
@@ -165,8 +176,8 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 		return performBackupInternal(resources, now, null);
 	}
 
-	private String calculateContentDigest(BackupResource rsrc, MessageDigest digest, byte[] buf,
-			ObjectMetadata objectMetadata) throws IOException {
+	private S3ObjectMeta setupMetadata(BackupResource rsrc, MessageDigest digest, byte[] buf)
+			throws IOException {
 		// S3 client buffers to RAM unless content length set; so since we have to calculate the 
 		// SHA256 digest of the content anyway, also calculate the content length at the same time
 		long contentLength = 0;
@@ -178,23 +189,22 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 				contentLength += len;
 			}
 		}
-		objectMetadata.setContentLength(contentLength);
-		return new String(Hex.encodeHex(digest.digest()));
+		Date modified = null;
+		if ( rsrc.getModificationDate() > 0 ) {
+			modified = new Date(rsrc.getModificationDate());
+		} else {
+			modified = new Date();
+		}
+		String sha256 = new String(Hex.encodeHex(digest.digest()));
+
+		return new S3ObjectMeta(contentLength, modified, S3ObjectMetadata.DEFAULT_CONTENT_TYPE,
+				singletonMap(CONTENT_SHA256_KEY, sha256));
 	}
 
 	private void setupClient() {
 		SdkS3Client c = s3Client;
-		if ( c != null ) {
-			c.setBucketName(bucketName);
-			c.setRegionName(regionName);
-			if ( accessToken != null && accessToken.length() > 0 && accessSecret != null
-					&& accessSecret.length() > 0 ) {
-				c.setCredentialsProvider(new AWSStaticCredentialsProvider(
-						new BasicAWSCredentials(accessToken, accessSecret)));
-			}
-			if ( c.isConfigured() ) {
-				status.set(BackupStatus.Configured);
-			}
+		if ( c != null && c.isConfigured() ) {
+			status.set(BackupStatus.Configured);
 		}
 	}
 
@@ -216,6 +226,7 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 			}
 		}
 		S3BackupMetadata result = null;
+		Backup listBackupItem = null;
 		try {
 			final Long nodeId = nodeId(props);
 			final String metaName = String.format(META_NAME_FORMAT, now, nodeId);
@@ -230,17 +241,15 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 			MessageDigest digest = DigestUtils.getSha256Digest();
 			byte[] buf = new byte[4096];
 			for ( BackupResource rsrc : resources ) {
-				ObjectMetadata objectMetadata = new ObjectMetadata();
-				if ( rsrc.getModificationDate() > 0 ) {
-					objectMetadata.setLastModified(new Date(rsrc.getModificationDate()));
-				}
-				String sha = calculateContentDigest(rsrc, digest, buf, objectMetadata);
+				S3ObjectMeta objMeta = setupMetadata(rsrc, digest, buf);
+				String sha = (String) objMeta.getExtendedMetadata().get(CONTENT_SHA256_KEY);
 				String objectKey = objectKeyForPath(DATA_OBJECT_KEY_PREFIX + sha);
 
 				// see if already exists
-				if ( !allDataObjects.contains(new S3ObjectReference(objectKey)) ) {
+				if ( !allDataObjects.contains(new S3ObjectRef(objectKey)) ) {
 					log.info("Saving resource to S3: {}", rsrc.getBackupPath());
-					client.putObject(objectKey, rsrc.getInputStream(), objectMetadata);
+					client.putObject(objectKey, rsrc.getInputStream(),
+							new S3ObjectMeta(objMeta.getSize(), objMeta.getModified()), null, null);
 				} else {
 					log.info("Backup resource already saved to S3: {}", rsrc.getBackupPath());
 				}
@@ -253,24 +262,23 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 			meta.setKey(metaName);
 			byte[] metaJsonBytes = OBJECT_MAPPER.writeValueAsBytes(meta);
 			try (ByteArrayInputStream in = new ByteArrayInputStream(metaJsonBytes)) {
-				ObjectMetadata metaObjectMetadata = new ObjectMetadata();
-				metaObjectMetadata.setContentType("application/json;charset=UTF-8");
-				metaObjectMetadata.setContentLength(metaJsonBytes.length);
-				metaObjectMetadata.setLastModified(meta.getDate());
-				S3ObjectReference metaRef = client.putObject(metaObjectKey, in, metaObjectMetadata);
+				S3ObjectReference metaRef = client.putObject(metaObjectKey, in,
+						new S3ObjectMeta(metaJsonBytes.length, meta.getDate(),
+								MimeType.valueOf("application/json;charset=UTF-8")),
+						null, null);
 				result = new S3BackupMetadata(metaRef);
+				listBackupItem = backupListItem().apply(metaRef);
 			}
 
-			if ( additionalBackupCount < 1 ) {
-				// add this backup to the cached data
-				CachedResult<List<Backup>> cached = cachedBackupList.get();
-				if ( cached != null ) {
-					List<Backup> list = cached.getResult();
-					List<Backup> newList = new ArrayList<>(list);
-					newList.add(0, result);
-					updateCachedBackupList(newList);
-				}
-			} else {
+			// add this backup to the cached data
+			CachedResult<List<Backup>> cached = cachedBackupList.get();
+			if ( cached != null && listBackupItem != null ) {
+				List<Backup> list = cached.getResult();
+				List<Backup> newList = new ArrayList<>(list);
+				newList.add(0, listBackupItem);
+				updateCachedBackupList(newList);
+			}
+			if ( additionalBackupCount > 0 ) {
 				// clean out older backups
 				List<Backup> knownBackups = getAvailableBackupsInternal();
 				List<String> backupsForNode = knownBackups.stream()
@@ -279,7 +287,7 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 				if ( backupsForNode.size() > additionalBackupCount + 1 ) {
 					Set<String> keysToDelete = backupsForNode.stream()
 							.limit(backupsForNode.size() - additionalBackupCount - 1)
-							.collect(Collectors.toSet());
+							.map(k -> canonicalObjectKeyForBackupKey(k)).collect(Collectors.toSet());
 					log.info("Deleting {} expired backups for node {}: {}", keysToDelete.size(), nodeId,
 							keysToDelete);
 					client.deleteObjects(keysToDelete);
@@ -301,8 +309,9 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 	private void updateCachedBackupList(List<Backup> newList) {
 		CachedResult<List<Backup>> cached = cachedBackupList.get();
 		if ( cached != null ) {
-			cachedBackupList.compareAndSet(cached, new CachedResult<List<Backup>>(newList,
-					cached.getExpires() - System.currentTimeMillis(), TimeUnit.MILLISECONDS));
+			boolean updated = cachedBackupList.compareAndSet(cached, new CachedResult<List<Backup>>(
+					newList, cached.getExpires() - System.currentTimeMillis(), TimeUnit.MILLISECONDS));
+			log.debug("Cached backup list {} updated", updated ? "was" : "was not");
 		}
 	}
 
@@ -392,10 +401,8 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 		try {
 			Set<S3ObjectReference> objs = client.listObjects(objectKeyPrefix);
 			List<Backup> result = objs.stream()
-					.map(o -> new SimpleBackup(
-							identityFromBackupKey(pathWithoutPrefix(o.getKey(), objectKeyPrefix)), null,
-							true))
-					.collect(Collectors.toList());
+					.filter(o -> NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(o.getKey()).find())
+					.map(backupListItem()).collect(Collectors.toList());
 			cachedBackupList.compareAndSet(cached,
 					new CachedResult<List<Backup>>(result, cacheSeconds, TimeUnit.SECONDS));
 			return result;
@@ -404,6 +411,11 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 					e.getMessage());
 			return Collections.emptyList();
 		}
+	}
+
+	private Function<S3ObjectReference, Backup> backupListItem() {
+		return o -> new SimpleBackup(
+				identityFromBackupKey(pathWithoutPrefix(o.getKey(), objectKeyPrefix)), null, true);
 	}
 
 	/**
@@ -531,10 +543,7 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 	 *        the access token to set
 	 */
 	public void setAccessToken(String accessToken) {
-		if ( accessToken != null && !accessToken.equals(this.accessToken) ) {
-			this.accessToken = accessToken;
-			setupClient();
-		}
+		s3Client.setAccessToken(accessToken);
 	}
 
 	/**
@@ -544,10 +553,7 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 	 *        the access secret to set
 	 */
 	public void setAccessSecret(String accessSecret) {
-		if ( accessSecret != null && !accessSecret.equals(this.accessSecret) ) {
-			this.accessSecret = accessSecret;
-			setupClient();
-		}
+		s3Client.setAccessSecret(accessSecret);
 	}
 
 	/**
@@ -557,10 +563,7 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 	 *        the region name to set
 	 */
 	public void setRegionName(String regionName) {
-		if ( regionName != null && !regionName.equals(this.regionName) ) {
-			this.regionName = regionName;
-			setupClient();
-		}
+		s3Client.setRegionName(regionName);
 	}
 
 	/**
@@ -570,10 +573,7 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 	 *        the name to set
 	 */
 	public void setBucketName(String bucketName) {
-		if ( bucketName != null && !bucketName.equals(this.bucketName) ) {
-			this.bucketName = bucketName;
-			setupClient();
-		}
+		s3Client.setBucketName(bucketName);
 	}
 
 	/**
@@ -618,7 +618,6 @@ public class S3BackupService extends BackupServiceSupport implements SettingSpec
 	 */
 	public void setS3Client(SdkS3Client s3Client) {
 		this.s3Client = s3Client;
-		setupClient();
 	}
 
 	/**

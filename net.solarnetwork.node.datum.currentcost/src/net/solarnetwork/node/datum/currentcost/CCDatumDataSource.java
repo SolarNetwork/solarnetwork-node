@@ -42,12 +42,12 @@ import net.solarnetwork.node.hw.currentcost.CCDatum;
 import net.solarnetwork.node.hw.currentcost.CCSupport;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
-import net.solarnetwork.node.io.serial.SerialUtils;
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.util.ByteUtils;
 
 /**
  * {@link MultiDatumDataSource} implementation for CurrentCost watt monitors,
@@ -67,7 +67,7 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * </p>
  * 
  * @author matt
- * @version 2.1
+ * @version 3.1
  */
 public class CCDatumDataSource extends CCSupport implements DatumDataSource<GeneralNodeDatum>,
 		MultiDatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
@@ -92,9 +92,8 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 
 				@Override
 				public CCDatum doWithConnection(SerialConnection conn) throws IOException {
-					byte[] data = conn.readMarkedMessage(
-							MESSAGE_START_MARKER.getBytes(SerialUtils.ASCII_CHARSET),
-							MESSAGE_END_MARKER.getBytes(SerialUtils.ASCII_CHARSET));
+					byte[] data = conn.readMarkedMessage(MESSAGE_START_MARKER.getBytes(ByteUtils.ASCII),
+							MESSAGE_END_MARKER.getBytes(ByteUtils.ASCII));
 					if ( data != null && data.length > 0 ) {
 						return messageParser.parseMessage(data);
 					}
@@ -132,7 +131,8 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 		}
 		final long endTime = (isCollectAllSourceIds() && getSourceIdFilter() != null
 				&& getSourceIdFilter().size() > 1
-						? System.currentTimeMillis() + (getCollectAllSourceIdsTimeout() * 1000) : 0);
+						? System.currentTimeMillis() + (getCollectAllSourceIdsTimeout() * 1000)
+						: 0);
 
 		try {
 			performAction(new SerialConnectionAction<Object>() {
@@ -201,7 +201,7 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 		if ( datum == null ) {
 			return null;
 		}
-		String addr = addressValue(datum, ampIndex);
+		String addr = resolvePlaceholders(addressValue(datum, ampIndex));
 		if ( getAddressSourceMapping() != null && getAddressSourceMapping().containsKey(addr) ) {
 			addr = getAddressSourceMapping().get(addr);
 		}
@@ -236,7 +236,7 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 		if ( datum == null ) {
 			return null;
 		}
-		String addr = datum.getDeviceAddress() + ".T";
+		String addr = resolvePlaceholders(datum.getDeviceAddress() + ".T");
 		if ( getAddressSourceMapping() != null && getAddressSourceMapping().containsKey(addr) ) {
 			addr = getAddressSourceMapping().get(addr);
 		}

@@ -27,7 +27,6 @@ package net.solarnetwork.node.setup.web;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -61,6 +60,7 @@ import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupInfo;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.setup.InvalidVerificationCodeException;
@@ -69,14 +69,18 @@ import net.solarnetwork.node.setup.SetupException;
 import net.solarnetwork.node.setup.UserProfile;
 import net.solarnetwork.node.setup.UserService;
 import net.solarnetwork.node.setup.web.support.AssociateNodeCommand;
+import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
+import net.solarnetwork.support.RemoteServiceException;
 import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.OptionalServiceCollection;
 import net.solarnetwork.web.domain.Response;
 
 /**
  * Controller used to associate a node with a SolarNet account.
  * 
  * @author maxieduncan
- * @version 1.3
+ * @author matt
+ * @version 1.7
  */
 @Controller
 @SessionAttributes({ NodeAssociationController.KEY_DETAILS, NodeAssociationController.KEY_IDENTITY })
@@ -104,6 +108,14 @@ public class NodeAssociationController extends BaseSetupController {
 	 */
 	public static final String KEY_USER = "user";
 
+	/**
+	 * The model attribute for a list of {@link SettingSpecifierProvider}
+	 * instances.
+	 * 
+	 * @since 1.7
+	 */
+	public static final String KEY_PROVIDERS = "providers";
+
 	private static final String KEY_SETTINGS_SERVICE = "settingsService";
 	private static final String KEY_BACKUP_MANAGER = "backupManager";
 	private static final String KEY_BACKUP_SERVICE = "backupService";
@@ -130,6 +142,9 @@ public class NodeAssociationController extends BaseSetupController {
 	@Resource(name = "networkLinks")
 	private Map<String, String> networkURLs = new HashMap<String, String>(4);
 
+	@Resource(name = "associationSettingProviders")
+	private OptionalServiceCollection<SettingSpecifierProvider> settingProviders;
+
 	/**
 	 * Node association entry point.
 	 * 
@@ -141,6 +156,27 @@ public class NodeAssociationController extends BaseSetupController {
 	public String setupForm(Model model) {
 		model.addAttribute("command", new AssociateNodeCommand());
 		model.addAttribute(KEY_NETWORK_URL_MAP, networkURLs);
+
+		List<SettingSpecifierProvider> providers = null;
+		if ( settingProviders != null ) {
+			Iterable<SettingSpecifierProvider> iterable = settingProviders.services();
+			if ( iterable != null ) {
+				providers = new ArrayList<>(8);
+				for ( SettingSpecifierProvider provider : iterable ) {
+					providers.add(provider);
+				}
+			}
+		}
+		if ( providers == null ) {
+			providers = Collections.emptyList();
+		}
+		model.addAttribute(KEY_PROVIDERS, providers);
+
+		final SettingsService settingsService = settingsServiceTracker.service();
+		if ( settingsService != null ) {
+			model.addAttribute(KEY_SETTINGS_SERVICE, settingsService);
+		}
+
 		return PAGE_ENTER_CODE;
 	}
 
@@ -226,19 +262,30 @@ public class NodeAssociationController extends BaseSetupController {
 	 *        the errors associated with the command
 	 * @param details
 	 *        the session details objects
+	 * @param identity
+	 *        the association identity
 	 * @param model
 	 *        the view model
 	 * @return the view name
 	 */
 	@RequestMapping(value = "/confirm", method = RequestMethod.POST)
 	public String confirmIdentity(@ModelAttribute("command") AssociateNodeCommand command, Errors errors,
-			@ModelAttribute(KEY_DETAILS) NetworkAssociationDetails details, Model model) {
+			@ModelAttribute(KEY_DETAILS) NetworkAssociationDetails details,
+			@ModelAttribute(KEY_IDENTITY) NetworkAssociation identity, Model model) {
 		try {
 
 			// now that the association has been confirmed get send confirmation to the server
 			NetworkAssociationDetails req = new NetworkAssociationDetails(details);
 			req.setUsername(details.getUsername());
 			req.setKeystorePassword(command.getKeystorePassword());
+			if ( identity != null && identity.getNetworkServiceURLs() != null ) {
+				Map<String, String> urls = req.getNetworkServiceURLs();
+				if ( urls == null ) {
+					urls = new HashMap<>(4);
+					req.setNetworkServiceURLs(urls);
+				}
+				urls.putAll(identity.getNetworkServiceURLs());
+			}
 			NetworkCertificate cert = getSetupBiz().acceptNetworkAssociation(req);
 			details.setNetworkId(cert.getNetworkId());
 
@@ -287,16 +334,18 @@ public class NodeAssociationController extends BaseSetupController {
 			BackupService service = backupManager.activeBackupService();
 			model.put(KEY_BACKUP_SERVICE, service);
 			if ( service != null ) {
-				List<Backup> backups = new ArrayList<Backup>(service.getAvailableBackups());
-				Collections.sort(backups, new Comparator<Backup>() {
-
-					@Override
-					public int compare(Backup o1, Backup o2) {
-						// sort in reverse chronological order (newest to oldest)
-						return o2.getDate().compareTo(o1.getDate());
+				try {
+					List<Backup> backups = new ArrayList<Backup>(service.getAvailableBackups());
+					Collections.sort(backups, SortByNodeAndDate.DEFAULT);
+					model.put(KEY_BACKUPS, backups);
+				} catch ( RemoteServiceException e ) {
+					Throwable root = e;
+					while ( root.getCause() != null ) {
+						root = root.getCause();
 					}
-				});
-				model.put(KEY_BACKUPS, backups);
+					log.error("Error listing backups with BackupService {}: {}", service,
+							root.getMessage());
+				}
 			}
 		}
 		return PAGE_IMPORT_FROM_BACKUP;
@@ -422,6 +471,18 @@ public class NodeAssociationController extends BaseSetupController {
 
 	public void setNetworkURLs(Map<String, String> networkURLs) {
 		this.networkURLs = networkURLs;
+	}
+
+	/**
+	 * Set the setting provider collection.
+	 * 
+	 * @param settingProviders
+	 *        the providers to set
+	 * @since 1.7
+	 */
+	public void setSettingProviders(
+			OptionalServiceCollection<SettingSpecifierProvider> settingProviders) {
+		this.settingProviders = settingProviders;
 	}
 
 }

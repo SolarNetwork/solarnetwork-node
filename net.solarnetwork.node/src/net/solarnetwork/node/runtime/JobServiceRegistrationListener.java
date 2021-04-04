@@ -73,14 +73,14 @@ import net.solarnetwork.node.util.RegisteredService;
  * </p>
  * 
  * <pre>
- * &lt;reference-list id="triggers" interface="net.solarnetwork.node.job.TriggerAndJobDetail">
- * 		&lt;reference-listener bind-method="onBind" unbind-method="onUnbind">
- * 			&lt;bean class="net.solarnetwork.node.runtime.JobServiceRegistrationListener">
- * 				&lt;property name="scheduler" ref="scheduler"/>
- *              &lt;property name="bundleContext" ref="bundleContext"/>
- * 			&lt;/bean>
- * 		&lt;/reference-listener>
- * &lt;/reference-list>
+ * &lt;reference-list id="triggers" interface="net.solarnetwork.node.job.TriggerAndJobDetail"&gt;
+ * 		&lt;reference-listener bind-method="onBind" unbind-method="onUnbind"&gt;
+ * 			&lt;bean class="net.solarnetwork.node.runtime.JobServiceRegistrationListener"&gt;
+ * 				&lt;property name="scheduler" ref="scheduler"/&gt;
+ *              &lt;property name="bundleContext" ref="bundleContext"/&gt;
+ * 			&lt;/bean&gt;
+ * 		&lt;/reference-listener&gt;
+ * &lt;/reference-list&gt;
  * </pre>
  * 
  * <p>
@@ -95,7 +95,7 @@ import net.solarnetwork.node.util.RegisteredService;
  * </dl>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @see ManagedJobServiceRegistrationListener for alternative using
  *      settings-based jobs
  */
@@ -159,7 +159,6 @@ public class JobServiceRegistrationListener
 						try {
 							Configuration conf = ca.getConfiguration(pid, null);
 							if ( conf != null ) {
-								@SuppressWarnings("unchecked")
 								Dictionary<String, ?> props = conf.getProperties();
 								if ( props != null ) {
 									String newCronExpression = (String) props.get(settingKey);
@@ -239,12 +238,10 @@ public class JobServiceRegistrationListener
 				provider = providerMap.get(event.getPid());
 			}
 			if ( provider != null ) {
-				@SuppressWarnings("unchecked")
 				ServiceReference<ConfigurationAdmin> caRef = event.getReference();
 				ConfigurationAdmin ca = getBundleContext().getService(caRef);
 				try {
 					Configuration config = ca.getConfiguration(event.getPid(), null);
-					@SuppressWarnings("unchecked")
 					Dictionary<String, ?> props = config.getProperties();
 					log.debug("CA PID {} updated props: {}", event.getPid(), props);
 					Enumeration<String> keys = props.keys();

@@ -1,0 +1,23 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<NetworkDefinition xmlns="http://kayak.2codeornot2code.org/1.0" xmlns:sn="urn:solarnetwork:datum:1.0">
+	<Document name="Bus" version="1.0" author="J Doe" company="ACME" date="2019-09-20">Bus CAN</Document>
+	
+	<Node id="2" name="Vehicle" sn:source-id="/BUS1/VEH1" sn:publish-interval="60000"/>
+	
+	<Bus name="CANB">
+		<!-- Battery -->
+		<Message id="0x0C17A708" name="Stats" interval="6000">
+			<Producer>
+				<NodeRef id="2"/>
+			</Producer>
+			<Signal name="Status" offset="0" length="16" endianess="little" sn:datum-property="status" sn:datum-property-classification="s">
+				<Value type="unsigned"/>
+				<LabelSet>
+					<Label value="0" name="Normal"/>
+					<Label value="1" name="Broken"/>
+					<LabelGroup from="2" to="4" name="Get Out"/>
+				</LabelSet>
+			</Signal>
+		</Message>
+	</Bus>
+</NetworkDefinition>

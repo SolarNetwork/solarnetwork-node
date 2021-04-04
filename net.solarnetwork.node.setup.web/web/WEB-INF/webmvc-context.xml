@@ -38,6 +38,17 @@
     		<bean class="org.springframework.security.web.method.annotation.CsrfTokenArgumentResolver"/>
 		</mvc:argument-resolvers>
 	</mvc:annotation-driven>
+
+	<mvc:cors>
+		<mvc:mapping path="/pub/**"
+			allowed-origins="*"
+			allowed-methods="GET, HEAD, POST, PUT, DELETE, OPTIONS, PATCH"
+			allowed-headers="Content-MD5, Content-Type, Digest, X-SN-Date"
+			allow-credentials="false"
+			max-age="86400"/>
+	</mvc:cors>
+	
+	<bean id="loginKeyHelper" class="net.solarnetwork.node.setup.web.support.LoginKeyHelper"/>
 	
 	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
 		factory-bean="objectMapperService" factory-method="getObjectMapper"/>

@@ -43,7 +43,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integer> {
 
@@ -153,6 +153,13 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 		this.decimalScale = decimalScale;
 	}
 
+	/**
+	 * Get settings suitable for configuring an instance of this class.
+	 * 
+	 * @param prefix
+	 *        a setting key prefix to use
+	 * @return the settings, never {@literal null}
+	 */
 	public static List<SettingSpecifier> settings(String prefix) {
 		ModbusPropertyConfig defaults = new ModbusPropertyConfig();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>();
@@ -272,7 +279,6 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	 * This is an alias for {@link #setPropertyType(GeneralDatumSamplesType)},
 	 * and ignores a {@literal null} argument.
 	 * </p>
-	 * </p>
 	 * 
 	 * @param datumPropertyType
 	 *        the datum property type to set
@@ -282,6 +288,55 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 			return;
 		}
 		setPropertyType(datumPropertyType);
+	}
+
+	/**
+	 * Get the property type key.
+	 * 
+	 * <p>
+	 * This returns the configured {@link #getPropertyType()}
+	 * {@link GeneralDatumSamplesType#toKey()} value as a string. If the type is
+	 * not available, {@link GeneralDatumSamplesType#Instantaneous} will be
+	 * returned.
+	 * </p>
+	 * 
+	 * @return the property type key
+	 */
+	public String getDatumPropertyTypeKey() {
+		GeneralDatumSamplesType type = getDatumPropertyType();
+		if ( type == null ) {
+			type = GeneralDatumSamplesType.Instantaneous;
+		}
+		return Character.toString(type.toKey());
+	}
+
+	/**
+	 * Set the property type via a key value.
+	 * 
+	 * <p>
+	 * This uses the first character of {@code key} as a
+	 * {@link GeneralDatumSamplesType} key value to call
+	 * {@link #setPropertyType(GeneralDatumSamplesType)}. If there is any
+	 * problem parsing the type, {@link GeneralDatumSamplesType#Instantaneous}
+	 * is set.
+	 * </p>
+	 * 
+	 * @param key
+	 *        the datum property type key to set
+	 */
+	public void setDatumPropertyTypeKey(String key) {
+		GeneralDatumSamplesType type = null;
+		if ( key != null && key.length() > 0 ) {
+			try {
+				type = GeneralDatumSamplesType.valueOf(key.charAt(0));
+			} catch ( IllegalArgumentException e ) {
+				// ignore
+			}
+		}
+		if ( type == null ) {
+			type = GeneralDatumSamplesType.Instantaneous;
+		}
+		setDatumPropertyType(type);
 	}
 
 	/**
@@ -387,12 +442,20 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	/**
 	 * Set the data type as a string value.
 	 * 
+	 * <p>
+	 * If {@code this.dataType} already has a value, this method will not do
+	 * anything.
+	 * </p>
+	 * 
 	 * @param dataType
 	 *        the type to set
-	 * @deprecated use {@link #setDataTypeKey(String)
+	 * @deprecated use {@link #setDataTypeKey(String)}
 	 */
 	@Deprecated
 	public void setDataTypeValue(String dataType) {
+		if ( dataType != null ) {
+			return;
+		}
 		setDataType(
 				net.solarnetwork.node.datum.modbus.ModbusDataType.valueOf(dataType).toModbusDataType());
 	}
@@ -410,8 +473,8 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	/**
 	 * Set the data type as a string value.
 	 * 
-	 * @param dataType
-	 *        the type to set
+	 * @param key
+	 *        the type key to set
 	 */
 	public void setDataTypeKey(String key) {
 		setDataType(ModbusDataType.forKey(key));
@@ -466,7 +529,8 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	 * Set the register address to start reading data from.
 	 * 
 	 * <p>
-	 * This is an alias for {@link #setConfig(Integer)}.
+	 * This is an alias for
+	 * {@link GeneralDatumSamplePropertyConfig#setConfig(Object)}.
 	 * </p>
 	 * 
 	 * @param address

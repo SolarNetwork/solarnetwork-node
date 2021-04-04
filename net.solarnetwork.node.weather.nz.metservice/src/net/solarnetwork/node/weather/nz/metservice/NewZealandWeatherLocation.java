@@ -22,28 +22,21 @@
 
 package net.solarnetwork.node.weather.nz.metservice;
 
-import net.solarnetwork.domain.BasicLocation;
+import net.solarnetwork.domain.SimpleLocation;
 
 /**
  * NewZealand specific weather location info.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class NewZealandWeatherLocation extends BasicLocation implements
-		Comparable<NewZealandWeatherLocation> {
+public class NewZealandWeatherLocation extends SimpleLocation
+		implements Comparable<NewZealandWeatherLocation> {
+
+	private static final long serialVersionUID = -3320716966519243496L;
 
 	private String island;
 	private String key;
-
-	/**
-	 * Get the island this location is on.
-	 * 
-	 * @return The island.
-	 */
-	public String getIsland() {
-		return island;
-	}
 
 	/**
 	 * Set the island this location is on.

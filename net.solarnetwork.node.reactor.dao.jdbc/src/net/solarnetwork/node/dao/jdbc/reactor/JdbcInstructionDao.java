@@ -57,7 +57,7 @@ import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
  * JDBC implementation of {@link JdbcInstructionDao}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class JdbcInstructionDao extends AbstractJdbcDao<Instruction>
 		implements net.solarnetwork.node.reactor.InstructionDao {
@@ -103,6 +103,14 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction>
 	 * InstructionStatus.
 	 */
 	public static final String RESOURCE_SQL_UPDATE_INSTRUCTION_STATUS = "update-status";
+
+	/**
+	 * The classpath Resource for the SQL template for performing a
+	 * compare-and-set update on an InstructionStatus.
+	 * 
+	 * @since 1.2
+	 */
+	public static final String RESOURCE_SQL_COMPARE_AND_SET_INSTRUCTION_STATUS = "compare-set-status";
 
 	/**
 	 * The classpath Resource for the SQL template for selecting Instruction by
@@ -308,8 +316,26 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction>
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	public void storeInstructionStatus(Long instructionId, InstructionStatus status) {
+		String jparams = encodeInstructionParameters(status);
+		getJdbcTemplate().update(getSqlResource(RESOURCE_SQL_UPDATE_INSTRUCTION_STATUS),
+				status.getInstructionState().toString(), jparams,
+				(status.getAcknowledgedInstructionState() == null ? null
+						: status.getAcknowledgedInstructionState().toString()),
+				instructionId);
+	}
+
+	/**
+	 * Encode status result parameters as JSON.
+	 * 
+	 * @param status
+	 *        the status to encode the result parameters for
+	 * @return the JSON string, or {@literal null} if there are no parameters to
+	 *         encode
+	 * @since 1.2
+	 */
+	private String encodeInstructionParameters(InstructionStatus status) {
 		String jparams = null;
-		Map<String, ?> resultParameters = status.getResultParameters();
+		final Map<String, ?> resultParameters = (status != null ? status.getResultParameters() : null);
 		if ( resultParameters != null && !resultParameters.isEmpty() ) {
 			Map<String, Object> stringParameters = new LinkedHashMap<String, Object>(
 					resultParameters.size());
@@ -334,12 +360,21 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction>
 						e.getMessage());
 			}
 		}
-		getJdbcTemplate().update(getSqlResource(RESOURCE_SQL_UPDATE_INSTRUCTION_STATUS),
+		return jparams;
+	}
+
+	@Override
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+	public boolean compareAndStoreInstructionStatus(Long instructionId, InstructionState expectedState,
+			InstructionStatus status) {
+		String jparams = encodeInstructionParameters(status);
+		int count = getJdbcTemplate().update(
+				getSqlResource(RESOURCE_SQL_COMPARE_AND_SET_INSTRUCTION_STATUS),
 				status.getInstructionState().toString(), jparams,
 				(status.getAcknowledgedInstructionState() == null ? null
 						: status.getAcknowledgedInstructionState().toString()),
-				instructionId);
-
+				instructionId, expectedState.toString());
+		return (count > 0);
 	}
 
 	@Override

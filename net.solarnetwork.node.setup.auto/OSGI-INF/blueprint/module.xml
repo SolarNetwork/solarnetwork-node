@@ -14,6 +14,8 @@
 
 	<reference id="settingsService" interface="net.solarnetwork.node.settings.SettingsService"/>
 	
+	<reference id="executor" interface="java.util.concurrent.Executor" filter="(function=node)"/>
+
 	<!-- Published services -->
 	
 	<service ref="settingsImporter" interface="net.solarnetwork.node.backup.BackupResourceProvider"/>
@@ -23,6 +25,7 @@
 	<bean id="settingsImporter" class="net.solarnetwork.node.setup.auto.SettingsImporter"
 			init-method="loadSettings">
 		<property name="settingsService" ref="settingsService"/>
+		<property name="executor" ref="executor"/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 				<property name="basename" value="net.solarnetwork.node.setup.auto.SettingsImporter"/>

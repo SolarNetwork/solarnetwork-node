@@ -29,15 +29,9 @@ import org.slf4j.LoggerFactory;
  * Utility methods for working with serial IO.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public final class SerialUtils {
-
-	/** The UTF-8 character set name. */
-	public static final String UTF8_CHARSET = "UTF-8";
-
-	/** The US-ASCII character set name. */
-	public static final String ASCII_CHARSET = "US-ASCII";
 
 	private static final Logger LOG = LoggerFactory.getLogger(SerialUtils.class);
 
@@ -69,6 +63,8 @@ public final class SerialUtils {
 	 * 
 	 * @param data
 	 *        the data array
+	 * @param offset
+	 *        the offset within {@code data} to read from
 	 * @return the parsed float, or <em>null</em> if not available or parsed
 	 *         float is {@code NaN}
 	 */
@@ -112,8 +108,8 @@ public final class SerialUtils {
 	public static Float parseBigEndianFloat32(final Integer[] data) {
 		Float result = null;
 		if ( data != null && data.length == 2 ) {
-			result = Float.intBitsToFloat(((data[0].intValue() & 0xFFFF) << 16)
-					| (data[1].intValue() & 0xFFFF));
+			result = Float.intBitsToFloat(
+					((data[0].intValue() & 0xFFFF) << 16) | (data[1].intValue() & 0xFFFF));
 			if ( result.isNaN() ) {
 				LOG.trace("Data results in NaN: {}", (Object) data);
 				result = null;

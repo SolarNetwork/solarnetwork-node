@@ -1,29 +1,45 @@
-# SolarNode Modbus I/O
+# SolarNode Modbus I/O API
 
-This plugin provides configurable Modbus network connections for other SolarNode components.
-There are three types of networks supported: serial, TCP, and UDP.
+This plugin provides a generic API for communicating with Modbus devices. By itself
+this plugin does not provide anything: another plugin that implements this API must
+be deployed at runtime to provide Modbus integration support, for example the
+[Jamod](../net.solarnetwork.node.io.modbus.jamod/) plugin.
 
-## Serial Modbus connection
+# `ModbusNetwork` - main entry point
 
-Serial Modbus connections work via device-specific serial ports made available on the
-host operating system. The name of each port is operating-system specific. Some 
-common examples are `/dev/ttyS0` (Linux serial port), `/dev/ttyUSB0` (Linux USB serial
-port), and `COM1` (Windows serial port).
+The [`ModbusNetwork`](src/net/solarnetwork/node/io/modbus/ModbusNetwork.java) API
+is the main entry point for plugins that want to integrate with a Modbus device.
+This API models a single physical Modbus network, regardless of the transport
+used by the implementation. Service provider plugins are expected to provide an
+implementation of this API as a service for other plugins to use at runtime.
 
-![settings](docs/modbus-serial-settings.png)
+The main method used by clients is the `createConnection(int unitId)` method. This
+returns a [`ModbusConnection`](src/net/solarnetwork/node/io/modbus/ModbusConnection.java)
+for a specific device on the network.
 
-## TCP Modbus connection
+The `performAction(int unitId, ModbusConnectionAction<T> action)` method is
+a handy way for clients to perform an action such as read or write to a Modbus
+device safely. Here's an example that reads 8 "coil" registers from device 123:
 
-TCP Modbus connections work via TCP socket connections to a remote Modbus device.
-You configure this type of connection with a host name (or IP address) and a port
-number.
+```java
+ModbusNetwork modbus = getModbusNetwork(); // e.g. lookup service in runtime
+BitSet result = modbus.performAction(123, conn -> {
+	return conn.readDiscreetValues(0, 8);
+});
+```
 
-![settings](docs/modbus-tcp-settings.png)
+# `ModbusConnection` - access to a single Modbus device
 
-## UDP Modbus connection
+The [`ModbusConnection`](src/net/solarnetwork/node/io/modbus/ModbusConnection.java)
+API models a connection to a single Modbus device. The API provides methods for
+reading Modbus registers and writing to registers, in a variety of formats.
 
-UDP Modbus connections work via UDP socket connections to a remote Modbus device.
-You configure this type of connection with a host name (or IP address) and a port
-number.
+# Supporting client classes
 
-![settings](docs/modbus-udp-settings.png)
+The [`net.solarnetwork.node.io.modbus.support`](src/net/solarnetwork/node/io/modbus/support/)
+package contains several useful classes for working with this Modbus API. For
+example the [`ModbusDataDatumDataSourceSupport`](src/net/solarnetwork/node/io/modbus/support/ModbusDataDatumDataSourceSupport.java)
+class can be used as a starting point for `net.solarnetwork.node.DatumDataSource`
+implementations. It uses the [`ModbusData`](src/net/solarnetwork/node/io/modbus/ModbusData.java)
+class which makes it easy to store the data captured from Modbus devices and populate
+`net.solarnetwork.node.domain.Datum` instances from that data in a thread-safe manner.

@@ -1,0 +1,19 @@
+# Int16
+[0]: 0x1234
+
+# UInt16
+[1]: 0xABCD
+
+# Int32
+[2]: 0x0000
+[3]: 0x2345
+
+# UInt32
+[4]: 0xEFFF
+[5]: 0xFFFF
+
+# UInt64
+[6]: 0xFFFF
+[7]: 0xFFFF
+[8]: 0xFFFF
+[9]: 0x1234

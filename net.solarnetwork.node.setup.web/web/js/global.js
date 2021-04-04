@@ -364,6 +364,38 @@ SolarNode.tryGotoURL = function(destURL) {
 	tryLoadUrl(SolarNode.context.path('/csrf'));
 };
 
+SolarNode.GlobalProgress = (function() {
+	var self = {};
+
+	function getModal() {
+		return $('#generic-progress-modal');
+	}
+	
+	function show(percentComplete, title, message) {
+		var modal = getModal(),
+			titleEl = modal.find('.info-title'),
+			messageEl = modal.find('.info-message');
+		titleEl.text(title || titleEl.data('default-message'));
+		messageEl.text(message || messageEl.data('default-message'));
+		modal.find('.bar').css('width', Math.round((+percentComplete || 0) * 100) + '%');
+		modal.modal('show');
+	}
+	
+	function update(percentComplete) {
+		getModal().find('.bar').css('width', Math.round((+percentComplete || 0) * 100) + '%');
+	}
+	
+	function hide() {
+		getModal().modal('hide');
+	}
+		
+	return Object.defineProperties(self, {
+		show : { value : show },
+		update : { value : update },
+		hide : { value : hide },
+	});
+}());
+
 $(document).ready(function() {
 	$('body').on('hidden', '.modal.dynamic', function () {
 		$(this).removeData('modal');
@@ -404,6 +436,33 @@ $(document).ready(function() {
 			input = form.elements['reboot'];
 		if ( input ) {
 			input.value = 'true';
+		}
+	});
+	$('a.reset').on('click', function(event) {
+		event.preventDefault();
+		$('#reset-modal').modal('show');
+	});
+	$('#reset-modal').ajaxForm({
+		dataType: 'json',
+		beforeSubmit: function(formData, jqForm, options) {
+			$('#reset-modal .modal-footer button').attr('disabled', 'disabled');
+			return true;
+		},
+		success: function(json, status, xhr, form) {
+			var modal = $('#reset-modal');
+			if ( json && json.success === true ) {
+				modal.find('.start').hide();
+				modal.find('.success').show();
+				setTimeout(function() {
+					SolarNode.tryGotoURL(SolarNode.context.path('/a/home'));
+				}, 10000);
+			} else {
+				SolarNode.error(json.message, $('#reset-modal .modal-body.start'));
+			}
+		},
+		error: function(xhr, status, statusText) {
+			var json = $.parseJSON(xhr.responseText);
+			SolarNode.error(json.message, $('#reset-modal .modal-body.start'));
 		}
 	});
 });

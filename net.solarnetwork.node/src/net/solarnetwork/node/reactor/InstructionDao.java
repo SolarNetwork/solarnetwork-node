@@ -29,7 +29,7 @@ import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
  * DAO API for Instructor entities.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface InstructionDao {
 
@@ -37,6 +37,7 @@ public interface InstructionDao {
 	 * Store an Instruction instance and return its primary key.
 	 * 
 	 * @param instruction
+	 *        the instruction to store
 	 * @return the local primary key
 	 */
 	Long storeInstruction(Instruction instruction);
@@ -64,12 +65,34 @@ public interface InstructionDao {
 	/**
 	 * Update an instruction status.
 	 * 
-	 * @param instruction
-	 *        ID the ID of the instruction to update the status for
+	 * @param instructionId
+	 *        the ID of the instruction to update the status for
 	 * @param status
 	 *        the status
 	 */
 	void storeInstructionStatus(Long instructionId, InstructionStatus status);
+
+	/**
+	 * Update an instruction status only if it currently has an expected state.
+	 * 
+	 * <p>
+	 * This is equivalent to an atomic compare-and-set operation. The status of
+	 * the given instruction will be set to {@code status} only if the
+	 * instruction with {@code instructionId} exists and has the
+	 * {@code expectedState} state.
+	 * </p>
+	 * 
+	 * @param instructionId
+	 *        the ID of the instruction to update the status for
+	 * @param expectedState
+	 *        the expected state of the instruction
+	 * @param status
+	 *        the desired status
+	 * @return {@literal true} if the instruction status was updated
+	 * @since 1.1
+	 */
+	boolean compareAndStoreInstructionStatus(Long instructionId, InstructionState expectedState,
+			InstructionStatus status);
 
 	/**
 	 * Find all instructions in a given state.

@@ -61,7 +61,7 @@
 
 	<service ref="pkiService">
 		<interfaces>
-			<value>net.solarnetwork.node.SSLService</value>
+			<value>net.solarnetwork.support.SSLService</value>
 			<value>net.solarnetwork.node.setup.PKIService</value>
 			<value>net.solarnetwork.node.backup.BackupResourceProvider</value>
 		</interfaces>

@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
+
+	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler" filter="(function=node)"/>
+	
+	<reference id="taskExecutor" interface="org.springframework.core.task.TaskExecutor" filter="(function=node)"/>
+	
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Modbus Server (TCP)"/>
+			<property name="factoryUID" value="net.solarnetwork.node.io.modbus.server"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
+	
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<array>
+				<value>net.solarnetwork.node.io.modbus.server.impl.ModbusServer</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+			</array>
+		</property>
+		<property name="parentMessageSource">
+			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+				<property name="prefix" value="unitConfigsItem."/>
+				<property name="delegate">
+					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+						<property name="basenames" value="net.solarnetwork.node.io.modbus.server.domain.UnitConfig"/>
+						<property name="parentMessageSource">
+							<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+								<property name="prefix" value="registerBlockConfigsItem."/>
+								<property name="delegate">
+									<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+										<property name="basenames" value="net.solarnetwork.node.io.modbus.server.domain.RegisterBlockConfig"/>
+										<property name="parentMessageSource">
+											<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+												<property name="prefix" value="measurementConfigsItem."/>
+												<property name="delegate">
+													<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+														<property name="basenames" value="net.solarnetwork.node.io.modbus.server.domain.MeasurementConfig"/>
+													</bean>
+												</property>
+											</bean>
+										</property>
+									</bean>
+								</property>
+							</bean>
+						</property>
+					</bean>
+				</property>
+			</bean>
+		</property>
+	</bean>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.modbus.server" autowire-on-update="true" update-method="configurationChanged">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>org.osgi.service.event.EventHandler</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.io.modbus.server"/>
+			<beans:entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
+				<beans:array value-type="java.lang.String">
+					<beans:value>#{T(net.solarnetwork.node.DatumDataSource).EVENT_TOPIC_DATUM_CAPTURED}</beans:value>
+					<beans:value>#{T(net.solarnetwork.node.NodeControlProvider).EVENT_TOPIC_CONTROL_INFO_CAPTURED}</beans:value>
+					<beans:value>#{T(net.solarnetwork.node.NodeControlProvider).EVENT_TOPIC_CONTROL_INFO_CHANGED}</beans:value>
+				</beans:array>
+			</beans:entry>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.io.modbus.server.impl.ModbusServer" init-method="startup" destroy-method="shutdown">
+			<argument ref="taskExecutor"/>
+			<property name="messageSource" ref="messageSource"/>
+			<property name="taskScheduler" ref="taskScheduler"/>
+		</bean>
+	</osgix:managed-service-factory>
+		
+</blueprint>

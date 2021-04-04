@@ -1,0 +1,40 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: SolarFlux Upload
+Bundle-SymbolicName: net.solarnetwork.node.upload.flux
+Bundle-Description: Upload datump created by other SolarNode plugins to a SolarFlux-compatible MQTT server.
+Bundle-Version: 1.5.1
+Bundle-Vendor: SolarNetwork
+Automatic-Module-Name: net.solarnetwork.node.upload.flux
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Import-Package: 
+ com.fasterxml.jackson.annotation;version="[2.10,3.0)",
+ com.fasterxml.jackson.core;version="[2.10,3.0)",
+ com.fasterxml.jackson.databind;version="[2.10,3.0)",
+ com.fasterxml.jackson.databind.annotation;version="[2.10,3.0)",
+ com.fasterxml.jackson.databind.ser.std;version="[2.10,3.0)",
+ com.fasterxml.jackson.dataformat.cbor;version="[2.10,3.0)",
+ javax.net,
+ javax.net.ssl,
+ net.solarnetwork.common.mqtt;version="[1.0,2.0)",
+ net.solarnetwork.domain;version="[1.14,2.0)",
+ net.solarnetwork.node;version="[1.25,2.0)",
+ net.solarnetwork.node.dao;version="[1.8,2.0)",
+ net.solarnetwork.node.domain;version="[1.12,2.0)",
+ net.solarnetwork.node.settings;version="[1.10,2.0)",
+ net.solarnetwork.node.settings.support;version="[1.8.1,2.0)",
+ net.solarnetwork.node.support;version="[1.15,2.0)",
+ net.solarnetwork.settings;version="[1.2,2.0)",
+ net.solarnetwork.support;version="[1.9,2.0)",
+ net.solarnetwork.util;version="[1.32,2.0)",
+ org.apache.commons.codec.binary;version="1.11.0",
+ org.osgi.service.event;version="[1.2,2.0)",
+ org.slf4j;version="[1.7,2.0)",
+ org.springframework.beans;version="[4.2,5.0)",
+ org.springframework.beans.factory;version="[4.2,5.0)",
+ org.springframework.beans.factory.config;version="[4.2,5.0)",
+ org.springframework.context;version="[4.2,5.0)",
+ org.springframework.context.support;version="[4.2,5.0)",
+ org.springframework.core.task;version="[4.2,5.0)",
+ org.springframework.scheduling;version="[4.2,5.0)",
+ org.springframework.util;version="[4.2,5.0)"

@@ -6,7 +6,11 @@
 
 <c:if test="${fn:length(factories) > 0}">
 	<section id="factories">
-		<h2><fmt:message key="settings.factories.title"/></h2>
+		<h2>
+			<a id="components-section" href="#components-section"
+				class="anchor" aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>			
+			<fmt:message key="settings.factories.title"/>
+		</h2>
 		<p><fmt:message key="settings.factories.intro"/></p>	
 		<table class="table">
 			<tbody>
@@ -29,7 +33,11 @@
 
 <c:if test="${fn:length(providers) > 0}">
 	<section id="settings">
-		<h2><fmt:message key="settings.providers.title"/></h2>
+		<h2>
+			<a id="settings-section" href="#settings-section"
+				class="anchor" aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>			
+			<fmt:message key="settings.providers.title"/>
+		</h2>
 		<p><fmt:message key="settings.providers.intro"/></p>	
 
 		<form class="form-horizontal" action="<setup:url value='/a/settings/save'/>" method="post">
@@ -37,7 +45,13 @@
 				<!--  ${provider.settingUID} -->
 				<c:set var="provider" value="${provider}" scope="request"/>
 				<fieldset>
-					<legend><setup:message key="title" messageSource="${provider.messageSource}" text="${provider.displayName}"/></legend>
+					<legend>
+						<a id="${provider.settingUID}" 
+							class="anchor" 
+							href="#${provider.settingUID}"
+							aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>
+						<setup:message key="title" messageSource="${provider.messageSource}" text="${provider.displayName}"/>
+					</legend>
 					<c:set var="providerDescription">
 						<setup:message key="desc" messageSource="${provider.messageSource}" text=""/>
 					</c:set>
@@ -83,7 +97,11 @@
 
 <c:if test="${not empty backupManager}">
 <section>
-	<h2><fmt:message key="backup.title"/></h2>
+	<h2>
+		<a id="backup-section" href="#backup-section"
+			class="anchor" aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>			
+		<fmt:message key="backup.title"/>
+	</h2>
 	<p><fmt:message key="backup.intro"/></p>
 	<div class="form-horizontal">
 		<fieldset>
@@ -114,7 +132,7 @@
  					<button type="button" class="help-popover help-icon" tabindex="-1"
 							data-content="<fmt:message key='backup.now.caption'/>"
 							data-html="true">
-						<i class="icon-question-sign"></i>
+						<i class="fa fa-question-circle-o" aria-hidden="true"></i>
 					</button>
 					<sec:csrfInput/>
 				</form>
@@ -149,7 +167,7 @@
 					<button type="button" class="help-popover help-icon" tabindex="-1"
 							data-content="<fmt:message key='backup.backups.info'/>"
 							data-html="true">
-						<i class="icon-question-sign"></i>
+						<i class="fa fa-question-circle-o" aria-hidden="true"></i>
 					</button>
 					<sec:csrfInput/>
 				</form>
@@ -165,7 +183,7 @@
 					<button type="button" class="help-popover help-icon" tabindex="-1"
 							data-content="<fmt:message key='backup.import.info'/>"
 							data-html="true">
-						<i class="icon-question-sign"></i>
+						<i class="fa fa-question-circle-o" aria-hidden="true"></i>
 					</button>
 					<sec:csrfInput/>
 				</form>
@@ -176,7 +194,11 @@
 </c:if>
 
 <section>
-	<h2><fmt:message key="settings.io.title"/></h2>
+	<h2>
+		<a id="settings-backup-section" href="#settings-backup-section"
+			class="anchor" aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>			
+		<fmt:message key="settings.io.title"/>
+	</h2>
 	<p><fmt:message key="settings.io.intro"/></p>
 	<div class="form-horizontal">
 		<fieldset>
@@ -218,7 +240,7 @@
 										<button type="button" class="help-popover help-icon" tabindex="-1"
 												data-content="<fmt:message key='settings.autobackup.info'/>"
 												data-html="true">
-											<i class="icon-question-sign"></i>
+											<i class="fa fa-question-circle-o" aria-hidden="true"></i>
 										</button>
 									</c:if>
 								</li>

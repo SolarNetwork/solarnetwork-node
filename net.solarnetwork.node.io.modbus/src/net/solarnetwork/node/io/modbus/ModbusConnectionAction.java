@@ -39,6 +39,7 @@ import java.io.IOException;
  * @version 1.0
  * @since 2.0
  */
+@FunctionalInterface
 public interface ModbusConnectionAction<T> {
 
 	/**
@@ -49,6 +50,7 @@ public interface ModbusConnectionAction<T> {
 	 *        the connection
 	 * @return the result
 	 * @throws IOException
+	 *         if any IO error occurs
 	 */
 	T doWithConnection(ModbusConnection conn) throws IOException;
 

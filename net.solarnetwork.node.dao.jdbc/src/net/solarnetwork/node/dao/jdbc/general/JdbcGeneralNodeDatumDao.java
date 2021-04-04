@@ -29,30 +29,30 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
 import java.util.List;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.domain.GeneralNodeDatumSamples;
-import net.solarnetwork.node.dao.jdbc.AbstractJdbcDatumDao;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.domain.GeneralNodeDatumSamples;
+import net.solarnetwork.node.dao.jdbc.AbstractJdbcDatumDao;
+import net.solarnetwork.node.domain.GeneralNodeDatum;
 
 /**
  * JDBC-based implementation of {@link net.solarnetwork.node.dao.DatumDao} for
  * {@link GeneralNodeDatum} domain objects.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.3
  */
 public class JdbcGeneralNodeDatumDao extends AbstractJdbcDatumDao<GeneralNodeDatum> {
 
 	/** The default tables version. */
-	public static final int DEFAULT_TABLES_VERSION = 1;
+	public static final int DEFAULT_TABLES_VERSION = 3;
 
-	/** The table name for {@link PowerDatum} data. */
+	/** The table name for datum. */
 	public static final String TABLE_GENERAL_NODE_DATUM = "sn_general_node_datum";
 
 	/** The default classpath Resource for the {@code initSqlResource}. */
@@ -112,7 +112,8 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDatumDao<GeneralNodeDat
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public void setDatumUploaded(GeneralNodeDatum datum, Date date, String destination, String trackingId) {
+	public void setDatumUploaded(GeneralNodeDatum datum, Date date, String destination,
+			String trackingId) {
 		updateDatumUpload(datum, date == null ? System.currentTimeMillis() : date.getTime());
 	}
 
@@ -172,9 +173,8 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDatumDao<GeneralNodeDat
 	protected void setStoreStatementValues(GeneralNodeDatum datum, PreparedStatement ps)
 			throws SQLException {
 		int col = 0;
-		ps.setTimestamp(++col,
-				new java.sql.Timestamp(datum.getCreated() == null ? System.currentTimeMillis() : datum
-						.getCreated().getTime()));
+		ps.setTimestamp(++col, new java.sql.Timestamp(
+				datum.getCreated() == null ? System.currentTimeMillis() : datum.getCreated().getTime()));
 		ps.setString(++col, datum.getSourceId() == null ? "" : datum.getSourceId());
 
 		String json = jsonForSamples(datum);

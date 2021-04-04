@@ -72,14 +72,14 @@ import net.solarnetwork.node.job.ServiceProvider;
  * </p>
  * 
  * <pre>
- * &lt;reference-list id="managedJobs" interface="net.solarnetwork.node.job.ManagedTriggerAndJobDetail">
- * 		&lt;reference-listener bind-method="onBind" unbind-method="onUnbind">
- * 			&lt;bean class="net.solarnetwork.node.runtime.ManagedJobServiceRegistrationListener">
- * 				&lt;property name="scheduler" ref="scheduler"/>
- *              &lt;property name="bundleContext" ref="bundleContext"/>
- * 			&lt;/bean>
- * 		&lt;/reference-listener>
- * &lt;/reference-list>
+ * &lt;reference-list id="managedJobs" interface="net.solarnetwork.node.job.ManagedTriggerAndJobDetail"&gt;
+ * 		&lt;reference-listener bind-method="onBind" unbind-method="onUnbind"&gt;
+ * 			&lt;bean class="net.solarnetwork.node.runtime.ManagedJobServiceRegistrationListener"&gt;
+ * 				&lt;property name="scheduler" ref="scheduler"/&gt;
+ *              &lt;property name="bundleContext" ref="bundleContext"/&gt;
+ * 			&lt;/bean&gt;
+ * 		&lt;/reference-listener&gt;
+ * &lt;/reference-list&gt;
  * </pre>
  * 
  * <p>
@@ -113,7 +113,7 @@ import net.solarnetwork.node.job.ServiceProvider;
  * </dl>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class ManagedJobServiceRegistrationListener implements ConfigurationListener {
 
@@ -268,12 +268,10 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 			// so it might not be updated yet so we must extract the current value from ConfigurationAdmin
 			String newCronExpression = origTrigger.getCronExpression();
 			JobDataMap newJobDataMap = (JobDataMap) origJobDetail.getJobDataMap().clone();
-			@SuppressWarnings("unchecked")
 			ServiceReference<ConfigurationAdmin> caRef = event.getReference();
 			ConfigurationAdmin ca = bundleContext.getService(caRef);
 			try {
 				Configuration config = ca.getConfiguration(pid, null);
-				@SuppressWarnings("unchecked")
 				Dictionary<String, ?> props = config.getProperties();
 
 				// first look for expression on common attribute names

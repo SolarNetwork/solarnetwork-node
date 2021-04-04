@@ -22,38 +22,45 @@
 
 package net.solarnetwork.node.control.sma.pcm.test;
 
+import static org.easymock.EasyMock.aryEq;
+import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Date;
+import java.util.UUID;
+import org.easymock.EasyMock;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.control.sma.pcm.ModbusPCMController;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
+import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnection;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.support.BasicInstruction;
 import net.solarnetwork.util.StaticOptionalService;
-import org.easymock.EasyMock;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * Unit tests for the {@link ModbusPCMController} class.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ModbusPCMControllerTest {
 
-	private final String TEST_CONTROL_ID = "/power/pcm/test";
+	private static final String TEST_CONTROL_ID = "/power/pcm/test";
+	private static final int[] DEFAULT_PCM_ADDRESSES = new int[] { 0, 1, 2, 3 };
 
 	private final int UNIT_ID = 1;
 
@@ -66,10 +73,10 @@ public class ModbusPCMControllerTest {
 		service = new ModbusPCMController();
 		service.setControlId(TEST_CONTROL_ID);
 		service.setUnitId(UNIT_ID);
-		service.setD1Address(1);
-		service.setD2Address(2);
-		service.setD3Address(3);
-		service.setD4Address(4);
+		service.setD1Address(0);
+		service.setD2Address(1);
+		service.setD3Address(2);
+		service.setD4Address(3);
 
 		modbus = EasyMock.createMock(ModbusNetwork.class);
 		conn = EasyMock.createMock(ModbusConnection.class);
@@ -87,11 +94,11 @@ public class ModbusPCMControllerTest {
 				new Date(), Instruction.LOCAL_INSTRUCTION_ID, Instruction.LOCAL_INSTRUCTION_ID, null);
 		instr.addParameter(TEST_CONTROL_ID, "50");
 
-		expect(modbus.performAction(anyAction(Boolean.class), EasyMock.eq(UNIT_ID))).andDelegateTo(
-				new AbstractModbusNetwork() {
+		expect(modbus.performAction(EasyMock.eq(UNIT_ID), anyAction(Boolean.class)))
+				.andDelegateTo(new AbstractModbusNetwork() {
 
 					@Override
-					public <T> T performAction(ModbusConnectionAction<T> action, int unitId)
+					public <T> T performAction(int unitId, ModbusConnectionAction<T> action)
 							throws IOException {
 						return action.doWithConnection(conn);
 					}
@@ -99,9 +106,7 @@ public class ModbusPCMControllerTest {
 				});
 		BitSet expectedBitSet = new BitSet();
 		expectedBitSet.set(3, true); // binary 8 == 50%
-		expect(
-				conn.writeDiscreetValues(EasyMock.aryEq(new Integer[] { 1, 2, 3, 4 }),
-						EasyMock.eq(expectedBitSet))).andReturn(Boolean.TRUE);
+		conn.writeDiscreetValues(aryEq(DEFAULT_PCM_ADDRESSES), eq(expectedBitSet));
 
 		replay(modbus, conn);
 
@@ -115,20 +120,19 @@ public class ModbusPCMControllerTest {
 
 	@Test
 	public void exposesPercentControl() {
-		Assert.assertEquals(
-				"Percent control included in supported control IDs",
-				Arrays.asList(TEST_CONTROL_ID, TEST_CONTROL_ID
-						+ ModbusPCMController.PERCENT_CONTROL_ID_SUFFIX),
+		Assert.assertEquals("Percent control included in supported control IDs",
+				Arrays.asList(TEST_CONTROL_ID,
+						TEST_CONTROL_ID + ModbusPCMController.PERCENT_CONTROL_ID_SUFFIX),
 				service.getAvailableControlIds());
 	}
 
 	@Test
 	public void readControlInfo() throws IOException {
-		expect(modbus.performAction(anyAction(BitSet.class), EasyMock.eq(UNIT_ID))).andDelegateTo(
-				new AbstractModbusNetwork() {
+		expect(modbus.performAction(EasyMock.eq(UNIT_ID), anyAction(BitSet.class)))
+				.andDelegateTo(new AbstractModbusNetwork() {
 
 					@Override
-					public <T> T performAction(ModbusConnectionAction<T> action, int unitId)
+					public <T> T performAction(int unitId, ModbusConnectionAction<T> action)
 							throws IOException {
 						return action.doWithConnection(conn);
 					}
@@ -136,8 +140,7 @@ public class ModbusPCMControllerTest {
 				});
 		BitSet expectedBitSet = new BitSet();
 		expectedBitSet.set(3, true); // binary 8 == 50%
-		expect(conn.readDiscreetValues(EasyMock.aryEq(new Integer[] { 1, 2, 3, 4 }), EasyMock.eq(1)))
-				.andReturn(expectedBitSet);
+		expect(conn.readDiscreetValues(aryEq(DEFAULT_PCM_ADDRESSES), eq(1))).andReturn(expectedBitSet);
 
 		replay(modbus, conn);
 
@@ -145,18 +148,18 @@ public class ModbusPCMControllerTest {
 
 		verify(modbus, conn);
 
-		Assert.assertEquals("Read control ID", TEST_CONTROL_ID, info.getControlId());
-		Assert.assertEquals("Read value type", NodeControlPropertyType.Integer, info.getType());
-		Assert.assertEquals("Read value", String.valueOf(8), info.getValue());
+		assertThat("Read control ID", info.getControlId(), equalTo(TEST_CONTROL_ID));
+		assertThat("Read value type", info.getType(), equalTo(NodeControlPropertyType.Integer));
+		assertThat("Read value", info.getValue(), equalTo(String.valueOf(8)));
 	}
 
 	@Test
 	public void readControlInfoAsPercent() throws IOException {
-		expect(modbus.performAction(anyAction(BitSet.class), EasyMock.eq(UNIT_ID))).andDelegateTo(
-				new AbstractModbusNetwork() {
+		expect(modbus.performAction(EasyMock.eq(UNIT_ID), anyAction(BitSet.class)))
+				.andDelegateTo(new AbstractModbusNetwork() {
 
 					@Override
-					public <T> T performAction(ModbusConnectionAction<T> action, int unitId)
+					public <T> T performAction(int unitId, ModbusConnectionAction<T> action)
 							throws IOException {
 						return action.doWithConnection(conn);
 					}
@@ -164,20 +167,85 @@ public class ModbusPCMControllerTest {
 				});
 		BitSet expectedBitSet = new BitSet();
 		expectedBitSet.set(3, true); // binary 8 == 50%
-		expect(conn.readDiscreetValues(EasyMock.aryEq(new Integer[] { 1, 2, 3, 4 }), EasyMock.eq(1)))
-				.andReturn(expectedBitSet);
+		expect(conn.readDiscreetValues(aryEq(DEFAULT_PCM_ADDRESSES), eq(1))).andReturn(expectedBitSet);
 
 		replay(modbus, conn);
 
-		NodeControlInfo info = service.getCurrentControlInfo(TEST_CONTROL_ID
-				+ ModbusPCMController.PERCENT_CONTROL_ID_SUFFIX);
+		NodeControlInfo info = service
+				.getCurrentControlInfo(TEST_CONTROL_ID + ModbusPCMController.PERCENT_CONTROL_ID_SUFFIX);
 
 		verify(modbus, conn);
 
-		Assert.assertEquals("Read control ID", TEST_CONTROL_ID
-				+ ModbusPCMController.PERCENT_CONTROL_ID_SUFFIX, info.getControlId());
+		Assert.assertEquals("Read control ID",
+				TEST_CONTROL_ID + ModbusPCMController.PERCENT_CONTROL_ID_SUFFIX, info.getControlId());
 		Assert.assertEquals("Read value type", NodeControlPropertyType.Integer, info.getType());
 		Assert.assertEquals("Read value", String.valueOf(50), info.getValue());
 	}
 
+	@Test
+	public void readControlInfoWithDefaultAddresses() throws IOException {
+		final ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(
+				new int[] { 0, 0, 0, 0, 0, 0, 1, 0 }, 0x4000);
+		ModbusPCMController service = new ModbusPCMController();
+		service.setControlId(TEST_CONTROL_ID);
+		service.setUnitId(UNIT_ID);
+		service.setModbusNetwork(new StaticOptionalService<ModbusNetwork>(modbus));
+		expect(modbus.performAction(eq(UNIT_ID), anyAction(BitSet.class)))
+				.andDelegateTo(new AbstractModbusNetwork() {
+
+					@Override
+					public <T> T performAction(int unitId, ModbusConnectionAction<T> action)
+							throws IOException {
+						return action.doWithConnection(conn);
+					}
+
+				});
+		BitSet expectedBitSet = new BitSet();
+		expectedBitSet.set(3, true); // binary 8 == 50%
+
+		replay(modbus);
+
+		NodeControlInfo info = service.getCurrentControlInfo(TEST_CONTROL_ID);
+
+		verify(modbus);
+
+		assertThat("Read control ID", info.getControlId(), equalTo(TEST_CONTROL_ID));
+		assertThat("Read value type", info.getType(), equalTo(NodeControlPropertyType.Integer));
+		assertThat("Read value", info.getValue(), equalTo(String.valueOf(8)));
+	}
+
+	@Test
+	public void handleDemandBalanceInstructionWithDefaultAddresses() throws IOException {
+		ModbusPCMController service = new ModbusPCMController();
+		service.setControlId(TEST_CONTROL_ID);
+		service.setUnitId(UNIT_ID);
+		service.setModbusNetwork(new StaticOptionalService<ModbusNetwork>(modbus));
+		expect(modbus.performAction(eq(UNIT_ID), anyAction(Boolean.class)))
+				.andDelegateTo(new AbstractModbusNetwork() {
+
+					@Override
+					public <T> T performAction(int unitId, ModbusConnectionAction<T> action)
+							throws IOException {
+						return action.doWithConnection(conn);
+					}
+
+				});
+
+		BitSet expectedBitSet = new BitSet();
+		expectedBitSet.set(3, true); // binary 8 == 50%
+		conn.writeDiscreetValues(aryEq(new int[] { 0x4000, 0x4002, 0x4004, 0x4006 }),
+				eq(expectedBitSet));
+
+		replay(modbus, conn);
+
+		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_DEMAND_BALANCE,
+				new Date(), UUID.randomUUID().toString(), null, null);
+		instr.addParameter(TEST_CONTROL_ID, "50"); // request 50%
+
+		InstructionStatus.InstructionState result = service.processInstruction(instr);
+
+		verify(modbus, conn);
+
+		assertThat("Result", result, equalTo(InstructionStatus.InstructionState.Completed));
+	}
 }

@@ -1,31 +1,29 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode S3 Backup
+Bundle-Name: S3 Backup
 Bundle-SymbolicName: net.solarnetwork.node.backup.s3
 Bundle-Description: SolarNode cloud backup provider using Amazon S3.
-Bundle-Version: 0.4.0
+Bundle-Version: 1.0.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
-Export-Package: net.solarnetwork.node.backup.s3;version="0.2.0"
 Import-Package: 
- com.amazonaws;version="1.11.186",
- com.amazonaws.auth;version="[1.11,1.12)",
- com.amazonaws.client.builder;version="[1.11,1.12)",
- com.amazonaws.regions;version="1.11.186",
- com.amazonaws.services.s3;version="[1.11,1.12)",
- com.amazonaws.services.s3.model;version="[1.11,1.12)",
- com.amazonaws.services.s3.transfer;version="[1.11,1.12)",
  com.fasterxml.jackson.annotation;version="[2.4,3.0)",
  com.fasterxml.jackson.core;version="[2.4,3.0)",
  com.fasterxml.jackson.databind;version="[2.4,3.0)",
+ net.solarnetwork.common.s3;version="1.0.0",
+ net.solarnetwork.common.s3.sdk;version="1.0.0",
+ net.solarnetwork.io;version="1.5.0",
  net.solarnetwork.node;version="1.22.0",
  net.solarnetwork.node.backup;version="1.6.0",
  net.solarnetwork.node.settings;version="1.10.0",
  net.solarnetwork.node.settings.support;version="1.8.0",
+ net.solarnetwork.settings;version="1.2.0",
  net.solarnetwork.util;version="1.27.0",
  org.apache.commons.codec;version="[1.7,2.0)",
  org.apache.commons.codec.binary;version="[1.7,2.0)",
  org.apache.commons.codec.digest;version="[1.7,2.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.context;version="[4.2,5.0)",
- org.springframework.context.support;version="[4.2,5.0)"
+ org.springframework.context.support;version="[4.2,5.0)",
+ org.springframework.core.io;version="[4.2,5.0)",
+ org.springframework.util;version="[4.2,5.0)"

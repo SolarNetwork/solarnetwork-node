@@ -39,8 +39,8 @@ import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.SSLService;
 import net.solarnetwork.node.support.HttpClientSupport;
+import net.solarnetwork.support.SSLService;
 import net.solarnetwork.util.OptionalServiceTracker;
 
 /**
@@ -53,7 +53,7 @@ import net.solarnetwork.util.OptionalServiceTracker;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 @Controller
 public class SolarInHttpProxy extends HttpClientSupport {
@@ -130,6 +130,7 @@ public class SolarInHttpProxy extends HttpClientSupport {
 	 * Configure a set of HTTP headers to <b>not</b> proxy.
 	 * 
 	 * @param proxyHeadersIgnore
+	 *        the headers to ignore
 	 */
 	public void setProxyHeadersIgnore(Set<String> proxyHeadersIgnore) {
 		Set<String> ignores = null;

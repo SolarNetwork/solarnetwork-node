@@ -37,7 +37,7 @@ import net.solarnetwork.web.domain.Response;
  * Controller to manage the initial home screen.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.23
  */
 @ServiceAwareController
@@ -50,8 +50,7 @@ public class HomeController {
 	/**
 	 * Setup the home view.
 	 * 
-	 * @param model
-	 * @return
+	 * @return the view name
 	 */
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String home() {
@@ -82,6 +81,27 @@ public class HomeController {
 			} else {
 				sysService.exit(false);
 			}
+		}
+		return response(Boolean.TRUE);
+	}
+
+	/**
+	 * Reset SolarNode.
+	 * 
+	 * @param applicationOnly
+	 *        the flag to pass to {@link SystemService#reset(boolean)}
+	 * @return A status result.
+	 * @since 1.1
+	 */
+	@RequestMapping(value = "/reset", method = RequestMethod.POST)
+	@ResponseBody
+	public Response<Boolean> reset(
+			@RequestParam(name = "applicationOnly", required = false, defaultValue = "false") final boolean applicationOnly) {
+		final SystemService sysService = (systemService != null ? systemService.service() : null);
+		if ( sysService == null ) {
+			return new Response<Boolean>(false, null, "No service available", Boolean.FALSE);
+		} else {
+			sysService.reset(applicationOnly);
 		}
 		return response(Boolean.TRUE);
 	}

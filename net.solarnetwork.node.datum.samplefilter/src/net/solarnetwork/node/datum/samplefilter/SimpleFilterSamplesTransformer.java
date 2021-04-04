@@ -41,6 +41,7 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.settings.SettingsChangeObserver;
 
 /**
  * {@link GeneralDatumSamplesTransformer} that can filter out sample properties
@@ -56,7 +57,7 @@ import net.solarnetwork.node.settings.support.SettingsUtil;
  * @version 1.1
  */
 public class SimpleFilterSamplesTransformer extends SamplesTransformerSupport
-		implements GeneralDatumSamplesTransformer, SettingSpecifierProvider {
+		implements GeneralDatumSamplesTransformer, SettingSpecifierProvider, SettingsChangeObserver {
 
 	private DatumPropertyFilterConfig[] propIncludes;
 	private String[] excludes;
@@ -225,10 +226,8 @@ public class SimpleFilterSamplesTransformer extends SamplesTransformerSupport
 		configurationChanged(null);
 	}
 
-	/**
-	 * Call after any of the include/exclude values are modified.
-	 */
-	public void configurationChanged(Map<String, ?> props) {
+	@Override
+	public void configurationChanged(Map<String, Object> props) {
 		// backwards compatibility support for the old String[] includes configuration
 		if ( props != null && props.containsKey("includesCount") ) {
 			final int includeCount = Integer.parseInt(props.get("includesCount").toString());

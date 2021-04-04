@@ -3,20 +3,22 @@
 	<configurations defaultconf="compile,runtime">
 		<conf name="compile" visibility="public" description="Build dependencies"/>
 		<conf name="runtime" visibility="public" description="Runtime dependencies"/>
+		<conf name="javadoc" visibility="public" description="Javadoc documentation"/>
 		<conf name="sources"/>
 	</configurations>
 	<publications>
 		<artifact type="pom" ext="pom"/>
 		<artifact type="bundle" ext="jar"/>
+		<artifact type="javadoc" ext="jar" conf="javadoc" m:classifier="javadoc"/>
 		<artifact type="sources" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
      	<dependency org="commons-codec" name="commons-codec" rev="1.7"/>
 	    <dependency org="net.solarnetwork.external" name="net.solarnetwork.external.yasdi4j" rev="[0.1.5.SN02,2.0)"/>
-		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.51,2.0)"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.76,2.0)"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.hw.sma" rev="[1.8,2.0)"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.yasdi4j" rev="[1.3,2.0)"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>
-		<dependency org="org.springframework" name="spring-context-support" rev="4.2.6.RELEASE"/>
+		<dependency org="org.springframework" name="spring-context-support" rev="4.3.23.RELEASE"/>
 	</dependencies>
 </ivy-module>

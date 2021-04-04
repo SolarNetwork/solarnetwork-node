@@ -39,6 +39,7 @@ import org.junit.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ContextConfiguration;
 import net.solarnetwork.node.dao.jdbc.DatabaseSystemService;
 import net.solarnetwork.node.dao.jdbc.TimeBasedTableDiskSizeManager;
 import net.solarnetwork.node.dao.jdbc.derby.DerbyDatabaseSystemService;
@@ -52,12 +53,13 @@ import net.solarnetwork.util.StaticOptionalService;
  * @author matt
  * @version 1.0
  */
+@ContextConfiguration
 public class TimeBasedTableDiskSizeManagerTests extends AbstractNodeTransactionalTest {
 
 	private static int ROW_COUNT = 60 * 24 * 30;
 	private static int TRIM_MINUTES = 60 * 24;
 
-	@Resource(name = "dataSource")
+	@Resource(name = "timeBasedDataSource")
 	private DataSource dataSource;
 
 	private JdbcTemplate jdbcTemplate;

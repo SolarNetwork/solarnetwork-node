@@ -32,6 +32,7 @@ import java.net.Socket;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.After;
@@ -173,5 +174,76 @@ public class RfidSocketReaderServiceTests extends AbstractNodeTest {
 		Assert.assertEquals(Long.valueOf(2),
 				event.getProperty(RfidSocketReaderService.EVENT_PARAM_COUNT));
 		Assert.assertNotNull(event.getProperty(RfidSocketReaderService.EVENT_PARAM_DATE));
+	}
+
+	private AtomicInteger startKeepGoingServerThread(final List<MockServerMessage> messages)
+			throws Exception {
+		final AtomicInteger count = new AtomicInteger(0);
+		startServerThread(new Runnable() {
+
+			@Override
+			public void run() {
+				log.debug("Server thread starting for messages {}", messages);
+				PrintWriter out = null;
+				while ( count.get() < messages.size() ) {
+					log.debug("Server thread waiting for client @; next message #{}", count.get() + 1);
+					try {
+						Socket socket = server.accept();
+						out = new PrintWriter(socket.getOutputStream(), true);
+						out.println("HELLO");
+						log.debug("RFID server sent HELLO, processing messages {}", messages);
+						while ( count.get() < messages.size() ) {
+							MockServerMessage msg = messages.get(count.get());
+							Thread.sleep(msg.getPause());
+							log.debug("Server thread sending message {} [{}]", count.get() + 1,
+									msg.getMessage());
+							out.println(msg.getMessage());
+							count.incrementAndGet();
+						}
+					} catch ( IOException e ) {
+						log.warn("RFID server IOException: {}", e.getMessage());
+					} catch ( InterruptedException e ) {
+						log.warn("RFID server InterruptedException: {}", e.getMessage());
+					} finally {
+						if ( out != null ) {
+							out.close();
+						}
+					}
+				}
+				log.debug("Server thread exiting for messages {}, last index {}", messages,
+						count.get() + 1);
+			}
+		});
+		return count;
+	}
+
+	@Test
+	public void watchdogTimeoutReconnect() throws Exception {
+		List<MockServerMessage> msgs = Arrays.asList(new MockServerMessage(2100, "Message 1"));
+		AtomicInteger count = startKeepGoingServerThread(msgs);
+
+		int port = server.getLocalPort();
+
+		eventAdmin = EasyMock.createMock(EventAdmin.class);
+
+		Capture<Event> eventCapt = new Capture<Event>();
+		eventAdmin.postEvent(capture(eventCapt));
+		replay(eventAdmin);
+
+		service = new RfidSocketReaderService();
+		service.setPort(port);
+		service.setConnectRetryMinutes(0);
+		service.setEventAdmin(new StaticOptionalService<EventAdmin>(eventAdmin));
+		service.setUid(TEST_UID);
+		service.setGroupUID(TEST_GROUP_UID);
+		service.setWatchdogSeconds(1);
+		service.init();
+
+		serverThread.join(2000);
+		Thread.sleep(500); // sleep; watchdog timer should activate
+
+		verify(eventAdmin);
+
+		Assert.assertEquals("Messages served", 1, count.get());
 	}
 }

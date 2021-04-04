@@ -26,37 +26,120 @@ package net.solarnetwork.node.domain;
  * Enumeration of AC phase values.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum ACPhase {
 
 	/** The first phase. */
-	PhaseA(1),
+	PhaseA(1, 'a'),
 
 	/** The second phase. */
-	PhaseB(2),
+	PhaseB(2, 'b'),
 
 	/** The third phase. */
-	PhaseC(3),
+	PhaseC(3, 'c'),
 
-	Total(0);
+	Total(0, 't');
 
 	private final int number;
+	private final char key;
 
-	private ACPhase(int n) {
+	private ACPhase(int n, char key) {
 		this.number = n;
+		this.key = key;
 	}
 
 	/**
-	 * Get the integer based value of the phase. The {@code PhaseA},
-	 * {@code PhaseB}, and {@code PhaseC} phases are numbered <em>1</em>,
-	 * <em>2</em>, and <em>3</em>. The {{@code Total} phase is numbered
-	 * <em>0</em>.
+	 * Get the integer based value of the phase.
+	 * 
+	 * <p>
+	 * The {@code PhaseA}, {@code PhaseB}, and {@code PhaseC} phases are
+	 * numbered <em>1</em>, <em>2</em>, and <em>3</em>. The {{@code Total} phase
+	 * is numbered <em>0</em>.
+	 * </p>
 	 * 
 	 * @return the phase number
 	 */
 	public int getNumber() {
 		return number;
+	}
+
+	/**
+	 * Get the key value of the phase.
+	 * 
+	 * <p>
+	 * The keys are {@literal a}, {@literal b}, {@literal c}, and {@literal t}.
+	 * </p>
+	 * 
+	 * @return the key value
+	 * @since 1.1
+	 */
+	public char getKey() {
+		return key;
+	}
+
+	/**
+	 * Get a string with a key suffix added.
+	 * 
+	 * <p>
+	 * This will take {@code value} and append <i>_P</i>, where {@literal P} is
+	 * the key.
+	 * </p>
+	 * 
+	 * @param value
+	 *        the value to append the key to
+	 * @return the value with a key suffix added
+	 * @since 1.1
+	 */
+	public String withKey(String value) {
+		return (value != null ? value : "") + '_' + key;
+	}
+
+	/**
+	 * Get a key value for a line phase, with this phase as the leading phase.
+	 * 
+	 * <p>
+	 * The keys are {@literal ab}, {@literal bc}, {@literal ca}, and
+	 * {@literal t}.
+	 * </p>
+	 * 
+	 * @return the line key
+	 * @since 1.1
+	 */
+	public String getLineKey() {
+		switch (this) {
+			case Total:
+				return "t";
+
+			case PhaseA:
+				return "ab";
+
+			case PhaseB:
+				return "bc";
+
+			case PhaseC:
+				return "ca";
+
+			default:
+				return "";
+		}
+	}
+
+	/**
+	 * Get a string with a line key suffix added.
+	 * 
+	 * <p>
+	 * This will take {@code value} and append <i>_P</i>, where {@literal P} is
+	 * the line key.
+	 * </p>
+	 * 
+	 * @param value
+	 *        the value to append the line key to
+	 * @return the value with a line key suffix added
+	 * @since 1.1
+	 */
+	public String withLineKey(String value) {
+		return (value != null ? value : "") + '_' + getLineKey();
 	}
 
 	/**
@@ -85,6 +168,35 @@ public enum ACPhase {
 
 			default:
 				throw new IllegalArgumentException("Number " + n + " is not a valid ACPhase");
+		}
+	}
+
+	/**
+	 * Get an ACPhase for a given key.
+	 * 
+	 * @param key
+	 *        the key
+	 * @return the ACPhase
+	 * @see #getKey()
+	 * @throws IllegalArgumentException
+	 *         if the key is not a valid phase value
+	 */
+	public ACPhase forKey(final char key) {
+		switch (key) {
+			case 't':
+				return Total;
+
+			case 'a':
+				return PhaseA;
+
+			case 'b':
+				return PhaseB;
+
+			case 'c':
+				return PhaseC;
+
+			default:
+				throw new IllegalArgumentException("Key " + key + " is not a valid ACPhase");
 		}
 	}
 

@@ -25,26 +25,27 @@ package net.solarnetwork.node.hw.panasonic.battery;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.util.ClassUtils;
-import net.solarnetwork.util.OptionalService;
 import org.joda.time.format.DateTimeFormat;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.util.ClassUtils;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * Supporting class for {@link BatteryAPIClient} use.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.2
  */
-public class BatteryAPISupport {
+public class BatteryAPISupport extends BaseIdentifiable {
 
 	// the client to use
 	private BatteryAPIClient client = new SimpleBatteryAPIClient();
@@ -52,8 +53,6 @@ public class BatteryAPISupport {
 	// an optional EventAdmin service
 	private OptionalService<EventAdmin> eventAdmin;
 
-	private String uid;
-	private String groupUID;
 	private String errorMessage;
 
 	/** A class-level logger to use. */
@@ -129,20 +128,20 @@ public class BatteryAPISupport {
 	 * <p>
 	 * This method will populate all simple properties of the given
 	 * {@link Datum} into the event properties, along with the
-	 * {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE}.
+	 * {@link Datum#DATUM_TYPE_PROPERTY}.
 	 * 
 	 * @param datum
 	 *        the datum to create the event for
 	 * @param eventDatumType
-	 *        the Datum class to use for the
-	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
+	 *        the Datum class to use for the {@link Datum#DATUM_TYPE_PROPERTY}
+	 *        property
 	 * @return the new Event instance
 	 * @since 1.3
 	 */
 	protected Event createDatumCapturedEvent(final Datum datum,
 			final Class<? extends Datum> eventDatumType) {
 		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(datum, null);
-		props.put(DatumDataSource.EVENT_DATUM_CAPTURED_DATUM_TYPE, eventDatumType.getName());
+		props.put(Datum.DATUM_TYPE_PROPERTY, eventDatumType.getName());
 		log.debug("Created {} event with props {}", DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
 		return new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
 	}
@@ -190,12 +189,14 @@ public class BatteryAPISupport {
 	 * 
 	 * @return The unique ID.
 	 */
+	@Override
 	public String getUid() {
-		return uid;
+		return super.getUid();
 	}
 
+	@Override
 	public void setUid(String uid) {
-		this.uid = uid;
+		super.setUid(uid);
 	}
 
 	/**
@@ -204,8 +205,9 @@ public class BatteryAPISupport {
 	 * 
 	 * @return The unique ID.
 	 */
+	@Override
 	public String getUID() {
-		return getUid();
+		return super.getUID();
 	}
 
 	/**
@@ -213,12 +215,14 @@ public class BatteryAPISupport {
 	 * 
 	 * @return The group ID.
 	 */
+	@Override
 	public String getGroupUID() {
-		return groupUID;
+		return super.getGroupUID();
 	}
 
+	@Override
 	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
+		super.setGroupUID(groupUID);
 	}
 
 	/**

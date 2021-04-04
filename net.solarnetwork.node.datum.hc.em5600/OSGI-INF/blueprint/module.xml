@@ -14,6 +14,11 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
+	<bean id="placeholderService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
+	</bean>
+	
 	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
@@ -28,9 +33,9 @@
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.datum.hc.em5600.EM5600ConsumptionDatumDataSource</value>
-				<value>net.solarnetwork.node.hw.hc.EM5600Support</value>
-				<value>net.solarnetwork.node.io.modbus.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.node.datum.hc.em5600.EM5600DatumDataSource</value>
+				<value>net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport</value>
+				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
 			</list>
 		</property>
 	</bean>
@@ -101,10 +106,11 @@
 						<map>
 							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
 							<entry key="multiDatumDataSource">
-								<bean class="net.solarnetwork.node.datum.hc.em5600.EM5600ConsumptionDatumDataSource">
+								<bean class="net.solarnetwork.node.datum.hc.em5600.EM5600DatumDataSource">
 									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="datumMetadataService" ref="datumMetadataService"/>
 									<property name="messageSource" ref="jobMessageSource"/>
+									<property name="placeholderService" ref="placeholderService"/>
 									<property name="modbusNetwork">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>
