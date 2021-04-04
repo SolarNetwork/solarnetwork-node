@@ -8,13 +8,14 @@ This project provides a cloud-based backup service to SolarNode.
 
 The service supports the following settings:
 
-| Setting    | Key             | Default            | Description                               |
-|------------|-----------------|--------------------|-------------------------------------------|
-| AWS Token  | accessToken     |                    | AWS access token for authentication.      |
-| AWS Secret | accessSecret    |                    | AWS access token secret.                  |
-| AWS Region | regionName      | us-west-2          | AWS service region.                       |
-| S3 Bucket  | bucketName      |                    | S3 bucket name to save backups to.        |
-| S3 Path    | objectKeyPrefix | solarnode-backups/ | A prefix to add to all backup data files. |
+| Setting       | Key               | Default            | Description                               |
+|:--------------|:------------------|:-------------------|-------------------------------------------|
+| AWS Token     | `accessToken`     |                    | AWS access token for authentication.      |
+| AWS Secret    | `accessSecret`    |                    | AWS access token secret.                  |
+| AWS Region    | `regionName`      | us-west-2          | AWS service region.                       |
+| S3 Bucket     | `bucketName`      |                    | S3 bucket name to save backups to.        |
+| S3 Path       | `objectKeyPrefix` | solarnode-backups/ | A prefix to add to all backup data files. |
+| Storage Class | `storageClass`    | STANDARD           | An S3 supported storage class name.       |
 
 All values are required. The `S3 Path` value can be empty. The **Key** values
 are Configuration Admin keys for the `net.solarnetwork.node.backup.s3.S3BackupService`
@@ -29,6 +30,7 @@ accessToken = 123abc
 accessSecret = 234bcd
 regionName = us-east-1
 bucketName = mybucket
+storageClass = STANDARD_IA
 ```
 
 # S3 Structure
