@@ -171,6 +171,10 @@ public class CanbusDatumDataSourceSimulator {
 		}
 
 		@Override
+		public void resetProviderFactoryInstance(String factoryUID, String instanceUID) {
+		}
+
+		@Override
 		public Map<String, FactorySettingSpecifierProvider> getProvidersForFactory(String factoryUID) {
 			return Collections.emptyMap();
 		}
