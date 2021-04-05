@@ -109,12 +109,43 @@ The `<Node>` element supports the following additional attributes:
 | `sn:network-service-name` | `Canbus Port` | The name of a CAN Bus Connection component that provides the connection to the physical CAN bus network. |
 | `sn:publish-interval` | 60000 | The frequency at which to publish datum for this node, in **milliseconds**. |
 
+The `<Node>` element supports the following additional nested elements:
+
+| Element | Default | Description |
+|:----------|:--------|:------------|
+| `Expression` | | Zero or more property expression configurations. |
+
 For example:
 
 ```xml
 <Node id="1" name="Motor" sn:source-id="/TR/BUS/TEST1/MOT/1" 
-  sn:publish-interval="60000" sn:network-service-name="Canbus Port A"/>
+  sn:publish-interval="60000" sn:network-service-name="Canbus Port A">
+  <Expression sn:datum-property="power" sn:datum-property-classification="i">
+    props['amps'] * props['volts']
+  </Expression>
+</Node>
 ```
+
+#### `<Expression>` element
+
+The `<Expression>` element, which can appear in a `<Node>` element, defines a dynamic expression to 
+apply to the generated datum. The content of the element is the expression, and it supports the
+following attributes:
+
+| Attribute | Default | Description |
+|:----------|:--------|:------------|
+| `sn:datum-property` | | The datum property name to populate for this expression. |
+| `sn:datum-property-classification` | `i` | The [datum property classification][datum-samples] of the property to populate for this expression. |
+| `sn:expression-lang` | `net.solarnetwork.common.expr.spel.SpelExpressionService` | The UID of the [expression service][expr] to evaluate the expression with. |
+
+For example:
+
+```xml
+<Expression sn:datum-property="power" sn:datum-property-classification="i">
+  props['amps'] * props['volts']
+</Expression>
+```
+
 
 ### `<Signal>` element extensions
 
@@ -181,6 +212,7 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_211.jdk/Contents/Home xjc \
   -d src
 ```
 
+[expr]: https://github.com/SolarNetwork/solarnetwork/wiki/Expression-Languages
 [socketcand]: https://github.com/linux-can/socketcand
 [can-datum-source]: ../net.solarnetwork.node.datum.canbus
 [datum-samples]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNet-API-global-objects#datum-samples

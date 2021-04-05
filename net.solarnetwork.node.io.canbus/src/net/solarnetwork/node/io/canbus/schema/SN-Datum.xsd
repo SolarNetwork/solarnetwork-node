@@ -95,5 +95,42 @@
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
+    
+    <xs:attribute name="expression-lang">
+        <xs:annotation>
+            <xs:documentation>The UID of the net.solarnetwork.support.ExpressionService implementation to use.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+            <xs:restriction base="xs:string"/>
+        </xs:simpleType>
+    </xs:attribute>
+    
+    <xs:complexType name="PropertyExpression">
+        <xs:annotation>
+            <xs:documentation>A datum property derived from an expression.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute ref="sn:datum-property" use="required">
+                    <xs:annotation>
+                        <xs:documentation>The datum property name to populate for this
+                            expression.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute ref="sn:datum-property-classification" use="optional" default="i">
+                    <xs:annotation>
+                        <xs:documentation>The datum property classification of the property to
+                            populate for this expression.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute ref="sn:expression-lang" use="optional" default="net.solarnetwork.common.expr.spel.SpelExpressionService">
+                    <xs:annotation>
+                        <xs:documentation>The datum property classification of the property to
+                            populate for this expression.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
 
 </xs:schema>
