@@ -60,13 +60,14 @@ import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.support.ExpressionService;
 import net.solarnetwork.util.ArrayUtils;
 
 /**
  * Generic CAN bus datum data source.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, CanbusFrameListener {
@@ -133,6 +134,7 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 		d.setCreated(new Date(data.getDataTimestamp()));
 		d.setSourceId(resolvePlaceholders(sourceId));
 		populateDatumProperties(data, d, getMsgConfigs());
+		populateDatumProperties(data, d, getExpressionConfigs());
 		return d;
 	}
 
@@ -195,6 +197,11 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 				}
 			}
 		}
+	}
+
+	private void populateDatumProperties(CanbusData sample, GeneralNodeDatum d,
+			ExpressionConfig[] expressionConfs) {
+		populateExpressionDatumProperties(d, expressionConfs, new ExpressionRoot(d, sample));
 	}
 
 	@Override
@@ -399,6 +406,26 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 					}
 				}));
 
+		Iterable<ExpressionService> exprServices = (getExpressionServices() != null
+				? getExpressionServices().services()
+				: null);
+		if ( exprServices != null ) {
+			ExpressionConfig[] exprConfs = getExpressionConfigs();
+			List<ExpressionConfig> exprConfsList = (exprConfs != null ? Arrays.asList(exprConfs)
+					: Collections.<ExpressionConfig> emptyList());
+			results.add(SettingsUtil.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
+					new SettingsUtil.KeyedListCallback<ExpressionConfig>() {
+
+						@Override
+						public Collection<SettingSpecifier> mapListSettingKey(ExpressionConfig value,
+								int index, String key) {
+							BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
+									ExpressionConfig.settings(key + ".", exprServices));
+							return Collections.<SettingSpecifier> singletonList(configGroup);
+						}
+					}));
+		}
+
 		return results;
 	}
 
@@ -431,6 +458,40 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 	public int getMsgConfigsCount() {
 		CanbusMessageConfig[] confs = this.msgConfigs;
 		return (confs == null ? 0 : confs.length);
+	}
+
+	@Override
+	public ExpressionConfig[] getExpressionConfigs() {
+		return (ExpressionConfig[]) super.getExpressionConfigs();
+	}
+
+	/**
+	 * Set the expression configurations to use.
+	 * 
+	 * @param expressionConfigs
+	 *        the configs to use
+	 * @since 1.2
+	 */
+	public void setExpressionConfigs(ExpressionConfig[] expressionConfigs) {
+		super.setExpressionConfigs(expressionConfigs);
+	}
+
+	/**
+	 * Adjust the number of configured {@code ExpressionConfig} elements.
+	 * 
+	 * <p>
+	 * Any newly added element values will be set to new
+	 * {@link ExpressionConfig} instances.
+	 * </p>
+	 * 
+	 * @param count
+	 *        The desired number of {@code expressionConfigs} elements.
+	 * @since 1.2
+	 */
+	@Override
+	public void setExpressionConfigsCount(int count) {
+		setExpressionConfigs(
+				ArrayUtils.arrayWithLength(getExpressionConfigs(), count, ExpressionConfig.class, null));
 	}
 
 	/**

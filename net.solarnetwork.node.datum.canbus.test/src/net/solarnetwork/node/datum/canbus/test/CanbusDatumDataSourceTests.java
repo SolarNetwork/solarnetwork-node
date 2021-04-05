@@ -23,6 +23,7 @@
 package net.solarnetwork.node.datum.canbus.test;
 
 import static java.util.Collections.singletonMap;
+import static net.solarnetwork.domain.GeneralDatumSamplesType.Instantaneous;
 import static net.solarnetwork.util.ByteUtils.decodeHexString;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
@@ -63,6 +64,7 @@ import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
+import net.solarnetwork.common.expr.spel.SpelExpressionService;
 import net.solarnetwork.domain.BitDataType;
 import net.solarnetwork.domain.ByteOrdering;
 import net.solarnetwork.domain.GeneralDatumMetadata;
@@ -74,9 +76,12 @@ import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.datum.canbus.CanbusDatumDataSource;
 import net.solarnetwork.node.datum.canbus.CanbusMessageConfig;
 import net.solarnetwork.node.datum.canbus.CanbusPropertyConfig;
+import net.solarnetwork.node.datum.canbus.ExpressionConfig;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.io.canbus.socketcand.msg.FrameMessageImpl;
 import net.solarnetwork.node.io.canbus.support.MeasurementHelper;
+import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.util.OptionalServiceCollection;
 import net.solarnetwork.util.StaticOptionalService;
 import net.solarnetwork.util.StaticOptionalServiceCollection;
 import systems.uom.ucum.spi.UCUMServiceProvider;
@@ -86,7 +91,7 @@ import tech.units.indriya.spi.DefaultServiceProvider;
  * Test cases for the {@link CanbusDatumDataSource} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class CanbusDatumDataSourceTests {
 
@@ -109,6 +114,12 @@ public class CanbusDatumDataSourceTests {
 		dataSource.setMeasurementHelper(new MeasurementHelper(new StaticOptionalServiceCollection<>(
 				Arrays.asList(new IndriyaMeasurementServiceProvider(new UCUMServiceProvider()),
 						new IndriyaMeasurementServiceProvider(new DefaultServiceProvider())))));
+		dataSource.setExpressionServices(spelExpressionServices());
+	}
+
+	private OptionalServiceCollection<ExpressionService> spelExpressionServices() {
+		return new StaticOptionalServiceCollection<>(
+				Collections.singletonList(new SpelExpressionService()));
 	}
 
 	@After
@@ -485,6 +496,53 @@ public class CanbusDatumDataSourceTests {
 						nullValue());
 			}
 		}
+	}
+
+	@Test
+	public void frameReceived_withExpressions() {
+		// GIVEN
+		CanbusMessageConfig message = new CanbusMessageConfig(1, ByteOrdering.BigEndian);
+		message.addPropConfig(new CanbusPropertyConfig("watts", GeneralDatumSamplesType.Instantaneous, 0,
+				BitDataType.UInt8, 8, "W", null));
+
+		dataSource.setSourceId(TEST_SOURCE);
+		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
+
+		ExpressionConfig[] exprConfigs = new ExpressionConfig[] {
+				new ExpressionConfig("prop-val", Instantaneous,
+						"propValue(1,'UInt8','BigEndian',0,8) * 2",
+						SpelExpressionService.class.getName()),
+				new ExpressionConfig("prop-multiply", Instantaneous, "props['watts'] * 3",
+						SpelExpressionService.class.getName()), };
+		dataSource.setExpressionConfigs(exprConfigs);
+
+		Capture<Event> eventCaptor = new Capture<>();
+		eventAdmin.postEvent(capture(eventCaptor));
+
+		// WHEN
+		replayAll();
+		long start = System.currentTimeMillis();
+		FrameMessageImpl f = new FrameMessageImpl(1, false, 1, 2, new byte[] { (byte) 0x11 });
+		dataSource.canbusFrameReceived(f);
+		GeneralNodeDatum d = dataSource.readCurrentDatum();
+
+		// THEN
+		Event evt = eventCaptor.getValue();
+		assertThat("Event generated", evt, notNullValue());
+		assertThat("Event topic", evt.getTopic(), equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
+		Map<String, Object> expectedData = new HashMap<>(3);
+		expectedData.put("watts", 17);
+		expectedData.put("prop-val", 34);
+		expectedData.put("prop-multiply", 51);
+		assertDatumCapturedEvent(evt, start, TEST_SOURCE, expectedData);
+
+		assertThat("Datum captured", d, notNullValue());
+		assertThat("Datum watts instantaneous value", d.getInstantaneousSampleBigDecimal("watts"),
+				equalTo(new BigDecimal("17")));
+		assertThat("Datum prop-val instantaneous value", d.getInstantaneousSampleBigDecimal("prop-val"),
+				equalTo(new BigDecimal("34")));
+		assertThat("Datum props-multiply instantaneous value",
+				d.getInstantaneousSampleBigDecimal("prop-multiply"), equalTo(new BigDecimal("51")));
 	}
 
 }

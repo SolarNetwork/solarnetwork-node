@@ -47,6 +47,8 @@
 			<list>
 				<value>net.solarnetwork.node.datum.canbus.CanbusDatumDataSource</value>
 				<value>net.solarnetwork.node.io.canbus.support.CanbusDatumDataSourceSupport</value>
+				<value>net.solarnetwork.node.domain.ExpressionConfig</value>
+				<value>net.solarnetwork.node.support.DatumDataSourceSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
 		</property>
@@ -74,6 +76,11 @@
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+	</bean>
+	
+	<bean id="expressionServices" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.support.ExpressionService"/>
 	</bean>
 	
 	<bean id="kcdParser" class="net.solarnetwork.util.DynamicServiceTracker">
@@ -167,6 +174,7 @@
 									<property name="measurementHelper" ref="measurementHelper"/>
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="placeholderService" ref="placeholderService"/>
+									<property name="expressionServices" ref="expressionServices"/>
 									<property name="canbusNetwork">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>
