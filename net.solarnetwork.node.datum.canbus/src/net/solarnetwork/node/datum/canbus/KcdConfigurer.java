@@ -53,6 +53,7 @@ import net.solarnetwork.node.io.canbus.kcd.NetworkDefinitionType;
 import net.solarnetwork.node.io.canbus.kcd.NodeRefType;
 import net.solarnetwork.node.io.canbus.kcd.NodeType;
 import net.solarnetwork.node.io.canbus.kcd.ProducerType;
+import net.solarnetwork.node.io.canbus.kcd.PropertyExpression;
 import net.solarnetwork.node.io.canbus.kcd.SignalType;
 import net.solarnetwork.node.io.canbus.kcd.ValueType;
 import net.solarnetwork.node.settings.SettingResourceHandler;
@@ -174,12 +175,14 @@ public class KcdConfigurer extends BaseIdentifiable
 		private final String sourceId;
 		private String busName;
 		private final List<CanbusMessageConfig> messageConfigs;
+		private final List<ExpressionConfig> expressionConfigs;
 
 		private DatumDataSourceConfig(String networkUid, String sourceId) {
 			super();
 			this.networkUid = networkUid;
 			this.sourceId = sourceId;
 			this.messageConfigs = new ArrayList<>(16);
+			this.expressionConfigs = new ArrayList<>(2);
 		}
 
 	}
@@ -214,9 +217,11 @@ public class KcdConfigurer extends BaseIdentifiable
 			if ( node.getNetworkServiceName() == null || node.getNetworkServiceName().isEmpty() ) {
 				continue;
 			}
-			if ( sourceMessageConfigMap.putIfAbsent(node.getSourceId(), new DatumDataSourceConfig(
-					node.getNetworkServiceName(), node.getSourceId())) == null ) {
+			DatumDataSourceConfig ddsc = new DatumDataSourceConfig(node.getNetworkServiceName(),
+					node.getSourceId());
+			if ( sourceMessageConfigMap.putIfAbsent(node.getSourceId(), ddsc) == null ) {
 				nodeMap.put(node.getId(), node);
+				populateExpressionConfigs(node, ddsc, parseMessages, locale);
 			} else {
 				parseMessages.add(getMessageSource().getMessage("node.duplicateSourceId",
 						new Object[] { node.getId(), node.getSourceId() }, locale));
@@ -464,10 +469,56 @@ public class KcdConfigurer extends BaseIdentifiable
 						settingPrefix + "msgConfigs[" + idx + "]."));
 				idx++;
 			}
+			idx = 0;
+			settings.add(setting(instanceId, "expressionConfigsCount",
+					String.valueOf(dsConfig.expressionConfigs.size())));
+			for ( ExpressionConfig exprConfig : dsConfig.expressionConfigs ) {
+				settings.addAll(exprConfig.toSettingValues(settingProviderId, instanceId,
+						settingPrefix + "expressionConfigs[" + idx + "]."));
+				idx++;
+			}
 		}
 
 		SettingsCommand cmd = new SettingsCommand(settings, asList(Pattern.compile(".*")));
 		return cmd;
+	}
+
+	private void populateExpressionConfigs(NodeType node, DatumDataSourceConfig ddsc,
+			List<String> parseMessages, Locale locale) {
+		List<PropertyExpression> exprs = node.getExpression();
+		if ( exprs == null || exprs.isEmpty() ) {
+			return;
+		}
+		int i = 0;
+		for ( PropertyExpression expr : exprs ) {
+			i++;
+			if ( expr.getValue() == null || expr.getValue().isEmpty()
+					|| expr.getValue().trim().isEmpty() ) {
+				parseMessages.add(getMessageSource().getMessage("node.emptyExpression",
+						new Object[] { node.getName(), i }, locale));
+				log.warn("Node [{}] Expression [{}] has no content, skipping", node.getName(), i);
+				continue;
+			}
+			GeneralDatumSamplesType datumPropType = GeneralDatumSamplesType.Instantaneous;
+			if ( expr.getDatumPropertyClassification() != null
+					&& !expr.getDatumPropertyClassification().isEmpty() ) {
+				try {
+					datumPropType = GeneralDatumSamplesType
+							.valueOf(expr.getDatumPropertyClassification().charAt(0));
+				} catch ( IllegalArgumentException e ) {
+					parseMessages.add(getMessageSource().getMessage("expression.badDatumPropertyClass",
+							new Object[] { node.getName(), i, expr.getDatumPropertyClassification() },
+							locale));
+					log.info(
+							"Node [{}] Expression [{}] has invalid datum property classification [{}]; skipping",
+							node.getName(), i, expr.getDatumPropertyClassification());
+					continue;
+				}
+			}
+			ExpressionConfig cfg = new ExpressionConfig(expr.getDatumProperty(), datumPropType,
+					expr.getValue().trim(), expr.getExpressionLang());
+			ddsc.expressionConfigs.add(cfg);
+		}
 	}
 
 	private BigDecimal bigDecimalValue(Number n) {

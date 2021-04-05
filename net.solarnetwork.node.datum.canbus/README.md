@@ -98,6 +98,7 @@ Each device configuration contains the following overall settings:
 | Debug Mode             | When enabled, capture all CAN messages into the configured **Debug File**, and do **not** collect any datum. |
 | Debug File             | File path to write CAN messages to when **Debug Mode** is enabled. Accepts a single `%s` argument which will be replaced by the configured **Bus Name**. |
 | Message Configurations | A list of CAN bus message configurations that determine which datum properties are collected, from which CAN bus addresses. |
+| Expression Configurations | A list of [expression configurations](#expressions) for deriving properties from other properties. |
 
 # Message settings
 
@@ -221,7 +222,45 @@ Each property configuration contains the following overall settings:
 }
 ```
 
+## Expressions
+
+Since version **1.4** properties can be defined using [expressions][expr]. Expressions allow you to
+configure datum properties that are dynamically calculated from other properties or raw Canbus
+signal values.
+
+![expressions-config](docs/solarnode-canbus-device-expression-settings.png)
+
+Each expression configuration contains the following settings:
+
+| Setting              | Description |
+|:---------------------|:------------|
+| Property             | The datum property name to generate from the result of the expression. |
+| Property Type        | The [datum property classification][datum-samples] to use. |
+| Expression           | The expression. |
+| Expression Language  | The expression language the **Expression** is written in. |
+
+### Expression root object
+
+The root object is a [ExpressionRoot][ExpressionRoot] object, which has the following properties:
+
+| Property | Type | Description |
+|:---------|:-----|:------------|
+| `datum` | `GeneralNodeDatum` | A [`GeneralNodeDatum`][GeneralNodeDatum] object, populated with data from all property and virtual meter configurations. |
+| `props` | `Map<String,Object>` | Simple Map based access to the data in `datum`, to simplify expressions. |
+| `sample` | `CanbusData` | A [`CanbusData`][CanbusData] object, populated with the raw CAN bus data read from the device. |
+
+### Expression examples
+
+| Expression  | Comment |
+|:------------|:--------|
+| `props['current'] * props['voltage']` | Returns the product of datum property `current` and datum property `voltage`. |
+
+
 [can-conn]: ../net.solarnetwork.node.io.canbus
 [datum-samples]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNet-API-global-objects#datum-samples
+[expr]: https://github.com/SolarNetwork/solarnetwork/wiki/Expression-Languages
+[ExpressionRoot]: https://github.com/SolarNetwork/solarnetwork-node/tree/develop/net.solarnetwork.node.datum.canbus/src/net/solarnetwork/node/datum/canbus/ExpressionRoot.java
+[GeneralNodeDatum]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node/src/net/solarnetwork/node/domain/GeneralNodeDatum.java
+[CanbusData]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node.io.canbus/src/net/solarnetwork/node/io/canbus/CanbusData.java
 [sn-kcd]: ../net.solarnetwork.node.io.canbus#solarnetwork-kcd-support
 [ucum]: http://unitsofmeasure.org/ucum.html

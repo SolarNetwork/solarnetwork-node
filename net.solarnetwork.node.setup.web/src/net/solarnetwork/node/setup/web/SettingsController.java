@@ -75,7 +75,7 @@ import net.solarnetwork.web.support.MultipartFileResource;
  * Web controller for the settings UI.
  * 
  * @author matt
- * @version 1.7
+ * @version 1.8
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -180,6 +180,18 @@ public class SettingsController {
 		final SettingsService service = settingsServiceTracker.service();
 		if ( service != null ) {
 			service.deleteProviderFactoryInstance(factoryUID, instanceUID);
+		}
+		return response(null);
+	}
+	
+	@RequestMapping(value = "/manage/reset", method = RequestMethod.POST)
+	@ResponseBody
+	public Response<Object> resetConfiguration(
+			@RequestParam(value = "uid", required = true) String factoryUID,
+			@RequestParam(value = "instance", required = true) String instanceUID) {
+		final SettingsService service = settingsServiceTracker.service();
+		if ( service != null ) {
+			service.resetProviderFactoryInstance(factoryUID, instanceUID);
 		}
 		return response(null);
 	}

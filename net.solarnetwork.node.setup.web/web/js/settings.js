@@ -381,12 +381,31 @@ SolarNode.Settings.addFactoryConfiguration = function(params) {
  * or confirm the deletion by clicking another button.
  */
 SolarNode.Settings.deleteFactoryConfiguration = function(params) {
+	params['alert'] = '#alert-delete'
+	SolarNode.Settings.showConfirmation(params);
+};
+
+/**
+ * Show an alert element asking the user if they really want to reset
+ * the selected factory configuration to default, and allow them to dismiss the alert
+ * or confirm the reset by clicking another button.
+ */
+SolarNode.Settings.resetFactoryConfiguration = function(params) {
+	params['alert'] = '#alert-reset'
+	SolarNode.Settings.showConfirmation(params);
+};
+
+/**
+ * Show an alert element asking the user if they if they want to complete
+ * the current action
+ */
+SolarNode.Settings.showConfirmation = function(params) {
 	var origButton = $(params.button);
 	origButton.attr('disabled', 'disabled');
-	var alert = $('#alert-delete').clone();
+	var alert = $(params.alert).clone();
 	
-	var reallyDeleteButton = alert.find('button.submit');
-	reallyDeleteButton.click(function() {
+	var confirmationButton = alert.find('button.submit');
+	confirmationButton.click(function() {
 		$(this).attr('disabled', 'disabled');
 		$.ajax({
 			type : 'POST',
@@ -401,11 +420,12 @@ SolarNode.Settings.deleteFactoryConfiguration = function(params) {
 	alert.bind('close', function(e) {
 		origButton.removeAttr('disabled');
 		origButton.removeClass('hidden');
-		reallyDeleteButton.unbind();
+		confirmationButton.unbind();
 	});
 	origButton.addClass('hidden');
 	alert.insertAfter(origButton).removeClass('hidden');
 };
+
 
 function formatTimestamp(date) {
 	if ( !date ) {

@@ -37,7 +37,7 @@ import net.solarnetwork.node.Constants;
  * Service API for settings.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public interface SettingsService {
 
@@ -160,6 +160,16 @@ public interface SettingsService {
 	 */
 	void deleteProviderFactoryInstance(String factoryUID, String instanceUID);
 
+	/**
+	 * Reset an existing factory instance to its default values.
+	 * 
+	 * @param factoryUID
+	 *        the factory UID to reset
+	 * @param instanceUID
+	 *        the instance UID to reset
+	 */
+	void resetProviderFactoryInstance(String factoryUID, String instanceUID);
+	
 	/**
 	 * Get all possible setting providers for a specific factory UID, grouped by
 	 * instance ID.

@@ -29,6 +29,13 @@
         <xs:complexType name="NodeType">
             <xs:complexContent>
                 <xs:extension base="kcd:NodeType">
+                    <xs:sequence>
+                        <xs:element name="Expression" type="sn:PropertyExpression" minOccurs="0" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation>Property expressions to apply to datum.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
+                    </xs:sequence>
                     <xs:attribute ref="sn:source-id" use="required">
                         <xs:annotation>
                             <xs:documentation>A SolarNetwork Source ID to associate with datum

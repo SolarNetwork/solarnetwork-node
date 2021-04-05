@@ -127,7 +127,7 @@ import net.solarnetwork.node.settings.support.BasicFactorySettingSpecifierProvid
  * {@link SettingDao} to persist changes between application restarts.
  * 
  * @author matt
- * @version 1.7
+ * @version 1.8
  */
 public class CASettingsService
 		implements SettingsService, BackupResourceProvider, FeedbackInstructionHandler {
@@ -547,21 +547,7 @@ public class CASettingsService
 				}
 			}
 			String newInstanceKey = String.valueOf(next);
-			settingDao.storeSetting(getFactorySettingKey(factoryUID), newInstanceKey, newInstanceKey);
-			try {
-				Configuration conf = getConfiguration(factoryUID, newInstanceKey);
-				Dictionary<String, Object> props = conf.getProperties();
-				if ( props == null ) {
-					props = new Hashtable<String, Object>();
-				}
-				props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, newInstanceKey);
-				conf.update(props);
-				return newInstanceKey;
-			} catch ( IOException e ) {
-				throw new RuntimeException(e);
-			} catch ( InvalidSyntaxException e ) {
-				throw new RuntimeException(e);
-			}
+			return addProviderFactoryInstance(factoryUID, newInstanceKey);
 		}
 	}
 
@@ -583,6 +569,32 @@ public class CASettingsService
 			} catch ( InvalidSyntaxException e ) {
 				throw new RuntimeException(e);
 			}
+		}
+	}
+
+	@Override
+	public void resetProviderFactoryInstance(String factoryUID, String instanceUID) {
+		deleteProviderFactoryInstance(factoryUID, instanceUID);
+		synchronized ( factories ) {
+			addProviderFactoryInstance(factoryUID, instanceUID);
+		}
+	}
+
+	private String addProviderFactoryInstance(String factoryUID, String instanceUID) {
+		settingDao.storeSetting(getFactorySettingKey(factoryUID), instanceUID, instanceUID);
+		try {
+			Configuration conf = getConfiguration(factoryUID, instanceUID);
+			Dictionary<String, Object> props = conf.getProperties();
+			if ( props == null ) {
+				props = new Hashtable<String, Object>();
+			}
+			props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceUID);
+			conf.update(props);
+			return instanceUID;
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		} catch ( InvalidSyntaxException e ) {
+			throw new RuntimeException(e);
 		}
 	}
 
