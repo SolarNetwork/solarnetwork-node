@@ -105,7 +105,7 @@ public class KcdConfigurerTests {
 				Matchers.contains(".*"));
 		List<Change> changes = stream(updates.getSettingValueUpdates().spliterator(), false)
 				.collect(toList());
-		assertThat("Setting change count", changes, hasSize(24));
+		assertThat("Setting change count", changes, hasSize(25));
 		int i = 0;
 		for ( Change change : changes ) {
 			String msg = "Change " + i;
@@ -226,6 +226,10 @@ public class KcdConfigurerTests {
 							"Énergie de sortie de la batterie");
 					break;
 
+				case 24:
+					assertChangeEquals(msg, change, instanceId, "expressionConfigsCount", "0");
+					break;
+
 				default:
 					fail("Unexpected setting change: " + change);
 			}
@@ -269,7 +273,7 @@ public class KcdConfigurerTests {
 				Matchers.contains(".*"));
 		List<Change> changes = stream(updates.getSettingValueUpdates().spliterator(), false)
 				.collect(toList());
-		assertThat("Setting change count", changes, hasSize(21));
+		assertThat("Setting change count", changes, hasSize(22));
 		int i = 0;
 		for ( Change change : changes ) {
 			String msg = "Change " + i;
@@ -372,6 +376,10 @@ public class KcdConfigurerTests {
 							"msgConfigs[0].propConfigs[0].localizedNamesCount", "0");
 					break;
 
+				case 21:
+					assertChangeEquals(msg, change, instanceId, "expressionConfigsCount", "0");
+					break;
+
 				default:
 					fail("Unexpected setting change: " + change);
 			}
@@ -406,7 +414,7 @@ public class KcdConfigurerTests {
 				Matchers.contains(".*"));
 		List<Change> changes = stream(updates.getSettingValueUpdates().spliterator(), false)
 				.collect(toList());
-		assertThat("Setting change count", changes, hasSize(30));
+		assertThat("Setting change count", changes, hasSize(31));
 		int i = 0;
 		for ( Change change : changes ) {
 			String msg = "Change " + i;
@@ -554,6 +562,10 @@ public class KcdConfigurerTests {
 							"msgConfigs[0].propConfigs[0].localizedNamesCount", "0");
 					break;
 
+				case 30:
+					assertChangeEquals(msg, change, instanceId, "expressionConfigsCount", "0");
+					break;
+
 				default:
 					fail("Unexpected setting change: " + change);
 			}
@@ -590,7 +602,7 @@ public class KcdConfigurerTests {
 				Matchers.contains(".*"));
 		List<Change> changes = stream(updates.getSettingValueUpdates().spliterator(), false)
 				.collect(toList());
-		assertThat("Setting change count", changes, hasSize(40));
+		assertThat("Setting change count", changes, hasSize(42));
 		int i = 0;
 		for ( Change change : changes ) {
 			String msg = "Change " + i;
@@ -689,96 +701,260 @@ public class KcdConfigurerTests {
 					break;
 
 				case 20:
+					assertChangeEquals(msg, change, instanceId1, "expressionConfigsCount", "0");
+					break;
+
+				case 21:
 					assertChangeEquals(msg, change, instanceId2, "canbusNetwork.propertyFilters['UID']",
 							"Canbus Port");
 					break;
 
-				case 21:
+				case 22:
 					assertChangeEquals(msg, change, instanceId2, "busName", "CANB");
 					break;
 
-				case 22:
+				case 23:
 					assertChangeEquals(msg, change, instanceId2, "sourceId", "/BUS1/VEH2");
 					break;
 
-				case 23:
+				case 24:
 					assertChangeEquals(msg, change, instanceId2, "msgConfigsCount", "1");
 					break;
 
-				case 24:
+				case 25:
 					assertChangeEquals(msg, change, instanceId2, "msgConfigs[0].address",
 							String.valueOf(0x0C17A708));
 					break;
 
-				case 25:
+				case 26:
 					assertChangeEquals(msg, change, instanceId2, "msgConfigs[0].name", "Stats");
 					break;
 
-				case 26:
+				case 27:
 					assertChangeEquals(msg, change, instanceId2, "msgConfigs[0].interval", "6000");
 					break;
 
-				case 27:
+				case 28:
 					assertChangeEquals(msg, change, instanceId2, "msgConfigs[0].byteOrderingCode", "l");
 					break;
 
-				case 28:
-					assertChangeEquals(msg, change, instanceId2, "msgConfigs[0].propConfigsCount", "1");
-					break;
-
 				case 29:
-					assertChangeEquals(msg, change, instanceId2,
-							"msgConfigs[0].propConfigs[0].propertyKey", "status");
+					assertChangeEquals(msg, change, instanceId2, "msgConfigs[0].propConfigsCount", "1");
 					break;
 
 				case 30:
 					assertChangeEquals(msg, change, instanceId2,
-							"msgConfigs[0].propConfigs[0].propertyTypeKey", "s");
+							"msgConfigs[0].propConfigs[0].propertyKey", "status");
 					break;
 
 				case 31:
 					assertChangeEquals(msg, change, instanceId2,
-							"msgConfigs[0].propConfigs[0].dataTypeKey", "u16");
+							"msgConfigs[0].propConfigs[0].propertyTypeKey", "s");
 					break;
 
 				case 32:
+					assertChangeEquals(msg, change, instanceId2,
+							"msgConfigs[0].propConfigs[0].dataTypeKey", "u16");
+					break;
+
+				case 33:
 					assertChangeEquals(msg, change, instanceId2, "msgConfigs[0].propConfigs[0].unit",
 							"1");
 					break;
 
-				case 33:
+				case 34:
 					assertChangeEquals(msg, change, instanceId2,
 							"msgConfigs[0].propConfigs[0].bitOffset", "0");
 					break;
 
-				case 34:
+				case 35:
 					assertChangeEquals(msg, change, instanceId2,
 							"msgConfigs[0].propConfigs[0].bitLength", "16");
 					break;
 
-				case 35:
+				case 36:
 					assertChangeEquals(msg, change, instanceId2, "msgConfigs[0].propConfigs[0].slope",
 							"1.0");
 					break;
 
-				case 36:
+				case 37:
 					assertChangeEquals(msg, change, instanceId2,
 							"msgConfigs[0].propConfigs[0].intercept", "0");
 					break;
 
-				case 37:
+				case 38:
 					assertChangeEquals(msg, change, instanceId2,
 							"msgConfigs[0].propConfigs[0].decimalScale", "-1");
 					break;
 
-				case 38:
+				case 39:
 					assertChangeEquals(msg, change, instanceId2,
 							"msgConfigs[0].propConfigs[0].valueLabelsCount", "0");
 					break;
 
-				case 39:
+				case 40:
 					assertChangeEquals(msg, change, instanceId2,
 							"msgConfigs[0].propConfigs[0].localizedNamesCount", "0");
+					break;
+
+				case 41:
+					assertChangeEquals(msg, change, instanceId2, "expressionConfigsCount", "0");
+					break;
+
+				default:
+					fail("Unexpected setting change: " + change);
+			}
+			i++;
+		}
+	}
+
+	@Test
+	public void parseKcd_expression() throws Exception {
+		// GIVEN
+
+		// look for existing instances to delete, but find none
+		expect(settingsService.getProvidersForFactory(SETTING_UID)).andReturn(Collections.emptyMap());
+
+		// create new datum data source instances for both <Node> elements
+		final String instanceId = "1";
+		expect(settingsService.addProviderFactoryInstance(SETTING_UID)).andReturn(instanceId);
+
+		// WHEN
+		replayAll();
+		ClassPathResource r = new ClassPathResource("kcd-test-05.xml", getClass());
+		SettingsUpdates updates = configurer.applySettingResources(KcdConfigurer.RESOURCE_KEY_KCD_FILE,
+				singleton(r));
+
+		// THEN
+		assertThat("Updates generated", updates, notNullValue());
+		assertThat("Patterns to clean available", updates.getSettingKeyPatternsToClean(),
+				notNullValue());
+		assertThat("Pattern to clean",
+				stream(updates.getSettingKeyPatternsToClean().spliterator(), false).map(p -> p.pattern())
+						.collect(toList()),
+				Matchers.contains(".*"));
+		List<Change> changes = stream(updates.getSettingValueUpdates().spliterator(), false)
+				.collect(toList());
+		assertThat("Setting change count", changes, hasSize(25));
+		int i = 0;
+		for ( Change change : changes ) {
+			String msg = "Change " + i;
+			switch (i) {
+				case 0:
+					assertChangeEquals(msg, change, instanceId, "canbusNetwork.propertyFilters['UID']",
+							"Canbus Port");
+					break;
+
+				case 1:
+					assertChangeEquals(msg, change, instanceId, "busName", "CANB");
+					break;
+
+				case 2:
+					assertChangeEquals(msg, change, instanceId, "sourceId", "/BUS1/VEH1");
+					break;
+
+				case 3:
+					assertChangeEquals(msg, change, instanceId, "msgConfigsCount", "1");
+					break;
+
+				case 4:
+					assertChangeEquals(msg, change, instanceId, "msgConfigs[0].address",
+							String.valueOf(0x0C17A708));
+					break;
+
+				case 5:
+					assertChangeEquals(msg, change, instanceId, "msgConfigs[0].name", "Stats");
+					break;
+
+				case 6:
+					assertChangeEquals(msg, change, instanceId, "msgConfigs[0].interval", "6000");
+					break;
+
+				case 7:
+					assertChangeEquals(msg, change, instanceId, "msgConfigs[0].byteOrderingCode", "l");
+					break;
+
+				case 8:
+					assertChangeEquals(msg, change, instanceId, "msgConfigs[0].propConfigsCount", "1");
+					break;
+
+				case 9:
+					assertChangeEquals(msg, change, instanceId,
+							"msgConfigs[0].propConfigs[0].propertyKey", "distance");
+					break;
+
+				case 10:
+					assertChangeEquals(msg, change, instanceId,
+							"msgConfigs[0].propConfigs[0].propertyTypeKey", "a");
+					break;
+
+				case 11:
+					assertChangeEquals(msg, change, instanceId,
+							"msgConfigs[0].propConfigs[0].dataTypeKey", "u32");
+					break;
+
+				case 12:
+					assertChangeEquals(msg, change, instanceId, "msgConfigs[0].propConfigs[0].unit",
+							"1");
+					break;
+
+				case 13:
+					assertChangeEquals(msg, change, instanceId, "msgConfigs[0].propConfigs[0].bitOffset",
+							"32");
+					break;
+
+				case 14:
+					assertChangeEquals(msg, change, instanceId, "msgConfigs[0].propConfigs[0].bitLength",
+							"32");
+					break;
+
+				case 15:
+					assertChangeEquals(msg, change, instanceId, "msgConfigs[0].propConfigs[0].slope",
+							"1.0");
+					break;
+
+				case 16:
+					assertChangeEquals(msg, change, instanceId, "msgConfigs[0].propConfigs[0].intercept",
+							"0");
+					break;
+
+				case 17:
+					assertChangeEquals(msg, change, instanceId,
+							"msgConfigs[0].propConfigs[0].decimalScale", "-1");
+					break;
+
+				case 18:
+					assertChangeEquals(msg, change, instanceId,
+							"msgConfigs[0].propConfigs[0].valueLabelsCount", "0");
+					break;
+
+				case 19:
+					assertChangeEquals(msg, change, instanceId,
+							"msgConfigs[0].propConfigs[0].localizedNamesCount", "0");
+					break;
+
+				case 20:
+					assertChangeEquals(msg, change, instanceId, "expressionConfigsCount", "1");
+					break;
+
+				case 21:
+					assertChangeEquals(msg, change, instanceId, "expressionConfigs[0].name", "area");
+					break;
+
+				case 22:
+					assertChangeEquals(msg, change, instanceId,
+							"expressionConfigs[0].datumPropertyTypeKey", "i");
+					break;
+
+				case 23:
+					assertChangeEquals(msg, change, instanceId,
+							"expressionConfigs[0].expressionServiceId",
+							"net.solarnetwork.common.expr.spel.SpelExpressionService");
+					break;
+
+				case 24:
+					assertChangeEquals(msg, change, instanceId, "expressionConfigs[0].expression",
+							"props('distance') * props('distance')");
 					break;
 
 				default:

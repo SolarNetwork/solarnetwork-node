@@ -36,6 +36,7 @@ import org.springframework.expression.Expression;
 import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.support.ExpressionService;
@@ -49,7 +50,7 @@ import net.solarnetwork.support.ExpressionServiceExpression;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.79
  */
 public class ExpressionConfig extends GeneralDatumSamplePropertyConfig<String> {
@@ -135,6 +136,30 @@ public class ExpressionConfig extends GeneralDatumSamplePropertyConfig<String> {
 		}
 
 		return results;
+	}
+
+	/**
+	 * Generate a list of setting values from this instance.
+	 * 
+	 * @param providerId
+	 *        the setting provider key to use
+	 * @param instanceId
+	 *        the setting provider instance key to use
+	 * @param prefix
+	 *        a prefix to append to all setting keys
+	 * @return the list of setting values, never {@literal null}
+	 * @since 1.1
+	 */
+	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, String prefix) {
+		List<SettingValueBean> settings = new ArrayList<>(16);
+		settings.add(new SettingValueBean(providerId, instanceId, prefix + "name", getName()));
+		settings.add(new SettingValueBean(providerId, instanceId, prefix + "datumPropertyTypeKey",
+				getDatumPropertyTypeKey()));
+		settings.add(new SettingValueBean(providerId, instanceId, prefix + "expressionServiceId",
+				getExpressionServiceId()));
+		settings.add(
+				new SettingValueBean(providerId, instanceId, prefix + "expression", getExpression()));
+		return settings;
 	}
 
 	/**
