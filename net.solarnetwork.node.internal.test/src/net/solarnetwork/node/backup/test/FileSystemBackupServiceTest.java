@@ -218,8 +218,7 @@ public class FileSystemBackupServiceTest {
 		assertEquals(result.getDate().getTime(), b.getDate().getTime());
 
 		int count = 0;
-		final BackupResourceIterable backupResources = bs.getBackupResources(b);
-		try {
+		try (final BackupResourceIterable backupResources = bs.getBackupResources(b)) {
 			for ( BackupResource r : bs.getBackupResources(b) ) {
 				if ( count == 0 ) {
 					assertEquals("test.xml", r.getBackupPath());
@@ -234,8 +233,6 @@ public class FileSystemBackupServiceTest {
 				}
 				count++;
 			}
-		} finally {
-			backupResources.close();
 		}
 		assertEquals("Should have 2 backup resources", 2, count);
 	}
