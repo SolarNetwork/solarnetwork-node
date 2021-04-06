@@ -173,16 +173,16 @@ public enum EM5600Register implements ModbusReference {
 	MeterApparentPowerTotal(0x142, UInt16),
 
 	/** Power factor for phase A. */
-	MeterPowerFactorPhaseA(0x148, UInt16),
+	MeterPowerFactorPhaseA(0x148, Int16),
 
 	/** Power factor for phase B. */
-	MeterPowerFactorPhaseB(0x14C, UInt16),
+	MeterPowerFactorPhaseB(0x14C, Int16),
 
 	/** Power factor for phase C. */
-	MeterPowerFactorPhaseC(0x150, UInt16),
+	MeterPowerFactorPhaseC(0x150, Int16),
 
 	/** Power factor total. */
-	MeterPowerFactorTotal(0x143, UInt16),
+	MeterPowerFactorTotal(0x143, Int16),
 
 	/** AC frequency, reported in milli Hz. */
 	MeterFrequency(0x144, UInt16),
