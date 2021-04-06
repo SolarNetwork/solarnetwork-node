@@ -59,7 +59,7 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * {@link net.solarnetwork.node.MultiDatumDataSource} implementations to extend.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @since 1.51
  */
 public class DatumDataSourceSupport extends BaseIdentifiable {
@@ -158,17 +158,19 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * value. This method will catch all exceptions and silently discard them.
 	 * 
 	 * @param sourceId
-	 *        the source ID to add metadata to
+	 *        the source ID to add metadata to; place holders will be resolved
+	 *        via {@link #resolvePlaceholders(String)}
 	 * @param meta
 	 *        the metadata to add
 	 * @return {@literal true} if the metadata was saved successfully, or does
 	 *         not need to be updated
 	 */
 	protected boolean addSourceMetadata(final String sourceId, final GeneralDatumMetadata meta) {
-		GeneralDatumMetadata cached = SOURCE_METADATA_CACHE.get(sourceId);
+		final String resolvedSourceId = resolvePlaceholders(sourceId);
+		GeneralDatumMetadata cached = SOURCE_METADATA_CACHE.get(resolvedSourceId);
 		if ( cached != null && meta.equals(cached) ) {
 			// we've already posted this metadata... don't bother doing it again
-			log.debug("Source {} metadata already added, not posting again", sourceId);
+			log.debug("Source {} metadata already added, not posting again", resolvedSourceId);
 			return true;
 		}
 		DatumMetadataService service = null;
@@ -179,11 +181,11 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 			return false;
 		}
 		try {
-			service.addSourceMetadata(sourceId, meta);
-			SOURCE_METADATA_CACHE.put(sourceId, meta);
+			service.addSourceMetadata(resolvedSourceId, meta);
+			SOURCE_METADATA_CACHE.put(resolvedSourceId, meta);
 			return true;
 		} catch ( Exception e ) {
-			log.warn("Error saving source {} metadata: {}", sourceId, e.getMessage());
+			log.warn("Error saving source {} metadata: {}", resolvedSourceId, e.getMessage());
 		}
 		return false;
 	}
