@@ -147,4 +147,141 @@ public class CanbusDataTests {
 		assertThat("Upper UInt32 parsed", n, equalTo(1023894840L));
 	}
 
+	@Test
+	public void getNumber_1BitFromWithinByte() {
+		// GIVEN
+		CanbusData d = new CanbusData();
+		d.performUpdates(new CanbusDataUpdateAction() {
+
+			@Override
+			public boolean updateCanbusData(MutableCanbusData m) {
+				m.saveData(asList(new FrameMessageImpl(0x1, false, 2, 3,
+						new byte[] { (byte) 0x32, (byte) 0x15, (byte) 0xDC, (byte) 0x1A, (byte) 0x3D,
+								(byte) 0x07, (byte) 0x65, (byte) 0x38 })));
+				return false;
+			}
+		});
+
+		// WHEN
+		Number n = d.getNumber(new SimpleCanbusSignalReference(0x1, BitDataType.UnsignedInteger,
+				ByteOrdering.BigEndian, 5, 1));
+
+		// THEN
+		assertThat("1-bit integer parsed", n, equalTo((short) 1));
+	}
+
+	@Test
+	public void getNumber_2BitFromWithinByte() {
+		// GIVEN
+		CanbusData d = new CanbusData();
+		d.performUpdates(new CanbusDataUpdateAction() {
+
+			@Override
+			public boolean updateCanbusData(MutableCanbusData m) {
+				m.saveData(asList(new FrameMessageImpl(0x1, false, 2, 3,
+						new byte[] { (byte) 0x32, (byte) 0x15, (byte) 0xDC, (byte) 0x1A, (byte) 0x3D,
+								(byte) 0x07, (byte) 0x65, (byte) 0x38 })));
+				return false;
+			}
+		});
+
+		// WHEN
+		Number n = d.getNumber(new SimpleCanbusSignalReference(0x1, BitDataType.UnsignedInteger,
+				ByteOrdering.BigEndian, 4, 2));
+
+		// THEN
+		assertThat("2-bit integer parsed", n, equalTo((short) 3));
+	}
+
+	@Test
+	public void getNumber_3BitFromWithinByte() {
+		// GIVEN
+		CanbusData d = new CanbusData();
+		d.performUpdates(new CanbusDataUpdateAction() {
+
+			@Override
+			public boolean updateCanbusData(MutableCanbusData m) {
+				m.saveData(asList(new FrameMessageImpl(0x1, false, 2, 3,
+						new byte[] { (byte) 0x32, (byte) 0x15, (byte) 0xDC, (byte) 0x1A, (byte) 0x3D,
+								(byte) 0x07, (byte) 0x65, (byte) 0x38 })));
+				return false;
+			}
+		});
+
+		// WHEN
+		Number n = d.getNumber(new SimpleCanbusSignalReference(0x1, BitDataType.UnsignedInteger,
+				ByteOrdering.BigEndian, 2, 3));
+
+		// THEN
+		assertThat("3-bit integer parsed", n, equalTo((short) 6));
+	}
+
+	@Test
+	public void getNumber_12BitFromWithinBytes() {
+		// GIVEN
+		CanbusData d = new CanbusData();
+		d.performUpdates(new CanbusDataUpdateAction() {
+
+			@Override
+			public boolean updateCanbusData(MutableCanbusData m) {
+				m.saveData(asList(new FrameMessageImpl(0x1, false, 2, 3,
+						new byte[] { (byte) 0x32, (byte) 0x15, (byte) 0xDC, (byte) 0x1A, (byte) 0x3D,
+								(byte) 0x07, (byte) 0x65, (byte) 0x38 })));
+				return false;
+			}
+		});
+
+		// WHEN
+		Number n = d.getNumber(new SimpleCanbusSignalReference(0x1, BitDataType.UnsignedInteger,
+				ByteOrdering.BigEndian, 4, 12));
+
+		// THEN
+		assertThat("12-bit integer parsed", n, equalTo((short) 0x653));
+	}
+
+	@Test
+	public void getNumber_15BitFromWithinBytes() {
+		// GIVEN
+		CanbusData d = new CanbusData();
+		d.performUpdates(new CanbusDataUpdateAction() {
+
+			@Override
+			public boolean updateCanbusData(MutableCanbusData m) {
+				m.saveData(asList(new FrameMessageImpl(0x1, false, 2, 3,
+						new byte[] { (byte) 0x32, (byte) 0x15, (byte) 0xDC, (byte) 0x1A, (byte) 0x3D,
+								(byte) 0x07, (byte) 0x65, (byte) 0x38 })));
+				return false;
+			}
+		});
+
+		// WHEN
+		Number n = d.getNumber(new SimpleCanbusSignalReference(0x1, BitDataType.UnsignedInteger,
+				ByteOrdering.BigEndian, 1, 15));
+
+		// THEN
+		assertThat("15-bit integer parsed", n, equalTo((short) 0x329C));
+	}
+
+	@Test
+	public void getNumber_17BitFromWithinBytes() {
+		// GIVEN
+		CanbusData d = new CanbusData();
+		d.performUpdates(new CanbusDataUpdateAction() {
+
+			@Override
+			public boolean updateCanbusData(MutableCanbusData m) {
+				m.saveData(asList(new FrameMessageImpl(0x1, false, 2, 3,
+						new byte[] { (byte) 0x32, (byte) 0x15, (byte) 0xDC, (byte) 0x1A, (byte) 0x3D,
+								(byte) 0x07, (byte) 0x65, (byte) 0x38 })));
+				return false;
+			}
+		});
+
+		// WHEN
+		Number n = d.getNumber(new SimpleCanbusSignalReference(0x1, BitDataType.UnsignedInteger,
+				ByteOrdering.BigEndian, 2, 17));
+
+		// THEN
+		assertThat("17-bit integer parsed", n, equalTo(0x1D94E));
+	}
 }
