@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.canbus;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -270,11 +271,32 @@ public class CanbusData implements DataAccessor {
 		final ByteOrdering ordering = ref.getByteOrdering();
 		final CanbusFrame message = dataFrames.get(addr);
 		final byte[] data = (message != null ? message.getData() : null);
-		if ( bitLength % 8 != 0 ) {
-			throw new UnsupportedOperationException("Only byte-aligned number values are supported.");
-		}
 		if ( data == null ) {
 			return null;
+		}
+		final int bitOffsetRemain = bitOffset % 8;
+		final int bitLengthRemain = bitLength % 8;
+		if ( bitOffsetRemain != 0 || bitLengthRemain != 0 ) {
+			long mask = 0L;
+			for ( int i = 0; i < bitLength; i++ ) {
+				mask |= (1 << i);
+			}
+			BigInteger bi = ByteUtils.parseUnsignedInteger(data, 0, data.length, ordering)
+					.shiftRight(bitOffset).and(BigInteger.valueOf(mask));
+			// try to return the smallest possible number type
+			try {
+				return bi.shortValueExact();
+			} catch ( ArithmeticException e ) {
+				try {
+					return bi.intValueExact();
+				} catch ( ArithmeticException e2 ) {
+					try {
+						return bi.longValueExact();
+					} catch ( ArithmeticException e3 ) {
+						return bi;
+					}
+				}
+			}
 		}
 		final int offset = bitOffset / 8;
 		final int length = bitLength / 8;

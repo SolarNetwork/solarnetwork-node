@@ -621,7 +621,24 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 
 		@Override
 		public Float getPowerFactor() {
-			return EM5600Data.this.getPowerFactor();
+			Float n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getPowerFactorValue(EM5600Register.MeterPowerFactorPhaseA);
+					break;
+
+				case PhaseB:
+					n = getPowerFactorValue(EM5600Register.MeterPowerFactorPhaseB);
+					break;
+
+				case PhaseC:
+					n = getPowerFactorValue(EM5600Register.MeterPowerFactorPhaseC);
+					break;
+
+				default:
+					n = EM5600Data.this.getPowerFactor();
+			}
+			return n;
 		}
 
 		@Override

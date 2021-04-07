@@ -275,7 +275,7 @@ public class S3BackupService extends BackupServiceSupport
 								MimeType.valueOf("application/json;charset=UTF-8")),
 						null, null);
 				result = new S3BackupMetadata(metaRef);
-				listBackupItem = backupListItem().apply(metaRef);
+				listBackupItem = backupListItem(objectKeyForPath(META_OBJECT_KEY_PREFIX)).apply(metaRef);
 			}
 
 			// add this backup to the cached data
@@ -298,10 +298,14 @@ public class S3BackupService extends BackupServiceSupport
 							.map(k -> canonicalObjectKeyForBackupKey(k)).collect(Collectors.toSet());
 					log.info("Deleting {} expired backups for node {}: {}", keysToDelete.size(), nodeId,
 							keysToDelete);
-					client.deleteObjects(keysToDelete);
+					Set<String> keysDeleted = client.deleteObjects(keysToDelete);
+					if ( !keysToDelete.equals(keysDeleted) ) {
+						log.warn("Expected to delete expired backups {} but actually deleted {}",
+								keysToDelete, keysDeleted);
+					}
 
 					// update cache
-					knownBackups = knownBackups.stream().filter(b -> !keysToDelete.contains(b.getKey()))
+					knownBackups = knownBackups.stream().filter(b -> !keysDeleted.contains(b.getKey()))
 							.collect(Collectors.toList());
 					updateCachedBackupList(knownBackups);
 				}
@@ -410,7 +414,7 @@ public class S3BackupService extends BackupServiceSupport
 			Set<S3ObjectReference> objs = client.listObjects(objectKeyPrefix);
 			List<Backup> result = objs.stream()
 					.filter(o -> NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(o.getKey()).find())
-					.map(backupListItem()).collect(Collectors.toList());
+					.map(backupListItem(objectKeyPrefix)).collect(Collectors.toList());
 			cachedBackupList.compareAndSet(cached,
 					new CachedResult<List<Backup>>(result, cacheSeconds, TimeUnit.SECONDS));
 			return result;
@@ -421,7 +425,7 @@ public class S3BackupService extends BackupServiceSupport
 		}
 	}
 
-	private Function<S3ObjectReference, Backup> backupListItem() {
+	private Function<S3ObjectReference, Backup> backupListItem(String objectKeyPrefix) {
 		return o -> new SimpleBackup(
 				identityFromBackupKey(pathWithoutPrefix(o.getKey(), objectKeyPrefix)), null, true);
 	}

@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.hc;
 
 import static java.util.Arrays.asList;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.StringAscii;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
@@ -38,7 +39,7 @@ import net.solarnetwork.util.IntRangeSet;
  * devices.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public enum EM5600Register implements ModbusReference {
@@ -130,34 +131,34 @@ public enum EM5600Register implements ModbusReference {
 	MeterVoltageLineLineAverage(0x13E, UInt16),
 
 	/** Active power for phase A, reported in {@link UnitFactor#getP()} W */
-	MeterActivePowerPhaseA(0x145, UInt16),
+	MeterActivePowerPhaseA(0x145, Int16),
 
 	/** Active power for phase B, reported in {@link UnitFactor#getP()} W. */
-	MeterActivePowerPhaseB(0x149, UInt16),
+	MeterActivePowerPhaseB(0x149, Int16),
 
 	/** Active power for phase C, reported in {@link UnitFactor#getP()} W. */
-	MeterActivePowerPhaseC(0x14D, UInt16),
+	MeterActivePowerPhaseC(0x14D, Int16),
 
 	/** Active power total, reported in {@link UnitFactor#getP()} W. */
-	MeterActivePowerTotal(0x140, UInt16),
+	MeterActivePowerTotal(0x140, Int16),
 
 	/**
 	 * Reactive power for phase A, reported in {@link UnitFactor#getP()} VAR.
 	 */
-	MeterReactivePowerPhaseA(0x146, UInt16),
+	MeterReactivePowerPhaseA(0x146, Int16),
 
 	/**
 	 * Reactive power for phase B, reported in {@link UnitFactor#getP()} VAR.
 	 */
-	MeterReactivePowerPhaseB(0x14A, UInt16),
+	MeterReactivePowerPhaseB(0x14A, Int16),
 
 	/**
 	 * Reactive power for phase C, reported in {@link UnitFactor#getP()} VAR.
 	 */
-	MeterReactivePowerPhaseC(0x14E, UInt16),
+	MeterReactivePowerPhaseC(0x14E, Int16),
 
 	/** Reactive power total, reported in {@link UnitFactor#getP()} VAR. */
-	MeterReactivePowerTotal(0x141, UInt16),
+	MeterReactivePowerTotal(0x141, Int16),
 
 	/** Apparent power for phase A, reported in {@link UnitFactor#getP()} VA. */
 	MeterApparentPowerPhaseA(0x147, UInt16),
@@ -172,16 +173,16 @@ public enum EM5600Register implements ModbusReference {
 	MeterApparentPowerTotal(0x142, UInt16),
 
 	/** Power factor for phase A. */
-	MeterPowerFactorPhaseA(0x148, UInt16),
+	MeterPowerFactorPhaseA(0x148, Int16),
 
 	/** Power factor for phase B. */
-	MeterPowerFactorPhaseB(0x14C, UInt16),
+	MeterPowerFactorPhaseB(0x14C, Int16),
 
 	/** Power factor for phase C. */
-	MeterPowerFactorPhaseC(0x150, UInt16),
+	MeterPowerFactorPhaseC(0x150, Int16),
 
 	/** Power factor total. */
-	MeterPowerFactorTotal(0x143, UInt16),
+	MeterPowerFactorTotal(0x143, Int16),
 
 	/** AC frequency, reported in milli Hz. */
 	MeterFrequency(0x144, UInt16),
@@ -241,10 +242,10 @@ public enum EM5600Register implements ModbusReference {
 		return (this.length > 0 ? this.length : dataType.getWordLength());
 	}
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(
-			EM5600Register.class, new HashSet<>(asList("Info", "Config"))).immutableCopy();
-	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createAddressSet(
-			EM5600Register.class, new HashSet<>(asList("Meter", "Config"))).immutableCopy();
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(EM5600Register.class,
+			new HashSet<>(asList("Info", "Config"))).immutableCopy();
+	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createAddressSet(EM5600Register.class,
+			new HashSet<>(asList("Meter", "Config"))).immutableCopy();
 
 	/**
 	 * Get an address range set that covers all the registers defined in this

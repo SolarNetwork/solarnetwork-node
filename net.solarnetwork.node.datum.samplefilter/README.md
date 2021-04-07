@@ -107,6 +107,9 @@ Each filter configuration contains the following overall settings:
 ## Datum Throttle Filter settings notes
 
 <dl>
+	<dt>Source ID</dt>
+	<dd>This is a case-insensitive regular expression pattern to match against datum source ID values.
+	<b>Only</b> datum with matching source ID values will be filtered. This is required.</dd>
 	<dt>Limit Seconds</dt>
 	<dd>The throttle limit is applied to datum by source ID. Before each datum is uploaded
 	to SolarNetwork, the filter will check how long has elapsed since a datum with the
@@ -170,6 +173,9 @@ Each virtual meter configuration contains the following settings:
 ## Virtual meter settings notes
 
 <dl>
+	<dt>Source ID</dt>
+	<dd>This is a case-insensitive regular expression pattern to match against datum source ID values.
+	<b>Only</b> datum with matching source ID values will be filtered. This is required.</dd>
 	<dt>Reading Property</dt>
 	<dd>This can be used to customize the generated accumulating datum property name. If left unconfigured,
 	the accumulating datum property will be named after the Property value with the Time Unit suffix appended. 
