@@ -39,11 +39,10 @@ public interface DatumDataSource<T extends Datum> extends Identifiable {
 	/**
 	 * An {@link org.osgi.service.event.Event} topic for when a {@link Datum}
 	 * has been read, sampled, or in some way captured by a
-	 * {@link DatumDataSource}. The properties of the event shall be any of the
-	 * JavaBean properties of the Datum supported by events (i.e. any simple
-	 * Java property such as numbers and strings). In addition, the
-	 * {@link #EVENT_DATUM_CAPTURED_DATUM_TYPE} property shall be populated with
-	 * the name of the <em>core</em> class name of the datum type.
+	 * {@link DatumDataSource}. The {@link Datum#DATUM_PROPERTY} property will
+	 * be set to the datum instance that was captured. In addition, the
+	 * {@link Datum#DATUM_TYPE_PROPERTY} property shall be populated with the
+	 * name of the <em>core</em> class name of the datum type.
 	 * 
 	 * @since 1.2
 	 */

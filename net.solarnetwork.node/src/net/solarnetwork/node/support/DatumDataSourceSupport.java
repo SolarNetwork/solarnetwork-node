@@ -62,7 +62,7 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * @version 1.4
  * @since 1.51
  */
-public class DatumDataSourceSupport extends BaseIdentifiable {
+public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEvents {
 
 	/**
 	 * A transform properties instance that can be used to signal "sub-sampling"
@@ -108,27 +108,9 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 		if ( datum == null ) {
 			return;
 		}
-		Event event = createDatumCapturedEvent(datum);
+		Event event = datumCapturedEvent(datum);
+		log.debug("Created {} event with datum {}", event.getTopic(), datum);
 		postEvent(event);
-	}
-
-	/**
-	 * Create a new {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED}
-	 * {@link Event} object out of a {@link Datum}.
-	 * 
-	 * <p>
-	 * This method uses the result of {@link Datum#asSimpleMap()} as the event
-	 * properties.
-	 * </p>
-	 * 
-	 * @param datum
-	 *        the datum to create the event for
-	 * @return the new Event instance
-	 */
-	protected Event createDatumCapturedEvent(Datum datum) {
-		Map<String, ?> props = datum.asSimpleMap();
-		log.debug("Created {} event with props {}", DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
-		return new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
 	}
 
 	/**

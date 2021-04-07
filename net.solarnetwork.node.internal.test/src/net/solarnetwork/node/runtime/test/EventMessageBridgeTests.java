@@ -39,7 +39,9 @@ import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.dao.DatumDao;
+import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.runtime.EventMessageBridge;
+import net.solarnetwork.node.support.DatumEvents;
 import net.solarnetwork.util.StaticOptionalService;
 
 /**
@@ -118,6 +120,33 @@ public class EventMessageBridgeTests {
 		assertThat("Message data", msgData, instanceOf(Map.class));
 
 		Map<String, Object> expectedMsgData = new HashMap<String, Object>(data);
+		expectedMsgData.put("event.topics", DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED);
+		assertThat("Message data", msgData, equalTo((Object) expectedMsgData));
+	}
+
+	@Test
+	public void handleDatumCapturedEvent_datum() {
+		Capture<String> destCaptor = new Capture<String>();
+		Capture<Object> msgCaptor = new Capture<Object>();
+		messageSendingOps.convertAndSend(capture(destCaptor), capture(msgCaptor),
+				EasyMock.<Map<String, Object>> isNull());
+
+		replayAll();
+
+		GeneralNodeDatum d = new GeneralNodeDatum();
+		d.setSourceId("test-source");
+		d.putInstantaneousSampleValue("wattts", 123);
+		d.putAccumulatingSampleValue("wattHours", 12345L);
+		Event event = DatumEvents.datumEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, d);
+		eventMessageBridge.handleEvent(event);
+
+		assertThat("Message topic", destCaptor.getValue(), equalTo("/topic/datum/captured/test-source"));
+		assertThat("Message body", msgCaptor.getValue(), instanceOf(Result.class));
+		Object msgData = ((Result<?>) msgCaptor.getValue()).getData();
+		assertThat("Message data", msgData, instanceOf(Map.class));
+
+		Map<String, Object> expectedMsgData = new LinkedHashMap<>();
+		expectedMsgData.putAll(d.asSimpleMap());
 		expectedMsgData.put("event.topics", DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED);
 		assertThat("Message data", msgData, equalTo((Object) expectedMsgData));
 	}
