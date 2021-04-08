@@ -124,7 +124,6 @@ public class KcdConfigurer extends BaseIdentifiable
 
 	@Override
 	public String getDisplayName() {
-		// TODO Auto-generated method stub
 		return "CAN Bus Datum Data Source KCD Configurer";
 	}
 
