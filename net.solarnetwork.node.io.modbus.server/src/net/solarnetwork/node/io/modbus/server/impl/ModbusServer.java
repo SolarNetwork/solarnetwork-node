@@ -72,7 +72,7 @@ import net.wimpi.modbus.io.ModbusTCPTransport;
  * Modbus TCP server service.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ModbusServer extends BaseIdentifiable
 		implements SettingSpecifierProvider, SettingsChangeObserver, EventHandler {
@@ -291,12 +291,14 @@ public class ModbusServer extends BaseIdentifiable
 		}
 	}
 
-	private void handleDatumCapturedEvent(Event event) {
-		Object sourceId = event.getProperty(Datum.SOURCE_ID);
-		if ( sourceId == null ) {
+	private void handleDatumCapturedEvent(Event eventz) {
+		Object d = eventz.getProperty(Datum.DATUM_PROPERTY);
+		if ( !(d instanceof Datum && ((Datum) d).getSourceId() != null) ) {
 			return;
 		}
-
+		Datum datum = (Datum) d;
+		final String sourceId = datum.getSourceId();
+		final Map<String, ?> datumProps = datum.asSimpleMap();
 		UnitConfig[] unitConfigs = getUnitConfigs();
 		if ( unitConfigs == null || unitConfigs.length < 1 ) {
 			return;
@@ -316,14 +318,14 @@ public class ModbusServer extends BaseIdentifiable
 				for ( MeasurementConfig measConfig : measConfigs ) {
 					if ( sourceId.equals(measConfig.getSourceId())
 							&& measConfig.getPropertyName() != null
-							&& event.containsProperty(measConfig.getPropertyName()) ) {
+							&& datumProps.containsKey(measConfig.getPropertyName()) ) {
 						final int measAddr = address;
 						executor.execute(new Runnable() {
 
 							@Override
 							public void run() {
-								applyDatumCapturedUpdates(unitConfig, blockConfig, measConfig, event,
-										measAddr);
+								applyDatumCapturedUpdates(unitConfig, blockConfig, measConfig,
+										datumProps, measAddr);
 							}
 						});
 					}
@@ -334,8 +336,8 @@ public class ModbusServer extends BaseIdentifiable
 	}
 
 	private void applyDatumCapturedUpdates(UnitConfig unitConfig, RegisterBlockConfig blockConfig,
-			MeasurementConfig measConfig, Event event, int address) {
-		Object propVal = event.getProperty(measConfig.getPropertyName());
+			MeasurementConfig measConfig, Map<String, ?> datumProps, int address) {
+		Object propVal = datumProps.get(measConfig.getPropertyName());
 		if ( propVal == null ) {
 			return;
 		}

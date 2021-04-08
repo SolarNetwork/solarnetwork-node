@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.osgi.service.event.Event;
@@ -50,6 +49,7 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.node.support.DatumEvents;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
@@ -73,10 +73,10 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class OperationalModeSwitch extends BaseIdentifiable
-		implements EventHandler, InstructionHandler, NodeControlProvider, SettingSpecifierProvider {
+public class OperationalModeSwitch extends BaseIdentifiable implements EventHandler, InstructionHandler,
+		NodeControlProvider, SettingSpecifierProvider, DatumEvents {
 
 	private String mode;
 	private String controlId;
@@ -165,9 +165,9 @@ public class OperationalModeSwitch extends BaseIdentifiable
 		if ( admin == null ) {
 			return;
 		}
-		Map<String, ?> props = info.asSimpleMap();
-		log.debug("Posting [{}] event with {}", topic, props);
-		admin.postEvent(new Event(topic, props));
+		Event event = DatumEvents.datumEvent(topic, info);
+		log.debug("Posting [{}] event with {}", topic, info);
+		admin.postEvent(event);
 	}
 
 	// EventHandler

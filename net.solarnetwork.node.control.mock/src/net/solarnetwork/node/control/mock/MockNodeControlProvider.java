@@ -36,6 +36,7 @@ import net.solarnetwork.node.domain.NodeControlInfoDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.support.DatumEvents;
 import net.solarnetwork.util.OptionalService;
 
 /**
@@ -54,9 +55,9 @@ import net.solarnetwork.util.OptionalService;
  * <b>FALSE</b>.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
-public class MockNodeControlProvider implements NodeControlProvider, InstructionHandler {
+public class MockNodeControlProvider implements NodeControlProvider, InstructionHandler, DatumEvents {
 
 	private String[] booleanControlIds = new String[] { "/mock/switch/1", "/mock/switch/2", };
 
@@ -190,8 +191,8 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 		if ( admin == null ) {
 			return;
 		}
-		Map<String, ?> props = info.asSimpleMap();
-		admin.postEvent(new Event(topic, props));
+		Event event = DatumEvents.datumEvent(topic, info);
+		admin.postEvent(event);
 	}
 
 	private NodeControlInfoDatum newNodeControlInfoDatum(String controlId, String propertyName,

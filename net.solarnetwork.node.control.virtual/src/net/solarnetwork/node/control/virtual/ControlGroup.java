@@ -39,6 +39,7 @@ import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.NodeControlProvider;
+import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.NodeControlInfoDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
@@ -50,6 +51,7 @@ import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.node.support.DatumEvents;
 import net.solarnetwork.util.NodeControlUtils;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.OptionalServiceCollection;
@@ -67,8 +69,8 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * @author Matt Magoffin
  * @version 1.0
  */
-public class ControlGroup extends BaseIdentifiable
-		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler, EventHandler {
+public class ControlGroup extends BaseIdentifiable implements SettingSpecifierProvider,
+		NodeControlProvider, InstructionHandler, EventHandler, DatumEvents {
 
 	/** The default value for the {@code controlPropertyType} property. */
 	public static final NodeControlPropertyType DEFAULT_CONTROL_PROPERTY_TYPE = NodeControlPropertyType.Boolean;
@@ -149,9 +151,9 @@ public class ControlGroup extends BaseIdentifiable
 		if ( admin == null ) {
 			return;
 		}
-		Map<String, ?> props = info.asSimpleMap();
-		log.debug("Posting [{}] event with {}", topic, props);
-		admin.postEvent(new Event(topic, props));
+		Event event = DatumEvents.datumEvent(topic, info);
+		log.debug("Posting [{}] event with {}", topic, info);
+		admin.postEvent(event);
 	}
 
 	// EventHandler
@@ -166,8 +168,9 @@ public class ControlGroup extends BaseIdentifiable
 		if ( controlId == null ) {
 			return;
 		}
-		Object eventControlId = event.getProperty("controlId");
-		if ( !controlId.equals(eventControlId) ) {
+		Object datum = event.getProperty(Datum.DATUM_PROPERTY);
+		if ( !(datum instanceof NodeControlInfo
+				&& controlId.equals(((NodeControlInfo) datum).getControlId())) ) {
 			return;
 		}
 		// TODO: verify value is the expected group value; if not change it?

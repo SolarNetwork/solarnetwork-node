@@ -30,10 +30,12 @@ import static net.solarnetwork.node.OperationalModesService.EVENT_PARAM_ACTIVE_O
 import static net.solarnetwork.node.OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
@@ -138,20 +140,25 @@ public class OperationalModeSwitchTests {
 		assertThat("Control captured event posted", ctlCapturedEvent, notNullValue());
 		assertThat("Event topic", ctlCapturedEvent.getTopic(), equalTo(topic));
 		assertThat("Event params", ctlCapturedEvent.getPropertyNames(),
-				arrayContainingInAnyOrder("_DatumTypes", "_DatumType", "event.topics", "controlId",
-						"created", "readonly", "sourceId", "type", "value"));
-		assertThat("Event datum types", (String[]) ctlCapturedEvent.getProperty("_DatumTypes"),
+				arrayContainingInAnyOrder(Datum.DATUM_PROPERTY, Datum.DATUM_TYPE_PROPERTY,
+						Datum.DATUM_TYPES_PROPERTY, "event.topics"));
+
+		assertThat("Event datum types",
+				(String[]) ctlCapturedEvent.getProperty(Datum.DATUM_TYPES_PROPERTY),
 				arrayContaining(NodeControlInfo.class.getName(), Datum.class.getName()));
-		assertThat("Event datum type", ctlCapturedEvent.getProperty("_DatumType"),
+		assertThat("Event datum type", ctlCapturedEvent.getProperty(Datum.DATUM_TYPE_PROPERTY),
 				equalTo(NodeControlInfo.class.getName()));
-		assertThat("Event control ID", ctlCapturedEvent.getProperty("controlId"),
-				equalTo(TEST_CONTROL_ID));
-		assertThat("Event readonly", ctlCapturedEvent.getProperty("readonly"), equalTo(Boolean.FALSE));
-		assertThat("Event source ID", ctlCapturedEvent.getProperty("sourceId"),
-				equalTo(TEST_CONTROL_ID));
-		assertThat("Event type", ctlCapturedEvent.getProperty("type"),
-				equalTo(NodeControlPropertyType.Boolean.name()));
-		assertThat("Event value", ctlCapturedEvent.getProperty("value"), equalTo(String.valueOf(value)));
+
+		Object o = ctlCapturedEvent.getProperty(Datum.DATUM_PROPERTY);
+		assertThat("Event datum is a NodeControlInfo and Datum", o,
+				allOf(instanceOf(Datum.class), instanceOf(NodeControlInfo.class)));
+		NodeControlInfo info = (NodeControlInfo) o;
+		assertThat("Event control ID", info.getControlId(), equalTo(TEST_CONTROL_ID));
+		assertThat("Event readonly", info.getReadonly(), equalTo(Boolean.FALSE));
+		assertThat("Event type", info.getType(), equalTo(NodeControlPropertyType.Boolean));
+		assertThat("Event value", info.getValue(), equalTo(String.valueOf(value)));
+
+		assertThat("Event source ID", ((Datum) o).getSourceId(), equalTo(TEST_CONTROL_ID));
 	}
 
 	@Test

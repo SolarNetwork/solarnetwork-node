@@ -25,9 +25,13 @@ package net.solarnetwork.node.support;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import org.osgi.service.event.Event;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.util.ClassUtils;
 
 /**
  * Support for {@link Datum} {@link Event} handling.
@@ -49,7 +53,20 @@ public interface DatumEvents {
 	 * @return the new event instance
 	 */
 	static Event datumEvent(String topic, Datum datum) {
-		return new Event(topic, Collections.singletonMap(Datum.DATUM_PROPERTY, datum));
+		if ( datum == null ) {
+			return new Event(topic, Collections.emptyMap());
+		}
+		Map<String, Object> props;
+		String[] datumTypes = datumTypes(datum.getClass());
+		if ( datumTypes != null && datumTypes.length > 0 ) {
+			props = new LinkedHashMap<>(3);
+			props.put(Datum.DATUM_TYPE_PROPERTY, datumTypes[0]);
+			props.put(Datum.DATUM_TYPES_PROPERTY, datumTypes);
+			props.put(Datum.DATUM_PROPERTY, datum);
+		} else {
+			props = Collections.singletonMap(Datum.DATUM_PROPERTY, datum);
+		}
+		return new Event(topic, props);
 	}
 
 	/**
@@ -95,6 +112,42 @@ public interface DatumEvents {
 	 */
 	default Event datumCapturedEvent(Datum datum) {
 		return datumEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, datum);
+	}
+
+	/**
+	 * A cache of datum type mappings.
+	 * 
+	 * <p>
+	 * The {@link #datumTypes(Class)} method populates this cache.
+	 * </p>
+	 */
+	ConcurrentMap<Class<?>, String[]> DATUM_TYPE_CACHE = new ConcurrentHashMap<Class<?>, String[]>();
+
+	/**
+	 * Get an array of datum types for a class.
+	 * 
+	 * <p>
+	 * This method caches the results for performance.
+	 * </p>
+	 * 
+	 * @param clazz
+	 *        the datum class to get the types for
+	 * @return the types
+	 */
+	static String[] datumTypes(Class<?> clazz) {
+		String[] result = DATUM_TYPE_CACHE.get(clazz);
+		if ( result != null ) {
+			return result;
+		}
+		Set<Class<?>> interfaces = ClassUtils.getAllNonJavaInterfacesForClassAsSet(clazz);
+		result = new String[interfaces.size()];
+		int i = 0;
+		for ( Class<?> intf : interfaces ) {
+			result[i] = intf.getName();
+			i++;
+		}
+		DATUM_TYPE_CACHE.putIfAbsent(clazz, result);
+		return result;
 	}
 
 }
