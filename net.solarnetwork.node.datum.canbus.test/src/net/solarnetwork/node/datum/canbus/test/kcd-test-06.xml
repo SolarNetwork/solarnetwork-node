@@ -1,0 +1,22 @@
+<?xml version="1.1" encoding="UTF-8"?>
+<NetworkDefinition xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://kayak.2codeornot2code.org/1.0 ../../../../../../../../net.solarnetwork.node.io.canbus/src/net/solarnetwork/node/io/canbus/schema/SN-Definition-Datum.xsd"
+ xmlns="http://kayak.2codeornot2code.org/1.0" xmlns:sn="urn:solarnetwork:datum:1.0">
+	<Document name="Bus" version="1.0" author="J Doe" company="ACME" date="2019-09-20">Bus CAN</Document>
+	
+	<Node id="2" name="Vehicle" sn:source-id="/BUS1/VEH1" sn:publish-interval="60000">
+		<Metadata sn:type="setting" sn:key="samplesTransformService.propertyFilters['UID']">Vehicle Virtual Meter</Metadata>
+	</Node>
+	
+	<Bus name="CANB">
+		<!-- Battery -->
+		<Message id="0x0C17A708" name="Stats" interval="6000">
+			<Producer>
+				<NodeRef id="2"/>
+			</Producer>
+			<Signal name="Distance" offset="32" length="32" endianess="little" sn:datum-property="distance" sn:datum-property-classification="a">
+				<Value type="unsigned"/>
+			</Signal>
+		</Message>
+	</Bus>
+</NetworkDefinition>

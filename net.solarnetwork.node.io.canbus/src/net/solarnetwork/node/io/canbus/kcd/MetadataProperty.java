@@ -16,17 +16,18 @@ import javax.xml.bind.annotation.XmlValue;
 
 
 /**
- * A name that is localizable.
+ * Metadata relating to some property key.
  * 
- * <p>Java class for LocalizedName complex type.
+ * <p>Java class for MetadataProperty complex type.
  * 
  * <p>The following schema fragment specifies the expected content contained within this class.
  * 
  * <pre>
- * &lt;complexType name="LocalizedName">
+ * &lt;complexType name="MetadataProperty">
  *   &lt;simpleContent>
  *     &lt;extension base="&lt;http://www.w3.org/2001/XMLSchema>string">
- *       &lt;attribute ref="{http://www.w3.org/XML/1998/namespace}lang use="required""/>
+ *       &lt;attribute name="key" use="required" type="{http://www.w3.org/2001/XMLSchema}string" />
+ *       &lt;attribute name="type" type="{http://www.w3.org/2001/XMLSchema}string" />
  *     &lt;/extension>
  *   &lt;/simpleContent>
  * &lt;/complexType>
@@ -35,15 +36,17 @@ import javax.xml.bind.annotation.XmlValue;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "LocalizedName", namespace = "urn:solarnetwork:datum:1.0", propOrder = {
+@XmlType(name = "MetadataProperty", namespace = "urn:solarnetwork:datum:1.0", propOrder = {
     "value"
 })
-public class LocalizedName {
+public class MetadataProperty {
 
     @XmlValue
     protected String value;
-    @XmlAttribute(name = "lang", namespace = "http://www.w3.org/XML/1998/namespace", required = true)
-    protected String lang;
+    @XmlAttribute(name = "key", namespace = "urn:solarnetwork:datum:1.0", required = true)
+    protected String key;
+    @XmlAttribute(name = "type", namespace = "urn:solarnetwork:datum:1.0")
+    protected String type;
 
     /**
      * Gets the value of the value property.
@@ -70,27 +73,51 @@ public class LocalizedName {
     }
 
     /**
-     * The language of this name.
+     * Gets the value of the key property.
      * 
      * @return
      *     possible object is
      *     {@link String }
      *     
      */
-    public String getLang() {
-        return lang;
+    public String getKey() {
+        return key;
     }
 
     /**
-     * Sets the value of the lang property.
+     * Sets the value of the key property.
      * 
      * @param value
      *     allowed object is
      *     {@link String }
      *     
      */
-    public void setLang(String value) {
-        this.lang = value;
+    public void setKey(String value) {
+        this.key = value;
+    }
+
+    /**
+     * Gets the value of the type property.
+     * 
+     * @return
+     *     possible object is
+     *     {@link String }
+     *     
+     */
+    public String getType() {
+        return type;
+    }
+
+    /**
+     * Sets the value of the type property.
+     * 
+     * @param value
+     *     allowed object is
+     *     {@link String }
+     *     
+     */
+    public void setType(String value) {
+        this.type = value;
     }
 
 }

@@ -133,4 +133,24 @@
         </xs:simpleContent>
     </xs:complexType>
 
+    <xs:complexType name="MetadataProperty">
+        <xs:annotation>
+            <xs:documentation>Metadata relating to some property key.</xs:documentation>
+        </xs:annotation>
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="key" type="xs:string" use="required">
+                    <xs:annotation>
+                        <xs:documentation>The metadata key.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+                <xs:attribute name="type" type="xs:string" use="optional">
+                    <xs:annotation>
+                        <xs:documentation>An optional type classification for the metadata.</xs:documentation>
+                    </xs:annotation>
+                </xs:attribute>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+    
 </xs:schema>

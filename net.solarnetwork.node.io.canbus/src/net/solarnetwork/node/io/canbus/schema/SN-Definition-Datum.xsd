@@ -35,6 +35,11 @@
                                 <xs:documentation>Property expressions to apply to datum.</xs:documentation>
                             </xs:annotation>
                         </xs:element>
+                        <xs:element name="Metadata" type="sn:MetadataProperty" minOccurs="0" maxOccurs="unbounded">
+                            <xs:annotation>
+                                <xs:documentation>Property metadata to include.</xs:documentation>
+                            </xs:annotation>
+                        </xs:element>
                     </xs:sequence>
                     <xs:attribute ref="sn:source-id" use="required">
                         <xs:annotation>

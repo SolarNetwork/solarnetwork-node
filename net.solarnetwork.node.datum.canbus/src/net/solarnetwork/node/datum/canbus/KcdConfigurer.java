@@ -49,6 +49,7 @@ import net.solarnetwork.node.io.canbus.kcd.LabelGroupType;
 import net.solarnetwork.node.io.canbus.kcd.LabelSetType;
 import net.solarnetwork.node.io.canbus.kcd.LabelType;
 import net.solarnetwork.node.io.canbus.kcd.MessageType;
+import net.solarnetwork.node.io.canbus.kcd.MetadataProperty;
 import net.solarnetwork.node.io.canbus.kcd.NetworkDefinitionType;
 import net.solarnetwork.node.io.canbus.kcd.NodeRefType;
 import net.solarnetwork.node.io.canbus.kcd.NodeType;
@@ -75,13 +76,21 @@ import net.solarnetwork.util.StringUtils;
  * resource.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class KcdConfigurer extends BaseIdentifiable
 		implements SettingSpecifierProvider, SettingResourceHandler {
 
 	/** The setting resource key for a KCD file. */
 	public static final String RESOURCE_KEY_KCD_FILE = "kcdFile";
+
+	/**
+	 * A node metadata property {@code type} value representing a setting value
+	 * to apply.
+	 * 
+	 * @since 1.2
+	 */
+	public static final String METADATA_TYPE_SETTING = "setting";
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -202,8 +211,11 @@ public class KcdConfigurer extends BaseIdentifiable
 			return null;
 		}
 
-		// build up mapping of node ID -> node and source ID -> node, eliminating any duplicate source ID mappings
+		// build up mapping of node ID -> node
 		Map<String, NodeType> nodeMap = new LinkedHashMap<>(nodes.size());
+
+		// a mapping of source ID -> node, eliminating any duplicate source ID mappings
+		Map<String, NodeType> sourceNodeMap = new LinkedHashMap<>(nodes.size());
 
 		// a mapping of source ID -> data source config
 		Map<String, DatumDataSourceConfig> sourceMessageConfigMap = new LinkedHashMap<>(nodeMap.size());
@@ -217,9 +229,10 @@ public class KcdConfigurer extends BaseIdentifiable
 			if ( node.getNetworkServiceName() == null || node.getNetworkServiceName().isEmpty() ) {
 				continue;
 			}
-			DatumDataSourceConfig ddsc = new DatumDataSourceConfig(node.getNetworkServiceName(),
-					node.getSourceId());
-			if ( sourceMessageConfigMap.putIfAbsent(node.getSourceId(), ddsc) == null ) {
+			if ( sourceNodeMap.putIfAbsent(node.getSourceId(), node) == null ) {
+				DatumDataSourceConfig ddsc = new DatumDataSourceConfig(node.getNetworkServiceName(),
+						node.getSourceId());
+				sourceMessageConfigMap.put(node.getSourceId(), ddsc);
 				nodeMap.put(node.getId(), node);
 				populateExpressionConfigs(node, ddsc, parseMessages, locale);
 			} else {
@@ -461,6 +474,23 @@ public class KcdConfigurer extends BaseIdentifiable
 					setting(instanceId, "canbusNetwork.propertyFilters['UID']", dsConfig.networkUid));
 			settings.add(setting(instanceId, "busName", dsConfig.busName));
 			settings.add(setting(instanceId, "sourceId", dsConfig.sourceId));
+
+			NodeType node = sourceNodeMap.get(dsConfig.sourceId);
+			if ( node != null ) {
+				List<MetadataProperty> metas = node.getMetadata();
+				if ( metas != null ) {
+					for ( MetadataProperty meta : metas ) {
+						if ( meta != null && METADATA_TYPE_SETTING.equals(meta.getType()) ) {
+							String key = (meta.getKey() != null ? meta.getKey().trim() : "");
+							String val = (meta.getValue() != null ? meta.getValue().trim() : "");
+							if ( !meta.getKey().trim().isEmpty() && !meta.getValue().trim().isEmpty() ) {
+								settings.add(setting(instanceId, key, val));
+							}
+						}
+					}
+				}
+			}
+
 			settings.add(setting(instanceId, "msgConfigsCount",
 					String.valueOf(dsConfig.messageConfigs.size())));
 			int idx = 0;
