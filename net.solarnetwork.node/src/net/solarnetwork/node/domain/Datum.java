@@ -31,7 +31,7 @@ import java.util.Map;
  * Basic persistable domain object API.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public interface Datum {
 
@@ -75,6 +75,13 @@ public interface Datum {
 	 * @since 1.3
 	 */
 	String DATUM_TYPES_PROPERTY = "_DatumTypes";
+
+	/**
+	 * A property name for a {@code Datum} instance associated with an event.
+	 * 
+	 * @since 1.5
+	 */
+	String DATUM_PROPERTY = "_Datum";
 
 	/**
 	 * A {@link net.solarnetwork.domain.GeneralNodeDatumSamples} sample key for

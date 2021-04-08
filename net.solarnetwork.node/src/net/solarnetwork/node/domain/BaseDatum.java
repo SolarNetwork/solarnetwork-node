@@ -27,10 +27,7 @@ package net.solarnetwork.node.domain;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import net.solarnetwork.util.ClassUtils;
+import net.solarnetwork.node.support.DatumEvents;
 
 /**
  * Abstract base class for {@link Datum} implementations.
@@ -39,8 +36,6 @@ import net.solarnetwork.util.ClassUtils;
  * @version 1.3
  */
 public abstract class BaseDatum implements Datum, Cloneable {
-
-	private static final ConcurrentMap<Class<?>, String[]> DATUM_TYPE_CACHE = new ConcurrentHashMap<Class<?>, String[]>();
 
 	private String sourceId = null;
 	private Date created = null;
@@ -117,19 +112,7 @@ public abstract class BaseDatum implements Datum, Cloneable {
 	 * @since 1.2
 	 */
 	public static String[] getDatumTypes(Class<?> clazz) {
-		String[] result = DATUM_TYPE_CACHE.get(clazz);
-		if ( result != null ) {
-			return result;
-		}
-		Set<Class<?>> interfaces = ClassUtils.getAllNonJavaInterfacesForClassAsSet(clazz);
-		result = new String[interfaces.size()];
-		int i = 0;
-		for ( Class<?> intf : interfaces ) {
-			result[i] = intf.getName();
-			i++;
-		}
-		DATUM_TYPE_CACHE.putIfAbsent(clazz, result);
-		return result;
+		return DatumEvents.datumTypes(clazz);
 	}
 
 	@Override

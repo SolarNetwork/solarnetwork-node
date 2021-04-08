@@ -56,6 +56,7 @@ import net.solarnetwork.common.mqtt.ReconfigurableMqttConnection;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.OperationalModesService;
+import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
@@ -68,7 +69,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public class FluxUploadService extends BaseMqttConnectionService
 		implements EventHandler, SettingSpecifierProvider, SettingsChangeObserver {
@@ -92,6 +93,9 @@ public class FluxUploadService extends BaseMqttConnectionService
 
 	/** The default value for the {@code includeVersionTag} property. */
 	public static final boolean DEFAULT_INCLUDE_VERSION_TAG = true;
+
+	private final ConcurrentMap<String, Long> SOURCE_CAPTURE_TIMES = new ConcurrentHashMap<>(16, 0.9f,
+			2);
 
 	private final ObjectMapper objectMapper;
 	private final IdentityService identityService;
@@ -229,9 +233,6 @@ public class FluxUploadService extends BaseMqttConnectionService
 		}
 	}
 
-	private static ConcurrentMap<String, Long> SOURCE_CAPTURE_TIMES = new ConcurrentHashMap<>(16, 0.9f,
-			2);
-
 	private boolean shouldPublishDatum(String sourceId, Map<String, Object> data) {
 		FluxFilterConfig[] filters = getFilters();
 		Long ts = System.currentTimeMillis();
@@ -310,14 +311,28 @@ public class FluxUploadService extends BaseMqttConnectionService
 		Map<String, Object> map = new LinkedHashMap<>(propNames.length);
 		Pattern exPattern = this.excludePropertyNamesPattern;
 		for ( String propName : propNames ) {
-			if ( exPattern != null && exPattern.matcher(propName).matches() ) {
+			Object propVal = event.getProperty(propName);
+			if ( Datum.DATUM_PROPERTY.equals(propName) && (propVal instanceof Datum) ) {
+				Map<String, ?> datumProps = ((Datum) propVal).asSimpleMap();
+				if ( datumProps != null ) {
+					for ( Map.Entry<String, ?> me : datumProps.entrySet() ) {
+						String datumPropName = me.getKey();
+						if ( exPattern != null && exPattern.matcher(datumPropName).matches() ) {
+							// exclude this property
+							continue;
+						}
+						map.put(datumPropName, me.getValue());
+					}
+				}
+				continue;
+			} else if ( exPattern != null && exPattern.matcher(propName).matches() ) {
 				// exclude this property
 				continue;
 			} else if ( EventConstants.EVENT_TOPIC.equals(propName) ) {
 				// exclude event topic
 				continue;
 			}
-			map.put(propName, event.getProperty(propName));
+			map.put(propName, propVal);
 		}
 		return map;
 	}

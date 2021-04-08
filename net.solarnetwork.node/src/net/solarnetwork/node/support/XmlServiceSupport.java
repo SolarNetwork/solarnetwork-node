@@ -84,9 +84,9 @@ import net.solarnetwork.util.OptionalService;
  * </p>
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
-public abstract class XmlServiceSupport extends HttpClientSupport {
+public abstract class XmlServiceSupport extends HttpClientSupport implements DatumEvents {
 
 	/**
 	 * A global cache of source-based metadata, so only changes to metadata need
@@ -794,52 +794,6 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	}
 
 	/**
-	 * Post a {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} {@link Event}.
-	 * 
-	 * <p>
-	 * This method calls {@link #createDatumCapturedEvent(Datum, Class)} to
-	 * create the actual Event, which may be overridden by extending classes.
-	 * </p>
-	 * 
-	 * @param datum
-	 *        the {@link Datum} to post the event for
-	 * @param eventDatumType
-	 *        the Datum class to use for the
-	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
-	 * @since 1.4
-	 * @deprecated use {@link #postDatumCapturedEvent(Datum)}
-	 */
-	@Deprecated
-	protected final void postDatumCapturedEvent(final Datum datum,
-			final Class<? extends Datum> eventDatumType) {
-		postDatumCapturedEvent(datum);
-	}
-
-	/**
-	 * Create a new {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED}
-	 * {@link Event} object out of a {@link Datum}.
-	 * 
-	 * <p>
-	 * This method will populate all simple properties of the given
-	 * {@link Datum} into the event properties, along with the
-	 * {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE}.
-	 * 
-	 * @param datum
-	 *        the datum to create the event for
-	 * @param eventDatumType
-	 *        the Datum class to use for the
-	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
-	 * @return the new Event instance
-	 * @since 1.4
-	 * @deprecated use {@link #createDatumCapturedEvent(Datum)}
-	 */
-	@Deprecated
-	protected Event createDatumCapturedEvent(final Datum datum,
-			final Class<? extends Datum> eventDatumType) {
-		return createDatumCapturedEvent(datum);
-	}
-
-	/**
 	 * Post an {@link Event}.
 	 * 
 	 * <p>
@@ -872,28 +826,9 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 		if ( datum == null ) {
 			return;
 		}
-		Event event = createDatumCapturedEvent(datum);
+		Event event = datumCapturedEvent(datum);
+		log.debug("Created {} event with datum {}", event.getTopic(), datum);
 		postEvent(event);
-	}
-
-	/**
-	 * Create a new {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED}
-	 * {@link Event} object out of a {@link Datum}.
-	 * 
-	 * <p>
-	 * This method uses the result of {@link Datum#asSimpleMap()} as the event
-	 * properties.
-	 * </p>
-	 * 
-	 * @param datum
-	 *        the datum to create the event for
-	 * @return the new Event instance
-	 * @since 1.5
-	 */
-	protected Event createDatumCapturedEvent(Datum datum) {
-		Map<String, ?> props = datum.asSimpleMap();
-		log.debug("Created {} event with props {}", DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
-		return new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
 	}
 
 	/**
@@ -1046,6 +981,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	 * @return the message source, or {@literal null}
 	 * @since 1.5
 	 */
+	@Override
 	public MessageSource getMessageSource() {
 		return messageSource;
 	}
@@ -1057,6 +993,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport {
 	 *        the message source to use
 	 * @since 1.5
 	 */
+	@Override
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}

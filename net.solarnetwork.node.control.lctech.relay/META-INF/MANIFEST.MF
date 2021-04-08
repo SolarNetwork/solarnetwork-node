@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: LC Tech Relay Toggle Control
 Bundle-Description: Service to open and close LC Tech relays.
 Bundle-SymbolicName: net.solarnetwork.node.control.lctech.relay
-Bundle-Version: 2.0.1
+Bundle-Version: 2.1.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.control.lctech.relay
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -17,7 +17,7 @@ Import-Package:
  net.solarnetwork.node.reactor;version="[1.5,2.0)",
  net.solarnetwork.node.settings;version="[1.11,2.0)",
  net.solarnetwork.node.settings.support;version="[1.9.1,2.0)",
- net.solarnetwork.node.support;version="[1.21,2.0)",
+ net.solarnetwork.node.support;version="[1.24,2.0)",
  net.solarnetwork.node.util;version="[1.7.2,2.0)",
  net.solarnetwork.util;version="[1.40,2.0)",
  org.aopalliance.aop;version="[1.0,2.0)",

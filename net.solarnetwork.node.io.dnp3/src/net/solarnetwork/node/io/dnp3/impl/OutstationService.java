@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -95,7 +96,7 @@ import net.solarnetwork.util.StringUtils;
  * events to DNP3.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class OutstationService extends AbstractApplicationService
 		implements EventHandler, SettingSpecifierProvider {
@@ -456,8 +457,8 @@ public class OutstationService extends AbstractApplicationService
 	}
 
 	private void handleDatumCapturedEvent(Event event) {
-		Object sourceId = event.getProperty(Datum.SOURCE_ID);
-		if ( sourceId == null ) {
+		final Object datum = event.getProperty(Datum.DATUM_PROPERTY);
+		if ( !(datum instanceof Datum && ((Datum) datum).getSourceId() != null) ) {
 			return;
 		}
 
@@ -467,17 +468,17 @@ public class OutstationService extends AbstractApplicationService
 
 				@Override
 				public void run() {
-					applyDatumCapturedUpdates(sourceId.toString(), event);
+					applyDatumCapturedUpdates((Datum) datum, event);
 				}
 			});
 		} else {
-			applyDatumCapturedUpdates(sourceId.toString(), event);
+			applyDatumCapturedUpdates((Datum) datum, event);
 		}
 	}
 
 	private void handleControlInfoCapturedEvent(Event event) {
-		Object sourceId = event.getProperty(Datum.SOURCE_ID);
-		if ( sourceId == null ) {
+		final Object datum = event.getProperty(Datum.DATUM_PROPERTY);
+		if ( !(datum instanceof Datum && ((Datum) datum).getSourceId() != null) ) {
 			return;
 		}
 
@@ -487,16 +488,16 @@ public class OutstationService extends AbstractApplicationService
 
 				@Override
 				public void run() {
-					applyDatumCapturedUpdates(sourceId.toString(), event);
+					applyDatumCapturedUpdates((Datum) datum, event);
 				}
 			});
 		} else {
-			applyDatumCapturedUpdates(sourceId.toString(), event);
+			applyDatumCapturedUpdates((Datum) datum, event);
 		}
 	}
 
-	private void applyDatumCapturedUpdates(String sourceId, Event event) {
-		OutstationChangeSet changes = changeSetForDatumCapturedEvent(sourceId.toString(), event);
+	private void applyDatumCapturedUpdates(Datum datum, Event event) {
+		OutstationChangeSet changes = changeSetForDatumCapturedEvent(datum, event);
 		if ( changes == null ) {
 			return;
 		}
@@ -509,19 +510,20 @@ public class OutstationService extends AbstractApplicationService
 		}
 	}
 
-	private OutstationChangeSet changeSetForDatumCapturedEvent(final String sourceId,
-			final Event event) {
+	private OutstationChangeSet changeSetForDatumCapturedEvent(final Datum datum, final Event event) {
 		Map<MeasurementType, List<MeasurementConfig>> map = measurementTypeMap(getMeasurementConfigs());
 		Map<ControlType, List<ControlConfig>> controlMap = controlTypeMap(getControlConfigs());
-		if ( event == null
+		if ( datum == null
 				|| ((map == null || map.isEmpty()) && (controlMap == null || controlMap.isEmpty())) ) {
 			return null;
 		}
-		Object timestamp = event.getProperty(Datum.TIMESTAMP);
-		if ( timestamp == null || !(timestamp instanceof Number) ) {
+		final String sourceId = datum.getSourceId();
+		final Date timestamp = datum.getCreated();
+		if ( timestamp == null ) {
 			return null;
 		}
-		final long ts = ((Number) timestamp).longValue();
+		final long ts = timestamp.getTime();
+		final Map<String, ?> datumProps = datum.getSampleData();
 		OutstationChangeSet changes = null;
 		if ( map != null ) {
 			for ( Map.Entry<MeasurementType, List<MeasurementConfig>> me : map.entrySet() ) {
@@ -530,7 +532,7 @@ public class OutstationService extends AbstractApplicationService
 				for ( ListIterator<MeasurementConfig> itr = list.listIterator(); itr.hasNext(); ) {
 					MeasurementConfig config = itr.next();
 					if ( sourceId.equals(config.getSourceId()) ) {
-						Object propVal = event.getProperty(config.getPropertyName());
+						Object propVal = datumProps.get(config.getPropertyName());
 						if ( propVal != null ) {
 							if ( propVal instanceof Number ) {
 								if ( config.getUnitMultiplier() != null ) {
@@ -626,7 +628,7 @@ public class OutstationService extends AbstractApplicationService
 							int index = (type == ControlType.Analog ? analogStatusOffset
 									: binaryStatusOffset) + itr.previousIndex();
 
-							Object propVal = event.getProperty("value");
+							Object propVal = datumProps.get("value");
 							log.debug("Updating DNP3 control {}[{}] from [{}].value -> {}", type, index,
 									sourceId, propVal);
 							switch (type) {
