@@ -33,6 +33,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -46,11 +47,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.easymock.Capture;
@@ -77,6 +76,8 @@ import net.solarnetwork.node.datum.canbus.CanbusDatumDataSource;
 import net.solarnetwork.node.datum.canbus.CanbusMessageConfig;
 import net.solarnetwork.node.datum.canbus.CanbusPropertyConfig;
 import net.solarnetwork.node.datum.canbus.ExpressionConfig;
+import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.GeneralDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.io.canbus.socketcand.msg.FrameMessageImpl;
 import net.solarnetwork.node.io.canbus.support.MeasurementHelper;
@@ -179,19 +180,17 @@ public class CanbusDatumDataSourceTests {
 		assertThat("Event topic", event.getTopic(), equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
 		Map<String, Object> evtProps = eventProps(event);
 		log.debug("Got datum captured event: {}", evtProps);
-		Set<String> expectedKeys = new HashSet<>(5 + expectedData.size());
-		expectedKeys.add("event.topics");
-		expectedKeys.add("_DatumType");
-		expectedKeys.add("_DatumTypes");
-		expectedKeys.add("created");
-		expectedKeys.add("sourceId");
-		expectedKeys.addAll(expectedData.keySet());
-		assertThat("Event property keys", evtProps.keySet(), equalTo(expectedKeys));
-		assertThat("Event creation date at least", (Long) evtProps.get("created"),
+		assertThat("Event property keys", evtProps.keySet(), containsInAnyOrder(Datum.DATUM_PROPERTY,
+				Datum.DATUM_TYPE_PROPERTY, Datum.DATUM_TYPES_PROPERTY, "event.topics"));
+		Object o = evtProps.get(Datum.DATUM_PROPERTY);
+		assertThat("Event Datum is GeneralDatum", o, instanceOf(GeneralDatum.class));
+		GeneralDatum datum = (GeneralDatum) o;
+		assertThat("Event creation date at least", datum.getCreated().getTime(),
 				greaterThanOrEqualTo(minDate));
+		Map<String, ?> datumProps = datum.getSampleData();
 		for ( Map.Entry<String, Object> me : expectedData.entrySet() ) {
 			if ( me.getValue() != null ) {
-				assertThat("Event property " + me.getKey() + " value", evtProps.get(me.getKey()),
+				assertThat("Event datum property " + me.getKey() + " value", datumProps.get(me.getKey()),
 						equalTo(me.getValue()));
 			}
 		}
@@ -354,7 +353,8 @@ public class CanbusDatumDataSourceTests {
 		assertThat("Event generated", evt, notNullValue());
 		assertThat("Event topic", evt.getTopic(), equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
 		assertDatumCapturedEvent(evt, start, TEST_SOURCE, singletonMap("distance", null));
-		assertThat("Event distance", ((Number) evt.getProperty("distance")).toString(),
+		Map<String, ?> eventDatumProps = ((Datum) evt.getProperty(Datum.DATUM_PROPERTY)).getSampleData();
+		assertThat("Event distance", ((Number) eventDatumProps.get("distance")).toString(),
 				equalTo("0.017"));
 
 		assertThat("Datum captured", d, notNullValue());
