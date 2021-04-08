@@ -186,6 +186,17 @@
 											</property>
 										</bean>	
 									</property>
+									<property name="samplesTransformService">
+										<bean class="net.solarnetwork.util.DynamicServiceTracker">
+											<property name="bundleContext" ref="bundleContext"/>
+											<property name="serviceClassName" value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
+											<property name="propertyFilters">
+												<map>
+													<entry key="UID" value=""/>
+												</map>
+											</property>
+										</bean>	
+									</property>
 								</bean>
 							</entry>
 						</map>
