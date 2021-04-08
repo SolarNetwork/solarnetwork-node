@@ -94,6 +94,9 @@ public class FluxUploadService extends BaseMqttConnectionService
 	/** The default value for the {@code includeVersionTag} property. */
 	public static final boolean DEFAULT_INCLUDE_VERSION_TAG = true;
 
+	private final ConcurrentMap<String, Long> SOURCE_CAPTURE_TIMES = new ConcurrentHashMap<>(16, 0.9f,
+			2);
+
 	private final ObjectMapper objectMapper;
 	private final IdentityService identityService;
 	private String requiredOperationalMode;
@@ -229,9 +232,6 @@ public class FluxUploadService extends BaseMqttConnectionService
 			task.run();
 		}
 	}
-
-	private static ConcurrentMap<String, Long> SOURCE_CAPTURE_TIMES = new ConcurrentHashMap<>(16, 0.9f,
-			2);
 
 	private boolean shouldPublishDatum(String sourceId, Map<String, Object> data) {
 		FluxFilterConfig[] filters = getFilters();
