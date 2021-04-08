@@ -407,7 +407,7 @@ public class ModbusToggler extends ModbusDeviceSupport
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
 	 * 
-	 * @param sampleCacheSecondsMs
+	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 * @since 1.3
 	 */
