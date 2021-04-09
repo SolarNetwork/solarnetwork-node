@@ -146,8 +146,8 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 			return changed;
 		}
 
-		private void setSynced() {
-			lastSync = System.currentTimeMillis();
+		private void setSynced(long timestamp) {
+			lastSync = timestamp;
 		}
 
 		private boolean needsSync() {
@@ -183,8 +183,18 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	public void run() {
 		// sync all metadata that requires it
 		for ( Map.Entry<String, CachedMetadata> me : sourceMetadata.entrySet() ) {
-			if ( me.getValue().needsSync() ) {
-				syncMetadata(me.getKey(), me.getValue().metadata);
+			CachedMetadata m = me.getValue();
+			GeneralDatumMetadata metaToSync = null;
+			long timestamp = 0;
+			synchronized ( m ) {
+				if ( m.needsSync() ) {
+					// create thread-safe copy
+					metaToSync = new GeneralDatumMetadata(m.metadata);
+					timestamp = System.currentTimeMillis();
+				}
+			}
+			if ( metaToSync != null ) {
+				syncMetadata(me.getKey(), metaToSync, timestamp);
 			}
 		}
 	}
@@ -313,24 +323,36 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	public void addSourceMetadata(String sourceId, GeneralDatumMetadata meta) {
 		log.debug("Adding metadata to source {}: {}", sourceId, meta.getPm());
 		CachedMetadata cachedMetadata = getCachedMetadata(sourceId);
-		if ( cachedMetadata.addMetadata(meta) && updateThrottleSeconds < 1 ) {
-			syncMetadata(sourceId, cachedMetadata.metadata);
-		} else if ( log.isDebugEnabled() ) {
+		boolean changed = false;
+		GeneralDatumMetadata metaToSync = null;
+		long timestamp = 0;
+		synchronized ( cachedMetadata ) {
+			changed = cachedMetadata.addMetadata(meta);
+			if ( changed && updateThrottleSeconds < 1 ) {
+				metaToSync = new GeneralDatumMetadata(cachedMetadata.metadata);
+				timestamp = System.currentTimeMillis();
+			}
+		}
+		if ( metaToSync != null ) {
+			syncMetadata(sourceId, metaToSync, timestamp);
+		} else if ( !changed && log.isDebugEnabled() ) {
 			log.debug("Metadata has not changed for source {}", sourceId);
 		}
 	}
 
-	private void syncMetadata(String sourceId, GeneralDatumMetadata metadata) {
-		final GeneralDatumMetadata meta = new GeneralDatumMetadata(metadata);
+	private void syncMetadata(final String sourceId, final GeneralDatumMetadata metadata,
+			final long timestamp) {
 		final String url = nodeSourceMetadataUrl(sourceId);
 		log.info("Posting metadata for source {}", sourceId);
 		try {
-			final InputStream in = jsonPOST(url, meta);
+			final InputStream in = jsonPOST(url, metadata);
 			verifyResponseSuccess(in);
-			persistMetadataLocally(sourceId, meta);
+			persistMetadataLocally(sourceId, metadata);
 			CachedMetadata cachedMetadata = sourceMetadata.get(sourceId);
 			if ( cachedMetadata != null ) {
-				cachedMetadata.setSynced();
+				synchronized ( cachedMetadata ) {
+					cachedMetadata.setSynced(timestamp);
+				}
 			}
 		} catch ( IOException e ) {
 			if ( log.isTraceEnabled() ) {
