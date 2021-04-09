@@ -25,7 +25,10 @@ package net.solarnetwork.node.datum.control;
 import static java.util.Collections.singleton;
 import static net.solarnetwork.util.OptionalService.service;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -33,6 +36,7 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.dao.DatumDao;
@@ -41,6 +45,7 @@ import net.solarnetwork.node.domain.GeneralNodeControlInfoDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.util.OptionalService;
@@ -55,11 +60,15 @@ import net.solarnetwork.util.OptionalService;
 public class NodeControlInfoDatumDataSource extends BaseIdentifiable
 		implements SettingSpecifierProvider, EventHandler {
 
+	/** The default {@code eventMode} property value: {@literal Change}. */
+	public static final ControlEventMode DEFAULT_EVENT_MODE = ControlEventMode.Change;
+
 	private static final Logger log = LoggerFactory.getLogger(NodeControlInfoDatumDataSource.class);
 
 	private OptionalService<DatumDao<GeneralNodeDatum>> datumDao;
 	private Executor executor;
 	private Pattern controlIdRegex;
+	private ControlEventMode eventMode = DEFAULT_EVENT_MODE;
 
 	@Override
 	public void handleEvent(Event event) {
@@ -124,10 +133,26 @@ public class NodeControlInfoDatumDataSource extends BaseIdentifiable
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> result = new ArrayList<>(3);
-		result.addAll(baseIdentifiableSettings(""));
-		result.add(new BasicTextFieldSettingSpecifier("controlIdRegexValue", ""));
-		return result;
+		List<SettingSpecifier> results = new ArrayList<>(3);
+		results.addAll(baseIdentifiableSettings(""));
+		results.add(new BasicTextFieldSettingSpecifier("controlIdRegexValue", ""));
+
+		// drop-down menu for event mode
+		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
+				"eventModeValue", DEFAULT_EVENT_MODE.name());
+		Map<String, String> propTypeTitles = new LinkedHashMap<>(3);
+		MessageSource ms = getMessageSource();
+		for ( ControlEventMode e : ControlEventMode.values() ) {
+			String desc = e.toString();
+			if ( ms != null ) {
+				desc = ms.getMessage("eventMode." + e.name(), null, e.name(), Locale.getDefault());
+			}
+			propTypeTitles.put(e.name(), desc);
+		}
+		propTypeSpec.setValueTitles(propTypeTitles);
+		results.add(propTypeSpec);
+
+		return results;
 	}
 
 	/**
@@ -207,6 +232,55 @@ public class NodeControlInfoDatumDataSource extends BaseIdentifiable
 			}
 		}
 		setControlIdRegex(p);
+	}
+
+	/**
+	 * Get the control event mode.
+	 * 
+	 * @return the mode, never {@literal null}
+	 */
+	public ControlEventMode getEventMode() {
+		return eventMode;
+	}
+
+	/**
+	 * Set the control event mode.
+	 * 
+	 * @param eventMode
+	 *        the mode to set; if {@literal null} then
+	 *        {@link #DEFAULT_EVENT_MODE} will be set instead
+	 */
+	public void setEventMode(ControlEventMode eventMode) {
+		if ( eventMode == null ) {
+			eventMode = DEFAULT_EVENT_MODE;
+		}
+		this.eventMode = eventMode;
+	}
+
+	/**
+	 * Get the control event mode string value.
+	 * 
+	 * @return the mode as a string, never {@literal null}
+	 */
+	public String getEventModeValue() {
+		return getEventMode().name();
+	}
+
+	/**
+	 * Set the control event mode as a string value.
+	 * 
+	 * @param value
+	 *        the mode to set; if {@literal null} then
+	 *        {@link #DEFAULT_EVENT_MODE} will be set instead
+	 */
+	public void setEventModeValue(String value) {
+		ControlEventMode mode;
+		try {
+			mode = ControlEventMode.valueOf(value);
+		} catch ( IllegalArgumentException | NullPointerException e ) {
+			mode = DEFAULT_EVENT_MODE;
+		}
+		setEventMode(mode);
 	}
 
 }
