@@ -73,8 +73,15 @@ public class NodeControlInfoDatumDataSource extends BaseIdentifiable
 	@Override
 	public void handleEvent(Event event) {
 		final String topic = event.getTopic();
-		if ( !(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED.equals(topic)
-				|| NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED.equals(topic)) ) {
+		if ( NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED.equals(topic) ) {
+			if ( eventMode == ControlEventMode.Change ) {
+				return;
+			}
+		} else if ( NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED.equals(topic) ) {
+			if ( eventMode == ControlEventMode.Capture ) {
+				return;
+			}
+		} else {
 			return;
 		}
 		final Object val = event.getProperty(Datum.DATUM_PROPERTY);
