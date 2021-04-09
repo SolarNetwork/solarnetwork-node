@@ -216,11 +216,15 @@ public class FluxUploadService extends BaseMqttConnectionService
 								requiredOperationalMode);
 						return;
 					}
+					String sourceId = sourceIdForEvent(event);
+					if ( sourceId == null || sourceId.isEmpty() ) {
+						return;
+					}
 					Map<String, Object> data = mapForEvent(event);
 					if ( data == null || data.isEmpty() ) {
 						return;
 					}
-					publishDatum(data);
+					publishDatum(sourceId, data);
 				}
 			}
 
@@ -253,16 +257,11 @@ public class FluxUploadService extends BaseMqttConnectionService
 		return true;
 	}
 
-	private void publishDatum(Map<String, Object> data) {
+	private void publishDatum(String sourceId, Map<String, Object> data) {
 		final Long nodeId = identityService.getNodeId();
 		if ( nodeId == null ) {
 			return;
 		}
-		final Object sourceIdObj = data.get("sourceId");
-		if ( sourceIdObj == null ) {
-			return;
-		}
-		String sourceId = sourceIdObj.toString().trim();
 		if ( !shouldPublishDatum(sourceId, data) ) {
 			return;
 		}
@@ -298,6 +297,21 @@ public class FluxUploadService extends BaseMqttConnectionService
 						getMqttConfig().getServerUri(), msg);
 			}
 		}
+	}
+
+	private String sourceIdForEvent(Event event) {
+		if ( event == null ) {
+			return null;
+		}
+		Object val = event.getProperty(Datum.SOURCE_ID);
+		if ( val != null ) {
+			return val.toString().trim();
+		}
+		val = event.getProperty(Datum.DATUM_PROPERTY);
+		if ( val instanceof Datum ) {
+			return ((Datum) val).getSourceId();
+		}
+		return null;
 	}
 
 	private Map<String, Object> mapForEvent(Event event) {

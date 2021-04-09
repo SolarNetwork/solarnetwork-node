@@ -23,6 +23,7 @@
 package net.solarnetwork.node.upload.flux.test;
 
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static net.solarnetwork.common.mqtt.MqttConnectReturnCode.Accepted;
 import static org.easymock.EasyMock.anyObject;
@@ -30,6 +31,7 @@ import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
@@ -45,7 +47,6 @@ import java.util.UUID;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
-import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -148,7 +149,7 @@ public class FluxUploadServiceTests {
 				continue;
 			}
 			assertThat("Published data prop " + me.getKey(), publishedMsgBody,
-					Matchers.hasEntry(me.getKey(), me.getValue()));
+					hasEntry(me.getKey(), me.getValue()));
 		}
 	}
 
@@ -212,6 +213,69 @@ public class FluxUploadServiceTests {
 		datum.put(FluxUploadService.TAG_VERSION, 2);
 		datum.put(Datum.TIMESTAMP, null);
 		assertMessage(publishedMsg, TEST_SOURCE_ID, datum);
+	}
+
+	@Test
+	public void postDatum_globalExcludeProps() throws Exception {
+		// GIVEN
+		service.setExcludePropertyNamesRegex("w.*");
+
+		expectMqttConnectionSetup();
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		Map<String, Object> datum = new HashMap<>(4);
+		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
+		datum.put("watts", 1234);
+		datum.put("wattHours", 2345);
+		datum.put("foo", 3456);
+		postEvent(datum);
+
+		// THEN
+		MqttMessage publishedMsg = msgCaptor.getValue();
+
+		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
+		filteredDatum.put("_DatumType", "net.solarnetwork.node.domain.Datum");
+		filteredDatum.put("_DatumTypes", asList("net.solarnetwork.node.domain.Datum",
+				"net.solarnetwork.node.domain.GeneralDatum"));
+		filteredDatum.remove("watts");
+		filteredDatum.remove("wattHours");
+		filteredDatum.put(Datum.TIMESTAMP, null);
+		assertMessage(publishedMsg, TEST_SOURCE_ID, filteredDatum);
+	}
+
+	@Test
+	public void postDatum_globalExcludeProps_underscoreOrSourceId() throws Exception {
+		// GIVEN
+		service.setExcludePropertyNamesRegex("(_.*|sourceId)");
+
+		expectMqttConnectionSetup();
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		Map<String, Object> datum = new HashMap<>(4);
+		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
+		datum.put("watts", 1234);
+		datum.put("wattHours", 2345);
+		postEvent(datum);
+
+		// THEN
+		MqttMessage publishedMsg = msgCaptor.getValue();
+
+		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
+		filteredDatum.put(Datum.TIMESTAMP, null);
+		filteredDatum.remove(Datum.SOURCE_ID);
+		assertMessage(publishedMsg, TEST_SOURCE_ID, filteredDatum);
 	}
 
 	@Test
