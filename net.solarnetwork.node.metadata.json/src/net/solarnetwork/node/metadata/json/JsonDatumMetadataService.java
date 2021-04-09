@@ -164,6 +164,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 			syncTask = null;
 		}
 		if ( updateThrottleSeconds > 1 ) {
+			log.info("Scheduling metdata synchroniztion at {} seconds", updateThrottleSeconds);
 			syncTask = taskScheduler.scheduleWithFixedDelay(this,
 					new Date(System.currentTimeMillis()
 							+ TimeUnit.SECONDS.toMillis(updateThrottleSeconds)),
