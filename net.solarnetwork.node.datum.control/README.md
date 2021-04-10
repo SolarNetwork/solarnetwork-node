@@ -1,4 +1,4 @@
-# SolarNode Simple Control Datum Logger
+# SolarNode Control Event Datum Logger
 
 This SolarNode plugin provides a component that can generate a datum stream from SolarNode control
 values.
