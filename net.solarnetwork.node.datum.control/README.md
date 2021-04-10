@@ -36,5 +36,3 @@ The **Mode** setting allows you to configure which control events are turned int
 | Sampled | Emitted when some plugin reads (samples) a control value. |
 | Changed | Emitted when a plugin writes (changes) a control value.   |
 | Sampled and changed | Generate datum from both **Sampled** and **Changed** control events. |
-
-[cron-exp]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Cron-Job-Syntax
