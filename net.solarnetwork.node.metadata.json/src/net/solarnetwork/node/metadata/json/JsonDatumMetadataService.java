@@ -158,13 +158,16 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	/**
 	 * Call once after properties have been configured.
 	 */
-	public void startup() {
+	public synchronized void startup() {
+		boolean cancelled = false;
 		if ( syncTask != null ) {
-			syncTask.cancel(false);
+			syncTask.cancel(true);
 			syncTask = null;
+			cancelled = true;
 		}
 		if ( updateThrottleSeconds > 1 ) {
-			log.info("Scheduling metdata synchroniztion at {} seconds", updateThrottleSeconds);
+			log.info("{}cheduling metdata synchroniztion at {} seconds", (cancelled ? "Res" : "S"),
+					updateThrottleSeconds);
 			syncTask = taskScheduler.scheduleWithFixedDelay(this,
 					new Date(System.currentTimeMillis()
 							+ TimeUnit.SECONDS.toMillis(updateThrottleSeconds)),
