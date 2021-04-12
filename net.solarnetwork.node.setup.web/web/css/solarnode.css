@@ -409,3 +409,8 @@ div.plugin .desc {
 	text-indent: 0;
 	color: white;
 }
+
+/* popover content line-height is reset :-( */
+.carousel .popover-content {
+	line-height: 20px;
+}
