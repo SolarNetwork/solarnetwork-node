@@ -244,7 +244,7 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 			final BigDecimal currVal = samples.getInstantaneousSampleBigDecimal(config.getPropertyKey());
 			final PropertySamples propSamples = samplesForConfig(config, d.getSourceId());
 			if ( currVal == null ) {
-				log.warn(
+				log.debug(
 						"Source {} instantaneous property [{}] not available, cannot populate virtual meter reading",
 						d.getSourceId(), config.getPropertyKey());
 				continue;
@@ -274,7 +274,7 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 							meterPropMap);
 				} else if ( prevDate >= date ) {
 					log.warn(
-							"Source {} virtual meter reading date {} for {} not older than current time, will not populate reading",
+							"Source {} virtual meter reading date {} for {} not older than sample date, will not populate reading",
 							d.getSourceId(), new Date(prevDate), meterPropName);
 					continue;
 				} else if ( (date - prevDate) > config.getMaxAgeSeconds() * 1000 ) {

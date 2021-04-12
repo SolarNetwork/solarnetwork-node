@@ -316,7 +316,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 			}
 			BigDecimal currVal = d.getInstantaneousSampleBigDecimal(config.getPropertyKey());
 			if ( currVal == null ) {
-				log.warn(
+				log.debug(
 						"Instantaneous property [{}] not available, cannot populate virtual meter reading",
 						config.getPropertyKey());
 				continue;
