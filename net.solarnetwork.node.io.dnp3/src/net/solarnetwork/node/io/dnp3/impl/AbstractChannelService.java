@@ -138,6 +138,8 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 	 * @param configuration
 	 *        the configuration
 	 * @return the channel
+	 * @throws DNP3Exception
+	 *         if any DNP3 error occurs
 	 */
 	protected abstract Channel createChannel(C configuration) throws DNP3Exception;
 

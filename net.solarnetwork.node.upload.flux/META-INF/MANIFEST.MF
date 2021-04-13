@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SolarFlux Upload
 Bundle-SymbolicName: net.solarnetwork.node.upload.flux
 Bundle-Description: Upload datump created by other SolarNode plugins to a SolarFlux-compatible MQTT server.
-Bundle-Version: 1.5.1
+Bundle-Version: 1.6.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.upload.flux
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -18,12 +18,12 @@ Import-Package:
  javax.net.ssl,
  net.solarnetwork.common.mqtt;version="[1.0,2.0)",
  net.solarnetwork.domain;version="[1.14,2.0)",
- net.solarnetwork.node;version="[1.25,2.0)",
+ net.solarnetwork.node;version="[1.31,2.0)",
  net.solarnetwork.node.dao;version="[1.8,2.0)",
- net.solarnetwork.node.domain;version="[1.12,2.0)",
+ net.solarnetwork.node.domain;version="[1.23,2.0)",
  net.solarnetwork.node.settings;version="[1.10,2.0)",
  net.solarnetwork.node.settings.support;version="[1.8.1,2.0)",
- net.solarnetwork.node.support;version="[1.15,2.0)",
+ net.solarnetwork.node.support;version="[1.24,2.0)",
  net.solarnetwork.settings;version="[1.2,2.0)",
  net.solarnetwork.support;version="[1.9,2.0)",
  net.solarnetwork.util;version="[1.32,2.0)",

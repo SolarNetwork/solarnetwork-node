@@ -316,7 +316,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 			}
 			BigDecimal currVal = d.getInstantaneousSampleBigDecimal(config.getPropertyKey());
 			if ( currVal == null ) {
-				log.warn(
+				log.debug(
 						"Instantaneous property [{}] not available, cannot populate virtual meter reading",
 						config.getPropertyKey());
 				continue;
@@ -342,8 +342,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 					log.info("Virtual meter {} status: {}", meterPropName, meterPropMap);
 				} else if ( prevDate >= date ) {
 					log.warn(
-							"Virtual meter reading date {} for {} not older than current time, will not populate reading",
-							new Date(prevDate), meterPropName);
+							"Virtual meter reading date {} for {} not older than sample time {}, will not populate reading",
+							new Date(prevDate), meterPropName, new Date(date));
 					continue;
 				} else if ( (date - prevDate) > config.getMaxAgeSeconds() * 1000 ) {
 					log.warn(

@@ -375,3 +375,42 @@ div.plugin .desc {
 	stroke: #000;
 	stroke-width 1px;
 }
+
+/* carousel */
+
+.carousel-indicators li {
+	background-color: #777;
+	border: none;
+	margin: 10px;
+	cursor: pointer;
+}
+
+.carousel-indicators li + li {
+	margin: 10px;
+}
+
+.carousel-indicators .active {
+	background-color: #d6ad15;
+	border: none;
+}
+
+.carousel .form-actions.top {
+	padding-top: 17px;
+	padding-bottom: 18px;
+	padding-left: 20px;
+}
+
+.carousel-indicators.numbered > li {
+	font-size: 10px;
+	line-height: 10px;
+	padding: 4px;
+	text-align: center;
+	margin: 10px 8px;
+	text-indent: 0;
+	color: white;
+}
+
+/* popover content line-height is reset :-( */
+.carousel .popover-content {
+	line-height: 20px;
+}

@@ -23,6 +23,7 @@
 package net.solarnetwork.node.upload.flux.test;
 
 import static java.lang.String.format;
+import static java.util.Arrays.asList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static net.solarnetwork.common.mqtt.MqttConnectReturnCode.Accepted;
 import static org.easymock.EasyMock.anyObject;
@@ -30,12 +31,14 @@ import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -56,6 +59,8 @@ import net.solarnetwork.common.mqtt.MqttQos;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.support.DatumEvents;
 import net.solarnetwork.node.upload.flux.FluxFilterConfig;
 import net.solarnetwork.node.upload.flux.FluxUploadService;
 import net.solarnetwork.util.JsonUtils;
@@ -106,9 +111,25 @@ public class FluxUploadServiceTests {
 		expect(connection.isEstablished()).andReturn(true).anyTimes();
 	}
 
-	private void postEvent(Map<String, Object> datum) {
-		datum.put(Datum.TIMESTAMP, System.currentTimeMillis());
-		Event event = new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, datum);
+	private void postEvent(Map<String, Object> datumProps) {
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setCreated(new Date());
+		for ( Map.Entry<String, ?> me : datumProps.entrySet() ) {
+			String k = me.getKey();
+			Object v = me.getValue();
+			if ( v == null ) {
+				continue;
+			}
+			if ( Datum.SOURCE_ID.equals(k) ) {
+				datum.setSourceId(v.toString());
+			} else if ( v instanceof Number ) {
+				datum.putInstantaneousSampleValue(k, (Number) v);
+			} else {
+				datum.putStatusSampleValue(k, v);
+			}
+
+		}
+		Event event = DatumEvents.datumEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, datum);
 		service.handleEvent(event);
 	}
 
@@ -121,7 +142,15 @@ public class FluxUploadServiceTests {
 
 		Map<String, Object> publishedMsgBody = JsonUtils
 				.getStringMap(new String(publishedMsg.getPayload(), Charset.forName("UTF-8")));
-		assertThat("Published data as map", publishedMsgBody, equalTo(datum));
+		assertThat("Published data keys", publishedMsgBody.keySet(), equalTo(datum.keySet()));
+		for ( Map.Entry<String, ?> me : datum.entrySet() ) {
+			if ( me.getValue() == null ) {
+				// ignore null values
+				continue;
+			}
+			assertThat("Published data prop " + me.getKey(), publishedMsgBody,
+					hasEntry(me.getKey(), me.getValue()));
+		}
 	}
 
 	private Map<String, Object> publishLoop(long length, Map<String, Object> datum) throws Exception {
@@ -131,6 +160,7 @@ public class FluxUploadServiceTests {
 			postEvent(datum);
 			if ( result == null ) {
 				result = new LinkedHashMap<>(datum);
+				result.put(Datum.TIMESTAMP, null);
 			}
 			Thread.sleep(200);
 		}
@@ -156,6 +186,7 @@ public class FluxUploadServiceTests {
 
 		// THEN
 		MqttMessage publishedMsg = msgCaptor.getValue();
+		datum.put(Datum.TIMESTAMP, null);
 		assertMessage(publishedMsg, TEST_SOURCE_ID, datum);
 	}
 
@@ -180,7 +211,71 @@ public class FluxUploadServiceTests {
 		// THEN
 		MqttMessage publishedMsg = msgCaptor.getValue();
 		datum.put(FluxUploadService.TAG_VERSION, 2);
+		datum.put(Datum.TIMESTAMP, null);
 		assertMessage(publishedMsg, TEST_SOURCE_ID, datum);
+	}
+
+	@Test
+	public void postDatum_globalExcludeProps() throws Exception {
+		// GIVEN
+		service.setExcludePropertyNamesRegex("w.*");
+
+		expectMqttConnectionSetup();
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		Map<String, Object> datum = new HashMap<>(4);
+		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
+		datum.put("watts", 1234);
+		datum.put("wattHours", 2345);
+		datum.put("foo", 3456);
+		postEvent(datum);
+
+		// THEN
+		MqttMessage publishedMsg = msgCaptor.getValue();
+
+		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
+		filteredDatum.put("_DatumType", "net.solarnetwork.node.domain.Datum");
+		filteredDatum.put("_DatumTypes", asList("net.solarnetwork.node.domain.Datum",
+				"net.solarnetwork.node.domain.GeneralDatum"));
+		filteredDatum.remove("watts");
+		filteredDatum.remove("wattHours");
+		filteredDatum.put(Datum.TIMESTAMP, null);
+		assertMessage(publishedMsg, TEST_SOURCE_ID, filteredDatum);
+	}
+
+	@Test
+	public void postDatum_globalExcludeProps_underscoreOrSourceId() throws Exception {
+		// GIVEN
+		service.setExcludePropertyNamesRegex("(_.*|sourceId)");
+
+		expectMqttConnectionSetup();
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		Map<String, Object> datum = new HashMap<>(4);
+		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
+		datum.put("watts", 1234);
+		datum.put("wattHours", 2345);
+		postEvent(datum);
+
+		// THEN
+		MqttMessage publishedMsg = msgCaptor.getValue();
+
+		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
+		filteredDatum.put(Datum.TIMESTAMP, null);
+		filteredDatum.remove(Datum.SOURCE_ID);
+		assertMessage(publishedMsg, TEST_SOURCE_ID, filteredDatum);
 	}
 
 	@Test
@@ -234,6 +329,7 @@ public class FluxUploadServiceTests {
 
 		// THEN
 		MqttMessage publishedMsg = msgCaptor.getValue();
+		datum.put(Datum.TIMESTAMP, null);
 		assertMessage(publishedMsg, "not.filtered", datum);
 	}
 
@@ -301,6 +397,7 @@ public class FluxUploadServiceTests {
 		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
 		filteredDatum.remove("watts");
 		filteredDatum.remove("wattHours");
+		filteredDatum.put(Datum.TIMESTAMP, null);
 		assertMessage(publishedMsg, TEST_SOURCE_ID, filteredDatum);
 	}
 
@@ -335,6 +432,7 @@ public class FluxUploadServiceTests {
 		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
 		filteredDatum.remove("foo");
 		filteredDatum.remove("wattHours");
+		filteredDatum.put(Datum.TIMESTAMP, null);
 		assertMessage(publishedMsg, TEST_SOURCE_ID, filteredDatum);
 	}
 

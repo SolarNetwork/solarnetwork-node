@@ -29,79 +29,91 @@
 	</p>
 </section>
 
-<section id="settings">
+<section id="settings" class="carousel slide" data-interval="0">
+	<c:if test="${fn:length(providers) > 1}">
+		<ol class="carousel-indicators numbered">
+			<c:forEach items="${providers}" var="instance" varStatus="instanceStatus">
+				<li data-target="#settings" data-slide-to="${instanceStatus.index}"
+					class="${instanceStatus.index == 0 ? 'active' : ''}">${instance.key}</li>
+			</c:forEach>
+		</ol>
+	</c:if>
 	<form class="form-horizontal" action="<setup:url value='/a/settings/save'/>" method="post">
-		<c:forEach items="${providers}" var="instance" varStatus="instanceStatus">
-			<c:set var="instance" value="${instance}" scope="request"/>
-			<c:set var="provider" value="${instance.value}" scope="request"/>
-			<c:set var="instanceId" value="${provider.factoryInstanceUID}" scope="request"/>
-			<!--  ${provider.settingUID} -->
-	
-			<fieldset>
-				<legend>
-					<a id="${instance.key}" 
-						class="anchor" 
-						href="#${instance.key}"
-						aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>
-					<setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/>
-					${' '}
-					${instance.key}
-				</legend>
-				
-				<c:catch var="providerException">		
-					<c:forEach items="${provider.settingSpecifiers}" var="setting" varStatus="settingStatus">
-						<c:set var="setting" value="${setting}" scope="request"/>
-						<c:set var="settingId" value="m${instanceStatus.index}s0i${settingStatus.index}" scope="request"/>
-						<c:import url="/WEB-INF/jsp/a/settings/setting-control.jsp"/>
-					</c:forEach>
-				</c:catch>
-				<c:if test="${not empty providerException}">
-					<div class="alert alert-warning">
-						<fmt:message key="settings.error.provider.exception">
-							<fmt:param value="${providerException.cause.message}"/>
-						</fmt:message>
-					</div>
-				</c:if>
-				<div class="control-group">
-					<div class="controls">
-						<button type="button" class="btn btn-danger" id="del${instance.key}">
-							<fmt:message key='settings.factory.delete'>
-								<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
-								<fmt:param value="${instance.key}"/>
+		<c:if test="${fn:length(providers) > 0}">
+			<div class="form-actions top">
+				<button type="button" class="btn btn-primary" id="submit"><fmt:message key='settings.save'/></button>
+			</div>
+		</c:if>
+		<div class="carousel-inner">
+			<c:forEach items="${providers}" var="instance" varStatus="instanceStatus">
+				<c:set var="instance" value="${instance}" scope="request"/>
+				<c:set var="provider" value="${instance.value}" scope="request"/>
+				<c:set var="instanceId" value="${provider.factoryInstanceUID}" scope="request"/>
+				<!--  ${provider.settingUID} -->
+		
+				<fieldset class="item ${instanceStatus.index == 0 ? 'active' : ''}">
+					<legend>
+						<a id="${instance.key}" 
+							class="anchor" 
+							href="#${instance.key}"
+							aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>
+						<setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/>
+						${' '}
+						${instance.key}
+					</legend>
+					
+					<c:catch var="providerException">		
+						<c:forEach items="${provider.settingSpecifiers}" var="setting" varStatus="settingStatus">
+							<c:set var="setting" value="${setting}" scope="request"/>
+							<c:set var="settingId" value="m${instanceStatus.index}s0i${settingStatus.index}" scope="request"/>
+							<c:import url="/WEB-INF/jsp/a/settings/setting-control.jsp"/>
+						</c:forEach>
+					</c:catch>
+					<c:if test="${not empty providerException}">
+						<div class="alert alert-warning">
+							<fmt:message key="settings.error.provider.exception">
+								<fmt:param value="${providerException.cause.message}"/>
 							</fmt:message>
-						</button>
-						<script>
-						$('#del${instance.key}').click(function() {
-							SolarNode.Settings.deleteFactoryConfiguration({
-								button: this,
-								url: '<setup:url value="/a/settings/manage/delete"/>',
-										factoryUID: '${factory.factoryUID}',
-										instanceUID: '${instance.key}'
-									});
-								});
-								</script>
-								<button type="button" class="btn btn-primary" id="reset${instance.key}">
-									<fmt:message key='settings.factory.reset'>
-										<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
-										<fmt:param value="${instance.key}"/>
-									</fmt:message>
-								</button>
-								<script>
-								$('#reset${instance.key}').click(function() {
-									SolarNode.Settings.resetFactoryConfiguration({
-										button: this,
-										url: '<setup:url value="/a/settings/manage/reset"/>',
-										factoryUID: '${factory.factoryUID}',
-										instanceUID: '${instance.key}'
-									});
-								});
-								</script>
-							</div>
 						</div>
-					</fieldset>
-		</c:forEach>
-		<div class="form-actions">
-			<button type="button" class="btn btn-primary" id="submit"><fmt:message key='settings.save'/></button>
+					</c:if>
+					<div class="control-group">
+						<div class="controls">
+							<button type="button" class="btn btn-danger" id="del${instance.key}">
+								<fmt:message key='settings.factory.delete'>
+									<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
+									<fmt:param value="${instance.key}"/>
+								</fmt:message>
+							</button>
+							<script>
+							$('#del${instance.key}').click(function() {
+								SolarNode.Settings.deleteFactoryConfiguration({
+									button: this,
+									url: '<setup:url value="/a/settings/manage/delete"/>',
+											factoryUID: '${factory.factoryUID}',
+											instanceUID: '${instance.key}'
+										});
+									});
+							</script>
+							<button type="button" class="btn btn-primary" id="reset${instance.key}">
+								<fmt:message key='settings.factory.reset'>
+									<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
+									<fmt:param value="${instance.key}"/>
+								</fmt:message>
+							</button>
+							<script>
+							$('#reset${instance.key}').click(function() {
+								SolarNode.Settings.resetFactoryConfiguration({
+									button: this,
+									url: '<setup:url value="/a/settings/manage/reset"/>',
+									factoryUID: '${factory.factoryUID}',
+									instanceUID: '${instance.key}'
+								});
+							});
+							</script>
+						</div>
+					</div>
+				</fieldset>
+			</c:forEach>
 		</div>
 		<sec:csrfInput/>
 	</form>

@@ -67,7 +67,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Generic CAN bus datum data source.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, CanbusFrameListener {
@@ -123,7 +123,7 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 			return null;
 		}
 		GeneralNodeDatum d = createDatum(currSample);
-		if ( d.getSamples() == null || d.getSamples().isEmpty() ) {
+		if ( d == null || d.getSamples() == null || d.getSamples().isEmpty() ) {
 			return null;
 		}
 		return d;
@@ -135,6 +135,10 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 		d.setSourceId(resolvePlaceholders(sourceId));
 		populateDatumProperties(data, d, getMsgConfigs());
 		populateDatumProperties(data, d, getExpressionConfigs());
+		d = applySamplesTransformer(d, null);
+		if ( d == null ) {
+			return null;
+		}
 		return d;
 	}
 
@@ -388,6 +392,8 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 		List<SettingSpecifier> results = getIdentifiableSettingSpecifiers();
 		results.addAll(canbusDatumDataSourceSettingSpecifiers(""));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
+		results.add(new BasicTextFieldSettingSpecifier("samplesTransformService.propertyFilters['UID']",
+				null));
 		results.add(new BasicToggleSettingSpecifier("debug", false));
 		results.add(new BasicTextFieldSettingSpecifier("debugLogPath", DEFAULT_DEBUG_LOG));
 

@@ -90,6 +90,7 @@ public class BaseChannelConfiguration {
 	 * 
 	 * 
 	 * @param logLevels
+	 *        the log levels value to set
 	 * @see com.automatak.dnp3.LogLevels
 	 * @see com.automatak.dnp3.LogMasks
 	 */
@@ -126,7 +127,7 @@ public class BaseChannelConfiguration {
 	/**
 	 * Set the min retry delay as a number of seconds.
 	 * 
-	 * @param maxRetryDelaySecs
+	 * @param minRetryDelaySecs
 	 *        the number of seconds
 	 */
 	public void setMinRetryDelaySecs(int minRetryDelaySecs) {

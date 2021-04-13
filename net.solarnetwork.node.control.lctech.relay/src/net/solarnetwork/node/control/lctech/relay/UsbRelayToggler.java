@@ -45,16 +45,17 @@ import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.support.DatumEvents;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * Control a relay state: open or closed.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class UsbRelayToggler extends SerialDeviceSupport
-		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
+		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler, DatumEvents {
 
 	/** The default value for the {@code address} property. */
 	public static final int DEFAULT_ADDRESS = 0x01;
@@ -163,7 +164,8 @@ public class UsbRelayToggler extends SerialDeviceSupport
 	}
 
 	private void postControlEvent(NodeControlInfoDatum info, String topic) {
-		postEvent(new Event(topic, info.asSimpleMap()));
+		Event event = DatumEvents.datumEvent(topic, info);
+		postEvent(event);
 	}
 
 	// SettingSpecifierProvider

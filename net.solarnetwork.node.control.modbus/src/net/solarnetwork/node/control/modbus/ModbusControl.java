@@ -63,6 +63,7 @@ import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.node.support.DatumEvents;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.ByteUtils;
 import net.solarnetwork.util.NumberUtils;
@@ -73,10 +74,10 @@ import net.solarnetwork.util.StringUtils;
  * Read and write a Modbus "coil" or "holding" type register.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifierProvider,
-		NodeControlProvider, InstructionHandler, ModbusConnectionAction<ModbusData> {
+		NodeControlProvider, InstructionHandler, ModbusConnectionAction<ModbusData>, DatumEvents {
 
 	/** The default value for the {@code address} property. */
 	public static final int DEFAULT_ADDRESS = 0x0;
@@ -466,8 +467,8 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 		if ( admin == null ) {
 			return;
 		}
-		Map<String, ?> props = info.asSimpleMap();
-		admin.postEvent(new Event(topic, props));
+		Event event = DatumEvents.datumEvent(topic, info);
+		admin.postEvent(event);
 	}
 
 	// InstructionHandler

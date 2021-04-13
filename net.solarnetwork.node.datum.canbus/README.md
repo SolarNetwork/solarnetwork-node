@@ -95,6 +95,7 @@ Each device configuration contains the following overall settings:
 | CAN Bus Connection     | The **service name** of the CAN Bus Connection to use. |
 | Bus Name               | The CAN bus name to connect to. |
 | Source ID              | The source ID to assign to generated datum. |
+| Datum Filter Service   | The **service name** of the datum filter to apply to the data collected from the device, for example a [Virtual Meter Filter][vmf]. | 
 | Debug Mode             | When enabled, capture all CAN messages into the configured **Debug File**, and do **not** collect any datum. |
 | Debug File             | File path to write CAN messages to when **Debug Mode** is enabled. Accepts a single `%s` argument which will be replaced by the configured **Bus Name**. |
 | Message Configurations | A list of CAN bus message configurations that determine which datum properties are collected, from which CAN bus addresses. |
@@ -264,3 +265,4 @@ The root object is a [ExpressionRoot][ExpressionRoot] object, which has the foll
 [CanbusData]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node.io.canbus/src/net/solarnetwork/node/io/canbus/CanbusData.java
 [sn-kcd]: ../net.solarnetwork.node.io.canbus#solarnetwork-kcd-support
 [ucum]: http://unitsofmeasure.org/ucum.html
+[vmf]: ../net.solarnetwork.node.datum.samplefilter#virtual-meter-filter

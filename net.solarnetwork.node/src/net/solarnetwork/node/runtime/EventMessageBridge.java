@@ -24,7 +24,6 @@ package net.solarnetwork.node.runtime;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
@@ -40,6 +39,7 @@ import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.PlatformService;
 import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.dao.DatumDao;
+import net.solarnetwork.node.support.DatumEvents;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
@@ -47,7 +47,7 @@ import net.solarnetwork.util.StringUtils;
  * Bridge between OSGi EventAdmin events and a Spring Messaging.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class EventMessageBridge implements EventHandler {
 
@@ -101,7 +101,7 @@ public class EventMessageBridge implements EventHandler {
 
 	@Override
 	public void handleEvent(Event event) {
-		Map<String, Object> data = mapForEvent(event);
+		Map<String, ?> data = DatumEvents.datumEventMap(event);
 		String topic = messageTopicForEvent(event, data);
 		if ( topic == null ) {
 			return;
@@ -110,7 +110,7 @@ public class EventMessageBridge implements EventHandler {
 		postMessage(topic, data);
 	}
 
-	private String messageTopicForEvent(Event event, Map<String, Object> data) {
+	private String messageTopicForEvent(Event event, Map<String, ?> data) {
 		boolean pubTopic = false;
 		String topic = event.getTopic();
 		if ( topicMapping != null ) {
@@ -135,15 +135,6 @@ public class EventMessageBridge implements EventHandler {
 		topic = topic.replaceAll("\\/\\/", "/");
 
 		return (pubTopic ? PUBLIC_MESSAGE_TOPIC_PREFIX : MESSAGE_TOPIC_PREFIX) + topic;
-	}
-
-	private Map<String, Object> mapForEvent(Event event) {
-		String[] propNames = event.getPropertyNames();
-		Map<String, Object> map = new LinkedHashMap<String, Object>(propNames.length);
-		for ( String propName : propNames ) {
-			map.put(propName, event.getProperty(propName));
-		}
-		return map;
 	}
 
 	/**

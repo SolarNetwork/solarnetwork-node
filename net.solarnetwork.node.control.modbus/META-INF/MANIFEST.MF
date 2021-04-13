@@ -4,22 +4,22 @@ Bundle-Name: Modbus Control
 Bundle-SymbolicName: net.solarnetwork.node.control.modbus
 Automatic-Module-Name: net.solarnetwork.node.control.modbus
 Bundle-Description: Service to control arbitrary Modbus-accessible devices.
-Bundle-Version: 2.1.0
+Bundle-Version: 2.2.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
- net.solarnetwork.domain;version="1.17.0",
- net.solarnetwork.node;version="1.22.0",
- net.solarnetwork.node.domain;version="1.10.0",
+ net.solarnetwork.domain;version="[1.17,2.0)",
+ net.solarnetwork.node;version="[1.22,2.0)",
+ net.solarnetwork.node.domain;version="[1.10,2.0)",
  net.solarnetwork.node.io.modbus;version="[3.2,4.0)",
  net.solarnetwork.node.io.modbus.support;version="[3.1,4.0)",
- net.solarnetwork.node.reactor;version="1.0.0",
- net.solarnetwork.node.settings;version="1.1.0",
- net.solarnetwork.node.settings.support;version="1.0.0",
- net.solarnetwork.node.support;version="1.18.0",
- net.solarnetwork.node.util;version="1.7.0",
+ net.solarnetwork.node.reactor;version="[1.0,2.0)",
+ net.solarnetwork.node.settings;version="[1.1,2.0)",
+ net.solarnetwork.node.settings.support;version="[1.0,2.0)",
+ net.solarnetwork.node.support;version="[1.24,2.0)",
+ net.solarnetwork.node.util;version="[1.7,2.0)",
  net.solarnetwork.util;version="[1.40,2.0)",
- org.aopalliance.aop;version="1.0.0",
+ org.aopalliance.aop;version="[1.0,2.0)",
  org.eclipse.gemini.blueprint.compendium.cm;version="[2.0,3.0)",
  org.joda.time;version="[2.4,3.0)",
  org.joda.time.base;version="[2.4,3.0)",

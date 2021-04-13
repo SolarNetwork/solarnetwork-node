@@ -51,6 +51,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.support.DatumEvents;
 
 /**
  * Implementation of both {@link NodeControlProvider} and
@@ -62,10 +63,10 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * </p>
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class LATAController extends SerialDeviceSupport
-		implements NodeControlProvider, InstructionHandler, SettingSpecifierProvider {
+		implements NodeControlProvider, InstructionHandler, SettingSpecifierProvider, DatumEvents {
 
 	/** The default value for the {@code controlIdMappingValue} property. */
 	public static final String DEFAULT_CONTROL_ID_MAPPING = "/power/switch/1 = 100000BD, /power/switch/2 = 100000FD";
@@ -222,8 +223,8 @@ public class LATAController extends SerialDeviceSupport
 	}
 
 	private void postControlEvent(NodeControlInfoDatum info, String topic) {
-		Map<String, ?> props = info.asSimpleMap();
-		postEvent(new Event(topic, props));
+		Event event = DatumEvents.datumEvent(topic, info);
+		postEvent(event);
 	}
 
 	/**

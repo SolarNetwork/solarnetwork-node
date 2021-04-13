@@ -61,9 +61,6 @@
 		<property name="serviceClassName" value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
 	</bean>
 
-	<reference-list id="sampleTransformers" availability="optional" 
-		interface="net.solarnetwork.node.domain.GeneralDatumSamplesTransformer"/>
-		
 	<bean id="mqttUploadService" class="net.solarnetwork.node.upload.mqtt.MqttUploadService" 
 			init-method="init" destroy-method="shutdown">
 		<argument ref="mqttConnectionFactory"/>

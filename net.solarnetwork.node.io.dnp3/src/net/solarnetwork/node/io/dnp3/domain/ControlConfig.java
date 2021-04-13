@@ -70,9 +70,9 @@ public class ControlConfig {
 	 * @param type
 	 *        the DNP3 control type
 	 */
-	public ControlConfig(String dataSourceUid, String controlId, ControlType type) {
+	public ControlConfig(String controlProviderUid, String controlId, ControlType type) {
 		super();
-		this.controlProviderUid = dataSourceUid;
+		this.controlProviderUid = controlProviderUid;
 		this.controlId = controlId;
 		this.type = type;
 	}
@@ -133,7 +133,7 @@ public class ControlConfig {
 	 * <p>
 	 * This returns the configured {@link #getType()}
 	 * {@link ControlType#getCode()} value as a string. If the type is not
-	 * available, {@link ControlType#AnalogInput} will be returned.
+	 * available, {@link #DEFAULT_TYPE} will be returned.
 	 * </p>
 	 * 
 	 * @return the control type key
@@ -152,7 +152,7 @@ public class ControlConfig {
 	 * <p>
 	 * This uses the first character of {@code key} as a {@link ControlType}
 	 * code value to call {@link #setType(ControlType)}. If there is any problem
-	 * parsing the type, {@link ControlType#AnalogInput} is set.
+	 * parsing the type, {@link #DEFAULT_TYPE} is set.
 	 * </p>
 	 * 
 	 * @param key

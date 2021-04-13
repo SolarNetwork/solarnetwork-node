@@ -52,6 +52,7 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.support.DatumEvents;
 import net.solarnetwork.util.CachedResult;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
@@ -60,10 +61,10 @@ import net.solarnetwork.util.StringUtils;
  * Control a Modbus "coil" or "holding" type digital switch register on and off.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ModbusToggler extends ModbusDeviceSupport
-		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
+		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler, DatumEvents {
 
 	/** The default value for the {@code address} property. */
 	public static final int DEFAULT_ADDRESS = 0x4008;
@@ -219,8 +220,8 @@ public class ModbusToggler extends ModbusDeviceSupport
 		if ( admin == null ) {
 			return;
 		}
-		Map<String, ?> props = info.asSimpleMap();
-		admin.postEvent(new Event(topic, props));
+		Event event = DatumEvents.datumEvent(topic, info);
+		admin.postEvent(event);
 	}
 
 	// InstructionHandler
@@ -406,7 +407,7 @@ public class ModbusToggler extends ModbusDeviceSupport
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
 	 * 
-	 * @param sampleCacheSecondsMs
+	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 * @since 1.3
 	 */
