@@ -88,6 +88,7 @@
 	<bean id="generalDatumSamplesTransformService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext" />
 		<property name="serviceClassName" value="net.solarnetwork.node.GeneralDatumSamplesTransformService" />
+		<property name="serviceFilter" value="(role=global)" />
 	</bean>
 
 	<!-- Published Services -->
