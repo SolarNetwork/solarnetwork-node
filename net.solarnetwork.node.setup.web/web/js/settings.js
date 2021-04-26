@@ -571,12 +571,19 @@ function uploadSettingResource(url, provider, instance, setting, dataKey, dataVa
 	SolarNode.GlobalProgress.show();
 	var xhr = xhr = new XMLHttpRequest();
 	var form = new FormData();
+	var i;
 	form.append("handlerKey", provider);
 	if ( instance ) {
 		form.append("instanceKey", instance);
 	}
 	form.append("key", setting);
-	form.append(dataKey, dataValue);
+	if ( dataValue instanceof FileList ) {
+		for ( i = 0; i < dataValue.length; i++ ) {
+			form.append(dataKey, dataValue[i]);
+		}
+	} else {
+		form.append(dataKey, dataValue);
+	}
 	xhr.onload = uploadSettingResourceDone;
 	xhr.onerror = uploadSettingResourceError;
 	xhr.upload.addEventListener("progress", uploadSettingResourceProgress);
@@ -643,7 +650,7 @@ $(document).ready(function() {
 		if ( el.files ) {
 			// input[type=file]
 			if ( el.files.length > 0 ) {
-				uploadSettingResource(url, provider, instance, setting, "file", el.files[0]);
+				uploadSettingResource(url, provider, instance, setting, "file", el.files);
 			}
 		} else {
 			// textarea
