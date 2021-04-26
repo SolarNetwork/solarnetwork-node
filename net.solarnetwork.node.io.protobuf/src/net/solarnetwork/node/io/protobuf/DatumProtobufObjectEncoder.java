@@ -30,7 +30,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -47,9 +50,12 @@ import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsUpdates;
 import net.solarnetwork.node.settings.support.BasicFileSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.util.ArrayUtils;
 
 /**
  * Service for encoding datum into Protobuf messages.
@@ -71,15 +77,33 @@ public class DatumProtobufObjectEncoder extends net.solarnetwork.common.protobuf
 
 	private Path protoDir = Paths.get(DEFAULT_PROTO_DIR);
 	private String[] protoFileNames;
+	private DatumFieldConfig[] propConfigs;
 
 	@Override
 	protected Map<String, ?> convertToMap(Object obj, Map<String, ?> parameters) {
 		if ( !(obj instanceof Datum) ) {
-			log.debug("Can not convert object that does not implement GeneralDatum: {}", obj);
+			log.debug("Can not convert object that does not implement Datum: {}", obj);
 			return null;
 		}
 		Datum d = (Datum) obj;
-		return d.asSimpleMap();
+		DatumFieldConfig[] confs = getPropConfigs();
+		if ( confs == null || confs.length < 1 ) {
+			return null;
+		}
+		Map<String, ?> data = d.asSimpleMap();
+		Map<String, Object> result = new LinkedHashMap<>(confs.length);
+		for ( DatumFieldConfig conf : confs ) {
+			String key = conf.getDatumProperty();
+			String field = conf.getFieldProperty();
+			if ( key == null || key.isEmpty() || field == null || field.isEmpty() ) {
+				continue;
+			}
+			Object val = data.get(key);
+			if ( val != null ) {
+				result.put(field, val);
+			}
+		}
+		return (result.isEmpty() ? null : result);
 	}
 
 	@Override
@@ -106,6 +130,22 @@ public class DatumProtobufObjectEncoder extends net.solarnetwork.common.protobuf
 				result.add(new BasicTitleSettingSpecifier("protoFileNames", name, true));
 			}
 		}
+
+		DatumFieldConfig[] confs = getPropConfigs();
+		List<DatumFieldConfig> confsList = (confs != null ? Arrays.asList(confs)
+				: Collections.<DatumFieldConfig> emptyList());
+		result.add(SettingsUtil.dynamicListSettingSpecifier("propConfigs", confsList,
+				new SettingsUtil.KeyedListCallback<DatumFieldConfig>() {
+
+					@Override
+					public Collection<SettingSpecifier> mapListSettingKey(DatumFieldConfig value,
+							int index, String key) {
+						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
+								DatumFieldConfig.settings(key + "."));
+						return Collections.<SettingSpecifier> singletonList(configGroup);
+					}
+				}));
+
 		return result;
 	}
 
@@ -224,6 +264,51 @@ public class DatumProtobufObjectEncoder extends net.solarnetwork.common.protobuf
 	 */
 	public void setProtoFileNames(String[] protoFileNames) {
 		this.protoFileNames = protoFileNames;
+	}
+
+	/**
+	 * Get the property configurations.
+	 * 
+	 * @return the property configurations
+	 */
+	public DatumFieldConfig[] getPropConfigs() {
+		return propConfigs;
+	}
+
+	/**
+	 * Set the property configurations to use.
+	 * 
+	 * @param propConfigs
+	 *        the configs to use
+	 */
+	public void setPropConfigs(DatumFieldConfig[] propConfigs) {
+		this.propConfigs = propConfigs;
+	}
+
+	/**
+	 * Get the number of configured {@code propConfigs} elements.
+	 * 
+	 * @return the number of {@code propConfigs} elements
+	 */
+	public int getPropConfigsCount() {
+		DatumFieldConfig[] confs = this.propConfigs;
+		return (confs == null ? 0 : confs.length);
+	}
+
+	/**
+	 * Adjust the number of configured {@code propConfigs} elements.
+	 * 
+	 * <p>
+	 * Any newly added element values will be set to new
+	 * {@link DatumFieldConfig} instances.
+	 * </p>
+	 * 
+	 * @param count
+	 *        The desired number of {@code propConfigs} elements.
+	 */
+	public void setPropConfigsCount(int count) {
+		this.propConfigs = ArrayUtils.arrayWithLength(this.propConfigs, count, DatumFieldConfig.class,
+				null);
 	}
 
 }
