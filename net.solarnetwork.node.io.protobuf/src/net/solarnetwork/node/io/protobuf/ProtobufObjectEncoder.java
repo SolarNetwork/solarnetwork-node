@@ -35,8 +35,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.FileCopyUtils;
@@ -69,8 +67,6 @@ public class ProtobufObjectEncoder extends net.solarnetwork.common.protobuf.Prot
 
 	/** The setting resource key for proto files. */
 	public static final String RESOURCE_KEY_PROTO_FILES = "protoFiles";
-
-	private static final Logger log = LoggerFactory.getLogger(ProtobufObjectEncoder.class);
 
 	private Path protoDir = Paths.get(DEFAULT_PROTO_DIR);
 	private String[] protoFileNames;

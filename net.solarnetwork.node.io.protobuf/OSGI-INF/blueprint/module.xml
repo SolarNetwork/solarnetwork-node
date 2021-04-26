@@ -54,5 +54,39 @@
 			</property>
 		</bean>
 	</osgix:managed-service-factory>
+	
+	<!-- 
+	Protoc Compiler
+	 -->
+	 
+	<bean id="protocMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.io.protobuf.ProtocProtobufCompilerService</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+			</list>
+		</property>
+	</bean>
+	
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Protobuf Compiler (protoc)"/>
+			<property name="factoryUID" value="net.solarnetwork.node.io.protobuf.protoc"/>
+			<property name="messageSource" ref="protocMessageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.protobuf.protoc" autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.common.protobuf.ProtobufCompilerService</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.io.protobuf.protoc"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.io.protobuf.ProtocProtobufCompilerService">
+			<property name="messageSource" ref="protocMessageSource"/>
+		</bean>
+	</osgix:managed-service-factory>
 		
 </blueprint>
