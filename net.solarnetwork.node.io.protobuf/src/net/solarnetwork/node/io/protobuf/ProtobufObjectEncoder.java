@@ -33,12 +33,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.FileCopyUtils;
+import net.solarnetwork.common.protobuf.ProtobufCompilerService;
 import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -71,8 +73,19 @@ public class ProtobufObjectEncoder extends net.solarnetwork.common.protobuf.Prot
 	private static final Logger log = LoggerFactory.getLogger(ProtobufObjectEncoder.class);
 
 	private Path protoDir = Paths.get(DEFAULT_PROTO_DIR);
-
 	private String[] protoFileNames;
+
+	@Override
+	protected Map<String, ?> convertToMap(Object obj, Map<String, ?> parameters) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	protected ClassLoader compileProtobufResources(ProtobufCompilerService compiler) throws IOException {
+		Iterable<Resource> resources = currentSettingResources(RESOURCE_KEY_PROTO_FILES);
+		return compiler.compileProtobufResources(resources, null);
+	}
 
 	@Override
 	public String getSettingUID() {
@@ -83,6 +96,7 @@ public class ProtobufObjectEncoder extends net.solarnetwork.common.protobuf.Prot
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = BaseIdentifiable.baseIdentifiableSettings("");
 		result.add(new BasicTextFieldSettingSpecifier("compilerServiceUidFilter", ""));
+		result.add(new BasicTextFieldSettingSpecifier("messageClassName", ""));
 		result.add(new BasicFileSettingSpecifier(RESOURCE_KEY_PROTO_FILES, null,
 				new LinkedHashSet<>(asList(".proto", "text/*")), true));
 		String[] files = getProtoFileNames();

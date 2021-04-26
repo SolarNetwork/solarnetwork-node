@@ -28,7 +28,8 @@
 		</bean>
 	</service>
 	
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.protobuf.enc" autowire-on-update="true">
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.protobuf.enc" 
+			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.io.ObjectEncoder</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingResourceHandler</beans:value>
@@ -40,6 +41,17 @@
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.io.protobuf.ProtobufObjectEncoder">
 			<property name="messageSource" ref="messageSource"/>
+			<property name="compilerService">
+				<bean class="net.solarnetwork.util.DynamicServiceTracker">
+					<property name="bundleContext" ref="bundleContext"/>
+					<property name="serviceClassName" value="net.solarnetwork.common.protobuf.ProtobufCompilerService"/>
+					<property name="propertyFilters">
+						<map>
+							<entry key="uid" value=""/>
+						</map>
+					</property>
+				</bean>
+			</property>
 		</bean>
 	</osgix:managed-service-factory>
 		
