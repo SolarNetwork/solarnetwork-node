@@ -1,5 +1,5 @@
 /* ==================================================================
- * ProtobufObjectEncoder.java - 26/04/2021 3:20:18 PM
+ * DatumProtobufObjectEncoder.java - 26/04/2021 3:20:18 PM
  * 
  * Copyright 2021 SolarNetwork.net Dev Team
  * 
@@ -39,6 +39,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.common.protobuf.ProtobufCompilerService;
+import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -56,11 +57,11 @@ import net.solarnetwork.node.support.BaseIdentifiable;
  * @author matt
  * @version 1.0
  */
-public class ProtobufObjectEncoder extends net.solarnetwork.common.protobuf.ProtobufObjectEncoder
+public class DatumProtobufObjectEncoder extends net.solarnetwork.common.protobuf.ProtobufObjectEncoder
 		implements SettingSpecifierProvider, SettingResourceHandler {
 
 	/** The setting UID for this service. */
-	public static final String SETTING_UID = "net.solarnetwork.node.io.protobuf.enc";
+	public static final String SETTING_UID = "net.solarnetwork.node.io.protobuf.enc.datum";
 
 	/** The default {@code protoDir} property value. */
 	public static final String DEFAULT_PROTO_DIR = "var/" + SETTING_UID;
@@ -73,8 +74,12 @@ public class ProtobufObjectEncoder extends net.solarnetwork.common.protobuf.Prot
 
 	@Override
 	protected Map<String, ?> convertToMap(Object obj, Map<String, ?> parameters) {
-		// TODO Auto-generated method stub
-		return null;
+		if ( !(obj instanceof Datum) ) {
+			log.debug("Can not convert object that does not implement GeneralDatum: {}", obj);
+			return null;
+		}
+		Datum d = (Datum) obj;
+		return d.asSimpleMap();
 	}
 
 	@Override

@@ -14,7 +14,7 @@
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.io.protobuf.ProtobufObjectEncoder</value>
+				<value>net.solarnetwork.node.io.protobuf.DatumProtobufObjectEncoder</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
 		</property>
@@ -23,12 +23,12 @@
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Protobuf Datum Encoder"/>
-			<property name="factoryUID" value="net.solarnetwork.node.io.protobuf.enc"/>
+			<property name="factoryUID" value="net.solarnetwork.node.io.protobuf.enc.datum"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
 	
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.protobuf.enc" 
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.protobuf.enc.datum" 
 			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.io.ObjectEncoder</beans:value>
@@ -36,10 +36,10 @@
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
-			<beans:entry key="settingPid" value="net.solarnetwork.node.io.protobuf.enc"/>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.io.protobuf.enc.datum"/>
 			<beans:entry key="objectType" value="net.solarnetwork.node.domain.GeneralDatum"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.io.protobuf.ProtobufObjectEncoder">
+		<bean class="net.solarnetwork.node.io.protobuf.DatumProtobufObjectEncoder">
 			<property name="messageSource" ref="messageSource"/>
 			<property name="compilerService">
 				<bean class="net.solarnetwork.util.DynamicServiceTracker">

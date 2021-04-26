@@ -11,6 +11,7 @@ Import-Package:
  net.solarnetwork.common.protobuf.protoc;version="[0.1,2.0)",
  net.solarnetwork.io;version="[1.6,2.0)",
  net.solarnetwork.node;version="[1.31,2.0)",
+ net.solarnetwork.node.domain;version="[1.23,2.0)",
  net.solarnetwork.node.settings;version="[1.13,2.0)",
  net.solarnetwork.node.settings.support;version="[1.11,2.0)",
  net.solarnetwork.node.support;version="[1.24,2.0)",
