@@ -42,6 +42,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.common.protobuf.ProtobufCompilerService;
+import net.solarnetwork.common.protobuf.ProtobufMessagePopulator;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -59,6 +60,16 @@ import net.solarnetwork.util.ArrayUtils;
 
 /**
  * Service for encoding datum into Protobuf messages.
+ * 
+ * <p>
+ * This service supports encoding {@link Map} and {@link Datum} objects.
+ * {@code Map} objects are used directly as input while {@code Datum} will use
+ * {@link Datum#asSimpleMap()}. The input {@code Map} is then transformed into a
+ * new {@code Map} according to the configured property configurations. The
+ * transformed {@code Map} is what will be passed to
+ * {@link ProtobufMessagePopulator#setMessageProperties(Map, boolean)} to be
+ * encoded into a Protobuf message.
+ * </p>
  * 
  * @author matt
  * @version 1.0
@@ -81,16 +92,14 @@ public class DatumProtobufObjectEncoder extends net.solarnetwork.common.protobuf
 
 	@Override
 	protected Map<String, ?> convertToMap(Object obj, Map<String, ?> parameters) {
-		if ( !(obj instanceof Datum) ) {
-			log.debug("Can not convert object that does not implement Datum: {}", obj);
-			return null;
-		}
-		Datum d = (Datum) obj;
 		DatumFieldConfig[] confs = getPropConfigs();
 		if ( confs == null || confs.length < 1 ) {
 			return null;
 		}
-		Map<String, ?> data = d.asSimpleMap();
+		Map<String, ?> data = dataForObject(obj);
+		if ( data == null ) {
+			return null;
+		}
 		Map<String, Object> result = new LinkedHashMap<>(confs.length);
 		for ( DatumFieldConfig conf : confs ) {
 			String key = conf.getDatumProperty();
@@ -104,6 +113,18 @@ public class DatumProtobufObjectEncoder extends net.solarnetwork.common.protobuf
 			}
 		}
 		return (result.isEmpty() ? null : result);
+	}
+
+	@SuppressWarnings("unchecked")
+	private Map<String, ?> dataForObject(Object obj) {
+		if ( obj instanceof Map ) {
+			return (Map<String, ?>) obj;
+		} else if ( obj instanceof Datum ) {
+			Datum d = (Datum) obj;
+			return d.asSimpleMap();
+		}
+		log.debug("Can not convert object that does not implement Datum or Map: {}", obj);
+		return null;
 	}
 
 	@Override
