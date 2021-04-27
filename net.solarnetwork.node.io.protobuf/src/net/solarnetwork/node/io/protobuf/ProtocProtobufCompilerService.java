@@ -27,6 +27,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.util.JavaCompiler;
 
 /**
  * Service for compiling Protobuf definitions.
@@ -37,6 +38,16 @@ import net.solarnetwork.node.support.BaseIdentifiable;
 public class ProtocProtobufCompilerService
 		extends net.solarnetwork.common.protobuf.protoc.ProtocProtobufCompilerService
 		implements SettingSpecifierProvider {
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param compiler
+	 *        the compiler
+	 */
+	public ProtocProtobufCompilerService(JavaCompiler compiler) {
+		super(compiler);
+	}
 
 	@Override
 	public String getSettingUID() {

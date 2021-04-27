@@ -10,6 +10,8 @@
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
+		
+	<reference id="compiler" interface="net.solarnetwork.util.JavaCompiler"/>
 
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
@@ -96,6 +98,7 @@
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.protobuf.protoc"/>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.io.protobuf.ProtocProtobufCompilerService">
+			<argument ref="compiler"/>
 			<property name="messageSource" ref="protocMessageSource"/>
 		</bean>
 	</osgix:managed-service-factory>
