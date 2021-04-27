@@ -1,5 +1,5 @@
 /* ==================================================================
- * DatumProtobufObjectEncoder.java - 26/04/2021 3:20:18 PM
+ * DatumProtobufObjectCodec.java - 26/04/2021 3:20:18 PM
  * 
  * Copyright 2021 SolarNetwork.net Dev Team
  * 
@@ -38,12 +38,17 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.PropertyAccessor;
+import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.common.protobuf.ProtobufCompilerService;
 import net.solarnetwork.common.protobuf.ProtobufMessagePopulator;
+import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -71,10 +76,15 @@ import net.solarnetwork.util.ArrayUtils;
  * encoded into a Protobuf message.
  * </p>
  * 
+ * <p>
+ * The {@link #decodeFromBytes(byte[], Map)} method always returns a
+ * {@link net.solarnetwork.node.domain.GeneralDatum} instance.
+ * </p>
+ * 
  * @author matt
  * @version 1.0
  */
-public class DatumProtobufObjectEncoder extends net.solarnetwork.common.protobuf.ProtobufObjectEncoder
+public class DatumProtobufObjectCodec extends net.solarnetwork.common.protobuf.ProtobufObjectCodec
 		implements SettingSpecifierProvider, SettingResourceHandler {
 
 	/** The setting UID for this service. */
@@ -113,6 +123,44 @@ public class DatumProtobufObjectEncoder extends net.solarnetwork.common.protobuf
 			}
 		}
 		return (result.isEmpty() ? null : result);
+	}
+
+	@Override
+	public Object decodeFromBytes(byte[] data, Map<String, ?> parameters) throws IOException {
+		final String className = getMessageClassName();
+		if ( data == null ) {
+			throw new IOException(format("No data provided to decode %s message.", className));
+		}
+		DatumFieldConfig[] confs = getPropConfigs();
+		if ( confs == null || confs.length < 1 ) {
+			throw new IOException(format("No property configurations provided to decode %s message.",
+					getMessageClassName()));
+		}
+		Object msg = super.decodeFromBytes(data, parameters);
+		PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(msg);
+		GeneralNodeDatum result = new GeneralNodeDatum();
+		for ( DatumFieldConfig conf : confs ) {
+			String key = conf.getDatumProperty();
+			GeneralDatumSamplesType type = conf.getPropertyType();
+			String field = conf.getFieldProperty();
+			if ( key == null || key.isEmpty() || field == null || field.isEmpty() ) {
+				continue;
+			}
+			try {
+				Object val = accessor.getPropertyValue(field);
+				if ( val != null ) {
+					result.putSampleValue(type, key, val);
+				}
+			} catch ( BeansException e ) {
+				log.debug("Error reading Protobuf message {} field {}: {}", className, field,
+						e.getMessage());
+			}
+		}
+		if ( result.getSamples() == null || result.getSamples().isEmpty() ) {
+			throw new IOException(
+					format("No datum properties populated from Protobuf message %s", className));
+		}
+		return result;
 	}
 
 	@SuppressWarnings("unchecked")

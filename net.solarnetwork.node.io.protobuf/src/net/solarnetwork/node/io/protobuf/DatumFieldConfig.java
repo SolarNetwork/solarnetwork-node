@@ -23,8 +23,13 @@
 package net.solarnetwork.node.io.protobuf;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
+import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
@@ -34,10 +39,37 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * @author matt
  * @version 1.0
  */
-public class DatumFieldConfig {
+public class DatumFieldConfig extends GeneralDatumSamplePropertyConfig<String> {
 
-	private String datumProperty;
-	private String fieldProperty;
+	/** The default {@code propertyType} property value. */
+	public static final GeneralDatumSamplesType DEFAULT_PROPERTY_TYPE = GeneralDatumSamplesType.Instantaneous;
+
+	/**
+	 * Default constructor.
+	 * 
+	 * <p>
+	 * The {@code propertyType} is set to
+	 * {@link GeneralDatumSamplesType#Instantaneous}.
+	 * </p>
+	 */
+	public DatumFieldConfig() {
+		super(null, GeneralDatumSamplesType.Instantaneous, null);
+	}
+
+	/**
+	 * Construct with values.
+	 * 
+	 * @param datumProperty
+	 *        the datum property
+	 * @param propertyType
+	 *        the property type
+	 * @param fieldProperty
+	 *        the message field property
+	 */
+	public DatumFieldConfig(String datumProperty, GeneralDatumSamplesType propertyType,
+			String fieldProperty) {
+		super(datumProperty, propertyType, fieldProperty);
+	}
 
 	/**
 	 * Get settings suitable for configuring an instance of this class.
@@ -50,6 +82,17 @@ public class DatumFieldConfig {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(2);
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "datumProperty", ""));
+
+		// drop-down menu for propertyTypeKey
+		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
+				prefix + "propertyTypeKey", Character.toString(DEFAULT_PROPERTY_TYPE.toKey()));
+		Map<String, String> propTypeTitles = new LinkedHashMap<String, String>(3);
+		for ( GeneralDatumSamplesType e : GeneralDatumSamplesType.values() ) {
+			propTypeTitles.put(Character.toString(e.toKey()), e.toString());
+		}
+		propTypeSpec.setValueTitles(propTypeTitles);
+		results.add(propTypeSpec);
+
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "fieldProperty", ""));
 
 		return results;
@@ -58,39 +101,55 @@ public class DatumFieldConfig {
 	/**
 	 * Get the datum property name.
 	 * 
+	 * <p>
+	 * This is an alias for {@link #getPropertyKey()}.
+	 * </p>
+	 * 
 	 * @return the datum property name
 	 */
 	public String getDatumProperty() {
-		return datumProperty;
+		return getPropertyKey();
 	}
 
 	/**
 	 * Set the datum property name.
 	 * 
+	 * <p>
+	 * This is an alias for {@link #setPropertyKey(String)}.
+	 * </p>
+	 * 
 	 * @param datumProperty
 	 *        the property name to set
 	 */
 	public void setDatumProperty(String datumProperty) {
-		this.datumProperty = datumProperty;
+		setPropertyKey(datumProperty);
 	}
 
 	/**
 	 * Get the message field property name.
 	 * 
+	 * <p>
+	 * This is an alias for {@link #getConfig()}.
+	 * </p>
+	 * 
 	 * @return the field property name
 	 */
 	public String getFieldProperty() {
-		return fieldProperty;
+		return getConfig();
 	}
 
 	/**
 	 * Set the message field property name.
 	 * 
+	 * <p>
+	 * This is an alias for {@link #setConfig(String)}.
+	 * </p>
+	 * 
 	 * @param fieldProperty
 	 *        the field property name to set
 	 */
 	public void setFieldProperty(String fieldProperty) {
-		this.fieldProperty = fieldProperty;
+		setConfig(fieldProperty);
 	}
 
 }
