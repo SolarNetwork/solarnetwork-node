@@ -30,7 +30,7 @@ import java.util.Map;
  * {@link net.solarnetwork.support.ExpressionService} evaluation.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.79
  */
 public class ExpressionRoot {
@@ -66,6 +66,23 @@ public class ExpressionRoot {
 	 */
 	public Map<String, ?> getProps() {
 		return datumProps;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("ExpressionRoot{");
+		if ( datum != null ) {
+			builder.append("datum=");
+			builder.append(datum);
+			builder.append(", ");
+		}
+		if ( datumProps != null ) {
+			builder.append("props=");
+			builder.append(datumProps);
+		}
+		builder.append("}");
+		return builder.toString();
 	}
 
 }
