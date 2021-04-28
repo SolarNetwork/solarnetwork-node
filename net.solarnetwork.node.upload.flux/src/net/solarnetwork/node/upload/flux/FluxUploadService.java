@@ -65,8 +65,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.util.ArrayUtils;
-import net.solarnetwork.util.FilterableService;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.OptionalServiceCollection;
 
 /**
  * Service to listen to datum events and upload datum to SolarFlux.
@@ -108,7 +107,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 	private Executor executor;
 	private FluxFilterConfig[] filters;
 	private boolean includeVersionTag = DEFAULT_INCLUDE_VERSION_TAG;
-	private OptionalService<ObjectEncoder> datumEncoder;
+	private OptionalServiceCollection<ObjectEncoder> datumEncoders;
 
 	/**
 	 * Constructor.
@@ -280,7 +279,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 			String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, nodeId, sourceId);
 			try {
 				byte[] payload;
-				ObjectEncoder encoder = OptionalService.service(datumEncoder);
+				ObjectEncoder encoder = encoderForSourceId(sourceId);
 				if ( encoder != null ) {
 					payload = encoder.encodeAsBytes(data, null);
 				} else {
@@ -307,6 +306,33 @@ public class FluxUploadService extends BaseMqttConnectionService
 						getMqttConfig().getServerUri(), msg);
 			}
 		}
+	}
+
+	private ObjectEncoder encoderForSourceId(String sourceId) {
+		OptionalServiceCollection<ObjectEncoder> encoders = getDatumEncoders();
+		if ( encoders == null ) {
+			return null;
+		}
+		FluxFilterConfig[] filters = getFilters();
+		if ( filters == null || filters.length < 1 ) {
+			return null;
+		}
+		for ( FluxFilterConfig cfg : filters ) {
+			String uid = (cfg != null && cfg.getDatumEncoderUid() != null
+					&& !cfg.getDatumEncoderUid().isEmpty() ? cfg.getDatumEncoderUid() : null);
+			if ( uid == null ) {
+				continue;
+			}
+			Pattern filterSourceId = cfg.getSourceIdRegex();
+			if ( filterSourceId == null || filterSourceId.matcher(sourceId).find() ) {
+				for ( ObjectEncoder encoder : encoders.services() ) {
+					if ( uid.equals(encoder.getUid()) ) {
+						return encoder;
+					}
+				}
+			}
+		}
+		return null;
 	}
 
 	private String sourceIdForEvent(Event event) {
@@ -380,7 +406,6 @@ public class FluxUploadService extends BaseMqttConnectionService
 		results.add(new BasicTextFieldSettingSpecifier("excludePropertyNamesRegex",
 				DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN.pattern()));
 		results.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode", ""));
-		results.add(new BasicTextFieldSettingSpecifier("datumEncoderUidFilter", ""));
 
 		// filter list
 		FluxFilterConfig[] confs = getFilters();
@@ -612,8 +637,8 @@ public class FluxUploadService extends BaseMqttConnectionService
 	 * @return the encoder service
 	 * @since 1.7
 	 */
-	public OptionalService<ObjectEncoder> getDatumEncoder() {
-		return datumEncoder;
+	public OptionalServiceCollection<ObjectEncoder> getDatumEncoders() {
+		return datumEncoders;
 	}
 
 	/**
@@ -623,38 +648,8 @@ public class FluxUploadService extends BaseMqttConnectionService
 	 *        the encoder to set
 	 * @since 1.7
 	 */
-	public void setDatumEncoder(OptionalService<ObjectEncoder> datumEncoder) {
-		this.datumEncoder = datumEncoder;
+	public void setDatumEncoders(OptionalServiceCollection<ObjectEncoder> datumEncoders) {
+		this.datumEncoders = datumEncoders;
 	}
 
-	/**
-	 * Get the datum encoder UID filter.
-	 * 
-	 * <p>
-	 * The configured {@link #getDatumEncoder()} must also implement
-	 * {@link FilterableService} for this method to work.
-	 * </p>
-	 * 
-	 * @return the UID filter
-	 * @since 1.7
-	 */
-	public String getDatumEncoderUidFilter() {
-		return FilterableService.filterPropValue(getDatumEncoder(), UID_PROPERTY);
-	}
-
-	/**
-	 * Set the datum encoder UID filter.
-	 * 
-	 * <p>
-	 * The configured {@link #getDatumEncoder()} must also implement
-	 * {@link FilterableService} for this method to work.
-	 * </p>
-	 * 
-	 * @param uid
-	 *        the filter to set
-	 * @since 1.7
-	 */
-	public void setDatumEncoderUidFilter(String uid) {
-		FilterableService.setFilterProp(getDatumEncoder(), UID_PROPERTY, uid);
-	}
 }

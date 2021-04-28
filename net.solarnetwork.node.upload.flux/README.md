@@ -20,8 +20,8 @@ configuration for each SolarFlux server you want to upload data to.
 
 Each datum message is published as a [CBOR][cbor] encoded indefinite-length map by default. This is
 essentially a JSON object. The map keys are the datum property names. You can configure a 
-**Datum Encoder** to encode datum into a different format. For example, the 
-[Protobuf Datum Encoder][protobuf-io] supports encoding datum into Protobuf messages.
+**Datum Encoder** to encode datum into a different format, by configuring a [filter](#filter-settings).
+ For example, the [Protobuf Datum Encoder][protobuf-io] supports encoding datum into Protobuf messages.
 
 Here's an example datum message, expressed as JSON:
 
@@ -60,7 +60,6 @@ Each component configuration contains the following overall settings:
 | Password | The MQTT password to use. |
 | Exclude Properties | A regular expression to match property names on all datum sources to exclude from publishinggrip. |
 | Require Mode | If configured, an operational mode that must be active for any data to be published. |
-| Datum Encoder | The <b>Service Name</b> if a <b>Datum Encoder</b> component to encode datum with. The encoder will be passed a `java.util.Map` object with all the datum properties. If not configured then CBOR will be used. |
 | Filters | Any number of datum [filter configurations](#filter-settings). |
 
 For TLS-encrypted connections, SolarNode will make the node's own X.509 certificate available for
@@ -91,9 +90,6 @@ individual datum sources are posted to SolarFlux, and/or restrict which properti
 are posted. This can be very useful to constrain how much data is sent to SolarFlux, for example
 on nodes using mobile internet connections where the cost of posting data is high.
 
-> :warning: **Note** that filters are applied before passing the datum properties to any configured
-> **Datum Encoder** service. 
-
 ![SolarFlux filter settings](docs/solarnode-solarflux-upload-filter-settings.png)
 
 Each filter configuration contains the following settings:
@@ -101,6 +97,7 @@ Each filter configuration contains the following settings:
 | Setting | Description |
 |---------|-------------|
 | Source ID | A case-insensitive regular expression to match against datum source IDs. If defined, this filter will only be applied to datum with matching source ID values. If not defined this filter will be applied to all datum. For example `^solar` would match any source ID starting with _solar_. |
+| Datum Encoder | The <b>Service Name</b> if a <b>Datum Encoder</b> component to encode datum with. The encoder will be passed a `java.util.Map` object with all the datum properties. If not configured then CBOR will be used. |
 | Limit Seconds | The minimum number of seconds to limit datum that match the configured **Source ID** pattern. If datum are produced faster than this rate, they will be filtered out. Set to `0` or leave empty for no limit. |
 | Property Includes | A list of  case-insensitive regular expressions to match against datum property names. If configured, **only** properties that match one of these expressions will be included in the filtered output. For example `^watt` would match any property starting with _watt_.  |
 | Property Excludes | A list of  case-insensitive regular expressions to match against datum property names. If configured, **any** property that match one of these expressions will be excluded from the filtered output. For example `^temp` would match any property starting with _temp_. Exclusions are applied **after** property inclusions.  |
