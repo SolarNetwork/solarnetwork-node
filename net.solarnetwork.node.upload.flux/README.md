@@ -18,8 +18,10 @@ configuration for each SolarFlux server you want to upload data to.
 
 ## MQTT message format
 
-Each datum message is published as a [CBOR][cbor] encoded indefinite-length map. This is
-essentially a JSON object. The map keys are the datum property names.
+Each datum message is published as a [CBOR][cbor] encoded indefinite-length map by default. This is
+essentially a JSON object. The map keys are the datum property names. You can configure a 
+**Datum Encoder** to encode datum into a different format. For example, the 
+[Protobuf Datum Encoder][protobuf-io] supports encoding datum into Protobuf messages.
 
 Here's an example datum message, expressed as JSON:
 
@@ -56,8 +58,9 @@ Each component configuration contains the following overall settings:
 | Host | The URI for the SolarFlux server to connect to. |
 | Username | The MQTT username to use. |
 | Password | The MQTT password to use. |
-| Exclude Properties | A regular expression to match property names on all datum sources to exclude from publishing. |
+| Exclude Properties | A regular expression to match property names on all datum sources to exclude from publishinggrip. |
 | Require Mode | If configured, an operational mode that must be active for any data to be published. |
+| Datum Encoder | The <b>Service Name</b> if a <b>Datum Encoder</b> component to encode datum with. The encoder will be passed a `java.util.Map` object with all the datum properties. If not configured then CBOR will be used. |
 | Filters | Any number of datum [filter configurations](#filter-settings). |
 
 For TLS-encrypted connections, SolarNode will make the node's own X.509 certificate available for
@@ -88,6 +91,9 @@ individual datum sources are posted to SolarFlux, and/or restrict which properti
 are posted. This can be very useful to constrain how much data is sent to SolarFlux, for example
 on nodes using mobile internet connections where the cost of posting data is high.
 
+> :warning: **Note** that filters are applied before passing the datum properties to any configured
+> **Datum Encoder** service. 
+
 ![SolarFlux filter settings](docs/solarnode-solarflux-upload-filter-settings.png)
 
 Each filter configuration contains the following settings:
@@ -106,3 +112,4 @@ Each filter configuration contains the following settings:
   redundant.
 
 [cbor]: http://cbor.io/
+[protobuf-io]: ../net.solarnetwork.node.io.protobuf#protobuf-datum-encoderdecoder

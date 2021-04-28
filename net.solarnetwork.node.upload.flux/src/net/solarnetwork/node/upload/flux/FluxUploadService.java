@@ -53,6 +53,7 @@ import net.solarnetwork.common.mqtt.MqttConnectionFactory;
 import net.solarnetwork.common.mqtt.MqttQos;
 import net.solarnetwork.common.mqtt.MqttStats;
 import net.solarnetwork.common.mqtt.ReconfigurableMqttConnection;
+import net.solarnetwork.io.ObjectEncoder;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.OperationalModesService;
@@ -64,12 +65,14 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.FilterableService;
+import net.solarnetwork.util.OptionalService;
 
 /**
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 1.6
+ * @version 1.7
  */
 public class FluxUploadService extends BaseMqttConnectionService
 		implements EventHandler, SettingSpecifierProvider, SettingsChangeObserver {
@@ -105,6 +108,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 	private Executor executor;
 	private FluxFilterConfig[] filters;
 	private boolean includeVersionTag = DEFAULT_INCLUDE_VERSION_TAG;
+	private OptionalService<ObjectEncoder> datumEncoder;
 
 	/**
 	 * Constructor.
@@ -275,13 +279,19 @@ public class FluxUploadService extends BaseMqttConnectionService
 		if ( conn != null && conn.isEstablished() ) {
 			String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, nodeId, sourceId);
 			try {
-				if ( includeVersionTag ) {
-					data.put(TAG_VERSION, 2);
-				}
-				JsonNode jsonData = objectMapper.valueToTree(data);
-				byte[] payload = objectMapper.writeValueAsBytes(jsonData);
-				if ( log.isTraceEnabled() ) {
+				byte[] payload;
+				ObjectEncoder encoder = OptionalService.service(datumEncoder);
+				if ( encoder != null ) {
+					payload = encoder.encodeAsBytes(data, null);
+				} else {
+					if ( includeVersionTag ) {
+						data.put(TAG_VERSION, 2);
+					}
+					JsonNode jsonData = objectMapper.valueToTree(data);
+					payload = objectMapper.writeValueAsBytes(jsonData);
 					log.trace("Publishing to MQTT topic {} JSON:\n{}", topic, jsonData);
+				}
+				if ( log.isTraceEnabled() ) {
 					log.trace("Publishing to MQTT topic {}\n{}", topic, Hex.encodeHexString(payload));
 				}
 				conn.publish(new BasicMqttMessage(topic, true, getPublishQos(), payload))
@@ -370,6 +380,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 		results.add(new BasicTextFieldSettingSpecifier("excludePropertyNamesRegex",
 				DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN.pattern()));
 		results.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode", ""));
+		results.add(new BasicTextFieldSettingSpecifier("datumEncoderUidFilter", ""));
 
 		// filter list
 		FluxFilterConfig[] confs = getFilters();
@@ -595,4 +606,55 @@ public class FluxUploadService extends BaseMqttConnectionService
 		this.includeVersionTag = includeVersionTag;
 	}
 
+	/**
+	 * Get an encoder service to use for MQTT messages.
+	 * 
+	 * @return the encoder service
+	 * @since 1.7
+	 */
+	public OptionalService<ObjectEncoder> getDatumEncoder() {
+		return datumEncoder;
+	}
+
+	/**
+	 * Set an encoder service to use for MQTT messages.
+	 * 
+	 * @param datumEncoder
+	 *        the encoder to set
+	 * @since 1.7
+	 */
+	public void setDatumEncoder(OptionalService<ObjectEncoder> datumEncoder) {
+		this.datumEncoder = datumEncoder;
+	}
+
+	/**
+	 * Get the datum encoder UID filter.
+	 * 
+	 * <p>
+	 * The configured {@link #getDatumEncoder()} must also implement
+	 * {@link FilterableService} for this method to work.
+	 * </p>
+	 * 
+	 * @return the UID filter
+	 * @since 1.7
+	 */
+	public String getDatumEncoderUidFilter() {
+		return FilterableService.filterPropValue(getDatumEncoder(), UID_PROPERTY);
+	}
+
+	/**
+	 * Set the datum encoder UID filter.
+	 * 
+	 * <p>
+	 * The configured {@link #getDatumEncoder()} must also implement
+	 * {@link FilterableService} for this method to work.
+	 * </p>
+	 * 
+	 * @param uid
+	 *        the filter to set
+	 * @since 1.7
+	 */
+	public void setDatumEncoderUidFilter(String uid) {
+		FilterableService.setFilterProp(getDatumEncoder(), UID_PROPERTY, uid);
+	}
 }

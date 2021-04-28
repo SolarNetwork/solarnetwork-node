@@ -41,6 +41,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.ui.ModelMap;
 import org.springframework.util.FileCopyUtils;
@@ -183,7 +184,7 @@ public class SettingsController {
 		}
 		return response(null);
 	}
-	
+
 	@RequestMapping(value = "/manage/reset", method = RequestMethod.POST)
 	@ResponseBody
 	public Response<Object> resetConfiguration(
@@ -303,8 +304,8 @@ public class SettingsController {
 	 *        the optional factory instance ID, or {@literal null}
 	 * @param key
 	 *        the resource setting key
-	 * @param file
-	 *        the resource
+	 * @param files
+	 *        the resources
 	 * @return status response
 	 * @throws IOException
 	 *         if any IO error occurs
@@ -313,14 +314,18 @@ public class SettingsController {
 	@ResponseBody
 	public Response<Void> importResource(@RequestParam("handlerKey") String handlerKey,
 			@RequestParam(name = "instanceKey", required = false) String instanceKey,
-			@RequestParam("key") String key, @RequestPart("file") MultipartFile file)
+			@RequestParam("key") String key, @RequestPart("file") MultipartFile[] files)
 			throws IOException {
 		final SettingsService service = settingsServiceTracker.service();
 		if ( service == null ) {
 			return new Response<Void>(false, null, "SettingsService not available.", null);
 		}
-		MultipartFileResource r = new MultipartFileResource(file);
-		service.importSettingResources(handlerKey, instanceKey, key, Collections.singleton(r));
+		List<Resource> resources = new ArrayList<>(files.length);
+		for ( MultipartFile file : files ) {
+			MultipartFileResource r = new MultipartFileResource(file);
+			resources.add(r);
+		}
+		service.importSettingResources(handlerKey, instanceKey, key, resources);
 		return Response.response(null);
 	}
 
