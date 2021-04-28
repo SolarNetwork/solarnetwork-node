@@ -142,7 +142,7 @@ public class DatumFieldConfig extends GeneralDatumSamplePropertyConfig<String> {
 	 * Set the message field property name.
 	 * 
 	 * <p>
-	 * This is an alias for {@link #setConfig(String)}.
+	 * This is an alias for {@link #setConfig(Object)}.
 	 * </p>
 	 * 
 	 * @param fieldProperty
