@@ -35,7 +35,7 @@ import net.solarnetwork.util.IntRangeSet;
  * An object to use as the "root" for {@link ExpressionService} evaluation.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot {
 
@@ -151,6 +151,28 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	 */
 	public Map<Integer, Integer> getRegs() {
 		return sampleUnsignedData;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("ExpressionRoot{");
+		if ( getDatum() != null ) {
+			builder.append("datum=");
+			builder.append(getDatum());
+			builder.append(", ");
+		}
+		if ( getProps() != null ) {
+			builder.append("props=");
+			builder.append(getProps());
+			builder.append(", ");
+		}
+		if ( sample != null ) {
+			builder.append("sample=");
+			builder.append(sample.dataDebugString());
+		}
+		builder.append("}");
+		return builder.toString();
 	}
 
 }

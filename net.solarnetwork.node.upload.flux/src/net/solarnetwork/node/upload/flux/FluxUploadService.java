@@ -53,6 +53,7 @@ import net.solarnetwork.common.mqtt.MqttConnectionFactory;
 import net.solarnetwork.common.mqtt.MqttQos;
 import net.solarnetwork.common.mqtt.MqttStats;
 import net.solarnetwork.common.mqtt.ReconfigurableMqttConnection;
+import net.solarnetwork.io.ObjectEncoder;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.OperationalModesService;
@@ -64,12 +65,13 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.OptionalServiceCollection;
 
 /**
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 1.6
+ * @version 1.7
  */
 public class FluxUploadService extends BaseMqttConnectionService
 		implements EventHandler, SettingSpecifierProvider, SettingsChangeObserver {
@@ -105,6 +107,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 	private Executor executor;
 	private FluxFilterConfig[] filters;
 	private boolean includeVersionTag = DEFAULT_INCLUDE_VERSION_TAG;
+	private OptionalServiceCollection<ObjectEncoder> datumEncoders;
 
 	/**
 	 * Constructor.
@@ -275,13 +278,19 @@ public class FluxUploadService extends BaseMqttConnectionService
 		if ( conn != null && conn.isEstablished() ) {
 			String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, nodeId, sourceId);
 			try {
-				if ( includeVersionTag ) {
-					data.put(TAG_VERSION, 2);
-				}
-				JsonNode jsonData = objectMapper.valueToTree(data);
-				byte[] payload = objectMapper.writeValueAsBytes(jsonData);
-				if ( log.isTraceEnabled() ) {
+				byte[] payload;
+				ObjectEncoder encoder = encoderForSourceId(sourceId);
+				if ( encoder != null ) {
+					payload = encoder.encodeAsBytes(data, null);
+				} else {
+					if ( includeVersionTag ) {
+						data.put(TAG_VERSION, 2);
+					}
+					JsonNode jsonData = objectMapper.valueToTree(data);
+					payload = objectMapper.writeValueAsBytes(jsonData);
 					log.trace("Publishing to MQTT topic {} JSON:\n{}", topic, jsonData);
+				}
+				if ( log.isTraceEnabled() ) {
 					log.trace("Publishing to MQTT topic {}\n{}", topic, Hex.encodeHexString(payload));
 				}
 				conn.publish(new BasicMqttMessage(topic, true, getPublishQos(), payload))
@@ -297,6 +306,36 @@ public class FluxUploadService extends BaseMqttConnectionService
 						getMqttConfig().getServerUri(), msg);
 			}
 		}
+	}
+
+	private ObjectEncoder encoderForSourceId(String sourceId) {
+		OptionalServiceCollection<ObjectEncoder> encoders = getDatumEncoders();
+		if ( encoders == null ) {
+			return null;
+		}
+		FluxFilterConfig[] filters = getFilters();
+		if ( filters == null || filters.length < 1 ) {
+			return null;
+		}
+		Iterable<ObjectEncoder> encoderItr = encoders.services();
+		for ( FluxFilterConfig cfg : filters ) {
+			String uid = (cfg != null && cfg.getDatumEncoderUid() != null
+					&& !cfg.getDatumEncoderUid().isEmpty() ? cfg.getDatumEncoderUid() : null);
+			if ( uid == null ) {
+				continue;
+			}
+			Pattern filterSourceId = cfg.getSourceIdRegex();
+			if ( filterSourceId == null || filterSourceId.matcher(sourceId).find() ) {
+				for ( ObjectEncoder encoder : encoderItr ) {
+					if ( uid.equals(encoder.getUid()) ) {
+						return encoder;
+					}
+				}
+				// if no encoder available, don't keep checking more filters for another
+				break;
+			}
+		}
+		return null;
 	}
 
 	private String sourceIdForEvent(Event event) {
@@ -593,6 +632,27 @@ public class FluxUploadService extends BaseMqttConnectionService
 	 */
 	public void setIncludeVersionTag(boolean includeVersionTag) {
 		this.includeVersionTag = includeVersionTag;
+	}
+
+	/**
+	 * Get the encoder services to use for MQTT messages.
+	 * 
+	 * @return the encoder services
+	 * @since 1.7
+	 */
+	public OptionalServiceCollection<ObjectEncoder> getDatumEncoders() {
+		return datumEncoders;
+	}
+
+	/**
+	 * Set the available encoder services to use for MQTT messages.
+	 * 
+	 * @param datumEncoders
+	 *        the encoders to set
+	 * @since 1.7
+	 */
+	public void setDatumEncoders(OptionalServiceCollection<ObjectEncoder> datumEncoders) {
+		this.datumEncoders = datumEncoders;
 	}
 
 }

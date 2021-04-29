@@ -1,7 +1,7 @@
 # SolarFlux Upload Service
 
 This project provides SolarNode plugin that posts datum captured by other SolarNode plugins to a
-SolarFlux-compatible MQTT server.
+[SolarFlux][solarflux]-compatible MQTT server.
 
 ![SolarFlux overall settings](docs/solarnode-solarflux-upload-settings.png)
 
@@ -18,8 +18,10 @@ configuration for each SolarFlux server you want to upload data to.
 
 ## MQTT message format
 
-Each datum message is published as a [CBOR][cbor] encoded indefinite-length map. This is
-essentially a JSON object. The map keys are the datum property names.
+Each datum message is published as a [CBOR][cbor] encoded indefinite-length map by default. This is
+essentially a JSON object. The map keys are the datum property names. You can configure a 
+**Datum Encoder** to encode datum into a different format, by configuring a [filter](#filter-settings).
+ For example, the [Protobuf Datum Encoder][protobuf-io] supports encoding datum into Protobuf messages.
 
 Here's an example datum message, expressed as JSON:
 
@@ -56,7 +58,7 @@ Each component configuration contains the following overall settings:
 | Host | The URI for the SolarFlux server to connect to. |
 | Username | The MQTT username to use. |
 | Password | The MQTT password to use. |
-| Exclude Properties | A regular expression to match property names on all datum sources to exclude from publishing. |
+| Exclude Properties | A regular expression to match property names on all datum sources to exclude from publishinggrip. |
 | Require Mode | If configured, an operational mode that must be active for any data to be published. |
 | Filters | Any number of datum [filter configurations](#filter-settings). |
 
@@ -88,6 +90,17 @@ individual datum sources are posted to SolarFlux, and/or restrict which properti
 are posted. This can be very useful to constrain how much data is sent to SolarFlux, for example
 on nodes using mobile internet connections where the cost of posting data is high.
 
+A filter can also configure a **Datum Encoder** to encode the MQTT message with. This can be 
+combined with a **Source ID** pattern to encode specific sources with specific encoders. For 
+example when using the [Protobuf Datum Encoder][protobuf-io] a single Protobuf message type is
+supported per encoder. If you want to encode different datum sources into different Protobuf 
+messages, you would configure one encoder per message type, and then one filter per source ID
+with the corresponding encoder.
+
+> :warning: **Note** that all filters are applied in the order they are defined, and then the 
+> _first_ filter with a **Datum Encoder** configured that matches the filter's **Source ID**
+> pattern will be used to encode the datum.
+
 ![SolarFlux filter settings](docs/solarnode-solarflux-upload-filter-settings.png)
 
 Each filter configuration contains the following settings:
@@ -95,6 +108,7 @@ Each filter configuration contains the following settings:
 | Setting | Description |
 |---------|-------------|
 | Source ID | A case-insensitive regular expression to match against datum source IDs. If defined, this filter will only be applied to datum with matching source ID values. If not defined this filter will be applied to all datum. For example `^solar` would match any source ID starting with _solar_. |
+| Datum Encoder | The <b>Service Name</b> if a <b>Datum Encoder</b> component to encode datum with. The encoder will be passed a `java.util.Map` object with all the datum properties. If not configured then CBOR will be used. |
 | Limit Seconds | The minimum number of seconds to limit datum that match the configured **Source ID** pattern. If datum are produced faster than this rate, they will be filtered out. Set to `0` or leave empty for no limit. |
 | Property Includes | A list of  case-insensitive regular expressions to match against datum property names. If configured, **only** properties that match one of these expressions will be included in the filtered output. For example `^watt` would match any property starting with _watt_.  |
 | Property Excludes | A list of  case-insensitive regular expressions to match against datum property names. If configured, **any** property that match one of these expressions will be excluded from the filtered output. For example `^temp` would match any property starting with _temp_. Exclusions are applied **after** property inclusions.  |
@@ -106,3 +120,5 @@ Each filter configuration contains the following settings:
   redundant.
 
 [cbor]: http://cbor.io/
+[protobuf-io]: ../net.solarnetwork.node.io.protobuf#protobuf-datum-encoderdecoder
+[solarflux]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarFlux-API

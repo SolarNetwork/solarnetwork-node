@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package sn;
+
+option java_package = "sn";
+option java_multiple_files = true;
+
+enum Status {   
+  OK = 0;
+  ERROR = 1;
+}
+
+message Location {
+  double lat = 1;
+  double lon = 2;
+}
+
+message PowerDatum {
+  double 	voltage = 1;
+  double 	current = 2;
+  uint64 	energy = 3;
+  Status 	status = 4;
+  Location 	location = 5;
+}

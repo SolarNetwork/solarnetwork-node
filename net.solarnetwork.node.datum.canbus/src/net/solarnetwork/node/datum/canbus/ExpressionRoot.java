@@ -34,7 +34,7 @@ import net.solarnetwork.support.ExpressionService;
  * An object to use as the "root" for {@link ExpressionService} evaluation.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.4
  */
 public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot {
@@ -83,6 +83,28 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 		CanbusSignalReference ref = new SimpleCanbusSignalReference(address, dataType, byteOrdering,
 				bitOffset, bitLength);
 		return sample.getNumber(ref);
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("ExpressionRoot{");
+		if ( getDatum() != null ) {
+			builder.append("datum=");
+			builder.append(getDatum());
+			builder.append(", ");
+		}
+		if ( getProps() != null ) {
+			builder.append("props=");
+			builder.append(getProps());
+			builder.append(", ");
+		}
+		if ( sample != null ) {
+			builder.append("sample=");
+			builder.append(sample.dataDebugString());
+		}
+		builder.append("}");
+		return builder.toString();
 	}
 
 }

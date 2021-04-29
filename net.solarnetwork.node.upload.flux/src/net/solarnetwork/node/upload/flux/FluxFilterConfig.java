@@ -49,7 +49,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Configuration for filtering options used by SolarFlux.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.4
  */
 public class FluxFilterConfig implements SettingsChangeObserver {
@@ -65,6 +65,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	}
 
 	private Pattern sourceIdRegex;
+	private String datumEncoderUid;
 	private Integer frequencySeconds;
 	private String[] propIncludeValues;
 	private String[] propExcludeValues;
@@ -209,6 +210,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>(8);
 
 		result.add(new BasicTextFieldSettingSpecifier(prefix + "sourceIdRegexValue", ""));
+		result.add(new BasicTextFieldSettingSpecifier(prefix + "datumEncoderUid", ""));
 		result.add(new BasicTextFieldSettingSpecifier(prefix + "frequencySeconds", ""));
 
 		SimpleKeyedListCallback cb = new SimpleKeyedListCallback();
@@ -233,6 +235,11 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 		if ( sourceIdRegex != null ) {
 			builder.append("sourceIdRegex=");
 			builder.append(sourceIdRegex);
+			builder.append(", ");
+		}
+		if ( datumEncoderUid != null ) {
+			builder.append("datumEncoderUid=");
+			builder.append(datumEncoderUid);
 			builder.append(", ");
 		}
 		if ( frequencySeconds != null ) {
@@ -419,4 +426,28 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 		this.propExcludeValues = ArrayUtils.arrayWithLength(this.propExcludeValues, count, String.class,
 				new NullStringObjectFactory());
 	}
+
+	/**
+	 * Get the UID of a {@code ObjectEncoder} service to encode the message
+	 * with.
+	 * 
+	 * @return the datumEncoderUid the UID of the encoder service to use
+	 * @since 1.1
+	 */
+	public String getDatumEncoderUid() {
+		return datumEncoderUid;
+	}
+
+	/**
+	 * Set the UID of a {@code ObjectEncoder} service to encode the message
+	 * with.
+	 * 
+	 * @param datumEncoderUid
+	 *        the datumEncoderUid to set
+	 * @since 1.1
+	 */
+	public void setDatumEncoderUid(String datumEncoderUid) {
+		this.datumEncoderUid = datumEncoderUid;
+	}
+
 }

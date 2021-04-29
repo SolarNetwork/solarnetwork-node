@@ -59,7 +59,7 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * {@link net.solarnetwork.node.MultiDatumDataSource} implementations to extend.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  * @since 1.51
  */
 public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEvents {
@@ -369,8 +369,8 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 					propValue = expr.getService().evaluateExpression(expr.getExpression(), null, root,
 							null, Object.class);
 				} catch ( ExpressionException e ) {
-					log.warn("Error evaluating property [{}] expression `{}`: {}", config.getName(),
-							config.getExpression(), e.getMessage());
+					log.warn("Error evaluating property [{}] expression `{}`: {}\n\nExpression root: {}",
+							config.getName(), config.getExpression(), e.getMessage(), root);
 				}
 			}
 			if ( propValue != null ) {
