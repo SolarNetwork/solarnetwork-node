@@ -317,6 +317,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 		if ( filters == null || filters.length < 1 ) {
 			return null;
 		}
+		Iterable<ObjectEncoder> encoderItr = encoders.services();
 		for ( FluxFilterConfig cfg : filters ) {
 			String uid = (cfg != null && cfg.getDatumEncoderUid() != null
 					&& !cfg.getDatumEncoderUid().isEmpty() ? cfg.getDatumEncoderUid() : null);
@@ -325,7 +326,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 			}
 			Pattern filterSourceId = cfg.getSourceIdRegex();
 			if ( filterSourceId == null || filterSourceId.matcher(sourceId).find() ) {
-				for ( ObjectEncoder encoder : encoders.services() ) {
+				for ( ObjectEncoder encoder : encoderItr ) {
 					if ( uid.equals(encoder.getUid()) ) {
 						return encoder;
 					}
