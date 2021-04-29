@@ -1,7 +1,7 @@
 # SolarFlux Upload Service
 
 This project provides SolarNode plugin that posts datum captured by other SolarNode plugins to a
-SolarFlux-compatible MQTT server.
+[SolarFlux][solarflux]-compatible MQTT server.
 
 ![SolarFlux overall settings](docs/solarnode-solarflux-upload-settings.png)
 
@@ -121,3 +121,4 @@ Each filter configuration contains the following settings:
 
 [cbor]: http://cbor.io/
 [protobuf-io]: ../net.solarnetwork.node.io.protobuf#protobuf-datum-encoderdecoder
+[solarflux]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarFlux-API
