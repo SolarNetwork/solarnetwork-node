@@ -330,6 +330,8 @@ public class FluxUploadService extends BaseMqttConnectionService
 						return encoder;
 					}
 				}
+				// if no encoder available, don't keep checking more filters for another
+				break;
 			}
 		}
 		return null;

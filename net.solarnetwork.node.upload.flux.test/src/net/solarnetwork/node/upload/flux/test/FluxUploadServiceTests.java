@@ -24,16 +24,19 @@ package net.solarnetwork.node.upload.flux.test;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static java.util.Collections.singleton;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static net.solarnetwork.common.mqtt.MqttConnectReturnCode.Accepted;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.isNull;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -56,6 +59,7 @@ import net.solarnetwork.common.mqtt.MqttConnection;
 import net.solarnetwork.common.mqtt.MqttConnectionFactory;
 import net.solarnetwork.common.mqtt.MqttMessage;
 import net.solarnetwork.common.mqtt.MqttQos;
+import net.solarnetwork.io.ObjectEncoder;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.domain.Datum;
@@ -64,6 +68,7 @@ import net.solarnetwork.node.support.DatumEvents;
 import net.solarnetwork.node.upload.flux.FluxFilterConfig;
 import net.solarnetwork.node.upload.flux.FluxUploadService;
 import net.solarnetwork.util.JsonUtils;
+import net.solarnetwork.util.StaticOptionalServiceCollection;
 
 /**
  * Test cases for the {@link FluxUploadService} class.
@@ -79,6 +84,7 @@ public class FluxUploadServiceTests {
 	private ObjectMapper objectMapper;
 	private MqttConnectionFactory connectionFactory;
 	private MqttConnection connection;
+	private ObjectEncoder encoder;
 	private Long nodeId;
 	private FluxUploadService service;
 
@@ -87,6 +93,7 @@ public class FluxUploadServiceTests {
 		connectionFactory = EasyMock.createMock(MqttConnectionFactory.class);
 		connection = EasyMock.createMock(MqttConnection.class);
 		identityService = EasyMock.createMock(IdentityService.class);
+		encoder = EasyMock.createMock(ObjectEncoder.class);
 		objectMapper = new ObjectMapper();
 
 		nodeId = Math.abs(UUID.randomUUID().getMostSignificantBits());
@@ -96,12 +103,12 @@ public class FluxUploadServiceTests {
 	}
 
 	private void replayAll() {
-		EasyMock.replay(connectionFactory, connection, identityService);
+		EasyMock.replay(connectionFactory, connection, identityService, encoder);
 	}
 
 	@After
 	public void teardown() {
-		EasyMock.verify(connectionFactory, connection, identityService);
+		EasyMock.verify(connectionFactory, connection, identityService, encoder);
 	}
 
 	private void expectMqttConnectionSetup() throws IOException {
@@ -133,13 +140,15 @@ public class FluxUploadServiceTests {
 		service.handleEvent(event);
 	}
 
-	private void assertMessage(MqttMessage publishedMsg, String sourceId, Map<String, Object> datum) {
+	private void assertMessageMetadata(MqttMessage publishedMsg, String sourceId) {
 		assertThat("MQTT message published", publishedMsg, notNullValue());
 		assertThat("MQTT message topic", publishedMsg.getTopic(),
 				equalTo(format("node/%d/datum/0/%s", nodeId, sourceId)));
 		assertThat("MQTT message QOS", publishedMsg.getQosLevel(), equalTo(MqttQos.AtMostOnce));
 		assertThat("MQTT message retained", publishedMsg.isRetained(), equalTo(true));
+	}
 
+	private void assertMessagePayloadJson(MqttMessage publishedMsg, Map<String, Object> datum) {
 		Map<String, Object> publishedMsgBody = JsonUtils
 				.getStringMap(new String(publishedMsg.getPayload(), Charset.forName("UTF-8")));
 		assertThat("Published data keys", publishedMsgBody.keySet(), equalTo(datum.keySet()));
@@ -151,6 +160,11 @@ public class FluxUploadServiceTests {
 			assertThat("Published data prop " + me.getKey(), publishedMsgBody,
 					hasEntry(me.getKey(), me.getValue()));
 		}
+	}
+
+	private void assertMessage(MqttMessage publishedMsg, String sourceId, Map<String, Object> datum) {
+		assertMessageMetadata(publishedMsg, sourceId);
+		assertMessagePayloadJson(publishedMsg, datum);
 	}
 
 	private Map<String, Object> publishLoop(long length, Map<String, Object> datum) throws Exception {
@@ -525,4 +539,172 @@ public class FluxUploadServiceTests {
 					equalTo(format("node/%d/datum/0/%s", nodeId, "not.throttled.source")));
 		}
 	}
+
+	@Test
+	public void postDatum_withEncoder_anySource() throws Exception {
+		// GIVEN
+		service.setDatumEncoders(new StaticOptionalServiceCollection<>(singleton(encoder)));
+
+		final String encoderUid = "test.encoder";
+
+		FluxFilterConfig filter = new FluxFilterConfig();
+		filter.setDatumEncoderUid(encoderUid);
+		filter.configurationChanged(null);
+		service.setFilters(new FluxFilterConfig[] { filter });
+
+		expectMqttConnectionSetup();
+
+		expect(encoder.getUid()).andReturn(encoderUid);
+
+		final byte[] encodedBytes = "encoded".getBytes();
+		Capture<Object> encoderObjectCaptor = new Capture<>();
+		expect(encoder.encodeAsBytes(capture(encoderObjectCaptor), isNull())).andReturn(encodedBytes);
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		Map<String, Object> datum = new HashMap<>(4);
+		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
+		datum.put("watts", 1234);
+		postEvent(datum);
+
+		// THEN
+		MqttMessage publishedMsg = msgCaptor.getValue();
+
+		assertMessageMetadata(publishedMsg, TEST_SOURCE_ID);
+		assertThat("Message encoded via encoder", publishedMsg.getPayload(), sameInstance(encodedBytes));
+	}
+
+	@Test
+	public void postDatum_withEncoder_matchingSource() throws Exception {
+		// GIVEN
+		service.setDatumEncoders(new StaticOptionalServiceCollection<>(singleton(encoder)));
+
+		final String encoderUid = "test.encoder";
+
+		FluxFilterConfig filter = new FluxFilterConfig();
+		filter.setSourceIdRegexValue("^test");
+		filter.setDatumEncoderUid(encoderUid);
+		filter.configurationChanged(null);
+		service.setFilters(new FluxFilterConfig[] { filter });
+
+		expectMqttConnectionSetup();
+
+		expect(encoder.getUid()).andReturn(encoderUid);
+
+		final byte[] encodedBytes = "encoded".getBytes();
+		Capture<Object> encoderObjectCaptor = new Capture<>();
+		expect(encoder.encodeAsBytes(capture(encoderObjectCaptor), isNull())).andReturn(encodedBytes);
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		Map<String, Object> datum = new HashMap<>(4);
+		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
+		datum.put("watts", 1234);
+		postEvent(datum);
+
+		// THEN
+		MqttMessage publishedMsg = msgCaptor.getValue();
+
+		assertMessageMetadata(publishedMsg, TEST_SOURCE_ID);
+		assertThat("Message encoded via encoder", publishedMsg.getPayload(), sameInstance(encodedBytes));
+	}
+
+	@Test
+	public void postDatum_withEncoder_matchingSource_multiEncoders() throws Exception {
+		// GIVEN
+		service.setDatumEncoders(new StaticOptionalServiceCollection<>(singleton(encoder)));
+
+		final String encoderUid = "test.encoder";
+
+		FluxFilterConfig filter = new FluxFilterConfig();
+		filter.setSourceIdRegexValue("^not.test");
+		filter.setDatumEncoderUid("not.test.encoder");
+		filter.configurationChanged(null);
+
+		FluxFilterConfig filter2 = new FluxFilterConfig();
+		filter2.setSourceIdRegexValue("^test");
+		filter2.setDatumEncoderUid(encoderUid);
+		filter2.configurationChanged(null);
+		service.setFilters(new FluxFilterConfig[] { filter, filter2 });
+
+		expectMqttConnectionSetup();
+
+		expect(encoder.getUid()).andReturn(encoderUid);
+
+		final byte[] encodedBytes = "encoded".getBytes();
+		Capture<Object> encoderObjectCaptor = new Capture<>();
+		expect(encoder.encodeAsBytes(capture(encoderObjectCaptor), isNull())).andReturn(encodedBytes);
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		Map<String, Object> datum = new HashMap<>(4);
+		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
+		datum.put("watts", 1234);
+		postEvent(datum);
+
+		// THEN
+		MqttMessage publishedMsg = msgCaptor.getValue();
+
+		assertMessageMetadata(publishedMsg, TEST_SOURCE_ID);
+		assertThat("Message encoded via encoder", publishedMsg.getPayload(), sameInstance(encodedBytes));
+	}
+
+	@Test
+	public void postDatum_withEncoder_noMatchingSource_filtersStillApplied() throws Exception {
+		// GIVEN
+		service.setDatumEncoders(new StaticOptionalServiceCollection<>(singleton(encoder)));
+
+		FluxFilterConfig filter = new FluxFilterConfig();
+		filter.setDatumEncoderUid("not.test.encoder");
+		filter.setPropExcludeValues(new String[] { "^(created|wattHours)$" });
+		filter.configurationChanged(null);
+
+		FluxFilterConfig filter2 = new FluxFilterConfig();
+		filter2.setDatumEncoderUid("no.no.encoder");
+		filter2.setPropExcludeValues(new String[] { "^watts" });
+		filter2.configurationChanged(null);
+		service.setFilters(new FluxFilterConfig[] { filter, filter2 });
+
+		expectMqttConnectionSetup();
+
+		expect(encoder.getUid()).andReturn("foo").anyTimes();
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		Map<String, Object> datum = new HashMap<>(4);
+		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
+		datum.put("watts", 1234);
+		datum.put("wattHours", 2345);
+		datum.put("foo", 3456);
+		postEvent(datum);
+
+		// THEN
+		MqttMessage publishedMsg = msgCaptor.getValue();
+
+		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
+		filteredDatum.remove("watts");
+		filteredDatum.remove("wattHours");
+		assertMessage(publishedMsg, TEST_SOURCE_ID, filteredDatum);
+	}
+
 }

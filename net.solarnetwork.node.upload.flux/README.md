@@ -90,6 +90,17 @@ individual datum sources are posted to SolarFlux, and/or restrict which properti
 are posted. This can be very useful to constrain how much data is sent to SolarFlux, for example
 on nodes using mobile internet connections where the cost of posting data is high.
 
+A filter can also configure a **Datum Encoder** to encode the MQTT message with. This can be 
+combined with a **Source ID** pattern to encode specific sources with specific encoders. For 
+example when using the [Protobuf Datum Encoder][protobuf-io] a single Protobuf message type is
+supported per encoder. If you want to encode different datum sources into different Protobuf 
+messages, you would configure one encoder per message type, and then one filter per source ID
+with the corresponding encoder.
+
+> :warning: **Note** that all filters are applied in the order they are defined, and then the 
+> _first_ filter with a **Datum Encoder** configured that matches the filter's **Source ID**
+> pattern will be used to encode the datum.
+
 ![SolarFlux filter settings](docs/solarnode-solarflux-upload-filter-settings.png)
 
 Each filter configuration contains the following settings:
