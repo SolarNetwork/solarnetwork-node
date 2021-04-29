@@ -634,9 +634,9 @@ public class FluxUploadService extends BaseMqttConnectionService
 	}
 
 	/**
-	 * Get an encoder service to use for MQTT messages.
+	 * Get the encoder services to use for MQTT messages.
 	 * 
-	 * @return the encoder service
+	 * @return the encoder services
 	 * @since 1.7
 	 */
 	public OptionalServiceCollection<ObjectEncoder> getDatumEncoders() {
@@ -644,10 +644,10 @@ public class FluxUploadService extends BaseMqttConnectionService
 	}
 
 	/**
-	 * Set an encoder service to use for MQTT messages.
+	 * Set the available encoder services to use for MQTT messages.
 	 * 
-	 * @param datumEncoder
-	 *        the encoder to set
+	 * @param datumEncoders
+	 *        the encoders to set
 	 * @since 1.7
 	 */
 	public void setDatumEncoders(OptionalServiceCollection<ObjectEncoder> datumEncoders) {
