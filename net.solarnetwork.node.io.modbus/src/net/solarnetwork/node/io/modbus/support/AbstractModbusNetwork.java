@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.modbus.support;
 
+import static java.lang.String.format;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -187,18 +188,27 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 			log.debug("Port {} lock already acquired", desc);
 			return;
 		}
+		final long timeout = getTimeout();
 		log.debug("Acquiring lock on Modbus port {}; waiting at most {} {}",
-				new Object[] { desc, getTimeout(), getTimeoutUnit() });
+				new Object[] { desc, timeout, getTimeoutUnit() });
 		try {
-			if ( lock.tryLock(getTimeout(), getTimeoutUnit()) ) {
-				log.debug("Acquired port {} lock", desc);
+			final long ts = System.currentTimeMillis();
+			if ( lock.tryLock(timeout, getTimeoutUnit()) ) {
+				if ( log.isDebugEnabled() ) {
+					long t = System.currentTimeMillis() - ts;
+					log.debug("Acquired port {} lock in {}ms", desc, t);
+				}
 				return;
 			}
-			log.debug("Timeout acquiring port {} lock", desc);
+			if ( log.isDebugEnabled() ) {
+				long t = System.currentTimeMillis() - ts;
+				log.debug("Timeout acquiring port {} lock after {}ms", desc, t);
+			}
 		} catch ( InterruptedException e ) {
 			log.debug("Interrupted waiting for port {} lock", desc);
 		}
-		throw new LockTimeoutException("Could not acquire port " + desc + " lock");
+		throw new LockTimeoutException(format("Could not acquire port %s lock within %d %s", desc,
+				timeout, getTimeoutUnit().toString().toLowerCase()));
 	}
 
 	/**
