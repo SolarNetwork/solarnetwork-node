@@ -45,11 +45,13 @@ import com.fasterxml.jackson.databind.node.JsonNodeCreator;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import net.solarnetwork.common.mqtt.BaseMqttConnectionService;
 import net.solarnetwork.common.mqtt.BasicMqttMessage;
+import net.solarnetwork.common.mqtt.BasicMqttProperty;
 import net.solarnetwork.common.mqtt.MqttConnection;
 import net.solarnetwork.common.mqtt.MqttConnectionFactory;
 import net.solarnetwork.common.mqtt.MqttConnectionObserver;
 import net.solarnetwork.common.mqtt.MqttMessage;
 import net.solarnetwork.common.mqtt.MqttMessageHandler;
+import net.solarnetwork.common.mqtt.MqttPropertyType;
 import net.solarnetwork.common.mqtt.MqttQos;
 import net.solarnetwork.common.mqtt.MqttStats;
 import net.solarnetwork.common.mqtt.MqttVersion;
@@ -137,6 +139,10 @@ public class MqttUploadService extends BaseMqttConnectionService
 		setPublishQos(MqttQos.AtLeastOnce);
 		getMqttConfig().setUid("SolarIn/MQTT");
 		getMqttConfig().setVersion(DEFAULT_MQTT_VERSION);
+		// we only subscribe to one topic, so set the max topic alias to a small number here
+		getMqttConfig().getProperties()
+				.addProperty(new BasicMqttProperty<Integer>(MqttPropertyType.TOPIC_ALIAS_MAXIMUM, 7));
+		//getMqttConfig().setWireLoggingEnabled(true);
 	}
 
 	@Override
