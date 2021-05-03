@@ -52,6 +52,7 @@ import net.solarnetwork.common.mqtt.MqttMessage;
 import net.solarnetwork.common.mqtt.MqttMessageHandler;
 import net.solarnetwork.common.mqtt.MqttQos;
 import net.solarnetwork.common.mqtt.MqttStats;
+import net.solarnetwork.common.mqtt.MqttVersion;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.domain.BaseDatum;
@@ -70,7 +71,7 @@ import net.solarnetwork.util.OptionalService;
  * {@link UploadService} using MQTT.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class MqttUploadService extends BaseMqttConnectionService
 		implements UploadService, MqttMessageHandler, MqttConnectionObserver {
@@ -89,6 +90,13 @@ public class MqttUploadService extends BaseMqttConnectionService
 
 	/** A tag to indicate that CBOR encoding v2 is in use. */
 	public static final String TAG_VERSION_2 = "_v2";
+
+	/**
+	 * The default MQTT version to use.
+	 * 
+	 * @since 1.4
+	 */
+	public static final MqttVersion DEFAULT_MQTT_VERSION = MqttVersion.Mqtt5;
 
 	private final ObjectMapper objectMapper;
 	private final IdentityService identityService;
@@ -128,6 +136,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 		this.eventAdminOpt = eventAdmin;
 		setPublishQos(MqttQos.AtLeastOnce);
 		getMqttConfig().setUid("SolarIn/MQTT");
+		getMqttConfig().setVersion(DEFAULT_MQTT_VERSION);
 	}
 
 	@Override
@@ -513,6 +522,17 @@ public class MqttUploadService extends BaseMqttConnectionService
 	 */
 	public void setIncludeVersionTag(boolean includeVersionTag) {
 		this.includeVersionTag = includeVersionTag;
+	}
+
+	/**
+	 * Set the MQTT version to use.
+	 * 
+	 * @param mqttVersion
+	 *        the version, or {@literal null} for a default version
+	 * @since 1.4
+	 */
+	public void setMqttVersion(MqttVersion mqttVersion) {
+		getMqttConfig().setVersion(mqttVersion != null ? mqttVersion : DEFAULT_MQTT_VERSION);
 	}
 
 }
