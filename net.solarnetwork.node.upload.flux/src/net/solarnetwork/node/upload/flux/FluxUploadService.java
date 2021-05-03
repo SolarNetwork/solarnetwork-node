@@ -52,6 +52,7 @@ import net.solarnetwork.common.mqtt.MqttConnection;
 import net.solarnetwork.common.mqtt.MqttConnectionFactory;
 import net.solarnetwork.common.mqtt.MqttQos;
 import net.solarnetwork.common.mqtt.MqttStats;
+import net.solarnetwork.common.mqtt.MqttVersion;
 import net.solarnetwork.common.mqtt.ReconfigurableMqttConnection;
 import net.solarnetwork.io.ObjectEncoder;
 import net.solarnetwork.node.DatumDataSource;
@@ -61,7 +62,9 @@ import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.util.ArrayUtils;
@@ -71,7 +74,7 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 1.7
+ * @version 1.8
  */
 public class FluxUploadService extends BaseMqttConnectionService
 		implements EventHandler, SettingSpecifierProvider, SettingsChangeObserver {
@@ -95,6 +98,13 @@ public class FluxUploadService extends BaseMqttConnectionService
 
 	/** The default value for the {@code includeVersionTag} property. */
 	public static final boolean DEFAULT_INCLUDE_VERSION_TAG = true;
+
+	/**
+	 * The default MQTT version to use.
+	 * 
+	 * @since 1.8
+	 */
+	public static final MqttVersion DEFAULT_MQTT_VERSION = MqttVersion.Mqtt5;
 
 	private final ConcurrentMap<String, Long> SOURCE_CAPTURE_TIMES = new ConcurrentHashMap<>(16, 0.9f,
 			2);
@@ -127,6 +137,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 		setPublishQos(MqttQos.AtMostOnce);
 		getMqttConfig().setUsername(DEFAULT_MQTT_USERNAME);
 		getMqttConfig().setServerUriValue(DEFAULT_MQTT_HOST);
+		getMqttConfig().setVersion(DEFAULT_MQTT_VERSION);
 	}
 
 	@Override
@@ -410,6 +421,17 @@ public class FluxUploadService extends BaseMqttConnectionService
 				DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN.pattern()));
 		results.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode", ""));
 
+		// drop-down menu for version
+		BasicMultiValueSettingSpecifier versionSpec = new BasicMultiValueSettingSpecifier("mqttVersion",
+				DEFAULT_MQTT_VERSION.name());
+		Map<String, String> versionTitles = new LinkedHashMap<String, String>(4);
+		versionTitles.put(MqttVersion.Mqtt311.name(), "3.1.1");
+		versionTitles.put(MqttVersion.Mqtt5.name(), "5");
+		versionSpec.setValueTitles(versionTitles);
+		results.add(versionSpec);
+
+		results.add(new BasicToggleSettingSpecifier("wireLogging", false));
+
 		// filter list
 		FluxFilterConfig[] confs = getFilters();
 		List<FluxFilterConfig> confsList = (confs != null ? asList(confs) : emptyList());
@@ -465,6 +487,16 @@ public class FluxUploadService extends BaseMqttConnectionService
 	 */
 	public void setMqttPassword(String mqttPassword) {
 		getMqttConfig().setPassword(mqttPassword);
+	}
+
+	/**
+	 * Set the MQTT version to use.
+	 * 
+	 * @param mqttVersion
+	 *        the version, or {@literal null} for a default version
+	 */
+	public void setMqttVersion(MqttVersion mqttVersion) {
+		getMqttConfig().setVersion(mqttVersion != null ? mqttVersion : DEFAULT_MQTT_VERSION);
 	}
 
 	/**
@@ -653,6 +685,17 @@ public class FluxUploadService extends BaseMqttConnectionService
 	 */
 	public void setDatumEncoders(OptionalServiceCollection<ObjectEncoder> datumEncoders) {
 		this.datumEncoders = datumEncoders;
+	}
+
+	/**
+	 * Toggle the wire logging mode.
+	 * 
+	 * @param wireLogging
+	 *        {@literal true} to enable wire logging
+	 * @since 1.8
+	 */
+	public void setWireLogging(boolean wireLogging) {
+		getMqttConfig().setWireLoggingEnabled(wireLogging);
 	}
 
 }
