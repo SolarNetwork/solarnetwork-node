@@ -494,6 +494,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 	 * 
 	 * @param mqttVersion
 	 *        the version, or {@literal null} for a default version
+	 * @since 1.8
 	 */
 	public void setMqttVersion(MqttVersion mqttVersion) {
 		getMqttConfig().setVersion(mqttVersion != null ? mqttVersion : DEFAULT_MQTT_VERSION);
