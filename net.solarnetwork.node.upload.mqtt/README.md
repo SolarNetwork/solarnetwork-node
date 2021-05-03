@@ -20,6 +20,8 @@ If a connection to the MQTT server is not available for any reason, then datum
 will be persisted locally, to be picked up by the bulk upload service, the same
 as if this plugin were not installed.
 
+As of version **1.7** MQTT version 5 is used by default.
+
 # Instruction handling
 
 This plugin listens for instructions from SolarNet as well, and attempts to

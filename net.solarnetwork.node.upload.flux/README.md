@@ -60,6 +60,8 @@ Each component configuration contains the following overall settings:
 | Password | The MQTT password to use. |
 | Exclude Properties | A regular expression to match property names on all datum sources to exclude from publishinggrip. |
 | Require Mode | If configured, an operational mode that must be active for any data to be published. |
+| Version | The MQTT protocol version to use. Startig with version 5 MQTT [topic aliases][mqtt-topic-aliases] will be used if the server supports it, which can save a significant amount of network bandwidth when long source IDs are in use.  |
+| Wire Logging | Toggle verbose logging on/off to support troubleshooting. The messages are logged to the `net.solarnetwork.mqtt` topic at `DEBUG` level. |
 | Filters | Any number of datum [filter configurations](#filter-settings). |
 
 For TLS-encrypted connections, SolarNode will make the node's own X.509 certificate available for
@@ -120,5 +122,6 @@ Each filter configuration contains the following settings:
   redundant.
 
 [cbor]: http://cbor.io/
+[mqtt-topic-aliases]: https://www.hivemq.com/blog/mqtt5-essentials-part10-topic-alias/
 [protobuf-io]: ../net.solarnetwork.node.io.protobuf#protobuf-datum-encoderdecoder
 [solarflux]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarFlux-API
