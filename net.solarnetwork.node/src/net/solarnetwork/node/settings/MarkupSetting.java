@@ -1,7 +1,7 @@
 /* ==================================================================
- * TitleSettingSpecifier.java - Mar 12, 2012 9:36:14 AM
+ * MarkupSetting.java - 6/05/2021 7:01:09 AM
  * 
- * Copyright 2007-2012 SolarNetwork.net Dev Team
+ * Copyright 2021 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -22,27 +22,22 @@
 
 package net.solarnetwork.node.settings;
 
-import java.util.Map;
-
 /**
- * A read-only string setting.
+ * API for a setting that supports markup content, such as HTML or Markdown.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
+ * @since 1.82
  */
-public interface TitleSettingSpecifier extends KeyedSettingSpecifier<String>, MarkupSetting {
+public interface MarkupSetting {
 
 	/**
-	 * An optional mapping of possible values for this setting to associated
-	 * titles.
+	 * Flag indicating the setting value contains markup such as HTML, Markdown,
+	 * and so on.
 	 * 
-	 * <p>
-	 * This can be used to display user-friendly titles for setting values if
-	 * the setting value itself is cryptic.
-	 * </p>
-	 * 
-	 * @return the mapping of titles
+	 * @return {@literal true} if the setting value contains markup,
+	 *         {@literal false} for plain text
 	 */
-	Map<String, String> getValueTitles();
+	boolean isMarkup();
 
 }

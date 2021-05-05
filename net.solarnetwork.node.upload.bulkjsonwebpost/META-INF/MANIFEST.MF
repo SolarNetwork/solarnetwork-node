@@ -1,9 +1,9 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNet Bulk JSON Web Uploader
+Bundle-Name: SolarIn/HTTP Upload Service
 Bundle-SymbolicName: net.solarnetwork.node.upload.bulkjsonwebpost
-Bundle-Description: Upload collected data to SolarNet periodically, in bulk.
-Bundle-Version: 1.11.0
+Bundle-Description: Upload locally cached data periodically to SolarIn via HTTP using JSON.
+Bundle-Version: 1.11.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 

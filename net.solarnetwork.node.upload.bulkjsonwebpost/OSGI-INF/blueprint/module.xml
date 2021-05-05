@@ -103,8 +103,6 @@
 	
 	<bean id="bulkDatumUploadTrigger" class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
 		<property name="jobDetail" ref="bulkDatumUploadJob"/>
-		<property name="name" value="Bulk Datum Uploader"/>
-		<property name="description" value="Upload locally collected data to SolarNetwork"/>
 		<property name="cronExpression" value="${job.bulkDatumUploader.cron}"/>
 		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 		<property name="randomSecond" value="true"/>

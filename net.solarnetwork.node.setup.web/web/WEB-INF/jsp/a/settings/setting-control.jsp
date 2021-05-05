@@ -11,7 +11,9 @@
 	groupIndex - an optional group index
 --%>
 <c:set var="settingValue" scope="page">
-	<setup:settingValue service='${settingsService}' provider='${provider}' setting='${setting}'/>
+	<setup:settingValue service='${settingsService}' provider='${provider}' setting='${setting}' 
+		escapeXml="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.MarkupSetting') 
+			? !setting.markup : true}"/>
 </c:set>
 <c:choose>
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.SetupResourceSettingSpecifier')}">
@@ -174,7 +176,14 @@
 						</script>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TitleSettingSpecifier')}">
-						<span class="title">${settingValue}</span>
+						<c:choose>
+							<c:when test="${setting.markup}">
+								<div class="title">${settingValue}</div>
+							</c:when>
+							<c:otherwise>				
+								<span class="title">${settingValue}</span>
+							</c:otherwise>
+						</c:choose>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.LocationLookupSettingSpecifier')}">
 						<span id="${settingId}">

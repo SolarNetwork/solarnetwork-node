@@ -1,7 +1,7 @@
 /* ==================================================================
- * TitleSettingSpecifier.java - Mar 12, 2012 9:36:14 AM
+ * SolarInCountStat.java - 5/05/2021 3:35:33 PM
  * 
- * Copyright 2007-2012 SolarNetwork.net Dev Team
+ * Copyright 2021 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -20,29 +20,43 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.settings;
+package net.solarnetwork.node.upload.mqtt;
 
-import java.util.Map;
+import net.solarnetwork.common.mqtt.MqttStats.MqttStat;
 
 /**
- * A read-only string setting.
+ * SolarIn/MQTT statistic types.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
+ * @since 1.8
  */
-public interface TitleSettingSpecifier extends KeyedSettingSpecifier<String>, MarkupSetting {
+public enum SolarInCountStat implements MqttStat {
 
-	/**
-	 * An optional mapping of possible values for this setting to associated
-	 * titles.
-	 * 
-	 * <p>
-	 * This can be used to display user-friendly titles for setting values if
-	 * the setting value itself is cryptic.
-	 * </p>
-	 * 
-	 * @return the mapping of titles
-	 */
-	Map<String, String> getValueTitles();
+	NodeDatumPosted(0, "node datum posted"),
+
+	LocationDatumPosted(1, "location datum posted"),
+
+	InstructionStatusPosted(2, "instruction status posted"),
+
+	InstructionsReceived(3, "instructions received");
+
+	private final int index;
+	private final String description;
+
+	private SolarInCountStat(int index, String description) {
+		this.index = index;
+		this.description = description;
+	}
+
+	@Override
+	public int getIndex() {
+		return index;
+	}
+
+	@Override
+	public String getDescription() {
+		return description;
+	}
 
 }
