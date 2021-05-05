@@ -32,12 +32,13 @@ import net.solarnetwork.node.settings.TitleSettingSpecifier;
  * Basic implemtation of {@link TitleSettingSpecifier}.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class BasicTitleSettingSpecifier extends BaseKeyedSettingSpecifier<String>
 		implements TitleSettingSpecifier {
 
 	private Map<String, String> valueTitles;
+	private boolean markup;
 
 	/**
 	 * Constructor.
@@ -65,9 +66,32 @@ public class BasicTitleSettingSpecifier extends BaseKeyedSettingSpecifier<String
 		super(key, defaultValue, trans);
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param key
+	 *        the key
+	 * @param defaultValue
+	 *        the default value
+	 * @param trans
+	 *        the transient flag value
+	 * @param markup
+	 *        the markup flag value
+	 * @since 1.4
+	 */
+	public BasicTitleSettingSpecifier(String key, String defaultValue, boolean trans, boolean markup) {
+		super(key, defaultValue, trans);
+		this.markup = markup;
+	}
+
 	@Override
 	public Map<String, String> getValueTitles() {
 		return this.valueTitles;
+	}
+
+	@Override
+	public boolean isMarkup() {
+		return markup;
 	}
 
 	@Override
@@ -98,6 +122,18 @@ public class BasicTitleSettingSpecifier extends BaseKeyedSettingSpecifier<String
 
 	public void setValueTitles(Map<String, String> valueTitles) {
 		this.valueTitles = (valueTitles == null ? null : Collections.unmodifiableMap(valueTitles));
+	}
+
+	/**
+	 * Set the markup flag.
+	 * 
+	 * @param markup
+	 *        {@literal true} if the setting value contains markup,
+	 *        {@literal false} for plain text
+	 * @since 1.4
+	 */
+	public void setMarkup(boolean markup) {
+		this.markup = markup;
 	}
 
 }

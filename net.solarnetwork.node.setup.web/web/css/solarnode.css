@@ -97,6 +97,15 @@ h2:hover .anchor {
 	font-weight: 400;
 }
 
+.control-group div.title table th {
+	text-align: left;
+	padding-right: 10px;
+}
+
+table.counts td:last-child {
+	text-align: right;
+}
+
 form > fieldset > fieldset:last-of-type {
     border-bottom: 1px dotted #e5e5e5;
     margin-bottom: 20px;
