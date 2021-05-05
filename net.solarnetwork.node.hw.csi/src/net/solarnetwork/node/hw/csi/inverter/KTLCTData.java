@@ -237,7 +237,7 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 
 	@Override
 	public Float getPv3Current() {
-		return getCentiValueAsFloat(KTLCTRegister.InverterPv1Current);
+		return getCentiValueAsFloat(KTLCTRegister.InverterPv3Current);
 	}
 
 	@Override
