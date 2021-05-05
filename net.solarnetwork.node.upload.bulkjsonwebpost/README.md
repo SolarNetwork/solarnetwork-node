@@ -1,7 +1,7 @@
-# SolarNode Bulk JSON Web Uploader
+# SolarIn/HTTP Upload Service
 
 This project provides SolarNode plugin that allows SolarNode to upload data
-collected by other plugins to SolarIn. It also can parse and persist 
+collected by other plugins to SolarIn via HTTP as JSON. It also can parse and persist 
 instructions in the response to data uploads, and provides an instruction
 acknowledgement service for uploading the status of instructions back
 to SolarIn.

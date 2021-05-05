@@ -72,6 +72,11 @@
 		<property name="executor" ref="executor"/>
 		<property name="mqttConfig.keepAliveSeconds" value="${client.keepAliveInterval}"/>
 		<property name="mqttConfig.optionalSslService" ref="sslService"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basename" value="net.solarnetwork.node.upload.mqtt.MqttUploadService"/>
+			</bean>
+		</property>
 	</bean>
 
 	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">
@@ -115,5 +120,7 @@
 			<argument ref="samplesTransformService"/>
 		</bean>
 	</service>
+	
+	<service ref="mqttUploadService" interface="net.solarnetwork.node.settings.SettingSpecifierProvider"/>
 
 </blueprint>

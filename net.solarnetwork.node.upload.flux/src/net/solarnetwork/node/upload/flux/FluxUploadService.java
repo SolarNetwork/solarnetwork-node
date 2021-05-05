@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.upload.flux;
 
+import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
@@ -31,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -64,6 +66,7 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.settings.SettingsChangeObserver;
@@ -414,6 +417,8 @@ public class FluxUploadService extends BaseMqttConnectionService
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<>(4);
+		results.add(new BasicTitleSettingSpecifier("status", getStatusMessage(), true));
+
 		results.add(new BasicTextFieldSettingSpecifier("mqttHost", DEFAULT_MQTT_HOST));
 		results.add(new BasicTextFieldSettingSpecifier("mqttUsername", DEFAULT_MQTT_USERNAME));
 		results.add(new BasicTextFieldSettingSpecifier("mqttPassword", "", true));
@@ -448,6 +453,17 @@ public class FluxUploadService extends BaseMqttConnectionService
 				}));
 
 		return results;
+	}
+
+	private String getStatusMessage() {
+		final MqttConnection conn = connection();
+		final boolean connected = (conn != null ? conn.isEstablished() : false);
+		String connMsg = getMessageSource().getMessage(
+				format("status.%s", connected ? "connected" : "disconnected"), null,
+				Locale.getDefault());
+		return getMessageSource().getMessage("status.msg",
+				new Object[] { connMsg, getMqttStats().get(MqttStats.BasicCounts.MessagesDelivered) },
+				Locale.getDefault());
 	}
 
 	@Override

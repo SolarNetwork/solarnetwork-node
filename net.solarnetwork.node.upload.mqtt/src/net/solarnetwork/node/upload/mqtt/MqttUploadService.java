@@ -22,12 +22,15 @@
 
 package net.solarnetwork.node.upload.mqtt;
 
+import static java.lang.String.format;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -66,6 +69,9 @@ import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.ReactorService;
 import net.solarnetwork.node.reactor.support.BasicInstruction;
 import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.JsonUtils;
 import net.solarnetwork.util.OptionalService;
 
@@ -73,10 +79,10 @@ import net.solarnetwork.util.OptionalService;
  * {@link UploadService} using MQTT.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class MqttUploadService extends BaseMqttConnectionService
-		implements UploadService, MqttMessageHandler, MqttConnectionObserver {
+		implements UploadService, MqttMessageHandler, MqttConnectionObserver, SettingSpecifierProvider {
 
 	/** The JSON MIME type. */
 	public static final String JSON_MIME_TYPE = "application/json";
@@ -130,7 +136,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 			IdentityService identityService, OptionalService<ReactorService> reactorService,
 			OptionalService<InstructionExecutionService> instructionExecutionService,
 			OptionalService<EventAdmin> eventAdmin) {
-		super(connectionFactory, new MqttStats(100));
+		super(connectionFactory, new MqttStats("SolarIn/MQTT", 100, SolarInCountStat.values()));
 		this.objectMapper = objectMapper;
 		this.identityService = identityService;
 		this.reactorServiceOpt = reactorService;
@@ -275,6 +281,9 @@ public class MqttUploadService extends BaseMqttConnectionService
 						conn.publish(new BasicMqttMessage(topic, false, getPublishQos(),
 								objectMapper.writeValueAsBytes(jsonData)))
 								.get(getMqttConfig().getConnectTimeoutSeconds(), TimeUnit.SECONDS);
+						getMqttStats().incrementAndGet(
+								jsonData.hasNonNull("locationId") ? SolarInCountStat.LocationDatumPosted
+										: SolarInCountStat.NodeDatumPosted);
 						postDatumUploadedEvent(data, jsonData);
 						log.info("Uploaded datum via MQTT: {}", data);
 					}
@@ -352,6 +361,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 				conn.publish(new BasicMqttMessage(topic, false, getPublishQos(),
 						objectMapper.writeValueAsBytes(instr)))
 						.get(getMqttConfig().getConnectTimeoutSeconds(), TimeUnit.SECONDS);
+				getMqttStats().incrementAndGet(SolarInCountStat.InstructionStatusPosted);
 				return true;
 			} catch ( Exception e ) {
 				Throwable root = e;
@@ -427,6 +437,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 					MqttConnection conn = connection();
 					Long nodeId = identityService.getNodeId();
 					for ( Instruction instr : instructions ) {
+						getMqttStats().incrementAndGet(SolarInCountStat.InstructionsReceived);
 						try {
 							InstructionStatus status = null;
 							if ( executor != null ) {
@@ -493,6 +504,36 @@ public class MqttUploadService extends BaseMqttConnectionService
 			log.error("Error subscribing to MQTT topic {} @ {}: {}", instructionTopic,
 					getMqttConfig().getServerUri(), msg);
 		}
+	}
+
+	@Override
+	public String getSettingUID() {
+		return "net.solarnetwork.node.upload.mqtt";
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		SettingSpecifier stats = new BasicTitleSettingSpecifier("status", getStatusMessage(), true);
+		return Collections.singletonList(stats);
+	}
+
+	private String getStatusMessage() {
+		final MqttConnection conn = connection();
+		final boolean connected = (conn != null ? conn.isEstablished() : false);
+		final String connMsg = getMessageSource().getMessage(
+				format("status.%s", connected ? "connected" : "disconnected"), null,
+				Locale.getDefault());
+		final URI uri = getMqttUri();
+		// @formatter:off
+		return getMessageSource().getMessage("status.msg",
+				new Object[] { connMsg, 
+						uri != null ? uri : "N/A",
+						getMqttStats().get(SolarInCountStat.NodeDatumPosted),
+						getMqttStats().get(SolarInCountStat.LocationDatumPosted),
+						getMqttStats().get(SolarInCountStat.InstructionsReceived),
+						getMqttStats().get(SolarInCountStat.InstructionStatusPosted) },
+				Locale.getDefault());
+		// @formatter:on
 	}
 
 	/**
