@@ -42,7 +42,7 @@ import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
  * 
  * @author maxieduncan
  * @author matt
- * @version 1.6
+ * @version 1.7
  */
 public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 
