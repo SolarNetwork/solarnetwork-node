@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.csi.inverter;
 
 import static java.util.Arrays.asList;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.StringAscii;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
@@ -38,7 +39,7 @@ import net.solarnetwork.util.IntRangeSet;
  * Enumeration of Modbus register mappings for the CSI 50KTL-CT series inverter.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public enum KTLCTRegister implements ModbusReference {
 
@@ -64,7 +65,7 @@ public enum KTLCTRegister implements ModbusReference {
 	InverterEfficiency(0x19, UInt16),
 
 	/** Power factor from 0 - 1, in 0.001 increment. */
-	InverterPowerFactor(0x1A, UInt16),
+	InverterPowerFactor(0x1A, Int16),
 
 	/** AC active power total, in 0.1 kW (100 W). */
 	InverterActivePowerTotal(0x1D, UInt16),
@@ -94,31 +95,31 @@ public enum KTLCTRegister implements ModbusReference {
 	InverterPv1Voltage(0x25, UInt16),
 
 	/** PV 1 input current, in 0.1 A. */
-	InverterPv1Current(0x26, UInt16),
+	InverterPv1Current(0x26, Int16),
 
 	/** PV 2 input voltage, in 0.1 V. */
 	InverterPv2Voltage(0x27, UInt16),
 
 	/** PV 2 input current, in 0.1 A. */
-	InverterPv2Current(0x28, UInt16),
+	InverterPv2Current(0x28, Int16),
 
 	/** PV 3 input voltage, in 0.1 V. */
 	InverterPv3Voltage(0x29, UInt16),
 
 	/** PV 3 input current, in 0.1 A. */
-	InverterPv3Current(0x2A, UInt16),
+	InverterPv3Current(0x2A, Int16),
 
 	/** AC line frequency, in 0.1 Hz. */
 	InverterFrequency(0x2B, UInt16),
 
 	/** Module temperature, in 0.1 C. */
-	InverterModuleTemperature(0x2C, UInt16),
+	InverterModuleTemperature(0x2C, Int16),
 
 	/** Internal temperature, in 0.1 C. */
-	InverterInternalTemperature(0x2D, UInt16),
+	InverterInternalTemperature(0x2D, Int16),
 
 	/** Transformer temperature, in 0.1 C. */
-	InverterTransformerTemperature(0x2E, UInt16),
+	InverterTransformerTemperature(0x2E, Int16),
 
 	/** Status mode code, see {@link KTLCTInverterWorkMode}. */
 	StatusMode(0x2F, UInt16),
