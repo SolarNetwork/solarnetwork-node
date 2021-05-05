@@ -462,7 +462,8 @@ public class FluxUploadService extends BaseMqttConnectionService
 				format("status.%s", connected ? "connected" : "disconnected"), null,
 				Locale.getDefault());
 		return getMessageSource().getMessage("status.msg",
-				new Object[] { connMsg, getMqttStats().get(MqttStats.BasicCounts.MessagesDelivered) },
+				new Object[] { connMsg, getMqttStats().get(MqttStats.BasicCounts.MessagesDelivered),
+						getMqttStats().get(MqttStats.BasicCounts.PayloadBytesDelivered) },
 				Locale.getDefault());
 	}
 

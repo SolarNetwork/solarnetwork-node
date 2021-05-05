@@ -513,7 +513,8 @@ public class MqttUploadService extends BaseMqttConnectionService
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		SettingSpecifier stats = new BasicTitleSettingSpecifier("status", getStatusMessage(), true);
+		SettingSpecifier stats = new BasicTitleSettingSpecifier("status", getStatusMessage(), true,
+				true);
 		return Collections.singletonList(stats);
 	}
 
@@ -524,14 +525,18 @@ public class MqttUploadService extends BaseMqttConnectionService
 				format("status.%s", connected ? "connected" : "disconnected"), null,
 				Locale.getDefault());
 		final URI uri = getMqttUri();
+		final MqttStats s = getMqttStats();
 		// @formatter:off
 		return getMessageSource().getMessage("status.msg",
-				new Object[] { connMsg, 
+				new Object[] { 
+						connMsg, 
 						uri != null ? uri : "N/A",
-						getMqttStats().get(SolarInCountStat.NodeDatumPosted),
-						getMqttStats().get(SolarInCountStat.LocationDatumPosted),
-						getMqttStats().get(SolarInCountStat.InstructionsReceived),
-						getMqttStats().get(SolarInCountStat.InstructionStatusPosted) },
+						s.get(SolarInCountStat.NodeDatumPosted),
+						s.get(SolarInCountStat.LocationDatumPosted),
+						s.get(MqttStats.BasicCounts.PayloadBytesDelivered),
+						s.get(SolarInCountStat.InstructionsReceived),
+						s.get(SolarInCountStat.InstructionStatusPosted),
+						s.get(MqttStats.BasicCounts.PayloadBytesReceived) },
 				Locale.getDefault());
 		// @formatter:on
 	}
