@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.support;
 
+import static net.solarnetwork.web.security.AuthorizationV2Builder.httpDate;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,7 +35,10 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.Collection;
+import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.zip.DeflaterInputStream;
 import java.util.zip.GZIPInputStream;
 import javax.net.ssl.HttpsURLConnection;
@@ -45,12 +49,13 @@ import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.support.SSLService;
 import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.web.security.AuthorizationV2Builder;
 
 /**
  * Supporting methods for HTTP client operations.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public abstract class HttpClientSupport extends BaseIdentifiable {
 
@@ -185,6 +190,48 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	 */
 	protected URLConnection getURLConnection(String url, String httpMethod, String accept)
 			throws IOException {
+		return getURLConnection(url, httpMethod, accept, null);
+	}
+
+	/**
+	 * Get a URLConnection for a specific URL and HTTP method.
+	 * 
+	 * <p>
+	 * If the httpMethod equals {@code POST} then the connection's
+	 * {@code doOutput} property will be set to {@literal true}, otherwise it
+	 * will be set to {@literal false}. The {@code doInput} property is always
+	 * set to {@literal true}.
+	 * </p>
+	 * 
+	 * <p>
+	 * This method also sets up the request property
+	 * {@code Accept-Encoding: gzip,deflate} so the response can be compressed.
+	 * The {@link #getInputStreamFromURLConnection(URLConnection)} automatically
+	 * handles compressed responses.
+	 * </p>
+	 * 
+	 * <p>
+	 * If the {@link #getSslService()} property is configured and the URL
+	 * represents an HTTPS connection, then that factory will be used to for the
+	 * connection.
+	 * </p>
+	 * 
+	 * @param url
+	 *        the URL to connect to
+	 * @param httpMethod
+	 *        the HTTP method
+	 * @param accept
+	 *        the HTTP Accept header value
+	 * @param connectionCustomizer
+	 *        an optional consumer to customize the connection before it is
+	 *        opened
+	 * @return the URLConnection
+	 * @throws IOException
+	 *         if any IO error occurs
+	 * @since 1.5
+	 */
+	protected URLConnection getURLConnection(String url, String httpMethod, String accept,
+			Consumer<URLConnection> connectionCustomizer) throws IOException {
 		URL connUrl = new URL(url);
 		URLConnection conn = connUrl.openConnection();
 		if ( conn instanceof HttpURLConnection ) {
@@ -207,7 +254,55 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 		conn.setDoOutput(HTTP_METHOD_POST.equalsIgnoreCase(httpMethod));
 		conn.setConnectTimeout(this.connectionTimeout);
 		conn.setReadTimeout(connectionTimeout);
+		if ( connectionCustomizer != null ) {
+			connectionCustomizer.accept(conn);
+		}
 		return conn;
+	}
+
+	/**
+	 * Populate SolarNetwork token authorization headers on a
+	 * {@code URLConnection}.
+	 * 
+	 * @param conn
+	 *        the connection to populate
+	 * @param builder
+	 *        the authorization builder
+	 * @param requestDate
+	 *        the request date
+	 * @param headers
+	 *        any additional headers to populate on the request
+	 * @since 1.5
+	 */
+	public void setupTokenAuthorization(URLConnection conn, AuthorizationV2Builder builder,
+			Date requestDate, Map<String, List<String>> headers) {
+		if ( headers != null ) {
+			for ( Map.Entry<String, List<String>> me : headers.entrySet() ) {
+				boolean first = true;
+				for ( String v : me.getValue() ) {
+					if ( first ) {
+						conn.setRequestProperty(me.getKey(), v);
+					} else {
+						conn.addRequestProperty(me.getKey(), v);
+					}
+				}
+			}
+		}
+		builder.date(requestDate);
+
+		URL url = conn.getURL();
+		String host = url.getHost();
+		if ( url.getPort() != 80 ) {
+			host += ":" + url.getPort();
+		}
+		builder.host(host).path(url.getPath());
+
+		if ( log.isTraceEnabled() ) {
+			log.trace("Canonical request data: {}", builder.buildCanonicalRequestData());
+		}
+
+		conn.setRequestProperty("Date", httpDate(requestDate));
+		conn.setRequestProperty("Authorization", builder.build());
 	}
 
 	/**

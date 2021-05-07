@@ -351,4 +351,44 @@
 		</bean>
 	</service>
 	
+	<!-- User Metadata Service -->
+	
+	<bean id="userMetadataMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.support.UserMetadataService</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+			</list>
+		</property>
+	</bean>
+	
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="User Metadata Service"/>
+			<property name="factoryUID" value="net.solarnetwork.node.metadata.user"/>
+			<property name="messageSource" ref="userMetadataMessageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.metadata.user" 
+			autowire-on-update="true" update-method="configurationChanged">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.support.UserMetadataService</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.metadata.user"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.support.UserMetadataService">
+			<argument>
+				<bean class="net.solarnetwork.util.DynamicServiceTracker">
+					<property name="bundleContext" ref="bundleContext"/>
+					<property name="serviceClassName" value="net.solarnetwork.node.setup.SetupService"/>
+				</bean>
+			</argument>
+			<property name="objectMapper" ref="objectMapper"/>
+			<property name="messageSource" ref="userMetadataMessageSource"/>
+		</bean>
+	</osgix:managed-service-factory>
+	
 </blueprint>

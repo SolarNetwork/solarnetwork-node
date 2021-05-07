@@ -19,7 +19,8 @@
 		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[1.5.0,)"/>
 		
 		<!-- Testing support -->
-		
-		<!-- SolarNetwork -->
+		<dependency org="javax.servlet" name="javax.servlet-api" rev="3.1.0" />
+		<dependency org="org.mortbay.jetty" name="jetty" rev="6.1.26"/>
+		<dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.26"/>
     </dependencies>
 </ivy-module>

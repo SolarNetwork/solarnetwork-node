@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.zip.GZIPOutputStream;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,7 +53,7 @@ import net.solarnetwork.node.RemoteServiceException;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public abstract class JsonHttpClientSupport extends HttpClientSupport {
 
@@ -77,7 +78,30 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	 *         if any IO error occurs
 	 */
 	protected final InputStream doJson(String url, String method, Object data) throws IOException {
-		URLConnection conn = getURLConnection(url, method, JSON_MIME_TYPE);
+		return doJson(url, method, data, null);
+	}
+
+	/**
+	 * Perform a JSON HTTP request.
+	 * 
+	 * @param url
+	 *        the URL to make the request to
+	 * @param method
+	 *        the HTTP method, e.g. {@link HttpClientSupport#HTTP_METHOD_GET}
+	 * @param data
+	 *        the optional data to marshall to JSON and upload as the request
+	 *        content
+	 * @param connectionCustomizer
+	 *        an optional consumer to customize the created URL connection,
+	 *        before it is opened
+	 * @return the InputStream for the HTTP response
+	 * @throws IOException
+	 *         if any IO error occurs
+	 * @since 1.3
+	 */
+	protected final InputStream doJson(String url, String method, Object data,
+			Consumer<URLConnection> connectionCustomizer) throws IOException {
+		URLConnection conn = getURLConnection(url, method, JSON_MIME_TYPE, connectionCustomizer);
 		if ( data != null ) {
 			conn.setRequestProperty("Content-Type", JSON_MIME_TYPE + ";charset=UTF-8");
 			if ( compress ) {
@@ -110,7 +134,25 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	 *         if any IO error occurs
 	 */
 	protected final InputStream jsonGET(String url) throws IOException {
-		return doJson(url, HTTP_METHOD_GET, null);
+		return doJson(url, HTTP_METHOD_GET, null, null);
+	}
+
+	/**
+	 * Perform a JSON GET HTTP request.
+	 * 
+	 * @param url
+	 *        the URL to GET
+	 * @param connectionCustomizer
+	 *        an optional consumer to customize the created URL connection,
+	 *        before it is opened
+	 * @return the HTTP response InputStream
+	 * @throws IOException
+	 *         if any IO error occurs
+	 * @since 1.3
+	 */
+	protected final InputStream jsonGET(String url, Consumer<URLConnection> connectionCustomizer)
+			throws IOException {
+		return doJson(url, HTTP_METHOD_GET, null, connectionCustomizer);
 	}
 
 	/**
@@ -126,6 +168,26 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	 */
 	protected final InputStream jsonPOST(String url, Object data) throws IOException {
 		return doJson(url, HTTP_METHOD_POST, data);
+	}
+
+	/**
+	 * Perform a JSON POST HTTP request.
+	 * 
+	 * @param url
+	 *        the URL to POST
+	 * @param data
+	 *        the object to marshall into JSON
+	 * @param connectionCustomizer
+	 *        an optional consumer to customize the created URL connection,
+	 *        before it is opened
+	 * @return the HTTP response InputStream
+	 * @throws IOException
+	 *         if any IO error occurs
+	 * @since 1.3
+	 */
+	protected final InputStream jsonPOST(String url, Object data,
+			Consumer<URLConnection> connectionCustomizer) throws IOException {
+		return doJson(url, HTTP_METHOD_POST, data, connectionCustomizer);
 	}
 
 	/**
@@ -147,8 +209,13 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	 */
 	protected <T> T extractResponseData(InputStream in, Class<T> dataType)
 			throws RemoteServiceException, IOException {
+		final ObjectMapper mapper = getObjectMapper();
+		if ( mapper == null ) {
+			throw new RuntimeException(
+					"No ObjectMapper configured for extracting JSON response data with.");
+		}
 		try {
-			JsonNode root = getObjectMapper().readTree(in);
+			JsonNode root = mapper.readTree(in);
 			if ( root.isObject() ) {
 				JsonNode child = root.get("success");
 				if ( child != null && child.asBoolean() ) {
@@ -300,18 +367,40 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 		}
 	}
 
+	/**
+	 * Get the JSON mapper.
+	 * 
+	 * @return the mapper
+	 */
 	public final ObjectMapper getObjectMapper() {
 		return objectMapper;
 	}
 
+	/**
+	 * Set the JSON mapper.
+	 * 
+	 * @param objectMapper
+	 *        the mapper
+	 */
 	public final void setObjectMapper(ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
 	}
 
+	/**
+	 * Get the compress flag.
+	 * 
+	 * @return {@literal true} to compress HTTP body content with gzip
+	 */
 	public final boolean isCompress() {
 		return compress;
 	}
 
+	/**
+	 * Set the compress flag.
+	 * 
+	 * @param compress
+	 *        {@literal true} to compress HTTP body content with gzip
+	 */
 	public final void setCompress(boolean compress) {
 		this.compress = compress;
 	}
