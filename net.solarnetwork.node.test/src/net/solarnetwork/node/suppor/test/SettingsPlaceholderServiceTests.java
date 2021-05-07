@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.support.test;
+package net.solarnetwork.node.suppor.test;
 
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.equalTo;
@@ -43,6 +43,12 @@ import net.solarnetwork.util.StaticOptionalService;
 
 /**
  * Test cases for the {@link SettingsPlaceholderService} class.
+ * 
+ * <p>
+ * <b>Note</b> this test is not in the
+ * {@code net.solarnetwork.node.internal.test} project because of the file
+ * system access required during testing.
+ * </p>
  * 
  * @author matt
  * @version 1.0
