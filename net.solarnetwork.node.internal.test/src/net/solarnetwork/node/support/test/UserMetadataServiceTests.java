@@ -142,16 +142,18 @@ public class UserMetadataServiceTests extends AbstractHttpClientTests {
 
 		TestHttpHandler handler = new TestHttpHandler() {
 
+			private final String p = "/solarquery/api/v1/sec/users/meta";
+
 			@Override
 			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
 					throws Exception {
 				assertThat("Request method", request.getMethod(), equalTo("GET"));
-				assertThat("Request path", request.getPathInfo(),
-						equalTo("/solarquery/api/v1/sec/users/meta"));
+				assertThat("Request path", request.getPathInfo(), equalTo(p));
 
 				long reqDate = request.getDateHeader("Date");
 				String auth = new AuthorizationV2Builder(token).saveSigningKey(secret)
-						.host("localhost:" + getHttpServerPort()).date(new Date(reqDate)).build();
+						.host("localhost:" + getHttpServerPort()).path(p).date(new Date(reqDate))
+						.build();
 				assertThat("Request auth", request.getHeader("Authorization"), equalTo(auth));
 
 				respondWithJsonResource(response, "meta-01.json");
