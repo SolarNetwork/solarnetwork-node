@@ -59,6 +59,7 @@
 	<bean id="samplesTransformService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
+		<property name="serviceFilter" value="(role=global)" />
 	</bean>
 
 	<bean id="mqttUploadService" class="net.solarnetwork.node.upload.mqtt.MqttUploadService" 

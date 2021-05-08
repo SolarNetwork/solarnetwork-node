@@ -15,18 +15,18 @@
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
 	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler" filter="(function=node)"/>
-	
+
 	<bean id="placeholderService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
 	</bean>
-	
+
 	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
 		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
 	</bean>
-	
+
 	<bean id="datumMetadataService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.DatumMetadataService"/>
@@ -41,7 +41,7 @@
 			</bean>
 		</argument>
 	</bean>
-	
+
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
@@ -67,7 +67,7 @@
 			</bean>
 		</property>
 	</bean>
-	
+
 	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
 		<property name="prefix" value="datumDataSource."/>
 		<property name="delegate" ref="messageSource"/>
@@ -77,19 +77,19 @@
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
 	</bean>
-	
+
 	<bean id="expressionServices" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.support.ExpressionService"/>
 	</bean>
-	
+
 	<bean id="kcdParser" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.io.canbus.KcdParser"/>
 	</bean>
-	
+
 	<reference id="settingsService" interface="net.solarnetwork.node.settings.SettingsService"/>
-	
+
 	<bean id="kcdConfigurer" class="net.solarnetwork.node.datum.canbus.KcdConfigurer">
 		<argument ref="kcdParser"/>
 		<argument ref="settingsService"/>
@@ -106,14 +106,14 @@
 	</bean>
 
 	<!-- Published Services -->
-	
+
 	<service ref="kcdConfigurer">
 		<interfaces>
 			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
 			<value>net.solarnetwork.node.settings.SettingResourceHandler</value>
 		</interfaces>
 	</service>
-	
+
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Canbus device"/>
@@ -121,8 +121,8 @@
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
-	
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.canbus" 
+
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.canbus"
 			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
@@ -179,23 +179,26 @@
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>
 											<property name="serviceClassName" value="net.solarnetwork.node.io.canbus.CanbusNetwork"/>
+											<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 											<property name="propertyFilters">
 												<map>
 													<entry key="UID" value="Canbus Port"/>
 												</map>
 											</property>
-										</bean>	
+										</bean>
 									</property>
 									<property name="samplesTransformService">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>
 											<property name="serviceClassName" value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
+											<property name="serviceFilter" value="(!(role=global))"/>
+											<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 											<property name="propertyFilters">
 												<map>
 													<entry key="UID" value=""/>
 												</map>
 											</property>
-										</bean>	
+										</bean>
 									</property>
 								</bean>
 							</entry>

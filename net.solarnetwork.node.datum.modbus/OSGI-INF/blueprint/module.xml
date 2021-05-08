@@ -18,18 +18,18 @@
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
 	</bean>
-	
+
 	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
 		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
 	</bean>
-	
+
 	<bean id="datumMetadataService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.DatumMetadataService"/>
 	</bean>
-		
+
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
@@ -40,27 +40,27 @@
 			</list>
 		</property>
 	</bean>
-	
+
 	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
 		<property name="prefix" value="multiDatumDataSource."/>
 		<property name="delegate" ref="messageSource"/>
-	</bean>	
+	</bean>
 
 
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
 	</bean>
-	
+
 	<bean id="expressionServices" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.support.ExpressionService"/>
 	</bean>
-	
+
 	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler" filter="(function=node)"/>
 
 	<!-- Published Services -->
-	
+
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Modbus device"/>
@@ -68,8 +68,8 @@
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
-	
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.modbus" 
+
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.modbus"
 			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
@@ -124,26 +124,27 @@
 									<property name="modbusNetwork">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>
-											<property name="serviceClassName" 
-												value="net.solarnetwork.node.io.modbus.ModbusNetwork"/>
+											<property name="serviceClassName" value="net.solarnetwork.node.io.modbus.ModbusNetwork"/>
+											<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 											<property name="propertyFilters">
 												<map>
 													<entry key="UID" value="Modbus Port"/>
 												</map>
 											</property>
-										</bean>	
+										</bean>
 									</property>
 									<property name="samplesTransformService">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>
-											<property name="serviceClassName" 
-												value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
+											<property name="serviceClassName" value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
+											<property name="serviceFilter" value="(!(role=global))"/>
+											<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 											<property name="propertyFilters">
 												<map>
 													<entry key="UID" value=""/>
 												</map>
 											</property>
-										</bean>	
+										</bean>
 									</property>
 								</bean>
 							</entry>
