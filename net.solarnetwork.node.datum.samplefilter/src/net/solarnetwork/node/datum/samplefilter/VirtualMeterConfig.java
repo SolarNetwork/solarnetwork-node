@@ -20,16 +20,18 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.domain;
+package net.solarnetwork.node.datum.samplefilter;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
+import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -42,21 +44,49 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * </p>
  * 
  * @author matt
- * @version 1.1
- * @since 1.77
+ * @version 1.2
+ * @since 1.6
  */
 public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInteger> {
+
+	/** The {@code propertyType} default value. */
+	public static final GeneralDatumSamplesType DEFAULT_PROPERTY_TYPE = GeneralDatumSamplesType.Instantaneous;
+
+	/**
+	 * The {@code virtualMeterScale} property default value.
+	 * 
+	 * @since 1.2
+	 */
+	public static final int DEFAULT_VIRTUAL_METER_SCALE = 6;
 
 	private TimeUnit timeUnit = TimeUnit.HOURS;
 	private long maxAgeSeconds = TimeUnit.HOURS.toSeconds(1);
 	private int rollingAverageCount = 0;
 	private String readingPropertyName = null;
+	private int virtualMeterScale = DEFAULT_VIRTUAL_METER_SCALE;
+
+	public VirtualMeterConfig() {
+		super();
+		setPropertyType(DEFAULT_PROPERTY_TYPE);
+	}
 
 	public static List<SettingSpecifier> settings(String prefix, String meterReading) {
 		VirtualMeterConfig defaults = new VirtualMeterConfig();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>();
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "name", ""));
+
+		// drop-down menu for propertyTypeKey
+		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
+				prefix + "propertyTypeKey", Character.toString(DEFAULT_PROPERTY_TYPE.toKey()));
+		Map<String, String> propTypeTitles = new LinkedHashMap<String, String>(3);
+		for ( GeneralDatumSamplesType e : EnumSet.of(GeneralDatumSamplesType.Instantaneous,
+				GeneralDatumSamplesType.Accumulating) ) {
+			propTypeTitles.put(Character.toString(e.toKey()), e.toString());
+		}
+		propTypeSpec.setValueTitles(propTypeTitles);
+		results.add(propTypeSpec);
+
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "readingPropertyName", null));
 
 		// drop-down menu for timeUnit
@@ -75,6 +105,8 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 
 		results.add(
 				new BasicTextFieldSettingSpecifier(prefix + "rollingAverageCount", String.valueOf(0)));
+
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "calculationServiceUid", null));
 
 		// meter reading has "live" data, not static default
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "meterReading", meterReading));
@@ -315,6 +347,26 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 	 */
 	public void setReadingPropertyName(String readingPropertyName) {
 		this.readingPropertyName = readingPropertyName;
+	}
+
+	/**
+	 * Get the scale (maximum number of decimal points) for the virtual meter.
+	 * 
+	 * @return the scale to round to, or {@literal -1} for no rounding; defaults
+	 *         to {@link #DEFAULT_VIRTUAL_METER_SCALE}
+	 */
+	public int getVirtualMeterScale() {
+		return virtualMeterScale;
+	}
+
+	/**
+	 * Set the scale (maximum number of decimal points) for the virtual meter.
+	 * 
+	 * @param virtualMeterScale
+	 *        the scale to set; if less than 0 then no rounding will occur
+	 */
+	public void setVirtualMeterScale(int virtualMeterScale) {
+		this.virtualMeterScale = virtualMeterScale;
 	}
 
 }

@@ -46,7 +46,6 @@ import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.VirtualMeterConfig;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
@@ -59,10 +58,10 @@ import net.solarnetwork.util.OptionalService;
 
 /**
  * Samples transform service that simulates an accumulating meter property,
- * derived from an instantaneous property.
+ * derived from another property.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.4
  */
 public class VirtualMeterSamplesTransformer extends BaseIdentifiable
@@ -76,8 +75,6 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 
 	/** The datum metadata key for a virtual meter reading value. */
 	public static final String VIRTUAL_METER_READING_KEY = "vm-reading";
-
-	private static final int VIRTUAL_METER_SCALE = 6;
 
 	private static final BigDecimal TWO = new BigDecimal("2");
 
@@ -241,12 +238,13 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 						d.getSourceId(), meterPropName, config.getPropertyKey());
 				continue;
 			}
-			final BigDecimal currVal = samples.getInstantaneousSampleBigDecimal(config.getPropertyKey());
+			final BigDecimal currVal = samples.getSampleBigDecimal(config.getPropertyType(),
+					config.getPropertyKey());
 			final PropertySamples propSamples = samplesForConfig(config, d.getSourceId());
 			if ( currVal == null ) {
 				log.debug(
-						"Source {} instantaneous property [{}] not available, cannot populate virtual meter reading",
-						d.getSourceId(), config.getPropertyKey());
+						"Source {} {} property [{}] not available, cannot populate virtual meter reading",
+						d.getSourceId(), config.getPropertyType(), config.getPropertyKey());
 				continue;
 			}
 
@@ -288,27 +286,43 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 						propSamples.addValue(currVal);
 					}
 				} else {
+					final int scale = config.getVirtualMeterScale();
 					BigDecimal msDiff = new BigDecimal(date - prevDate);
-					msDiff.setScale(VIRTUAL_METER_SCALE);
+					if ( scale >= 0 ) {
+						msDiff.setScale(scale);
+					}
 					BigDecimal unitMs = new BigDecimal(timeUnit.toMillis(1));
-					unitMs.setScale(VIRTUAL_METER_SCALE);
-					BigDecimal meterValue = prevVal.add(currVal).divide(TWO).multiply(msDiff)
-							.divide(unitMs, VIRTUAL_METER_SCALE, RoundingMode.HALF_UP);
+					if ( scale >= 0 ) {
+						unitMs.setScale(scale);
+					}
+					BigDecimal meterValue;
+					if ( config.getPropertyType() == GeneralDatumSamplesType.Accumulating ) {
+						// accumulation is simply difference between current value and previous
+						meterValue = currVal.subtract(prevVal);
+					} else {
+						// accumulation is average of previous and current values multiplied by time diff
+						meterValue = prevVal.add(currVal).divide(TWO).multiply(msDiff);
+						if ( scale >= 0 ) {
+							meterValue = meterValue.divide(unitMs, scale, RoundingMode.HALF_UP);
+						} else {
+							meterValue = meterValue.divide(unitMs, RoundingMode.HALF_UP);
+						}
+					}
 					BigDecimal currReading = prevReading.add(meterValue);
 					samples.putAccumulatingSampleValue(meterPropName, currReading);
 					if ( propSamples != null ) {
 						propSamples.addValue(currVal);
-						samples.putInstantaneousSampleValue(config.getPropertyKey(),
-								propSamples.averageValue(VIRTUAL_METER_SCALE));
+						samples.putSampleValue(config.getPropertyType(), config.getPropertyKey(),
+								propSamples.averageValue(scale));
 					}
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_DATE_KEY, date);
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_READING_KEY,
 							currReading.stripTrailingZeros().toPlainString());
 					log.debug(
-							"Source {} virtual meter {} adds {} from instantaneous value {} -> {} over {}ms to reach {}",
-							d.getSourceId(), meterPropName, meterValue, prevVal, currVal, msDiff,
-							currReading);
+							"Source {} virtual meter {} adds {} from {} value {} -> {} over {}ms to reach {}",
+							d.getSourceId(), meterPropName, meterValue, config.getPropertyType(),
+							prevVal, currVal, msDiff, currReading);
 				}
 				try {
 					service.addSourceMetadata(d.getSourceId(), metadata);
@@ -364,8 +378,12 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 				count++;
 			}
 			if ( result != null && count > 1 ) {
-				result = result.divide(BigDecimal.valueOf(count), scale, RoundingMode.HALF_UP)
-						.stripTrailingZeros();
+				if ( scale >= 0 ) {
+					result = result.divide(BigDecimal.valueOf(count), scale, RoundingMode.HALF_UP);
+				} else {
+					result = result.divide(BigDecimal.valueOf(count), RoundingMode.HALF_UP);
+				}
+				result = result.stripTrailingZeros();
 			}
 			return result;
 		}
