@@ -92,7 +92,7 @@ public class SimpleGeneralDatumSamplesTransformService extends BaseIdentifiable
 
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
-			Map<String, ?> parameters) {
+			Map<String, Object> parameters) {
 		GeneralDatumSamples result = samples;
 		List<GeneralDatumSamplesTransformer> xforms = sampleTransformers;
 		Map<String, ?> xformParams = xformParameterMap(parameters);

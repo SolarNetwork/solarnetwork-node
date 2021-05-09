@@ -24,18 +24,24 @@ package net.solarnetwork.node.domain;
 
 import java.util.Collections;
 import java.util.Map;
+import net.solarnetwork.util.MapBeanProxy;
 
 /**
  * An object to use as the "root" for
  * {@link net.solarnetwork.support.ExpressionService} evaluation.
  * 
+ * <p>
+ * This object extends {@link MapBeanProxy} to allow all datum sample properties
+ * to be exposed as top-level expression properties.
+ * </p>
+ * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.79
  */
-public class ExpressionRoot {
+public class ExpressionRoot extends MapBeanProxy implements DatumExpressionRoot {
 
-	private final GeneralNodeDatum datum;
+	private final Datum datum;
 	private final Map<String, ?> datumProps;
 
 	/**
@@ -44,26 +50,31 @@ public class ExpressionRoot {
 	 * @param datum
 	 *        the datum currently being populated
 	 */
-	public ExpressionRoot(GeneralNodeDatum datum) {
-		super();
+	public ExpressionRoot(Datum datum) {
+		this(null, datum);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param data
+	 *        the map data
+	 * @param datum
+	 *        the datum currently being populated
+	 * @since 1.2
+	 */
+	public ExpressionRoot(Map<String, ?> data, Datum datum) {
+		super(data);
 		this.datum = datum;
 		this.datumProps = (datum != null ? datum.getSampleData() : Collections.emptyMap());
 	}
 
-	/**
-	 * Get the datum.
-	 * 
-	 * @return the datum
-	 */
-	public GeneralNodeDatum getDatum() {
+	@Override
+	public Datum getDatum() {
 		return datum;
 	}
 
-	/**
-	 * Alias for {@code datum.getSampleData()}.
-	 * 
-	 * @return the datum sample data, never {@literal null}
-	 */
+	@Override
 	public Map<String, ?> getProps() {
 		return datumProps;
 	}
@@ -75,11 +86,16 @@ public class ExpressionRoot {
 		if ( datum != null ) {
 			builder.append("datum=");
 			builder.append(datum);
-			builder.append(", ");
 		}
-		if ( datumProps != null ) {
-			builder.append("props=");
-			builder.append(datumProps);
+		Map<String, ?> data = getData();
+		if ( data != null ) {
+			builder.append(", data=");
+			builder.append(data);
+		}
+		Map<String, ?> props = getProps();
+		if ( props != null && props != data ) {
+			builder.append(", props=");
+			builder.append(props);
 		}
 		builder.append("}");
 		return builder.toString();

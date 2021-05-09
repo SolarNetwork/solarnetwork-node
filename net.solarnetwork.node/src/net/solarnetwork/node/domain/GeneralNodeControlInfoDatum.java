@@ -31,7 +31,7 @@ import net.solarnetwork.domain.NodeControlInfo;
  * instance.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.58
  */
 public class GeneralNodeControlInfoDatum extends GeneralNodeDatum {
@@ -70,6 +70,11 @@ public class GeneralNodeControlInfoDatum extends GeneralNodeDatum {
 		for ( NodeControlInfo info : infos ) {
 			populateInfo(info);
 		}
+	}
+
+	@Override
+	public GeneralNodeControlInfoDatum clone() {
+		return (GeneralNodeControlInfoDatum) super.clone();
 	}
 
 	private void populateInfo(NodeControlInfo controlInfo) {

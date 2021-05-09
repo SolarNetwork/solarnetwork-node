@@ -174,6 +174,9 @@
 		</bean>
 	</service>
 	
+	<reference-list id="datumXformServices" interface="net.solarnetwork.node.GeneralDatumSamplesTransformService" 
+		filter="(!(role=global))" availability="optional"/>
+	
 	<!-- 
 		Global GeneralDatumSamplesTransformService that applies all available 
 		GeneralDatumSamplesTransformer services at runtime. This special GeneralDatumSamplesTransformService
@@ -181,12 +184,30 @@
 		GeneralDatumSamplesTransformService should be referenced via a service filter like
 		(!(role=global)) so as not to use this one inadvertently.
 	 -->
-	<service interface="net.solarnetwork.node.GeneralDatumSamplesTransformService" ranking="10">
+	<service ranking="10">
+		<interfaces>
+			<value>net.solarnetwork.node.GeneralDatumSamplesTransformService</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+		</interfaces>
 		<service-properties>
 			<entry key="role" value="global"/>
 		</service-properties>
-		<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService">
-			<property name="sampleTransformers" ref="sampleTransformers"/>
+		<bean class="net.solarnetwork.node.support.GeneralDatumSamplesTransformChain">
+			<osgix:managed-properties persistent-id="net.solarnetwork.node.datum.xform.solarin" autowire-on-update="true"/>
+			<argument value="net.solarnetwork.node.datum.xform.solarin"/>
+			<argument ref="datumXformServices"/>
+			<argument value="false"/>
+			<argument>
+				<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService">
+					<property name="sampleTransformers" ref="sampleTransformers"/>
+				</bean>
+			</argument>
+			<property name="uid" value="SolarIn"/>
+			<property name="messageSource">
+				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+					<property name="basename" value="net.solarnetwork.node.support.SolarInGeneralDatumSamplesTransformChain"/>
+				</bean>
+			</property>			
 		</bean>
 	</service>
 	

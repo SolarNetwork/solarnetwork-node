@@ -33,7 +33,7 @@ import net.solarnetwork.node.support.DatumEvents;
  * Abstract base class for {@link Datum} implementations.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public abstract class BaseDatum implements Datum, Cloneable {
 
@@ -116,9 +116,9 @@ public abstract class BaseDatum implements Datum, Cloneable {
 	}
 
 	@Override
-	public Object clone() {
+	public BaseDatum clone() {
 		try {
-			return super.clone();
+			return (BaseDatum) super.clone();
 		} catch ( CloneNotSupportedException e ) {
 			// should never get here
 			throw new RuntimeException(e);

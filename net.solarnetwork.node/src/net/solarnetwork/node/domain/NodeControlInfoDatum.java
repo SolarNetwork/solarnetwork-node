@@ -31,7 +31,7 @@ import net.solarnetwork.domain.NodeControlPropertyType;
  * Implementation of {@link NodeControlInfo} and {@link Datum}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class NodeControlInfoDatum extends BaseDatum implements NodeControlInfo {
 
@@ -40,6 +40,11 @@ public class NodeControlInfoDatum extends BaseDatum implements NodeControlInfo {
 	private Boolean readonly;
 	private String unit;
 	private String propertyName;
+
+	@Override
+	public NodeControlInfoDatum clone() {
+		return (NodeControlInfoDatum) super.clone();
+	}
 
 	@Override
 	public String getControlId() {

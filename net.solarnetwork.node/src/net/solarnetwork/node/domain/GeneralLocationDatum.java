@@ -29,7 +29,7 @@ import net.solarnetwork.domain.GeneralLocationDatumSamples;
  * General location datum.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class GeneralLocationDatum extends GeneralNodeDatum {
 
@@ -41,6 +41,11 @@ public class GeneralLocationDatum extends GeneralNodeDatum {
 	public GeneralLocationDatum() {
 		super();
 		setSourceId(null);
+	}
+
+	@Override
+	public GeneralLocationDatum clone() {
+		return (GeneralLocationDatum) super.clone();
 	}
 
 	@Override

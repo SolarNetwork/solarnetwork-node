@@ -32,10 +32,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
-import org.springframework.expression.ExpressionException;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.domain.GeneralDatumSamples;
@@ -49,7 +46,6 @@ import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.support.ExpressionService;
-import net.solarnetwork.support.ExpressionServiceExpression;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.OptionalServiceCollection;
@@ -59,7 +55,7 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * {@link net.solarnetwork.node.MultiDatumDataSource} implementations to extend.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  * @since 1.51
  */
 public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEvents {
@@ -90,12 +86,8 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	private long subSampleStartDelay = DEFAULT_SUBSAMPLE_START_DELAY;
 	private OptionalService<GeneralDatumSamplesTransformService> samplesTransformService;
 	private ExpressionConfig[] expressionConfigs;
-	private OptionalServiceCollection<ExpressionService> expressionServices;
 
 	private ScheduledFuture<?> subSampleFuture;
-
-	/** A class-level logger. */
-	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
 	 * Post an {@link Event} for the
@@ -291,7 +283,8 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	 *         datum has been filtered out completely
 	 * @since 1.1
 	 */
-	protected <T extends GeneralNodeDatum> T applySamplesTransformer(T datum, Map<String, ?> props) {
+	protected <T extends GeneralNodeDatum> T applySamplesTransformer(T datum,
+			Map<String, Object> props) {
 		GeneralDatumSamplesTransformService xformService = OptionalService
 				.service(getSamplesTransformService());
 		if ( xformService != null ) {
@@ -342,41 +335,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	 */
 	protected void populateExpressionDatumProperties(final GeneralNodeDatum d,
 			final ExpressionConfig[] expressionConfs, final Object root) {
-		Iterable<ExpressionService> services = (getExpressionServices() != null
-				? getExpressionServices().services()
-				: null);
-		if ( services == null || expressionConfs == null || expressionConfs.length < 1
-				|| root == null ) {
-			return;
-		}
-		for ( ExpressionConfig config : expressionConfs ) {
-			if ( config.getName() == null || config.getName().isEmpty() || config.getExpression() == null
-					|| config.getExpression().isEmpty() ) {
-				continue;
-			}
-			final ExpressionServiceExpression expr;
-			try {
-				expr = config.getExpression(services);
-			} catch ( ExpressionException e ) {
-				log.warn("Error parsing property [{}] expression `{}`: {}", config.getName(),
-						config.getExpression(), e.getMessage());
-				return;
-			}
-
-			Object propValue = null;
-			if ( expr != null ) {
-				try {
-					propValue = expr.getService().evaluateExpression(expr.getExpression(), null, root,
-							null, Object.class);
-				} catch ( ExpressionException e ) {
-					log.warn("Error evaluating property [{}] expression `{}`: {}\n\nExpression root: {}",
-							config.getName(), config.getExpression(), e.getMessage(), root);
-				}
-			}
-			if ( propValue != null ) {
-				d.putSampleValue(config.getDatumPropertyType(), config.getName(), propValue);
-			}
-		}
+		super.populateExpressionDatumProperties(d.asMutableSampleOperations(), expressionConfs, root);
 	}
 
 	@Override
@@ -597,8 +556,9 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	 * @return the optional {@link ExpressionService} collection to use
 	 * @since 1.3
 	 */
+	@Override
 	public OptionalServiceCollection<ExpressionService> getExpressionServices() {
-		return expressionServices;
+		return super.getExpressionServices();
 	}
 
 	/**
@@ -613,8 +573,9 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	 *        the optional {@link ExpressionService} collection to use
 	 * @since 1.3
 	 */
+	@Override
 	public void setExpressionServices(OptionalServiceCollection<ExpressionService> expressionServices) {
-		this.expressionServices = expressionServices;
+		super.setExpressionServices(expressionServices);
 	}
 
 }

@@ -69,7 +69,7 @@ import net.solarnetwork.node.support.BaseIdentifiable;
  * </ul>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.2
  */
 public class DownsampleTransformService extends BaseIdentifiable
@@ -103,7 +103,7 @@ public class DownsampleTransformService extends BaseIdentifiable
 
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
-			Map<String, ?> parameters) {
+			Map<String, Object> parameters) {
 		if ( datum == null || datum.getSourceId() == null || samples == null ) {
 			return samples;
 		}

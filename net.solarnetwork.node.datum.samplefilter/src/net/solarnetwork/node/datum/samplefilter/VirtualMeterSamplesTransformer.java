@@ -126,8 +126,8 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(VirtualMeterConfig value,
 							int index, String key) {
-						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
-								VirtualMeterConfig.settings(key + ".", value.getMeterReading()));
+						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(value
+								.settings(key + ".", value.getMeterReading(), getExpressionServices()));
 						return Collections.<SettingSpecifier> singletonList(configGroup);
 					}
 				}));
@@ -166,14 +166,14 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
-			Map<String, ?> parameters) {
+			Map<String, Object> parameters) {
 		if ( virtualMeterConfigs == null || virtualMeterConfigs.length < 1 || datum == null
 				|| datum.getSourceId() == null || samples == null ) {
 			return samples;
 		}
 		if ( sourceId == null || sourceId.matcher(datum.getSourceId()).find() ) {
 			GeneralDatumSamples s = new GeneralDatumSamples(samples);
-			populateDatumProperties(datum, s, virtualMeterConfigs);
+			populateDatumProperties(datum, s, virtualMeterConfigs, parameters);
 			return s;
 		}
 		return samples;
@@ -208,7 +208,7 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 	}
 
 	private void populateDatumProperties(Datum d, GeneralDatumSamples samples,
-			VirtualMeterConfig[] meterConfs) {
+			VirtualMeterConfig[] meterConfs, Map<String, ?> parameters) {
 		final DatumMetadataService service = OptionalService.service(datumMetadataService);
 		if ( service == null ) {
 			// the metadata service is required for virtual meters
@@ -287,29 +287,38 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 					}
 				} else {
 					final int scale = config.getVirtualMeterScale();
-					BigDecimal msDiff = new BigDecimal(date - prevDate);
+					final BigDecimal msDiff = new BigDecimal(date - prevDate);
 					if ( scale >= 0 ) {
 						msDiff.setScale(scale);
 					}
-					BigDecimal unitMs = new BigDecimal(timeUnit.toMillis(1));
+					final BigDecimal unitMs = new BigDecimal(timeUnit.toMillis(1));
 					if ( scale >= 0 ) {
 						unitMs.setScale(scale);
 					}
 					BigDecimal meterValue;
-					if ( config.getPropertyType() == GeneralDatumSamplesType.Accumulating ) {
-						// accumulation is simply difference between current value and previous
-						meterValue = currVal.subtract(prevVal);
+					BigDecimal currReading = null;
+					if ( config.getExpressionConfigsCount() > 0 ) {
+						VirtualMeterExpressionRoot root = new VirtualMeterExpressionRootImpl(d, config,
+								prevDate, date, prevVal, currVal, parameters);
+						populateExpressionDatumProperties(samples, config.getExpressionConfigs(), root);
+						currReading = samples.getAccumulatingSampleBigDecimal(meterPropName);
+						meterValue = currReading.subtract(prevReading);
 					} else {
-						// accumulation is average of previous and current values multiplied by time diff
-						meterValue = prevVal.add(currVal).divide(TWO).multiply(msDiff);
-						if ( scale >= 0 ) {
-							meterValue = meterValue.divide(unitMs, scale, RoundingMode.HALF_UP);
+						if ( config.getPropertyType() == GeneralDatumSamplesType.Accumulating ) {
+							// accumulation is simply difference between current value and previous
+							meterValue = currVal.subtract(prevVal);
 						} else {
-							meterValue = meterValue.divide(unitMs, RoundingMode.HALF_UP);
+							// accumulation is average of previous and current values multiplied by time diff
+							meterValue = prevVal.add(currVal).divide(TWO).multiply(msDiff);
+							if ( scale >= 0 ) {
+								meterValue = meterValue.divide(unitMs, scale, RoundingMode.HALF_UP);
+							} else {
+								meterValue = meterValue.divide(unitMs, RoundingMode.HALF_UP);
+							}
 						}
+						currReading = prevReading.add(meterValue);
+						samples.putAccumulatingSampleValue(meterPropName, currReading);
 					}
-					BigDecimal currReading = prevReading.add(meterValue);
-					samples.putAccumulatingSampleValue(meterPropName, currReading);
 					if ( propSamples != null ) {
 						propSamples.addValue(currVal);
 						samples.putSampleValue(config.getPropertyType(), config.getPropertyKey(),
@@ -469,4 +478,5 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 		this.virtualMeterConfigs = ArrayUtils.arrayWithLength(this.virtualMeterConfigs, count,
 				VirtualMeterConfig.class, null);
 	}
+
 }

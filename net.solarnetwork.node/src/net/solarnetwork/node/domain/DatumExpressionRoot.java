@@ -1,7 +1,7 @@
 /* ==================================================================
- * GeneralNodeDatum.java - Aug 25, 2014 10:48:30 AM
+ * DatumExpressionRoot.java - 9/05/2021 11:18:13 AM
  * 
- * Copyright 2007-2014 SolarNetwork.net Dev Team
+ * Copyright 2021 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -22,18 +22,35 @@
 
 package net.solarnetwork.node.domain;
 
+import java.util.Map;
+
 /**
- * General node datum. Note that no {@code nodeId} property is added to this
- * class because the node ID is implied by the node's identity.
+ * API for a datum-based expression root.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
  */
-public class GeneralNodeDatum extends GeneralDatumSupport implements Cloneable {
+public interface DatumExpressionRoot {
 
-	@Override
-	public GeneralNodeDatum clone() {
-		return (GeneralNodeDatum) super.clone();
-	}
+	/**
+	 * Get the datum.
+	 * 
+	 * @return the datum
+	 */
+	Datum getDatum();
+
+	/**
+	 * Get additional data.
+	 * 
+	 * @return the data
+	 */
+	Map<String, ?> getData();
+
+	/**
+	 * Get the datum properties, i.e. {@link GeneralNodeDatum#getSampleData()}.
+	 * 
+	 * @return the datum properties
+	 */
+	Map<String, ?> getProps();
 
 }

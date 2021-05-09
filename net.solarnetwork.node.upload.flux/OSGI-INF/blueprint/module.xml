@@ -48,6 +48,12 @@
 		<property name="serviceFilter" value="(&amp;(function=node)(function=datum)(objectType=java.util.Map))"/>
 	</bean>
 
+	<bean id="transformServices" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
+		<property name="serviceFilter" value="(!(role=global))"/>
+	</bean>
+
 	<!-- Published Services -->
 	
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
@@ -82,6 +88,7 @@
 			<property name="opModesService" ref="opModesService"/>
 			<property name="mqttConfig.optionalSslService" ref="sslService"/>
 			<property name="datumEncoders" ref="datumEncoders"/>
+			<property name="transformServices" ref="transformServices"/>
 		</bean>
 	</osgix:managed-service-factory>
 	

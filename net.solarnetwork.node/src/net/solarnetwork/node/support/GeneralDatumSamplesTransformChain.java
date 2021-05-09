@@ -1,0 +1,258 @@
+/* ==================================================================
+ * GeneralDatumSamplesTransformChain.java - 9/05/2021 3:39:09 PM
+ * 
+ * Copyright 2021 SolarNetwork.net Dev Team
+ * 
+ * This program is free software; you can redistribute it and/or 
+ * modify it under the terms of the GNU General Public License as 
+ * published by the Free Software Foundation; either version 2 of 
+ * the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License 
+ * along with this program; if not, write to the Free Software 
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ * 02111-1307 USA
+ * ==================================================================
+ */
+
+package net.solarnetwork.node.support;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.node.GeneralDatumSamplesTransformService;
+import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.util.ArrayUtils;
+
+/**
+ * A configurable chain of transformer services.
+ * 
+ * <p>
+ * If a {@code staticService} is configured then it will be applied
+ * <em>first</em>. Then the {@code transformuids} will be iterated over and the
+ * first matching service found for each value in {@code transformServices} will
+ * be applied.
+ * </p>
+ * 
+ * @author matt
+ * @version 1.0
+ */
+public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
+		implements GeneralDatumSamplesTransformService, SettingSpecifierProvider {
+
+	private final String settingUid;
+	private final List<GeneralDatumSamplesTransformService> transformServices;
+	private final boolean configurableUid;
+	private final GeneralDatumSamplesTransformService staticService;
+	private String[] transformUids;
+
+	/**
+	 * Constructor.
+	 * 
+	 * <p>
+	 * The {@code configurableUid} property will be set to {@literal true}.
+	 * </p>
+	 * 
+	 * @param settingUid
+	 *        the {@link SettingSpecifierProvider#getSettingUID()} value to use
+	 * @param transformServices
+	 *        the list of available services
+	 * @throws IllegalArgumentException
+	 *         if {@code settingUid} or {@code transformServices} are
+	 *         {@literal null}
+	 */
+	public GeneralDatumSamplesTransformChain(String settingUid,
+			List<GeneralDatumSamplesTransformService> transformServices) {
+		this(settingUid, transformServices, true, null);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param settingUid
+	 *        the {@link SettingSpecifierProvider#getSettingUID()} value to use
+	 * @param transformServices
+	 *        the list of available services
+	 * @param configurableUid
+	 *        {@literal true} to support the UID and groupUID values as setting
+	 *        specifiers
+	 * @param staticService
+	 *        an optional static service
+	 * @throws IllegalArgumentException
+	 *         if {@code settingUid} or {@code transformServices} are
+	 *         {@literal null}
+	 */
+	public GeneralDatumSamplesTransformChain(String settingUid,
+			List<GeneralDatumSamplesTransformService> transformServices, boolean configurableUid) {
+		this(settingUid, transformServices, configurableUid, null);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param settingUid
+	 *        the {@link SettingSpecifierProvider#getSettingUID()} value to use
+	 * @param transformServices
+	 *        the list of available services
+	 * @param configurableUid
+	 *        {@literal true} to support the UID and groupUID values as setting
+	 *        specifiers
+	 * @param staticService
+	 *        an optional static service
+	 * @throws IllegalArgumentException
+	 *         if {@code settingUid} or {@code transformServices} are
+	 *         {@literal null}
+	 */
+	public GeneralDatumSamplesTransformChain(String settingUid,
+			List<GeneralDatumSamplesTransformService> transformServices, boolean configurableUid,
+			GeneralDatumSamplesTransformService staticService) {
+		super();
+		if ( settingUid == null || settingUid.isEmpty() ) {
+			throw new IllegalArgumentException("The settingUid argument must not be null.");
+		}
+		this.settingUid = settingUid;
+		if ( transformServices == null ) {
+			throw new IllegalArgumentException("The transformServices argument must not be null.");
+		}
+		this.transformServices = transformServices;
+		this.configurableUid = configurableUid;
+		this.staticService = staticService;
+	}
+
+	@Override
+	public String getSettingUID() {
+		return settingUid;
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		List<SettingSpecifier> result;
+		if ( configurableUid ) {
+			result = baseIdentifiableSettings("");
+		} else {
+			result = new ArrayList<>(1);
+		}
+
+		// list of UIDs
+		String[] uids = getTransformUids();
+		List<String> uidsList = (uids != null ? Arrays.asList(uids) : Collections.emptyList());
+		BasicGroupSettingSpecifier uidsGroup = SettingsUtil.dynamicListSettingSpecifier("transformUids",
+				uidsList, new SettingsUtil.KeyedListCallback<String>() {
+
+					@Override
+					public Collection<SettingSpecifier> mapListSettingKey(String value, int index,
+							String key) {
+						return Collections.singletonList(new BasicTextFieldSettingSpecifier(key, ""));
+					}
+				});
+		result.add(uidsGroup);
+
+		return result;
+	}
+
+	@Override
+	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
+			Map<String, Object> parameters) {
+		Map<String, Object> p = parameters;
+		if ( staticService != null ) {
+			if ( p == null ) {
+				p = new HashMap<>(8);
+			}
+			samples = staticService.transformSamples(datum, samples, parameters);
+			if ( samples == null ) {
+				return null;
+			}
+		}
+		final String[] uids = getTransformUids();
+		if ( uids == null || uids.length < 1 ) {
+			return samples;
+		}
+		Map<String, GeneralDatumSamplesTransformService> serviceMap = null; // a UID cache
+		for ( String uid : uids ) {
+			if ( uid == null || uid.isEmpty() ) {
+				continue;
+			}
+			if ( serviceMap == null ) {
+				serviceMap = new HashMap<>(8);
+				for ( GeneralDatumSamplesTransformService s : transformServices ) {
+					String serviceUid = s.getUID();
+					if ( serviceUid == null || serviceUid.isEmpty() ) {
+						continue;
+					}
+					serviceMap.put(serviceUid, s);
+				}
+			}
+			GeneralDatumSamplesTransformService s = serviceMap.get(uid);
+			if ( s != null ) {
+				if ( p == null ) {
+					p = new HashMap<>(8);
+				}
+				samples = s.transformSamples(datum, samples, p);
+				if ( samples == null ) {
+					return null;
+				}
+			}
+		}
+		return samples;
+	}
+
+	/**
+	 * Get the transform UIDs to use.
+	 * 
+	 * @return the transform UIDs.
+	 */
+	public String[] getTransformUids() {
+		return transformUids;
+	}
+
+	/**
+	 * Set the transform UIDs to use.
+	 * 
+	 * <p>
+	 * This list defines the {@link GeneralDatumSamplesTransformService}
+	 * instances to apply, from the list of available services.
+	 * </p>
+	 * 
+	 * @param transformUids
+	 *        the UIDs to set
+	 */
+	public void setTransformUids(String[] transformUids) {
+		this.transformUids = transformUids;
+	}
+
+	/**
+	 * Get the transform UIDs count.
+	 * 
+	 * @return the number of UIDs to support
+	 */
+	public int getTransformUidsCount() {
+		String[] uids = getTransformUids();
+		return (uids != null ? uids.length : 0);
+	}
+
+	/**
+	 * Set the transform UIDs count.
+	 * 
+	 * @param count
+	 *        the number of UIDs to support
+	 */
+	public void setTransformUidsCount(int count) {
+		this.transformUids = ArrayUtils.arrayWithLength(this.transformUids, count, String.class, null);
+	}
+
+}
