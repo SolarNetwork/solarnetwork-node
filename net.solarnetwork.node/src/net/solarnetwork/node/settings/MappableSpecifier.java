@@ -22,11 +22,14 @@
 
 package net.solarnetwork.node.settings;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * API for a specifier that can be mapped to some other specifier.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface MappableSpecifier {
 
@@ -76,5 +79,80 @@ public interface MappableSpecifier {
 	 * @return the new instance
 	 */
 	SettingSpecifier mappedWithMapper(Mapper mapper);
+
+	/**
+	 * Map a list of settings to a new prefix.
+	 * 
+	 * @param settings
+	 *        the settings to map
+	 * @param prefix
+	 *        the prefix to add to each setting
+	 * @return the mapped settings
+	 * @since 1.1
+	 */
+	static List<SettingSpecifier> mapTo(List<SettingSpecifier> settings, String prefix) {
+		if ( settings == null || prefix == null || prefix.isEmpty() ) {
+			return settings;
+		}
+		List<SettingSpecifier> result = new ArrayList<>(settings.size());
+		for ( SettingSpecifier setting : settings ) {
+			if ( setting instanceof MappableSpecifier ) {
+				result.add(((MappableSpecifier) setting).mappedTo(prefix));
+			} else {
+				result.add(setting);
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Map a list of settings with a template.
+	 * 
+	 * @param settings
+	 *        the settings to map
+	 * @param template
+	 *        the template to use
+	 * @return the mapped settings
+	 * @since 1.1
+	 */
+	static List<SettingSpecifier> mapWithPlaceholder(List<SettingSpecifier> settings, String template) {
+		if ( settings == null || template == null ) {
+			return settings;
+		}
+		List<SettingSpecifier> result = new ArrayList<>(settings.size());
+		for ( SettingSpecifier setting : settings ) {
+			if ( setting instanceof MappableSpecifier ) {
+				result.add(((MappableSpecifier) setting).mappedWithPlaceholer(template));
+			} else {
+				result.add(setting);
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Map a list of settings with a {@code Mapper}.
+	 * 
+	 * @param settings
+	 *        the settings to map
+	 * @param mapper
+	 *        the {@code Mapper} to use
+	 * @return the mapped settings
+	 * @since 1.1
+	 */
+	static List<SettingSpecifier> mapWithMapper(List<SettingSpecifier> settings, Mapper mapper) {
+		if ( settings == null || mapper == null ) {
+			return settings;
+		}
+		List<SettingSpecifier> result = new ArrayList<>(settings.size());
+		for ( SettingSpecifier setting : settings ) {
+			if ( setting instanceof MappableSpecifier ) {
+				result.add(((MappableSpecifier) setting).mappedWithMapper(mapper));
+			} else {
+				result.add(setting);
+			}
+		}
+		return result;
+	}
 
 }
