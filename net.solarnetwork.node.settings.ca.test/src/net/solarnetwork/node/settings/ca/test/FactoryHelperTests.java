@@ -28,6 +28,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -51,6 +52,7 @@ import net.solarnetwork.node.settings.ca.FactoryHelper;
 public class FactoryHelperTests {
 
 	private SettingSpecifierProviderFactory factory;
+	private Map<String, Object> factoryProperties;
 	private Map<String, SettingSpecifierProvider> providers;
 	private Map<String, SettingResourceHandler> handlers;
 	private FactoryHelper helper;
@@ -62,9 +64,10 @@ public class FactoryHelperTests {
 		mocks = new ArrayList<>(8);
 		factory = EasyMock.createMock(SettingSpecifierProviderFactory.class);
 		mocks.add(factory);
+		factoryProperties = new LinkedHashMap<>();
 		providers = new TreeMap<>();
 		handlers = new TreeMap<>();
-		helper = new FactoryHelper(factory, providers, handlers);
+		helper = new FactoryHelper(factory, factoryProperties, providers, handlers);
 	}
 
 	@After
