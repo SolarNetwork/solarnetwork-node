@@ -131,9 +131,12 @@ form .control-group.grouped + fieldset > fieldset:not(:first-child) {
     border-top: 1px dotted #e5e5e5;
 }
 
-
 .form-horizontal .controls.static {
-    padding-top: 3px;
+	padding-top: 2px;
+}
+
+.form-horizontal .controls.static .title > * {
+	margin-top: 2px;
 }
 
 .controls.static .title {
