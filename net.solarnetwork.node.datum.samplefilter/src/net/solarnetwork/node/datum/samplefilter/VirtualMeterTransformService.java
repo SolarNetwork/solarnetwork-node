@@ -1,5 +1,5 @@
 /* ==================================================================
- * VirtualMeterSamplesTransformer.java - 16/09/2020 9:14:27 AM
+ * VirtualMeterTransformService.java - 16/09/2020 9:14:27 AM
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -64,7 +64,7 @@ import net.solarnetwork.util.OptionalService;
  * @version 1.1
  * @since 1.4
  */
-public class VirtualMeterSamplesTransformer extends BaseIdentifiable
+public class VirtualMeterTransformService extends BaseIdentifiable
 		implements GeneralDatumSamplesTransformService, SettingSpecifierProvider {
 
 	/** The datum metadata key for a virtual meter sample value. */
@@ -78,7 +78,7 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 
 	private static final BigDecimal TWO = new BigDecimal("2");
 
-	private static final Logger log = LoggerFactory.getLogger(VirtualMeterSamplesTransformer.class);
+	private static final Logger log = LoggerFactory.getLogger(VirtualMeterTransformService.class);
 
 	private final ConcurrentMap<String, GeneralDatumMetadata> sourceMetas = new ConcurrentHashMap<>(8,
 			0.9f, 2);
@@ -96,7 +96,7 @@ public class VirtualMeterSamplesTransformer extends BaseIdentifiable
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public VirtualMeterSamplesTransformer(OptionalService<DatumMetadataService> datumMetadataService) {
+	public VirtualMeterTransformService(OptionalService<DatumMetadataService> datumMetadataService) {
 		super();
 		if ( datumMetadataService == null ) {
 			throw new IllegalArgumentException("The datumMetadataService must not be null.");

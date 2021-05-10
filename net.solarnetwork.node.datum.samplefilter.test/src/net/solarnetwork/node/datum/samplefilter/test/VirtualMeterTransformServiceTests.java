@@ -1,5 +1,5 @@
 /* ==================================================================
- * VirtualMeterSamplesTransformerTests.java - 16/02/2021 10:18:36 AM
+ * VirtualMeterTransformServiceTests.java - 16/02/2021 10:18:36 AM
  * 
  * Copyright 2021 SolarNetwork.net Dev Team
  * 
@@ -45,17 +45,17 @@ import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.datum.samplefilter.SourceThrottlingSamplesTransformer;
 import net.solarnetwork.node.datum.samplefilter.VirtualMeterConfig;
-import net.solarnetwork.node.datum.samplefilter.VirtualMeterSamplesTransformer;
+import net.solarnetwork.node.datum.samplefilter.VirtualMeterTransformService;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.util.StaticOptionalService;
 
 /**
- * Test cases for the {@link VirtualMeterSamplesTransformer} class.
+ * Test cases for the {@link VirtualMeterTransformService} class.
  * 
  * @author matt
  * @version 1.0
  */
-public class VirtualMeterSamplesTransformerTests {
+public class VirtualMeterTransformServiceTests {
 
 	private static final String SOURCE_ID = "FILTER_ME";
 	private static final String PROP_WATTS = "watts";
@@ -63,13 +63,13 @@ public class VirtualMeterSamplesTransformerTests {
 	private static final String TEST_UID = "test";
 
 	private DatumMetadataService datumMetadataService;
-	private VirtualMeterSamplesTransformer xform;
+	private VirtualMeterTransformService xform;
 
 	@Before
 	public void setup() {
 		datumMetadataService = EasyMock.createMock(DatumMetadataService.class);
 		SourceThrottlingSamplesTransformer.clearSettingCache();
-		xform = new VirtualMeterSamplesTransformer(new StaticOptionalService<>(datumMetadataService));
+		xform = new VirtualMeterTransformService(new StaticOptionalService<>(datumMetadataService));
 		xform.setUid(TEST_UID);
 		xform.setSourceId("^F");
 	}
@@ -125,14 +125,14 @@ public class VirtualMeterSamplesTransformerTests {
 	private void assertVirtalMeterMetadata(String msg, GeneralDatumMetadata meta, String readingPropName,
 			long date, BigDecimal expectedValue, BigDecimal expectedReading) {
 		assertThat("Virtual meter date saved (close to) " + msg,
-				meta.getInfoLong(readingPropName, VirtualMeterSamplesTransformer.VIRTUAL_METER_DATE_KEY)
+				meta.getInfoLong(readingPropName, VirtualMeterTransformService.VIRTUAL_METER_DATE_KEY)
 						- date,
 				lessThan(2000L));
 		assertThat("Virtual meter value saved " + msg, meta.getInfoBigDecimal(readingPropName,
-				VirtualMeterSamplesTransformer.VIRTUAL_METER_VALUE_KEY), equalTo(expectedValue));
+				VirtualMeterTransformService.VIRTUAL_METER_VALUE_KEY), equalTo(expectedValue));
 		assertThat("Virtual meter reading saved " + msg,
 				meta.getInfoBigDecimal(readingPropName,
-						VirtualMeterSamplesTransformer.VIRTUAL_METER_READING_KEY),
+						VirtualMeterTransformService.VIRTUAL_METER_READING_KEY),
 				equalTo(expectedReading));
 	}
 
