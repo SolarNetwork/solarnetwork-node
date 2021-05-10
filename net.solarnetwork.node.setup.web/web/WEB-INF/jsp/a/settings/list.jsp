@@ -12,7 +12,7 @@
 			<fmt:message key="settings.factories.title"/>
 		</h2>
 		<p><fmt:message key="settings.factories.intro"/></p>	
-		<table class="table">
+		<table class="table setting-components">
 			<tbody>
 			<c:forEach items="${factories}" var="factory" varStatus="factoryStatus">
 				<!--  ${factory.factoryUID} -->

@@ -49,6 +49,10 @@ td dl {
 	text-align: right;
 }
 
+section.intro {
+	margin-bottom: 1rem;
+}
+
 span.active-value.clean {
 	display: none !important;
 }
@@ -218,6 +222,11 @@ pre.pre-scrollable {
 
 #settings .popover {
 	min-width: 240px;
+}
+
+.table.setting-components td:last-of-type {
+	width: 120px;
+	text-align: right;
 }
 
 #weather-lookup-modal {

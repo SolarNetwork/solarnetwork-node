@@ -1,4 +1,4 @@
-# SolarNode Datum Property/Throttle Filters
+# SolarNode Standard Datum Filters
 
 This project provides a SolarNode plugin that can filter out datum properties from datum
 collected by other plugins before they are posted to SolarNetwork, either entirely or by
@@ -12,7 +12,7 @@ scenarios:
 # Install
 
 The plugin can be installed via the **Plugins** page on your SolarNode. It appears under
-the **Datum** category as **Datum Sample Property Filter**.
+the **Datum** category as **Datum Filters (Standard)**.
 
 # Use
 
@@ -117,7 +117,7 @@ Each filter configuration contains the following overall settings:
 	the datum will not be uploaded.</dd>
 </dl>
 
-# Virtual Meter Filter
+# Virtual Meter Datum Filter
 
 This component can derive an accumulating "meter reading" value out of an instantaneous property
 value over time. For example, if you have an irradiance sensor that allows you to capture

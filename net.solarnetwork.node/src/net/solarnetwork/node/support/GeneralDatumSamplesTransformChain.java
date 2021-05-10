@@ -37,6 +37,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.WeakValueConcurrentHashMap;
@@ -150,8 +151,10 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 		if ( configurableUid ) {
 			result = baseIdentifiableSettings("");
 		} else {
-			result = new ArrayList<>(1);
+			result = new ArrayList<>(2);
 		}
+
+		result.add(new BasicTitleSettingSpecifier("availableUids", availableUidsStatus(), true, true));
 
 		// list of UIDs
 		String[] uids = getTransformUids();
@@ -168,6 +171,26 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 		result.add(uidsGroup);
 
 		return result;
+	}
+
+	private String availableUidsStatus() {
+		List<String> uids = new ArrayList<>();
+		for ( GeneralDatumSamplesTransformService s : transformServices ) {
+			String uid = s.getUid();
+			if ( uid != null && !uid.isEmpty() ) {
+				uids.add(uid);
+			}
+		}
+		if ( uids.isEmpty() ) {
+			return "N/A";
+		}
+		Collections.sort(uids, String::compareToIgnoreCase);
+		StringBuilder buf = new StringBuilder("<ol>");
+		for ( String uid : uids ) {
+			buf.append("<li>").append(uid).append("</li>");
+		}
+		buf.append("</ol>");
+		return buf.toString();
 	}
 
 	private GeneralDatumSamplesTransformService findService(String uid) {

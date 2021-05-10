@@ -68,6 +68,7 @@ import net.solarnetwork.node.settings.support.SettingSpecifierProviderFactoryMes
 import net.solarnetwork.node.settings.support.SettingSpecifierProviderMessageComparator;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
+import net.solarnetwork.support.SearchFilter;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.web.domain.Response;
 import net.solarnetwork.web.support.MultipartFileResource;
@@ -76,7 +77,7 @@ import net.solarnetwork.web.support.MultipartFileResource;
  * Web controller for the settings UI.
  * 
  * @author matt
- * @version 1.8
+ * @version 1.9
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -85,11 +86,20 @@ public class SettingsController {
 	private static final String KEY_PROVIDERS = "providers";
 	private static final String KEY_PROVIDER_FACTORY = "factory";
 	private static final String KEY_PROVIDER_FACTORIES = "factories";
+	private static final String KEY_GLOBAL_PROVIDER_FACTORIES = "globalFactories";
+	private static final String KEY_USER_PROVIDER_FACTORIES = "userFactories";
 	private static final String KEY_SETTINGS_SERVICE = "settingsService";
 	private static final String KEY_SETTINGS_BACKUPS = "settingsBackups";
 	private static final String KEY_BACKUP_MANAGER = "backupManager";
 	private static final String KEY_BACKUP_SERVICE = "backupService";
 	private static final String KEY_BACKUPS = "backups";
+
+	private static final SearchFilter NOT_DATUM_FILTER = SearchFilter
+			.forLDAPSearchFilterString("(!(role=datum-filter))");
+	private static final SearchFilter GLOBAL_DATUM_FILTER = SearchFilter
+			.forLDAPSearchFilterString("(&(role=datum-filter)(role=global))");
+	private static final SearchFilter USER_DATUM_FILTER = SearchFilter
+			.forLDAPSearchFilterString("(&(role=datum-filter)(role=user))");
 
 	@Autowired
 	@Qualifier("settingsService")
@@ -109,11 +119,12 @@ public class SettingsController {
 			locale = Locale.US;
 		}
 		if ( settingsService != null ) {
-			List<SettingSpecifierProviderFactory> factories = settingsService.getProviderFactories();
+			List<SettingSpecifierProviderFactory> factories = settingsService
+					.getProviderFactories(NOT_DATUM_FILTER);
 			if ( factories != null ) {
 				sort(factories, new SettingSpecifierProviderFactoryMessageComparator(locale));
 			}
-			List<SettingSpecifierProvider> providers = settingsService.getProviders();
+			List<SettingSpecifierProvider> providers = settingsService.getProviders(NOT_DATUM_FILTER);
 			if ( providers != null ) {
 				sort(providers, new SettingSpecifierProviderMessageComparator(locale));
 			}
@@ -134,6 +145,35 @@ public class SettingsController {
 			}
 		}
 		return "settings-list";
+	}
+
+	@RequestMapping(value = "/filters", method = RequestMethod.GET)
+	public String filterSettingsList(ModelMap model, Locale locale) {
+		final SettingsService settingsService = settingsServiceTracker.service();
+		if ( locale == null ) {
+			locale = Locale.US;
+		}
+		if ( settingsService != null ) {
+			List<SettingSpecifierProviderFactory> globalFactories = settingsService
+					.getProviderFactories(GLOBAL_DATUM_FILTER);
+			if ( globalFactories != null ) {
+				sort(globalFactories, new SettingSpecifierProviderFactoryMessageComparator(locale));
+			}
+			List<SettingSpecifierProviderFactory> userFactories = settingsService
+					.getProviderFactories(USER_DATUM_FILTER);
+			if ( userFactories != null ) {
+				sort(userFactories, new SettingSpecifierProviderFactoryMessageComparator(locale));
+			}
+			List<SettingSpecifierProvider> providers = settingsService.getProviders(GLOBAL_DATUM_FILTER);
+			if ( providers != null ) {
+				sort(providers, new SettingSpecifierProviderMessageComparator(locale));
+			}
+			model.put(KEY_PROVIDERS, providers);
+			model.put(KEY_GLOBAL_PROVIDER_FACTORIES, globalFactories);
+			model.put(KEY_USER_PROVIDER_FACTORIES, userFactories);
+			model.put(KEY_SETTINGS_SERVICE, settingsService);
+		}
+		return "filters-list";
 	}
 
 	@RequestMapping(value = "/manage", method = RequestMethod.GET)

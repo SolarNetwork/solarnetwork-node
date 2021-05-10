@@ -14,7 +14,18 @@
 				</sec:authorize>
 			</li>
 			<li ${navloc == 'cert' ? 'class="active"' : ''}><a href="<setup:url value='/a/certs'/>"><fmt:message key='link.cert'/></a></li>
-			<li ${navloc == 'settings' ? 'class="active"' : ''}><a href="<setup:url value='/a/settings'/>"><fmt:message key='link.settings'/></a></li>
+			
+			<li class="dropdown${navloc == 'settings' or navloc == 'filters' or navloc == 'settings-component' ? ' active' : ''}">
+				<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+					<fmt:message key='link.settings'/>
+					<b class="caret"></b>
+				</a>
+				<ul class="dropdown-menu">
+					<li ${navloc == 'settings' ? 'class="active"' : ''}><a href="<setup:url value='/a/settings'/>"><fmt:message key='link.settings'/></a></li>
+					<li ${navloc == 'filters' ? 'class="active"' : ''}><a href="<setup:url value='/a/settings/filters'/>"><fmt:message key='link.filters'/></a></li>
+				</ul>
+			</li>
+			
 			<li ${navloc == 'controls' ? 'class="active"' : ''}><a href="<setup:url value='/a/controls'/>"><fmt:message key='link.controls'/></a></li>
 			<li ${navloc == 'plugins' ? 'class="active"' : ''}><a id="link-plugins" href="<setup:url value='/a/plugins'/>"><fmt:message key='link.plugins'/></a></li>
  		</ul>
