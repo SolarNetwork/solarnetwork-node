@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.domain.Datum;
@@ -38,6 +39,7 @@ import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.WeakValueConcurrentHashMap;
 
 /**
  * A configurable chain of transformer services.
@@ -60,6 +62,9 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 	private final boolean configurableUid;
 	private final GeneralDatumSamplesTransformService staticService;
 	private String[] transformUids;
+
+	private final ConcurrentMap<String, GeneralDatumSamplesTransformService> serviceCache = new WeakValueConcurrentHashMap<>(
+			16, 0.9f, 2);
 
 	/**
 	 * Constructor.
@@ -165,6 +170,22 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 		return result;
 	}
 
+	private GeneralDatumSamplesTransformService findService(String uid) {
+		return serviceCache.compute(uid, (k, v) -> {
+			// have to re-check UID, as these can change
+			if ( v != null && uid.equals(v.getUid()) ) {
+				return v;
+			}
+			for ( GeneralDatumSamplesTransformService s : transformServices ) {
+				String serviceUid = s.getUid();
+				if ( uid.equals(serviceUid) ) {
+					return s;
+				}
+			}
+			return null;
+		});
+	}
+
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
 			Map<String, Object> parameters) {
@@ -182,22 +203,11 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 		if ( uids == null || uids.length < 1 ) {
 			return samples;
 		}
-		Map<String, GeneralDatumSamplesTransformService> serviceMap = null; // a UID cache
 		for ( String uid : uids ) {
 			if ( uid == null || uid.isEmpty() ) {
 				continue;
 			}
-			if ( serviceMap == null ) {
-				serviceMap = new HashMap<>(8);
-				for ( GeneralDatumSamplesTransformService s : transformServices ) {
-					String serviceUid = s.getUID();
-					if ( serviceUid == null || serviceUid.isEmpty() ) {
-						continue;
-					}
-					serviceMap.put(serviceUid, s);
-				}
-			}
-			GeneralDatumSamplesTransformService s = serviceMap.get(uid);
+			GeneralDatumSamplesTransformService s = findService(uid);
 			if ( s != null ) {
 				if ( p == null ) {
 					p = new HashMap<>(8);
