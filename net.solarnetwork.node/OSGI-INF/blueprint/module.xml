@@ -23,6 +23,8 @@
 		<beans:prop key="job.backup.cron">0 3 0 ? * SAT</beans:prop>
 		<beans:prop key="placeholders.dir">conf/placeholders.d</beans:prop>
 	</osgix:cm-properties>
+
+	<ctx:property-placeholder properties-ref="core.cfg"/>
 	
 	<!-- Service References -->
 
@@ -79,8 +81,6 @@
 	<reference-list id="sampleTransformers" availability="optional"
 		interface="net.solarnetwork.node.domain.GeneralDatumSamplesTransformer"/>
 		
-	<!-- Published Services -->
-
 	<!-- Provide a centralized ObjectMapper for JSON processing. -->
 	<service interface="net.solarnetwork.util.ObjectMapperService">
 		<service-properties>
@@ -190,7 +190,12 @@
 			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
 		</interfaces>
 		<service-properties>
-			<entry key="role" value="global"/>
+			<entry key="role">
+				<array value-type="java.lang.String">
+					<value>global</value>
+					<value>datum-filter</value>
+				</array>
+			</entry>
 		</service-properties>
 		<bean class="net.solarnetwork.node.support.GeneralDatumSamplesTransformChain">
 			<osgix:managed-properties persistent-id="net.solarnetwork.node.datum.xform.solarin" autowire-on-update="true"/>
@@ -211,6 +216,56 @@
 		</bean>
 	</service>
 	
+	<!-- User Datum Filter Chain factory -->	
+	<bean id="userDatumFilterChainMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.support.UserGeneralDatumSamplesTransformChain</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+			</list>
+		</property>
+	</bean>
+	
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<service-properties>
+			<entry key="role">
+				<array value-type="java.lang.String">
+					<value>user</value>
+					<value>datum-filter</value>
+				</array>
+			</entry>
+		</service-properties>
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Datum Filter Chain"/>
+			<property name="factoryUID" value="net.solarnetwork.node.datum.xform.user"/>
+			<property name="messageSource" ref="userDatumFilterChainMessageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.xform.user" autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.GeneralDatumSamplesTransformService</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.xform.user"/>
+			<beans:entry key="role">
+				<beans:array value-type="java.lang.String">
+					<beans:value>user</beans:value>
+					<beans:value>datum-filter</beans:value>
+				</beans:array>
+			</beans:entry>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.support.GeneralDatumSamplesTransformChain">
+			<argument value="net.solarnetwork.node.datum.xform.user"/>
+			<argument ref="datumXformServices"/>
+			<argument value="true"/>
+			<argument><null/></argument>
+			<property name="messageSource" ref="userDatumFilterChainMessageSource"/>
+		</bean>
+	</osgix:managed-service-factory>
+
+	<!-- Platform package service -->	
 	<service interface="net.solarnetwork.node.PlatformPackageService">
 		<bean class="net.solarnetwork.node.support.NativeTarPlatformPackageService">
 			<property name="taskExecutor">
@@ -221,10 +276,6 @@
 		</bean>
 	</service>
 	
-	<!-- Supporting Services -->
-
-	<ctx:property-placeholder properties-ref="core.cfg"/>
-
 	<!-- Quartz scheduler for scheduling all jobs -->
 	<bean id="scheduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
 		<property name="applicationContextSchedulerContextKey" value="applicationContext"/>
