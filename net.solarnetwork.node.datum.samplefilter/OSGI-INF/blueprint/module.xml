@@ -28,8 +28,9 @@
 	<bean id="simpleFilterMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
+				<value>net.solarnetwork.node.datum.samplefilter.PropertyFilterSamplesTransformer</value>
 				<value>net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport</value>
-				<value>net.solarnetwork.node.datum.samplefilter.SimpleFilterSamplesTransformer</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
 		</property>
 	</bean>
@@ -65,7 +66,7 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.datum.samplefilter.SimpleFilterSamplesTransformer" init-method="init">
+		<bean class="net.solarnetwork.node.datum.samplefilter.PropertyFilterSamplesTransformer" init-method="init">
 			<property name="settingDao" ref="settingDao"/>
 			<property name="messageSource" ref="simpleFilterMessageSource"/>
 		</bean>
@@ -79,6 +80,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.samplefilter.DatumPropertyTransformService</value>
+				<value>net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
 		</property>
@@ -100,7 +102,7 @@
 			</entry>
 		</service-properties>
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-			<property name="displayName" value="Datum Sample Property Filter"/>
+			<property name="displayName" value="Property Datum Filter"/>
 			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.prop"/>
 			<property name="messageSource" ref="propFilterMessageSource"/>
 		</bean>
@@ -124,7 +126,7 @@
 		<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService">
 			<argument value="net.solarnetwork.node.datum.samplefilter.prop"/>
 			<property name="sampleTransformer">
-				<bean class="net.solarnetwork.node.datum.samplefilter.SimpleFilterSamplesTransformer" init-method="init">
+				<bean class="net.solarnetwork.node.datum.samplefilter.PropertyFilterSamplesTransformer" init-method="init">
 					<property name="settingDao" ref="settingDao"/>
 				</bean>
 			</property>
@@ -133,20 +135,19 @@
 	</osgix:managed-service-factory>
 
 	<!-- 
-	 !!! SourceThrottlingSamplesFilter (source based throttling)
+	 !!! SourceThrottlingSamplesFilter (source based throttling) - global filter
 	 -->
 
-	<!-- support localized strings for the settings in the GUI -->
 	<bean id="sourceThrottleMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport</value>
 				<value>net.solarnetwork.node.datum.samplefilter.SourceThrottlingSamplesTransformer</value>
+				<value>net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
 		</property>
 	</bean>
 	
-	<!-- publish a "component factory" so our service appears in the settings GUI -->
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
 		<service-properties>
 			<entry key="role">
@@ -163,8 +164,6 @@
 		</bean>
 	</service>
 
-	<!-- publish a "service factory" that each filter component instance can be
-	     configured in the GUI -->
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.throttle" 
 		autowire-on-update="true">
 		<osgix:interfaces>
@@ -186,13 +185,81 @@
 		</bean>
 	</osgix:managed-service-factory>
 
+	<!-- 
+	 !!! SourceThrottlingSamplesFilter (source based throttling) - user filter
+	 -->
+
+	<bean id="throttleFilterMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.datum.samplefilter.DatumThrottleTransformService</value>
+				<value>net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+			</list>
+		</property>
+		<property name="parentMessageSource">
+			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+				<property name="prefix" value="sampleTransformer."/>
+				<property name="delegate" ref="sourceThrottleMessageSource"/>
+			</bean>
+		</property>
+	</bean>
+
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<service-properties>
+			<entry key="role">
+				<array value-type="java.lang.String">
+					<value>user</value>
+					<value>datum-filter</value>
+				</array>
+			</entry>
+		</service-properties>
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Throttle Datum Filter"/>
+			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.limiter"/>
+			<property name="messageSource" ref="throttleFilterMessageSource"/>
+		</bean>
+	</service>
+
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.limiter" 
+		autowire-on-update="true" update-method="configurationChanged">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.GeneralDatumSamplesTransformService</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.samplefilter.limiter"/>
+			<beans:entry key="role">
+				<beans:array value-type="java.lang.String">
+					<beans:value>user</beans:value>
+					<beans:value>datum-filter</beans:value>
+				</beans:array>
+			</beans:entry>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService">
+			<argument value="net.solarnetwork.node.datum.samplefilter.limiter"/>
+			<property name="sampleTransformer">
+				<bean class="net.solarnetwork.node.datum.samplefilter.SourceThrottlingSamplesTransformer">
+					<property name="settingDao" ref="settingDao"/>
+					<property name="messageSource" ref="sourceThrottleMessageSource"/>
+				</bean>
+			</property>
+			<property name="messageSource" ref="throttleFilterMessageSource"/>
+		</bean>
+	</osgix:managed-service-factory>
 
 	<!-- 
 		Downsampler Filter Service
 	 -->
 	 
 	<bean id="downsamplerMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basename" value="net.solarnetwork.node.datum.samplefilter.DownsampleTransformService"/>
+		<property name="basenames">
+			<array>
+				<value>net.solarnetwork.node.datum.samplefilter.DownsampleTransformService</value>
+				<value>net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+			</array>
+		</property>
 	</bean>
 
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
@@ -239,6 +306,7 @@
 		<property name="basenames">
 			<array>
 				<value>net.solarnetwork.node.datum.samplefilter.VirtualMeterTransformService</value>
+				<value>net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</array>
 		</property>

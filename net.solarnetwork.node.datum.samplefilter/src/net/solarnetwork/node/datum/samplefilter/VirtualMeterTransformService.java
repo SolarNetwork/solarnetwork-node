@@ -25,7 +25,6 @@ package net.solarnetwork.node.datum.samplefilter;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -36,8 +35,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.domain.GeneralDatumMetadata;
@@ -52,7 +49,6 @@ import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
-import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.OptionalService;
 
@@ -61,10 +57,10 @@ import net.solarnetwork.util.OptionalService;
  * derived from another property.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.4
  */
-public class VirtualMeterTransformService extends BaseIdentifiable
+public class VirtualMeterTransformService extends SamplesTransformerSupport
 		implements GeneralDatumSamplesTransformService, SettingSpecifierProvider {
 
 	/** The datum metadata key for a virtual meter sample value. */
@@ -86,7 +82,6 @@ public class VirtualMeterTransformService extends BaseIdentifiable
 			2);
 	private final OptionalService<DatumMetadataService> datumMetadataService;
 	private VirtualMeterConfig[] virtualMeterConfigs;
-	private Pattern sourceId;
 
 	/**
 	 * Constructor.
@@ -111,10 +106,9 @@ public class VirtualMeterTransformService extends BaseIdentifiable
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(4);
+		List<SettingSpecifier> results = baseIdentifiableSettings(null);
 
-		results.add(new BasicTitleSettingSpecifier("status", statusValue()));
-		results.addAll(baseIdentifiableSettings(null));
+		results.add(0, new BasicTitleSettingSpecifier("status", statusValue()));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));
 
 		VirtualMeterConfig[] meterConfs = getVirtualMeterConfigs();
@@ -171,7 +165,7 @@ public class VirtualMeterTransformService extends BaseIdentifiable
 				|| datum.getSourceId() == null || samples == null ) {
 			return samples;
 		}
-		if ( sourceId == null || sourceId.matcher(datum.getSourceId()).find() ) {
+		if ( sourceIdMatches(datum) ) {
 			GeneralDatumSamples s = new GeneralDatumSamples(samples);
 			populateDatumProperties(datum, s, virtualMeterConfigs, parameters);
 			return s;
@@ -395,42 +389,6 @@ public class VirtualMeterTransformService extends BaseIdentifiable
 				result = result.stripTrailingZeros();
 			}
 			return result;
-		}
-	}
-
-	/**
-	 * Get the source ID pattern.
-	 * 
-	 * @return The pattern.
-	 */
-	public String getSourceId() {
-		return (sourceId != null ? sourceId.pattern() : null);
-	}
-
-	/**
-	 * Set a source ID pattern to match samples against.
-	 * 
-	 * Samples will only be considered for filtering if
-	 * {@link Datum#getSourceId()} matches this pattern.
-	 * 
-	 * The {@code sourceIdPattern} must be a valid {@link Pattern} regular
-	 * expression. The expression will be allowed to match anywhere in
-	 * {@link Datum#getSourceId()} values, so if the pattern must match the full
-	 * value only then use pattern positional expressions like {@code ^} and
-	 * {@code $}.
-	 * 
-	 * @param sourceIdPattern
-	 *        The source ID regex to match. Syntax errors in the pattern will be
-	 *        ignored and a {@code null} value will be set instead.
-	 */
-	public void setSourceId(String sourceIdPattern) {
-		try {
-			this.sourceId = (sourceIdPattern != null
-					? Pattern.compile(sourceIdPattern, Pattern.CASE_INSENSITIVE)
-					: null);
-		} catch ( PatternSyntaxException e ) {
-			log.warn("Error compiling regex [{}]", sourceIdPattern, e);
-			this.sourceId = null;
 		}
 	}
 

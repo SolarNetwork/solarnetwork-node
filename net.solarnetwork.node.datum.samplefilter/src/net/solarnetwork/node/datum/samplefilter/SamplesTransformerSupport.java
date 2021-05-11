@@ -22,9 +22,11 @@
 
 package net.solarnetwork.node.datum.samplefilter;
 
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -34,18 +36,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.node.Setting;
+import net.solarnetwork.node.Setting.SettingFlag;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.support.KeyValuePair;
+import net.solarnetwork.node.support.BaseIdentifiable;
 
 /**
  * Support class for sample transformers.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-@SuppressWarnings("deprecation")
-public class SamplesTransformerSupport {
+public class SamplesTransformerSupport extends BaseIdentifiable {
 
 	/** The default value for the {@code settingCacheSecs} property. */
 	public static final int DEFAULT_SETTING_CACHE_SECS = 15;
@@ -67,12 +70,10 @@ public class SamplesTransformerSupport {
 	protected static final ConcurrentMap<String, ConcurrentMap<String, String>> SETTING_CACHE = new ConcurrentHashMap<String, ConcurrentMap<String, String>>(
 			4, 0.9f, 1);
 
-	private String uid;
-	private String groupUID;
 	private Pattern sourceId;
 	private SettingDao settingDao;
-	private MessageSource messageSource;
 	private int settingCacheSecs;
+	private String settingKey;
 
 	private final AtomicLong settingCacheExpiry = new AtomicLong(0);
 
@@ -90,6 +91,30 @@ public class SamplesTransformerSupport {
 		super();
 		setUid(DEFAULT_UID);
 		setSettingCacheSecs(DEFAULT_SETTING_CACHE_SECS);
+		setSettingKey(String.format(SETTING_KEY_TEMPLATE, DEFAULT_UID));
+	}
+
+	/**
+	 * Test if a given datum's source ID matches the configured source ID
+	 * pattern.
+	 * 
+	 * @param datum
+	 *        the datum whose source ID should be tested
+	 * @return {@literal true} if the datum's {@code sourceId} value matches the
+	 *         configured source ID pattern, or no pattern is configured
+	 * @since 1.2
+	 */
+	protected boolean sourceIdMatches(Datum datum) {
+		Pattern sourceIdPat = getSourceIdPattern();
+		if ( sourceIdPat != null ) {
+			if ( datum == null || datum.getSourceId() == null
+					|| !sourceIdPat.matcher(datum.getSourceId()).find() ) {
+				log.trace("Datum {} does not match source ID pattern {}; not filtering", datum,
+						sourceIdPat);
+				return false;
+			}
+		}
+		return true;
 	}
 
 	/**
@@ -225,13 +250,18 @@ public class SamplesTransformerSupport {
 	}
 
 	/**
-	 * Get a setting key value based on the configured {@code uid}.
+	 * Get a setting key value for saving settings.
+	 * 
+	 * <p>
+	 * This returns a static value. This is expected to be combined with a
+	 * unique setting type key to distinguish between different datum sources
+	 * and/or datum properties.
+	 * </p>
 	 * 
 	 * @return a setting key to use, never {@literal null}
 	 */
 	protected String settingKey() {
-		final String uid = getUid();
-		return String.format(SETTING_KEY_TEMPLATE, (uid == null ? DEFAULT_UID : uid));
+		return settingKey;
 	}
 
 	/**
@@ -248,6 +278,7 @@ public class SamplesTransformerSupport {
 	 *         setting {@code type} for keys and the setting {@code value} for
 	 *         the associated values
 	 */
+	@SuppressWarnings("deprecation")
 	protected ConcurrentMap<String, String> loadSettings(String key) {
 		ConcurrentMap<String, String> result = SETTING_CACHE.get(key);
 		if ( result == null ) {
@@ -260,9 +291,9 @@ public class SamplesTransformerSupport {
 		}
 		SettingDao dao = getSettingDao();
 		if ( dao != null ) {
-			List<KeyValuePair> pairs = dao.getSettings(key);
+			List<net.solarnetwork.node.support.KeyValuePair> pairs = dao.getSettings(key);
 			if ( pairs != null && !pairs.isEmpty() ) {
-				for ( KeyValuePair pair : pairs ) {
+				for ( net.solarnetwork.node.support.KeyValuePair pair : pairs ) {
 					result.put(pair.getKey(), pair.getValue());
 				}
 			}
@@ -305,6 +336,51 @@ public class SamplesTransformerSupport {
 	}
 
 	/**
+	 * Save a "last seen" setting.
+	 * 
+	 * @param seenDate
+	 *        the "last seen" date to use
+	 * @param settingKey
+	 *        the setting key to save the date to
+	 * @param lastSeenKey
+	 *        the setting type key to save the date to
+	 * @param oldLastSeenValue
+	 *        the previous "last seen" value, or {@literal null}
+	 * @param lastSeenMap
+	 *        a map to save the last seen date to, as a hex-encoded string
+	 */
+	protected void saveLastSeenSetting(final long seenDate, final String settingKey,
+			final String lastSeenKey, final String oldLastSeenValue,
+			ConcurrentMap<String, String> lastSeenMap) {
+		// save the new setting date
+		final String newLastSeenValue = Long.toString(seenDate, 16);
+		if ( (oldLastSeenValue == null && lastSeenMap.putIfAbsent(lastSeenKey, newLastSeenValue) == null)
+				|| (oldLastSeenValue != null
+						&& lastSeenMap.replace(lastSeenKey, oldLastSeenValue, newLastSeenValue)) ) {
+			log.debug("Saving {} last seen date: {}", lastSeenKey, seenDate);
+			Setting s = new Setting(settingKey, lastSeenKey, Long.toString(seenDate, 16),
+					EnumSet.of(SettingFlag.Volatile, SettingFlag.IgnoreModificationDate));
+			getSettingDao().storeSetting(s);
+		}
+	}
+
+	/**
+	 * Get a description of this service.
+	 * 
+	 * @return the description
+	 * @since 1.2
+	 */
+	public String getDescription() {
+		String uid = getUid();
+		MessageSource msg = getMessageSource();
+		String title = msg.getMessage("title", null, getClass().getSimpleName(), Locale.getDefault());
+		if ( uid != null && !DEFAULT_UID.equals(uid) ) {
+			return String.format("%s (%s)", uid, title);
+		}
+		return title;
+	}
+
+	/**
 	 * Get the source ID pattern.
 	 * 
 	 * @return The pattern.
@@ -338,72 +414,6 @@ public class SamplesTransformerSupport {
 			log.warn("Error compiling regex [{}]", sourceIdPattern, e);
 			this.sourceId = null;
 		}
-	}
-
-	/**
-	 * Alias for the {@link #getUid()} method.
-	 * 
-	 * @return the UID
-	 */
-	public String getUID() {
-		return getUid();
-	}
-
-	/**
-	 * Get the UID value.
-	 * 
-	 * @return the UID value
-	 */
-	public String getUid() {
-		return this.uid;
-	}
-
-	/**
-	 * Set the UID value.
-	 * 
-	 * @param uid
-	 *        the uid to set
-	 */
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	/**
-	 * Get the group UID.
-	 * 
-	 * @return the group UID
-	 */
-	public String getGroupUID() {
-		return this.groupUID;
-	}
-
-	/**
-	 * Set the group ID value.
-	 * 
-	 * @param groupUID
-	 *        the groupUID to set
-	 */
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
-	}
-
-	/**
-	 * Get a MessageSource to use.
-	 * 
-	 * @return the meessage source
-	 */
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	/**
-	 * Set the MessageSource to use.
-	 * 
-	 * @param messageSource
-	 *        the messageSource to set
-	 */
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
 	}
 
 	/**
@@ -441,6 +451,22 @@ public class SamplesTransformerSupport {
 	 */
 	public void setSettingCacheSecs(int settingCacheSecs) {
 		this.settingCacheSecs = settingCacheSecs;
+	}
+
+	/**
+	 * Set the setting key to use for saved settings.
+	 * 
+	 * @param settingKey
+	 *        the key to set
+	 * @throws IllegalArgumentException
+	 *         if {@code settingKey} is {@literal null}
+	 * @since 1.2
+	 */
+	public void setSettingKey(String settingKey) {
+		if ( settingKey == null ) {
+			throw new IllegalArgumentException("The settingKey argument must not be null.");
+		}
+		this.settingKey = settingKey;
 	}
 
 }

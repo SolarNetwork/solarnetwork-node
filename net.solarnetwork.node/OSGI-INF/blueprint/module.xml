@@ -207,6 +207,7 @@
 					<property name="sampleTransformers" ref="sampleTransformers"/>
 				</bean>
 			</argument>
+			<property name="sampleTransformers" ref="sampleTransformers"/>
 			<property name="uid" value="SolarIn"/>
 			<property name="messageSource">
 				<bean class="org.springframework.context.support.ResourceBundleMessageSource">

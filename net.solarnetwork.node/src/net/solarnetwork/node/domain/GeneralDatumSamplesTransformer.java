@@ -24,15 +24,16 @@ package net.solarnetwork.node.domain;
 
 import java.util.Map;
 import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.domain.Identifiable;
 
 /**
  * API for taking a {@link GeneralDatumSamples} object and transforming it in
  * some way into a different {@link GeneralDatumSamples} object.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
-public interface GeneralDatumSamplesTransformer {
+public interface GeneralDatumSamplesTransformer extends Identifiable {
 
 	/**
 	 * A parameter key signaling the transform is for testing purposes only, and
@@ -111,6 +112,25 @@ public interface GeneralDatumSamplesTransformer {
 	default GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
 			Map<String, ?> parameters) {
 		return transformSamples(datum, samples);
+	}
+
+	/**
+	 * Get a description of this transformer.
+	 * 
+	 * <p>
+	 * This method should return a meaningful description of this service,
+	 * suitable for users to see.
+	 * </p>
+	 * 
+	 * @return a friendly description
+	 * @since 1.3
+	 */
+	default String getDescription() {
+		String uid = getUid();
+		if ( uid != null ) {
+			return String.format("%s (%s)", uid, getClass().getSimpleName());
+		}
+		return getClass().getSimpleName();
 	}
 
 }

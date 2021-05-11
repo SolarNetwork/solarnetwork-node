@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentMap;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
@@ -63,6 +64,7 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 	private final boolean configurableUid;
 	private final GeneralDatumSamplesTransformService staticService;
 	private String[] transformUids;
+	private List<GeneralDatumSamplesTransformer> sampleTransformers;
 
 	private final ConcurrentMap<String, GeneralDatumSamplesTransformService> serviceCache = new WeakValueConcurrentHashMap<>(
 			16, 0.9f, 2);
@@ -154,6 +156,11 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 			result = new ArrayList<>(2);
 		}
 
+		if ( sampleTransformers != null ) {
+			result.add(new BasicTitleSettingSpecifier("availableTransformerUids",
+					availableTransformerUidsStatus(), true, true));
+		}
+
 		result.add(new BasicTitleSettingSpecifier("availableUids", availableUidsStatus(), true, true));
 
 		// list of UIDs
@@ -171,6 +178,23 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 		result.add(uidsGroup);
 
 		return result;
+	}
+
+	private String availableTransformerUidsStatus() {
+		List<String> names = new ArrayList<>();
+		for ( GeneralDatumSamplesTransformer s : sampleTransformers ) {
+			names.add(s.getDescription());
+		}
+		if ( names.isEmpty() ) {
+			return "N/A";
+		}
+		Collections.sort(names, String::compareToIgnoreCase);
+		StringBuilder buf = new StringBuilder("<ol>");
+		for ( String uid : names ) {
+			buf.append("<li>").append(uid).append("</li>");
+		}
+		buf.append("</ol>");
+		return buf.toString();
 	}
 
 	private String availableUidsStatus() {
@@ -286,6 +310,22 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 	 */
 	public void setTransformUidsCount(int count) {
 		this.transformUids = ArrayUtils.arrayWithLength(this.transformUids, count, String.class, null);
+	}
+
+	/**
+	 * Set the sample transformers to use.
+	 * 
+	 * <p>
+	 * Theese are not applied by this class. Rather, if this is set then a
+	 * read-only setting will be included in {@link #getSettingSpecifiers()}
+	 * that lists the configured filters.
+	 * </p>
+	 * 
+	 * @param sampleTransformers
+	 *        the transformers to use
+	 */
+	public void setSampleTransformers(List<GeneralDatumSamplesTransformer> sampleTransformers) {
+		this.sampleTransformers = sampleTransformers;
 	}
 
 }

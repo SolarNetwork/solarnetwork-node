@@ -1,5 +1,5 @@
 /* ==================================================================
- * SimpleFilterSamplesTransformer.java - 28/10/2016 3:00:56 PM
+ * PropertyFilterSamplesTransformer.java - 28/10/2016 3:00:56 PM
  * 
  * Copyright 2007-2016 SolarNetwork.net Dev Team
  * 
@@ -26,14 +26,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.node.Setting;
-import net.solarnetwork.node.Setting.SettingFlag;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -56,7 +53,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * @author matt
  * @version 1.1
  */
-public class SimpleFilterSamplesTransformer extends SamplesTransformerSupport
+public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 		implements GeneralDatumSamplesTransformer, SettingSpecifierProvider, SettingsChangeObserver {
 
 	private DatumPropertyFilterConfig[] propIncludes;
@@ -66,18 +63,17 @@ public class SimpleFilterSamplesTransformer extends SamplesTransformerSupport
 
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples) {
-		Pattern sourceIdPat = getSourceIdPattern();
-		if ( sourceIdPat != null ) {
-			if ( datum == null || datum.getSourceId() == null
-					|| !sourceIdPat.matcher(datum.getSourceId()).find() ) {
-				log.trace("Datum {} does not match source ID pattern {}; not filtering", datum,
-						sourceIdPat);
-				return samples;
-			}
+		final String settingKey = settingKey();
+		if ( settingKey == null ) {
+			log.trace("Filter does not have a UID configured; not filtering: {}", this);
+			return samples;
+		}
+
+		if ( !sourceIdMatches(datum) ) {
+			return samples;
 		}
 
 		// load all Datum "last created" settings
-		final String settingKey = settingKey();
 		final ConcurrentMap<String, String> lastSeenMap = loadSettings(settingKey);
 
 		final long now = (datum != null && datum.getCreated() != null ? datum.getCreated().getTime()
@@ -206,17 +202,8 @@ public class SimpleFilterSamplesTransformer extends SamplesTransformerSupport
 		if ( limit == null || limit.intValue() < 1 ) {
 			return;
 		}
-		// save the new setting date
 		final String oldLastSeenValue = lastSeenMap.get(lastSeenKey);
-		final String newLastSeenValue = Long.toString(now, 16);
-		if ( (oldLastSeenValue == null && lastSeenMap.putIfAbsent(lastSeenKey, newLastSeenValue) == null)
-				|| (oldLastSeenValue != null
-						&& lastSeenMap.replace(lastSeenKey, oldLastSeenValue, newLastSeenValue)) ) {
-			log.debug("Saving {} last seen date: {}", lastSeenKey, now);
-			Setting s = new Setting(settingKey, lastSeenKey, Long.toString(now, 16),
-					EnumSet.of(SettingFlag.Volatile, SettingFlag.IgnoreModificationDate));
-			getSettingDao().storeSetting(s);
-		}
+		super.saveLastSeenSetting(now, settingKey, lastSeenKey, oldLastSeenValue, lastSeenMap);
 	}
 
 	/**
@@ -263,6 +250,7 @@ public class SimpleFilterSamplesTransformer extends SamplesTransformerSupport
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(3);
 
+		results.add(new BasicTextFieldSettingSpecifier("uid", null));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
 
 		DatumPropertyFilterConfig[] incs = getPropIncludes();

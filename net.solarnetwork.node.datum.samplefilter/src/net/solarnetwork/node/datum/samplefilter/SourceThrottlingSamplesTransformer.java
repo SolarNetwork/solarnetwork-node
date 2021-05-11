@@ -23,14 +23,10 @@
 package net.solarnetwork.node.datum.samplefilter;
 
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
-import java.util.regex.Pattern;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.Identifiable;
-import net.solarnetwork.node.Setting;
-import net.solarnetwork.node.Setting.SettingFlag;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -62,18 +58,19 @@ public class SourceThrottlingSamplesTransformer extends SamplesTransformerSuppor
 
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples) {
-		final String sourceId = datum.getSourceId();
-		Pattern sourceIdPat = getSourceIdPattern();
-		if ( sourceIdPat != null ) {
-			if ( datum == null || sourceId == null || !sourceIdPat.matcher(sourceId).find() ) {
-				log.trace("Datum {} does not match source ID pattern {}; not filtering", datum,
-						sourceIdPat);
-				return samples;
-			}
+		final String settingKey = settingKey();
+		if ( settingKey == null ) {
+			log.trace("Filter does not have a UID configured; not filtering: {}", this);
+			return samples;
 		}
 
+		if ( !sourceIdMatches(datum) ) {
+			return samples;
+		}
+
+		final String sourceId = datum.getSourceId();
+
 		// load all Datum "last created" settings
-		final String settingKey = settingKey();
 		final ConcurrentMap<String, String> createdSettings = loadSettings(settingKey);
 
 		final long now = (datum != null && datum.getCreated() != null ? datum.getCreated().getTime()
@@ -98,15 +95,7 @@ public class SourceThrottlingSamplesTransformer extends SamplesTransformerSuppor
 		log.trace("Datum {} has not been seen in the past {}s; not filtering", datum, offset);
 
 		// save the new setting date
-		final String newSaveSetting = Long.toString(now, 16);
-		if ( (lastSaveSetting == null && createdSettings.putIfAbsent(sourceId, newSaveSetting) == null)
-				|| (lastSaveSetting != null
-						&& createdSettings.replace(sourceId, lastSaveSetting, newSaveSetting)) ) {
-
-			Setting s = new Setting(settingKey, sourceId, newSaveSetting,
-					EnumSet.of(SettingFlag.Volatile, SettingFlag.IgnoreModificationDate));
-			getSettingDao().storeSetting(s);
-		}
+		saveLastSeenSetting(now, settingKey, sourceId, lastSaveSetting, createdSettings);
 
 		return samples;
 	}
@@ -125,8 +114,8 @@ public class SourceThrottlingSamplesTransformer extends SamplesTransformerSuppor
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(3);
 
+		results.add(new BasicTextFieldSettingSpecifier("uid", null));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
-		results.add(new BasicTextFieldSettingSpecifier("uid", DEFAULT_UID));
 		results.add(new BasicTextFieldSettingSpecifier("frequencySeconds",
 				String.valueOf(DEFAULT_FREQUENCY_SECONDS)));
 

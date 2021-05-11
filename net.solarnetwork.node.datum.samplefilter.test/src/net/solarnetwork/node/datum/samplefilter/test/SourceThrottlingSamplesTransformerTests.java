@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.samplefilter.test;
 
+import static java.lang.String.format;
 import static net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport.SETTING_KEY_TEMPLATE;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
@@ -79,7 +80,7 @@ public class SourceThrottlingSamplesTransformerTests {
 		settingDao = EasyMock.createMock(SettingDao.class);
 		xform = new SourceThrottlingSamplesTransformer();
 		xform.setFrequencySeconds(TEST_FREQ);
-		xform.setUid(TEST_UID);
+		xform.setSettingKey(format(SourceThrottlingSamplesTransformer.SETTING_KEY_TEMPLATE, TEST_UID));
 		xform.setSourceId("^F");
 		xform.setSettingDao(settingDao);
 		xform.setSettingCacheSecs(TEST_SETTING_CACHE_SECS);

@@ -22,13 +22,11 @@
 
 package net.solarnetwork.node.datum.samplefilter;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import net.solarnetwork.domain.AggregateDatumProperty;
 import net.solarnetwork.domain.AggregateDatumSamples;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
@@ -37,18 +35,25 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
 
 /**
  * Samples transform service that accumulates "sub-sample" values and then
  * produces a down-sampled average with min/max added.
+ * 
+ * <p>
+ * This filter operates in two different modes: one when a {@code sampleCount}
+ * value is configured and another otherwise. When {@code sampleCount} is
+ * configured (and greater than {@literal 1}), then the filter will collect
+ * {@code sampleCount} samples before generating the down-sampled output
+ * samples.
+ * </p>
  *
  * <p>
- * Sub-samples are signaled by passing the {@link #SUB_SAMPLE_PROP} key in the
- * {@code parameter} map passed to
- * {@link #transformSamples(Datum, GeneralDatumSamples, Map)}. When invoked in
- * this way the method will always return {@literal null}. Then when a
- * down-sampled output value is needed call
+ * When {@code sampleCount} is <b>not</b> configured, then sub-samples are
+ * signaled by passing the {@link #SUB_SAMPLE_PROP} key in the {@code parameter}
+ * map passed to {@link #transformSamples(Datum, GeneralDatumSamples, Map)}.
+ * When invoked in this way the method will always return {@literal null}. Then
+ * when a down-sampled output value is needed call
  * {@link #transformSamples(Datum, GeneralDatumSamples, Map)} again but without
  * the {@link #SUB_SAMPLE_PROP} key. Then a computed value derived from the
  * collected sub-samples will be returned:
@@ -72,7 +77,7 @@ import net.solarnetwork.node.support.BaseIdentifiable;
  * @version 1.1
  * @since 1.2
  */
-public class DownsampleTransformService extends BaseIdentifiable
+public class DownsampleTransformService extends SamplesTransformerSupport
 		implements GeneralDatumSamplesTransformService, SettingSpecifierProvider {
 
 	/** The "sub sample" transform property flag. */
@@ -100,6 +105,7 @@ public class DownsampleTransformService extends BaseIdentifiable
 	private int decimalScale = DEFAULT_DECIMAL_SCALE;
 	private String minPropertyFormat = DEFAULT_MIN_FORMAT;
 	private String maxPropertyFormat = DEFAULT_MAX_FORMAT;
+	private Integer sampleCount;
 
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
@@ -107,14 +113,19 @@ public class DownsampleTransformService extends BaseIdentifiable
 		if ( datum == null || datum.getSourceId() == null || samples == null ) {
 			return samples;
 		}
+		if ( !sourceIdMatches(datum) ) {
+			return samples;
+		}
+		final int count = (sampleCount != null ? sampleCount.intValue() : 0);
 		final boolean sub = (parameters != null && parameters.containsKey(SUB_SAMPLE_PROP));
 		AggregateDatumSamples agg = subSamplesBySource.computeIfAbsent(datum.getSourceId(),
 				k -> new AggregateDatumSamples());
 		synchronized ( agg ) {
 			agg.addSample(samples);
-			if ( !sub ) {
-				GeneralDatumSamples out = downsample(agg);
-				subSamplesBySource.remove(datum.getSourceId());
+			if ( (count < 1 && !sub) || (count > 1 && agg.addedSampleCount() >= count) ) {
+				GeneralDatumSamples out = agg.average(decimalScale, minPropertyFormat,
+						maxPropertyFormat);
+				subSamplesBySource.remove(datum.getSourceId(), agg);
 				return out;
 			}
 		}
@@ -128,10 +139,11 @@ public class DownsampleTransformService extends BaseIdentifiable
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(6);
+		List<SettingSpecifier> results = baseIdentifiableSettings("");
 
-		results.add(new BasicTitleSettingSpecifier("status", statusValue()));
-		results.add(new BasicTextFieldSettingSpecifier("uid", null));
+		results.add(0, new BasicTitleSettingSpecifier("status", statusValue()));
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));
+		results.add(new BasicTextFieldSettingSpecifier("sampleCount", null));
 		results.add(new BasicTextFieldSettingSpecifier("decimalScale",
 				String.valueOf(DEFAULT_DECIMAL_SCALE)));
 		results.add(new BasicTextFieldSettingSpecifier("minPropertyFormat", DEFAULT_MIN_FORMAT));
@@ -152,32 +164,6 @@ public class DownsampleTransformService extends BaseIdentifiable
 			}
 		}
 		return buf.toString();
-	}
-
-	private GeneralDatumSamples downsample(AggregateDatumSamples s) {
-		GeneralDatumSamples out = new GeneralDatumSamples();
-		if ( s.getInstantaneous() != null ) {
-			for ( Map.Entry<String, AggregateDatumProperty> me : s.getInstantaneous().entrySet() ) {
-				out.putInstantaneousSampleValue(me.getKey(), me.getValue().average(decimalScale));
-				out.putInstantaneousSampleValue(String.format(minPropertyFormat, me.getKey()),
-						me.getValue().getMin());
-				out.putInstantaneousSampleValue(String.format(maxPropertyFormat, me.getKey()),
-						me.getValue().getMax());
-			}
-		}
-		if ( s.getAccumulating() != null ) {
-			for ( Map.Entry<String, AggregateDatumProperty> me : s.getAccumulating().entrySet() ) {
-				out.putAccumulatingSampleValue(me.getKey(), me.getValue().last());
-			}
-		}
-		if ( s.getStatus() != null ) {
-			out.setStatus(s.getStatus());
-		}
-		if ( s.getTags() != null ) {
-			out.setTags(s.getTags());
-		}
-
-		return out;
 	}
 
 	/**
@@ -255,6 +241,25 @@ public class DownsampleTransformService extends BaseIdentifiable
 	 */
 	public void setMaxPropertyFormat(String maxPropertyFormat) {
 		this.maxPropertyFormat = maxPropertyFormat;
+	}
+
+	/**
+	 * Get the sample count.
+	 * 
+	 * @return the count, or {@literal null}
+	 */
+	public Integer getSampleCount() {
+		return sampleCount;
+	}
+
+	/**
+	 * Set the sample count.
+	 * 
+	 * @param sampleCount
+	 *        the count to set, or {@literal null}
+	 */
+	public void setSampleCount(Integer sampleCount) {
+		this.sampleCount = sampleCount;
 	}
 
 }
