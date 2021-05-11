@@ -99,13 +99,20 @@ public class DownsampleTransformService extends SamplesTransformerSupport
 	/** The {@code maxPropertyFormat} property default value. */
 	public static final String DEFAULT_MAX_FORMAT = "%s_max";
 
+	/**
+	 * The {@code sampleCount} property default value.
+	 * 
+	 * @since 1.1
+	 */
+	public static Integer DEFAULT_SAMPLE_COUNT = 5;
+
 	private final ConcurrentMap<String, AggregateDatumSamples> subSamplesBySource = new ConcurrentHashMap<>(
 			8, 0.9f, 4);
 
 	private int decimalScale = DEFAULT_DECIMAL_SCALE;
 	private String minPropertyFormat = DEFAULT_MIN_FORMAT;
 	private String maxPropertyFormat = DEFAULT_MAX_FORMAT;
-	private Integer sampleCount;
+	private Integer sampleCount = DEFAULT_SAMPLE_COUNT;
 
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
@@ -143,7 +150,7 @@ public class DownsampleTransformService extends SamplesTransformerSupport
 
 		results.add(0, new BasicTitleSettingSpecifier("status", statusValue()));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));
-		results.add(new BasicTextFieldSettingSpecifier("sampleCount", null));
+		results.add(new BasicTextFieldSettingSpecifier("sampleCount", DEFAULT_SAMPLE_COUNT.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("decimalScale",
 				String.valueOf(DEFAULT_DECIMAL_SCALE)));
 		results.add(new BasicTextFieldSettingSpecifier("minPropertyFormat", DEFAULT_MIN_FORMAT));
