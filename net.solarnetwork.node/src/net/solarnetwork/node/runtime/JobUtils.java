@@ -29,18 +29,22 @@ import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import org.quartz.SimpleTrigger;
 import org.quartz.Trigger;
 import org.quartz.TriggerKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.scheduling.quartz.CronTriggerFactoryBean;
+import org.springframework.scheduling.quartz.SimpleTriggerFactoryBean;
 import net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean;
 
 /**
  * Utility methods for dealing with Quartz jobs.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class JobUtils {
 
@@ -93,6 +97,117 @@ public class JobUtils {
 	}
 
 	/**
+	 * Test if two triggers have the "same" schedule.
+	 * 
+	 * <p>
+	 * The {@code schedule} can either be a number representing a millisecond
+	 * frequency or a compatible cron schedule.
+	 * </p>
+	 * 
+	 * @param t
+	 *        the existing trigger, or {@literal null} if none
+	 * @param schedule
+	 *        the desired schedule for the trigger
+	 * @return {@literal true} if {@code t} is not {@literal null} and has the
+	 *         given schedule
+	 * @since 2.1
+	 */
+	public static boolean triggerSchedulesEqual(Trigger t, String schedule) {
+		if ( t == null || schedule == null ) {
+			return false;
+		}
+		try {
+			long ms = Long.parseLong(schedule);
+			if ( t instanceof SimpleTrigger ) {
+				return simpleTriggerSchedulesEqual((SimpleTrigger) t, ms);
+			}
+			return false;
+		} catch ( NumberFormatException e ) {
+			// assume a cron schedule
+		}
+		if ( t instanceof CronTrigger ) {
+			return cronTriggerSchedulesEqual((CronTrigger) t, schedule);
+		}
+		return false;
+	}
+
+	/**
+	 * Get the "base" cron expression from a randomized cron trigger schedule.
+	 * 
+	 * @param t
+	 *        the trigger to inspect
+	 * @return the base expression, or {@literal null}
+	 * @since 2.1
+	 */
+	public static String baseCronExpression(Trigger t) {
+		return (t != null
+				? t.getJobDataMap().getString(RandomizedCronTriggerFactoryBean.BASE_CRON_EXPRESSION_KEY)
+				: null);
+	}
+
+	/**
+	 * Get a schedule string value for a trigger.
+	 * 
+	 * @param t
+	 *        the trigger to extract a schedule from
+	 * @return the schedule, never {@literal null}
+	 * @since 2.1
+	 */
+	public static String triggerSchedule(Trigger t) {
+		if ( t instanceof CronTrigger ) {
+			return ((CronTrigger) t).getCronExpression();
+		} else if ( t instanceof SimpleTrigger ) {
+			return String.format("%dms", ((SimpleTrigger) t).getRepeatInterval());
+		} else {
+			return "";
+		}
+	}
+
+	/**
+	 * Test if a cron trigger has a given schedule.
+	 * 
+	 * @param t
+	 *        the trigger to test
+	 * @param newCronExpression
+	 *        the cron expression to compare
+	 * @return {@literal true} if {@code t} is not {@literal null} and has a
+	 *         {@code newCronExpression} schedule
+	 * @since 2.1
+	 */
+	public static boolean cronTriggerSchedulesEqual(CronTrigger t, String newCronExpression) {
+		String baseCronExpression = baseCronExpression(t);
+		String currentCronExpression;
+		if ( baseCronExpression != null ) {
+			currentCronExpression = baseCronExpression;
+		} else {
+			currentCronExpression = (t != null ? t.getCronExpression() : null);
+		}
+		if ( newCronExpression.equals(currentCronExpression) ) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Test if a simple trigger has a given schedule.
+	 * 
+	 * @param t
+	 *        the trigger to test
+	 * @param newInterval
+	 *        the interval to compare
+	 * @return {@literal true} if {@code t} is not {@literal null} and has a
+	 *         {@code newInterval} schedule
+	 * @since 2.1
+	 */
+	public static boolean simpleTriggerSchedulesEqual(SimpleTrigger t, long newInterval) {
+		long currInterval = t.getRepeatInterval();
+		if ( t != null && currInterval == newInterval ) {
+			return true;
+		}
+		return false;
+	}
+
+	/**
 	 * Schedule a new job or re-schedule an existing job.
 	 * 
 	 * @param scheduler
@@ -103,41 +218,29 @@ public class JobUtils {
 	 *        the JobDetail to schedule
 	 * @param newCronExpression
 	 *        the cron expression to re-schedule the job with, if not currently
-	 *        scheduled
+	 *        scheduled; a simple number is allowed to signal that a simple
+	 *        repeating millisecond interval should be used
 	 * @param newJobDataMap
 	 *        new job data to use with the job
 	 */
-	public static void scheduleCronJob(Scheduler scheduler, CronTrigger trigger, JobDetail jobDetail,
-			String newCronExpression, JobDataMap newJobDataMap) {
+	public synchronized static void scheduleCronJob(Scheduler scheduler, Trigger trigger,
+			JobDetail jobDetail, String newSchedule, JobDataMap newJobDataMap) {
 		// has the trigger value actually changed?
-		CronTrigger ct = trigger;
+		Trigger t = trigger;
 		boolean reschedule = false;
 		try {
 			Trigger runtimeTrigger = scheduler.getTrigger(trigger.getKey());
 			if ( runtimeTrigger != null ) {
 				reschedule = true;
-				ct = (CronTrigger) runtimeTrigger;
+				t = runtimeTrigger;
 			}
 		} catch ( SchedulerException e ) {
 			log.warn("Error getting trigger {}.{}",
 					new Object[] { trigger.getKey().getGroup(), trigger.getKey().getName(), e });
 		}
 
-		String baseCronExpression = null;
-		String currentCronExpression = ct.getCronExpression();
-		if ( ct.getJobDataMap()
-				.containsKey(RandomizedCronTriggerFactoryBean.BASE_CRON_EXPRESSION_KEY) ) {
-			baseCronExpression = ct.getJobDataMap()
-					.getString(RandomizedCronTriggerFactoryBean.BASE_CRON_EXPRESSION_KEY);
-			currentCronExpression = baseCronExpression;
-		}
-		boolean triggerChanged = false;
-		if ( !newCronExpression.equals(currentCronExpression) ) {
-			log.info("Trigger {} cron changed from {} to {}",
-					new Object[] { triggerKey(trigger), currentCronExpression, newCronExpression });
-			triggerChanged = true;
-		}
-		if ( newJobDataMap != null && !newJobDataMap.equals(ct.getJobDataMap()) ) {
+		boolean triggerChanged = !triggerSchedulesEqual(t, newSchedule);
+		if ( newJobDataMap != null && !newJobDataMap.equals(t.getJobDataMap()) ) {
 			log.info("Trigger {} job data changed", triggerKey(trigger));
 			triggerChanged = true;
 		}
@@ -146,42 +249,74 @@ public class JobUtils {
 			return;
 		}
 		if ( reschedule ) {
-			CronTriggerFactoryBean newTrigger;
+			reschedule(scheduler, t, jobDetail, newSchedule, newJobDataMap);
+		} else {
+			if ( log.isInfoEnabled() ) {
+				log.info("Scheduling job {} with [{}]", triggerKey(t), triggerSchedule(t));
+			}
+			try {
+				scheduler.scheduleJob(jobDetail, t);
+			} catch ( SchedulerException e ) {
+				log.error("Error scheduling trigger {}: {}", triggerKey(t), e.toString());
+			}
+		}
+	}
+
+	private static void reschedule(Scheduler scheduler, Trigger t, JobDetail jobDetail,
+			String newSchedule, JobDataMap newJobDataMap) {
+		FactoryBean<? extends Trigger> newTriggerFactory = null;
+		try {
+			long ms = Long.parseLong(newSchedule);
+			SimpleTriggerFactoryBean f = new SimpleTriggerFactoryBean();
+			f.setName(t.getKey().getName());
+			f.setGroup(t.getKey().getGroup());
+			f.setDescription(t.getDescription());
+			f.setMisfireInstruction(t.getMisfireInstruction());
+			f.setRepeatInterval(ms);
+			f.setJobDetail(jobDetail);
+			if ( newJobDataMap != null ) {
+				f.setJobDataMap(newJobDataMap);
+			}
+			newTriggerFactory = f;
+		} catch ( NumberFormatException e ) {
+			// treat as cron
+			CronTriggerFactoryBean f;
+			String baseCronExpression = baseCronExpression(t);
 			if ( baseCronExpression != null ) {
 				RandomizedCronTriggerFactoryBean r = new RandomizedCronTriggerFactoryBean();
 				r.setRandomSecond(true);
-				newTrigger = r;
+				f = r;
 			} else {
-				newTrigger = new CronTriggerFactoryBean();
+				f = new CronTriggerFactoryBean();
 			}
-			newTrigger.setName(ct.getKey().getName());
-			newTrigger.setGroup(ct.getKey().getGroup());
-			newTrigger.setDescription(ct.getDescription());
-			newTrigger.setMisfireInstruction(ct.getMisfireInstruction());
-			newTrigger.setCronExpression(newCronExpression);
-			newTrigger.setJobDetail(jobDetail);
+			f.setName(t.getKey().getName());
+			f.setGroup(t.getKey().getGroup());
+			f.setDescription(t.getDescription());
+			f.setMisfireInstruction(t.getMisfireInstruction());
+			f.setCronExpression(newSchedule);
+			f.setJobDetail(jobDetail);
 			if ( newJobDataMap != null ) {
-				newTrigger.setJobDataMap(newJobDataMap);
+				f.setJobDataMap(newJobDataMap);
 			}
-			try {
-				newTrigger.afterPropertiesSet();
-				CronTrigger newCt = newTrigger.getObject();
-				scheduler.rescheduleJob(ct.getKey(), newCt);
-			} catch ( ParseException e ) {
-				log.error("Error in cron expression [{}]", newCronExpression, e);
-			} catch ( SchedulerException e ) {
-				log.error("Error re-scheduling trigger {} for job {}",
-						new Object[] { ct.getKey().getName(), jobDetail.getKey().getName(), e });
+			newTriggerFactory = f;
+		}
+
+		try {
+			if ( newTriggerFactory instanceof InitializingBean ) {
+				((InitializingBean) newTriggerFactory).afterPropertiesSet();
 			}
-		} else {
-			log.info("Scheduling trigger {} as cron {}",
-					new Object[] { triggerKey(trigger), newCronExpression });
-			try {
-				scheduler.scheduleJob(jobDetail, ct);
-			} catch ( SchedulerException e ) {
-				log.error("Error scheduling trigger {} for job {}",
-						new Object[] { ct.getKey().getName(), jobDetail.getKey().getName(), e });
+			Trigger newTrigger = newTriggerFactory.getObject();
+			if ( log.isInfoEnabled() ) {
+				log.info("Re-scheduling job {} from [{}] to [{}]", triggerKey(t), triggerSchedule(t),
+						triggerSchedule(newTrigger));
 			}
+			scheduler.rescheduleJob(t.getKey(), newTrigger);
+		} catch ( ParseException e ) {
+			log.error("Error in trigger schedule [{}]", newSchedule, e);
+		} catch ( SchedulerException e ) {
+			log.error("Error re-scheduling trigger {}: {}", triggerKey(t), e.toString());
+		} catch ( Exception e ) {
+			log.error("Error configuring trigger {}: {}", triggerKey(t), e.toString());
 		}
 	}
 

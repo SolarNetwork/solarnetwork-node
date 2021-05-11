@@ -26,7 +26,9 @@
 
 package net.solarnetwork.node.runtime;
 
+import static net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean.BASE_CRON_EXPRESSION_KEY;
 import java.io.IOException;
+import java.util.Date;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -43,7 +45,9 @@ import org.quartz.CronTrigger;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import org.quartz.SimpleScheduleBuilder;
 import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
 import net.solarnetwork.node.job.TriggerAndJobDetail;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.util.BaseServiceListener;
@@ -95,9 +99,9 @@ import net.solarnetwork.node.util.RegisteredService;
  * </dl>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  * @see ManagedJobServiceRegistrationListener for alternative using
- *      settings-based jobs
+ *      settings-based job factories
  */
 public class JobServiceRegistrationListener
 		extends BaseServiceListener<TriggerAndJobDetail, RegisteredService<TriggerAndJobDetail>>
@@ -130,6 +134,7 @@ public class JobServiceRegistrationListener
 		Trigger trigger = trigJob.getTrigger();
 
 		final String pid = pidForSymbolicName((String) properties.get("Bundle-SymbolicName"));
+		final String baseSchedule = trigger.getJobDataMap().getString(BASE_CRON_EXPRESSION_KEY);
 		String cronExpression = null;
 		String settingKey = null;
 		JobSettingSpecifierProvider provider = null;
@@ -177,8 +182,20 @@ public class JobServiceRegistrationListener
 
 		try {
 			if ( cronExpression != null && settingKey != null ) {
-				JobUtils.scheduleCronJob(scheduler, (CronTrigger) trigJob.getTrigger(),
-						trigJob.getJobDetail(), cronExpression, null);
+				Trigger t = trigger;
+				try {
+					long ms = Long.parseLong(baseSchedule);
+					t = TriggerBuilder.newTrigger().withIdentity(t.getKey()).forJob(t.getJobKey())
+							.startAt(new Date(System.currentTimeMillis() + ms))
+							.usingJobData(t.getJobDataMap())
+							.withSchedule(
+									SimpleScheduleBuilder.simpleSchedule().withIntervalInMilliseconds(ms)
+											.withMisfireHandlingInstructionNextWithExistingCount())
+							.build();
+				} catch ( NumberFormatException e ) {
+					// ignore and treat as-is
+				}
+				JobUtils.scheduleCronJob(scheduler, t, job, cronExpression, null);
 				if ( provider != null ) {
 					provider.addSpecifier(trigJob);
 					RegisteredService<TriggerAndJobDetail> rs = new RegisteredService<TriggerAndJobDetail>(
@@ -251,12 +268,12 @@ public class JobServiceRegistrationListener
 						synchronized ( tjList ) {
 							for ( RegisteredService<TriggerAndJobDetail> rs : tjList ) {
 								TriggerAndJobDetail tj = rs.getConfig();
-								if ( key.equals(JobUtils.triggerKey(tj.getTrigger())) ) {
-									JobUtils.scheduleCronJob(scheduler, (CronTrigger) tj.getTrigger(),
-											tj.getJobDetail(), (String) props.get(key), null);
+								Trigger t = tj.getTrigger();
+								if ( key.equals(JobUtils.triggerKey(t)) ) {
+									JobUtils.scheduleCronJob(scheduler, t, tj.getJobDetail(),
+											(String) props.get(key), null);
 								}
 							}
-
 						}
 					}
 				} catch ( IOException e ) {
