@@ -570,9 +570,6 @@ public class CASettingsService
 			// delete factory reference
 			settingDao.deleteSetting(getFactorySettingKey(factoryUID), instanceUID);
 
-			// delete instance values
-			settingDao.deleteSetting(getFactoryInstanceSettingKey(factoryUID, instanceUID));
-
 			// delete Configuration
 			try {
 				Configuration conf = getConfiguration(factoryUID, instanceUID);
@@ -587,8 +584,12 @@ public class CASettingsService
 
 	@Override
 	public void resetProviderFactoryInstance(String factoryUID, String instanceUID) {
-		deleteProviderFactoryInstance(factoryUID, instanceUID);
 		synchronized ( factories ) {
+			deleteProviderFactoryInstance(factoryUID, instanceUID);
+
+			// delete instance values
+			settingDao.deleteSetting(getFactoryInstanceSettingKey(factoryUID, instanceUID));
+
 			addProviderFactoryInstance(factoryUID, instanceUID);
 		}
 	}
