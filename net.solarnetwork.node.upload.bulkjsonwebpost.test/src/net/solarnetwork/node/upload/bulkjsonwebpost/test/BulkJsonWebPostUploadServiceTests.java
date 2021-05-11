@@ -71,6 +71,7 @@ import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.ReactorService;
 import net.solarnetwork.node.reactor.support.BasicInstruction;
 import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
+import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.node.support.DatumSerializer;
 import net.solarnetwork.node.support.GeneralNodeDatumSerializer;
 import net.solarnetwork.node.support.InstructionSerializer;
@@ -99,6 +100,11 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 	private EventAdmin eventAdmin;
 	private ReactorService reactorService;
 	private TestIdentityService identityService;
+
+	private abstract class TestTransformer extends BaseIdentifiable
+			implements GeneralDatumSamplesTransformer {
+		// nothing added
+	}
 
 	@Before
 	public void setupService() throws Exception {
@@ -235,7 +241,7 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 
 	@Test
 	public void uploadSingleDatumSampleFilteredOut() throws Exception {
-		GeneralDatumSamplesTransformer xform = new GeneralDatumSamplesTransformer() {
+		GeneralDatumSamplesTransformer xform = new TestTransformer() {
 
 			@Override
 			public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples) {
@@ -282,7 +288,7 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 
 	@Test
 	public void uploadMultiDatumFirstSampleFilteredOut() throws Exception {
-		GeneralDatumSamplesTransformer xform = new GeneralDatumSamplesTransformer() {
+		GeneralDatumSamplesTransformer xform = new TestTransformer() {
 
 			@Override
 			public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples) {
@@ -368,7 +374,7 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 
 	@Test
 	public void uploadMultiDatumMiddleSampleFilteredOut() throws Exception {
-		GeneralDatumSamplesTransformer xform = new GeneralDatumSamplesTransformer() {
+		GeneralDatumSamplesTransformer xform = new TestTransformer() {
 
 			@Override
 			public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples) {
@@ -454,7 +460,7 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 
 	@Test
 	public void uploadMultiDatumLastSampleFilteredOut() throws Exception {
-		GeneralDatumSamplesTransformer xform = new GeneralDatumSamplesTransformer() {
+		GeneralDatumSamplesTransformer xform = new TestTransformer() {
 
 			@Override
 			public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples) {
@@ -540,7 +546,7 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 
 	@Test
 	public void uploadMultiDatumSampleAllFilteredOut() throws Exception {
-		GeneralDatumSamplesTransformer xform = new GeneralDatumSamplesTransformer() {
+		GeneralDatumSamplesTransformer xform = new TestTransformer() {
 
 			@Override
 			public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples) {
