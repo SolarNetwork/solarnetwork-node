@@ -132,7 +132,7 @@ form .control-group.grouped + fieldset > fieldset:not(:first-child) {
 }
 
 .form-horizontal .controls.static {
-	padding-top: 2px;
+	padding-top: 3px;
 }
 
 .form-horizontal .controls.static .title > * {

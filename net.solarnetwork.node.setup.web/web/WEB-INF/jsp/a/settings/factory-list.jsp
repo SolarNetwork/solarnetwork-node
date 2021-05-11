@@ -16,6 +16,10 @@
 		</fmt:message>
 	</p>
 	<p>
+		<a href="<setup:url value='${navloc == "filters-component" ? "/a/settings/filters" : "/a/settings"}'/>" class="btn">
+			<i class="icon-arrow-left"></i>
+			<fmt:message key="back.label"/>
+		</a>
 		<button type="button" class="btn btn-primary" id="add">
 			<i class="icon-plus icon-white"></i>
 			<fmt:message key='settings.factory.add'>

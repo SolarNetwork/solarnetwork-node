@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -176,9 +177,9 @@ public class SettingsController {
 		return "filters-list";
 	}
 
-	@RequestMapping(value = "/manage", method = RequestMethod.GET)
+	@RequestMapping(value = { "/manage", "/filters/manage" }, method = RequestMethod.GET)
 	public String settingsList(@RequestParam(value = "uid", required = true) String factoryUID,
-			ModelMap model) {
+			ModelMap model, HttpServletRequest req) {
 		final SettingsService service = settingsServiceTracker.service();
 		if ( service != null ) {
 			Map<String, FactorySettingSpecifierProvider> providers = service
@@ -198,7 +199,8 @@ public class SettingsController {
 			model.put(KEY_PROVIDER_FACTORY, service.getProviderFactory(factoryUID));
 			model.put(KEY_SETTINGS_SERVICE, service);
 		}
-		return "factory-settings-list";
+		return (req.getRequestURI().contains("/filters/") ? "filters-factory-settings-list"
+				: "factory-settings-list");
 	}
 
 	@RequestMapping(value = "/manage/add", method = RequestMethod.POST)

@@ -21,7 +21,7 @@
 					<tr>
 						<td><strong><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></strong></td>
 						<td>
-							<a class="btn" href="<setup:url value='/a/settings/manage?uid=${factory.factoryUID}'/>">
+							<a class="btn" href="<setup:url value='/a/settings/filters/manage?uid=${factory.factoryUID}'/>">
 								<i class="icon-edit icon-large"></i> 
 								<fmt:message key="settings.factory.manage.label"/>
 							</a>
@@ -104,7 +104,7 @@
 				<tr>
 					<td><strong><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></strong></td>
 					<td>
-						<a class="btn" href="<setup:url value='/a/settings/manage?uid=${factory.factoryUID}'/>">
+						<a class="btn" href="<setup:url value='/a/settings/filters/manage?uid=${factory.factoryUID}'/>">
 							<i class="icon-edit icon-large"></i> 
 							<fmt:message key="settings.factory.manage.label"/>
 						</a>

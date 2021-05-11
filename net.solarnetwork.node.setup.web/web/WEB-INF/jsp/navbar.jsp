@@ -15,7 +15,7 @@
 			</li>
 			<li ${navloc == 'cert' ? 'class="active"' : ''}><a href="<setup:url value='/a/certs'/>"><fmt:message key='link.cert'/></a></li>
 			
-			<li class="dropdown${navloc == 'settings' or navloc == 'filters' or navloc == 'settings-component' ? ' active' : ''}">
+			<li class="dropdown${navloc == 'settings' or navloc == 'settings-component' or navloc == 'filters' or navloc == 'filters-component' ? ' active' : ''}">
 				<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
 					<fmt:message key='link.settings'/>
 					<b class="caret"></b>
