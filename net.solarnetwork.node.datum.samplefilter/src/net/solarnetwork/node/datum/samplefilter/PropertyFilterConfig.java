@@ -1,5 +1,5 @@
 /* ==================================================================
- * DatumPropertyFilterConfig.java - 11/08/2017 4:44:29 PM
+ * PropertyFilterConfig.java - 11/08/2017 4:44:29 PM
  * 
  * Copyright 2017 SolarNetwork.net Dev Team
  * 
@@ -38,9 +38,9 @@ import net.solarnetwork.util.SerializeIgnore;
  * @author matt
  * @version 1.0
  */
-public class DatumPropertyFilterConfig {
+public class PropertyFilterConfig {
 
-	private static final Logger LOG = LoggerFactory.getLogger(DatumPropertyFilterConfig.class);
+	private static final Logger LOG = LoggerFactory.getLogger(PropertyFilterConfig.class);
 
 	private String name;
 	private Integer frequencySeconds;
@@ -50,7 +50,7 @@ public class DatumPropertyFilterConfig {
 	/**
 	 * Default constructor.
 	 */
-	public DatumPropertyFilterConfig() {
+	public PropertyFilterConfig() {
 		super();
 	}
 
@@ -62,7 +62,7 @@ public class DatumPropertyFilterConfig {
 	 * @param frequencySeconds
 	 *        the limit frequency, or {@literal null}
 	 */
-	public DatumPropertyFilterConfig(String name, Integer frequencySeconds) {
+	public PropertyFilterConfig(String name, Integer frequencySeconds) {
 		super();
 		setName(name);
 		setFrequencySeconds(frequencySeconds);
@@ -84,7 +84,7 @@ public class DatumPropertyFilterConfig {
 
 	@Override
 	public String toString() {
-		return "DatumPropertyFilterConfig{name=" + name + ", frequency=" + frequencySeconds + "}";
+		return "PropertyFilterConfig{name=" + name + ", frequency=" + frequencySeconds + "}";
 	}
 
 	/**

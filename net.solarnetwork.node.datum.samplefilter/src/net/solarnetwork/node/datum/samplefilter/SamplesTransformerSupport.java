@@ -197,12 +197,12 @@ public class SamplesTransformerSupport extends BaseIdentifiable {
 	 *        as a match (thus matching any value)
 	 * @return the first config that matches, or {@literal null} if none do
 	 */
-	public static DatumPropertyFilterConfig findMatch(final DatumPropertyFilterConfig[] configs,
+	public static PropertyFilterConfig findMatch(final PropertyFilterConfig[] configs,
 			final String value, final boolean emptyPatternMatches) {
 		if ( configs == null || configs.length < 1 || value == null ) {
 			return null;
 		}
-		for ( DatumPropertyFilterConfig config : configs ) {
+		for ( PropertyFilterConfig config : configs ) {
 			final Pattern pat = (config != null ? config.getNamePattern() : null);
 			if ( pat == null ) {
 				if ( emptyPatternMatches ) {
@@ -231,7 +231,7 @@ public class SamplesTransformerSupport extends BaseIdentifiable {
 	 *        the date of the property
 	 * @return {@literal true} if the property should be limited
 	 */
-	protected boolean shouldLimitByFrequency(DatumPropertyFilterConfig config, final String lastSeenKey,
+	protected boolean shouldLimitByFrequency(PropertyFilterConfig config, final String lastSeenKey,
 			final ConcurrentMap<String, String> lastSeenMap, final long now) {
 		boolean limit = false;
 		if ( config.getFrequency() != null && config.getFrequency().intValue() > 0 ) {

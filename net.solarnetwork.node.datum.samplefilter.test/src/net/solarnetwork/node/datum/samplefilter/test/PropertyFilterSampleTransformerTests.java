@@ -47,7 +47,7 @@ import org.junit.Test;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.node.datum.samplefilter.DatumPropertyFilterConfig;
+import net.solarnetwork.node.datum.samplefilter.PropertyFilterConfig;
 import net.solarnetwork.node.datum.samplefilter.PropertyFilterSamplesTransformer;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.support.KeyValuePair;
@@ -218,7 +218,7 @@ public class PropertyFilterSampleTransformerTests {
 		xform.setSettingKey(format(PropertyFilterSamplesTransformer.SETTING_KEY_TEMPLATE, TEST_UID));
 		xform.setSourceId("^test");
 		xform.setPropIncludes(
-				new DatumPropertyFilterConfig[] { new DatumPropertyFilterConfig("^watt", 1) });
+				new PropertyFilterConfig[] { new PropertyFilterConfig("^watt", 1) });
 		xform.init();
 
 		final String settingKey = String.format(SETTING_KEY_TEMPLATE, TEST_UID);
@@ -289,7 +289,7 @@ public class PropertyFilterSampleTransformerTests {
 		xform.setSettingKey(format(PropertyFilterSamplesTransformer.SETTING_KEY_TEMPLATE, TEST_UID));
 		xform.setSourceId("^test");
 		xform.setPropIncludes(
-				new DatumPropertyFilterConfig[] { new DatumPropertyFilterConfig("^watt", 1) });
+				new PropertyFilterConfig[] { new PropertyFilterConfig("^watt", 1) });
 		xform.init();
 
 		final String settingKey = String.format(SETTING_KEY_TEMPLATE, TEST_UID);
@@ -362,7 +362,7 @@ public class PropertyFilterSampleTransformerTests {
 		xform.setSettingKey(format(PropertyFilterSamplesTransformer.SETTING_KEY_TEMPLATE, TEST_UID));
 		xform.setSourceId("^test");
 		xform.setPropIncludes(
-				new DatumPropertyFilterConfig[] { new DatumPropertyFilterConfig("^watt", 1) });
+				new PropertyFilterConfig[] { new PropertyFilterConfig("^watt", 1) });
 		xform.init();
 
 		final long start = System.currentTimeMillis();
@@ -427,8 +427,8 @@ public class PropertyFilterSampleTransformerTests {
 		xform.setSettingKey(format(PropertyFilterSamplesTransformer.SETTING_KEY_TEMPLATE, TEST_UID));
 		xform.setSourceId("^test");
 		xform.setPropIncludes(
-				new DatumPropertyFilterConfig[] { new DatumPropertyFilterConfig("^watts$", 1),
-						new DatumPropertyFilterConfig("^wattHours$", 3) });
+				new PropertyFilterConfig[] { new PropertyFilterConfig("^watts$", 1),
+						new PropertyFilterConfig("^wattHours$", 3) });
 		xform.init();
 
 		final long start = System.currentTimeMillis();

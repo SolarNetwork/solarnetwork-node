@@ -56,7 +56,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
 public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 		implements GeneralDatumSamplesTransformer, SettingSpecifierProvider, SettingsChangeObserver {
 
-	private DatumPropertyFilterConfig[] propIncludes;
+	private PropertyFilterConfig[] propIncludes;
 	private String[] excludes;
 
 	private Pattern[] excludePatterns;
@@ -83,12 +83,12 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 		GeneralDatumSamples copy = null;
 
 		// handle property inclusion rules
-		DatumPropertyFilterConfig[] incs = this.propIncludes;
+		PropertyFilterConfig[] incs = this.propIncludes;
 		if ( incs != null && incs.length > 0 ) {
 			Map<String, ?> map = samples.getAccumulating();
 			if ( map != null ) {
 				for ( String propName : map.keySet() ) {
-					DatumPropertyFilterConfig match = findMatch(incs, propName, true);
+					PropertyFilterConfig match = findMatch(incs, propName, true);
 					String lastSeenKey = (match != null ? datum.getSourceId() + ';' + propName : null);
 					if ( match == null
 							|| shouldLimitByFrequency(match, lastSeenKey, lastSeenMap, now) ) {
@@ -105,7 +105,7 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 			map = samples.getInstantaneous();
 			if ( map != null ) {
 				for ( String propName : map.keySet() ) {
-					DatumPropertyFilterConfig match = findMatch(incs, propName, true);
+					PropertyFilterConfig match = findMatch(incs, propName, true);
 					String lastSeenKey = (match != null ? datum.getSourceId() + ';' + propName : null);
 					if ( match == null || shouldLimitByFrequency(match,
 							datum.getSourceId() + ';' + propName, lastSeenMap, now) ) {
@@ -122,7 +122,7 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 			map = samples.getStatus();
 			if ( map != null ) {
 				for ( String propName : map.keySet() ) {
-					DatumPropertyFilterConfig match = findMatch(incs, propName, true);
+					PropertyFilterConfig match = findMatch(incs, propName, true);
 					String lastSeenKey = (match != null ? datum.getSourceId() + ';' + propName : null);
 					if ( match == null || shouldLimitByFrequency(match,
 							datum.getSourceId() + ';' + propName, lastSeenMap, now) ) {
@@ -221,9 +221,9 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 			if ( includeCount > 0 && propIncludes != null && propIncludes.length >= includeCount ) {
 				for ( int i = 0; i < includeCount; i++ ) {
 					String inc = (String) props.get("includes[" + i + "]");
-					DatumPropertyFilterConfig config = propIncludes[i];
+					PropertyFilterConfig config = propIncludes[i];
 					if ( config == null ) {
-						config = new DatumPropertyFilterConfig();
+						config = new PropertyFilterConfig();
 						propIncludes[i] = config;
 					}
 					if ( (config.getName() == null || config.getName().length() < 1) && inc != null
@@ -253,17 +253,17 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 		results.add(new BasicTextFieldSettingSpecifier("uid", null));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
 
-		DatumPropertyFilterConfig[] incs = getPropIncludes();
-		List<DatumPropertyFilterConfig> incsList = (incs != null ? Arrays.asList(incs)
-				: Collections.<DatumPropertyFilterConfig> emptyList());
+		PropertyFilterConfig[] incs = getPropIncludes();
+		List<PropertyFilterConfig> incsList = (incs != null ? Arrays.asList(incs)
+				: Collections.<PropertyFilterConfig> emptyList());
 		results.add(SettingsUtil.dynamicListSettingSpecifier("propIncludes", incsList,
-				new SettingsUtil.KeyedListCallback<DatumPropertyFilterConfig>() {
+				new SettingsUtil.KeyedListCallback<PropertyFilterConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(
-							DatumPropertyFilterConfig value, int index, String key) {
+							PropertyFilterConfig value, int index, String key) {
 						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
-								DatumPropertyFilterConfig.settings(key + "."));
+								PropertyFilterConfig.settings(key + "."));
 						return Collections.<SettingSpecifier> singletonList(configGroup);
 					}
 				}));
@@ -293,7 +293,7 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 	 */
 	@Deprecated
 	public String[] getIncludes() {
-		DatumPropertyFilterConfig[] configurations = getPropIncludes();
+		PropertyFilterConfig[] configurations = getPropIncludes();
 		String[] includes = null;
 		if ( configurations != null ) {
 			includes = new String[configurations.length];
@@ -309,15 +309,15 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 	 * 
 	 * @param includeExpressions
 	 *        The property include expressions.
-	 * @deprecated use {@link #setPropIncludes(DatumPropertyFilterConfig[])}
+	 * @deprecated use {@link #setPropIncludes(PropertyFilterConfig[])}
 	 */
 	@Deprecated
 	public void setIncludes(String[] includeExpressions) {
-		DatumPropertyFilterConfig[] configurations = null;
+		PropertyFilterConfig[] configurations = null;
 		if ( includeExpressions != null ) {
-			configurations = new DatumPropertyFilterConfig[includeExpressions.length];
+			configurations = new PropertyFilterConfig[includeExpressions.length];
 			for ( int i = 0; i < includeExpressions.length; i++ ) {
-				DatumPropertyFilterConfig config = new DatumPropertyFilterConfig();
+				PropertyFilterConfig config = new PropertyFilterConfig();
 				config.setName(includeExpressions[i]);
 				configurations[i] = config;
 			}
@@ -354,7 +354,7 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 	 * 
 	 * @return The property include configurations.
 	 */
-	public DatumPropertyFilterConfig[] getPropIncludes() {
+	public PropertyFilterConfig[] getPropIncludes() {
 		return this.propIncludes;
 	}
 
@@ -364,7 +364,7 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 	 * @param propIncludes
 	 *        The property include configurations.
 	 */
-	public void setPropIncludes(DatumPropertyFilterConfig[] propIncludes) {
+	public void setPropIncludes(PropertyFilterConfig[] propIncludes) {
 		this.propIncludes = propIncludes;
 	}
 
@@ -374,7 +374,7 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 	 * @return The number of {@code propIncludes} elements.
 	 */
 	public int getPropIncludesCount() {
-		DatumPropertyFilterConfig[] incs = this.propIncludes;
+		PropertyFilterConfig[] incs = this.propIncludes;
 		return (incs == null ? 0 : incs.length);
 	}
 
@@ -383,7 +383,7 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 	 * 
 	 * <p>
 	 * Any newly added element values will be set to new
-	 * {@link DatumPropertyFilterConfig} instances.
+	 * {@link PropertyFilterConfig} instances.
 	 * </p>
 	 * 
 	 * @param count
@@ -393,16 +393,16 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 		if ( count < 0 ) {
 			count = 0;
 		}
-		DatumPropertyFilterConfig[] incs = this.propIncludes;
+		PropertyFilterConfig[] incs = this.propIncludes;
 		int lCount = (incs == null ? 0 : incs.length);
 		if ( lCount != count ) {
-			DatumPropertyFilterConfig[] newIncs = new DatumPropertyFilterConfig[count];
+			PropertyFilterConfig[] newIncs = new PropertyFilterConfig[count];
 			if ( incs != null ) {
 				System.arraycopy(incs, 0, newIncs, 0, Math.min(count, incs.length));
 			}
 			for ( int i = 0; i < count; i++ ) {
 				if ( newIncs[i] == null ) {
-					newIncs[i] = new DatumPropertyFilterConfig();
+					newIncs[i] = new PropertyFilterConfig();
 				}
 			}
 			this.propIncludes = newIncs;
