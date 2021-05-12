@@ -23,24 +23,17 @@
 package net.solarnetwork.node.datum.samplefilter;
 
 import java.util.EnumSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
-import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.Setting.SettingFlag;
 import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.node.support.BaseSamplesTransformSupport;
 
 /**
  * Support class for sample transformers.
@@ -48,7 +41,7 @@ import net.solarnetwork.node.support.BaseIdentifiable;
  * @author matt
  * @version 1.2
  */
-public class SamplesTransformerSupport extends BaseIdentifiable {
+public class SamplesTransformerSupport extends BaseSamplesTransformSupport {
 
 	/** The default value for the {@code settingCacheSecs} property. */
 	public static final int DEFAULT_SETTING_CACHE_SECS = 15;
@@ -60,17 +53,11 @@ public class SamplesTransformerSupport extends BaseIdentifiable {
 	public static final String SETTING_KEY_TEMPLATE = "%s/valueCaptured";
 
 	/**
-	 * The default value for the UID property.
-	 */
-	public static final String DEFAULT_UID = "Default";
-
-	/**
 	 * A global cache for helping with transformers that require persistence.
 	 */
 	protected static final ConcurrentMap<String, ConcurrentMap<String, String>> SETTING_CACHE = new ConcurrentHashMap<String, ConcurrentMap<String, String>>(
 			4, 0.9f, 1);
 
-	private Pattern sourceId;
 	private SettingDao settingDao;
 	private int settingCacheSecs;
 	private String settingKey;
@@ -92,97 +79,6 @@ public class SamplesTransformerSupport extends BaseIdentifiable {
 		setUid(DEFAULT_UID);
 		setSettingCacheSecs(DEFAULT_SETTING_CACHE_SECS);
 		setSettingKey(String.format(SETTING_KEY_TEMPLATE, DEFAULT_UID));
-	}
-
-	/**
-	 * Test if a given datum's source ID matches the configured source ID
-	 * pattern.
-	 * 
-	 * @param datum
-	 *        the datum whose source ID should be tested
-	 * @return {@literal true} if the datum's {@code sourceId} value matches the
-	 *         configured source ID pattern, or no pattern is configured
-	 * @since 1.2
-	 */
-	protected boolean sourceIdMatches(Datum datum) {
-		Pattern sourceIdPat = getSourceIdPattern();
-		if ( sourceIdPat != null ) {
-			if ( datum == null || datum.getSourceId() == null
-					|| !sourceIdPat.matcher(datum.getSourceId()).find() ) {
-				log.trace("Datum {} does not match source ID pattern {}; not filtering", datum,
-						sourceIdPat);
-				return false;
-			}
-		}
-		return true;
-	}
-
-	/**
-	 * Get the source ID regex.
-	 * 
-	 * @return the regex
-	 */
-	protected Pattern getSourceIdPattern() {
-		return sourceId;
-	}
-
-	/**
-	 * Copy a samples object.
-	 * 
-	 * <p>
-	 * This method copies the {@code samples} instance and the
-	 * {@code instantaneous}, {@code accumulating}, {@code status}, and
-	 * {@code tags} collection instances.
-	 * </p>
-	 * 
-	 * @param samples
-	 *        the samples to copy
-	 * @return the copied samples instance
-	 */
-	public static GeneralDatumSamples copy(GeneralDatumSamples samples) {
-		GeneralDatumSamples copy = new GeneralDatumSamples(
-				samples.getInstantaneous() != null
-						? new LinkedHashMap<String, Number>(samples.getInstantaneous())
-						: null,
-				samples.getAccumulating() != null
-						? new LinkedHashMap<String, Number>(samples.getAccumulating())
-						: null,
-				samples.getStatus() != null ? new LinkedHashMap<String, Object>(samples.getStatus())
-						: null);
-		copy.setTags(samples.getTags() != null ? new LinkedHashSet<String>(samples.getTags()) : null);
-		return copy;
-	}
-
-	/**
-	 * Test if any regular expression in a set matches a string value.
-	 * 
-	 * @param pats
-	 *        the regular expressions to use
-	 * @param value
-	 *        the value to test
-	 * @param emptyPatternMatches
-	 *        {@literal true} if a {@literal null} regular expression is treated
-	 *        as a match (thus matching any value)
-	 * @return {@literal true} if at least one regular expression matches
-	 *         {@code value}
-	 */
-	public static boolean matchesAny(final Pattern[] pats, final String value,
-			final boolean emptyPatternMatches) {
-		if ( pats == null || pats.length < 1 || value == null ) {
-			return true;
-		}
-		for ( Pattern pat : pats ) {
-			if ( pat == null ) {
-				if ( emptyPatternMatches ) {
-					return true;
-				}
-				continue;
-			}
-			if ( pat.matcher(value).find() ) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	/**
@@ -303,39 +199,6 @@ public class SamplesTransformerSupport extends BaseIdentifiable {
 	}
 
 	/**
-	 * Compile a set of regular expression strings.
-	 * 
-	 * <p>
-	 * The returned array will be the same length as {@code expressions} and the
-	 * compiled {@link Pattern} objects in the same order. If any expression
-	 * fails to compile, a warning log will be emitted and a {@literal null}
-	 * value will be returned for that expression.
-	 * </p>
-	 * 
-	 * @param expressions
-	 *        the expressions to compile
-	 * @return the regular expressions
-	 */
-	protected Pattern[] patterns(String[] expressions) {
-		Pattern[] pats = null;
-		if ( expressions != null ) {
-			final int len = expressions.length;
-			pats = new Pattern[len];
-			for ( int i = 0; i < len; i++ ) {
-				if ( expressions[i] == null || expressions[i].length() < 1 ) {
-					continue;
-				}
-				try {
-					pats[i] = Pattern.compile(expressions[i], Pattern.CASE_INSENSITIVE);
-				} catch ( PatternSyntaxException e ) {
-					log.warn("Error compiling includePatterns regex [{}]", expressions[i], e);
-				}
-			}
-		}
-		return pats;
-	}
-
-	/**
 	 * Save a "last seen" setting.
 	 * 
 	 * @param seenDate
@@ -361,58 +224,6 @@ public class SamplesTransformerSupport extends BaseIdentifiable {
 			Setting s = new Setting(settingKey, lastSeenKey, Long.toString(seenDate, 16),
 					EnumSet.of(SettingFlag.Volatile, SettingFlag.IgnoreModificationDate));
 			getSettingDao().storeSetting(s);
-		}
-	}
-
-	/**
-	 * Get a description of this service.
-	 * 
-	 * @return the description
-	 * @since 1.2
-	 */
-	public String getDescription() {
-		String uid = getUid();
-		MessageSource msg = getMessageSource();
-		String title = msg.getMessage("title", null, getClass().getSimpleName(), Locale.getDefault());
-		if ( uid != null && !DEFAULT_UID.equals(uid) ) {
-			return String.format("%s (%s)", uid, title);
-		}
-		return title;
-	}
-
-	/**
-	 * Get the source ID pattern.
-	 * 
-	 * @return The pattern.
-	 */
-	public String getSourceId() {
-		return (sourceId != null ? sourceId.pattern() : null);
-	}
-
-	/**
-	 * Set a source ID pattern to match samples against.
-	 * 
-	 * Samples will only be considered for filtering if
-	 * {@link Datum#getSourceId()} matches this pattern.
-	 * 
-	 * The {@code sourceIdPattern} must be a valid {@link Pattern} regular
-	 * expression. The expression will be allowed to match anywhere in
-	 * {@link Datum#getSourceId()} values, so if the pattern must match the full
-	 * value only then use pattern positional expressions like {@code ^} and
-	 * {@code $}.
-	 * 
-	 * @param sourceIdPattern
-	 *        The source ID regex to match. Syntax errors in the pattern will be
-	 *        ignored and a {@code null} value will be set instead.
-	 */
-	public void setSourceId(String sourceIdPattern) {
-		try {
-			this.sourceId = (sourceIdPattern != null
-					? Pattern.compile(sourceIdPattern, Pattern.CASE_INSENSITIVE)
-					: null);
-		} catch ( PatternSyntaxException e ) {
-			log.warn("Error compiling regex [{}]", sourceIdPattern, e);
-			this.sourceId = null;
 		}
 	}
 

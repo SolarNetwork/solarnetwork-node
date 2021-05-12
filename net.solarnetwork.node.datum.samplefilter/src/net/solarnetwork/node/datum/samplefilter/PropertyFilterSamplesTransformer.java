@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.samplefilter;
 
+import static net.solarnetwork.util.StringUtils.patterns;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -233,7 +234,7 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 				}
 			}
 		}
-		this.excludePatterns = patterns(getExcludes());
+		this.excludePatterns = patterns(getExcludes(), Pattern.CASE_INSENSITIVE);
 	}
 
 	@Override
@@ -260,8 +261,8 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 				new SettingsUtil.KeyedListCallback<PropertyFilterConfig>() {
 
 					@Override
-					public Collection<SettingSpecifier> mapListSettingKey(
-							PropertyFilterConfig value, int index, String key) {
+					public Collection<SettingSpecifier> mapListSettingKey(PropertyFilterConfig value,
+							int index, String key) {
 						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
 								PropertyFilterConfig.settings(key + "."));
 						return Collections.<SettingSpecifier> singletonList(configGroup);
