@@ -22,27 +22,24 @@
 
 package net.solarnetwork.node.domain;
 
-import java.util.Collections;
 import java.util.Map;
-import net.solarnetwork.util.MapBeanProxy;
+import net.solarnetwork.domain.DatumSamplesExpressionRoot;
 
 /**
  * An object to use as the "root" for
  * {@link net.solarnetwork.support.ExpressionService} evaluation.
  * 
  * <p>
- * This object extends {@link MapBeanProxy} to allow all datum sample properties
- * to be exposed as top-level expression properties.
+ * This object extends {@link DatumSamplesExpressionRoot} to allow all datum
+ * sample properties to be exposed as top-level expression properties (via the
+ * {@code Map} API).
  * </p>
  * 
  * @author matt
  * @version 1.2
  * @since 1.79
  */
-public class ExpressionRoot extends MapBeanProxy implements DatumExpressionRoot {
-
-	private final Datum datum;
-	private final Map<String, ?> datumProps;
+public class ExpressionRoot extends DatumSamplesExpressionRoot {
 
 	/**
 	 * Constructor.
@@ -64,41 +61,7 @@ public class ExpressionRoot extends MapBeanProxy implements DatumExpressionRoot 
 	 * @since 1.2
 	 */
 	public ExpressionRoot(Map<String, ?> data, Datum datum) {
-		super(data);
-		this.datum = datum;
-		this.datumProps = (datum != null ? datum.getSampleData() : Collections.emptyMap());
-	}
-
-	@Override
-	public Datum getDatum() {
-		return datum;
-	}
-
-	@Override
-	public Map<String, ?> getProps() {
-		return datumProps;
-	}
-
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("ExpressionRoot{");
-		if ( datum != null ) {
-			builder.append("datum=");
-			builder.append(datum);
-		}
-		Map<String, ?> data = getData();
-		if ( data != null ) {
-			builder.append(", data=");
-			builder.append(data);
-		}
-		Map<String, ?> props = getProps();
-		if ( props != null && props != data ) {
-			builder.append(", props=");
-			builder.append(props);
-		}
-		builder.append("}");
-		return builder.toString();
+		super(datum, null, data);
 	}
 
 }
