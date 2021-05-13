@@ -24,16 +24,18 @@
 
 package net.solarnetwork.node.domain;
 
+import java.time.Instant;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import net.solarnetwork.node.support.DatumEvents;
 
 /**
  * Abstract base class for {@link Datum} implementations.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public abstract class BaseDatum implements Datum, Cloneable {
 
@@ -176,6 +178,13 @@ public abstract class BaseDatum implements Datum, Cloneable {
 	@Override
 	public Map<String, ?> getSampleData() {
 		return null;
+	}
+
+	@JsonIgnore
+	@Override
+	public Instant getTimestamp() {
+		Date d = getCreated();
+		return (d != null ? Instant.ofEpochMilli(d.getTime()) : null);
 	}
 
 	@Override

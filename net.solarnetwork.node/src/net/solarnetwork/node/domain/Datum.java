@@ -31,9 +31,9 @@ import java.util.Map;
  * Basic persistable domain object API.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
-public interface Datum {
+public interface Datum extends net.solarnetwork.domain.datum.Datum {
 
 	/**
 	 * A suffix to append to to data property keys that represent a logical
@@ -43,7 +43,7 @@ public interface Datum {
 	 * 
 	 * @since 1.2
 	 */
-	String REVERSE_ACCUMULATING_SUFFIX_KEY = "Reverse";
+	String REVERSE_ACCUMULATING_SUFFIX_KEY = net.solarnetwork.domain.datum.Datum.REVERSE_ACCUMULATING_SUFFIX_KEY;
 
 	/**
 	 * A property name for the string name of the <em>core</em> datum type a
@@ -58,7 +58,7 @@ public interface Datum {
 	 * @since 1.3
 	 * @see #DATUM_TYPES_PROPERTY
 	 */
-	String DATUM_TYPE_PROPERTY = "_DatumType";
+	String DATUM_TYPE_PROPERTY = net.solarnetwork.domain.datum.Datum.DATUM_TYPE_PROPERTY;
 
 	/**
 	 * A property name for an array of string names of all datum types
@@ -74,7 +74,7 @@ public interface Datum {
 	 * 
 	 * @since 1.3
 	 */
-	String DATUM_TYPES_PROPERTY = "_DatumTypes";
+	String DATUM_TYPES_PROPERTY = net.solarnetwork.domain.datum.Datum.DATUM_TYPES_PROPERTY;
 
 	/**
 	 * A property name for a {@code Datum} instance associated with an event.
@@ -89,7 +89,7 @@ public interface Datum {
 	 * 
 	 * @since 1.4
 	 */
-	String OP_STATE = "opState";
+	String OP_STATE = net.solarnetwork.domain.datum.Datum.OP_STATE;
 
 	/**
 	 * A {@link net.solarnetwork.domain.GeneralNodeDatumSamples} sample key for
@@ -97,7 +97,7 @@ public interface Datum {
 	 * 
 	 * @since 1.4
 	 */
-	String OP_STATES = "opStates";
+	String OP_STATES = net.solarnetwork.domain.datum.Datum.OP_STATES;
 
 	/**
 	 * A sample data key for a {@link Datum#getCreated()} value, as a
@@ -105,14 +105,14 @@ public interface Datum {
 	 * 
 	 * @since 1.4
 	 */
-	String TIMESTAMP = "created";
+	String TIMESTAMP = net.solarnetwork.domain.datum.Datum.TIMESTAMP;
 
 	/**
 	 * A sample data key for a {@link Datum#getSourceId()} value.
 	 * 
 	 * @since 1.4
 	 */
-	String SOURCE_ID = "sourceId";
+	String SOURCE_ID = net.solarnetwork.domain.datum.Datum.SOURCE_ID;
 
 	/**
 	 * A sample data key for a {@link Datum#getUploaded()} value, as a
@@ -131,15 +131,8 @@ public interface Datum {
 	 */
 	Date getCreated();
 
-	/**
-	 * Get a unique source ID for this datum.
-	 * 
-	 * <p>
-	 * A single datum type may collect data from many different sources.
-	 * </p>
-	 * 
-	 * @return the source ID
-	 */
+	// for backwards-compatibility
+	@Override
 	String getSourceId();
 
 	/**
@@ -149,29 +142,12 @@ public interface Datum {
 	 */
 	Date getUploaded();
 
-	/**
-	 * Get a map of all available data sampled or collected on this datum.
-	 * 
-	 * @return a map with all available sample data
-	 * @since 1.3
-	 */
+	// for backwards-compatibility
+	@Override
 	Map<String, ?> getSampleData();
 
-	/**
-	 * Get a simple {@link Map} view of this datum.
-	 * 
-	 * <p>
-	 * The returned map should include all the available properties of this
-	 * datum, in as flat of a structure as possible, i.e. without nested maps.
-	 * The property values should be composed only if simple Java types like
-	 * numbers, strings, and arrays or lists of those types. It should also
-	 * include the {@link #DATUM_TYPE_PROPERTY} and
-	 * {@link #DATUM_TYPES_PROPERTY} values.
-	 * </p>
-	 * 
-	 * @return a Map view of this datum
-	 * @since 1.3
-	 */
+	// for backwards-compatibility
+	@Override
 	Map<String, ?> asSimpleMap();
 
 }
