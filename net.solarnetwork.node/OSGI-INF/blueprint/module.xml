@@ -453,7 +453,7 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.metadata.user" 
 			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.support.UserMetadataService</beans:value>
+			<beans:value>net.solarnetwork.node.MetadataService</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
