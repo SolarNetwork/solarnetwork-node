@@ -310,7 +310,7 @@
 	<bean id="virtualMeterMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<array>
-				<value>net.solarnetwork.node.datum.samplefilter.VirtualMeterTransformService</value>
+				<value>net.solarnetwork.node.datum.samplefilter.virt.VirtualMeterTransformService</value>
 				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</array>
@@ -348,7 +348,7 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.datum.samplefilter.VirtualMeterTransformService">
+		<bean class="net.solarnetwork.node.datum.samplefilter.virt.VirtualMeterTransformService">
 			<argument ref="datumMetadataService"/>
 			<property name="messageSource" ref="virtualMeterMessageSource"/>
 		</bean>
@@ -361,7 +361,7 @@
 	<bean id="expressionMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<array>
-				<value>net.solarnetwork.node.datum.samplefilter.ExpressionTransformService</value>
+				<value>net.solarnetwork.node.datum.samplefilter.expr.ExpressionTransformService</value>
 				<value>net.solarnetwork.node.domain.ExpressionConfig</value>
 				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
@@ -400,7 +400,7 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.datum.samplefilter.ExpressionTransformService">
+		<bean class="net.solarnetwork.node.datum.samplefilter.expr.ExpressionTransformService">
 			<property name="expressionServices" ref="expressionServices"/>
 			<property name="messageSource" ref="expressionMessageSource"/>
 		</bean>

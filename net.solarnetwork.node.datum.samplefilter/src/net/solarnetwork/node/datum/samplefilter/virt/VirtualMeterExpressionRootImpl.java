@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.samplefilter;
+package net.solarnetwork.node.datum.samplefilter.virt;
 
 import java.math.BigDecimal;
 import java.util.Collections;

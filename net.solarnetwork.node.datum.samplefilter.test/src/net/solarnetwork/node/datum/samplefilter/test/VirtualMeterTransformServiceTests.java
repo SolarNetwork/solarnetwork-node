@@ -44,8 +44,8 @@ import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.datum.samplefilter.SourceThrottlingSamplesTransformer;
-import net.solarnetwork.node.datum.samplefilter.VirtualMeterConfig;
-import net.solarnetwork.node.datum.samplefilter.VirtualMeterTransformService;
+import net.solarnetwork.node.datum.samplefilter.virt.VirtualMeterConfig;
+import net.solarnetwork.node.datum.samplefilter.virt.VirtualMeterTransformService;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.util.StaticOptionalService;
 

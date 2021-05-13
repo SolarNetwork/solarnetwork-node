@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.samplefilter;
+package net.solarnetwork.node.datum.samplefilter.virt;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -42,6 +42,7 @@ import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
+import net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;

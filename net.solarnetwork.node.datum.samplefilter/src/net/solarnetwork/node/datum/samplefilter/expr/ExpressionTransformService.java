@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.samplefilter;
+package net.solarnetwork.node.datum.samplefilter.expr;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import net.solarnetwork.domain.DatumSamplesExpressionRoot;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.domain.Datum;
@@ -61,7 +62,7 @@ public class ExpressionTransformService extends BaseSamplesTransformSupport
 		if ( !sourceIdMatches(datum) ) {
 			return samples;
 		}
-		ExpressionRoot root = new ExpressionRoot(datum, samples, parameters);
+		DatumSamplesExpressionRoot root = new DatumSamplesExpressionRoot(datum, samples, parameters);
 		GeneralDatumSamples s = new GeneralDatumSamples(samples);
 		populateExpressionDatumProperties(s, getExpressionConfigs(), root);
 		return s;
@@ -88,7 +89,8 @@ public class ExpressionTransformService extends BaseSamplesTransformSupport
 						public Collection<SettingSpecifier> mapListSettingKey(ExpressionConfig value,
 								int index, String key) {
 							SettingSpecifier configGroup = new BasicGroupSettingSpecifier(
-									ExpressionTransformConfig.settings(key + ".", exprServices));
+									ExpressionConfig.settings(ExpressionTransformService.class,
+											key + ".", exprServices));
 							return Collections.singletonList(configGroup);
 						}
 					}));

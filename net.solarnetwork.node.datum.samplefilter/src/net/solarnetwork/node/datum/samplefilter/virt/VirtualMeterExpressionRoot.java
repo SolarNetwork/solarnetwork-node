@@ -20,11 +20,11 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.samplefilter;
+package net.solarnetwork.node.datum.samplefilter.virt;
 
 import java.math.BigDecimal;
 import java.util.Map;
-import net.solarnetwork.node.domain.DatumExpressionRoot;
+import net.solarnetwork.domain.DatumExpressionRoot;
 
 /**
  * API for a virtual meter expression root object.

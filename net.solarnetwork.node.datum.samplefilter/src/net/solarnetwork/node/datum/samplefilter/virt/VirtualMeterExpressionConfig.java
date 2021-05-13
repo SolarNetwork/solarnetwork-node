@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.samplefilter;
+package net.solarnetwork.node.datum.samplefilter.virt;
 
 import java.util.List;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
