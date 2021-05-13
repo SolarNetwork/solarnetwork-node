@@ -1,0 +1,6 @@
+Month,Day Range,Day of Week Range,Hour of Day Range,TOU,Line
+January-December,,Mon-Fri,0-8,10.48
+January-December,,Mon-Fri,8-24,11.00
+January-December,,Sat-Sun,0-8,9.19
+January-December,,Sat-Sun,8-24,11.21
+,,,,,9.99
