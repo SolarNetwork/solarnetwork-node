@@ -29,7 +29,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.samplefilter.PropertyFilterSamplesTransformer</value>
-				<value>net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport</value>
+				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
 		</property>
@@ -80,7 +80,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.samplefilter.DatumPropertyTransformService</value>
-				<value>net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport</value>
+				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
 		</property>
@@ -142,7 +142,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.samplefilter.SourceThrottlingSamplesTransformer</value>
-				<value>net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport</value>
+				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
 		</property>
@@ -193,7 +193,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.samplefilter.DatumThrottleTransformService</value>
-				<value>net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport</value>
+				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
 		</property>
@@ -256,7 +256,7 @@
 		<property name="basenames">
 			<array>
 				<value>net.solarnetwork.node.datum.samplefilter.DownsampleTransformService</value>
-				<value>net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport</value>
+				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</array>
 		</property>
@@ -306,7 +306,7 @@
 		<property name="basenames">
 			<array>
 				<value>net.solarnetwork.node.datum.samplefilter.VirtualMeterTransformService</value>
-				<value>net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport</value>
+				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</array>
 		</property>
