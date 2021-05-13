@@ -22,21 +22,30 @@
 
 package net.solarnetwork.node.datum.filter.tariff;
 
+import static java.time.format.TextStyle.SHORT;
 import static net.solarnetwork.domain.tariff.SimpleTemporalRangesTariffEvaluator.DEFAULT_EVALUATOR;
+import static net.solarnetwork.util.DateUtils.formatRange;
 import static net.solarnetwork.util.OptionalService.service;
 import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
+import net.solarnetwork.domain.tariff.CompositeTariff;
 import net.solarnetwork.domain.tariff.CsvTemporalRangeTariffParser;
 import net.solarnetwork.domain.tariff.SimpleTariffRate;
 import net.solarnetwork.domain.tariff.SimpleTemporalTariffSchedule;
@@ -50,6 +59,9 @@ import net.solarnetwork.node.MetadataService;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.support.BaseSamplesTransformSupport;
 import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.util.CachedResult;
@@ -109,10 +121,10 @@ public class TariffTransformService extends BaseSamplesTransformSupport implemen
 		if ( !sourceIdMatches(datum) ) {
 			return samples;
 		}
-		final LocalDateTime now = (datum.getCreated() != null
+		final LocalDateTime date = (datum.getCreated() != null
 				? LocalDateTime.ofInstant(datum.getCreated().toInstant(), ZoneId.systemDefault())
 				: LocalDateTime.now());
-		Tariff tariff = resolveTariff(now, parameters);
+		Tariff tariff = resolveTariff(date, parameters);
 
 		if ( tariff != null ) {
 			GeneralDatumSamples s = new GeneralDatumSamples(samples);
@@ -150,8 +162,122 @@ public class TariffTransformService extends BaseSamplesTransformSupport implemen
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		// TODO Auto-generated method stub
-		return null;
+		List<SettingSpecifier> result = baseIdentifiableSettings("");
+		result.add(0, new BasicTitleSettingSpecifier("status", getStatusMessage(), true, true));
+		result.add(new BasicTextFieldSettingSpecifier("sourceId", null));
+		result.add(new BasicTextFieldSettingSpecifier("metadataServiceUid", null));
+		result.add(
+				new BasicTextFieldSettingSpecifier("tariffMetadataPath", DEFAULT_TARIFF_METADATA_PATH));
+		result.add(new BasicToggleSettingSpecifier("firstMatchOnly",
+				SimpleTemporalTariffSchedule.DEFAULT_FIRST_MATCH_ONLY));
+		result.add(new BasicTextFieldSettingSpecifier("scheduleCacheSeconds",
+				String.valueOf(DEFAULT_SCHEDULE_CACHE_SECONDS)));
+		result.add(new BasicTextFieldSettingSpecifier("evaluatorUid", null));
+		result.add(new BasicTextFieldSettingSpecifier("language", null));
+		return result;
+	}
+
+	private String getStatusMessage() {
+		StringBuilder buf = new StringBuilder();
+		TariffSchedule schedule = schedule();
+		CachedResult<TariffSchedule> cached = this.schedule.get();
+		MessageSource messageSource = getMessageSource();
+		if ( schedule instanceof SimpleTemporalTariffSchedule ) {
+			List<TemporalRangesTariff> rules = ((SimpleTemporalTariffSchedule) schedule).getRules();
+			if ( rules.isEmpty() ) {
+				buf.append("<p>").append(messageSource.getMessage("rules.empty", null, null))
+						.append("</p>");
+			} else {
+				final LocalDateTime now = LocalDateTime.now();
+				Map<Integer, TemporalRangesTariff> active = renderRulesTable(
+						(SimpleTemporalTariffSchedule) schedule, now, buf);
+				if ( !active.isEmpty() ) {
+					Map<String, Rate> activeRates = new CompositeTariff(active.values()).getRates();
+					DateTimeFormatter dateFormat = DateTimeFormatter
+							.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT);
+					buf.append("<p>").append(messageSource.getMessage("rates.active",
+							new Object[] { dateFormat.format(now) }, null)).append("</p><ol>");
+					for ( Map.Entry<Integer, TemporalRangesTariff> me : active.entrySet() ) {
+						buf.append("<li value=\"").append(me.getKey() + 1).append("\">");
+						int rateCount = 0;
+						for ( Rate rate : me.getValue().getRates().values() ) {
+							if ( rate == activeRates.get(rate.getId()) ) {
+								// this rate active for this rule
+								if ( rateCount++ > 0 ) {
+									buf.append("; ");
+								}
+								buf.append("<b>").append(rate.getDescription()).append("</b>: ")
+										.append(rate.getAmount().toPlainString());
+							}
+							buf.append("</li>");
+						}
+					}
+					buf.append("</ol>");
+				}
+			}
+		} else if ( schedule == null ) {
+			buf.append("<p>").append(messageSource.getMessage("schedule.none", null, null))
+					.append("</p>");
+		}
+		if ( cached != null ) {
+			buf.append("<p>");
+			buf.append(messageSource.getMessage(cached.isValid() ? "cached.valid" : "cached.invalid",
+					new Object[] { new Date(cached.getCreated()), new Date(cached.getExpires()) },
+					null));
+			buf.append("</p>");
+		}
+		return buf.toString();
+	}
+
+	private Map<Integer, TemporalRangesTariff> renderRulesTable(SimpleTemporalTariffSchedule schedule,
+			LocalDateTime date, StringBuilder buf) {
+		final List<TemporalRangesTariff> tariffs = schedule.getRules();
+		final Map<Integer, TemporalRangesTariff> active = new TreeMap<>();
+		final TemporalRangesTariffEvaluator e = evaluator();
+		final boolean firstOnly = isFirstMatchOnly();
+		final CompositeTariff ct = new CompositeTariff(tariffs);
+		final Map<String, Rate> rates = ct.getRates();
+		buf.append(
+				"<table class=\"table counts\"><thead><tr><th>Rule</th><th>Month</th><th>Day</th><th>Weekday</th><th>Time</th>");
+		for ( Rate r : rates.values() ) {
+			buf.append("<th>").append(r.getDescription()).append("</th>");
+		}
+		buf.append("</tr></thead><tbody>");
+
+		int i = 0;
+		for ( TemporalRangesTariff tariff : tariffs ) {
+			if ( (active.isEmpty() || !firstOnly) && tariff.applies(e, date, null) ) {
+				active.put(i, tariff);
+			}
+			buf.append("<tr>");
+			buf.append("<th>").append(++i).append("</th>");
+			buf.append("<td>").append(rangeDisplayString(ChronoField.MONTH_OF_YEAR, tariff))
+					.append("</td>");
+			buf.append("<td>").append(rangeDisplayString(ChronoField.DAY_OF_MONTH, tariff))
+					.append("</td>");
+			buf.append("<td>").append(rangeDisplayString(ChronoField.DAY_OF_WEEK, tariff))
+					.append("</td>");
+			buf.append("<td>").append(rangeDisplayString(ChronoField.MINUTE_OF_DAY, tariff))
+					.append("</td>");
+			Map<String, Rate> tariffRates = tariff.getRates();
+			// iterate over global rates, to keep order consistent in case rows vary
+			for ( String id : rates.keySet() ) {
+				Rate r = tariffRates.get(id);
+				buf.append("<td>");
+				if ( r != null ) {
+					buf.append(r.getAmount().toPlainString());
+				}
+				buf.append("</td>");
+			}
+			buf.append("</tr>");
+		}
+		buf.append("</tbody></table>");
+		return active;
+	}
+
+	private String rangeDisplayString(ChronoField field, TemporalRangesTariff tariff) {
+		String r = formatRange(field, tariff.rangeForField(field), locale, SHORT);
+		return (r != null ? r : "*");
 	}
 
 	private Tariff resolveTariff(LocalDateTime date, Map<String, ?> parameters) {
@@ -229,10 +355,14 @@ public class TariffTransformService extends BaseSamplesTransformSupport implemen
 		} else {
 			return null;
 		}
-		TemporalRangesTariffEvaluator e = service(evaluator, DEFAULT_EVALUATOR);
+		TemporalRangesTariffEvaluator e = evaluator();
 		SimpleTemporalTariffSchedule s = new SimpleTemporalTariffSchedule(tariffs, e);
 		s.setFirstMatchOnly(firstMatchOnly);
 		return s;
+	}
+
+	private TemporalRangesTariffEvaluator evaluator() {
+		return service(evaluator, DEFAULT_EVALUATOR);
 	}
 
 	/**
@@ -342,6 +472,44 @@ public class TariffTransformService extends BaseSamplesTransformSupport implemen
 	 */
 	public void setFirstMatchOnly(boolean firstMatchOnly) {
 		this.firstMatchOnly = firstMatchOnly;
+	}
+
+	/**
+	 * Get the {@link MetadataService} service filter UID.
+	 * 
+	 * @return the service UID
+	 */
+	public String getMetadataServiceUid() {
+		return metadataService.getPropertyValue(UID_PROPERTY);
+	}
+
+	/**
+	 * Set the {@link MetadataService} service filter UID.
+	 * 
+	 * @param uid
+	 *        the service UID
+	 */
+	public void setMetadataServiceUid(String uid) {
+		metadataService.setPropertyFilter(UID_PROPERTY, uid);
+	}
+
+	/**
+	 * Get the {@link TemporalRangesTariffEvaluator} service filter UID.
+	 * 
+	 * @return the service UID
+	 */
+	public String getEvaluatorUid() {
+		return evaluator.getPropertyValue(UID_PROPERTY);
+	}
+
+	/**
+	 * Set the {@link TemporalRangesTariffEvaluator} service filter UID.
+	 * 
+	 * @param uid
+	 *        the service UID
+	 */
+	public void setEvaluatorUid(String uid) {
+		evaluator.setPropertyFilter(UID_PROPERTY, uid);
 	}
 
 }
