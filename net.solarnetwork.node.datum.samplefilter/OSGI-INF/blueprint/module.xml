@@ -14,6 +14,11 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
+	<bean id="expressionServices" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.support.ExpressionService"/>
+	</bean>
+
 	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
 
 	<bean id="datumMetadataService" class="net.solarnetwork.util.DynamicServiceTracker">
@@ -346,6 +351,58 @@
 		<bean class="net.solarnetwork.node.datum.samplefilter.VirtualMeterTransformService">
 			<argument ref="datumMetadataService"/>
 			<property name="messageSource" ref="virtualMeterMessageSource"/>
+		</bean>
+	</osgix:managed-service-factory>
+
+	<!-- 
+	 !!! Expression Filter Service
+	 -->
+
+	<bean id="expressionMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<array>
+				<value>net.solarnetwork.node.datum.samplefilter.ExpressionTransformService</value>
+				<value>net.solarnetwork.node.domain.ExpressionConfig</value>
+				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+			</array>
+		</property>
+	</bean>
+
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<service-properties>
+			<entry key="role">
+				<array value-type="java.lang.String">
+					<value>user</value>
+					<value>datum-filter</value>
+				</array>
+			</entry>
+		</service-properties>
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Expression Filter"/>
+			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.expression"/>
+			<property name="messageSource" ref="expressionMessageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.expression" 
+			autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.GeneralDatumSamplesTransformService</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.samplefilter.expression"/>
+			<beans:entry key="role">
+				<beans:array value-type="java.lang.String">
+					<beans:value>user</beans:value>
+					<beans:value>datum-filter</beans:value>
+				</beans:array>
+			</beans:entry>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.datum.samplefilter.ExpressionTransformService">
+			<property name="expressionServices" ref="expressionServices"/>
+			<property name="messageSource" ref="expressionMessageSource"/>
 		</bean>
 	</osgix:managed-service-factory>
 
