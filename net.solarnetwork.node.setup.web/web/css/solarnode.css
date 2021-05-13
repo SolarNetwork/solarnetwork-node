@@ -106,8 +106,9 @@ h2:hover .anchor {
 	padding-right: 10px;
 }
 
-table.counts td:last-child {
-	text-align: right;
+table.counts td:last-child,
+table.counts th:last-child {
+	text-align: right !important;
 }
 
 form > fieldset > fieldset:last-of-type {
