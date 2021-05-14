@@ -305,38 +305,40 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 				} else {
 					final int scale = config.getVirtualMeterScale();
 					final BigDecimal msDiff = new BigDecimal(date - prevDate);
-					if ( scale >= 0 ) {
-						msDiff.setScale(scale);
-					}
 					final BigDecimal unitMs = new BigDecimal(timeUnit.toMillis(1));
-					if ( scale >= 0 ) {
-						unitMs.setScale(scale);
-					}
-					BigDecimal meterValue;
-					BigDecimal currReading = null;
+					BigDecimal meterDiff;
+					BigDecimal newReading = null;
 					VirtualMeterExpressionConfig exprConfig = expressionForConfig(meterPropName);
 					if ( exprConfig != null ) {
-						VirtualMeterExpressionRoot root = new VirtualMeterExpressionRootImpl(d, config,
-								prevDate, date, prevVal, currVal, parameters);
+						VirtualMeterExpressionRoot root = new VirtualMeterExpressionRootImpl(d, samples,
+								parameters, config, prevDate, date, prevVal, currVal, prevReading);
 						populateExpressionDatumProperties(samples,
 								new VirtualMeterExpressionConfig[] { exprConfig }, root);
-						currReading = samples.getAccumulatingSampleBigDecimal(meterPropName);
-						meterValue = currReading.subtract(prevReading);
+						newReading = samples.getAccumulatingSampleBigDecimal(meterPropName);
+						if ( newReading == null ) {
+							// no new reading value
+							continue;
+						}
+						if ( scale >= 0 && newReading.scale() > scale ) {
+							newReading = newReading.setScale(scale, RoundingMode.HALF_UP);
+							samples.putAccumulatingSampleValue(meterPropName, newReading);
+						}
+						meterDiff = newReading.subtract(prevReading); // for debug log
 					} else {
 						if ( config.getPropertyType() == GeneralDatumSamplesType.Accumulating ) {
 							// accumulation is simply difference between current value and previous
-							meterValue = currVal.subtract(prevVal);
+							meterDiff = currVal.subtract(prevVal);
 						} else {
 							// accumulation is average of previous and current values multiplied by time diff
-							meterValue = prevVal.add(currVal).divide(TWO).multiply(msDiff);
+							meterDiff = prevVal.add(currVal).divide(TWO).multiply(msDiff);
 							if ( scale >= 0 ) {
-								meterValue = meterValue.divide(unitMs, scale, RoundingMode.HALF_UP);
+								meterDiff = meterDiff.divide(unitMs, scale, RoundingMode.HALF_UP);
 							} else {
-								meterValue = meterValue.divide(unitMs, RoundingMode.HALF_UP);
+								meterDiff = meterDiff.divide(unitMs, RoundingMode.HALF_UP);
 							}
 						}
-						currReading = prevReading.add(meterValue);
-						samples.putAccumulatingSampleValue(meterPropName, currReading);
+						newReading = prevReading.add(meterDiff);
+						samples.putAccumulatingSampleValue(meterPropName, newReading);
 					}
 					if ( propSamples != null ) {
 						propSamples.addValue(currVal);
@@ -346,11 +348,11 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_DATE_KEY, date);
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_READING_KEY,
-							currReading.stripTrailingZeros().toPlainString());
+							newReading.stripTrailingZeros().toPlainString());
 					log.debug(
 							"Source {} virtual meter {} adds {} from {} value {} -> {} over {}ms to reach {}",
-							d.getSourceId(), meterPropName, meterValue, config.getPropertyType(),
-							prevVal, currVal, msDiff, currReading);
+							d.getSourceId(), meterPropName, meterDiff, config.getPropertyType(), prevVal,
+							currVal, msDiff, newReading);
 				}
 				try {
 					service.addSourceMetadata(d.getSourceId(), metadata);
@@ -383,7 +385,8 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 		VirtualMeterExpressionConfig[] configs = getExpressionConfigs();
 		if ( configs != null ) {
 			for ( VirtualMeterExpressionConfig config : configs ) {
-				if ( propName.equalsIgnoreCase(config.getName()) ) {
+				if ( propName.equalsIgnoreCase(config.getName()) && config.getExpression() != null
+						&& config.getExpressionServiceId() != null ) {
 					return config;
 				}
 			}

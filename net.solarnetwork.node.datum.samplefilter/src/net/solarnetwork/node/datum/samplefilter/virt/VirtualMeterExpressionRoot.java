@@ -24,7 +24,6 @@ package net.solarnetwork.node.datum.samplefilter.virt;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import net.solarnetwork.domain.DatumExpressionRoot;
 
@@ -43,13 +42,6 @@ public interface VirtualMeterExpressionRoot extends DatumExpressionRoot {
 	 * @return the configuration
 	 */
 	VirtualMeterConfig getConfig();
-
-	/**
-	 * Get the metadata.
-	 * 
-	 * @return the metadata
-	 */
-	Map<String, ?> getMetadata();
 
 	/**
 	 * Get the previous date.
@@ -99,15 +91,36 @@ public interface VirtualMeterExpressionRoot extends DatumExpressionRoot {
 	/**
 	 * Get the previous input property value.
 	 * 
-	 * @return the previous property value
+	 * @return the previous property value, never {@literal null}
 	 */
-	BigDecimal getPrevVal();
+	BigDecimal getPrevInput();
 
 	/**
 	 * Get the current input property value.
 	 * 
-	 * @return the current property value
+	 * @return the current property value, never {@literal null}
 	 */
-	BigDecimal getCurrVal();
+	BigDecimal getCurrInput();
+
+	/**
+	 * Get the input property difference, as {@code curr - prev}.
+	 * 
+	 * @return the difference, never {@literal null}
+	 */
+	default BigDecimal getInputDiff() {
+		BigDecimal prev = getPrevInput();
+		BigDecimal curr = getCurrInput();
+		if ( prev == null || curr == null ) {
+			return BigDecimal.ZERO;
+		}
+		return curr.subtract(prev);
+	}
+
+	/**
+	 * Get the previous output reading value.
+	 * 
+	 * @return the previous reading value, never {@literal null}
+	 */
+	BigDecimal getPrevReading();
 
 }

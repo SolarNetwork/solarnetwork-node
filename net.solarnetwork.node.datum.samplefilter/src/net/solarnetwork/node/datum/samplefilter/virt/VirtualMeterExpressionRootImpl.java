@@ -23,8 +23,8 @@
 package net.solarnetwork.node.datum.samplefilter.virt;
 
 import java.math.BigDecimal;
-import java.util.Collections;
 import java.util.Map;
+import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.node.domain.ExpressionRoot;
 import net.solarnetwork.support.ExpressionService;
@@ -41,49 +41,49 @@ public class VirtualMeterExpressionRootImpl extends ExpressionRoot
 		implements VirtualMeterExpressionRoot {
 
 	private final VirtualMeterConfig config;
-	private final Map<String, ?> metadata;
 	private final long prevDate;
 	private final long currDate;
-	private final BigDecimal prevVal;
-	private final BigDecimal currVal;
+	private final BigDecimal prevInput;
+	private final BigDecimal currInput;
+	private final BigDecimal prevReading;
 
 	/**
 	 * Constructor.
 	 * 
 	 * @param datum
 	 *        the datum currently being populated
+	 * @param samples
+	 *        the samples
+	 * @param parameters
+	 *        the parameters
 	 * @param config
 	 *        the virtual meter configuration
 	 * @param prevDate
 	 *        the previous reading date, as an epoch
 	 * @param currDate
 	 *        the current reading date, as an epoch
-	 * @param prevVal
-	 *        the previous reading value
-	 * @param currVal
-	 *        the current reading value
-	 * @param metadata
-	 *        metadata
+	 * @param prevInput
+	 *        the previous input value
+	 * @param currInput
+	 *        the current input value
+	 * @param prevReading
+	 *        the previous reading
 	 */
-	public VirtualMeterExpressionRootImpl(Datum datum, VirtualMeterConfig config, long prevDate,
-			long currDate, BigDecimal prevVal, BigDecimal currVal, Map<String, ?> metadata) {
-		super(datum);
+	public VirtualMeterExpressionRootImpl(Datum datum, GeneralDatumSamples samples,
+			Map<String, ?> parameters, VirtualMeterConfig config, long prevDate, long currDate,
+			BigDecimal prevInput, BigDecimal currInput, BigDecimal prevReading) {
+		super(datum, samples, parameters);
 		this.config = config;
 		this.prevDate = prevDate;
 		this.currDate = currDate;
-		this.prevVal = prevVal;
-		this.currVal = currVal;
-		this.metadata = (metadata != null ? metadata : Collections.emptyMap());
+		this.prevInput = prevInput;
+		this.currInput = currInput;
+		this.prevReading = prevReading;
 	}
 
 	@Override
 	public VirtualMeterConfig getConfig() {
 		return config;
-	}
-
-	@Override
-	public Map<String, ?> getMetadata() {
-		return metadata;
 	}
 
 	@Override
@@ -97,13 +97,48 @@ public class VirtualMeterExpressionRootImpl extends ExpressionRoot
 	}
 
 	@Override
-	public BigDecimal getPrevVal() {
-		return prevVal;
+	public BigDecimal getPrevInput() {
+		return prevInput;
 	}
 
 	@Override
-	public BigDecimal getCurrVal() {
-		return currVal;
+	public BigDecimal getCurrInput() {
+		return currInput;
+	}
+
+	@Override
+	public BigDecimal getPrevReading() {
+		return prevReading;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("VirtualMeterExpressionRootImpl{prevDate=");
+		builder.append(prevDate);
+		builder.append(", currDate=");
+		builder.append(currDate);
+		builder.append(", timeUnits=");
+		builder.append(getTimeUnits());
+		builder.append(", ");
+		if ( prevInput != null ) {
+			builder.append("prevInput=");
+			builder.append(prevInput);
+			builder.append(", ");
+		}
+		if ( currInput != null ) {
+			builder.append("currInput=");
+			builder.append(currInput);
+			builder.append(", ");
+		}
+		if ( prevReading != null ) {
+			builder.append("prevReading=");
+			builder.append(prevReading);
+			builder.append(", ");
+		}
+		builder.append(super.toString());
+		builder.append("}");
+		return builder.toString();
 	}
 
 }
