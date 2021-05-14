@@ -31,7 +31,7 @@ import net.solarnetwork.util.SerializeIgnore;
  * GeneralNodeDatum that also implements {@link ACEnergyDatum}.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements ACEnergyDatum {
 
@@ -271,7 +271,7 @@ public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements 
 	@JsonIgnore
 	@SerializeIgnore
 	public Long getReverseWattHourReading() {
-		return getAccumulatingSampleLong(WATT_HOUR_READING_KEY + REVERSE_ACCUMULATING_SUFFIX_KEY);
+		return getAccumulatingSampleLong(WATT_HOUR_READING_KEY + Datum.REVERSE_ACCUMULATING_SUFFIX_KEY);
 	}
 
 	/**
@@ -282,7 +282,7 @@ public class GeneralNodeACEnergyDatum extends GeneralNodeEnergyDatum implements 
 	 * @since 1.1
 	 */
 	public void setReverseWattHourReading(Long wattHourReading) {
-		putAccumulatingSampleValue(WATT_HOUR_READING_KEY + REVERSE_ACCUMULATING_SUFFIX_KEY,
+		putAccumulatingSampleValue(WATT_HOUR_READING_KEY + Datum.REVERSE_ACCUMULATING_SUFFIX_KEY,
 				wattHourReading);
 	}
 

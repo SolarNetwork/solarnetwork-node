@@ -29,26 +29,17 @@ import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
  * API for a general datum.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.57
  */
-public interface GeneralDatum extends Datum {
+public interface GeneralDatum extends Datum, net.solarnetwork.domain.datum.GeneralDatum {
 
-	/**
-	 * Get a general accessor for the sample data.
-	 * 
-	 * @return the operations instance, or {@literal null} if no samples are
-	 *         available
-	 */
+	// for backwards compat
+	@Override
 	GeneralDatumSamplesOperations asSampleOperations();
 
-	/**
-	 * Get a mutable general accessor for the sample data.
-	 * 
-	 * @return the operations instance, never {@literal null}
-	 * @throws UnsupportedOperationException
-	 *         if mutation is not supported
-	 */
+	// for backwards compat
+	@Override
 	MutableGeneralDatumSamplesOperations asMutableSampleOperations();
 
 }
