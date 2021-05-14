@@ -99,8 +99,8 @@ public class BatteryAPISupport extends BaseIdentifiable implements DatumEvents {
 	 * Post a {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} {@link Event}.
 	 * 
 	 * <p>
-	 * This method calls {@link #createDatumCapturedEvent(Datum, Class)} to
-	 * create the actual Event, which may be overridden by extending classes.
+	 * This method calls {@link DatumEvents#datumCapturedEvent(Datum)} to create
+	 * the actual Event, which may be overridden by extending classes.
 	 * </p>
 	 * 
 	 * @param datum
