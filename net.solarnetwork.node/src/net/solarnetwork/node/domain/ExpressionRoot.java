@@ -24,6 +24,7 @@ package net.solarnetwork.node.domain;
 
 import java.util.Map;
 import net.solarnetwork.domain.DatumSamplesExpressionRoot;
+import net.solarnetwork.domain.datum.Datum;
 
 /**
  * An object to use as the "root" for
