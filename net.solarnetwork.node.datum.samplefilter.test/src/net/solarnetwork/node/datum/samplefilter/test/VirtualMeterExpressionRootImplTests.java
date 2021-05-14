@@ -106,6 +106,32 @@ public class VirtualMeterExpressionRootImplTests {
 	}
 
 	@Test
+	public void eval_underscoreProperty() {
+		// GIVEN
+		GeneralDatum d = testDatum();
+		d.putSampleValue(GeneralDatumSamplesType.Instantaneous, "my_rate", new BigDecimal("11.50"));
+		VirtualMeterConfig c = testConfig();
+		long currDate = d.getTimestamp().toEpochMilli();
+		long prevDate = currDate - 60_000L;
+		BigDecimal prevInput = BigDecimal.ZERO;
+		BigDecimal currInput = new BigDecimal("3000");
+		BigDecimal prevReading = BigDecimal.ONE;
+
+		ExpressionService exprService = new SpelExpressionService();
+
+		// WHEN
+		VirtualMeterExpressionRoot root = new VirtualMeterExpressionRootImpl(d, d.getSamples(),
+				emptyMap(), c, prevDate, currDate, prevInput, currInput, prevReading);
+		BigDecimal result = exprService.evaluateExpression(
+				"prevReading + (timeUnits * (inputDiff / 1000) * my_rate)", null, root, null,
+				BigDecimal.class);
+
+		// THEN
+		assertThat("Calculated result", result.setScale(4, RoundingMode.HALF_UP),
+				is(equalTo(new BigDecimal("1.5750"))));
+	}
+
+	@Test
 	public void eval_conditional() {
 		// GIVEN
 		GeneralDatum d = testDatum();
