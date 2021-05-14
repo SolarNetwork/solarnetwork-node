@@ -292,8 +292,9 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 
 		URL url = conn.getURL();
 		String host = url.getHost();
-		if ( url.getPort() != 80 ) {
-			host += ":" + url.getPort();
+		int port = url.getPort();
+		if ( port != 80 && port != -1 ) {
+			host += ":" + port;
 		}
 		builder.host(host).path(url.getPath());
 
