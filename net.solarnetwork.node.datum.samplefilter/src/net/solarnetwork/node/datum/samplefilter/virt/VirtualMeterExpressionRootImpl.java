@@ -25,7 +25,7 @@ package net.solarnetwork.node.datum.samplefilter.virt;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Map;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.node.domain.ExpressionRoot;
 import net.solarnetwork.support.ExpressionService;
 

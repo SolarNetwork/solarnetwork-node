@@ -23,7 +23,9 @@
 package net.solarnetwork.node.datum.samplefilter.virt;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import net.solarnetwork.domain.DatumExpressionRoot;
 
 /**
@@ -62,6 +64,37 @@ public interface VirtualMeterExpressionRoot extends DatumExpressionRoot {
 	 * @return the date, as an epoch
 	 */
 	long getCurrDate();
+
+	/**
+	 * Get the amount of time units between the previous and current dates.
+	 * 
+	 * @return the time units, using a default scale of {@literal 12}, never
+	 *         {@literal null}
+	 */
+	default BigDecimal getTimeUnits() {
+		return timeUnits(12);
+	}
+
+	/**
+	 * Get the amount of time units between the previous and current dates.
+	 * 
+	 * @param scale
+	 *        the desired decimal scale of the output
+	 * @return the time units, never {@literal null}
+	 */
+	default BigDecimal timeUnits(int scale) {
+		VirtualMeterConfig config = getConfig();
+		TimeUnit unit = (config != null ? config.getTimeUnit() : null);
+		if ( unit == null ) {
+			return BigDecimal.ZERO;
+		}
+		long msDiff = getCurrDate() - getPrevDate();
+		if ( msDiff == 0 ) {
+			return BigDecimal.ZERO;
+		}
+		BigDecimal unitMs = new BigDecimal(unit.toMillis(1));
+		return BigDecimal.valueOf(msDiff).divide(unitMs, scale, RoundingMode.HALF_UP);
+	}
 
 	/**
 	 * Get the previous input property value.

@@ -22,12 +22,14 @@
 
 package net.solarnetwork.node.datum.samplefilter.virt;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static net.solarnetwork.util.OptionalServiceCollection.services;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -44,12 +46,14 @@ import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.ExpressionConfig;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.support.ExpressionService;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.OptionalService;
 
@@ -83,6 +87,7 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 			2);
 	private final OptionalService<DatumMetadataService> datumMetadataService;
 	private VirtualMeterConfig[] virtualMeterConfigs;
+	private VirtualMeterExpressionConfig[] expressionConfigs;
 
 	/**
 	 * Constructor.
@@ -113,8 +118,8 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));
 
 		VirtualMeterConfig[] meterConfs = getVirtualMeterConfigs();
-		List<VirtualMeterConfig> meterConfsList = (meterConfs != null ? Arrays.asList(meterConfs)
-				: Collections.<VirtualMeterConfig> emptyList());
+		List<VirtualMeterConfig> meterConfsList = (meterConfs != null ? asList(meterConfs)
+				: emptyList());
 		results.add(SettingsUtil.dynamicListSettingSpecifier("virtualMeterConfigs", meterConfsList,
 				new SettingsUtil.KeyedListCallback<VirtualMeterConfig>() {
 
@@ -123,9 +128,26 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 							int index, String key) {
 						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(value
 								.settings(key + ".", value.getMeterReading(), getExpressionServices()));
-						return Collections.<SettingSpecifier> singletonList(configGroup);
+						return singletonList(configGroup);
 					}
 				}));
+
+		Iterable<ExpressionService> exprServices = services(getExpressionServices());
+		if ( exprServices != null ) {
+			VirtualMeterExpressionConfig[] exprConfs = getExpressionConfigs();
+			List<ExpressionConfig> exprConfsList = (exprConfs != null ? asList(exprConfs) : emptyList());
+			results.add(SettingsUtil.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
+					new SettingsUtil.KeyedListCallback<ExpressionConfig>() {
+
+						@Override
+						public Collection<SettingSpecifier> mapListSettingKey(ExpressionConfig value,
+								int index, String key) {
+							BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
+									VirtualMeterExpressionConfig.settings(key + ".", exprServices));
+							return singletonList(configGroup);
+						}
+					}));
+		}
 
 		return results;
 	}
@@ -292,10 +314,12 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 					}
 					BigDecimal meterValue;
 					BigDecimal currReading = null;
-					if ( config.getExpressionConfigsCount() > 0 ) {
+					VirtualMeterExpressionConfig exprConfig = expressionForConfig(meterPropName);
+					if ( exprConfig != null ) {
 						VirtualMeterExpressionRoot root = new VirtualMeterExpressionRootImpl(d, config,
 								prevDate, date, prevVal, currVal, parameters);
-						populateExpressionDatumProperties(samples, config.getExpressionConfigs(), root);
+						populateExpressionDatumProperties(samples,
+								new VirtualMeterExpressionConfig[] { exprConfig }, root);
 						currReading = samples.getAccumulatingSampleBigDecimal(meterPropName);
 						meterValue = currReading.subtract(prevReading);
 					} else {
@@ -346,6 +370,25 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 				}
 			}
 		}
+	}
+
+	/**
+	 * Find an expression config whose name matches the given property name.
+	 * 
+	 * @param propName
+	 *        the property name to match the expression config name
+	 * @return the first match, or {@literal null}
+	 */
+	private VirtualMeterExpressionConfig expressionForConfig(String propName) {
+		VirtualMeterExpressionConfig[] configs = getExpressionConfigs();
+		if ( configs != null ) {
+			for ( VirtualMeterExpressionConfig config : configs ) {
+				if ( propName.equalsIgnoreCase(config.getName()) ) {
+					return config;
+				}
+			}
+		}
+		return null;
 	}
 
 	private static final class PropertySamples {
@@ -436,6 +479,56 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 	public void setVirtualMeterConfigsCount(int count) {
 		this.virtualMeterConfigs = ArrayUtils.arrayWithLength(this.virtualMeterConfigs, count,
 				VirtualMeterConfig.class, null);
+	}
+
+	/**
+	 * Get the expression configurations.
+	 * 
+	 * @return the expression configurations
+	 * @since 1.4
+	 */
+	public VirtualMeterExpressionConfig[] getExpressionConfigs() {
+		return expressionConfigs;
+	}
+
+	/**
+	 * Set the expression configurations to use.
+	 * 
+	 * @param expressionConfigs
+	 *        the configs to use
+	 * @since 1.4
+	 */
+	public void setExpressionConfigs(VirtualMeterExpressionConfig[] expressionConfigs) {
+		this.expressionConfigs = expressionConfigs;
+	}
+
+	/**
+	 * Get the number of configured {@code expressionConfigs} elements.
+	 * 
+	 * @return the number of {@code expressionConfigs} elements
+	 * @since 1.4
+	 */
+	public int getExpressionConfigsCount() {
+		VirtualMeterExpressionConfig[] confs = this.expressionConfigs;
+		return (confs == null ? 0 : confs.length);
+	}
+
+	/**
+	 * Adjust the number of configured {@code VirtualMeterExpressionConfig}
+	 * elements.
+	 * 
+	 * <p>
+	 * Any newly added element values will be set to new
+	 * {@link VirtualMeterExpressionConfig} instances.
+	 * </p>
+	 * 
+	 * @param count
+	 *        The desired number of {@code expressionConfigs} elements.
+	 * @since 1.4
+	 */
+	public void setExpressionConfigsCount(int count) {
+		this.expressionConfigs = ArrayUtils.arrayWithLength(this.expressionConfigs, count,
+				VirtualMeterExpressionConfig.class, null);
 	}
 
 }

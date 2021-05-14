@@ -311,6 +311,7 @@
 		<property name="basenames">
 			<array>
 				<value>net.solarnetwork.node.datum.samplefilter.virt.VirtualMeterTransformService</value>
+				<value>net.solarnetwork.node.domain.ExpressionConfig</value>
 				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</array>
@@ -351,6 +352,7 @@
 		<bean class="net.solarnetwork.node.datum.samplefilter.virt.VirtualMeterTransformService">
 			<argument ref="datumMetadataService"/>
 			<property name="messageSource" ref="virtualMeterMessageSource"/>
+			<property name="expressionServices" ref="expressionServices"/>
 		</bean>
 	</osgix:managed-service-factory>
 

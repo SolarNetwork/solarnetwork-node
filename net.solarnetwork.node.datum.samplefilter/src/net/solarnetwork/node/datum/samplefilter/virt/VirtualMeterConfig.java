@@ -22,13 +22,9 @@
 
 package net.solarnetwork.node.datum.samplefilter.virt;
 
-import static net.solarnetwork.util.OptionalServiceCollection.services;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,14 +32,10 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
-import net.solarnetwork.node.domain.ExpressionConfig;
 import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.support.ExpressionService;
-import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.OptionalServiceCollection;
 
 /**
@@ -74,7 +66,6 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 	private int rollingAverageCount = 0;
 	private String readingPropertyName = null;
 	private int virtualMeterScale = DEFAULT_VIRTUAL_METER_SCALE;
-	private VirtualMeterExpressionConfig[] expressionConfigs;
 
 	/**
 	 * Constructor.
@@ -132,24 +123,6 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 
 		results.add(
 				new BasicTextFieldSettingSpecifier(prefix + "rollingAverageCount", String.valueOf(0)));
-
-		Iterable<ExpressionService> exprServices = services(expressionServices);
-		if ( exprServices != null ) {
-			VirtualMeterExpressionConfig[] exprConfs = getExpressionConfigs();
-			List<ExpressionConfig> exprConfsList = (exprConfs != null ? Arrays.asList(exprConfs)
-					: Collections.<ExpressionConfig> emptyList());
-			results.add(SettingsUtil.dynamicListSettingSpecifier(prefix + "expressionConfigs",
-					exprConfsList, new SettingsUtil.KeyedListCallback<ExpressionConfig>() {
-
-						@Override
-						public Collection<SettingSpecifier> mapListSettingKey(ExpressionConfig value,
-								int index, String key) {
-							BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
-									VirtualMeterExpressionConfig.settings(key + ".", exprServices));
-							return Collections.<SettingSpecifier> singletonList(configGroup);
-						}
-					}));
-		}
 
 		// meter reading has "live" data, not static default
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "meterReading", meterReading));
@@ -412,56 +385,6 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 	 */
 	public void setVirtualMeterScale(int virtualMeterScale) {
 		this.virtualMeterScale = virtualMeterScale;
-	}
-
-	/**
-	 * Get the expression configurations.
-	 * 
-	 * @return the expression configurations
-	 * @since 1.2
-	 */
-	public VirtualMeterExpressionConfig[] getExpressionConfigs() {
-		return expressionConfigs;
-	}
-
-	/**
-	 * Set the expression configurations to use.
-	 * 
-	 * @param expressionConfigs
-	 *        the configs to use
-	 * @since 1.2
-	 */
-	public void setExpressionConfigs(VirtualMeterExpressionConfig[] expressionConfigs) {
-		this.expressionConfigs = expressionConfigs;
-	}
-
-	/**
-	 * Get the number of configured {@code expressionConfigs} elements.
-	 * 
-	 * @return the number of {@code expressionConfigs} elements
-	 * @since 1.2
-	 */
-	public int getExpressionConfigsCount() {
-		VirtualMeterExpressionConfig[] confs = this.expressionConfigs;
-		return (confs == null ? 0 : confs.length);
-	}
-
-	/**
-	 * Adjust the number of configured {@code VirtualMeterExpressionConfig}
-	 * elements.
-	 * 
-	 * <p>
-	 * Any newly added element values will be set to new
-	 * {@link VirtualMeterExpressionConfig} instances.
-	 * </p>
-	 * 
-	 * @param count
-	 *        The desired number of {@code expressionConfigs} elements.
-	 * @since 1.2
-	 */
-	public void setExpressionConfigsCount(int count) {
-		this.expressionConfigs = ArrayUtils.arrayWithLength(this.expressionConfigs, count,
-				VirtualMeterExpressionConfig.class, null);
 	}
 
 }
