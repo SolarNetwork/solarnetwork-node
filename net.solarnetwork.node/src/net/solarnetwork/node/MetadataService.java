@@ -60,7 +60,7 @@ public interface MetadataService extends Identifiable {
 	 *        the expected value type
 	 * @param path
 	 *        the path of the metadata object to get
-	 * @param class
+	 * @param clazz
 	 *        the expected value type class
 	 * @return the value, or {@literal null}
 	 * @see GeneralDatumMetadata#metadataAtPath(String, Class)

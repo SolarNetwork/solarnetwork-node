@@ -99,8 +99,6 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 	 * @param configurableUid
 	 *        {@literal true} to support the UID and groupUID values as setting
 	 *        specifiers
-	 * @param staticService
-	 *        an optional static service
 	 * @throws IllegalArgumentException
 	 *         if {@code settingUid} or {@code transformServices} are
 	 *         {@literal null}

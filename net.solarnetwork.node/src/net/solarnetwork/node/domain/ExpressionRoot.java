@@ -24,6 +24,7 @@ package net.solarnetwork.node.domain;
 
 import java.util.Map;
 import net.solarnetwork.domain.DatumSamplesExpressionRoot;
+import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.datum.Datum;
 
 /**
@@ -49,7 +50,19 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	 *        the datum currently being populated
 	 */
 	public ExpressionRoot(Datum datum) {
-		this(null, datum);
+		this(datum, null, null);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param datum
+	 *        the datum currently being populated
+	 * @param samples
+	 *        the samples
+	 */
+	public ExpressionRoot(Datum datum, GeneralDatumSamples samples) {
+		this(datum, samples, null);
 	}
 
 	/**
@@ -62,7 +75,21 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	 * @since 1.2
 	 */
 	public ExpressionRoot(Map<String, ?> data, Datum datum) {
-		super(datum, null, data);
+		this(datum, null, data);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param datum
+	 *        the datum currently being populated
+	 * @param samples
+	 *        the samples
+	 * @param parameters
+	 *        the parameters
+	 */
+	public ExpressionRoot(Datum datum, GeneralDatumSamples samples, Map<String, ?> parameters) {
+		super(datum, samples, parameters);
 	}
 
 }

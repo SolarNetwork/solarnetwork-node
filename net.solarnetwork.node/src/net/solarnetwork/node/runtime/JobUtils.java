@@ -216,10 +216,11 @@ public class JobUtils {
 	 *        the Trigger to schedule
 	 * @param jobDetail
 	 *        the JobDetail to schedule
-	 * @param newCronExpression
-	 *        the cron expression to re-schedule the job with, if not currently
-	 *        scheduled; a simple number is allowed to signal that a simple
-	 *        repeating millisecond interval should be used
+	 * @param newSchedule
+	 *        the cron expression or millisecond frequency to re-schedule the
+	 *        job with, if not currently scheduled; a simple number is allowed
+	 *        to signal that a simple repeating millisecond interval should be
+	 *        used
 	 * @param newJobDataMap
 	 *        new job data to use with the job
 	 */

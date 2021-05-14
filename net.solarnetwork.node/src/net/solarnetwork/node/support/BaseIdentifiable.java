@@ -175,7 +175,7 @@ public abstract class BaseIdentifiable extends net.solarnetwork.support.BasicIde
 				try {
 					propValue = expr.getService().evaluateExpression(expr.getExpression(), null, root,
 							null, Object.class);
-					log.trace(
+					log.debug(
 							"Service [{}] evaluated datum property {} expression `{}` -> {}\n\nExpression root: {}",
 							getUid(), config.getName(), config.getExpression(), propValue, root);
 				} catch ( ExpressionException e ) {
