@@ -113,6 +113,11 @@ public interface VirtualMeterExpressionRoot extends DatumExpressionRoot {
 		if ( prev == null || curr == null ) {
 			return BigDecimal.ZERO;
 		}
+		VirtualMeterConfig config = getConfig();
+		if ( config != null && config.getVirtualMeterScale() > 0
+				&& curr.scale() < config.getVirtualMeterScale() ) {
+			curr = curr.setScale(config.getVirtualMeterScale());
+		}
 		return curr.subtract(prev);
 	}
 
