@@ -326,6 +326,12 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 						if ( scale >= 0 && newReading.scale() > scale ) {
 							newReading = newReading.setScale(scale, RoundingMode.HALF_UP);
 							samples.putAccumulatingSampleValue(meterPropName, newReading);
+						} else {
+							BigDecimal stripped = newReading.stripTrailingZeros();
+							if ( !stripped.equals(newReading) ) {
+								// we stripped off some zeros, so replace now
+								samples.putAccumulatingSampleValue(meterPropName, newReading);
+							}
 						}
 						meterDiff = newReading.subtract(prevReading); // for debug log
 					} else {
