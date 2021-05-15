@@ -30,13 +30,14 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.lessThan;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -131,17 +132,16 @@ public class VirtualMeterTransformServiceTests {
 
 	}
 
-	private void assertVirtalMeterMetadata(String msg, GeneralDatumMetadata meta, long date,
+	private void assertVirtualMeterMetadata(String msg, GeneralDatumMetadata meta, long date,
 			BigDecimal expectedValue, BigDecimal expectedReading) {
-		assertVirtalMeterMetadata(msg, meta, PROP_WATTS_SECONDS, date, expectedValue, expectedReading);
+		assertVirtualMeterMetadata(msg, meta, PROP_WATTS_SECONDS, date, expectedValue, expectedReading);
 	}
 
-	private void assertVirtalMeterMetadata(String msg, GeneralDatumMetadata meta, String readingPropName,
-			long date, BigDecimal expectedValue, BigDecimal expectedReading) {
-		assertThat("Virtual meter date saved (close to) " + msg,
-				meta.getInfoLong(readingPropName, VirtualMeterTransformService.VIRTUAL_METER_DATE_KEY)
-						- date,
-				lessThan(2000L));
+	private void assertVirtualMeterMetadata(String msg, GeneralDatumMetadata meta,
+			String readingPropName, long date, BigDecimal expectedValue, BigDecimal expectedReading) {
+		assertThat("Virtual meter date saved " + msg,
+				meta.getInfoLong(readingPropName, VirtualMeterTransformService.VIRTUAL_METER_DATE_KEY),
+				equalTo(date));
 		assertThat("Virtual meter value saved " + msg, meta.getInfoBigDecimal(readingPropName,
 				VirtualMeterTransformService.VIRTUAL_METER_VALUE_KEY), equalTo(expectedValue));
 		assertThat("Virtual meter reading saved " + msg,
@@ -173,7 +173,7 @@ public class VirtualMeterTransformServiceTests {
 		assertOutputValue("at first sample", result, new BigDecimal("23.4"), null);
 
 		GeneralDatumMetadata meta = metaCaptor.getValue();
-		assertVirtalMeterMetadata("first", meta, System.currentTimeMillis(), new BigDecimal("23.4"),
+		assertVirtualMeterMetadata("first", meta, System.currentTimeMillis(), new BigDecimal("23.4"),
 				BigDecimal.ZERO);
 	}
 
@@ -201,7 +201,7 @@ public class VirtualMeterTransformServiceTests {
 		assertOutputValue("at first sample", result, PROP_WATTS, "foobar", new BigDecimal("23.4"), null);
 
 		GeneralDatumMetadata meta = metaCaptor.getValue();
-		assertVirtalMeterMetadata("first", meta, "foobar", System.currentTimeMillis(),
+		assertVirtualMeterMetadata("first", meta, "foobar", System.currentTimeMillis(),
 				new BigDecimal("23.4"), BigDecimal.ZERO);
 	}
 
@@ -347,7 +347,7 @@ public class VirtualMeterTransformServiceTests {
 
 		ExpressionService exprService = new SpelExpressionService();
 		VirtualMeterExpressionConfig exprConfig = new VirtualMeterExpressionConfig(PROP_COST,
-				GeneralDatumSamplesType.Accumulating, "prevReading + (timeUnits * inputDiff * 3)",
+				GeneralDatumSamplesType.Accumulating, "prevReading + (inputDiff * 3)",
 				exprService.getUid());
 		xform.setExpressionConfigs(new VirtualMeterExpressionConfig[] { exprConfig });
 		xform.setExpressionServices(new StaticOptionalServiceCollection<>(singleton(exprService)));
@@ -386,6 +386,86 @@ public class VirtualMeterTransformServiceTests {
 			assertOutputValue("at sample " + i, result, PROP_WATT_HOURS, PROP_COST, expectedValues[i],
 					expectedReadings[i]);
 		}
+	}
+
+	private static class CloningCapture extends Capture<GeneralDatumMetadata> {
+
+		private static final long serialVersionUID = -7208625218989724725L;
+
+		public CloningCapture(CaptureType type) {
+			super(type);
+		}
+
+		@Override
+		public void setValue(GeneralDatumMetadata value) {
+			// so we can capture a snapshot in time
+			super.setValue(new GeneralDatumMetadata(value));
+		}
+
+	}
+
+	@Test
+	public void filter_accumulating_expression_unchangedReading() {
+		// GIVEN
+		final GeneralNodeDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATT_HOURS);
+		vmConfig.setPropertyType(GeneralDatumSamplesType.Accumulating);
+		vmConfig.setReadingPropertyName(PROP_COST);
+		vmConfig.setTrackOnlyWhenReadingChanges(true);
+		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
+
+		ExpressionService exprService = new SpelExpressionService();
+		VirtualMeterExpressionConfig exprConfig = new VirtualMeterExpressionConfig(PROP_COST,
+				GeneralDatumSamplesType.Accumulating,
+				"currInput == 15 ? prevReading : prevReading + (inputDiff * 3)", exprService.getUid());
+		xform.setExpressionConfigs(new VirtualMeterExpressionConfig[] { exprConfig });
+		xform.setExpressionServices(new StaticOptionalServiceCollection<>(singleton(exprService)));
+
+		// no metadata available yet
+		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(null);
+
+		// add metadata
+		final List<Integer> inputs = Arrays.asList(5, 10, 15, 20);
+		final int iterations = inputs.size();
+		Capture<GeneralDatumMetadata> metaCaptor = new CloningCapture(CaptureType.ALL);
+		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
+		expectLastCall().times(iterations - 1); // one less metadata save
+
+		// WHEN
+		replayAll();
+		List<GeneralDatumSamples> outputs = new ArrayList<>();
+		List<Date> dates = new ArrayList<>();
+		final Date start = new Date(
+				LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC).toEpochMilli());
+		for ( int i = 0; i < iterations; i++ ) {
+			datum.setCreated(new Date(start.getTime() + TimeUnit.SECONDS.toMillis(i)));
+			datum.putAccumulatingSampleValue(PROP_WATT_HOURS, inputs.get(i));
+			dates.add(datum.getCreated());
+			outputs.add(xform.transformSamples(datum, datum.getSamples(), emptyMap()));
+		}
+
+		// THEN
+		// expected rolling average values
+		BigDecimal[] expectedValues = new BigDecimal[] { new BigDecimal("5"), new BigDecimal("10"),
+				new BigDecimal("15"), new BigDecimal("20") };
+		BigDecimal[] expectedReadings = new BigDecimal[] { null, new BigDecimal("15"),
+				new BigDecimal("15"), new BigDecimal("45") };
+
+		for ( int i = 0; i < iterations; i++ ) {
+			GeneralDatumSamples result = outputs.get(i);
+			assertOutputValue("at sample " + i, result, PROP_WATT_HOURS, PROP_COST, expectedValues[i],
+					expectedReadings[i]);
+		}
+
+		List<GeneralDatumMetadata> savedMetas = metaCaptor.getValues();
+		assertThat("Saved one less meter metdata because of track only changes", savedMetas, hasSize(3));
+
+		assertVirtualMeterMetadata("first", savedMetas.get(0), PROP_COST, dates.get(0).getTime(),
+				new BigDecimal("5"), BigDecimal.ZERO);
+		assertVirtualMeterMetadata("second", savedMetas.get(1), PROP_COST, dates.get(1).getTime(),
+				new BigDecimal("10"), new BigDecimal("15"));
+		assertVirtualMeterMetadata("third (after skip)", savedMetas.get(2), PROP_COST,
+				dates.get(3).getTime(), new BigDecimal("20"), new BigDecimal("45"));
 	}
 
 }

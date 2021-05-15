@@ -131,6 +131,9 @@ public class VirtualMeterExpressionRootImpl extends ExpressionRoot
 			builder.append(currInput);
 			builder.append(", ");
 		}
+		builder.append("inputDiff=");
+		builder.append(getInputDiff());
+		builder.append(", ");
 		if ( prevReading != null ) {
 			builder.append("prevReading=");
 			builder.append(prevReading);

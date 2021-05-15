@@ -35,6 +35,7 @@ import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.support.ExpressionService;
 import net.solarnetwork.util.OptionalServiceCollection;
 
@@ -55,17 +56,32 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 	public static final GeneralDatumSamplesType DEFAULT_PROPERTY_TYPE = GeneralDatumSamplesType.Instantaneous;
 
 	/**
+	 * The {@code timeUnit} default value.
+	 * 
+	 * @since 1.2
+	 */
+	public static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.HOURS;
+
+	/**
+	 * The {@code maxAgeSeconds} default value.
+	 * 
+	 * @since 1.2
+	 */
+	public static final long DEFAULT_MAX_AGE_SECONDS = TimeUnit.HOURS.toSeconds(1);
+
+	/**
 	 * The {@code virtualMeterScale} property default value.
 	 * 
 	 * @since 1.2
 	 */
 	public static final int DEFAULT_VIRTUAL_METER_SCALE = 6;
 
-	private TimeUnit timeUnit = TimeUnit.HOURS;
-	private long maxAgeSeconds = TimeUnit.HOURS.toSeconds(1);
+	private TimeUnit timeUnit = DEFAULT_TIME_UNIT;
+	private long maxAgeSeconds = DEFAULT_MAX_AGE_SECONDS;
 	private int rollingAverageCount = 0;
 	private String readingPropertyName = null;
 	private int virtualMeterScale = DEFAULT_VIRTUAL_METER_SCALE;
+	private boolean trackOnlyWhenReadingChanges;
 
 	/**
 	 * Constructor.
@@ -81,15 +97,12 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 	 * 
 	 * @param prefix
 	 *        the message key prefix
-	 * @param meterReading
-	 *        the meter reading value to use
 	 * @param expressionServices
 	 *        an optional list of expression services
 	 * @return the settings
 	 */
-	public List<SettingSpecifier> settings(String prefix, String meterReading,
+	public List<SettingSpecifier> settings(String prefix,
 			OptionalServiceCollection<ExpressionService> expressionServices) {
-		VirtualMeterConfig defaults = new VirtualMeterConfig();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>();
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "name", ""));
@@ -109,7 +122,7 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 
 		// drop-down menu for timeUnit
 		BasicMultiValueSettingSpecifier timeUnitSpec = new BasicMultiValueSettingSpecifier(
-				prefix + "timeUnitName", defaults.getTimeUnitName());
+				prefix + "timeUnitName", DEFAULT_TIME_UNIT.name());
 		Map<String, String> timeUnitTitles = new LinkedHashMap<String, String>(3);
 		for ( TimeUnit e : TimeUnit.values() ) {
 			String desc = e.name().substring(0, 1) + e.name().substring(1).toLowerCase();
@@ -119,13 +132,15 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 		results.add(timeUnitSpec);
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "maxAgeSeconds",
-				String.valueOf(defaults.maxAgeSeconds)));
+				String.valueOf(DEFAULT_MAX_AGE_SECONDS)));
+
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "virtualMeterScale",
+				String.valueOf(DEFAULT_VIRTUAL_METER_SCALE)));
+
+		results.add(new BasicToggleSettingSpecifier(prefix + "trackOnlyWhenReadingChanges", false));
 
 		results.add(
 				new BasicTextFieldSettingSpecifier(prefix + "rollingAverageCount", String.valueOf(0)));
-
-		// meter reading has "live" data, not static default
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "meterReading", meterReading));
 
 		return results;
 	}
@@ -385,6 +400,29 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 	 */
 	public void setVirtualMeterScale(int virtualMeterScale) {
 		this.virtualMeterScale = virtualMeterScale;
+	}
+
+	/**
+	 * Get the "track only when reading changes" flag.
+	 * 
+	 * @return {@literal true} to only update the "previously seen" data if the
+	 *         new reading changes from the previous reading
+	 * @since 1.2
+	 */
+	public boolean isTrackOnlyWhenReadingChanges() {
+		return trackOnlyWhenReadingChanges;
+	}
+
+	/**
+	 * Set the "track only when reading changes" flag.
+	 * 
+	 * @param trackOnlyWhenReadingChanges
+	 *        {@literal true} to only update the "previously seen" data if the
+	 *        new reading changes from the previous reading
+	 * @since 1.2
+	 */
+	public void setTrackOnlyWhenReadingChanges(boolean trackOnlyWhenReadingChanges) {
+		this.trackOnlyWhenReadingChanges = trackOnlyWhenReadingChanges;
 	}
 
 }

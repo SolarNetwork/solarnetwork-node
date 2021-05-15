@@ -126,8 +126,8 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(VirtualMeterConfig value,
 							int index, String key) {
-						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(value
-								.settings(key + ".", value.getMeterReading(), getExpressionServices()));
+						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
+								value.settings(key + ".", getExpressionServices()));
 						return singletonList(configGroup);
 					}
 				}));
@@ -289,13 +289,14 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 							meterPropMap);
 				} else if ( prevDate > date ) {
 					log.warn(
-							"Source {} virtual meter reading date [{}] for {} not older than sample date [{}], will not populate reading",
-							d.getSourceId(), prevDate, meterPropName, date);
+							"Source [{}] virtual meter [{}] reading date [{}] not older than sample date [{}], will not populate reading",
+							d.getSourceId(), meterPropName, prevDate, meterPropName, date);
 					continue;
-				} else if ( (date - prevDate) > config.getMaxAgeSeconds() * 1000 ) {
+				} else if ( config.getMaxAgeSeconds() > 0
+						&& (date - prevDate) > config.getMaxAgeSeconds() * 1000 ) {
 					log.warn(
-							"Source {} virtual meter previous reading date [{}] for {} greater than allowed age {}s, will not populate reading",
-							d.getSourceId(), new Date(prevDate), meterPropName,
+							"Source [{}] virtual meter [{}] previous reading date [{}] greater than allowed age {}s, will not populate reading",
+							d.getSourceId(), meterPropName, new Date(prevDate),
 							config.getMaxAgeSeconds());
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_DATE_KEY, date);
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
@@ -317,6 +318,9 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 						newReading = samples.getAccumulatingSampleBigDecimal(meterPropName);
 						if ( newReading == null ) {
 							// no new reading value
+							log.debug(
+									"Source [{}] virtual meter [{}] expression `{}` did not produce a new reading",
+									d.getSourceId(), meterPropName, exprConfig.getExpression());
 							continue;
 						}
 						if ( scale >= 0 && newReading.scale() > scale ) {
@@ -345,12 +349,21 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 						samples.putSampleValue(config.getPropertyType(), config.getPropertyKey(),
 								propSamples.averageValue(scale));
 					}
+
+					newReading = newReading.stripTrailingZeros();
+					if ( config.isTrackOnlyWhenReadingChanges() && newReading.equals(prevReading) ) {
+						log.debug(
+								"Source [{}] virtual meter [{}] has not changed from {}; configured to ignore",
+								d.getSourceId(), meterPropName, prevReading);
+						continue;
+					}
+
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_DATE_KEY, date);
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_READING_KEY,
-							newReading.stripTrailingZeros().toPlainString());
+							newReading.toPlainString());
 					log.debug(
-							"Source {} virtual meter {} adds {} from {} value {} -> {} over {}ms to reach {}",
+							"Source [{}] virtual meter [{}] adds {} from {} value {} -> {} over {}ms to reach {}",
 							d.getSourceId(), meterPropName, meterDiff, config.getPropertyType(), prevVal,
 							currVal, msDiff, newReading);
 				}
