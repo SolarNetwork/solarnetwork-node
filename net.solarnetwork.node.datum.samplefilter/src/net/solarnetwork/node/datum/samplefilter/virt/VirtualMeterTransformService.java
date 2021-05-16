@@ -324,7 +324,8 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 							continue;
 						}
 						if ( scale >= 0 && newReading.scale() > scale ) {
-							newReading = newReading.setScale(scale, RoundingMode.HALF_UP);
+							newReading = newReading.setScale(scale, RoundingMode.HALF_UP)
+									.stripTrailingZeros();
 							samples.putAccumulatingSampleValue(meterPropName, newReading);
 						} else {
 							BigDecimal stripped = newReading.stripTrailingZeros();
