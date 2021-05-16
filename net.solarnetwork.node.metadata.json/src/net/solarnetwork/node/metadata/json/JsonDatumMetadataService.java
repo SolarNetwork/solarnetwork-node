@@ -62,7 +62,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * </p>
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public class JsonDatumMetadataService extends JsonHttpClientSupport implements DatumMetadataService,
 		SettingResourceHandler, SettingSpecifierProvider, SettingsChangeObserver, Runnable {
@@ -73,6 +73,9 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	/** The default {@code updateThrottleSeconds} property value. */
 	public static final int DEFAULT_UPDATE_THROTTLE_SECONDS = 60;
 
+	/** The default {@code updatePersistDelaySeconds} property value. */
+	public static final int DEFAULT_UPDATE_PERSIST_DELAY_SECONDS = 2;
+
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 
 	private String baseUrl = "/api/v1/sec/datum/meta";
@@ -82,6 +85,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	private final ConcurrentMap<String, CachedMetadata> sourceMetadata;
 	private SettingDao settingDao;
 	private int updateThrottleSeconds = DEFAULT_UPDATE_THROTTLE_SECONDS;
+	private int updatePersistDelaySeconds = DEFAULT_UPDATE_PERSIST_DELAY_SECONDS;
 	private ScheduledFuture<?> syncTask;
 
 	/**
@@ -99,14 +103,18 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 		this.sourceMetadata = new ConcurrentHashMap<>(8, 0.9f, 4);
 	}
 
-	private final class CachedMetadata {
+	private final class CachedMetadata implements Runnable {
 
+		private final String sourceId;
 		private final GeneralDatumMetadata metadata;
 		private long lastChange = 0;
 		private long lastSync = 0;
+		private long lastPersist = 0;
+		private ScheduledFuture<?> persistTask;
 
-		private CachedMetadata(GeneralDatumMetadata metadata) {
+		private CachedMetadata(String sourceId, GeneralDatumMetadata metadata) {
 			super();
+			this.sourceId = sourceId;
 			this.metadata = (metadata != null ? metadata : new GeneralDatumMetadata());
 		}
 
@@ -142,6 +150,11 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 			if ( changed ) {
 				metadata.merge(newMetadata, true);
 				lastChange = System.currentTimeMillis();
+				if ( updatePersistDelaySeconds > 0 ) {
+					persistLaterUnlessUpdated(updatePersistDelaySeconds);
+				} else {
+					persistMetadataLocally(new GeneralDatumMetadata(metadata), lastChange);
+				}
 			}
 			return changed;
 		}
@@ -150,9 +163,53 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 			lastSync = timestamp;
 		}
 
+		private void setPersisted(long timestamp) {
+			lastPersist = timestamp;
+		}
+
 		private boolean needsSync() {
 			return (lastChange - lastSync) > TimeUnit.SECONDS.toMillis(updateThrottleSeconds);
 		}
+
+		private boolean needsPersist() {
+			return (lastChange - lastPersist) > TimeUnit.SECONDS.toMillis(updatePersistDelaySeconds);
+		}
+
+		private void persistLaterUnlessUpdated(int delaySeconds) {
+			if ( persistTask != null && !persistTask.isDone() ) {
+				persistTask.cancel(false);
+			}
+			persistTask = taskScheduler.schedule(this,
+					new Date(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(delaySeconds)));
+		}
+
+		@Override
+		public void run() {
+			// sync all metadata that requires it
+			synchronized ( this ) {
+				if ( needsPersist() ) {
+					long timestamp = System.currentTimeMillis();
+					// create thread-safe copy
+					GeneralDatumMetadata metaToPersist = new GeneralDatumMetadata(metadata);
+					persistMetadataLocally(metaToPersist, timestamp);
+				}
+			}
+		}
+
+		private synchronized void persistMetadataLocally(final GeneralDatumMetadata meta,
+				final long timestamp) {
+			try {
+				final String sourceKey = DigestUtils.md5DigestAsHex(sourceId.getBytes(UTF8));
+				byte[] json = getObjectMapper().writeValueAsBytes(meta);
+				ByteArrayResource r = new ByteArrayResource(json, sourceId + " metadata");
+				settingsService.importSettingResources(getSettingUID(), null, sourceKey, singleton(r));
+				setPersisted(timestamp);
+			} catch ( IOException e ) {
+				log.error("Error generating cached metadata JSON for source {}: {}", sourceId,
+						e.getMessage());
+			}
+		}
+
 	}
 
 	/**
@@ -191,13 +248,16 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 			GeneralDatumMetadata metaToSync = null;
 			long timestamp = 0;
 			synchronized ( m ) {
-				if ( m.needsSync() ) {
+				if ( m.needsSync() || m.needsPersist() ) {
 					// create thread-safe copy
 					metaToSync = new GeneralDatumMetadata(m.metadata);
 					timestamp = System.currentTimeMillis();
 				}
 			}
 			if ( metaToSync != null ) {
+				if ( m.needsPersist() ) {
+					m.persistMetadataLocally(metaToSync, timestamp);
+				}
 				syncMetadata(me.getKey(), metaToSync, timestamp);
 			}
 		}
@@ -211,6 +271,8 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>();
+		result.add(new BasicTextFieldSettingSpecifier("updatePersistDelaySeconds",
+				String.valueOf(DEFAULT_UPDATE_PERSIST_DELAY_SECONDS)));
 		result.add(new BasicTextFieldSettingSpecifier("updateThrottleSeconds",
 				String.valueOf(DEFAULT_UPDATE_THROTTLE_SECONDS)));
 		return result;
@@ -249,7 +311,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 			if ( m == null ) {
 				m = fetchMetadata(sourceId);
 			}
-			return new CachedMetadata(m);
+			return new CachedMetadata(sourceId, m);
 		});
 	}
 
@@ -310,19 +372,6 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 		return null;
 	}
 
-	private synchronized void persistMetadataLocally(final String sourceId,
-			final GeneralDatumMetadata meta) {
-		try {
-			final String sourceKey = DigestUtils.md5DigestAsHex(sourceId.getBytes(UTF8));
-			byte[] json = getObjectMapper().writeValueAsBytes(meta);
-			ByteArrayResource r = new ByteArrayResource(json, sourceId + " metadata");
-			settingsService.importSettingResources(getSettingUID(), null, sourceKey, singleton(r));
-		} catch ( IOException e ) {
-			log.error("Error generating cached metadata JSON for source {}: {}", sourceId,
-					e.getMessage());
-		}
-	}
-
 	@Override
 	public void addSourceMetadata(String sourceId, GeneralDatumMetadata meta) {
 		log.debug("Adding metadata to source {}: {}", sourceId, meta.getPm());
@@ -333,8 +382,8 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 		synchronized ( cachedMetadata ) {
 			changed = cachedMetadata.addMetadata(meta);
 			if ( changed && updateThrottleSeconds < 1 ) {
-				metaToSync = new GeneralDatumMetadata(cachedMetadata.metadata);
 				timestamp = System.currentTimeMillis();
+				metaToSync = new GeneralDatumMetadata(cachedMetadata.metadata);
 			}
 		}
 		if ( metaToSync != null ) {
@@ -351,7 +400,6 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 		try {
 			final InputStream in = jsonPOST(url, metadata);
 			verifyResponseSuccess(in);
-			persistMetadataLocally(sourceId, metadata);
 			CachedMetadata cachedMetadata = sourceMetadata.get(sourceId);
 			if ( cachedMetadata != null ) {
 				synchronized ( cachedMetadata ) {
@@ -440,6 +488,42 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	 */
 	public void setUpdateThrottleSeconds(int updateThrottleSeconds) {
 		this.updateThrottleSeconds = updateThrottleSeconds;
+	}
+
+	/**
+	 * Get the amount of seconds to wait after an update occurs before
+	 * persisting the metadata locally.
+	 * 
+	 * @return the seconds; defaults to
+	 *         {@link #DEFAULT_UPDATE_PERSIST_DELAY_SECONDS}
+	 * @since 1.6
+	 */
+	public int getUpdatePersistDelaySeconds() {
+		return updatePersistDelaySeconds;
+	}
+
+	/**
+	 * Set the amount of seconds to wait after an update occurs before
+	 * persisting the metadata locally.
+	 * 
+	 * <p>
+	 * When greater than {@literal 0} then when updates occur they will not
+	 * immediately be persisted locally. Instead the service will wait this many
+	 * seconds before persisting the changes. If another update occurs, then the
+	 * timer will be reset and the service will wait this many seconds again,
+	 * and so on. This can be combined with the {@code updateThrottleSeconds} to
+	 * ensure that even if updates are occurring continuously, the changes
+	 * eventually get persisted. When changes are infrequent, however, this
+	 * setting can be set to a small value to ensure the changes are persisted
+	 * relatively quickly, instead of waiting for {@code updateThrottleSeconds}.
+	 * </p>
+	 * 
+	 * @param updatePersistDelaySeconds
+	 *        the updatePersistDelaySeconds to set
+	 * @since 1.6
+	 */
+	public void setUpdatePersistDelaySeconds(int updatePersistDelaySeconds) {
+		this.updatePersistDelaySeconds = updatePersistDelaySeconds;
 	}
 
 }
