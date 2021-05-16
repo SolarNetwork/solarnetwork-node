@@ -23,6 +23,7 @@
 package net.solarnetwork.node.setup.s3;
 
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.joining;
 import static org.springframework.util.StringUtils.getFilenameExtension;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -52,6 +53,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,7 +93,7 @@ import net.solarnetwork.util.StringUtils;
  * Service for provisioning node resources based on versioned resource sets.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public class S3SetupManager implements FeedbackInstructionHandler {
 
@@ -121,7 +123,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	public static final String DATA_OBJECT_KEY_PREFIX = "setup-data/";
 
 	/** The default package timeout value. */
-	public static final long DEFAULT_PACKAGE_ACTION_TIMEOUT_SECS = TimeUnit.MINUTES.toSeconds(5);
+	public static final long DEFAULT_PACKAGE_ACTION_TIMEOUT_SECS = TimeUnit.MINUTES.toSeconds(10);
 
 	/** The default value for the {@code objectKeyPrefix} property. */
 	public static final String DEFAULT_OBJECT_KEY_PREFIX = "solarnode-backups/";
@@ -303,9 +305,13 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 
 		UpgradingPackages,
 
+		CleaningUpPackages,
+
 		PostingSetupVersion,
 
 		Complete,
+
+		Restarting,
 	}
 
 	private class S3SetupManagerPlatformTask
@@ -360,6 +366,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 				if ( config.isRestartRequired() ) {
 					SystemService sysService = (systemService != null ? systemService.service() : null);
 					if ( sysService != null ) {
+						setState(S3SetupManagerPlatformTaskState.Restarting, null);
 						sysService.exit(true);
 					} else {
 						log.warn("S3 setup {} requires restart, but no SystemService available",
@@ -439,25 +446,13 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			S3SetupManagerPlatformTaskState s = state.get();
 			String asset = assetName.get();
 			switch (s) {
-				case Complete:
-					return ms.getMessage("platformTask.message.Complete", null, locale);
-
-				case Idle:
-					return ms.getMessage("platformTask.message.Idle", null, locale);
-
-				case DownloadingAsset:
-				case InstallingAsset:
-				case SyncingPath:
-				case DeletingAsset:
-					return ms.getMessage("platformTask.message." + s.toString(), new Object[] { asset },
-							locale);
-
 				case PostingSetupVersion:
 					return ms.getMessage("platformTask.message.PostingSetupVersion",
 							new Object[] { getConfigVersion() }, locale);
 
 				default:
-					return null;
+					return ms.getMessage("platformTask.message." + s.toString(), new Object[] { asset },
+							locale);
 			}
 		}
 
@@ -568,8 +563,9 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 					}
 				}
 			}
-			if ( !installed.isEmpty() ) {
-				log.info("Installed files from objects {}: {}", asList(config.getObjects()), installed);
+			if ( !installed.isEmpty() && log.isInfoEnabled() ) {
+				String fileList = installed.stream().map(Path::toString).collect(joining("\n"));
+				log.info("Installed files from objects {}:\n{}", asList(config.getObjects()), fileList);
 			}
 			return installed;
 		}
@@ -606,8 +602,8 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 					switch (pkgConfig.getAction()) {
 						case Install:
 							setState(S3SetupManagerPlatformTaskState.InstallingPackage,
-									pkgConfig.getName());
-							log.info("Installing package [{}]", pkgConfig.getName());
+									pkgConfig.getDescription());
+							log.info("Installing package [{}]", pkgConfig.getDescription());
 							taskFuture = pkgService.installNamedPackage(pkgConfig.getName(),
 									pkgConfig.getVersion(), destBasePath, this, null);
 							break;
@@ -615,15 +611,14 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 						case Remove:
 							setState(S3SetupManagerPlatformTaskState.DeletingPackage,
 									pkgConfig.getName());
-							log.info("Removing package [{}]", pkgConfig.getName());
+							log.info("Removing package [{}]", pkgConfig.getDescription());
 							taskFuture = pkgService.removeNamedPackage(pkgConfig.getName(), this, null);
 							break;
 
 						case Upgrade:
 							setState(S3SetupManagerPlatformTaskState.UpgradingPackages, "");
 							log.info("Upgrading all packages");
-							taskFuture = pkgService.installNamedPackage(pkgConfig.getName(),
-									pkgConfig.getVersion(), destBasePath, this, null);
+							taskFuture = pkgService.upgradeNamedPackages(this, null);
 							break;
 
 					}
@@ -654,6 +649,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 				}
 			}
 
+			setState(S3SetupManagerPlatformTaskState.CleaningUpPackages, null);
 			boolTaskFuture = pkgService.cleanup();
 			try {
 				boolTaskFuture.get(packageActionTimeoutSecs, TimeUnit.SECONDS);
@@ -665,6 +661,14 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 				incrementStep();
 			}
 
+			if ( !installed.isEmpty() && log.isInfoEnabled() ) {
+				String actions = Arrays.stream(config.getPackages())
+						.map(c -> String.format("%s %s", c.getAction(), c.getDescription()))
+						.collect(Collectors.joining(", "));
+				String fileList = installed.stream().map(Path::toString).collect(joining("\n"));
+				log.info("Installed files from package actions [{}]:\n{}", actions, fileList);
+
+			}
 			return installed;
 		}
 
@@ -790,7 +794,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	private void performFirstTimeUpdateIfNeeded() {
 		if ( !isConfigured() ) {
 			log.info("S3 not configured, cannot perform first time update check");
-			// TODO: perhaps delay and try again later?
+			// perhaps delay and try again later?
 			return;
 		}
 		String installedVersion = settingDao.getSetting(SETTING_KEY_VERSION,
@@ -1037,6 +1041,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	 * No-op method, for backwards compatibility.
 	 * 
 	 * @param tarCommand
+	 *        the tar command to use
 	 * @deprecated since 1.2
 	 */
 	@Deprecated

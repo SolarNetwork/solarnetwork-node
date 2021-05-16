@@ -66,6 +66,7 @@ public class S3SetupConfiguration {
 	 * Set a list of file path patterns
 	 * 
 	 * @param syncPaths
+	 *        the paths to sync
 	 */
 	public void setSyncPaths(String[] syncPaths) {
 		this.syncPaths = syncPaths;
