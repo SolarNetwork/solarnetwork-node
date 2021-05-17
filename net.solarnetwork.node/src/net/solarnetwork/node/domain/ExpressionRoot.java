@@ -22,21 +22,26 @@
 
 package net.solarnetwork.node.domain;
 
-import java.util.Collections;
 import java.util.Map;
+import net.solarnetwork.domain.DatumSamplesExpressionRoot;
+import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.domain.datum.Datum;
 
 /**
  * An object to use as the "root" for
  * {@link net.solarnetwork.support.ExpressionService} evaluation.
  * 
+ * <p>
+ * This object extends {@link DatumSamplesExpressionRoot} to allow all datum
+ * sample properties to be exposed as top-level expression properties (via the
+ * {@code Map} API).
+ * </p>
+ * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.79
  */
-public class ExpressionRoot {
-
-	private final GeneralNodeDatum datum;
-	private final Map<String, ?> datumProps;
+public class ExpressionRoot extends DatumSamplesExpressionRoot {
 
 	/**
 	 * Constructor.
@@ -44,45 +49,47 @@ public class ExpressionRoot {
 	 * @param datum
 	 *        the datum currently being populated
 	 */
-	public ExpressionRoot(GeneralNodeDatum datum) {
-		super();
-		this.datum = datum;
-		this.datumProps = (datum != null ? datum.getSampleData() : Collections.emptyMap());
+	public ExpressionRoot(Datum datum) {
+		this(datum, null, null);
 	}
 
 	/**
-	 * Get the datum.
+	 * Constructor.
 	 * 
-	 * @return the datum
+	 * @param datum
+	 *        the datum currently being populated
+	 * @param samples
+	 *        the samples
 	 */
-	public GeneralNodeDatum getDatum() {
-		return datum;
+	public ExpressionRoot(Datum datum, GeneralDatumSamples samples) {
+		this(datum, samples, null);
 	}
 
 	/**
-	 * Alias for {@code datum.getSampleData()}.
+	 * Constructor.
 	 * 
-	 * @return the datum sample data, never {@literal null}
+	 * @param data
+	 *        the map data
+	 * @param datum
+	 *        the datum currently being populated
+	 * @since 1.2
 	 */
-	public Map<String, ?> getProps() {
-		return datumProps;
+	public ExpressionRoot(Map<String, ?> data, Datum datum) {
+		this(datum, null, data);
 	}
 
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("ExpressionRoot{");
-		if ( datum != null ) {
-			builder.append("datum=");
-			builder.append(datum);
-			builder.append(", ");
-		}
-		if ( datumProps != null ) {
-			builder.append("props=");
-			builder.append(datumProps);
-		}
-		builder.append("}");
-		return builder.toString();
+	/**
+	 * Constructor.
+	 * 
+	 * @param datum
+	 *        the datum currently being populated
+	 * @param samples
+	 *        the samples
+	 * @param parameters
+	 *        the parameters
+	 */
+	public ExpressionRoot(Datum datum, GeneralDatumSamples samples, Map<String, ?> parameters) {
+		super(datum, samples, parameters);
 	}
 
 }

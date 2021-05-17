@@ -27,7 +27,6 @@ import java.util.Locale;
 import org.joda.time.DateTime;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.domain.EnergyStorageDatum;
 import net.solarnetwork.node.domain.GeneralNodeEnergyStorageDatum;
 import net.solarnetwork.node.hw.panasonic.battery.BatteryAPIException;
 import net.solarnetwork.node.hw.panasonic.battery.BatteryAPISupport;
@@ -55,7 +54,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class PanasonicBatteryDatumDataSource extends BatteryAPISupport
 		implements DatumDataSource<GeneralNodeEnergyStorageDatum>, SettingSpecifierProvider {
@@ -146,8 +145,8 @@ public class PanasonicBatteryDatumDataSource extends BatteryAPISupport
 		PanasonicBatteryDatum d = new PanasonicBatteryDatum(currSample);
 		d.setSourceId(resolvePlaceholders(getSourceId()));
 		if ( currSample.getDate() != null && currSample.getDate().getMillis() >= start ) {
-			// we read from the meter
-			postDatumCapturedEvent(d, EnergyStorageDatum.class);
+			// we captured new datum
+			postDatumCapturedEvent(d);
 		}
 		return d;
 	}

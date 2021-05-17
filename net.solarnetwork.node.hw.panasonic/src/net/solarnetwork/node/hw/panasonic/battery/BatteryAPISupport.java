@@ -24,7 +24,6 @@ package net.solarnetwork.node.hw.panasonic.battery;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import org.joda.time.format.DateTimeFormat;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
@@ -36,16 +35,16 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.support.BaseIdentifiable;
-import net.solarnetwork.util.ClassUtils;
+import net.solarnetwork.node.support.DatumEvents;
 import net.solarnetwork.util.OptionalService;
 
 /**
  * Supporting class for {@link BatteryAPIClient} use.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
-public class BatteryAPISupport extends BaseIdentifiable {
+public class BatteryAPISupport extends BaseIdentifiable implements DatumEvents {
 
 	// the client to use
 	private BatteryAPIClient client = new SimpleBatteryAPIClient();
@@ -100,50 +99,21 @@ public class BatteryAPISupport extends BaseIdentifiable {
 	 * Post a {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} {@link Event}.
 	 * 
 	 * <p>
-	 * This method calls {@link #createDatumCapturedEvent(Datum, Class)} to
-	 * create the actual Event, which may be overridden by extending classes.
+	 * This method calls {@link DatumEvents#datumCapturedEvent(Datum)} to create
+	 * the actual Event, which may be overridden by extending classes.
 	 * </p>
 	 * 
 	 * @param datum
 	 *        the {@link Datum} to post the event for
-	 * @param eventDatumType
-	 *        the Datum class to use for the
-	 *        {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE} property
 	 * @since 1.3
 	 */
-	protected final void postDatumCapturedEvent(final Datum datum,
-			final Class<? extends Datum> eventDatumType) {
+	protected final void postDatumCapturedEvent(final Datum datum) {
 		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
 		if ( ea == null || datum == null ) {
 			return;
 		}
-		Event event = createDatumCapturedEvent(datum, eventDatumType);
+		Event event = datumCapturedEvent(datum);
 		ea.postEvent(event);
-	}
-
-	/**
-	 * Create a new {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED}
-	 * {@link Event} object out of a {@link Datum}.
-	 * 
-	 * <p>
-	 * This method will populate all simple properties of the given
-	 * {@link Datum} into the event properties, along with the
-	 * {@link Datum#DATUM_TYPE_PROPERTY}.
-	 * 
-	 * @param datum
-	 *        the datum to create the event for
-	 * @param eventDatumType
-	 *        the Datum class to use for the {@link Datum#DATUM_TYPE_PROPERTY}
-	 *        property
-	 * @return the new Event instance
-	 * @since 1.3
-	 */
-	protected Event createDatumCapturedEvent(final Datum datum,
-			final Class<? extends Datum> eventDatumType) {
-		Map<String, Object> props = ClassUtils.getSimpleBeanProperties(datum, null);
-		props.put(Datum.DATUM_TYPE_PROPERTY, eventDatumType.getName());
-		log.debug("Created {} event with props {}", DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
-		return new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
 	}
 
 	/**

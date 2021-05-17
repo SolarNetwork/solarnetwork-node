@@ -22,10 +22,12 @@
 
 package net.solarnetwork.node.runtime;
 
+import static net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean.BASE_CRON_EXPRESSION_KEY;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -48,6 +50,10 @@ import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import org.quartz.SimpleScheduleBuilder;
+import org.quartz.SimpleTrigger;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.job.ManagedTriggerAndJobDetail;
@@ -113,7 +119,7 @@ import net.solarnetwork.node.job.ServiceProvider;
  * </dl>
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class ManagedJobServiceRegistrationListener implements ConfigurationListener {
 
@@ -153,12 +159,12 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 			return;
 		}
 
-		final CronTrigger origTrigger = (CronTrigger) trigJob.getTrigger();
+		final Trigger origTrigger = trigJob.getTrigger();
 		final JobDetail origJobDetail = trigJob.getJobDetail();
 		final String pid = (String) properties.get(Constants.SERVICE_PID);
 
 		// rename job name and trigger name to account for instance
-		final CronTrigger instanceTrigger = origTrigger.getTriggerBuilder().withIdentity(pid).forJob(pid)
+		final Trigger instanceTrigger = origTrigger.getTriggerBuilder().withIdentity(pid).forJob(pid)
 				.build();
 		final JobDetail instanceJobDetail = origJobDetail.getJobBuilder().withIdentity(pid).build();
 
@@ -194,8 +200,20 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 			}
 		}
 
-		JobUtils.scheduleCronJob(scheduler, instanceTrigger, instanceJobDetail,
-				instanceTrigger.getCronExpression(), instanceTrigger.getJobDataMap());
+		Trigger t = instanceTrigger;
+		final String baseSchedule = instanceTrigger.getJobDataMap().getString(BASE_CRON_EXPRESSION_KEY);
+		try {
+			long ms = Long.parseLong(baseSchedule);
+			t = TriggerBuilder.newTrigger().withIdentity(t.getKey()).forJob(t.getJobKey())
+					.startAt(new Date(System.currentTimeMillis() + ms)).usingJobData(t.getJobDataMap())
+					.withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInMilliseconds(ms)
+							.withMisfireHandlingInstructionNextWithExistingCount())
+					.build();
+		} catch ( NumberFormatException e ) {
+			// ignore and treat as-is
+		}
+
+		JobUtils.scheduleCronJob(scheduler, t, instanceJobDetail, triggerSchedule(t), t.getJobDataMap());
 	}
 
 	private Dictionary<String, ?> dictionaryForMap(Map<String, ?> map) {
@@ -245,6 +263,12 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 		}
 	}
 
+	private String triggerSchedule(Trigger t) {
+		return (t instanceof CronTrigger ? ((CronTrigger) t).getCronExpression()
+				: t instanceof SimpleTrigger ? String.valueOf(((SimpleTrigger) t).getRepeatInterval())
+						: null);
+	}
+
 	@Override
 	public void configurationEvent(ConfigurationEvent event) {
 		if ( event.getType() == ConfigurationEvent.CM_UPDATED ) {
@@ -256,18 +280,18 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 			if ( trigJob == null ) {
 				return;
 			}
-			final CronTrigger origTrigger = (CronTrigger) trigJob.getTrigger();
+			final Trigger origTrigger = trigJob.getTrigger();
 			final JobDetail origJobDetail = trigJob.getJobDetail();
 
 			// rename job name and trigger name to account for instance
-			final CronTrigger instanceTrigger = origTrigger.getTriggerBuilder().withIdentity(pid)
-					.forJob(pid).build();
+			final Trigger instanceTrigger = origTrigger.getTriggerBuilder().withIdentity(pid).forJob(pid)
+					.build();
 			final JobDetail instanceJobDetail = origJobDetail.getJobBuilder().withIdentity(pid).build();
 
 			// even though the cron expression is also updated by ConfigurationAdmin, it can happen in a different thread
 			// so it might not be updated yet so we must extract the current value from ConfigurationAdmin
-			String newCronExpression = origTrigger.getCronExpression();
-			JobDataMap newJobDataMap = (JobDataMap) origJobDetail.getJobDataMap().clone();
+			String newSchedule = triggerSchedule(origTrigger);
+			JobDataMap newJobDataMap = (JobDataMap) origTrigger.getJobDataMap().clone();
 			ServiceReference<ConfigurationAdmin> caRef = event.getReference();
 			ConfigurationAdmin ca = bundleContext.getService(caRef);
 			try {
@@ -300,16 +324,15 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 				}
 
 				if ( propCronExpression != null ) {
-					newCronExpression = propCronExpression;
+					newSchedule = propCronExpression;
 				}
 			} catch ( IOException e ) {
 				log.warn("Exception processing configuration update event", e);
 			}
-			if ( newCronExpression != null ) {
-				JobUtils.scheduleCronJob(scheduler, instanceTrigger, instanceJobDetail,
-						newCronExpression, newJobDataMap);
+			if ( newSchedule != null ) {
+				JobUtils.scheduleCronJob(scheduler, instanceTrigger, instanceJobDetail, newSchedule,
+						newJobDataMap);
 			}
-
 		}
 	}
 

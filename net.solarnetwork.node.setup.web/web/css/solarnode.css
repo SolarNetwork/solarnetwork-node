@@ -49,6 +49,10 @@ td dl {
 	text-align: right;
 }
 
+section.intro {
+	margin-bottom: 1rem;
+}
+
 span.active-value.clean {
 	display: none !important;
 }
@@ -102,8 +106,9 @@ h2:hover .anchor {
 	padding-right: 10px;
 }
 
-table.counts td:last-child {
-	text-align: right;
+table.counts td:last-child,
+table.counts th:last-child {
+	text-align: right !important;
 }
 
 form > fieldset > fieldset:last-of-type {
@@ -127,9 +132,12 @@ form .control-group.grouped + fieldset > fieldset:not(:first-child) {
     border-top: 1px dotted #e5e5e5;
 }
 
-
 .form-horizontal .controls.static {
-    padding-top: 3px;
+	padding-top: 3px;
+}
+
+.form-horizontal .controls.static .title > * {
+	margin-top: 2px;
 }
 
 .controls.static .title {
@@ -218,6 +226,11 @@ pre.pre-scrollable {
 
 #settings .popover {
 	min-width: 240px;
+}
+
+.table.setting-components td:last-of-type {
+	width: 120px;
+	text-align: right;
 }
 
 #weather-lookup-modal {

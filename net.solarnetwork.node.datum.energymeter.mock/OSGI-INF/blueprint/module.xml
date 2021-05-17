@@ -25,7 +25,7 @@
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
 	</bean>
-	
+
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
@@ -122,14 +122,15 @@
 									<property name="samplesTransformService">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>
-											<property name="serviceClassName" 
-												value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
+											<property name="serviceClassName" value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
+											<property name="serviceFilter" value="(!(role=global))"/>
+											<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 											<property name="propertyFilters">
 												<map>
 													<entry key="UID" value=""/>
 												</map>
 											</property>
-										</bean>	
+										</bean>
 									</property>
 								</bean>
 							</entry>

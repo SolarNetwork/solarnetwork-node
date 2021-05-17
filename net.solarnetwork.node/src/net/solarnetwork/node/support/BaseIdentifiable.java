@@ -22,16 +22,25 @@
 
 package net.solarnetwork.node.support;
 
+import static net.solarnetwork.util.OptionalServiceCollection.services;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
+import org.springframework.expression.ExpressionException;
+import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
 import net.solarnetwork.node.Identifiable;
 import net.solarnetwork.node.PlaceholderService;
+import net.solarnetwork.node.domain.ExpressionConfig;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.support.BasicIdentifiable;
+import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.support.ExpressionServiceExpression;
 import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.util.OptionalServiceCollection;
 
 /**
  * Basic implementation of {@link Identifiable} and
@@ -42,13 +51,21 @@ import net.solarnetwork.util.OptionalService;
  * </p>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @since 1.67
  */
 public abstract class BaseIdentifiable extends net.solarnetwork.support.BasicIdentifiable
 		implements Identifiable, net.solarnetwork.domain.Identifiable {
 
+	/**
+	 * A class-level logger.
+	 * 
+	 * @since 1.4
+	 */
+	protected final Logger log = LoggerFactory.getLogger(getClass());
+
 	private OptionalService<PlaceholderService> placeholderService;
+	private OptionalServiceCollection<ExpressionService> expressionServices;
 
 	/**
 	 * Get settings for the configurable properties of
@@ -118,6 +135,64 @@ public abstract class BaseIdentifiable extends net.solarnetwork.support.BasicIde
 	 */
 	protected String resolvePlaceholders(String s, Map<String, ?> parameters) {
 		return PlaceholderService.resolvePlaceholders(placeholderService, s, parameters);
+	}
+
+	/**
+	 * Evaluate a set of expression configurations and store the results as
+	 * properties on a datum.
+	 * 
+	 * @param d
+	 *        the datum to store the results of expression evaluations on
+	 * @param expressionConfs
+	 *        the expression configurations
+	 * @param root
+	 *        the expression root object
+	 * @since 1.4
+	 */
+	protected void populateExpressionDatumProperties(final MutableGeneralDatumSamplesOperations d,
+			final ExpressionConfig[] expressionConfs, final Object root) {
+		Iterable<ExpressionService> services = services(expressionServices);
+		if ( services == null || expressionConfs == null || expressionConfs.length < 1
+				|| root == null ) {
+			return;
+		}
+		for ( ExpressionConfig config : expressionConfs ) {
+			if ( config.getName() == null || config.getName().isEmpty() || config.getExpression() == null
+					|| config.getExpression().isEmpty() ) {
+				continue;
+			}
+			final ExpressionServiceExpression expr;
+			try {
+				expr = config.getExpression(services);
+			} catch ( ExpressionException e ) {
+				log.warn("Error parsing property [{}] expression `{}`: {}", config.getName(),
+						config.getExpression(), e.getMessage());
+				return;
+			}
+
+			Object propValue = null;
+			if ( expr != null ) {
+				try {
+					propValue = expr.getService().evaluateExpression(expr.getExpression(), null, root,
+							null, Object.class);
+					if ( log.isTraceEnabled() ) {
+						log.trace(
+								"Service [{}] evaluated datum property {} expression `{}` -> {}\n\nExpression root: {}",
+								getUid(), config.getName(), config.getExpression(), propValue, root);
+					} else if ( log.isDebugEnabled() ) {
+						log.debug("Service [{}] evaluated datum property {} expression `{}` -> {}",
+								getUid(), config.getName(), config.getExpression(), propValue);
+					}
+				} catch ( ExpressionException e ) {
+					log.warn(
+							"Error evaluating service [{}] datum property {} expression `{}`: {}\n\nExpression root: {}",
+							getUid(), config.getName(), config.getExpression(), e.getMessage(), root);
+				}
+			}
+			if ( propValue != null ) {
+				d.putSampleValue(config.getDatumPropertyType(), config.getName(), propValue);
+			}
+		}
 	}
 
 	/**
@@ -227,6 +302,27 @@ public abstract class BaseIdentifiable extends net.solarnetwork.support.BasicIde
 	 */
 	public void setPlaceholderService(OptionalService<PlaceholderService> placeholderService) {
 		this.placeholderService = placeholderService;
+	}
+
+	/**
+	 * Get an optional collection of {@link ExpressionService}.
+	 * 
+	 * @return the optional {@link ExpressionService} collection to use
+	 * @since 1.4
+	 */
+	public OptionalServiceCollection<ExpressionService> getExpressionServices() {
+		return expressionServices;
+	}
+
+	/**
+	 * Configure an optional collection of {@link ExpressionService}.
+	 * 
+	 * @param expressionServices
+	 *        the optional {@link ExpressionService} collection to use
+	 * @since 1.4
+	 */
+	public void setExpressionServices(OptionalServiceCollection<ExpressionService> expressionServices) {
+		this.expressionServices = expressionServices;
 	}
 
 }

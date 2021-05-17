@@ -289,8 +289,6 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 				defaults.resistanceDeviation.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("inductanceDeviation",
 				defaults.inductanceDeviation.toString()));
-		results.add(new BasicTextFieldSettingSpecifier("samplesTransformService.propertyFilters['UID']",
-				null));
 
 		return results;
 	}

@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.settings.ca;
 
+import static java.util.stream.Collectors.toList;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -120,6 +121,7 @@ import net.solarnetwork.node.settings.SettingsImportOptions;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.SettingsUpdates;
 import net.solarnetwork.node.settings.support.BasicFactorySettingSpecifierProvider;
+import net.solarnetwork.support.SearchFilter;
 
 /**
  * Implementation of {@link SettingsService} that uses
@@ -157,7 +159,7 @@ public class CASettingsService
 	private MessageSource messageSource;
 
 	private final Map<String, FactoryHelper> factories = new TreeMap<String, FactoryHelper>();
-	private final Map<String, SettingSpecifierProvider> providers = new TreeMap<String, SettingSpecifierProvider>();
+	private final Map<String, ProviderHelper> providers = new TreeMap<String, ProviderHelper>();
 	private final Map<String, SettingResourceHandler> handlers = new TreeMap<String, SettingResourceHandler>();
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -184,7 +186,7 @@ public class CASettingsService
 		final String factoryPid = provider.getFactoryUID();
 
 		synchronized ( factories ) {
-			factories.put(factoryPid, new FactoryHelper(provider));
+			factories.put(factoryPid, new FactoryHelper(provider, properties));
 
 			// find all configured factory instances, and publish those
 			// configurations now. First we look up all registered factory
@@ -274,7 +276,7 @@ public class CASettingsService
 
 		if ( !factoryFound ) {
 			synchronized ( providers ) {
-				providers.put(pid, provider);
+				providers.put(pid, new ProviderHelper(provider, properties));
 			}
 		}
 
@@ -328,19 +330,30 @@ public class CASettingsService
 	@Override
 	public List<SettingSpecifierProvider> getProviders() {
 		synchronized ( providers ) {
-			return new ArrayList<SettingSpecifierProvider>(providers.values());
+			return providers.values().stream().map(ProviderHelper::getProvider).collect(toList());
+		}
+	}
+
+	@Override
+	public List<SettingSpecifierProvider> getProviders(SearchFilter filter) {
+		synchronized ( providers ) {
+			return providers.values().stream().filter(h -> h.matches(filter))
+					.map(ProviderHelper::getProvider).collect(toList());
 		}
 	}
 
 	@Override
 	public List<SettingSpecifierProviderFactory> getProviderFactories() {
-		List<SettingSpecifierProviderFactory> results;
 		synchronized ( factories ) {
-			results = new ArrayList<SettingSpecifierProviderFactory>(factories.size());
-			for ( FactoryHelper helper : factories.values() ) {
-				results.add(helper.getFactory());
-			}
-			return results;
+			return factories.values().stream().map(FactoryHelper::getFactory).collect(toList());
+		}
+	}
+
+	@Override
+	public List<SettingSpecifierProviderFactory> getProviderFactories(SearchFilter filter) {
+		synchronized ( factories ) {
+			return factories.values().stream().filter(h -> h.matches(filter))
+					.map(FactoryHelper::getFactory).collect(toList());
 		}
 	}
 
@@ -557,9 +570,6 @@ public class CASettingsService
 			// delete factory reference
 			settingDao.deleteSetting(getFactorySettingKey(factoryUID), instanceUID);
 
-			// delete instance values
-			settingDao.deleteSetting(getFactoryInstanceSettingKey(factoryUID, instanceUID));
-
 			// delete Configuration
 			try {
 				Configuration conf = getConfiguration(factoryUID, instanceUID);
@@ -574,8 +584,12 @@ public class CASettingsService
 
 	@Override
 	public void resetProviderFactoryInstance(String factoryUID, String instanceUID) {
-		deleteProviderFactoryInstance(factoryUID, instanceUID);
 		synchronized ( factories ) {
+			deleteProviderFactoryInstance(factoryUID, instanceUID);
+
+			// delete instance values
+			settingDao.deleteSetting(getFactoryInstanceSettingKey(factoryUID, instanceUID));
+
 			addProviderFactoryInstance(factoryUID, instanceUID);
 		}
 	}

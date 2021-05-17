@@ -26,7 +26,7 @@ package net.solarnetwork.node.setup.s3;
  * Configuration for a single setup package.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.1
  */
 public class S3SetupPackageConfiguration {
@@ -48,6 +48,18 @@ public class S3SetupPackageConfiguration {
 	private String name;
 	private String version;
 	private String[] arguments;
+
+	/**
+	 * Get a description of this configuration.
+	 * 
+	 * @return the description
+	 */
+	public String getDescription() {
+		if ( version != null ) {
+			return name + " " + version;
+		}
+		return name;
+	}
 
 	public Action getAction() {
 		return action;

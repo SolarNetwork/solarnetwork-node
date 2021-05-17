@@ -25,11 +25,13 @@ package net.solarnetwork.node.metadata.json.test;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.isNull;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
@@ -37,7 +39,12 @@ import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -46,6 +53,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
+import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -89,6 +97,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		service.setIdentityService(identityService);
 		service.setSettingDao(settingDao);
 		service.setUpdateThrottleSeconds(0);
+		service.setUpdatePersistDelaySeconds(0);
 
 		ObjectMapperFactoryBean factory = new ObjectMapperFactoryBean();
 		factory.setFeaturesToDisable(Arrays.asList(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES));
@@ -418,7 +427,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		Capture<Iterable<Resource>> resourcesCaptor = new Capture<>(CaptureType.ALL);
 		settingsService.importSettingResources(eq(service.getSettingUID()), isNull(), eq(settingKey),
 				capture(resourcesCaptor));
-		EasyMock.expectLastCall().times(2);
+		expectLastCall().times(2);
 
 		AtomicInteger count = new AtomicInteger(0);
 		TestHttpHandler handler = new TestHttpHandler() {
@@ -492,9 +501,10 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 				.andReturn(Collections.singleton(jsonResource));
 
 		// then store as settings resource
-		Capture<Iterable<Resource>> resourcesCaptor = new Capture<>();
+		Capture<Iterable<Resource>> resourcesCaptor = new Capture<>(CaptureType.ALL);
 		settingsService.importSettingResources(eq(service.getSettingUID()), isNull(), eq(settingKey),
 				capture(resourcesCaptor));
+		expectLastCall().times(2); // persisted locally each time
 
 		TestHttpHandler handler = new TestHttpHandler() {
 
@@ -535,13 +545,23 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		service.run();
 
 		// THEN
-		Iterable<Resource> savedResources = resourcesCaptor.getValue();
-		List<Resource> rsrcs = StreamSupport.stream(savedResources.spliterator(), false)
-				.collect(Collectors.toList());
-		assertThat("Saved single resource", rsrcs, hasSize(1));
-		String json = FileCopyUtils.copyToString(
-				new InputStreamReader(rsrcs.get(0).getInputStream(), Charset.forName("UTF-8")));
-		assertThat("Cached metadata json", json, equalTo("{\"m\":{\"foo\":\"bar\",\"bim\":\"bop\"}}"));
+		List<Iterable<Resource>> savedResourcesList = resourcesCaptor.getValues();
+		assertThat("Two sets of saved resources", savedResourcesList, hasSize(2));
+		for ( int i = 0; i < 2; i++ ) {
+			Iterable<Resource> savedResources = savedResourcesList.get(i);
+			List<Resource> rsrcs = StreamSupport.stream(savedResources.spliterator(), false)
+					.collect(Collectors.toList());
+			assertThat("Saved single resource", rsrcs, hasSize(1));
+			String json = FileCopyUtils.copyToString(
+					new InputStreamReader(rsrcs.get(0).getInputStream(), Charset.forName("UTF-8")));
+			String expectedJson;
+			if ( i == 0 ) {
+				expectedJson = "{\"m\":{\"foo\":\"bar\",\"bim\":\"bam\"}}";
+			} else {
+				expectedJson = "{\"m\":{\"foo\":\"bar\",\"bim\":\"bop\"}}";
+			}
+			assertThat("Cached metadata json " + i, json, equalTo(expectedJson));
+		}
 	}
 
 	@Test
@@ -567,6 +587,86 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		service.addSourceMetadata(TEST_SOUCE_ID, meta);
 
 		// THEN
+	}
+
+	private static class TestScheduledFuture extends CompletableFuture<Object>
+			implements ScheduledFuture<Object> {
+
+		@Override
+		public long getDelay(TimeUnit unit) {
+			return 0;
+		}
+
+		@Override
+		public int compareTo(Delayed o) {
+			return 0;
+		}
+
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void addMetadata_cached_coalesced_delayPersist() throws Exception {
+		// GIVEN
+		service.setUpdatePersistDelaySeconds(60);
+		service.setUpdateThrottleSeconds(2);
+		final String settingKey = DigestUtils
+				.md5DigestAsHex(TEST_SOUCE_ID.getBytes(Charset.forName("UTF-8")));
+
+		expect(identityService.getNodeId()).andReturn(TEST_NODE_ID).anyTimes();
+		expect(identityService.getSolarInBaseUrl()).andReturn(getHttpServerBaseUrl()).anyTimes();
+
+		// cached metadata available
+		ByteArrayResource jsonResource = new ByteArrayResource(
+				"{\"m\":{\"foo\":\"bar\"}}".getBytes(Charset.forName("UTF-8")));
+		expect(settingsService.getSettingResources(service.getSettingUID(), null, settingKey))
+				.andReturn(Collections.singleton(jsonResource));
+
+		// create delayed persist task
+		Capture<Runnable> persistRunCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Date> persistDateCaptor = new Capture<>(CaptureType.ALL);
+		TestScheduledFuture f1 = new TestScheduledFuture();
+		TestScheduledFuture f2 = new TestScheduledFuture();
+		expect(taskScheduler.schedule(capture(persistRunCaptor), capture(persistDateCaptor)))
+				.andReturn((ScheduledFuture) f1).andAnswer(new IAnswer<ScheduledFuture<?>>() {
+
+					@Override
+					public ScheduledFuture<?> answer() throws Throwable {
+						persistRunCaptor.getValues().get(1).run();
+						f2.complete(Boolean.TRUE);
+						return f2;
+					}
+				});
+
+		// then store as settings resource
+		Capture<Iterable<Resource>> resourcesCaptor = new Capture<>();
+		settingsService.importSettingResources(eq(service.getSettingUID()), isNull(), eq(settingKey),
+				capture(resourcesCaptor));
+
+		// WHEN
+		replayAll();
+
+		GeneralDatumMetadata meta = new GeneralDatumMetadata();
+		meta.putInfoValue("bim", "bam");
+		service.addSourceMetadata(TEST_SOUCE_ID, meta);
+
+		// call again with new value; 2nd time does not re-load from local cache because already in memory
+		meta.putInfoValue("bee", "bop");
+		service.addSourceMetadata(TEST_SOUCE_ID, meta);
+
+		// THEN
+		Iterable<Resource> savedResources = resourcesCaptor.getValue();
+		List<Resource> rsrcs = StreamSupport.stream(savedResources.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Saved single resource", rsrcs, hasSize(1));
+		String json = FileCopyUtils.copyToString(
+				new InputStreamReader(rsrcs.get(0).getInputStream(), Charset.forName("UTF-8")));
+		assertThat("Cached metadata json", json,
+				is(equalTo("{\"m\":{\"foo\":\"bar\",\"bim\":\"bam\",\"bee\":\"bop\"}}")));
+
+		assertThat("Persist future 1 cancelled from 2nd update", f1.isCancelled(), is(equalTo(true)));
+		assertThat("Persist future 2 completed after 2nd update timeout",
+				f2.isDone() && !f2.isCompletedExceptionally() && !f2.isCancelled(), is(equalTo(true)));
 	}
 
 }

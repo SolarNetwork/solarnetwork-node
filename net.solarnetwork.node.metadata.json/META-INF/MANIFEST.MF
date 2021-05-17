@@ -1,9 +1,9 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: JSON Metadata Service
-Bundle-Description: Support for loading/publishing node and source-level metadata from/to SolarNet.
+Bundle-Name: Metadata Service (SolarNetwork)
+Bundle-Description: Support for loading/publishing node and source-level metadata from/to SolarNetwork.
 Bundle-SymbolicName: net.solarnetwork.node.metadata.json
-Bundle-Version: 1.4.1
+Bundle-Version: 1.5.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.metadata.json
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8

@@ -38,10 +38,11 @@ import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.66
  */
-public interface GeneralDatumSamplesTransformService extends Identifiable {
+public interface GeneralDatumSamplesTransformService
+		extends Identifiable, net.solarnetwork.domain.Identifiable {
 
 	/**
 	 * Transform a samples instance.
@@ -75,9 +76,8 @@ public interface GeneralDatumSamplesTransformService extends Identifiable {
 	 * @return The transformed samples instance, which may be the
 	 *         {@code samples} instance or a new instance, or {@literal null} to
 	 *         indicate the samples should not be processed.
-	 * @since 1.2
 	 */
 	GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
-			Map<String, ?> parameters);
+			Map<String, Object> parameters);
 
 }

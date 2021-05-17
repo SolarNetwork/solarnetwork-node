@@ -150,9 +150,16 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 	public Trigger getTrigger() {
 		Trigger result = trigger;
 		if ( triggerCronExpression != null && result instanceof CronTrigger ) {
+			String schedule = triggerCronExpression;
 			try {
-				result = ((CronTrigger) result).getTriggerBuilder().withSchedule(
-						CronScheduleBuilder.cronScheduleNonvalidatedExpression(triggerCronExpression))
+				try {
+					Long.parseLong(triggerCronExpression);
+					schedule = "0 * * * * ?";
+				} catch ( NumberFormatException e ) {
+					// ignore
+				}
+				result = ((CronTrigger) result).getTriggerBuilder()
+						.withSchedule(CronScheduleBuilder.cronScheduleNonvalidatedExpression(schedule))
 						.build();
 			} catch ( ParseException e ) {
 				LOG.warn("Error parsing cron expression [{}]: {}. Trigger unchanged as {}",

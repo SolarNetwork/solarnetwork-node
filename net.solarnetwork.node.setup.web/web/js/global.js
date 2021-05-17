@@ -341,16 +341,17 @@ SolarNode.extractJSONPath = function(root, path) {
 };
 
 SolarNode.tryGotoURL = function(destURL) {
+	console.info('Trying to go to URL: ' +destURL);
 	function tryLoadUrl(url) {
-		function retry(error) {
+		function retry() {
 			setTimeout(function() {
 				tryLoadUrl(url);
 			}, 2000);
 		}
 		
-		console.log('Trying to refresh URL ' + url);
 		$.getJSON(url).then(function() {
 			// we got csrf; but now try destURL to make sure that's ready
+			console.info('Checking URL: ' + destURL);
 			$.ajax({
 				type: 'HEAD',
 				url: destURL,
@@ -358,7 +359,15 @@ SolarNode.tryGotoURL = function(destURL) {
 			}).then(function() {
 				// successfully got HEAD of destURL; redirect there now
 				window.location = destURL;
-			}, retry);
+			}, function(xhr, status) {
+				if ( stats == '302' ) {
+					// redirect, that's OK
+					window.location = destURL;
+				} else {
+					console.info('Unable to reach ' +destURL +'; will try again again a 2s...');
+					retry();
+				}
+			});
 		}, retry);
 	}
 	tryLoadUrl(SolarNode.context.path('/csrf'));

@@ -27,8 +27,13 @@ package net.solarnetwork.node.domain;
  * class because the node ID is implied by the node's identity.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class GeneralNodeDatum extends GeneralDatumSupport implements Cloneable {
+
+	@Override
+	public GeneralNodeDatum clone() {
+		return (GeneralNodeDatum) super.clone();
+	}
 
 }

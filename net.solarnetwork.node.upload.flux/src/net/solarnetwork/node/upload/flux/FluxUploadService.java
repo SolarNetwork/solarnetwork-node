@@ -30,6 +30,7 @@ import static net.solarnetwork.node.OperationalModesService.hasActiveOperational
 import static net.solarnetwork.node.settings.support.SettingsUtil.dynamicListSettingSpecifier;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -40,6 +41,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.apache.commons.codec.binary.Hex;
@@ -56,11 +58,15 @@ import net.solarnetwork.common.mqtt.MqttQos;
 import net.solarnetwork.common.mqtt.MqttStats;
 import net.solarnetwork.common.mqtt.MqttVersion;
 import net.solarnetwork.common.mqtt.ReconfigurableMqttConnection;
+import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.domain.Identifiable;
 import net.solarnetwork.io.ObjectEncoder;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.GeneralDatumSupport;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
@@ -77,7 +83,7 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 1.8
+ * @version 1.9
  */
 public class FluxUploadService extends BaseMqttConnectionService
 		implements EventHandler, SettingSpecifierProvider, SettingsChangeObserver {
@@ -121,6 +127,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 	private FluxFilterConfig[] filters;
 	private boolean includeVersionTag = DEFAULT_INCLUDE_VERSION_TAG;
 	private OptionalServiceCollection<ObjectEncoder> datumEncoders;
+	private OptionalServiceCollection<GeneralDatumSamplesTransformService> transformServices;
 
 	/**
 	 * Constructor.
@@ -237,7 +244,10 @@ public class FluxUploadService extends BaseMqttConnectionService
 					if ( sourceId == null || sourceId.isEmpty() ) {
 						return;
 					}
-					Map<String, Object> data = mapForEvent(event);
+
+					// FIXME transform
+
+					Map<String, Object> data = mapForEvent(sourceId, event);
 					if ( data == null || data.isEmpty() ) {
 						return;
 					}
@@ -323,29 +333,40 @@ public class FluxUploadService extends BaseMqttConnectionService
 	}
 
 	private ObjectEncoder encoderForSourceId(String sourceId) {
-		OptionalServiceCollection<ObjectEncoder> encoders = getDatumEncoders();
-		if ( encoders == null ) {
+		return serviceForSourceId(sourceId, getDatumEncoders(), FluxFilterConfig::getDatumEncoderUid);
+	}
+
+	private GeneralDatumSamplesTransformService transformServiceForSourceId(String sourceId) {
+		return serviceForSourceId(sourceId, getTransformServices(),
+				FluxFilterConfig::getTransformServiceUid);
+	}
+
+	private <T extends Identifiable> T serviceForSourceId(String sourceId,
+			OptionalServiceCollection<T> services, Function<FluxFilterConfig, String> uidProvider) {
+		if ( services == null ) {
 			return null;
 		}
 		FluxFilterConfig[] filters = getFilters();
 		if ( filters == null || filters.length < 1 ) {
 			return null;
 		}
-		Iterable<ObjectEncoder> encoderItr = encoders.services();
+		Iterable<T> serviceItr = null;
 		for ( FluxFilterConfig cfg : filters ) {
-			String uid = (cfg != null && cfg.getDatumEncoderUid() != null
-					&& !cfg.getDatumEncoderUid().isEmpty() ? cfg.getDatumEncoderUid() : null);
-			if ( uid == null ) {
+			String uid = (cfg != null ? uidProvider.apply(cfg) : null);
+			if ( uid == null || uid.isEmpty() ) {
 				continue;
 			}
 			Pattern filterSourceId = cfg.getSourceIdRegex();
 			if ( filterSourceId == null || filterSourceId.matcher(sourceId).find() ) {
-				for ( ObjectEncoder encoder : encoderItr ) {
-					if ( uid.equals(encoder.getUid()) ) {
-						return encoder;
+				if ( serviceItr == null ) {
+					serviceItr = services.services();
+				}
+				for ( T service : serviceItr ) {
+					if ( uid.equals(service.getUid()) ) {
+						return service;
 					}
 				}
-				// if no encoder available, don't keep checking more filters for another
+				// if no service available, don't keep checking more filters for another
 				break;
 			}
 		}
@@ -367,7 +388,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 		return null;
 	}
 
-	private Map<String, Object> mapForEvent(Event event) {
+	private Map<String, Object> mapForEvent(String sourceId, Event event) {
 		if ( event == null ) {
 			return null;
 		}
@@ -380,7 +401,24 @@ public class FluxUploadService extends BaseMqttConnectionService
 		for ( String propName : propNames ) {
 			Object propVal = event.getProperty(propName);
 			if ( Datum.DATUM_PROPERTY.equals(propName) && (propVal instanceof Datum) ) {
-				Map<String, ?> datumProps = ((Datum) propVal).asSimpleMap();
+				Datum d = (Datum) propVal;
+				if ( d instanceof GeneralDatumSupport ) {
+					GeneralDatumSupport gds = (GeneralDatumSupport) d;
+					GeneralDatumSamplesTransformService xform = transformServiceForSourceId(sourceId);
+					if ( xform != null ) {
+						GeneralDatumSamples samples = xform.transformSamples(d, gds.getSamples(),
+								new HashMap<>(4));
+						if ( samples == null ) {
+							return null;
+						}
+						if ( samples != gds.getSamples() ) {
+							GeneralDatumSupport newGds = gds.clone();
+							newGds.setSamples(samples);
+							d = newGds;
+						}
+					}
+				}
+				Map<String, ?> datumProps = d.asSimpleMap();
 				if ( datumProps != null ) {
 					for ( Map.Entry<String, ?> me : datumProps.entrySet() ) {
 						String datumPropName = me.getKey();
@@ -714,6 +752,28 @@ public class FluxUploadService extends BaseMqttConnectionService
 	 */
 	public void setWireLogging(boolean wireLogging) {
 		getMqttConfig().setWireLoggingEnabled(wireLogging);
+	}
+
+	/**
+	 * Get the transform services to use for MQTT messages.
+	 * 
+	 * @return the transform services
+	 * @since 1.9
+	 */
+	public OptionalServiceCollection<GeneralDatumSamplesTransformService> getTransformServices() {
+		return transformServices;
+	}
+
+	/**
+	 * Set the available transform services to use for MQTT messages.
+	 * 
+	 * @param transformServices
+	 *        the services to set
+	 * @since 1.9
+	 */
+	public void setTransformServices(
+			OptionalServiceCollection<GeneralDatumSamplesTransformService> transformServices) {
+		this.transformServices = transformServices;
 	}
 
 }

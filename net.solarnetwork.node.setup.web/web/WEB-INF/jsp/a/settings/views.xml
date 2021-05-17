@@ -15,6 +15,17 @@
 	</definition>
 		
 	<definition name="factory-settings-list" extends="settings">
+		<put-attribute name="navloc" value="settings-component" type="string"/>
+		<put-attribute name="body" value="/WEB-INF/jsp/a/settings/factory-list.jsp" />
+	</definition>
+		
+	<definition name="filters-list" extends="settings">
+		<put-attribute name="navloc" value="filters" type="string"/>
+		<put-attribute name="body" value="/WEB-INF/jsp/a/settings/filters.jsp" />
+	</definition>
+		
+	<definition name="filters-factory-settings-list" extends="settings">
+		<put-attribute name="navloc" value="filters-component" type="string"/>
 		<put-attribute name="body" value="/WEB-INF/jsp/a/settings/factory-list.jsp" />
 	</definition>
 		

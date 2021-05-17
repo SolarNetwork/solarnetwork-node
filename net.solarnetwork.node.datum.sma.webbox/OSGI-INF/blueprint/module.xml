@@ -23,27 +23,27 @@
 			</list>
 		</property>
 	</bean>
-	
+
 	<bean id="placeholderService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
 	</bean>
-	
+
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
 	</bean>
-	
+
 	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
 		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
 	</bean>
 
-	<!-- 
+	<!--
 		WebBox Service
 	 -->
-	
+
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="SMA WebBox"/>
@@ -51,7 +51,7 @@
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
-	
+
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.sma.webbox" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.hw.sma.modbus.webbox.WebBoxOperations</beans:value>
@@ -71,12 +71,12 @@
 							<entry key="UID" value="Modbus Port"/>
 						</map>
 					</property>
-				</bean>	
+				</bean>
 			</property>
 		</bean>
 	</osgix:managed-service-factory>
 
-	<!-- 
+	<!--
 		Device Data Source
 	 -->
 	<bean id="dsMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
@@ -88,11 +88,11 @@
 			</list>
 		</property>
 	</bean>
-	
+
 	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
 		<property name="prefix" value="datumDataSource."/>
 		<property name="delegate" ref="dsMessageSource"/>
-	</bean>	
+	</bean>
 
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
@@ -101,7 +101,7 @@
 			<property name="messageSource" ref="dsMessageSource"/>
 		</bean>
 	</service>
-	
+
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.sma.webbox.ds" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
@@ -150,14 +150,14 @@
 									<argument>
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>
-											<property name="serviceClassName" 
-												value="net.solarnetwork.node.hw.sma.modbus.webbox.WebBoxOperations"/>
+											<property name="serviceClassName" value="net.solarnetwork.node.hw.sma.modbus.webbox.WebBoxOperations"/>
+											<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 											<property name="propertyFilters">
 												<map>
 													<entry key="UID" value="WebBox"/>
 												</map>
 											</property>
-										</bean>	
+										</bean>
 									</argument>
 									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="messageSource" ref="jobMessageSource"/>
@@ -165,14 +165,15 @@
 									<property name="samplesTransformService">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>
-											<property name="serviceClassName" 
-												value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
+											<property name="serviceClassName" value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
+											<property name="serviceFilter" value="(!(role=global))"/>
+											<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 											<property name="propertyFilters">
 												<map>
 													<entry key="UID" value=""/>
 												</map>
 											</property>
-										</bean>	
+										</bean>
 									</property>
 								</bean>
 							</entry>

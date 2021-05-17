@@ -23,6 +23,8 @@
 		<beans:prop key="job.backup.cron">0 3 0 ? * SAT</beans:prop>
 		<beans:prop key="placeholders.dir">conf/placeholders.d</beans:prop>
 	</osgix:cm-properties>
+
+	<ctx:property-placeholder properties-ref="core.cfg"/>
 	
 	<!-- Service References -->
 
@@ -79,8 +81,6 @@
 	<reference-list id="sampleTransformers" availability="optional"
 		interface="net.solarnetwork.node.domain.GeneralDatumSamplesTransformer"/>
 		
-	<!-- Published Services -->
-
 	<!-- Provide a centralized ObjectMapper for JSON processing. -->
 	<service interface="net.solarnetwork.util.ObjectMapperService">
 		<service-properties>
@@ -174,15 +174,99 @@
 		</bean>
 	</service>
 	
-	<service interface="net.solarnetwork.node.GeneralDatumSamplesTransformService" ranking="10">
+	<reference-list id="datumXformServices" interface="net.solarnetwork.node.GeneralDatumSamplesTransformService" 
+		filter="(!(role=global))" availability="optional"/>
+	
+	<!-- 
+		Global GeneralDatumSamplesTransformService that applies all available 
+		GeneralDatumSamplesTransformer services at runtime. This special GeneralDatumSamplesTransformService
+		serves as a "applicable to all captured datum" transform service. Other specialized 
+		GeneralDatumSamplesTransformService should be referenced via a service filter like
+		(!(role=global)) so as not to use this one inadvertently.
+	 -->
+	<service ranking="10">
+		<interfaces>
+			<value>net.solarnetwork.node.GeneralDatumSamplesTransformService</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+		</interfaces>
 		<service-properties>
-			<entry key="role" value="global"/>
+			<entry key="role">
+				<array value-type="java.lang.String">
+					<value>global</value>
+					<value>datum-filter</value>
+				</array>
+			</entry>
 		</service-properties>
-		<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService">
+		<bean class="net.solarnetwork.node.support.GeneralDatumSamplesTransformChain">
+			<osgix:managed-properties persistent-id="net.solarnetwork.node.datum.xform.solarin" autowire-on-update="true"/>
+			<argument value="net.solarnetwork.node.datum.xform.solarin"/>
+			<argument ref="datumXformServices"/>
+			<argument value="false"/>
+			<argument>
+				<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService">
+					<property name="sampleTransformers" ref="sampleTransformers"/>
+				</bean>
+			</argument>
 			<property name="sampleTransformers" ref="sampleTransformers"/>
+			<property name="uid" value="SolarIn"/>
+			<property name="messageSource">
+				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+					<property name="basename" value="net.solarnetwork.node.support.SolarInGeneralDatumSamplesTransformChain"/>
+				</bean>
+			</property>			
 		</bean>
 	</service>
 	
+	<!-- User Datum Filter Chain factory -->	
+	<bean id="userDatumFilterChainMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.support.UserGeneralDatumSamplesTransformChain</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+			</list>
+		</property>
+	</bean>
+	
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<service-properties>
+			<entry key="role">
+				<array value-type="java.lang.String">
+					<value>user</value>
+					<value>datum-filter</value>
+				</array>
+			</entry>
+		</service-properties>
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Datum Filter Chain"/>
+			<property name="factoryUID" value="net.solarnetwork.node.datum.xform.user"/>
+			<property name="messageSource" ref="userDatumFilterChainMessageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.xform.user" autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.GeneralDatumSamplesTransformService</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.xform.user"/>
+			<beans:entry key="role">
+				<beans:array value-type="java.lang.String">
+					<beans:value>user</beans:value>
+					<beans:value>datum-filter</beans:value>
+				</beans:array>
+			</beans:entry>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.support.GeneralDatumSamplesTransformChain">
+			<argument value="net.solarnetwork.node.datum.xform.user"/>
+			<argument ref="datumXformServices"/>
+			<argument value="true"/>
+			<argument><null/></argument>
+			<property name="messageSource" ref="userDatumFilterChainMessageSource"/>
+		</bean>
+	</osgix:managed-service-factory>
+
+	<!-- Platform package service -->	
 	<service interface="net.solarnetwork.node.PlatformPackageService">
 		<bean class="net.solarnetwork.node.support.NativeTarPlatformPackageService">
 			<property name="taskExecutor">
@@ -193,10 +277,6 @@
 		</bean>
 	</service>
 	
-	<!-- Supporting Services -->
-
-	<ctx:property-placeholder properties-ref="core.cfg"/>
-
 	<!-- Quartz scheduler for scheduling all jobs -->
 	<bean id="scheduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
 		<property name="applicationContextSchedulerContextKey" value="applicationContext"/>
@@ -350,5 +430,45 @@
 			<property name="staticPropertiesPath" value="${placeholders.dir}"/>
 		</bean>
 	</service>
+	
+	<!-- User Metadata Service -->
+	
+	<bean id="userMetadataMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.support.UserMetadataService</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+			</list>
+		</property>
+	</bean>
+	
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="User Metadata Service"/>
+			<property name="factoryUID" value="net.solarnetwork.node.metadata.user"/>
+			<property name="messageSource" ref="userMetadataMessageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.metadata.user" 
+			autowire-on-update="true" update-method="configurationChanged">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.MetadataService</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.metadata.user"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.support.UserMetadataService">
+			<argument>
+				<bean class="net.solarnetwork.util.DynamicServiceTracker">
+					<property name="bundleContext" ref="bundleContext"/>
+					<property name="serviceClassName" value="net.solarnetwork.node.setup.SetupService"/>
+				</bean>
+			</argument>
+			<property name="objectMapper" ref="objectMapper"/>
+			<property name="messageSource" ref="userMetadataMessageSource"/>
+		</bean>
+	</osgix:managed-service-factory>
 	
 </blueprint>

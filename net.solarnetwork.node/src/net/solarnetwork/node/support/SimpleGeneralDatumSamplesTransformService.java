@@ -31,17 +31,24 @@ import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
+import net.solarnetwork.node.settings.MappableSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingsChangeObserver;
 
 /**
- * Basic implementation of {@link GeneralDatumSamplesTransformService}.
+ * Basic implementation of {@link GeneralDatumSamplesTransformService} that
+ * adapts a collection of {@link GeneralDatumSamplesTransformer} into a single
+ * service.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.66
  */
-public class SimpleGeneralDatumSamplesTransformService extends BaseIdentifiable
-		implements GeneralDatumSamplesTransformService {
+public class SimpleGeneralDatumSamplesTransformService extends BaseIdentifiable implements
+		GeneralDatumSamplesTransformService, SettingsChangeObserver, SettingSpecifierProvider {
 
+	private final String settingUid;
 	private final Map<String, Object> staticParameters;
 	private List<GeneralDatumSamplesTransformer> sampleTransformers;
 
@@ -49,7 +56,17 @@ public class SimpleGeneralDatumSamplesTransformService extends BaseIdentifiable
 	 * Constructor.
 	 */
 	public SimpleGeneralDatumSamplesTransformService() {
-		this(null, null);
+		this(null, null, null);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param settingUid
+	 *        the setting UID
+	 */
+	public SimpleGeneralDatumSamplesTransformService(String settingUid) {
+		this(settingUid, null, null);
 	}
 
 	/**
@@ -59,7 +76,7 @@ public class SimpleGeneralDatumSamplesTransformService extends BaseIdentifiable
 	 *        optional static properties to pass to the transformers
 	 */
 	public SimpleGeneralDatumSamplesTransformService(Map<String, Object> staticParameters) {
-		this(null, staticParameters);
+		this(null, null, staticParameters);
 	}
 
 	/**
@@ -74,15 +91,18 @@ public class SimpleGeneralDatumSamplesTransformService extends BaseIdentifiable
 	 * to the static parameters, overriding duplicate values.
 	 * </p>
 	 * 
+	 * @param settingUid
+	 *        the setting UID
 	 * @param sampleTransformers
 	 *        the transformers
 	 * @param staticParameters
 	 *        optional static properties to pass to the transformers
 	 */
-	public SimpleGeneralDatumSamplesTransformService(
+	public SimpleGeneralDatumSamplesTransformService(String settingUid,
 			List<GeneralDatumSamplesTransformer> sampleTransformers,
 			Map<String, Object> staticParameters) {
 		super();
+		this.settingUid = settingUid;
 		if ( staticParameters != null ) {
 			staticParameters = Collections.unmodifiableMap(new LinkedHashMap<>(staticParameters));
 		}
@@ -91,8 +111,18 @@ public class SimpleGeneralDatumSamplesTransformService extends BaseIdentifiable
 	}
 
 	@Override
+	public void configurationChanged(Map<String, Object> properties) {
+		final List<GeneralDatumSamplesTransformer> xforms = sampleTransformers;
+		for ( GeneralDatumSamplesTransformer xform : xforms ) {
+			if ( xform instanceof SettingsChangeObserver ) {
+				((SettingsChangeObserver) xform).configurationChanged(properties);
+			}
+		}
+	}
+
+	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
-			Map<String, ?> parameters) {
+			Map<String, Object> parameters) {
 		GeneralDatumSamples result = samples;
 		List<GeneralDatumSamplesTransformer> xforms = sampleTransformers;
 		Map<String, ?> xformParams = xformParameterMap(parameters);
@@ -118,6 +148,22 @@ public class SimpleGeneralDatumSamplesTransformService extends BaseIdentifiable
 		return combined;
 	}
 
+	@Override
+	public String getSettingUID() {
+		return settingUid;
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		List<SettingSpecifier> result = baseIdentifiableSettings("");
+		GeneralDatumSamplesTransformer xform = getSampleTransformer();
+		if ( xform instanceof SettingSpecifierProvider ) {
+			List<SettingSpecifier> settings = ((SettingSpecifierProvider) xform).getSettingSpecifiers();
+			result.addAll(MappableSpecifier.mapTo(settings, "sampleTransformer."));
+		}
+		return result;
+	}
+
 	/**
 	 * Set the sample transformers to use.
 	 * 
@@ -126,6 +172,28 @@ public class SimpleGeneralDatumSamplesTransformService extends BaseIdentifiable
 	 */
 	public void setSampleTransformers(List<GeneralDatumSamplesTransformer> sampleTransformers) {
 		this.sampleTransformers = sampleTransformers;
+	}
+
+	/**
+	 * Get the first available transformer.
+	 * 
+	 * @return the first available transformer
+	 * @since 1.1
+	 */
+	public GeneralDatumSamplesTransformer getSampleTransformer() {
+		return (sampleTransformers != null && sampleTransformers.size() > 0 ? sampleTransformers.get(0)
+				: null);
+	}
+
+	/**
+	 * Set a sample transformer to use.
+	 * 
+	 * @param xform
+	 *        the transformer
+	 * @since 1.1
+	 */
+	public void setSampleTransformer(GeneralDatumSamplesTransformer xform) {
+		setSampleTransformers(Collections.singletonList(xform));
 	}
 
 }

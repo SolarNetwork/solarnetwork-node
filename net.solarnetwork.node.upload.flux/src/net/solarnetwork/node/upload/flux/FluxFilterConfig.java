@@ -49,7 +49,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Configuration for filtering options used by SolarFlux.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.4
  */
 public class FluxFilterConfig implements SettingsChangeObserver {
@@ -66,6 +66,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 
 	private Pattern sourceIdRegex;
 	private String datumEncoderUid;
+	private String transformServiceUid;
 	private Integer frequencySeconds;
 	private String[] propIncludeValues;
 	private String[] propExcludeValues;
@@ -210,6 +211,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>(8);
 
 		result.add(new BasicTextFieldSettingSpecifier(prefix + "sourceIdRegexValue", ""));
+		result.add(new BasicTextFieldSettingSpecifier(prefix + "transformServiceUid", ""));
 		result.add(new BasicTextFieldSettingSpecifier(prefix + "datumEncoderUid", ""));
 		result.add(new BasicTextFieldSettingSpecifier(prefix + "frequencySeconds", ""));
 
@@ -448,6 +450,29 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	 */
 	public void setDatumEncoderUid(String datumEncoderUid) {
 		this.datumEncoderUid = datumEncoderUid;
+	}
+
+	/**
+	 * Get the UID of a {code GeneralDatumSamplesTransformService} to transform
+	 * the datum with.
+	 * 
+	 * @return the UID, or {@literal null}
+	 * @since 1.2
+	 */
+	public String getTransformServiceUid() {
+		return transformServiceUid;
+	}
+
+	/**
+	 * Set the UID of a {code GeneralDatumSamplesTransformService} to transform
+	 * the datum with.
+	 * 
+	 * @param transformServiceUid
+	 *        the UID to set
+	 * @since 1.2
+	 */
+	public void setTransformServiceUid(String transformServiceUid) {
+		this.transformServiceUid = transformServiceUid;
 	}
 
 }

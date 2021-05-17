@@ -32,12 +32,13 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.core.io.Resource;
 import net.solarnetwork.node.Constants;
+import net.solarnetwork.support.SearchFilter;
 
 /**
  * Service API for settings.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public interface SettingsService {
 
@@ -125,11 +126,33 @@ public interface SettingsService {
 	List<SettingSpecifierProvider> getProviders();
 
 	/**
+	 * Get a list of all possible non-factory setting providers.
+	 * 
+	 * @param filter
+	 *        the search filter; the filter is applied to the factory service
+	 *        properties
+	 * @return list of setting providers (never {@literal null})
+	 * @since 1.6
+	 */
+	List<SettingSpecifierProvider> getProviders(SearchFilter filter);
+
+	/**
 	 * Get a list of all possible setting provider factories.
 	 * 
 	 * @return list of setting provider factories (never {@literal null})
 	 */
 	List<SettingSpecifierProviderFactory> getProviderFactories();
+
+	/**
+	 * Get a filtered list of all possible setting provider factories.
+	 * 
+	 * @param filter
+	 *        the search filter; the filter is applied to the factory service
+	 *        properties
+	 * @return list of setting provider factories (never {@literal null})
+	 * @since 1.6
+	 */
+	List<SettingSpecifierProviderFactory> getProviderFactories(SearchFilter filter);
 
 	/**
 	 * Get a specific factory for a given UID.
@@ -169,7 +192,7 @@ public interface SettingsService {
 	 *        the instance UID to reset
 	 */
 	void resetProviderFactoryInstance(String factoryUID, String instanceUID);
-	
+
 	/**
 	 * Get all possible setting providers for a specific factory UID, grouped by
 	 * instance ID.

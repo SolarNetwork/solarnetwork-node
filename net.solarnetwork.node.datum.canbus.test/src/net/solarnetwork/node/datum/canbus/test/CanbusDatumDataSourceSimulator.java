@@ -64,6 +64,7 @@ import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsImportOptions;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.SettingsUpdates;
+import net.solarnetwork.support.SearchFilter;
 import net.solarnetwork.util.ByteUtils;
 import net.solarnetwork.util.ClassUtils;
 import net.solarnetwork.util.JsonUtils;
@@ -145,6 +146,16 @@ public class CanbusDatumDataSourceSimulator {
 	public static final class InternalSettingsService implements SettingsService {
 
 		private int instanceId = -1;
+
+		@Override
+		public List<SettingSpecifierProvider> getProviders(SearchFilter filter) {
+			return null;
+		}
+
+		@Override
+		public List<SettingSpecifierProviderFactory> getProviderFactories(SearchFilter filter) {
+			return null;
+		}
 
 		@Override
 		public List<SettingSpecifierProvider> getProviders() {

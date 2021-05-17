@@ -31,18 +31,21 @@ import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
+import net.solarnetwork.support.MapPathMatcher;
+import net.solarnetwork.support.SearchFilter;
 
 /**
  * Helper class for managing factory providers.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-public class FactoryHelper {
+public final class FactoryHelper {
 
 	private static final Logger log = LoggerFactory.getLogger(FactoryHelper.class);
 
 	private final SettingSpecifierProviderFactory factory;
+	private final Map<String, ?> properties;
 	private final Map<String, SettingSpecifierProvider> instanceMap;
 	private final Map<String, SettingResourceHandler> handlerMap;
 
@@ -51,9 +54,11 @@ public class FactoryHelper {
 	 * 
 	 * @param factory
 	 *        the factory to provide help to
+	 * @param properties
+	 *        the properties
 	 */
-	public FactoryHelper(SettingSpecifierProviderFactory factory) {
-		this(factory, new TreeMap<>(), new TreeMap<>());
+	public FactoryHelper(SettingSpecifierProviderFactory factory, Map<String, ?> properties) {
+		this(factory, properties, new TreeMap<>(), new TreeMap<>());
 	}
 
 	/**
@@ -61,16 +66,19 @@ public class FactoryHelper {
 	 * 
 	 * @param factory
 	 *        the factory to provide help to
+	 * @param properties
+	 *        the properties
 	 * @param instanceMap
 	 *        a map to use for tracking instance providers
 	 * @param handlerMap
 	 *        a map to use for tracking instance handlers
 	 */
-	public FactoryHelper(SettingSpecifierProviderFactory factory,
+	public FactoryHelper(SettingSpecifierProviderFactory factory, Map<String, ?> properties,
 			Map<String, SettingSpecifierProvider> instanceMap,
 			Map<String, SettingResourceHandler> handlerMap) {
 		super();
 		this.factory = factory;
+		this.properties = properties;
 		this.instanceMap = instanceMap;
 		this.handlerMap = handlerMap;
 	}
@@ -82,6 +90,31 @@ public class FactoryHelper {
 	 */
 	public SettingSpecifierProviderFactory getFactory() {
 		return factory;
+	}
+
+	/**
+	 * Get the properties.
+	 * 
+	 * @return the properties
+	 * @since 1.2
+	 */
+	public Map<String, ?> getProperties() {
+		return properties;
+	}
+
+	/**
+	 * Test if a filter matches the provider service properties.
+	 * 
+	 * @param filter
+	 *        the filter
+	 * @return {@literal true} if the filter matches
+	 * @since 1.2
+	 */
+	public boolean matches(SearchFilter filter) {
+		if ( properties == null ) {
+			return false;
+		}
+		return MapPathMatcher.matches(properties, filter);
 	}
 
 	/**

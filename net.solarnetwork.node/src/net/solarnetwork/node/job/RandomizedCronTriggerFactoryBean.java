@@ -35,10 +35,15 @@ import org.springframework.scheduling.quartz.CronTriggerFactoryBean;
  * <p>
  * The cron expression is only randomized if the
  * {@link #setCronExpression(String)} method is used to set the cron expression.
+ * Additionally, if a simple long string value is configured, a cron expression
+ * of {@literal 0 * * * * ?} will be used, but the
+ * {@link #BASE_CRON_EXPRESSION_KEY} job map value will be set to the original
+ * long string so the code scheduling the job might look for that and use a
+ * simple trigger instead of the cron.
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class RandomizedCronTriggerFactoryBean extends CronTriggerFactoryBean {
 
@@ -55,9 +60,18 @@ public class RandomizedCronTriggerFactoryBean extends CronTriggerFactoryBean {
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Override
-	public void setCronExpression(final String cronExpression) {
+	public void setCronExpression(String cronExpression) {
 		this.baseCronExpression = cronExpression;
 		this.finalCronExpression = cronExpression;
+		// look for plain number as milliseconds; we will trick ourselves into millisecond interval
+		try {
+			Long.parseLong(cronExpression);
+
+			// convert to "cron" of every minute, will generate random second
+			cronExpression = "0 * * * * ?";
+		} catch ( NumberFormatException e ) {
+			// ignore
+		}
 		if ( randomSecond ) {
 			int seconds = (int) Math.floor(Math.random() * 60);
 			String newExpression = cronExpression.replaceAll("^\\s*\\d+(\\s+)",
