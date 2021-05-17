@@ -331,6 +331,7 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 							BigDecimal stripped = newReading.stripTrailingZeros();
 							if ( !stripped.equals(newReading) ) {
 								// we stripped off some zeros, so replace now
+								newReading = stripped;
 								samples.putAccumulatingSampleValue(meterPropName, newReading);
 							}
 						}
@@ -348,7 +349,7 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 								meterDiff = meterDiff.divide(unitMs, RoundingMode.HALF_UP);
 							}
 						}
-						newReading = prevReading.add(meterDiff);
+						newReading = prevReading.add(meterDiff).stripTrailingZeros();
 						samples.putAccumulatingSampleValue(meterPropName, newReading);
 					}
 					if ( propSamples != null ) {
@@ -357,7 +358,6 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 								propSamples.averageValue(scale));
 					}
 
-					newReading = newReading.stripTrailingZeros();
 					if ( config.isTrackOnlyWhenReadingChanges() && newReading.equals(prevReading) ) {
 						log.debug(
 								"Source [{}] virtual meter [{}] has not changed from {}; configured to ignore",
