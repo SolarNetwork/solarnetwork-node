@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.samplefilter;
+package net.solarnetwork.node.datum.filter.std;
 
 import static net.solarnetwork.util.StringUtils.patterns;
 import java.util.ArrayList;

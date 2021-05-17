@@ -20,10 +20,10 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.samplefilter.test;
+package net.solarnetwork.node.datum.filter.test;
 
 import static java.lang.String.format;
-import static net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport.SETTING_KEY_TEMPLATE;
+import static net.solarnetwork.node.datum.filter.std.SamplesTransformerSupport.SETTING_KEY_TEMPLATE;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
@@ -47,8 +47,8 @@ import org.junit.Test;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.node.datum.samplefilter.PropertyFilterConfig;
-import net.solarnetwork.node.datum.samplefilter.PropertyFilterSamplesTransformer;
+import net.solarnetwork.node.datum.filter.std.PropertyFilterConfig;
+import net.solarnetwork.node.datum.filter.std.PropertyFilterSamplesTransformer;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.support.KeyValuePair;
 

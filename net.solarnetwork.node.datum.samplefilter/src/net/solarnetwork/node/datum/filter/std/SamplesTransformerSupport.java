@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.samplefilter;
+package net.solarnetwork.node.datum.filter.std;
 
 import java.util.EnumSet;
 import java.util.List;

@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.samplefilter.expr;
+package net.solarnetwork.node.datum.filter.expr;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;

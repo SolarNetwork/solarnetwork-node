@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.samplefilter.test;
+package net.solarnetwork.node.datum.filter.test;
 
 import static java.util.Collections.emptyMap;
 import static org.hamcrest.Matchers.equalTo;
@@ -34,9 +34,9 @@ import org.junit.Test;
 import net.solarnetwork.common.expr.spel.SpelExpressionService;
 import net.solarnetwork.domain.GeneralDatum;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
-import net.solarnetwork.node.datum.samplefilter.virt.VirtualMeterConfig;
-import net.solarnetwork.node.datum.samplefilter.virt.VirtualMeterExpressionRoot;
-import net.solarnetwork.node.datum.samplefilter.virt.VirtualMeterExpressionRootImpl;
+import net.solarnetwork.node.datum.filter.virt.VirtualMeterConfig;
+import net.solarnetwork.node.datum.filter.virt.VirtualMeterExpressionRoot;
+import net.solarnetwork.node.datum.filter.virt.VirtualMeterExpressionRootImpl;
 import net.solarnetwork.support.ExpressionService;
 
 /**

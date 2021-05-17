@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.samplefilter.test;
+package net.solarnetwork.node.datum.filter.test;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
@@ -52,10 +52,10 @@ import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.DatumMetadataService;
-import net.solarnetwork.node.datum.samplefilter.SourceThrottlingSamplesTransformer;
-import net.solarnetwork.node.datum.samplefilter.virt.VirtualMeterConfig;
-import net.solarnetwork.node.datum.samplefilter.virt.VirtualMeterExpressionConfig;
-import net.solarnetwork.node.datum.samplefilter.virt.VirtualMeterTransformService;
+import net.solarnetwork.node.datum.filter.std.SourceThrottlingSamplesTransformer;
+import net.solarnetwork.node.datum.filter.virt.VirtualMeterConfig;
+import net.solarnetwork.node.datum.filter.virt.VirtualMeterExpressionConfig;
+import net.solarnetwork.node.datum.filter.virt.VirtualMeterTransformService;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.support.ExpressionService;
 import net.solarnetwork.util.StaticOptionalService;
@@ -100,6 +100,7 @@ public class VirtualMeterTransformServiceTests {
 
 	private GeneralNodeDatum createTestGeneralNodeDatum(String sourceId) {
 		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setCreated(new Date());
 		datum.setSourceId(sourceId);
 		datum.putInstantaneousSampleValue(PROP_WATTS, 23.4);
 		return datum;
@@ -173,7 +174,7 @@ public class VirtualMeterTransformServiceTests {
 		assertOutputValue("at first sample", result, new BigDecimal("23.4"), null);
 
 		GeneralDatumMetadata meta = metaCaptor.getValue();
-		assertVirtualMeterMetadata("first", meta, System.currentTimeMillis(), new BigDecimal("23.4"),
+		assertVirtualMeterMetadata("first", meta, datum.getCreated().getTime(), new BigDecimal("23.4"),
 				BigDecimal.ZERO);
 	}
 
@@ -201,7 +202,7 @@ public class VirtualMeterTransformServiceTests {
 		assertOutputValue("at first sample", result, PROP_WATTS, "foobar", new BigDecimal("23.4"), null);
 
 		GeneralDatumMetadata meta = metaCaptor.getValue();
-		assertVirtualMeterMetadata("first", meta, "foobar", System.currentTimeMillis(),
+		assertVirtualMeterMetadata("first", meta, "foobar", datum.getCreated().getTime(),
 				new BigDecimal("23.4"), BigDecimal.ZERO);
 	}
 

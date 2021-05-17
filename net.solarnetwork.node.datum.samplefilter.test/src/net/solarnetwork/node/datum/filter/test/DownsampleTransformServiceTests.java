@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.samplefilter.test;
+package net.solarnetwork.node.datum.filter.test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
@@ -30,7 +30,7 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import org.junit.Test;
 import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.node.datum.samplefilter.DownsampleTransformService;
+import net.solarnetwork.node.datum.filter.std.DownsampleTransformService;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 
 /**

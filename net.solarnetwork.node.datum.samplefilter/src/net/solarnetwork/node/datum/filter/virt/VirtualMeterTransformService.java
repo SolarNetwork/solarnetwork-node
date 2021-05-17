@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.samplefilter.virt;
+package net.solarnetwork.node.datum.filter.virt;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -44,7 +44,7 @@ import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
-import net.solarnetwork.node.datum.samplefilter.SamplesTransformerSupport;
+import net.solarnetwork.node.datum.filter.std.SamplesTransformerSupport;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.ExpressionConfig;
 import net.solarnetwork.node.settings.SettingSpecifier;

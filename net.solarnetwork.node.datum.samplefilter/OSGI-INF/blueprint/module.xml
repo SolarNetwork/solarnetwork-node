@@ -33,7 +33,7 @@
 	<bean id="simpleFilterMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.datum.samplefilter.PropertyFilterSamplesTransformer</value>
+				<value>net.solarnetwork.node.datum.filter.std.PropertyFilterSamplesTransformer</value>
 				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
@@ -71,7 +71,7 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.datum.samplefilter.PropertyFilterSamplesTransformer" init-method="init">
+		<bean class="net.solarnetwork.node.datum.filter.std.PropertyFilterSamplesTransformer" init-method="init">
 			<property name="settingDao" ref="settingDao"/>
 			<property name="messageSource" ref="simpleFilterMessageSource"/>
 		</bean>
@@ -84,7 +84,7 @@
 	<bean id="propFilterMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.datum.samplefilter.DatumPropertyTransformService</value>
+				<value>net.solarnetwork.node.datum.filter.std.DatumPropertyTransformService</value>
 				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
@@ -131,7 +131,7 @@
 		<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService">
 			<argument value="net.solarnetwork.node.datum.samplefilter.prop"/>
 			<property name="sampleTransformer">
-				<bean class="net.solarnetwork.node.datum.samplefilter.PropertyFilterSamplesTransformer" init-method="init">
+				<bean class="net.solarnetwork.node.datum.filter.std.PropertyFilterSamplesTransformer" init-method="init">
 					<property name="settingDao" ref="settingDao"/>
 				</bean>
 			</property>
@@ -146,7 +146,7 @@
 	<bean id="sourceThrottleMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.datum.samplefilter.SourceThrottlingSamplesTransformer</value>
+				<value>net.solarnetwork.node.datum.filter.std.SourceThrottlingSamplesTransformer</value>
 				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
@@ -184,7 +184,7 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.datum.samplefilter.SourceThrottlingSamplesTransformer">
+		<bean class="net.solarnetwork.node.datum.filter.std.SourceThrottlingSamplesTransformer">
 			<property name="settingDao" ref="settingDao"/>
 			<property name="messageSource" ref="sourceThrottleMessageSource"/>
 		</bean>
@@ -197,7 +197,7 @@
 	<bean id="throttleFilterMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.datum.samplefilter.DatumThrottleTransformService</value>
+				<value>net.solarnetwork.node.datum.filter.std.DatumThrottleTransformService</value>
 				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
@@ -244,7 +244,7 @@
 		<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService">
 			<argument value="net.solarnetwork.node.datum.samplefilter.limiter"/>
 			<property name="sampleTransformer">
-				<bean class="net.solarnetwork.node.datum.samplefilter.SourceThrottlingSamplesTransformer">
+				<bean class="net.solarnetwork.node.datum.filter.std.SourceThrottlingSamplesTransformer">
 					<property name="settingDao" ref="settingDao"/>
 					<property name="messageSource" ref="sourceThrottleMessageSource"/>
 				</bean>
@@ -260,7 +260,7 @@
 	<bean id="downsamplerMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<array>
-				<value>net.solarnetwork.node.datum.samplefilter.DownsampleTransformService</value>
+				<value>net.solarnetwork.node.datum.filter.std.DownsampleTransformService</value>
 				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</array>
@@ -298,7 +298,7 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.datum.samplefilter.DownsampleTransformService">
+		<bean class="net.solarnetwork.node.datum.filter.std.DownsampleTransformService">
 			<property name="messageSource" ref="downsamplerMessageSource"/>
 		</bean>
 	</osgix:managed-service-factory>
@@ -310,7 +310,7 @@
 	<bean id="virtualMeterMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<array>
-				<value>net.solarnetwork.node.datum.samplefilter.virt.VirtualMeterTransformService</value>
+				<value>net.solarnetwork.node.datum.filter.virt.VirtualMeterTransformService</value>
 				<value>net.solarnetwork.node.domain.ExpressionConfig</value>
 				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
@@ -349,7 +349,7 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.datum.samplefilter.virt.VirtualMeterTransformService">
+		<bean class="net.solarnetwork.node.datum.filter.virt.VirtualMeterTransformService">
 			<argument ref="datumMetadataService"/>
 			<property name="messageSource" ref="virtualMeterMessageSource"/>
 			<property name="expressionServices" ref="expressionServices"/>
@@ -363,7 +363,7 @@
 	<bean id="expressionMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<array>
-				<value>net.solarnetwork.node.datum.samplefilter.expr.ExpressionTransformService</value>
+				<value>net.solarnetwork.node.datum.filter.expr.ExpressionTransformService</value>
 				<value>net.solarnetwork.node.domain.ExpressionConfig</value>
 				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
@@ -402,7 +402,7 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.datum.samplefilter.expr.ExpressionTransformService">
+		<bean class="net.solarnetwork.node.datum.filter.expr.ExpressionTransformService">
 			<property name="expressionServices" ref="expressionServices"/>
 			<property name="messageSource" ref="expressionMessageSource"/>
 		</bean>
