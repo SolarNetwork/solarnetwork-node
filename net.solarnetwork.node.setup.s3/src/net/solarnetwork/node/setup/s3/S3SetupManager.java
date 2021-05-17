@@ -299,6 +299,8 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 
 		DeletingAsset,
 
+		RefreshingAvailablePackages,
+
 		InstallingPackage,
 
 		DeletingPackage,
@@ -582,6 +584,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 				return Collections.emptySet();
 			}
 
+			setState(S3SetupManagerPlatformTaskState.RefreshingAvailablePackages, null);
 			Future<Boolean> boolTaskFuture = pkgService.refreshNamedPackages();
 			try {
 				boolTaskFuture.get(packageActionTimeoutSecs, TimeUnit.SECONDS);
