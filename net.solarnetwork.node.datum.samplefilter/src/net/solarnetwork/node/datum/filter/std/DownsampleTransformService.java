@@ -74,7 +74,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * </ul>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.2
  */
 public class DownsampleTransformService extends SamplesTransformerSupport
@@ -146,7 +146,7 @@ public class DownsampleTransformService extends SamplesTransformerSupport
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = baseIdentifiableSettings("");
+		List<SettingSpecifier> results = baseIdentifiableSettings();
 
 		results.add(0, new BasicTitleSettingSpecifier("status", statusValue()));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));

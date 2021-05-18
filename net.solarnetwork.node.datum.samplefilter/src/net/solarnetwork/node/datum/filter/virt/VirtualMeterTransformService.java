@@ -118,7 +118,7 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = baseIdentifiableSettings(null);
+		List<SettingSpecifier> results = baseIdentifiableSettings();
 
 		results.add(0, new BasicTitleSettingSpecifier("status", statusValue()));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));

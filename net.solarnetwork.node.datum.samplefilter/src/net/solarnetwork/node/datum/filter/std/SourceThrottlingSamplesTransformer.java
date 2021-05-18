@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.datum.filter.std;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 import net.solarnetwork.domain.GeneralDatumSamples;
@@ -38,7 +37,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * basic frequency constraint.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class SourceThrottlingSamplesTransformer extends SamplesTransformerSupport
 		implements GeneralDatumSamplesTransformer, SettingSpecifierProvider, Identifiable {
@@ -112,9 +111,8 @@ public class SourceThrottlingSamplesTransformer extends SamplesTransformerSuppor
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(3);
+		List<SettingSpecifier> results = baseIdentifiableSettings();
 
-		results.add(new BasicTextFieldSettingSpecifier("uid", null));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
 		results.add(new BasicTextFieldSettingSpecifier("frequencySeconds",
 				String.valueOf(DEFAULT_FREQUENCY_SECONDS)));
