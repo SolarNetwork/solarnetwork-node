@@ -396,9 +396,12 @@ public class VirtualMeterTransformServiceTests {
 			if ( i == 0 ) {
 				assertThat("Input diff parameter not created " + i, p.keySet(), hasSize(0));
 			} else {
-				assertThat("Xform parameters created", p.keySet(), contains("wattHours_diff"));
+				assertThat("Xform parameters created", p.keySet(),
+						contains("wattHours_diff", "cost_diff"));
 				assertThat("Input diff parameter created " + i, p,
 						hasEntry("wattHours_diff", new BigDecimal("5")));
+				assertThat("Output diff parameter created " + i, p,
+						hasEntry("cost_diff", new BigDecimal("15")));
 			}
 		}
 	}
