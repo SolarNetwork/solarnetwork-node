@@ -29,7 +29,9 @@ import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.hamcrest.Matchers.closeTo;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
@@ -39,7 +41,9 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
@@ -366,17 +370,19 @@ public class VirtualMeterTransformServiceTests {
 		replayAll();
 		List<GeneralDatumSamples> outputs = new ArrayList<>();
 		List<Date> dates = new ArrayList<>();
+		List<Map<String, ?>> parameters = new ArrayList<>();
 		final Date start = new Date(
 				LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC).toEpochMilli());
 		for ( int i = 0; i < iterations; i++ ) {
 			datum.setCreated(new Date(start.getTime() + TimeUnit.SECONDS.toMillis(i)));
 			datum.putAccumulatingSampleValue(PROP_WATT_HOURS, 5 * (i + 1));
 			dates.add(datum.getCreated());
-			outputs.add(xform.transformSamples(datum, datum.getSamples(), emptyMap()));
+			Map<String, Object> p = new LinkedHashMap<>();
+			outputs.add(xform.transformSamples(datum, datum.getSamples(), p));
+			parameters.add(p);
 		}
 
 		// THEN
-		// expected rolling average values
 		BigDecimal[] expectedValues = new BigDecimal[] { new BigDecimal("5"), new BigDecimal("10"),
 				new BigDecimal("15") };
 		BigDecimal[] expectedReadings = new BigDecimal[] { null, new BigDecimal("15"),
@@ -386,6 +392,14 @@ public class VirtualMeterTransformServiceTests {
 			GeneralDatumSamples result = outputs.get(i);
 			assertOutputValue("at sample " + i, result, PROP_WATT_HOURS, PROP_COST, expectedValues[i],
 					expectedReadings[i]);
+			Map<String, ?> p = parameters.get(i);
+			if ( i == 0 ) {
+				assertThat("Input diff parameter not created " + i, p.keySet(), hasSize(0));
+			} else {
+				assertThat("Xform parameters created", p.keySet(), contains("wattHours_diff"));
+				assertThat("Input diff parameter created " + i, p,
+						hasEntry("wattHours_diff", new BigDecimal("5")));
+			}
 		}
 	}
 

@@ -62,7 +62,7 @@ import net.solarnetwork.util.OptionalService;
  * derived from another property.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 1.4
  */
 public class VirtualMeterTransformService extends SamplesTransformerSupport
@@ -225,7 +225,7 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 	}
 
 	private void populateDatumProperties(Datum d, GeneralDatumSamples samples,
-			VirtualMeterConfig[] meterConfs, Map<String, ?> parameters) {
+			VirtualMeterConfig[] meterConfs, Map<String, Object> parameters) {
 		final DatumMetadataService service = OptionalService.service(datumMetadataService);
 		if ( service == null ) {
 			// the metadata service is required for virtual meters
@@ -369,6 +369,16 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
 					metadata.putInfoValue(meterPropName, VIRTUAL_METER_READING_KEY,
 							newReading.toPlainString());
+
+					// add our "input diff" value as a transform parameter, for future transforms to access
+					if ( parameters != null ) {
+						try {
+							parameters.put(String.format("%s_diff", config.getPropertyKey()),
+									currVal.subtract(prevVal));
+						} catch ( UnsupportedOperationException e ) {
+							log.debug("Cannot populate input diff parameters because map is read-only");
+						}
+					}
 					log.debug(
 							"Source [{}] virtual meter [{}] adds {} from {} value {} -> {} over {}ms to reach {}",
 							d.getSourceId(), meterPropName, meterDiff, config.getPropertyType(), prevVal,
