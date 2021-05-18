@@ -51,7 +51,7 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * </p>
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  * @since 1.67
  */
 public abstract class BaseIdentifiable extends net.solarnetwork.support.BasicIdentifiable
@@ -177,15 +177,15 @@ public abstract class BaseIdentifiable extends net.solarnetwork.support.BasicIde
 							null, Object.class);
 					if ( log.isTraceEnabled() ) {
 						log.trace(
-								"Service [{}] evaluated datum property {} expression `{}` -> {}\n\nExpression root: {}",
+								"Service [{}] evaluated datum property [{}] expression `{}` \u2192 {}\n\nExpression root: {}",
 								getUid(), config.getName(), config.getExpression(), propValue, root);
 					} else if ( log.isDebugEnabled() ) {
-						log.debug("Service [{}] evaluated datum property {} expression `{}` -> {}",
+						log.debug("Service [{}] evaluated datum property [{}] expression `{}` \u2192 {}",
 								getUid(), config.getName(), config.getExpression(), propValue);
 					}
 				} catch ( ExpressionException e ) {
 					log.warn(
-							"Error evaluating service [{}] datum property {} expression `{}`: {}\n\nExpression root: {}",
+							"Error evaluating service [{}] datum property [{}] expression `{}`: {}\n\nExpression root: {}",
 							getUid(), config.getName(), config.getExpression(), e.getMessage(), root);
 				}
 			}
