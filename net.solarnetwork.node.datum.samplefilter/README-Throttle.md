@@ -31,7 +31,7 @@ Each filter configuration contains the following overall settings:
 | Source ID          | The source ID(s) to filter.                                       |
 | Limit Seconds      | A throttle limit, in seconds, to apply to matching datum.         |
 
-## Datum Throttle Filter settings notes
+## Settings notes
 
 <dl>
 	<dt>Source ID</dt>
