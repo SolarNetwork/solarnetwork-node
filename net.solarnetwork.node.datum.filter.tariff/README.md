@@ -1,4 +1,4 @@
-# SolarNode Expression Datum Filter
+# SolarNode Time-based Tariff Datum Filter
 
 Inject time-based tariff rates based on a flexible tariff schedule defined with various time
 constraints.
@@ -26,12 +26,12 @@ Each filter configuration contains the following overall settings:
 | Service Name       | A unique ID for the filter, to be referenced by other components. |
 | Service Group      | An optional service group name to assign. |
 | Source ID          | The source ID(s) to filter. |
-| Metadata Service   | The **Service Name** of the Metadata Service to obtain the tariff schedule from. |
+| Metadata Service   | The **Service Name** of the Metadata Service to obtain the tariff schedule from. See [below](#metadata-service) for more information. |
 | Metadata Path      | The metadata path that will resolve the tariff schedule from the configured Metadata Service. |
 | Language           | A IETF BCP 47 language tag to parse the tariff data with. If not configured then the default system language will be assumed.
 | First Match        | If enabled, then apply only the **first** tariff that matches a given datum date. If disabled, then apply **all** tariffs that match. |
 | Schedule Cache     | The amount of seconds to cache the tariff schedule obtained from the configured Metadata Service.
-| Tariff Evaluator   | The **Service Name** of a <i>Time-based Tariff Evaluator</i> service to evaluate each tariff to determine if it should apply to a given datum. |
+| Tariff Evaluator   | The **Service Name** of a _Time-based Tariff Evaluator_ service to evaluate each tariff to determine if it should apply to a given datum. |
 
 ## Settings notes
 
@@ -57,6 +57,10 @@ that you create a **Data** security token in SolarNetwork with a limited securit
 
 ![Tariff metadata security token](docs/solaruser-tariff-metadata-security-token.png)
 
+The [SolarNetwork API Explorer][api-explorer] can be used to add the necessary tariff schedule
+metadata to your account. For example:
+
+![API Explorer add tariff metadata](docs/api-explorer-add-tariff-user-metdata.png)
 
 # Tariff schedule format
 
@@ -99,7 +103,17 @@ Here are some examples of the header name to the equivalent property name:
 
 ## Example schedule
 
-Here's an example schedule with 4 rules and a single rate, in CSV format:
+Here's an example schedule with 4 rules and a single **TOU** rate (the `*` stands for **all values**):
+
+| Rule  | Month   | Day | Weekday | Time |   TOU |
+|:------|:--------|:----|:--------|:-----|------:|
+| **1** | Jan-Dec | *   | Mon-Fri | 0-8  | 10.48 |
+| **2** | Jan-Dec | *   | Mon-Fri | 8-24 | 11.00 |
+| **3** | Jan-Dec | *   | Sat-Sun | 0-8  |  9.19 |
+| **4** | Jan-Dec | *   | Sat-Sun | 8-24 | 11.21 |
+
+
+In CSV format the schedule would look like this:
 
 ```csv
 Month,Day,Weekday,Time,TOU
@@ -109,7 +123,8 @@ Jan-Dec,,Sat-Sun,0-8,9.19
 Jan-Dec,,Sat-Sun,8-24,11.21
 ```
 
-When encoding into SolarNetwork metadata JSON, that same schedule would look like this:
+When encoding into SolarNetwork metadata JSON, that same schedule would look like this when saved
+at the `/pm/tariffs/schedule` path:
 
 ```json
 {
@@ -120,3 +135,5 @@ When encoding into SolarNetwork metadata JSON, that same schedule would look lik
   }
 }
 ```
+
+[api-explorer]: https://go.solarnetwork.net/dev/api/
