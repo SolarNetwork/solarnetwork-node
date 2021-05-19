@@ -31,7 +31,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Collection;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -62,7 +61,7 @@ import net.solarnetwork.util.OptionalService;
  * derived from another property.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 1.4
  */
 public class VirtualMeterTransformService extends SamplesTransformerSupport
@@ -76,6 +75,13 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 
 	/** The datum metadata key for a virtual meter reading value. */
 	public static final String VIRTUAL_METER_READING_KEY = "vm-reading";
+
+	/**
+	 * The input and reading "diff" parameter name template.
+	 * 
+	 * @since 1.3
+	 */
+	public static final String DIFF_PARAMETER_TEMPLATE = "%s_diff";
 
 	private static final BigDecimal TWO = new BigDecimal("2");
 
@@ -112,7 +118,7 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = baseIdentifiableSettings(null);
+		List<SettingSpecifier> results = baseIdentifiableSettings();
 
 		results.add(0, new BasicTitleSettingSpecifier("status", statusValue()));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));
@@ -225,7 +231,7 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 	}
 
 	private void populateDatumProperties(Datum d, GeneralDatumSamples samples,
-			VirtualMeterConfig[] meterConfs, Map<String, ?> parameters) {
+			VirtualMeterConfig[] meterConfs, Map<String, Object> parameters) {
 		final DatumMetadataService service = OptionalService.service(datumMetadataService);
 		if ( service == null ) {
 			// the metadata service is required for virtual meters
@@ -266,27 +272,21 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 			}
 
 			synchronized ( config ) {
-				Map<String, Map<String, Object>> pm = metadata.getPropertyInfo();
-				if ( pm == null ) {
-					pm = new LinkedHashMap<String, Map<String, Object>>(8);
-					metadata.setPm(pm);
-				}
+				GeneralDatumMetadata metadataOut = new GeneralDatumMetadata();
 				Long prevDate = metadata.getInfoLong(meterPropName, VIRTUAL_METER_DATE_KEY);
 				BigDecimal prevVal = metadata.getInfoBigDecimal(meterPropName, VIRTUAL_METER_VALUE_KEY);
 				BigDecimal prevReading = metadata.getInfoBigDecimal(meterPropName,
 						VIRTUAL_METER_READING_KEY);
 				if ( prevDate == null || prevVal == null || prevReading == null ) {
-					Map<String, Object> meterPropMap = new LinkedHashMap<>(3);
-					meterPropMap.put(VIRTUAL_METER_DATE_KEY, date);
-					meterPropMap.put(VIRTUAL_METER_VALUE_KEY, currVal.toString());
-					meterPropMap.put(VIRTUAL_METER_READING_KEY,
+					metadataOut.putInfoValue(meterPropName, VIRTUAL_METER_DATE_KEY, date);
+					metadataOut.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
+					metadataOut.putInfoValue(meterPropName, VIRTUAL_METER_READING_KEY,
 							prevReading != null ? prevReading.toString() : config.getMeterReading());
-					pm.put(meterPropName, meterPropMap);
 					if ( propSamples != null ) {
 						propSamples.addValue(currVal);
 					}
 					log.info("Virtual meter {}.{} status: {}", d.getSourceId(), meterPropName,
-							meterPropMap);
+							metadataOut.getPropertyInfo());
 				} else if ( prevDate > date ) {
 					log.warn(
 							"Source [{}] virtual meter [{}] reading date [{}] not older than sample date [{}], will not populate reading",
@@ -298,8 +298,8 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 							"Source [{}] virtual meter [{}] previous reading date [{}] greater than allowed age {}s, will not populate reading",
 							d.getSourceId(), meterPropName, new Date(prevDate),
 							config.getMaxAgeSeconds());
-					metadata.putInfoValue(meterPropName, VIRTUAL_METER_DATE_KEY, date);
-					metadata.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
+					metadataOut.putInfoValue(meterPropName, VIRTUAL_METER_DATE_KEY, date);
+					metadataOut.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
 					if ( propSamples != null ) {
 						propSamples.addValue(currVal);
 					}
@@ -365,17 +365,32 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 						continue;
 					}
 
-					metadata.putInfoValue(meterPropName, VIRTUAL_METER_DATE_KEY, date);
-					metadata.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
-					metadata.putInfoValue(meterPropName, VIRTUAL_METER_READING_KEY,
+					metadataOut.putInfoValue(meterPropName, VIRTUAL_METER_DATE_KEY, date);
+					metadataOut.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
+					metadataOut.putInfoValue(meterPropName, VIRTUAL_METER_READING_KEY,
 							newReading.toPlainString());
+
+					// add our "input diff" and "reading diff" value as a transform parameter, for future transforms to access
+					if ( parameters != null ) {
+						try {
+							parameters.put(
+									String.format(DIFF_PARAMETER_TEMPLATE, config.getPropertyKey()),
+									currVal.subtract(prevVal));
+							parameters.put(String.format(DIFF_PARAMETER_TEMPLATE, meterPropName),
+									newReading.subtract(prevReading));
+						} catch ( UnsupportedOperationException e ) {
+							log.debug("Cannot populate input diff parameters because map is read-only");
+						}
+					}
 					log.debug(
-							"Source [{}] virtual meter [{}] adds {} from {} value {} -> {} over {}ms to reach {}",
+							"Source [{}] virtual meter [{}] adds {} from {} value {} \u2192 {} over {}ms to reach {}",
 							d.getSourceId(), meterPropName, meterDiff, config.getPropertyType(), prevVal,
 							currVal, msDiff, newReading);
 				}
+
+				metadata.merge(metadataOut, true);
 				try {
-					service.addSourceMetadata(d.getSourceId(), metadata);
+					service.addSourceMetadata(d.getSourceId(), metadataOut);
 				} catch ( RuntimeException e ) {
 					// catch IO errors and let slide
 					Throwable root = e;

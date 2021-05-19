@@ -23,7 +23,6 @@
 package net.solarnetwork.node.datum.filter.std;
 
 import static net.solarnetwork.util.StringUtils.patterns;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -52,7 +51,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 		implements GeneralDatumSamplesTransformer, SettingSpecifierProvider, SettingsChangeObserver {
@@ -249,9 +248,7 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(3);
-
-		results.add(new BasicTextFieldSettingSpecifier("uid", null));
+		List<SettingSpecifier> results = baseIdentifiableSettings();
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
 
 		PropertyFilterConfig[] incs = getPropIncludes();

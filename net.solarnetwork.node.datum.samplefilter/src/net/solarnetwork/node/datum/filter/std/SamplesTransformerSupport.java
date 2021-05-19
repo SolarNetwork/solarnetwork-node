@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.filter.std;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,13 +34,16 @@ import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.Setting.SettingFlag;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.node.support.BaseSamplesTransformSupport;
+import net.solarnetwork.support.BasicIdentifiable;
 
 /**
  * Support class for sample transformers.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class SamplesTransformerSupport extends BaseSamplesTransformSupport {
 
@@ -61,6 +65,7 @@ public class SamplesTransformerSupport extends BaseSamplesTransformSupport {
 	private SettingDao settingDao;
 	private int settingCacheSecs;
 	private String settingKey;
+	private boolean excludeBaseIdentifiableSettings;
 
 	private final AtomicLong settingCacheExpiry = new AtomicLong(0);
 
@@ -79,6 +84,29 @@ public class SamplesTransformerSupport extends BaseSamplesTransformSupport {
 		setUid(DEFAULT_UID);
 		setSettingCacheSecs(DEFAULT_SETTING_CACHE_SECS);
 		setSettingKey(String.format(SETTING_KEY_TEMPLATE, DEFAULT_UID));
+	}
+
+	/**
+	 * Get settings for the configurable properties of
+	 * {@link BasicIdentifiable}.
+	 * 
+	 * <p>
+	 * Empty strings are used for the default {@code uid} and {@code groupUid}
+	 * setting values. No settings are returned if
+	 * {@code excludeBaseIdentifiableSettings} is {@literal true}.
+	 * </p>
+	 * 
+	 * @param prefix
+	 *        an optional prefix to include in all setting keys
+	 * @return the settings
+	 * @see BaseIdentifiable#baseIdentifiableSettings(String, String, String)
+	 * @since 1.3
+	 */
+	public List<SettingSpecifier> baseIdentifiableSettings() {
+		if ( excludeBaseIdentifiableSettings ) {
+			return new ArrayList<>(4);
+		}
+		return baseIdentifiableSettings("", "", "");
 	}
 
 	/**
@@ -278,6 +306,31 @@ public class SamplesTransformerSupport extends BaseSamplesTransformSupport {
 			throw new IllegalArgumentException("The settingKey argument must not be null.");
 		}
 		this.settingKey = settingKey;
+	}
+
+	/**
+	 * Get the flag to indicate the base identifiable service settings should be
+	 * excluded.
+	 * 
+	 * @return {@literal true} to exclude base identifiable service settings;
+	 *         defaults to {@literal false}
+	 * @since 1.3
+	 */
+	public boolean isExcludeBaseIdentifiableSettings() {
+		return excludeBaseIdentifiableSettings;
+	}
+
+	/**
+	 * Set the flag to indicate the base identifiable service settings should be
+	 * excluded.
+	 * 
+	 * @param excludeBaseIdentifiableSettings
+	 *        {@literal true} to exclude base identifiable service settings;
+	 *        defaults to {@literal false}
+	 * @since 1.3
+	 */
+	public void setExcludeBaseIdentifiableSettings(boolean excludeBaseIdentifiableSettings) {
+		this.excludeBaseIdentifiableSettings = excludeBaseIdentifiableSettings;
 	}
 
 }

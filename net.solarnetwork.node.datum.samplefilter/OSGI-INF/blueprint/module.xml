@@ -133,6 +133,7 @@
 			<property name="sampleTransformer">
 				<bean class="net.solarnetwork.node.datum.filter.std.PropertyFilterSamplesTransformer" init-method="init">
 					<property name="settingDao" ref="settingDao"/>
+					<property name="excludeBaseIdentifiableSettings" value="true"/>
 				</bean>
 			</property>
 			<property name="messageSource" ref="propFilterMessageSource"/>
@@ -247,6 +248,7 @@
 				<bean class="net.solarnetwork.node.datum.filter.std.SourceThrottlingSamplesTransformer">
 					<property name="settingDao" ref="settingDao"/>
 					<property name="messageSource" ref="sourceThrottleMessageSource"/>
+					<property name="excludeBaseIdentifiableSettings" value="true"/>
 				</bean>
 			</property>
 			<property name="messageSource" ref="throttleFilterMessageSource"/>
