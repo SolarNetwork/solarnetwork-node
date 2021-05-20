@@ -455,7 +455,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<>(4);
-		results.add(new BasicTitleSettingSpecifier("status", getStatusMessage(), true));
+		results.add(new BasicTitleSettingSpecifier("status", getStatusMessage(), true, true));
 
 		results.add(new BasicTextFieldSettingSpecifier("mqttHost", DEFAULT_MQTT_HOST));
 		results.add(new BasicTextFieldSettingSpecifier("mqttUsername", DEFAULT_MQTT_USERNAME));
@@ -499,10 +499,15 @@ public class FluxUploadService extends BaseMqttConnectionService
 		String connMsg = getMessageSource().getMessage(
 				format("status.%s", connected ? "connected" : "disconnected"), null,
 				Locale.getDefault());
+		final MqttStats s = getMqttStats();
+		// @formatter:off
 		return getMessageSource().getMessage("status.msg",
-				new Object[] { connMsg, getMqttStats().get(MqttStats.BasicCounts.MessagesDelivered),
-						getMqttStats().get(MqttStats.BasicCounts.PayloadBytesDelivered) },
+				new Object[] { 
+						connMsg, 
+						s.get(MqttStats.BasicCounts.MessagesDelivered),
+						s.get(MqttStats.BasicCounts.PayloadBytesDelivered) },
 				Locale.getDefault());
+		// @formatter:on
 	}
 
 	@Override
