@@ -545,4 +545,50 @@ public class CanbusDatumDataSourceTests {
 				d.getInstantaneousSampleBigDecimal("prop-multiply"), equalTo(new BigDecimal("51")));
 	}
 
+	@Test
+	public void frameReceived_withExpressions_literalPropertyVariable() {
+		// GIVEN
+		CanbusMessageConfig message = new CanbusMessageConfig(1, ByteOrdering.BigEndian);
+		message.addPropConfig(new CanbusPropertyConfig("watts", GeneralDatumSamplesType.Instantaneous, 0,
+				BitDataType.UInt8, 8, "W", null));
+
+		dataSource.setSourceId(TEST_SOURCE);
+		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
+
+		ExpressionConfig[] exprConfigs = new ExpressionConfig[] {
+				new ExpressionConfig("prop-val", Instantaneous, "has('foo') and foo > 0 ? 1 : -1",
+						SpelExpressionService.class.getName()),
+				new ExpressionConfig("prop-multiply", Instantaneous, "watts * 3",
+						SpelExpressionService.class.getName()), };
+		dataSource.setExpressionConfigs(exprConfigs);
+
+		Capture<Event> eventCaptor = new Capture<>();
+		eventAdmin.postEvent(capture(eventCaptor));
+
+		// WHEN
+		replayAll();
+		long start = System.currentTimeMillis();
+		FrameMessageImpl f = new FrameMessageImpl(1, false, 1, 2, new byte[] { (byte) 0x11 });
+		dataSource.canbusFrameReceived(f);
+		GeneralNodeDatum d = dataSource.readCurrentDatum();
+
+		// THEN
+		Event evt = eventCaptor.getValue();
+		assertThat("Event generated", evt, notNullValue());
+		assertThat("Event topic", evt.getTopic(), equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
+		Map<String, Object> expectedData = new HashMap<>(3);
+		expectedData.put("watts", 17);
+		expectedData.put("prop-val", -1);
+		expectedData.put("prop-multiply", 51);
+		assertDatumCapturedEvent(evt, start, TEST_SOURCE, expectedData);
+
+		assertThat("Datum captured", d, notNullValue());
+		assertThat("Datum watts instantaneous value", d.getInstantaneousSampleBigDecimal("watts"),
+				equalTo(new BigDecimal("17")));
+		assertThat("Datum props-val instantaneous value", d.getInstantaneousSampleBigDecimal("prop-val"),
+				equalTo(new BigDecimal("-1")));
+		assertThat("Datum props-multiply instantaneous value",
+				d.getInstantaneousSampleBigDecimal("prop-multiply"), equalTo(new BigDecimal("51")));
+	}
+
 }
