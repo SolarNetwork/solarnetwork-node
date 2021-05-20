@@ -35,7 +35,7 @@ import net.solarnetwork.support.ExpressionService;
  * 
  * @author matt
  * @version 1.1
- * @since 1.4
+ * @since 1.5
  */
 public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot {
 
@@ -88,21 +88,13 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("ExpressionRoot{");
-		if ( getDatum() != null ) {
-			builder.append("datum=");
-			builder.append(getDatum());
-			builder.append(", ");
-		}
-		if ( getProps() != null ) {
-			builder.append("props=");
-			builder.append(getProps());
-			builder.append(", ");
-		}
+		builder.append("CanbusExpressionRoot{");
 		if ( sample != null ) {
 			builder.append("sample=");
 			builder.append(sample.dataDebugString());
+			builder.append(", ");
 		}
+		builder.append(super.toString());
 		builder.append("}");
 		return builder.toString();
 	}

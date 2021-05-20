@@ -35,7 +35,7 @@ import net.solarnetwork.util.IntRangeSet;
  * An object to use as the "root" for {@link ExpressionService} evaluation.
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot {
 
@@ -156,21 +156,13 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("ExpressionRoot{");
-		if ( getDatum() != null ) {
-			builder.append("datum=");
-			builder.append(getDatum());
-			builder.append(", ");
-		}
-		if ( getProps() != null ) {
-			builder.append("props=");
-			builder.append(getProps());
-			builder.append(", ");
-		}
+		builder.append("ModbusExpressionRoot{");
 		if ( sample != null ) {
 			builder.append("sample=");
 			builder.append(sample.dataDebugString());
+			builder.append(", ");
 		}
+		builder.append(super.toString());
 		builder.append("}");
 		return builder.toString();
 	}
