@@ -217,7 +217,7 @@ $(function() {
 		<p><fmt:message key='lookup.weather.intro'/></p>
 		<div class="form-inline">
 			<input type="hidden" name="tags" value="weather"/>
-			<input type="text" class="span4" maxlength="64" name="location.region" placeholder="<fmt:message key='lookup.weather.search.placeholder'/>"/>
+			<input type="text" class="span4" maxlength="64" name="query" placeholder="<fmt:message key='lookup.weather.search.placeholder'/>"/>
 			<button type="submit" class="btn btn-primary ladda-button expand-right" 
 				data-loading-text="<fmt:message key='lookup.searching.label'/>">
 				<fmt:message key='lookup.action.search'/>
