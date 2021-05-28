@@ -52,6 +52,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.util.FileCopyUtils;
 import com.fasterxml.jackson.core.JsonFactory;
@@ -68,6 +69,7 @@ import net.solarnetwork.common.mqtt.MqttConnectionFactory;
 import net.solarnetwork.common.mqtt.MqttMessage;
 import net.solarnetwork.common.mqtt.MqttMessageHandler;
 import net.solarnetwork.common.mqtt.MqttQos;
+import net.solarnetwork.common.mqtt.MqttVersion;
 import net.solarnetwork.common.mqtt.netty.NettyMqttConnectionFactory;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.UploadService;
@@ -76,6 +78,7 @@ import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.ReactorService;
 import net.solarnetwork.node.reactor.io.json.JsonReactorSerializationService;
 import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
@@ -99,6 +102,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 
 	private static final int MQTT_TIMEOUT = 10;
 	private static final String TEST_CLIENT_ID = "solarnet.test";
+	private static final String TEST_SOLARIN_BASE_URL = "http://localhost:8680";
 
 	private IdentityService identityService;
 	private ReactorService reactorService;
@@ -138,7 +142,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 
 		@Override
 		public String getSolarInBaseUrl() {
-			return null;
+			return TEST_SOLARIN_BASE_URL;
 		}
 
 		@Override
@@ -185,6 +189,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 				new StaticOptionalService<InstructionExecutionService>(instructionExecutionService),
 				new StaticOptionalService<EventAdmin>(eventAdminService));
 		service.getMqttConfig().setClientId(TEST_CLIENT_ID);
+		service.getMqttConfig().setVersion(MqttVersion.Mqtt311);
 		service.getMqttConfig().setServerUri(new URI("mqtt://localhost:" + getMqttServerPort()));
 
 		nodeId = Math.abs(UUID.randomUUID().getMostSignificantBits());
@@ -373,8 +378,8 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		try {
 			JsonNode node = objectMapper.readTree(serverInstructions);
 			JsonNode instructions = node.path("instructions");
-			return new JsonReactorSerializationService().decodeInstructions(null, instructions,
-					MqttUploadService.JSON_MIME_TYPE, null);
+			return new JsonReactorSerializationService().decodeInstructions(TEST_SOLARIN_BASE_URL,
+					instructions, MqttUploadService.JSON_MIME_TYPE, null);
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		}
@@ -393,28 +398,39 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 
 	@Test
 	public void processInstruction() throws Exception {
-		// given
+		// GIVEN
 		TestingMqttMessageHandler messageHandler = new TestingMqttMessageHandler();
 		MqttConnection solarNetClient = createMqttClient("solarnet", messageHandler);
-
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.putInstantaneousSampleValue("foo", 123);
 
 		// parse instructions
 		String testInstructions = getStringResource("instructions-01.json");
 		List<Instruction> instructions = parseInstructions(testInstructions);
+		assert instructions.size() == 1;
+		final String remoteInstructionId = instructions.get(0).getRemoteInstructionId();
 		expect(reactorService.parseInstructions(anyObject(), anyObject(JsonNode.class),
 				eq(MqttUploadService.JSON_MIME_TYPE), isNull())).andReturn(instructions);
 
+		// persist Executing state
+		Capture<Instruction> storeInstructionCaptor = new Capture<>();
+		final Long localInstructionId = 98765L;
+		expect(reactorService.storeInstruction(capture(storeInstructionCaptor)))
+				.andReturn(localInstructionId);
+
 		// execute single instruction
+		Capture<Instruction> execInstructionCaptor = new Capture<>();
 		InstructionStatus execResultStatus = new BasicInstructionStatus(null,
 				InstructionStatus.InstructionState.Completed, new Date());
-		expect(instructionExecutionService.executeInstruction(instructions.get(0)))
+		expect(instructionExecutionService.executeInstruction(capture(execInstructionCaptor)))
 				.andReturn(execResultStatus);
+
+		// save result back to DB
+		Capture<Instruction> storeCompletedInstructionCaptor = new Capture<>();
+		expect(reactorService.storeInstruction(capture(storeCompletedInstructionCaptor)))
+				.andReturn(localInstructionId);
 
 		replayAll();
 
-		// when
+		// WHEN
 		Thread.sleep(1000); // allow time for subscription to take
 
 		String instrTopic = instructionTopic(nodeId);
@@ -425,7 +441,29 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 
 		stopMqttServer(); // shut down server
 
-		// then
+		// THEN
+
+		// should have stored Executing status
+		Instruction storeInstruction = storeInstructionCaptor.getValue();
+		assertThat("Store instruction remote ID", storeInstruction.getRemoteInstructionId(),
+				equalTo(remoteInstructionId));
+		assertThat("Store instruction has no local ID", storeInstruction.getId(), nullValue());
+		assertThat("Store instruction state", storeInstruction.getInstructionState(),
+				equalTo(InstructionState.Executing));
+		assertThat("Store instruction instructorId", storeInstruction.getInstructorId(),
+				equalTo(TEST_SOLARIN_BASE_URL));
+
+		// should have executed Instruction with persisted local ID
+		Instruction execInstruction = execInstructionCaptor.getValue();
+		assertThat("Exec instruction has persisted local ID", execInstruction.getId(),
+				equalTo(localInstructionId));
+
+		// should have stored Completed status
+		Instruction completedInstruction = storeCompletedInstructionCaptor.getValue();
+		assertThat("Completed instruction has persisted local ID", execInstruction.getId(),
+				equalTo(localInstructionId));
+		assertThat("Completed instruction state", completedInstruction.getInstructionState(),
+				equalTo(InstructionState.Completed));
 
 		// should have published acknowledgement on datum topic
 		TestingInterceptHandler session = getTestingInterceptHandler();
@@ -439,14 +477,16 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		assertThat("Instruction ack client ID", pubMsg.getClientID(), equalTo(nodeId.toString()));
 		assertThat("Instruction topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
 		assertThat("Instruction ack payload", session.getPublishPayloadStringAtIndex(1),
-				equalTo("{\"__type__\":\"InstructionStatus\",\"instructionId\":\"4316548\""
+				equalTo("{\"__type__\":\"InstructionStatus\",\"id\":\"" + localInstructionId + "\""
+						+ ",\"instructionId\":\"" + remoteInstructionId + "\""
 						+ ",\"topic\":\"SetControlParameter\",\"status\":\"Executing\"}"));
 
 		pubMsg = session.publishMessages.get(2);
 		assertThat("Instruction ack client ID", pubMsg.getClientID(), equalTo(nodeId.toString()));
 		assertThat("Instruction topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
 		assertThat("Instruction ack payload", session.getPublishPayloadStringAtIndex(2),
-				equalTo("{\"__type__\":\"InstructionStatus\",\"instructionId\":\"4316548\""
+				equalTo("{\"__type__\":\"InstructionStatus\",\"id\":\"" + localInstructionId + "\""
+						+ ",\"instructionId\":\"" + remoteInstructionId + "\""
 						+ ",\"topic\":\"SetControlParameter\",\"status\":\"Completed\"}"));
 	}
 
@@ -535,4 +575,57 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 				ackStatus.getStatus().getAcknowledgedInstructionState(), nullValue());
 	}
 	*/
+
+	@Test
+	public void processInstruction_duplicate() throws Exception {
+		// GIVEN
+		TestingMqttMessageHandler messageHandler = new TestingMqttMessageHandler();
+		MqttConnection solarNetClient = createMqttClient("solarnet", messageHandler);
+
+		// parse instructions
+		String testInstructions = getStringResource("instructions-01.json");
+		List<Instruction> instructions = parseInstructions(testInstructions);
+		assert instructions.size() == 1;
+		final String remoteInstructionId = instructions.get(0).getRemoteInstructionId();
+		expect(reactorService.parseInstructions(anyObject(), anyObject(JsonNode.class),
+				eq(MqttUploadService.JSON_MIME_TYPE), isNull())).andReturn(instructions);
+
+		// persist Executing state
+		Capture<Instruction> storeInstructionCaptor = new Capture<>();
+		expect(reactorService.storeInstruction(capture(storeInstructionCaptor)))
+				.andThrow(new DuplicateKeyException("Duplicate key"));
+
+		replayAll();
+
+		// WHEN
+		Thread.sleep(1000); // allow time for subscription to take
+
+		String instrTopic = instructionTopic(nodeId);
+		solarNetClient.publish(new BasicMqttMessage(instrTopic, false, MqttQos.AtLeastOnce,
+				testInstructions.getBytes("UTF-8"))).get(MQTT_TIMEOUT, TimeUnit.SECONDS);
+
+		Thread.sleep(2000); // allow time for messages to process
+
+		stopMqttServer(); // shut down server
+
+		// THEN
+
+		// should have stored Executing status
+		Instruction storeInstruction = storeInstructionCaptor.getValue();
+		assertThat("Store instruction remote ID", storeInstruction.getRemoteInstructionId(),
+				equalTo(remoteInstructionId));
+		assertThat("Store instruction has no local ID", storeInstruction.getId(), nullValue());
+		assertThat("Store instruction state", storeInstruction.getInstructionState(),
+				equalTo(InstructionState.Executing));
+		assertThat("Store instruction instructorId", storeInstruction.getInstructorId(),
+				equalTo(TEST_SOLARIN_BASE_URL));
+
+		// should have published acknowledgement on datum topic
+		TestingInterceptHandler session = getTestingInterceptHandler();
+		assertThat("Published instruction and acks", session.publishMessages, hasSize(1));
+
+		InterceptPublishMessage pubMsg = session.publishMessages.get(0);
+		assertThat("Instruction client ID", pubMsg.getClientID(), equalTo("solarnet"));
+		assertThat("Instruction topic", pubMsg.getTopicName(), equalTo(instructionTopic(nodeId)));
+	}
 }
