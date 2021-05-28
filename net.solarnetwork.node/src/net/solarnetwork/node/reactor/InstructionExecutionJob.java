@@ -64,7 +64,7 @@ import net.solarnetwork.node.reactor.support.DefaultInstructionExecutionService;
  * </p>
  * 
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
@@ -96,8 +96,9 @@ public class InstructionExecutionJob extends AbstractJob {
 					status = service.executeInstruction(instruction);
 				}
 			} catch ( Exception e ) {
-				log.error("Execution of instruction {} ({}) threw exception", instruction.getId(),
-						instruction.getTopic(), e);
+				log.error("Execution of instruction {} {} (local {{}) threw exception",
+						instruction.getRemoteInstructionId(), instruction.getTopic(),
+						instruction.getId(), e);
 			} finally {
 				if ( status == null ) {
 					// roll back to received status to try again later
@@ -105,8 +106,9 @@ public class InstructionExecutionJob extends AbstractJob {
 				}
 				if ( instructionDao.compareAndStoreInstructionStatus(instruction.getId(),
 						InstructionState.Executing, status) ) {
-					log.info("Instruction {} {} status changed to {}", instruction.getId(),
-							instruction.getTopic(), status.getInstructionState());
+					log.info("Instruction {} {} (local {}) status changed to {}",
+							instruction.getRemoteInstructionId(), instruction.getTopic(),
+							instruction.getId(), status.getInstructionState());
 				}
 			}
 		}

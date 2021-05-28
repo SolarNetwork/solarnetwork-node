@@ -39,6 +39,7 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.test.context.ContextConfiguration;
 import net.solarnetwork.node.dao.jdbc.reactor.JdbcInstructionDao;
 import net.solarnetwork.node.reactor.Instruction;
@@ -51,7 +52,7 @@ import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
  * Test case for the {@link JdbcInstructionDao} class.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 @ContextConfiguration
 public class JdbcInstructionDaoTest extends AbstractNodeTransactionalTest {
@@ -74,17 +75,32 @@ public class JdbcInstructionDaoTest extends AbstractNodeTransactionalTest {
 
 	@Test
 	public void storeNew() {
-		BasicInstruction datum = new BasicInstruction(TEST_TOPIC, new Date(), TEST_REMOTE_ID,
+		BasicInstruction instr = new BasicInstruction(TEST_TOPIC, new Date(), TEST_REMOTE_ID,
 				TEST_INSTRUCTOR, null);
 
 		for ( int i = 0; i < 2; i++ ) {
-			datum.addParameter(String.format("%s %d", TEST_PARAM_KEY, i),
+			instr.addParameter(String.format("%s %d", TEST_PARAM_KEY, i),
 					String.format("%s %d %s", TEST_PARAM_KEY, i, TEST_PARAM_VALUE));
 		}
 
-		Long id = dao.storeInstruction(datum);
+		Long id = dao.storeInstruction(instr);
 		assertNotNull(id);
 		lastDatum = dao.getInstruction(id);
+	}
+
+	@Test(expected = DuplicateKeyException.class)
+	public void storeDuplicate() {
+		BasicInstruction instr = new BasicInstruction(TEST_TOPIC, new Date(), TEST_REMOTE_ID,
+				TEST_INSTRUCTOR, null);
+
+		for ( int i = 0; i < 2; i++ ) {
+			instr.addParameter(String.format("%s %d", TEST_PARAM_KEY, i),
+					String.format("%s %d %s", TEST_PARAM_KEY, i, TEST_PARAM_VALUE));
+		}
+
+		Long id = dao.storeInstruction(instr);
+		assertNotNull(id);
+		dao.storeInstruction(instr);
 	}
 
 	@Test
