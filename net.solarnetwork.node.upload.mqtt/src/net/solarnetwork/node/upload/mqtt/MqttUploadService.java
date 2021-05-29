@@ -362,6 +362,9 @@ public class MqttUploadService extends BaseMqttConnectionService
 						objectMapper.writeValueAsBytes(instr)))
 						.get(getMqttConfig().getConnectTimeoutSeconds(), TimeUnit.SECONDS);
 				getMqttStats().incrementAndGet(SolarInCountStat.InstructionStatusPosted);
+				log.info("Posted Instruction {} {} (local {}) acknowledgement state: {}",
+						instr.getRemoteInstructionId(), instr.getTopic(), instr.getId(),
+						instr.getInstructionState());
 				return true;
 			} catch ( Exception e ) {
 				Throwable root = e;
@@ -402,9 +405,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 					if ( reactor != null ) {
 						// if instructions have a local ID, store ack
 						if ( instr.getId() != null && instr.getStatus() != null ) {
-							BasicInstruction ackInstr = new BasicInstruction(instr.getId(),
-									instr.getTopic(), instr.getInstructionDate(),
-									instr.getRemoteInstructionId(), instr.getInstructorId(),
+							BasicInstruction ackInstr = new BasicInstruction(instr,
 									instr.getStatus().newCopyWithAcknowledgedState(
 											instr.getStatus().getInstructionState()));
 							reactor.storeInstruction(ackInstr);
@@ -419,6 +420,15 @@ public class MqttUploadService extends BaseMqttConnectionService
 
 	@Override
 	public void onMqttMessage(MqttMessage message) {
+		final Executor exec = this.executor;
+		if ( exec != null ) {
+			exec.execute(() -> handleMqttMessage(message));
+		} else {
+			handleMqttMessage(message);
+		}
+	}
+
+	private void handleMqttMessage(MqttMessage message) {
 		final String topic = message.getTopic();
 		try {
 			// look for and process instructions from message body, as JSON array
@@ -433,21 +443,27 @@ public class MqttUploadService extends BaseMqttConnectionService
 					List<Instruction> resultInstructions = new ArrayList<>(8);
 					// manually parse instruction, so we can immediately execute
 					List<Instruction> instructions = reactor.parseInstructions(
-							getMqttConfig().getServerUriValue(), instrArray, JSON_MIME_TYPE, null);
+							identityService.getSolarInBaseUrl(), instrArray, JSON_MIME_TYPE, null);
 					MqttConnection conn = connection();
 					Long nodeId = identityService.getNodeId();
 					for ( Instruction instr : instructions ) {
+						if ( log.isInfoEnabled() ) {
+							log.info("Instruction {} {} received with parameters: {}",
+									instr.getRemoteInstructionId(), instr.getTopic(),
+									instr.getParameterMap());
+						}
 						getMqttStats().incrementAndGet(SolarInCountStat.InstructionsReceived);
 						try {
 							InstructionStatus status = null;
 							if ( executor != null ) {
+								// save with Executing state immediately
+								status = new BasicInstructionStatus(instr.getId(),
+										InstructionState.Executing, new Date());
+								Long id = reactor.storeInstruction(new BasicInstruction(instr, status));
+								instr = new BasicInstruction(instr, id, status);
+
 								// execute immediately with our executor; pass Executing status back first
-								publishInstructionAck(conn, nodeId,
-										new BasicInstruction(instr.getId(), instr.getTopic(),
-												instr.getInstructionDate(),
-												instr.getRemoteInstructionId(), instr.getInstructorId(),
-												new BasicInstructionStatus(instr.getId(),
-														InstructionState.Executing, new Date())));
+								publishInstructionAck(conn, nodeId, instr);
 								status = executor.executeInstruction(instr);
 							}
 							if ( status == null ) {
@@ -459,9 +475,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 								status = new BasicInstructionStatus(instr.getId(),
 										InstructionStatus.InstructionState.Declined, new Date());
 							}
-							resultInstructions.add(new BasicInstruction(instr.getId(), instr.getTopic(),
-									instr.getInstructionDate(), instr.getRemoteInstructionId(),
-									instr.getInstructorId(), status));
+							resultInstructions.add(new BasicInstruction(instr, status));
 						} catch ( Exception e ) {
 							log.error("Error handling instruction {}", instr, e);
 						}

@@ -36,7 +36,7 @@ import net.solarnetwork.node.reactor.InstructionStatus;
  * Basic implementation of {@link Instruction}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class BasicInstruction implements Instruction, Serializable {
 
@@ -50,13 +50,44 @@ public class BasicInstruction implements Instruction, Serializable {
 	private final InstructionStatus status;
 	private final Map<String, List<String>> parameters;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param topic
+	 *        the instruction topic
+	 * @param instructionDate
+	 *        the instruction date
+	 * @param remoteInstructionId
+	 *        the remote instruction ID
+	 * @param instructorId
+	 *        the instructor ID
+	 * @param status
+	 *        the status, or {@literal null}
+	 */
 	public BasicInstruction(String topic, Date instructionDate, String remoteInstructionId,
 			String instructorId, InstructionStatus status) {
 		this(null, topic, instructionDate, remoteInstructionId, instructorId, status);
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param id
+	 *        the local instruction ID
+	 * @param topic
+	 *        the instruction topic
+	 * @param instructionDate
+	 *        the instruction date
+	 * @param remoteInstructionId
+	 *        the remote instruction ID
+	 * @param instructorId
+	 *        the instructor ID
+	 * @param status
+	 *        the status, or {@literal null}
+	 */
 	public BasicInstruction(Long id, String topic, Date instructionDate, String remoteInstructionId,
 			String instructorId, InstructionStatus status) {
+		super();
 		this.id = id;
 		this.topic = topic;
 		this.instructionDate = instructionDate;
@@ -64,6 +95,40 @@ public class BasicInstruction implements Instruction, Serializable {
 		this.instructorId = instructorId;
 		this.status = status;
 		this.parameters = new LinkedHashMap<String, List<String>>();
+	}
+
+	/**
+	 * Copy constructor.
+	 * 
+	 * @param other
+	 *        the instruction to copy
+	 * @param id
+	 *        if provided, the local ID to use
+	 * @param status
+	 *        if provided, the new status to use
+	 * @since 1.2
+	 */
+	public BasicInstruction(Instruction other, Long id, InstructionStatus status) {
+		this((id != null ? id : other.getId()), other.getTopic(), other.getInstructionDate(),
+				other.getRemoteInstructionId(), other.getInstructorId(),
+				(status != null ? status : other.getStatus()));
+		Map<String, List<String>> otherParams = other.getParameterMultiMap();
+		if ( otherParams != null ) {
+			this.parameters.putAll(otherParams);
+		}
+	}
+
+	/**
+	 * Copy constructor.
+	 * 
+	 * @param other
+	 *        the instruction to copy
+	 * @param status
+	 *        if provided, the new status to use
+	 * @since 1.2
+	 */
+	public BasicInstruction(Instruction other, InstructionStatus status) {
+		this(other, null, status);
 	}
 
 	@Override
@@ -151,6 +216,11 @@ public class BasicInstruction implements Instruction, Serializable {
 			parameters.put(name, values);
 		}
 		values.add(value);
+	}
+
+	@Override
+	public Map<String, List<String>> getParameterMultiMap() {
+		return Collections.unmodifiableMap(parameters);
 	}
 
 }

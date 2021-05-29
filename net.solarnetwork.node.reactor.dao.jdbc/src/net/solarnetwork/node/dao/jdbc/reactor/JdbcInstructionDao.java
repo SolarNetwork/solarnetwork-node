@@ -245,10 +245,12 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction>
 			}
 		});
 
-		// finally crate a status row
+		// finally create a status row
 		Date statusDate = new Date();
+		InstructionState state = instruction.getInstructionState();
 		getJdbcTemplate().update(getSqlResource(RESOURCE_SQL_INSERT_INSTRUCTION_STATUS), pk,
-				new java.sql.Timestamp(statusDate.getTime()), InstructionState.Received.toString());
+				new java.sql.Timestamp(statusDate.getTime()),
+				(state != null ? state : InstructionState.Received).toString());
 		return pk;
 	}
 

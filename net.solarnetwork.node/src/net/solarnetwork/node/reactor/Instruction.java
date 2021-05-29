@@ -22,7 +22,13 @@
 
 package net.solarnetwork.node.reactor;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 
 /**
  * API for a single, immutable instruction with associated parameters.
@@ -39,7 +45,7 @@ import java.util.Date;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface Instruction {
 
@@ -86,7 +92,7 @@ public interface Instruction {
 	/**
 	 * Get an Iterator of all unique instruction parameter names.
 	 * 
-	 * @return iterator
+	 * @return iterator, never {@literal null}
 	 */
 	Iterable<String> getParameterNames();
 
@@ -126,4 +132,50 @@ public interface Instruction {
 	 * @return the status
 	 */
 	InstructionStatus getStatus();
+
+	/**
+	 * Get the instruction state.
+	 * 
+	 * @return the state, or {@literal null} if none available
+	 * @since 1.1
+	 */
+	default InstructionState getInstructionState() {
+		InstructionStatus status = getStatus();
+		return (status != null ? status.getInstructionState() : null);
+	}
+
+	/**
+	 * Get a single-valued map of all parameter values.
+	 * 
+	 * @return the parameters as a map, never {@literal null}
+	 * @since 1.1
+	 */
+	default Map<String, String> getParameterMap() {
+		Map<String, String> result = null;
+		for ( String paramName : getParameterNames() ) {
+			if ( result == null ) {
+				result = new LinkedHashMap<>(4);
+			}
+			result.put(paramName, getParameterValue(paramName));
+		}
+		return (result != null ? result : Collections.emptyMap());
+	}
+
+	/**
+	 * Get a multi-valued map of all parameter values.
+	 * 
+	 * @return the parameters as a multi-valued map, never {@literal null}
+	 * @since 1.1
+	 */
+	default Map<String, List<String>> getParameterMultiMap() {
+		Map<String, List<String>> result = null;
+		for ( String paramName : getParameterNames() ) {
+			if ( result == null ) {
+				result = new LinkedHashMap<>(4);
+			}
+			result.put(paramName, Arrays.asList(getAllParameterValues(paramName)));
+		}
+		return (result != null ? result : Collections.emptyMap());
+	}
+
 }
