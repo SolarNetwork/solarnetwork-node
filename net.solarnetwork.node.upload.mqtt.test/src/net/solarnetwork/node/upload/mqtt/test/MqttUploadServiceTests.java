@@ -428,6 +428,11 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		expect(reactorService.storeInstruction(capture(storeCompletedInstructionCaptor)))
 				.andReturn(localInstructionId);
 
+		// save result back to DB
+		Capture<Instruction> storeCompletedInstructionAckCaptor = new Capture<>();
+		expect(reactorService.storeInstruction(capture(storeCompletedInstructionAckCaptor)))
+				.andReturn(localInstructionId);
+
 		replayAll();
 
 		// WHEN
@@ -460,9 +465,21 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 
 		// should have stored Completed status
 		Instruction completedInstruction = storeCompletedInstructionCaptor.getValue();
-		assertThat("Completed instruction has persisted local ID", execInstruction.getId(),
+		assertThat("Completed instruction has persisted local ID", completedInstruction.getId(),
 				equalTo(localInstructionId));
 		assertThat("Completed instruction state", completedInstruction.getInstructionState(),
+				equalTo(InstructionState.Completed));
+		assertThat("Completed instruction no ack state",
+				completedInstruction.getStatus().getAcknowledgedInstructionState(), nullValue());
+
+		// should have stored Completed ack status
+		Instruction completedInstructionAck = storeCompletedInstructionAckCaptor.getValue();
+		assertThat("Completed instruction has persisted local ID", completedInstructionAck.getId(),
+				equalTo(localInstructionId));
+		assertThat("Completed instruction state", completedInstructionAck.getInstructionState(),
+				equalTo(InstructionState.Completed));
+		assertThat("Completed instruction ack state",
+				completedInstructionAck.getStatus().getAcknowledgedInstructionState(),
 				equalTo(InstructionState.Completed));
 
 		// should have published acknowledgement on datum topic
@@ -627,5 +644,116 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		InterceptPublishMessage pubMsg = session.publishMessages.get(0);
 		assertThat("Instruction client ID", pubMsg.getClientID(), equalTo("solarnet"));
 		assertThat("Instruction topic", pubMsg.getTopicName(), equalTo(instructionTopic(nodeId)));
+	}
+
+	@Test
+	public void processInstruction_noHandler() throws Exception {
+		// GIVEN
+		TestingMqttMessageHandler messageHandler = new TestingMqttMessageHandler();
+		MqttConnection solarNetClient = createMqttClient("solarnet", messageHandler);
+
+		// parse instructions
+		String testInstructions = getStringResource("instructions-01.json");
+		List<Instruction> instructions = parseInstructions(testInstructions);
+		assert instructions.size() == 1;
+		final String remoteInstructionId = instructions.get(0).getRemoteInstructionId();
+		expect(reactorService.parseInstructions(anyObject(), anyObject(JsonNode.class),
+				eq(MqttUploadService.JSON_MIME_TYPE), isNull())).andReturn(instructions);
+
+		// persist Executing state
+		Capture<Instruction> storeInstructionCaptor = new Capture<>();
+		final Long localInstructionId = 98765L;
+		expect(reactorService.storeInstruction(capture(storeInstructionCaptor)))
+				.andReturn(localInstructionId);
+
+		// execute single instruction
+		Capture<Instruction> execInstructionCaptor = new Capture<>();
+		expect(instructionExecutionService.executeInstruction(capture(execInstructionCaptor)))
+				.andReturn(null);
+
+		// save result back to DB
+		Capture<Instruction> storeReceivedInstructionCaptor = new Capture<>();
+		expect(reactorService.storeInstruction(capture(storeReceivedInstructionCaptor)))
+				.andReturn(localInstructionId);
+
+		// save ack result back to DB
+		Capture<Instruction> storeReceivedAckInstructionCaptor = new Capture<>();
+		expect(reactorService.storeInstruction(capture(storeReceivedAckInstructionCaptor)))
+				.andReturn(localInstructionId);
+
+		replayAll();
+
+		// WHEN
+		Thread.sleep(1000); // allow time for subscription to take
+
+		String instrTopic = instructionTopic(nodeId);
+		solarNetClient.publish(new BasicMqttMessage(instrTopic, false, MqttQos.AtLeastOnce,
+				testInstructions.getBytes("UTF-8"))).get(MQTT_TIMEOUT, TimeUnit.SECONDS);
+
+		Thread.sleep(2000); // allow time for messages to process
+
+		stopMqttServer(); // shut down server
+
+		// THEN
+
+		// should have stored Executing status
+		Instruction storeInstruction = storeInstructionCaptor.getValue();
+		assertThat("Store instruction remote ID", storeInstruction.getRemoteInstructionId(),
+				equalTo(remoteInstructionId));
+		assertThat("Store instruction has no local ID", storeInstruction.getId(), nullValue());
+		assertThat("Store instruction state", storeInstruction.getInstructionState(),
+				equalTo(InstructionState.Executing));
+		assertThat("Store instruction instructorId", storeInstruction.getInstructorId(),
+				equalTo(TEST_SOLARIN_BASE_URL));
+		assertThat("Store instruction no ack",
+				storeInstruction.getStatus().getAcknowledgedInstructionState(), nullValue());
+
+		// should have executed Instruction with persisted local ID
+		Instruction execInstruction = execInstructionCaptor.getValue();
+		assertThat("Exec instruction has persisted local ID", execInstruction.getId(),
+				equalTo(localInstructionId));
+
+		// should have stored Received status
+		Instruction receivedInstruction = storeReceivedInstructionCaptor.getValue();
+		assertThat("Received instruction has persisted local ID", receivedInstruction.getId(),
+				equalTo(localInstructionId));
+		assertThat("Received instruction state", receivedInstruction.getInstructionState(),
+				equalTo(InstructionState.Received));
+		assertThat("Received instruction no ack",
+				receivedInstruction.getStatus().getAcknowledgedInstructionState(), nullValue());
+
+		// should have stored Received status
+		Instruction receivedAckInstruction = storeReceivedAckInstructionCaptor.getValue();
+		assertThat("Received ack instruction has persisted local ID", receivedAckInstruction.getId(),
+				equalTo(localInstructionId));
+		assertThat("Received ack instruction state", receivedAckInstruction.getInstructionState(),
+				equalTo(InstructionState.Received));
+		assertThat("Received ack instruction ack state",
+				receivedAckInstruction.getStatus().getAcknowledgedInstructionState(),
+				equalTo(InstructionState.Received));
+
+		// should have published acknowledgement on datum topic
+		TestingInterceptHandler session = getTestingInterceptHandler();
+		assertThat("Published instruction and acks", session.publishMessages, hasSize(3));
+
+		InterceptPublishMessage pubMsg = session.publishMessages.get(0);
+		assertThat("Instruction client ID", pubMsg.getClientID(), equalTo("solarnet"));
+		assertThat("Instruction topic", pubMsg.getTopicName(), equalTo(instructionTopic(nodeId)));
+
+		pubMsg = session.publishMessages.get(1);
+		assertThat("Instruction ack client ID", pubMsg.getClientID(), equalTo(nodeId.toString()));
+		assertThat("Instruction topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
+		assertThat("Instruction ack payload", session.getPublishPayloadStringAtIndex(1),
+				equalTo("{\"__type__\":\"InstructionStatus\",\"id\":\"" + localInstructionId + "\""
+						+ ",\"instructionId\":\"" + remoteInstructionId + "\""
+						+ ",\"topic\":\"SetControlParameter\",\"status\":\"Executing\"}"));
+
+		pubMsg = session.publishMessages.get(2);
+		assertThat("Instruction ack client ID", pubMsg.getClientID(), equalTo(nodeId.toString()));
+		assertThat("Instruction topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
+		assertThat("Instruction ack payload", session.getPublishPayloadStringAtIndex(2),
+				equalTo("{\"__type__\":\"InstructionStatus\",\"id\":\"" + localInstructionId + "\""
+						+ ",\"instructionId\":\"" + remoteInstructionId + "\""
+						+ ",\"topic\":\"SetControlParameter\",\"status\":\"Received\"}"));
 	}
 }
