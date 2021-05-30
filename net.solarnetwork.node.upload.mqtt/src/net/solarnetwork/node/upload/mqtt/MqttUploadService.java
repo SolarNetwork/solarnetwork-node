@@ -79,7 +79,7 @@ import net.solarnetwork.util.OptionalService;
  * {@link UploadService} using MQTT.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public class MqttUploadService extends BaseMqttConnectionService
 		implements UploadService, MqttMessageHandler, MqttConnectionObserver, SettingSpecifierProvider {
@@ -456,7 +456,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 						try {
 							InstructionStatus status = null;
 							if ( executor != null ) {
-								// save with Executing state immediately
+								// save with Executing state immediately, to prevent reactor job from picking up
 								status = new BasicInstructionStatus(instr.getId(),
 										InstructionState.Executing, new Date());
 								Long id = reactor.storeInstruction(new BasicInstruction(instr, status));
@@ -465,17 +465,27 @@ public class MqttUploadService extends BaseMqttConnectionService
 								// execute immediately with our executor; pass Executing status back first
 								publishInstructionAck(conn, nodeId, instr);
 								status = executor.executeInstruction(instr);
-							}
-							if ( status == null ) {
+
+								if ( status == null ) {
+									log.info(
+											"No handler available for instruction {} {}: deferring to Received state",
+											instr.getRemoteInstructionId(), instr.getTopic());
+									// instruction not handled: change instruction status to Received
+									status = new BasicInstructionStatus(instr.getId(),
+											InstructionState.Received, new Date());
+								}
+							} else {
 								// execution didn't happen, so pass to deferred executor
 								status = reactor.processInstruction(instr);
 							}
 							if ( status == null ) {
 								// deferred executor didn't handle, so decline
 								status = new BasicInstructionStatus(instr.getId(),
-										InstructionStatus.InstructionState.Declined, new Date());
+										InstructionState.Declined, new Date());
 							}
-							resultInstructions.add(new BasicInstruction(instr, status));
+							instr = new BasicInstruction(instr, status);
+							reactor.storeInstruction(instr);
+							resultInstructions.add(instr);
 						} catch ( Exception e ) {
 							log.error("Error handling instruction {}", instr, e);
 						}

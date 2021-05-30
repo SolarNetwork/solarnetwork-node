@@ -64,7 +64,7 @@ import net.solarnetwork.node.reactor.support.DefaultInstructionExecutionService;
  * </p>
  * 
  * @author matt
- * @version 2.4
+ * @version 2.5
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
@@ -106,9 +106,12 @@ public class InstructionExecutionJob extends AbstractJob {
 				}
 				if ( instructionDao.compareAndStoreInstructionStatus(instruction.getId(),
 						InstructionState.Executing, status) ) {
-					log.info("Instruction {} {} (local {}) status changed to {}",
-							instruction.getRemoteInstructionId(), instruction.getTopic(),
-							instruction.getId(), status.getInstructionState());
+					if ( log.isInfoEnabled()
+							&& status.getInstructionState() != InstructionState.Received ) {
+						log.info("Instruction {} {} (local {}) status changed to {}",
+								instruction.getRemoteInstructionId(), instruction.getTopic(),
+								instruction.getId(), status.getInstructionState());
+					}
 				}
 			}
 		}
