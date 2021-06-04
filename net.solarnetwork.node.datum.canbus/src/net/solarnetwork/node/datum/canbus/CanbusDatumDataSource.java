@@ -67,7 +67,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Generic CAN bus datum data source.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, CanbusFrameListener {
@@ -123,7 +123,7 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 			return null;
 		}
 		GeneralNodeDatum d = createDatum(currSample);
-		if ( d == null || d.getSamples() == null || d.getSamples().isEmpty() ) {
+		if ( d == null ) {
 			return null;
 		}
 		return d;
@@ -136,7 +136,7 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 		populateDatumProperties(data, d, getMsgConfigs());
 		populateDatumProperties(data, d, getExpressionConfigs());
 		d = applySamplesTransformer(d, null);
-		if ( d == null ) {
+		if ( d == null || d.getSamples() == null || d.getSamples().isEmpty() ) {
 			return null;
 		}
 		return d;
