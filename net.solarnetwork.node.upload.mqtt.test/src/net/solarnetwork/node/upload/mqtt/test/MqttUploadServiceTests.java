@@ -73,6 +73,8 @@ import net.solarnetwork.common.mqtt.MqttQos;
 import net.solarnetwork.common.mqtt.MqttVersion;
 import net.solarnetwork.common.mqtt.netty.NettyMqttConnectionFactory;
 import net.solarnetwork.domain.datum.BasicObjectDatumStreamMetadata;
+import net.solarnetwork.domain.datum.BasicStreamDatum;
+import net.solarnetwork.domain.datum.DatumProperties;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.IdentityService;
@@ -306,7 +308,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		assertThat("Publish topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
 
 		datum.addTag(MqttUploadService.TAG_VERSION_2);
-		assertThat("Publish payload", session.getPublishPayloadStringAtIndex(0),
+		assertThat("Publish payload in stream form", session.getPublishPayloadStringAtIndex(0),
 				equalTo(objectMapper.writeValueAsString(datum)));
 
 		Event datumUploadEvent = eventCaptor.getValue();
@@ -317,8 +319,9 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 
 	@Test
 	public void uploadWithConnectionToMqttServer_stream() throws IOException {
-		// given
+		// GIVEN
 		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setCreated(new Date());
 		datum.setSourceId("test.source");
 		datum.putInstantaneousSampleValue("foo", 123);
 
@@ -334,12 +337,12 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 
 		replayAll();
 
-		// when
+		// WHEN
 		String txId = service.uploadDatum(datum);
 
 		stopMqttServer(); // to flush messages
 
-		// then
+		// THEN
 		assertThat("TX ID", txId, notNullValue());
 
 		TestingInterceptHandler session = getTestingInterceptHandler();
@@ -354,8 +357,62 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		assertThat("Publish client ID", pubMsg.getClientID(), equalTo(nodeId.toString()));
 		assertThat("Publish topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
 
-		datum.addTag(MqttUploadService.TAG_VERSION_2);
+		// StreamDatum published
+		DatumProperties props = DatumProperties.propertiesFrom(datum, meta);
+		BasicStreamDatum streamDatum = new BasicStreamDatum(meta.getStreamId(), datum.getTimestamp(),
+				props);
 		assertThat("Publish payload", session.getPublishPayloadStringAtIndex(0),
+				equalTo(objectMapper.writeValueAsString(streamDatum)));
+
+		Event datumUploadEvent = eventCaptor.getValue();
+		assertThat("Event topic", datumUploadEvent.getTopic(),
+				equalTo(UploadService.EVENT_TOPIC_DATUM_UPLOADED));
+		assertThat("Event prop 'foo'", datumUploadEvent.getProperty("foo"), equalTo((Object) 123));
+	}
+
+	@Test
+	public void uploadWithConnectionToMqttServer_streamMismatch() throws IOException {
+		// GIVEN
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setCreated(new Date());
+		datum.setSourceId("test.source");
+		datum.putInstantaneousSampleValue("foo", 123);
+
+		// stream metadata available
+		BasicObjectDatumStreamMetadata meta = new BasicObjectDatumStreamMetadata(UUID.randomUUID(),
+				"Pacific/Auckland", ObjectDatumKind.Node, nodeId, "test.source", new String[] { "bar" },
+				null, null);
+		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Node, nodeId,
+				datum.getSourceId())).andReturn(meta);
+
+		Capture<Event> eventCaptor = new Capture<Event>();
+		eventAdminService.postEvent(capture(eventCaptor));
+
+		replayAll();
+
+		// WHEN
+		String txId = service.uploadDatum(datum);
+
+		stopMqttServer(); // to flush messages
+
+		// THEN
+		assertThat("TX ID", txId, notNullValue());
+
+		TestingInterceptHandler session = getTestingInterceptHandler();
+		assertThat("Connected to broker", session.connectMessages, hasSize(1));
+
+		InterceptConnectMessage connMsg = session.connectMessages.get(0);
+		assertThat("Connect client ID", connMsg.getClientID(), equalTo(nodeId.toString()));
+		assertThat("Durable session", connMsg.isCleanSession(), equalTo(true));
+
+		assertThat("Published datum", session.publishMessages, hasSize(1));
+		InterceptPublishMessage pubMsg = session.publishMessages.get(0);
+		assertThat("Publish client ID", pubMsg.getClientID(), equalTo(nodeId.toString()));
+		assertThat("Publish topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
+
+		// fall back to general datum because of stream  mis-match
+		datum.addTag(MqttUploadService.TAG_VERSION_2);
+		assertThat("Publish payload in general form", session.getPublishPayloadStringAtIndex(0),
 				equalTo(objectMapper.writeValueAsString(datum)));
 
 		Event datumUploadEvent = eventCaptor.getValue();
@@ -405,6 +462,63 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		datum.addTag(MqttUploadService.TAG_VERSION_2);
 		assertThat("Publish payload", session.getPublishPayloadStringAtIndex(0),
 				equalTo(objectMapper.writeValueAsString(datum)));
+
+		Event datumUploadEvent = eventCaptor.getValue();
+		assertThat("Event topic", datumUploadEvent.getTopic(),
+				equalTo(UploadService.EVENT_TOPIC_DATUM_UPLOADED));
+		assertThat("Event prop 'locationId'", datumUploadEvent.getProperty("locationId"),
+				equalTo((Object) locationId));
+		assertThat("Event prop 'foo'", datumUploadEvent.getProperty("foo"), equalTo((Object) 123));
+	}
+
+	@Test
+	public void uploadLocationDatumWithConnectionToMqttServer_stream() throws IOException {
+		// GIVEN
+		Long locationId = Math.abs(UUID.randomUUID().getMostSignificantBits());
+		GeneralLocationDatum datum = new GeneralLocationDatum();
+		datum.setCreated(new Date());
+		datum.setLocationId(locationId);
+		datum.setSourceId("test.source");
+		datum.putInstantaneousSampleValue("foo", 123);
+
+		// stream metadata available
+		BasicObjectDatumStreamMetadata meta = new BasicObjectDatumStreamMetadata(UUID.randomUUID(),
+				"Pacific/Auckland", ObjectDatumKind.Location, locationId, "test.source",
+				new String[] { "foo" }, null, null);
+		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Location, locationId,
+				datum.getSourceId())).andReturn(meta);
+
+		Capture<Event> eventCaptor = new Capture<Event>();
+		eventAdminService.postEvent(capture(eventCaptor));
+
+		replayAll();
+
+		// when
+		String txId = service.uploadDatum(datum);
+
+		stopMqttServer(); // to flush messages
+
+		// then
+		assertThat("TX ID", txId, notNullValue());
+
+		TestingInterceptHandler session = getTestingInterceptHandler();
+		assertThat("Connected to broker", session.connectMessages, hasSize(1));
+
+		InterceptConnectMessage connMsg = session.connectMessages.get(0);
+		assertThat("Connect client ID", connMsg.getClientID(), equalTo(nodeId.toString()));
+		assertThat("Durable session", connMsg.isCleanSession(), equalTo(true));
+
+		assertThat("Published datum", session.publishMessages, hasSize(1));
+		InterceptPublishMessage pubMsg = session.publishMessages.get(0);
+		assertThat("Publish client ID", pubMsg.getClientID(), equalTo(nodeId.toString()));
+		assertThat("Publish topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
+
+		// StreamDatum published
+		DatumProperties props = DatumProperties.propertiesFrom(datum, meta);
+		BasicStreamDatum streamDatum = new BasicStreamDatum(meta.getStreamId(), datum.getTimestamp(),
+				props);
+		assertThat("Publish payload in stream form", session.getPublishPayloadStringAtIndex(0),
+				equalTo(objectMapper.writeValueAsString(streamDatum)));
 
 		Event datumUploadEvent = eventCaptor.getValue();
 		assertThat("Event topic", datumUploadEvent.getTopic(),
