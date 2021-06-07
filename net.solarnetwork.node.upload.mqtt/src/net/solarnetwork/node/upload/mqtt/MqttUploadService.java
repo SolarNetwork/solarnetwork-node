@@ -335,8 +335,8 @@ public class MqttUploadService extends BaseMqttConnectionService
 						postDatumUploadedEvent(data, jsonData);
 						log.info("Uploaded datum via MQTT: {}", data);
 					}
-					return DigestUtils.md5DigestAsHex(
-							String.format("%tQ;%s", data.getCreated(), data.getSourceId()).getBytes());
+					return DigestUtils.md5DigestAsHex(String.format("%tQ;%s;%d;%s", data.getCreated(),
+							data.getSourceId(), objectId, kind).getBytes());
 				} catch ( IOException | InterruptedException | ExecutionException
 						| TimeoutException e ) {
 					Throwable root = e;
