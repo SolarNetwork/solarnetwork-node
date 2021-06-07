@@ -93,10 +93,16 @@
 	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean" >
 		<property name="serializers">
 			<list>
-				<bean class="net.solarnetwork.util.JodaDateTimeSerializer"/>
-				<bean class="net.solarnetwork.util.JodaLocalDateSerializer"/>
-				<bean class="net.solarnetwork.util.JodaLocalDateTimeSerializer"/>
-				<bean class="net.solarnetwork.util.JodaLocalTimeSerializer"/>
+				<bean class="net.solarnetwork.codec.JodaDateTimeSerializer"/>
+				<bean class="net.solarnetwork.codec.JodaLocalDateSerializer"/>
+				<bean class="net.solarnetwork.codec.JodaLocalDateTimeSerializer"/>
+				<bean class="net.solarnetwork.codec.JodaLocalTimeSerializer"/>
+				<bean class="net.solarnetwork.codec.BasicObjectDatumStreamMetadataSerializer"/>
+			</list>
+		</property>
+		<property name="deserializers">
+			<list>
+				<bean class="net.solarnetwork.codec.BasicObjectDatumStreamMetadataDeserializer"/>
 			</list>
 		</property>
 		<property name="featuresToDisable">

@@ -41,6 +41,9 @@ import org.springframework.core.io.Resource;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.DigestUtils;
 import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.domain.datum.ObjectDatumKind;
+import net.solarnetwork.domain.datum.ObjectDatumStreamMetadata;
+import net.solarnetwork.domain.datum.ObjectDatumStreamMetadataId;
 import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.settings.SettingResourceHandler;
@@ -51,6 +54,7 @@ import net.solarnetwork.node.settings.SettingsUpdates;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.support.JsonHttpClientSupport;
 import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.util.CachedResult;
 
 /**
  * JSON based web service implementation of {@link DatumMetadataService}.
@@ -62,7 +66,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * </p>
  * 
  * @author matt
- * @version 1.6
+ * @version 1.7
  */
 public class JsonDatumMetadataService extends JsonHttpClientSupport implements DatumMetadataService,
 		SettingResourceHandler, SettingSpecifierProvider, SettingsChangeObserver, Runnable {
@@ -76,6 +80,13 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	/** The default {@code updatePersistDelaySeconds} property value. */
 	public static final int DEFAULT_UPDATE_PERSIST_DELAY_SECONDS = 2;
 
+	/**
+	 * The default {@code datumStreamMetadataCacheSeconds} property value.
+	 * 
+	 * @since 1.7
+	 */
+	public static final int DEFATUL_DATUM_STREAM_METADATA_CACHE_SECONDS = 86400;
+
 	private static final Charset UTF8 = Charset.forName("UTF-8");
 
 	private String baseUrl = "/api/v1/sec/datum/meta";
@@ -83,10 +94,12 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	private final SettingsService settingsService;
 	private final TaskScheduler taskScheduler;
 	private final ConcurrentMap<String, CachedMetadata> sourceMetadata;
+	private final ConcurrentMap<ObjectDatumStreamMetadataId, CachedResult<ObjectDatumStreamMetadata>> datumStreamMetadata;
 	private SettingDao settingDao;
 	private int updateThrottleSeconds = DEFAULT_UPDATE_THROTTLE_SECONDS;
 	private int updatePersistDelaySeconds = DEFAULT_UPDATE_PERSIST_DELAY_SECONDS;
 	private ScheduledFuture<?> syncTask;
+	private int datumStreamMetadataCacheSeconds = DEFATUL_DATUM_STREAM_METADATA_CACHE_SECONDS;
 
 	/**
 	 * Constructor.
@@ -97,13 +110,38 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	 *        the task scheduler to use
 	 */
 	public JsonDatumMetadataService(SettingsService settingsService, TaskScheduler taskScheduler) {
+		this(settingsService, taskScheduler, null, null);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param settingsService
+	 *        the settings service to use
+	 * @param taskScheduler
+	 *        the task scheduler to use
+	 * @param sourceMetadata
+	 *        the source metadata cache to use
+	 * @param datumStreamMetadata
+	 *        the stream metadata cache to use
+	 * @since 1.7
+	 */
+	public JsonDatumMetadataService(SettingsService settingsService, TaskScheduler taskScheduler,
+			ConcurrentMap<String, CachedMetadata> sourceMetadata,
+			ConcurrentMap<ObjectDatumStreamMetadataId, CachedResult<ObjectDatumStreamMetadata>> datumStreamMetadata) {
 		super();
 		this.settingsService = settingsService;
 		this.taskScheduler = taskScheduler;
-		this.sourceMetadata = new ConcurrentHashMap<>(8, 0.9f, 4);
+		this.sourceMetadata = (sourceMetadata != null ? sourceMetadata
+				: new ConcurrentHashMap<>(8, 0.9f, 4));
+		this.datumStreamMetadata = (datumStreamMetadata != null ? datumStreamMetadata
+				: new ConcurrentHashMap<>(8, 0.9f, 4));
 	}
 
-	private final class CachedMetadata implements Runnable {
+	/**
+	 * Internal class ued for cached metadata.
+	 */
+	public final class CachedMetadata implements Runnable {
 
 		private final String sourceId;
 		private final GeneralDatumMetadata metadata;
@@ -416,6 +454,68 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 		}
 	}
 
+	@Override
+	public ObjectDatumStreamMetadata getDatumStreamMetadata(ObjectDatumKind kind, Long objectId,
+			String sourceId) {
+		if ( kind == null || sourceId == null || sourceId.isEmpty() ) {
+			return null;
+		} else if ( kind == ObjectDatumKind.Location && objectId == null ) {
+			return null;
+		} else if ( kind == ObjectDatumKind.Node ) {
+			objectId = getIdentityService().getNodeId();
+		}
+		ObjectDatumStreamMetadataId id = new ObjectDatumStreamMetadataId(kind, objectId, sourceId);
+		CachedResult<ObjectDatumStreamMetadata> cached = datumStreamMetadata.get(id);
+		if ( cached != null && cached.isValid() ) {
+			return cached.getResult();
+		}
+		ObjectDatumStreamMetadata meta = fetchStreamMetadata(id);
+		if ( meta != null ) {
+			if ( datumStreamMetadataCacheSeconds > 0 ) {
+				CachedResult<ObjectDatumStreamMetadata> toCache = new CachedResult<>(meta,
+						datumStreamMetadataCacheSeconds, TimeUnit.SECONDS);
+				datumStreamMetadata.compute(id, (k, v) -> {
+					// update cache only if not currently in cache or replacing expired element
+					if ( v == null || v == cached ) {
+						return toCache;
+					}
+					return v;
+				});
+			}
+		}
+		return meta;
+	}
+
+	private ObjectDatumStreamMetadata fetchStreamMetadata(ObjectDatumStreamMetadataId id) {
+		final String url = streamMetadataUrl(id);
+		try {
+			final InputStream in = jsonGET(url);
+			ObjectDatumStreamMetadata result = extractResponseData(in, ObjectDatumStreamMetadata.class);
+			if ( result != null ) {
+				log.info("Fetched datum stream {} metadata from SolarIn: {}", id, result);
+			}
+			return result;
+		} catch ( IOException e ) {
+			if ( log.isTraceEnabled() ) {
+				log.trace("IOException querying for datum stream metadata at " + url, e);
+			} else if ( log.isDebugEnabled() ) {
+				log.debug("Unable to get datum stream metadata: " + e.getMessage());
+			}
+			throw new RuntimeException(e);
+		}
+	}
+
+	private String streamMetadataUrl(ObjectDatumStreamMetadataId id) {
+		StringBuilder buf = new StringBuilder();
+		appendXWWWFormURLEncodedValue(buf, "sourceId", id.getSourceId());
+		if ( id.getKind() != null ) {
+			buf.append('&');
+			appendXWWWFormURLEncodedValue(buf, "kind", id.getKind().name());
+		}
+		return (getIdentityService().getSolarInBaseUrl() + baseUrl + '/' + id.getObjectId() + "/stream?"
+				+ buf);
+	}
+
 	/**
 	 * Get the setting DAO.
 	 * 
@@ -524,6 +624,30 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	 */
 	public void setUpdatePersistDelaySeconds(int updatePersistDelaySeconds) {
 		this.updatePersistDelaySeconds = updatePersistDelaySeconds;
+	}
+
+	/**
+	 * Get the maximum number of seconds to cache datum stream metadata before
+	 * fetching it again from SolarIn.
+	 * 
+	 * @return the seconds, defaults to
+	 *         {@link #DEFATUL_DATUM_STREAM_METADATA_CACHE_SECONDS}
+	 * @since 1.7
+	 */
+	public int getDatumStreamMetadataCacheSeconds() {
+		return datumStreamMetadataCacheSeconds;
+	}
+
+	/**
+	 * Set the maximum number of seconds to cache datum stream metadata before
+	 * fetching it again from SolarIn.
+	 * 
+	 * @param datumStreamMetadataCacheSeconds
+	 *        the number of seconds to set
+	 * @since 1.7
+	 */
+	public void setDatumStreamMetadataCacheSeconds(int datumStreamMetadataCacheSeconds) {
+		this.datumStreamMetadataCacheSeconds = datumStreamMetadataCacheSeconds;
 	}
 
 }

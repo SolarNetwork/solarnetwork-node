@@ -37,6 +37,7 @@ import org.osgi.service.event.EventAdmin;
 import org.springframework.context.MessageSource;
 import org.springframework.util.DigestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
+import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.node.BulkUploadResult;
 import net.solarnetwork.node.BulkUploadService;
 import net.solarnetwork.node.UploadService;
@@ -50,7 +51,6 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.support.JsonHttpClientSupport;
-import net.solarnetwork.util.JsonUtils;
 import net.solarnetwork.util.OptionalService;
 
 /**
@@ -58,7 +58,7 @@ import net.solarnetwork.util.OptionalService;
  * a JSON document containing all data to upload.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 		implements BulkUploadService, InstructionAcknowledgementService, SettingSpecifierProvider {
@@ -403,6 +403,7 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 		this.uploadEmptyDataset = uploadEmptyDataset;
 	}
 
+	@Override
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}

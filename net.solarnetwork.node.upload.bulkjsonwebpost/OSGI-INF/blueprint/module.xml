@@ -47,6 +47,7 @@
 				<bean class="net.solarnetwork.node.support.DatumSerializer"/>
 				<bean class="net.solarnetwork.node.support.InstructionSerializer"/>
 				<bean class="net.solarnetwork.node.support.NodeControlInfoSerializer"/>
+				<bean class="net.solarnetwork.codec.BasicStreamDatumArraySerializer"/>
 			</list>
 		</property>
 	</bean>
