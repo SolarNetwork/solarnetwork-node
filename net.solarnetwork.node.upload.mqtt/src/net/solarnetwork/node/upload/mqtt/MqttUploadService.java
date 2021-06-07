@@ -46,6 +46,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeCreator;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.common.mqtt.BaseMqttConnectionService;
 import net.solarnetwork.common.mqtt.BasicMqttMessage;
 import net.solarnetwork.common.mqtt.BasicMqttProperty;
@@ -58,10 +59,17 @@ import net.solarnetwork.common.mqtt.MqttPropertyType;
 import net.solarnetwork.common.mqtt.MqttQos;
 import net.solarnetwork.common.mqtt.MqttStats;
 import net.solarnetwork.common.mqtt.MqttVersion;
+import net.solarnetwork.domain.datum.BasicStreamDatum;
+import net.solarnetwork.domain.datum.DatumProperties;
+import net.solarnetwork.domain.datum.GeneralDatum;
+import net.solarnetwork.domain.datum.ObjectDatumKind;
+import net.solarnetwork.domain.datum.ObjectDatumStreamMetadata;
+import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.domain.BaseDatum;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
@@ -72,14 +80,13 @@ import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.util.JsonUtils;
 import net.solarnetwork.util.OptionalService;
 
 /**
  * {@link UploadService} using MQTT.
  * 
  * @author matt
- * @version 1.6
+ * @version 1.7
  */
 public class MqttUploadService extends BaseMqttConnectionService
 		implements UploadService, MqttMessageHandler, MqttConnectionObserver, SettingSpecifierProvider {
@@ -111,6 +118,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 	private final OptionalService<ReactorService> reactorServiceOpt;
 	private final OptionalService<InstructionExecutionService> instructionExecutionServiceOpt;
 	private final OptionalService<EventAdmin> eventAdminOpt;
+	private final OptionalService<DatumMetadataService> datumMetadataServiceOpt;
 	private Executor executor;
 	private boolean includeVersionTag = DEFAULT_INCLUDE_VERSION_TAG;
 
@@ -131,17 +139,21 @@ public class MqttUploadService extends BaseMqttConnectionService
 	 *        the instruction execution service
 	 * @param eventAdmin
 	 *        the event admin service
+	 * @param datumMetadataService
+	 *        the datum metadata service
 	 */
 	public MqttUploadService(MqttConnectionFactory connectionFactory, ObjectMapper objectMapper,
 			IdentityService identityService, OptionalService<ReactorService> reactorService,
 			OptionalService<InstructionExecutionService> instructionExecutionService,
-			OptionalService<EventAdmin> eventAdmin) {
+			OptionalService<EventAdmin> eventAdmin,
+			OptionalService<DatumMetadataService> datumMetadataService) {
 		super(connectionFactory, new MqttStats("SolarIn/MQTT", 100, SolarInCountStat.values()));
 		this.objectMapper = objectMapper;
 		this.identityService = identityService;
 		this.reactorServiceOpt = reactorService;
 		this.instructionExecutionServiceOpt = instructionExecutionService;
 		this.eventAdminOpt = eventAdmin;
+		this.datumMetadataServiceOpt = datumMetadataService;
 		setPublishQos(MqttQos.AtLeastOnce);
 		getMqttConfig().setUid("SolarIn/MQTT");
 		getMqttConfig().setVersion(DEFAULT_MQTT_VERSION);
@@ -246,43 +258,79 @@ public class MqttUploadService extends BaseMqttConnectionService
 	@Override
 	public String uploadDatum(Datum data) {
 		final Long nodeId = identityService.getNodeId();
+		final DatumMetadataService datumMetadataService = OptionalService
+				.service(datumMetadataServiceOpt);
 		if ( nodeId != null ) {
 			MqttConnection conn = connection();
 			if ( conn != null ) {
 				String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, nodeId);
 				try {
+					byte[] messageData = null;
 					JsonNode jsonData = objectMapper.valueToTree(data);
-					if ( includeVersionTag ) {
-						JsonNode samplesData = jsonData.path("samples");
-						if ( samplesData.isObject() ) {
-							JsonNode tagsData = samplesData.path("t");
-							ArrayNode tagsArrayNode = null;
-							if ( tagsData.isArray() ) {
-								tagsArrayNode = (ArrayNode) tagsData;
-							} else if ( tagsData.isNull() || tagsData.isMissingNode() ) {
-								tagsArrayNode = ((JsonNodeCreator) samplesData).arrayNode(1);
-								((ObjectNode) samplesData).set("t", tagsArrayNode);
-							}
-							if ( tagsArrayNode != null ) {
-								boolean found = false;
-								for ( JsonNode t : tagsArrayNode ) {
-									if ( TAG_VERSION_2.equals(t.textValue()) ) {
-										found = true;
-										break;
-									}
+					ObjectDatumKind kind;
+					Long objectId;
+					if ( data instanceof GeneralLocationDatum ) {
+						GeneralLocationDatum locDatum = (GeneralLocationDatum) data;
+						kind = ObjectDatumKind.Location;
+						objectId = locDatum.getLocationId();
+					} else {
+						kind = ObjectDatumKind.Node;
+						objectId = nodeId;
+					}
+					if ( datumMetadataService != null && data instanceof GeneralDatum ) {
+						// try to post as stream datum, if metadata available
+						ObjectDatumStreamMetadata meta = datumMetadataService
+								.getDatumStreamMetadata(kind, objectId, data.getSourceId());
+						if ( meta != null ) {
+							// we've got stream metadata: post as this if all properties accounted for
+							try {
+								DatumProperties datumProps = DatumProperties
+										.propertiesFrom((GeneralDatum) data, meta);
+								if ( datumProps != null ) {
+									BasicStreamDatum streamDatum = new BasicStreamDatum(
+											meta.getStreamId(), data.getTimestamp(), datumProps);
+									messageData = objectMapper.writeValueAsBytes(streamDatum);
 								}
-								if ( !found ) {
-									tagsArrayNode.add(TAG_VERSION_2);
-								}
+							} catch ( IllegalArgumentException e ) {
+								log.debug(
+										"Unable to post datum as stream datum, falling back to general datum: "
+												+ e.getMessage());
 							}
 						}
 					}
-					if ( jsonData != null && !jsonData.isNull() ) {
-						conn.publish(new BasicMqttMessage(topic, false, getPublishQos(),
-								objectMapper.writeValueAsBytes(jsonData)))
+					if ( messageData == null ) {
+						if ( includeVersionTag ) {
+							JsonNode samplesData = jsonData.path("samples");
+							if ( samplesData.isObject() ) {
+								JsonNode tagsData = samplesData.path("t");
+								ArrayNode tagsArrayNode = null;
+								if ( tagsData.isArray() ) {
+									tagsArrayNode = (ArrayNode) tagsData;
+								} else if ( tagsData.isNull() || tagsData.isMissingNode() ) {
+									tagsArrayNode = ((JsonNodeCreator) samplesData).arrayNode(1);
+									((ObjectNode) samplesData).set("t", tagsArrayNode);
+								}
+								if ( tagsArrayNode != null ) {
+									boolean found = false;
+									for ( JsonNode t : tagsArrayNode ) {
+										if ( TAG_VERSION_2.equals(t.textValue()) ) {
+											found = true;
+											break;
+										}
+									}
+									if ( !found ) {
+										tagsArrayNode.add(TAG_VERSION_2);
+									}
+								}
+							}
+						}
+						messageData = objectMapper.writeValueAsBytes(jsonData);
+					}
+					if ( messageData != null && messageData.length > 0 ) {
+						conn.publish(new BasicMqttMessage(topic, false, getPublishQos(), messageData))
 								.get(getMqttConfig().getConnectTimeoutSeconds(), TimeUnit.SECONDS);
 						getMqttStats().incrementAndGet(
-								jsonData.hasNonNull("locationId") ? SolarInCountStat.LocationDatumPosted
+								kind == ObjectDatumKind.Location ? SolarInCountStat.LocationDatumPosted
 										: SolarInCountStat.NodeDatumPosted);
 						postDatumUploadedEvent(data, jsonData);
 						log.info("Uploaded datum via MQTT: {}", data);
