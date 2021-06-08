@@ -39,6 +39,7 @@
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+		<property name="sticky" value="true"/>
 	</bean>
 
 	<bean id="sslService" class="net.solarnetwork.util.DynamicServiceTracker">
@@ -60,11 +61,13 @@
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
 		<property name="serviceFilter" value="(role=global)" />
+		<property name="sticky" value="true"/>
 	</bean>
 
 	<bean id="datumMetadataService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.DatumMetadataService"/>
+		<property name="sticky" value="true"/>
 	</bean>
 
 	<bean id="mqttUploadService" class="net.solarnetwork.node.upload.mqtt.MqttUploadService" 
