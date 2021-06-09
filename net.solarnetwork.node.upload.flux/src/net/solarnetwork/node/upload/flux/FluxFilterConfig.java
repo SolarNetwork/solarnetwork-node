@@ -49,7 +49,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Configuration for filtering options used by SolarFlux.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 1.4
  */
 public class FluxFilterConfig implements SettingsChangeObserver {
@@ -67,6 +67,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	private Pattern sourceIdRegex;
 	private String datumEncoderUid;
 	private String transformServiceUid;
+	private String requiredOperationalMode;
 	private Integer frequencySeconds;
 	private String[] propIncludeValues;
 	private String[] propExcludeValues;
@@ -109,6 +110,22 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	}
 
 	/**
+	 * Test if a source ID matches the source ID pattern configured on this
+	 * instance.
+	 * 
+	 * @param sourceId
+	 * @return {@literal true} if {@code sourceId} matches the configured source
+	 *         ID pattern, or no pattern is defined
+	 * @since 1.3
+	 */
+	public boolean isSourceIdMatch(String sourceId) {
+		if ( sourceIdRegex != null && sourceId != null ) {
+			return sourceIdRegex.matcher(sourceId).find();
+		}
+		return true;
+	}
+
+	/**
 	 * Apply the rules defined in this filter configuration to see if a datum
 	 * can be published.
 	 * 
@@ -128,12 +145,8 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 		if ( datum == null ) {
 			return false;
 		}
-		if ( sourceIdRegex != null && sourceId != null ) {
-			boolean match = sourceIdRegex.matcher(sourceId).find();
-			if ( !match ) {
-				// this filter does not apply to the given source ID, so skip
-				return true;
-			}
+		if ( !isSourceIdMatch(sourceId) ) {
+			return true;
 		}
 
 		if ( frequencySeconds != null && frequencySeconds > 0 && previousSourceIdPublishDate != null ) {
@@ -212,6 +225,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 
 		result.add(new BasicTextFieldSettingSpecifier(prefix + "sourceIdRegexValue", ""));
 		result.add(new BasicTextFieldSettingSpecifier(prefix + "transformServiceUid", ""));
+		result.add(new BasicTextFieldSettingSpecifier(prefix + "requiredOperationalMode", ""));
 		result.add(new BasicTextFieldSettingSpecifier(prefix + "datumEncoderUid", ""));
 		result.add(new BasicTextFieldSettingSpecifier(prefix + "frequencySeconds", ""));
 
@@ -473,6 +487,29 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	 */
 	public void setTransformServiceUid(String transformServiceUid) {
 		this.transformServiceUid = transformServiceUid;
+	}
+
+	/**
+	 * Get the required operational mode.
+	 * 
+	 * @return the operational mode that must be active for this configuration
+	 *         to be applicable
+	 * @since 1.3
+	 */
+	public String getRequiredOperationalMode() {
+		return requiredOperationalMode;
+	}
+
+	/**
+	 * Set the required operational mode.
+	 * 
+	 * @param requiredOperationalMode
+	 *        the operational mode that must be active for this configuration to
+	 *        be applicable, or {@literal null} for no requirement
+	 * @since 1.3
+	 */
+	public void setRequiredOperationalMode(String requiredOperationalMode) {
+		this.requiredOperationalMode = requiredOperationalMode;
 	}
 
 }

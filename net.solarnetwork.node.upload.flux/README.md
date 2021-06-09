@@ -110,6 +110,8 @@ Each filter configuration contains the following settings:
 | Setting | Description |
 |---------|-------------|
 | Source ID | A case-insensitive regular expression to match against datum source IDs. If defined, this filter will only be applied to datum with matching source ID values. If not defined this filter will be applied to all datum. For example `^solar` would match any source ID starting with _solar_. |
+| Datum Filter | The Service Name of a **Datum Filter** component to apply to datum before encoding and posting them. Can be a the UID of a specific Datum Filter or a Datum Filter Chain. |
+| Require Mode | If configured, an operational mode that must be active for this filter to be applied. |
 | Datum Encoder | The <b>Service Name</b> if a <b>Datum Encoder</b> component to encode datum with. The encoder will be passed a `java.util.Map` object with all the datum properties. If not configured then CBOR will be used. |
 | Limit Seconds | The minimum number of seconds to limit datum that match the configured **Source ID** pattern. If datum are produced faster than this rate, they will be filtered out. Set to `0` or leave empty for no limit. |
 | Property Includes | A list of  case-insensitive regular expressions to match against datum property names. If configured, **only** properties that match one of these expressions will be included in the filtered output. For example `^watt` would match any property starting with _watt_.  |

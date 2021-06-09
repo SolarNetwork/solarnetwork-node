@@ -29,6 +29,7 @@ import static java.util.Collections.singletonList;
 import static net.solarnetwork.node.OperationalModesService.hasActiveOperationalMode;
 import static net.solarnetwork.node.settings.support.SettingsUtil.dynamicListSettingSpecifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -246,12 +247,13 @@ public class FluxUploadService extends BaseMqttConnectionService
 					}
 
 					// FIXME transform
+					final FluxFilterConfig[] activeFilters = activeFilters(getFilters(), sourceId);
 
-					Map<String, Object> data = mapForEvent(sourceId, event);
+					Map<String, Object> data = mapForEvent(activeFilters, sourceId, event);
 					if ( data == null || data.isEmpty() ) {
 						return;
 					}
-					publishDatum(sourceId, data);
+					publishDatum(activeFilters, sourceId, data);
 				}
 			}
 
@@ -264,12 +266,31 @@ public class FluxUploadService extends BaseMqttConnectionService
 		}
 	}
 
-	private boolean shouldPublishDatum(String sourceId, Map<String, Object> data) {
-		FluxFilterConfig[] filters = getFilters();
+	private FluxFilterConfig[] activeFilters(FluxFilterConfig[] filters, String sourceId) {
+		if ( filters == null || filters.length < 1 ) {
+			return null;
+		}
+		final OperationalModesService opModesService = this.opModesService;
+		return Arrays.stream(filters).filter(f -> {
+			if ( f.getRequiredOperationalMode() != null && !f.getRequiredOperationalMode().isEmpty() ) {
+				if ( opModesService == null ) {
+					// op mode required, but no service available
+					return false;
+				}
+				if ( !opModesService.isOperationalModeActive(f.getRequiredOperationalMode()) ) {
+					return false;
+				}
+			}
+			return f.isSourceIdMatch(sourceId);
+		}).toArray(FluxFilterConfig[]::new);
+	}
+
+	private boolean shouldPublishDatum(FluxFilterConfig[] activeFilters, String sourceId,
+			Map<String, Object> data) {
 		Long ts = System.currentTimeMillis();
 		Long prevTs = SOURCE_CAPTURE_TIMES.get(sourceId);
-		if ( filters != null ) {
-			for ( FluxFilterConfig filter : filters ) {
+		if ( activeFilters != null ) {
+			for ( FluxFilterConfig filter : activeFilters ) {
 				if ( filter == null ) {
 					continue;
 				}
@@ -284,12 +305,13 @@ public class FluxUploadService extends BaseMqttConnectionService
 		return true;
 	}
 
-	private void publishDatum(String sourceId, Map<String, Object> data) {
+	private void publishDatum(FluxFilterConfig[] activeFilters, String sourceId,
+			Map<String, Object> data) {
 		final Long nodeId = identityService.getNodeId();
 		if ( nodeId == null ) {
 			return;
 		}
-		if ( !shouldPublishDatum(sourceId, data) ) {
+		if ( !shouldPublishDatum(activeFilters, sourceId, data) ) {
 			return;
 		}
 		if ( sourceId.startsWith("/") ) {
@@ -303,7 +325,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 			String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, nodeId, sourceId);
 			try {
 				byte[] payload;
-				ObjectEncoder encoder = encoderForSourceId(sourceId);
+				ObjectEncoder encoder = encoderForSourceId(activeFilters, sourceId);
 				if ( encoder != null ) {
 					payload = encoder.encodeAsBytes(data, null);
 				} else {
@@ -332,26 +354,28 @@ public class FluxUploadService extends BaseMqttConnectionService
 		}
 	}
 
-	private ObjectEncoder encoderForSourceId(String sourceId) {
-		return serviceForSourceId(sourceId, getDatumEncoders(), FluxFilterConfig::getDatumEncoderUid);
+	private ObjectEncoder encoderForSourceId(FluxFilterConfig[] activeFilters, String sourceId) {
+		return serviceForSourceId(activeFilters, sourceId, getDatumEncoders(),
+				FluxFilterConfig::getDatumEncoderUid);
 	}
 
-	private GeneralDatumSamplesTransformService transformServiceForSourceId(String sourceId) {
-		return serviceForSourceId(sourceId, getTransformServices(),
+	private GeneralDatumSamplesTransformService transformServiceForSourceId(
+			FluxFilterConfig[] activeFilters, String sourceId) {
+		return serviceForSourceId(activeFilters, sourceId, getTransformServices(),
 				FluxFilterConfig::getTransformServiceUid);
 	}
 
-	private <T extends Identifiable> T serviceForSourceId(String sourceId,
-			OptionalServiceCollection<T> services, Function<FluxFilterConfig, String> uidProvider) {
+	private <T extends Identifiable> T serviceForSourceId(FluxFilterConfig[] activeFilters,
+			String sourceId, OptionalServiceCollection<T> services,
+			Function<FluxFilterConfig, String> uidProvider) {
 		if ( services == null ) {
 			return null;
 		}
-		FluxFilterConfig[] filters = getFilters();
-		if ( filters == null || filters.length < 1 ) {
+		if ( activeFilters == null || activeFilters.length < 1 ) {
 			return null;
 		}
 		Iterable<T> serviceItr = null;
-		for ( FluxFilterConfig cfg : filters ) {
+		for ( FluxFilterConfig cfg : activeFilters ) {
 			String uid = (cfg != null ? uidProvider.apply(cfg) : null);
 			if ( uid == null || uid.isEmpty() ) {
 				continue;
@@ -388,7 +412,8 @@ public class FluxUploadService extends BaseMqttConnectionService
 		return null;
 	}
 
-	private Map<String, Object> mapForEvent(String sourceId, Event event) {
+	private Map<String, Object> mapForEvent(FluxFilterConfig[] activeFilters, String sourceId,
+			Event event) {
 		if ( event == null ) {
 			return null;
 		}
@@ -404,7 +429,8 @@ public class FluxUploadService extends BaseMqttConnectionService
 				Datum d = (Datum) propVal;
 				if ( d instanceof GeneralDatumSupport ) {
 					GeneralDatumSupport gds = (GeneralDatumSupport) d;
-					GeneralDatumSamplesTransformService xform = transformServiceForSourceId(sourceId);
+					GeneralDatumSamplesTransformService xform = transformServiceForSourceId(
+							activeFilters, sourceId);
 					if ( xform != null ) {
 						GeneralDatumSamples samples = xform.transformSamples(d, gds.getSamples(),
 								new HashMap<>(4));
