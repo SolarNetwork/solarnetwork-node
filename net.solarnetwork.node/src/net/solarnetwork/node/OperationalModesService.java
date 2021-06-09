@@ -103,8 +103,11 @@ public interface OperationalModesService {
 	 * </p>
 	 * 
 	 * @param mode
-	 *        the mode to test
-	 * @return {@literal true} if {@code mode} is active
+	 *        the mode to test; the mode can be prefixed with {@literal !} to
+	 *        test if the given mode is <b>not</b> active
+	 * @return {@literal true} if {@code mode} is active, or if {@code mode}
+	 *         starts with {@literal !} then {@literal true} if {@code mode} is
+	 *         <b>not</b> active
 	 */
 	boolean isOperationalModeActive(String mode);
 

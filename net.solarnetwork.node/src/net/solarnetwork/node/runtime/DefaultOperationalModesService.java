@@ -53,7 +53,7 @@ import net.solarnetwork.util.OptionalService;
  * Default implementation of {@link OperationalModesService}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 @SuppressWarnings("deprecation")
 public class DefaultOperationalModesService implements OperationalModesService, InstructionHandler {
@@ -213,13 +213,19 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 		if ( mode == null || mode.isEmpty() ) {
 			return true;
 		}
+		boolean inverted = false;
 		mode = mode.toLowerCase();
+		if ( mode.charAt(0) == '!' ) {
+			mode = mode.substring(1);
+			inverted = true;
+		}
 		SettingDao dao = settingDao.service();
 		if ( dao == null ) {
 			return false;
 		}
 		String active = dao.getSetting(SETTING_OP_MODE, mode);
-		return active != null;
+		boolean result = active != null;
+		return (inverted ? !result : result);
 	}
 
 	@Override
