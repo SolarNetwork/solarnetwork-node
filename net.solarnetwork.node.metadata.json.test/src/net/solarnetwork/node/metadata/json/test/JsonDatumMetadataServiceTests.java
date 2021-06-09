@@ -41,7 +41,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -64,10 +67,16 @@ import org.springframework.util.DigestUtils;
 import org.springframework.util.FileCopyUtils;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.domain.datum.BasicObjectDatumStreamMetadata;
+import net.solarnetwork.domain.datum.ObjectDatumKind;
+import net.solarnetwork.domain.datum.ObjectDatumStreamMetadata;
+import net.solarnetwork.domain.datum.ObjectDatumStreamMetadataId;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.metadata.json.JsonDatumMetadataService;
+import net.solarnetwork.node.metadata.json.JsonDatumMetadataService.CachedMetadata;
 import net.solarnetwork.node.settings.SettingsService;
+import net.solarnetwork.util.CachedResult;
 import net.solarnetwork.util.ObjectMapperFactoryBean;
 
 /**
@@ -85,6 +94,8 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 	private SettingsService settingsService;
 	private SettingDao settingDao;
 	private TaskScheduler taskScheduler;
+	private ConcurrentMap<String, CachedMetadata> sourceMetadata;
+	private ConcurrentMap<ObjectDatumStreamMetadataId, CachedResult<ObjectDatumStreamMetadata>> datumStreamMetadata;
 	private JsonDatumMetadataService service;
 
 	@Before
@@ -93,7 +104,10 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		settingsService = EasyMock.createMock(SettingsService.class);
 		settingDao = EasyMock.createMock(SettingDao.class);
 		taskScheduler = EasyMock.createMock(TaskScheduler.class);
-		service = new JsonDatumMetadataService(settingsService, taskScheduler);
+		sourceMetadata = new ConcurrentHashMap<>();
+		datumStreamMetadata = new ConcurrentHashMap<>();
+		service = new JsonDatumMetadataService(settingsService, taskScheduler, sourceMetadata,
+				datumStreamMetadata);
 		service.setIdentityService(identityService);
 		service.setSettingDao(settingDao);
 		service.setUpdateThrottleSeconds(0);
@@ -101,6 +115,8 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 
 		ObjectMapperFactoryBean factory = new ObjectMapperFactoryBean();
 		factory.setFeaturesToDisable(Arrays.asList(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES));
+		factory.setDeserializers(Arrays
+				.asList(net.solarnetwork.codec.BasicObjectDatumStreamMetadataDeserializer.INSTANCE));
 		service.setObjectMapper(factory.getObject());
 	}
 
@@ -667,6 +683,75 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		assertThat("Persist future 1 cancelled from 2nd update", f1.isCancelled(), is(equalTo(true)));
 		assertThat("Persist future 2 completed after 2nd update timeout",
 				f2.isDone() && !f2.isCompletedExceptionally() && !f2.isCancelled(), is(equalTo(true)));
+	}
+
+	@Test
+	public void requestNodeStreamMetadata_notCached() throws Exception {
+		// GIVEN
+		expect(identityService.getNodeId()).andReturn(TEST_NODE_ID).anyTimes();
+		expect(identityService.getSolarInBaseUrl()).andReturn(getHttpServerBaseUrl()).anyTimes();
+
+		TestHttpHandler handler = new TestHttpHandler() {
+
+			@Override
+			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+					throws Exception {
+				assertThat("Request method", request.getMethod(), equalTo("GET"));
+				assertThat("Request path", request.getPathInfo(),
+						equalTo("/api/v1/sec/datum/meta/" + TEST_NODE_ID + "/stream"));
+				assertThat("Source ID", request.getParameter("sourceId"), equalTo(TEST_SOUCE_ID));
+				assertThat("Kind", request.getParameter("kind"), equalTo(ObjectDatumKind.Node.name()));
+				respondWithJsonResource(response, "node-stream-meta-01.json");
+				response.flushBuffer();
+				return true;
+			}
+
+		};
+		getHttpServer().addHandler(handler);
+
+		// WHEN
+		replayAll();
+
+		ObjectDatumStreamMetadata meta = service.getDatumStreamMetadata(ObjectDatumKind.Node, null,
+				TEST_SOUCE_ID);
+
+		// THEN
+		assertThat("Metadata returned", meta, notNullValue());
+		assertThat("Metadata stream ID", meta.getStreamId(),
+				is(equalTo(UUID.fromString("a66e3344-3791-4113-afff-22b44eb3c833"))));
+		assertThat("Metadata object kind", meta.getKind(), is(equalTo(ObjectDatumKind.Node)));
+		assertThat("Metadata object ID", meta.getObjectId(), is(equalTo(TEST_NODE_ID)));
+		assertThat("Metadata source ID", meta.getSourceId(), is(equalTo(TEST_SOUCE_ID)));
+	}
+
+	@Test
+	public void requestNodeStreamMetadata_cached() throws Exception {
+		// GIVEN
+
+		// put metadata into cache from start
+		BasicObjectDatumStreamMetadata m = new BasicObjectDatumStreamMetadata(UUID.randomUUID(),
+				"Pacific/Auckland", ObjectDatumKind.Node, TEST_NODE_ID, TEST_SOUCE_ID, null,
+				new String[] { "foo" }, null, null, null);
+		CachedResult<ObjectDatumStreamMetadata> cachedMeta = new CachedResult<ObjectDatumStreamMetadata>(
+				m, 1, TimeUnit.HOURS);
+		datumStreamMetadata.put(
+				new ObjectDatumStreamMetadataId(m.getKind(), m.getObjectId(), m.getSourceId()),
+				cachedMeta);
+
+		expect(identityService.getNodeId()).andReturn(TEST_NODE_ID).anyTimes();
+
+		// WHEN
+		replayAll();
+
+		ObjectDatumStreamMetadata meta = service.getDatumStreamMetadata(ObjectDatumKind.Node, null,
+				TEST_SOUCE_ID);
+
+		// THEN
+		assertThat("Metadata returned", meta, notNullValue());
+		assertThat("Metadata stream ID", meta.getStreamId(), is(equalTo(m.getStreamId())));
+		assertThat("Metadata object kind", meta.getKind(), is(equalTo(ObjectDatumKind.Node)));
+		assertThat("Metadata object ID", meta.getObjectId(), is(equalTo(TEST_NODE_ID)));
+		assertThat("Metadata source ID", meta.getSourceId(), is(equalTo(TEST_SOUCE_ID)));
 	}
 
 }

@@ -23,13 +23,15 @@
 package net.solarnetwork.node;
 
 import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.domain.datum.ObjectDatumKind;
+import net.solarnetwork.domain.datum.ObjectDatumStreamMetadata;
 
 /**
  * API for manipulating {@link GeneralDatumMetadata} associated with a datum
  * source.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface DatumMetadataService {
 
@@ -53,5 +55,21 @@ public interface DatumMetadataService {
 	 * @return the metadata, or {@literal null} if none available
 	 */
 	GeneralDatumMetadata getSourceMetadata(String sourceId);
+
+	/**
+	 * Get datum stream metadata.
+	 * 
+	 * @param kind
+	 *        the stream kind
+	 * @param objectId
+	 *        the location ID of {@code kind} is {@literal Location}, otherwise
+	 *        unused
+	 * @param sourceId
+	 *        the source ID
+	 * @return the metadata, or {@literal null} if not available
+	 * @since 1.1
+	 */
+	ObjectDatumStreamMetadata getDatumStreamMetadata(ObjectDatumKind kind, Long objectId,
+			String sourceId);
 
 }

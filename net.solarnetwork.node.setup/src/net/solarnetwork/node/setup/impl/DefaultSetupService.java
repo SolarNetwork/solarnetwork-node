@@ -44,6 +44,7 @@ import org.joda.time.format.ISODateTimeFormat;
 import org.osgi.service.event.Event;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.util.FileCopyUtils;
+import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
 import net.solarnetwork.domain.NetworkCertificate;
@@ -63,7 +64,6 @@ import net.solarnetwork.node.setup.SetupService;
 import net.solarnetwork.node.support.XmlServiceSupport;
 import net.solarnetwork.support.CertificateException;
 import net.solarnetwork.util.JavaBeanXmlSerializer;
-import net.solarnetwork.util.JsonUtils;
 import net.solarnetwork.util.OptionalService;
 
 /**

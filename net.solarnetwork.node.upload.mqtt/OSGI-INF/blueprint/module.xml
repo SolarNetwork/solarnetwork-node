@@ -39,6 +39,7 @@
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+		<property name="sticky" value="true"/>
 	</bean>
 
 	<bean id="sslService" class="net.solarnetwork.util.DynamicServiceTracker">
@@ -60,6 +61,13 @@
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
 		<property name="serviceFilter" value="(role=global)" />
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="datumMetadataService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.DatumMetadataService"/>
+		<property name="sticky" value="true"/>
 	</bean>
 
 	<bean id="mqttUploadService" class="net.solarnetwork.node.upload.mqtt.MqttUploadService" 
@@ -70,6 +78,7 @@
 		<argument ref="reactorService"/>
 		<argument ref="instructionExecutionService"/>
 		<argument ref="eventAdmin"/>
+		<argument ref="datumMetadataService"/>
 		<property name="executor" ref="executor"/>
 		<property name="mqttConfig.keepAliveSeconds" value="${client.keepAliveInterval}"/>
 		<property name="mqttConfig.optionalSslService" ref="sslService"/>
@@ -90,6 +99,7 @@
 				<bean class="net.solarnetwork.node.support.DatumSerializer"/>
 				<bean class="net.solarnetwork.node.support.InstructionSerializer"/>
 				<bean class="net.solarnetwork.node.support.NodeControlInfoSerializer"/>
+				<bean class="net.solarnetwork.codec.BasicStreamDatumArraySerializer"/>
 			</list>
 		</property>
 	</bean>

@@ -43,7 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.solarnetwork.util.JsonUtils;
+import net.solarnetwork.codec.JsonUtils;
 
 /**
  * Extension of {@link AbstractHandler} to aid with unit tests.
