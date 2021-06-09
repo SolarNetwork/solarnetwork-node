@@ -509,7 +509,6 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 		StringBuilder buf = new StringBuilder();
 		appendXWWWFormURLEncodedValue(buf, "sourceId", id.getSourceId());
 		if ( id.getKind() != null ) {
-			buf.append('&');
 			appendXWWWFormURLEncodedValue(buf, "kind", id.getKind().name());
 		}
 		return (getIdentityService().getSolarInBaseUrl() + baseUrl + '/' + id.getObjectId() + "/stream?"
