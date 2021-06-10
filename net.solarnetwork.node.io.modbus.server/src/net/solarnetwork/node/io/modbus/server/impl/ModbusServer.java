@@ -229,6 +229,7 @@ public class ModbusServer extends BaseIdentifiable
 			socket.setSoTimeout(60000);
 			socket.bind(new InetSocketAddress(this.addr, port), backlog);
 			this.listening = true;
+			log.info("Modbus server listening on {}:{}", addr, port);
 		}
 
 		private synchronized void finish() {
@@ -242,8 +243,7 @@ public class ModbusServer extends BaseIdentifiable
 					try {
 						socket.close();
 					} catch ( IOException e ) {
-						log.warn("Error closing ModbusServer server {}:{}: {}", addr, port,
-								e.toString());
+						log.warn("Error closing Modbus server {}:{}: {}", addr, port, e.toString());
 					}
 				}
 			} finally {
@@ -265,13 +265,13 @@ public class ModbusServer extends BaseIdentifiable
 							bind();
 						}
 						Socket in = socket.accept();
-						log.debug("ModbusServer {}:{} connection created: {}", addr, port, in);
+						log.debug("Modbus server {}:{} connection created: {}", addr, port, in);
 						executor.execute(new ModbusConnectionHandler(new ModbusTCPTransport(in),
 								registers, String.format("TCP %s:%d %d", addr, port, in.getLocalPort()),
 								in));
 					} catch ( SocketException e ) {
 						// socket timeout, we assume?
-						log.debug("Socket exception in ModbusServer {}:{}: {}", addr, port,
+						log.debug("Socket exception in Modbus server {}:{}: {}", addr, port,
 								e.toString());
 					} catch ( IOException e ) {
 						// close and try again
@@ -280,7 +280,7 @@ public class ModbusServer extends BaseIdentifiable
 				}
 			} finally {
 				close();
-				log.info("ModbusServer {}:{} finished.", addr, port);
+				log.info("Modbus server {}:{} finished.", addr, port);
 			}
 		}
 	}
