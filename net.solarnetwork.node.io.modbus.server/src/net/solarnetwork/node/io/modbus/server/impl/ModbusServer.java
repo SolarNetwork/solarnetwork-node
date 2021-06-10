@@ -46,9 +46,11 @@ import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.TaskScheduler;
+import net.solarnetwork.domain.GeneralDatumSamplesOperations;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.GeneralDatum;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.server.domain.MeasurementConfig;
@@ -295,16 +297,17 @@ public class ModbusServer extends BaseIdentifiable
 
 	private void handleDatumCapturedEvent(Event eventz) {
 		Object d = eventz.getProperty(Datum.DATUM_PROPERTY);
-		if ( !(d instanceof Datum && ((Datum) d).getSourceId() != null) ) {
+		if ( !(d instanceof GeneralDatum && ((GeneralDatum) d).getSourceId() != null) ) {
 			return;
 		}
-		Datum datum = (Datum) d;
-		final String sourceId = datum.getSourceId();
-		final Map<String, ?> datumProps = datum.asSimpleMap();
 		UnitConfig[] unitConfigs = getUnitConfigs();
 		if ( unitConfigs == null || unitConfigs.length < 1 ) {
 			return;
 		}
+
+		GeneralDatum datum = (GeneralDatum) d;
+		final GeneralDatumSamplesOperations ops = datum.asSampleOperations();
+		final String sourceId = datum.getSourceId();
 
 		for ( UnitConfig unitConfig : unitConfigs ) {
 			RegisterBlockConfig[] blockConfigs = unitConfig.getRegisterBlockConfigs();
@@ -320,14 +323,14 @@ public class ModbusServer extends BaseIdentifiable
 				for ( MeasurementConfig measConfig : measConfigs ) {
 					if ( sourceId.equals(measConfig.getSourceId())
 							&& measConfig.getPropertyName() != null
-							&& datumProps.containsKey(measConfig.getPropertyName()) ) {
+							&& ops.hasSampleValue(measConfig.getPropertyName()) ) {
 						final int measAddr = address;
 						executor.execute(new Runnable() {
 
 							@Override
 							public void run() {
-								applyDatumCapturedUpdates(unitConfig, blockConfig, measConfig,
-										datumProps, measAddr);
+								applyDatumCapturedUpdates(unitConfig, blockConfig, measConfig, ops,
+										measAddr);
 							}
 						});
 					}
@@ -338,8 +341,8 @@ public class ModbusServer extends BaseIdentifiable
 	}
 
 	private void applyDatumCapturedUpdates(UnitConfig unitConfig, RegisterBlockConfig blockConfig,
-			MeasurementConfig measConfig, Map<String, ?> datumProps, int address) {
-		Object propVal = datumProps.get(measConfig.getPropertyName());
+			MeasurementConfig measConfig, GeneralDatumSamplesOperations ops, int address) {
+		Object propVal = ops.findSampleValue(measConfig.getPropertyName());
 		if ( propVal == null ) {
 			return;
 		}
