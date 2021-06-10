@@ -182,8 +182,10 @@ public class ModbusServer extends BaseIdentifiable
 						serverThread = new ServerThread(bindAddress, port, backlog);
 						serverThread.start();
 					} catch ( IOException e ) {
-						serverThread.finish();
-						serverThread = null;
+						if ( serverThread != null ) {
+							serverThread.finish();
+							serverThread = null;
+						}
 						log.error("Error binding Modbus server {} to {}:{}: {}", ModbusServer.this, port,
 								bindAddress, e.toString());
 						if ( taskScheduler != null ) {
