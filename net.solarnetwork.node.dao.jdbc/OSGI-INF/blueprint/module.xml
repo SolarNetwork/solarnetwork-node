@@ -76,13 +76,6 @@
 	<service ref="settingDao" interface="net.solarnetwork.node.dao.SettingDao"
 		depends-on="databaseSetup" />
 
-	<service ref="dataSource" interface="javax.sql.DataSource"
-		depends-on="databaseSetup">
-		<service-properties>
-			<entry key="db" value="node" />
-		</service-properties>
-	</service>
-
 	<service ref="jdbcTemplate" interface="org.springframework.jdbc.core.JdbcOperations">
 		<service-properties>
 			<entry key="db" value="node" />
