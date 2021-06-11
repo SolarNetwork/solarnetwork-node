@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans" xmlns:ctx="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd
+		http://www.springframework.org/schema/tx
+		http://www.springframework.org/schema/tx/spring-tx-4.2.xsd">
+
+	<!-- Configuration -->
+
+	<osgix:cm-properties id="cfg" persistent-id="net.solarnetwork.node.dao.mqtt.jdbc">
+		<beans:prop key="JdbcMqttMessageDao.initSqlResource">classpath:/net/solarnetwork/node/dao/mqtt/jdbc/derby-mqtt_message-init.sql</beans:prop>
+		<beans:prop key="JdbcMqttMessageDao.sqlResourcePrefix">derby-mqtt_message</beans:prop>
+		<beans:prop key="job.mqttMessageCleaner.cron">35 0 0/2 ? * *</beans:prop>
+		<beans:prop key="job.mqttMessageCleaner.uploadedTrimHours">4</beans:prop>
+	</osgix:cm-properties>
+
+	<!-- Service References -->
+
+	<reference id="dataSource" interface="javax.sql.DataSource" filter="(db=node-data)" />
+
+	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext" />
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin" />
+		<property name="sticky" value="true"/>
+	</bean>
+	
+	<!-- Published Services -->
+
+	
+	<!-- The GeneralNodeDatumDao is also published as (mode=direct) for services that need non-proxied direct support. -->
+	<service ref="mqttMessageDao" ranking="1">
+		<interfaces>
+			<value>net.solarnetwork.common.mqtt.dao.MqttMessageDao</value>
+		</interfaces>
+		<service-properties>
+			<entry key="mode" value="direct" />
+		</service-properties>
+	</service>
+
+	<service ref="mqttMessageCleaner" interface="net.solarnetwork.node.job.TriggerAndJobDetail" />
+
+	<service ref="mqttMessageTrimmer" interface="net.solarnetwork.node.job.TriggerAndJobDetail" />
+
+	<!-- Supporting Services -->
+
+	<ctx:property-placeholder properties-ref="cfg" />
+
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- PlatformTransactionManager: local JDBC transaction manager. -->
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- Use Java @Transactional annotations to declare transactions. -->
+	<tx:annotation-driven transaction-manager="txManager" />
+
+	<bean id="jobMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames" value="net.solarnetwork.node.dao.mqtt.jdbc.JOBS" />
+	</bean>
+	
+	<!-- General Node Datum -->
+
+	<bean id="mqttMessageDao" class="net.solarnetwork.node.dao.mqtt.jdbc.JdbcMqttMessageDao" init-method="init">
+		<property name="dataSource" ref="dataSource" />
+		<property name="eventAdmin" ref="eventAdmin" />
+		<property name="initSqlResource" value="${JdbcMqttMessageDao.initSqlResource}" />
+		<property name="sqlResourcePrefix" value="${JdbcMqttMessageDao.sqlResourcePrefix}" />
+		<!-- property name="maxFetchForUpload" value="${JdbcMqttMessageDao.maxFetchForUpload}" /-->
+	</bean>
+	
+	<bean id="mqttMessageCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
+		<property name="trigger" ref="mqttMessageCleanerTrigger"/>
+		<property name="jobDetail" ref="mqttMessageCleanerJob"/>
+		<property name="messageSource" ref="jobMessageSource"/>
+	</bean>
+
+	<bean id="mqttMessageCleanerTrigger"
+		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
+		<property name="jobDetail" ref="mqttMessageCleanerJob" />
+		<property name="cronExpression" value="${job.mqttMessageCleaner.cron}" />
+		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING" />
+	</bean>
+
+	<bean id="mqttMessageCleanerJob"
+		class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+		<property name="jobClass" value="net.solarnetwork.node.job.DatumDaoCleanerJob" />
+		<property name="jobDataAsMap">
+			<map>
+				<entry key="datumDao" value-ref="mqttMessageDao" />
+				<entry key="hours" value="${job.mqttMessageCleaner.uploadedTrimHours}"/>
+			</map>
+		</property>
+	</bean>
+	
+</blueprint>
