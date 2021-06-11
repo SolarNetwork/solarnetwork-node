@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.dao.jdbc;
+package net.solarnetwork.node.dao.jdbc.con;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,7 +38,6 @@ import org.slf4j.LoggerFactory;
  * 
  * @author matt
  * @version 1.0
- * @since 1.29
  */
 public class DefaultDataSourceConfigurer {
 
@@ -51,6 +50,7 @@ public class DefaultDataSourceConfigurer {
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final ConfigurationAdmin configurationAdmin;
+	private final Class<?> propertiesClass;
 	private final String propertiesPath;
 	private final String dbServiceName;
 
@@ -61,7 +61,8 @@ public class DefaultDataSourceConfigurer {
 	 *        the configuration admin
 	 */
 	public DefaultDataSourceConfigurer(ConfigurationAdmin configurationAdmin) {
-		this(configurationAdmin, DEFAULT_PROPERTIES_PATH, DEFAULT_DB_SERVICE_NAME);
+		this(configurationAdmin, DefaultDataSourceConfigurer.class, DEFAULT_PROPERTIES_PATH,
+				DEFAULT_DB_SERVICE_NAME);
 	}
 
 	/**
@@ -69,15 +70,18 @@ public class DefaultDataSourceConfigurer {
 	 * 
 	 * @param configurationAdmin
 	 *        the configuration admin
+	 * @param propertiesClass
+	 *        the class from which to load {@code propertiesPath}
 	 * @param propertiesPath
 	 *        the properties path
 	 * @param dbServiceName
 	 *        the {@literal db} service property name
 	 */
-	public DefaultDataSourceConfigurer(ConfigurationAdmin configurationAdmin, String propertiesPath,
-			String dbServiceName) {
+	public DefaultDataSourceConfigurer(ConfigurationAdmin configurationAdmin, Class<?> propertiesClass,
+			String propertiesPath, String dbServiceName) {
 		super();
 		this.configurationAdmin = configurationAdmin;
+		this.propertiesClass = propertiesClass;
 		this.propertiesPath = propertiesPath;
 		this.dbServiceName = dbServiceName;
 	}
@@ -87,7 +91,7 @@ public class DefaultDataSourceConfigurer {
 	 */
 	public void init() {
 		Properties props = new Properties();
-		try (InputStream in = getClass().getResourceAsStream(propertiesPath)) {
+		try (InputStream in = propertiesClass.getResourceAsStream(propertiesPath)) {
 			props.load(in);
 		} catch ( IOException e ) {
 			log.error("Properties path [{}] not available: {}", propertiesPath, e.toString());

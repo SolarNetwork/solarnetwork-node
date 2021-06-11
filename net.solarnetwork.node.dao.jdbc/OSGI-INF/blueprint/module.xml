@@ -47,14 +47,7 @@
 
 	<!-- Service References -->
 
-	<reference id="ca" interface="org.osgi.service.cm.ConfigurationAdmin"/>
-
-	<!-- 
-		To make deployment as easy as possible, create a DataSource factory instance
-		if one does not exist when we start up; otherwise use the existing one.
-	 -->
-	<reference id="dataSource" interface="javax.sql.DataSource" filter="(db=node)" 
-		availability="optional" depends-on="defaultDataSourceConfigurer"/>
+	<reference id="dataSource" interface="javax.sql.DataSource" filter="(db=node)" />
 
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext" />
@@ -159,10 +152,6 @@
 	<!-- Supporting Services -->
 
 	<ctx:property-placeholder properties-ref="dao.jdbc.cfg" />
-
-	<bean id="defaultDataSourceConfigurer" class="net.solarnetwork.node.dao.jdbc.DefaultDataSourceConfigurer" init-method="init">
-		<argument ref="ca"/>
-	</bean>
 
 	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
 		<property name="dataSource" ref="dataSource" />
