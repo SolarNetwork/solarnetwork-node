@@ -22,6 +22,7 @@
 	<bean id="sslService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.support.SSLService"/>
+		<property name="sticky" value="true"/>
 	</bean>
 
 	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">
@@ -52,6 +53,12 @@
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
 		<property name="serviceFilter" value="(!(role=global))"/>
+	</bean>
+	
+	<bean id="mqttMessageDao" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.common.mqtt.dao.MqttMessageDao"/>
+		<property name="sticky" value="true"/>
 	</bean>
 
 	<!-- Published Services -->
@@ -89,6 +96,7 @@
 			<property name="mqttConfig.optionalSslService" ref="sslService"/>
 			<property name="datumEncoders" ref="datumEncoders"/>
 			<property name="transformServices" ref="transformServices"/>
+			<property name="mqttMessageDao" ref="mqttMessageDao"/>
 		</bean>
 	</osgix:managed-service-factory>
 	

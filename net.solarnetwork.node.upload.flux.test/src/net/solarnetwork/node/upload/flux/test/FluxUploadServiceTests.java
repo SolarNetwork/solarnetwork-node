@@ -30,6 +30,7 @@ import static net.solarnetwork.common.mqtt.MqttConnectReturnCode.Accepted;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.isNull;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -122,6 +123,8 @@ public class FluxUploadServiceTests {
 		expect(identityService.getNodeId()).andReturn(nodeId).anyTimes();
 		expect(connectionFactory.createConnection(anyObject())).andReturn(connection);
 		expect(connection.open()).andReturn(completedFuture(Accepted));
+		connection.setConnectionObserver(anyObject());
+		expectLastCall().anyTimes();
 		expect(connection.isEstablished()).andReturn(true).anyTimes();
 	}
 
