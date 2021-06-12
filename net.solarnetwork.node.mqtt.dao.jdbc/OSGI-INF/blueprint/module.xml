@@ -37,20 +37,7 @@
 	
 	<!-- Published Services -->
 
-	
-	<!-- The GeneralNodeDatumDao is also published as (mode=direct) for services that need non-proxied direct support. -->
-	<service ref="mqttMessageDao" ranking="1">
-		<interfaces>
-			<value>net.solarnetwork.common.mqtt.dao.MqttMessageDao</value>
-		</interfaces>
-		<service-properties>
-			<entry key="mode" value="direct" />
-		</service-properties>
-	</service>
-
-	<service ref="mqttMessageCleaner" interface="net.solarnetwork.node.job.TriggerAndJobDetail" />
-
-	<service ref="mqttMessageTrimmer" interface="net.solarnetwork.node.job.TriggerAndJobDetail" />
+	<service ref="mqttMessageDao" interface="net.solarnetwork.common.mqtt.dao.MqttMessageDao"/>
 
 	<!-- Supporting Services -->
 
@@ -68,11 +55,7 @@
 	<!-- Use Java @Transactional annotations to declare transactions. -->
 	<tx:annotation-driven transaction-manager="txManager" />
 
-	<bean id="jobMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames" value="net.solarnetwork.node.dao.mqtt.jdbc.JOBS" />
-	</bean>
-	
-	<!-- General Node Datum -->
+	<!-- MQTT Message persistence -->
 
 	<bean id="mqttMessageDao" class="net.solarnetwork.node.dao.mqtt.jdbc.JdbcMqttMessageDao" init-method="init">
 		<property name="dataSource" ref="dataSource" />
@@ -80,30 +63,6 @@
 		<property name="initSqlResource" value="${JdbcMqttMessageDao.initSqlResource}" />
 		<property name="sqlResourcePrefix" value="${JdbcMqttMessageDao.sqlResourcePrefix}" />
 		<!-- property name="maxFetchForUpload" value="${JdbcMqttMessageDao.maxFetchForUpload}" /-->
-	</bean>
-	
-	<bean id="mqttMessageCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
-		<property name="trigger" ref="mqttMessageCleanerTrigger"/>
-		<property name="jobDetail" ref="mqttMessageCleanerJob"/>
-		<property name="messageSource" ref="jobMessageSource"/>
-	</bean>
-
-	<bean id="mqttMessageCleanerTrigger"
-		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
-		<property name="jobDetail" ref="mqttMessageCleanerJob" />
-		<property name="cronExpression" value="${job.mqttMessageCleaner.cron}" />
-		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING" />
-	</bean>
-
-	<bean id="mqttMessageCleanerJob"
-		class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-		<property name="jobClass" value="net.solarnetwork.node.job.DatumDaoCleanerJob" />
-		<property name="jobDataAsMap">
-			<map>
-				<entry key="datumDao" value-ref="mqttMessageDao" />
-				<entry key="hours" value="${job.mqttMessageCleaner.uploadedTrimHours}"/>
-			</map>
-		</property>
 	</bean>
 	
 </blueprint>
