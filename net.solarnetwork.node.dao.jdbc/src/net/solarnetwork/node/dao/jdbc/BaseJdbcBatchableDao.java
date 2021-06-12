@@ -110,6 +110,28 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K> extends BaseJ
 	protected abstract String getBatchJdbcStatement(BatchOptions options);
 
 	/**
+	 * Prepare the batch statement.
+	 * 
+	 * <p>
+	 * This implementation does nothing. Extending classes might need to set
+	 * parameters.
+	 * </p>
+	 * 
+	 * @param options
+	 *        the batch options
+	 * @param con
+	 *        the SQL connection
+	 * @param queryStmt
+	 *        the SQL statement
+	 * @throws SQLException
+	 *         if any SQL error occurs
+	 */
+	protected void prepareBatchStatement(BatchOptions options, Connection con,
+			PreparedStatement queryStmt) throws SQLException {
+		// extending classes can override if needed
+	}
+
+	/**
 	 * Get an entity from the current row in a ResultSet for batch processing.
 	 * 
 	 * @param options
@@ -185,6 +207,7 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K> extends BaseJ
 				try {
 					queryStmt = con.prepareStatement(querySql, scrollType, concurType,
 							ResultSet.CLOSE_CURSORS_AT_COMMIT);
+					prepareBatchStatement(options, con, queryStmt);
 					queryResult = queryStmt.executeQuery();
 					while ( queryResult.next() ) {
 						T entity = getBatchRowEntity(options, queryResult, rowCount.incrementAndGet());
