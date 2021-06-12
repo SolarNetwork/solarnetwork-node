@@ -23,6 +23,7 @@
 package net.solarnetwork.node.dao.mqtt.jdbc;
 
 import static java.lang.String.format;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -61,10 +62,19 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 	 */
 	public enum SqlResource {
 
+		/** Batch list. */
 		Batch("batch"),
 
+		/** Batch list for a specific destination. */
+		BatchForDestination("batch-for-destination"),
+
 		/** Batch update. */
-		BatchUpdate("batch-update");
+		BatchUpdate("batch-update"),
+
+		/** Batch update for a specific destination. */
+		BatchUpdateForDestination("batch-update-for-destination"),
+
+		;
 
 		private final String resource;
 
@@ -103,16 +113,17 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 	protected void setUpdateStatementValues(MqttMessageEntity obj, PreparedStatement ps)
 			throws SQLException {
 		setUpdateStatementValues(obj, ps, 0);
-		ps.setObject(5, obj.getId());
+		ps.setObject(6, obj.getId());
 	}
 
 	protected void setUpdateStatementValues(MqttMessageEntity obj, PreparedStatement ps, int offset)
 			throws SQLException {
-		ps.setString(1 + offset, obj.getTopic());
-		ps.setBoolean(2 + offset, obj.isRetained());
-		ps.setInt(3 + offset, obj.getQosLevel() != null ? obj.getQosLevel().getValue()
+		ps.setString(1 + offset, obj.getDestination());
+		ps.setString(2 + offset, obj.getTopic());
+		ps.setBoolean(3 + offset, obj.isRetained());
+		ps.setInt(4 + offset, obj.getQosLevel() != null ? obj.getQosLevel().getValue()
 				: MqttQos.AtMostOnce.getValue());
-		ps.setBytes(4 + offset, obj.getPayload());
+		ps.setBytes(5 + offset, obj.getPayload());
 	}
 
 	/**
@@ -126,21 +137,46 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 		public MqttMessageEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
 			Long id = rs.getLong(1);
 			Instant created = getInstantColumn(rs, 2);
-			String topic = rs.getString(3);
-			boolean retained = rs.getBoolean(4);
-			MqttQos qos = MqttQos.valueOf(rs.getInt(5));
-			byte[] payload = rs.getBytes(6);
+			String dest = rs.getString(3);
+			String topic = rs.getString(4);
+			boolean retained = rs.getBoolean(5);
+			MqttQos qos = MqttQos.valueOf(rs.getInt(6));
+			byte[] payload = rs.getBytes(7);
 
-			return new BasicMqttMessageEntity(id, created, topic, retained, qos, payload);
+			return new BasicMqttMessageEntity(id, created, dest, topic, retained, qos, payload);
 		}
 
 	}
 
 	@Override
 	protected String getBatchJdbcStatement(BatchOptions options) {
-		return getSqlResource(
-				options != null && options.isUpdatable() ? SqlResource.BatchUpdate.getResource()
-						: SqlResource.Batch.getResource());
+		Object destFilter = (options != null && options.getParameters() != null
+				? options.getParameters().get(BATCH_OPTION_DESTINATION)
+				: null);
+		String resource;
+		if ( options != null && options.isUpdatable() ) {
+			if ( destFilter != null ) {
+				resource = SqlResource.BatchUpdateForDestination.getResource();
+			} else {
+				resource = SqlResource.BatchUpdate.getResource();
+			}
+		} else if ( destFilter != null ) {
+			resource = SqlResource.BatchForDestination.getResource();
+		} else {
+			resource = SqlResource.Batch.getResource();
+		}
+		return getSqlResource(resource);
+	}
+
+	@Override
+	protected void prepareBatchStatement(BatchOptions options, Connection con,
+			PreparedStatement queryStmt) throws SQLException {
+		Object destFilter = (options != null && options.getParameters() != null
+				? options.getParameters().get(BATCH_OPTION_DESTINATION)
+				: null);
+		if ( destFilter != null ) {
+			queryStmt.setString(1, destFilter.toString());
+		}
 	}
 
 	@Override
@@ -152,11 +188,12 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 	@Override
 	protected void updateBatchRowEntity(BatchOptions options, ResultSet resultSet, int rowCount,
 			MqttMessageEntity entity) throws SQLException {
-		resultSet.updateString(3, entity.getTopic());
-		resultSet.updateBoolean(4, entity.isRetained());
-		resultSet.updateInt(5, entity.getQosLevel() != null ? entity.getQosLevel().getValue()
+		resultSet.updateString(3, entity.getDestination());
+		resultSet.updateString(4, entity.getTopic());
+		resultSet.updateBoolean(5, entity.isRetained());
+		resultSet.updateInt(6, entity.getQosLevel() != null ? entity.getQosLevel().getValue()
 				: MqttQos.AtMostOnce.getValue());
-		resultSet.updateBytes(6, entity.getPayload());
+		resultSet.updateBytes(7, entity.getPayload());
 	}
 
 }

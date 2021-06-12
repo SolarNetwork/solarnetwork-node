@@ -1,4 +1,4 @@
 INSERT INTO solarnode.mqtt_message
-	(created,topic,retained,qos,payload)
+	(created,destination,topic,retained,qos,payload)
 VALUES 
-	(?,?,?,?,?)
+	(?,?,?,?,?,?)

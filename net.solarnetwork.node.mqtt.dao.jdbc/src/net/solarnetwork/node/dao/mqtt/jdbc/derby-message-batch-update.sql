@@ -1,2 +1,2 @@
-SELECT id,created,topic,retained,qos,payload
+SELECT id,created,destination,topic,retained,qos,payload
 FROM solarnode.mqtt_message
