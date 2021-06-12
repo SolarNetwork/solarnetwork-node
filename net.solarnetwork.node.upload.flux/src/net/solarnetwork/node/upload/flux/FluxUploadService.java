@@ -496,7 +496,8 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 				log.debug("Locally persisting MQTT message to {} on topic {}", dest,
 						msgToPersist.getTopic());
 				BasicMqttMessageEntity entity = new BasicMqttMessageEntity(null, Instant.now(), dest,
-						msgToPersist);
+						msgToPersist.getTopic(), false, msgToPersist.getQosLevel(),
+						msgToPersist.getPayload());
 				dao.save(entity);
 			}
 		}
