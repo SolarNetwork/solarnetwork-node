@@ -127,6 +127,20 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	 */
 	public static final MqttVersion DEFAULT_MQTT_VERSION = MqttVersion.Mqtt5;
 
+	/**
+	 * The default MQTT QoS to use.
+	 * 
+	 * @since 1.10
+	 */
+	public static final MqttQos DEFAULT_MQTT_QOS = MqttQos.AtMostOnce;
+
+	/**
+	 * The default value for the {@code cachedMessagePublishMaximum} property.
+	 * 
+	 * @since 1.10
+	 */
+	public static final int DEFAULT_CACHED_MESSAGE_PUBLISH_MAXIMUM = 200;
+
 	private final ConcurrentMap<String, Long> SOURCE_CAPTURE_TIMES = new ConcurrentHashMap<>(16, 0.9f,
 			2);
 
@@ -141,6 +155,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	private OptionalServiceCollection<ObjectEncoder> datumEncoders;
 	private OptionalServiceCollection<GeneralDatumSamplesTransformService> transformServices;
 	private OptionalService<MqttMessageDao> mqttMessageDao;
+	private int cachedMessagePublishMaximum = DEFAULT_CACHED_MESSAGE_PUBLISH_MAXIMUM;
 
 	/**
 	 * Constructor.
@@ -157,7 +172,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		super(connectionFactory, new MqttStats(100));
 		this.objectMapper = objectMapper;
 		this.identityService = identityService;
-		setPublishQos(MqttQos.AtMostOnce);
+		setPublishQos(DEFAULT_MQTT_QOS);
 		getMqttConfig().setUsername(DEFAULT_MQTT_USERNAME);
 		getMqttConfig().setServerUriValue(DEFAULT_MQTT_HOST);
 		getMqttConfig().setVersion(DEFAULT_MQTT_VERSION);
@@ -215,42 +230,8 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		String dest = getMqttConfig().getServerUriValue();
 		int timeoutSecs = getMqttConfig().getConnectTimeoutSeconds();
 		if ( dao != null ) {
-			Runnable task = new Runnable() {
-
-				@Override
-				public void run() {
-					final BatchableDao.BatchResult result = dao
-							.batchProcess(new BatchableDao.BatchCallback<MqttMessageEntity>() {
-
-								@Override
-								public BatchCallbackResult handle(MqttMessageEntity entity) {
-									if ( !connection.isEstablished() ) {
-										return BatchCallbackResult.STOP;
-									}
-									BatchCallbackResult action;
-									try {
-										connection.publish(entity).get(timeoutSecs, TimeUnit.SECONDS);
-										action = BatchCallbackResult.DELETE;
-										log.debug("Published cached MQTT message {} to topic {}",
-												entity.getId(), entity.getTopic());
-									} catch ( Exception e ) {
-										log.debug(
-												"Error publishing cached MQTT message {} to topic {}: {}",
-												entity.getId(), entity.getTopic(), e.toString());
-										action = BatchCallbackResult.CONTINUE;
-									}
-									return action;
-								}
-
-							}, new BasicBatchOptions("Process cached MQTT messages",
-									BasicBatchOptions.DEFAULT_BATCH_SIZE, true,
-									singletonMap(MqttMessageDao.BATCH_OPTION_DESTINATION, dest)));
-					if ( result.numProcessed() > 0 ) {
-						log.info("Uploaded {} locally cached MQTT messages to {}", result.numProcessed(),
-								dest);
-					}
-				}
-			};
+			Runnable task = new PublishCachedMessagesTask(dest, dao, connection, timeoutSecs,
+					cachedMessagePublishMaximum);
 			Executor e = this.executor;
 			if ( e != null ) {
 				e.execute(task);
@@ -258,6 +239,83 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 				task.run();
 			}
 		}
+	}
+
+	private final class PublishCachedMessagesTask implements Runnable {
+
+		private final String dest;
+		private final MqttMessageDao dao;
+		private final MqttConnection connection;
+		private final int timeoutSecs;
+		private final int max;
+
+		private int processedCount = 0;
+
+		private PublishCachedMessagesTask(String dest, MqttMessageDao dao, MqttConnection connection,
+				int timeoutSecs, int max) {
+			super();
+			this.dest = dest;
+			this.dao = dao;
+			this.connection = connection;
+			this.timeoutSecs = timeoutSecs;
+			this.max = max;
+		}
+
+		@Override
+		public void run() {
+			// in case multiple tasks attempt to run at same time, i.e. from connection up/down during processing,
+			// sync on DAO to only allow one at a time
+			synchronized ( dao ) {
+				batchProcess();
+			}
+			if ( isMaximumReached() && connection.isEstablished() ) {
+				// submit new task to publish next block
+				final Executor e = executor;
+				Runnable task = new PublishCachedMessagesTask(dest, dao, connection, timeoutSecs, max);
+				if ( e != null ) {
+					e.execute(task);
+				} else {
+					task.run();
+				}
+			}
+		}
+
+		private void batchProcess() {
+			final BatchableDao.BatchResult result = dao
+					.batchProcess(new BatchableDao.BatchCallback<MqttMessageEntity>() {
+
+						@Override
+						public BatchCallbackResult handle(MqttMessageEntity entity) {
+							if ( !connection.isEstablished() || isMaximumReached() ) {
+								return BatchCallbackResult.STOP;
+							}
+							BatchCallbackResult action;
+							try {
+								connection.publish(entity).get(timeoutSecs, TimeUnit.SECONDS);
+								action = BatchCallbackResult.DELETE;
+								processedCount++;
+								log.debug("Published cached MQTT message {} to topic {}", entity.getId(),
+										entity.getTopic());
+							} catch ( Exception e ) {
+								log.debug("Error publishing cached MQTT message {} to topic {}: {}",
+										entity.getId(), entity.getTopic(), e.toString());
+								action = BatchCallbackResult.STOP;
+							}
+							return action;
+						}
+
+					}, new BasicBatchOptions("Process cached MQTT messages",
+							BasicBatchOptions.DEFAULT_BATCH_SIZE, true,
+							singletonMap(MqttMessageDao.BATCH_OPTION_DESTINATION, dest)));
+			if ( result.numProcessed() > 0 ) {
+				log.info("Uploaded {} locally cached MQTT messages to {}", result.numProcessed(), dest);
+			}
+		}
+
+		private boolean isMaximumReached() {
+			return (max > 0 && processedCount >= max);
+		}
+
 	}
 
 	private String getMqttClientId() {
@@ -579,6 +637,20 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		results.add(new BasicTextFieldSettingSpecifier("excludePropertyNamesRegex",
 				DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN.pattern()));
 		results.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode", ""));
+		results.add(new BasicTextFieldSettingSpecifier("cachedMessagePublishMaximum",
+				String.valueOf(DEFAULT_CACHED_MESSAGE_PUBLISH_MAXIMUM)));
+
+		// drop-down menu for QoS
+		BasicMultiValueSettingSpecifier qosSpec = new BasicMultiValueSettingSpecifier("publishQosValue",
+				String.valueOf(DEFAULT_MQTT_QOS.getValue()));
+		Map<String, String> qosTitles = new LinkedHashMap<String, String>(3);
+		for ( MqttQos qos : MqttQos.values() ) {
+			String code = String.format("mqttQos.%d.title", qos.getValue());
+			qosTitles.put(String.valueOf(qos.getValue()), getMessageSource().getMessage(code,
+					new Object[] { qos.getValue() }, qos.toString(), null));
+		}
+		qosSpec.setValueTitles(qosTitles);
+		results.add(qosSpec);
 
 		// drop-down menu for version
 		BasicMultiValueSettingSpecifier versionSpec = new BasicMultiValueSettingSpecifier("mqttVersion",
@@ -916,6 +988,29 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	 */
 	public void setMqttMessageDao(OptionalService<MqttMessageDao> mqttMessageDao) {
 		this.mqttMessageDao = mqttMessageDao;
+	}
+
+	/**
+	 * Get the maximum number of cached messages to publish at one time, or
+	 * {@code 0} for no limit.
+	 * 
+	 * @return the maximum count; defaults to
+	 *         {@link #DEFAULT_CACHED_MESSAGE_PUBLISH_MAXIMUM}
+	 * @since 1.10
+	 */
+	public int getCachedMessagePublishMaximum() {
+		return cachedMessagePublishMaximum;
+	}
+
+	/**
+	 * Set the maximum number of cached messages to publish at one time.
+	 * 
+	 * @param cachedMessagePublishMaximum
+	 *        the maximum count
+	 * @since 1.10
+	 */
+	public void setCachedMessagePublishMaximum(int cachedMessagePublishMaximum) {
+		this.cachedMessagePublishMaximum = cachedMessagePublishMaximum;
 	}
 
 }

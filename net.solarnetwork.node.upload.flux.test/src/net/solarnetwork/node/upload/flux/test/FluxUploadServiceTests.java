@@ -36,12 +36,15 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -51,6 +54,7 @@ import java.util.UUID;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
+import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -61,6 +65,11 @@ import net.solarnetwork.common.mqtt.MqttConnection;
 import net.solarnetwork.common.mqtt.MqttConnectionFactory;
 import net.solarnetwork.common.mqtt.MqttMessage;
 import net.solarnetwork.common.mqtt.MqttQos;
+import net.solarnetwork.common.mqtt.dao.BasicMqttMessageEntity;
+import net.solarnetwork.common.mqtt.dao.MqttMessageDao;
+import net.solarnetwork.common.mqtt.dao.MqttMessageEntity;
+import net.solarnetwork.dao.BasicBatchResult;
+import net.solarnetwork.dao.BatchableDao;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.io.ObjectEncoder;
 import net.solarnetwork.node.DatumDataSource;
@@ -73,6 +82,7 @@ import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.node.support.DatumEvents;
 import net.solarnetwork.node.upload.flux.FluxFilterConfig;
 import net.solarnetwork.node.upload.flux.FluxUploadService;
+import net.solarnetwork.util.StaticOptionalService;
 import net.solarnetwork.util.StaticOptionalServiceCollection;
 
 /**
@@ -89,6 +99,7 @@ public class FluxUploadServiceTests {
 	private ObjectMapper objectMapper;
 	private MqttConnectionFactory connectionFactory;
 	private MqttConnection connection;
+	private MqttMessageDao messageDao;
 	private ObjectEncoder encoder;
 	private OperationalModesService operationalModeService;
 	private Long nodeId;
@@ -98,6 +109,7 @@ public class FluxUploadServiceTests {
 	public void setup() {
 		connectionFactory = EasyMock.createMock(MqttConnectionFactory.class);
 		connection = EasyMock.createMock(MqttConnection.class);
+		messageDao = EasyMock.createMock(MqttMessageDao.class);
 		identityService = EasyMock.createMock(IdentityService.class);
 		encoder = EasyMock.createMock(ObjectEncoder.class);
 		operationalModeService = EasyMock.createMock(OperationalModesService.class);
@@ -111,19 +123,21 @@ public class FluxUploadServiceTests {
 	}
 
 	private void replayAll() {
-		EasyMock.replay(connectionFactory, connection, identityService, encoder, operationalModeService);
+		EasyMock.replay(connectionFactory, connection, identityService, encoder, operationalModeService,
+				messageDao);
 	}
 
 	@After
 	public void teardown() {
-		EasyMock.verify(connectionFactory, connection, identityService, encoder, operationalModeService);
+		EasyMock.verify(connectionFactory, connection, identityService, encoder, operationalModeService,
+				messageDao);
 	}
 
 	private void expectMqttConnectionSetup() throws IOException {
 		expect(identityService.getNodeId()).andReturn(nodeId).anyTimes();
 		expect(connectionFactory.createConnection(anyObject())).andReturn(connection);
 		expect(connection.open()).andReturn(completedFuture(Accepted));
-		connection.setConnectionObserver(anyObject());
+		connection.setConnectionObserver(service);
 		expectLastCall().anyTimes();
 		expect(connection.isEstablished()).andReturn(true).anyTimes();
 	}
@@ -189,6 +203,138 @@ public class FluxUploadServiceTests {
 			Thread.sleep(200);
 		}
 		return result;
+	}
+
+	@Test
+	public void connEstablished_mqttPersistence_none() throws Exception {
+		// GIVEN
+		service.setMqttMessageDao(new StaticOptionalService<>(messageDao));
+		expectMqttConnectionSetup();
+
+		Capture<BatchableDao.BatchCallback<MqttMessageEntity>> callbackCaptor = new Capture<>();
+		Capture<BatchableDao.BatchOptions> optionsCaptor = new Capture<>();
+		expect(messageDao.batchProcess(capture(callbackCaptor), capture(optionsCaptor)))
+				.andReturn(new BasicBatchResult(0));
+
+		// WHEN
+		replayAll();
+		service.init();
+		service.onMqttServerConnectionEstablished(connection, false);
+
+		// THEN
+		assertThat("Callback provided", callbackCaptor.getValue(), is(notNullValue()));
+		BatchableDao.BatchOptions options = optionsCaptor.getValue();
+		assertThat("Options provided", options, is(notNullValue()));
+		assertThat("Options is updatable", options.isUpdatable(), is(equalTo(true)));
+		assertThat("Options has dest parameter", options.getParameters(), hasEntry(
+				MqttMessageDao.BATCH_OPTION_DESTINATION, service.getMqttConfig().getServerUriValue()));
+	}
+
+	@Test
+	public void connEstablished_mqttPersistence_lessThanMax() throws Exception {
+		// GIVEN
+		service.setMqttMessageDao(new StaticOptionalService<>(messageDao));
+		expectMqttConnectionSetup();
+
+		BasicMqttMessageEntity entity = new BasicMqttMessageEntity(1L, Instant.now(),
+				service.getMqttConfig().getServerUriValue(), "some/topic", false, MqttQos.ExactlyOnce,
+				"Hello, world".getBytes());
+
+		Capture<BatchableDao.BatchCallback<MqttMessageEntity>> callbackCaptor = new Capture<>();
+		Capture<BatchableDao.BatchOptions> optionsCaptor = new Capture<>();
+		expect(messageDao.batchProcess(capture(callbackCaptor), capture(optionsCaptor)))
+				.andAnswer(new IAnswer<BatchableDao.BatchResult>() {
+
+					@Override
+					public BatchableDao.BatchResult answer() throws Throwable {
+						callbackCaptor.getValue().handle(entity);
+						return new BasicBatchResult(1);
+					}
+				});
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
+
+		// WHEN
+		replayAll();
+		service.init();
+		service.onMqttServerConnectionEstablished(connection, false);
+
+		// THEN
+		MqttMessage pubMessage = msgCaptor.getValue();
+		assertThat("Cached message published", pubMessage, is(notNullValue()));
+		assertThat("Published cached message topic", pubMessage.getTopic(),
+				is(equalTo(entity.getTopic())));
+		assertThat("Published cached message QoS", pubMessage.getQosLevel(),
+				is(equalTo(entity.getQosLevel())));
+		assertThat("Published cached message payload",
+				Arrays.equals(pubMessage.getPayload(), entity.getPayload()), is(equalTo(true)));
+	}
+
+	@Test
+	public void connEstablished_mqttPersistence_max() throws Exception {
+		// GIVEN
+		service.setMqttMessageDao(new StaticOptionalService<>(messageDao));
+		service.setCachedMessagePublishMaximum(2);
+		expectMqttConnectionSetup();
+
+		List<MqttMessageEntity> entities = new ArrayList<>();
+		for ( int i = 0; i < 3; i++ ) {
+			BasicMqttMessageEntity entity = new BasicMqttMessageEntity((long) i, Instant.now(),
+					service.getMqttConfig().getServerUriValue(), "some/topic", false,
+					MqttQos.ExactlyOnce, String.format("Hello, world %d", i).getBytes());
+			entities.add(entity);
+		}
+
+		// first "page" of cached messages
+		Capture<BatchableDao.BatchCallback<MqttMessageEntity>> callbackCaptor = new Capture<>();
+		Capture<BatchableDao.BatchOptions> optionsCaptor = new Capture<>();
+		expect(messageDao.batchProcess(capture(callbackCaptor), capture(optionsCaptor)))
+				.andAnswer(new IAnswer<BatchableDao.BatchResult>() {
+
+					@Override
+					public BatchableDao.BatchResult answer() throws Throwable {
+						callbackCaptor.getValue().handle(entities.get(0));
+						callbackCaptor.getValue().handle(entities.get(1));
+						return new BasicBatchResult(2);
+					}
+				});
+
+		// second "page"
+		Capture<BatchableDao.BatchCallback<MqttMessageEntity>> callbackCaptor2 = new Capture<>();
+		Capture<BatchableDao.BatchOptions> optionsCaptor2 = new Capture<>();
+		expect(messageDao.batchProcess(capture(callbackCaptor2), capture(optionsCaptor2)))
+				.andAnswer(new IAnswer<BatchableDao.BatchResult>() {
+
+					@Override
+					public BatchableDao.BatchResult answer() throws Throwable {
+						callbackCaptor2.getValue().handle(entities.get(2));
+						return new BasicBatchResult(1);
+					}
+				});
+
+		Capture<MqttMessage> msgCaptor = new Capture<>(CaptureType.ALL);
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null)).times(3);
+
+		// WHEN
+		replayAll();
+		service.init();
+		service.onMqttServerConnectionEstablished(connection, false);
+
+		// THEN
+		List<MqttMessage> pubMessages = msgCaptor.getValues();
+		assertThat("Published all cached messages", pubMessages, hasSize(entities.size()));
+		for ( int i = 0; i < entities.size(); i++ ) {
+			MqttMessageEntity entity = entities.get(i);
+			MqttMessage pubMessage = pubMessages.get(i);
+			assertThat("Cached message published", pubMessage, is(notNullValue()));
+			assertThat("Published cached message topic", pubMessage.getTopic(),
+					is(equalTo(entity.getTopic())));
+			assertThat("Published cached message QoS", pubMessage.getQosLevel(),
+					is(equalTo(entity.getQosLevel())));
+			assertThat("Published cached message payload",
+					Arrays.equals(pubMessage.getPayload(), entity.getPayload()), is(equalTo(true)));
+		}
 	}
 
 	@Test
