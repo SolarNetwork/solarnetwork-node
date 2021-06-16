@@ -30,17 +30,21 @@ import static net.solarnetwork.common.mqtt.MqttConnectReturnCode.Accepted;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.isNull;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -50,31 +54,42 @@ import java.util.UUID;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
+import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.common.mqtt.MqttConnection;
 import net.solarnetwork.common.mqtt.MqttConnectionFactory;
 import net.solarnetwork.common.mqtt.MqttMessage;
 import net.solarnetwork.common.mqtt.MqttQos;
+import net.solarnetwork.common.mqtt.dao.BasicMqttMessageEntity;
+import net.solarnetwork.common.mqtt.dao.MqttMessageDao;
+import net.solarnetwork.common.mqtt.dao.MqttMessageEntity;
+import net.solarnetwork.dao.BasicBatchResult;
+import net.solarnetwork.dao.BatchableDao;
+import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.io.ObjectEncoder;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.IdentityService;
+import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.node.support.DatumEvents;
 import net.solarnetwork.node.upload.flux.FluxFilterConfig;
 import net.solarnetwork.node.upload.flux.FluxUploadService;
-import net.solarnetwork.util.JsonUtils;
+import net.solarnetwork.util.StaticOptionalService;
 import net.solarnetwork.util.StaticOptionalServiceCollection;
 
 /**
  * Test cases for the {@link FluxUploadService} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class FluxUploadServiceTests {
 
@@ -84,7 +99,9 @@ public class FluxUploadServiceTests {
 	private ObjectMapper objectMapper;
 	private MqttConnectionFactory connectionFactory;
 	private MqttConnection connection;
+	private MqttMessageDao messageDao;
 	private ObjectEncoder encoder;
+	private OperationalModesService operationalModeService;
 	private Long nodeId;
 	private FluxUploadService service;
 
@@ -92,29 +109,36 @@ public class FluxUploadServiceTests {
 	public void setup() {
 		connectionFactory = EasyMock.createMock(MqttConnectionFactory.class);
 		connection = EasyMock.createMock(MqttConnection.class);
+		messageDao = EasyMock.createMock(MqttMessageDao.class);
 		identityService = EasyMock.createMock(IdentityService.class);
 		encoder = EasyMock.createMock(ObjectEncoder.class);
+		operationalModeService = EasyMock.createMock(OperationalModesService.class);
 		objectMapper = new ObjectMapper();
 
 		nodeId = Math.abs(UUID.randomUUID().getMostSignificantBits());
 
 		this.service = new FluxUploadService(connectionFactory, objectMapper, identityService);
 		this.service.setIncludeVersionTag(false);
+		service.setOpModesService(operationalModeService);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(connectionFactory, connection, identityService, encoder);
+		EasyMock.replay(connectionFactory, connection, identityService, encoder, operationalModeService,
+				messageDao);
 	}
 
 	@After
 	public void teardown() {
-		EasyMock.verify(connectionFactory, connection, identityService, encoder);
+		EasyMock.verify(connectionFactory, connection, identityService, encoder, operationalModeService,
+				messageDao);
 	}
 
 	private void expectMqttConnectionSetup() throws IOException {
 		expect(identityService.getNodeId()).andReturn(nodeId).anyTimes();
 		expect(connectionFactory.createConnection(anyObject())).andReturn(connection);
 		expect(connection.open()).andReturn(completedFuture(Accepted));
+		connection.setConnectionObserver(service);
+		expectLastCall().anyTimes();
 		expect(connection.isEstablished()).andReturn(true).anyTimes();
 	}
 
@@ -179,6 +203,138 @@ public class FluxUploadServiceTests {
 			Thread.sleep(200);
 		}
 		return result;
+	}
+
+	@Test
+	public void connEstablished_mqttPersistence_none() throws Exception {
+		// GIVEN
+		service.setMqttMessageDao(new StaticOptionalService<>(messageDao));
+		expectMqttConnectionSetup();
+
+		Capture<BatchableDao.BatchCallback<MqttMessageEntity>> callbackCaptor = new Capture<>();
+		Capture<BatchableDao.BatchOptions> optionsCaptor = new Capture<>();
+		expect(messageDao.batchProcess(capture(callbackCaptor), capture(optionsCaptor)))
+				.andReturn(new BasicBatchResult(0));
+
+		// WHEN
+		replayAll();
+		service.init();
+		service.onMqttServerConnectionEstablished(connection, false);
+
+		// THEN
+		assertThat("Callback provided", callbackCaptor.getValue(), is(notNullValue()));
+		BatchableDao.BatchOptions options = optionsCaptor.getValue();
+		assertThat("Options provided", options, is(notNullValue()));
+		assertThat("Options is updatable", options.isUpdatable(), is(equalTo(true)));
+		assertThat("Options has dest parameter", options.getParameters(), hasEntry(
+				MqttMessageDao.BATCH_OPTION_DESTINATION, service.getMqttConfig().getServerUriValue()));
+	}
+
+	@Test
+	public void connEstablished_mqttPersistence_lessThanMax() throws Exception {
+		// GIVEN
+		service.setMqttMessageDao(new StaticOptionalService<>(messageDao));
+		expectMqttConnectionSetup();
+
+		BasicMqttMessageEntity entity = new BasicMqttMessageEntity(1L, Instant.now(),
+				service.getMqttConfig().getServerUriValue(), "some/topic", false, MqttQos.ExactlyOnce,
+				"Hello, world".getBytes());
+
+		Capture<BatchableDao.BatchCallback<MqttMessageEntity>> callbackCaptor = new Capture<>();
+		Capture<BatchableDao.BatchOptions> optionsCaptor = new Capture<>();
+		expect(messageDao.batchProcess(capture(callbackCaptor), capture(optionsCaptor)))
+				.andAnswer(new IAnswer<BatchableDao.BatchResult>() {
+
+					@Override
+					public BatchableDao.BatchResult answer() throws Throwable {
+						callbackCaptor.getValue().handle(entity);
+						return new BasicBatchResult(1);
+					}
+				});
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
+
+		// WHEN
+		replayAll();
+		service.init();
+		service.onMqttServerConnectionEstablished(connection, false);
+
+		// THEN
+		MqttMessage pubMessage = msgCaptor.getValue();
+		assertThat("Cached message published", pubMessage, is(notNullValue()));
+		assertThat("Published cached message topic", pubMessage.getTopic(),
+				is(equalTo(entity.getTopic())));
+		assertThat("Published cached message QoS", pubMessage.getQosLevel(),
+				is(equalTo(entity.getQosLevel())));
+		assertThat("Published cached message payload",
+				Arrays.equals(pubMessage.getPayload(), entity.getPayload()), is(equalTo(true)));
+	}
+
+	@Test
+	public void connEstablished_mqttPersistence_max() throws Exception {
+		// GIVEN
+		service.setMqttMessageDao(new StaticOptionalService<>(messageDao));
+		service.setCachedMessagePublishMaximum(2);
+		expectMqttConnectionSetup();
+
+		List<MqttMessageEntity> entities = new ArrayList<>();
+		for ( int i = 0; i < 3; i++ ) {
+			BasicMqttMessageEntity entity = new BasicMqttMessageEntity((long) i, Instant.now(),
+					service.getMqttConfig().getServerUriValue(), "some/topic", false,
+					MqttQos.ExactlyOnce, String.format("Hello, world %d", i).getBytes());
+			entities.add(entity);
+		}
+
+		// first "page" of cached messages
+		Capture<BatchableDao.BatchCallback<MqttMessageEntity>> callbackCaptor = new Capture<>();
+		Capture<BatchableDao.BatchOptions> optionsCaptor = new Capture<>();
+		expect(messageDao.batchProcess(capture(callbackCaptor), capture(optionsCaptor)))
+				.andAnswer(new IAnswer<BatchableDao.BatchResult>() {
+
+					@Override
+					public BatchableDao.BatchResult answer() throws Throwable {
+						callbackCaptor.getValue().handle(entities.get(0));
+						callbackCaptor.getValue().handle(entities.get(1));
+						return new BasicBatchResult(2);
+					}
+				});
+
+		// second "page"
+		Capture<BatchableDao.BatchCallback<MqttMessageEntity>> callbackCaptor2 = new Capture<>();
+		Capture<BatchableDao.BatchOptions> optionsCaptor2 = new Capture<>();
+		expect(messageDao.batchProcess(capture(callbackCaptor2), capture(optionsCaptor2)))
+				.andAnswer(new IAnswer<BatchableDao.BatchResult>() {
+
+					@Override
+					public BatchableDao.BatchResult answer() throws Throwable {
+						callbackCaptor2.getValue().handle(entities.get(2));
+						return new BasicBatchResult(1);
+					}
+				});
+
+		Capture<MqttMessage> msgCaptor = new Capture<>(CaptureType.ALL);
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null)).times(3);
+
+		// WHEN
+		replayAll();
+		service.init();
+		service.onMqttServerConnectionEstablished(connection, false);
+
+		// THEN
+		List<MqttMessage> pubMessages = msgCaptor.getValues();
+		assertThat("Published all cached messages", pubMessages, hasSize(entities.size()));
+		for ( int i = 0; i < entities.size(); i++ ) {
+			MqttMessageEntity entity = entities.get(i);
+			MqttMessage pubMessage = pubMessages.get(i);
+			assertThat("Cached message published", pubMessage, is(notNullValue()));
+			assertThat("Published cached message topic", pubMessage.getTopic(),
+					is(equalTo(entity.getTopic())));
+			assertThat("Published cached message QoS", pubMessage.getQosLevel(),
+					is(equalTo(entity.getQosLevel())));
+			assertThat("Published cached message payload",
+					Arrays.equals(pubMessage.getPayload(), entity.getPayload()), is(equalTo(true)));
+		}
 	}
 
 	@Test
@@ -255,8 +411,13 @@ public class FluxUploadServiceTests {
 
 		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
 		filteredDatum.put("_DatumType", "net.solarnetwork.node.domain.Datum");
-		filteredDatum.put("_DatumTypes", asList("net.solarnetwork.node.domain.Datum",
-				"net.solarnetwork.node.domain.GeneralDatum"));
+		// @formatter:off
+		filteredDatum.put("_DatumTypes", asList(
+				"net.solarnetwork.node.domain.Datum",
+				"net.solarnetwork.domain.datum.Datum",
+				"net.solarnetwork.node.domain.GeneralDatum",
+				"net.solarnetwork.domain.datum.GeneralDatum"));
+		// @formatter:on
 		filteredDatum.remove("watts");
 		filteredDatum.remove("wattHours");
 		filteredDatum.put(Datum.TIMESTAMP, null);
@@ -538,6 +699,216 @@ public class FluxUploadServiceTests {
 			assertThat("MQTT message topic", publishedMsg.getTopic(),
 					equalTo(format("node/%d/datum/0/%s", nodeId, "not.throttled.source")));
 		}
+	}
+
+	@Test
+	public void postDatum_throttle_anySource_requireMode_notActive() throws Exception {
+		// GIVEN
+		FluxFilterConfig filter = new FluxFilterConfig();
+		filter.setFrequencySeconds(1);
+		filter.configurationChanged(null);
+		filter.setRequiredOperationalMode("test");
+		service.setFilters(new FluxFilterConfig[] { filter });
+
+		expectMqttConnectionSetup();
+
+		expect(operationalModeService.isOperationalModeActive("test")).andReturn(false).anyTimes();
+
+		Capture<MqttMessage> msgCaptor = new Capture<>(CaptureType.ALL);
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null)).anyTimes();
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		List<Map<String, Object>> publishedDatum = new ArrayList<Map<String, Object>>(2);
+		Map<String, Object> datum = new HashMap<>(4);
+		datum.put(Datum.SOURCE_ID, "s1");
+		datum.put("watts", 1234);
+
+		// post a bunch of events within the throttle window; only one should be captured
+		publishedDatum.add(publishLoop(1000, datum));
+
+		// THEN
+		List<MqttMessage> publishedMsgs = msgCaptor.getValues();
+		assertThat("All MQTT messages published because throttle filter required op mode not active",
+				publishedMsgs, hasSize(5));
+	}
+
+	@Test
+	public void postDatum_throttle_anySource_requireMode_active() throws Exception {
+		// GIVEN
+		FluxFilterConfig filter = new FluxFilterConfig();
+		filter.setFrequencySeconds(1);
+		filter.configurationChanged(null);
+		filter.setRequiredOperationalMode("test");
+		service.setFilters(new FluxFilterConfig[] { filter });
+
+		expectMqttConnectionSetup();
+
+		expect(operationalModeService.isOperationalModeActive("test")).andReturn(true).anyTimes();
+
+		Capture<MqttMessage> msgCaptor = new Capture<>(CaptureType.ALL);
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null)).anyTimes();
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		List<Map<String, Object>> publishedDatum = new ArrayList<Map<String, Object>>(2);
+		Map<String, Object> datum = new HashMap<>(4);
+		datum.put(Datum.SOURCE_ID, "s1");
+		datum.put("watts", 1234);
+
+		// post a bunch of events within the throttle window; only one should be captured
+		publishedDatum.add(publishLoop(1000, datum));
+
+		Thread.sleep(200);
+
+		publishedDatum.add(publishLoop(1000, datum));
+
+		// THEN
+		List<MqttMessage> publishedMsgs = msgCaptor.getValues();
+		assertThat("Only 2 MQTT messages published because of throttle filter", publishedMsgs,
+				hasSize(2));
+		assertMessage(publishedMsgs.get(0), "s1", publishedDatum.get(0));
+		assertMessage(publishedMsgs.get(1), "s1", publishedDatum.get(1));
+	}
+
+	private static final class TestInjectorTransformService extends BaseIdentifiable
+			implements GeneralDatumSamplesTransformService {
+
+		private final GeneralDatumSamples staticSamples;
+
+		public TestInjectorTransformService(String uid, GeneralDatumSamples staticSamples) {
+			super();
+			setUid(uid);
+			this.staticSamples = staticSamples;
+		}
+
+		@Override
+		public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
+				Map<String, Object> parameters) {
+			GeneralDatumSamples result = new GeneralDatumSamples(samples);
+			if ( staticSamples.getInstantaneous() != null ) {
+				for ( Map.Entry<String, Number> me : staticSamples.getInstantaneous().entrySet() ) {
+					result.putInstantaneousSampleValue(me.getKey(), me.getValue());
+				}
+			}
+			if ( staticSamples.getAccumulating() != null ) {
+				for ( Map.Entry<String, Number> me : staticSamples.getAccumulating().entrySet() ) {
+					result.putAccumulatingSampleValue(me.getKey(), me.getValue());
+				}
+			}
+			if ( staticSamples.getStatus() != null ) {
+				for ( Map.Entry<String, Object> me : staticSamples.getStatus().entrySet() ) {
+					result.putStatusSampleValue(me.getKey(), me.getValue());
+				}
+			}
+			if ( staticSamples.getTags() != null ) {
+				for ( String t : staticSamples.getTags() ) {
+					result.addTag(t);
+				}
+			}
+			return result;
+		}
+
+	}
+
+	@Test
+	public void postDatum_filters_requireMode_togglePair() throws Exception {
+		FluxFilterConfig f1 = new FluxFilterConfig();
+		f1.setRequiredOperationalMode("test");
+		f1.setTransformServiceUid("test1.filter");
+		FluxFilterConfig f2 = new FluxFilterConfig();
+		f2.setRequiredOperationalMode("!test");
+		f2.setTransformServiceUid("test2.filter");
+		service.setFilters(new FluxFilterConfig[] { f1, f2 });
+
+		GeneralDatumSamples s1 = new GeneralDatumSamples();
+		s1.putInstantaneousSampleValue("foo", 1);
+		TestInjectorTransformService x1 = new TestInjectorTransformService("test1.filter", s1);
+
+		GeneralDatumSamples s2 = new GeneralDatumSamples();
+		s2.putInstantaneousSampleValue("bar", 1);
+		TestInjectorTransformService x2 = new TestInjectorTransformService("test2.filter", s2);
+
+		service.setTransformServices(new StaticOptionalServiceCollection<>(asList(x1, x2)));
+
+		expectMqttConnectionSetup();
+
+		expect(operationalModeService.isOperationalModeActive("test")).andReturn(true);
+		expect(operationalModeService.isOperationalModeActive("!test")).andReturn(false);
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		Map<String, Object> datum = new HashMap<>(4);
+		datum.put(Datum.SOURCE_ID, "s1");
+		datum.put("watts", 1234);
+
+		postEvent(datum);
+
+		// THEN
+		List<MqttMessage> publishedMsgs = msgCaptor.getValues();
+		assertThat("1 MQTT messages published", publishedMsgs, hasSize(1));
+
+		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
+		filteredDatum.put(Datum.TIMESTAMP, null);
+		filteredDatum.put("foo", 1);
+		assertMessage(publishedMsgs.get(0), "s1", filteredDatum);
+	}
+
+	@Test
+	public void postDatum_filters_requireMode_togglePair_inverted() throws Exception {
+		FluxFilterConfig f1 = new FluxFilterConfig();
+		f1.setRequiredOperationalMode("test");
+		f1.setTransformServiceUid("test1.filter");
+		FluxFilterConfig f2 = new FluxFilterConfig();
+		f2.setRequiredOperationalMode("!test");
+		f2.setTransformServiceUid("test2.filter");
+		service.setFilters(new FluxFilterConfig[] { f1, f2 });
+
+		GeneralDatumSamples s1 = new GeneralDatumSamples();
+		s1.putInstantaneousSampleValue("foo", 1);
+		TestInjectorTransformService x1 = new TestInjectorTransformService("test1.filter", s1);
+
+		GeneralDatumSamples s2 = new GeneralDatumSamples();
+		s2.putInstantaneousSampleValue("bar", 1);
+		TestInjectorTransformService x2 = new TestInjectorTransformService("test2.filter", s2);
+
+		service.setTransformServices(new StaticOptionalServiceCollection<>(asList(x1, x2)));
+
+		expectMqttConnectionSetup();
+
+		expect(operationalModeService.isOperationalModeActive("test")).andReturn(false);
+		expect(operationalModeService.isOperationalModeActive("!test")).andReturn(true);
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		Map<String, Object> datum = new HashMap<>(4);
+		datum.put(Datum.SOURCE_ID, "s1");
+		datum.put("watts", 1234);
+
+		postEvent(datum);
+
+		// THEN
+		List<MqttMessage> publishedMsgs = msgCaptor.getValues();
+		assertThat("1 MQTT messages published", publishedMsgs, hasSize(1));
+
+		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
+		filteredDatum.put(Datum.TIMESTAMP, null);
+		filteredDatum.put("bar", 1);
+		assertMessage(publishedMsgs.get(0), "s1", filteredDatum);
 	}
 
 	@Test

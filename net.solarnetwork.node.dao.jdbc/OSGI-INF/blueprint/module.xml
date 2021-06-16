@@ -26,25 +26,6 @@
 		<beans:prop key="restoreFromBackup.resourceProviderFilter">net.solarnetwork.node.settings.ca.CASettingsService</beans:prop>
 		<beans:prop key="restoreFromBackup.sqlStateRegex">XS(?!DB6).*</beans:prop>
 		<beans:prop key="shutdown.sqlStateRegex">XSDB6</beans:prop>
-		<beans:prop key="jdbc.driver">org.apache.derby.jdbc.EmbeddedDriver</beans:prop>
-		<beans:prop key="jdbc.url">jdbc:derby:solarnode;create=true;upgrade=true</beans:prop>
-		<beans:prop key="jdbc.user">solarnode</beans:prop>
-		<beans:prop key="jdbc.pass">solarnode</beans:prop>
-		<beans:prop key="jdbc.pool.minIdle">0</beans:prop>
-		<beans:prop key="jdbc.pool.maxIdle">0</beans:prop>
-		<beans:prop key="jdbc.pool.initialSize">0</beans:prop>
-		<beans:prop key="jdbc.pool.maxActive">3</beans:prop>
-		<beans:prop key="jdbc.pool.maxWait">20000</beans:prop>
-		<beans:prop key="jdbc.pool.maxAge">0</beans:prop>
-		<beans:prop key="jdbc.pool.timeBetweenEvictionRunsMillis">120000</beans:prop>
-		<beans:prop key="jdbc.pool.minEvictableIdleTimeMillis">300000</beans:prop>
-		<beans:prop key="jdbc.pool.removeAbandoned">true</beans:prop>
-		<beans:prop key="jdbc.pool.removeAbandonedTimeout">600</beans:prop>
-		<beans:prop key="jdbc.pool.abandonWhenPercentageFull">70</beans:prop>
-		<beans:prop key="jdbc.pool.logAbandoned">false</beans:prop>
-		<beans:prop key="jdbc.pool.validationQuery">VALUES CURRENT_DATE</beans:prop>
-		<beans:prop key="jdbc.pool.interceptors">ConnectionState;StatementCache(prepared=true,callable=true,max=50);ResetAbandonedTimer</beans:prop>
-		<beans:prop key="jdbc.pool.jmxEnabled">true</beans:prop>
 		<beans:prop key="JdbcDatumDao.maxFetchForUpload">240</beans:prop>
 		<beans:prop key="JdbcGeneralNodeDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generalnodedatum-init.sql</beans:prop>
 		<beans:prop key="JdbcGeneralNodeDatumDao.sqlResourcePrefix">derby-generalnodedatum</beans:prop>
@@ -66,8 +47,7 @@
 
 	<!-- Service References -->
 
-	<reference id="dataSourceFactory" interface="org.osgi.service.jdbc.DataSourceFactory"
-		filter="(osgi.jdbc.driver.class=${jdbc.driver})" />
+	<reference id="dataSource" interface="javax.sql.DataSource" filter="(db=node)" />
 
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext" />
@@ -95,13 +75,6 @@
 
 	<service ref="settingDao" interface="net.solarnetwork.node.dao.SettingDao"
 		depends-on="databaseSetup" />
-
-	<service ref="dataSource" interface="javax.sql.DataSource"
-		depends-on="databaseSetup">
-		<service-properties>
-			<entry key="db" value="node" />
-		</service-properties>
-	</service>
 
 	<service ref="jdbcTemplate" interface="org.springframework.jdbc.core.JdbcOperations">
 		<service-properties>
@@ -172,46 +145,6 @@
 	<!-- Supporting Services -->
 
 	<ctx:property-placeholder properties-ref="dao.jdbc.cfg" />
-
-	<bean id="dataSource"
-		class="net.solarnetwork.dao.jdbc.TomcatJdbcPoolDataSourceFactoryBean">
-		<property name="poolProperties">
-			<bean class="org.apache.tomcat.jdbc.pool.PoolProperties">
-				<property name="jmxEnabled" value="${jdbc.pool.jmxEnabled}" />
-				<property name="testWhileIdle" value="true" />
-				<property name="testOnBorrow" value="true" />
-				<property name="testOnConnect" value="true" />
-				<property name="testOnReturn" value="false" />
-				<property name="validationQuery" value="${jdbc.pool.validationQuery}" />
-				<property name="validationInterval" value="30000" />
-				<property name="timeBetweenEvictionRunsMillis" value="${jdbc.pool.timeBetweenEvictionRunsMillis}" />
-				<property name="minEvictableIdleTimeMillis" value="${jdbc.pool.minEvictableIdleTimeMillis}" />
-				<property name="initialSize" value="${jdbc.pool.initialSize}" />
-				<property name="maxActive" value="${jdbc.pool.maxActive}" />
-				<property name="minIdle" value="${jdbc.pool.minIdle}" />
-				<property name="maxIdle" value="${jdbc.pool.maxIdle}" />
-				<property name="maxWait" value="${jdbc.pool.maxWait}" />
-				<property name="maxAge" value="${jdbc.pool.maxAge}"/>
-				<property name="removeAbandoned" value="${jdbc.pool.removeAbandoned}"/>
-				<property name="removeAbandonedTimeout" value="${jdbc.pool.removeAbandonedTimeout}" />
-				<property name="abandonWhenPercentageFull" value="${jdbc.pool.abandonWhenPercentageFull}"/>
-				<property name="logAbandoned" value="${jdbc.pool.logAbandoned}" />
-				<property name="jdbcInterceptors" value="${jdbc.pool.interceptors}" />
-			</bean>
-		</property>
-		<property name="dataSourceFactory" ref="dataSourceFactory" />
-		<property name="dataSourceProperties">
-			<props>
-				<prop key="url">${jdbc.url}</prop>
-				<prop key="user">${jdbc.user}</prop>
-				<prop key="password">${jdbc.pass}</prop>
-			</props>
-		</property>
-		<property name="bundleContext" ref="bundleContext" />
-		<property name="sqlExceptionHandlerSupport" value="true" />
-		<property name="registerJmx" value="${jdbc.pool.jmxEnabled}"/>
-		<property name="jmxName" value="SolarNode"/>
-	</bean>
 
 	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
 		<property name="dataSource" ref="dataSource" />

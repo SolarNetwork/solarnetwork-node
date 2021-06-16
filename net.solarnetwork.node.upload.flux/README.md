@@ -60,6 +60,8 @@ Each component configuration contains the following overall settings:
 | Password | The MQTT password to use. |
 | Exclude Properties | A regular expression to match property names on all datum sources to exclude from publishinggrip. |
 | Require Mode | If configured, an operational mode that must be active for any data to be published. |
+| Maximum Republish | If offline message persistence has been configured, then the maximum number of offline messages to publish in one go. See the [offline persistence](#offline-message-persistence) section for more information. |
+| Reliability | The MQTT _quality of service_ level to use. Normally the default of **At most once** is sufficient. |
 | Version | The MQTT protocol version to use. Startig with version 5 MQTT [topic aliases][mqtt-topic-aliases] will be used if the server supports it, which can save a significant amount of network bandwidth when long source IDs are in use.  |
 | Wire Logging | Toggle verbose logging on/off to support troubleshooting. The messages are logged to the `net.solarnetwork.mqtt` topic at `DEBUG` level. |
 | Filters | Any number of datum [filter configurations](#filter-settings). |
@@ -110,6 +112,8 @@ Each filter configuration contains the following settings:
 | Setting | Description |
 |---------|-------------|
 | Source ID | A case-insensitive regular expression to match against datum source IDs. If defined, this filter will only be applied to datum with matching source ID values. If not defined this filter will be applied to all datum. For example `^solar` would match any source ID starting with _solar_. |
+| Datum Filter | The Service Name of a **Datum Filter** component to apply to datum before encoding and posting them. Can be a the UID of a specific Datum Filter or a Datum Filter Chain. |
+| Require Mode | If configured, an operational mode that must be active for this filter to be applied. |
 | Datum Encoder | The <b>Service Name</b> if a <b>Datum Encoder</b> component to encode datum with. The encoder will be passed a `java.util.Map` object with all the datum properties. If not configured then CBOR will be used. |
 | Limit Seconds | The minimum number of seconds to limit datum that match the configured **Source ID** pattern. If datum are produced faster than this rate, they will be filtered out. Set to `0` or leave empty for no limit. |
 | Property Includes | A list of  case-insensitive regular expressions to match against datum property names. If configured, **only** properties that match one of these expressions will be included in the filtered output. For example `^watt` would match any property starting with _watt_.  |
@@ -120,6 +124,26 @@ Each filter configuration contains the following settings:
   add an include rule for `^created$`. You might like to have `sourceId` removed to conserve
   bandwidth, however, given that value is part of the MQTT topic the datum is posted on and thus
   redundant.
+
+# Offline message persistence
+
+By default if the connection to the configured SolarFlux MQTT server is down for any reason, all
+messages that would normally be published to the server will be discarded. This is suitable for 
+most applications that rely on SolarFlux to view real-time status updates only, and SolarNode
+uploads datum to SolarIn for long-term persistence. For applications that rely on SolarFlux for
+more, it might be desirable to configure SolarNode to locally cache SolarFlux messages when the
+connection is down, and then publish those cached messages when the connection is restored. This
+can be accomplished by deploying the [MQTT Persistence](../net.solarnetwork.node.dao.mqtt.jdbc)
+plugin.
+
+When that plugin is available, all messages processed by this service will be saved locally when the
+MQTT connection is down, and then posted once the MQTT connection comes back up. Note the following
+points to consider:
+
+ * The cached messages will be posted with the MQTT _retained_ flag set to `false`.
+ * The cached messages will be posted in an unspecified order.
+ * The cached messages may be posted more than once, regardless of the configured _Reliabiliy_
+   setting.
 
 [cbor]: http://cbor.io/
 [mqtt-topic-aliases]: https://www.hivemq.com/blog/mqtt5-essentials-part10-topic-alias/

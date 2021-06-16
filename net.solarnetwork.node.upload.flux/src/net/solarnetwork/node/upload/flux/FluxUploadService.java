@@ -26,9 +26,12 @@ import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static java.util.Collections.singletonMap;
 import static net.solarnetwork.node.OperationalModesService.hasActiveOperationalMode;
 import static net.solarnetwork.node.settings.support.SettingsUtil.dynamicListSettingSpecifier;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -54,10 +57,18 @@ import net.solarnetwork.common.mqtt.BaseMqttConnectionService;
 import net.solarnetwork.common.mqtt.BasicMqttMessage;
 import net.solarnetwork.common.mqtt.MqttConnection;
 import net.solarnetwork.common.mqtt.MqttConnectionFactory;
+import net.solarnetwork.common.mqtt.MqttConnectionObserver;
+import net.solarnetwork.common.mqtt.MqttMessage;
 import net.solarnetwork.common.mqtt.MqttQos;
 import net.solarnetwork.common.mqtt.MqttStats;
 import net.solarnetwork.common.mqtt.MqttVersion;
 import net.solarnetwork.common.mqtt.ReconfigurableMqttConnection;
+import net.solarnetwork.common.mqtt.dao.BasicMqttMessageEntity;
+import net.solarnetwork.common.mqtt.dao.MqttMessageDao;
+import net.solarnetwork.common.mqtt.dao.MqttMessageEntity;
+import net.solarnetwork.dao.BasicBatchOptions;
+import net.solarnetwork.dao.BatchableDao;
+import net.solarnetwork.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.Identifiable;
 import net.solarnetwork.io.ObjectEncoder;
@@ -77,16 +88,17 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.OptionalServiceCollection;
 
 /**
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 1.9
+ * @version 1.10
  */
-public class FluxUploadService extends BaseMqttConnectionService
-		implements EventHandler, SettingSpecifierProvider, SettingsChangeObserver {
+public class FluxUploadService extends BaseMqttConnectionService implements EventHandler,
+		SettingSpecifierProvider, SettingsChangeObserver, MqttConnectionObserver {
 
 	/** The MQTT topic template for node data publication. */
 	public static final String NODE_DATUM_TOPIC_TEMPLATE = "node/%d/datum/0/%s";
@@ -115,6 +127,20 @@ public class FluxUploadService extends BaseMqttConnectionService
 	 */
 	public static final MqttVersion DEFAULT_MQTT_VERSION = MqttVersion.Mqtt5;
 
+	/**
+	 * The default MQTT QoS to use.
+	 * 
+	 * @since 1.10
+	 */
+	public static final MqttQos DEFAULT_MQTT_QOS = MqttQos.AtMostOnce;
+
+	/**
+	 * The default value for the {@code cachedMessagePublishMaximum} property.
+	 * 
+	 * @since 1.10
+	 */
+	public static final int DEFAULT_CACHED_MESSAGE_PUBLISH_MAXIMUM = 200;
+
 	private final ConcurrentMap<String, Long> SOURCE_CAPTURE_TIMES = new ConcurrentHashMap<>(16, 0.9f,
 			2);
 
@@ -128,6 +154,8 @@ public class FluxUploadService extends BaseMqttConnectionService
 	private boolean includeVersionTag = DEFAULT_INCLUDE_VERSION_TAG;
 	private OptionalServiceCollection<ObjectEncoder> datumEncoders;
 	private OptionalServiceCollection<GeneralDatumSamplesTransformService> transformServices;
+	private OptionalService<MqttMessageDao> mqttMessageDao;
+	private int cachedMessagePublishMaximum = DEFAULT_CACHED_MESSAGE_PUBLISH_MAXIMUM;
 
 	/**
 	 * Constructor.
@@ -144,7 +172,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 		super(connectionFactory, new MqttStats(100));
 		this.objectMapper = objectMapper;
 		this.identityService = identityService;
-		setPublishQos(MqttQos.AtMostOnce);
+		setPublishQos(DEFAULT_MQTT_QOS);
 		getMqttConfig().setUsername(DEFAULT_MQTT_USERNAME);
 		getMqttConfig().setServerUriValue(DEFAULT_MQTT_HOST);
 		getMqttConfig().setVersion(DEFAULT_MQTT_VERSION);
@@ -187,6 +215,107 @@ public class FluxUploadService extends BaseMqttConnectionService
 				f.configurationChanged(properties);
 			}
 		}
+	}
+
+	@Override
+	public void onMqttServerConnectionLost(MqttConnection connection, boolean willReconnect,
+			Throwable cause) {
+		// nothing special here
+	}
+
+	@Override
+	public void onMqttServerConnectionEstablished(MqttConnection connection, boolean reconnected) {
+		// if we have persistence, upload any cached messages now
+		MqttMessageDao dao = OptionalService.service(mqttMessageDao);
+		String dest = getMqttConfig().getServerUriValue();
+		int timeoutSecs = getMqttConfig().getConnectTimeoutSeconds();
+		if ( dao != null ) {
+			Runnable task = new PublishCachedMessagesTask(dest, dao, connection, timeoutSecs,
+					cachedMessagePublishMaximum);
+			Executor e = this.executor;
+			if ( e != null ) {
+				e.execute(task);
+			} else {
+				task.run();
+			}
+		}
+	}
+
+	private final class PublishCachedMessagesTask implements Runnable {
+
+		private final String dest;
+		private final MqttMessageDao dao;
+		private final MqttConnection connection;
+		private final int timeoutSecs;
+		private final int max;
+
+		private int processedCount = 0;
+
+		private PublishCachedMessagesTask(String dest, MqttMessageDao dao, MqttConnection connection,
+				int timeoutSecs, int max) {
+			super();
+			this.dest = dest;
+			this.dao = dao;
+			this.connection = connection;
+			this.timeoutSecs = timeoutSecs;
+			this.max = max;
+		}
+
+		@Override
+		public void run() {
+			// in case multiple tasks attempt to run at same time, i.e. from connection up/down during processing,
+			// sync on DAO to only allow one at a time
+			synchronized ( dao ) {
+				batchProcess();
+			}
+			if ( isMaximumReached() && connection.isEstablished() ) {
+				// submit new task to publish next block
+				final Executor e = executor;
+				Runnable task = new PublishCachedMessagesTask(dest, dao, connection, timeoutSecs, max);
+				if ( e != null ) {
+					e.execute(task);
+				} else {
+					task.run();
+				}
+			}
+		}
+
+		private void batchProcess() {
+			final BatchableDao.BatchResult result = dao
+					.batchProcess(new BatchableDao.BatchCallback<MqttMessageEntity>() {
+
+						@Override
+						public BatchCallbackResult handle(MqttMessageEntity entity) {
+							if ( !connection.isEstablished() || isMaximumReached() ) {
+								return BatchCallbackResult.STOP;
+							}
+							BatchCallbackResult action;
+							try {
+								connection.publish(entity).get(timeoutSecs, TimeUnit.SECONDS);
+								action = BatchCallbackResult.DELETE;
+								processedCount++;
+								log.debug("Published cached MQTT message {} to topic {}", entity.getId(),
+										entity.getTopic());
+							} catch ( Exception e ) {
+								log.debug("Error publishing cached MQTT message {} to topic {}: {}",
+										entity.getId(), entity.getTopic(), e.toString());
+								action = BatchCallbackResult.STOP;
+							}
+							return action;
+						}
+
+					}, new BasicBatchOptions("Process cached MQTT messages",
+							BasicBatchOptions.DEFAULT_BATCH_SIZE, true,
+							singletonMap(MqttMessageDao.BATCH_OPTION_DESTINATION, dest)));
+			if ( result.numProcessed() > 0 ) {
+				log.info("Uploaded {} locally cached MQTT messages to {}", result.numProcessed(), dest);
+			}
+		}
+
+		private boolean isMaximumReached() {
+			return (max > 0 && processedCount >= max);
+		}
+
 	}
 
 	private String getMqttClientId() {
@@ -245,13 +374,13 @@ public class FluxUploadService extends BaseMqttConnectionService
 						return;
 					}
 
-					// FIXME transform
+					final FluxFilterConfig[] activeFilters = activeFilters(getFilters(), sourceId);
 
-					Map<String, Object> data = mapForEvent(sourceId, event);
+					Map<String, Object> data = mapForEvent(activeFilters, sourceId, event);
 					if ( data == null || data.isEmpty() ) {
 						return;
 					}
-					publishDatum(sourceId, data);
+					publishDatum(activeFilters, sourceId, data);
 				}
 			}
 
@@ -264,12 +393,31 @@ public class FluxUploadService extends BaseMqttConnectionService
 		}
 	}
 
-	private boolean shouldPublishDatum(String sourceId, Map<String, Object> data) {
-		FluxFilterConfig[] filters = getFilters();
+	private FluxFilterConfig[] activeFilters(FluxFilterConfig[] filters, String sourceId) {
+		if ( filters == null || filters.length < 1 ) {
+			return null;
+		}
+		final OperationalModesService opModesService = this.opModesService;
+		return Arrays.stream(filters).filter(f -> {
+			if ( f.getRequiredOperationalMode() != null && !f.getRequiredOperationalMode().isEmpty() ) {
+				if ( opModesService == null ) {
+					// op mode required, but no service available
+					return false;
+				}
+				if ( !opModesService.isOperationalModeActive(f.getRequiredOperationalMode()) ) {
+					return false;
+				}
+			}
+			return f.isSourceIdMatch(sourceId);
+		}).toArray(FluxFilterConfig[]::new);
+	}
+
+	private boolean shouldPublishDatum(FluxFilterConfig[] activeFilters, String sourceId,
+			Map<String, Object> data) {
 		Long ts = System.currentTimeMillis();
 		Long prevTs = SOURCE_CAPTURE_TIMES.get(sourceId);
-		if ( filters != null ) {
-			for ( FluxFilterConfig filter : filters ) {
+		if ( activeFilters != null ) {
+			for ( FluxFilterConfig filter : activeFilters ) {
 				if ( filter == null ) {
 					continue;
 				}
@@ -284,12 +432,13 @@ public class FluxUploadService extends BaseMqttConnectionService
 		return true;
 	}
 
-	private void publishDatum(String sourceId, Map<String, Object> data) {
+	private void publishDatum(FluxFilterConfig[] activeFilters, String sourceId,
+			Map<String, Object> data) {
 		final Long nodeId = identityService.getNodeId();
 		if ( nodeId == null ) {
 			return;
 		}
-		if ( !shouldPublishDatum(sourceId, data) ) {
+		if ( !shouldPublishDatum(activeFilters, sourceId, data) ) {
 			return;
 		}
 		if ( sourceId.startsWith("/") ) {
@@ -298,12 +447,15 @@ public class FluxUploadService extends BaseMqttConnectionService
 		if ( sourceId.isEmpty() ) {
 			return;
 		}
+		final MqttMessageDao dao = OptionalService.service(mqttMessageDao);
+		MqttMessage msgToPersist = null;
 		MqttConnection conn = connection();
-		if ( conn != null && conn.isEstablished() ) {
+		if ( dao != null || (conn != null && conn.isEstablished()) ) {
 			String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, nodeId, sourceId);
+			MqttMessage msg = null;
 			try {
 				byte[] payload;
-				ObjectEncoder encoder = encoderForSourceId(sourceId);
+				ObjectEncoder encoder = encoderForSourceId(activeFilters, sourceId);
 				if ( encoder != null ) {
 					payload = encoder.encodeAsBytes(data, null);
 				} else {
@@ -314,44 +466,65 @@ public class FluxUploadService extends BaseMqttConnectionService
 					payload = objectMapper.writeValueAsBytes(jsonData);
 					log.trace("Publishing to MQTT topic {} JSON:\n{}", topic, jsonData);
 				}
-				if ( log.isTraceEnabled() ) {
-					log.trace("Publishing to MQTT topic {}\n{}", topic, Hex.encodeHexString(payload));
+				msg = new BasicMqttMessage(topic, true, getPublishQos(), payload);
+				if ( conn != null && conn.isEstablished() ) {
+					if ( log.isTraceEnabled() ) {
+						log.trace("Publishing to MQTT topic {}\n{}", topic,
+								Hex.encodeHexString(payload));
+					}
+					conn.publish(msg).get(getMqttConfig().getConnectTimeoutSeconds(), TimeUnit.SECONDS);
+					log.debug("Published to MQTT topic {}: {}", topic, data);
+				} else if ( dao != null ) {
+					msgToPersist = msg;
 				}
-				conn.publish(new BasicMqttMessage(topic, true, getPublishQos(), payload))
-						.get(getMqttConfig().getConnectTimeoutSeconds(), TimeUnit.SECONDS);
-				log.debug("Published to MQTT topic {}: {}", topic, data);
 			} catch ( Exception e ) {
 				Throwable root = e;
 				while ( root.getCause() != null ) {
 					root = root.getCause();
 				}
-				String msg = (root instanceof TimeoutException ? "timeout" : root.getMessage());
+				String message = (root instanceof TimeoutException ? "timeout" : root.getMessage());
 				log.warn("Error publishing to MQTT topic {} datum {} @ {}: {}", topic, data,
-						getMqttConfig().getServerUri(), msg);
+						getMqttConfig().getServerUri(), message);
+				if ( dao != null ) {
+					msgToPersist = msg;
+				}
+			}
+		}
+		if ( msgToPersist != null ) {
+			String dest = getMqttConfig().getServerUriValue();
+			if ( dest != null ) {
+				log.debug("Locally persisting MQTT message to {} on topic {}", dest,
+						msgToPersist.getTopic());
+				BasicMqttMessageEntity entity = new BasicMqttMessageEntity(null, Instant.now(), dest,
+						msgToPersist.getTopic(), false, msgToPersist.getQosLevel(),
+						msgToPersist.getPayload());
+				dao.save(entity);
 			}
 		}
 	}
 
-	private ObjectEncoder encoderForSourceId(String sourceId) {
-		return serviceForSourceId(sourceId, getDatumEncoders(), FluxFilterConfig::getDatumEncoderUid);
+	private ObjectEncoder encoderForSourceId(FluxFilterConfig[] activeFilters, String sourceId) {
+		return serviceForSourceId(activeFilters, sourceId, getDatumEncoders(),
+				FluxFilterConfig::getDatumEncoderUid);
 	}
 
-	private GeneralDatumSamplesTransformService transformServiceForSourceId(String sourceId) {
-		return serviceForSourceId(sourceId, getTransformServices(),
+	private GeneralDatumSamplesTransformService transformServiceForSourceId(
+			FluxFilterConfig[] activeFilters, String sourceId) {
+		return serviceForSourceId(activeFilters, sourceId, getTransformServices(),
 				FluxFilterConfig::getTransformServiceUid);
 	}
 
-	private <T extends Identifiable> T serviceForSourceId(String sourceId,
-			OptionalServiceCollection<T> services, Function<FluxFilterConfig, String> uidProvider) {
+	private <T extends Identifiable> T serviceForSourceId(FluxFilterConfig[] activeFilters,
+			String sourceId, OptionalServiceCollection<T> services,
+			Function<FluxFilterConfig, String> uidProvider) {
 		if ( services == null ) {
 			return null;
 		}
-		FluxFilterConfig[] filters = getFilters();
-		if ( filters == null || filters.length < 1 ) {
+		if ( activeFilters == null || activeFilters.length < 1 ) {
 			return null;
 		}
 		Iterable<T> serviceItr = null;
-		for ( FluxFilterConfig cfg : filters ) {
+		for ( FluxFilterConfig cfg : activeFilters ) {
 			String uid = (cfg != null ? uidProvider.apply(cfg) : null);
 			if ( uid == null || uid.isEmpty() ) {
 				continue;
@@ -388,7 +561,8 @@ public class FluxUploadService extends BaseMqttConnectionService
 		return null;
 	}
 
-	private Map<String, Object> mapForEvent(String sourceId, Event event) {
+	private Map<String, Object> mapForEvent(FluxFilterConfig[] activeFilters, String sourceId,
+			Event event) {
 		if ( event == null ) {
 			return null;
 		}
@@ -404,7 +578,8 @@ public class FluxUploadService extends BaseMqttConnectionService
 				Datum d = (Datum) propVal;
 				if ( d instanceof GeneralDatumSupport ) {
 					GeneralDatumSupport gds = (GeneralDatumSupport) d;
-					GeneralDatumSamplesTransformService xform = transformServiceForSourceId(sourceId);
+					GeneralDatumSamplesTransformService xform = transformServiceForSourceId(
+							activeFilters, sourceId);
 					if ( xform != null ) {
 						GeneralDatumSamples samples = xform.transformSamples(d, gds.getSamples(),
 								new HashMap<>(4));
@@ -463,6 +638,20 @@ public class FluxUploadService extends BaseMqttConnectionService
 		results.add(new BasicTextFieldSettingSpecifier("excludePropertyNamesRegex",
 				DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN.pattern()));
 		results.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode", ""));
+		results.add(new BasicTextFieldSettingSpecifier("cachedMessagePublishMaximum",
+				String.valueOf(DEFAULT_CACHED_MESSAGE_PUBLISH_MAXIMUM)));
+
+		// drop-down menu for QoS
+		BasicMultiValueSettingSpecifier qosSpec = new BasicMultiValueSettingSpecifier("publishQosValue",
+				String.valueOf(DEFAULT_MQTT_QOS.getValue()));
+		Map<String, String> qosTitles = new LinkedHashMap<String, String>(3);
+		for ( MqttQos qos : MqttQos.values() ) {
+			String code = String.format("mqttQos.%d.title", qos.getValue());
+			qosTitles.put(String.valueOf(qos.getValue()), getMessageSource().getMessage(code,
+					new Object[] { qos.getValue() }, qos.toString(), null));
+		}
+		qosSpec.setValueTitles(qosTitles);
+		results.add(qosSpec);
 
 		// drop-down menu for version
 		BasicMultiValueSettingSpecifier versionSpec = new BasicMultiValueSettingSpecifier("mqttVersion",
@@ -779,6 +968,50 @@ public class FluxUploadService extends BaseMqttConnectionService
 	public void setTransformServices(
 			OptionalServiceCollection<GeneralDatumSamplesTransformService> transformServices) {
 		this.transformServices = transformServices;
+	}
+
+	/**
+	 * Get the DAO to use for offline MQTT message persistence.
+	 * 
+	 * @return the DAO to use for offline MQTT messages
+	 * @since 1.10
+	 */
+	public OptionalService<MqttMessageDao> getMqttMessageDao() {
+		return mqttMessageDao;
+	}
+
+	/**
+	 * Set the DAO to use for offline MQTT message persistence.
+	 * 
+	 * @param mqttMessageDao
+	 *        the DAO to use for offline MQTT messages
+	 * @since 1.10
+	 */
+	public void setMqttMessageDao(OptionalService<MqttMessageDao> mqttMessageDao) {
+		this.mqttMessageDao = mqttMessageDao;
+	}
+
+	/**
+	 * Get the maximum number of cached messages to publish at one time, or
+	 * {@code 0} for no limit.
+	 * 
+	 * @return the maximum count; defaults to
+	 *         {@link #DEFAULT_CACHED_MESSAGE_PUBLISH_MAXIMUM}
+	 * @since 1.10
+	 */
+	public int getCachedMessagePublishMaximum() {
+		return cachedMessagePublishMaximum;
+	}
+
+	/**
+	 * Set the maximum number of cached messages to publish at one time.
+	 * 
+	 * @param cachedMessagePublishMaximum
+	 *        the maximum count
+	 * @since 1.10
+	 */
+	public void setCachedMessagePublishMaximum(int cachedMessagePublishMaximum) {
+		this.cachedMessagePublishMaximum = cachedMessagePublishMaximum;
 	}
 
 }
