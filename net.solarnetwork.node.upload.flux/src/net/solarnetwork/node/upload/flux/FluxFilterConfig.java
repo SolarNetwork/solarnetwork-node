@@ -114,6 +114,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	 * instance.
 	 * 
 	 * @param sourceId
+	 *        the source ID to test
 	 * @return {@literal true} if {@code sourceId} matches the configured source
 	 *         ID pattern, or no pattern is defined
 	 * @since 1.3
