@@ -37,7 +37,12 @@
 	
 	<!-- Published Services -->
 
-	<service ref="mqttMessageDao" interface="net.solarnetwork.common.mqtt.dao.MqttMessageDao"/>
+	<service ref="mqttMessageDao">
+		<interfaces>
+			<value>net.solarnetwork.common.mqtt.dao.MqttMessageDao</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+		</interfaces>
+	</service>
 
 	<!-- Supporting Services -->
 
@@ -62,7 +67,11 @@
 		<property name="eventAdmin" ref="eventAdmin" />
 		<property name="initSqlResource" value="${JdbcMqttMessageDao.initSqlResource}" />
 		<property name="sqlResourcePrefix" value="${JdbcMqttMessageDao.sqlResourcePrefix}" />
-		<!-- property name="maxFetchForUpload" value="${JdbcMqttMessageDao.maxFetchForUpload}" /-->
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basename" value="net.solarnetwork.node.dao.mqtt.jdbc.JdbcMqttMessageDao"/>
+			</bean>
+		</property>
 	</bean>
 	
 </blueprint>

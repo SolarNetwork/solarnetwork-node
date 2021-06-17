@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: MQTT Persistence (JDBC)
 Bundle-SymbolicName: net.solarnetwork.node.dao.mqtt.jdbc
-Bundle-Version: 1.0.0
+Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.dao.mqtt.jdbc
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -12,7 +12,9 @@ Import-Package:
  net.solarnetwork.common.mqtt.dao;version="[1.0,2.0)",
  net.solarnetwork.dao;version="[1.3,2.0)",
  net.solarnetwork.domain;version="[1.28,2.0)",
- net.solarnetwork.node.dao.jdbc;version="[1.18,2.0)",
+ net.solarnetwork.node.dao.jdbc;version="[1.19,2.0)",
+ net.solarnetwork.node.settings;version="[1.15,2.0)",
+ net.solarnetwork.node.settings.support;version="[1.12,2.0)",
  net.solarnetwork.node.support;version="[1.25,2.0)",
  net.solarnetwork.util;version="[1.50,2.0)",
  org.aopalliance.aop;version="[1.0,2.0)",
