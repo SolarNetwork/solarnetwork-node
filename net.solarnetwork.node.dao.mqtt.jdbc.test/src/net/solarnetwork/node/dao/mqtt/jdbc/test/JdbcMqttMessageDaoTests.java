@@ -48,6 +48,7 @@ import net.solarnetwork.dao.BatchableDao;
 import net.solarnetwork.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.dao.mqtt.jdbc.JdbcMqttMessageDao;
+import net.solarnetwork.node.dao.mqtt.jdbc.MqttMessageDaoStat;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 
 /**
@@ -84,8 +85,11 @@ public class JdbcMqttMessageDaoTests extends AbstractNodeTransactionalTest {
 	public void insert() {
 		BasicMqttMessageEntity msg = createTestMqttMessageEntity("test", "test/topic", true,
 				MqttQos.AtLeastOnce, "Hello, world.".getBytes());
+		final long saveCount = dao.getStats().get(MqttMessageDaoStat.MessagesStored);
 		Long pk = dao.save(msg);
 		assertThat("PK generated", pk, notNullValue());
+		assertThat("Save count incremented", dao.getStats().get(MqttMessageDaoStat.MessagesStored),
+				is(equalTo(saveCount + 1)));
 		last = msg.withId(pk);
 	}
 
@@ -197,6 +201,7 @@ public class JdbcMqttMessageDaoTests extends AbstractNodeTransactionalTest {
 	public void batchDelete() {
 		final BasicMqttMessageEntity template = createTestMqttMessageEntity("dest", "test", false,
 				MqttQos.AtLeastOnce, "Hello, world.".getBytes());
+		final long deleteCount = dao.getStats().get(MqttMessageDaoStat.MessagesDeleted);
 		final int count = 5;
 		final List<Long> ids = new ArrayList<>(5);
 		for ( int i = 0; i < count; i += 1 ) {
@@ -231,12 +236,15 @@ public class JdbcMqttMessageDaoTests extends AbstractNodeTransactionalTest {
 		List<Long> remainingIds = dao.getAll(null).stream().map(MqttMessageEntity::getId)
 				.collect(Collectors.toList());
 		assertThat("3 entities remain", remainingIds, is(equalTo(ids)));
+		assertThat("Delete count incremented", dao.getStats().get(MqttMessageDaoStat.MessagesDeleted),
+				is(equalTo(deleteCount + 2)));
 	}
 
 	@Test
 	public void batchDelete_destination() {
 		final BasicMqttMessageEntity template = createTestMqttMessageEntity("dest1", "test", false,
 				MqttQos.AtLeastOnce, "Hello, world.".getBytes());
+		final long deleteCount = dao.getStats().get(MqttMessageDaoStat.MessagesDeleted);
 		final int count = 5;
 		final List<Long> ids = new ArrayList<>(5);
 		for ( int i = 0; i < count; i += 1 ) {
@@ -280,5 +288,7 @@ public class JdbcMqttMessageDaoTests extends AbstractNodeTransactionalTest {
 		List<Long> remainingIds = dao.getAll(null).stream().map(MqttMessageEntity::getId)
 				.collect(Collectors.toList());
 		assertThat("3 dest1 + 5 dest2 entities remain", remainingIds, is(equalTo(expectedRemainingIds)));
+		assertThat("Delete count incremented", dao.getStats().get(MqttMessageDaoStat.MessagesDeleted),
+				is(equalTo(deleteCount + 2)));
 	}
 }
