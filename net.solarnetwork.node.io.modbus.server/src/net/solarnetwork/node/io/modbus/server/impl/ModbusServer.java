@@ -28,6 +28,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -269,8 +270,12 @@ public class ModbusServer extends BaseIdentifiable
 						executor.execute(new ModbusConnectionHandler(new ModbusTCPTransport(in),
 								registers, String.format("TCP %s:%d %d", addr, port, in.getLocalPort()),
 								in));
+					} catch ( SocketTimeoutException e ) {
+						//  just try to accept again
+						log.debug("Socket timeout exception in Modbus server {}:{}: {}", addr, port,
+								e.toString());
 					} catch ( SocketException e ) {
-						// socket timeout, we assume?
+						// just try to accept again
 						log.debug("Socket exception in Modbus server {}:{}: {}", addr, port,
 								e.toString());
 					} catch ( IOException e ) {
