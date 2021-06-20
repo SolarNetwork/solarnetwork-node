@@ -223,11 +223,7 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 					activity();
 				} catch ( ModbusIOException e ) {
 					if ( isRetryReconnect() && getRetries() > 0 ) {
-						try {
-							close();
-						} catch ( IOException e2 ) {
-							// ignore
-						}
+						doClose();
 					}
 					throw e;
 				}
@@ -241,11 +237,7 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 					return req;
 				} catch ( ModbusIOException e ) {
 					if ( isRetryReconnect() && getRetries() > 0 ) {
-						try {
-							close();
-						} catch ( IOException e2 ) {
-							// ignore
-						}
+						doClose();
 					}
 					throw e;
 				}
@@ -259,11 +251,7 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 					return res;
 				} catch ( ModbusIOException e ) {
 					if ( isRetryReconnect() && getRetries() > 0 ) {
-						try {
-							close();
-						} catch ( IOException e2 ) {
-							// ignore
-						}
+						doClose();
 					}
 					throw e;
 				}
@@ -274,21 +262,22 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 		@Override
 		public void connect() throws Exception {
 			acquireLock();
-			activity();
-			if ( !isConnected() ) {
-				super.connect();
-				if ( transport == null ) {
-					transport = new TrackingModbusTransport(super.getModbusTransport());
-				}
-				if ( keepOpenTimeoutThread == null || !keepOpenTimeoutThread.isAlive() ) {
-					keepOpenTimeoutThread = new Thread(this,
-							format("Modbus TCP Expiry %s", getNetworkDescription()));
-					keepOpenTimeoutThread.setDaemon(true);
-					keepOpenTimeoutThread.start();
-				}
-				if ( log.isInfoEnabled() ) {
-					log.info("Opened Modbus TCP connection {}; keep for {}s", getNetworkDescription(),
-							keepOpenSeconds);
+			synchronized ( keepOpenExpiry ) {
+				if ( !isConnected() ) {
+					super.connect();
+					if ( transport == null ) {
+						transport = new TrackingModbusTransport(super.getModbusTransport());
+					}
+					if ( keepOpenTimeoutThread == null || !keepOpenTimeoutThread.isAlive() ) {
+						keepOpenTimeoutThread = new Thread(this,
+								format("Modbus TCP Expiry %s", getNetworkDescription()));
+						keepOpenTimeoutThread.setDaemon(true);
+						keepOpenTimeoutThread.start();
+					}
+					if ( log.isInfoEnabled() ) {
+						log.info("Opened Modbus TCP connection {}; keep for {}s",
+								getNetworkDescription(), keepOpenSeconds);
+					}
 				}
 			}
 		}
@@ -296,7 +285,7 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 		@Override
 		public void close() {
 			try {
-				if ( keepOpenExpiry.get() < System.currentTimeMillis() && isConnected() ) {
+				if ( keepOpenExpiry.get() < System.currentTimeMillis() ) {
 					doClose();
 				}
 			} finally {
@@ -305,13 +294,15 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 		}
 
 		private void doClose() {
-			try {
-				super.close();
-				if ( log.isInfoEnabled() ) {
-					log.info("Closed Modbus TCP connection {}", getNetworkDescription());
+			synchronized ( keepOpenExpiry ) {
+				try {
+					super.close();
+					if ( log.isInfoEnabled() && cachedConnection.get() == this ) {
+						log.info("Closed Modbus TCP connection {}", getNetworkDescription());
+					}
+				} finally {
+					cachedConnection.compareAndSet(this, null);
 				}
-			} finally {
-				cachedConnection.compareAndSet(this, null);
 			}
 		}
 
