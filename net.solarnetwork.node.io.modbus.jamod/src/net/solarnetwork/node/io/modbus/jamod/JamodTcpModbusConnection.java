@@ -45,10 +45,28 @@ public class JamodTcpModbusConnection extends AbstractModbusConnection implement
 
 	private final TCPMasterConnection connection;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param conn
+	 *        the Jamod connection to use
+	 * @param unitId
+	 *        the unit ID
+	 */
 	public JamodTcpModbusConnection(TCPMasterConnection conn, int unitId) {
 		this(conn, unitId, false);
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param conn
+	 *        the Jamod connection to use
+	 * @param unitId
+	 *        the unit ID
+	 * @param headless
+	 *        the headless setting
+	 */
 	public JamodTcpModbusConnection(TCPMasterConnection conn, int unitId, boolean headless) {
 		super(unitId, headless);
 		this.connection = conn;
