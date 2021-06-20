@@ -84,12 +84,6 @@ public class JamodTcpModbusConnection extends AbstractModbusConnection implement
 	}
 
 	@Override
-	protected void finalize() throws Throwable {
-		close();
-		super.finalize();
-	}
-
-	@Override
 	public void open() throws IOException {
 		if ( !connection.isConnected() ) {
 			try {
