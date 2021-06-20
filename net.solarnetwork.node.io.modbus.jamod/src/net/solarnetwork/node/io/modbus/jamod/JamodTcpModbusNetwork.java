@@ -62,12 +62,19 @@ import net.wimpi.modbus.net.TCPMasterConnection;
  */
 public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements SettingSpecifierProvider {
 
+	/**
+	 * The default {@code keepOpenSeconds} property value.
+	 * 
+	 * @since 1.1
+	 */
+	public static final int DEFAULT_KEEP_OPEN_SECONDS = 90;
+
 	private String host;
 	private int port = net.wimpi.modbus.Modbus.DEFAULT_PORT;
 	private boolean socketReuseAddress = true;
 	private int socketLinger = 1;
 	private boolean socketKeepAlive = true;
-	private int keepOpenSeconds = 0;
+	private int keepOpenSeconds = DEFAULT_KEEP_OPEN_SECONDS;
 
 	private final AtomicReference<CachedTcpConnection> cachedConnection = new AtomicReference<>();
 
@@ -360,7 +367,7 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 		results.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(defaults.port)));
 		results.addAll(getBaseSettingSpecifiers());
 		results.add(new BasicTextFieldSettingSpecifier("keepOpenSeconds",
-				String.valueOf(defaults.keepOpenSeconds)));
+				String.valueOf(DEFAULT_KEEP_OPEN_SECONDS)));
 		results.add(new BasicToggleSettingSpecifier("socketReuseAddress", defaults.socketReuseAddress));
 		results.add(new BasicTextFieldSettingSpecifier("socketLinger",
 				String.valueOf(defaults.socketLinger)));
