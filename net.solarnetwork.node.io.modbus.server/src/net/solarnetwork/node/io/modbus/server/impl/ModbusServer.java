@@ -28,6 +28,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -36,8 +37,10 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Collectors;
@@ -216,6 +219,8 @@ public class ModbusServer extends BaseIdentifiable
 		private ServerSocket socket;
 		private boolean listening;
 
+		private final Set<ModbusConnectionHandler> clients = new CopyOnWriteArraySet<>();
+
 		private ServerThread(String bindAddress, int port, int backlog) throws IOException {
 			super();
 			this.addr = InetAddress.getByName(bindAddress);
@@ -240,6 +245,14 @@ public class ModbusServer extends BaseIdentifiable
 		private synchronized void close() {
 			try {
 				if ( socket != null && !socket.isClosed() ) {
+					for ( ModbusConnectionHandler handler : clients ) {
+						try {
+							handler.close();
+						} catch ( IOException e ) {
+							log.debug("Error closing Modbus TCP client connection: " + e.toString());
+						}
+					}
+					clients.clear();
 					try {
 						socket.close();
 					} catch ( IOException e ) {
@@ -266,11 +279,17 @@ public class ModbusServer extends BaseIdentifiable
 						}
 						Socket in = socket.accept();
 						log.debug("Modbus server {}:{} connection created: {}", addr, port, in);
-						executor.execute(new ModbusConnectionHandler(new ModbusTCPTransport(in),
-								registers, String.format("TCP %s:%d %d", addr, port, in.getLocalPort()),
-								in));
+						ModbusConnectionHandler handler = new ModbusConnectionHandler(
+								new ModbusTCPTransport(in), registers,
+								String.format("TCP %s:%d %d", addr, port, in.getLocalPort()), in);
+						clients.add(handler);
+						executor.execute(handler);
+					} catch ( SocketTimeoutException e ) {
+						//  just try to accept again
+						log.debug("Socket timeout exception in Modbus server {}:{}: {}", addr, port,
+								e.toString());
 					} catch ( SocketException e ) {
-						// socket timeout, we assume?
+						// just try to accept again
 						log.debug("Socket exception in Modbus server {}:{}: {}", addr, port,
 								e.toString());
 					} catch ( IOException e ) {

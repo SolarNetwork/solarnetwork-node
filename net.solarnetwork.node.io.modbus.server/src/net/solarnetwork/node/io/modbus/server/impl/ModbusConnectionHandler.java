@@ -48,7 +48,7 @@ import net.wimpi.modbus.procimg.SimpleRegister;
  * @author matt
  * @version 1.0
  */
-public class ModbusConnectionHandler implements Runnable {
+public class ModbusConnectionHandler implements Runnable, Closeable {
 
 	private static final Logger log = LoggerFactory.getLogger(ModbusConnectionHandler.class);
 
@@ -114,6 +114,11 @@ public class ModbusConnectionHandler implements Runnable {
 		builder.append(description);
 		builder.append("}");
 		return builder.toString();
+	}
+
+	@Override
+	public void close() throws IOException {
+		transport.close();
 	}
 
 	@Override
