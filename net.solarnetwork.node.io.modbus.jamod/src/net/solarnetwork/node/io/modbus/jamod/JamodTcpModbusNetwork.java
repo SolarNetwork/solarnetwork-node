@@ -58,7 +58,7 @@ import net.wimpi.modbus.net.TCPMasterConnection;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements SettingSpecifierProvider {
 
@@ -95,7 +95,7 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 			if ( keepOpenSeconds > 0 ) {
 				synchronized ( cachedConnection ) {
 					CachedTcpConnection c = cachedConnection.get();
-					if ( c == null || !c.delayExpiry() ) {
+					if ( c == null ) {
 						c = new CachedTcpConnection(InetAddress.getByName(host));
 						cachedConnection.set(c);
 					}
@@ -187,18 +187,9 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 					System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(keepOpenSeconds));
 		}
 
-		private boolean delayExpiry() {
-			synchronized ( keepOpenExpiry ) {
-				if ( keepOpenTimeoutThread == null || keepOpenTimeoutThread.isAlive() ) {
-					activity();
-					return true;
-				}
-			}
-			return false;
-		}
-
 		private void activity() {
-			log.trace("Extending TCP connection expiry to {} seconds from now", keepOpenSeconds);
+			log.trace("Extending Modbus TCP connection {} expiry to {} seconds from now",
+					getNetworkDescription(), keepOpenSeconds);
 			keepOpenExpiry.set(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(keepOpenSeconds));
 		}
 
