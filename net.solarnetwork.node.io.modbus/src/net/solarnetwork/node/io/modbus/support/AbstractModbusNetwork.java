@@ -46,7 +46,7 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * Abstract implementation of {@link ModbusNetwork}.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 2.4
  */
 public abstract class AbstractModbusNetwork implements ModbusNetwork {
@@ -225,6 +225,25 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 			log.debug("Releasing lock on {}", desc);
 			lock.unlock();
 		}
+	}
+
+	/**
+	 * Create a new connection that wraps the network-wide lock around another
+	 * connection.
+	 * 
+	 * <p>
+	 * The {@link ModbusConnection#open()} call will acquire the lock, and
+	 * {@link ModbusConnection#close()} will release it.
+	 * </p>
+	 * 
+	 * @param connection
+	 *        the connection to warp
+	 * @return a new connection that uses the network-wide lock
+	 * @since 2.1
+	 */
+	protected ModbusConnection createLockingConnection(ModbusConnection connection) {
+		return new LockingModbusConnection(connection, lock, timeout, timeoutUnit,
+				getNetworkDescription(), log);
 	}
 
 	@Override

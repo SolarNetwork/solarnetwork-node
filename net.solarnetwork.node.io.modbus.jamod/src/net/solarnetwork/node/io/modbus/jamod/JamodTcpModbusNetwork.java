@@ -58,7 +58,7 @@ import net.wimpi.modbus.net.TCPMasterConnection;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements SettingSpecifierProvider {
 
@@ -95,14 +95,14 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 			if ( keepOpenSeconds > 0 ) {
 				synchronized ( cachedConnection ) {
 					CachedTcpConnection c = cachedConnection.get();
-					if ( c == null || !c.delayExpiry() ) {
+					if ( c == null ) {
 						c = new CachedTcpConnection(InetAddress.getByName(host));
 						cachedConnection.set(c);
 					}
 					conn = c;
 				}
 			} else {
-				conn = new LockingTcpConnection(InetAddress.getByName(host));
+				conn = new TCPMasterConnection(InetAddress.getByName(host));
 			}
 			conn.setPort(port);
 			conn.setTimeout((int) getTimeoutUnit().toMillis(getTimeout()));
@@ -117,7 +117,7 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 			JamodTcpModbusConnection mbconn = new JamodTcpModbusConnection(conn, unitId, isHeadless());
 			mbconn.setRetries(getRetries());
 			mbconn.setRetryReconnect(isRetryReconnect());
-			return mbconn;
+			return createLockingConnection(mbconn);
 		} catch ( UnknownHostException e ) {
 			throw new RuntimeException("Unknown modbus host [" + host + "]");
 		}
@@ -126,43 +126,6 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 	@Override
 	protected String getNetworkDescription() {
 		return host + ":" + port;
-	}
-
-	/**
-	 * Internal extension of {@link TCPMasterConnection} that utilizes a
-	 * {@link Lock} to serialize access to the connection between threads.
-	 */
-	private class LockingTcpConnection extends TCPMasterConnection {
-
-		/**
-		 * Constructor.
-		 * 
-		 * @param addr
-		 *        the host address
-		 */
-		private LockingTcpConnection(InetAddress addr) {
-			super(addr);
-		}
-
-		@Override
-		public void connect() throws Exception {
-			if ( !isConnected() ) {
-				acquireLock();
-				super.connect();
-			}
-		}
-
-		@Override
-		public void close() {
-			try {
-				if ( isConnected() ) {
-					super.close();
-				}
-			} finally {
-				releaseLock();
-			}
-		}
-
 	}
 
 	/**
@@ -187,18 +150,9 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 					System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(keepOpenSeconds));
 		}
 
-		private boolean delayExpiry() {
-			synchronized ( keepOpenExpiry ) {
-				if ( keepOpenTimeoutThread == null || keepOpenTimeoutThread.isAlive() ) {
-					activity();
-					return true;
-				}
-			}
-			return false;
-		}
-
 		private void activity() {
-			log.trace("Extending TCP connection expiry to {} seconds from now", keepOpenSeconds);
+			log.trace("Extending Modbus TCP connection {} expiry to {} seconds from now",
+					getNetworkDescription(), keepOpenSeconds);
 			keepOpenExpiry.set(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(keepOpenSeconds));
 		}
 
@@ -261,7 +215,6 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 
 		@Override
 		public void connect() throws Exception {
-			acquireLock();
 			synchronized ( keepOpenExpiry ) {
 				if ( !isConnected() ) {
 					super.connect();
@@ -284,12 +237,8 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 
 		@Override
 		public void close() {
-			try {
-				if ( keepOpenExpiry.get() < System.currentTimeMillis() ) {
-					doClose();
-				}
-			} finally {
-				releaseLock();
+			if ( keepOpenExpiry.get() < System.currentTimeMillis() ) {
+				doClose();
 			}
 		}
 

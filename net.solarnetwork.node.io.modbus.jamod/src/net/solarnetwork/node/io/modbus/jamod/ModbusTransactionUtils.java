@@ -57,7 +57,7 @@ import net.wimpi.modbus.util.BitVector;
  * Utility methods for Modbus actions.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class ModbusTransactionUtils {
 
@@ -372,7 +372,7 @@ public class ModbusTransactionUtils {
 		short[] result = new short[count];
 		if ( response instanceof ReadMultipleRegistersResponse ) {
 			ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) response;
-			for ( int w = 0, len = res.getWordCount(); w < len; w += 1 ) {
+			for ( int w = 0, len = res.getWordCount(); w < count && w < len; w += 1 ) {
 				result[w] = res.getRegister(w).toShort();
 				if ( LOG.isTraceEnabled() ) {
 					LOG.trace("Got Modbus read {} response {}", address + w, result[w]);
@@ -380,7 +380,7 @@ public class ModbusTransactionUtils {
 			}
 		} else if ( response instanceof ReadInputRegistersResponse ) {
 			ReadInputRegistersResponse res = (ReadInputRegistersResponse) response;
-			for ( int w = 0, len = res.getWordCount(); w < len; w += 1 ) {
+			for ( int w = 0, len = res.getWordCount(); w < count && w < len; w += 1 ) {
 				result[w] = res.getRegister(w).toShort();
 				if ( LOG.isTraceEnabled() ) {
 					LOG.trace("Got Modbus read {} response {}", address + w, result[w]);
@@ -538,7 +538,7 @@ public class ModbusTransactionUtils {
 		int[] result = new int[count];
 		if ( response instanceof ReadMultipleRegistersResponse ) {
 			ReadMultipleRegistersResponse res = (ReadMultipleRegistersResponse) response;
-			for ( int w = 0, len = res.getWordCount(); w < len; w += 1 ) {
+			for ( int w = 0, len = res.getWordCount(); w < count && w < len; w += 1 ) {
 				result[w] = res.getRegisterValue(w);
 				if ( LOG.isTraceEnabled() ) {
 					LOG.trace("Got Modbus read {} response {}", address + w, result[w]);
@@ -546,7 +546,7 @@ public class ModbusTransactionUtils {
 			}
 		} else if ( response instanceof ReadInputRegistersResponse ) {
 			ReadInputRegistersResponse res = (ReadInputRegistersResponse) response;
-			for ( int w = 0, len = res.getWordCount(); w < len; w += 1 ) {
+			for ( int w = 0, len = res.getWordCount(); w < count && w < len; w += 1 ) {
 				result[w] = res.getRegisterValue(w);
 				if ( LOG.isTraceEnabled() ) {
 					LOG.trace("Got Modbus read {} response {}", address + w, result[w]);
