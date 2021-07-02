@@ -30,7 +30,7 @@ import net.solarnetwork.node.hw.sunspec.OperatingState;
  * Operating state for inverters.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public enum InverterOperatingState implements OperatingState {
 
@@ -40,7 +40,7 @@ public enum InverterOperatingState implements OperatingState {
 
 	Sleeping(2, "Device is sleeping / auto-shudown"),
 
-	Starting(3, "Device is staring up"),
+	Starting(3, "Device is starting up"),
 
 	Mppt(4, "Device is auto tracking maximum power point"),
 
@@ -78,6 +78,7 @@ public enum InverterOperatingState implements OperatingState {
 	 * @return the device operating state, never {@literal null}
 	 * @since 1.2
 	 */
+	@Override
 	public DeviceOperatingState asDeviceOperatingState() {
 		switch (this) {
 			case Normal:
