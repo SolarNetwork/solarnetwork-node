@@ -102,7 +102,7 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 					conn = c;
 				}
 			} else {
-				conn = new LockingTcpConnection(InetAddress.getByName(host));
+				conn = new TCPMasterConnection(InetAddress.getByName(host));
 			}
 			conn.setPort(port);
 			conn.setTimeout((int) getTimeoutUnit().toMillis(getTimeout()));
@@ -117,7 +117,7 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 			JamodTcpModbusConnection mbconn = new JamodTcpModbusConnection(conn, unitId, isHeadless());
 			mbconn.setRetries(getRetries());
 			mbconn.setRetryReconnect(isRetryReconnect());
-			return mbconn;
+			return createLockingConnection(mbconn);
 		} catch ( UnknownHostException e ) {
 			throw new RuntimeException("Unknown modbus host [" + host + "]");
 		}
@@ -126,43 +126,6 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 	@Override
 	protected String getNetworkDescription() {
 		return host + ":" + port;
-	}
-
-	/**
-	 * Internal extension of {@link TCPMasterConnection} that utilizes a
-	 * {@link Lock} to serialize access to the connection between threads.
-	 */
-	private class LockingTcpConnection extends TCPMasterConnection {
-
-		/**
-		 * Constructor.
-		 * 
-		 * @param addr
-		 *        the host address
-		 */
-		private LockingTcpConnection(InetAddress addr) {
-			super(addr);
-		}
-
-		@Override
-		public void connect() throws Exception {
-			if ( !isConnected() ) {
-				acquireLock();
-				super.connect();
-			}
-		}
-
-		@Override
-		public void close() {
-			try {
-				if ( isConnected() ) {
-					super.close();
-				}
-			} finally {
-				releaseLock();
-			}
-		}
-
 	}
 
 	/**
@@ -252,7 +215,6 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 
 		@Override
 		public void connect() throws Exception {
-			acquireLock();
 			synchronized ( keepOpenExpiry ) {
 				if ( !isConnected() ) {
 					super.connect();
@@ -275,12 +237,8 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 
 		@Override
 		public void close() {
-			try {
-				if ( keepOpenExpiry.get() < System.currentTimeMillis() ) {
-					doClose();
-				}
-			} finally {
-				releaseLock();
+			if ( keepOpenExpiry.get() < System.currentTimeMillis() ) {
+				doClose();
 			}
 		}
 

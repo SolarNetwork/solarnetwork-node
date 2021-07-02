@@ -26,7 +26,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.locks.Lock;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork;
@@ -44,7 +43,7 @@ import net.wimpi.modbus.net.UDPMasterConnection;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class JamodUdpModbusNetwork extends AbstractModbusNetwork implements SettingSpecifierProvider {
 
@@ -63,12 +62,12 @@ public class JamodUdpModbusNetwork extends AbstractModbusNetwork implements Sett
 	@Override
 	public ModbusConnection createConnection(int unitId) {
 		try {
-			UDPMasterConnection conn = new LockingUdpConnection(InetAddress.getByName(host));
+			UDPMasterConnection conn = new UDPMasterConnection(InetAddress.getByName(host));
 			conn.setPort(port);
 			conn.setTimeout((int) getTimeoutUnit().toMillis(getTimeout()));
 			JamodUdpModbusConnection mbconn = new JamodUdpModbusConnection(conn, unitId, isHeadless());
 			mbconn.setRetries(getRetries());
-			return mbconn;
+			return createLockingConnection(mbconn);
 		} catch ( UnknownHostException e ) {
 			throw new RuntimeException("Unknown modbus host [" + host + "]");
 		}
@@ -77,48 +76,6 @@ public class JamodUdpModbusNetwork extends AbstractModbusNetwork implements Sett
 	@Override
 	protected String getNetworkDescription() {
 		return host + ":" + port;
-	}
-
-	/**
-	 * Internal extension of {@link UDPMasterConnection} that utilizes a
-	 * {@link Lock} to serialize access to the connection between threads.
-	 */
-	private class LockingUdpConnection extends UDPMasterConnection {
-
-		/**
-		 * Constructor.
-		 * 
-		 * @param addr
-		 *        the host address
-		 */
-		private LockingUdpConnection(InetAddress addr) {
-			super(addr);
-		}
-
-		@Override
-		public void connect() throws Exception {
-			if ( !isConnected() ) {
-				acquireLock();
-				super.connect();
-			}
-		}
-
-		@Override
-		public void close() {
-			try {
-				if ( isConnected() ) {
-					super.close();
-				}
-			} finally {
-				releaseLock();
-			}
-		}
-
-		@Override
-		protected void finalize() throws Throwable {
-			releaseLock(); // as a catch-all
-			super.finalize();
-		}
 	}
 
 	// SettingSpecifierProvider
