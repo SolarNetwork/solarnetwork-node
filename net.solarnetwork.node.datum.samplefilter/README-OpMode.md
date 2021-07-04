@@ -20,12 +20,54 @@ Each filter configuration contains the following overall settings:
 | Service Group       | An optional service group name to assign. |
 | Source ID           | The source ID(s) to filter. |
 | Require Mode        | If configured, an [operational mode][opmodes] that must be active for this filter to be applied. |
-| Property            | The datum property to store the expression result in. |
-| Property Type       | The datum property type to use. |
+| Expressions        |  A list of expression configurations that are evaluated to toggle operational modes. |
+
+Use the <kbd>+</kbd> and <kbd>-</kbd> buttons to add/remove expression configurations.
+
+## Expression settings
+
+Each expression configuration contains the following settings:
+
+| Setting             | Description                                                       |
+|:--------------------|:------------------------------------------------------------------|
+| Mode                | The operational mode to toggle. |
+| Expire Seconds      | Number of seconds after activating the operational mode to automatically deactivate it. See [below](#expire-setting) for more information. |
+| Property            | The datum property to store the expression result in. See [below](#property-setting) for more information. |
+| Property Type       | The datum property type to use. See [below](#property-setting) for more information. |
 | Expression          | The expression to evaluate. See [below](#expressions) for more info. |
 | Expression Language | The [expression language][expr] to write **Expression** in. |
 
+### Expire setting
+
+When configured the expression will **never deactivate the operational mode directly**. When
+evaluating the given expression, if it evaluates to `true` the mode will activated and configured to
+deactivate after this many seconds. If the operation mode was already active, the expiration will be
+**extended** by this many seconds.
+
+This configuration can be thought of a time out like used on motion-detecting lights: each time
+motion is detected the light is turned on (if not already on) and a timer set to turn the light off
+after so many seconds of no motion being detected.
+
+Note that the operational modes service might actually deactivate the given mode a short time
+**after** the configured expiration.
+
+### Property setting
+
+The value of the datum property depends on property type configured:
+
+| Type          | Description |
+|:--------------|:------------|
+| Instantaneous | The property value will be `1` or `0` based on `true` and `false` expression results. |
+| Status        | The property will be the expression result, so `true` or `false`. |
+| Tag           | A tag named as the configured property will be added if the expression is `true`, or removed if `false`. |
+
+
 # Expressions
+
+The expression must evaluate to  a **boolean** (`true` or `false`) result. When it evaluates to
+`true` the configured operational mode will be **activated**. When it evaluates to `false` the
+operational mode will be **deactivated** (unless an [expire setting](#expire-setting) has been
+configured).
 
 The root object is a [datum samples expression object][DatumSamplesExpressionRoot] that lets you
 treat all datum properties, and filter parameters, as expression variables directly, along with
@@ -56,10 +98,8 @@ Then here are some example expressions and the results they would produce:
 
 | Expression | Result | Comment |
 |:-----------|:-------|:--------|
-| `voltage * current` | `1824.76` | Simple multiplication of two properties. |
-| `props['voltage'] * props['current']` | `1824.76` | Another way to write the previous expression. Can be useful if the property names contain non-alphanumeric characters, like spaces. |
-| `has('frequency') ? 1 : null` | `null` | Uses the `?:` _if/then/else_ operator to evaluate to `null` because the `frequency` property is not available. When an expression evaluates to `null` then no property will be added to the output samples. |
-| `current > 7 or voltage > 245 ? 1 : null` | `1` | Uses comparison and logic operators to evaluate to `1` because `current` is greater than `7`. |
+| `voltage * current > 1800` | `true` | Since `voltage * current` is **1824.76**, the expression is `true`. |
+| `status != 'Error'` | `false` | Since `status` is `Error` the expression is `false`. |
 
 
 [expr]: https://github.com/SolarNetwork/solarnetwork/wiki/Expression-Languages

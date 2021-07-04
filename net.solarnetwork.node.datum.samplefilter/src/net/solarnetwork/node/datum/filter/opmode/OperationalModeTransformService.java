@@ -117,16 +117,6 @@ public class OperationalModeTransformService extends BaseSamplesTransformSupport
 				continue;
 			}
 
-			if ( config.getExpireSeconds() > 0 ) {
-				if ( opModesService.isOperationalModeActive(config.getOperationalMode()) ) {
-					// not expired, so don't bother evaluating expression
-					log.debug(
-							"Operational mode [{}] already active for configuration with expire seconds {}; not evaluating expression.",
-							config.getOperationalMode(), config.getExpireSeconds());
-					continue;
-				}
-			}
-
 			final ExpressionServiceExpression expr;
 			try {
 				expr = config.getExpression(services);
@@ -168,7 +158,7 @@ public class OperationalModeTransformService extends BaseSamplesTransformSupport
 					}
 					opModesService.enableOperationalModes(singleton(config.getOperationalMode()),
 							expire);
-				} else {
+				} else if ( config.getExpireSeconds() < 1 ) {
 					opModesService.disableOperationalModes(singleton(config.getOperationalMode()));
 				}
 				if ( config.getName() != null && !config.getName().trim().isEmpty()
