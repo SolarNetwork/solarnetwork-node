@@ -1,6 +1,8 @@
 # SolarNode Operational Mode Datum Filter
 
-This component provides a way to evaluate expressions to toggle [operational modes][opmodes].
+This component provides a way to evaluate expressions to toggle [operational modes][opmodes]. When
+an expression evaluates to `true` the associated operational mode is activated. When an expression
+evaluates to `false` the associated operational mode is deactivated.
 
 # Use
 
@@ -31,9 +33,9 @@ Each expression configuration contains the following settings:
 | Setting             | Description                                                       |
 |:--------------------|:------------------------------------------------------------------|
 | Mode                | The operational mode to toggle. |
-| Expire Seconds      | Number of seconds after activating the operational mode to automatically deactivate it. See [below](#expire-setting) for more information. |
-| Property            | The datum property to store the expression result in. See [below](#property-setting) for more information. |
-| Property Type       | The datum property type to use. See [below](#property-setting) for more information. |
+| Expire Seconds      | If configured and greater than `0`, the number of seconds after activating the operational mode to automatically deactivate it. If not configured or `0` then the operational mode will be deactivated when the expression evaluates to `false`. See [below](#expire-setting) for more information. |
+| Property            | If configured, the datum property to store the expression result in. See [below](#property-setting) for more information. |
+| Property Type       | The datum property type to use if **Property** is configured. See [below](#property-setting) for more information. |
 | Expression          | The expression to evaluate. See [below](#expressions) for more info. |
 | Expression Language | The [expression language][expr] to write **Expression** in. |
 
