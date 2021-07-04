@@ -28,11 +28,17 @@ import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.util.Arrays;
 import java.util.Collections;
@@ -45,6 +51,7 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.datum.filter.std.PropertyFilterConfig;
@@ -217,8 +224,7 @@ public class PropertyFilterSampleTransformerTests {
 		xform.setSettingCacheSecs(TEST_SETTING_CACHE_SECS);
 		xform.setSettingKey(format(PropertyFilterSamplesTransformer.SETTING_KEY_TEMPLATE, TEST_UID));
 		xform.setSourceId("^test");
-		xform.setPropIncludes(
-				new PropertyFilterConfig[] { new PropertyFilterConfig("^watt", 1) });
+		xform.setPropIncludes(new PropertyFilterConfig[] { new PropertyFilterConfig("^watt", 1) });
 		xform.init();
 
 		final String settingKey = String.format(SETTING_KEY_TEMPLATE, TEST_UID);
@@ -288,8 +294,7 @@ public class PropertyFilterSampleTransformerTests {
 		xform.setSettingCacheSecs(TEST_SETTING_CACHE_SECS);
 		xform.setSettingKey(format(PropertyFilterSamplesTransformer.SETTING_KEY_TEMPLATE, TEST_UID));
 		xform.setSourceId("^test");
-		xform.setPropIncludes(
-				new PropertyFilterConfig[] { new PropertyFilterConfig("^watt", 1) });
+		xform.setPropIncludes(new PropertyFilterConfig[] { new PropertyFilterConfig("^watt", 1) });
 		xform.init();
 
 		final String settingKey = String.format(SETTING_KEY_TEMPLATE, TEST_UID);
@@ -361,8 +366,7 @@ public class PropertyFilterSampleTransformerTests {
 		xform.setSettingCacheSecs(TEST_SETTING_CACHE_SECS);
 		xform.setSettingKey(format(PropertyFilterSamplesTransformer.SETTING_KEY_TEMPLATE, TEST_UID));
 		xform.setSourceId("^test");
-		xform.setPropIncludes(
-				new PropertyFilterConfig[] { new PropertyFilterConfig("^watt", 1) });
+		xform.setPropIncludes(new PropertyFilterConfig[] { new PropertyFilterConfig("^watt", 1) });
 		xform.init();
 
 		final long start = System.currentTimeMillis();
@@ -426,9 +430,8 @@ public class PropertyFilterSampleTransformerTests {
 		xform.setSettingCacheSecs(TEST_SETTING_CACHE_SECS);
 		xform.setSettingKey(format(PropertyFilterSamplesTransformer.SETTING_KEY_TEMPLATE, TEST_UID));
 		xform.setSourceId("^test");
-		xform.setPropIncludes(
-				new PropertyFilterConfig[] { new PropertyFilterConfig("^watts$", 1),
-						new PropertyFilterConfig("^wattHours$", 3) });
+		xform.setPropIncludes(new PropertyFilterConfig[] { new PropertyFilterConfig("^watts$", 1),
+				new PropertyFilterConfig("^wattHours$", 3) });
 		xform.init();
 
 		final long start = System.currentTimeMillis();
@@ -480,6 +483,63 @@ public class PropertyFilterSampleTransformerTests {
 		}
 
 		verify(settingDao);
+	}
+
+	@Test
+	public void operationalMode_noMatch() {
+		// GIVEN
+		PropertyFilterSamplesTransformer xs = new PropertyFilterSamplesTransformer();
+		xs.setSourceId("^test");
+		xs.setExcludes(new String[] { "^watt" });
+		xs.init();
+		OperationalModesService opModesService = EasyMock.createMock(OperationalModesService.class);
+		xs.setOpModesService(opModesService);
+		xs.setRequiredOperationalMode("foo");
+
+		expect(opModesService.isOperationalModeActive("foo")).andReturn(false);
+
+		// WHEN
+		replay(opModesService);
+		GeneralNodeDatum d = createTestGeneralNodeDatum(TEST_SOURCE_ID);
+
+		GeneralDatumSamples out = xs.transformSamples(d, d.getSamples(), null);
+
+		// THEN
+		assertThat("No change because required operational mode not active", out,
+				is(sameInstance(d.getSamples())));
+		verify(opModesService);
+	}
+
+	@Test
+	public void operationalMode_match() {
+		// GIVEN
+		PropertyFilterSamplesTransformer xs = new PropertyFilterSamplesTransformer();
+		xs.setSourceId("^test");
+		xs.setExcludes(new String[] { "^watt" });
+		xs.init();
+		OperationalModesService opModesService = EasyMock.createMock(OperationalModesService.class);
+		xs.setOpModesService(opModesService);
+		xs.setRequiredOperationalMode("foo");
+
+		expect(opModesService.isOperationalModeActive("foo")).andReturn(true);
+
+		// WHEN
+		replay(opModesService);
+		GeneralNodeDatum d = createTestGeneralNodeDatum(TEST_SOURCE_ID);
+
+		GeneralDatumSamples out = xs.transformSamples(d, d.getSamples(), null);
+
+		// THEN
+		assertThat("Change because required operational mode active", out,
+				is(not(sameInstance(d.getSamples()))));
+		assertThat("Watts filtered", out.getInstantaneousSampleDouble(PROP_WATTS), is(nullValue()));
+		assertThat("Frequency", d.getInstantaneousSampleBigDecimal(PROP_FREQUENCY),
+				is(equalTo(out.getInstantaneousSampleBigDecimal(PROP_FREQUENCY))));
+		assertThat("Watt hours filtered", out.getAccumulatingSampleLong(PROP_WATTHOURS),
+				is(nullValue()));
+		assertThat("Phase", d.getStatusSampleString(PROP_PHASE),
+				is(equalTo(out.getStatusSampleString(PROP_PHASE))));
+		verify(opModesService);
 	}
 
 }

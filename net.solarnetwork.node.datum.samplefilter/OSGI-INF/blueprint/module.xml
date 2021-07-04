@@ -19,6 +19,8 @@
 		<property name="serviceClassName" value="net.solarnetwork.support.ExpressionService"/>
 	</bean>
 
+	<reference id="opModesService" interface="net.solarnetwork.node.OperationalModesService"/>
+
 	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
 
 	<bean id="datumMetadataService" class="net.solarnetwork.util.DynamicServiceTracker">
@@ -74,6 +76,7 @@
 		<bean class="net.solarnetwork.node.datum.filter.std.PropertyFilterSamplesTransformer" init-method="init">
 			<property name="settingDao" ref="settingDao"/>
 			<property name="messageSource" ref="simpleFilterMessageSource"/>
+			<property name="opModesService" ref="opModesService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -134,6 +137,7 @@
 				<bean class="net.solarnetwork.node.datum.filter.std.PropertyFilterSamplesTransformer" init-method="init">
 					<property name="settingDao" ref="settingDao"/>
 					<property name="excludeBaseIdentifiableSettings" value="true"/>
+					<property name="opModesService" ref="opModesService"/>
 				</bean>
 			</property>
 			<property name="messageSource" ref="propFilterMessageSource"/>
@@ -188,6 +192,7 @@
 		<bean class="net.solarnetwork.node.datum.filter.std.SourceThrottlingSamplesTransformer">
 			<property name="settingDao" ref="settingDao"/>
 			<property name="messageSource" ref="sourceThrottleMessageSource"/>
+			<property name="opModesService" ref="opModesService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -249,6 +254,7 @@
 					<property name="settingDao" ref="settingDao"/>
 					<property name="messageSource" ref="sourceThrottleMessageSource"/>
 					<property name="excludeBaseIdentifiableSettings" value="true"/>
+					<property name="opModesService" ref="opModesService"/>
 				</bean>
 			</property>
 			<property name="messageSource" ref="throttleFilterMessageSource"/>
@@ -302,6 +308,7 @@
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.datum.filter.std.DownsampleTransformService">
 			<property name="messageSource" ref="downsamplerMessageSource"/>
+			<property name="opModesService" ref="opModesService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -355,6 +362,7 @@
 			<argument ref="datumMetadataService"/>
 			<property name="messageSource" ref="virtualMeterMessageSource"/>
 			<property name="expressionServices" ref="expressionServices"/>
+			<property name="opModesService" ref="opModesService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -407,6 +415,7 @@
 		<bean class="net.solarnetwork.node.datum.filter.expr.ExpressionTransformService">
 			<property name="expressionServices" ref="expressionServices"/>
 			<property name="messageSource" ref="expressionMessageSource"/>
+			<property name="opModesService" ref="opModesService"/>
 		</bean>
 	</osgix:managed-service-factory>
 

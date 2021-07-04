@@ -43,6 +43,7 @@ import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.tariff.SimpleTemporalRangesTariffEvaluator;
 import net.solarnetwork.node.MetadataService;
+import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.datum.filter.tariff.TariffTransformService;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.util.StaticOptionalService;
@@ -58,24 +59,27 @@ public class TariffTransformServiceTests {
 	private static final String META_PATH = "/pm/tariffs/foo";
 
 	private MetadataService metadataService;
+	private OperationalModesService opModesService;
 	private TariffTransformService service;
 
 	@Before
 	public void setup() {
 		metadataService = EasyMock.createMock(MetadataService.class);
+		opModesService = EasyMock.createMock(OperationalModesService.class);
 		service = new TariffTransformService(new StaticOptionalService<>(metadataService),
 				new StaticOptionalService<>(SimpleTemporalRangesTariffEvaluator.DEFAULT_EVALUATOR));
 		service.setTariffMetadataPath(META_PATH);
 		service.setFirstMatchOnly(true);
+		service.setOpModesService(opModesService);
 	}
 
 	@After
 	public void teardown() {
-		EasyMock.verify(metadataService);
+		EasyMock.verify(metadataService, opModesService);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(metadataService);
+		EasyMock.replay(metadataService, opModesService);
 	}
 
 	private String stringResource(String resource) {
@@ -132,6 +136,52 @@ public class TariffTransformServiceTests {
 				is(equalTo(new BigDecimal("9.19"))));
 		assertThat("Line rate applied", result.getInstantaneousSampleBigDecimal("line"),
 				is(equalTo(new BigDecimal("9.99"))));
+	}
+
+	@Test
+	public void operationalMode_noMatch() {
+		// GIVEN
+		service.setRequiredOperationalMode("foo");
+		expect(opModesService.isOperationalModeActive("foo")).andReturn(false);
+
+		LocalDateTime datumDate = LocalDateTime.of(2021, 5, 13, 12, 15);
+		GeneralNodeDatum d = new GeneralNodeDatum();
+		d.setSamples(new GeneralDatumSamples());
+		d.setCreated(new Date(datumDate.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+
+		// WHEN
+		replayAll();
+		GeneralDatumSamples result = service.transformSamples(d, d.getSamples(), emptyMap());
+
+		// THEN
+		assertThat("Result unchanged because required operational mode not active", result,
+				is(sameInstance(d.getSamples())));
+	}
+
+	@Test
+	public void operationalMode_match() {
+		// GIVEN
+		service.setRequiredOperationalMode("foo");
+		expect(opModesService.isOperationalModeActive("foo")).andReturn(true);
+
+		String csv = stringResource("test-tariffs-01.csv");
+		expect(metadataService.metadataAtPath(META_PATH)).andReturn(csv);
+
+		LocalDateTime datumDate = LocalDateTime.of(2021, 5, 13, 12, 15);
+		GeneralNodeDatum d = new GeneralNodeDatum();
+		d.setSamples(new GeneralDatumSamples());
+		d.setCreated(new Date(datumDate.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+
+		// WHEN
+		replayAll();
+		GeneralDatumSamples result = service.transformSamples(d, d.getSamples(), emptyMap());
+
+		// THEN
+		assertThat("Result changed because required operational mode active", result,
+				is(not(sameInstance(d.getSamples()))));
+		assertThat("Single rate added", result.getSampleData().keySet(), contains("rate"));
+		assertThat("Rate applied", result.getInstantaneousSampleBigDecimal("rate"),
+				is(equalTo(new BigDecimal("11.00"))));
 	}
 
 }

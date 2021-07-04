@@ -37,7 +37,6 @@ import net.solarnetwork.node.domain.ExpressionConfig;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.node.support.BaseSamplesTransformSupport;
 import net.solarnetwork.support.ExpressionService;
@@ -48,7 +47,7 @@ import net.solarnetwork.util.ArrayUtils;
  * on the output samples.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.6
  */
 public class ExpressionTransformService extends BaseSamplesTransformSupport
@@ -59,7 +58,7 @@ public class ExpressionTransformService extends BaseSamplesTransformSupport
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
 			Map<String, Object> parameters) {
-		if ( !sourceIdMatches(datum) ) {
+		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
 			return samples;
 		}
 		DatumSamplesExpressionRoot root = new DatumSamplesExpressionRoot(datum, samples, parameters);
@@ -76,7 +75,7 @@ public class ExpressionTransformService extends BaseSamplesTransformSupport
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = baseIdentifiableSettings("");
-		result.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
+		populateBaseSampleTransformSupportSettings(result);
 
 		Iterable<ExpressionService> exprServices = services(getExpressionServices());
 		if ( exprServices != null ) {

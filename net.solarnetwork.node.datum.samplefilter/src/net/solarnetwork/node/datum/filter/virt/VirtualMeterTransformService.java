@@ -49,7 +49,6 @@ import net.solarnetwork.node.domain.ExpressionConfig;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.support.ExpressionService;
@@ -61,7 +60,7 @@ import net.solarnetwork.util.OptionalService;
  * derived from another property.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  * @since 1.4
  */
 public class VirtualMeterTransformService extends SamplesTransformerSupport
@@ -121,7 +120,7 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 		List<SettingSpecifier> results = baseIdentifiableSettings();
 
 		results.add(0, new BasicTitleSettingSpecifier("status", statusValue()));
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));
+		populateBaseSampleTransformSupportSettings(results);
 
 		VirtualMeterConfig[] meterConfs = getVirtualMeterConfigs();
 		List<VirtualMeterConfig> meterConfsList = (meterConfs != null ? asList(meterConfs)
@@ -194,12 +193,12 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 				|| datum.getSourceId() == null || samples == null ) {
 			return samples;
 		}
-		if ( sourceIdMatches(datum) ) {
-			GeneralDatumSamples s = new GeneralDatumSamples(samples);
-			populateDatumProperties(datum, s, virtualMeterConfigs, parameters);
-			return s;
+		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
+			return samples;
 		}
-		return samples;
+		GeneralDatumSamples s = new GeneralDatumSamples(samples);
+		populateDatumProperties(datum, s, virtualMeterConfigs, parameters);
+		return s;
 	}
 
 	private GeneralDatumMetadata metadata(final DatumMetadataService service, final String sourceId) {
