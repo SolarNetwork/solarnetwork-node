@@ -33,7 +33,7 @@ Each filter configuration contains the following overall settings:
 | Service Name       | A unique ID for the filter, to be referenced by other components. |
 | Service Group      | An optional service group name to assign.                         |
 | Source ID          | The source ID(s) to filter.                                       |
-| Require Mode       | If configured, an [operational mode](https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Operational-Modes) that must be active for this filter to be applied. |
+| Required Mode      | If configured, an [operational mode](https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Operational-Modes) that must be active for this filter to be applied. |
 | Property Includes  | A list of property names to include, removing all others.         |
 | Property Excludes  | A list of property names to exclude.                              |
 
