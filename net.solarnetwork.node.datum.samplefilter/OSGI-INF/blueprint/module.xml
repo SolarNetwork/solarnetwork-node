@@ -419,4 +419,57 @@
 		</bean>
 	</osgix:managed-service-factory>
 
+	<!-- 
+	 !!! Operational Mode Filter Service
+	 -->
+
+	<bean id="opModeMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<array>
+				<value>net.solarnetwork.node.datum.filter.opmode.OperationalModeTransformService</value>
+				<value>net.solarnetwork.node.domain.ExpressionConfig</value>
+				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
+				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+			</array>
+		</property>
+	</bean>
+
+	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+		<service-properties>
+			<entry key="role">
+				<array value-type="java.lang.String">
+					<value>user</value>
+					<value>datum-filter</value>
+				</array>
+			</entry>
+		</service-properties>
+		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Operational Mode Filter"/>
+			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.opmode"/>
+			<property name="messageSource" ref="opModeMessageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.opmode" 
+			autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.GeneralDatumSamplesTransformService</beans:value>
+			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.samplefilter.opmode"/>
+			<beans:entry key="role">
+				<beans:array value-type="java.lang.String">
+					<beans:value>user</beans:value>
+					<beans:value>datum-filter</beans:value>
+				</beans:array>
+			</beans:entry>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.datum.filter.opmode.OperationalModeTransformService">
+			<property name="expressionServices" ref="expressionServices"/>
+			<property name="messageSource" ref="opModeMessageSource"/>
+			<property name="opModesService" ref="opModesService"/>
+		</bean>
+	</osgix:managed-service-factory>
+
 </blueprint>
