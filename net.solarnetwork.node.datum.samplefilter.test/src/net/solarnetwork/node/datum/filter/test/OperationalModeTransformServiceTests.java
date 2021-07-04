@@ -145,9 +145,6 @@ public class OperationalModeTransformServiceTests {
 		config.setExpireSeconds(60);
 		xform.setExpressionConfigs(new OperationalModeTransformConfig[] { config });
 
-		// check if active already
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false);
-
 		// not already active, so activate now
 		Capture<DateTime> expireCaptor = new Capture<>();
 		expect(opModesService.enableOperationalModes(eq(singleton(OP_MODE)), capture(expireCaptor)))
@@ -175,34 +172,6 @@ public class OperationalModeTransformServiceTests {
 		config.setExpression("watts > 100");
 		config.setExpireSeconds(60);
 		xform.setExpressionConfigs(new OperationalModeTransformConfig[] { config });
-
-		// check if active already
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(false);
-
-		// not already active, so will deactivate now
-		expect(opModesService.disableOperationalModes(singleton(OP_MODE))).andReturn(singleton(OP_MODE));
-
-		// WHEN
-		replayAll();
-		GeneralNodeDatum d = createTestGeneralNodeDatum(SOURCE_ID);
-		GeneralDatumSamples result = xform.transformSamples(d, d.getSamples(), null);
-
-		// THEN
-		assertThat("Result unchanged", result, is(sameInstance(d.getSamples())));
-	}
-
-	@Test
-	public void opModeActivated_withExpire_alreadyActive() {
-		// GIVEN
-		OperationalModeTransformConfig config = new OperationalModeTransformConfig();
-		config.setExpressionServiceId(exprService.getUid());
-		config.setOperationalMode(OP_MODE);
-		config.setExpression("watts > 10");
-		config.setExpireSeconds(60);
-		xform.setExpressionConfigs(new OperationalModeTransformConfig[] { config });
-
-		// check if active already
-		expect(opModesService.isOperationalModeActive(OP_MODE)).andReturn(true);
 
 		// WHEN
 		replayAll();
