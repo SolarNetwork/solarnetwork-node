@@ -42,11 +42,11 @@ Each expression configuration contains the following settings:
 ### Expire setting
 
 When configured the expression will **never deactivate the operational mode directly**. When
-evaluating the given expression, if it evaluates to `true` the mode will activated and configured to
-deactivate after this many seconds. If the operation mode was already active, the expiration will be
-**extended** by this many seconds.
+evaluating the given expression, if it evaluates to `true` the mode will be activated and configured
+to deactivate after this many seconds. If the operation mode was already active, the expiration will
+be **extended** by this many seconds.
 
-This configuration can be thought of a time out like used on motion-detecting lights: each time
+This configuration can be thought of like a time out as used on motion-detecting lights: each time
 motion is detected the light is turned on (if not already on) and a timer set to turn the light off
 after so many seconds of no motion being detected.
 
@@ -55,7 +55,8 @@ Note that the operational modes service might actually deactivate the given mode
 
 ### Property setting
 
-The value of the datum property depends on property type configured:
+A property does not have to be populated. If you provide a **Property** name to populate, the value
+of the datum property depends on property type configured:
 
 | Type          | Description |
 |:--------------|:------------|
