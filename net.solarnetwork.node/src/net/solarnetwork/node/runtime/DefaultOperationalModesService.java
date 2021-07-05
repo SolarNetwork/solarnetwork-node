@@ -25,13 +25,22 @@ package net.solarnetwork.node.runtime;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
 import static net.solarnetwork.util.StringUtils.commaDelimitedStringFromCollection;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -40,23 +49,32 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
+import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.support.KeyValuePair;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.util.OptionalService;
 
 /**
  * Default implementation of {@link OperationalModesService}.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
-@SuppressWarnings("deprecation")
-public class DefaultOperationalModesService implements OperationalModesService, InstructionHandler {
+public class DefaultOperationalModesService extends BaseIdentifiable
+		implements OperationalModesService, InstructionHandler, SettingSpecifierProvider {
 
 	/** The setting key for operational modes. */
 	public static final String SETTING_OP_MODE = "solarnode.opmode";
@@ -74,10 +92,26 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 	/** The default rate at which to look for auto-expired modes, in seconds. */
 	public static final int DEFAULT_AUTO_EXPIRE_MODES_FREQUENCY = 20;
 
+	/**
+	 * An expiration value meaning "no expiration".
+	 * 
+	 * @since 1.3
+	 */
+	public static final Long NO_EXPIRATION = -1L;
+
+	private static final TransactionDefinition TX_RW;
+	static {
+		DefaultTransactionDefinition def = new DefaultTransactionDefinition();
+		def.setReadOnly(false);
+		TX_RW = def;
+	}
+
+	private final ConcurrentMap<String, Long> activeModes;
 	private final OptionalService<SettingDao> settingDao;
 	private final OptionalService<EventAdmin> eventAdmin;
 	private long startupDelay = DEFAULT_STARTUP_DELAY;
 	private TaskScheduler taskScheduler;
+	private OptionalService<PlatformTransactionManager> transactionManager;
 	private int autoExpireModesFrequency = DEFAULT_AUTO_EXPIRE_MODES_FREQUENCY;
 
 	private ScheduledFuture<?> autoExpireScheduledFuture;
@@ -91,10 +125,37 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 	 *        the setting DAO to persist operational mode changes with
 	 * @param eventAdmin
 	 *        the event service to post notifications with
+	 * @throws IllegalArgumentException
+	 *         if {@code settingDao} is {@literal null}
 	 */
 	public DefaultOperationalModesService(OptionalService<SettingDao> settingDao,
 			OptionalService<EventAdmin> eventAdmin) {
+		this(new ConcurrentHashMap<>(16, 0.9f, 2), settingDao, eventAdmin);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param modeCache
+	 *        the cache to use for active mode tracking
+	 * @param settingDao
+	 *        the setting DAO to persist operational mode changes with
+	 * @param eventAdmin
+	 *        the event service to post notifications with
+	 * @throws IllegalArgumentException
+	 *         if {@code settingDao} or {@code modeCache} is {@literal null}
+	 * @since 1.3
+	 */
+	public DefaultOperationalModesService(ConcurrentMap<String, Long> modeCache,
+			OptionalService<SettingDao> settingDao, OptionalService<EventAdmin> eventAdmin) {
 		super();
+		if ( modeCache == null ) {
+			throw new IllegalArgumentException("The modeCache argument must not be null.");
+		}
+		this.activeModes = modeCache;
+		if ( settingDao == null ) {
+			throw new IllegalArgumentException("The settingDao argument must not be null.");
+		}
 		this.settingDao = settingDao;
 		this.eventAdmin = eventAdmin;
 	}
@@ -104,11 +165,12 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 	 */
 	public synchronized void init() {
 		// post current modes, i.e. shift from "default" to whatever is active
+		final Set<String> modes = initActiveModes();
+
 		Runnable task = new Runnable() {
 
 			@Override
 			public void run() {
-				Set<String> modes = activeOperationalModes();
 				if ( !modes.isEmpty() ) {
 					if ( log.isInfoEnabled() ) {
 						log.info("Initial active operational modes [{}]",
@@ -125,8 +187,43 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 		}
 		if ( taskScheduler != null && autoExpireScheduledFuture == null ) {
 			autoExpireScheduledFuture = taskScheduler.scheduleWithFixedDelay(new AutoExpireModesTask(),
-					new Date(System.currentTimeMillis() + this.autoExpireModesFrequency * 1000L),
+					new Date(System.currentTimeMillis() + startupDelay
+							+ this.autoExpireModesFrequency * 1000L),
 					this.autoExpireModesFrequency * 1000L);
+		}
+	}
+
+	private synchronized Set<String> initActiveModes() {
+		activeModes.clear();
+		SettingDao dao = settingDao.service();
+		if ( dao == null ) {
+			return emptySet();
+		}
+		PlatformTransactionManager txManager = OptionalService.service(transactionManager);
+		TransactionStatus tx = null;
+		if ( txManager != null ) {
+			tx = txManager.getTransaction(TX_RW);
+		}
+		try {
+			List<KeyValuePair> modes = dao.getSettingValues(SETTING_OP_MODE);
+			if ( modes == null ) {
+				return emptySet();
+			}
+			Set<String> active = new LinkedHashSet<>();
+			final long now = System.currentTimeMillis();
+			for ( KeyValuePair kv : modes ) {
+				String mode = kv.getValue();
+				Long exp = modeExpiration(dao, mode);
+				if ( exp == null || exp.longValue() > now ) {
+					activeModes.put(mode, exp != null ? exp : NO_EXPIRATION);
+					active.add(mode);
+				}
+			}
+			return active;
+		} finally {
+			if ( tx != null ) {
+				txManager.commit(tx);
+			}
 		}
 	}
 
@@ -134,34 +231,58 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 
 		@Override
 		public void run() {
+			final long now = System.currentTimeMillis();
+			Set<String> toDeactivate = null;
+			for ( Map.Entry<String, Long> me : activeModes.entrySet() ) {
+				Long exp = me.getValue();
+				if ( !NO_EXPIRATION.equals(exp) && exp.longValue() < now ) {
+					if ( toDeactivate == null ) {
+						toDeactivate = new HashSet<>(4);
+					}
+					toDeactivate.add(me.getKey());
+				}
+			}
+			if ( toDeactivate == null ) {
+				// no expired values
+				return;
+			}
 			SettingDao dao = settingDao.service();
 			if ( dao == null ) {
 				return;
 			}
-			List<KeyValuePair> modes = dao.getSettings(SETTING_OP_MODE);
-			if ( modes == null || modes.isEmpty() ) {
-				return;
+			PlatformTransactionManager txManager = OptionalService.service(transactionManager);
+			TransactionStatus tx = null;
+			if ( txManager != null ) {
+				tx = txManager.getTransaction(TX_RW);
 			}
-			Set<String> removed = new LinkedHashSet<>(8);
-			for ( Iterator<KeyValuePair> itr = modes.iterator(); itr.hasNext(); ) {
-				KeyValuePair mode = itr.next();
-				if ( isModeExpired(dao, mode.getValue()) ) {
-					dao.deleteSetting(SETTING_OP_MODE, mode.getValue());
-					dao.deleteSetting(SETTING_OP_MODE_EXPIRE, mode.getValue());
-					itr.remove();
-					removed.add(mode.getValue());
+			try {
+				for ( String mode : toDeactivate ) {
+					dao.deleteSetting(SETTING_OP_MODE, mode);
+					dao.deleteSetting(SETTING_OP_MODE_EXPIRE, mode);
+					activeModes.remove(mode);
 				}
-			}
-			if ( !removed.isEmpty() ) {
-				Set<String> newActive = modes.stream().map(m -> m.getValue())
-						.sorted(String::compareToIgnoreCase)
-						.collect(Collectors.toCollection(LinkedHashSet::new));
+				Set<String> newActive = activeOperationalModes();
 				log.info("Expired operational modes [{}]; active modes now [{}]",
-						commaDelimitedStringFromCollection(removed),
+						commaDelimitedStringFromCollection(toDeactivate),
 						commaDelimitedStringFromCollection(newActive));
 				postOperationalModesChangedEvent(newActive);
+			} finally {
+				if ( tx != null ) {
+					txManager.commit(tx);
+				}
 			}
 		}
+	}
+
+	/**
+	 * Manually run the auto-expire task.
+	 * 
+	 * <p>
+	 * This is primarily designed to support testing.
+	 * </p>
+	 */
+	public void expireNow() {
+		new AutoExpireModesTask().run();
 	}
 
 	/**
@@ -172,6 +293,38 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 			autoExpireScheduledFuture.cancel(true);
 			autoExpireScheduledFuture = null;
 		}
+	}
+
+	@Override
+	public String getSettingUID() {
+		return DefaultOperationalModesService.class.getName();
+	}
+
+	@Override
+	public String getDisplayName() {
+		return "Operational Modes Servcie";
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		MessageSource messages = getMessageSource();
+		StringBuilder buf = new StringBuilder();
+		Set<String> modes = new TreeSet<>(activeModes.keySet());
+		for ( String mode : modes ) {
+			Long exp = activeModes.get(mode);
+			buf.append(messages.getMessage("activeModes.row",
+					new Object[] { mode,
+							!NO_EXPIRATION.equals(exp) ? DateTimeFormatter
+									.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.MEDIUM)
+									.format(ZonedDateTime.ofInstant(
+											Instant.ofEpochMilli(exp.longValue()),
+											ZoneId.systemDefault()))
+									: "-" },
+					null));
+		}
+		String status = messages.getMessage("activeModes.msg", new Object[] { buf }, null);
+		return Collections
+				.singletonList(new BasicTitleSettingSpecifier("activeModes", status, true, true));
 	}
 
 	@Override
@@ -219,50 +372,34 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 			mode = mode.substring(1);
 			inverted = true;
 		}
-		SettingDao dao = settingDao.service();
-		if ( dao == null ) {
-			return false;
-		}
-		String active = dao.getSetting(SETTING_OP_MODE, mode);
-		boolean result = active != null;
+		Long exp = activeModes.get(mode);
+		boolean result = exp != null
+				&& (NO_EXPIRATION.equals(exp) || exp.longValue() < System.currentTimeMillis());
 		return (inverted ? !result : result);
 	}
 
 	@Override
 	public Set<String> activeOperationalModes() {
-		SettingDao dao = settingDao.service();
-		if ( dao == null ) {
-			return emptySet();
-		}
-		return activeModesFromSettings(dao);
+		final long now = System.currentTimeMillis();
+		return activeModes.entrySet().stream().filter(e -> {
+			Long exp = e.getValue();
+			return (NO_EXPIRATION.equals(exp) || exp.longValue() > now);
+		}).map(Map.Entry::getKey).collect(Collectors.toSet());
 	}
 
-	private boolean isModeExpired(SettingDao dao, String mode) {
+	private Long modeExpiration(SettingDao dao, String mode) {
 		if ( dao == null ) {
-			return false;
+			return null;
 		}
 		String exp = dao.getSetting(SETTING_OP_MODE_EXPIRE, mode);
 		if ( exp != null ) {
 			try {
-				long date = Long.parseLong(exp);
-				if ( date < System.currentTimeMillis() ) {
-					return true;
-				}
+				return Long.valueOf(exp);
 			} catch ( NumberFormatException e ) {
 				// ignore
 			}
 		}
-		return false;
-	}
-
-	private Set<String> activeModesFromSettings(SettingDao dao) {
-		List<KeyValuePair> modes = dao.getSettings(SETTING_OP_MODE);
-		if ( modes == null || modes.isEmpty() ) {
-			return emptySet();
-		}
-		return modes.stream().map(m -> m.getValue()).filter(m -> !isModeExpired(dao, m))
-				.sorted(String::compareToIgnoreCase)
-				.collect(Collectors.toCollection(LinkedHashSet::new));
+		return null;
 	}
 
 	@Override
@@ -271,58 +408,114 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 	}
 
 	@Override
-	public Set<String> enableOperationalModes(Set<String> modes, DateTime expire) {
+	public synchronized Set<String> enableOperationalModes(Set<String> modes, DateTime expire) {
+		if ( modes == null || modes.isEmpty() ) {
+			return activeOperationalModes();
+		}
+		Set<String> toActivate = null;
+		Long expireMs = (expire != null ? expire.getMillis() : null);
+		for ( String mode : modes ) {
+			if ( mode == null ) {
+				continue;
+			}
+			mode = mode.toLowerCase();
+			Long exp = activeModes.get(mode);
+			if ( (expireMs == null && !NO_EXPIRATION.equals(exp))
+					|| (expireMs != null && (exp == null || !expireMs.equals(exp))) ) {
+				if ( toActivate == null ) {
+					toActivate = new HashSet<>();
+				}
+				toActivate.add(mode);
+			}
+		}
+		if ( toActivate == null ) {
+			// no chnage
+			return activeOperationalModes();
+		}
 		SettingDao dao = settingDao.service();
 		if ( dao == null ) {
-			return emptySet();
+			return activeOperationalModes();
 		}
-		if ( modes != null && !modes.isEmpty() ) {
-			for ( String mode : modes ) {
-				if ( mode == null ) {
-					continue;
-				}
-				mode = mode.toLowerCase();
+		PlatformTransactionManager txManager = OptionalService.service(transactionManager);
+		TransactionStatus tx = null;
+		if ( txManager != null ) {
+			tx = txManager.getTransaction(TX_RW);
+		}
+		try {
+			for ( String mode : toActivate ) {
+				activeModes.put(mode, expireMs != null ? expireMs : NO_EXPIRATION);
 				dao.storeSetting(SETTING_OP_MODE, mode, mode);
 				if ( expire != null ) {
-					dao.storeSetting(SETTING_OP_MODE_EXPIRE, mode, String.valueOf(expire.getMillis()));
+					dao.storeSetting(SETTING_OP_MODE_EXPIRE, mode, String.valueOf(expireMs));
 				} else {
 					dao.deleteSetting(SETTING_OP_MODE_EXPIRE, mode);
 				}
 			}
+			Set<String> active = activeOperationalModes();
+			if ( log.isInfoEnabled() ) {
+				log.info("Enabled operational modes [{}], expiring [{}]; active modes now [{}]",
+						commaDelimitedStringFromCollection(modes), (expire != null ? expire : "never"),
+						commaDelimitedStringFromCollection(active));
+			}
+			postOperationalModesChangedEvent(active);
+			return active;
+		} finally {
+			if ( tx != null ) {
+				txManager.commit(tx);
+			}
 		}
-		Set<String> active = activeModesFromSettings(dao);
-		if ( log.isInfoEnabled() ) {
-			log.info("Enabled operational modes [{}], expiring [{}]; active modes now [{}]",
-					commaDelimitedStringFromCollection(modes), (expire != null ? expire : "never"),
-					commaDelimitedStringFromCollection(active));
-		}
-		postOperationalModesChangedEvent(active);
-		return active;
 	}
 
 	@Override
-	public Set<String> disableOperationalModes(Set<String> modes) {
+	public synchronized Set<String> disableOperationalModes(Set<String> modes) {
+		Set<String> active = activeOperationalModes();
+		if ( modes == null || modes.isEmpty() ) {
+			return active;
+		}
+		Set<String> toDeactivate = null;
+		for ( String mode : modes ) {
+			if ( mode == null ) {
+				continue;
+			}
+			mode = mode.toLowerCase();
+			if ( active.contains(mode) ) {
+				if ( toDeactivate == null ) {
+					toDeactivate = new LinkedHashSet<>(modes.size());
+				}
+				toDeactivate.add(mode);
+			}
+		}
+		if ( toDeactivate == null ) {
+			// no chnage
+			return active;
+		}
 		SettingDao dao = settingDao.service();
 		if ( dao == null ) {
 			return emptySet();
 		}
-		if ( modes != null && !modes.isEmpty() ) {
-			for ( String mode : modes ) {
-				if ( mode == null ) {
-					continue;
-				}
-				mode = mode.toLowerCase();
+		PlatformTransactionManager txManager = OptionalService.service(transactionManager);
+		TransactionStatus tx = null;
+		if ( txManager != null ) {
+			tx = txManager.getTransaction(TX_RW);
+		}
+		try {
+			for ( String mode : toDeactivate ) {
+				activeModes.remove(mode);
 				dao.deleteSetting(SETTING_OP_MODE, mode);
+				active.remove(mode);
+			}
+			if ( log.isInfoEnabled() ) {
+				log.info("Disabled operational modes [{}]; active modes now [{}]",
+						commaDelimitedStringFromCollection(modes),
+						commaDelimitedStringFromCollection(active));
+			}
+			postOperationalModesChangedEvent(active);
+			return active;
+		} finally {
+			if ( tx != null ) {
+				txManager.commit(tx);
 			}
 		}
-		Set<String> active = activeModesFromSettings(dao);
-		if ( log.isInfoEnabled() ) {
-			log.info("Disabled operational modes [{}]; active modes now [{}]",
-					commaDelimitedStringFromCollection(modes),
-					commaDelimitedStringFromCollection(active));
-		}
-		postOperationalModesChangedEvent(active);
-		return active;
 	}
 
 	private void postOperationalModesChangedEvent(Set<String> activeModes) {
@@ -396,6 +589,27 @@ public class DefaultOperationalModesService implements OperationalModesService, 
 			throw new IllegalArgumentException("autoExpireModesFrequency must be > 0");
 		}
 		this.autoExpireModesFrequency = autoExpireModesFrequency;
+	}
+
+	/**
+	 * Get the transaction manager.
+	 * 
+	 * @return the transaction manager to use
+	 * @since 1.3
+	 */
+	public OptionalService<PlatformTransactionManager> getTransactionManager() {
+		return transactionManager;
+	}
+
+	/**
+	 * Set the transaction manager.
+	 * 
+	 * @param transactionManager
+	 *        the transaction manager to use
+	 * @since 1.3
+	 */
+	public void setTransactionManager(OptionalService<PlatformTransactionManager> transactionManager) {
+		this.transactionManager = transactionManager;
 	}
 
 }

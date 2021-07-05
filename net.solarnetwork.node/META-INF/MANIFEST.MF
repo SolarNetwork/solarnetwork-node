@@ -78,6 +78,8 @@ Import-Package:
  org.springframework.scheduling;version="[4.3,5.0)",
  org.springframework.scheduling.concurrent;version="[4.3,5.0)",
  org.springframework.scheduling.quartz;version="[4.3,5.0)",
+ org.springframework.transaction;version="[4.3,5.0)",
+ org.springframework.transaction.support;version="[4.3,5.0)",
  org.springframework.util;version="[4.3,5.0)",
  org.w3c.dom,
  org.xml.sax

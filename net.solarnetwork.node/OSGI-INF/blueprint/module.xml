@@ -40,6 +40,13 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="txManager" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.springframework.transaction.PlatformTransactionManager"/>
+		<property name="serviceFilter" value="(db=node)"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<reference-list id="triggers" interface="net.solarnetwork.node.job.TriggerAndJobDetail" availability="optional">
 		<reference-listener bind-method="onBind" unbind-method="onUnbind">
 			<bean class="net.solarnetwork.node.runtime.JobServiceRegistrationListener">
@@ -418,12 +425,19 @@
 		<interfaces>
 			<value>net.solarnetwork.node.OperationalModesService</value>
 			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
 		</interfaces>
 	</service>
 	<bean id="opModesService" class="net.solarnetwork.node.runtime.DefaultOperationalModesService" init-method="init" destroy-method="close">
 		<argument ref="settingDao"/>
 		<argument ref="eventAdmin"/>
 		<property name="taskScheduler" ref="taskScheduler"/>
+		<property name="transactionManager" ref="txManager"/>
+			<property name="messageSource">
+				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+					<property name="basename" value="net.solarnetwork.node.runtime.DefaultOperationalModesService"/>
+				</bean>
+			</property>			
 	</bean>
 	
 	<!-- PlaceholderService -->
