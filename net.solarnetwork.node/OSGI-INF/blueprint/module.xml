@@ -31,11 +31,20 @@
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+		<property name="sticky" value="true"/>
 	</bean>
 	
 	<bean id="settingDao" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.dao.SettingDao"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="txManager" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="org.springframework.transaction.PlatformTransactionManager"/>
+		<property name="serviceFilter" value="(db=node)"/>
+		<property name="sticky" value="true"/>
 	</bean>
 
 	<reference-list id="triggers" interface="net.solarnetwork.node.job.TriggerAndJobDetail" availability="optional">
@@ -385,6 +394,7 @@
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="org.springframework.messaging.simp.SimpMessageSendingOperations"/>
 		<property name="serviceFilter" value="(channel=broker)"/>
+		<property name="sticky" value="true"/>
 	</bean>
 
 	<service interface="org.osgi.service.event.EventHandler">
@@ -415,24 +425,26 @@
 		<interfaces>
 			<value>net.solarnetwork.node.OperationalModesService</value>
 			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
 		</interfaces>
 	</service>
 	<bean id="opModesService" class="net.solarnetwork.node.runtime.DefaultOperationalModesService" init-method="init" destroy-method="close">
 		<argument ref="settingDao"/>
 		<argument ref="eventAdmin"/>
 		<property name="taskScheduler" ref="taskScheduler"/>
+		<property name="transactionManager" ref="txManager"/>
+			<property name="messageSource">
+				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+					<property name="basename" value="net.solarnetwork.node.runtime.DefaultOperationalModesService"/>
+				</bean>
+			</property>			
 	</bean>
 	
 	<!-- PlaceholderService -->
 	
 	<service interface="net.solarnetwork.node.PlaceholderService">
 		<bean class="net.solarnetwork.node.support.SettingsPlaceholderService">
-			<argument>
-				<bean class="net.solarnetwork.util.DynamicServiceTracker">
-					<property name="bundleContext" ref="bundleContext"/>
-					<property name="serviceClassName" value="net.solarnetwork.node.dao.SettingDao"/>
-				</bean>
-			</argument>
+			<argument ref="settingDao"/>
 			<property name="staticPropertiesPath" value="${placeholders.dir}"/>
 		</bean>
 	</service>
@@ -448,6 +460,12 @@
 		</property>
 	</bean>
 	
+	<bean id="setupService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.setup.SetupService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="User Metadata Service"/>
@@ -455,7 +473,7 @@
 			<property name="messageSource" ref="userMetadataMessageSource"/>
 		</bean>
 	</service>
-	
+
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.metadata.user" 
 			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
@@ -466,12 +484,7 @@
 			<beans:entry key="settingPid" value="net.solarnetwork.node.metadata.user"/>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.support.UserMetadataService">
-			<argument>
-				<bean class="net.solarnetwork.util.DynamicServiceTracker">
-					<property name="bundleContext" ref="bundleContext"/>
-					<property name="serviceClassName" value="net.solarnetwork.node.setup.SetupService"/>
-				</bean>
-			</argument>
+			<argument ref="setupService"/>
 			<property name="objectMapper" ref="objectMapper"/>
 			<property name="messageSource" ref="userMetadataMessageSource"/>
 		</bean>
