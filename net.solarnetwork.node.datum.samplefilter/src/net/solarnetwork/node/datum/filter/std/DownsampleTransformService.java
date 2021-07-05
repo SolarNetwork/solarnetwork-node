@@ -74,7 +74,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * </ul>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 1.2
  */
 public class DownsampleTransformService extends SamplesTransformerSupport
@@ -120,7 +120,7 @@ public class DownsampleTransformService extends SamplesTransformerSupport
 		if ( datum == null || datum.getSourceId() == null || samples == null ) {
 			return samples;
 		}
-		if ( !sourceIdMatches(datum) ) {
+		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
 			return samples;
 		}
 		final int count = (sampleCount != null ? sampleCount.intValue() : 0);
@@ -149,7 +149,7 @@ public class DownsampleTransformService extends SamplesTransformerSupport
 		List<SettingSpecifier> results = baseIdentifiableSettings();
 
 		results.add(0, new BasicTitleSettingSpecifier("status", statusValue()));
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));
+		populateBaseSampleTransformSupportSettings(results);
 		results.add(new BasicTextFieldSettingSpecifier("sampleCount", DEFAULT_SAMPLE_COUNT.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("decimalScale",
 				String.valueOf(DEFAULT_DECIMAL_SCALE)));

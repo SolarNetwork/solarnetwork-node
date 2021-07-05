@@ -24,19 +24,23 @@ package net.solarnetwork.node.support;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Base class for services like
  * {@link net.solarnetwork.node.GeneralDatumSamplesTransformService} to extend.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.83
  */
 public class BaseSamplesTransformSupport extends BaseIdentifiable {
@@ -47,6 +51,49 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	public static final String DEFAULT_UID = "Default";
 
 	private Pattern sourceId;
+	private OperationalModesService opModesService;
+	private String requiredOperationalMode;
+
+	/**
+	 * Populate settings for the {@code BaseSamplesTransformSupport} class.
+	 * 
+	 * <p>
+	 * This will use {@literal null} for all default values.
+	 * </p>
+	 * 
+	 * @param settings
+	 *        the settings to populate
+	 * @since 1.1
+	 * @see BaseSamplesTransformSupport#populateBaseSampleTransformSupportSettings(List,
+	 *      String, String)
+	 */
+	public static void populateBaseSampleTransformSupportSettings(List<SettingSpecifier> settings) {
+		populateBaseSampleTransformSupportSettings(settings, null, null);
+	}
+
+	/**
+	 * Populate settings for the {@code BaseSamplesTransformSupport} class.
+	 * 
+	 * <p>
+	 * This will add settings for the {@code sourceId} and
+	 * {@code requiredOperationalMode} settings.
+	 * </p>
+	 * 
+	 * @param settings
+	 *        the list to add settings to
+	 * @param sourceIdDefault
+	 *        the default {@code sourceId} value
+	 * @param requiredOperationalModeDefault
+	 *        the default {@code requiredOperationalMode} value
+	 * @since 1.1
+	 */
+	public static void populateBaseSampleTransformSupportSettings(List<SettingSpecifier> settings,
+			String sourceIdDefault, String requiredOperationalModeDefault) {
+		settings.add(new BasicTextFieldSettingSpecifier("sourceId", sourceIdDefault));
+		settings.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode",
+				requiredOperationalModeDefault));
+
+	}
 
 	/**
 	 * Copy a samples object.
@@ -130,6 +177,33 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	}
 
 	/**
+	 * Test if the configured required operational mode is active.
+	 * 
+	 * <p>
+	 * If {@link #getRequiredOperationalMode()} is configured but
+	 * {@code #getOpModesService()} is not, this method will always return
+	 * {@literal false}.
+	 * </p>
+	 * 
+	 * @return {@literal true} if an operational mode is required and that mode
+	 *         is currently active
+	 * @since 1.1
+	 */
+	protected boolean operationalModeMatches() {
+		final String mode = getRequiredOperationalMode();
+		if ( mode == null ) {
+			// no mode required, so automatically matches
+			return true;
+		}
+		final OperationalModesService service = getOpModesService();
+		if ( service == null ) {
+			// service not available, so automatically does not match
+			return false;
+		}
+		return service.isOperationalModeActive(mode);
+	}
+
+	/**
 	 * Get the source ID regex.
 	 * 
 	 * @return the regex
@@ -188,6 +262,51 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 			log.warn("Error compiling regex [{}]", sourceIdPattern, e);
 			this.sourceId = null;
 		}
+	}
+
+	/**
+	 * Get the operational modes service to use.
+	 * 
+	 * @return the service, or {@literal null}
+	 */
+	public OperationalModesService getOpModesService() {
+		return opModesService;
+	}
+
+	/**
+	 * Set the operational modes service to use.
+	 * 
+	 * @param opModesService
+	 *        the service to use
+	 * @since 1.1
+	 */
+	public void setOpModesService(OperationalModesService opModesService) {
+		this.opModesService = opModesService;
+	}
+
+	/**
+	 * Get an operational mode that is required by this service.
+	 * 
+	 * @return the required operational mode, or {@literal null} for none
+	 * @since 1.1
+	 */
+	public String getRequiredOperationalMode() {
+		return requiredOperationalMode;
+	}
+
+	/**
+	 * Set an operational mode that is required by this service.
+	 * 
+	 * @param requiredOperationalMode
+	 *        the required operational mode, or {@literal null} or an empty
+	 *        string that will be treated as {@literal null}
+	 * @since 1.1
+	 */
+	public void setRequiredOperationalMode(String requiredOperationalMode) {
+		if ( requiredOperationalMode != null && requiredOperationalMode.trim().isEmpty() ) {
+			requiredOperationalMode = null;
+		}
+		this.requiredOperationalMode = requiredOperationalMode;
 	}
 
 }

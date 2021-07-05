@@ -51,7 +51,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 		implements GeneralDatumSamplesTransformer, SettingSpecifierProvider, SettingsChangeObserver {
@@ -69,7 +69,7 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 			return samples;
 		}
 
-		if ( !sourceIdMatches(datum) ) {
+		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
 			return samples;
 		}
 
@@ -249,7 +249,7 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = baseIdentifiableSettings();
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
+		populateBaseSampleTransformSupportSettings(results);
 
 		PropertyFilterConfig[] incs = getPropIncludes();
 		List<PropertyFilterConfig> incsList = (incs != null ? Arrays.asList(incs)

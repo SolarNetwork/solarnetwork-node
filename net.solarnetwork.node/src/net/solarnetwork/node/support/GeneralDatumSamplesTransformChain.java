@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
+import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -54,7 +55,7 @@ import net.solarnetwork.util.WeakValueConcurrentHashMap;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 		implements GeneralDatumSamplesTransformService, SettingSpecifierProvider {
@@ -65,6 +66,8 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 	private final GeneralDatumSamplesTransformService staticService;
 	private String[] transformUids;
 	private List<GeneralDatumSamplesTransformer> sampleTransformers;
+	private OperationalModesService opModesService;
+	private String requiredOperationalMode;
 
 	private final ConcurrentMap<String, GeneralDatumSamplesTransformService> serviceCache = new WeakValueConcurrentHashMap<>(
 			16, 0.9f, 2);
@@ -147,19 +150,18 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> result;
-		if ( configurableUid ) {
-			result = baseIdentifiableSettings("");
-		} else {
-			result = new ArrayList<>(2);
-		}
-
+		List<SettingSpecifier> result = new ArrayList<>(8);
 		if ( sampleTransformers != null ) {
 			result.add(new BasicTitleSettingSpecifier("availableTransformerUids",
 					availableTransformerUidsStatus(), true, true));
 		}
 
 		result.add(new BasicTitleSettingSpecifier("availableUids", availableUidsStatus(), true, true));
+
+		if ( configurableUid ) {
+			result.addAll(baseIdentifiableSettings(""));
+			result.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode", null));
+		}
 
 		// list of UIDs
 		String[] uids = getTransformUids();
@@ -267,6 +269,33 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 	}
 
 	/**
+	 * Test if the configured required operational mode is active.
+	 * 
+	 * <p>
+	 * If {@link #getRequiredOperationalMode()} is configured but
+	 * {@code #getOpModesService()} is not, this method will always return
+	 * {@literal false}.
+	 * </p>
+	 * 
+	 * @return {@literal true} if an operational mode is required and that mode
+	 *         is currently active
+	 * @since 1.1
+	 */
+	protected boolean operationalModeMatches() {
+		final String mode = getRequiredOperationalMode();
+		if ( mode == null ) {
+			// no mode required, so automatically matches
+			return true;
+		}
+		final OperationalModesService service = getOpModesService();
+		if ( service == null ) {
+			// service not available, so automatically does not match
+			return false;
+		}
+		return service.isOperationalModeActive(mode);
+	}
+
+	/**
 	 * Get the transform UIDs to use.
 	 * 
 	 * @return the transform UIDs.
@@ -324,6 +353,51 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 	 */
 	public void setSampleTransformers(List<GeneralDatumSamplesTransformer> sampleTransformers) {
 		this.sampleTransformers = sampleTransformers;
+	}
+
+	/**
+	 * Get the operational modes service to use.
+	 * 
+	 * @return the service, or {@literal null}
+	 */
+	public OperationalModesService getOpModesService() {
+		return opModesService;
+	}
+
+	/**
+	 * Set the operational modes service to use.
+	 * 
+	 * @param opModesService
+	 *        the service to use
+	 * @since 1.1
+	 */
+	public void setOpModesService(OperationalModesService opModesService) {
+		this.opModesService = opModesService;
+	}
+
+	/**
+	 * Get an operational mode that is required by this service.
+	 * 
+	 * @return the required operational mode, or {@literal null} for none
+	 * @since 1.1
+	 */
+	public String getRequiredOperationalMode() {
+		return requiredOperationalMode;
+	}
+
+	/**
+	 * Set an operational mode that is required by this service.
+	 * 
+	 * @param requiredOperationalMode
+	 *        the required operational mode, or {@literal null} or an empty
+	 *        string that will be treated as {@literal null}
+	 * @since 1.1
+	 */
+	public void setRequiredOperationalMode(String requiredOperationalMode) {
+		if ( requiredOperationalMode != null && requiredOperationalMode.trim().isEmpty() ) {
+			requiredOperationalMode = null;
+		}
+		this.requiredOperationalMode = requiredOperationalMode;
 	}
 
 }

@@ -33,7 +33,9 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -56,6 +58,7 @@ import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.DatumMetadataService;
+import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.datum.filter.std.SourceThrottlingSamplesTransformer;
 import net.solarnetwork.node.datum.filter.virt.VirtualMeterConfig;
 import net.solarnetwork.node.datum.filter.virt.VirtualMeterExpressionConfig;
@@ -82,24 +85,27 @@ public class VirtualMeterTransformServiceTests {
 	private static final String TEST_UID = "test";
 
 	private DatumMetadataService datumMetadataService;
+	private OperationalModesService opModesService;
 	private VirtualMeterTransformService xform;
 
 	@Before
 	public void setup() {
 		datumMetadataService = EasyMock.createMock(DatumMetadataService.class);
+		opModesService = EasyMock.createMock(OperationalModesService.class);
 		SourceThrottlingSamplesTransformer.clearSettingCache();
 		xform = new VirtualMeterTransformService(new StaticOptionalService<>(datumMetadataService));
 		xform.setUid(TEST_UID);
 		xform.setSourceId("^F");
+		xform.setOpModesService(opModesService);
 	}
 
 	@After
 	public void teardown() {
-		EasyMock.verify(datumMetadataService);
+		EasyMock.verify(datumMetadataService, opModesService);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(datumMetadataService);
+		EasyMock.replay(datumMetadataService, opModesService);
 	}
 
 	private GeneralNodeDatum createTestGeneralNodeDatum(String sourceId) {
@@ -484,6 +490,56 @@ public class VirtualMeterTransformServiceTests {
 				new BigDecimal("10"), new BigDecimal("15"));
 		assertVirtualMeterMetadata("third (after skip)", savedMetas.get(2), PROP_COST,
 				dates.get(3).getTime(), new BigDecimal("20"), new BigDecimal("45"));
+	}
+
+	@Test
+	public void operationalMode_noMatch() {
+		// GIVEN
+		final GeneralNodeDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATTS);
+		vmConfig.setRollingAverageCount(4);
+		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
+		xform.setRequiredOperationalMode("foo");
+
+		expect(opModesService.isOperationalModeActive("foo")).andReturn(false);
+
+		// WHEN
+		replayAll();
+		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples(), null);
+
+		// THEN
+		assertThat("No change because required operational mode not active", result,
+				is(sameInstance(datum.getSamples())));
+	}
+
+	@Test
+	public void operationalMode_match() {
+		// GIVEN
+		final GeneralNodeDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATTS);
+		vmConfig.setRollingAverageCount(4);
+		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
+		xform.setRequiredOperationalMode("foo");
+
+		expect(opModesService.isOperationalModeActive("foo")).andReturn(true);
+
+		// no metadata available yet
+		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(null);
+
+		// add metadata
+		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>();
+		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
+
+		// WHEN
+		replayAll();
+		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples(), null);
+
+		// THEN
+		assertOutputValue("at first sample", result, new BigDecimal("23.4"), null);
+
+		GeneralDatumMetadata meta = metaCaptor.getValue();
+		assertVirtualMeterMetadata("first", meta, datum.getCreated().getTime(), new BigDecimal("23.4"),
+				BigDecimal.ZERO);
 	}
 
 }

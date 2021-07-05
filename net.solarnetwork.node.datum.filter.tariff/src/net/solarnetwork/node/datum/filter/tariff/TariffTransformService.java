@@ -72,7 +72,7 @@ import net.solarnetwork.util.OptionalService.OptionalFilterableService;
  * spreadsheet style tariff metadata.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class TariffTransformService extends BaseSamplesTransformSupport implements
 		GeneralDatumSamplesTransformService, SettingSpecifierProvider, SettingsChangeObserver {
@@ -118,7 +118,7 @@ public class TariffTransformService extends BaseSamplesTransformSupport implemen
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
 			Map<String, Object> parameters) {
-		if ( !sourceIdMatches(datum) ) {
+		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
 			return samples;
 		}
 		final LocalDateTime date = (datum.getCreated() != null
@@ -164,7 +164,7 @@ public class TariffTransformService extends BaseSamplesTransformSupport implemen
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = baseIdentifiableSettings("");
 		result.add(0, new BasicTitleSettingSpecifier("status", getStatusMessage(), true, true));
-		result.add(new BasicTextFieldSettingSpecifier("sourceId", null));
+		populateBaseSampleTransformSupportSettings(result);
 		result.add(new BasicTextFieldSettingSpecifier("metadataServiceUid", null));
 		result.add(
 				new BasicTextFieldSettingSpecifier("tariffMetadataPath", DEFAULT_TARIFF_METADATA_PATH));

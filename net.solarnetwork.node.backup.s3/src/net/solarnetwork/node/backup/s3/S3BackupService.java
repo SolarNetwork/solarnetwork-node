@@ -97,7 +97,7 @@ import net.solarnetwork.util.OptionalService;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class S3BackupService extends BackupServiceSupport
 		implements SettingSpecifierProvider, SettingsChangeObserver {
@@ -283,7 +283,7 @@ public class S3BackupService extends BackupServiceSupport
 			if ( cached != null && listBackupItem != null ) {
 				List<Backup> list = cached.getResult();
 				List<Backup> newList = new ArrayList<>(list);
-				newList.add(0, listBackupItem);
+				newList.add(listBackupItem);
 				updateCachedBackupList(newList);
 			}
 			if ( additionalBackupCount > 0 ) {
@@ -590,6 +590,16 @@ public class S3BackupService extends BackupServiceSupport
 	}
 
 	/**
+	 * Get the S3 object key prefix to use.
+	 * 
+	 * @return the prefix; defaults to {@link #DEFAULT_OBJECT_KEY_PREFIX}
+	 * @since 1.3
+	 */
+	public String getObjectKeyPrefix() {
+		return objectKeyPrefix;
+	}
+
+	/**
 	 * Set a S3 object key prefix to use.
 	 * 
 	 * <p>
@@ -621,6 +631,16 @@ public class S3BackupService extends BackupServiceSupport
 	 */
 	public void setCacheSeconds(int cacheSeconds) {
 		this.cacheSeconds = cacheSeconds;
+	}
+
+	/**
+	 * Get the S3 client.
+	 * 
+	 * @return the S3 client
+	 * @since 1.3
+	 */
+	public S3Client getS3Client() {
+		return s3Client;
 	}
 
 	/**

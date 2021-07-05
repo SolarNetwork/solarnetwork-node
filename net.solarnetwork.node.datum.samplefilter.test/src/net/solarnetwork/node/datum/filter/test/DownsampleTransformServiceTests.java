@@ -22,14 +22,20 @@
 
 package net.solarnetwork.node.datum.filter.test;
 
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.math.BigDecimal;
 import java.util.Collections;
+import org.easymock.EasyMock;
 import org.junit.Test;
 import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.datum.filter.std.DownsampleTransformService;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 
@@ -37,7 +43,7 @@ import net.solarnetwork.node.domain.GeneralNodeDatum;
  * Test cases for the {@link DownsampleTransformService}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class DownsampleTransformServiceTests {
 
@@ -175,4 +181,29 @@ public class DownsampleTransformServiceTests {
 		assertThat("Final output contains property last value",
 				out.getAccumulatingSampleBigDecimal(TEST_PROP), equalTo(new BigDecimal(5)));
 	}
+
+	@Test
+	public void operationalMode_noMatch() {
+		// GIVEN
+		DownsampleTransformService xs = new DownsampleTransformService();
+		OperationalModesService opModesService = EasyMock.createMock(OperationalModesService.class);
+		xs.setOpModesService(opModesService);
+		xs.setRequiredOperationalMode("foo");
+
+		expect(opModesService.isOperationalModeActive("foo")).andReturn(false);
+
+		// WHEN
+		replay(opModesService);
+		GeneralNodeDatum d = new GeneralNodeDatum();
+		d.setSourceId(TEST_SOURCE);
+		d.putAccumulatingSampleValue(TEST_PROP, 5);
+
+		GeneralDatumSamples out = xs.transformSamples(d, d.getSamples(), null);
+
+		// THEN
+		assertThat("No change because required operational mode not active", out,
+				sameInstance(d.getSamples()));
+		verify(opModesService);
+	}
+
 }
