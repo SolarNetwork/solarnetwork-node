@@ -129,7 +129,7 @@ import net.solarnetwork.support.SearchFilter;
  * {@link SettingDao} to persist changes between application restarts.
  * 
  * @author matt
- * @version 1.8
+ * @version 1.9
  */
 public class CASettingsService
 		implements SettingsService, BackupResourceProvider, FeedbackInstructionHandler {
@@ -210,7 +210,7 @@ public class CASettingsService
 					bean.setValue(setting.getValue());
 					cmd.getValues().add(bean);
 				}
-				updateSettings(cmd);
+				applySettingsUpdates(cmd, cmd.getProviderKey(), cmd.getInstanceKey(), true);
 			}
 		}
 	}
@@ -287,15 +287,15 @@ public class CASettingsService
 			return;
 		}
 		SettingsCommand cmd = new SettingsCommand();
+		cmd.setProviderKey(provider.getSettingUID());
+		cmd.setInstanceKey(factoryInstanceKey);
 		for ( KeyValuePair pair : settings ) {
 			SettingValueBean bean = new SettingValueBean();
-			bean.setProviderKey(provider.getSettingUID());
-			bean.setInstanceKey(factoryInstanceKey);
 			bean.setKey(pair.getKey());
 			bean.setValue(pair.getValue());
 			cmd.getValues().add(bean);
 		}
-		updateSettings(cmd);
+		applySettingsUpdates(cmd, cmd.getProviderKey(), factoryInstanceKey, true);
 	}
 
 	/**
@@ -484,6 +484,26 @@ public class CASettingsService
 
 	private void applySettingsUpdates(final SettingsUpdates updates, final String providerKey,
 			final String instanceKey) {
+		applySettingsUpdates(updates, providerKey, instanceKey, false);
+	}
+
+	/**
+	 * Apply a set of settings updates.
+	 * 
+	 * @param updates
+	 *        the updates to apply
+	 * @param providerKey
+	 *        the provider key
+	 * @param instanceKey
+	 *        if {@code providerKey} is a factory, the factory instance key,
+	 *        otherwise {@literal null}
+	 * @param configurationOnly
+	 *        {@literal true} to only update the associated Configuration Admin
+	 *        {@link Configuration}, {@literal false} to also persist the
+	 *        updates via {@link SettingDao}
+	 */
+	private void applySettingsUpdates(final SettingsUpdates updates, final String providerKey,
+			final String instanceKey, final boolean configurationOnly) {
 		if ( updates == null || providerKey == null || providerKey.isEmpty()
 				|| !(updates.hasSettingKeyPatternsToClean() || updates.hasSettingValueUpdates()) ) {
 			return;
@@ -511,7 +531,9 @@ public class CASettingsService
 				}
 				for ( String key : keysToRemove ) {
 					props.remove(key);
-					settingDao.deleteSetting(settingKey, key);
+					if ( !configurationOnly ) {
+						settingDao.deleteSetting(settingKey, key);
+					}
 				}
 			}
 			for ( SettingsUpdates.Change bean : updates.getSettingValueUpdates() ) {
@@ -521,7 +543,7 @@ public class CASettingsService
 					props.put(bean.getKey(), bean.getValue());
 				}
 
-				if ( !bean.isTransient() ) {
+				if ( !configurationOnly && !bean.isTransient() ) {
 					if ( bean.isRemove() ) {
 						settingDao.deleteSetting(settingKey, bean.getKey());
 					} else {
@@ -1252,15 +1274,15 @@ public class CASettingsService
 		}
 	}
 
-	private Configuration getConfiguration(String providerUID, String factoryInstanceUID)
+	private Configuration getConfiguration(String pid, String instanceKey)
 			throws IOException, InvalidSyntaxException {
 		Configuration conf = null;
-		if ( factoryInstanceUID == null ) {
-			conf = configurationAdmin.getConfiguration(providerUID, null);
+		if ( instanceKey == null || instanceKey.isEmpty() ) {
+			conf = configurationAdmin.getConfiguration(pid, null);
 		} else {
-			conf = findExistingConfiguration(providerUID, factoryInstanceUID);
+			conf = findExistingConfiguration(pid, instanceKey);
 			if ( conf == null ) {
-				conf = configurationAdmin.createFactoryConfiguration(providerUID, null);
+				conf = configurationAdmin.createFactoryConfiguration(pid, null);
 			}
 		}
 		return conf;
