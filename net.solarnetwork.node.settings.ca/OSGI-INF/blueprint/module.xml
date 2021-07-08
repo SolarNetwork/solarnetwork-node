@@ -27,6 +27,63 @@
 		<beans:prop key="settingsBackup.backupMaxCount">5</beans:prop>
 	</osgix:cm-properties>
 	
+	<reference id="scheduler" interface="org.quartz.Scheduler" filter="(function=node)"/>
+
+	<reference id="taskExecutor" interface="org.springframework.core.task.TaskExecutor" filter="(function=node)"/>
+	
+	<reference id="ca" interface="org.osgi.service.cm.ConfigurationAdmin"/>
+	
+	<reference id="txManager" interface="org.springframework.transaction.PlatformTransactionManager" filter="(db=node)"/>
+
+	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
+	
+	<service ref="settingsBackup" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
+	
+	<service ref="settingsService">
+		<interfaces>
+			<value>net.solarnetwork.node.settings.SettingsService</value>
+			<value>net.solarnetwork.node.backup.BackupResourceProvider</value>
+			<value>net.solarnetwork.node.reactor.FeedbackInstructionHandler</value>
+		</interfaces>
+		<service-properties>
+			<entry key="instruction">
+				<list>
+					<value>UpdateSetting</value>
+				</list>
+			</entry>
+		</service-properties>
+	</service>
+	
+	<bean id="settingsService" class="net.solarnetwork.node.settings.ca.CASettingsService">
+		<property name="configurationAdmin" ref="ca"/>
+		<property name="settingDao" ref="settingDao"/>
+		<property name="taskExecutor" ref="taskExecutor"/>
+		<property name="backupDestinationPath" value="${settingsBackup.destinationPath}"/>
+		<property name="backupMaxCount" value="${settingsBackup.backupMaxCount}"/>
+		<property name="transactionTemplate">
+			<bean class="org.springframework.transaction.support.TransactionTemplate">
+				<argument ref="txManager"/>
+			</bean>
+		</property>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basename" value="net.solarnetwork.node.settings.ca.CASettingsService"/>
+			</bean>
+		</property>
+	</bean>
+	
+	<reference-list id="factoryList" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory" availability="optional">
+		<reference-listener ref="settingsService" bind-method="onBindFactory" unbind-method="onUnbindFactory"/>
+	</reference-list>
+	
+	<reference-list id="providerList" interface="net.solarnetwork.node.settings.SettingSpecifierProvider" availability="optional">
+		<reference-listener ref="settingsService" bind-method="onBind" unbind-method="onUnbind"/>
+	</reference-list>
+	
+	<reference-list id="handlerList" interface="net.solarnetwork.node.settings.SettingResourceHandler" availability="optional">
+		<reference-listener ref="settingsService" bind-method="onBindHandler" unbind-method="onUnbindHandler"/>
+	</reference-list>
+	
 	<!-- Settings backup job -->
 
 	<bean id="settingsBackup" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
@@ -56,60 +113,5 @@
 			</bean>
 		</property>
 	</bean>
-	
-	<bean id="settingsService" class="net.solarnetwork.node.settings.ca.CASettingsService">
-		<property name="configurationAdmin" ref="ca"/>
-		<property name="settingDao" ref="settingDao"/>
-		<property name="backupDestinationPath" value="${settingsBackup.destinationPath}"/>
-		<property name="backupMaxCount" value="${settingsBackup.backupMaxCount}"/>
-		<property name="transactionTemplate">
-			<bean class="org.springframework.transaction.support.TransactionTemplate">
-				<argument ref="txManager"/>
-			</bean>
-		</property>
-		<property name="messageSource">
-			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basename" value="net.solarnetwork.node.settings.ca.CASettingsService"/>
-			</bean>
-		</property>
-	</bean>
-	
-	<reference id="scheduler" interface="org.quartz.Scheduler" filter="(function=node)"/>
-
-	<reference id="ca" interface="org.osgi.service.cm.ConfigurationAdmin"/>
-	
-	<reference id="txManager" interface="org.springframework.transaction.PlatformTransactionManager"
-		filter="(db=node)"/>
-
-	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
-	
-	<service ref="settingsBackup" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
-	
-	<service ref="settingsService">
-		<interfaces>
-			<value>net.solarnetwork.node.settings.SettingsService</value>
-			<value>net.solarnetwork.node.backup.BackupResourceProvider</value>
-			<value>net.solarnetwork.node.reactor.FeedbackInstructionHandler</value>
-		</interfaces>
-		<service-properties>
-			<entry key="instruction">
-				<list>
-					<value>UpdateSetting</value>
-				</list>
-			</entry>
-		</service-properties>
-	</service>
-	
-	<reference-list id="factoryList" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory" availability="optional">
-		<reference-listener ref="settingsService" bind-method="onBindFactory" unbind-method="onUnbindFactory"/>
-	</reference-list>
-	
-	<reference-list id="providerList" interface="net.solarnetwork.node.settings.SettingSpecifierProvider" availability="optional">
-		<reference-listener ref="settingsService" bind-method="onBind" unbind-method="onUnbind"/>
-	</reference-list>
-	
-	<reference-list id="handlerList" interface="net.solarnetwork.node.settings.SettingResourceHandler" availability="optional">
-		<reference-listener ref="settingsService" bind-method="onBindHandler" unbind-method="onUnbindHandler"/>
-	</reference-list>
 	
 </blueprint>
