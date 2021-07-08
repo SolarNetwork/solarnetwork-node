@@ -606,7 +606,7 @@ public class CASettingsService
 		}
 	}
 
-	private static Pattern SENSITVE_PATTERN = Pattern.compile("(password|secret)",
+	private static Pattern SENSITVE_PATTERN = Pattern.compile("(apikey|password|secret)",
 			Pattern.CASE_INSENSITIVE);
 
 	private class ConfigurationUpdateTask implements Runnable {
