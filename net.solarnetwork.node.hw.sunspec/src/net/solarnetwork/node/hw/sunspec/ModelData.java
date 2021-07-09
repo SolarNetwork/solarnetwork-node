@@ -31,6 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.solarnetwork.domain.BasicDeviceInfo;
+import net.solarnetwork.domain.DeviceInfo;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -40,7 +42,7 @@ import net.solarnetwork.util.IntRange;
  * Base object for model data.
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class ModelData extends ModbusData implements CommonModelAccessor {
 
@@ -145,6 +147,21 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	@Override
 	public ModbusData copy() {
 		return new ModelData(this);
+	}
+
+	@Override
+	public DeviceInfo deviceInfo() {
+		BasicDeviceInfo.Builder b = BasicDeviceInfo.builder();
+		ModelData data = getSnapshot();
+		b.withManufacturer(data.getManufacturer());
+		b.withModelName(data.getModelName());
+		b.withVersion(data.getVersion());
+		b.withSerialNumber(data.getSerialNumber());
+		Integer addr = data.getDeviceAddress();
+		if ( addr != null ) {
+			b.withDeviceAddress(addr.toString());
+		}
+		return (b.isEmpty() ? null : b.build());
 	}
 
 	@Override

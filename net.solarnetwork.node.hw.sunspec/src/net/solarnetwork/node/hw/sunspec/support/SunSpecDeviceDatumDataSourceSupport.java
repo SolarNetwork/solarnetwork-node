@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import net.solarnetwork.domain.DeviceInfo;
 import net.solarnetwork.node.hw.sunspec.CommonModelAccessor;
 import net.solarnetwork.node.hw.sunspec.GenericModelId;
 import net.solarnetwork.node.hw.sunspec.ModelAccessor;
@@ -49,7 +50,7 @@ import net.solarnetwork.util.StringUtils;
  * implementations for SunSpec devices.
  * 
  * @author matt
- * @version 1.6
+ * @version 1.7
  * @since 1.1
  */
 public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDatumDataSourceSupport {
@@ -218,6 +219,18 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 		return data.getDeviceInfo();
 	}
 
+	@Override
+	protected String deviceInfoSourceId() {
+		return getSourceId();
+	}
+
+	@Override
+	protected DeviceInfo deviceInfo() {
+		getDeviceInfo(); // make sure common model populated
+		ModelData s = sample.get();
+		return (s != null ? s.deviceInfo() : null);
+	}
+
 	/**
 	 * Test if the sample data has expired.
 	 * 
@@ -305,6 +318,8 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 
 		results.add(new BasicTextFieldSettingSpecifier("secondaryModelIdsValue", ""));
 		results.add(new BasicTextFieldSettingSpecifier("baseAddress", ""));
+
+		results.addAll(getDeviceInfoMetadataSettingSpecifiers());
 
 		return results;
 	}
