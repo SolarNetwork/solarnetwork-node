@@ -30,10 +30,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
+import net.solarnetwork.codec.JsonUtils;
+import net.solarnetwork.domain.DeviceInfo;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.DatumDataSource;
@@ -45,6 +48,7 @@ import net.solarnetwork.node.domain.ExpressionRoot;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.support.ExpressionService;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.OptionalService;
@@ -55,7 +59,7 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * {@link net.solarnetwork.node.MultiDatumDataSource} implementations to extend.
  * 
  * @author matt
- * @version 1.6
+ * @version 1.7
  * @since 1.51
  */
 public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEvents {
@@ -86,7 +90,9 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	private long subSampleStartDelay = DEFAULT_SUBSAMPLE_START_DELAY;
 	private OptionalService<GeneralDatumSamplesTransformService> samplesTransformService;
 	private ExpressionConfig[] expressionConfigs;
+	private boolean publishDeviceInfoMetadata = false;
 
+	private final AtomicBoolean deviceInfoMetadataPublished = new AtomicBoolean(false);
 	private ScheduledFuture<?> subSampleFuture;
 
 	/**
@@ -103,6 +109,67 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 		Event event = datumCapturedEvent(datum);
 		log.debug("Created {} event with datum {}", event.getTopic(), datum);
 		postEvent(event);
+		publishDeviceInfoMetadata(deviceInfoSourceId());
+	}
+
+	/**
+	 * Get the source ID to publish device info under.
+	 * 
+	 * <p>
+	 * This method returns {@literal null}. Extending classes must override to
+	 * provide a source ID value if they wish to publish device info metadata.
+	 * </p>
+	 * 
+	 * @return the source ID to publish device info metadata to
+	 * @since 1.7
+	 */
+	protected String deviceInfoSourceId() {
+		return null;
+	}
+
+	/**
+	 * Publish the available device info from {@link #deviceInfo()} as source
+	 * metadata, if {@code publishDeviceInfoMetadata} is {@literal true} and the
+	 * metadata has not yet been published.
+	 * 
+	 * <p>
+	 * This requires the {@link #getDatumMetadataService()} to be available.
+	 * </p>
+	 * 
+	 * @param sourceId
+	 *        the source ID to publish the metadata to, or {@literal null} to
+	 *        not publish
+	 * @see #deviceInfo()
+	 * @since 1.7
+	 */
+	protected final void publishDeviceInfoMetadata(String sourceId) {
+		if ( sourceId == null || sourceId.isEmpty() || !publishDeviceInfoMetadata
+				|| deviceInfoMetadataPublished.get() ) {
+			return;
+		}
+		synchronized ( deviceInfoMetadataPublished ) {
+			if ( deviceInfoMetadataPublished.get() ) {
+				return;
+			}
+			DeviceInfo info = deviceInfo();
+			Map<String, Object> m = JsonUtils.getStringMapFromObject(info);
+			if ( m != null && !m.isEmpty() ) {
+				GeneralDatumMetadata meta = new GeneralDatumMetadata(null,
+						Collections.singletonMap(DeviceInfo.DEVICE_INFO_METADATA_KEY, m));
+				addSourceMetadata(sourceId, meta);
+			}
+			deviceInfoMetadataPublished.set(true);
+		}
+	}
+
+	/**
+	 * Get a {@link DeviceInfo} instance.
+	 * 
+	 * @return the device info, or {@literal null} if none available
+	 * @since 1.7
+	 */
+	protected DeviceInfo deviceInfo() {
+		return null;
 	}
 
 	/**
@@ -188,6 +255,17 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 		results.add(new BasicTextFieldSettingSpecifier("subSampleStartDelay",
 				String.valueOf(DEFAULT_SUBSAMPLE_START_DELAY)));
 		return results;
+	}
+
+	/**
+	 * Get setting specifiers for device info metadata publishing support.
+	 * 
+	 * @return list of settings
+	 * @since 1.7
+	 */
+	protected List<SettingSpecifier> getDeviceInfoMetadataSettingSpecifiers() {
+		return Collections.singletonList(
+				new BasicToggleSettingSpecifier("publishDeviceInfoMetadata", Boolean.FALSE));
 	}
 
 	/**
@@ -576,6 +654,36 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	@Override
 	public void setExpressionServices(OptionalServiceCollection<ExpressionService> expressionServices) {
 		super.setExpressionServices(expressionServices);
+	}
+
+	/**
+	 * Get the desired device info metadata publish mode.
+	 * 
+	 * @return {@literal true} to publish device metadata
+	 * @since 1.7
+	 */
+	public boolean isPublishDeviceInfoMetadata() {
+		return publishDeviceInfoMetadata;
+	}
+
+	/**
+	 * Get the desired device info metadata publish mode.
+	 * 
+	 * <p>
+	 * This feature requires the
+	 * {@link #setDatumMetadataService(OptionalService)} to be configured. It
+	 * will cause a {@link DeviceInfo} object to be published as source metadata
+	 * under a {@literal deviceInfo} property key, the first time
+	 * {@link #postDatumCapturedEvent(Datum)} is invoked.
+	 * </p>
+	 * 
+	 * @param publishDeviceInfoMetadata
+	 *        {@literal true} to publish device metadata once, after the first
+	 *        datum has been captured
+	 * @since 1.7
+	 */
+	public void setPublishDeviceInfoMetadata(boolean publishDeviceInfoMetadata) {
+		this.publishDeviceInfoMetadata = publishDeviceInfoMetadata;
 	}
 
 }

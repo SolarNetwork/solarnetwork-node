@@ -22,13 +22,16 @@
 
 package net.solarnetwork.node.domain;
 
+import java.time.LocalDate;
 import java.util.Map;
+import net.solarnetwork.domain.BasicDeviceInfo;
+import net.solarnetwork.domain.DeviceInfo;
 
 /**
  * API for accessing properties from a snapshot of data captured from a device.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.60
  */
 public interface DataAccessor {
@@ -69,5 +72,74 @@ public interface DataAccessor {
 	 * @return a map of device information, never {@literal null}
 	 */
 	Map<String, Object> getDeviceInfo();
+
+	/**
+	 * Get a {@link DeviceInfo} instance based on the {@link #getDeviceInfo()}
+	 * data.
+	 * 
+	 * @return the device info, or {@literal null} if no device properties are
+	 *         available
+	 * @since 1.1
+	 */
+	default DeviceInfo deviceInfo() {
+		BasicDeviceInfo.Builder b = deviceInfoBuilder();
+		return (b.isEmpty() ? null : b.build());
+	}
+
+	/**
+	 * Get a {@link BasicDeviceInfo} builder, populated from
+	 * {@link #getDeviceInfo()}.
+	 * 
+	 * @return the builder, never {@literal null}
+	 * @since 1.1
+	 */
+	default BasicDeviceInfo.Builder deviceInfoBuilder() {
+		Map<String, Object> info = getDeviceInfo();
+		return deviceInfoBuilderForInfo(info);
+	}
+
+	/**
+	 * Get a {@link BasicDeviceInfo} builder, populated from an info map, like
+	 * those returned from {@link DataAccessor#getDeviceInfo()}.
+	 * 
+	 * @param info
+	 *        the info to extract device properties from
+	 * @return the builder, never {@literal null}
+	 * @since 1.1
+	 */
+	static BasicDeviceInfo.Builder deviceInfoBuilderForInfo(Map<String, ?> info) {
+		BasicDeviceInfo.Builder b = BasicDeviceInfo.builder();
+		if ( info != null && !info.isEmpty() ) {
+			Object o = info.get(INFO_KEY_DEVICE_NAME);
+			if ( o != null ) {
+				b.withName(o.toString());
+			}
+			o = info.get(INFO_KEY_DEVICE_MANUFACTURER);
+			if ( o != null ) {
+				b.withManufacturer(o.toString());
+			}
+			o = info.get(INFO_KEY_DEVICE_MODEL);
+			if ( o != null ) {
+				b.withModelName(o.toString());
+			}
+			o = info.get(INFO_KEY_DEVICE_SERIAL_NUMBER);
+			if ( o != null ) {
+				b.withVersion(o.toString());
+			}
+			o = info.get(INFO_KEY_DEVICE_MANUFACTURE_DATE);
+			if ( o instanceof org.joda.time.ReadablePartial ) {
+				org.joda.time.ReadablePartial p = (org.joda.time.ReadablePartial) o;
+				try {
+					b.withManufactureDate(LocalDate.of(p.get(org.joda.time.DateTimeFieldType.year()),
+							p.get(org.joda.time.DateTimeFieldType.monthOfYear()),
+							p.get(org.joda.time.DateTimeFieldType.dayOfMonth())));
+				} catch ( IllegalArgumentException e ) {
+					// ignore
+				}
+			}
+
+		}
+		return b;
+	}
 
 }
