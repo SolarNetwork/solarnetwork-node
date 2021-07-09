@@ -19,18 +19,27 @@
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
 		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
+		<property name="sticky" value="true"/>
 	</bean>
 
 	<bean id="placeholderService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
+		<property name="sticky" value="true"/>
 	</bean>
 
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="datumMetadataService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.DatumMetadataService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+		
 	<!-- support localized strings for the settings in the GUI -->
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
@@ -119,6 +128,7 @@
 									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="placeholderService" ref="placeholderService"/>
+									<property name="datumMetadataService" ref="datumMetadataService"/>
 									<property name="samplesTransformService">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>

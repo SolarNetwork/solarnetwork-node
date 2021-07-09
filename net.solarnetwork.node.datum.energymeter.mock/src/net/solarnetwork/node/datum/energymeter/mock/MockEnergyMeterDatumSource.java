@@ -24,12 +24,15 @@ package net.solarnetwork.node.datum.energymeter.mock;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
+import net.solarnetwork.domain.BasicDeviceInfo;
+import net.solarnetwork.domain.DeviceInfo;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.ACEnergyDatum;
 import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
@@ -50,7 +53,7 @@ import net.solarnetwork.node.support.DatumDataSourceSupport;
  * </p>
  * 
  * @author robert
- * @version 1.3
+ * @version 1.4
  */
 public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
@@ -90,16 +93,12 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		return GeneralNodeACEnergyDatum.class;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see net.solarnetwork.node.DatumDataSource#readCurrentDatum()
-	 * 
+	/***
 	 * Returns a {@link GeneralNodeACEnergyDatum} the data in the datum is the
 	 * state of the simulated circuit.
 	 * 
+	 * @see net.solarnetwork.node.DatumDataSource#readCurrentDatum()
 	 * @return A {@link GeneralNodeACEnergyDatum}
-	 * 
 	 */
 	@Override
 	public GeneralNodeACEnergyDatum readCurrentDatum() {
@@ -120,6 +119,25 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		postDatumCapturedEvent(datum);
 
 		return datum;
+	}
+
+	@Override
+	protected String deviceInfoSourceId() {
+		return sourceId;
+	}
+
+	@Override
+	protected DeviceInfo deviceInfo() {
+		// @formatter:off
+		return BasicDeviceInfo.builder()
+				.withName("Mock Energy Meter")
+				.withManufacturer("SolarNetwork")
+				.withModelName("Simutron")
+				.withSerialNumber("ABCDEF123")
+				.withVersion("1.4")
+				.withManufactureDate(LocalDate.of(2021, 7, 9))
+				.withDeviceAddress("localhost").build();
+		// @formatter:on
 	}
 
 	private double readVoltage() {
@@ -275,6 +293,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		MockEnergyMeterDatumSource defaults = new MockEnergyMeterDatumSource();
 		List<SettingSpecifier> results = getIdentifiableSettingSpecifiers();
+		results.addAll(getDeviceInfoMetadataSettingSpecifiers());
 
 		// user enters text
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
