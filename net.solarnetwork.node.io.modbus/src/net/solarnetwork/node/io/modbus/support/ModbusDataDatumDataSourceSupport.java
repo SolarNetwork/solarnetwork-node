@@ -24,6 +24,7 @@ package net.solarnetwork.node.io.modbus.support;
 
 import java.io.IOException;
 import java.util.Map;
+import net.solarnetwork.domain.DeviceInfo;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -37,7 +38,7 @@ import net.solarnetwork.node.io.modbus.ModbusNetwork;
  * object.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @since 2.9
  */
 public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & DataAccessor>
@@ -142,6 +143,12 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	 */
 	protected void readDeviceInfoFirstTime(ModbusConnection connection, T sample) throws IOException {
 		refreshDeviceInfo(connection, sample);
+	}
+
+	@Override
+	protected DeviceInfo deviceInfo() {
+		ModbusData s = sample.copy();
+		return s.deviceInfo();
 	}
 
 	/**
