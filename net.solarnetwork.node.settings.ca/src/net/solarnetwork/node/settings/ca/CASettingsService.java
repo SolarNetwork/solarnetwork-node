@@ -572,12 +572,10 @@ public class CASettingsService
 					}
 				}
 			}
-			if ( conf != null && props != null ) {
-				if ( instanceKey != null && !instanceKey.isEmpty() ) {
-					props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceKey);
-				}
-				conf.update(props);
+			if ( instanceKey != null && !instanceKey.isEmpty() ) {
+				props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceKey);
 			}
+			conf.update(props);
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		} catch ( InvalidSyntaxException e ) {
