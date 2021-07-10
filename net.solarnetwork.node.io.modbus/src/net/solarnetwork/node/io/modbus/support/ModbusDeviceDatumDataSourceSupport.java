@@ -27,7 +27,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import net.solarnetwork.domain.BasicDeviceInfo;
+import net.solarnetwork.domain.DeviceInfo;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
@@ -42,7 +45,7 @@ import net.solarnetwork.util.StringUtils;
  * {@link DatumDataSource} implementations.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSourceSupport {
 
@@ -212,6 +215,13 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 */
 	protected void setDeviceInfoMap(Map<String, Object> deviceInfo) {
 		this.deviceInfo = deviceInfo;
+	}
+
+	@Override
+	protected DeviceInfo deviceInfo() {
+		Map<String, ?> info = getDeviceInfo();
+		BasicDeviceInfo.Builder b = DataAccessor.deviceInfoBuilderForInfo(info);
+		return (b.isEmpty() ? null : b.build());
 	}
 
 	/**

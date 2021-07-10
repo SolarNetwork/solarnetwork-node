@@ -50,7 +50,7 @@ import net.solarnetwork.util.IntShortMap;
  * </p>
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  * @since 2.3
  */
 public class ModbusData implements DataAccessor {
@@ -497,7 +497,7 @@ public class ModbusData implements DataAccessor {
 	 *        the number of 16-bit registers to read
 	 * @param trim
 	 *        if {@literal true} then remove leading/trailing whitespace from
-	 *        the resulting string
+	 *        the resulting string as well as any null bytes, i.e. {@literal \0}
 	 * @param charset
 	 *        the character set to interpret the bytes as
 	 * @return the parsed string, or {@literal null} if {@code count} is
@@ -509,7 +509,7 @@ public class ModbusData implements DataAccessor {
 		if ( bytes != null ) {
 			result = new String(bytes, charset);
 			if ( trim ) {
-				result = result.trim();
+				result = result.trim().replace("\0", "");
 			}
 		}
 		return result;

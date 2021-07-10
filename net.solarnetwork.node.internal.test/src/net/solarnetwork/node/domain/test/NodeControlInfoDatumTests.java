@@ -52,8 +52,9 @@ public class NodeControlInfoDatumTests {
 
 		Map<String, ?> map = datum.asSimpleMap();
 		assertThat(map, hasEntry("_DatumType", (Object) "net.solarnetwork.domain.NodeControlInfo"));
-		assertThat((String[]) map.get("_DatumTypes"), arrayContaining(
-				"net.solarnetwork.domain.NodeControlInfo", "net.solarnetwork.node.domain.Datum"));
+		assertThat((String[]) map.get("_DatumTypes"),
+				arrayContaining("net.solarnetwork.domain.NodeControlInfo",
+						"net.solarnetwork.node.domain.Datum", "net.solarnetwork.domain.datum.Datum"));
 		assertThat(map, hasEntry("created", (Object) datum.getCreated().getTime()));
 		assertThat(map, hasEntry("propertyName", (Object) "test-property"));
 		assertThat(map, hasEntry("readonly", (Object) false));

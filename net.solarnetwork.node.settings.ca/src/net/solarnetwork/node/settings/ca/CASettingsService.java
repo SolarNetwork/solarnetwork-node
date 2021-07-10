@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.settings.ca;
 
+import static java.lang.String.format;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -75,6 +77,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -129,7 +132,7 @@ import net.solarnetwork.support.SearchFilter;
  * {@link SettingDao} to persist changes between application restarts.
  * 
  * @author matt
- * @version 1.8
+ * @version 1.9
  */
 public class CASettingsService
 		implements SettingsService, BackupResourceProvider, FeedbackInstructionHandler {
@@ -157,6 +160,7 @@ public class CASettingsService
 	private String backupDestinationPath;
 	private int backupMaxCount = DEFAULT_BACKUP_MAX_COUNT;
 	private MessageSource messageSource;
+	private TaskExecutor taskExecutor;
 
 	private final Map<String, FactoryHelper> factories = new TreeMap<String, FactoryHelper>();
 	private final Map<String, ProviderHelper> providers = new TreeMap<String, ProviderHelper>();
@@ -184,7 +188,6 @@ public class CASettingsService
 	public void onBindFactory(SettingSpecifierProviderFactory provider, Map<String, ?> properties) {
 		log.debug("Bind called on factory {} with props {}", provider, properties);
 		final String factoryPid = provider.getFactoryUID();
-
 		synchronized ( factories ) {
 			factories.put(factoryPid, new FactoryHelper(provider, properties));
 
@@ -194,23 +197,31 @@ public class CASettingsService
 			// key
 			List<KeyValuePair> instanceKeys = settingDao
 					.getSettingValues(getFactorySettingKey(factoryPid));
-			for ( KeyValuePair instanceKey : instanceKeys ) {
-				// when registering an instance from a factory, set the "force" flag so instances
-				// with only defaults are still created
-				SettingsCommand cmd = new SettingsCommand(true);
-				cmd.setProviderKey(factoryPid);
-				cmd.setInstanceKey(instanceKey.getKey());
 
-				// now lookup all settings for the configured instance
-				List<KeyValuePair> settings = settingDao.getSettingValues(
-						getFactoryInstanceSettingKey(factoryPid, instanceKey.getKey()));
-				for ( KeyValuePair setting : settings ) {
-					SettingValueBean bean = new SettingValueBean();
-					bean.setKey(setting.getKey());
-					bean.setValue(setting.getValue());
-					cmd.getValues().add(bean);
+			if ( log.isInfoEnabled() ) {
+				if ( instanceKeys.size() > 0 ) {
+					log.info("Component [{}] registered; {} instances discovered with keys: [{}]",
+							factoryPid, instanceKeys.size(),
+							instanceKeys.stream().map(KeyValuePair::getKey).collect(joining(", ")));
+				} else {
+					log.info("Component [{}] registered; no instances discovered", factoryPid);
 				}
-				updateSettings(cmd);
+			}
+
+			final TaskExecutor executor = getTaskExecutor();
+			for ( KeyValuePair instanceKey : instanceKeys ) {
+				Runnable task = new Runnable() {
+
+					@Override
+					public void run() {
+						addProviderFactoryInstance(factoryPid, instanceKey.getKey(), true);
+					}
+				};
+				if ( executor != null ) {
+					executor.execute(task);
+				} else {
+					task.run();
+				}
 			}
 		}
 	}
@@ -283,19 +294,29 @@ public class CASettingsService
 		final String settingKey = getFactoryInstanceSettingKey(pid, factoryInstanceKey);
 
 		List<KeyValuePair> settings = settingDao.getSettingValues(settingKey);
+
+		if ( log.isInfoEnabled() ) {
+			if ( factoryInstanceKey != null ) {
+				log.info("Component [{}] instance {} registered with {} custom settings", pid,
+						factoryInstanceKey, settings.size());
+			} else {
+				log.info("Component [{}] registered with {} custom settings", pid, settings.size());
+			}
+		}
+
 		if ( settings.size() < 1 ) {
 			return;
 		}
 		SettingsCommand cmd = new SettingsCommand();
+		cmd.setProviderKey(provider.getSettingUID());
+		cmd.setInstanceKey(factoryInstanceKey);
 		for ( KeyValuePair pair : settings ) {
 			SettingValueBean bean = new SettingValueBean();
-			bean.setProviderKey(provider.getSettingUID());
-			bean.setInstanceKey(factoryInstanceKey);
 			bean.setKey(pair.getKey());
 			bean.setValue(pair.getValue());
 			cmd.getValues().add(bean);
 		}
-		updateSettings(cmd);
+		applyConfigurationSettings(cmd);
 	}
 
 	/**
@@ -484,6 +505,26 @@ public class CASettingsService
 
 	private void applySettingsUpdates(final SettingsUpdates updates, final String providerKey,
 			final String instanceKey) {
+		applySettingsUpdates(updates, providerKey, instanceKey, false);
+	}
+
+	/**
+	 * Apply a set of settings updates.
+	 * 
+	 * @param updates
+	 *        the updates to apply
+	 * @param providerKey
+	 *        the provider key
+	 * @param instanceKey
+	 *        if {@code providerKey} is a factory, the factory instance key,
+	 *        otherwise {@literal null}
+	 * @param configurationOnly
+	 *        {@literal true} to only update the associated Configuration Admin
+	 *        {@link Configuration}, {@literal false} to also persist the
+	 *        updates via {@link SettingDao}
+	 */
+	private void applySettingsUpdates(final SettingsUpdates updates, final String providerKey,
+			final String instanceKey, final boolean configurationOnly) {
 		if ( updates == null || providerKey == null || providerKey.isEmpty()
 				|| !(updates.hasSettingKeyPatternsToClean() || updates.hasSettingValueUpdates()) ) {
 			return;
@@ -511,7 +552,9 @@ public class CASettingsService
 				}
 				for ( String key : keysToRemove ) {
 					props.remove(key);
-					settingDao.deleteSetting(settingKey, key);
+					if ( !configurationOnly ) {
+						settingDao.deleteSetting(settingKey, key);
+					}
 				}
 			}
 			for ( SettingsUpdates.Change bean : updates.getSettingValueUpdates() ) {
@@ -521,7 +564,7 @@ public class CASettingsService
 					props.put(bean.getKey(), bean.getValue());
 				}
 
-				if ( !bean.isTransient() ) {
+				if ( !configurationOnly && !bean.isTransient() ) {
 					if ( bean.isRemove() ) {
 						settingDao.deleteSetting(settingKey, bean.getKey());
 					} else {
@@ -529,16 +572,74 @@ public class CASettingsService
 					}
 				}
 			}
-			if ( conf != null && props != null ) {
-				if ( instanceKey != null && !instanceKey.isEmpty() ) {
-					props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceKey);
-				}
-				conf.update(props);
+			if ( instanceKey != null && !instanceKey.isEmpty() ) {
+				props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceKey);
 			}
+			conf.update(props);
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		} catch ( InvalidSyntaxException e ) {
 			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Update Configuration Admin with the provided settings.
+	 * 
+	 * <p>
+	 * The settings are <b>not</b> updated in {@code SettingDao}.
+	 * </p>
+	 * 
+	 * @param cmd
+	 *        the configuration admin settings to update
+	 */
+	private void applyConfigurationSettings(final SettingsCommand cmd) {
+		assert cmd.getProviderKey() != null && cmd.getInstanceKey() != null;
+		final TaskExecutor executor = getTaskExecutor();
+		final Runnable task = new ConfigurationUpdateTask(cmd);
+		if ( executor != null ) {
+			executor.execute(task);
+		} else {
+			task.run();
+		}
+	}
+
+	private static Pattern SENSITVE_PATTERN = Pattern.compile("(apikey|password|secret)",
+			Pattern.CASE_INSENSITIVE);
+
+	private class ConfigurationUpdateTask implements Runnable {
+
+		private final SettingsCommand cmd;
+
+		private ConfigurationUpdateTask(SettingsCommand cmd) {
+			super();
+			this.cmd = cmd;
+		}
+
+		private String toSettingLogEntry(SettingValueBean setting) {
+			String key = setting.getKey();
+			String value = setting.getValue();
+			if ( value != null && key != null && SENSITVE_PATTERN.matcher(key).find() ) {
+				value = "*****";
+			}
+			return format("  %s = %s", key, value);
+		}
+
+		@Override
+		public void run() {
+			if ( log.isInfoEnabled() ) {
+				String msg = cmd.getValues() == null || cmd.getValues().isEmpty() ? "Defaults"
+						: format("{\n%s\n}", cmd.getValues().stream().map(this::toSettingLogEntry)
+								.collect(joining("\n")));
+				if ( cmd.getInstanceKey() != null ) {
+					log.info("Configuring component [{}] instance {} settings: {}", cmd.getProviderKey(),
+							cmd.getInstanceKey(), msg);
+				} else {
+					log.info("Configuring component [{}] settings: {}", cmd.getProviderKey(), msg);
+
+				}
+			}
+			applySettingsUpdates(cmd, cmd.getProviderKey(), cmd.getInstanceKey(), true);
 		}
 	}
 
@@ -560,7 +661,8 @@ public class CASettingsService
 				}
 			}
 			String newInstanceKey = String.valueOf(next);
-			return addProviderFactoryInstance(factoryUID, newInstanceKey);
+			addProviderFactoryInstance(factoryUID, newInstanceKey, false);
+			return newInstanceKey;
 		}
 	}
 
@@ -590,12 +692,15 @@ public class CASettingsService
 			// delete instance values
 			settingDao.deleteSetting(getFactoryInstanceSettingKey(factoryUID, instanceUID));
 
-			addProviderFactoryInstance(factoryUID, instanceUID);
+			addProviderFactoryInstance(factoryUID, instanceUID, false);
 		}
 	}
 
-	private String addProviderFactoryInstance(String factoryUID, String instanceUID) {
-		settingDao.storeSetting(getFactorySettingKey(factoryUID), instanceUID, instanceUID);
+	private void addProviderFactoryInstance(String factoryUID, String instanceUID,
+			boolean configurationOnly) {
+		if ( !configurationOnly ) {
+			settingDao.storeSetting(getFactorySettingKey(factoryUID), instanceUID, instanceUID);
+		}
 		try {
 			Configuration conf = getConfiguration(factoryUID, instanceUID);
 			Dictionary<String, Object> props = conf.getProperties();
@@ -604,7 +709,6 @@ public class CASettingsService
 			}
 			props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceUID);
 			conf.update(props);
-			return instanceUID;
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		} catch ( InvalidSyntaxException e ) {
@@ -1252,15 +1356,15 @@ public class CASettingsService
 		}
 	}
 
-	private Configuration getConfiguration(String providerUID, String factoryInstanceUID)
+	private Configuration getConfiguration(String pid, String instanceKey)
 			throws IOException, InvalidSyntaxException {
 		Configuration conf = null;
-		if ( factoryInstanceUID == null ) {
-			conf = configurationAdmin.getConfiguration(providerUID, null);
+		if ( instanceKey == null || instanceKey.isEmpty() ) {
+			conf = configurationAdmin.getConfiguration(pid, null);
 		} else {
-			conf = findExistingConfiguration(providerUID, factoryInstanceUID);
+			conf = findExistingConfiguration(pid, instanceKey);
 			if ( conf == null ) {
-				conf = configurationAdmin.createFactoryConfiguration(providerUID, null);
+				conf = configurationAdmin.createFactoryConfiguration(pid, null);
 			}
 		}
 		return conf;
@@ -1367,6 +1471,26 @@ public class CASettingsService
 
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
+	}
+
+	/**
+	 * Get an executor to handle asynchronous tasks with.
+	 * 
+	 * @return the executor, or {@literal null}
+	 */
+	public TaskExecutor getTaskExecutor() {
+		return this.taskExecutor;
+	}
+
+	/**
+	 * Set an executor to handle asynchronous tasks with.
+	 * 
+	 * @param taskExecutor
+	 *        the executor to use
+	 * @since 1.9
+	 */
+	public void setTaskExecutor(TaskExecutor taskExecutor) {
+		this.taskExecutor = taskExecutor;
 	}
 
 }
