@@ -184,8 +184,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 			if ( opModesService == null
 					|| !opModesService.isOperationalModeActive(requiredOperationalMode) ) {
 				// don't connect to MQTT because required operational state not active
-				log.info(
-						"Not connecting to SolarFlux because required operational state [{}] not active",
+				log.info("Not connecting to SolarFlux because required operational mode [{}] not active",
 						requiredOperationalMode);
 				return;
 			}
