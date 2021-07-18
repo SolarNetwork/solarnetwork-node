@@ -47,7 +47,7 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 1.6
  */
 public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInteger> {
@@ -112,7 +112,7 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 				prefix + "propertyTypeKey", Character.toString(DEFAULT_PROPERTY_TYPE.toKey()));
 		Map<String, String> propTypeTitles = new LinkedHashMap<String, String>(3);
 		for ( GeneralDatumSamplesType e : EnumSet.of(GeneralDatumSamplesType.Instantaneous,
-				GeneralDatumSamplesType.Accumulating) ) {
+				GeneralDatumSamplesType.Accumulating, GeneralDatumSamplesType.Status) ) {
 			propTypeTitles.put(Character.toString(e.toKey()), e.toString());
 		}
 		propTypeSpec.setValueTitles(propTypeTitles);
