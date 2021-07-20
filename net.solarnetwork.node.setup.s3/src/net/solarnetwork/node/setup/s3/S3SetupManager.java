@@ -93,7 +93,7 @@ import net.solarnetwork.util.StringUtils;
  * Service for provisioning node resources based on versioned resource sets.
  * 
  * @author matt
- * @version 1.6
+ * @version 1.7
  */
 public class S3SetupManager implements FeedbackInstructionHandler {
 
@@ -501,6 +501,11 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			for ( int i = 0; i < objCount; i++, incrementStep() ) {
 				extractPercentComplete = 0;
 				String dataObjKey = objects[i];
+				if ( S3SetupConfiguration.REFRESH_NAMED_PACKAGES_OBJECT.equalsIgnoreCase(dataObjKey) ) {
+					refreshNamedPackages();
+					continue;
+				}
+
 				PlatformPackageService pkgService = packageServiceForArchiveFileName(dataObjKey);
 				if ( pkgService == null ) {
 					log.warn("S3 setup resource {} is not a supported type; skipping", dataObjKey);
@@ -572,6 +577,25 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			return installed;
 		}
 
+		private void refreshNamedPackages() {
+			final PlatformPackageService pkgService = mainPackageService();
+			if ( pkgService == null ) {
+				log.warn("No PlatformPackageService available to refresh packages; skipping.");
+				return;
+			}
+			setState(S3SetupManagerPlatformTaskState.RefreshingAvailablePackages, null);
+			Future<Boolean> boolTaskFuture = pkgService.refreshNamedPackages();
+			try {
+				boolTaskFuture.get(packageActionTimeoutSecs, TimeUnit.SECONDS);
+			} catch ( InterruptedException | ExecutionException e ) {
+				log.warn("Error refreshing packages; continuing anyway: {}", e.getMessage(), e);
+			} catch ( TimeoutException e ) {
+				log.warn("Timeout waiting to refresh packages; continuing anyway.");
+			} finally {
+				incrementStep();
+			}
+		}
+
 		private Set<Path> applySetupPackages(S3SetupConfiguration config) throws IOException {
 			final S3SetupPackageConfiguration[] pkgConfigs = (config != null ? config.getPackages()
 					: null);
@@ -584,17 +608,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 				return Collections.emptySet();
 			}
 
-			setState(S3SetupManagerPlatformTaskState.RefreshingAvailablePackages, null);
-			Future<Boolean> boolTaskFuture = pkgService.refreshNamedPackages();
-			try {
-				boolTaskFuture.get(packageActionTimeoutSecs, TimeUnit.SECONDS);
-			} catch ( InterruptedException | ExecutionException e ) {
-				log.warn("Error refreshing packages; continuing anyway: {}", e.getMessage(), e);
-			} catch ( TimeoutException e ) {
-				log.warn("Timeout waiting to refresh packages; continuing anyway.");
-			} finally {
-				incrementStep();
-			}
+			refreshNamedPackages();
 
 			final Path destBasePath = Paths.get(destinationPath);
 			Set<Path> installed = new LinkedHashSet<>();
@@ -653,7 +667,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			}
 
 			setState(S3SetupManagerPlatformTaskState.CleaningUpPackages, null);
-			boolTaskFuture = pkgService.cleanup();
+			Future<Boolean> boolTaskFuture = pkgService.cleanup();
 			try {
 				boolTaskFuture.get(packageActionTimeoutSecs, TimeUnit.SECONDS);
 			} catch ( InterruptedException | ExecutionException e ) {
