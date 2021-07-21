@@ -51,7 +51,7 @@ import net.solarnetwork.util.ProgressListener;
  * Adaptation of {@link S3ResourceStorageService} to work with node settings.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class NodeS3ResourceStorageService extends BaseIdentifiable
 		implements ResourceStorageService, SettingsChangeObserver, SettingSpecifierProvider {
@@ -74,6 +74,13 @@ public class NodeS3ResourceStorageService extends BaseIdentifiable
 		this.identityService = identityService;
 		this.delegate = new S3ResourceStorageService(executor);
 		this.nodeIdPrefix = true;
+	}
+
+	/**
+	 * Set up once after fully configured.
+	 */
+	public void startup() {
+		configurationChanged(null);
 	}
 
 	@Override
