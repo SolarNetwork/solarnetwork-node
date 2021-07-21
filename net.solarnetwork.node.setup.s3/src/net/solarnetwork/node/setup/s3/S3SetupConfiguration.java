@@ -26,11 +26,24 @@ package net.solarnetwork.node.setup.s3;
  * Metadata about an S3 setup.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class S3SetupConfiguration {
 
 	public static final String DEFAULT_CLEAN_PATHS = "{osgi.configuration.area}/config.ini";
+
+	/**
+	 * Special {@code objectKey} value to signal that named packages should be
+	 * refreshed.
+	 * 
+	 * <p>
+	 * This can be used to ensure updated dependencies are available for
+	 * subsequent objects.
+	 * </p>
+	 * 
+	 * @since 1.2
+	 */
+	public static final String REFRESH_NAMED_PACKAGES_OBJECT = "_refreshPackages";
 
 	private String version;
 	private String objectKey;

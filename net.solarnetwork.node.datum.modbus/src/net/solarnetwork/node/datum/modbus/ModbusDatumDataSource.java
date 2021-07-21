@@ -158,8 +158,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		d.setCreated(new Date(currSample.getDataTimestamp()));
 		d.setSourceId(resolvePlaceholders(sourceId));
 		populateDatumProperties(currSample, d, propConfigs);
-		populateDatumProperties(currSample, d, virtualMeterConfigs);
 		populateDatumProperties(currSample, d, getExpressionConfigs());
+		populateDatumProperties(currSample, d, virtualMeterConfigs);
 		d = applySamplesTransformer(d, xformProps);
 		if ( d == null ) {
 			return null;
@@ -177,8 +177,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 			return;
 		}
 		for ( ModbusPropertyConfig conf : propConfs ) {
-			// skip configurations without a property to set
-			if ( conf.getPropertyKey() == null || conf.getPropertyKey().length() < 1 ) {
+			// skip configurations without full configuration set
+			if ( !conf.isValid() ) {
 				continue;
 			}
 			Object propVal = null;

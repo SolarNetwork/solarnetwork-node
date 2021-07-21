@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -78,7 +80,7 @@ import net.solarnetwork.web.support.MultipartFileResource;
  * Web controller for the settings UI.
  * 
  * @author matt
- * @version 1.9
+ * @version 1.10
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -241,10 +243,21 @@ public class SettingsController {
 
 	@RequestMapping(value = "/save", method = RequestMethod.POST)
 	@ResponseBody
-	public Response<Object> saveSettings(SettingsCommand command, ModelMap model) {
+	public Response<Object> saveSettings(CleanSupportSettingsCommand command, ModelMap model) {
 		final SettingsService service = settingsServiceTracker.service();
+		SettingsCommand cmd = command;
 		if ( service != null ) {
-			service.updateSettings(command);
+			if ( command.getSettingKeyPrefixToClean() != null ) {
+				String prefix = command.getSettingKeyPrefixToClean();
+				try {
+					Pattern pat = Pattern.compile(Pattern.quote(prefix) + ".*");
+					cmd = new SettingsCommand(command.getValues(), Collections.singleton(pat));
+				} catch ( PatternSyntaxException e ) {
+					throw new IllegalArgumentException(
+							"The settingKeyPrefixToClean expression is invlalid.");
+				}
+			}
+			service.updateSettings(cmd);
 		}
 		return response(null);
 	}
@@ -413,6 +426,43 @@ public class SettingsController {
 		public String getFilename() {
 			return filename;
 		}
+	}
+
+	/**
+	 * Internal settings command to support path clean prefix.
+	 * 
+	 * @since 1.10
+	 */
+	public static final class CleanSupportSettingsCommand extends SettingsCommand {
+
+		private String settingKeyPrefixToClean;
+
+		/**
+		 * Constructor.
+		 */
+		public CleanSupportSettingsCommand() {
+			super();
+		}
+
+		/**
+		 * Get a prefix path to clean during the settings update.
+		 * 
+		 * @return the prefix path, or {@literal null}
+		 */
+		public String getSettingKeyPrefixToClean() {
+			return settingKeyPrefixToClean;
+		}
+
+		/**
+		 * Set a prefix path to clean during the settings update.
+		 * 
+		 * @param settingKeyPrefixToClean
+		 *        the prefix to clean
+		 */
+		public void setSettingKeyPrefixToClean(String settingKeyPrefixToClean) {
+			this.settingKeyPrefixToClean = settingKeyPrefixToClean;
+		}
+
 	}
 
 }
