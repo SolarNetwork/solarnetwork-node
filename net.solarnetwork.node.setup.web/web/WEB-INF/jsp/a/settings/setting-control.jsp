@@ -320,7 +320,8 @@
 							key: '${settingId}',
 							provider: '${provider.settingUID}',
 							setting: '${setup:js(setting.key)}Count',
-							instance: '${instanceId}'
+							instance: '${instanceId}',
+							indexed: '${setup:js(setting.key)}'
 						});
 					});
 					</script>

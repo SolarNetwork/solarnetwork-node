@@ -272,7 +272,9 @@ SolarNode.Settings.addGroupedSetting = function(params) {
 		var newCount = count - 1;
 		container.find('button').attr('disabled', 'disabled');
 		SolarNode.Settings.updateSetting(params, newCount);
-		SolarNode.Settings.saveUpdates(url, undefined, delayedReload);
+		SolarNode.Settings.saveUpdates(url, undefined, delayedReload, {
+			'settingKeyPrefixToClean' : params.indexed +'['+newCount+']'
+		});
 	}).each(function() {
 		if ( count < 1 ) {
 			$(this).attr('disabled', 'disabled');
@@ -296,8 +298,9 @@ SolarNode.Settings.addFile = function(params) {
  * @param msg.success {String} the message to display for a successful post
  * @param msg.error {String} the message to display for an error post
  * @param resultCallback {Function} optional callback to invoke after updates saved, passed error as parameter
+ * @param extraFormData {Object} any extra form data to include in the submission
  */
-SolarNode.Settings.saveUpdates = function(url, msg, resultCallback) {
+SolarNode.Settings.saveUpdates = function(url, msg, resultCallback, extraFormData) {
 	var updates = SolarNode.Settings.updates;
 	var formData = '';
 	var i = 0;
@@ -315,6 +318,14 @@ SolarNode.Settings.saveUpdates = function(url, msg, resultCallback) {
 			formData += '&values[' +i+'].key=' +encodeURIComponent(key);
 			formData += '&values[' +i+'].value=' +encodeURIComponent(updates[providerKey][key].value);
 			i++;
+		}
+	}
+	if ( extraFormData ) {
+		for ( key in extraFormData ) {
+			if ( formData.length > 0 ) {
+				formData += '&';
+			}
+			formData += encodeURIComponent(key) + '=' + encodeURIComponent(extraFormData[key]);
 		}
 	}
 	var buttons = {};
