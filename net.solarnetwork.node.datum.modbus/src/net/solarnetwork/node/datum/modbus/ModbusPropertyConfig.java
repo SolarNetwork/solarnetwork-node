@@ -43,15 +43,15 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integer> {
 
 	private ModbusReadFunction function;
 	private ModbusDataType dataType;
-	private int wordLength;
+	private Integer wordLength;
 	private BigDecimal unitMultiplier;
-	private int decimalScale;
+	private Integer decimalScale;
 
 	/**
 	 * Default constructor.
@@ -60,9 +60,9 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 		super(null, GeneralDatumSamplesType.Instantaneous, 0);
 		dataType = ModbusDataType.Float32;
 		function = ModbusReadFunction.ReadHoldingRegister;
-		wordLength = 1;
-		unitMultiplier = BigDecimal.ONE;
-		decimalScale = 0;
+		setWordLength(1);
+		setUnitMultiplier(BigDecimal.ONE);
+		setDecimalScale(0);
 	}
 
 	/**
@@ -148,9 +148,22 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 		super(name, datumPropertyType, address);
 		this.function = ModbusReadFunction.ReadHoldingRegister;
 		this.dataType = dataType;
-		this.wordLength = wordLength;
-		this.unitMultiplier = unitMultiplier;
-		this.decimalScale = decimalScale;
+		setWordLength(wordLength);
+		setUnitMultiplier(unitMultiplier);
+		setDecimalScale(decimalScale);
+	}
+
+	/**
+	 * Test if this configuration appears to be vaild.
+	 * 
+	 * @return {@literal true} if the configuration has all necessary properties
+	 *         configured
+	 */
+	public boolean isValid() {
+		Integer address = getAddress();
+		String propName = getName();
+		return (address != null && address.intValue() >= 0 && propName != null && !propName.isEmpty()
+				&& function != null && dataType != null);
 	}
 
 	/**
@@ -487,9 +500,9 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	 * This is only used for data types of unknown length, like strings.
 	 * </p>
 	 * 
-	 * @return the register count to read
+	 * @return the register count to read, never {@literal null}
 	 */
-	public int getWordLength() {
+	public Integer getWordLength() {
 		return wordLength;
 	}
 
@@ -501,11 +514,12 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	 * </p>
 	 * 
 	 * @param wordLength
-	 *        the register count to read
+	 *        the register count to read; if {@literal null} or less than
+	 *        {@literal 1} then {@literal 1} will be set
 	 */
-	public void setWordLength(int wordLength) {
-		if ( wordLength < 1 ) {
-			return;
+	public void setWordLength(Integer wordLength) {
+		if ( wordLength == null || wordLength < 1 ) {
+			wordLength = 1;
 		}
 		this.wordLength = wordLength;
 	}
@@ -518,9 +532,9 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	 * returns {@literal null}.
 	 * </p>
 	 * 
-	 * @return the register address
+	 * @return the register address, never {@literal null}
 	 */
-	public int getAddress() {
+	public Integer getAddress() {
 		Integer addr = getConfig();
 		return (addr != null ? addr : 0);
 	}
@@ -536,14 +550,14 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	 * @param address
 	 *        the register address to set
 	 */
-	public void setAddress(int address) {
+	public void setAddress(Integer address) {
 		setConfig(address);
 	}
 
 	/**
 	 * Get the unit multiplier.
 	 * 
-	 * @return the multiplier
+	 * @return the multiplier, never {@literal null}
 	 */
 	public BigDecimal getUnitMultiplier() {
 		return unitMultiplier;
@@ -561,18 +575,22 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	 * </p>
 	 * 
 	 * @param unitMultiplier
-	 *        the mutliplier to set
+	 *        the mutliplier to set; if {@literal null} then {@literal 1} will
+	 *        be set instead
 	 */
 	public void setUnitMultiplier(BigDecimal unitMultiplier) {
+		if ( unitMultiplier == null ) {
+			unitMultiplier = BigDecimal.ONE;
+		}
 		this.unitMultiplier = unitMultiplier;
 	}
 
 	/**
 	 * Get the decimal scale to round decimal numbers to.
 	 * 
-	 * @return the decimal scale
+	 * @return the decimal scale, never {@literal null}
 	 */
-	public int getDecimalScale() {
+	public Integer getDecimalScale() {
 		return decimalScale;
 	}
 
@@ -587,9 +605,13 @@ public class ModbusPropertyConfig extends GeneralDatumSamplePropertyConfig<Integ
 	 * </p>
 	 * 
 	 * @param decimalScale
-	 *        the scale to set, or {@literal -1} to disable rounding completely
+	 *        the scale to set, or {@literal -1} to disable rounding completely;
+	 *        if {@literal null} then {@literal 0} will be set
 	 */
-	public void setDecimalScale(int decimalScale) {
+	public void setDecimalScale(Integer decimalScale) {
+		if ( decimalScale == null ) {
+			decimalScale = 0;
+		}
 		this.decimalScale = decimalScale;
 	}
 

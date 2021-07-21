@@ -177,8 +177,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 			return;
 		}
 		for ( ModbusPropertyConfig conf : propConfs ) {
-			// skip configurations without a property to set
-			if ( conf.getPropertyKey() == null || conf.getPropertyKey().length() < 1 ) {
+			// skip configurations without full configuration set
+			if ( !conf.isValid() ) {
 				continue;
 			}
 			Object propVal = null;
