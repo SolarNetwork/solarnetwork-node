@@ -95,7 +95,7 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 1.10
+ * @version 1.11
  */
 public class FluxUploadService extends BaseMqttConnectionService implements EventHandler,
 		SettingSpecifierProvider, SettingsChangeObserver, MqttConnectionObserver {
@@ -189,6 +189,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 				return;
 			}
 		}
+		configurationChanged(null);
 		super.init();
 	}
 

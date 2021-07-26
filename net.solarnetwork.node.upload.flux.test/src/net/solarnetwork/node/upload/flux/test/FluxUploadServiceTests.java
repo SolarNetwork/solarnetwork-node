@@ -89,7 +89,7 @@ import net.solarnetwork.util.StaticOptionalServiceCollection;
  * Test cases for the {@link FluxUploadService} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class FluxUploadServiceTests {
 
@@ -102,6 +102,7 @@ public class FluxUploadServiceTests {
 	private MqttMessageDao messageDao;
 	private ObjectEncoder encoder;
 	private OperationalModesService operationalModeService;
+	private GeneralDatumSamplesTransformService xformService;
 	private Long nodeId;
 	private FluxUploadService service;
 
@@ -114,23 +115,25 @@ public class FluxUploadServiceTests {
 		encoder = EasyMock.createMock(ObjectEncoder.class);
 		operationalModeService = EasyMock.createMock(OperationalModesService.class);
 		objectMapper = new ObjectMapper();
+		xformService = EasyMock.createMock(GeneralDatumSamplesTransformService.class);
 
 		nodeId = Math.abs(UUID.randomUUID().getMostSignificantBits());
 
 		this.service = new FluxUploadService(connectionFactory, objectMapper, identityService);
 		this.service.setIncludeVersionTag(false);
 		service.setOpModesService(operationalModeService);
+		service.setTransformServices(new StaticOptionalServiceCollection<>(singleton(xformService)));
 	}
 
 	private void replayAll() {
 		EasyMock.replay(connectionFactory, connection, identityService, encoder, operationalModeService,
-				messageDao);
+				messageDao, xformService);
 	}
 
 	@After
 	public void teardown() {
 		EasyMock.verify(connectionFactory, connection, identityService, encoder, operationalModeService,
-				messageDao);
+				messageDao, xformService);
 	}
 
 	private void expectMqttConnectionSetup() throws IOException {
@@ -540,6 +543,55 @@ public class FluxUploadServiceTests {
 		filteredDatum.remove("foo");
 		filteredDatum.remove("sourceId");
 		assertMessage(publishedMsg, TEST_SOURCE_ID, filteredDatum);
+	}
+
+	@Test
+	public void postDatum_includeProps_withXformFilter() throws Exception {
+		// GIVEN
+		FluxFilterConfig filter = new FluxFilterConfig();
+		filter.setSourceIdRegexValue("test");
+		filter.setPropIncludeValues(new String[] { "^watt" });
+		filter.configurationChanged(null);
+		filter.setTransformServiceUid("test.filter");
+		service.setFilters(new FluxFilterConfig[] { filter });
+
+		expectMqttConnectionSetup();
+
+		expect(xformService.getUid()).andReturn("test.filter").anyTimes();
+		Capture<GeneralDatumSamples> samplesCaptor = new Capture<>();
+		GeneralDatumSamples xformed = new GeneralDatumSamples();
+		xformed.putInstantaneousSampleValue("wattsX", 12345);
+		xformed.putInstantaneousSampleValue("wattHoursX", 23456);
+		xformed.putStatusSampleValue("wattFoo", "bar");
+		expect(xformService.transformSamples(anyObject(), capture(samplesCaptor), anyObject()))
+				.andReturn(xformed);
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		Map<String, Object> datum = new HashMap<>(4);
+		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
+		datum.put("watts", 1234);
+		datum.put("wattHours", 2345);
+		datum.put("foo", 3456);
+		postEvent(datum);
+
+		// THEN
+		MqttMessage publishedMsg = msgCaptor.getValue();
+
+		Map<String, Object> filteredDatum = new LinkedHashMap<>(xformed.getInstantaneous());
+		filteredDatum.put("wattFoo", "bar");
+		assertMessage(publishedMsg, TEST_SOURCE_ID, filteredDatum);
+
+		GeneralDatumSamples filterInput = samplesCaptor.getValue();
+		assertThat("Input watts", filterInput.getInstantaneousSampleInteger("watts"), is(equalTo(1234)));
+		assertThat("Input wattHours", filterInput.getInstantaneousSampleInteger("wattHours"),
+				is(equalTo(2345)));
+		assertThat("Input foo", filterInput.getInstantaneousSampleInteger("foo"), is(equalTo(3456)));
 	}
 
 	@Test
