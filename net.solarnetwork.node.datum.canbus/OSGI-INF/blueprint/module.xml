@@ -167,7 +167,7 @@
 						<map>
 							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
 							<entry key="datumDataSource">
-								<bean class="net.solarnetwork.node.datum.canbus.CanbusDatumDataSource">
+								<bean class="net.solarnetwork.node.datum.canbus.CanbusDatumDataSource" init-method="serviceDidStartup">
 									<property name="taskScheduler" ref="taskScheduler"/>
 									<property name="datumMetadataService" ref="datumMetadataService"/>
 									<property name="eventAdmin" ref="eventAdmin"/>

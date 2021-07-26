@@ -44,7 +44,10 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.domain.datum.ObjectDatumKind;
+import net.solarnetwork.domain.datum.ObjectDatumStreamMetadata;
 import net.solarnetwork.external.indriya.IndriyaMeasurementServiceProvider;
 import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.datum.canbus.CanbusDatumDataSource;
@@ -67,7 +70,6 @@ import net.solarnetwork.node.settings.SettingsUpdates;
 import net.solarnetwork.support.SearchFilter;
 import net.solarnetwork.util.ByteUtils;
 import net.solarnetwork.util.ClassUtils;
-import net.solarnetwork.util.JsonUtils;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StaticOptionalService;
 import net.solarnetwork.util.StaticOptionalServiceCollection;
@@ -86,7 +88,7 @@ import tech.units.indriya.spi.DefaultServiceProvider;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class CanbusDatumDataSourceSimulator {
 
@@ -267,6 +269,12 @@ public class CanbusDatumDataSourceSimulator {
 
 		@Override
 		public GeneralDatumMetadata getSourceMetadata(String sourceId) {
+			return null;
+		}
+
+		@Override
+		public ObjectDatumStreamMetadata getDatumStreamMetadata(ObjectDatumKind kind, Long objectId,
+				String sourceId) {
 			return null;
 		}
 
