@@ -25,6 +25,7 @@ package net.solarnetwork.node.datum.filter.std;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -37,15 +38,17 @@ import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.node.support.BaseSamplesTransformSupport;
+import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.support.BasicIdentifiable;
 
 /**
  * Support class for sample transformers.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
-public class SamplesTransformerSupport extends BaseSamplesTransformSupport {
+public class SamplesTransformerSupport extends BaseSamplesTransformSupport
+		implements SettingsChangeObserver {
 
 	/** The default value for the {@code settingCacheSecs} property. */
 	public static final int DEFAULT_SETTING_CACHE_SECS = 15;
@@ -87,6 +90,18 @@ public class SamplesTransformerSupport extends BaseSamplesTransformSupport {
 	}
 
 	/**
+	 * Call to initialize the instance after properties are configured.
+	 */
+	public void init() {
+		configurationChanged(null);
+	}
+
+	@Override
+	public void configurationChanged(Map<String, Object> props) {
+		setSettingKey(String.format(SETTING_KEY_TEMPLATE, getUid() != null ? getUid() : DEFAULT_UID));
+	}
+
+	/**
 	 * Get settings for the configurable properties of
 	 * {@link BasicIdentifiable}.
 	 * 
@@ -96,8 +111,6 @@ public class SamplesTransformerSupport extends BaseSamplesTransformSupport {
 	 * {@code excludeBaseIdentifiableSettings} is {@literal true}.
 	 * </p>
 	 * 
-	 * @param prefix
-	 *        an optional prefix to include in all setting keys
 	 * @return the settings
 	 * @see BaseIdentifiable#baseIdentifiableSettings(String, String, String)
 	 * @since 1.3

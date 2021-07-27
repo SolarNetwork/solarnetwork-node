@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.datum.filter.test;
 
-import static java.lang.String.format;
 import static net.solarnetwork.node.datum.filter.std.SamplesTransformerSupport.SETTING_KEY_TEMPLATE;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
@@ -222,7 +221,7 @@ public class PropertyFilterSampleTransformerTests {
 		PropertyFilterSamplesTransformer xform = new PropertyFilterSamplesTransformer();
 		xform.setSettingDao(settingDao);
 		xform.setSettingCacheSecs(TEST_SETTING_CACHE_SECS);
-		xform.setSettingKey(format(PropertyFilterSamplesTransformer.SETTING_KEY_TEMPLATE, TEST_UID));
+		xform.setUid(TEST_UID);
 		xform.setSourceId("^test");
 		xform.setPropIncludes(new PropertyFilterConfig[] { new PropertyFilterConfig("^watt", 1) });
 		xform.init();
@@ -292,7 +291,7 @@ public class PropertyFilterSampleTransformerTests {
 		PropertyFilterSamplesTransformer xform = new PropertyFilterSamplesTransformer();
 		xform.setSettingDao(settingDao);
 		xform.setSettingCacheSecs(TEST_SETTING_CACHE_SECS);
-		xform.setSettingKey(format(PropertyFilterSamplesTransformer.SETTING_KEY_TEMPLATE, TEST_UID));
+		xform.setUid(TEST_UID);
 		xform.setSourceId("^test");
 		xform.setPropIncludes(new PropertyFilterConfig[] { new PropertyFilterConfig("^watt", 1) });
 		xform.init();
@@ -364,7 +363,7 @@ public class PropertyFilterSampleTransformerTests {
 		PropertyFilterSamplesTransformer xform = new PropertyFilterSamplesTransformer();
 		xform.setSettingDao(settingDao);
 		xform.setSettingCacheSecs(TEST_SETTING_CACHE_SECS);
-		xform.setSettingKey(format(PropertyFilterSamplesTransformer.SETTING_KEY_TEMPLATE, TEST_UID));
+		xform.setUid(TEST_UID);
 		xform.setSourceId("^test");
 		xform.setPropIncludes(new PropertyFilterConfig[] { new PropertyFilterConfig("^watt", 1) });
 		xform.init();
@@ -428,7 +427,7 @@ public class PropertyFilterSampleTransformerTests {
 		PropertyFilterSamplesTransformer xform = new PropertyFilterSamplesTransformer();
 		xform.setSettingDao(settingDao);
 		xform.setSettingCacheSecs(TEST_SETTING_CACHE_SECS);
-		xform.setSettingKey(format(PropertyFilterSamplesTransformer.SETTING_KEY_TEMPLATE, TEST_UID));
+		xform.setUid(TEST_UID);
 		xform.setSourceId("^test");
 		xform.setPropIncludes(new PropertyFilterConfig[] { new PropertyFilterConfig("^watts$", 1),
 				new PropertyFilterConfig("^wattHours$", 3) });
