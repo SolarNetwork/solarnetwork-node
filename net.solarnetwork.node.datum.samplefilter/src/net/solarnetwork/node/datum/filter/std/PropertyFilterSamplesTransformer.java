@@ -51,7 +51,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * </p>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 		implements GeneralDatumSamplesTransformer, SettingSpecifierProvider, SettingsChangeObserver {
@@ -209,12 +209,14 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 	/**
 	 * Call to initialize the instance after properties are configured.
 	 */
+	@Override
 	public void init() {
-		configurationChanged(null);
+		super.init();
 	}
 
 	@Override
 	public void configurationChanged(Map<String, Object> props) {
+		super.configurationChanged(props);
 		// backwards compatibility support for the old String[] includes configuration
 		if ( props != null && props.containsKey("includesCount") ) {
 			final int includeCount = Integer.parseInt(props.get("includesCount").toString());

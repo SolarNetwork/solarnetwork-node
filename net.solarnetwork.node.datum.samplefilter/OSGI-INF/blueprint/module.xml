@@ -175,7 +175,7 @@
 	</service>
 
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.throttle" 
-		autowire-on-update="true">
+		autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.domain.GeneralDatumSamplesTransformer</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
@@ -189,7 +189,7 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.datum.filter.std.SourceThrottlingSamplesTransformer">
+		<bean class="net.solarnetwork.node.datum.filter.std.SourceThrottlingSamplesTransformer" init-method="init">
 			<property name="settingDao" ref="settingDao"/>
 			<property name="messageSource" ref="sourceThrottleMessageSource"/>
 			<property name="opModesService" ref="opModesService"/>
@@ -250,7 +250,7 @@
 		<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService">
 			<argument value="net.solarnetwork.node.datum.samplefilter.limiter"/>
 			<property name="sampleTransformer">
-				<bean class="net.solarnetwork.node.datum.filter.std.SourceThrottlingSamplesTransformer">
+				<bean class="net.solarnetwork.node.datum.filter.std.SourceThrottlingSamplesTransformer" init-method="init">
 					<property name="settingDao" ref="settingDao"/>
 					<property name="messageSource" ref="sourceThrottleMessageSource"/>
 					<property name="excludeBaseIdentifiableSettings" value="true"/>

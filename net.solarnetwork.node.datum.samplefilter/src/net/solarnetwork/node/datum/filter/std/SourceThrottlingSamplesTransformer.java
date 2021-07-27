@@ -25,22 +25,22 @@ package net.solarnetwork.node.datum.filter.std;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.node.Identifiable;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingsChangeObserver;
 
 /**
  * {@link GeneralDatumSamplesTransformer} that can filter out samples based on a
  * basic frequency constraint.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class SourceThrottlingSamplesTransformer extends SamplesTransformerSupport
-		implements GeneralDatumSamplesTransformer, SettingSpecifierProvider, Identifiable {
+		implements GeneralDatumSamplesTransformer, SettingSpecifierProvider, SettingsChangeObserver {
 
 	/**
 	 * The default interval at which to save {@code Datum} instances, in
