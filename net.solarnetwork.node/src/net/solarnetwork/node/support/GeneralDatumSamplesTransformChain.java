@@ -55,7 +55,7 @@ import net.solarnetwork.util.WeakValueConcurrentHashMap;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 		implements GeneralDatumSamplesTransformService, SettingSpecifierProvider {
@@ -236,6 +236,9 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
 			Map<String, Object> parameters) {
+		if ( !operationalModeMatches() ) {
+			return samples;
+		}
 		Map<String, Object> p = parameters;
 		if ( staticService != null ) {
 			if ( p == null ) {

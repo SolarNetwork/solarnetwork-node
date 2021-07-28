@@ -278,6 +278,7 @@
 			<argument value="true"/>
 			<argument><null/></argument>
 			<property name="messageSource" ref="userDatumFilterChainMessageSource"/>
+			<property name="opModesService" ref="opModesService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
