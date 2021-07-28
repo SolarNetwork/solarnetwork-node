@@ -71,7 +71,7 @@ import net.solarnetwork.util.OptionalService;
  * Default implementation of {@link OperationalModesService}.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class DefaultOperationalModesService extends BaseIdentifiable
 		implements OperationalModesService, InstructionHandler, SettingSpecifierProvider {
@@ -370,6 +370,10 @@ public class DefaultOperationalModesService extends BaseIdentifiable
 		mode = mode.toLowerCase();
 		if ( mode.charAt(0) == '!' ) {
 			mode = mode.substring(1);
+			if ( mode.isEmpty() ) {
+				// inverted default, so false if ANY mode active
+				return !activeModes.isEmpty();
+			}
 			inverted = true;
 		}
 		Long exp = activeModes.get(mode);

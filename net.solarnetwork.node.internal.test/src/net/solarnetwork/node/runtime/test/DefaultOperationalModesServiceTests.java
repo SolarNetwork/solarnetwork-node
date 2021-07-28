@@ -237,6 +237,33 @@ public class DefaultOperationalModesServiceTests {
 	}
 
 	@Test
+	public void isActive_empty_inverted_no() {
+		// GIVEN
+
+		// WHEN
+		replayAll();
+		boolean result = service.isOperationalModeActive("!");
+
+		// THEN
+		assertThat("Invertered empty is default is not active unless some mode active", result,
+				is(equalTo(false)));
+	}
+
+	@Test
+	public void isActive_empty_inverted_yes() {
+		// GIVEN
+		activeModeCache.put("test", DefaultOperationalModesService.NO_EXPIRATION);
+
+		// WHEN
+		replayAll();
+		boolean result = service.isOperationalModeActive("!");
+
+		// THEN
+		assertThat("Invertered empty is default is active when some mode active", result,
+				is(equalTo(true)));
+	}
+
+	@Test
 	public void isActive_no() {
 		// GIVEN
 
