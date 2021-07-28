@@ -433,7 +433,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable
 			}
 		}
 		if ( toActivate == null ) {
-			// no chnage
+			// no change
 			return activeOperationalModes();
 		}
 		SettingDao dao = settingDao.service();
@@ -490,7 +490,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable
 			}
 		}
 		if ( toDeactivate == null ) {
-			// no chnage
+			// no change
 			return active;
 		}
 		SettingDao dao = settingDao.service();
