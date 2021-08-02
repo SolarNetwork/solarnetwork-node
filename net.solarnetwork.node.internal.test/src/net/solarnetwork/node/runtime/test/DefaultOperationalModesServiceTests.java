@@ -245,8 +245,8 @@ public class DefaultOperationalModesServiceTests {
 		boolean result = service.isOperationalModeActive("!");
 
 		// THEN
-		assertThat("Invertered empty is default is not active unless some mode active", result,
-				is(equalTo(false)));
+		assertThat("Invertered empty is default is active when no mode active", result,
+				is(equalTo(true)));
 	}
 
 	@Test
@@ -259,8 +259,8 @@ public class DefaultOperationalModesServiceTests {
 		boolean result = service.isOperationalModeActive("!");
 
 		// THEN
-		assertThat("Invertered empty is default is active when some mode active", result,
-				is(equalTo(true)));
+		assertThat("Invertered empty is default is not active when some mode active", result,
+				is(equalTo(false)));
 	}
 
 	@Test
