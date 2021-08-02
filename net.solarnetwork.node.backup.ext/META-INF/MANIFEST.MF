@@ -1,9 +1,9 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: SolarNode External Filesystem Backup
+Bundle-Name:  Backup External Filesystems
 Bundle-Description: Backup device filesystem resources.
 Bundle-SymbolicName: net.solarnetwork.node.backup.ext
-Bundle-Version: 1.0.0
+Bundle-Version: 1.0.1
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.backup.ext
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
