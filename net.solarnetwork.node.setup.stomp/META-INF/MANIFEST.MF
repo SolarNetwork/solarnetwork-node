@@ -1,0 +1,40 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Setup via STOMP
+Bundle-Description: Provides a TCP server using the STOMP protocol for setup 
+ integration with external applications.
+Bundle-SymbolicName: net.solarnetwork.node.setup.stomp
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Automatic-Module-Name: net.solarnetwork.node.setup.stomp
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Import-Package: 
+ io.netty.bootstrap;version="[4.1,5.0)",
+ io.netty.buffer;version="[4.1,5.0)",
+ io.netty.channel;version="[4.1,5.0)",
+ io.netty.channel.nio;version="[4.1,5.0)",
+ io.netty.channel.socket;version="[4.1,5.0)",
+ io.netty.channel.socket.nio;version="[4.1,5.0)",
+ io.netty.handler.codec;version="[4.1,5.0)",
+ io.netty.handler.codec.stomp;version="[4.1,5.0)",
+ io.netty.handler.logging;version="[4.1,5.0)",
+ io.netty.handler.timeout;version="[4.1,5.0)",
+ io.netty.resolver;version="[4.1,5.0)",
+ io.netty.util;version="[4.1,5.0)",
+ io.netty.util.collection;version="[4.1,5.0)",
+ io.netty.util.concurrent;version="[4.1,5.0)",
+ net.solarnetwork.node.reactor;version="[1.8,2.0)",
+ net.solarnetwork.node.reactor.support;version="[1.5,2.0)",
+ net.solarnetwork.node.settings;version="[1.15,2.0)",
+ net.solarnetwork.node.settings.support;version="[1.12,2.0)",
+ net.solarnetwork.node.support;version="[1.27,2.0)",
+ net.solarnetwork.settings;version="[1.2,2.0)",
+ org.slf4j;version="[1.7,2.0)",
+ org.springframework.asm;version="[4.3,5.0)",
+ org.springframework.beans;version="[4.3,5.0)",
+ org.springframework.beans.factory;version="[4.3,5.0)",
+ org.springframework.context;version="[4.3,5.0)",
+ org.springframework.context.support;version="[4.3,5.0)",
+ org.springframework.core.task;version="[4.3,5.0)",
+ org.springframework.scheduling;version="[4.3,5.0)",
+ org.springframework.util;version="[4.3,5.0)"
