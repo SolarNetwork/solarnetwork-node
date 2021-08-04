@@ -1108,7 +1108,7 @@ public class CASettingsService
 					FileCopyUtils.copy(r.getInputStream(),
 							new BufferedOutputStream(new FileOutputStream(outFile)));
 				}
-				log.info("Imported setting resource {}", out);
+				log.debug("Imported setting resource {}", out);
 				finalResources.add(new FileSystemResource(outFile));
 				i++;
 			} catch ( IOException e ) {
