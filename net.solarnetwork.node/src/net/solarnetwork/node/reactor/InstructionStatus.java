@@ -24,12 +24,13 @@ package net.solarnetwork.node.reactor;
 
 import java.util.Date;
 import java.util.Map;
+import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
 
 /**
  * Status information for a single Instruction.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public interface InstructionStatus {
 
@@ -158,5 +159,27 @@ public interface InstructionStatus {
 	 */
 	InstructionStatus newCopyWithAcknowledgedState(InstructionState newState,
 			Map<String, ?> resultParameters);
+
+	/**
+	 * Create a new status for a given instruction.
+	 * 
+	 * @param instruction
+	 *        the instruction, or {@literal null}
+	 * @param state
+	 *        the new state
+	 * @param date
+	 *        the status date
+	 * @param resultParameters
+	 *        the optional result parameters
+	 * @return the status, never {@literal null}
+	 * @since 1.2
+	 */
+	static InstructionStatus createStatus(Instruction instruction, InstructionState state, Date date,
+			Map<String, ?> resultParameters) {
+		final InstructionStatus status = (instruction != null ? instruction.getStatus() : null);
+		return (status != null ? status.newCopyWithState(state, resultParameters)
+				: new BasicInstructionStatus(instruction != null ? instruction.getId() : null, state,
+						date != null ? date : new Date(), null, resultParameters));
+	}
 
 }

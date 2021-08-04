@@ -28,7 +28,7 @@ import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
  * API to be implemented by a service that can handle instructions.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public interface InstructionHandler {
 
@@ -101,6 +101,32 @@ public interface InstructionHandler {
 	 * @since 1.4
 	 */
 	String TOPIC_SIGNAL = "Signal";
+
+	/**
+	 * The instruction topic for system configuration.
+	 * 
+	 * <p>
+	 * A {@link #PARAM_SERVICE} parameter must be provided that specifies the
+	 * system service to apply the configuration to. Each service may define
+	 * additional parameters that can be configured.
+	 * </p>
+	 * 
+	 * @since 1.5
+	 */
+	String TOPIC_SYSTEM_CONFIGURE = "SystemConfigure";
+
+	/**
+	 * An instruction parameter for a service name.
+	 * 
+	 * <p>
+	 * The nature of this parameter depends on the topic it is associated with.
+	 * Generally it is meant to refer to the name of some service to be operated
+	 * on.
+	 * </p>
+	 * 
+	 * @since 1.5
+	 */
+	String PARAM_SERVICE = "service";
 
 	/**
 	 * Test if a topic is handled by this handler.
