@@ -422,6 +422,56 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 	}
 
 	@Test
+	public void uploadWithConnectionToMqttServer_streamMismatch_empty() throws IOException {
+		// GIVEN
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setCreated(new Date());
+		datum.setSourceId("test.source");
+		datum.putInstantaneousSampleValue("foo", 123);
+
+		// stream metadata available
+		BasicObjectDatumStreamMetadata meta = new BasicObjectDatumStreamMetadata(UUID.randomUUID(),
+				"Pacific/Auckland", ObjectDatumKind.Node, nodeId, "test.source", null, null, null);
+		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Node, nodeId,
+				datum.getSourceId())).andReturn(meta);
+
+		Capture<Event> eventCaptor = new Capture<Event>();
+		eventAdminService.postEvent(capture(eventCaptor));
+
+		replayAll();
+
+		// WHEN
+		String txId = service.uploadDatum(datum);
+
+		stopMqttServer(); // to flush messages
+
+		// THEN
+		assertThat("TX ID", txId, notNullValue());
+
+		TestingInterceptHandler session = getTestingInterceptHandler();
+		assertThat("Connected to broker", session.connectMessages, hasSize(1));
+
+		InterceptConnectMessage connMsg = session.connectMessages.get(0);
+		assertThat("Connect client ID", connMsg.getClientID(), equalTo(nodeId.toString()));
+		assertThat("Durable session", connMsg.isCleanSession(), equalTo(true));
+
+		assertThat("Published datum", session.publishMessages, hasSize(1));
+		InterceptPublishMessage pubMsg = session.publishMessages.get(0);
+		assertThat("Publish client ID", pubMsg.getClientID(), equalTo(nodeId.toString()));
+		assertThat("Publish topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
+
+		// fall back to general datum because of stream  mis-match
+		datum.addTag(MqttUploadService.TAG_VERSION_2);
+		assertThat("Publish payload in general form", session.getPublishPayloadStringAtIndex(0),
+				equalTo(objectMapper.writeValueAsString(datum)));
+
+		Event datumUploadEvent = eventCaptor.getValue();
+		assertThat("Event topic", datumUploadEvent.getTopic(),
+				equalTo(UploadService.EVENT_TOPIC_DATUM_UPLOADED));
+		assertThat("Event prop 'foo'", datumUploadEvent.getProperty("foo"), equalTo((Object) 123));
+	}
+
+	@Test
 	public void uploadLocationDatumWithConnectionToMqttServer() throws IOException {
 		// given
 		Long locationId = Math.abs(UUID.randomUUID().getMostSignificantBits());
@@ -944,4 +994,5 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 						+ ",\"instructionId\":\"" + remoteInstructionId + "\""
 						+ ",\"topic\":\"SetControlParameter\",\"status\":\"Received\"}"));
 	}
+
 }
