@@ -139,6 +139,27 @@ SolarNode.csrf = function(xhr) {
 	 return SolarNode.csrfData.token;
 };
 
+/**
+ * Request the current CSRF token value and refresh the cached page value if it differs.
+ *
+ * @return {xhr} the request
+ */
+SolarNode.refreshCsrf = function() {
+	// {"token":"43bafadb-ebd9-4f62-a422-02c51a02f1d1","parameterName":"_csrf","headerName":"X-CSRF-TOKEN"}
+	return $.getJSON(SolarNode.context.path('/csrf')).done(function(json) {
+		if ( json && json.token ) {
+			var cached = SolarNode.csrfData;
+			if ( cached && cached.token != json.token ) {
+				console.debug("CSRF value has changed to %s", json.token);
+				$("meta[name='csrf']").attr("content", json.token);
+				$("meta[name='csrf_header']").attr("content", json.headerName);
+				$("input[name='_csrf']").val(json.token);
+				SolarNode.csrfData = json;
+			}
+		}
+	});
+};
+
 
 SolarNode.touchEventNames = (function() {
 	return SolarNode.hasTouchSupport ? {

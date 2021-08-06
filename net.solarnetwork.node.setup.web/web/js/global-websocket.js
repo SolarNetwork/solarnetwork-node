@@ -9,13 +9,15 @@ SolarNode.WebSocket = (function() {
 	var connecting = false;
 	
 	function executePing(url) {
-		$.getJSON(SolarNode.context.path('/csrf')).then(subscribeDisconnectedTopics);
+		SolarNode.refreshCsrf().done(subscribeDisconnectedTopics);
 	}
 	
 	function doWithConnection(callback) {
 		if ( stompClient != null ) {
 			callback(null, stompClient);
+			return;
 		}
+		
 		// so we don't try to fire up multiple WebSocket instances from multiple connection tasks,
 		// stash tasks on array so we can invoke the task callback(s) later once connected
 		connectTasks.push({callback:callback});
@@ -31,7 +33,7 @@ SolarNode.WebSocket = (function() {
 
 	function connect() {
 		connecting = true;
-
+		
 		var csrf = SolarNode.csrfData;
 		var url = (document.location.protocol === 'https:' ? 'wss://' : 'ws://') 
 			+document.location.host +SolarNode.context.path('/ws');
@@ -50,6 +52,7 @@ SolarNode.WebSocket = (function() {
 						task.callback(null, client);
 					}
 				});
+				connectTasks.length = 0;
 
 				// check for subscriptions that need to be re-subscribed
 				subscribeDisconnectedTopics();
@@ -57,12 +60,29 @@ SolarNode.WebSocket = (function() {
 				connecting = false;
 			}
 		}, function (error) {
-			console.error('STOMP protocol error %s', error);
+			console.debug('STOMP protocol error %s', error);
 			subscriptions = {};
 			stompClient = null;
+			
+			// if looks like we're logged out, remove refs to non-publish subscriptions
+			if ( error && error.headers && error.headers.message ) {
+				var errorMessage = error.headers.message.toLowerCase();
+				if ( errorMessage.includes("security") || errorMessage.includes("denied") ) {
+					Object.keys(subscriptionHandlers).forEach(function(topic) {
+						if ( !topic.startsWith("/pub/") ) {
+							console.info("Removing subscription handler for non-public topic %s due to security exception.", topic);
+							delete subscriptionHandlers[topic];
+						}
+					});
+				}
+			}
 
-			// reconnect automatically
-			setTimeout(connect, 10000);
+			// try to reconnect automatically
+			setTimeout(function() {
+				SolarNode.refreshCsrf().always(function() {
+					connect();
+				});
+			}, 10000);
 		});
 
 		if ( !pingTask ) {
