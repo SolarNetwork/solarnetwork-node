@@ -81,7 +81,7 @@ import net.solarnetwork.util.StringUtils;
  * implementation.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class OBRPluginService implements PluginService, SettingSpecifierProvider {
 
@@ -155,9 +155,15 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 	 */
 	public void init() {
 		if ( repositories != null && repositoryAdmin != null ) {
-			for ( OBRRepository repo : repositories ) {
-				configureOBRRepository(repo);
-			}
+			executorService.execute(new Runnable() {
+
+				@Override
+				public void run() {
+					for ( OBRRepository repo : repositories ) {
+						configureOBRRepository(repo);
+					}
+				}
+			});
 		}
 	}
 
@@ -550,7 +556,13 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 	 *        the repository
 	 */
 	public void onBind(OBRRepository repository) {
-		configureOBRRepository(repository);
+		executorService.execute(new Runnable() {
+
+			@Override
+			public void run() {
+				configureOBRRepository(repository);
+			}
+		});
 	}
 
 	/**
@@ -563,14 +575,20 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 		if ( repository == null || repository.getURL() == null || repositoryAdmin == null ) {
 			return;
 		}
-		for ( Repository repo : repositoryAdmin.listRepositories() ) {
-			URL repoURL = repo.getURL();
-			if ( repoURL != null && repoURL.equals(repository.getURL()) ) {
-				repositoryAdmin.removeRepository(repoURL);
-				repoStatusMap.remove(repoURL);
-				return;
+		executorService.execute(new Runnable() {
+
+			@Override
+			public void run() {
+				for ( Repository repo : repositoryAdmin.listRepositories() ) {
+					URL repoURL = repo.getURL();
+					if ( repoURL != null && repoURL.equals(repository.getURL()) ) {
+						repositoryAdmin.removeRepository(repoURL);
+						repoStatusMap.remove(repoURL);
+						return;
+					}
+				}
 			}
-		}
+		});
 	}
 
 	// Settings
