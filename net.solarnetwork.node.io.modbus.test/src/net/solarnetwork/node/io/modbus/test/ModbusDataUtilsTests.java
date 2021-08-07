@@ -31,9 +31,12 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import java.math.BigInteger;
+import java.util.Arrays;
 import org.hamcrest.Matchers;
 import org.junit.Test;
+import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusDataUtils;
+import net.solarnetwork.util.Half;
 
 /**
  * Test cases for the {@link ModbusDataUtils} class.
@@ -210,6 +213,20 @@ public class ModbusDataUtilsTests {
 	}
 
 	@Test
+	public void encodeFloat16() {
+		Half h = new Half(Half.intBitsToHalf(0x4240));
+		short s = ModbusDataUtils.encodeFloat16(h);
+		assertThat(s, equalTo((short) 0x4240));
+	}
+
+	@Test
+	public void encodeNumber_Float16() {
+		Half h = new Half(Half.intBitsToHalf(0x4240));
+		short[] words = ModbusDataUtils.encodeNumber(ModbusDataType.Float16, h);
+		assertThat(Arrays.equals(words, new short[] { (short) 0x4240 }), equalTo(true));
+	}
+
+	@Test
 	public void testEncodeFloat32() {
 		Float f = Float.intBitsToFloat(0x403FA7F6);
 		Integer[] words = ModbusDataUtils.integerArray(ModbusDataUtils.encodeFloat32(f));
@@ -268,6 +285,20 @@ public class ModbusDataUtilsTests {
 		byte[] data = ModbusDataUtils.parseBytes(words, 0, LeastToMostSignificant);
 		assertThat("Parse 16-bit words into bytes in reverse order", objectArray(data), arrayContaining(
 				(byte) 1, (byte) 3, (byte) 5, (byte) 7, (byte) 9, (byte) 0xb, (byte) 0xd, (byte) 0));
+	}
+
+	@Test
+	public void parseFloat16() {
+		short[] words = new short[] { 0x4240 };
+		Half h = ModbusDataUtils.parseFloat16(words[0]);
+		assertThat(h.halfValue(), equalTo((short) 0x4240));
+	}
+
+	@Test
+	public void parseNumber_Float16() {
+		short[] words = new short[] { 0x4240 };
+		Number n = ModbusDataUtils.parseNumber(ModbusDataType.Float16, words, 0);
+		assertThat(n, equalTo(new Half((short) 0x4240)));
 	}
 
 }

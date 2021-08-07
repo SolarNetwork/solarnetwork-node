@@ -26,13 +26,20 @@ package net.solarnetwork.node.io.modbus;
  * An enumeration of common Modbus data types.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.5
  */
 public enum ModbusDataType {
 
 	/** Boolean bit. */
 	Boolean("bit", 1),
+
+	/**
+	 * 16-bit floating point.
+	 * 
+	 * @since 1.1
+	 */
+	Float16("f16", 1),
 
 	/** 32-bit floating point. */
 	Float32("f32", 2),
@@ -126,6 +133,9 @@ public enum ModbusDataType {
 
 			case Bytes:
 				return "Bytes, 8-bit (two per register)";
+
+			case Float16:
+				return "16-bit floating point (1 register)";
 
 			case Float32:
 				return "32-bit floating point (2 registers)";

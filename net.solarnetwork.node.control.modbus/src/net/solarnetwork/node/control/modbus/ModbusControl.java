@@ -49,7 +49,6 @@ import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
-import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusDataUtils;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
@@ -66,6 +65,7 @@ import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.node.support.DatumEvents;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.ByteUtils;
+import net.solarnetwork.util.Half;
 import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
@@ -74,7 +74,7 @@ import net.solarnetwork.util.StringUtils;
  * Read and write a Modbus "coil" or "holding" type register.
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifierProvider,
 		NodeControlProvider, InstructionHandler, ModbusConnectionAction<ModbusData>, DatumEvents {
@@ -111,6 +111,10 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 
 			case Bytes:
 				// can't set on control currently
+				break;
+
+			case Float16:
+				propVal = sample.getFloat16(config.getAddress());
 				break;
 
 			case Float32:
@@ -266,6 +270,7 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 										: (short) 0 };
 						break;
 
+					case Float16:
 					case Float32:
 					case Float64:
 					case Int16:
@@ -302,10 +307,16 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 
 			case Float:
 			case Percent:
-				if ( config.getDataType() == ModbusDataType.Float64 ) {
-					return new BigDecimal(str).doubleValue();
+				switch (config.getDataType()) {
+					case Float16:
+						return Half.valueOf(str);
+
+					case Float64:
+						return new BigDecimal(str).doubleValue();
+
+					default:
+						return new BigDecimal(str).floatValue();
 				}
-				return new BigDecimal(str).floatValue();
 
 			case Integer:
 				BigInteger bigInt = new BigInteger(str);

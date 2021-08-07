@@ -26,6 +26,7 @@ import static net.solarnetwork.node.io.modbus.ModbusWordOrder.LeastToMostSignifi
 import static net.solarnetwork.node.io.modbus.ModbusWordOrder.MostToLeastSignificant;
 import java.math.BigInteger;
 import java.util.Arrays;
+import net.solarnetwork.util.Half;
 
 /**
  * Utilities for converting to/from Modbus 16-bit register values.
@@ -36,7 +37,7 @@ import java.util.Arrays;
  * </p>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  * @since 2.6
  */
 public final class ModbusDataUtils {
@@ -145,6 +146,11 @@ public final class ModbusDataUtils {
 			case Boolean:
 				result = new short[] {
 						(number != null && number.intValue() != 0 ? (short) 1 : (short) 0) };
+				break;
+
+			case Float16:
+				result = new short[] { encodeFloat16(number instanceof Half ? (Half) number
+						: number != null ? Half.valueOf(number.toString()) : null) };
 				break;
 
 			case Float32:
@@ -467,6 +473,19 @@ public final class ModbusDataUtils {
 	}
 
 	/**
+	 * Encode an IEEE-754 16-bit float value into a raw Modbus unsigned short
+	 * register value.
+	 * 
+	 * @param value
+	 *        the half to encode
+	 * @return the register value
+	 * @since 2.2
+	 */
+	public static short encodeFloat16(Half value) {
+		return (value != null ? value.halfValue() : (short) 0);
+	}
+
+	/**
 	 * Encode an IEEE-754 32-bit float value into raw Modbus unsigned short
 	 * register values.
 	 * 
@@ -618,6 +637,12 @@ public final class ModbusDataUtils {
 			case Boolean:
 				if ( offset < words.length ) {
 					result = words[offset] == 0 ? (byte) 0 : (byte) 1;
+				}
+				break;
+
+			case Float16:
+				if ( offset < words.length ) {
+					result = parseFloat16(words[offset]);
 				}
 				break;
 
@@ -884,6 +909,23 @@ public final class ModbusDataUtils {
 			r = r.add(new BigInteger(String.valueOf(data[i] & 0xFFFF)));
 		}
 		return r;
+	}
+
+	/**
+	 * Parse an IEEE-754 16-bit float value from raw Modbus register values.
+	 * 
+	 * @param val
+	 *        the 16 bits
+	 * @return the parsed half, or {@literal null} if not available or parsed
+	 *         half is {@code NaN}
+	 * @since 2.2
+	 */
+	public static Half parseFloat16(final short val) {
+		Half result = Half.valueOf(val);
+		if ( result.isNaN() ) {
+			result = null;
+		}
+		return result;
 	}
 
 	/**

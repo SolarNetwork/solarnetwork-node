@@ -73,7 +73,7 @@ import net.solarnetwork.util.StringUtils;
  * Generic Modbus device datum data source.
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider,
@@ -189,6 +189,10 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 				case Bytes:
 					// can't set on datum currently
+					break;
+
+				case Float16:
+					propVal = sample.getFloat16(conf.getAddress());
 					break;
 
 				case Float32:
