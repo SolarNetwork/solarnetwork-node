@@ -177,6 +177,73 @@ public class SettingsPlaceholderServiceTests {
 	}
 
 	@Test
+	public void resolveWithParametersArgument_cached() {
+		// GIVEN
+		service.setCacheSeconds(Integer.MAX_VALUE);
+		List<KeyValuePair> data = Arrays.asList(new KeyValuePair("foo", "bar"),
+				new KeyValuePair("f", "b"));
+		expect(settingDao.getSettingValues(SettingsPlaceholderService.SETTING_KEY)).andReturn(data);
+
+		// WHEN
+		replayAll();
+		Map<String, Object> params = new HashMap<>(4);
+		params.put("a", "eh");
+		params.put("foo", "boo");
+		String result = service.resolvePlaceholders("{a} != {foo} != {b} != {f}", params);
+
+		params.put("foo", "BOO");
+		String result2 = service.resolvePlaceholders("{a} != {foo} != {b} != {f}", params);
+
+		// THEN
+		assertThat("Resolved static placeholders with DAO and parameters", result,
+				equalTo("eh != boo != two != b"));
+		assertThat("Resolved static placeholders with DAO (cached) and parameters", result2,
+				equalTo("eh != BOO != two != b"));
+	}
+
+	@Test
+	public void resolveWithParametersArgument_cached_expired() throws InterruptedException {
+		// GIVEN
+		service.setCacheSeconds(1);
+		List<KeyValuePair> data1 = Arrays.asList(new KeyValuePair("foo", "bar"),
+				new KeyValuePair("f", "b"));
+		expect(settingDao.getSettingValues(SettingsPlaceholderService.SETTING_KEY)).andReturn(data1);
+
+		List<KeyValuePair> data2 = Arrays.asList(new KeyValuePair("foo", "BAR"),
+				new KeyValuePair("f", "B"));
+		expect(settingDao.getSettingValues(SettingsPlaceholderService.SETTING_KEY)).andReturn(data2);
+
+		// WHEN
+		replayAll();
+		Map<String, Object> params = new HashMap<>(4);
+		params.put("a", "eh");
+		params.put("foo", "boo");
+		String result = service.resolvePlaceholders("{a} != {foo} != {b} != {f}", params);
+
+		params.put("foo", "BOO");
+		String result2 = service.resolvePlaceholders("{a} != {foo} != {b} != {f}", params);
+
+		// let cache expire
+		Thread.sleep(1050);
+
+		params.put("foo", "BOO!");
+		String result3 = service.resolvePlaceholders("{a} != {foo} != {b} != {f}", params);
+
+		params.put("foo", "BOO!!");
+		String result4 = service.resolvePlaceholders("{a} != {foo} != {b} != {f}", params);
+
+		// THEN
+		assertThat("Resolved static placeholders with DAO and parameters", result,
+				equalTo("eh != boo != two != b"));
+		assertThat("Resolved static placeholders with DAO (cached) and parameters", result2,
+				equalTo("eh != BOO != two != b"));
+		assertThat("Resolved static placeholders with DAO (cache refreshed) and parameters", result3,
+				equalTo("eh != BOO! != two != B"));
+		assertThat("Resolved static placeholders with DAO (cache refreshed cached again) and parameters",
+				result4, equalTo("eh != BOO!! != two != B"));
+	}
+
+	@Test
 	public void register() {
 		// GIVEN
 		settingDao.storeSetting(SettingsPlaceholderService.SETTING_KEY, "foo", "bar");
