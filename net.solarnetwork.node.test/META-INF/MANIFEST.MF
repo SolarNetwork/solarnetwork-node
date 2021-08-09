@@ -33,6 +33,8 @@ Import-Package:
  org.springframework.context;version="[4.3,5.0)",
  org.springframework.core;version="[4.3,5.0)",
  org.springframework.core.io;version="[4.3,5.0)",
+ org.springframework.core.task;version="[4.3,5.0)",
+ org.springframework.core.task.support;version="[4.3,5.0)",
  org.springframework.dao;version="[4.3,5.0)",
  org.springframework.expression;version="[4.3,5.0)",
  org.springframework.jdbc.core;version="4.2.6.RELEASE",

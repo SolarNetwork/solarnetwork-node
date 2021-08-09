@@ -34,9 +34,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.task.AsyncTaskExecutor;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.PlaceholderService;
 import net.solarnetwork.node.dao.SettingDao;
@@ -79,6 +81,7 @@ public class SettingsPlaceholderService implements PlaceholderService {
 	private final OptionalService<SettingDao> settingDao;
 	private Path staticPropertiesPath;
 	private int cacheSeconds = DEFAULT_CACHE_SECONDS;
+	private AsyncTaskExecutor taskExecutor;
 
 	private Map<String, ?> staticProps;
 
@@ -124,12 +127,41 @@ public class SettingsPlaceholderService implements PlaceholderService {
 			final CachedResult<Map<String, ?>> cached = this.placeholdersCache;
 			result = (cached != null ? cached.getResult() : null);
 			if ( cached == null || !cached.isValid() ) {
+				Callable<Map<String, ?>> task = new CacheRefreshTask();
+				final AsyncTaskExecutor executor = this.taskExecutor;
 				try {
-					synchronized ( this ) {
-						result = allPlaceholdersWithoutCache();
-						this.placeholdersCache = new CachedResult<Map<String, ?>>(result, cacheSeconds,
-								TimeUnit.SECONDS);
+					if ( executor != null && cached != null ) {
+						log.debug("Refreshing placeholder cache in background.");
+						executor.submit(task);
+						// refresh cache asynchronously and return expired data
+						result = cached.getResult();
+					} else {
+						result = task.call();
 					}
+				} catch ( Exception e ) {
+					log.error("Error loading placeholders: {}", e);
+				}
+			}
+		} else {
+			result = allPlaceholdersWithoutCache();
+		}
+		return placeholdersMergedWithParameters(result, parameters);
+	}
+
+	private final class CacheRefreshTask implements Callable<Map<String, ?>> {
+
+		@Override
+		public Map<String, ?> call() throws Exception {
+			synchronized ( SettingsPlaceholderService.this ) {
+				final CachedResult<Map<String, ?>> cached = placeholdersCache;
+				if ( cached != null && cached.isValid() ) {
+					return cached.getResult();
+				}
+				try {
+					Map<String, ?> placeholders = allPlaceholdersWithoutCache();
+					placeholdersCache = new CachedResult<Map<String, ?>>(placeholders, cacheSeconds,
+							TimeUnit.SECONDS);
+					return placeholders;
 				} catch ( Exception e ) {
 					Throwable root = e;
 					while ( root.getCause() != null ) {
@@ -139,11 +171,10 @@ public class SettingsPlaceholderService implements PlaceholderService {
 							"Error refreshing placeholders from SettingDao; returning cached values: {}",
 							root.toString());
 				}
+				return (cached != null ? cached.getResult() : null);
 			}
-		} else {
-			result = allPlaceholdersWithoutCache();
 		}
-		return placeholdersMergedWithParameters(result, parameters);
+
 	}
 
 	private Map<String, ?> placeholdersMergedWithParameters(Map<String, ?> placeholders,
@@ -308,6 +339,7 @@ public class SettingsPlaceholderService implements PlaceholderService {
 	 * Get the cache seconds value.
 	 * 
 	 * @return the cache seconds; defaults to {@link #DEFAULT_CACHE_SECONDS}
+	 * @since 1.1
 	 */
 	public int getCacheSeconds() {
 		return cacheSeconds;
@@ -327,9 +359,35 @@ public class SettingsPlaceholderService implements PlaceholderService {
 	 * 
 	 * @param cacheSeconds
 	 *        the cache seconds to set, or {@code 0} to disable
+	 * @since 1.1
 	 */
 	public void setCacheSeconds(int cacheSeconds) {
 		this.cacheSeconds = cacheSeconds;
 	}
 
+	/**
+	 * Get the task executor.
+	 * 
+	 * @return the task executor
+	 * @since 1.1
+	 */
+	public AsyncTaskExecutor getTaskExecutor() {
+		return this.taskExecutor;
+	}
+
+	/**
+	 * An executor to handle cache refreshing with.
+	 * 
+	 * <p>
+	 * If configured then cache refresh operations will occur asynchronously
+	 * after expiring.
+	 * </p>
+	 * 
+	 * @param taskExecutor
+	 *        a task executor
+	 * @since 1.1
+	 */
+	public void setTaskExecutor(AsyncTaskExecutor taskExecutor) {
+		this.taskExecutor = taskExecutor;
+	}
 }
