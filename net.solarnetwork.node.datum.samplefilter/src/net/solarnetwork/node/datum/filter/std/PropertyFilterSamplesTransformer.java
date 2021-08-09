@@ -51,7 +51,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * </p>
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 		implements GeneralDatumSamplesTransformer, SettingSpecifierProvider, SettingsChangeObserver {
@@ -73,8 +73,11 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 			return samples;
 		}
 
-		// load all Datum "last created" settings
-		final ConcurrentMap<String, String> lastSeenMap = loadSettings(settingKey);
+		final PropertyFilterConfig[] incs = this.propIncludes;
+
+		// load all Datum "last created" settings, if we need to throttle by frequency
+		final ConcurrentMap<String, String> lastSeenMap = loadSettingsIfFrequencyLimitConfigured(
+				settingKey, incs);
 
 		final long now = (datum != null && datum.getCreated() != null ? datum.getCreated().getTime()
 				: System.currentTimeMillis());
@@ -83,20 +86,21 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 		GeneralDatumSamples copy = null;
 
 		// handle property inclusion rules
-		PropertyFilterConfig[] incs = this.propIncludes;
 		if ( incs != null && incs.length > 0 ) {
 			Map<String, ?> map = samples.getAccumulating();
 			if ( map != null ) {
 				for ( String propName : map.keySet() ) {
 					PropertyFilterConfig match = findMatch(incs, propName, true);
-					String lastSeenKey = (match != null ? datum.getSourceId() + ';' + propName : null);
+					String lastSeenKey = (lastSeenMap != null && match != null
+							? datum.getSourceId() + ';' + propName
+							: null);
 					if ( match == null
 							|| shouldLimitByFrequency(match, lastSeenKey, lastSeenMap, now) ) {
 						if ( copy == null ) {
 							copy = copy(samples);
 						}
 						copy.getAccumulating().remove(propName);
-					} else if ( match != null ) {
+					} else if ( lastSeenMap != null && match != null ) {
 						saveLastSeenSetting(match.getFrequencySeconds(), now, settingKey, lastSeenKey,
 								lastSeenMap);
 					}
@@ -106,14 +110,16 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 			if ( map != null ) {
 				for ( String propName : map.keySet() ) {
 					PropertyFilterConfig match = findMatch(incs, propName, true);
-					String lastSeenKey = (match != null ? datum.getSourceId() + ';' + propName : null);
+					String lastSeenKey = (lastSeenMap != null && match != null
+							? datum.getSourceId() + ';' + propName
+							: null);
 					if ( match == null || shouldLimitByFrequency(match,
 							datum.getSourceId() + ';' + propName, lastSeenMap, now) ) {
 						if ( copy == null ) {
 							copy = copy(samples);
 						}
 						copy.getInstantaneous().remove(propName);
-					} else if ( match != null ) {
+					} else if ( lastSeenMap != null && match != null ) {
 						saveLastSeenSetting(match.getFrequencySeconds(), now, settingKey, lastSeenKey,
 								lastSeenMap);
 					}
@@ -123,14 +129,16 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 			if ( map != null ) {
 				for ( String propName : map.keySet() ) {
 					PropertyFilterConfig match = findMatch(incs, propName, true);
-					String lastSeenKey = (match != null ? datum.getSourceId() + ';' + propName : null);
+					String lastSeenKey = (lastSeenMap != null && match != null
+							? datum.getSourceId() + ';' + propName
+							: null);
 					if ( match == null || shouldLimitByFrequency(match,
 							datum.getSourceId() + ';' + propName, lastSeenMap, now) ) {
 						if ( copy == null ) {
 							copy = copy(samples);
 						}
 						copy.getStatus().remove(propName);
-					} else if ( match != null ) {
+					} else if ( lastSeenMap != null && match != null ) {
 						saveLastSeenSetting(match.getFrequencySeconds(), now, settingKey, lastSeenKey,
 								lastSeenMap);
 					}
