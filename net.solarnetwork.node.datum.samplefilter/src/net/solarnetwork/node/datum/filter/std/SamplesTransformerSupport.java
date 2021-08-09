@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.Setting.SettingFlag;
 import net.solarnetwork.node.dao.SettingDao;
@@ -244,7 +245,6 @@ public class SamplesTransformerSupport extends BaseSamplesTransformSupport
 	 *         setting {@code type} for keys and the setting {@code value} for
 	 *         the associated values
 	 */
-	@SuppressWarnings("deprecation")
 	protected ConcurrentMap<String, String> loadSettings(String key) {
 		ConcurrentMap<String, String> result = SETTING_CACHE.get(key);
 		if ( result == null ) {
@@ -257,9 +257,9 @@ public class SamplesTransformerSupport extends BaseSamplesTransformSupport
 		}
 		SettingDao dao = getSettingDao();
 		if ( dao != null ) {
-			List<net.solarnetwork.node.support.KeyValuePair> pairs = dao.getSettings(key);
+			List<KeyValuePair> pairs = dao.getSettingValues(key);
 			if ( pairs != null && !pairs.isEmpty() ) {
-				for ( net.solarnetwork.node.support.KeyValuePair pair : pairs ) {
+				for ( KeyValuePair pair : pairs ) {
 					result.put(pair.getKey(), pair.getValue());
 				}
 			}
