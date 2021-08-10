@@ -82,6 +82,8 @@ import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.node.support.DatumEvents;
 import net.solarnetwork.node.upload.flux.FluxFilterConfig;
 import net.solarnetwork.node.upload.flux.FluxUploadService;
+import net.solarnetwork.util.Half;
+import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.StaticOptionalService;
 import net.solarnetwork.util.StaticOptionalServiceCollection;
 
@@ -360,6 +362,31 @@ public class FluxUploadServiceTests {
 		// THEN
 		MqttMessage publishedMsg = msgCaptor.getValue();
 		datum.put(Datum.TIMESTAMP, null);
+		assertMessage(publishedMsg, TEST_SOURCE_ID, datum);
+	}
+
+	@Test
+	public void postDatum_withHalf() throws Exception {
+		// GIVEN
+		expectMqttConnectionSetup();
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		Half h = new Half(1.23f);
+		Map<String, Object> datum = new HashMap<>(4);
+		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
+		datum.put("watts", h);
+		postEvent(datum);
+
+		// THEN
+		MqttMessage publishedMsg = msgCaptor.getValue();
+		datum.put(Datum.TIMESTAMP, null);
+		datum.put("watts", NumberUtils.bigDecimalForNumber(h));
 		assertMessage(publishedMsg, TEST_SOURCE_ID, datum);
 	}
 
