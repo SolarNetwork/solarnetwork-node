@@ -8,6 +8,8 @@ filters can be useful for scenarios like this:
  2. you want to collect some properties less frequently than others within the same datum
  3. you want to collect entire datum less frequently than they are produced
  4. you want to generate an accumulating meter reading property out of another property
+ 5. you'd like to downsample high-frequency datum into lower-frequency averages
+ 6. you'd like to toggle operational modes based on datum properties
 
 # Install
 
@@ -21,5 +23,7 @@ documentation:
    using an average
  * [Expression Datum Filter](README-Expression.md) - generate dynamic datum properties by evaluating
    expressions against existing datum properties
+ * [Operational Mode Datum Filter](README-OpMode.md) - evaluate expressions to toggle operational
+   modes
  * [Virtual Meter Datum Filter](README-VirtualMeter.md) - derive accumulating meter-style reading
    datum properties out of other datum properties

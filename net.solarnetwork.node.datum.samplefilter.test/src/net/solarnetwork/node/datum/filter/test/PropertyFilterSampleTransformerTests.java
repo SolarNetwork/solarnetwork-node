@@ -50,13 +50,13 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.datum.filter.std.PropertyFilterConfig;
 import net.solarnetwork.node.datum.filter.std.PropertyFilterSamplesTransformer;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
-import net.solarnetwork.node.support.KeyValuePair;
 
 /**
  * Test cases for the {@link PropertyFilterSamplesTransformer} class.
@@ -64,7 +64,6 @@ import net.solarnetwork.node.support.KeyValuePair;
  * @author matt
  * @version 1.0
  */
-@SuppressWarnings("deprecation")
 public class PropertyFilterSampleTransformerTests {
 
 	private static final String TEST_SOURCE_ID = "test.source";
@@ -92,6 +91,7 @@ public class PropertyFilterSampleTransformerTests {
 		PropertyFilterSamplesTransformer.clearSettingCache();
 	}
 
+	@SuppressWarnings("deprecation")
 	@Test
 	public void testInclude() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
@@ -109,6 +109,7 @@ public class PropertyFilterSampleTransformerTests {
 		assertNull("Phase filtered", result.getStatusSampleString(PROP_PHASE));
 	}
 
+	@SuppressWarnings("deprecation")
 	@Test
 	public void testIncludeMultiplePatterns() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
@@ -160,6 +161,7 @@ public class PropertyFilterSampleTransformerTests {
 		assertNull("Phase filtered", result.getStatusSampleString(PROP_PHASE));
 	}
 
+	@SuppressWarnings("deprecation")
 	@Test
 	public void testIncludeAndExclude() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
@@ -177,6 +179,7 @@ public class PropertyFilterSampleTransformerTests {
 		assertNull("Phase filtered", result.getStatusSampleString(PROP_PHASE));
 	}
 
+	@SuppressWarnings("deprecation")
 	@Test
 	public void testNonMatchingSourceId() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum("other.source");
@@ -189,6 +192,7 @@ public class PropertyFilterSampleTransformerTests {
 		assertSame("Sample sample instance", datum.getSamples(), result);
 	}
 
+	@SuppressWarnings("deprecation")
 	@Test
 	public void testNoMatchingIncludes() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
@@ -228,7 +232,7 @@ public class PropertyFilterSampleTransformerTests {
 
 		final String settingKey = String.format(SETTING_KEY_TEMPLATE, TEST_UID);
 		List<KeyValuePair> initialSettings = Collections.emptyList();
-		expect(settingDao.getSettings(settingKey)).andReturn(initialSettings);
+		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
 		Capture<Setting> savedSettingCapture = new Capture<Setting>(CaptureType.ALL);
 		settingDao.storeSetting(capture(savedSettingCapture));
@@ -300,7 +304,7 @@ public class PropertyFilterSampleTransformerTests {
 		List<KeyValuePair> initialSettings = Collections
 				.singletonList(new KeyValuePair(settingTypeValue(TEST_SOURCE_ID, PROP_WATTS),
 						Long.toString(System.currentTimeMillis() - TEST_FREQ * 10 * 1000L, 16)));
-		expect(settingDao.getSettings(settingKey)).andReturn(initialSettings);
+		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
 		Capture<Setting> savedSettingCapture = new Capture<Setting>(CaptureType.ALL);
 		settingDao.storeSetting(capture(savedSettingCapture));
@@ -373,7 +377,7 @@ public class PropertyFilterSampleTransformerTests {
 		final String settingKey = String.format(SETTING_KEY_TEMPLATE, TEST_UID);
 		List<KeyValuePair> initialSettings = Collections.singletonList(new KeyValuePair(
 				settingTypeValue(TEST_SOURCE_ID, PROP_WATTS), Long.toString(start, 16)));
-		expect(settingDao.getSettings(settingKey)).andReturn(initialSettings);
+		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
 		Capture<Setting> savedSettingCapture = new Capture<Setting>(CaptureType.ALL);
 		settingDao.storeSetting(capture(savedSettingCapture));
@@ -441,7 +445,7 @@ public class PropertyFilterSampleTransformerTests {
 						Long.toString(start - TEST_FREQ * 1000L - 500L, 16)),
 				new KeyValuePair(settingTypeValue(TEST_SOURCE_ID, PROP_WATTHOURS),
 						Long.toString(start - TEST_FREQ * 1000L - 500L, 16)));
-		expect(settingDao.getSettings(settingKey)).andReturn(initialSettings);
+		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
 		Capture<Setting> savedSettingCapture = new Capture<Setting>(CaptureType.ALL);
 		settingDao.storeSetting(capture(savedSettingCapture));

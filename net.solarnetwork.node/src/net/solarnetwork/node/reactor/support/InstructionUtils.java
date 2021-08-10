@@ -23,15 +23,17 @@
 package net.solarnetwork.node.reactor.support;
 
 import java.util.Date;
+import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 
 /**
  * Utilities for dealing with common Instruction patterns.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public final class InstructionUtils {
 
@@ -46,8 +48,8 @@ public final class InstructionUtils {
 	 * <p>
 	 * This method will iterate over the provided {@code handlers} and ask each
 	 * one if they handle the topic of the provided {@code instruction}. If the
-	 * handler does, it is asked to process the instruction. The first non-null
-	 * result returned by a handler will be returned.
+	 * handler does, it is asked to process the instruction. The first
+	 * non-{@literal null} result returned by a handler will be returned.
 	 * </p>
 	 * 
 	 * @param handlers
@@ -56,7 +58,7 @@ public final class InstructionUtils {
 	 *        the instruction to ask the handlers to perform
 	 * @return the first non-null result of
 	 *         {@link InstructionHandler#processInstruction(Instruction)}, or
-	 *         <em>null</em> if no handler returns a value
+	 *         {@literal null} if no handler returns a value
 	 */
 	public static InstructionState handleInstruction(Iterable<InstructionHandler> handlers,
 			Instruction instruction) {
@@ -64,6 +66,44 @@ public final class InstructionUtils {
 		for ( InstructionHandler handler : handlers ) {
 			if ( handler.handlesTopic(instruction.getTopic()) ) {
 				result = handler.processInstruction(instruction);
+			}
+			if ( result != null ) {
+				break;
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Given a collection of {@link FeedbackInstructionHandler} objects, find
+	 * one that can handle a specific {@link Instruction} and ask it to process
+	 * it.
+	 * 
+	 * <p>
+	 * This method will iterate over the provided {@code handlers} and ask each
+	 * one if they handle the topic of the provided {@code instruction}. If the
+	 * handler does, it is asked to process the instruction. The first
+	 * non-{@literal null} result returned by a handler will be returned.
+	 * </p>
+	 * 
+	 * @param handlers
+	 *        the collection of handlers to search over
+	 * @param instruction
+	 *        the instruction to ask the handlers to perform
+	 * @return the first non-null result of
+	 *         {@link FeedbackInstructionHandler#processInstructionWithFeedback(Instruction)},
+	 *         or {@literal null} if no handler returns a value
+	 */
+	public static InstructionStatus handleInstructionWithFeedback(
+			Iterable<FeedbackInstructionHandler> handlers, Instruction instruction) {
+		final String topic = (instruction != null ? instruction.getTopic() : null);
+		if ( topic == null || topic.isEmpty() || handlers == null ) {
+			return null;
+		}
+		InstructionStatus result = null;
+		for ( FeedbackInstructionHandler handler : handlers ) {
+			if ( handler.handlesTopic(instruction.getTopic()) ) {
+				result = handler.processInstructionWithFeedback(instruction);
 			}
 			if ( result != null ) {
 				break;
@@ -89,7 +129,7 @@ public final class InstructionUtils {
 	 *        the value to set the control to
 	 * @return the first non-null result of
 	 *         {@link InstructionHandler#processInstruction(Instruction)}, or
-	 *         <em>null</em> if no handler returns a value
+	 *         {@literal null} if no handler returns a value
 	 */
 	public static InstructionState setControlParameter(final Iterable<InstructionHandler> handlers,
 			final String controlId, final String controlValue) {

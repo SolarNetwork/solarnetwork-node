@@ -32,10 +32,14 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.core.task.support.TaskExecutorAdapter;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.support.SettingsPlaceholderService;
@@ -55,11 +59,13 @@ import net.solarnetwork.util.StaticOptionalService;
  */
 public class SettingsPlaceholderServiceTests {
 
+	private ExecutorService executor;
 	private SettingDao settingDao;
 	private SettingsPlaceholderService service;
 
 	@Before
 	public void setup() {
+		executor = Executors.newCachedThreadPool();
 		settingDao = EasyMock.createMock(SettingDao.class);
 		service = new SettingsPlaceholderService(new StaticOptionalService<SettingDao>(settingDao));
 		service.setStaticPropertiesPath(Paths.get("environment/test/placeholders"));
@@ -72,6 +78,7 @@ public class SettingsPlaceholderServiceTests {
 	@After
 	public void teardown() {
 		EasyMock.verify(settingDao);
+		executor.shutdownNow();
 	}
 
 	@Test
@@ -174,6 +181,152 @@ public class SettingsPlaceholderServiceTests {
 
 		// THEN
 		assertThat("Resolved static placeholders with default", result, equalTo("eh != boo != two"));
+	}
+
+	@Test
+	public void resolveWithParametersArgument_cached() {
+		// GIVEN
+		service.setCacheSeconds(Integer.MAX_VALUE);
+		List<KeyValuePair> data = Arrays.asList(new KeyValuePair("foo", "bar"),
+				new KeyValuePair("f", "b"));
+		expect(settingDao.getSettingValues(SettingsPlaceholderService.SETTING_KEY)).andReturn(data);
+
+		// WHEN
+		replayAll();
+		Map<String, Object> params = new HashMap<>(4);
+		params.put("a", "eh");
+		params.put("foo", "boo");
+		String result = service.resolvePlaceholders("{a} != {foo} != {b} != {f}", params);
+
+		params.put("foo", "BOO");
+		String result2 = service.resolvePlaceholders("{a} != {foo} != {b} != {f}", params);
+
+		// THEN
+		assertThat("Resolved static placeholders with DAO and parameters", result,
+				equalTo("eh != boo != two != b"));
+		assertThat("Resolved static placeholders with DAO (cached) and parameters", result2,
+				equalTo("eh != BOO != two != b"));
+	}
+
+	@Test
+	public void resolveWithParametersArgument_cached_async() throws Exception {
+		// GIVEN
+		service.setCacheSeconds(Integer.MAX_VALUE);
+		service.setTaskExecutor(new TaskExecutorAdapter(executor));
+		List<KeyValuePair> data = Arrays.asList(new KeyValuePair("foo", "bar"),
+				new KeyValuePair("f", "b"));
+		expect(settingDao.getSettingValues(SettingsPlaceholderService.SETTING_KEY)).andReturn(data);
+
+		// WHEN
+		replayAll();
+		Map<String, Object> params = new HashMap<>(4);
+		params.put("a", "eh");
+		params.put("foo", "boo");
+		String result = service.resolvePlaceholders("{a} != {foo} != {b} != {f}", params);
+
+		params.put("foo", "BOO");
+		String result2 = service.resolvePlaceholders("{a} != {foo} != {b} != {f}", params);
+
+		executor.shutdown();
+		executor.awaitTermination(10, TimeUnit.SECONDS);
+
+		// THEN
+		assertThat("Resolved static placeholders with DAO and parameters", result,
+				equalTo("eh != boo != two != b"));
+		assertThat("Resolved static placeholders with DAO (cached) and parameters", result2,
+				equalTo("eh != BOO != two != b"));
+	}
+
+	@Test
+	public void resolveWithParametersArgument_cached_expired() throws InterruptedException {
+		// GIVEN
+		service.setCacheSeconds(1);
+		List<KeyValuePair> data1 = Arrays.asList(new KeyValuePair("foo", "bar"),
+				new KeyValuePair("f", "b"));
+		expect(settingDao.getSettingValues(SettingsPlaceholderService.SETTING_KEY)).andReturn(data1);
+
+		List<KeyValuePair> data2 = Arrays.asList(new KeyValuePair("foo", "BAR"),
+				new KeyValuePair("f", "B"));
+		expect(settingDao.getSettingValues(SettingsPlaceholderService.SETTING_KEY)).andReturn(data2);
+
+		// WHEN
+		replayAll();
+		Map<String, Object> params = new HashMap<>(4);
+		params.put("a", "eh");
+		params.put("foo", "boo");
+		String result = service.resolvePlaceholders("{a} != {foo} != {b} != {f}", params);
+
+		params.put("foo", "BOO");
+		String result2 = service.resolvePlaceholders("{a} != {foo} != {b} != {f}", params);
+
+		// let cache expire
+		Thread.sleep(1050);
+
+		params.put("foo", "BOO!");
+		String result3 = service.resolvePlaceholders("{a} != {foo} != {b} != {f}", params);
+
+		params.put("foo", "BOO!!");
+		String result4 = service.resolvePlaceholders("{a} != {foo} != {b} != {f}", params);
+
+		// THEN
+		assertThat("Resolved static placeholders with DAO and parameters", result,
+				equalTo("eh != boo != two != b"));
+		assertThat("Resolved static placeholders with DAO (cached) and parameters", result2,
+				equalTo("eh != BOO != two != b"));
+		assertThat("Resolved static placeholders with DAO (cache refreshed) and parameters", result3,
+				equalTo("eh != BOO! != two != B"));
+		assertThat("Resolved static placeholders with DAO (cache refreshed cached again) and parameters",
+				result4, equalTo("eh != BOO!! != two != B"));
+	}
+
+	@Test
+	public void resolveWithParametersArgument_cached_expired_async() throws InterruptedException {
+		// GIVEN
+		service.setTaskExecutor(new TaskExecutorAdapter(executor));
+		service.setCacheSeconds(2);
+		List<KeyValuePair> data1 = Arrays.asList(new KeyValuePair("foo", "bar"),
+				new KeyValuePair("f", "b"));
+		expect(settingDao.getSettingValues(SettingsPlaceholderService.SETTING_KEY)).andReturn(data1);
+
+		List<KeyValuePair> data2 = Arrays.asList(new KeyValuePair("foo", "BAR"),
+				new KeyValuePair("f", "B"));
+		expect(settingDao.getSettingValues(SettingsPlaceholderService.SETTING_KEY)).andReturn(data2);
+
+		// WHEN
+		replayAll();
+		Map<String, Object> params = new HashMap<>(4);
+		params.put("a", "eh");
+		params.put("foo", "boo");
+		String result = service.resolvePlaceholders("{a} != {foo} != {b} != {f}", params);
+
+		params.put("foo", "BOO");
+		String result2 = service.resolvePlaceholders("{a} != {foo} != {b} != {f}", params);
+
+		// let cache expire
+		Thread.sleep(2050);
+
+		// invoke now, but expired data should be returned while cache refreshed
+		params.put("foo", "BOO!");
+		String result3 = service.resolvePlaceholders("{a} != {foo} != {b} != {f}", params);
+
+		// give async refresh time to complete
+		Thread.sleep(1000);
+
+		params.put("foo", "BOO!!");
+		String result4 = service.resolvePlaceholders("{a} != {foo} != {b} != {f}", params);
+
+		executor.shutdown();
+		executor.awaitTermination(10, TimeUnit.SECONDS);
+
+		// THEN
+		assertThat("Resolved static placeholders with DAO and parameters", result,
+				equalTo("eh != boo != two != b"));
+		assertThat("Resolved static placeholders with DAO (cached) and parameters", result2,
+				equalTo("eh != BOO != two != b"));
+		assertThat("Resolved static placeholders with DAO (cache refreshing async) and parameters",
+				result3, equalTo("eh != BOO! != two != b"));
+		assertThat("Resolved static placeholders with DAO (cache refreshed cached again) and parameters",
+				result4, equalTo("eh != BOO!! != two != B"));
 	}
 
 	@Test

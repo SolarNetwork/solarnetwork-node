@@ -34,11 +34,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.task.AsyncTaskExecutor;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.PlaceholderService;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.util.CachedResult;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
@@ -60,17 +64,28 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SettingsPlaceholderService implements PlaceholderService {
 
 	/** The setting key to use for placeholder parameter settings. */
 	public static final String SETTING_KEY = "placeholder";
 
+	/**
+	 * The default {@code cacheSeconds} property value.
+	 * 
+	 * @since 1.1
+	 */
+	public static final int DEFAULT_CACHE_SECONDS = 20;
+
 	private final OptionalService<SettingDao> settingDao;
 	private Path staticPropertiesPath;
+	private int cacheSeconds = DEFAULT_CACHE_SECONDS;
+	private AsyncTaskExecutor taskExecutor;
 
 	private Map<String, ?> staticProps;
+
+	private CachedResult<Map<String, ?>> placeholdersCache;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -98,40 +113,118 @@ public class SettingsPlaceholderService implements PlaceholderService {
 		}
 
 		String resolved = s;
+		Map<String, ?> placeholders = allPlaceholders(parameters);
+		if ( placeholders != null ) {
+			resolved = StringUtils.expandTemplateString(resolved, placeholders);
+		}
 
+		return resolved;
+	}
+
+	private Map<String, ?> allPlaceholders(Map<String, ?> parameters) {
+		Map<String, ?> result = null;
+		if ( cacheSeconds > 0 ) {
+			final CachedResult<Map<String, ?>> cached = this.placeholdersCache;
+			result = (cached != null ? cached.getResult() : null);
+			if ( cached == null || !cached.isValid() ) {
+				Callable<Map<String, ?>> task = new CacheRefreshTask();
+				final AsyncTaskExecutor executor = this.taskExecutor;
+				try {
+					if ( executor != null && cached != null ) {
+						log.debug("Refreshing placeholder cache in background.");
+						executor.submit(task);
+						// refresh cache asynchronously and return expired data
+						result = cached.getResult();
+					} else {
+						result = task.call();
+					}
+				} catch ( Exception e ) {
+					log.error("Error loading placeholders: {}", e);
+				}
+			}
+		} else {
+			result = allPlaceholdersWithoutCache();
+		}
+		return placeholdersMergedWithParameters(result, parameters);
+	}
+
+	private final class CacheRefreshTask implements Callable<Map<String, ?>> {
+
+		@Override
+		public Map<String, ?> call() throws Exception {
+			synchronized ( SettingsPlaceholderService.this ) {
+				final CachedResult<Map<String, ?>> cached = placeholdersCache;
+				if ( cached != null && cached.isValid() ) {
+					return cached.getResult();
+				}
+				try {
+					Map<String, ?> placeholders = allPlaceholdersWithoutCache();
+					placeholdersCache = new CachedResult<Map<String, ?>>(placeholders, cacheSeconds,
+							TimeUnit.SECONDS);
+					return placeholders;
+				} catch ( Exception e ) {
+					Throwable root = e;
+					while ( root.getCause() != null ) {
+						root = root.getCause();
+					}
+					log.warn(
+							"Error refreshing placeholders from SettingDao; returning cached values: {}",
+							root.toString());
+				}
+				return (cached != null ? cached.getResult() : null);
+			}
+		}
+
+	}
+
+	private Map<String, ?> placeholdersMergedWithParameters(Map<String, ?> placeholders,
+			Map<String, ?> parameters) {
+		// try to return the minimum level of placeholders, if some levels are null
+		if ( parameters == null ) {
+			return placeholders;
+		} else if ( placeholders == null ) {
+			return parameters;
+		}
+		return new AbstractMap<String, Object>() {
+
+			@Override
+			public Object get(Object key) {
+				// method argument takes highest precedence
+				if ( parameters != null && parameters.containsKey(key) ) {
+					return parameters.get(key);
+				}
+				// others take second precedence
+				return placeholders.get(key);
+			}
+
+			@Override
+			public Set<Entry<String, Object>> entrySet() {
+				return null;
+			}
+		};
+	}
+
+	private Map<String, Object> allPlaceholdersWithoutCache() {
 		List<KeyValuePair> kp = settingValues();
 		Map<String, ?> props = staticPropValues();
 
 		if ( (kp != null && !kp.isEmpty()) || (props != null && !props.isEmpty()) ) {
-			Map<String, ?> mergedProps = new AbstractMap<String, Object>() {
-
-				@Override
-				public Object get(Object key) {
-					// method argument takes highest precedence
-					if ( parameters != null && parameters.containsKey(key) ) {
-						return parameters.get(key);
-					}
-					// DAO takes second precedence
-					if ( kp != null ) {
-						for ( KeyValuePair p : kp ) {
-							if ( key.equals(p.getKey()) ) {
-								return p.getValue();
-							}
-						}
-					}
-					// static takes lowest precedence
-					return (props != null ? props.get(key) : null);
+			Map<String, Object> mergedProps = new HashMap<>(
+					(props != null ? props.size() : 1) + (kp != null ? kp.size() : 1));
+			// static takes lowest precedence
+			if ( props != null ) {
+				mergedProps.putAll(props);
+			}
+			// DAO takes second precedence
+			if ( kp != null ) {
+				for ( KeyValuePair p : kp ) {
+					mergedProps.put(p.getKey(), p.getValue());
 				}
+			}
 
-				@Override
-				public Set<Entry<String, Object>> entrySet() {
-					return null;
-				}
-			};
-			resolved = StringUtils.expandTemplateString(resolved, mergedProps);
+			return mergedProps;
 		}
-
-		return resolved;
+		return null;
 	}
 
 	private Map<String, ?> staticPropValues() {
@@ -242,4 +335,59 @@ public class SettingsPlaceholderService implements PlaceholderService {
 		this.staticPropertiesPath = staticPropertiesPath;
 	}
 
+	/**
+	 * Get the cache seconds value.
+	 * 
+	 * @return the cache seconds; defaults to {@link #DEFAULT_CACHE_SECONDS}
+	 * @since 1.1
+	 */
+	public int getCacheSeconds() {
+		return cacheSeconds;
+	}
+
+	/**
+	 * Set the cache seconds value.
+	 * 
+	 * <p>
+	 * If set to a value greater than {@literal 0} then placeholder values read
+	 * from {@link SettingDao} will be cached for a minimum of the given number
+	 * of seconds before being refreshed. This can be very helpful when
+	 * placeholders are evaluated frequently. Additionally, once cached if
+	 * refreshing from the DAO fails for any reason, the previously cached
+	 * values will be used.
+	 * </p>
+	 * 
+	 * @param cacheSeconds
+	 *        the cache seconds to set, or {@code 0} to disable
+	 * @since 1.1
+	 */
+	public void setCacheSeconds(int cacheSeconds) {
+		this.cacheSeconds = cacheSeconds;
+	}
+
+	/**
+	 * Get the task executor.
+	 * 
+	 * @return the task executor
+	 * @since 1.1
+	 */
+	public AsyncTaskExecutor getTaskExecutor() {
+		return this.taskExecutor;
+	}
+
+	/**
+	 * An executor to handle cache refreshing with.
+	 * 
+	 * <p>
+	 * If configured then cache refresh operations will occur asynchronously
+	 * after expiring.
+	 * </p>
+	 * 
+	 * @param taskExecutor
+	 *        a task executor
+	 * @since 1.1
+	 */
+	public void setTaskExecutor(AsyncTaskExecutor taskExecutor) {
+		this.taskExecutor = taskExecutor;
+	}
 }

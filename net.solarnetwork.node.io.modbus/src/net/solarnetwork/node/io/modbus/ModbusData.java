@@ -34,6 +34,7 @@ import java.util.Map;
 import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.util.ByteUtils;
 import net.solarnetwork.util.CollectionUtils;
+import net.solarnetwork.util.Half;
 import net.solarnetwork.util.IntRange;
 import net.solarnetwork.util.IntRangeSet;
 import net.solarnetwork.util.IntShortMap;
@@ -50,7 +51,7 @@ import net.solarnetwork.util.IntShortMap;
  * </p>
  * 
  * @author matt
- * @version 2.3
+ * @version 2.4
  * @since 2.3
  */
 public class ModbusData implements DataAccessor {
@@ -148,6 +149,9 @@ public class ModbusData implements DataAccessor {
 		switch (type) {
 			case Boolean:
 				return getBoolean(addr) ? 1 : 0;
+
+			case Float16:
+				return getFloat16(addr);
 
 			case Float32:
 				return getFloat32(addr);
@@ -276,6 +280,18 @@ public class ModbusData implements DataAccessor {
 	public final Long getUnsignedInt32(final int addr) {
 		return (wordOrder == ModbusWordOrder.MostToLeastSignificant ? getUnsignedInt32(addr, addr + 1)
 				: getUnsignedInt32(addr + 1, addr));
+	}
+
+	/**
+	 * Construct a 16-bit float from data register addresses.
+	 * 
+	 * @param addr
+	 *        the address of the 16 bits
+	 * @return the parsed value, or {@literal null} if not available.
+	 * @since 1.4
+	 */
+	public final Half getFloat16(final int addr) {
+		return ModbusDataUtils.parseFloat16(dataRegisters.getValue(addr));
 	}
 
 	/**

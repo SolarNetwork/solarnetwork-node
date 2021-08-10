@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.Setting.SettingFlag;
 import net.solarnetwork.node.dao.SettingDao;
@@ -45,7 +46,7 @@ import net.solarnetwork.support.BasicIdentifiable;
  * Support class for sample transformers.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class SamplesTransformerSupport extends BaseSamplesTransformSupport
 		implements SettingsChangeObserver {
@@ -162,8 +163,9 @@ public class SamplesTransformerSupport extends BaseSamplesTransformSupport
 	 * @param lastSeenKey
 	 *        the key to use for the last seen date
 	 * @param lastSeenMap
-	 *        a map of string keys to string values, where the values are
-	 *        hex-encoded epoch date values (long)
+	 *        a map of string keys to string values, where the values are; if
+	 *        {@literal null} then {@literal false} will be returned hex-encoded
+	 *        epoch date values (long)
 	 * @param now
 	 *        the date of the property
 	 * @return {@literal true} if the property should be limited
@@ -171,7 +173,8 @@ public class SamplesTransformerSupport extends BaseSamplesTransformSupport
 	protected boolean shouldLimitByFrequency(PropertyFilterConfig config, final String lastSeenKey,
 			final ConcurrentMap<String, String> lastSeenMap, final long now) {
 		boolean limit = false;
-		if ( config.getFrequency() != null && config.getFrequency().intValue() > 0 ) {
+		if ( lastSeenMap != null && lastSeenKey != null && config != null
+				&& config.getFrequency() != null && config.getFrequency().intValue() > 0 ) {
 			final long offset = config.getFrequency() * 1000L;
 			String lastSaveSetting = lastSeenMap.get(lastSeenKey);
 			long lastSaveTime = (lastSaveSetting != null ? Long.valueOf(lastSaveSetting, 16) : 0);
@@ -202,6 +205,33 @@ public class SamplesTransformerSupport extends BaseSamplesTransformSupport
 	}
 
 	/**
+	 * Load all available settings for a given key, if some property
+	 * configuration has a frequency limit defined.
+	 * 
+	 * @param key
+	 *        the key to load
+	 * @param configs
+	 *        the property configurations
+	 * @return the settings map, or {@literal null} if no configuration has a
+	 *         frequency set higher than {@literal 0}
+	 * @since 1.5
+	 */
+	protected ConcurrentMap<String, String> loadSettingsIfFrequencyLimitConfigured(String key,
+			PropertyFilterConfig[] configs) {
+		ConcurrentMap<String, String> result = null;
+		if ( configs != null && configs.length > 0 ) {
+			for ( int i = 0, len = configs.length; i < len; i++ ) {
+				PropertyFilterConfig config = configs[i];
+				if ( config.getFrequency() != null && config.getFrequency().intValue() > 0 ) {
+					result = loadSettings(key);
+					break;
+				}
+			}
+		}
+		return result;
+	}
+
+	/**
 	 * Load all available settings for a given key.
 	 * 
 	 * <p>
@@ -215,7 +245,6 @@ public class SamplesTransformerSupport extends BaseSamplesTransformSupport
 	 *         setting {@code type} for keys and the setting {@code value} for
 	 *         the associated values
 	 */
-	@SuppressWarnings("deprecation")
 	protected ConcurrentMap<String, String> loadSettings(String key) {
 		ConcurrentMap<String, String> result = SETTING_CACHE.get(key);
 		if ( result == null ) {
@@ -228,9 +257,9 @@ public class SamplesTransformerSupport extends BaseSamplesTransformSupport
 		}
 		SettingDao dao = getSettingDao();
 		if ( dao != null ) {
-			List<net.solarnetwork.node.support.KeyValuePair> pairs = dao.getSettings(key);
+			List<KeyValuePair> pairs = dao.getSettingValues(key);
 			if ( pairs != null && !pairs.isEmpty() ) {
-				for ( net.solarnetwork.node.support.KeyValuePair pair : pairs ) {
+				for ( KeyValuePair pair : pairs ) {
 					result.put(pair.getKey(), pair.getValue());
 				}
 			}

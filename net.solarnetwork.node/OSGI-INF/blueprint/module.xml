@@ -447,6 +447,7 @@
 		<bean class="net.solarnetwork.node.support.SettingsPlaceholderService">
 			<argument ref="settingDao"/>
 			<property name="staticPropertiesPath" value="${placeholders.dir}"/>
+			<property name="taskExecutor" ref="taskExecutor"/>
 		</bean>
 	</service>
 	

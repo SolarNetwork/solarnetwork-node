@@ -55,7 +55,7 @@ import net.solarnetwork.util.WeakValueConcurrentHashMap;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 		implements GeneralDatumSamplesTransformService, SettingSpecifierProvider {
@@ -201,7 +201,7 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 		List<String> uids = new ArrayList<>();
 		for ( GeneralDatumSamplesTransformService s : transformServices ) {
 			String uid = s.getUid();
-			if ( uid != null && !uid.isEmpty() ) {
+			if ( uid != null && !uid.isEmpty() && !uid.equalsIgnoreCase(getUid()) ) {
 				uids.add(uid);
 			}
 		}

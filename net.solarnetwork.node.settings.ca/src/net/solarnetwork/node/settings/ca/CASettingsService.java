@@ -63,7 +63,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -132,7 +132,7 @@ import net.solarnetwork.support.SearchFilter;
  * {@link SettingDao} to persist changes between application restarts.
  * 
  * @author matt
- * @version 1.9
+ * @version 1.10
  */
 public class CASettingsService
 		implements SettingsService, BackupResourceProvider, FeedbackInstructionHandler {
@@ -162,9 +162,9 @@ public class CASettingsService
 	private MessageSource messageSource;
 	private TaskExecutor taskExecutor;
 
-	private final Map<String, FactoryHelper> factories = new TreeMap<String, FactoryHelper>();
-	private final Map<String, ProviderHelper> providers = new TreeMap<String, ProviderHelper>();
-	private final Map<String, SettingResourceHandler> handlers = new TreeMap<String, SettingResourceHandler>();
+	private final Map<String, FactoryHelper> factories = new ConcurrentSkipListMap<String, FactoryHelper>();
+	private final Map<String, ProviderHelper> providers = new ConcurrentSkipListMap<String, ProviderHelper>();
+	private final Map<String, SettingResourceHandler> handlers = new ConcurrentSkipListMap<String, SettingResourceHandler>();
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -209,15 +209,15 @@ public class CASettingsService
 			}
 
 			final TaskExecutor executor = getTaskExecutor();
-			for ( KeyValuePair instanceKey : instanceKeys ) {
-				Runnable task = new Runnable() {
+			Runnable task = new Runnable() {
 
-					@Override
-					public void run() {
-						synchronized ( factories ) {
+				@Override
+				public void run() {
+					synchronized ( factories ) {
+						for ( KeyValuePair instanceKey : instanceKeys ) {
 							final String key = instanceKey.getKey();
-							Configuration conf = addProviderFactoryInstance(factoryPid, key, true);
 							try {
+								Configuration conf = getConfiguration(factoryPid, key);
 								SettingsCommand cmd = getSettingsForService(factoryPid, key);
 								if ( log.isInfoEnabled() ) {
 									String msg = settingsUpdateMessage(cmd);
@@ -227,17 +227,17 @@ public class CASettingsService
 											msg);
 								}
 								applySettingsUpdates(cmd, factoryPid, key, true, conf);
-							} catch ( IOException e ) {
+							} catch ( IOException | InvalidSyntaxException e ) {
 								throw new RuntimeException(e);
 							}
 						}
 					}
-				};
-				if ( executor != null ) {
-					executor.execute(task);
-				} else {
-					task.run();
 				}
+			};
+			if ( executor != null ) {
+				executor.execute(task);
+			} else {
+				task.run();
 			}
 		}
 	}
@@ -299,25 +299,18 @@ public class CASettingsService
 					log.error("Error getting factory instance configuration {}", instancePid, e);
 				}
 			}
-		}
-
-		if ( !factoryFound ) {
-			synchronized ( providers ) {
+			if ( !factoryFound ) {
 				providers.put(pid, new ProviderHelper(provider, properties));
 			}
-		}
 
-		SettingsCommand cmd = getSettingsForService(pid, factoryInstanceKey);
-		if ( log.isInfoEnabled() && factoryInstanceKey == null ) {
-			String msg = settingsUpdateMessage(cmd);
-			log.info("Component [{}] registered with {} custom settings: {}", pid,
-					cmd != null ? cmd.getValues().size() : 0, msg);
+			SettingsCommand cmd = getSettingsForService(pid, factoryInstanceKey);
+			if ( log.isInfoEnabled() && factoryInstanceKey == null ) {
+				String msg = settingsUpdateMessage(cmd);
+				log.info("Component [{}] registered with {} custom settings: {}", pid,
+						cmd != null ? cmd.getValues().size() : 0, msg);
+			}
+			applySettingsUpdates(cmd, pid, factoryInstanceKey, true);
 		}
-		if ( cmd == null ) {
-			return;
-		}
-
-		applySettingsUpdates(cmd, cmd.getProviderKey(), cmd.getInstanceKey(), true);
 	}
 
 	private SettingsCommand getSettingsForService(String pid, String instanceKey) {
@@ -362,63 +355,49 @@ public class CASettingsService
 			}
 		}
 
-		synchronized ( providers ) {
-			providers.remove(pid);
-		}
+		providers.remove(pid);
 	}
 
 	@Override
 	public List<SettingSpecifierProvider> getProviders() {
-		synchronized ( providers ) {
-			return providers.values().stream().map(ProviderHelper::getProvider).collect(toList());
-		}
+		return providers.values().stream().map(ProviderHelper::getProvider).collect(toList());
 	}
 
 	@Override
 	public List<SettingSpecifierProvider> getProviders(SearchFilter filter) {
-		synchronized ( providers ) {
-			return providers.values().stream().filter(h -> h.matches(filter))
-					.map(ProviderHelper::getProvider).collect(toList());
-		}
+		return providers.values().stream().filter(h -> h.matches(filter))
+				.map(ProviderHelper::getProvider).collect(toList());
 	}
 
 	@Override
 	public List<SettingSpecifierProviderFactory> getProviderFactories() {
-		synchronized ( factories ) {
-			return factories.values().stream().map(FactoryHelper::getFactory).collect(toList());
-		}
+		return factories.values().stream().map(FactoryHelper::getFactory).collect(toList());
 	}
 
 	@Override
 	public List<SettingSpecifierProviderFactory> getProviderFactories(SearchFilter filter) {
-		synchronized ( factories ) {
-			return factories.values().stream().filter(h -> h.matches(filter))
-					.map(FactoryHelper::getFactory).collect(toList());
-		}
+		return factories.values().stream().filter(h -> h.matches(filter)).map(FactoryHelper::getFactory)
+				.collect(toList());
 	}
 
 	@Override
 	public SettingSpecifierProviderFactory getProviderFactory(String factoryUID) {
-		synchronized ( factories ) {
-			FactoryHelper helper = factories.get(factoryUID);
-			if ( helper != null ) {
-				return helper.getFactory();
-			}
-			return null;
+		FactoryHelper helper = factories.get(factoryUID);
+		if ( helper != null ) {
+			return helper.getFactory();
 		}
+		return null;
 	}
 
 	@Override
 	public Map<String, FactorySettingSpecifierProvider> getProvidersForFactory(String factoryUID) {
 		Map<String, FactorySettingSpecifierProvider> results = new LinkedHashMap<>();
-		synchronized ( factories ) {
-			FactoryHelper helper = factories.get(factoryUID);
-			if ( helper != null ) {
-				for ( Map.Entry<String, SettingSpecifierProvider> me : helper.instanceEntrySet() ) {
-					String instanceUID = me.getKey();
-					results.put(instanceUID,
-							new BasicFactorySettingSpecifierProvider(instanceUID, me.getValue()));
-				}
+		FactoryHelper helper = factories.get(factoryUID);
+		if ( helper != null ) {
+			for ( Map.Entry<String, SettingSpecifierProvider> me : helper.instanceEntrySet() ) {
+				String instanceUID = me.getKey();
+				results.put(instanceUID,
+						new BasicFactorySettingSpecifierProvider(instanceUID, me.getValue()));
 			}
 		}
 		return results;
@@ -580,35 +559,36 @@ public class CASettingsService
 			originalProps.put(k, props.get(k));
 		}
 		Map<String, Object> propUpdates = new HashMap<>(originalProps);
-
-		if ( updates.getSettingKeyPatternsToClean() != null ) {
-			Set<String> keysToRemove = new HashSet<>();
-			for ( String key : propUpdates.keySet() ) {
-				for ( Pattern p : updates.getSettingKeyPatternsToClean() ) {
-					if ( p.matcher(key).matches() ) {
-						keysToRemove.add(key);
+		if ( updates != null ) {
+			if ( updates.getSettingKeyPatternsToClean() != null ) {
+				Set<String> keysToRemove = new HashSet<>();
+				for ( String key : propUpdates.keySet() ) {
+					for ( Pattern p : updates.getSettingKeyPatternsToClean() ) {
+						if ( p.matcher(key).matches() ) {
+							keysToRemove.add(key);
+						}
+					}
+				}
+				for ( String key : keysToRemove ) {
+					propUpdates.remove(key);
+					if ( !configurationOnly ) {
+						settingDao.deleteSetting(settingKey, key);
 					}
 				}
 			}
-			for ( String key : keysToRemove ) {
-				propUpdates.remove(key);
-				if ( !configurationOnly ) {
-					settingDao.deleteSetting(settingKey, key);
-				}
-			}
-		}
-		for ( SettingsUpdates.Change bean : updates.getSettingValueUpdates() ) {
-			if ( bean.isRemove() ) {
-				propUpdates.remove(bean.getKey());
-			} else {
-				propUpdates.put(bean.getKey(), bean.getValue());
-			}
-
-			if ( !configurationOnly && !bean.isTransient() ) {
+			for ( SettingsUpdates.Change bean : updates.getSettingValueUpdates() ) {
 				if ( bean.isRemove() ) {
-					settingDao.deleteSetting(settingKey, bean.getKey());
+					propUpdates.remove(bean.getKey());
 				} else {
-					settingDao.storeSetting(settingKey, bean.getKey(), bean.getValue());
+					propUpdates.put(bean.getKey(), bean.getValue());
+				}
+
+				if ( !configurationOnly && !bean.isTransient() ) {
+					if ( bean.isRemove() ) {
+						settingDao.deleteSetting(settingKey, bean.getKey());
+					} else {
+						settingDao.storeSetting(settingKey, bean.getKey(), bean.getValue());
+					}
 				}
 			}
 		}
@@ -658,7 +638,7 @@ public class CASettingsService
 				}
 			}
 			String newInstanceKey = String.valueOf(next);
-			addProviderFactoryInstance(factoryUID, newInstanceKey, false);
+			addProviderFactoryInstance(factoryUID, newInstanceKey);
 			log.info("Registered component [{}] instance {}", factoryUID, newInstanceKey);
 			return newInstanceKey;
 		}
@@ -691,26 +671,20 @@ public class CASettingsService
 			// delete instance values
 			settingDao.deleteSetting(getFactoryInstanceSettingKey(factoryUID, instanceUID));
 
-			addProviderFactoryInstance(factoryUID, instanceUID, false);
+			addProviderFactoryInstance(factoryUID, instanceUID);
 		}
 	}
 
-	private Configuration addProviderFactoryInstance(String factoryUID, String instanceUID,
-			boolean configurationOnly) {
-		if ( !configurationOnly ) {
-			settingDao.storeSetting(getFactorySettingKey(factoryUID), instanceUID, instanceUID);
-		}
+	private void addProviderFactoryInstance(String factoryUID, String instanceUID) {
+		settingDao.storeSetting(getFactorySettingKey(factoryUID), instanceUID, instanceUID);
 		try {
 			Configuration conf = getConfiguration(factoryUID, instanceUID);
-			if ( !configurationOnly ) {
-				Dictionary<String, Object> props = conf.getProperties();
-				if ( props == null ) {
-					props = new Hashtable<String, Object>();
-				}
-				props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceUID);
-				conf.update(props);
+			Dictionary<String, Object> props = conf.getProperties();
+			if ( props == null ) {
+				props = new Hashtable<String, Object>();
 			}
-			return conf;
+			props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceUID);
+			conf.update(props);
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		} catch ( InvalidSyntaxException e ) {
@@ -1000,9 +974,7 @@ public class CASettingsService
 		}
 
 		if ( !factoryFound ) {
-			synchronized ( handlers ) {
-				handlers.put(pid, handler);
-			}
+			handlers.put(pid, handler);
 		}
 	}
 
@@ -1030,25 +1002,19 @@ public class CASettingsService
 			}
 		}
 
-		synchronized ( handlers ) {
-			handlers.remove(pid, handler);
-		}
+		handlers.remove(pid, handler);
 	}
 
 	@Override
 	public SettingResourceHandler getSettingResourceHandler(String handlerKey, String instanceKey) {
 		SettingResourceHandler handler = null;
 		if ( instanceKey != null && !instanceKey.isEmpty() ) {
-			synchronized ( factories ) {
-				FactoryHelper helper = factories.get(handlerKey);
-				if ( helper != null ) {
-					handler = helper.getHandler(instanceKey);
-				}
+			FactoryHelper helper = factories.get(handlerKey);
+			if ( helper != null ) {
+				handler = helper.getHandler(instanceKey);
 			}
 		} else {
-			synchronized ( handlers ) {
-				handler = handlers.get(handlerKey);
-			}
+			handler = handlers.get(handlerKey);
 		}
 		return handler;
 	}
@@ -1108,7 +1074,7 @@ public class CASettingsService
 					FileCopyUtils.copy(r.getInputStream(),
 							new BufferedOutputStream(new FileOutputStream(outFile)));
 				}
-				log.info("Imported setting resource {}", out);
+				log.debug("Imported setting resource {}", out);
 				finalResources.add(new FileSystemResource(outFile));
 				i++;
 			} catch ( IOException e ) {

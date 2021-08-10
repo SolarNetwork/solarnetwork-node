@@ -50,19 +50,18 @@ import org.easymock.IAnswer;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.datum.filter.std.SourceThrottlingSamplesTransformer;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
-import net.solarnetwork.node.support.KeyValuePair;
 
 /**
  * Test cases for the {@link SourceThrottlingSamplesTransformer} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-@SuppressWarnings("deprecation")
 public class SourceThrottlingSamplesTransformerTests {
 
 	private static final int TEST_FREQ = 1;
@@ -115,7 +114,7 @@ public class SourceThrottlingSamplesTransformerTests {
 	public void testSourceMatchNoInitialSetting() {
 		final String settingKey = String.format(SETTING_KEY_TEMPLATE, TEST_UID);
 		List<KeyValuePair> initialSettings = Collections.emptyList();
-		expect(settingDao.getSettings(settingKey)).andReturn(initialSettings);
+		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
 		Capture<Setting> savedSettingCapture = new Capture<Setting>();
 		settingDao.storeSetting(capture(savedSettingCapture));
@@ -162,7 +161,7 @@ public class SourceThrottlingSamplesTransformerTests {
 		List<KeyValuePair> initialSettings = Collections
 				.singletonList(new KeyValuePair(datum.getSourceId(),
 						Long.toString(System.currentTimeMillis() - TEST_FREQ * 10 * 1000L, 16)));
-		expect(settingDao.getSettings(settingKey)).andReturn(initialSettings);
+		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
 		Capture<Setting> savedSettingCapture = new Capture<Setting>();
 		settingDao.storeSetting(capture(savedSettingCapture));
@@ -207,7 +206,7 @@ public class SourceThrottlingSamplesTransformerTests {
 		final String settingKey = String.format(SETTING_KEY_TEMPLATE, TEST_UID);
 		List<KeyValuePair> initialSettings = Collections
 				.singletonList(new KeyValuePair(datum.getSourceId(), Long.toString(start, 16)));
-		expect(settingDao.getSettings(settingKey)).andReturn(initialSettings);
+		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
 		Capture<Setting> savedSettingCapture = new Capture<Setting>();
 		settingDao.storeSetting(capture(savedSettingCapture));
@@ -253,13 +252,13 @@ public class SourceThrottlingSamplesTransformerTests {
 	public void settingCacheExpiresNoInitialSetting() throws InterruptedException {
 		final String settingKey = String.format(SETTING_KEY_TEMPLATE, TEST_UID);
 		List<KeyValuePair> initialSettings = Collections.emptyList();
-		expect(settingDao.getSettings(settingKey)).andReturn(initialSettings);
+		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
 		final Capture<Setting> savedSettingCapture = new Capture<Setting>(CaptureType.ALL);
 		settingDao.storeSetting(capture(savedSettingCapture));
 
 		// reload cached settings from DAO after expires
-		expect(settingDao.getSettings(settingKey)).andAnswer(new IAnswer<List<KeyValuePair>>() {
+		expect(settingDao.getSettingValues(settingKey)).andAnswer(new IAnswer<List<KeyValuePair>>() {
 
 			@Override
 			public List<KeyValuePair> answer() throws Throwable {
@@ -315,10 +314,10 @@ public class SourceThrottlingSamplesTransformerTests {
 		final String settingKey = String.format(SETTING_KEY_TEMPLATE, TEST_UID);
 		List<KeyValuePair> initialSettings = Collections
 				.singletonList(new KeyValuePair(datum.getSourceId(), Long.toString(start, 16)));
-		expect(settingDao.getSettings(settingKey)).andReturn(initialSettings);
+		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
 		// reload cached settings from DAO after expires (no changes)
-		expect(settingDao.getSettings(settingKey)).andReturn(initialSettings);
+		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
 		final Capture<Setting> savedSettingCapture = new Capture<Setting>(CaptureType.ALL);
 		settingDao.storeSetting(capture(savedSettingCapture));

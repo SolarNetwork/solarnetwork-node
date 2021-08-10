@@ -9,7 +9,7 @@ low-level knowledge of the device you want to collect data from.
 # Install
 
 The plugin can be installed via the **Plugins** page on your SolarNode. It
-appears under the **Datum** category as **Generic Modbus Datum Source**.
+appears under the **Datum** category as **Modbus Datum Source**.
 
 # Use
 
