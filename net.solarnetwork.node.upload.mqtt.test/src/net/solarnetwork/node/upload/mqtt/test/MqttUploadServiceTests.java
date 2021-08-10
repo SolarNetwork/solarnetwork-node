@@ -95,6 +95,8 @@ import net.solarnetwork.node.support.NodeControlInfoSerializer;
 import net.solarnetwork.node.upload.mqtt.MqttUploadService;
 import net.solarnetwork.test.mqtt.MqttServerSupport;
 import net.solarnetwork.test.mqtt.TestingInterceptHandler;
+import net.solarnetwork.util.Half;
+import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.ObjectMapperFactoryBean;
 import net.solarnetwork.util.StaticOptionalService;
 
@@ -102,7 +104,7 @@ import net.solarnetwork.util.StaticOptionalService;
  * Test cases for the {@link MqttUploadService} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class MqttUploadServiceTests extends MqttServerSupport {
 
@@ -368,6 +370,61 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		assertThat("Event topic", datumUploadEvent.getTopic(),
 				equalTo(UploadService.EVENT_TOPIC_DATUM_UPLOADED));
 		assertThat("Event prop 'foo'", datumUploadEvent.getProperty("foo"), equalTo((Object) 123));
+	}
+
+	@Test
+	public void uploadWithConnectionToMqttServer_stream_withHalf() throws IOException {
+		// GIVEN
+		Half h = new Half("1.23");
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setCreated(new Date());
+		datum.setSourceId("test.source");
+		datum.putInstantaneousSampleValue("foo", h);
+
+		// stream metadata available
+		BasicObjectDatumStreamMetadata meta = new BasicObjectDatumStreamMetadata(UUID.randomUUID(),
+				"Pacific/Auckland", ObjectDatumKind.Node, nodeId, "test.source", new String[] { "foo" },
+				null, null);
+		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Node, nodeId,
+				datum.getSourceId())).andReturn(meta);
+
+		Capture<Event> eventCaptor = new Capture<Event>();
+		eventAdminService.postEvent(capture(eventCaptor));
+
+		replayAll();
+
+		// WHEN
+		String txId = service.uploadDatum(datum);
+
+		stopMqttServer(); // to flush messages
+
+		// THEN
+		assertThat("TX ID", txId, notNullValue());
+
+		TestingInterceptHandler session = getTestingInterceptHandler();
+		assertThat("Connected to broker", session.connectMessages, hasSize(1));
+
+		InterceptConnectMessage connMsg = session.connectMessages.get(0);
+		assertThat("Connect client ID", connMsg.getClientID(), equalTo(nodeId.toString()));
+		assertThat("Durable session", connMsg.isCleanSession(), equalTo(true));
+
+		assertThat("Published datum", session.publishMessages, hasSize(1));
+		InterceptPublishMessage pubMsg = session.publishMessages.get(0);
+		assertThat("Publish client ID", pubMsg.getClientID(), equalTo(nodeId.toString()));
+		assertThat("Publish topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
+
+		// StreamDatum published
+		DatumProperties props = DatumProperties.propertiesFrom(datum, meta);
+		BasicStreamDatum streamDatum = new BasicStreamDatum(meta.getStreamId(), datum.getTimestamp(),
+				props);
+		assertThat("Publish payload", session.getPublishPayloadStringAtIndex(0),
+				equalTo(objectMapper.writeValueAsString(streamDatum)));
+
+		Event datumUploadEvent = eventCaptor.getValue();
+		assertThat("Event topic", datumUploadEvent.getTopic(),
+				equalTo(UploadService.EVENT_TOPIC_DATUM_UPLOADED));
+		assertThat("Half event prop 'foo' converted to BigDecimal", datumUploadEvent.getProperty("foo"),
+				equalTo((Object) NumberUtils.bigDecimalForNumber(h)));
 	}
 
 	@Test
