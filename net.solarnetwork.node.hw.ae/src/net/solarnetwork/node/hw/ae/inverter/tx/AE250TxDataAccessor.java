@@ -22,6 +22,9 @@
 
 package net.solarnetwork.node.hw.ae.inverter.tx;
 
+import java.util.Set;
+import java.util.SortedSet;
+import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.PVEnergyDataAccessor;
 
@@ -29,7 +32,7 @@ import net.solarnetwork.node.domain.PVEnergyDataAccessor;
  * API for reading AE 250TX data.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface AE250TxDataAccessor extends PVEnergyDataAccessor, ACEnergyDataAccessor {
 
@@ -81,5 +84,34 @@ public interface AE250TxDataAccessor extends PVEnergyDataAccessor, ACEnergyDataA
 	 * @return the rated power
 	 */
 	Integer getInverterRatedPower();
+
+	/**
+	 * Get the system status.
+	 * 
+	 * @return the status
+	 * @since 1.1
+	 */
+	Set<AE250TxSystemStatus> getSystemStatus();
+
+	/**
+	 * Get the complete set of active faults, sorted by fault number.
+	 * 
+	 * @return the active faults
+	 */
+	SortedSet<AE250TxFault> getFaults();
+
+	/**
+	 * Get the complete set of active warnings, sorted by warning number.
+	 * 
+	 * @return the active warnings
+	 */
+	SortedSet<AE250TxWarning> getWarnings();
+
+	/**
+	 * Get the device operating state.
+	 * 
+	 * @return the device operating state
+	 */
+	DeviceOperatingState getDeviceOperatingState();
 
 }

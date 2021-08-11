@@ -99,22 +99,31 @@ public enum AE250TxRegister implements ModbusReference {
 	/** The DC power output, in kW. */
 	InverterDcPower(1024, Float32),
 
+	/** System status bitmask, see {@link AE250TxSystemStatus}. */
 	StatusOperatingState(2100, UInt16),
 
+	/** Main falts bitmask, see {@link AE250TxMainFault}. */
 	StatusMainFault(2101, UInt16),
 
+	/** Drive falts bitmask, see {@link AE250TxDriveFault}. */
 	StatusDriveFault(2102, UInt16),
 
+	/** Voltage falts bitmask, see {@link AE250TxVoltageFault}. */
 	StatusVoltageFault(2103, UInt16),
 
+	/** Grid falts bitmask, see {@link AE250TxGridFault}. */
 	StatusGridFault(2104, UInt16),
 
+	/** Temperature falts bitmask, see {@link AE250TxTemperatureFault}. */
 	StatusTemperatureFault(2105, UInt16),
 
+	/** System falts bitmask, see {@link AE250TxSystemFault}. */
 	StatusSystemFault(2106, UInt16),
 
+	/** System warning bitmask, see {@link AE250TxSystemWarning}. */
 	StatusSystemWarnings(2107, UInt16),
 
+	/** PVM status bitmask, see {@link AE250TxPvmStatus}. */
 	StatusPvMonitoringStatus(2108, UInt16);
 
 	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(

@@ -22,10 +22,16 @@
 
 package net.solarnetwork.node.hw.ae.inverter.tx;
 
+import static net.solarnetwork.domain.Bitmaskable.setForBitmask;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import net.solarnetwork.domain.Bitmaskable;
+import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -216,6 +222,79 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	@Override
 	public Integer getInverterRatedPower() {
 		return getKiloValueAsInteger(AE250TxRegister.InfoRatedPower);
+	}
+
+	@Override
+	public Set<AE250TxSystemStatus> getSystemStatus() {
+		Number n = getNumber(AE250TxRegister.StatusOperatingState);
+		return (n != null ? setForBitmask(n.intValue(), AE250TxSystemStatus.class) : null);
+	}
+
+	@Override
+	public SortedSet<AE250TxFault> getFaults() {
+		SortedSet<AE250TxFault> result = new TreeSet<>(Bitmaskable.SORT_BY_TYPE);
+		Number n = getNumber(AE250TxRegister.StatusMainFault);
+		if ( n != null ) {
+			result.addAll(setForBitmask(n.intValue(), AE250TxMainFault.class));
+		}
+		n = getNumber(AE250TxRegister.StatusDriveFault);
+		if ( n != null ) {
+			result.addAll(setForBitmask(n.intValue(), AE250TxDriveFault.class));
+		}
+		n = getNumber(AE250TxRegister.StatusVoltageFault);
+		if ( n != null ) {
+			result.addAll(setForBitmask(n.intValue(), AE250TxVoltageFault.class));
+		}
+		n = getNumber(AE250TxRegister.StatusGridFault);
+		if ( n != null ) {
+			result.addAll(setForBitmask(n.intValue(), AE250TxGridFault.class));
+		}
+		n = getNumber(AE250TxRegister.StatusTemperatureFault);
+		if ( n != null ) {
+			result.addAll(setForBitmask(n.intValue(), AE250TxTemperatureFault.class));
+		}
+		n = getNumber(AE250TxRegister.StatusSystemFault);
+		if ( n != null ) {
+			result.addAll(setForBitmask(n.intValue(), AE250TxSystemFault.class));
+		}
+		return result;
+	}
+
+	@Override
+	public SortedSet<AE250TxWarning> getWarnings() {
+		SortedSet<AE250TxWarning> result = new TreeSet<>(Bitmaskable.SORT_BY_TYPE);
+		Number n = getNumber(AE250TxRegister.StatusSystemWarnings);
+		if ( n != null ) {
+			result.addAll(setForBitmask(n.intValue(), AE250TxSystemWarning.class));
+		}
+		n = getNumber(AE250TxRegister.StatusPvMonitoringStatus);
+		if ( n != null ) {
+			result.addAll(setForBitmask(n.intValue(), AE250TxPvmStatus.class));
+		}
+		return result;
+	}
+
+	@Override
+	public DeviceOperatingState getDeviceOperatingState() {
+		Set<AE250TxSystemStatus> status = getSystemStatus();
+		if ( status.contains(AE250TxSystemStatus.Initialization)
+				|| status.contains(AE250TxSystemStatus.StartupDelay)
+				|| status.contains(AE250TxSystemStatus.Latching)
+				|| status.contains(AE250TxSystemStatus.AcPrecharge)
+				|| status.contains(AE250TxSystemStatus.DcPrecharge) ) {
+			return DeviceOperatingState.Starting;
+		} else if ( status.contains(AE250TxSystemStatus.Sleep) ) {
+			return DeviceOperatingState.Standby;
+		} else if ( status.contains(AE250TxSystemStatus.Fault) ) {
+			return DeviceOperatingState.Fault;
+		} else if ( !status.contains(AE250TxSystemStatus.Disabled) ) {
+			return DeviceOperatingState.Disabled;
+		} else if ( !status.contains(AE250TxSystemStatus.Idle) ) {
+			return DeviceOperatingState.Shutdown;
+		} else if ( status.contains(AE250TxSystemStatus.CoolDown) ) {
+			return DeviceOperatingState.Recovery;
+		}
+		return DeviceOperatingState.Normal;
 	}
 
 	@Override
