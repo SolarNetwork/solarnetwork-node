@@ -18,11 +18,19 @@
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
 		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
+		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="datumMetadataService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.DatumMetadataService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+		
 	<bean id="placeholderService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
+		<property name="sticky" value="true"/>
 	</bean>
 	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
@@ -31,6 +39,7 @@
 				<value>net.solarnetwork.node.datum.ae.ae250tx.AE250TxDatumDataSource</value>
 				<value>net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport</value>
 				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.node.support.DatumDataSourceSupport</value>
 			</list>
 		</property>
 	</bean>
@@ -44,6 +53,7 @@
 	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+		<property name="sticky" value="true"/>
 	</bean>
 	
 	<!-- Published Services -->
@@ -105,6 +115,7 @@
 									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="placeholderService" ref="placeholderService"/>
+									<property name="datumMetadataService" ref="datumMetadataService"/>
 									<property name="modbusNetwork">
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>

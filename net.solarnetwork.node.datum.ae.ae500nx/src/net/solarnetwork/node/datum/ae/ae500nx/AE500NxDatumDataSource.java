@@ -155,6 +155,8 @@ public class AE500NxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE5
 				String.valueOf(defaults.getSampleCacheMs())));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
 
+		results.addAll(getDeviceInfoMetadataSettingSpecifiers());
+
 		return results;
 	}
 
