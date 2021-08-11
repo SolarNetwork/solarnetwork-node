@@ -38,7 +38,7 @@ import net.solarnetwork.util.NumberUtils;
  * Data object for the AE 250TX series inverter.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 
@@ -97,8 +97,16 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 					config.getTapType().getDescription(), config.isMeterInstalled() ? "yes" : "no"));
 		}
 		String s = data.getSerialNumber();
-		if ( s != null ) {
+		if ( s != null && !s.isEmpty() ) {
 			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, s);
+		}
+		s = data.getIdNumber();
+		if ( s != null && !s.isEmpty() ) {
+			result.put("ID Number", s);
+		}
+		Integer rating = data.getInverterRatedPower();
+		if ( rating != null ) {
+			result.put("Rated Power", rating);
 		}
 		return result;
 	}
