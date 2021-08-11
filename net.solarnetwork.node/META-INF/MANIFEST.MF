@@ -5,7 +5,7 @@ Bundle-SymbolicName: net.solarnetwork.node
 Automatic-Module-Name: net.solarnetwork.node
 Bundle-Description: The core of the SolarNode framework that provides basic 
  infrastructure for all of the SolarNode application.
-Bundle-Version: 1.88.1
+Bundle-Version: 1.89.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: 
@@ -15,7 +15,7 @@ Export-Package:
  net.solarnetwork.node.domain;version="1.25.0",
  net.solarnetwork.node.job;version="1.16.2",
  net.solarnetwork.node.reactor;version="1.8.0",
- net.solarnetwork.node.reactor.support;version="1.5.0",
+ net.solarnetwork.node.reactor.support;version="1.6.0",
  net.solarnetwork.node.settings;version="1.15.0",
  net.solarnetwork.node.settings.support;version="1.12.0",
  net.solarnetwork.node.setup;version="1.12.0",
@@ -26,6 +26,7 @@ Import-Package:
  com.fasterxml.jackson.core;version="[2.10.1,3.0)",
  com.fasterxml.jackson.databind;version="[2.10.1,3.0)",
  com.fasterxml.jackson.databind.annotation;version="[2.10.1,3.0)",
+ com.fasterxml.jackson.databind.deser.std;version="[2.10.1,3.0)",
  com.fasterxml.jackson.databind.ser.std;version="[2.10.1,3.0)",
  com.fasterxml.jackson.datatype.jsr310;version="[2.10.1,3.0)",
  javax.net.ssl,
@@ -35,7 +36,7 @@ Import-Package:
  javax.xml.transform.dom,
  javax.xml.transform.stream,
  javax.xml.xpath,
- net.solarnetwork.codec;version="[1.0,2.0)",
+ net.solarnetwork.codec;version="[1.2,2.0)",
  net.solarnetwork.domain;version="[1.27,2.0)",
  net.solarnetwork.domain.datum;version="[1.3,2.0)",
  net.solarnetwork.settings;version="[1.3,2.0)",
