@@ -55,11 +55,7 @@ import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.settings.SettingsChangeObserver;
 
 /**
- * FIXME
- * 
- * <p>
- * TODO
- * </p>
+ * A STOMP protocol server for SolarNode Setup, using Netty.
  * 
  * @author matt
  * @version 1.0

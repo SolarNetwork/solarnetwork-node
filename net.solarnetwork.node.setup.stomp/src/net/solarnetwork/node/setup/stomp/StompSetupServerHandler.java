@@ -28,8 +28,14 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.stomp.DefaultStompFrame;
@@ -52,11 +58,18 @@ import net.solarnetwork.node.reactor.support.InstructionUtils;
  */
 public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 
+	/** The server version. */
+	public static final String SERVER_VERSION = "1.0.0";
+
 	private static final Set<String> STOMP_HEADER_NAMES = createStompHeaderNames();
 
 	private final List<FeedbackInstructionHandler> instructionHandlers;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	private final ConcurrentMap<UUID, SetupSession> sessions = new ConcurrentHashMap<>(4, 0.9f, 1);
+
+	// TODO: need cleanup timer to clean expired sessions
 
 	/**
 	 * Constructor.
@@ -104,10 +117,16 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 				return;
 			}
 			log.debug("Got stomp message: {}", frame);
+			final SetupSession session = sessionForChannel(ctx.channel());
+			if ( session == null ) {
+				setupSession(ctx, frame);
+				return;
+			}
+
 			switch (frame.command()) {
 				case STOMP:
 				case CONNECT:
-					// TODO: authenticate
+					sendError(ctx, "Already connected.");
 					break;
 
 				case SEND:
@@ -123,6 +142,30 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 		} finally {
 			ReferenceCountUtil.release(msg);
 		}
+	}
+
+	private SetupSession sessionForChannel(Channel channel) {
+		return sessions.values().stream().filter(s -> s.getChannel() == channel).findAny().orElse(null);
+	}
+
+	private void setupSession(ChannelHandlerContext ctx, StompFrame connectFrame) {
+		final Channel channel = ctx.channel();
+		final SetupSession s = new SetupSession(channel);
+		final UUID sessionId = s.getSessionId();
+		sessions.put(s.getSessionId(), s);
+		channel.closeFuture().addListener(new ChannelFutureListener() {
+
+			@Override
+			public void operationComplete(ChannelFuture future) {
+				sessions.remove(sessionId);
+			}
+		});
+		DefaultStompFrame f = new DefaultStompFrame(StompCommand.CONNECTED);
+		f.headers().set(StompHeaders.VERSION, "1.2");
+		f.headers().set(StompHeaders.SERVER, "SolarNode-Setup/" + SERVER_VERSION);
+		f.headers().set(StompHeaders.SESSION, s.getSessionId().toString());
+		f.headers().set(StompHeaders.MESSAGE, "Please authenticate.");
+		ctx.writeAndFlush(f);
 	}
 
 	private void executeInstruction(ChannelHandlerContext ctx, StompFrame frame) {

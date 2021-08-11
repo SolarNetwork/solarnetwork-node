@@ -13,6 +13,13 @@
 		<artifact type="sources" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
+		<dependency org="io.netty" name="netty-buffer" rev="4.1.63.Final"/>
+		<dependency org="io.netty" name="netty-codec" rev="4.1.63.Final"/>
+		<dependency org="io.netty" name="netty-codec-stomp" rev="4.1.63.Final"/>
+		<dependency org="io.netty" name="netty-common" rev="4.1.63.Final"/>
+		<dependency org="io.netty" name="netty-handler" rev="4.1.63.Final"/>
+		<dependency org="io.netty" name="netty-resolver" rev="4.1.63.Final"/>
+		<dependency org="io.netty" name="netty-transport" rev="4.1.63.Final"/>
     	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.88,)"/>
     	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>
 		<dependency org="org.springframework" name="spring-beans" rev="4.3.23.RELEASE"/>
