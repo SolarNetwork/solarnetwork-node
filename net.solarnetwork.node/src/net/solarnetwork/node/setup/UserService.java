@@ -26,7 +26,7 @@ package net.solarnetwork.node.setup;
  * API for managing users and roles on the SolarNode system.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.48
  */
 public interface UserService {
@@ -34,9 +34,9 @@ public interface UserService {
 	/**
 	 * Test if any user exists.
 	 * 
-	 * @return <em>true</em> if some user exists
+	 * @return {@literal true} if some user exists
 	 */
-	public boolean someUserExists();
+	boolean someUserExists();
 
 	/**
 	 * Update the active user's password.
@@ -49,10 +49,9 @@ public interface UserService {
 	 *        The new password, repeated.
 	 * @throws IllegalArgumentException
 	 *         if the {@code newPassword} and {@code newPasswordAgain} values do
-	 *         not match, or are <em>null</em>
+	 *         not match, or are {@literal null}
 	 */
-	public void changePassword(final String existingPassword, final String newPassword,
-			final String newPasswordAgain);
+	void changePassword(String existingPassword, String newPassword, String newPasswordAgain);
 
 	/**
 	 * Update the active user's username.
@@ -63,9 +62,9 @@ public interface UserService {
 	 *        The new username, repeated.
 	 * @throws IllegalArgumentException
 	 *         if the {@code newUsername} and {@code newUsernameAgain} values do
-	 *         not match, or are <em>null</em>
+	 *         not match, or are {@literal null}
 	 */
-	public void changeUsername(String newUsername, String newUsernameAgain);
+	void changeUsername(String newUsername, String newUsernameAgain);
 
 	/**
 	 * Store a user profile into settings.
@@ -73,10 +72,10 @@ public interface UserService {
 	 * @param profile
 	 *        The profile to store.
 	 * @throws IllegalArgumentException
-	 *         if {@code username} is <em>null</em>, or if the {@code password}
-	 *         and {@code passwordAgain} values do not match or are
-	 *         <em>null</em>
+	 *         if {@code username} is {@literal null}, or if the
+	 *         {@code password} and {@code passwordAgain} values do not match or
+	 *         are {@literal null}
 	 */
-	public void storeUserProfile(UserProfile profile);
+	void storeUserProfile(UserProfile profile);
 
 }
