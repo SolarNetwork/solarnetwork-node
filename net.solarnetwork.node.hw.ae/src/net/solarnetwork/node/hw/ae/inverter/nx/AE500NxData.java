@@ -43,7 +43,7 @@ import net.solarnetwork.util.NumberUtils;
  * Data object for the AE 500NX series inverter.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.1
  */
 public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
@@ -113,7 +113,7 @@ public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
 	}
 
 	/**
-	 * Read the inverter registers from the device.
+	 * Read the inverter and status registers from the device.
 	 * 
 	 * @param conn
 	 *        the connection
@@ -122,7 +122,7 @@ public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
 	 */
 	public final void readInverterData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
-				AE500NxRegister.getInverterRegisterAddressSet(), MAX_RESULTS);
+				AE500NxRegister.getDataRegisterAddressSet(), MAX_RESULTS);
 	}
 
 	/**

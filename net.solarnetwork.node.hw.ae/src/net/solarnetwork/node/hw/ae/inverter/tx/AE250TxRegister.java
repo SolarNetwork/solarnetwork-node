@@ -38,7 +38,7 @@ import net.solarnetwork.util.IntRangeSet;
  * Enumeration of Modbus register mappings for the AE 250 TX series inverter.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public enum AE250TxRegister implements ModbusReference {
 
@@ -132,6 +132,8 @@ public enum AE250TxRegister implements ModbusReference {
 			AE250TxRegister.class, new HashSet<>(asList("Inverter"))).immutableCopy();
 	private static final IntRangeSet STATUS_REGISTER_ADDRESS_SET = createAddressSet(
 			AE250TxRegister.class, new HashSet<>(asList("Status"))).immutableCopy();
+	private static final IntRangeSet DATA_REGISTER_ADDRESS_SET = createAddressSet(AE250TxRegister.class,
+			new HashSet<>(asList("Inverter", "Status"))).immutableCopy();
 
 	private final int address;
 	private final int length;
@@ -224,4 +226,21 @@ public enum AE250TxRegister implements ModbusReference {
 	public static IntRangeSet getStatusRegisterAddressSet() {
 		return STATUS_REGISTER_ADDRESS_SET;
 	}
+
+	/**
+	 * Get an address range set that covers all the inverter and status
+	 * registers defined in this enumeration.
+	 * 
+	 * <p>
+	 * Note the ranges in this set represent <i>inclusive</i> starting addresses
+	 * and ending addresses.
+	 * </p>
+	 * 
+	 * @return the range set
+	 * @since 2.2
+	 */
+	public static IntRangeSet getDataRegisterAddressSet() {
+		return DATA_REGISTER_ADDRESS_SET;
+	}
+
 }

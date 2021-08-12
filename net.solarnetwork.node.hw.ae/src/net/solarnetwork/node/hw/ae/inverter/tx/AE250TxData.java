@@ -132,7 +132,7 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	}
 
 	/**
-	 * Read the inverter registers from the device.
+	 * Read the inverter and status registers from the device.
 	 * 
 	 * @param conn
 	 *        the connection
@@ -141,7 +141,7 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	 */
 	public final void readInverterData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
-				AE250TxRegister.getInverterRegisterAddressSet(), MAX_RESULTS);
+				AE250TxRegister.getDataRegisterAddressSet(), MAX_RESULTS);
 	}
 
 	/**
@@ -287,9 +287,9 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 			return DeviceOperatingState.Standby;
 		} else if ( status.contains(AE250TxSystemStatus.Fault) ) {
 			return DeviceOperatingState.Fault;
-		} else if ( !status.contains(AE250TxSystemStatus.Disabled) ) {
+		} else if ( status.contains(AE250TxSystemStatus.Disabled) ) {
 			return DeviceOperatingState.Disabled;
-		} else if ( !status.contains(AE250TxSystemStatus.Idle) ) {
+		} else if ( status.contains(AE250TxSystemStatus.Idle) ) {
 			return DeviceOperatingState.Shutdown;
 		} else if ( status.contains(AE250TxSystemStatus.CoolDown) ) {
 			return DeviceOperatingState.Recovery;

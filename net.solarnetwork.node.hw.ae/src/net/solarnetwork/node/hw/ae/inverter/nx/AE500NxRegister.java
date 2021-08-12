@@ -44,7 +44,7 @@ import net.solarnetwork.util.IntRangeSet;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.1
  */
 public enum AE500NxRegister implements ModbusReference {
@@ -154,6 +154,8 @@ public enum AE500NxRegister implements ModbusReference {
 			AE500NxRegister.class, new HashSet<>(asList("Inverter"))).immutableCopy();
 	private static final IntRangeSet STATUS_REGISTER_ADDRESS_SET = createAddressSet(
 			AE500NxRegister.class, new HashSet<>(asList("Status"))).immutableCopy();
+	private static final IntRangeSet DATA_REGISTER_ADDRESS_SET = createAddressSet(
+			AE500NxRegister.class, new HashSet<>(asList("Inverter", "Status"))).immutableCopy();
 
 	private final int address;
 	private final int length;
@@ -245,6 +247,22 @@ public enum AE500NxRegister implements ModbusReference {
 	 */
 	public static IntRangeSet getStatusRegisterAddressSet() {
 		return STATUS_REGISTER_ADDRESS_SET;
+	}
+
+	/**
+	 * Get an address range set that covers all the inverter and status
+	 * registers defined in this enumeration.
+	 * 
+	 * <p>
+	 * Note the ranges in this set represent <i>inclusive</i> starting addresses
+	 * and ending addresses.
+	 * </p>
+	 * 
+	 * @return the range set
+	 * @since 1.1
+	 */
+	public static IntRangeSet getDataRegisterAddressSet() {
+		return DATA_REGISTER_ADDRESS_SET;
 	}
 
 }
