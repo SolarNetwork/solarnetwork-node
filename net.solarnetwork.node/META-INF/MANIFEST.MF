@@ -18,7 +18,7 @@ Export-Package:
  net.solarnetwork.node.reactor.support;version="1.6.0",
  net.solarnetwork.node.settings;version="1.15.0",
  net.solarnetwork.node.settings.support;version="1.12.0",
- net.solarnetwork.node.setup;version="1.12.0",
+ net.solarnetwork.node.setup;version="1.13.0",
  net.solarnetwork.node.support;version="1.27.3",
  net.solarnetwork.node.util;version="1.7.2"
 Import-Package: 

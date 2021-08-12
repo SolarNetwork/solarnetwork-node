@@ -78,4 +78,14 @@ public interface UserService {
 	 */
 	void storeUserProfile(UserProfile profile);
 
+	/**
+	 * Get authentication info for a given username.
+	 * 
+	 * @param username
+	 *        the username to get authentication info for
+	 * @return the info, or {@literal null} if not available
+	 * @since 1.1
+	 */
+	UserAuthenticationInfo authenticationInfo(String username);
+
 }
