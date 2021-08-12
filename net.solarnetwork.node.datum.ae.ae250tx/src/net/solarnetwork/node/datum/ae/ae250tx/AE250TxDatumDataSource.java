@@ -71,6 +71,11 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 	}
 
 	@Override
+	protected String deviceInfoSourceId() {
+		return sourceId;
+	}
+
+	@Override
 	protected void refreshDeviceInfo(ModbusConnection connection, AE250TxData sample)
 			throws IOException {
 		sample.readConfigurationData(connection);
