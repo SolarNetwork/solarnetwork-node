@@ -23,6 +23,7 @@
 package net.solarnetwork.node.setup.stomp;
 
 import java.util.UUID;
+import org.springframework.security.core.Authentication;
 import io.netty.channel.Channel;
 
 /**
@@ -34,9 +35,11 @@ import io.netty.channel.Channel;
 public class SetupSession {
 
 	private final UUID sessionId;
+	private final String login;
 	private final Channel channel;
 	private final long created;
 	private long lastActivity;
+	private Authentication authentication;
 
 	/**
 	 * Constructor.
@@ -45,16 +48,36 @@ public class SetupSession {
 	 * A {@code sessionId} will be assigned during construction to a new random
 	 * value.
 	 * </p>
+	 * 
+	 * @param login
+	 *        the username to associate with the session
+	 * @param channel
+	 *        the channel
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
 	 */
-	public SetupSession(Channel channel) {
+	public SetupSession(String login, Channel channel) {
 		super();
+		if ( login == null ) {
+			throw new IllegalArgumentException("The login argument must not be null.");
+		}
+		this.login = login;
 		if ( channel == null ) {
 			throw new IllegalArgumentException("The channel argument must not be null.");
 		}
-		this.sessionId = UUID.randomUUID();
 		this.channel = channel;
+		this.sessionId = UUID.randomUUID();
 		this.created = System.currentTimeMillis();
 		this.lastActivity = this.created;
+	}
+
+	/**
+	 * Get the login.
+	 * 
+	 * @return the login
+	 */
+	public String getLogin() {
+		return login;
 	}
 
 	/**
@@ -102,6 +125,36 @@ public class SetupSession {
 	 */
 	public void activity() {
 		this.lastActivity = System.currentTimeMillis();
+	}
+
+	/**
+	 * Test if the session has successfully authenticated.
+	 * 
+	 * @return {@literal true} if an {@code Authentication} has been set and is
+	 *         authenticated
+	 */
+	public boolean isAuthenticated() {
+		final Authentication auth = getAuthentication();
+		return (auth != null && auth.isAuthenticated());
+	}
+
+	/**
+	 * Get the session authentication.
+	 * 
+	 * @return the authentication
+	 */
+	public Authentication getAuthentication() {
+		return authentication;
+	}
+
+	/**
+	 * Set the session authentication.
+	 * 
+	 * @param authentication
+	 *        the authentication to set
+	 */
+	public void setAuthentication(Authentication authentication) {
+		this.authentication = authentication;
 	}
 
 }

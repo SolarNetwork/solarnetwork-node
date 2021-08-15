@@ -31,6 +31,7 @@ import java.util.concurrent.ThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.TaskScheduler;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -51,6 +52,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.setup.UserService;
 import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.settings.SettingsChangeObserver;
 
@@ -74,6 +76,8 @@ public class StompSetupServer extends BaseIdentifiable
 
 	private static final Logger log = LoggerFactory.getLogger(StompSetupServer.class);
 
+	private final UserService userService;
+	private final UserDetailsService userDetailsService;
 	private final List<FeedbackInstructionHandler> instructionHandlers;
 
 	private TaskScheduler taskScheduler;
@@ -89,11 +93,26 @@ public class StompSetupServer extends BaseIdentifiable
 	/**
 	 * Constructor.
 	 * 
+	 * @param userService
+	 *        the user service
+	 * @param userDetailsService
+	 *        the user details service
 	 * @param instructionHandlers
 	 *        the handlers
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
 	 */
-	public StompSetupServer(List<FeedbackInstructionHandler> instructionHandlers) {
+	public StompSetupServer(UserService userService, UserDetailsService userDetailsService,
+			List<FeedbackInstructionHandler> instructionHandlers) {
 		super();
+		if ( userService == null ) {
+			throw new IllegalArgumentException("The userService argument must not be null.");
+		}
+		this.userService = userService;
+		if ( userDetailsService == null ) {
+			throw new IllegalArgumentException("The userDetailsService argument must not be null.");
+		}
+		this.userDetailsService = userDetailsService;
 		if ( instructionHandlers == null ) {
 			throw new IllegalArgumentException("The instructionHandlers argument must not be null.");
 		}
@@ -197,7 +216,7 @@ public class StompSetupServer extends BaseIdentifiable
 					new StompSubframeDecoder(),
 					new StompSubframeAggregator(4096),
 					new StompSubframeEncoder(),
-					new StompSetupServerHandler(instructionHandlers));
+					new StompSetupServerHandler(userService, userDetailsService, instructionHandlers));
 			// @formatter:on
 		}
 	}
