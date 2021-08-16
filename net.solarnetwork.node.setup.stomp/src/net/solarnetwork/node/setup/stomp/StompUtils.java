@@ -22,6 +22,9 @@
 
 package net.solarnetwork.node.setup.stomp;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Utilities for STOMP.
  * 
@@ -29,6 +32,20 @@ package net.solarnetwork.node.setup.stomp;
  * @version 1.0
  */
 public final class StompUtils {
+
+	/**
+	 * Pattern that matches characters that are reserved in STOMP headers and
+	 * must be backlash-escaped.
+	 */
+	public static final Pattern HEADER_RESERVED_REGEX = Pattern
+			.compile("(" + Pattern.quote("\\") + "|\r|\n|:)");
+
+	/**
+	 * Pattern that matches characters that are backslash-escaped in STOMP
+	 * headers and must be un-escaped.
+	 */
+	public static final Pattern HEADER_ESCAPED_REGEX = Pattern
+			.compile("(" + Pattern.quote("\\") + "[" + Pattern.quote("\\") + "rnc])");
 
 	private StompUtils() {
 		// can't construct me
@@ -45,12 +62,39 @@ public final class StompUtils {
 		if ( v == null || v.isEmpty() ) {
 			return v;
 		}
-		// @formatter:off
-	    return v.replaceAll("\\\\", "\\\\\\\\")
-	        .replaceAll("\r", "\\\\r")
-	        .replaceAll("\n", "\\\\n")
-	        .replaceAll(":", "\\\\c");
-	    // @formatter:on
+		Matcher m = HEADER_RESERVED_REGEX.matcher(v);
+		if ( !m.find() ) {
+			return v;
+		}
+		m.reset();
+		int idx = 0;
+		StringBuilder buf = new StringBuilder();
+		while ( m.find() ) {
+			buf.append(v.substring(idx, m.start()));
+			buf.append('\\');
+			char reserved = m.group(1).charAt(0);
+			switch (reserved) {
+				case '\\':
+					buf.append('\\');
+					break;
+				case '\r':
+					buf.append('r');
+					break;
+				case '\n':
+					buf.append('n');
+					break;
+				case ':':
+					buf.append('c');
+					break;
+				default:
+					// should never be here
+			}
+			idx = m.end();
+		}
+		if ( idx < v.length() ) {
+			buf.append(v.substring(idx));
+		}
+		return buf.toString();
 	}
 
 	/**
@@ -64,12 +108,38 @@ public final class StompUtils {
 		if ( v == null || v.isEmpty() ) {
 			return v;
 		}
-		// @formatter:off
-	    return v.replaceAll("\\\\\\\\", "\\\\")
-	        .replaceAll("\\\\r", "\r")
-	        .replaceAll("\\\\n", "\n")
-	        .replaceAll("\\\\c", ":");
-	    // @formatter:on
+		Matcher m = HEADER_ESCAPED_REGEX.matcher(v);
+		if ( !m.find() ) {
+			return v;
+		}
+		m.reset();
+		int idx = 0;
+		StringBuilder buf = new StringBuilder();
+		while ( m.find() ) {
+			buf.append(v.substring(idx, m.start()));
+			char reserved = m.group(1).charAt(1);
+			switch (reserved) {
+				case '\\':
+					buf.append('\\');
+					break;
+				case 'r':
+					buf.append('\r');
+					break;
+				case 'n':
+					buf.append('\n');
+					break;
+				case 'c':
+					buf.append(':');
+					break;
+				default:
+					// should never be here
+			}
+			idx = m.end();
+		}
+		if ( idx < v.length() ) {
+			buf.append(v.substring(idx));
+		}
+		return buf.toString();
 	}
 
 }

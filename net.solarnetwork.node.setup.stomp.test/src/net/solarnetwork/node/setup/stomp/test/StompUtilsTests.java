@@ -66,6 +66,12 @@ public class StompUtilsTests {
 	}
 
 	@Test
+	public void encodeHeader_multi() {
+		String v = StompUtils.encodeStompHeaderValue("a:b:c\\d\ne\r");
+		assertThat("Colon escaped", v, is("a\\cb\\cc\\\\d\\ne\\r"));
+	}
+
+	@Test
 	public void decodeHeader_plain() {
 		String v = StompUtils.decodeStompHeaderValue("nothing to escape");
 		assertThat("No change", v, is("nothing to escape"));
@@ -93,6 +99,12 @@ public class StompUtilsTests {
 	public void decodeHeader_backslash() {
 		String v = StompUtils.decodeStompHeaderValue("a\\\\b");
 		assertThat("Backslash decoded", v, is("a\\b"));
+	}
+
+	@Test
+	public void decodeHeader_multi() {
+		String v = StompUtils.decodeStompHeaderValue("a\\cb\\cc\\\\d\\ne\\r");
+		assertThat("Colon escaped", v, is("a:b:c\\d\ne\r"));
 	}
 
 }
