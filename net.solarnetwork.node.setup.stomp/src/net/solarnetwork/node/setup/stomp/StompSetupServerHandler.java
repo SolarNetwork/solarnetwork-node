@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.setup.stomp;
 
+import static net.solarnetwork.node.setup.stomp.StompUtils.decodeStompHeaderValue;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.Date;
@@ -251,7 +252,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 
 	private void handleSend(final ChannelHandlerContext ctx, final StompFrame frame,
 			final SetupSession session) {
-		String dest = frame.headers().getAsString(StompHeaders.DESTINATION);
+		String dest = decodeStompHeaderValue(frame.headers().getAsString(StompHeaders.DESTINATION));
 		if ( dest == null || dest.isEmpty() ) {
 			sendError(ctx, "Missing destination header.");
 			return;
@@ -269,7 +270,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private void authenticate(ChannelHandlerContext ctx, StompFrame frame, SetupSession session) {
-		String date = frame.headers().getAsString(SetupHeaders.Date.getValue());
+		String date = decodeStompHeaderValue(frame.headers().getAsString(SetupHeaders.Date.getValue()));
 		if ( date == null ) {
 			sendError(ctx, "Missing date header.");
 			return;
@@ -283,7 +284,8 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 			return;
 		}
 
-		String authorization = frame.headers().getAsString(SetupHeaders.Authorization.getValue());
+		String authorization = decodeStompHeaderValue(
+				frame.headers().getAsString(SetupHeaders.Authorization.getValue()));
 		SnsAuthorizationInfo authInfo;
 		try {
 			authInfo = SnsAuthorizationInfo.forAuthorizationHeader(authorization);
@@ -308,7 +310,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 		// @formatter:on
 
 		for ( String h : authInfo.getHeaderNames() ) {
-			authBuilder.header(h, frame.headers().getAsString(h));
+			authBuilder.header(h, decodeStompHeaderValue(frame.headers().getAsString(h)));
 		}
 
 		UserDetails user = userDetailsService.loadUserByUsername(session.getLogin());
@@ -343,7 +345,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private void executeInstruction(ChannelHandlerContext ctx, StompFrame frame) {
-		String topic = frame.headers().getAsString(StompHeaders.DESTINATION);
+		String topic = decodeStompHeaderValue(frame.headers().getAsString(StompHeaders.DESTINATION));
 		if ( !InstructionHandler.TOPIC_SYSTEM_CONFIGURE.equals(topic) ) {
 			// unsupported topic: ignore
 			return;
