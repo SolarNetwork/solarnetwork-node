@@ -32,6 +32,8 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -253,6 +255,56 @@ public class StompSetupServerHandlerTests {
 
 		// THEN
 		assertThat("Session is authenticated", session.isAuthenticated(), is(true));
+	}
+
+	/**
+	 * Example use of {@link SnsAuthorizationBuilder} for generating the
+	 * {@code authorization} and {@code date} headers required by the SNS
+	 * authorization scheme.
+	 * 
+	 * <p>
+	 * This example is meant to help you understand how a client application
+	 * would authenticate to the SolarNode STOMP Setup Server as the user
+	 * {@literal me@example.com} whose password is {@literal password123}.
+	 * </p>
+	 */
+	public void authenticate_example_bcrypt() {
+		// We received a CONNECTED frame whose `auth-hash` header value was `bcrypt`.
+		// Take the salt provided by the `auth-hash-param-salt` header value:
+		String salt = "$2a$10$upVbEZHge9Iph1NN3L6ENO";
+
+		// Generate the BCrypt hash of the plain-text user password `password123`
+		String passwordHash = BCrypt.hashpw("password123", salt);
+
+		// Compute the SHA-256 digest of the BCrypt hash: this will be our SNS secret key
+		String secret = DigestUtils.sha256Hex(passwordHash);
+
+		// The signature includes the current date
+		Instant now = Instant.now();
+
+		// Compute the SNS `authorization` header value, using the STOMP command `SEND` as
+		// the verb and `/setup/authenticate` as the path:
+
+		// @formatter:off
+		
+		SnsAuthorizationBuilder authBuilder = new SnsAuthorizationBuilder("me@example.com")
+				.date(now)
+				.verb("SEND")
+				.path("/setup/authenticate");
+		String authHeader = authBuilder.build(secret);
+		
+		// @formatter:on
+
+		// at this point, authHeader contains the `authorization` header value, and 
+		// we must also use a correctly formatted `date` header:
+		Map<String, String> sendFrameHeaders = new HashMap<>();
+		sendFrameHeaders.put("date", authBuilder.headerValue("date"));
+		sendFrameHeaders.put("authorization", authHeader);
+
+		// Now conceptually we'd post the SEND frame using our STOMP client, e.g. 
+		/*-
+		client.publish("SEND", sendFrameHeaders);
+		 */
 	}
 
 }
