@@ -26,7 +26,7 @@ follows that, followed by zero or more characters  representing the message body
 # Connecting
 
 To connect to the SolarNode STOMP Setup server open a TCP/IP socket connection to the host name or
-IP address of SolarNode, using the port configured in the server's settings (the default is `7870`).
+IP address of SolarNode, using the port configured in the server's settings (the default is `8780`).
 You must then send a `CONNECT` or `STOMP` frame.
 
 ## `CONNECT` frame
