@@ -238,7 +238,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 		f.headers().set(StompHeaders.SESSION, s.getSessionId().toString());
 		f.headers().set(StompHeaders.MESSAGE, "Please authenticate.");
 		f.headers().set(SetupHeaders.Authenticate.getValue(), SnsAuthorizationBuilder.SCHEME_NAME);
-		f.headers().set("auth-hash", authInfo.getHashAlgorithm());
+		f.headers().set(SetupHeaders.AuthHash.getValue(), authInfo.getHashAlgorithm());
 		for ( Entry<String, ?> me : authInfo.getHashParameters().entrySet() ) {
 			Object val = me.getValue();
 			if ( val == null ) {

@@ -34,6 +34,8 @@ public enum SetupHeaders {
 
 	Authorization("Client authorization, in HTTP Authorization header format."),
 
+	AuthHash("auth-hash", "The digest algorithm to use when authenticating."),
+
 	/**
 	 * The message date.
 	 * 

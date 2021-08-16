@@ -74,7 +74,6 @@ public class StompSetupServerHandlerTests {
 	private static final String TEST_LOGIN = "foo";
 	private static final String BCRYPT_ALG = "bcrypt";
 	private static final String SALT_PARAM = "salt";
-	private static final String TEST_BCRYPT_SALT = "$2a$10$bmJyEhL/EUQWubIpssV.L.";
 
 	private UserService userService;
 	private UserDetailsService userDetailsService;
@@ -148,6 +147,8 @@ public class StompSetupServerHandlerTests {
 		// WHEN
 		replayAll();
 		DefaultStompFrame f = new DefaultStompFrame(StompCommand.CONNECT);
+		f.headers().set(StompHeaders.ACCEPT_VERSION, "1.2");
+		f.headers().set(StompHeaders.HOST, "localhost");
 		f.headers().set(StompHeaders.LOGIN, TEST_LOGIN);
 		handler.channelRead(ctx, f);
 
@@ -167,8 +168,9 @@ public class StompSetupServerHandlerTests {
 		expect(ctx.channel()).andReturn(channel).anyTimes();
 
 		// request user auth info
+		final String salt = BCrypt.gensalt();
 		final UserAuthenticationInfo userInfo = new UserAuthenticationInfo(BCRYPT_ALG,
-				singletonMap(SALT_PARAM, TEST_BCRYPT_SALT));
+				singletonMap(SALT_PARAM, salt));
 		expect(userService.authenticationInfo(TEST_LOGIN)).andReturn(userInfo);
 
 		// add hook to clean up sessions
@@ -183,6 +185,8 @@ public class StompSetupServerHandlerTests {
 		// WHEN
 		replayAll();
 		DefaultStompFrame f = new DefaultStompFrame(StompCommand.CONNECT);
+		f.headers().set(StompHeaders.ACCEPT_VERSION, "1.2");
+		f.headers().set(StompHeaders.HOST, "localhost");
 		f.headers().set(StompHeaders.LOGIN, TEST_LOGIN);
 		handler.channelRead(ctx, f);
 
@@ -198,9 +202,10 @@ public class StompSetupServerHandlerTests {
 		assertThat("Session saved as SetupSession",
 				sessions.get(UUID.fromString(response.headers().getAsString(StompHeaders.SESSION))),
 				is(instanceOf(SetupSession.class)));
-		assertThat("Response has authenticate header", response.headers().getAsString("authenticate"),
-				is("SNS"));
-		assertThat("Response has auth-hash header", response.headers().getAsString("auth-hash"),
+		assertThat("Response has authenticate header",
+				response.headers().getAsString(SetupHeaders.Authenticate.getValue()), is("SNS"));
+		assertThat("Response has auth-hash header",
+				response.headers().getAsString(SetupHeaders.AuthHash.getValue()),
 				is(userInfo.getHashAlgorithm()));
 		assertThat("Response has auth-hash-param-salt",
 				response.headers().getAsString("auth-hash-param-salt"),
@@ -211,7 +216,8 @@ public class StompSetupServerHandlerTests {
 	public void authenticate_ok() {
 		// GIVEN
 		final String pw = "password123";
-		final String pwHash = BCrypt.hashpw(pw, TEST_BCRYPT_SALT);
+		final String salt = BCrypt.gensalt();
+		final String pwHash = BCrypt.hashpw(pw, salt);
 
 		// get the channel to associate with the session
 		expect(ctx.channel()).andReturn(channel);
