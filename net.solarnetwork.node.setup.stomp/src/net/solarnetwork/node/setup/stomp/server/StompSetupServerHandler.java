@@ -261,7 +261,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 		}
 		if ( session.getAuthentication() == null ) {
 			// can only authenticate
-			if ( !SetupTopic.Authenticate.getTopic().equals(dest) ) {
+			if ( !SetupTopic.Authenticate.getValue().equals(dest) ) {
 				sendError(ctx, "Not authorized.");
 				return;
 			}
@@ -308,7 +308,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 		SnsAuthorizationBuilder authBuilder = new SnsAuthorizationBuilder(session.getLogin())
 				.date(ts)
 				.verb(StompCommand.SEND.toString())
-				.path(SetupTopic.Authenticate.getTopic());
+				.path(SetupTopic.Authenticate.getValue());
 		// @formatter:on
 
 		for ( String h : authInfo.getHeaderNames() ) {

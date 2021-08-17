@@ -242,12 +242,12 @@ public class StompSetupServerHandlerTests {
 		SnsAuthorizationBuilder authBuilder = new SnsAuthorizationBuilder(TEST_LOGIN)
 				.date(now)
 				.verb(StompCommand.SEND.toString())
-				.path(Authenticate.getTopic());
+				.path(Authenticate.getValue());
 		// @formatter:on
 		String authHeader = authBuilder.build(secret);
 
 		DefaultStompFrame f = new DefaultStompFrame(StompCommand.SEND);
-		f.headers().set(StompHeaders.DESTINATION, Authenticate.getTopic());
+		f.headers().set(StompHeaders.DESTINATION, Authenticate.getValue());
 		f.headers().set(SetupHeader.Date.getValue(),
 				authBuilder.headerValue(SetupHeader.Date.getValue()));
 		f.headers().set(SetupHeader.Authorization.getValue(), authHeader);

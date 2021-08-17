@@ -30,48 +30,45 @@ package net.solarnetwork.node.setup.stomp;
  */
 public enum StompCommand {
 
-	Abort(),
+	ABORT,
 
-	Ack(),
+	ACK,
 
-	Begin(),
+	BEGIN,
 
-	Commit(),
+	COMMIT,
 
-	Connect(),
+	CONNECT,
 
-	Connected(true),
+	CONNECTED(true),
 
-	Disconnect(),
+	DISCONNECT,
 
-	Error(true),
+	ERROR(true),
 
-	Message(true),
+	MESSAGE(true),
 
-	Nack(),
+	NACK,
 
-	Receipt(true),
+	RECEIPT(true),
 
-	Send(),
+	SEND,
 
-	Subscribe(),
+	SUBSCRIBE,
 
-	Stomp(),
+	STOMP,
 
-	Unsubscribe(),
+	UNSUBSCRIBE,
 
 	;
 
-	private final String value;
 	private final boolean serverInitiated;
 
 	private StompCommand() {
-		this.value = this.name().toUpperCase();
 		this.serverInitiated = false;
 	}
 
 	private StompCommand(boolean serverInitiated) {
-		this.value = this.name().toUpperCase();
 		this.serverInitiated = serverInitiated;
 	}
 
@@ -81,7 +78,7 @@ public enum StompCommand {
 	 * @return the value, never {@literal null}
 	 */
 	public String getValue() {
-		return value;
+		return name();
 	}
 
 	/**

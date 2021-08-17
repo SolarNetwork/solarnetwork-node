@@ -30,13 +30,19 @@ package net.solarnetwork.node.setup.stomp;
  */
 public enum StompHeader {
 
+	AcceptVersion("accept-version"),
+
 	ContentLength("content-length"),
 
 	ContentType("content-type"),
 
-	Destination(),
+	Destination,
 
-	Id(),
+	Host,
+
+	Id,
+
+	Login,
 
 	;
 
