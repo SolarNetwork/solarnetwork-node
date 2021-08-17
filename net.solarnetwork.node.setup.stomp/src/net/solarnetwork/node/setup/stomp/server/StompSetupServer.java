@@ -31,7 +31,6 @@ import java.util.concurrent.ThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.TaskScheduler;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -47,12 +46,10 @@ import io.netty.handler.codec.stomp.StompSubframeEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
-import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.setup.UserService;
 import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.settings.SettingsChangeObserver;
 
@@ -76,9 +73,7 @@ public class StompSetupServer extends BaseIdentifiable
 
 	private static final Logger log = LoggerFactory.getLogger(StompSetupServer.class);
 
-	private final UserService userService;
-	private final UserDetailsService userDetailsService;
-	private final List<FeedbackInstructionHandler> instructionHandlers;
+	private final StompSetupServerService serverService;
 
 	private TaskScheduler taskScheduler;
 	private final int port = DEFAULT_PORT;
@@ -102,21 +97,12 @@ public class StompSetupServer extends BaseIdentifiable
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public StompSetupServer(UserService userService, UserDetailsService userDetailsService,
-			List<FeedbackInstructionHandler> instructionHandlers) {
+	public StompSetupServer(StompSetupServerService serverService) {
 		super();
-		if ( userService == null ) {
-			throw new IllegalArgumentException("The userService argument must not be null.");
+		if ( serverService == null ) {
+			throw new IllegalArgumentException("The serverService argument must not be null.");
 		}
-		this.userService = userService;
-		if ( userDetailsService == null ) {
-			throw new IllegalArgumentException("The userDetailsService argument must not be null.");
-		}
-		this.userDetailsService = userDetailsService;
-		if ( instructionHandlers == null ) {
-			throw new IllegalArgumentException("The instructionHandlers argument must not be null.");
-		}
-		this.instructionHandlers = instructionHandlers;
+		this.serverService = serverService;
 	}
 
 	/**
@@ -216,7 +202,7 @@ public class StompSetupServer extends BaseIdentifiable
 					new StompSubframeDecoder(),
 					new StompSubframeAggregator(4096),
 					new StompSubframeEncoder(),
-					new StompSetupServerHandler(userService, userDetailsService, instructionHandlers));
+					new StompSetupServerHandler(serverService));
 			// @formatter:on
 		}
 	}
@@ -307,15 +293,6 @@ public class StompSetupServer extends BaseIdentifiable
 	 */
 	public void setBindAddress(String bindAddress) {
 		this.bindAddress = bindAddress;
-	}
-
-	/**
-	 * Get the configured instruction handlers.
-	 * 
-	 * @return the handlers
-	 */
-	public List<FeedbackInstructionHandler> getInstructionHandlers() {
-		return instructionHandlers;
 	}
 
 }

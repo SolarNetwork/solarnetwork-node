@@ -63,6 +63,7 @@ import net.solarnetwork.node.setup.UserService;
 import net.solarnetwork.node.setup.stomp.SetupHeader;
 import net.solarnetwork.node.setup.stomp.server.SetupSession;
 import net.solarnetwork.node.setup.stomp.server.StompSetupServerHandler;
+import net.solarnetwork.node.setup.stomp.server.StompSetupServerService;
 import net.solarnetwork.security.SnsAuthorizationBuilder;
 
 /**
@@ -80,6 +81,7 @@ public class StompSetupServerHandlerTests {
 	private UserService userService;
 	private UserDetailsService userDetailsService;
 	private FeedbackInstructionHandler instructionHandler;
+	private StompSetupServerService serverService;
 	private ChannelHandlerContext ctx;
 	private Channel channel;
 	private ConcurrentMap<UUID, SetupSession> sessions;
@@ -90,11 +92,12 @@ public class StompSetupServerHandlerTests {
 		userService = EasyMock.createMock(UserService.class);
 		userDetailsService = EasyMock.createMock(UserDetailsService.class);
 		instructionHandler = EasyMock.createMock(FeedbackInstructionHandler.class);
+		serverService = new StompSetupServerService(userService, userDetailsService,
+				singletonList(instructionHandler));
 		ctx = EasyMock.createMock(ChannelHandlerContext.class);
 		channel = EasyMock.createMock(Channel.class);
 		sessions = new ConcurrentHashMap<>(4, 0.9f, 1);
-		handler = new StompSetupServerHandler(sessions, userService, userDetailsService,
-				singletonList(instructionHandler));
+		handler = new StompSetupServerHandler(sessions, serverService);
 	}
 
 	@After

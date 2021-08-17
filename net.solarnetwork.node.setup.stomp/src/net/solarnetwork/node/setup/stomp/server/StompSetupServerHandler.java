@@ -28,7 +28,6 @@ import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
@@ -40,7 +39,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
@@ -53,14 +51,12 @@ import io.netty.handler.codec.stomp.StompHeaders;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
-import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.support.BasicInstruction;
 import net.solarnetwork.node.reactor.support.InstructionUtils;
 import net.solarnetwork.node.setup.UserAuthenticationInfo;
-import net.solarnetwork.node.setup.UserService;
 import net.solarnetwork.node.setup.stomp.SetupHeader;
 import net.solarnetwork.node.setup.stomp.SetupTopic;
 import net.solarnetwork.security.AuthorizationUtils;
@@ -80,9 +76,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 
 	private static final Set<String> STOMP_HEADER_NAMES = createStompHeaderNames();
 
-	private final UserService userService;
-	private final UserDetailsService userDetailsService;
-	private final List<FeedbackInstructionHandler> instructionHandlers;
+	private final StompSetupServerService serverService;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -93,18 +87,13 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 	/**
 	 * Constructor.
 	 * 
-	 * @param userService
-	 *        the user service
-	 * @param userDetailsService
-	 *        the user details service
-	 * @param instructionHandlers
-	 *        the handlers
+	 * @param serverService
+	 *        the service service
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public StompSetupServerHandler(UserService userService, UserDetailsService userDetailsService,
-			List<FeedbackInstructionHandler> instructionHandlers) {
-		this(new ConcurrentHashMap<>(4, 0.9f, 1), userService, userDetailsService, instructionHandlers);
+	public StompSetupServerHandler(StompSetupServerService serverService) {
+		this(new ConcurrentHashMap<>(4, 0.9f, 1), serverService);
 	}
 
 	/**
@@ -121,26 +110,17 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public StompSetupServerHandler(ConcurrentMap<UUID, SetupSession> sessions, UserService userService,
-			UserDetailsService userDetailsService,
-			List<FeedbackInstructionHandler> instructionHandlers) {
+	public StompSetupServerHandler(ConcurrentMap<UUID, SetupSession> sessions,
+			StompSetupServerService serverService) {
 		super();
 		if ( sessions == null ) {
 			throw new IllegalArgumentException("The sessions argument must not be null.");
 		}
 		this.sessions = sessions;
-		if ( userService == null ) {
-			throw new IllegalArgumentException("The userService argument must not be null.");
+		if ( serverService == null ) {
+			throw new IllegalArgumentException("The serverService argument must not be null.");
 		}
-		this.userService = userService;
-		if ( userDetailsService == null ) {
-			throw new IllegalArgumentException("The userDetailsService argument must not be null.");
-		}
-		this.userDetailsService = userDetailsService;
-		if ( instructionHandlers == null ) {
-			throw new IllegalArgumentException("The instructionHandlers argument must not be null.");
-		}
-		this.instructionHandlers = instructionHandlers;
+		this.serverService = serverService;
 	}
 
 	private static Set<String> createStompHeaderNames() {
@@ -213,7 +193,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 			return;
 		}
 
-		final UserAuthenticationInfo authInfo = userService.authenticationInfo(login);
+		final UserAuthenticationInfo authInfo = serverService.getUserService().authenticationInfo(login);
 		if ( authInfo == null ) {
 			sendError(ctx, "Unauthorized.");
 			return;
@@ -315,7 +295,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 			authBuilder.header(h, decodeStompHeaderValue(frame.headers().getAsString(h)));
 		}
 
-		UserDetails user = userDetailsService.loadUserByUsername(session.getLogin());
+		UserDetails user = serverService.getUserDetailsService().loadUserByUsername(session.getLogin());
 		if ( user == null ) {
 			sendError(ctx, "Authorization denied: user not available.");
 			return;
@@ -362,8 +342,8 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 			}
 			instr.addParameter(entry.getKey(), entry.getValue());
 		}
-		InstructionStatus status = InstructionUtils.handleInstructionWithFeedback(instructionHandlers,
-				instr);
+		InstructionStatus status = InstructionUtils
+				.handleInstructionWithFeedback(serverService.getInstructionHandlers(), instr);
 		if ( status == null ) {
 			sendError(ctx, "Unsupported topic");
 		}
@@ -385,15 +365,6 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
 		cause.printStackTrace();
 		ctx.close();
-	}
-
-	/**
-	 * Get the configured instruction handlers.
-	 * 
-	 * @return the handlers
-	 */
-	public List<FeedbackInstructionHandler> getInstructionHandlers() {
-		return instructionHandlers;
 	}
 
 }
