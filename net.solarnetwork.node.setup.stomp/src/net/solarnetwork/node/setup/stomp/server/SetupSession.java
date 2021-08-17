@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.setup.stomp;
+package net.solarnetwork.node.setup.stomp.server;
 
 import java.util.UUID;
 import org.springframework.security.core.Authentication;

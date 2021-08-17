@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.setup.stomp;
+package net.solarnetwork.node.setup.stomp.server;
 
 import static net.solarnetwork.node.setup.stomp.StompUtils.decodeStompHeaderValue;
 import java.time.Instant;
@@ -61,6 +61,8 @@ import net.solarnetwork.node.reactor.support.BasicInstruction;
 import net.solarnetwork.node.reactor.support.InstructionUtils;
 import net.solarnetwork.node.setup.UserAuthenticationInfo;
 import net.solarnetwork.node.setup.UserService;
+import net.solarnetwork.node.setup.stomp.SetupHeader;
+import net.solarnetwork.node.setup.stomp.SetupTopic;
 import net.solarnetwork.security.AuthorizationUtils;
 import net.solarnetwork.security.SnsAuthorizationBuilder;
 import net.solarnetwork.security.SnsAuthorizationInfo;
@@ -238,8 +240,8 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 		f.headers().set(StompHeaders.SERVER, "SolarNode-Setup/" + SERVER_VERSION);
 		f.headers().set(StompHeaders.SESSION, s.getSessionId().toString());
 		f.headers().set(StompHeaders.MESSAGE, "Please authenticate.");
-		f.headers().set(SetupHeaders.Authenticate.getValue(), SnsAuthorizationBuilder.SCHEME_NAME);
-		f.headers().set(SetupHeaders.AuthHash.getValue(), authInfo.getHashAlgorithm());
+		f.headers().set(SetupHeader.Authenticate.getValue(), SnsAuthorizationBuilder.SCHEME_NAME);
+		f.headers().set(SetupHeader.AuthHash.getValue(), authInfo.getHashAlgorithm());
 		for ( Entry<String, ?> me : authInfo.getHashParameters().entrySet() ) {
 			Object val = me.getValue();
 			if ( val == null ) {
@@ -270,7 +272,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private void authenticate(ChannelHandlerContext ctx, StompFrame frame, SetupSession session) {
-		String date = decodeStompHeaderValue(frame.headers().getAsString(SetupHeaders.Date.getValue()));
+		String date = decodeStompHeaderValue(frame.headers().getAsString(SetupHeader.Date.getValue()));
 		if ( date == null ) {
 			sendError(ctx, "Missing date header.");
 			return;
@@ -285,7 +287,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 		}
 
 		String authorization = decodeStompHeaderValue(
-				frame.headers().getAsString(SetupHeaders.Authorization.getValue()));
+				frame.headers().getAsString(SetupHeader.Authorization.getValue()));
 		SnsAuthorizationInfo authInfo;
 		try {
 			authInfo = SnsAuthorizationInfo.forAuthorizationHeader(authorization);

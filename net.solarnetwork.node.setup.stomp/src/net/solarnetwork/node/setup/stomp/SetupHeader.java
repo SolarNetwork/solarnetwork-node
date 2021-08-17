@@ -1,5 +1,5 @@
 /* ==================================================================
- * SetupHeaders.java - 16/08/2021 8:44:24 AM
+ * SetupHeader.java - 16/08/2021 8:44:24 AM
  * 
  * Copyright 2021 SolarNetwork.net Dev Team
  * 
@@ -23,12 +23,12 @@
 package net.solarnetwork.node.setup.stomp;
 
 /**
- * Setup STOMP header names.
+ * SolarNode Setup specific STOMP header names.
  * 
  * @author matt
  * @version 1.0
  */
-public enum SetupHeaders {
+public enum SetupHeader {
 
 	Authenticate("Server request for client to authenticate, similar to HTTP WWW-Authenticate header."),
 
@@ -48,12 +48,12 @@ public enum SetupHeaders {
 	private final String value;
 	private final String description;
 
-	private SetupHeaders(String description) {
+	private SetupHeader(String description) {
 		this.value = this.name().toLowerCase();
 		this.description = description;
 	}
 
-	private SetupHeaders(String value, String description) {
+	private SetupHeader(String value, String description) {
 		this.value = value;
 		this.description = description;
 	}

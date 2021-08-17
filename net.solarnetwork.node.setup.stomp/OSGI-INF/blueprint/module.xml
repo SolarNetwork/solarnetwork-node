@@ -23,7 +23,7 @@
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<array>
-				<value>net.solarnetwork.node.setup.stomp.StompSetupServer</value>
+				<value>net.solarnetwork.node.setup.stomp.server.StompSetupServer</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</array>
 		</property>
@@ -31,7 +31,7 @@
 	
 	<service ref="stompServer" interface="net.solarnetwork.node.settings.SettingSpecifierProvider"/>
 
-	<bean id="stompServer" class="net.solarnetwork.node.setup.stomp.StompSetupServer"
+	<bean id="stompServer" class="net.solarnetwork.node.setup.stomp.server.StompSetupServer"
 			init-method="startup" destroy-method="shutdown">
 		<osgix:managed-properties persistent-id="net.solarnetwork.node.setup.stomp" 
 				autowire-on-update="true" update-method="configurationChanged"/>

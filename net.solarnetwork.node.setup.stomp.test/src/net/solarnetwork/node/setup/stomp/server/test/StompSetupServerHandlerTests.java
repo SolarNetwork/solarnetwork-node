@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.setup.stomp.test;
+package net.solarnetwork.node.setup.stomp.server.test;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -60,9 +60,9 @@ import io.netty.handler.codec.stomp.StompHeaders;
 import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.setup.UserAuthenticationInfo;
 import net.solarnetwork.node.setup.UserService;
-import net.solarnetwork.node.setup.stomp.SetupHeaders;
-import net.solarnetwork.node.setup.stomp.SetupSession;
-import net.solarnetwork.node.setup.stomp.StompSetupServerHandler;
+import net.solarnetwork.node.setup.stomp.SetupHeader;
+import net.solarnetwork.node.setup.stomp.server.SetupSession;
+import net.solarnetwork.node.setup.stomp.server.StompSetupServerHandler;
 import net.solarnetwork.security.SnsAuthorizationBuilder;
 
 /**
@@ -205,9 +205,9 @@ public class StompSetupServerHandlerTests {
 				sessions.get(UUID.fromString(response.headers().getAsString(StompHeaders.SESSION))),
 				is(instanceOf(SetupSession.class)));
 		assertThat("Response has authenticate header",
-				response.headers().getAsString(SetupHeaders.Authenticate.getValue()), is("SNS"));
+				response.headers().getAsString(SetupHeader.Authenticate.getValue()), is("SNS"));
 		assertThat("Response has auth-hash header",
-				response.headers().getAsString(SetupHeaders.AuthHash.getValue()),
+				response.headers().getAsString(SetupHeader.AuthHash.getValue()),
 				is(userInfo.getHashAlgorithm()));
 		assertThat("Response has auth-hash-param-salt",
 				response.headers().getAsString("auth-hash-param-salt"),
@@ -248,9 +248,9 @@ public class StompSetupServerHandlerTests {
 
 		DefaultStompFrame f = new DefaultStompFrame(StompCommand.SEND);
 		f.headers().set(StompHeaders.DESTINATION, Authenticate.getTopic());
-		f.headers().set(SetupHeaders.Date.getValue(),
-				authBuilder.headerValue(SetupHeaders.Date.getValue()));
-		f.headers().set(SetupHeaders.Authorization.getValue(), authHeader);
+		f.headers().set(SetupHeader.Date.getValue(),
+				authBuilder.headerValue(SetupHeader.Date.getValue()));
+		f.headers().set(SetupHeader.Authorization.getValue(), authHeader);
 		handler.channelRead(ctx, f);
 
 		// THEN

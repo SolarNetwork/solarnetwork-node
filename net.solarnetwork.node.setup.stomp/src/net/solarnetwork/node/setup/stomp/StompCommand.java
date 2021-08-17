@@ -1,5 +1,5 @@
 /* ==================================================================
- * SetupTopic.java - 12/08/2021 3:53:47 PM
+ * StompCommand.java - 17/08/2021 4:28:11 PM
  * 
  * Copyright 2021 SolarNetwork.net Dev Team
  * 
@@ -23,33 +23,75 @@
 package net.solarnetwork.node.setup.stomp;
 
 /**
- * Supported STOMP setup topics.
+ * STOMP commands.
  * 
  * @author matt
  * @version 1.0
  */
-public enum SetupTopic {
+public enum StompCommand {
 
-	/** Authenticate the session. */
-	Authenticate("/setup/authenticate"),
+	Abort(),
 
-	/** Get the latest datum. */
-	DatumLatest("/setup/datum/latest"),
+	Ack(),
+
+	Begin(),
+
+	Commit(),
+
+	Connect(),
+
+	Connected(true),
+
+	Disconnect(),
+
+	Error(true),
+
+	Message(true),
+
+	Nack(),
+
+	Receipt(true),
+
+	Send(),
+
+	Subscribe(),
+
+	Stomp(),
+
+	Unsubscribe(),
 
 	;
 
-	private final String topic;
+	private final String value;
+	private final boolean serverInitiated;
 
-	private SetupTopic(String topic) {
-		this.topic = topic;
+	private StompCommand() {
+		this.value = this.name().toUpperCase();
+		this.serverInitiated = false;
+	}
+
+	private StompCommand(boolean serverInitiated) {
+		this.value = this.name().toUpperCase();
+		this.serverInitiated = serverInitiated;
 	}
 
 	/**
-	 * Get the STOMP topic value.
+	 * Get the header value.
 	 * 
-	 * @return the topic
+	 * @return the value, never {@literal null}
 	 */
-	public String getTopic() {
-		return topic;
+	public String getValue() {
+		return value;
 	}
+
+	/**
+	 * Get "server initiated" flag.
+	 * 
+	 * @return {@literal true} if the command is initiated by the server, or
+	 *         {@literal false} if initiated by the client
+	 */
+	public boolean isServerInitiated() {
+		return serverInitiated;
+	}
+
 }

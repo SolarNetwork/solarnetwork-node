@@ -1,5 +1,5 @@
 /* ==================================================================
- * SetupTopic.java - 12/08/2021 3:53:47 PM
+ * StompHeader.java - 17/08/2021 4:25:28 PM
  * 
  * Copyright 2021 SolarNetwork.net Dev Team
  * 
@@ -23,33 +23,40 @@
 package net.solarnetwork.node.setup.stomp;
 
 /**
- * Supported STOMP setup topics.
+ * Common STOMP headers.
  * 
  * @author matt
  * @version 1.0
  */
-public enum SetupTopic {
+public enum StompHeader {
 
-	/** Authenticate the session. */
-	Authenticate("/setup/authenticate"),
+	ContentLength("content-length"),
 
-	/** Get the latest datum. */
-	DatumLatest("/setup/datum/latest"),
+	ContentType("content-type"),
+
+	Destination(),
+
+	Id(),
 
 	;
 
-	private final String topic;
+	private final String value;
 
-	private SetupTopic(String topic) {
-		this.topic = topic;
+	private StompHeader() {
+		this.value = this.name().toLowerCase();
+	}
+
+	private StompHeader(String value) {
+		this.value = value;
 	}
 
 	/**
-	 * Get the STOMP topic value.
+	 * Get the header value.
 	 * 
-	 * @return the topic
+	 * @return the value, never {@literal null}
 	 */
-	public String getTopic() {
-		return topic;
+	public String getValue() {
+		return value;
 	}
+
 }
