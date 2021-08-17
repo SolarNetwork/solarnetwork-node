@@ -492,4 +492,26 @@
 		</bean>
 	</osgix:managed-service-factory>
 	
+	<service>
+		<interfaces>
+			<value>net.solarnetwork.node.DatumService</value>
+			<value>org.osgi.service.event.EventHandler</value>
+		</interfaces>
+		<service-properties>
+			<entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
+				<array value-type="java.lang.String">
+					<value>#{T(net.solarnetwork.node.DatumDataSource).EVENT_TOPIC_DATUM_CAPTURED}</value>
+				</array>
+			</entry>
+		</service-properties>
+		<bean class="net.solarnetwork.node.runtime.DefaultDatumService">
+			<argument>
+				<bean class="org.springframework.util.AntPathMatcher" >
+					<property name="cachePatterns" value="true"/>
+					<property name="caseSensitive" value="false"/>
+				</bean>
+			</argument>
+		</bean>
+	</service>
+
 </blueprint>
