@@ -17,11 +17,27 @@
 	
 	<reference id="userDetailsService" interface="org.springframework.security.core.userdetails.UserDetailsService" filter="(app=node)"/>
 	
-	<reference id="datumService" interface="net.solarnetwork.node.DatumService"/>
-	
 	<reference-list id="instructionHandlers" interface="net.solarnetwork.node.reactor.FeedbackInstructionHandler"
 		filter="(instruction=SystemConfigure)"/>
 	
+	<service ref="stompServer" interface="net.solarnetwork.node.settings.SettingSpecifierProvider"/>
+
+	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">
+		<property name="serializers">
+			<list>
+				<bean class="net.solarnetwork.codec.BasicGeneralDatumSerializer"/>
+				<bean class="net.solarnetwork.node.support.NodeControlInfoSerializer"/>
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="serverService" class="net.solarnetwork.node.setup.stomp.server.StompSetupServerService">
+		<argument ref="userService"/>
+		<argument ref="userDetailsService"/>
+		<argument><bean class="org.springframework.util.AntPathMatcher"/></argument>
+		<argument ref="instructionHandlers"/>
+	</bean>
+
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<array>
@@ -31,19 +47,12 @@
 		</property>
 	</bean>
 	
-	<service ref="stompServer" interface="net.solarnetwork.node.settings.SettingSpecifierProvider"/>
-
-	<bean id="serverService" class="net.solarnetwork.node.setup.stomp.server.StompSetupServerService">
-		<argument ref="userService"/>
-		<argument ref="userDetailsService"/>
-		<argument ref="instructionHandlers"/>
-	</bean>
-
 	<bean id="stompServer" class="net.solarnetwork.node.setup.stomp.server.StompSetupServer"
 			init-method="startup" destroy-method="shutdown">
 		<osgix:managed-properties persistent-id="net.solarnetwork.node.setup.stomp" 
 				autowire-on-update="true" update-method="configurationChanged"/>
 		<argument ref="serverService"/>
+		<argument ref="objectMapper"/>
 		<property name="messageSource" ref="messageSource"/>
 		<property name="taskScheduler" ref="taskScheduler"/>
 	</bean>

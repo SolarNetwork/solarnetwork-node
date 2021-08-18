@@ -23,9 +23,8 @@
 package net.solarnetwork.node.setup.stomp.server;
 
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.util.PathMatcher;
 import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.setup.UserService;
 
@@ -39,9 +38,8 @@ public class StompSetupServerService {
 
 	private final UserService userService;
 	private final UserDetailsService userDetailsService;
+	private final PathMatcher pathMatcher;
 	private final List<FeedbackInstructionHandler> instructionHandlers;
-
-	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
 	 * Constructor.
@@ -50,13 +48,17 @@ public class StompSetupServerService {
 	 *        the user service
 	 * @param userDetailsService
 	 *        the user details service
+	 * @param datumService
+	 *        the datum service
+	 * @param pathMatcher
+	 *        the path matcher
 	 * @param instructionHandlers
 	 *        the handlers
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
 	public StompSetupServerService(UserService userService, UserDetailsService userDetailsService,
-			List<FeedbackInstructionHandler> instructionHandlers) {
+			PathMatcher pathMatcher, List<FeedbackInstructionHandler> instructionHandlers) {
 		super();
 		if ( userService == null ) {
 			throw new IllegalArgumentException("The userService argument must not be null.");
@@ -66,6 +68,10 @@ public class StompSetupServerService {
 			throw new IllegalArgumentException("The userDetailsService argument must not be null.");
 		}
 		this.userDetailsService = userDetailsService;
+		if ( pathMatcher == null ) {
+			throw new IllegalArgumentException("The pathMatcher argument must not be null.");
+		}
+		this.pathMatcher = pathMatcher;
 		if ( instructionHandlers == null ) {
 			throw new IllegalArgumentException("The instructionHandlers argument must not be null.");
 		}
@@ -88,6 +94,15 @@ public class StompSetupServerService {
 	 */
 	public UserDetailsService getUserDetailsService() {
 		return userDetailsService;
+	}
+
+	/**
+	 * Get the path matcher.
+	 * 
+	 * @return the path matcher, never {@literal null}
+	 */
+	public PathMatcher getPathMatcher() {
+		return pathMatcher;
 	}
 
 	/**

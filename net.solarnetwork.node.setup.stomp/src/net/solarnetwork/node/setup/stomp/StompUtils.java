@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.setup.stomp;
 
+import java.nio.charset.Charset;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,6 +33,12 @@ import java.util.regex.Pattern;
  * @version 1.0
  */
 public final class StompUtils {
+
+	/** The UTF-8 charset. */
+	public static final Charset UTF8 = Charset.forName("UTF-8");
+
+	/** The JSON content type with UTF-8 encoding. */
+	public static final String JSON_UTF8_CONTENT_TYPE = "application/json;charset=utf-8";
 
 	/**
 	 * Pattern that matches characters that are reserved in STOMP headers and

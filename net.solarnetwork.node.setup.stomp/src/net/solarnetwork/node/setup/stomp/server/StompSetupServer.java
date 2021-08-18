@@ -31,6 +31,7 @@ import java.util.concurrent.ThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.TaskScheduler;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -74,6 +75,7 @@ public class StompSetupServer extends BaseIdentifiable
 	private static final Logger log = LoggerFactory.getLogger(StompSetupServer.class);
 
 	private final StompSetupServerService serverService;
+	private final ObjectMapper objectMapper;
 
 	private TaskScheduler taskScheduler;
 	private final int port = DEFAULT_PORT;
@@ -88,21 +90,23 @@ public class StompSetupServer extends BaseIdentifiable
 	/**
 	 * Constructor.
 	 * 
-	 * @param userService
-	 *        the user service
-	 * @param userDetailsService
-	 *        the user details service
-	 * @param instructionHandlers
-	 *        the handlers
+	 * @param serverService
+	 *        the server service
+	 * @param objectMapper
+	 *        the object mapper
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public StompSetupServer(StompSetupServerService serverService) {
+	public StompSetupServer(StompSetupServerService serverService, ObjectMapper objectMapper) {
 		super();
 		if ( serverService == null ) {
 			throw new IllegalArgumentException("The serverService argument must not be null.");
 		}
 		this.serverService = serverService;
+		if ( objectMapper == null ) {
+			throw new IllegalArgumentException("The objectMapper argument must not be null.");
+		}
+		this.objectMapper = objectMapper;
 	}
 
 	/**
@@ -202,7 +206,7 @@ public class StompSetupServer extends BaseIdentifiable
 					new StompSubframeDecoder(),
 					new StompSubframeAggregator(4096),
 					new StompSubframeEncoder(),
-					new StompSetupServerHandler(serverService));
+					new StompSetupServerHandler(serverService, objectMapper));
 			// @formatter:on
 		}
 	}

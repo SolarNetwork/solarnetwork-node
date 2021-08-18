@@ -22,8 +22,15 @@
 
 package net.solarnetwork.node.setup.stomp.server;
 
+import java.util.Collection;
+import java.util.Map.Entry;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentNavigableMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 import org.springframework.security.core.Authentication;
+import org.springframework.util.PathMatcher;
 import io.netty.channel.Channel;
 
 /**
@@ -34,6 +41,7 @@ import io.netty.channel.Channel;
  */
 public class SetupSession {
 
+	private final ConcurrentNavigableMap<String, String> subscriptions = new ConcurrentSkipListMap<>();
 	private final UUID sessionId;
 	private final String login;
 	private final Channel channel;
@@ -155,6 +163,54 @@ public class SetupSession {
 	 */
 	public void setAuthentication(Authentication authentication) {
 		this.authentication = authentication;
+	}
+
+	/**
+	 * Add a subscription to topic mapping.
+	 * 
+	 * @param id
+	 *        the subscription ID
+	 * @param topic
+	 *        the topic
+	 */
+	public void addSubscription(String id, String topic) {
+		subscriptions.put(id, topic);
+	}
+
+	/**
+	 * Remove a subscription to topic mapping.
+	 * 
+	 * @param id
+	 *        the subscription ID to remove
+	 * @return the removed topic, or {@literal null} if the subscription ID was
+	 *         not mapped
+	 */
+	public String removeSubscription(String id) {
+		return subscriptions.remove(id);
+	}
+
+	/**
+	 * Get all subscription IDs for a given topic.
+	 * 
+	 * @param topic
+	 *        the topic to get subscription IDs for
+	 * @param pathMatcher
+	 *        an optional path patcher to interpret subscription topics with
+	 * @return the matching subscription IDs, never {@literal null}
+	 */
+	public Collection<String> subscriptionIdsForTopic(String topic, PathMatcher pathMatcher) {
+		SortedSet<String> result = new TreeSet<>();
+		for ( Entry<String, String> e : subscriptions.entrySet() ) {
+			String subTopic = e.getValue();
+			if ( pathMatcher != null && pathMatcher.isPattern(subTopic) ) {
+				if ( pathMatcher.match(subTopic, topic) ) {
+					result.add(e.getKey());
+				}
+			} else if ( subTopic.equals(topic) ) {
+				result.add(e.getKey());
+			}
+		}
+		return result;
 	}
 
 }

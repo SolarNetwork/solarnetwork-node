@@ -49,6 +49,9 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCrypt;
+import org.springframework.util.AntPathMatcher;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
@@ -57,6 +60,9 @@ import io.netty.handler.codec.stomp.DefaultStompFrame;
 import io.netty.handler.codec.stomp.StompCommand;
 import io.netty.handler.codec.stomp.StompFrame;
 import io.netty.handler.codec.stomp.StompHeaders;
+import net.solarnetwork.codec.BasicGeneralDatumSerializer;
+import net.solarnetwork.domain.datum.GeneralDatum;
+import net.solarnetwork.node.DatumService;
 import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.setup.UserAuthenticationInfo;
 import net.solarnetwork.node.setup.UserService;
@@ -80,8 +86,10 @@ public class StompSetupServerHandlerTests {
 
 	private UserService userService;
 	private UserDetailsService userDetailsService;
+	private DatumService datumService;
 	private FeedbackInstructionHandler instructionHandler;
 	private StompSetupServerService serverService;
+	private ObjectMapper objectMapper;
 	private ChannelHandlerContext ctx;
 	private Channel channel;
 	private ConcurrentMap<UUID, SetupSession> sessions;
@@ -91,22 +99,32 @@ public class StompSetupServerHandlerTests {
 	public void setup() {
 		userService = EasyMock.createMock(UserService.class);
 		userDetailsService = EasyMock.createMock(UserDetailsService.class);
+		datumService = EasyMock.createMock(DatumService.class);
 		instructionHandler = EasyMock.createMock(FeedbackInstructionHandler.class);
-		serverService = new StompSetupServerService(userService, userDetailsService,
-				singletonList(instructionHandler));
+		serverService = new StompSetupServerService(userService, userDetailsService, datumService,
+				new AntPathMatcher(), singletonList(instructionHandler));
+		objectMapper = createObjectMapper();
 		ctx = EasyMock.createMock(ChannelHandlerContext.class);
 		channel = EasyMock.createMock(Channel.class);
 		sessions = new ConcurrentHashMap<>(4, 0.9f, 1);
-		handler = new StompSetupServerHandler(sessions, serverService);
+		handler = new StompSetupServerHandler(sessions, serverService, objectMapper);
+	}
+
+	private ObjectMapper createObjectMapper() {
+		ObjectMapper m = new ObjectMapper();
+		SimpleModule mod = new SimpleModule("Test");
+		mod.addSerializer(GeneralDatum.class, BasicGeneralDatumSerializer.INSTANCE);
+		m.registerModule(mod);
+		return m;
 	}
 
 	@After
 	public void teardown() {
-		EasyMock.verify(userService, userDetailsService, instructionHandler, ctx, channel);
+		EasyMock.verify(userService, userDetailsService, datumService, instructionHandler, ctx, channel);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(userService, userDetailsService, instructionHandler, ctx, channel);
+		EasyMock.replay(userService, userDetailsService, datumService, instructionHandler, ctx, channel);
 	}
 
 	@Test
