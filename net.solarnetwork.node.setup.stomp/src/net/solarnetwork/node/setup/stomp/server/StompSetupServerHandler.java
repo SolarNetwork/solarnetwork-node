@@ -32,11 +32,13 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
@@ -44,6 +46,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.buffer.ByteBufUtil;
@@ -59,6 +63,7 @@ import io.netty.handler.codec.stomp.StompHeaders;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
+import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
@@ -67,6 +72,7 @@ import net.solarnetwork.node.reactor.support.BasicInstruction;
 import net.solarnetwork.node.reactor.support.InstructionUtils;
 import net.solarnetwork.node.setup.UserAuthenticationInfo;
 import net.solarnetwork.node.setup.stomp.SetupHeader;
+import net.solarnetwork.node.setup.stomp.SetupStatus;
 import net.solarnetwork.node.setup.stomp.SetupTopic;
 import net.solarnetwork.node.setup.stomp.StompUtils;
 import net.solarnetwork.security.AuthorizationUtils;
@@ -75,6 +81,47 @@ import net.solarnetwork.security.SnsAuthorizationInfo;
 
 /**
  * Handle the STOMP protocol setup integration.
+ * 
+ * <p>
+ * This service assumes the following sequence of interactions by a client:
+ * </p>
+ * 
+ * <ol>
+ * <li>A {@literal CONNECT} or {@literal STOMP} frame is sent that includes a
+ * {@literal login} header with the SolarNode username to use for the remainder
+ * of the STOMP session.</li>
+ * <li>The server will reply with a {@literal CONNECTED} frame that include
+ * {@literal session}, {@literal authenticate}, {@literal auth-hash}, and any
+ * number of {@literal auth-hash-param-*} headers.</li>
+ * <li>The client must send a {@literal SEND} frame with a
+ * {@literal destination} header of {@literal /setup/authenticate} and a
+ * {@literal authorization} header with the appropriate authentication
+ * details.</li>
+ * <li>The client must send at least one {@literal SUBSCRIBE} frame with a
+ * {@literal destination} header {@literal /setup/**} to receive future messages
+ * on.</li>
+ * <li>The client then can send any number of {@literal SEND} frames to various
+ * destinations and expect {@literal MESSAGE} frames back from those same
+ * destinations.</li>
+ * </ol>
+ * 
+ * <p>
+ * This service does not implement explicit support for the {@literal SEND}
+ * destinations. Instead, it uses the {@link FeedbackInstructionHandler} API to
+ * post local instructions to any registered handlers that support the
+ * {@link InstructionHandler#TOPIC_SYSTEM_CONFIGURE} topic. Each instruction
+ * will have a {@link InstructionHandler#PARAM_SERVICE} parameter set to the
+ * {@literal destination} STOMP header, and any other non-standard STOMP header
+ * will also be included as parameters. The STOMP frame body will be treated as
+ * a UTF-8 string and included as the
+ * {@link InstructionHandler#PARAM_SERVICE_ARGUMENT} parameter. The first
+ * registered handler that accepts the instruction and returns a
+ * {@link InstructionStatus.InstructionState#Completed} state with a
+ * {@link InstructionHandler#PARAM_SERVICE_RESULT} result parameter will trigger
+ * this server to send a {@literal MESSAGE} back to the client, with the result
+ * encoded into JSON and a {@literal destination} header that matches the value
+ * from the original {@literal SEND} frame.
+ * </p>
  * 
  * @author matt
  * @version 1.0
@@ -90,6 +137,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 
 	private final StompSetupServerService serverService;
 	private final ObjectMapper objectMapper;
+	private final Executor executor;
 	private final ConcurrentMap<UUID, SetupSession> sessions;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -101,11 +149,16 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 	 * 
 	 * @param serverService
 	 *        the service service
+	 * @param objectMapper
+	 *        the object mapper
+	 * @param executor
+	 *        the executor
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public StompSetupServerHandler(StompSetupServerService serverService, ObjectMapper objectMapper) {
-		this(new ConcurrentHashMap<>(4, 0.9f, 1), serverService, objectMapper);
+	public StompSetupServerHandler(StompSetupServerService serverService, ObjectMapper objectMapper,
+			Executor executor) {
+		this(new ConcurrentHashMap<>(4, 0.9f, 1), serverService, objectMapper, executor);
 	}
 
 	/**
@@ -113,17 +166,17 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 	 * 
 	 * @param sessions
 	 *        the session map
-	 * @param userService
-	 *        the user service
-	 * @param userDetailsService
-	 *        the user details service
-	 * @param instructionHandlers
-	 *        the handlers
+	 * @param serverService
+	 *        the server service
+	 * @param objectMapper
+	 *        the object mapper
+	 * @param executor
+	 *        the executor
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
 	public StompSetupServerHandler(ConcurrentMap<UUID, SetupSession> sessions,
-			StompSetupServerService serverService, ObjectMapper objectMapper) {
+			StompSetupServerService serverService, ObjectMapper objectMapper, Executor executor) {
 		super();
 		if ( sessions == null ) {
 			throw new IllegalArgumentException("The sessions argument must not be null.");
@@ -137,6 +190,10 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 			throw new IllegalArgumentException("The objectMapper argument must not be null.");
 		}
 		this.objectMapper = objectMapper;
+		if ( executor == null ) {
+			throw new IllegalArgumentException("The executor argument must not be null.");
+		}
+		this.executor = executor;
 	}
 
 	private static Set<String> createStompHeaderNames() {
@@ -206,8 +263,12 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 		return sessions.values().stream().filter(s -> s.getChannel() == channel).findAny().orElse(null);
 	}
 
-	private void setupSession(ChannelHandlerContext ctx, StompFrame connectFrame) {
-		final String login = connectFrame.headers().getAsString(StompHeaders.LOGIN);
+	private void setupSession(ChannelHandlerContext ctx, StompFrame frame) {
+		if ( !(frame.command() == StompCommand.CONNECT || frame.command() == StompCommand.STOMP) ) {
+			sendError(ctx, "Must start with CONNECT or STOMP frame.");
+			return;
+		}
+		final String login = frame.headers().getAsString(StompHeaders.LOGIN);
 		if ( login == null || login.isEmpty() ) {
 			sendError(ctx, "The login header is required.");
 			return;
@@ -290,7 +351,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 			return;
 		}
 
-		executeInstruction(ctx, frame, session);
+		executeInstruction(ctx, frame, session, dest);
 	}
 
 	private void authenticate(ChannelHandlerContext ctx, StompFrame frame, SetupSession session) {
@@ -368,8 +429,8 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 		return auth;
 	}
 
-	private void executeInstruction(ChannelHandlerContext ctx, StompFrame frame, SetupSession session) {
-		String topic = decodeStompHeaderValue(frame.headers().getAsString(StompHeaders.DESTINATION));
+	private void executeInstruction(final ChannelHandlerContext ctx, final StompFrame frame,
+			final SetupSession session, final String topic) {
 		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_SYSTEM_CONFIGURE,
 				new Date(), Instruction.LOCAL_INSTRUCTION_ID, Instruction.LOCAL_INSTRUCTION_ID, null);
 		StompHeaders headers = frame.headers();
@@ -388,40 +449,73 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 				instr.addParameter(InstructionHandler.PARAM_SERVICE_ARGUMENT, s);
 			}
 		}
-		InstructionStatus status = InstructionUtils
-				.handleInstructionWithFeedback(serverService.getInstructionHandlers(), instr);
-		if ( status == null || status.getInstructionState() != InstructionState.Completed ) {
-			sendError(ctx, "Unsupported topic");
-		} else if ( status.getResultParameters() != null
-				&& status.getResultParameters().containsKey(InstructionHandler.PARAM_SERVICE_RESULT) ) {
-			Object result = status.getResultParameters().get(InstructionHandler.PARAM_SERVICE_RESULT);
-			pubMessage(ctx, session, topic, result);
-		}
+
+		// execute instruction in new task
+		executor.execute(new Runnable() {
+
+			@Override
+			public void run() {
+				InstructionStatus status = InstructionUtils
+						.handleInstructionWithFeedback(serverService.getInstructionHandlers(), instr);
+				if ( status == null ) {
+					pubStatusMessage(ctx, session, topic, SetupStatus.NotFound, null);
+				} else if ( status.getInstructionState() == InstructionState.Declined ) {
+					pubStatusMessage(ctx, session, topic, SetupStatus.Unprocessable, null);
+				} else if ( status.getInstructionState() != InstructionState.Completed ) {
+					pubStatusMessage(ctx, session, topic, SetupStatus.Accepted, null);
+				} else {
+					Object result = (status.getResultParameters() != null
+							? status.getResultParameters().get(InstructionHandler.PARAM_SERVICE_RESULT)
+							: null);
+					pubStatusMessage(ctx, session, topic, SetupStatus.Ok, result);
+				}
+			}
+
+		});
 	}
 
-	private void pubMessage(ChannelHandlerContext ctx, SetupSession session, String topic, Object body) {
-		if ( body == null ) {
-			return;
-		}
+	private void pubStatusMessage(ChannelHandlerContext ctx, SetupSession session, String topic,
+			SetupStatus statusCode, Object body) {
+		MultiValueMap<String, String> headers = new LinkedMultiValueMap<>(1);
+		headers.set(SetupHeader.Status.getValue(), String.valueOf(statusCode.getCode()));
+		pubMessage(ctx, session, topic, headers, body);
+	}
+
+	private void pubMessage(ChannelHandlerContext ctx, SetupSession session, String topic,
+			MultiValueMap<String, String> headers, Object body) {
 		Collection<String> subIds = session.subscriptionIdsForTopic(SetupTopic.DatumLatest.getValue(),
 				serverService.getPathMatcher());
 		if ( subIds != null && !subIds.isEmpty() ) {
-			byte[] json;
-			try {
-				json = objectMapper.writeValueAsBytes(body);
-			} catch ( JsonProcessingException e ) {
-				sendError(ctx, "Error encoding message body as JSON: " + e.toString());
-				return;
+			byte[] json = null;
+			if ( body != null ) {
+				try {
+					json = objectMapper.writeValueAsBytes(body);
+				} catch ( JsonProcessingException e ) {
+					sendError(ctx, "Error encoding message body as JSON: " + e.toString());
+					return;
+				}
 			}
 			for ( String subId : subIds ) {
 				DefaultStompFrame f = new DefaultStompFrame(StompCommand.MESSAGE);
+				if ( headers != null ) {
+					for ( Entry<String, List<String>> e : headers.entrySet() ) {
+						List<String> values = e.getValue();
+						if ( values != null ) {
+							for ( String v : values ) {
+								f.headers().set(e.getKey(), encodeStompHeaderValue(v));
+							}
+						}
+					}
+				}
 				f.headers().set(StompHeaders.DESTINATION, topic);
 				f.headers().set(StompHeaders.SUBSCRIPTION, encodeStompHeaderValue(subId));
 				f.headers().set(StompHeaders.MESSAGE_ID,
 						String.valueOf(getAndIncrementWithWrap(messageIds, 0)));
-				f.headers().set(StompHeaders.CONTENT_TYPE, JSON_UTF8_CONTENT_TYPE);
-				f.headers().set(StompHeaders.CONTENT_LENGTH, String.valueOf(json.length));
-				f.content().writeBytes(json);
+				if ( json != null && json.length > 0 ) {
+					f.headers().set(StompHeaders.CONTENT_TYPE, JSON_UTF8_CONTENT_TYPE);
+					f.headers().set(StompHeaders.CONTENT_LENGTH, String.valueOf(json.length));
+					f.content().writeBytes(json);
+				}
 				ctx.writeAndFlush(f);
 			}
 		}

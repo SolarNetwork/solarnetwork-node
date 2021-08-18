@@ -48,8 +48,6 @@ public class StompSetupServerService {
 	 *        the user service
 	 * @param userDetailsService
 	 *        the user details service
-	 * @param datumService
-	 *        the datum service
 	 * @param pathMatcher
 	 *        the path matcher
 	 * @param instructionHandlers

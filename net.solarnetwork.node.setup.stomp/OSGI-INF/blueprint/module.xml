@@ -11,6 +11,8 @@
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
 
+	<reference id="executor" interface="java.util.concurrent.Executor" filter="(function=node)"/>
+
 	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler" filter="(function=node)"/>
 	
 	<reference id="userService" interface="net.solarnetwork.node.setup.UserService" filter="(app=node)"/>
@@ -53,6 +55,7 @@
 				autowire-on-update="true" update-method="configurationChanged"/>
 		<argument ref="serverService"/>
 		<argument ref="objectMapper"/>
+		<argument ref="executor"/>
 		<property name="messageSource" ref="messageSource"/>
 		<property name="taskScheduler" ref="taskScheduler"/>
 	</bean>

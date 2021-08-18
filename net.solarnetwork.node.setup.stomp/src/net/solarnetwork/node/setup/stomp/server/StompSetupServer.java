@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import org.slf4j.Logger;
@@ -78,6 +79,7 @@ public class StompSetupServer extends BaseIdentifiable
 	private final ObjectMapper objectMapper;
 
 	private TaskScheduler taskScheduler;
+	private final Executor executor;
 	private final int port = DEFAULT_PORT;
 	private String bindAddress = DEFAULT_BIND_ADDRESS;
 	private int startupDelay = DEFAULT_STARTUP_DELAY_SECS;
@@ -94,10 +96,13 @@ public class StompSetupServer extends BaseIdentifiable
 	 *        the server service
 	 * @param objectMapper
 	 *        the object mapper
+	 * @param executor
+	 *        the executor
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public StompSetupServer(StompSetupServerService serverService, ObjectMapper objectMapper) {
+	public StompSetupServer(StompSetupServerService serverService, ObjectMapper objectMapper,
+			Executor executor) {
 		super();
 		if ( serverService == null ) {
 			throw new IllegalArgumentException("The serverService argument must not be null.");
@@ -107,6 +112,10 @@ public class StompSetupServer extends BaseIdentifiable
 			throw new IllegalArgumentException("The objectMapper argument must not be null.");
 		}
 		this.objectMapper = objectMapper;
+		if ( executor == null ) {
+			throw new IllegalArgumentException("The executor argument must not be null.");
+		}
+		this.executor = executor;
 	}
 
 	/**
@@ -206,7 +215,7 @@ public class StompSetupServer extends BaseIdentifiable
 					new StompSubframeDecoder(),
 					new StompSubframeAggregator(4096),
 					new StompSubframeEncoder(),
-					new StompSetupServerHandler(serverService, objectMapper));
+					new StompSetupServerHandler(serverService, objectMapper, executor));
 			// @formatter:on
 		}
 	}

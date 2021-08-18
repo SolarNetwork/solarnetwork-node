@@ -24,25 +24,34 @@ package net.solarnetwork.node.setup.stomp.server.test;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static net.solarnetwork.node.reactor.InstructionStatus.createStatus;
 import static net.solarnetwork.node.setup.stomp.SetupTopic.Authenticate;
+import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.springframework.security.core.userdetails.User.withUsername;
+import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
+import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
@@ -64,13 +73,19 @@ import net.solarnetwork.codec.BasicGeneralDatumSerializer;
 import net.solarnetwork.domain.datum.GeneralDatum;
 import net.solarnetwork.node.DatumService;
 import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.setup.UserAuthenticationInfo;
 import net.solarnetwork.node.setup.UserService;
 import net.solarnetwork.node.setup.stomp.SetupHeader;
+import net.solarnetwork.node.setup.stomp.SetupStatus;
 import net.solarnetwork.node.setup.stomp.server.SetupSession;
 import net.solarnetwork.node.setup.stomp.server.StompSetupServerHandler;
 import net.solarnetwork.node.setup.stomp.server.StompSetupServerService;
 import net.solarnetwork.security.SnsAuthorizationBuilder;
+import net.solarnetwork.test.CallingThreadExecutorService;
 
 /**
  * Test cases for the {@link StompSetupServerHandler} class.
@@ -84,6 +99,7 @@ public class StompSetupServerHandlerTests {
 	private static final String BCRYPT_ALG = "bcrypt";
 	private static final String SALT_PARAM = "salt";
 
+	private Executor executor;
 	private UserService userService;
 	private UserDetailsService userDetailsService;
 	private DatumService datumService;
@@ -101,13 +117,14 @@ public class StompSetupServerHandlerTests {
 		userDetailsService = EasyMock.createMock(UserDetailsService.class);
 		datumService = EasyMock.createMock(DatumService.class);
 		instructionHandler = EasyMock.createMock(FeedbackInstructionHandler.class);
-		serverService = new StompSetupServerService(userService, userDetailsService, datumService,
+		serverService = new StompSetupServerService(userService, userDetailsService,
 				new AntPathMatcher(), singletonList(instructionHandler));
 		objectMapper = createObjectMapper();
 		ctx = EasyMock.createMock(ChannelHandlerContext.class);
 		channel = EasyMock.createMock(Channel.class);
 		sessions = new ConcurrentHashMap<>(4, 0.9f, 1);
-		handler = new StompSetupServerHandler(sessions, serverService, objectMapper);
+		executor = new CallingThreadExecutorService();
+		handler = new StompSetupServerHandler(sessions, serverService, objectMapper, executor);
 	}
 
 	private ObjectMapper createObjectMapper() {
@@ -200,7 +217,7 @@ public class StompSetupServerHandlerTests {
 		ChannelFuture closeFuture = new DefaultChannelPromise(channel);
 		expect(channel.closeFuture()).andReturn(closeFuture);
 
-		// return ERROR to client
+		// return CONNECTED to client
 		ChannelFuture responseFuture = new DefaultChannelPromise(channel);
 		Capture<Object> responseCaptor = new Capture<>();
 		expect(ctx.writeAndFlush(EasyMock.capture(responseCaptor))).andReturn(responseFuture);
@@ -326,6 +343,259 @@ public class StompSetupServerHandlerTests {
 		/*-
 		client.publish("SEND", sendFrameHeaders);
 		 */
+	}
+
+	private SetupSession givenSessionAuthenticated() {
+		String[] roles = new String[] { "ROLE_USER" };
+		UserDetails user = withUsername(TEST_LOGIN).password("pw").authorities(roles).build();
+		SetupSession session = new SetupSession(TEST_LOGIN, channel);
+		session.setAuthentication(new TestingAuthenticationToken(user, null, roles));
+		sessions.put(session.getSessionId(), session);
+		return session;
+	}
+
+	@Test
+	public void subscribe_ok() {
+		// GIVEN
+		// get the channel to associate with the session
+		expect(ctx.channel()).andReturn(channel);
+
+		// assume authenticated already
+		final SetupSession session = givenSessionAuthenticated();
+
+		// WHEN
+		replayAll();
+
+		final String subId = "123";
+		DefaultStompFrame f = new DefaultStompFrame(StompCommand.SUBSCRIBE);
+		f.headers().set(StompHeaders.ID, subId);
+		f.headers().set(StompHeaders.DESTINATION, "/setup/**");
+		handler.channelRead(ctx, f);
+
+		// THEN
+		assertThat("Session is subscribed", session.subscriptionIdsForTopic("/setup/**", null),
+				containsInAnyOrder(subId));
+	}
+
+	private SetupSession givenSessionAuthenticatedAndSubscribed() {
+		SetupSession session = givenSessionAuthenticated();
+		session.addSubscription("0", "/setup/**");
+		return session;
+	}
+
+	@Test
+	public void sendInstruction_ok() {
+		// GIVEN
+		// get the channel to associate with the session
+		expect(ctx.channel()).andReturn(channel);
+
+		// assume authenticated already
+		givenSessionAuthenticatedAndSubscribed();
+
+		// send instruction to configured handlers
+		final String dest = "/setup/do/something";
+		expect(instructionHandler.handlesTopic(InstructionHandler.TOPIC_SYSTEM_CONFIGURE))
+				.andReturn(true);
+
+		// process instruction OK
+		final String arg = "Hello, world.";
+		final String res = "Good day to you, sir.";
+		Capture<Instruction> instrCaptor = new Capture<>();
+		expect(instructionHandler.processInstructionWithFeedback(capture(instrCaptor)))
+				.andAnswer(new IAnswer<InstructionStatus>() {
+
+					@Override
+					public InstructionStatus answer() throws Throwable {
+						Instruction instr = instrCaptor.getValue();
+						assertThat("Instruction topic is SystemConfigure", instr.getTopic(),
+								is(InstructionHandler.TOPIC_SYSTEM_CONFIGURE));
+						assertThat("Intruction service param is STOMP dest",
+								instr.getParameterValue(InstructionHandler.PARAM_SERVICE), is(dest));
+						assertThat("Instruction service arg is STOMP body",
+								instr.getParameterValue(InstructionHandler.PARAM_SERVICE_ARGUMENT),
+								is(arg));
+						assertThat("Custom STOMP header provided as parameter",
+								instr.getParameterValue("foo"), is("bar"));
+						return createStatus(instr, InstructionState.Completed, new Date(),
+								singletonMap(InstructionHandler.PARAM_SERVICE_RESULT, res));
+					}
+
+				});
+
+		// post instruction result as MESSAGE back to client
+		Capture<Object> msgCaptor = new Capture<>();
+		expect(ctx.writeAndFlush(capture(msgCaptor))).andReturn(new DefaultChannelPromise(channel));
+
+		// WHEN
+		replayAll();
+
+		DefaultStompFrame f = new DefaultStompFrame(StompCommand.SEND);
+		f.headers().set(StompHeaders.DESTINATION, dest);
+		f.headers().set("foo", "bar");
+		f.content().writeBytes(arg.getBytes(Charset.forName("UTF-8")));
+
+		handler.channelRead(ctx, f);
+
+		// THEN
+		assertThat("MESSAGE response provided", msgCaptor.getValue(), is(instanceOf(StompFrame.class)));
+		StompFrame msg = (StompFrame) msgCaptor.getValue();
+		assertThat("Response dest is SEND dest", msg.headers().getAsString(StompHeaders.DESTINATION),
+				is(dest));
+		assertThat("Response status is OK", msg.headers().getAsString(SetupHeader.Status.getValue()),
+				is(String.valueOf(SetupStatus.Ok.getCode())));
+		assertThat("Response body is instruction result as JSON string",
+				msg.content().toString(Charset.forName("UTF-8")), is(String.format("\"%s\"", res)));
+	}
+
+	@Test
+	public void sendInstruction_noHandler() {
+		// GIVEN
+		// get the channel to associate with the session
+		expect(ctx.channel()).andReturn(channel);
+
+		// assume authenticated already
+		givenSessionAuthenticatedAndSubscribed();
+
+		// post instruction to configured handlers
+		final String dest = "/setup/do/something";
+		expect(instructionHandler.handlesTopic(InstructionHandler.TOPIC_SYSTEM_CONFIGURE))
+				.andReturn(false);
+
+		// post instruction result as MESSAGE back to client
+		Capture<Object> msgCaptor = new Capture<>();
+		expect(ctx.writeAndFlush(capture(msgCaptor))).andReturn(new DefaultChannelPromise(channel));
+
+		// WHEN
+		replayAll();
+
+		DefaultStompFrame f = new DefaultStompFrame(StompCommand.SEND);
+		f.headers().set(StompHeaders.DESTINATION, dest);
+		f.content().writeBytes("Yo".getBytes(Charset.forName("UTF-8")));
+
+		handler.channelRead(ctx, f);
+
+		// THEN
+		assertThat("MESSAGE response provided", msgCaptor.getValue(), is(instanceOf(StompFrame.class)));
+		StompFrame msg = (StompFrame) msgCaptor.getValue();
+		assertThat("Response dest is SEND dest", msg.headers().getAsString(StompHeaders.DESTINATION),
+				is(dest));
+		assertThat("Response status is NOT FOUND",
+				msg.headers().getAsString(SetupHeader.Status.getValue()),
+				is(String.valueOf(SetupStatus.NotFound.getCode())));
+	}
+
+	@Test
+	public void sendInstruction_asyncExecuting() {
+		// GIVEN
+		// get the channel to associate with the session
+		expect(ctx.channel()).andReturn(channel);
+
+		// assume authenticated already
+		givenSessionAuthenticatedAndSubscribed();
+
+		// post instruction to configured handlers
+		final String dest = "/setup/do/something";
+		expect(instructionHandler.handlesTopic(InstructionHandler.TOPIC_SYSTEM_CONFIGURE))
+				.andReturn(true);
+
+		final String arg = "Hello, world.";
+		Capture<Instruction> instrCaptor = new Capture<>();
+		expect(instructionHandler.processInstructionWithFeedback(capture(instrCaptor)))
+				.andAnswer(new IAnswer<InstructionStatus>() {
+
+					@Override
+					public InstructionStatus answer() throws Throwable {
+						Instruction instr = instrCaptor.getValue();
+						assertThat("Instruction topic is SystemConfigure", instr.getTopic(),
+								is(InstructionHandler.TOPIC_SYSTEM_CONFIGURE));
+						assertThat("Intruction service param is STOMP dest",
+								instr.getParameterValue(InstructionHandler.PARAM_SERVICE), is(dest));
+						assertThat("Instruction service arg is STOMP body",
+								instr.getParameterValue(InstructionHandler.PARAM_SERVICE_ARGUMENT),
+								is(arg));
+						return createStatus(instr, InstructionState.Executing, new Date(), null);
+					}
+
+				});
+
+		// post instruction result as MESSAGE back to client
+		Capture<Object> msgCaptor = new Capture<>();
+		expect(ctx.writeAndFlush(capture(msgCaptor))).andReturn(new DefaultChannelPromise(channel));
+
+		// WHEN
+		replayAll();
+
+		DefaultStompFrame f = new DefaultStompFrame(StompCommand.SEND);
+		f.headers().set(StompHeaders.DESTINATION, dest);
+		f.content().writeBytes(arg.getBytes(Charset.forName("UTF-8")));
+
+		handler.channelRead(ctx, f);
+
+		// THEN
+		assertThat("MESSAGE response provided", msgCaptor.getValue(), is(instanceOf(StompFrame.class)));
+		StompFrame msg = (StompFrame) msgCaptor.getValue();
+		assertThat("Response dest is SEND dest", msg.headers().getAsString(StompHeaders.DESTINATION),
+				is(dest));
+		assertThat("Response status is NOT FOUND",
+				msg.headers().getAsString(SetupHeader.Status.getValue()),
+				is(String.valueOf(SetupStatus.Accepted.getCode())));
+	}
+
+	@Test
+	public void sendInstruction_declined() {
+		// GIVEN
+		// get the channel to associate with the session
+		expect(ctx.channel()).andReturn(channel);
+
+		// assume authenticated already
+		givenSessionAuthenticatedAndSubscribed();
+
+		// post instruction to configured handlers
+		final String dest = "/setup/do/something";
+		expect(instructionHandler.handlesTopic(InstructionHandler.TOPIC_SYSTEM_CONFIGURE))
+				.andReturn(true);
+
+		final String arg = "Hello, world.";
+		Capture<Instruction> instrCaptor = new Capture<>();
+		expect(instructionHandler.processInstructionWithFeedback(capture(instrCaptor)))
+				.andAnswer(new IAnswer<InstructionStatus>() {
+
+					@Override
+					public InstructionStatus answer() throws Throwable {
+						Instruction instr = instrCaptor.getValue();
+						assertThat("Instruction topic is SystemConfigure", instr.getTopic(),
+								is(InstructionHandler.TOPIC_SYSTEM_CONFIGURE));
+						assertThat("Intruction service param is STOMP dest",
+								instr.getParameterValue(InstructionHandler.PARAM_SERVICE), is(dest));
+						assertThat("Instruction service arg is STOMP body",
+								instr.getParameterValue(InstructionHandler.PARAM_SERVICE_ARGUMENT),
+								is(arg));
+						return createStatus(instr, InstructionState.Declined, new Date(), null);
+					}
+
+				});
+
+		// post instruction result as MESSAGE back to client
+		Capture<Object> msgCaptor = new Capture<>();
+		expect(ctx.writeAndFlush(capture(msgCaptor))).andReturn(new DefaultChannelPromise(channel));
+
+		// WHEN
+		replayAll();
+
+		DefaultStompFrame f = new DefaultStompFrame(StompCommand.SEND);
+		f.headers().set(StompHeaders.DESTINATION, dest);
+		f.content().writeBytes(arg.getBytes(Charset.forName("UTF-8")));
+
+		handler.channelRead(ctx, f);
+
+		// THEN
+		assertThat("MESSAGE response provided", msgCaptor.getValue(), is(instanceOf(StompFrame.class)));
+		StompFrame msg = (StompFrame) msgCaptor.getValue();
+		assertThat("Response dest is SEND dest", msg.headers().getAsString(StompHeaders.DESTINATION),
+				is(dest));
+		assertThat("Response status is UNPROCESSABLE",
+				msg.headers().getAsString(SetupHeader.Status.getValue()),
+				is(String.valueOf(SetupStatus.Unprocessable.getCode())));
 	}
 
 }

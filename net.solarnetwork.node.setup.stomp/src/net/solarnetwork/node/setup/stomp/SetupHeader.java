@@ -43,6 +43,8 @@ public enum SetupHeader {
 	 */
 	Date("The message date, in HTTP Date header format, similar to similar to RFC 1123."),
 
+	Status("A status code, like HTTP status values."),
+
 	;
 
 	private final String value;
