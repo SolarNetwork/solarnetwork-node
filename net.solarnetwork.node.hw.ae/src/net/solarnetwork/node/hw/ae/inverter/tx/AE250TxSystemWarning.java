@@ -35,37 +35,33 @@ package net.solarnetwork.node.hw.ae.inverter.tx;
  */
 public enum AE250TxSystemWarning implements AE250TxWarning {
 
-	W1(0, "W1"),
+	Fan1(0, "Fan 1 warning"),
 
-	W2(1, "W2"),
+	Fan2(1, "Fan 2 warning"),
 
-	W3(2, "W3"),
+	Fan3(2, "Fan 3 warning"),
 
-	W4(3, "W4"),
+	MagHighTemp(3, "Magnetics high temp warning"),
 
-	W5(4, "W5"),
+	HighTempPowerLimit(4, "Power foldback warning"),
 
-	W6(5, "W6"),
+	DeltaTemp(5, "Heatsink delta temp warning"),
 
-	W7(6, "W7"),
+	// 6: missing
 
-	W8(7, "W8"),
+	GfdiCurrent(7, "GFDI current warning"),
 
-	W9(8, "W9"),
+	AcSurge(8, "AC surge warning"),
 
-	W10(9, "W10"),
+	DcSurge(9, "DC surge warning"),
 
-	W11(10, "W11"),
+	DcCurrent(10, "DC current warning"),
 
-	W12(11, "W12"),
+	IpmCurrent(11, "IPM current warning"),
 
-	W13(12, "W13"),
+	Ps24V(12, "24V power supply warning"),
 
-	W14(13, "W14"),
-
-	W15(14, "W15"),
-
-	W16(15, "W16"),
+	DcBleed(13, "DC bleed circuit warning"),
 
 	;
 

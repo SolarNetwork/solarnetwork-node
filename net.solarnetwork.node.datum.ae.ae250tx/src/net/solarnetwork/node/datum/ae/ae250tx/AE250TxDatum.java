@@ -25,13 +25,13 @@ package net.solarnetwork.node.datum.ae.ae250tx;
 import static net.solarnetwork.util.StringUtils.commaDelimitedStringFromCollection;
 import java.util.Date;
 import java.util.SortedSet;
-import net.solarnetwork.domain.Bitmaskable;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.ACEnergyDatum;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
 import net.solarnetwork.node.hw.ae.inverter.tx.AE250TxDataAccessor;
 import net.solarnetwork.node.hw.ae.inverter.tx.AE250TxFault;
+import net.solarnetwork.node.hw.ae.inverter.tx.AE250TxSystemStatus;
 import net.solarnetwork.node.hw.ae.inverter.tx.AE250TxWarning;
 
 /**
@@ -73,9 +73,9 @@ public class AE250TxDatum extends GeneralNodePVEnergyDatum {
 			putStatusSampleValue(Datum.OP_STATE, opState.getCode());
 		}
 
-		int status = Bitmaskable.bitmaskValue(data.getSystemStatus());
-		if ( status > 0 ) {
-			putStatusSampleValue(Datum.OP_STATES, status);
+		AE250TxSystemStatus status = data.getSystemStatus();
+		if ( status != null ) {
+			putStatusSampleValue(Datum.OP_STATES, status.getCode());
 		}
 
 		SortedSet<AE250TxFault> faults = data.getFaults();

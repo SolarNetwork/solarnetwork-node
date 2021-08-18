@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.hw.ae.inverter.tx;
 
+import net.solarnetwork.domain.CodedValue;
+
 /**
  * AE250TX PV monitoring status.
  * 
@@ -29,7 +31,7 @@ package net.solarnetwork.node.hw.ae.inverter.tx;
  * @version 1.0
  * @since 3.2
  */
-public enum AE250TxPvmStatus implements AE250TxWarning {
+public enum AE250TxPvmStatus implements CodedValue {
 
 	Rebooting(0, "Rebooting."),
 
@@ -49,20 +51,24 @@ public enum AE250TxPvmStatus implements AE250TxWarning {
 
 	;
 
-	private final int bit;
+	private final int code;
 	private final String description;
 
-	private AE250TxPvmStatus(int bit, String description) {
-		this.bit = bit;
+	private AE250TxPvmStatus(int code, String description) {
+		this.code = code;
 		this.description = description;
 	}
 
 	@Override
-	public int bitmaskBitOffset() {
-		return bit;
+	public int getCode() {
+		return code;
 	}
 
-	@Override
+	/**
+	 * Get a description of the status.
+	 * 
+	 * @return the description
+	 */
 	public String getDescription() {
 		return description;
 	}

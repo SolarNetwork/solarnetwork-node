@@ -23,11 +23,11 @@
 package net.solarnetwork.node.hw.ae.inverter.tx;
 
 import static net.solarnetwork.domain.Bitmaskable.setForBitmask;
+import static net.solarnetwork.domain.CodedValue.forCodeValue;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import net.solarnetwork.domain.Bitmaskable;
@@ -225,9 +225,11 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	}
 
 	@Override
-	public Set<AE250TxSystemStatus> getSystemStatus() {
+	public AE250TxSystemStatus getSystemStatus() {
 		Number n = getNumber(AE250TxRegister.StatusOperatingState);
-		return (n != null ? setForBitmask(n.intValue(), AE250TxSystemStatus.class) : null);
+		return (n != null
+				? forCodeValue(n.intValue(), AE250TxSystemStatus.class, AE250TxSystemStatus.Sleep)
+				: null);
 	}
 
 	@Override
@@ -267,34 +269,38 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 		if ( n != null ) {
 			result.addAll(setForBitmask(n.intValue(), AE250TxSystemWarning.class));
 		}
-		n = getNumber(AE250TxRegister.StatusPvMonitoringStatus);
-		if ( n != null ) {
-			result.addAll(setForBitmask(n.intValue(), AE250TxPvmStatus.class));
-		}
 		return result;
 	}
 
 	@Override
 	public DeviceOperatingState getDeviceOperatingState() {
-		Set<AE250TxSystemStatus> status = getSystemStatus();
-		if ( status.contains(AE250TxSystemStatus.Initialization)
-				|| status.contains(AE250TxSystemStatus.StartupDelay)
-				|| status.contains(AE250TxSystemStatus.Latching)
-				|| status.contains(AE250TxSystemStatus.AcPrecharge)
-				|| status.contains(AE250TxSystemStatus.DcPrecharge) ) {
-			return DeviceOperatingState.Starting;
-		} else if ( status.contains(AE250TxSystemStatus.Sleep) ) {
-			return DeviceOperatingState.Standby;
-		} else if ( status.contains(AE250TxSystemStatus.Fault) ) {
-			return DeviceOperatingState.Fault;
-		} else if ( status.contains(AE250TxSystemStatus.Disabled) ) {
-			return DeviceOperatingState.Disabled;
-		} else if ( status.contains(AE250TxSystemStatus.Idle) ) {
-			return DeviceOperatingState.Shutdown;
-		} else if ( status.contains(AE250TxSystemStatus.CoolDown) ) {
-			return DeviceOperatingState.Recovery;
+		final AE250TxSystemStatus status = getSystemStatus();
+		switch (status) {
+			case Initialization:
+			case StartupDelay:
+			case AcPrecharge:
+			case DcPrecharge:
+				return DeviceOperatingState.Starting;
+
+			case Sleep:
+				return DeviceOperatingState.Standby;
+
+			case Fault:
+			case LatchingFault:
+				return DeviceOperatingState.Fault;
+
+			case Disabled:
+				return DeviceOperatingState.Disabled;
+
+			case Idle:
+				return DeviceOperatingState.Shutdown;
+
+			case CoolDown:
+				return DeviceOperatingState.Recovery;
+
+			default:
+				return DeviceOperatingState.Normal;
 		}
-		return DeviceOperatingState.Normal;
 	}
 
 	@Override

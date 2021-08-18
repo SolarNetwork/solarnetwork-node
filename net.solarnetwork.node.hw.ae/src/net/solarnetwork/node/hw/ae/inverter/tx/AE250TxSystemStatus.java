@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.hw.ae.inverter.tx;
 
-import net.solarnetwork.domain.Bitmaskable;
+import net.solarnetwork.domain.CodedValue;
 
 /**
  * AE250TX system status bitmask enumeration.
@@ -31,7 +31,7 @@ import net.solarnetwork.domain.Bitmaskable;
  * @version 1.0
  * @since 3.2
  */
-public enum AE250TxSystemStatus implements Bitmaskable {
+public enum AE250TxSystemStatus implements CodedValue {
 
 	Sleep(0, "Sleep state"),
 
@@ -51,21 +51,21 @@ public enum AE250TxSystemStatus implements Bitmaskable {
 
 	Disabled(11, "Disabled"),
 
-	Latching(12, "Latching"),
+	LatchingFault(12, "Latching fault"),
 
 	CoolDown(13, "Cool down");
 
-	private final int bit;
+	private final int code;
 	private final String description;
 
-	private AE250TxSystemStatus(int bit, String description) {
-		this.bit = bit;
+	private AE250TxSystemStatus(int code, String description) {
+		this.code = code;
 		this.description = description;
 	}
 
 	@Override
-	public int bitmaskBitOffset() {
-		return bit;
+	public int getCode() {
+		return code;
 	}
 
 	/**

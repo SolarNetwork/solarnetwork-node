@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.hw.ae.inverter.tx;
 
-import java.util.Set;
 import java.util.SortedSet;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
@@ -91,7 +90,7 @@ public interface AE250TxDataAccessor extends PVEnergyDataAccessor, ACEnergyDataA
 	 * @return the status
 	 * @since 1.1
 	 */
-	Set<AE250TxSystemStatus> getSystemStatus();
+	AE250TxSystemStatus getSystemStatus();
 
 	/**
 	 * Get the complete set of active faults, sorted by fault number.
