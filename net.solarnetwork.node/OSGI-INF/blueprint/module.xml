@@ -107,11 +107,13 @@
 				<bean class="net.solarnetwork.codec.JodaLocalDateTimeSerializer"/>
 				<bean class="net.solarnetwork.codec.JodaLocalTimeSerializer"/>
 				<bean class="net.solarnetwork.codec.BasicObjectDatumStreamMetadataSerializer"/>
+				<bean class="net.solarnetwork.codec.BasicGeneralDatumSerializer"/>
 			</list>
 		</property>
 		<property name="deserializers">
 			<list>
 				<bean class="net.solarnetwork.codec.BasicObjectDatumStreamMetadataDeserializer"/>
+				<bean class="net.solarnetwork.codec.BasicGeneralDatumDeserializer"/>
 			</list>
 		</property>
 		<property name="featuresToDisable">
@@ -495,12 +497,18 @@
 	<service>
 		<interfaces>
 			<value>net.solarnetwork.node.DatumService</value>
+			<value>net.solarnetwork.node.reactor.FeedbackInstructionHandler</value>
 			<value>org.osgi.service.event.EventHandler</value>
 		</interfaces>
 		<service-properties>
 			<entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
 				<array value-type="java.lang.String">
 					<value>#{T(net.solarnetwork.node.DatumDataSource).EVENT_TOPIC_DATUM_CAPTURED}</value>
+				</array>
+			</entry>
+			<entry key="instruction">
+				<array value-type="java.lang.String">
+					<value>#{T(net.solarnetwork.node.reactor.InstructionHandler).TOPIC_SYSTEM_CONFIGURE}</value>
 				</array>
 			</entry>
 		</service-properties>
@@ -511,6 +519,7 @@
 					<property name="caseSensitive" value="false"/>
 				</bean>
 			</argument>
+			<argument ref="objectMapper"/>
 		</bean>
 	</service>
 
