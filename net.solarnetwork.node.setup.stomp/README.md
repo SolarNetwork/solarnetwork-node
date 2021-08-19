@@ -195,11 +195,11 @@ active at once, and the order of their replies are undefined. Clients can keep t
 `MESSAGE` pairs by including a unique `request-id` header value in each `SEND` frame. The server
 will include that same header in the associated `MESSAGE` response frame.
 
-For example, here is a `SEND` frame to execute the `/setup/datum/list` command:
+For example, here is a `SEND` frame to execute the `/setup/datum/latest` command:
 
 ```
 SEND
-destination:/setup/datum/list
+destination:/setup/datum/latest
 request-id:1
 
 ^@
@@ -209,7 +209,7 @@ Here is an example `MESSAGE` response frame for that request:
 
 ```
 MESSAGE
-destination:/setup/datum/list
+destination:/setup/datum/latest
 status:200
 message-id:26188729
 subscription:0
