@@ -173,12 +173,130 @@ String authHeader = authBuilder.build(secret);
 String dateHeader = authBuilder.headerValue("date");
 ```
 
-# Subscribing to Setup topic
+# Subscribing to Setup topics
 
-Once successfully authenticated, a client can subscribe to the `/setup/{sessionId}` topic to receive
-messages from the server. Replace `{sessionId}` with the `session` header value returned on the
-`CONNECTED` frame.
+Once successfully authenticated, a client can subscribe to the `/setup/**` wild card topic to
+receive messages from the server. Here is an example `SUBSCRIBE` frame:
 
+```
+SUBSCRIBE
+id:0
+destination:/setup/**
+
+^@
+```
+
+# Setup command processing
+
+The Setup STOMP server will handle commands via `SEND` frames posted by the client and send the
+result as a `MESSAGE` frame using the same `destination` header value as used in the original
+`SEND` frame. Commands are processed in an asynchronous fashion, so multiple commands can be 
+active at once, and the order of their replies are undefined. Clients can keep track of `SEND` and
+`MESSAGE` pairs by including a unique `request-id` header value in each `SEND` frame. The server
+will include that same header in the associated `MESSAGE` response frame.
+
+For example, here is a `SEND` frame to execute the `/setup/datum/list` command:
+
+```
+SEND
+destination:/setup/datum/list
+request-id:1
+
+^@
+```
+
+Here is an example `MESSAGE` response frame for that request:
+
+```
+MESSAGE
+destination:/setup/datum/list
+status:200
+message-id:26188729
+subscription:0
+request-id:1
+content-type:application/json;charset=utf-8
+content-length:159
+
+[{"created":"2021-08-19 02:30:10.005Z","sourceId":"Mock Energy Meter","i":{"voltage":234.99959,"frequency":50.499973,"watts":11214},"a":{"wattHours":6118188}}]^@
+```
+
+# SolarNode setup command handling
+
+Internally, each STOMP `SEND` setup command will be converted to an `Instruction` object and offered
+to all [`FeedbackInstructionHandler`][FeedbackInstructionHandler.java] services registered at
+runtime. The first handler to return a non-`null` result status will cause the Setup STOMP server to
+convert the result into a `MESSAGE` response and and publish that to the client.
+
+The `Instruction` topic will be set to `SystemConfigure`. The `destination` header from the `SEND`
+frame will be provided as the `service` instruction parameter, along with all custom frame headers
+converted to instruction parameters of the same name. Any `SEND` frame content will be assumed to be
+a UTF-8 string and will be set as the `arg` instruction parameter. **Note** this will be the raw
+string value, it will not be parsed in any way. The `SEND` frame `content-type` header will be
+provided as an instruction parameter so the handler can see what the content can be interpreted as.
+
+ A `MESSAGE` frame `status` header will be set according to the `InstructionState` returned by the
+ handler:
+ 
+ | InstructionState | Status value | Description |
+ |:-----------------|:-------------|:------------|
+ | `Completed`      | `200`        | The command was executed successfully. |
+ | `Executing`      | `202`        | The command is executing asynchronously. |
+ | _null_           | `404`        | No handler accepted processing the command. |
+ | `Declined`       | `422`        | The command was recognized but not executed because of a client problem. |
+ | _exception_      | `500`        | The handler threw an exception. The `message` header will contain the exception  message. |
+ 
+## Example SolarNode command handler
+
+Here is an example `FeedbackInstructionHandler` snippet, that responds to a `/setup/hello` command
+and returns a string result `Hi there!`:
+
+```java
+public boolean handlesTopic(String topic) {
+  return InstructionHandler.TOPIC_SYSTEM_CONFIGURE.equals(topic);
+}
+
+public InstructionStatus processInstructionWithFeedback(Instruction instruction) {
+  if ( instruction == null || !handlesTopic(instruction.getTopic()) ) {
+    return null;
+  }
+  final String topic = instruction.getParameterValue(InstructionHandler.PARAM_SERVICE);
+  if ( !"/setup/hello".equals(topic) ) {
+    return null;
+  }
+  final String result = "Hi there!";
+  return InstructionStatus.createStatus(instruction, InstructionState.Completed, new Date(),
+      Collections.singletonMap(InstructionHandler.PARAM_SERVICE_RESULT, result));
+}
+```
+
+To have this handler invoked, a client would post a `SEND` frame like this:
+
+```
+destination:/setup/hello
+request-id:2
+
+^@
+```
+
+The Setup STOMP server would post a `MESSAGE` back to the client like this:
+
+```
+destination:/setup/hello
+status:200
+message-id:1234567
+subscription:0
+request-id:2
+content-type:application/json;charset=utf-8
+content-length:11
+
+"Hi there!"^@
+
+```
+
+> :warning: **Note** how the response is a JSON string, enclosed in double-quotes. All messages 
+> returned from the server will be encoded into JSON.
+
+[FeedbackInstructionHandler.java]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node/src/net/solarnetwork/node/reactor/FeedbackInstructionHandler.java
 [s3-sigv4]: https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-requests.html
 [SnsAuthorizationBuilder.java]: https://github.com/SolarNetwork/solarnetwork-common/blob/develop/net.solarnetwork.common/src/net/solarnetwork/security/SnsAuthorizationBuilder.java
 [sns-auth-builder-example-java]: https://github.com/SolarNetwork/solarnetwork-node/blob/0d387a6ceb973c88c87e45ac7d0cd9a0bc95ba02/net.solarnetwork.node.setup.stomp.test/src/net/solarnetwork/node/setup/stomp/test/StompSetupServerHandlerTests.java#L260-L308

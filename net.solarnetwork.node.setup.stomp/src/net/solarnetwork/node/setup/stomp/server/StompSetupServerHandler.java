@@ -29,6 +29,7 @@ import static net.solarnetwork.util.NumberUtils.getAndIncrementWithWrap;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -74,6 +75,7 @@ import net.solarnetwork.node.setup.UserAuthenticationInfo;
 import net.solarnetwork.node.setup.stomp.SetupHeader;
 import net.solarnetwork.node.setup.stomp.SetupStatus;
 import net.solarnetwork.node.setup.stomp.SetupTopic;
+import net.solarnetwork.node.setup.stomp.StompHeader;
 import net.solarnetwork.node.setup.stomp.StompUtils;
 import net.solarnetwork.security.AuthorizationUtils;
 import net.solarnetwork.security.SnsAuthorizationBuilder;
@@ -132,6 +134,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 	public static final String SERVER_VERSION = "1.0.0";
 
 	private static final Set<String> STOMP_HEADER_NAMES = createStompHeaderNames();
+	private static final Set<String> SETUP_HEADER_NAMES = createSetupHeaderNames();
 
 	private final AtomicInteger messageIds = new AtomicInteger(0);
 
@@ -217,7 +220,15 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 		result.add(StompHeaders.MESSAGE.toString());
 		result.add(StompHeaders.CONTENT_LENGTH.toString());
 		result.add(StompHeaders.CONTENT_TYPE.toString());
-		return result;
+		return Collections.unmodifiableSet(result);
+	}
+
+	private static Set<String> createSetupHeaderNames() {
+		Set<String> result = new LinkedHashSet<>(8);
+		for ( SetupHeader h : SetupHeader.values() ) {
+			result.add(h.getValue());
+		}
+		return Collections.unmodifiableSet(result);
 	}
 
 	@Override
@@ -434,12 +445,16 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_SYSTEM_CONFIGURE,
 				new Date(), Instruction.LOCAL_INSTRUCTION_ID, Instruction.LOCAL_INSTRUCTION_ID, null);
 		StompHeaders headers = frame.headers();
+		MultiValueMap<String, String> reqHeaders = new LinkedMultiValueMap<>(headers.size());
 		for ( Iterator<Entry<String, String>> itr = headers.iteratorAsString(); itr.hasNext(); ) {
 			Entry<String, String> entry = itr.next();
-			if ( STOMP_HEADER_NAMES.contains(entry.getKey()) ) {
-				continue;
+			String key = entry.getKey();
+			String value = decodeStompHeaderValue(entry.getValue());
+			reqHeaders.add(key, value);
+			if ( StompHeader.ContentType.getValue().equals(key)
+					|| !(STOMP_HEADER_NAMES.contains(key) || SETUP_HEADER_NAMES.contains(key)) ) {
+				instr.addParameter(key, value);
 			}
-			instr.addParameter(entry.getKey(), decodeStompHeaderValue(entry.getValue()));
 		}
 		instr.addParameter(InstructionHandler.PARAM_SERVICE, topic);
 		if ( frame.content().isReadable() ) {
@@ -455,19 +470,33 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 
 			@Override
 			public void run() {
-				InstructionStatus status = InstructionUtils
-						.handleInstructionWithFeedback(serverService.getInstructionHandlers(), instr);
-				if ( status == null ) {
-					pubStatusMessage(ctx, session, topic, SetupStatus.NotFound, null);
-				} else if ( status.getInstructionState() == InstructionState.Declined ) {
-					pubStatusMessage(ctx, session, topic, SetupStatus.Unprocessable, null);
-				} else if ( status.getInstructionState() != InstructionState.Completed ) {
-					pubStatusMessage(ctx, session, topic, SetupStatus.Accepted, null);
-				} else {
-					Object result = (status.getResultParameters() != null
-							? status.getResultParameters().get(InstructionHandler.PARAM_SERVICE_RESULT)
-							: null);
-					pubStatusMessage(ctx, session, topic, SetupStatus.Ok, result);
+				try {
+					InstructionStatus status = InstructionUtils.handleInstructionWithFeedback(
+							serverService.getInstructionHandlers(), instr);
+					if ( status == null || status.getInstructionState() == null ) {
+						pubStatusMessage(ctx, session, topic, reqHeaders, SetupStatus.NotFound, null);
+					} else if ( status.getInstructionState() == InstructionState.Declined ) {
+						pubStatusMessage(ctx, session, topic, reqHeaders, SetupStatus.Unprocessable,
+								null);
+					} else if ( status.getInstructionState() != InstructionState.Completed ) {
+						pubStatusMessage(ctx, session, topic, reqHeaders, SetupStatus.Accepted, null);
+					} else {
+						Object result = (status.getResultParameters() != null ? status
+								.getResultParameters().get(InstructionHandler.PARAM_SERVICE_RESULT)
+								: null);
+						pubStatusMessage(ctx, session, topic, reqHeaders, SetupStatus.Ok, result);
+					}
+				} catch ( Exception e ) {
+					Throwable root = e;
+					while ( root.getCause() != null ) {
+						root = root.getCause();
+					}
+					String msg = root.getMessage();
+					if ( msg == null ) {
+						msg = root.toString();
+					}
+					pubStatusMessage(ctx, session, topic, reqHeaders, SetupStatus.InternalError, msg,
+							null);
 				}
 			}
 
@@ -475,9 +504,19 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private void pubStatusMessage(ChannelHandlerContext ctx, SetupSession session, String topic,
-			SetupStatus statusCode, Object body) {
-		MultiValueMap<String, String> headers = new LinkedMultiValueMap<>(1);
+			MultiValueMap<String, String> reqHeaders, SetupStatus statusCode, Object body) {
+		pubStatusMessage(ctx, session, topic, reqHeaders, statusCode, null, body);
+	}
+
+	private void pubStatusMessage(ChannelHandlerContext ctx, SetupSession session, String topic,
+			MultiValueMap<String, String> reqHeaders, SetupStatus statusCode, String message,
+			Object body) {
+		MultiValueMap<String, String> headers = new LinkedMultiValueMap<>(reqHeaders.size() + 2);
+		headers.putAll(reqHeaders);
 		headers.set(SetupHeader.Status.getValue(), String.valueOf(statusCode.getCode()));
+		if ( message != null ) {
+			headers.set(StompHeaders.MESSAGE.toString(), message);
+		}
 		pubMessage(ctx, session, topic, headers, body);
 	}
 

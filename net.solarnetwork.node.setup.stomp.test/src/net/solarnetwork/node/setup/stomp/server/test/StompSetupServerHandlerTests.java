@@ -398,6 +398,7 @@ public class StompSetupServerHandlerTests {
 				.andReturn(true);
 
 		// process instruction OK
+		final String contentType = "text/plain;charset=utf-8";
 		final String arg = "Hello, world.";
 		final String res = "Good day to you, sir.";
 		Capture<Instruction> instrCaptor = new Capture<>();
@@ -414,6 +415,9 @@ public class StompSetupServerHandlerTests {
 						assertThat("Instruction service arg is STOMP body",
 								instr.getParameterValue(InstructionHandler.PARAM_SERVICE_ARGUMENT),
 								is(arg));
+						assertThat("STOMP content-type header provided as parameter",
+								instr.getParameterValue(StompHeaders.CONTENT_TYPE.toString()),
+								is(contentType));
 						assertThat("Custom STOMP header provided as parameter",
 								instr.getParameterValue("foo"), is("bar"));
 						return createStatus(instr, InstructionState.Completed, new Date(),
@@ -432,6 +436,8 @@ public class StompSetupServerHandlerTests {
 		DefaultStompFrame f = new DefaultStompFrame(StompCommand.SEND);
 		f.headers().set(StompHeaders.DESTINATION, dest);
 		f.headers().set("foo", "bar");
+		f.headers().set(StompHeaders.CONTENT_TYPE, contentType);
+		f.headers().set(StompHeaders.CONTENT_LENGTH, String.valueOf(arg.length()));
 		f.content().writeBytes(arg.getBytes(Charset.forName("UTF-8")));
 
 		handler.channelRead(ctx, f);
@@ -443,6 +449,8 @@ public class StompSetupServerHandlerTests {
 				is(dest));
 		assertThat("Response status is OK", msg.headers().getAsString(SetupHeader.Status.getValue()),
 				is(String.valueOf(SetupStatus.Ok.getCode())));
+		assertThat("Custom request header copied to response", msg.headers().getAsString("foo"),
+				is("bar"));
 		assertThat("Response body is instruction result as JSON string",
 				msg.content().toString(Charset.forName("UTF-8")), is(String.format("\"%s\"", res)));
 	}
@@ -596,6 +604,58 @@ public class StompSetupServerHandlerTests {
 		assertThat("Response status is UNPROCESSABLE",
 				msg.headers().getAsString(SetupHeader.Status.getValue()),
 				is(String.valueOf(SetupStatus.Unprocessable.getCode())));
+	}
+
+	@Test
+	public void sendInstruction_internalError() {
+		// GIVEN
+		// get the channel to associate with the session
+		expect(ctx.channel()).andReturn(channel);
+
+		// assume authenticated already
+		givenSessionAuthenticatedAndSubscribed();
+
+		// post instruction to configured handlers
+		final String dest = "/setup/do/something";
+		expect(instructionHandler.handlesTopic(InstructionHandler.TOPIC_SYSTEM_CONFIGURE))
+				.andReturn(true);
+
+		final String arg = "Hello, world.";
+		final String error = "No way!";
+		Capture<Instruction> instrCaptor = new Capture<>();
+		expect(instructionHandler.processInstructionWithFeedback(capture(instrCaptor)))
+				.andAnswer(new IAnswer<InstructionStatus>() {
+
+					@Override
+					public InstructionStatus answer() throws Throwable {
+						throw new RuntimeException(error);
+					}
+
+				});
+
+		// post instruction result as MESSAGE back to client
+		Capture<Object> msgCaptor = new Capture<>();
+		expect(ctx.writeAndFlush(capture(msgCaptor))).andReturn(new DefaultChannelPromise(channel));
+
+		// WHEN
+		replayAll();
+
+		DefaultStompFrame f = new DefaultStompFrame(StompCommand.SEND);
+		f.headers().set(StompHeaders.DESTINATION, dest);
+		f.content().writeBytes(arg.getBytes(Charset.forName("UTF-8")));
+
+		handler.channelRead(ctx, f);
+
+		// THEN
+		assertThat("MESSAGE response provided", msgCaptor.getValue(), is(instanceOf(StompFrame.class)));
+		StompFrame msg = (StompFrame) msgCaptor.getValue();
+		assertThat("Response dest is SEND dest", msg.headers().getAsString(StompHeaders.DESTINATION),
+				is(dest));
+		assertThat("Response status is INTERNAL ERROR",
+				msg.headers().getAsString(SetupHeader.Status.getValue()),
+				is(String.valueOf(SetupStatus.InternalError.getCode())));
+		assertThat("Response message from exception", msg.headers().getAsString(StompHeaders.MESSAGE),
+				is(error));
 	}
 
 }

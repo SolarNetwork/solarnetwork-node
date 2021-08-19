@@ -43,6 +43,8 @@ public enum SetupHeader {
 	 */
 	Date("The message date, in HTTP Date header format, similar to similar to RFC 1123."),
 
+	RequestId("request-id", "A unique ID included with a send/receive frame pair."),
+
 	Status("A status code, like HTTP status values."),
 
 	;
@@ -76,6 +78,26 @@ public enum SetupHeader {
 	 */
 	public String getDescription() {
 		return description;
+	}
+
+	/**
+	 * Get an enum instance for a value.
+	 * 
+	 * @param value
+	 *        the value to get the enum instance for
+	 * @return the enum
+	 * @throws IllegalArgumentException
+	 *         if {@code value} is not a valid value
+	 */
+	public static SetupHeader forValue(String value) {
+		if ( value != null ) {
+			for ( SetupHeader h : SetupHeader.values() ) {
+				if ( h.value.equals(value) ) {
+					return h;
+				}
+			}
+		}
+		throw new IllegalArgumentException("Invalid SetupHeader value: " + value);
 	}
 
 }
