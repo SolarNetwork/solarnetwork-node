@@ -44,6 +44,8 @@ public enum StompHeader {
 
 	Login,
 
+	Message,
+
 	;
 
 	private final String value;
