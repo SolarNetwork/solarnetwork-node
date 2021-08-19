@@ -29,6 +29,7 @@ import static net.solarnetwork.node.setup.stomp.SetupTopic.Authenticate;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -293,6 +294,106 @@ public class StompSetupServerHandlerTests {
 
 		// THEN
 		assertThat("Session is authenticated", session.isAuthenticated(), is(true));
+	}
+
+	@Test
+	public void authenticate_error_dateSkew_past() {
+		// GIVEN
+		handler.setMaxAuthDateSkewSeconds(1);
+
+		final String pw = "password123";
+		final String salt = BCrypt.gensalt();
+		final String pwHash = BCrypt.hashpw(pw, salt);
+
+		// get the channel to associate with the session
+		expect(ctx.channel()).andReturn(channel);
+
+		// assume CONNECT already
+		SetupSession session = new SetupSession(TEST_LOGIN, channel);
+		sessions.put(session.getSessionId(), session);
+
+		// return ERROR to client
+		ChannelFuture responseFuture = new DefaultChannelPromise(channel);
+		Capture<Object> responseCaptor = new Capture<>();
+		expect(ctx.writeAndFlush(EasyMock.capture(responseCaptor))).andReturn(responseFuture);
+
+		// WHEN
+		replayAll();
+
+		Instant now = Instant.now().minusSeconds(10);
+		String secret = DigestUtils.sha256Hex(pwHash);
+		// @formatter:off
+		SnsAuthorizationBuilder authBuilder = new SnsAuthorizationBuilder(TEST_LOGIN)
+				.date(now)
+				.verb(StompCommand.SEND.toString())
+				.path(Authenticate.getValue());
+		// @formatter:on
+		String authHeader = authBuilder.build(secret);
+
+		DefaultStompFrame f = new DefaultStompFrame(StompCommand.SEND);
+		f.headers().set(StompHeaders.DESTINATION, Authenticate.getValue());
+		f.headers().set(SetupHeader.Date.getValue(),
+				authBuilder.headerValue(SetupHeader.Date.getValue()));
+		f.headers().set(SetupHeader.Authorization.getValue(), authHeader);
+		handler.channelRead(ctx, f);
+
+		// THEN
+		assertThat("Response is StompFrame", responseCaptor.getValue(),
+				is(instanceOf(StompFrame.class)));
+		StompFrame response = (StompFrame) responseCaptor.getValue();
+		assertThat("Response is ERROR", response.command(), is(StompCommand.ERROR));
+		assertThat("Response has date skew message",
+				response.headers().getAsString(StompHeaders.MESSAGE), containsString("skew"));
+	}
+
+	@Test
+	public void authenticate_error_dateSkew_future() {
+		// GIVEN
+		handler.setMaxAuthDateSkewSeconds(1);
+
+		final String pw = "password123";
+		final String salt = BCrypt.gensalt();
+		final String pwHash = BCrypt.hashpw(pw, salt);
+
+		// get the channel to associate with the session
+		expect(ctx.channel()).andReturn(channel);
+
+		// assume CONNECT already
+		SetupSession session = new SetupSession(TEST_LOGIN, channel);
+		sessions.put(session.getSessionId(), session);
+
+		// return ERROR to client
+		ChannelFuture responseFuture = new DefaultChannelPromise(channel);
+		Capture<Object> responseCaptor = new Capture<>();
+		expect(ctx.writeAndFlush(EasyMock.capture(responseCaptor))).andReturn(responseFuture);
+
+		// WHEN
+		replayAll();
+
+		Instant now = Instant.now().plusSeconds(10);
+		String secret = DigestUtils.sha256Hex(pwHash);
+		// @formatter:off
+		SnsAuthorizationBuilder authBuilder = new SnsAuthorizationBuilder(TEST_LOGIN)
+				.date(now)
+				.verb(StompCommand.SEND.toString())
+				.path(Authenticate.getValue());
+		// @formatter:on
+		String authHeader = authBuilder.build(secret);
+
+		DefaultStompFrame f = new DefaultStompFrame(StompCommand.SEND);
+		f.headers().set(StompHeaders.DESTINATION, Authenticate.getValue());
+		f.headers().set(SetupHeader.Date.getValue(),
+				authBuilder.headerValue(SetupHeader.Date.getValue()));
+		f.headers().set(SetupHeader.Authorization.getValue(), authHeader);
+		handler.channelRead(ctx, f);
+
+		// THEN
+		assertThat("Response is StompFrame", responseCaptor.getValue(),
+				is(instanceOf(StompFrame.class)));
+		StompFrame response = (StompFrame) responseCaptor.getValue();
+		assertThat("Response is ERROR", response.command(), is(StompCommand.ERROR));
+		assertThat("Response has date skew message",
+				response.headers().getAsString(StompHeaders.MESSAGE), containsString("skew"));
 	}
 
 	/**

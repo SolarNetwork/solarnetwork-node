@@ -133,6 +133,9 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 	/** The server version. */
 	public static final String SERVER_VERSION = "1.0.0";
 
+	/** The default {@code maxAuthDateSkewSeconds} property value. */
+	public static final int DEFAULT_MAX_AUTH_DATE_SKEW_SECONDS = 60 * 5;
+
 	private static final Set<String> STOMP_HEADER_NAMES = createStompHeaderNames();
 	private static final Set<String> SETUP_HEADER_NAMES = createSetupHeaderNames();
 
@@ -142,6 +145,8 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 	private final ObjectMapper objectMapper;
 	private final Executor executor;
 	private final ConcurrentMap<UUID, SetupSession> sessions;
+
+	private int maxAuthDateSkewSeconds = DEFAULT_MAX_AUTH_DATE_SKEW_SECONDS;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -379,6 +384,12 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 			sendError(ctx, "Invalidate date header value. Must be HTTP Date header format.");
 			return;
 		}
+		final int maxSkew = this.maxAuthDateSkewSeconds;
+		if ( maxSkew > 0
+				&& Math.abs(System.currentTimeMillis() - ts.toEpochMilli()) > (maxSkew * 1000L) ) {
+			sendError(ctx, "Invalidate date header value: too much skew.");
+			return;
+		}
 
 		String authorization = decodeStompHeaderValue(
 				frame.headers().getAsString(SetupHeader.Authorization.getValue()));
@@ -576,6 +587,30 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
 		cause.printStackTrace();
 		ctx.close();
+	}
+
+	/**
+	 * Get the maximum authentication date skew allowed, in seconds.
+	 * 
+	 * @return the max seconds
+	 */
+	public int getMaxAuthDateSkewSeconds() {
+		return maxAuthDateSkewSeconds;
+	}
+
+	/**
+	 * Set the maximum authentication date skew allowed, in seconds.
+	 * 
+	 * <p>
+	 * If anything less than {@literal 1} then no date verification will be
+	 * performed.
+	 * </p>
+	 * 
+	 * @param maxAuthDateSkewSeconds
+	 *        the maximum seconds to set
+	 */
+	public void setMaxAuthDateSkewSeconds(int maxAuthDateSkewSeconds) {
+		this.maxAuthDateSkewSeconds = maxAuthDateSkewSeconds;
 	}
 
 }
