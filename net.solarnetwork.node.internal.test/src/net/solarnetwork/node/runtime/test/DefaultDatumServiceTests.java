@@ -40,6 +40,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
 import org.springframework.util.AntPathMatcher;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.runtime.DefaultDatumService;
@@ -56,7 +57,7 @@ public class DefaultDatumServiceTests {
 
 	@Before
 	public void setup() {
-		service = new DefaultDatumService(new AntPathMatcher());
+		service = new DefaultDatumService(new AntPathMatcher(), new ObjectMapper());
 	}
 
 	private Map<String, Datum> populateDatum() {

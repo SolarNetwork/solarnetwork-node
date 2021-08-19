@@ -24,7 +24,6 @@ package net.solarnetwork.node.reactor.support;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -81,7 +80,7 @@ public class BasicInstructionDeserializer extends StdScalarDeserializer<Instruct
 			String topic = null;
 			String instructionId = this.instructionId;
 			String instructorId = this.instructorId;
-			Instant date = null;
+			Date date = null;
 			Map<String, List<String>> parameters = null;
 
 			String f;
@@ -101,7 +100,7 @@ public class BasicInstructionDeserializer extends StdScalarDeserializer<Instruct
 						break;
 
 					case InstructionDate:
-						date = (Instant) v;
+						date = (Date) v;
 						break;
 
 					case Params:
@@ -116,8 +115,8 @@ public class BasicInstructionDeserializer extends StdScalarDeserializer<Instruct
 				t = p.nextToken();
 			}
 
-			BasicInstruction result = new BasicInstruction(topic,
-					date != null ? Date.from(date) : new Date(), instructionId, instructorId, null);
+			BasicInstruction result = new BasicInstruction(topic, date != null ? date : new Date(),
+					instructionId, instructorId, null);
 			if ( parameters != null ) {
 				for ( Entry<String, List<String>> e : parameters.entrySet() ) {
 					final String paramName = e.getKey();
