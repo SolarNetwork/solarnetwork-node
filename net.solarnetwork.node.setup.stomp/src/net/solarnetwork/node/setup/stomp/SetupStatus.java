@@ -66,7 +66,7 @@ public enum SetupStatus {
 	 * @throws IllegalArgumentException
 	 *         if {@literal code} is not supported
 	 */
-	public SetupStatus forCode(int code) {
+	public static SetupStatus forCode(int code) {
 		for ( SetupStatus s : SetupStatus.values() ) {
 			if ( code == s.code ) {
 				return s;
