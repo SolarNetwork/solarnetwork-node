@@ -245,6 +245,10 @@ provided as an instruction parameter so the handler can see what the content can
  | `Declined`       | `422`        | The command was recognized but not executed because of a client problem. |
  | _exception_      | `500`        | The handler threw an exception. The `message` header will contain the exception  message. |
  
+ The instruction handler can override this default mapping by returning a `statusCode` result
+ parameter with an integer value. Additional the handler can provide a `message` result parameter
+ to pass back in the `MESSAGE` frame returned to the client.
+ 
 ## Example SolarNode command handler
 
 Here is an example `FeedbackInstructionHandler` snippet, that responds to a `/setup/hello` command

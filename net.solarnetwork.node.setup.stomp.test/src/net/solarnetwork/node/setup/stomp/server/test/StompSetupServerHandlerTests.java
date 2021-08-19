@@ -766,4 +766,63 @@ public class StompSetupServerHandlerTests {
 				is(error));
 	}
 
+	@Test
+	public void sendInstruction_customStatusCode() {
+		// GIVEN
+		// get the channel to associate with the session
+		expect(ctx.channel()).andReturn(channel);
+
+		// assume authenticated already
+		givenSessionAuthenticatedAndSubscribed();
+
+		// send instruction to configured handlers
+		final String dest = "/setup/do/something";
+		expect(instructionHandler.handlesTopic(InstructionHandler.TOPIC_SYSTEM_CONFIGURE))
+				.andReturn(true);
+
+		// process instruction OK
+		final int statusCode = 8675309;
+		final String message = "Jenny I've got your number.";
+		Capture<Instruction> instrCaptor = new Capture<>();
+		expect(instructionHandler.processInstructionWithFeedback(capture(instrCaptor)))
+				.andAnswer(new IAnswer<InstructionStatus>() {
+
+					@Override
+					public InstructionStatus answer() throws Throwable {
+						Instruction instr = instrCaptor.getValue();
+						assertThat("Instruction topic is SystemConfigure", instr.getTopic(),
+								is(InstructionHandler.TOPIC_SYSTEM_CONFIGURE));
+						assertThat("Intruction service param is STOMP dest",
+								instr.getParameterValue(InstructionHandler.PARAM_SERVICE), is(dest));
+						Map<String, Object> resultParams = new HashMap<>();
+						resultParams.put(InstructionHandler.PARAM_STATUS_CODE, statusCode);
+						resultParams.put(InstructionHandler.PARAM_MESSAGE, message);
+						return createStatus(instr, InstructionState.Completed, new Date(), resultParams);
+					}
+
+				});
+
+		// post instruction result as MESSAGE back to client
+		Capture<Object> msgCaptor = new Capture<>();
+		expect(ctx.writeAndFlush(capture(msgCaptor))).andReturn(new DefaultChannelPromise(channel));
+
+		// WHEN
+		replayAll();
+
+		DefaultStompFrame f = new DefaultStompFrame(StompCommand.SEND);
+		f.headers().set(StompHeaders.DESTINATION, dest);
+
+		handler.channelRead(ctx, f);
+
+		// THEN
+		assertThat("MESSAGE response provided", msgCaptor.getValue(), is(instanceOf(StompFrame.class)));
+		StompFrame msg = (StompFrame) msgCaptor.getValue();
+		assertThat("Response dest is SEND dest", msg.headers().getAsString(StompHeaders.DESTINATION),
+				is(dest));
+		assertThat("Response status is custom", msg.headers().getAsString(SetupHeader.Status.getValue()),
+				is(String.valueOf(statusCode)));
+		assertThat("Response message header provided", msg.headers().getAsString(StompHeaders.MESSAGE),
+				is(message));
+	}
+
 }

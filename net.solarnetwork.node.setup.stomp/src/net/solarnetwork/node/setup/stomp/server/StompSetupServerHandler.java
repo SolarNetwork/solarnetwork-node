@@ -488,19 +488,33 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 
 					InstructionStatus status = InstructionUtils.handleInstructionWithFeedback(
 							serverService.getInstructionHandlers(), instr);
+					int statusCode = 0;
+					String message = null;
+					Object result = null;
 					if ( status == null || status.getInstructionState() == null ) {
-						pubStatusMessage(ctx, session, topic, reqHeaders, SetupStatus.NotFound, null);
+						statusCode = SetupStatus.NotFound.getCode();
 					} else if ( status.getInstructionState() == InstructionState.Declined ) {
-						pubStatusMessage(ctx, session, topic, reqHeaders, SetupStatus.Unprocessable,
-								null);
+						statusCode = SetupStatus.Unprocessable.getCode();
 					} else if ( status.getInstructionState() != InstructionState.Completed ) {
-						pubStatusMessage(ctx, session, topic, reqHeaders, SetupStatus.Accepted, null);
+						statusCode = SetupStatus.Accepted.getCode();
 					} else {
-						Object result = (status.getResultParameters() != null ? status
-								.getResultParameters().get(InstructionHandler.PARAM_SERVICE_RESULT)
-								: null);
-						pubStatusMessage(ctx, session, topic, reqHeaders, SetupStatus.Ok, result);
+						statusCode = SetupStatus.Ok.getCode();
 					}
+					if ( status != null && status.getResultParameters() != null ) {
+						result = status.getResultParameters()
+								.get(InstructionHandler.PARAM_SERVICE_RESULT);
+						if ( status.getResultParameters()
+								.get(InstructionHandler.PARAM_STATUS_CODE) instanceof Integer ) {
+							statusCode = (Integer) status.getResultParameters()
+									.get(InstructionHandler.PARAM_STATUS_CODE);
+						}
+						if ( status.getResultParameters()
+								.get(InstructionHandler.PARAM_MESSAGE) != null ) {
+							message = status.getResultParameters().get(InstructionHandler.PARAM_MESSAGE)
+									.toString();
+						}
+					}
+					pubStatusMessage(ctx, session, topic, reqHeaders, statusCode, message, result);
 				} catch ( Exception e ) {
 					Throwable root = e;
 					while ( root.getCause() != null ) {
@@ -510,8 +524,8 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 					if ( msg == null ) {
 						msg = root.toString();
 					}
-					pubStatusMessage(ctx, session, topic, reqHeaders, SetupStatus.InternalError, msg,
-							null);
+					pubStatusMessage(ctx, session, topic, reqHeaders,
+							SetupStatus.InternalError.getCode(), msg, null);
 				} finally {
 					SecurityContextHolder.getContext().setAuthentication(null);
 				}
@@ -521,16 +535,10 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 	}
 
 	private void pubStatusMessage(ChannelHandlerContext ctx, SetupSession session, String topic,
-			MultiValueMap<String, String> reqHeaders, SetupStatus statusCode, Object body) {
-		pubStatusMessage(ctx, session, topic, reqHeaders, statusCode, null, body);
-	}
-
-	private void pubStatusMessage(ChannelHandlerContext ctx, SetupSession session, String topic,
-			MultiValueMap<String, String> reqHeaders, SetupStatus statusCode, String message,
-			Object body) {
+			MultiValueMap<String, String> reqHeaders, int statusCode, String message, Object body) {
 		MultiValueMap<String, String> headers = new LinkedMultiValueMap<>(reqHeaders.size() + 2);
 		headers.putAll(reqHeaders);
-		headers.set(SetupHeader.Status.getValue(), String.valueOf(statusCode.getCode()));
+		headers.set(SetupHeader.Status.getValue(), String.valueOf(statusCode));
 		if ( message != null ) {
 			headers.set(StompHeaders.MESSAGE.toString(), message);
 		}
