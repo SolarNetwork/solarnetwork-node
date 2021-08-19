@@ -49,12 +49,14 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
+import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.security.authentication.TestingAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -491,7 +493,7 @@ public class StompSetupServerHandlerTests {
 		expect(ctx.channel()).andReturn(channel);
 
 		// assume authenticated already
-		givenSessionAuthenticatedAndSubscribed();
+		SetupSession session = givenSessionAuthenticatedAndSubscribed();
 
 		// send instruction to configured handlers
 		final String dest = "/setup/do/something";
@@ -508,6 +510,11 @@ public class StompSetupServerHandlerTests {
 
 					@Override
 					public InstructionStatus answer() throws Throwable {
+						// should be authenticated as the user here
+						assertThat("Authenticated as login",
+								SecurityContextHolder.getContext().getAuthentication(),
+								is(Matchers.sameInstance(session.getAuthentication())));
+
 						Instruction instr = instrCaptor.getValue();
 						assertThat("Instruction topic is SystemConfigure", instr.getTopic(),
 								is(InstructionHandler.TOPIC_SYSTEM_CONFIGURE));

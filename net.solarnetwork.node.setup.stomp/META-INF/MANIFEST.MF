@@ -53,6 +53,7 @@ Import-Package:
  org.springframework.scheduling;version="[4.3,5.0)",
  org.springframework.security.authentication;version="[4.2,5.0)",
  org.springframework.security.core;version="[4.2,5.0)",
+ org.springframework.security.core.context;version="[4.2,5.0)",
  org.springframework.security.core.userdetails;version="[4.2,5.0)",
  org.springframework.security.crypto.bcrypt;version="[4.2,5.0)",
  org.springframework.util;version="[4.3,5.0)"
