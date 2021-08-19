@@ -136,7 +136,7 @@ String authHeader = authBuilder.build(secret);
 String dateHeader = authBuilder.headerValue("date");
 ```
 
-## Bcrypt secret derivation
+## BCrypt secret derivation
 
 The `auth-hash:bcrypt` `CONNECTED` header indicates that the BCrypt digest algorithm must be used to
 derive the SNS secret value used to sign the request, that in turn converted into by a hex-encoded
