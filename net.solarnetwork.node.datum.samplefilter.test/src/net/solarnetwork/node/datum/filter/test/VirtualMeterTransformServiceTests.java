@@ -629,6 +629,7 @@ public class VirtualMeterTransformServiceTests {
 						long date = start + TimeUnit.MILLISECONDS.toMillis(i * 10);
 						log.debug("Generating datum {} @ {}", i, date);
 						GeneralNodeDatum d = datum.clone();
+						d.setSamples(new GeneralDatumSamples(d.getSamples()));
 						d.setCreated(new Date(date));
 						d.putAccumulatingSampleValue(PROP_WATT_HOURS, (i + 1));
 						inputs.offer(new DelayedDatum(d));
