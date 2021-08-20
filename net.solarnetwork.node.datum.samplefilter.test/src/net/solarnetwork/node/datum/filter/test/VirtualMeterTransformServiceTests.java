@@ -38,21 +38,33 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.solarnetwork.common.expr.spel.SpelExpressionService;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.domain.GeneralDatumSamples;
@@ -75,6 +87,8 @@ import net.solarnetwork.util.StaticOptionalServiceCollection;
  * @version 1.0
  */
 public class VirtualMeterTransformServiceTests {
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private static final String SOURCE_ID = "FILTER_ME";
 	private static final String PROP_WATTS = "watts";
@@ -108,7 +122,7 @@ public class VirtualMeterTransformServiceTests {
 		EasyMock.replay(datumMetadataService, opModesService);
 	}
 
-	private GeneralNodeDatum createTestGeneralNodeDatum(String sourceId) {
+	private static GeneralNodeDatum createTestGeneralNodeDatum(String sourceId) {
 		GeneralNodeDatum datum = new GeneralNodeDatum();
 		datum.setCreated(new Date());
 		datum.setSourceId(sourceId);
@@ -116,7 +130,7 @@ public class VirtualMeterTransformServiceTests {
 		return datum;
 	}
 
-	private VirtualMeterConfig createTestVirtualMeterConfig(String propName) {
+	private static VirtualMeterConfig createTestVirtualMeterConfig(String propName) {
 		final VirtualMeterConfig vmConfig = new VirtualMeterConfig();
 		vmConfig.setPropertyKey(propName);
 		vmConfig.setMaxAgeSeconds(60L);
@@ -124,15 +138,16 @@ public class VirtualMeterTransformServiceTests {
 		return vmConfig;
 	}
 
-	private void assertOutputValue(String msg, GeneralDatumSamples result, BigDecimal expectedValue,
-			BigDecimal expectedDerived) {
+	private static void assertOutputValue(String msg, GeneralDatumSamples result,
+			BigDecimal expectedValue, BigDecimal expectedDerived) {
 		assertOutputValue(msg, result, PROP_WATTS, PROP_WATTS_SECONDS, expectedValue, expectedDerived);
 	}
 
-	private void assertOutputValue(String msg, GeneralDatumSamples result, String propName,
+	private static void assertOutputValue(String msg, GeneralDatumSamples result, String propName,
 			String readingPropName, BigDecimal expectedValue, BigDecimal expectedDerived) {
 		Number n = result.findSampleValue(propName); // use find to support both i & a styles
-		assertThat("Prop value " + msg, n.doubleValue(), closeTo(expectedValue.doubleValue(), 0.1));
+		assertThat("Prop " + propName + " value " + msg, n.doubleValue(),
+				closeTo(expectedValue.doubleValue(), 0.1));
 		if ( expectedDerived == null ) {
 			assertThat("Meter value not available " + msg,
 					result.getAccumulatingSampleDouble(readingPropName), nullValue());
@@ -143,12 +158,12 @@ public class VirtualMeterTransformServiceTests {
 
 	}
 
-	private void assertVirtualMeterMetadata(String msg, GeneralDatumMetadata meta, long date,
+	private static void assertVirtualMeterMetadata(String msg, GeneralDatumMetadata meta, long date,
 			BigDecimal expectedValue, BigDecimal expectedReading) {
 		assertVirtualMeterMetadata(msg, meta, PROP_WATTS_SECONDS, date, expectedValue, expectedReading);
 	}
 
-	private void assertVirtualMeterMetadata(String msg, GeneralDatumMetadata meta,
+	private static void assertVirtualMeterMetadata(String msg, GeneralDatumMetadata meta,
 			String readingPropName, long date, BigDecimal expectedValue, BigDecimal expectedReading) {
 		assertThat("Virtual meter date saved " + msg,
 				meta.getInfoLong(readingPropName, VirtualMeterTransformService.VIRTUAL_METER_DATE_KEY),
@@ -540,6 +555,128 @@ public class VirtualMeterTransformServiceTests {
 		GeneralDatumMetadata meta = metaCaptor.getValue();
 		assertVirtualMeterMetadata("first", meta, datum.getCreated().getTime(), new BigDecimal("23.4"),
 				BigDecimal.ZERO);
+	}
+
+	private static final long DELAY_MILLISECONDS = 200L;
+
+	private static class DelayedDatum implements Delayed {
+
+		private final GeneralNodeDatum datum;
+
+		private DelayedDatum(GeneralNodeDatum datum) {
+			super();
+			this.datum = datum;
+		}
+
+		@Override
+		public int compareTo(Delayed o) {
+			return datum.getCreated().compareTo(((DelayedDatum) o).datum.getCreated());
+		}
+
+		@Override
+		public long getDelay(TimeUnit unit) {
+			long ms = datum.getCreated().getTime() + DELAY_MILLISECONDS - System.currentTimeMillis();
+			return unit.convert(ms, TimeUnit.MILLISECONDS);
+		}
+
+	}
+
+	/**
+	 * This test explores using a DelayQueue to order processing of concurrent
+	 * datum by time.
+	 * 
+	 * @throws InterruptedException
+	 *         if an interruption occurs
+	 */
+	@Test
+	public void filter_concurrently() throws InterruptedException {
+		// GIVEN
+		final GeneralNodeDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATT_HOURS);
+		vmConfig.setPropertyType(GeneralDatumSamplesType.Accumulating);
+		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
+
+		// start with given metadata
+		GeneralDatumMetadata meta = new GeneralDatumMetadata();
+		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(meta).anyTimes();
+
+		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>(CaptureType.ALL);
+		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
+		expectLastCall().anyTimes();
+
+		// add metadata
+		final int iterations = 10;
+		final long start = Instant.now().plusSeconds(2).truncatedTo(ChronoUnit.SECONDS).toEpochMilli();
+		final AtomicInteger counter = new AtomicInteger();
+		final AtomicBoolean latch = new AtomicBoolean(true);
+		final BlockingQueue<DelayedDatum> inputs = new DelayQueue<>();
+
+		// start producing
+		final int numProducers = 4;
+		final ExecutorService producerPool = Executors.newFixedThreadPool(numProducers);
+		for ( int i = 0; i < numProducers; i++ ) {
+			producerPool.submit(new Runnable() {
+
+				@Override
+				public void run() {
+					while ( true ) {
+						int i = counter.getAndAccumulate(1, (curr, inc) -> {
+							return (curr < iterations ? curr + 1 : curr);
+						});
+						if ( i >= iterations ) {
+							return;
+						}
+						long date = start + TimeUnit.MILLISECONDS.toMillis(i * 10);
+						log.debug("Generating datum {} @ {}", i, date);
+						GeneralNodeDatum d = datum.clone();
+						d.setCreated(new Date(date));
+						d.putAccumulatingSampleValue(PROP_WATT_HOURS, (i + 1));
+						inputs.offer(new DelayedDatum(d));
+					}
+				}
+			});
+
+		}
+
+		// WHEN
+		replayAll();
+		final List<GeneralDatumSamples> outputs = Collections.synchronizedList(new ArrayList<>());
+
+		// start consuming
+		Thread consumer = new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				DelayedDatum d = null;
+				do {
+					try {
+						d = inputs.poll(5, TimeUnit.SECONDS);
+					} catch ( InterruptedException e ) {
+						continue;
+					}
+					if ( d != null ) {
+						log.debug("Processing datum {}", d.datum.getCreated().getTime());
+						outputs.add(xform.transformSamples(d.datum, d.datum.getSamples(), emptyMap()));
+					}
+				} while ( latch.get() || d != null );
+			}
+		});
+		consumer.start();
+
+		producerPool.shutdown();
+		producerPool.awaitTermination(1, TimeUnit.MINUTES);
+		latch.set(false);
+		consumer.join(2000 + iterations * 1000L);
+
+		// THEN
+		assertThat("All inputs processed", outputs, hasSize(iterations));
+		for ( int i = 0; i < iterations; i++ ) {
+			GeneralDatumSamples result = outputs.get(i);
+			BigDecimal expectedValue = new BigDecimal(i + 1);
+			BigDecimal expectedReading = (i == 0 ? null : new BigDecimal(i - 1));
+			assertOutputValue("at sample " + i, result, PROP_WATT_HOURS, PROP_WATT_HOURS_SECONDS,
+					expectedValue, expectedReading);
+		}
 	}
 
 }
