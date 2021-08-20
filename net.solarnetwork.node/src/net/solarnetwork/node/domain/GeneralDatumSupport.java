@@ -23,6 +23,8 @@
 package net.solarnetwork.node.domain;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import net.solarnetwork.domain.GeneralDatumSamples;
@@ -34,7 +36,7 @@ import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
  * Base Datum implementation with {@link GeneralDatumSamples} support.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public abstract class GeneralDatumSupport extends BaseDatum implements Datum, GeneralDatum, Cloneable {
 
@@ -42,7 +44,24 @@ public abstract class GeneralDatumSupport extends BaseDatum implements Datum, Ge
 
 	@Override
 	public GeneralDatumSupport clone() {
-		return (GeneralDatumSupport) super.clone();
+		GeneralDatumSupport copy = (GeneralDatumSupport) super.clone();
+		if ( samples != null ) {
+			GeneralDatumSamples samplesCopy = newSamplesInstance();
+			if ( samples.getInstantaneous() != null ) {
+				samplesCopy.setInstantaneous(new LinkedHashMap<>(samples.getInstantaneous()));
+			}
+			if ( samples.getAccumulating() != null ) {
+				samplesCopy.setAccumulating(new LinkedHashMap<>(samples.getAccumulating()));
+			}
+			if ( samples.getStatus() != null ) {
+				samplesCopy.setStatus(new LinkedHashMap<>(samples.getStatus()));
+			}
+			if ( samples.getTags() != null ) {
+				samplesCopy.setTags(new LinkedHashSet<>(samples.getTags()));
+			}
+			copy.setSamples(samplesCopy);
+		}
+		return copy;
 	}
 
 	/**
