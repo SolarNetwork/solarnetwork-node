@@ -60,7 +60,7 @@ import net.solarnetwork.util.OptionalService;
  * derived from another property.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  * @since 1.4
  */
 public class VirtualMeterTransformService extends SamplesTransformerSupport
@@ -288,8 +288,9 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 							metadataOut.getPropertyInfo());
 				} else if ( prevDate > date ) {
 					log.warn(
-							"Source [{}] virtual meter [{}] reading date [{}] newer than sample date [{}], will not populate reading",
-							d.getSourceId(), meterPropName, new Date(prevDate), new Date(date));
+							"Source [{}] virtual meter [{}] reading date [{}] newer than sample date [{}] by {}ms, will not populate reading",
+							d.getSourceId(), meterPropName, new Date(prevDate), new Date(date),
+							(prevDate - date));
 					continue;
 				} else if ( config.getMaxAgeSeconds() > 0
 						&& (date - prevDate) > config.getMaxAgeSeconds() * 1000 ) {

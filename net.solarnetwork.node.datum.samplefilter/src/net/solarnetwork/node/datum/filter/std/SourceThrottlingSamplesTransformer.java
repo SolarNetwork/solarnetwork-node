@@ -37,7 +37,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * basic frequency constraint.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class SourceThrottlingSamplesTransformer extends SamplesTransformerSupport
 		implements GeneralDatumSamplesTransformer, SettingSpecifierProvider, SettingsChangeObserver {
@@ -85,13 +85,14 @@ public class SourceThrottlingSamplesTransformer extends SamplesTransformerSuppor
 
 		if ( filter ) {
 			if ( log.isDebugEnabled() ) {
-				log.debug("Datum {} was seen in the past {}s ({}s ago); filtering", datum, offset,
-						(now - lastSaveTime) / 1000.0);
+				log.debug("Throttle filter [{}] filtering source [{}] seen the past {}s ({}s ago)",
+						getUid(), sourceId, offset, (now - lastSaveTime) / 1000.0);
 			}
 			return null;
 		}
 
-		log.trace("Datum {} has not been seen in the past {}s; not filtering", datum, offset);
+		log.trace("Throttle filter [{}] has not seen source [{}] in the past {}s; not filtering",
+				getUid(), sourceId, offset);
 
 		// save the new setting date
 		saveLastSeenSetting(now, settingKey, sourceId, lastSaveSetting, createdSettings);
