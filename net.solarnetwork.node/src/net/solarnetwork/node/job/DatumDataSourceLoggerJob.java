@@ -55,8 +55,8 @@ import net.solarnetwork.node.domain.Datum;
  * returned by {@link DatumDataSource#getDatumType()} then
  * {@link MultiDatumDataSource#readMultipleDatum()} will be called instead of
  * {@link DatumDataSource#readCurrentDatum()}. Each {@code Datum} returned in
- * the resulting Collection will be persisted to the configured
- * {@link DatumDao}.
+ * the resulting Collection will be persisted to the configured {@link DatumDao}
+ * .
  * </p>
  * 
  * <p>
@@ -79,22 +79,14 @@ import net.solarnetwork.node.domain.Datum;
  * @param <T>
  *        the Datum type for this job
  * @author matt
- * @version 2.1
+ * @version 2.0
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
 public class DatumDataSourceLoggerJob<T extends Datum> extends AbstractJob {
 
-	/**
-	 * The default {@code saveToDao} property value
-	 * 
-	 * @since 2.1
-	 */
-	public static final boolean DEFAULT_SAVE_TO_DAO = false;
-
 	private List<DatumDataSource<T>> datumDataSources = null;
 	private DatumDao<T> datumDao = null;
-	private boolean saveToDao = DEFAULT_SAVE_TO_DAO;
 
 	@Override
 	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
@@ -122,9 +114,7 @@ public class DatumDataSourceLoggerJob<T extends Datum> extends AbstractJob {
 					}
 					continue;
 				}
-				if ( !saveToDao ) {
-					continue;
-				}
+
 				if ( log.isInfoEnabled() ) {
 					log.info("Got {} Datum to persist: {}", datumList.size(),
 							(datumList.size() == 1 ? datumList.iterator().next().toString()
@@ -181,33 +171,6 @@ public class DatumDataSourceLoggerJob<T extends Datum> extends AbstractJob {
 
 	public void setDatumDao(DatumDao<T> datumDao) {
 		this.datumDao = datumDao;
-	}
-
-	/**
-	 * Get the "save to DAO" flag.
-	 * 
-	 * <p>
-	 * Since {@literal 2.2} this flag defaults to {@literal false}, meaning
-	 * datum are <b>not</b> persisted by default. This is because of the
-	 * introduction of the {@link net.solarnetwork.node.DatumQueue} service,
-	 * which is presumed to handle the processing of datum as they are captured.
-	 * </p>
-	 * 
-	 * @return the flag; defaults to {@link #DEFAULT_SAVE_TO_DAO}
-	 * @since 2.2
-	 */
-	public boolean isSaveToDao() {
-		return saveToDao;
-	}
-
-	/**
-	 * Set the "save to DAO flag.
-	 * 
-	 * @param {@literal true} to persist collected datum using the configured
-	 * DAO, or {@literal false} not to
-	 */
-	public void setSaveToDao(boolean saveToDao) {
-		this.saveToDao = saveToDao;
 	}
 
 }

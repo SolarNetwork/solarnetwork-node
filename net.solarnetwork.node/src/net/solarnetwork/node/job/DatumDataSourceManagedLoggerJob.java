@@ -51,24 +51,16 @@ import net.solarnetwork.util.OptionalService;
  * </p>
  * 
  * @author matt
- * @version 2.2
+ * @version 2.1
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
 public class DatumDataSourceManagedLoggerJob<T extends Datum> extends AbstractJob
 		implements SettingSpecifierProvider {
 
-	/**
-	 * The default {@code saveToDao} property value
-	 * 
-	 * @since 2.2
-	 */
-	public static final boolean DEFAULT_SAVE_TO_DAO = false;
-
 	private DatumDataSource<T> datumDataSource = null;
 	private MultiDatumDataSource<T> multiDatumDataSource = null;
 	private OptionalService<DatumDao<T>> datumDao = null;
-	private boolean saveToDao = DEFAULT_SAVE_TO_DAO;
 
 	@Override
 	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
@@ -132,7 +124,7 @@ public class DatumDataSourceManagedLoggerJob<T extends Datum> extends AbstractJo
 	}
 
 	private void persistDatum(Collection<T> datumList) {
-		if ( !saveToDao || datumList == null || datumList.size() < 1 ) {
+		if ( datumList == null || datumList.size() < 1 ) {
 			return;
 		}
 		if ( log.isDebugEnabled() ) {
@@ -236,33 +228,6 @@ public class DatumDataSourceManagedLoggerJob<T extends Datum> extends AbstractJo
 
 	public void setDatumDao(OptionalService<DatumDao<T>> datumDao) {
 		this.datumDao = datumDao;
-	}
-
-	/**
-	 * Get the "save to DAO" flag.
-	 * 
-	 * <p>
-	 * Since {@literal 2.2} this flag defaults to {@literal false}, meaning
-	 * datum are <b>not</b> persisted by default. This is because of the
-	 * introduction of the {@link net.solarnetwork.node.DatumQueue} service,
-	 * which is presumed to handle the processing of datum as they are captured.
-	 * </p>
-	 * 
-	 * @return the flag; defaults to {@link #DEFAULT_SAVE_TO_DAO}
-	 * @since 2.2
-	 */
-	public boolean isSaveToDao() {
-		return saveToDao;
-	}
-
-	/**
-	 * Set the "save to DAO flag.
-	 * 
-	 * @param {@literal true} to persist collected datum using the configured
-	 * DAO, or {@literal false} not to
-	 */
-	public void setSaveToDao(boolean saveToDao) {
-		this.saveToDao = saveToDao;
 	}
 
 }
