@@ -22,12 +22,10 @@
 
 package net.solarnetwork.node.runtime;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -39,8 +37,6 @@ import java.util.function.Consumer;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.domain.GeneralDatumSamplesOperations;
-import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
 import net.solarnetwork.domain.datum.GeneralDatumSamplesContainer;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.DatumQueue;
@@ -48,6 +44,8 @@ import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralDatum;
+import net.solarnetwork.node.domain.GeneralLocationDatum;
+import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -57,6 +55,14 @@ import net.solarnetwork.util.OptionalService.OptionalFilterableService;
 
 /**
  * Default implementation of {@link DatumQueue} for {@link GeneralDatum}.
+ * 
+ * <p>
+ * Datum passed to {@link #offer(GeneralDatum)} will be persisted via one of the
+ * configured {@link DatumDao} services, while Datum received via
+ * {@link #handleEvent(Event)} with the
+ * {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} topic will not be
+ * persisted.
+ * </p>
  * 
  * @author matt
  * @version 1.0
@@ -68,16 +74,22 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	/** The default value for the {@code queueDelayMs} property. */
 	public static final long DEFAULT_QUEUE_DELAY_MS = 200;
 
+	/** The default value for the {@code startupDelayMs} property. */
+	public static final long DEFAULT_STARTUP_DELAY_MS = 20_000;
+
 	// a queue of datum events ordered by datum creation date using a configurable delay
 	// so that concurrent producer events can be processed in datum creation time order
 	private final BlockingQueue<DelayedDatum> datumQueue = new DelayQueue<>();
 	private final Set<Consumer<GeneralDatum>> consumers = new CopyOnWriteArraySet<>();
 
 	private final Executor executor;
+	private long startupDelayMs = DEFAULT_STARTUP_DELAY_MS;
 	private long queueDelayMs = DEFAULT_QUEUE_DELAY_MS;
 	private OptionalFilterableService<GeneralDatumSamplesTransformService> transformService;
-	private OptionalService<DatumDao<GeneralDatum>> datumDao;
+	private OptionalService<DatumDao<GeneralNodeDatum>> nodeDatumDao;
+	private OptionalService<DatumDao<GeneralLocationDatum>> locationDatumDao;
 
+	private long processorStartupDelayMs;
 	private ProcessorThread eventProcessor;
 
 	/**
@@ -89,6 +101,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	public DefaultDatumQueue(Executor executor) {
 		super();
 		this.executor = executor;
+		this.processorStartupDelayMs = -1;
 	}
 
 	/**
@@ -98,6 +111,9 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		if ( eventProcessor != null ) {
 			eventProcessor.processing = false;
 			eventProcessor.interrupt();
+		}
+		if ( processorStartupDelayMs < 0 ) {
+			processorStartupDelayMs = getStartupDelayMs();
 		}
 		eventProcessor = new ProcessorThread();
 		eventProcessor.start();
@@ -114,16 +130,18 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		}
 	}
 
-	private static final class DelayedDatum implements Delayed, GeneralDatum {
+	private static final class DelayedDatum implements Delayed {
 
 		private final GeneralDatum datum;
 		private final long ts;
+		private final boolean persist;
 
-		private DelayedDatum(GeneralDatum datum, long delayMs) {
+		private DelayedDatum(GeneralDatum datum, long delayMs, boolean persist) {
 			super();
 			this.datum = datum;
 			Date date = datum.getCreated();
 			this.ts = (date != null ? date.getTime() : System.currentTimeMillis()) + delayMs;
+			this.persist = persist;
 		}
 
 		@Override
@@ -135,46 +153,6 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		public long getDelay(TimeUnit unit) {
 			long ms = ts - System.currentTimeMillis();
 			return unit.convert(ms, TimeUnit.MILLISECONDS);
-		}
-
-		@Override
-		public GeneralDatumSamplesOperations asSampleOperations() {
-			return datum.asSampleOperations();
-		}
-
-		@Override
-		public MutableGeneralDatumSamplesOperations asMutableSampleOperations() {
-			return datum.asMutableSampleOperations();
-		}
-
-		@Override
-		public Instant getTimestamp() {
-			return datum.getTimestamp();
-		}
-
-		@Override
-		public Date getCreated() {
-			return datum.getCreated();
-		}
-
-		@Override
-		public String getSourceId() {
-			return datum.getSourceId();
-		}
-
-		@Override
-		public Date getUploaded() {
-			return datum.getUploaded();
-		}
-
-		@Override
-		public Map<String, ?> getSampleData() {
-			return datum.getSampleData();
-		}
-
-		@Override
-		public Map<String, ?> asSimpleMap() {
-			return datum.asSimpleMap();
 		}
 
 	}
@@ -204,13 +182,23 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		private ProcessorThread() {
 			super("DatumQueue Processor");
 			setDaemon(true);
-			processing = true;
+			this.processing = true;
 		}
 
 		@Override
 		public void run() {
-			log.info("Starting DatumQueue processor " + getName());
 			try {
+				// the first time we start, include the processor startup delay
+				if ( processorStartupDelayMs > 0 ) {
+					try {
+						log.info("Waiting {}s before starting DatumQueue processor",
+								processorStartupDelayMs / 1000);
+					} catch ( Exception e ) {
+						// ignore
+					}
+					processorStartupDelayMs = -1;
+				}
+				log.info("Starting DatumQueue processor");
 				DelayedDatum event = null;
 				do {
 					try {
@@ -218,9 +206,8 @@ public class DefaultDatumQueue extends BaseIdentifiable
 						if ( event != null ) {
 							GeneralDatum result = applyTransform(event);
 							if ( result != null ) {
-								final DatumDao<GeneralDatum> dao = OptionalService.service(datumDao);
-								if ( dao != null ) {
-									dao.storeDatum(result);
+								if ( event.persist ) {
+									persistDatum(result);
 								}
 								for ( Consumer<GeneralDatum> consumer : consumers ) {
 									executor.execute(new ConsumerTask(consumer, result));
@@ -257,12 +244,26 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		return (GeneralDatum) ((GeneralDatumSamplesContainer) event.datum).copyWithSamples(out);
 	}
 
+	private void persistDatum(GeneralDatum result) {
+		if ( result instanceof GeneralNodeDatum ) {
+			final DatumDao<GeneralNodeDatum> dao = OptionalService.service(nodeDatumDao);
+			if ( dao != null ) {
+				dao.storeDatum((GeneralNodeDatum) result);
+			}
+		} else if ( result instanceof GeneralLocationDatum ) {
+			final DatumDao<GeneralLocationDatum> dao = OptionalService.service(locationDatumDao);
+			if ( dao != null ) {
+				dao.storeDatum((GeneralLocationDatum) result);
+			}
+		}
+	}
+
 	@Override
 	public boolean offer(GeneralDatum datum) {
 		if ( datum == null ) {
 			return false;
 		}
-		return datumQueue.offer(new DelayedDatum(datum, queueDelayMs));
+		return datumQueue.offer(new DelayedDatum(datum, queueDelayMs, true));
 	}
 
 	@Override
@@ -283,7 +284,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 			if ( datum == null ) {
 				return;
 			}
-			offer(datum);
+			datumQueue.offer(new DelayedDatum(datum, queueDelayMs, false));
 		}
 	}
 
@@ -307,6 +308,25 @@ public class DefaultDatumQueue extends BaseIdentifiable
 				String.valueOf(DEFAULT_QUEUE_DELAY_MS)));
 		result.add(new BasicTextFieldSettingSpecifier("transformServiceUid", null));
 		return result;
+	}
+
+	/**
+	 * Get the processing startup delay, in milliseconds.
+	 * 
+	 * @return the startup delay; defaults to {@link #DEFAULT_STARTUP_DELAY_MS}
+	 */
+	public long getStartupDelayMs() {
+		return startupDelayMs;
+	}
+
+	/**
+	 * Set the processing startup delay, in milliseconds.
+	 * 
+	 * @param startupDelayMs
+	 *        the delay to set
+	 */
+	public void setStartupDelayMs(long startupDelayMs) {
+		this.startupDelayMs = startupDelayMs;
 	}
 
 	/**
@@ -369,22 +389,41 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	}
 
 	/**
-	 * Get the DAO to persist datum with.
+	 * Get the DAO to persist node datum with.
 	 * 
 	 * @return the DAO
 	 */
-	public OptionalService<DatumDao<GeneralDatum>> getDatumDao() {
-		return datumDao;
+	public OptionalService<DatumDao<GeneralNodeDatum>> getNodeDatumDao() {
+		return nodeDatumDao;
 	}
 
 	/**
-	 * Set the DAO to persist datum with.
+	 * Set the DAO to persist node datum with.
 	 * 
-	 * @param datumDao
+	 * @param nodeDatumDao
 	 *        the DAO to set
 	 */
-	public void setDatumDao(OptionalService<DatumDao<GeneralDatum>> datumDao) {
-		this.datumDao = datumDao;
+	public void setNodeDatumDao(OptionalService<DatumDao<GeneralNodeDatum>> nodeDatumDao) {
+		this.nodeDatumDao = nodeDatumDao;
+	}
+
+	/**
+	 * Get the DAO to persist node datum with.
+	 * 
+	 * @return the DAO
+	 */
+	public OptionalService<DatumDao<GeneralLocationDatum>> getLocationDatumDao() {
+		return locationDatumDao;
+	}
+
+	/**
+	 * Set the DAO to persist node datum with.
+	 * 
+	 * @param locationDatumDao
+	 *        the DAO to set
+	 */
+	public void setLocationDatumDao(OptionalService<DatumDao<GeneralLocationDatum>> locationDatumDao) {
+		this.locationDatumDao = locationDatumDao;
 	}
 
 }

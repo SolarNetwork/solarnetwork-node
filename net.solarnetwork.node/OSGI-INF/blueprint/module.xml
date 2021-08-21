@@ -534,11 +534,19 @@
 				</property>
 			</bean>
 		</property>
-		<property name="datumDao">
+		<property name="nodeDatumDao">
 			<bean class="net.solarnetwork.util.DynamicServiceTracker">
 				<property name="bundleContext" ref="bundleContext"/>
 				<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
-				<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
+				<property name="serviceFilter" value="(&amp;(!queue=true)(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum))"/>
+				<property name="sticky" value="true"/>
+			</bean>
+		</property>
+		<property name="locationDatumDao">
+			<bean class="net.solarnetwork.util.DynamicServiceTracker">
+				<property name="bundleContext" ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
+				<property name="serviceFilter" value="(&amp;(!queue=true)(datumClassName=net.solarnetwork.node.domain.GeneralLocationDatum))"/>
 				<property name="sticky" value="true"/>
 			</bean>
 		</property>
@@ -557,6 +565,27 @@
 				</array>
 			</entry>
 		</service-properties>
+	</service>
+
+	<!-- 
+		DatumDao that offers datum to DatumQueue for serialzied processing.
+		This has a high ranking so it is preferred by default for all DatumDataSource jobs.
+	 -->	
+	<service interface="net.solarnetwork.node.dao.DatumDao" ranking="100">
+		<service-properties>
+			<entry key="datumClassName">
+				<array value-type="java.lang.String">
+					<value>net.solarnetwork.node.domain.GeneralLocationDatum</value>
+					<value>net.solarnetwork.node.domain.GeneralNodeDatum</value>
+				</array>
+			</entry>
+			<entry key="upload" value="false"/>
+			<entry key="queue" value="true"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.dao.QueueGeneralDatumDao">
+			<argument ref="datumQueue"/>
+			<argument value="true"/>
+		</bean>
 	</service>
 
 </blueprint>
