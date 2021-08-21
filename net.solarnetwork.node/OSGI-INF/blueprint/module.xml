@@ -522,5 +522,33 @@
 			<argument ref="objectMapper"/>
 		</bean>
 	</service>
+	
+	<bean id="datumQueue" class="net.solarnetwork.node.runtime.DefaultDatumQueue" init-method="startup" destroy-method="shutdown">
+		<argument ref="executorService"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames">
+					<list>
+						<value>net.solarnetwork.node.runtime.DefaultDatumQueue</value>
+					</list>
+				</property>
+			</bean>
+		</property>
+	</bean>
+	
+	<service ref="datumQueue">
+		<interfaces>
+			<value>net.solarnetwork.node.DatumQueue</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+			<value>org.osgi.service.event.EventHandler</value>
+		</interfaces>
+		<service-properties>
+			<entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
+				<array value-type="java.lang.String">
+					<value>#{T(net.solarnetwork.node.DatumDataSource).EVENT_TOPIC_DATUM_CAPTURED}</value>
+				</array>
+			</entry>
+		</service-properties>
+	</service>
 
 </blueprint>
