@@ -29,14 +29,16 @@ import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.GeneralDatumSamplesOperations;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
+import net.solarnetwork.domain.datum.GeneralDatumSamplesContainer;
 
 /**
  * Base Datum implementation with {@link GeneralDatumSamples} support.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
-public abstract class GeneralDatumSupport extends BaseDatum implements Datum, GeneralDatum, Cloneable {
+public abstract class GeneralDatumSupport extends BaseDatum
+		implements Datum, GeneralDatum, GeneralDatumSamplesContainer, Cloneable {
 
 	private GeneralDatumSamples samples;
 
@@ -464,6 +466,7 @@ public abstract class GeneralDatumSupport extends BaseDatum implements Datum, Ge
 		return builder.toString();
 	}
 
+	@Override
 	public GeneralDatumSamples getSamples() {
 		return samples;
 	}
