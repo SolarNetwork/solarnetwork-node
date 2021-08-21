@@ -25,6 +25,7 @@ package net.solarnetwork.node.runtime;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,17 +38,21 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
+import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.GeneralDatumSamplesOperations;
 import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
+import net.solarnetwork.domain.datum.GeneralDatumSamplesContainer;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.DatumQueue;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
+import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.OptionalService.OptionalFilterableService;
 
 /**
@@ -71,6 +76,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	private final Executor executor;
 	private long queueDelayMs = DEFAULT_QUEUE_DELAY_MS;
 	private OptionalFilterableService<GeneralDatumSamplesTransformService> transformService;
+	private OptionalService<DatumDao<GeneralDatum>> datumDao;
 
 	private ProcessorThread eventProcessor;
 
@@ -212,6 +218,10 @@ public class DefaultDatumQueue extends BaseIdentifiable
 						if ( event != null ) {
 							GeneralDatum result = applyTransform(event);
 							if ( result != null ) {
+								final DatumDao<GeneralDatum> dao = OptionalService.service(datumDao);
+								if ( dao != null ) {
+									dao.storeDatum(result);
+								}
 								for ( Consumer<GeneralDatum> consumer : consumers ) {
 									executor.execute(new ConsumerTask(consumer, result));
 								}
@@ -229,8 +239,22 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	}
 
 	private GeneralDatum applyTransform(DelayedDatum event) {
-		// TODO Auto-generated method stub
-		return null;
+		if ( !(event.datum instanceof GeneralDatumSamplesContainer) ) {
+			return event.datum;
+		}
+		GeneralDatumSamplesTransformService xform = OptionalService.service(transformService);
+		if ( xform == null ) {
+			return event.datum;
+		}
+		GeneralDatumSamples in = ((GeneralDatumSamplesContainer) event.datum).getSamples();
+		GeneralDatumSamples out = xform.transformSamples(event.datum, in, new HashMap<>(4));
+		if ( out == null ) {
+			return null;
+		}
+		if ( out == in ) {
+			return event.datum;
+		}
+		return (GeneralDatum) ((GeneralDatumSamplesContainer) event.datum).copyWithSamples(out);
 	}
 
 	@Override
@@ -342,6 +366,25 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 */
 	public void setTransformServiceUid(String uid) {
 		transformService.setPropertyFilter(UID_PROPERTY, uid);
+	}
+
+	/**
+	 * Get the DAO to persist datum with.
+	 * 
+	 * @return the DAO
+	 */
+	public OptionalService<DatumDao<GeneralDatum>> getDatumDao() {
+		return datumDao;
+	}
+
+	/**
+	 * Set the DAO to persist datum with.
+	 * 
+	 * @param datumDao
+	 *        the DAO to set
+	 */
+	public void setDatumDao(OptionalService<DatumDao<GeneralDatum>> datumDao) {
+		this.datumDao = datumDao;
 	}
 
 }

@@ -534,6 +534,14 @@
 				</property>
 			</bean>
 		</property>
+		<property name="datumDao">
+			<bean class="net.solarnetwork.util.DynamicServiceTracker">
+				<property name="bundleContext" ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
+				<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
+				<property name="sticky" value="true"/>
+			</bean>
+		</property>
 	</bean>
 	
 	<service ref="datumQueue">

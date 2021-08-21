@@ -47,6 +47,13 @@ public abstract class GeneralDatumSupport extends BaseDatum
 		return (GeneralDatumSupport) super.clone();
 	}
 
+	@Override
+	public GeneralDatumSamplesContainer copyWithSamples(GeneralDatumSamples samples) {
+		GeneralDatumSupport copy = clone();
+		copy.setSamples(samples);
+		return copy;
+	}
+
 	/**
 	 * Create a new {@link GeneralDatumSamples} instance.
 	 * 
