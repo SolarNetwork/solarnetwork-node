@@ -170,13 +170,26 @@ public class DefaultDatumQueue extends BaseIdentifiable
 			super();
 			this.datum = datum;
 			Date date = datum.getCreated();
+			// we really don't expect date to be null here, but just to be pragmatic we test
 			this.ts = (date != null ? date.getTime() : System.currentTimeMillis()) + delayMs;
 			this.persist = persist;
 		}
 
 		@Override
 		public int compareTo(Delayed o) {
-			return Long.compare(ts, ((DelayedDatum) o).ts);
+			DelayedDatum other = (DelayedDatum) o;
+			int result;
+			if ( datum == other.datum ) {
+				// if datum are the same, we assume ts are the same as well and assume persist is different
+				result = Boolean.compare(other.persist, persist);
+			} else {
+				result = Long.compare(ts, other.ts);
+				if ( result == 0 ) {
+					// fall back to sort by source ID when ts are equal
+					result = datum.getSourceId().compareTo(other.datum.getSourceId());
+				}
+			}
+			return result;
 		}
 
 		@Override
@@ -229,19 +242,27 @@ public class DefaultDatumQueue extends BaseIdentifiable
 					processorStartupDelayMs = -1;
 				}
 				log.info("Starting DatumQueue processor");
+				DelayedDatum prev = null;
 				DelayedDatum event = null;
 				do {
 					try {
 						event = datumQueue.poll(60, TimeUnit.SECONDS);
-						if ( event != null ) {
-							GeneralDatum result = applyTransform(event);
-							if ( result != null ) {
-								if ( event.persist ) {
-									persistDatum(result);
-								}
-								for ( Consumer<GeneralDatum> consumer : consumers ) {
-									executor.execute(new ConsumerTask(consumer, result));
-								}
+						if ( event == null
+								|| (prev != null && prev.datum == event.datum && prev.persist) ) {
+							// optimization to skip duplicate; this can happen when DatumDataSource 
+							// services are polled form data which is then offered to the queue via
+							// both offer() and handleEvent(DATUM_CAPTURED); however must process
+							// duplicate if the previous was not persisted by the current should be
+							continue;
+						}
+						prev = event;
+						GeneralDatum result = applyTransform(event);
+						if ( result != null ) {
+							if ( event.persist ) {
+								persistDatum(result);
+							}
+							for ( Consumer<GeneralDatum> consumer : consumers ) {
+								executor.execute(new ConsumerTask(consumer, result));
 							}
 						}
 					} catch ( InterruptedException e ) {
