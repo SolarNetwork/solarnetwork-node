@@ -16,7 +16,7 @@
 		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.4.3" />
 		<dependency org="net.sf.supercsv" name="super-csv" rev="2.4.0"/>
 		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[1.74,)"/>
-		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.70,)"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.89,)"/>
 		<dependency org="org.osgi" name="org.osgi.compendium" rev="5.0.0"/>
 		<dependency org="org.quartz-scheduler" name="quartz" rev="2.2.3" conf="runtime"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>

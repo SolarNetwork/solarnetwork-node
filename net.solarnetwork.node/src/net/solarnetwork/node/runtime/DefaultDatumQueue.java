@@ -83,11 +83,11 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	private final Set<Consumer<GeneralDatum>> consumers = new CopyOnWriteArraySet<>();
 
 	private final Executor executor;
+	private final DatumDao<GeneralNodeDatum> nodeDatumDao;
+	private final DatumDao<GeneralLocationDatum> locationDatumDao;
 	private long startupDelayMs = DEFAULT_STARTUP_DELAY_MS;
 	private long queueDelayMs = DEFAULT_QUEUE_DELAY_MS;
 	private OptionalFilterableService<GeneralDatumSamplesTransformService> transformService;
-	private OptionalService<DatumDao<GeneralNodeDatum>> nodeDatumDao;
-	private OptionalService<DatumDao<GeneralLocationDatum>> locationDatumDao;
 
 	private long processorStartupDelayMs;
 	private ProcessorThread eventProcessor;
@@ -97,11 +97,41 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 * 
 	 * @param executor
 	 *        the executor to use
+	 * @param nodeDatumDao
+	 *        the node datum DAO to use
+	 * @param locationDatumDao
+	 *        the location datum DAO to use
 	 */
-	public DefaultDatumQueue(Executor executor) {
+	public DefaultDatumQueue(Executor executor, DatumDao<GeneralNodeDatum> nodeDatumDao,
+			DatumDao<GeneralLocationDatum> locationDatumDao) {
 		super();
 		this.executor = executor;
+		this.nodeDatumDao = nodeDatumDao;
+		this.locationDatumDao = locationDatumDao;
 		this.processorStartupDelayMs = -1;
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * <p>
+	 * Hask for Gemini Blueprint reified type bug.
+	 * </p>
+	 * 
+	 * @param executor
+	 *        the executor to use
+	 * @param nodeDatumDao
+	 *        the node datum DAO to use
+	 * @param locationDatumDao
+	 *        the location datum DAO to use
+	 * @param yesReally
+	 *        unused
+	 */
+	@SuppressWarnings("unchecked")
+	public DefaultDatumQueue(Executor executor, Object nodeDatumDao, Object locationDatumDao,
+			boolean yesReally) {
+		this(executor, (DatumDao<GeneralNodeDatum>) nodeDatumDao,
+				(DatumDao<GeneralLocationDatum>) locationDatumDao);
 	}
 
 	/**
@@ -246,12 +276,12 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	private void persistDatum(GeneralDatum result) {
 		if ( result instanceof GeneralNodeDatum ) {
-			final DatumDao<GeneralNodeDatum> dao = OptionalService.service(nodeDatumDao);
+			final DatumDao<GeneralNodeDatum> dao = getNodeDatumDao();
 			if ( dao != null ) {
 				dao.storeDatum((GeneralNodeDatum) result);
 			}
 		} else if ( result instanceof GeneralLocationDatum ) {
-			final DatumDao<GeneralLocationDatum> dao = OptionalService.service(locationDatumDao);
+			final DatumDao<GeneralLocationDatum> dao = getLocationDatumDao();
 			if ( dao != null ) {
 				dao.storeDatum((GeneralLocationDatum) result);
 			}
@@ -393,18 +423,8 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 * 
 	 * @return the DAO
 	 */
-	public OptionalService<DatumDao<GeneralNodeDatum>> getNodeDatumDao() {
+	public DatumDao<GeneralNodeDatum> getNodeDatumDao() {
 		return nodeDatumDao;
-	}
-
-	/**
-	 * Set the DAO to persist node datum with.
-	 * 
-	 * @param nodeDatumDao
-	 *        the DAO to set
-	 */
-	public void setNodeDatumDao(OptionalService<DatumDao<GeneralNodeDatum>> nodeDatumDao) {
-		this.nodeDatumDao = nodeDatumDao;
 	}
 
 	/**
@@ -412,18 +432,8 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 * 
 	 * @return the DAO
 	 */
-	public OptionalService<DatumDao<GeneralLocationDatum>> getLocationDatumDao() {
+	public DatumDao<GeneralLocationDatum> getLocationDatumDao() {
 		return locationDatumDao;
-	}
-
-	/**
-	 * Set the DAO to persist node datum with.
-	 * 
-	 * @param locationDatumDao
-	 *        the DAO to set
-	 */
-	public void setLocationDatumDao(OptionalService<DatumDao<GeneralLocationDatum>> locationDatumDao) {
-		this.locationDatumDao = locationDatumDao;
 	}
 
 }
