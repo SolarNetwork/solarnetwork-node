@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.util.OptionalService;
 
 /**
  * {@link DatumDao} that delegates to another {@link DatumDao} only when an
@@ -77,7 +76,7 @@ public class UploadServiceDatumDao<T extends Datum> implements DatumDao<T> {
 	 *        the upload service
 	 * @param yesReally
 	 *        unused
-	 * @see #UploadServiceDatumDao(UploadService, DatumDao, OptionalService)
+	 * @see #UploadServiceDatumDao(UploadService, DatumDao)
 	 */
 	@SuppressWarnings("unchecked")
 	public UploadServiceDatumDao(Object delegate, UploadService uploadService, boolean yesReally) {

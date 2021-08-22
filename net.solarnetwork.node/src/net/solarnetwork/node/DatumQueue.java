@@ -41,7 +41,7 @@ public interface DatumQueue<T extends Datum> {
 	 * 
 	 * @param datum
 	 *        the datum to offer
-	 * @return
+	 * @return {@literal true} if the datum was accepted
 	 */
 	boolean offer(T datum);
 
