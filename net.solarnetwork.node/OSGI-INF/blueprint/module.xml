@@ -530,6 +530,7 @@
 		persisting them directly. Once processed, those datum are then 
 	 -->
 	<bean id="datumQueue" class="net.solarnetwork.node.runtime.DefaultDatumQueue" init-method="startup" destroy-method="shutdown">
+		<osgix:managed-properties persistent-id="net.solarnetwork.node.runtime.dq" autowire-on-update="true"/>
 		<argument ref="executorService"/>
 		<argument>
 			<bean class="net.solarnetwork.node.dao.SampleTransformingGeneralNodeDatumDao">
@@ -565,6 +566,20 @@
 						<value>net.solarnetwork.node.runtime.DefaultDatumQueue</value>
 					</list>
 				</property>
+			</bean>
+		</property>
+		<property name="transformService">
+			<bean class="net.solarnetwork.util.DynamicServiceTracker">
+				<property name="bundleContext" ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
+				<property name="serviceFilter" value="(!(role=global))"/>
+				<property name="ignoreEmptyPropertyFilterValues" value="false"/>
+				<property name="propertyFilters">
+					<map>
+						<entry key="uid" value=""/>
+					</map>
+				</property>
+				<property name="sticky" value="true"/>
 			</bean>
 		</property>
 	</bean>
