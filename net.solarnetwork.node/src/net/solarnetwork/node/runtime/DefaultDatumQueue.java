@@ -246,6 +246,8 @@ public class DefaultDatumQueue extends BaseIdentifiable
 						}
 					} catch ( InterruptedException e ) {
 						// keep going
+					} catch ( Exception e ) {
+						log.error("Error processing datum {}; discarding.", event.datum, e);
 					}
 				} while ( processing );
 			} finally {
