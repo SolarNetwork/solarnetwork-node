@@ -219,8 +219,17 @@
 	</bean>
 	<service ranking="10" ref="globalTransformService">
 		<interfaces>
+			<value>net.solarnetwork.node.GeneralDatumSamplesTransformService</value>
 			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
 		</interfaces>
+		<service-properties>
+			<entry key="role">
+				<array value-type="java.lang.String">
+					<value>global</value>
+					<value>datum-filter</value>
+				</array>
+			</entry>
+		</service-properties>
 	</service>
 	
 	<!-- User Datum Filter Chain factory -->	
@@ -571,9 +580,16 @@
 			<value>org.osgi.service.event.EventHandler</value>
 		</interfaces>
 		<service-properties>
+			<entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralDatum"/>
 			<entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
 				<array value-type="java.lang.String">
 					<value>#{T(net.solarnetwork.node.DatumDataSource).EVENT_TOPIC_DATUM_CAPTURED}</value>
+				</array>
+			</entry>
+			<entry key="role">
+				<array value-type="java.lang.String">
+					<value>global</value>
+					<value>datum-filter</value>
 				</array>
 			</entry>
 		</service-properties>
