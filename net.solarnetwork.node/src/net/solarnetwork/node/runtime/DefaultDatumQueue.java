@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.runtime;
 
+import static net.solarnetwork.util.DateUtils.formatHoursMinutesSeconds;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -168,21 +169,30 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		}
 	}
 
+	/**
+	 * Queue statistics.
+	 */
 	public static enum QueueStats implements StatCounter.Stat {
 
-		Added("Datum added to queue directly"),
+		Added("added datum"),
 
-		Captured("Datum added to queue via DATUM_CAPTURED events"),
+		Captured("captured datum"),
 
-		Processed("Datum processed"),
+		Processed("processed"),
 
-		Duplicates("Duplicate datum ignored"),
+		Duplicates("duplicates"),
 
-		Filtered("Datum evicted via filter"),
+		Filtered("filtered"),
 
-		Persisted("Number of datum persisted"),
+		Persisted("persisted"),
 
-		Errors("Errors encountered"),
+		Errors("errors"),
+
+		/** Milliseconds spent processing all input datum. */
+		ProcessingTimeTotal("processing ms"),
+
+		/** Milliseconds spent persisting datum. */
+		PersistingTimeTotal("persisting ms"),
 
 		;
 
@@ -301,6 +311,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 							stats.incrementAndGet(QueueStats.Duplicates);
 							continue;
 						}
+						final long start = System.currentTimeMillis();
 						stats.incrementAndGet(QueueStats.Processed);
 						prev = event;
 						GeneralDatum result = applyTransform(event);
@@ -312,6 +323,8 @@ public class DefaultDatumQueue extends BaseIdentifiable
 								executor.execute(new ConsumerTask(consumer, result));
 							}
 						}
+						stats.addAndGet(QueueStats.ProcessingTimeTotal,
+								System.currentTimeMillis() - start, true);
 					} catch ( InterruptedException e ) {
 						// keep going
 					} catch ( Exception e ) {
@@ -346,20 +359,22 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		return (GeneralDatum) ((GeneralDatumSamplesContainer) event.datum).copyWithSamples(out);
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void persistDatum(GeneralDatum result) {
+		final long start = System.currentTimeMillis();
+		final DatumDao<GeneralDatum> dao;
 		if ( result instanceof GeneralNodeDatum ) {
-			final DatumDao<GeneralNodeDatum> dao = getNodeDatumDao();
+			dao = (DatumDao) getNodeDatumDao();
 			if ( dao != null ) {
-				dao.storeDatum((GeneralNodeDatum) result);
-				stats.incrementAndGet(QueueStats.Persisted);
 			}
 		} else if ( result instanceof GeneralLocationDatum ) {
-			final DatumDao<GeneralLocationDatum> dao = getLocationDatumDao();
-			if ( dao != null ) {
-				dao.storeDatum((GeneralLocationDatum) result);
-				stats.incrementAndGet(QueueStats.Persisted);
-			}
+			dao = (DatumDao) getLocationDatumDao();
+		} else {
+			return;
 		}
+		dao.storeDatum(result);
+		stats.incrementAndGet(QueueStats.Persisted);
+		stats.addAndGet(QueueStats.PersistingTimeTotal, System.currentTimeMillis() - start, true);
 	}
 
 	@Override
@@ -419,10 +434,25 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	private String getStatusMessage() {
 		final int len = QueueStats.values().length;
-		Object[] params = new Object[len];
+		Object[] params = new Object[len + 2];
 		for ( int i = 0; i < len; i++ ) {
 			params[i] = stats.get(QueueStats.values()[i]);
 		}
+
+		// convert processing times to friendly strings and add averages
+
+		long processCount = (long) params[QueueStats.Processed.ordinal()];
+		long totalTime = (Long) params[QueueStats.ProcessingTimeTotal.ordinal()];
+		params[QueueStats.ProcessingTimeTotal.ordinal()] = formatHoursMinutesSeconds(totalTime);
+		params[params.length - 2] = (processCount > 0 ? String.format("%dms", totalTime / processCount)
+				: "-");
+
+		long persistCount = (long) params[QueueStats.Persisted.ordinal()];
+		long persistTime = (Long) params[QueueStats.PersistingTimeTotal.ordinal()];
+		params[QueueStats.PersistingTimeTotal.ordinal()] = formatHoursMinutesSeconds(persistTime);
+		params[params.length - 1] = (persistCount > 0 ? String.format("%dms", persistTime / persistCount)
+				: "-");
+
 		return getMessageSource().getMessage("status.msg", params, Locale.getDefault());
 	}
 

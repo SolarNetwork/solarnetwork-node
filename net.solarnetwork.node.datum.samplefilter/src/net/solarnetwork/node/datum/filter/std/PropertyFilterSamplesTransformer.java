@@ -51,7 +51,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * </p>
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 		implements GeneralDatumSamplesTransformer, SettingSpecifierProvider, SettingsChangeObserver {
@@ -63,13 +63,16 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples) {
+		final long start = incrementInputStats();
 		final String settingKey = settingKey();
 		if ( settingKey == null ) {
 			log.trace("Filter does not have a UID configured; not filtering: {}", this);
+			incrementIgnoredStats(start);
 			return samples;
 		}
 
 		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
+			incrementIgnoredStats(start);
 			return samples;
 		}
 
@@ -202,7 +205,9 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 			}
 		}
 
-		return (copy != null ? copy : samples);
+		GeneralDatumSamples out = (copy != null ? copy : samples);
+		incrementStats(start, samples, out);
+		return out;
 	}
 
 	private void saveLastSeenSetting(final Integer limit, final long now, final String settingKey,
@@ -260,6 +265,7 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = baseIdentifiableSettings();
 		populateBaseSampleTransformSupportSettings(results);
+		populateStatusSettings(results);
 
 		PropertyFilterConfig[] incs = getPropIncludes();
 		List<PropertyFilterConfig> incsList = (incs != null ? Arrays.asList(incs)

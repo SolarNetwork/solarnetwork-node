@@ -74,7 +74,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * </ul>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @since 1.2
  */
 public class DownsampleTransformService extends SamplesTransformerSupport
@@ -117,10 +117,13 @@ public class DownsampleTransformService extends SamplesTransformerSupport
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
 			Map<String, Object> parameters) {
+		final long start = incrementInputStats();
 		if ( datum == null || datum.getSourceId() == null || samples == null ) {
+			incrementIgnoredStats(start);
 			return samples;
 		}
 		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
+			incrementIgnoredStats(start);
 			return samples;
 		}
 		final int count = (sampleCount != null ? sampleCount.intValue() : 0);
@@ -133,9 +136,11 @@ public class DownsampleTransformService extends SamplesTransformerSupport
 				GeneralDatumSamples out = agg.average(decimalScale, minPropertyFormat,
 						maxPropertyFormat);
 				subSamplesBySource.remove(datum.getSourceId(), agg);
+				incrementStats(start, samples, out);
 				return out;
 			}
 		}
+		incrementStats(start, samples, null);
 		return null;
 	}
 
@@ -147,6 +152,7 @@ public class DownsampleTransformService extends SamplesTransformerSupport
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = baseIdentifiableSettings();
+		populateStatusSettings(results);
 
 		results.add(0, new BasicTitleSettingSpecifier("status", statusValue()));
 		populateBaseSampleTransformSupportSettings(results);

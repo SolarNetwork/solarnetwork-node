@@ -213,7 +213,12 @@
 		<property name="uid" value="SolarIn"/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basename" value="net.solarnetwork.node.support.SolarInGeneralDatumSamplesTransformChain"/>
+				<property name="basenames">
+					<list>
+						<value>net.solarnetwork.node.support.SolarInGeneralDatumSamplesTransformChain</value>
+						<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
+					</list>
+				</property>
 			</bean>
 		</property>			
 	</bean>
@@ -237,6 +242,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.support.UserGeneralDatumSamplesTransformChain</value>
+				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
 		</property>

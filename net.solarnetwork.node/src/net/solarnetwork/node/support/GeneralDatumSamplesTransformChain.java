@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
-import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -55,9 +54,9 @@ import net.solarnetwork.util.WeakValueConcurrentHashMap;
  * </p>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
-public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
+public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSupport
 		implements GeneralDatumSamplesTransformService, SettingSpecifierProvider {
 
 	private final String settingUid;
@@ -66,8 +65,6 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 	private final GeneralDatumSamplesTransformService staticService;
 	private String[] transformUids;
 	private List<GeneralDatumSamplesTransformer> sampleTransformers;
-	private OperationalModesService opModesService;
-	private String requiredOperationalMode;
 
 	private final ConcurrentMap<String, GeneralDatumSamplesTransformService> serviceCache = new WeakValueConcurrentHashMap<>(
 			16, 0.9f, 2);
@@ -163,6 +160,8 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 			result.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode", null));
 		}
 
+		populateStatusSettings(result);
+
 		// list of UIDs
 		String[] uids = getTransformUids();
 		List<String> uidsList = (uids != null ? Arrays.asList(uids) : Collections.emptyList());
@@ -234,24 +233,29 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 	}
 
 	@Override
-	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
-			Map<String, Object> parameters) {
+	public GeneralDatumSamples transformSamples(final Datum datum, final GeneralDatumSamples samples,
+			final Map<String, Object> parameters) {
+		final long start = incrementInputStats();
 		if ( !operationalModeMatches() ) {
+			incrementIgnoredStats(start);
 			return samples;
 		}
 		Map<String, Object> p = parameters;
+		GeneralDatumSamples out = samples;
 		if ( staticService != null ) {
 			if ( p == null ) {
 				p = new HashMap<>(8);
 			}
-			samples = staticService.transformSamples(datum, samples, parameters);
-			if ( samples == null ) {
+			out = staticService.transformSamples(datum, out, parameters);
+			if ( out == null ) {
+				incrementStats(start, samples, out);
 				return null;
 			}
 		}
 		final String[] uids = getTransformUids();
 		if ( uids == null || uids.length < 1 ) {
-			return samples;
+			incrementStats(start, samples, out);
+			return out;
 		}
 		for ( String uid : uids ) {
 			if ( uid == null || uid.isEmpty() ) {
@@ -262,40 +266,15 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 				if ( p == null ) {
 					p = new HashMap<>(8);
 				}
-				samples = s.transformSamples(datum, samples, p);
-				if ( samples == null ) {
+				out = s.transformSamples(datum, out, p);
+				if ( out == null ) {
+					incrementStats(start, samples, out);
 					return null;
 				}
 			}
 		}
-		return samples;
-	}
-
-	/**
-	 * Test if the configured required operational mode is active.
-	 * 
-	 * <p>
-	 * If {@link #getRequiredOperationalMode()} is configured but
-	 * {@code #getOpModesService()} is not, this method will always return
-	 * {@literal false}.
-	 * </p>
-	 * 
-	 * @return {@literal true} if an operational mode is required and that mode
-	 *         is currently active
-	 * @since 1.1
-	 */
-	protected boolean operationalModeMatches() {
-		final String mode = getRequiredOperationalMode();
-		if ( mode == null ) {
-			// no mode required, so automatically matches
-			return true;
-		}
-		final OperationalModesService service = getOpModesService();
-		if ( service == null ) {
-			// service not available, so automatically does not match
-			return false;
-		}
-		return service.isOperationalModeActive(mode);
+		incrementStats(start, samples, out);
+		return out;
 	}
 
 	/**
@@ -346,7 +325,7 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 	 * Set the sample transformers to use.
 	 * 
 	 * <p>
-	 * Theese are not applied by this class. Rather, if this is set then a
+	 * These are not applied by this class. Rather, if this is set then a
 	 * read-only setting will be included in {@link #getSettingSpecifiers()}
 	 * that lists the configured filters.
 	 * </p>
@@ -356,51 +335,6 @@ public class GeneralDatumSamplesTransformChain extends BaseIdentifiable
 	 */
 	public void setSampleTransformers(List<GeneralDatumSamplesTransformer> sampleTransformers) {
 		this.sampleTransformers = sampleTransformers;
-	}
-
-	/**
-	 * Get the operational modes service to use.
-	 * 
-	 * @return the service, or {@literal null}
-	 */
-	public OperationalModesService getOpModesService() {
-		return opModesService;
-	}
-
-	/**
-	 * Set the operational modes service to use.
-	 * 
-	 * @param opModesService
-	 *        the service to use
-	 * @since 1.1
-	 */
-	public void setOpModesService(OperationalModesService opModesService) {
-		this.opModesService = opModesService;
-	}
-
-	/**
-	 * Get an operational mode that is required by this service.
-	 * 
-	 * @return the required operational mode, or {@literal null} for none
-	 * @since 1.1
-	 */
-	public String getRequiredOperationalMode() {
-		return requiredOperationalMode;
-	}
-
-	/**
-	 * Set an operational mode that is required by this service.
-	 * 
-	 * @param requiredOperationalMode
-	 *        the required operational mode, or {@literal null} or an empty
-	 *        string that will be treated as {@literal null}
-	 * @since 1.1
-	 */
-	public void setRequiredOperationalMode(String requiredOperationalMode) {
-		if ( requiredOperationalMode != null && requiredOperationalMode.trim().isEmpty() ) {
-			requiredOperationalMode = null;
-		}
-		this.requiredOperationalMode = requiredOperationalMode;
 	}
 
 }

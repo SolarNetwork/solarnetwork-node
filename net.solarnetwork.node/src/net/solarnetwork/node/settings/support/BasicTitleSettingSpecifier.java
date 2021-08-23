@@ -32,7 +32,7 @@ import net.solarnetwork.node.settings.TitleSettingSpecifier;
  * Basic implemtation of {@link TitleSettingSpecifier}.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class BasicTitleSettingSpecifier extends BaseKeyedSettingSpecifier<String>
 		implements TitleSettingSpecifier {
@@ -100,6 +100,7 @@ public class BasicTitleSettingSpecifier extends BaseKeyedSettingSpecifier<String
 				String.format(template, getKey()), getDefaultValue());
 		spec.setTitle(getTitle());
 		spec.setValueTitles(valueTitles);
+		spec.setMarkup(markup);
 		spec.setDescriptionArguments(getDescriptionArguments());
 		return spec;
 	}
