@@ -97,10 +97,9 @@ public class BasicTitleSettingSpecifier extends BaseKeyedSettingSpecifier<String
 	@Override
 	public SettingSpecifier mappedWithPlaceholer(String template) {
 		BasicTitleSettingSpecifier spec = new BasicTitleSettingSpecifier(
-				String.format(template, getKey()), getDefaultValue());
+				String.format(template, getKey()), getDefaultValue(), isTransient(), isMarkup());
 		spec.setTitle(getTitle());
 		spec.setValueTitles(valueTitles);
-		spec.setMarkup(markup);
 		spec.setDescriptionArguments(getDescriptionArguments());
 		return spec;
 	}
@@ -114,7 +113,7 @@ public class BasicTitleSettingSpecifier extends BaseKeyedSettingSpecifier<String
 	@Override
 	public SettingSpecifier mappedWithMapper(MappableSpecifier.Mapper mapper) {
 		BasicTitleSettingSpecifier spec = new BasicTitleSettingSpecifier(mapper.mapKey(getKey()),
-				getDefaultValue());
+				getDefaultValue(), isTransient(), isMarkup());
 		spec.setTitle(getTitle());
 		spec.setValueTitles(valueTitles);
 		spec.setDescriptionArguments(getDescriptionArguments());
