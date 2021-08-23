@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -49,9 +50,11 @@ import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.OptionalService.OptionalFilterableService;
+import net.solarnetwork.util.StatCounter;
 
 /**
  * Default implementation of {@link DatumQueue} for {@link GeneralDatum}.
@@ -77,10 +80,15 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	/** The default value for the {@code startupDelayMs} property. */
 	public static final long DEFAULT_STARTUP_DELAY_MS = 20_000;
 
+	/** The default {@code statisticLogFrequency} property. */
+	public static final int DEFAULT_STAT_LOG_FREQUENCY = 250;
+
 	// a queue of datum events ordered by datum creation date using a configurable delay
 	// so that concurrent producer events can be processed in datum creation time order
 	private final BlockingQueue<DelayedDatum> datumQueue = new DelayQueue<>();
 	private final Set<Consumer<GeneralDatum>> consumers = new CopyOnWriteArraySet<>();
+	private final StatCounter stats = new StatCounter("DatumQueue", "", log, DEFAULT_STAT_LOG_FREQUENCY,
+			QueueStats.values());
 
 	private final Executor executor;
 	private final DatumDao<GeneralNodeDatum> nodeDatumDao;
@@ -158,6 +166,42 @@ public class DefaultDatumQueue extends BaseIdentifiable
 			eventProcessor.interrupt();
 			eventProcessor = null;
 		}
+	}
+
+	public static enum QueueStats implements StatCounter.Stat {
+
+		Added("Datum added to queue directly"),
+
+		Captured("Datum added to queue via DATUM_CAPTURED events"),
+
+		Processed("Datum processed"),
+
+		Duplicates("Duplicate datum ignored"),
+
+		Filtered("Datum evicted via filter"),
+
+		Persisted("Number of datum persisted"),
+
+		Errors("Errors encountered"),
+
+		;
+
+		private String description;
+
+		private QueueStats(String description) {
+			this.description = description;
+		}
+
+		@Override
+		public int getIndex() {
+			return ordinal();
+		}
+
+		@Override
+		public String getDescription() {
+			return description;
+		}
+
 	}
 
 	private static final class DelayedDatum implements Delayed {
@@ -247,14 +291,17 @@ public class DefaultDatumQueue extends BaseIdentifiable
 				do {
 					try {
 						event = datumQueue.poll(60, TimeUnit.SECONDS);
-						if ( event == null
-								|| (prev != null && prev.datum == event.datum && prev.persist) ) {
+						if ( event == null ) {
+							continue;
+						} else if ( prev != null && prev.datum == event.datum && prev.persist ) {
 							// optimization to skip duplicate; this can happen when DatumDataSource 
 							// services are polled form data which is then offered to the queue via
 							// both offer() and handleEvent(DATUM_CAPTURED); however must process
 							// duplicate if the previous was not persisted by the current should be
+							stats.incrementAndGet(QueueStats.Duplicates);
 							continue;
 						}
+						stats.incrementAndGet(QueueStats.Processed);
 						prev = event;
 						GeneralDatum result = applyTransform(event);
 						if ( result != null ) {
@@ -268,6 +315,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 					} catch ( InterruptedException e ) {
 						// keep going
 					} catch ( Exception e ) {
+						stats.incrementAndGet(QueueStats.Errors);
 						log.error("Error processing datum {}; discarding.", event.datum, e);
 					}
 				} while ( processing );
@@ -289,6 +337,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		GeneralDatumSamples in = ((GeneralDatumSamplesContainer) event.datum).getSamples();
 		GeneralDatumSamples out = xform.transformSamples(event.datum, in, new HashMap<>(4));
 		if ( out == null ) {
+			stats.incrementAndGet(QueueStats.Filtered);
 			return null;
 		}
 		if ( out == in ) {
@@ -302,11 +351,13 @@ public class DefaultDatumQueue extends BaseIdentifiable
 			final DatumDao<GeneralNodeDatum> dao = getNodeDatumDao();
 			if ( dao != null ) {
 				dao.storeDatum((GeneralNodeDatum) result);
+				stats.incrementAndGet(QueueStats.Persisted);
 			}
 		} else if ( result instanceof GeneralLocationDatum ) {
 			final DatumDao<GeneralLocationDatum> dao = getLocationDatumDao();
 			if ( dao != null ) {
 				dao.storeDatum((GeneralLocationDatum) result);
+				stats.incrementAndGet(QueueStats.Persisted);
 			}
 		}
 	}
@@ -316,6 +367,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		if ( datum == null ) {
 			return false;
 		}
+		stats.incrementAndGet(QueueStats.Added);
 		return datumQueue.offer(new DelayedDatum(datum, queueDelayMs, true));
 	}
 
@@ -337,6 +389,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 			if ( datum == null ) {
 				return;
 			}
+			stats.incrementAndGet(QueueStats.Captured);
 			datumQueue.offer(new DelayedDatum(datum, queueDelayMs, false));
 		}
 	}
@@ -357,10 +410,20 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = new ArrayList<>(4);
+		result.add(new BasicTitleSettingSpecifier("status", getStatusMessage(), true, true));
 		result.add(new BasicTextFieldSettingSpecifier("queueDelayMs",
 				String.valueOf(DEFAULT_QUEUE_DELAY_MS)));
 		result.add(new BasicTextFieldSettingSpecifier("transformServiceUid", null));
 		return result;
+	}
+
+	private String getStatusMessage() {
+		final int len = QueueStats.values().length;
+		Object[] params = new Object[len];
+		for ( int i = 0; i < len; i++ ) {
+			params[i] = stats.get(QueueStats.values()[i]);
+		}
+		return getMessageSource().getMessage("status.msg", params, Locale.getDefault());
 	}
 
 	/**
@@ -457,6 +520,25 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 */
 	public DatumDao<GeneralLocationDatum> getLocationDatumDao() {
 		return locationDatumDao;
+	}
+
+	/**
+	 * Get the statistics log frequency.
+	 * 
+	 * @return the frequency
+	 */
+	public int getStatisticLogFrequency() {
+		return stats.getLogFrequency();
+	}
+
+	/**
+	 * Set the statistics log frequency.
+	 * 
+	 * @param logFrequency
+	 *        the frequency to set
+	 */
+	public void setStatisticLogFrequency(int logFrequency) {
+		stats.setLogFrequency(logFrequency);
 	}
 
 }
