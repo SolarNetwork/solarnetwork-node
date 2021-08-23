@@ -363,12 +363,10 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	private void persistDatum(GeneralDatum result) {
 		final long start = System.currentTimeMillis();
 		final DatumDao<GeneralDatum> dao;
-		if ( result instanceof GeneralNodeDatum ) {
-			dao = (DatumDao) getNodeDatumDao();
-			if ( dao != null ) {
-			}
-		} else if ( result instanceof GeneralLocationDatum ) {
+		if ( result instanceof GeneralLocationDatum ) {
 			dao = (DatumDao) getLocationDatumDao();
+		} else if ( result instanceof GeneralNodeDatum ) {
+			dao = (DatumDao) getNodeDatumDao();
 		} else {
 			return;
 		}
