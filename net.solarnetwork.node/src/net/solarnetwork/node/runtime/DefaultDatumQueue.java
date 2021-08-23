@@ -23,6 +23,7 @@
 package net.solarnetwork.node.runtime;
 
 import static net.solarnetwork.util.DateUtils.formatHoursMinutesSeconds;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -72,8 +73,8 @@ import net.solarnetwork.util.StatCounter;
  * @version 1.0
  * @since 1.89
  */
-public class DefaultDatumQueue extends BaseIdentifiable
-		implements DatumQueue<GeneralDatum>, EventHandler, SettingSpecifierProvider {
+public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<GeneralDatum>,
+		EventHandler, SettingSpecifierProvider, UncaughtExceptionHandler {
 
 	/** The default value for the {@code queueDelayMs} property. */
 	public static final long DEFAULT_QUEUE_DELAY_MS = 200;
@@ -97,9 +98,10 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	private long startupDelayMs = DEFAULT_STARTUP_DELAY_MS;
 	private long queueDelayMs = DEFAULT_QUEUE_DELAY_MS;
 	private OptionalFilterableService<GeneralDatumSamplesTransformService> transformService;
+	private UncaughtExceptionHandler datumProcessorExceptionHandler;
 
 	private long processorStartupDelayMs;
-	private ProcessorThread eventProcessor;
+	private ProcessorThread datumProcessor;
 
 	/**
 	 * Constructor.
@@ -147,25 +149,26 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 * Startup once configured.
 	 */
 	public synchronized void startup() {
-		if ( eventProcessor != null ) {
-			eventProcessor.processing = false;
-			eventProcessor.interrupt();
+		if ( datumProcessor != null ) {
+			datumProcessor.processing = false;
+			datumProcessor.interrupt();
 		}
 		if ( processorStartupDelayMs < 0 ) {
 			processorStartupDelayMs = getStartupDelayMs();
 		}
-		eventProcessor = new ProcessorThread();
-		eventProcessor.start();
+		datumProcessor = new ProcessorThread();
+		datumProcessor.setUncaughtExceptionHandler(this);
+		datumProcessor.start();
 	}
 
 	/**
 	 * Shutdown after no longer needed.
 	 */
 	public synchronized void shutdown() {
-		if ( eventProcessor != null ) {
-			eventProcessor.processing = false;
-			eventProcessor.interrupt();
-			eventProcessor = null;
+		if ( datumProcessor != null ) {
+			datumProcessor.processing = false;
+			datumProcessor.interrupt();
+			datumProcessor = null;
 		}
 	}
 
@@ -295,45 +298,60 @@ public class DefaultDatumQueue extends BaseIdentifiable
 					}
 					processorStartupDelayMs = -1;
 				}
-				log.info("Starting DatumQueue processor");
+				log.info("Starting DatumQueue processor {}", Integer.toHexString(hashCode()));
 				DelayedDatum prev = null;
 				DelayedDatum event = null;
 				do {
 					try {
 						event = datumQueue.poll(60, TimeUnit.SECONDS);
-						if ( event == null ) {
-							continue;
-						} else if ( prev != null && prev.datum == event.datum && prev.persist ) {
-							// optimization to skip duplicate; this can happen when DatumDataSource 
-							// services are polled form data which is then offered to the queue via
-							// both offer() and handleEvent(DATUM_CAPTURED); however must process
-							// duplicate if the previous was not persisted by the current should be
-							stats.incrementAndGet(QueueStats.Duplicates);
-							continue;
-						}
-						final long start = System.currentTimeMillis();
-						stats.incrementAndGet(QueueStats.Processed);
-						prev = event;
-						GeneralDatum result = applyTransform(event);
-						if ( result != null ) {
-							if ( event.persist ) {
-								persistDatum(result);
-							}
-							for ( Consumer<GeneralDatum> consumer : consumers ) {
-								executor.execute(new ConsumerTask(consumer, result));
-							}
-						}
-						stats.addAndGet(QueueStats.ProcessingTimeTotal,
-								System.currentTimeMillis() - start, true);
 					} catch ( InterruptedException e ) {
 						// keep going
-					} catch ( Exception e ) {
-						stats.incrementAndGet(QueueStats.Errors);
-						log.error("Error processing datum {}; discarding.", event.datum, e);
 					}
+					if ( event == null ) {
+						continue;
+					} else if ( prev != null && prev.datum == event.datum && prev.persist ) {
+						// optimization to skip duplicate; this can happen when DatumDataSource 
+						// services are polled form data which is then offered to the queue via
+						// both offer() and handleEvent(DATUM_CAPTURED); however must process
+						// duplicate if the previous was not persisted by the current should be
+						stats.incrementAndGet(QueueStats.Duplicates);
+						continue;
+					}
+					final long start = System.currentTimeMillis();
+					stats.incrementAndGet(QueueStats.Processed);
+					prev = event;
+					GeneralDatum result;
+					try {
+						result = applyTransform(event);
+					} catch ( Throwable t ) {
+						stats.incrementAndGet(QueueStats.Errors);
+						log.error("Error processing datum {}; discarding.", event.datum, t);
+						throw t;
+					}
+					if ( result != null ) {
+						if ( event.persist ) {
+							try {
+								persistDatum(result);
+							} catch ( Throwable t ) {
+								stats.incrementAndGet(QueueStats.Errors);
+								log.error("Error persisting datum {}; discarding.", event.datum, t);
+								throw t;
+							}
+						}
+						for ( Consumer<GeneralDatum> consumer : consumers ) {
+							try {
+								executor.execute(new ConsumerTask(consumer, result));
+							} catch ( Throwable t ) {
+								stats.incrementAndGet(QueueStats.Errors);
+								log.error("Error persisting datum {}; discarding.", event.datum, t);
+							}
+						}
+					}
+					stats.addAndGet(QueueStats.ProcessingTimeTotal, System.currentTimeMillis() - start,
+							true);
 				} while ( processing );
 			} finally {
-				log.info("Finished DatumQueue processor " + getName());
+				log.info("Finished DatumQueue processor {}", Integer.toHexString(hashCode()));
 			}
 		}
 
@@ -404,6 +422,17 @@ public class DefaultDatumQueue extends BaseIdentifiable
 			}
 			stats.incrementAndGet(QueueStats.Captured);
 			datumQueue.offer(new DelayedDatum(datum, queueDelayMs, false));
+		}
+	}
+
+	@Override
+	public void uncaughtException(Thread t, Throwable e) {
+		synchronized ( this ) {
+			datumProcessor = null;
+			startup();
+		}
+		if ( datumProcessorExceptionHandler != null ) {
+			datumProcessorExceptionHandler.uncaughtException(t, e);
 		}
 	}
 
@@ -567,6 +596,36 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 */
 	public void setStatisticLogFrequency(int logFrequency) {
 		stats.setLogFrequency(logFrequency);
+	}
+
+	/**
+	 * Get an exception handler for the datum processor.
+	 * 
+	 * @return the exception handler, or {@literal null}
+	 */
+	public UncaughtExceptionHandler getDatumProcessorExceptionHandler() {
+		return datumProcessorExceptionHandler;
+	}
+
+	/**
+	 * Set an exception handler for the datum processor.
+	 * 
+	 * @param datumProcessorExceptionHandler
+	 *        the handler to set
+	 */
+	public void setDatumProcessorExceptionHandler(
+			UncaughtExceptionHandler datumProcessorExceptionHandler) {
+		this.datumProcessorExceptionHandler = datumProcessorExceptionHandler;
+	}
+
+	/**
+	 * Get the internal statistics.
+	 * 
+	 * @return the stats
+	 * @see QueueStats
+	 */
+	public StatCounter getStats() {
+		return stats;
 	}
 
 }
