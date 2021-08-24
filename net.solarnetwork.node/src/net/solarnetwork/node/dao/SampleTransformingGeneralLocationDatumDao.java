@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.dao;
 
+import static net.solarnetwork.util.OptionalService.service;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import org.slf4j.Logger;
@@ -36,13 +38,13 @@ import net.solarnetwork.util.OptionalService;
  * before persisting.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.66
  */
 public class SampleTransformingGeneralLocationDatumDao implements DatumDao<GeneralLocationDatum> {
 
 	private final OptionalService<GeneralDatumSamplesTransformService> samplesTransformService;
-	private final DatumDao<GeneralLocationDatum> delegate;
+	private final OptionalService<DatumDao<GeneralLocationDatum>> delegate;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -54,45 +56,27 @@ public class SampleTransformingGeneralLocationDatumDao implements DatumDao<Gener
 	 * @param samplesTransformService
 	 *        the transformer service
 	 */
-	public SampleTransformingGeneralLocationDatumDao(DatumDao<GeneralLocationDatum> delegate,
+	public SampleTransformingGeneralLocationDatumDao(
+			OptionalService<DatumDao<GeneralLocationDatum>> delegate,
 			OptionalService<GeneralDatumSamplesTransformService> samplesTransformService) {
 		super();
 		this.samplesTransformService = samplesTransformService;
 		this.delegate = delegate;
 	}
 
-	/**
-	 * Constructor hack.
-	 * 
-	 * <p>
-	 * This constructor is to work around Gemini Blueprint "reified type"
-	 * exceptions on DatumDao&lt;T&gt;.
-	 * </p>
-	 * 
-	 * @param delegate
-	 *        the DAO to delegate to
-	 * @param samplesTransformService
-	 *        the transformer service
-	 * @param yesReally
-	 *        ignored
-	 */
-	@SuppressWarnings("unchecked")
-	public SampleTransformingGeneralLocationDatumDao(Object delegate,
-			OptionalService<GeneralDatumSamplesTransformService> samplesTransformService,
-			boolean yesReally) {
-		this((DatumDao<GeneralLocationDatum>) delegate, samplesTransformService);
-	}
-
 	@Override
 	public Class<? extends GeneralLocationDatum> getDatumType() {
-		return delegate.getDatumType();
+		final DatumDao<GeneralLocationDatum> dao = service(delegate);
+		return (dao != null ? dao.getDatumType() : GeneralLocationDatum.class);
 	}
 
 	@Override
 	public void storeDatum(GeneralLocationDatum datum) {
-		GeneralDatumSamplesTransformService xformService = (samplesTransformService != null
-				? samplesTransformService.service()
-				: null);
+		final GeneralDatumSamplesTransformService xformService = service(samplesTransformService);
+		final DatumDao<GeneralLocationDatum> dao = service(delegate);
+		if ( dao == null ) {
+			return;
+		}
 		if ( datum != null && xformService != null && datum.getSamples() != null ) {
 			GeneralDatumSamples samples = xformService.transformSamples(datum, datum.getSamples(), null);
 			if ( samples == null || samples.isEmpty() ) {
@@ -103,29 +87,34 @@ public class SampleTransformingGeneralLocationDatumDao implements DatumDao<Gener
 			} else if ( !samples.equals(datum.getSamples()) ) {
 				log.info("Samples transform service modified location datum {} @ {} properties to {}",
 						datum.getSourceId(), datum.getCreated(), samples.getSampleData());
-				GeneralLocationDatum copy = (GeneralLocationDatum) datum.clone();
+				GeneralLocationDatum copy = datum.clone();
 				copy.setSamples(samples);
-				delegate.storeDatum(copy);
+				dao.storeDatum(copy);
 				return;
 			}
 		}
-		delegate.storeDatum(datum);
+		dao.storeDatum(datum);
 	}
 
 	@Override
 	public List<GeneralLocationDatum> getDatumNotUploaded(String destination) {
-		return delegate.getDatumNotUploaded(destination);
+		final DatumDao<GeneralLocationDatum> dao = service(delegate);
+		return (dao != null ? dao.getDatumNotUploaded(destination) : Collections.emptyList());
 	}
 
 	@Override
 	public void setDatumUploaded(GeneralLocationDatum datum, Date date, String destination,
 			String trackingId) {
-		delegate.setDatumUploaded(datum, date, destination, trackingId);
+		final DatumDao<GeneralLocationDatum> dao = service(delegate);
+		if ( dao != null ) {
+			dao.setDatumUploaded(datum, date, destination, trackingId);
+		}
 	}
 
 	@Override
 	public int deleteUploadedDataOlderThan(int hours) {
-		return delegate.deleteUploadedDataOlderThan(hours);
+		final DatumDao<GeneralLocationDatum> dao = service(delegate);
+		return (dao != null ? dao.deleteUploadedDataOlderThan(hours) : 0);
 	}
 
 }

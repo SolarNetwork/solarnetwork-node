@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.support;
 
+import static net.solarnetwork.util.DateUtils.formatHoursMinutesSeconds;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -32,15 +33,19 @@ import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.GeneralDatumSamplesTransformerStats;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.util.StatCounter;
+import net.solarnetwork.util.StatCounter.Stat;
 
 /**
  * Base class for services like
  * {@link net.solarnetwork.node.GeneralDatumSamplesTransformService} to extend.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.83
  */
 public class BaseSamplesTransformSupport extends BaseIdentifiable {
@@ -50,9 +55,47 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	 */
 	public static final String DEFAULT_UID = "Default";
 
+	/**
+	 * The default stat logging frequency.
+	 * 
+	 * @since 1.2
+	 */
+	public static final int DEFAULT_STAT_LOG_FREQUENCY = 1000;
+
+	/**
+	 * A stats counter.
+	 * 
+	 * <p>
+	 * The base stats will be {@link GeneralDatumSamplesTransformerStats}.
+	 * </p>
+	 * 
+	 * @since 1.2
+	 */
+	protected final StatCounter stats;
+
 	private Pattern sourceId;
 	private OperationalModesService opModesService;
 	private String requiredOperationalMode;
+
+	/**
+	 * Constructor.
+	 */
+	public BaseSamplesTransformSupport() {
+		this(null);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param stats
+	 *        the status to use (can be {@literal null}
+	 * @since 1.2
+	 */
+	public BaseSamplesTransformSupport(Stat[] stats) {
+		super();
+		this.stats = new StatCounter("Transform", "", log, DEFAULT_STAT_LOG_FREQUENCY,
+				GeneralDatumSamplesTransformerStats.values(), stats);
+	}
 
 	/**
 	 * Populate settings for the {@code BaseSamplesTransformSupport} class.
@@ -93,6 +136,112 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 		settings.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode",
 				requiredOperationalModeDefault));
 
+	}
+
+	/**
+	 * Populate a "status" setting.
+	 * 
+	 * @param settings
+	 *        the settings to add the status to
+	 * @see #getStatusMessage()
+	 * @since 1.2
+	 */
+	protected void populateStatusSettings(List<SettingSpecifier> settings) {
+		settings.add(0, new BasicTitleSettingSpecifier("status", getStatusMessage(), true, true));
+	}
+
+	/**
+	 * Generate a status message.
+	 * 
+	 * <p>
+	 * This will resolve the {@literal status.msg} message and pass in
+	 * parameters for all of the {@link GeneralDatumSamplesTransformerStats}
+	 * values along with a processing time average and "not ignored" processing
+	 * time average.
+	 * </p>
+	 * 
+	 * @return the status message
+	 */
+	protected String getStatusMessage() {
+		final int len = GeneralDatumSamplesTransformerStats.values().length;
+		Object[] params = new Object[len + 2];
+		for ( int i = 0; i < len; i++ ) {
+			params[i] = stats.get(GeneralDatumSamplesTransformerStats.values()[i]);
+		}
+
+		// convert processing times to friendly strings and add averages
+
+		long inputCount = (long) params[GeneralDatumSamplesTransformerStats.Input.ordinal()];
+
+		long totalTime = (Long) params[GeneralDatumSamplesTransformerStats.ProcessingTimeTotal
+				.ordinal()];
+		params[GeneralDatumSamplesTransformerStats.ProcessingTimeTotal
+				.ordinal()] = formatHoursMinutesSeconds(totalTime);
+		params[params.length - 2] = (inputCount > 0 ? String.format("%dms", totalTime / inputCount)
+				: "-");
+
+		long notIgnoredCount = inputCount
+				- (long) params[GeneralDatumSamplesTransformerStats.Ignored.ordinal()];
+		long notIgnoredTime = (Long) params[GeneralDatumSamplesTransformerStats.ProcessingTimeNotIgnoredTotal
+				.ordinal()];
+		params[GeneralDatumSamplesTransformerStats.ProcessingTimeNotIgnoredTotal
+				.ordinal()] = formatHoursMinutesSeconds(notIgnoredTime);
+		params[params.length - 1] = (notIgnoredCount > 0
+				? String.format("%dms", notIgnoredTime / notIgnoredCount)
+				: "-");
+
+		return getMessageSource().getMessage("status.msg", params, Locale.getDefault());
+	}
+
+	/**
+	 * Increment the statistics for "input" invocation.
+	 * 
+	 * @return the current time, for passing to
+	 *         {@link #incrementIgnoredStats(long)} or
+	 *         {@link #incrementStats(long, GeneralDatumSamples, GeneralDatumSamples)}
+	 *         later
+	 * @since 1.2
+	 */
+	protected long incrementInputStats() {
+		stats.incrementAndGet(GeneralDatumSamplesTransformerStats.Input);
+		return System.currentTimeMillis();
+	}
+
+	/**
+	 * Increment the statistics for an "ignored" invocation.
+	 * 
+	 * @param startTime
+	 *        the start time
+	 * @since 1.2
+	 */
+	protected void incrementIgnoredStats(final long startTime) {
+		final long end = System.currentTimeMillis();
+		stats.incrementAndGet(GeneralDatumSamplesTransformerStats.Ignored);
+		stats.addAndGet(GeneralDatumSamplesTransformerStats.ProcessingTimeTotal, end - startTime, true);
+	}
+
+	/**
+	 * Increment the statistics for a "not ignored" invocation.
+	 * 
+	 * @param startTime
+	 *        the start time
+	 * @param in
+	 *        the input samples
+	 * @param out
+	 *        the output samples
+	 * @since 1.2
+	 */
+	protected void incrementStats(final long startTime, final GeneralDatumSamples in,
+			final GeneralDatumSamples out) {
+		final long duration = System.currentTimeMillis() - startTime;
+		if ( out == null ) {
+			stats.incrementAndGet(GeneralDatumSamplesTransformerStats.Filtered);
+		} else if ( out != in && out != null && !out.equals(in) ) {
+			stats.incrementAndGet(GeneralDatumSamplesTransformerStats.Modified);
+		}
+		stats.addAndGet(GeneralDatumSamplesTransformerStats.ProcessingTimeNotIgnoredTotal, duration,
+				true);
+		stats.addAndGet(GeneralDatumSamplesTransformerStats.ProcessingTimeTotal, duration, true);
 	}
 
 	/**
@@ -225,6 +374,12 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 			return String.format("%s (%s)", uid, title);
 		}
 		return title;
+	}
+
+	@Override
+	public void setUid(String uid) {
+		super.setUid(uid);
+		stats.setUid(uid);
 	}
 
 	/**

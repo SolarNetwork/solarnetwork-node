@@ -1,7 +1,7 @@
 /* ==================================================================
- * ManagedTriggerAndJobDetail.java - Jul 22, 2013 6:53:49 AM
+ * DatumQueue.java - 21/08/2021 3:18:48 PM
  * 
- * Copyright 2007-2013 SolarNetwork.net Dev Team
+ * Copyright 2021 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -20,46 +20,45 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.job;
+package net.solarnetwork.node;
 
-import org.quartz.JobDetail;
-import org.quartz.Trigger;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import java.util.function.Consumer;
+import net.solarnetwork.node.domain.Datum;
 
 /**
- * A bean that combines a trigger and a job, designed to be managed via
- * settings.
+ * Unified queue to process datum across all of SolarNode.
  * 
+ * @param <T>
+ *        the datum type
  * @author matt
- * @version 1.2
+ * @version 1.0
+ * @since 1.89
  */
-public interface ManagedTriggerAndJobDetail extends SettingSpecifierProvider, ServiceProvider {
+public interface DatumQueue<T extends Datum> {
 
 	/**
-	 * Get the Trigger.
+	 * Offer a new datum to the queue.
 	 * 
-	 * @return the trigger
+	 * @param datum
+	 *        the datum to offer
+	 * @return {@literal true} if the datum was accepted
 	 */
-	Trigger getTrigger();
+	boolean offer(T datum);
 
 	/**
-	 * Get the JobDetail.
+	 * Register a consumer to receive processed datum.
 	 * 
-	 * @return the jobDetail
+	 * @param consumer
+	 *        the consumer to register
 	 */
-	JobDetail getJobDetail();
+	void addConsumer(Consumer<T> consumer);
 
 	/**
-	 * Get the desired trigger schedule expression.
+	 * De-register a previously registered consumer.
 	 * 
-	 * <p>
-	 * This might be a cron expression or a plain number representing a
-	 * millisecond period.
-	 * </p>
-	 * 
-	 * @return the schedule expression, never {@literal null}
-	 * @since 1.2
+	 * @param consumer
+	 *        the consumer to remove
 	 */
-	String getTriggerScheduleExpression();
+	void removeConsumer(Consumer<T> consumer);
 
 }

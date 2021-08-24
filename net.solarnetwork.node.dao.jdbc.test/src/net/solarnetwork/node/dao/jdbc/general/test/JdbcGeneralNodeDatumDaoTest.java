@@ -24,6 +24,7 @@ package net.solarnetwork.node.dao.jdbc.general.test;
 
 import static org.easymock.EasyMock.expectLastCall;
 import static org.hamcrest.Matchers.arrayContaining;
+import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
@@ -48,6 +49,7 @@ import org.osgi.service.event.EventAdmin;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.domain.GeneralNodeDatumSamples;
+import net.solarnetwork.domain.datum.GeneralDatumSamplesContainer;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.dao.jdbc.general.JdbcGeneralNodeDatumDao;
@@ -152,12 +154,17 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		Event event = captor.getValue();
 		assertDatumEventEqualsDatum(event, DatumDao.EVENT_TOPIC_DATUM_STORED, datum,
 				new String[] { ACEnergyDatum.class.getName(), EnergyDatum.class.getName(),
-						Datum.class.getName(), GeneralDatum.class.getName() });
+						Datum.class.getName(), net.solarnetwork.domain.datum.Datum.class.getName(),
+						GeneralDatum.class.getName(),
+						net.solarnetwork.domain.datum.GeneralDatum.class.getName(),
+						GeneralDatumSamplesContainer.class.getName() });
 	}
 
 	private void assertDatumStoredEventEqualsDatum(Event event, GeneralNodeDatum datum) {
-		assertDatumEventEqualsDatum(event, DatumDao.EVENT_TOPIC_DATUM_STORED, datum,
-				new String[] { Datum.class.getName(), GeneralDatum.class.getName() });
+		assertDatumEventEqualsDatum(event, DatumDao.EVENT_TOPIC_DATUM_STORED, datum, new String[] {
+				Datum.class.getName(), net.solarnetwork.domain.datum.Datum.class.getName(),
+				GeneralDatum.class.getName(), net.solarnetwork.domain.datum.GeneralDatum.class.getName(),
+				GeneralDatumSamplesContainer.class.getName() });
 	}
 
 	private void assertDatumEventEqualsDatum(Event event, String topic, GeneralNodeDatum datum,
@@ -166,7 +173,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		assertThat("Datum type", (String) event.getProperty(Datum.DATUM_TYPE_PROPERTY),
 				equalTo(datumTypes[0]));
 		assertThat("Datum types", (String[]) event.getProperty(Datum.DATUM_TYPES_PROPERTY),
-				arrayContaining(datumTypes));
+				arrayContainingInAnyOrder(datumTypes));
 		assertThat("Source ID", (String) event.getProperty("sourceId"), equalTo(datum.getSourceId()));
 		assertThat("Created", (Long) event.getProperty("created"),
 				equalTo(datum.getCreated().getTime()));

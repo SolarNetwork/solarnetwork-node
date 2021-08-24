@@ -37,7 +37,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * basic frequency constraint.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public class SourceThrottlingSamplesTransformer extends SamplesTransformerSupport
 		implements GeneralDatumSamplesTransformer, SettingSpecifierProvider, SettingsChangeObserver {
@@ -57,13 +57,16 @@ public class SourceThrottlingSamplesTransformer extends SamplesTransformerSuppor
 
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples) {
+		final long start = incrementInputStats();
 		final String settingKey = settingKey();
 		if ( settingKey == null ) {
 			log.trace("Filter does not have a UID configured; not filtering: {}", this);
+			incrementIgnoredStats(start);
 			return samples;
 		}
 
 		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
+			incrementIgnoredStats(start);
 			return samples;
 		}
 
@@ -88,6 +91,7 @@ public class SourceThrottlingSamplesTransformer extends SamplesTransformerSuppor
 				log.debug("Throttle filter [{}] filtering source [{}] seen the past {}s ({}s ago)",
 						getUid(), sourceId, offset, (now - lastSaveTime) / 1000.0);
 			}
+			incrementStats(start, samples, null);
 			return null;
 		}
 
@@ -96,7 +100,7 @@ public class SourceThrottlingSamplesTransformer extends SamplesTransformerSuppor
 
 		// save the new setting date
 		saveLastSeenSetting(now, settingKey, sourceId, lastSaveSetting, createdSettings);
-
+		incrementStats(start, samples, samples);
 		return samples;
 	}
 
@@ -114,6 +118,7 @@ public class SourceThrottlingSamplesTransformer extends SamplesTransformerSuppor
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = baseIdentifiableSettings();
 		populateBaseSampleTransformSupportSettings(results);
+		populateStatusSettings(results);
 		results.add(new BasicTextFieldSettingSpecifier("frequencySeconds",
 				String.valueOf(DEFAULT_FREQUENCY_SECONDS)));
 

@@ -27,10 +27,12 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
+import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.MappableSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -161,7 +163,14 @@ public class SimpleGeneralDatumSamplesTransformService extends BaseIdentifiable 
 			List<SettingSpecifier> settings = ((SettingSpecifierProvider) xform).getSettingSpecifiers();
 			result.addAll(MappableSpecifier.mapTo(settings, "sampleTransformer."));
 		}
-		return result;
+
+		// move transient to top (assume read-only titles and status)
+		List<SettingSpecifier> reordered = result.stream().filter(
+				s -> s instanceof KeyedSettingSpecifier && ((KeyedSettingSpecifier<?>) s).isTransient())
+				.collect(Collectors.toList());
+		result.removeAll(reordered);
+		reordered.addAll(result);
+		return reordered;
 	}
 
 	/**
