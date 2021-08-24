@@ -22,9 +22,11 @@
 
 package net.solarnetwork.node.runtime;
 
+import static java.util.stream.Collectors.joining;
 import static net.solarnetwork.util.DateUtils.formatHoursMinutesSeconds;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -235,15 +237,12 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 		@Override
 		public int compareTo(Delayed o) {
 			DelayedDatum other = (DelayedDatum) o;
-			int result;
-			if ( datum == other.datum ) {
-				// if datum are the same, we assume ts are the same as well and assume persist is different
-				result = Boolean.compare(other.persist, persist);
-			} else {
-				result = Long.compare(ts, other.ts);
+			int result = Long.compare(ts, other.ts);
+			if ( result == 0 ) {
+				// fall back to sort by source ID when ts are equal
+				result = datum.getSourceId().compareTo(other.datum.getSourceId());
 				if ( result == 0 ) {
-					// fall back to sort by source ID when ts are equal
-					result = datum.getSourceId().compareTo(other.datum.getSourceId());
+					result = Boolean.compare(other.persist, persist);
 				}
 			}
 			return result;
@@ -253,6 +252,11 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 		public long getDelay(TimeUnit unit) {
 			long ms = ts - System.currentTimeMillis();
 			return unit.convert(ms, TimeUnit.MILLISECONDS);
+		}
+
+		@Override
+		public String toString() {
+			return "DelayedDatum{" + ts + "," + datum.getSourceId() + "," + persist + "}";
 		}
 
 	}
@@ -299,54 +303,109 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 					processorStartupDelayMs = -1;
 				}
 				log.info("Starting DatumQueue processor {}", Integer.toHexString(hashCode()));
-				DelayedDatum prev = null;
+
+				/*-
+				 We are assuming there will be many pairs of identical datum received by the queue,
+				 because most DatumDataSource services, when polled for a Datum, will both return
+				 the Datum which is passed to offer() and ALSO emit a DATUM_CAPTURED event which 
+				 gets passed to handleEvent(). Datum passed to offer() have persist == true and 
+				 Datum passed to handleEvent() have persist == false; hence we are expecting pairs
+				 of events where one should be persisted and the other not (just passed to consumers).
+				 Since all events are passed to consumers, we can discard (persist == false) events
+				 from a matching pair event with (persist == true).
+				 
+				 The approach taken relies on the ordering of our queue, which is ordered by 
+				 date, source ID, persist. Potential pairs will differ only by the persist flag,
+				 and will have identical datum objects. The algorithm thus does:
+				 
+				 1. Poll for the next available event.
+				 2. Peek/take all next available events with a matching date.
+				 3. Sort the collected events (by date, source, persist)
+				 4. For each collected event where persist == false, search previous collected
+				    events for an identical datum with persist == true. If found, discard.
+				    
+				 The approach holds up in highly-concurrent environments where even a single 
+				 source ID has events at the same date (i.e. >1 event within 1ms on a JVM with
+				 millisecond precision dates).
+				 */
+
 				DelayedDatum event = null;
+				List<DelayedDatum> events = new ArrayList<>(16);
 				do {
 					try {
 						event = datumQueue.poll(60, TimeUnit.SECONDS);
+						if ( event == null ) {
+							continue;
+						}
+						// pull out all events with same date so we can find duplicates
+						final long ts = event.ts;
+						events.add(event);
+						while ( true ) {
+							event = datumQueue.peek();
+							if ( event == null || event.ts != ts ) {
+								break;
+							}
+							events.add(datumQueue.take());
+						}
+						if ( events.size() > 1 ) {
+							Collections.sort(events);
+							if ( log.isTraceEnabled() ) {
+								log.trace("Datum taken: [\n  {}\n]",
+										events.stream().map(Object::toString).collect(joining(",\n  ")));
+							}
+						}
 					} catch ( InterruptedException e ) {
 						// keep going
 					}
-					if ( event == null ) {
-						continue;
-					} else if ( prev != null && prev.datum == event.datum && prev.persist ) {
-						// optimization to skip duplicate; this can happen when DatumDataSource 
-						// services are polled form data which is then offered to the queue via
-						// both offer() and handleEvent(DATUM_CAPTURED); however must process
-						// duplicate if the previous was not persisted by the current should be
-						stats.incrementAndGet(QueueStats.Duplicates);
-						continue;
-					}
 					final long start = System.currentTimeMillis();
-					stats.incrementAndGet(QueueStats.Processed);
-					prev = event;
-					GeneralDatum result;
-					try {
-						result = applyTransform(event);
-					} catch ( Throwable t ) {
-						stats.incrementAndGet(QueueStats.Errors);
-						log.error("Error processing datum {}; discarding.", event.datum, t);
-						throw t;
-					}
-					if ( result != null ) {
-						if ( event.persist ) {
-							try {
-								persistDatum(result);
-							} catch ( Throwable t ) {
-								stats.incrementAndGet(QueueStats.Errors);
-								log.error("Error persisting datum {}; discarding.", event.datum, t);
-								throw t;
+					DelayedDatum p;
+					EVENT: for ( int i = 0, len = events.size(); i < len; i++ ) {
+						event = events.get(i);
+						if ( !event.persist ) {
+							for ( int j = i - 1; j >= 0; j-- ) {
+								p = events.get(j);
+								if ( p.datum == event.datum && p.persist ) {
+									// optimization to skip duplicate of persisted+unpersisted pair;
+									// this can happen when DatumDataSource services are polled for datum
+									// which is then received via both offer() and handleEvent(DATUM_CAPTURED)
+									stats.incrementAndGet(QueueStats.Duplicates);
+									continue EVENT;
+								} else if ( !p.datum.getSourceId().equals(event.datum.getSourceId()) ) {
+									// as events sorted by time,source,persist then we can stop looking now
+									break;
+								}
 							}
 						}
-						for ( Consumer<GeneralDatum> consumer : consumers ) {
-							try {
-								executor.execute(new ConsumerTask(consumer, result));
-							} catch ( Throwable t ) {
-								stats.incrementAndGet(QueueStats.Errors);
-								log.error("Error persisting datum {}; discarding.", event.datum, t);
+						stats.incrementAndGet(QueueStats.Processed);
+						GeneralDatum result;
+						try {
+							result = applyTransform(event);
+						} catch ( Throwable t ) {
+							stats.incrementAndGet(QueueStats.Errors);
+							log.error("Error processing datum {}; discarding.", event.datum, t);
+							throw t;
+						}
+						if ( result != null ) {
+							if ( event.persist ) {
+								try {
+									persistDatum(result);
+								} catch ( Throwable t ) {
+									stats.incrementAndGet(QueueStats.Errors);
+									log.error("Error persisting datum {}; discarding.", event.datum, t);
+									throw t;
+								}
+							}
+							for ( Consumer<GeneralDatum> consumer : consumers ) {
+								try {
+									executor.execute(new ConsumerTask(consumer, result));
+								} catch ( Throwable t ) {
+									stats.incrementAndGet(QueueStats.Errors);
+									log.error("Error persisting datum {}; discarding.", event.datum, t);
+								}
 							}
 						}
 					}
+					events.clear();
 					stats.addAndGet(QueueStats.ProcessingTimeTotal, System.currentTimeMillis() - start,
 							true);
 				} while ( processing );
@@ -395,7 +454,7 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 
 	@Override
 	public boolean offer(GeneralDatum datum) {
-		if ( datum == null ) {
+		if ( datum == null || datum.getSourceId() == null ) {
 			return false;
 		}
 		stats.incrementAndGet(QueueStats.Added);
@@ -417,7 +476,7 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 		final String topic = event.getTopic();
 		if ( DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED.equals(topic) ) {
 			GeneralDatum datum = datumForEvent(event);
-			if ( datum == null ) {
+			if ( datum == null || datum.getSourceId() == null ) {
 				return;
 			}
 			stats.incrementAndGet(QueueStats.Captured);

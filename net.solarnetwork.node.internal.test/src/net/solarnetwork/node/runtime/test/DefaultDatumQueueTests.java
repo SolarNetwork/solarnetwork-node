@@ -26,6 +26,7 @@ import static java.lang.Thread.sleep;
 import static net.solarnetwork.node.support.DatumEvents.datumEvent;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expectLastCall;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -34,11 +35,17 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import org.easymock.Capture;
+import org.easymock.CaptureType;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
@@ -237,6 +244,64 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Duplicates), is(1L));
 	}
 
+	@Test
+	public void capture_datum_concurrently() throws InterruptedException {
+		// GIVEN
+		ExecutorService executor = Executors.newCachedThreadPool();
+
+		final int count = 20;
+		final int sources = 2;
+
+		Capture<GeneralNodeDatum> datumCaptor = new Capture<>(CaptureType.ALL);
+		datumDao.storeDatum(capture(datumCaptor));
+		expectLastCall().anyTimes();//.times(count);
+		Capture<GeneralDatum> generalDatumCaptor = new Capture<>(CaptureType.ALL);
+		consumer.accept(capture(generalDatumCaptor));
+		expectLastCall().anyTimes();//.times(count);
+
+		// WHEN
+		replayAll();
+
+		final List<GeneralNodeDatum> datumList = new ArrayList<>();
+
+		// different threads providing the same datum for different sources at close to the same time
+		// this test depends on no more than 'sources' number of datum getting generated with the same
+		// date: the faster the machines running the test is, the more datum will be generated at the
+		// same date so the queue needs to deal with potentially many datum from same date even for
+		// same source ID
+		for ( int i = 0; i < count; i++ ) {
+			GeneralNodeDatum datum = new GeneralNodeDatum();
+			datum.setCreated(new Date());
+			datum.setSourceId(String.valueOf(i % sources));
+			datum.putInstantaneousSampleValue("watts", 1234);
+			datumList.add(datum);
+
+			executor.execute(new Runnable() {
+
+				@Override
+				public void run() {
+					Event event = datumEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, datum);
+					queue.handleEvent(event);
+				}
+
+			});
+			queue.offer(datum);
+		}
+
+		executor.shutdown();
+		executor.awaitTermination(5, TimeUnit.SECONDS);
+
+		sleep(queue.getQueueDelayMs() + 300L);
+
+		// THEN
+		assertThat("No duplicates persisted", datumCaptor.getValues(), hasSize(count));
+		assertThat("No duplicates consumed", generalDatumCaptor.getValues(), hasSize(count));
+		assertThat("Half of all datum recorded as duplicate",
+				queue.getStats().get(DefaultDatumQueue.QueueStats.Duplicates), is((long) count));
+		assertThat("Half of all datum recorded persisted",
+				queue.getStats().get(DefaultDatumQueue.QueueStats.Persisted), is((long) count));
+	}
+
 	private static abstract class TestTransformService extends BaseSamplesTransformSupport
 			implements GeneralDatumSamplesTransformService {
 
@@ -336,7 +401,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		});
 
 		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setCreated(new Date());
+		datum.setCreated(new Date(System.currentTimeMillis() - 10L));
 		datum.setSourceId(TEST_SOURCE_ID);
 		datum.putInstantaneousSampleValue("watts", 1234);
 
@@ -395,7 +460,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		}));
 
 		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setCreated(new Date());
+		datum.setCreated(new Date(System.currentTimeMillis() - 10L));
 		datum.setSourceId(TEST_SOURCE_ID);
 		datum.putInstantaneousSampleValue("watts", 1234);
 
