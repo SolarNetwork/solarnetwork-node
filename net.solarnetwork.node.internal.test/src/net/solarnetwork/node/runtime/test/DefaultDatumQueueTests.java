@@ -61,7 +61,6 @@ import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.runtime.DefaultDatumQueue;
 import net.solarnetwork.node.support.BaseSamplesTransformSupport;
-import net.solarnetwork.test.CallingThreadExecutorService;
 import net.solarnetwork.util.StaticOptionalService;
 
 /**
@@ -86,7 +85,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		datumDao = EasyMock.createMock(DatumDao.class);
 		locationDatumDao = EasyMock.createMock(DatumDao.class);
 		consumer = EasyMock.createMock(Consumer.class);
-		queue = new DefaultDatumQueue(new CallingThreadExecutorService(), datumDao, locationDatumDao);
+		queue = new DefaultDatumQueue(datumDao, locationDatumDao);
 		queue.setStartupDelayMs(0);
 		queue.setDatumProcessorExceptionHandler(this);
 		queue.addConsumer(consumer);

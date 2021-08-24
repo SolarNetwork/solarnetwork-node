@@ -29,14 +29,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
-import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.osgi.service.event.Event;
@@ -71,6 +71,11 @@ import net.solarnetwork.util.StatCounter;
  * persisted.
  * </p>
  * 
+ * <p>
+ * Each registered {@link Consumer} will receive datum sequentially in queue
+ * order via a single thread.
+ * </p>
+ * 
  * @author matt
  * @version 1.0
  * @since 1.89
@@ -90,11 +95,10 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 	// a queue of datum events ordered by datum creation date using a configurable delay
 	// so that concurrent producer events can be processed in datum creation time order
 	private final BlockingQueue<DelayedDatum> datumQueue = new DelayQueue<>();
-	private final Set<Consumer<GeneralDatum>> consumers = new CopyOnWriteArraySet<>();
+	private final List<ConsumerThread> consumers = new CopyOnWriteArrayList<>();
 	private final StatCounter stats = new StatCounter("DatumQueue", "", log, DEFAULT_STAT_LOG_FREQUENCY,
 			QueueStats.values());
 
-	private final Executor executor;
 	private final DatumDao<GeneralNodeDatum> nodeDatumDao;
 	private final DatumDao<GeneralLocationDatum> locationDatumDao;
 	private long startupDelayMs = DEFAULT_STARTUP_DELAY_MS;
@@ -108,17 +112,14 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 	/**
 	 * Constructor.
 	 * 
-	 * @param executor
-	 *        the executor to use
 	 * @param nodeDatumDao
 	 *        the node datum DAO to use
 	 * @param locationDatumDao
 	 *        the location datum DAO to use
 	 */
-	public DefaultDatumQueue(Executor executor, DatumDao<GeneralNodeDatum> nodeDatumDao,
+	public DefaultDatumQueue(DatumDao<GeneralNodeDatum> nodeDatumDao,
 			DatumDao<GeneralLocationDatum> locationDatumDao) {
 		super();
-		this.executor = executor;
 		this.nodeDatumDao = nodeDatumDao;
 		this.locationDatumDao = locationDatumDao;
 		this.processorStartupDelayMs = -1;
@@ -131,8 +132,6 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 	 * Hask for Gemini Blueprint reified type bug.
 	 * </p>
 	 * 
-	 * @param executor
-	 *        the executor to use
 	 * @param nodeDatumDao
 	 *        the node datum DAO to use
 	 * @param locationDatumDao
@@ -141,9 +140,8 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 	 *        unused
 	 */
 	@SuppressWarnings("unchecked")
-	public DefaultDatumQueue(Executor executor, Object nodeDatumDao, Object locationDatumDao,
-			boolean yesReally) {
-		this(executor, (DatumDao<GeneralNodeDatum>) nodeDatumDao,
+	public DefaultDatumQueue(Object nodeDatumDao, Object locationDatumDao, boolean yesReally) {
+		this((DatumDao<GeneralNodeDatum>) nodeDatumDao,
 				(DatumDao<GeneralLocationDatum>) locationDatumDao);
 	}
 
@@ -161,6 +159,17 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 		datumProcessor = new ProcessorThread();
 		datumProcessor.setUncaughtExceptionHandler(this);
 		datumProcessor.start();
+
+		// restart any registered consumers
+		List<ConsumerThread> newConsumers = new ArrayList<>();
+		for ( ConsumerThread t : consumers ) {
+			t.shutdown(); // should already be done; just a precaution
+			ConsumerThread newThread = new ConsumerThread(t.consumer);
+			newThread.start();
+			newConsumers.add(newThread);
+		}
+		consumers.clear();
+		consumers.addAll(newConsumers);
 	}
 
 	/**
@@ -171,6 +180,9 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 			datumProcessor.processing = false;
 			datumProcessor.interrupt();
 			datumProcessor = null;
+		}
+		for ( ConsumerThread t : consumers ) {
+			t.shutdown();
 		}
 	}
 
@@ -261,20 +273,45 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 
 	}
 
-	private static final class ConsumerTask implements Runnable {
+	private final class ConsumerThread extends Thread implements Consumer<GeneralDatum> {
 
 		private final Consumer<GeneralDatum> consumer;
-		private final GeneralDatum datum;
+		private final BlockingQueue<GeneralDatum> queue;
 
-		private ConsumerTask(Consumer<GeneralDatum> consumer, GeneralDatum datum) {
-			super();
+		private boolean processing;
+
+		private ConsumerThread(Consumer<GeneralDatum> consumer) {
+			super("DatumQueue Consumer " + consumer);
+			setDaemon(true);
 			this.consumer = consumer;
-			this.datum = datum;
+			this.queue = new LinkedBlockingDeque<>();
+			this.processing = true;
+		}
+
+		@Override
+		public void accept(GeneralDatum datum) {
+			this.queue.add(datum);
+		}
+
+		private void shutdown() {
+			processing = false;
+			this.interrupt();
 		}
 
 		@Override
 		public void run() {
-			consumer.accept(datum);
+			do {
+				GeneralDatum datum = null;
+				try {
+					datum = queue.take();
+					consumer.accept(datum);
+				} catch ( InterruptedException e ) {
+					// ignore
+				} catch ( Throwable t ) {
+					stats.incrementAndGet(QueueStats.Errors);
+					log.error("Consumer error on datum {}; discarding.", datum, t);
+				}
+			} while ( processing );
 		}
 
 	}
@@ -396,12 +433,7 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 								}
 							}
 							for ( Consumer<GeneralDatum> consumer : consumers ) {
-								try {
-									executor.execute(new ConsumerTask(consumer, result));
-								} catch ( Throwable t ) {
-									stats.incrementAndGet(QueueStats.Errors);
-									log.error("Error persisting datum {}; discarding.", event.datum, t);
-								}
+								consumer.accept(result);
 							}
 						}
 					}
@@ -462,13 +494,29 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 	}
 
 	@Override
-	public void addConsumer(Consumer<GeneralDatum> consumer) {
-		consumers.add(consumer);
+	public synchronized void addConsumer(Consumer<GeneralDatum> consumer) {
+		for ( ConsumerThread t : consumers ) {
+			if ( t.consumer == consumer ) {
+				return;
+			}
+		}
+		ConsumerThread t = new ConsumerThread(consumer);
+		consumers.add(t);
+		if ( datumProcessor != null ) {
+			t.start();
+		}
 	}
 
 	@Override
-	public void removeConsumer(Consumer<GeneralDatum> consumer) {
-		consumers.remove(consumer);
+	public synchronized void removeConsumer(Consumer<GeneralDatum> consumer) {
+		for ( Iterator<ConsumerThread> itr = consumers.iterator(); itr.hasNext(); ) {
+			ConsumerThread t = itr.next();
+			if ( t.consumer == consumer ) {
+				itr.remove();
+				t.shutdown();
+				return;
+			}
+		}
 	}
 
 	@Override

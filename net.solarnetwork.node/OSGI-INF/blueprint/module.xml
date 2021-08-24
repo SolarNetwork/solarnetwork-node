@@ -537,7 +537,6 @@
 	 -->
 	<bean id="datumQueue" class="net.solarnetwork.node.runtime.DefaultDatumQueue" init-method="startup" destroy-method="shutdown">
 		<osgix:managed-properties persistent-id="net.solarnetwork.node.runtime.dq" autowire-on-update="true"/>
-		<argument ref="executorService"/>
 		<argument>
 			<bean class="net.solarnetwork.node.dao.SampleTransformingGeneralNodeDatumDao">
 				<argument>
