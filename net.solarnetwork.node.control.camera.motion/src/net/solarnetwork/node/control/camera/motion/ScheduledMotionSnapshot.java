@@ -39,8 +39,8 @@ public class ScheduledMotionSnapshot {
 	/**
 	 * Constructor.
 	 * 
-	 * @param config
-	 *        the scheduled configuration
+	 * @param cameraId
+	 *        the camera ID
 	 * @param trigger
 	 *        the job trigger
 	 */

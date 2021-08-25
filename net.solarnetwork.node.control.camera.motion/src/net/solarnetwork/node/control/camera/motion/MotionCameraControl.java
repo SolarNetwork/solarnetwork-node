@@ -598,7 +598,7 @@ public class MotionCameraControl extends BaseIdentifiable
 	 * resource.
 	 * </p>
 	 * 
-	 * @param filterm
+	 * @param filter
 	 *        the file name path filter pattern to use, or {@literal null} for
 	 *        all files
 	 */
@@ -624,7 +624,7 @@ public class MotionCameraControl extends BaseIdentifiable
 	 * resource.
 	 * </p>
 	 * 
-	 * @param filterm
+	 * @param filterValue
 	 *        the file name path filter pattern to use, or {@literal null} for
 	 *        all files
 	 */
@@ -723,7 +723,7 @@ public class MotionCameraControl extends BaseIdentifiable
 	 * media resource.
 	 * </p>
 	 * 
-	 * @param filterm
+	 * @param filter
 	 *        the file name path filter pattern to use, or {@literal null} for
 	 *        all files
 	 */
@@ -749,7 +749,7 @@ public class MotionCameraControl extends BaseIdentifiable
 	 * media resource.
 	 * </p>
 	 * 
-	 * @param filterm
+	 * @param filterValue
 	 *        the file name path filter pattern to use, or {@literal null} for
 	 *        all files
 	 */

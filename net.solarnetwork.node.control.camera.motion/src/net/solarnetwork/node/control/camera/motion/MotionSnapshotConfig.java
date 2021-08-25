@@ -97,6 +97,7 @@ public class MotionSnapshotConfig {
 	 * </p>
 	 * 
 	 * @param schedule
+	 *        the schedule
 	 */
 	public void setSchedule(String schedule) {
 		this.schedule = schedule;
