@@ -22,6 +22,7 @@
 		<!-- Testing support -->
 		<dependency org="io.moquette" name="moquette-broker" rev="0.12.1"/>
 		<dependency org="net.solarnetwork.common.test" name="net.solarnetwork.common.test" rev="[1.15,)"/>
+		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[1.76,)"/>
 		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common.mqtt.netty" rev="[1.1,)"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.reactor.io.json" rev="[1.2,)"/>
 		<dependency org="org.springframework" name="spring-tx" rev="4.3.25.RELEASE"/>		

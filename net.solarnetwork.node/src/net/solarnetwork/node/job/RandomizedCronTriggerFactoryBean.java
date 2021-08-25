@@ -43,7 +43,7 @@ import org.springframework.scheduling.quartz.CronTriggerFactoryBean;
  * </p>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class RandomizedCronTriggerFactoryBean extends CronTriggerFactoryBean {
 
@@ -52,6 +52,12 @@ public class RandomizedCronTriggerFactoryBean extends CronTriggerFactoryBean {
 	 * randomization was applied.
 	 */
 	public static final String BASE_CRON_EXPRESSION_KEY = "net.solarnetwork.node.job.BASE_CRON_EXPRESSION";
+
+	/**
+	 * A trigger job data map key for a boolean flag indicating a random second
+	 * should be used.
+	 */
+	public static final String RANDOMIZED_SECOND = "net.solarnetwork.node.job.RANDOM_SECOND";
 
 	private boolean randomSecond = true;
 	private String baseCronExpression;
@@ -73,15 +79,34 @@ public class RandomizedCronTriggerFactoryBean extends CronTriggerFactoryBean {
 			// ignore
 		}
 		if ( randomSecond ) {
-			int seconds = (int) Math.floor(Math.random() * 60);
-			String newExpression = cronExpression.replaceAll("^\\s*\\d+(\\s+)",
-					String.valueOf(seconds) + "$1");
+			String newExpression = randomizeCronSecond(cronExpression);
 			if ( !newExpression.equals(cronExpression) ) {
-				log.debug("Randomized seconds of cron expression set to {}", seconds);
+				log.debug("Randomized seconds of cron expression to {}", newExpression);
 				finalCronExpression = newExpression;
 			}
 		}
 		super.setCronExpression(finalCronExpression);
+	}
+
+	/**
+	 * Randomize the seconds of a cron expression.
+	 * 
+	 * @param expression
+	 *        the expression to randomize the seconds on
+	 * @return the new expression, or the original expression if
+	 *         {@code expression} does not appear to be a cron expression
+	 * @since 2.2
+	 */
+	public static String randomizeCronSecond(String expression) {
+		try {
+			// don't randomize value if already just a number
+			Long.parseLong(expression);
+			return expression;
+		} catch ( NumberFormatException e ) {
+			// ignore
+		}
+		int seconds = (int) Math.floor(Math.random() * 60);
+		return expression.replaceAll("^\\s*\\d+(\\s+)", String.valueOf(seconds) + "$1");
 	}
 
 	@Override
@@ -90,6 +115,7 @@ public class RandomizedCronTriggerFactoryBean extends CronTriggerFactoryBean {
 			// add our base expression to the job data map, so we know at runtime it was altered
 			getJobDataMap().put(BASE_CRON_EXPRESSION_KEY, baseCronExpression);
 		}
+		getJobDataMap().put(RANDOMIZED_SECOND, randomSecond);
 		super.afterPropertiesSet();
 	}
 

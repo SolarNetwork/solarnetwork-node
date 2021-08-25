@@ -20,17 +20,19 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.setup.stomp;
+package net.solarnetwork.node.setup.stomp.server;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.TaskScheduler;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -46,7 +48,6 @@ import io.netty.handler.codec.stomp.StompSubframeEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
-import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -55,11 +56,7 @@ import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.settings.SettingsChangeObserver;
 
 /**
- * FIXME
- * 
- * <p>
- * TODO
- * </p>
+ * A STOMP protocol server for SolarNode Setup, using Netty.
  * 
  * @author matt
  * @version 1.0
@@ -78,9 +75,11 @@ public class StompSetupServer extends BaseIdentifiable
 
 	private static final Logger log = LoggerFactory.getLogger(StompSetupServer.class);
 
-	private final List<FeedbackInstructionHandler> instructionHandlers;
+	private final StompSetupServerService serverService;
+	private final ObjectMapper objectMapper;
 
 	private TaskScheduler taskScheduler;
+	private final Executor executor;
 	private final int port = DEFAULT_PORT;
 	private String bindAddress = DEFAULT_BIND_ADDRESS;
 	private int startupDelay = DEFAULT_STARTUP_DELAY_SECS;
@@ -93,15 +92,30 @@ public class StompSetupServer extends BaseIdentifiable
 	/**
 	 * Constructor.
 	 * 
-	 * @param instructionHandlers
-	 *        the handlers
+	 * @param serverService
+	 *        the server service
+	 * @param objectMapper
+	 *        the object mapper
+	 * @param executor
+	 *        the executor
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
 	 */
-	public StompSetupServer(List<FeedbackInstructionHandler> instructionHandlers) {
+	public StompSetupServer(StompSetupServerService serverService, ObjectMapper objectMapper,
+			Executor executor) {
 		super();
-		if ( instructionHandlers == null ) {
-			throw new IllegalArgumentException("The instructionHandlers argument must not be null.");
+		if ( serverService == null ) {
+			throw new IllegalArgumentException("The serverService argument must not be null.");
 		}
-		this.instructionHandlers = instructionHandlers;
+		this.serverService = serverService;
+		if ( objectMapper == null ) {
+			throw new IllegalArgumentException("The objectMapper argument must not be null.");
+		}
+		this.objectMapper = objectMapper;
+		if ( executor == null ) {
+			throw new IllegalArgumentException("The executor argument must not be null.");
+		}
+		this.executor = executor;
 	}
 
 	/**
@@ -201,7 +215,7 @@ public class StompSetupServer extends BaseIdentifiable
 					new StompSubframeDecoder(),
 					new StompSubframeAggregator(4096),
 					new StompSubframeEncoder(),
-					new StompSetupServerHandler(instructionHandlers));
+					new StompSetupServerHandler(serverService, objectMapper, executor));
 			// @formatter:on
 		}
 	}
@@ -292,15 +306,6 @@ public class StompSetupServer extends BaseIdentifiable
 	 */
 	public void setBindAddress(String bindAddress) {
 		this.bindAddress = bindAddress;
-	}
-
-	/**
-	 * Get the configured instruction handlers.
-	 * 
-	 * @return the handlers
-	 */
-	public List<FeedbackInstructionHandler> getInstructionHandlers() {
-		return instructionHandlers;
 	}
 
 }

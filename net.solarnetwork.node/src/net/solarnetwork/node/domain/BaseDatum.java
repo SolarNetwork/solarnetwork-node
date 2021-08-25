@@ -35,7 +35,7 @@ import net.solarnetwork.node.support.DatumEvents;
  * Abstract base class for {@link Datum} implementations.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public abstract class BaseDatum implements Datum, Cloneable {
 
@@ -184,7 +184,7 @@ public abstract class BaseDatum implements Datum, Cloneable {
 	@Override
 	public Instant getTimestamp() {
 		Date d = getCreated();
-		return (d != null ? Instant.ofEpochMilli(d.getTime()) : null);
+		return (d != null ? d.toInstant() : null);
 	}
 
 	@Override

@@ -11,27 +11,51 @@
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
 
+	<reference id="executor" interface="java.util.concurrent.Executor" filter="(function=node)"/>
+
 	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler" filter="(function=node)"/>
+	
+	<reference id="userService" interface="net.solarnetwork.node.setup.UserService" filter="(app=node)"/>
+	
+	<reference id="userDetailsService" interface="org.springframework.security.core.userdetails.UserDetailsService" filter="(app=node)"/>
 	
 	<reference-list id="instructionHandlers" interface="net.solarnetwork.node.reactor.FeedbackInstructionHandler"
 		filter="(instruction=SystemConfigure)"/>
 	
+	<service ref="stompServer" interface="net.solarnetwork.node.settings.SettingSpecifierProvider"/>
+
+	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">
+		<property name="serializers">
+			<list>
+				<bean class="net.solarnetwork.codec.BasicGeneralDatumSerializer"/>
+				<bean class="net.solarnetwork.node.support.NodeControlInfoSerializer"/>
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="serverService" class="net.solarnetwork.node.setup.stomp.server.StompSetupServerService">
+		<argument ref="userService"/>
+		<argument ref="userDetailsService"/>
+		<argument><bean class="org.springframework.util.AntPathMatcher"/></argument>
+		<argument ref="instructionHandlers"/>
+	</bean>
+
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<array>
-				<value>net.solarnetwork.node.setup.stomp.StompSetupServer</value>
+				<value>net.solarnetwork.node.setup.stomp.server.StompSetupServer</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</array>
 		</property>
 	</bean>
 	
-	<service ref="stompServer" interface="net.solarnetwork.node.settings.SettingSpecifierProvider"/>
-
-	<bean id="stompServer" class="net.solarnetwork.node.setup.stomp.StompSetupServer"
+	<bean id="stompServer" class="net.solarnetwork.node.setup.stomp.server.StompSetupServer"
 			init-method="startup" destroy-method="shutdown">
 		<osgix:managed-properties persistent-id="net.solarnetwork.node.setup.stomp" 
 				autowire-on-update="true" update-method="configurationChanged"/>
-		<argument ref="instructionHandlers"/>
+		<argument ref="serverService"/>
+		<argument ref="objectMapper"/>
+		<argument ref="executor"/>
 		<property name="messageSource" ref="messageSource"/>
 		<property name="taskScheduler" ref="taskScheduler"/>
 	</bean>

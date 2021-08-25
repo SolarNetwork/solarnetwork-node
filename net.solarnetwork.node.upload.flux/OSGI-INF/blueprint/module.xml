@@ -18,6 +18,9 @@
 	<reference id="identityService" availability="optional" interface="net.solarnetwork.node.IdentityService"/>
 
 	<reference id="mqttConnectionFactory" interface="net.solarnetwork.common.mqtt.MqttConnectionFactory"/>
+	
+	<reference id="datumQueue" interface="net.solarnetwork.node.DatumQueue" 
+		filter="(datumClassName=net.solarnetwork.node.domain.GeneralDatum)"/>
 
 	<bean id="sslService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
@@ -81,7 +84,6 @@
 			<beans:entry key="settingPid" value="net.solarnetwork.node.upload.flux"/>
 			<beans:entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
 				<beans:array value-type="java.lang.String">
-					<beans:value>#{T(net.solarnetwork.node.DatumDataSource).EVENT_TOPIC_DATUM_CAPTURED}</beans:value>
 					<beans:value>#{T(net.solarnetwork.node.OperationalModesService).EVENT_TOPIC_OPERATIONAL_MODES_CHANGED}</beans:value>
 				</beans:array>
 			</beans:entry>
@@ -90,6 +92,8 @@
 			<argument ref="mqttConnectionFactory"/>
 			<argument ref="objectMapper"/>
 			<argument ref="identityService"/>
+			<argument ref="datumQueue"/>
+			<argument value="true"/>
 			<property name="messageSource" ref="messageSource"/>
 			<property name="executor" ref="executor"/>
 			<property name="opModesService" ref="opModesService"/>

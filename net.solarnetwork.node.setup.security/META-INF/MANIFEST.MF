@@ -3,13 +3,13 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Core Security
 Bundle-SymbolicName: net.solarnetwork.node.setup.security
 Bundle-Description: Default node authentication and authorization provider.
-Bundle-Version: 1.0.1
+Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.6
 Import-Package: 
- net.solarnetwork.node;version="1.20.0",
- net.solarnetwork.node.dao;version="1.7.0",
- net.solarnetwork.node.setup;version="1.9.0",
+ net.solarnetwork.node;version="[1.20,2.0)",
+ net.solarnetwork.node.dao;version="[1.7,2.0)",
+ net.solarnetwork.node.setup;version="[1.13,2.0)",
  org.springframework.security.authentication;version="[4.1,5.0)",
  org.springframework.security.core;version="[4.1,5.0)",
  org.springframework.security.core.authority;version="[4.1,5.0)",

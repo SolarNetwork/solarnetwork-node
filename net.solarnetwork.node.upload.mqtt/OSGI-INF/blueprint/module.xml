@@ -57,13 +57,6 @@
 		<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionExecutionService"/>
 	</bean>
 	
-	<bean id="samplesTransformService" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
-		<property name="serviceFilter" value="(role=global)" />
-		<property name="sticky" value="true"/>
-	</bean>
-
 	<bean id="datumMetadataService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.DatumMetadataService"/>
@@ -114,7 +107,7 @@
 		<bean class="net.solarnetwork.node.upload.mqtt.UploadServiceDatumDao">
 			<argument ref="generalNodeDatumDao"/>
 			<argument ref="mqttUploadService"/>
-			<argument ref="samplesTransformService"/>
+			<argument value="true"/>
 		</bean>
 	</service>
 
@@ -128,7 +121,7 @@
 		<bean class="net.solarnetwork.node.upload.mqtt.UploadServiceDatumDao">
 			<argument ref="generalLocationDatumDao"/>
 			<argument ref="mqttUploadService"/>
-			<argument ref="samplesTransformService"/>
+			<argument value="true"/>
 		</bean>
 	</service>
 	

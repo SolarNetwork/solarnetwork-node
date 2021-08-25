@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.job;
 
+import static net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean.randomizeCronSecond;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,6 +31,7 @@ import java.util.Map;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
 import org.quartz.JobDetail;
+import org.quartz.SimpleTrigger;
 import org.quartz.Trigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,7 +113,7 @@ import net.solarnetwork.support.ServiceLifecycleObserver;
  * </dl>
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDetail, ServiceProvider,
 		SettingsChangeObserver, ServiceLifecycleObserver {
@@ -210,6 +212,15 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 		return null;
 	}
 
+	@Override
+	public String getTriggerScheduleExpression() {
+		String result = getTriggerCronExpression();
+		if ( result == null && trigger instanceof SimpleTrigger ) {
+			result = String.valueOf(((SimpleTrigger) trigger).getRepeatInterval());
+		}
+		return result;
+	}
+
 	/**
 	 * Set a cron expression to use for the trigger.
 	 * 
@@ -217,7 +228,15 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 	 *        The cron expression to use.
 	 */
 	public void setTriggerCronExpression(String cronExpression) {
-		this.triggerCronExpression = cronExpression;
+		String expr = cronExpression;
+		if ( trigger != null ) {
+			Object rando = trigger.getJobDataMap()
+					.get(RandomizedCronTriggerFactoryBean.RANDOMIZED_SECOND);
+			if ( rando instanceof Boolean && ((Boolean) rando).booleanValue() ) {
+				expr = randomizeCronSecond(cronExpression);
+			}
+		}
+		this.triggerCronExpression = expr;
 	}
 
 	@Override

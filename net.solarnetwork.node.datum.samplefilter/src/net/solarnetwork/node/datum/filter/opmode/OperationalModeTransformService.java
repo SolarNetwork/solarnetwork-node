@@ -54,7 +54,7 @@ import net.solarnetwork.util.ArrayUtils;
  * the mode as a datum property.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.8
  */
 public class OperationalModeTransformService extends BaseSamplesTransformSupport
@@ -65,18 +65,22 @@ public class OperationalModeTransformService extends BaseSamplesTransformSupport
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
 			Map<String, Object> parameters) {
+		final long start = incrementInputStats();
 		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
+			incrementIgnoredStats(start);
 			return samples;
 		}
 		final OperationalModesService opModesService = getOpModesService();
 		final OperationalModeTransformConfig[] configs = getExpressionConfigs();
 		final Iterable<ExpressionService> services = services(getExpressionServices());
 		if ( opModesService == null || configs == null || configs.length < 1 || services == null ) {
+			incrementIgnoredStats(start);
 			return samples;
 		}
 		DatumSamplesExpressionRoot root = new DatumSamplesExpressionRoot(datum, samples, parameters);
 		GeneralDatumSamples s = samplesForEvaluation(samples, configs);
 		evaluateExpressions(s, configs, root, services, opModesService);
+		incrementStats(start, samples, s);
 		return s;
 	}
 
@@ -186,6 +190,7 @@ public class OperationalModeTransformService extends BaseSamplesTransformSupport
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = baseIdentifiableSettings("");
 		populateBaseSampleTransformSupportSettings(result);
+		populateStatusSettings(result);
 
 		Iterable<ExpressionService> exprServices = services(getExpressionServices());
 		if ( exprServices != null ) {

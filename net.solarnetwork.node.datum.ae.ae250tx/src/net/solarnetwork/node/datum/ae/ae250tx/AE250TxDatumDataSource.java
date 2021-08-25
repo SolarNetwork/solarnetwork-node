@@ -45,7 +45,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * {@link DatumDataSource} for the AE 250TX series inverter.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE250TxData>
 		implements DatumDataSource<GeneralNodePVEnergyDatum>,
@@ -68,6 +68,11 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 	 */
 	public AE250TxDatumDataSource(AE250TxData sample) {
 		super(sample);
+	}
+
+	@Override
+	protected String deviceInfoSourceId() {
+		return sourceId;
 	}
 
 	@Override
@@ -149,6 +154,8 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(defaults.getSampleCacheMs())));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
+
+		results.addAll(getDeviceInfoMetadataSettingSpecifiers());
 
 		return results;
 	}

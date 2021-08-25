@@ -107,11 +107,13 @@
 				<bean class="net.solarnetwork.codec.JodaLocalDateTimeSerializer"/>
 				<bean class="net.solarnetwork.codec.JodaLocalTimeSerializer"/>
 				<bean class="net.solarnetwork.codec.BasicObjectDatumStreamMetadataSerializer"/>
+				<bean class="net.solarnetwork.codec.BasicGeneralDatumSerializer"/>
 			</list>
 		</property>
 		<property name="deserializers">
 			<list>
 				<bean class="net.solarnetwork.codec.BasicObjectDatumStreamMetadataDeserializer"/>
+				<bean class="net.solarnetwork.codec.BasicGeneralDatumDeserializer"/>
 			</list>
 		</property>
 		<property name="featuresToDisable">
@@ -195,11 +197,32 @@
 	<!-- 
 		Global GeneralDatumSamplesTransformService that applies all available 
 		GeneralDatumSamplesTransformer services at runtime. This special GeneralDatumSamplesTransformService
-		serves as a "applicable to all captured datum" transform service. Other specialized 
-		GeneralDatumSamplesTransformService should be referenced via a service filter like
-		(!(role=global)) so as not to use this one inadvertently.
+		serves as a "applicable to all persisted datum" transform service.
 	 -->
-	<service ranking="10">
+	<bean id="globalTransformService" class="net.solarnetwork.node.support.GeneralDatumSamplesTransformChain">
+		<osgix:managed-properties persistent-id="net.solarnetwork.node.datum.xform.solarin" autowire-on-update="true"/>
+		<argument value="net.solarnetwork.node.datum.xform.solarin"/>
+		<argument ref="datumXformServices"/>
+		<argument value="false"/>
+		<argument>
+			<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService">
+				<property name="sampleTransformers" ref="sampleTransformers"/>
+			</bean>
+		</argument>
+		<property name="sampleTransformers" ref="sampleTransformers"/>
+		<property name="uid" value="SolarIn"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames">
+					<list>
+						<value>net.solarnetwork.node.support.SolarInGeneralDatumSamplesTransformChain</value>
+						<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
+					</list>
+				</property>
+			</bean>
+		</property>			
+	</bean>
+	<service ranking="10" ref="globalTransformService">
 		<interfaces>
 			<value>net.solarnetwork.node.GeneralDatumSamplesTransformService</value>
 			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
@@ -212,24 +235,6 @@
 				</array>
 			</entry>
 		</service-properties>
-		<bean class="net.solarnetwork.node.support.GeneralDatumSamplesTransformChain">
-			<osgix:managed-properties persistent-id="net.solarnetwork.node.datum.xform.solarin" autowire-on-update="true"/>
-			<argument value="net.solarnetwork.node.datum.xform.solarin"/>
-			<argument ref="datumXformServices"/>
-			<argument value="false"/>
-			<argument>
-				<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService">
-					<property name="sampleTransformers" ref="sampleTransformers"/>
-				</bean>
-			</argument>
-			<property name="sampleTransformers" ref="sampleTransformers"/>
-			<property name="uid" value="SolarIn"/>
-			<property name="messageSource">
-				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-					<property name="basename" value="net.solarnetwork.node.support.SolarInGeneralDatumSamplesTransformChain"/>
-				</bean>
-			</property>			
-		</bean>
 	</service>
 	
 	<!-- User Datum Filter Chain factory -->	
@@ -237,6 +242,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.support.UserGeneralDatumSamplesTransformChain</value>
+				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
 				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 			</list>
 		</property>
@@ -492,4 +498,142 @@
 		</bean>
 	</osgix:managed-service-factory>
 	
+	<service>
+		<interfaces>
+			<value>net.solarnetwork.node.DatumService</value>
+			<value>net.solarnetwork.node.reactor.FeedbackInstructionHandler</value>
+			<value>org.osgi.service.event.EventHandler</value>
+		</interfaces>
+		<service-properties>
+			<entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
+				<array value-type="java.lang.String">
+					<value>#{T(net.solarnetwork.node.DatumDataSource).EVENT_TOPIC_DATUM_CAPTURED}</value>
+				</array>
+			</entry>
+			<entry key="instruction">
+				<array value-type="java.lang.String">
+					<value>#{T(net.solarnetwork.node.reactor.InstructionHandler).TOPIC_SYSTEM_CONFIGURE}</value>
+				</array>
+			</entry>
+		</service-properties>
+		<bean class="net.solarnetwork.node.runtime.DefaultDatumService">
+			<argument>
+				<bean class="org.springframework.util.AntPathMatcher" >
+					<property name="cachePatterns" value="true"/>
+					<property name="caseSensitive" value="false"/>
+				</bean>
+			</argument>
+			<argument ref="objectMapper"/>
+		</bean>
+	</service>
+	
+	<!-- 
+		DatumQueue: serialized processing of captured datum.
+		
+		This queue serves as sort of serial queue for captured datum across all of SolarNode.
+		For Datum to be added to the queue, processed, and then persisted (i.e. for SolarIn)
+		we publish DatumDao services of rank 1000 that add datum to the queue insted of 
+		persisting them directly. Once processed, those datum are then 
+	 -->
+	<bean id="datumQueue" class="net.solarnetwork.node.runtime.DefaultDatumQueue" init-method="startup" destroy-method="shutdown">
+		<osgix:managed-properties persistent-id="net.solarnetwork.node.runtime.dq" autowire-on-update="true"/>
+		<argument>
+			<bean class="net.solarnetwork.node.dao.SampleTransformingGeneralNodeDatumDao">
+				<argument>
+					<bean class="net.solarnetwork.util.DynamicServiceTracker">
+						<property name="bundleContext" ref="bundleContext"/>
+						<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
+						<property name="serviceFilter" value="(&amp;(!(queue=true))(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum))"/>
+						<property name="sticky" value="true"/>
+					</bean>
+				</argument>
+				<argument ref="globalTransformServiceOptional"/>
+			</bean>
+		</argument>
+		<argument>
+			<bean class="net.solarnetwork.node.dao.SampleTransformingGeneralLocationDatumDao">
+				<argument>
+					<bean class="net.solarnetwork.util.DynamicServiceTracker">
+						<property name="bundleContext" ref="bundleContext"/>
+						<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
+						<property name="serviceFilter" value="(&amp;(!(queue=true))(datumClassName=net.solarnetwork.node.domain.GeneralLocationDatum))"/>
+						<property name="sticky" value="true"/>
+					</bean>
+				</argument>
+				<argument ref="globalTransformServiceOptional"/>
+			</bean>
+		</argument>
+		<argument value="true"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames">
+					<list>
+						<value>net.solarnetwork.node.runtime.DefaultDatumQueue</value>
+					</list>
+				</property>
+			</bean>
+		</property>
+		<property name="transformService">
+			<bean class="net.solarnetwork.util.DynamicServiceTracker">
+				<property name="bundleContext" ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
+				<property name="serviceFilter" value="(!(role=global))"/>
+				<property name="ignoreEmptyPropertyFilterValues" value="false"/>
+				<property name="propertyFilters">
+					<map>
+						<entry key="uid" value=""/>
+					</map>
+				</property>
+				<property name="sticky" value="true"/>
+			</bean>
+		</property>
+	</bean>
+	
+	<bean id="globalTransformServiceOptional" class="net.solarnetwork.util.StaticOptionalService">
+		<argument ref="globalTransformService"/>
+	</bean>
+	
+	<service ref="datumQueue">
+		<interfaces>
+			<value>net.solarnetwork.node.DatumQueue</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+			<value>org.osgi.service.event.EventHandler</value>
+		</interfaces>
+		<service-properties>
+			<entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralDatum"/>
+			<entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
+				<array value-type="java.lang.String">
+					<value>#{T(net.solarnetwork.node.DatumDataSource).EVENT_TOPIC_DATUM_CAPTURED}</value>
+				</array>
+			</entry>
+			<entry key="role">
+				<array value-type="java.lang.String">
+					<value>global</value>
+					<value>datum-filter</value>
+				</array>
+			</entry>
+		</service-properties>
+	</service>
+
+	<!-- 
+		DatumDao that offers datum to DatumQueue for serialzied processing.
+		This has a high ranking so it is preferred by default for all DatumDataSource jobs.
+	 -->	
+	<service ranking="1000" interface="net.solarnetwork.node.dao.DatumDao">
+		<service-properties>
+			<entry key="datumClassName">
+				<array value-type="java.lang.String">
+					<value>net.solarnetwork.node.domain.GeneralLocationDatum</value>
+					<value>net.solarnetwork.node.domain.GeneralNodeDatum</value>
+				</array>
+			</entry>
+			<entry key="upload" value="false"/>
+			<entry key="queue" value="true"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.dao.QueueGeneralDatumDao">
+			<argument ref="datumQueue"/>
+			<argument value="true"/>
+		</bean>
+	</service>
+
 </blueprint>

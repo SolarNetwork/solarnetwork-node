@@ -24,7 +24,11 @@ package net.solarnetwork.node.setup.security;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -43,6 +47,7 @@ import net.solarnetwork.node.dao.BasicBatchOptions;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.setup.UserAuthenticationInfo;
 import net.solarnetwork.node.setup.UserProfile;
 import net.solarnetwork.node.setup.UserService;
 
@@ -50,7 +55,7 @@ import net.solarnetwork.node.setup.UserService;
  * {@link UserDetailsService} that uses {@link SettingDao} for users and roles.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SettingsUserService implements UserService, UserDetailsService {
 
@@ -250,6 +255,29 @@ public class SettingsUserService implements UserService, UserDetailsService {
 		}
 		settingDao.storeSetting(profile.getUsername(), SETTING_TYPE_USER, password);
 		settingDao.storeSetting(profile.getUsername(), SETTING_TYPE_ROLE, GRANTED_AUTH_USER);
+	}
+
+	@Override
+	public UserAuthenticationInfo authenticationInfo(String username) {
+		UserDetails user = loadUserByUsername(username);
+		if ( user == null ) {
+			return null;
+		}
+		String pw = user.getPassword();
+		Map<String, Object> params = new LinkedHashMap<String, Object>(2);
+		String alg = hashAlgorithmFromPassword(pw, params);
+		return new UserAuthenticationInfo(alg, params);
+	}
+
+	private static final Pattern BCRYPT_PAT = Pattern.compile("(\\$2[abxy]\\$\\d{2}\\$.{22}).+");
+
+	private String hashAlgorithmFromPassword(String pw, Map<String, Object> params) {
+		Matcher m = BCRYPT_PAT.matcher(pw);
+		if ( m.matches() ) {
+			params.put("salt", m.group(1));
+			return "bcrypt";
+		}
+		return null;
 	}
 
 	/**

@@ -5,27 +5,28 @@ Bundle-SymbolicName: net.solarnetwork.node
 Automatic-Module-Name: net.solarnetwork.node
 Bundle-Description: The core of the SolarNode framework that provides basic 
  infrastructure for all of the SolarNode application.
-Bundle-Version: 1.88.1
+Bundle-Version: 1.89.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: 
- net.solarnetwork.node;version="1.33.1",
+ net.solarnetwork.node;version="1.34.0",
  net.solarnetwork.node.backup;version="1.6.4",
  net.solarnetwork.node.dao;version="1.10.1",
- net.solarnetwork.node.domain;version="1.25.0",
- net.solarnetwork.node.job;version="1.16.2",
+ net.solarnetwork.node.domain;version="1.26.0",
+ net.solarnetwork.node.job;version="1.17.0",
  net.solarnetwork.node.reactor;version="1.8.0",
- net.solarnetwork.node.reactor.support;version="1.5.0",
+ net.solarnetwork.node.reactor.support;version="1.6.0",
  net.solarnetwork.node.settings;version="1.15.0",
- net.solarnetwork.node.settings.support;version="1.12.0",
- net.solarnetwork.node.setup;version="1.12.0",
- net.solarnetwork.node.support;version="1.27.3",
+ net.solarnetwork.node.settings.support;version="1.12.1",
+ net.solarnetwork.node.setup;version="1.13.0",
+ net.solarnetwork.node.support;version="1.28.0",
  net.solarnetwork.node.util;version="1.7.2"
 Import-Package: 
  com.fasterxml.jackson.annotation;version="[2.10.1,3.0)",
  com.fasterxml.jackson.core;version="[2.10.1,3.0)",
  com.fasterxml.jackson.databind;version="[2.10.1,3.0)",
  com.fasterxml.jackson.databind.annotation;version="[2.10.1,3.0)",
+ com.fasterxml.jackson.databind.deser.std;version="[2.10.1,3.0)",
  com.fasterxml.jackson.databind.ser.std;version="[2.10.1,3.0)",
  com.fasterxml.jackson.datatype.jsr310;version="[2.10.1,3.0)",
  javax.net.ssl,
@@ -35,12 +36,12 @@ Import-Package:
  javax.xml.transform.dom,
  javax.xml.transform.stream,
  javax.xml.xpath,
- net.solarnetwork.codec;version="[1.0,2.0)",
- net.solarnetwork.domain;version="[1.27,2.0)",
- net.solarnetwork.domain.datum;version="[1.3,2.0)",
+ net.solarnetwork.codec;version="[1.2,2.0)",
+ net.solarnetwork.domain;version="[1.31,2.0)",
+ net.solarnetwork.domain.datum;version="[1.4,2.0)",
  net.solarnetwork.settings;version="[1.3,2.0)",
  net.solarnetwork.support;version="[1.13,2.0)",
- net.solarnetwork.util;version="[1.45,2.0)",
+ net.solarnetwork.util;version="[1.52,2.0)",
  net.solarnetwork.web.security;version="[1.4,2.0)",
  org.apache.commons.codec;version="[1.7,2.0)",
  org.apache.commons.codec.binary;version="[1.7,2.0)",

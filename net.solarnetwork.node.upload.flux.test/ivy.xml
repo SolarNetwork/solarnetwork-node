@@ -21,6 +21,7 @@
 		
 		<!-- Testing support -->
 		<dependency org="io.moquette" name="moquette-broker" rev="0.12.1"/>
+		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[1.76,)"/>
 		<dependency org="net.solarnetwork.common.test" name="net.solarnetwork.common.test" rev="1.15.0"/>
 
 		<exclude module="commons-logging"/>

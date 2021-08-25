@@ -47,7 +47,7 @@ import net.solarnetwork.util.ArrayUtils;
  * on the output samples.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.6
  */
 public class ExpressionTransformService extends BaseSamplesTransformSupport
@@ -58,12 +58,15 @@ public class ExpressionTransformService extends BaseSamplesTransformSupport
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
 			Map<String, Object> parameters) {
+		final long start = incrementInputStats();
 		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
+			incrementIgnoredStats(start);
 			return samples;
 		}
 		DatumSamplesExpressionRoot root = new DatumSamplesExpressionRoot(datum, samples, parameters);
 		GeneralDatumSamples s = new GeneralDatumSamples(samples);
 		populateExpressionDatumProperties(s, getExpressionConfigs(), root);
+		incrementStats(start, samples, s);
 		return s;
 	}
 
@@ -76,6 +79,7 @@ public class ExpressionTransformService extends BaseSamplesTransformSupport
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = baseIdentifiableSettings("");
 		populateBaseSampleTransformSupportSettings(result);
+		populateStatusSettings(result);
 
 		Iterable<ExpressionService> exprServices = services(getExpressionServices());
 		if ( exprServices != null ) {

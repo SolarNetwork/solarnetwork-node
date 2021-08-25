@@ -4,7 +4,7 @@ Bundle-Name: Core Database Storage Support
 Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc
 Automatic-Module-Name: net.solarnetwork.node.dao.jdbc
 Bundle-Description: Provides standardized database storage infrastructure for the SolarNode application.
-Bundle-Version: 1.29.1
+Bundle-Version: 1.30.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: net.solarnetwork.node.dao.jdbc;version="1.19.0"
@@ -18,7 +18,7 @@ Import-Package:
  net.solarnetwork.dao;version="[1.0,2.0)",
  net.solarnetwork.dao.jdbc;version="[1.2,2.0)",
  net.solarnetwork.domain;version="[1.18,2.0)",
- net.solarnetwork.node;version="[1.27,2.0)",
+ net.solarnetwork.node;version="[1.34,2.0)",
  net.solarnetwork.node.backup;version="[1.6,2.0)",
  net.solarnetwork.node.dao;version="[1.10,2.0)",
  net.solarnetwork.node.domain;version="[1.18,2.0)",

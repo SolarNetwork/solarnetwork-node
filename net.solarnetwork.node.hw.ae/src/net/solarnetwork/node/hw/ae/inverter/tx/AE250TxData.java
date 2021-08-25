@@ -22,10 +22,16 @@
 
 package net.solarnetwork.node.hw.ae.inverter.tx;
 
+import static net.solarnetwork.domain.Bitmaskable.setForBitmask;
+import static net.solarnetwork.domain.CodedValue.forCodeValue;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import net.solarnetwork.domain.Bitmaskable;
+import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.ACEnergyDataAccessor;
 import net.solarnetwork.node.domain.ACPhase;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -38,7 +44,7 @@ import net.solarnetwork.util.NumberUtils;
  * Data object for the AE 250TX series inverter.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 
@@ -97,8 +103,16 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 					config.getTapType().getDescription(), config.isMeterInstalled() ? "yes" : "no"));
 		}
 		String s = data.getSerialNumber();
-		if ( s != null ) {
+		if ( s != null && !s.isEmpty() ) {
 			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, s);
+		}
+		s = data.getIdNumber();
+		if ( s != null && !s.isEmpty() ) {
+			result.put("ID Number", s);
+		}
+		Integer rating = data.getInverterRatedPower();
+		if ( rating != null ) {
+			result.put("Rated Power", rating);
 		}
 		return result;
 	}
@@ -118,7 +132,7 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	}
 
 	/**
-	 * Read the inverter registers from the device.
+	 * Read the inverter and status registers from the device.
 	 * 
 	 * @param conn
 	 *        the connection
@@ -127,7 +141,7 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	 */
 	public final void readInverterData(final ModbusConnection conn) throws IOException {
 		refreshData(conn, ModbusReadFunction.ReadHoldingRegister,
-				AE250TxRegister.getInverterRegisterAddressSet(), MAX_RESULTS);
+				AE250TxRegister.getDataRegisterAddressSet(), MAX_RESULTS);
 	}
 
 	/**
@@ -208,6 +222,85 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	@Override
 	public Integer getInverterRatedPower() {
 		return getKiloValueAsInteger(AE250TxRegister.InfoRatedPower);
+	}
+
+	@Override
+	public AE250TxSystemStatus getSystemStatus() {
+		Number n = getNumber(AE250TxRegister.StatusOperatingState);
+		return (n != null
+				? forCodeValue(n.intValue(), AE250TxSystemStatus.class, AE250TxSystemStatus.Sleep)
+				: null);
+	}
+
+	@Override
+	public SortedSet<AE250TxFault> getFaults() {
+		SortedSet<AE250TxFault> result = new TreeSet<>(Bitmaskable.SORT_BY_TYPE);
+		Number n = getNumber(AE250TxRegister.StatusMainFault);
+		if ( n != null ) {
+			result.addAll(setForBitmask(n.intValue(), AE250TxMainFault.class));
+		}
+		n = getNumber(AE250TxRegister.StatusDriveFault);
+		if ( n != null ) {
+			result.addAll(setForBitmask(n.intValue(), AE250TxDriveFault.class));
+		}
+		n = getNumber(AE250TxRegister.StatusVoltageFault);
+		if ( n != null ) {
+			result.addAll(setForBitmask(n.intValue(), AE250TxVoltageFault.class));
+		}
+		n = getNumber(AE250TxRegister.StatusGridFault);
+		if ( n != null ) {
+			result.addAll(setForBitmask(n.intValue(), AE250TxGridFault.class));
+		}
+		n = getNumber(AE250TxRegister.StatusTemperatureFault);
+		if ( n != null ) {
+			result.addAll(setForBitmask(n.intValue(), AE250TxTemperatureFault.class));
+		}
+		n = getNumber(AE250TxRegister.StatusSystemFault);
+		if ( n != null ) {
+			result.addAll(setForBitmask(n.intValue(), AE250TxSystemFault.class));
+		}
+		return result;
+	}
+
+	@Override
+	public SortedSet<AE250TxWarning> getWarnings() {
+		SortedSet<AE250TxWarning> result = new TreeSet<>(Bitmaskable.SORT_BY_TYPE);
+		Number n = getNumber(AE250TxRegister.StatusSystemWarnings);
+		if ( n != null ) {
+			result.addAll(setForBitmask(n.intValue(), AE250TxSystemWarning.class));
+		}
+		return result;
+	}
+
+	@Override
+	public DeviceOperatingState getDeviceOperatingState() {
+		final AE250TxSystemStatus status = getSystemStatus();
+		switch (status) {
+			case Initialization:
+			case StartupDelay:
+			case AcPrecharge:
+			case DcPrecharge:
+				return DeviceOperatingState.Starting;
+
+			case Sleep:
+				return DeviceOperatingState.Standby;
+
+			case Fault:
+			case LatchingFault:
+				return DeviceOperatingState.Fault;
+
+			case Disabled:
+				return DeviceOperatingState.Disabled;
+
+			case Idle:
+				return DeviceOperatingState.Shutdown;
+
+			case CoolDown:
+				return DeviceOperatingState.Recovery;
+
+			default:
+				return DeviceOperatingState.Normal;
+		}
 	}
 
 	@Override

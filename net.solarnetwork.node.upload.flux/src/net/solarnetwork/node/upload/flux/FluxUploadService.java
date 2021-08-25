@@ -44,12 +44,12 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.apache.commons.codec.binary.Hex;
 import org.osgi.service.event.Event;
-import org.osgi.service.event.EventConstants;
 import org.osgi.service.event.EventHandler;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -71,13 +71,13 @@ import net.solarnetwork.dao.BatchableDao;
 import net.solarnetwork.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.Identifiable;
+import net.solarnetwork.domain.datum.GeneralDatumSamplesContainer;
 import net.solarnetwork.io.ObjectEncoder;
-import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.DatumQueue;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.OperationalModesService;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.GeneralDatumSupport;
+import net.solarnetwork.node.domain.GeneralDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
@@ -95,10 +95,11 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 1.11
+ * @version 1.12
  */
-public class FluxUploadService extends BaseMqttConnectionService implements EventHandler,
-		SettingSpecifierProvider, SettingsChangeObserver, MqttConnectionObserver {
+public class FluxUploadService extends BaseMqttConnectionService
+		implements EventHandler, Consumer<GeneralDatum>, SettingSpecifierProvider,
+		SettingsChangeObserver, MqttConnectionObserver {
 
 	/** The MQTT topic template for node data publication. */
 	public static final String NODE_DATUM_TOPIC_TEMPLATE = "node/%d/datum/0/%s";
@@ -146,6 +147,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	private final ObjectMapper objectMapper;
 	private final IdentityService identityService;
+	private final DatumQueue<GeneralDatum> datumQueue;
 	private String requiredOperationalMode;
 	private Pattern excludePropertyNamesPattern = DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN;
 	private OperationalModesService opModesService;
@@ -166,16 +168,45 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	 *        the object mapper to use
 	 * @param identityService
 	 *        the identity service
+	 * @param datumQueue
+	 *        the queue to accept datum from
 	 */
 	public FluxUploadService(MqttConnectionFactory connectionFactory, ObjectMapper objectMapper,
-			IdentityService identityService) {
+			IdentityService identityService, DatumQueue<GeneralDatum> datumQueue) {
 		super(connectionFactory, new MqttStats(100));
 		this.objectMapper = objectMapper;
 		this.identityService = identityService;
+		this.datumQueue = datumQueue;
 		setPublishQos(DEFAULT_MQTT_QOS);
 		getMqttConfig().setUsername(DEFAULT_MQTT_USERNAME);
 		getMqttConfig().setServerUriValue(DEFAULT_MQTT_HOST);
 		getMqttConfig().setVersion(DEFAULT_MQTT_VERSION);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * <p>
+	 * This constructor exists only to work around Gemini Blueprint "reified
+	 * type" bug.
+	 * </p>
+	 * 
+	 * @param connectionFactory
+	 *        the factory to use for {@link MqttConnection} instances
+	 * @param objectMapper
+	 *        the object mapper to use
+	 * @param identityService
+	 *        the identity service
+	 * @param datumQueue
+	 *        the queue to accept datum from
+	 * @param yesReally
+	 *        unused
+	 * @since 1.12
+	 */
+	@SuppressWarnings("unchecked")
+	public FluxUploadService(MqttConnectionFactory connectionFactory, ObjectMapper objectMapper,
+			IdentityService identityService, Object datumQueue, boolean yesReally) {
+		this(connectionFactory, objectMapper, identityService, (DatumQueue<GeneralDatum>) datumQueue);
 	}
 
 	@Override
@@ -199,7 +230,14 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 			getMqttConfig().setUid("SolarFluxUpload-" + getMqttConfig().getServerUriValue());
 			getMqttConfig().setClientId(getMqttClientId());
 		}
+		datumQueue.addConsumer(this);
 		return super.startup();
+	}
+
+	@Override
+	public synchronized void shutdown() {
+		datumQueue.removeConsumer(this);
+		super.shutdown();
 	}
 
 	@Override
@@ -326,61 +364,36 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	@Override
 	public void handleEvent(Event event) {
 		final String topic = event.getTopic();
-		if ( !(OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED.equals(topic)
-				|| DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED.equals(topic)) ) {
+		if ( !OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED.equals(topic) ) {
+			return;
+		}
+		final String requiredMode = this.requiredOperationalMode;
+		if ( requiredMode == null || requiredMode.isEmpty() ) {
 			return;
 		}
 		Runnable task = new Runnable() {
 
 			@Override
 			public void run() {
-				if ( OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED.equals(topic) ) {
-					if ( requiredOperationalMode == null || requiredOperationalMode.isEmpty() ) {
-						return;
-					}
-					log.trace("Operational modes changed; required = [{}]; active = {}",
-							requiredOperationalMode, event.getProperty(
-									OperationalModesService.EVENT_PARAM_ACTIVE_OPERATIONAL_MODES));
-					if ( hasActiveOperationalMode(event, requiredOperationalMode) ) {
-						// operational mode is active, bring up MQTT connection
-						Future<?> f = startup();
-						try {
-							f.get(getMqttConfig().getConnectTimeoutSeconds(), TimeUnit.SECONDS);
-						} catch ( Exception e ) {
-							Throwable root = e;
-							while ( root.getCause() != null ) {
-								root = root.getCause();
-							}
-							String msg = (root instanceof TimeoutException ? "timeout"
-									: root.getMessage());
-							log.error("Error starting up connection to SolarFlux at {}: {}",
-									getMqttConfig().getServerUri(), msg);
+				log.trace("Operational modes changed; required = [{}]; active = {}", requiredMode,
+						event.getProperty(OperationalModesService.EVENT_PARAM_ACTIVE_OPERATIONAL_MODES));
+				if ( hasActiveOperationalMode(event, requiredMode) ) {
+					// operational mode is active, bring up MQTT connection
+					Future<?> f = startup();
+					try {
+						f.get(getMqttConfig().getConnectTimeoutSeconds(), TimeUnit.SECONDS);
+					} catch ( Exception e ) {
+						Throwable root = e;
+						while ( root.getCause() != null ) {
+							root = root.getCause();
 						}
-					} else {
-						// operational mode is no longer active, shut down MQTT connection
-						shutdown();
+						String msg = (root instanceof TimeoutException ? "timeout" : root.getMessage());
+						log.error("Error starting up connection to SolarFlux at {}: {}",
+								getMqttConfig().getServerUri(), msg);
 					}
 				} else {
-					// EVENT_TOPIC_DATUM_CAPTURED
-					if ( requiredOperationalMode != null && !requiredOperationalMode.isEmpty()
-							&& (opModesService == null || !opModesService
-									.isOperationalModeActive(requiredOperationalMode)) ) {
-						log.trace("Not posting to SolarFlux because operational mode [{}] not active",
-								requiredOperationalMode);
-						return;
-					}
-					String sourceId = sourceIdForEvent(event);
-					if ( sourceId == null || sourceId.isEmpty() ) {
-						return;
-					}
-
-					final FluxFilterConfig[] activeFilters = activeFilters(getFilters(), sourceId);
-
-					Map<String, Object> data = mapForEvent(activeFilters, sourceId, event);
-					if ( data == null || data.isEmpty() ) {
-						return;
-					}
-					publishDatum(activeFilters, sourceId, data);
+					// operational mode is no longer active, shut down MQTT connection
+					shutdown();
 				}
 			}
 
@@ -391,6 +404,26 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		} else {
 			task.run();
 		}
+	}
+
+	@Override
+	public void accept(GeneralDatum datum) {
+		if ( datum == null || datum.getSourceId() == null ) {
+			return;
+		}
+		final String requiredMode = this.requiredOperationalMode;
+		final OperationalModesService modeService = this.opModesService;
+		if ( requiredMode != null && !requiredMode.isEmpty()
+				&& (modeService == null || !modeService.isOperationalModeActive(requiredMode)) ) {
+			log.trace("Not posting to SolarFlux because operational mode [{}] not active", requiredMode);
+			return;
+		}
+		final FluxFilterConfig[] activeFilters = activeFilters(getFilters(), datum.getSourceId());
+		Map<String, Object> data = mapForDatum(activeFilters, datum);
+		if ( data == null || data.isEmpty() ) {
+			return;
+		}
+		publishDatum(activeFilters, datum.getSourceId(), data);
 	}
 
 	private FluxFilterConfig[] activeFilters(FluxFilterConfig[] filters, String sourceId) {
@@ -546,73 +579,34 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		return null;
 	}
 
-	private String sourceIdForEvent(Event event) {
-		if ( event == null ) {
-			return null;
-		}
-		Object val = event.getProperty(Datum.SOURCE_ID);
-		if ( val != null ) {
-			return val.toString().trim();
-		}
-		val = event.getProperty(Datum.DATUM_PROPERTY);
-		if ( val instanceof Datum ) {
-			return ((Datum) val).getSourceId();
-		}
-		return null;
-	}
-
-	private Map<String, Object> mapForEvent(FluxFilterConfig[] activeFilters, String sourceId,
-			Event event) {
-		if ( event == null ) {
-			return null;
-		}
-		String[] propNames = event.getPropertyNames();
-		if ( propNames == null || propNames.length < 1 ) {
-			return null;
-		}
-		Map<String, Object> map = new LinkedHashMap<>(propNames.length);
-		Pattern exPattern = this.excludePropertyNamesPattern;
-		for ( String propName : propNames ) {
-			Object propVal = event.getProperty(propName);
-			if ( Datum.DATUM_PROPERTY.equals(propName) && (propVal instanceof Datum) ) {
-				Datum d = (Datum) propVal;
-				if ( d instanceof GeneralDatumSupport ) {
-					GeneralDatumSupport gds = (GeneralDatumSupport) d;
-					GeneralDatumSamplesTransformService xform = transformServiceForSourceId(
-							activeFilters, sourceId);
-					if ( xform != null ) {
-						GeneralDatumSamples samples = xform.transformSamples(d, gds.getSamples(),
-								new HashMap<>(4));
-						if ( samples == null ) {
-							return null;
-						}
-						if ( samples != gds.getSamples() ) {
-							GeneralDatumSupport newGds = gds.clone();
-							newGds.setSamples(samples);
-							d = newGds;
-						}
-					}
+	private Map<String, Object> mapForDatum(FluxFilterConfig[] activeFilters, GeneralDatum datum) {
+		Map<String, Object> map = new LinkedHashMap<>();
+		if ( datum instanceof GeneralDatumSamplesContainer ) {
+			GeneralDatumSamplesContainer gds = (GeneralDatumSamplesContainer) datum;
+			GeneralDatumSamplesTransformService xform = transformServiceForSourceId(activeFilters,
+					datum.getSourceId());
+			if ( xform != null ) {
+				GeneralDatumSamples samples = xform.transformSamples(datum, gds.getSamples(),
+						new HashMap<>(4));
+				if ( samples == null ) {
+					return null;
 				}
-				Map<String, ?> datumProps = d.asSimpleMap();
-				if ( datumProps != null ) {
-					for ( Map.Entry<String, ?> me : datumProps.entrySet() ) {
-						String datumPropName = me.getKey();
-						if ( exPattern != null && exPattern.matcher(datumPropName).matches() ) {
-							// exclude this property
-							continue;
-						}
-						map.put(datumPropName, me.getValue());
-					}
+				if ( samples != gds.getSamples() ) {
+					datum = (GeneralDatum) gds.copyWithSamples(samples);
 				}
-				continue;
-			} else if ( exPattern != null && exPattern.matcher(propName).matches() ) {
-				// exclude this property
-				continue;
-			} else if ( EventConstants.EVENT_TOPIC.equals(propName) ) {
-				// exclude event topic
-				continue;
 			}
-			map.put(propName, propVal);
+		}
+		Map<String, ?> datumProps = datum.asSimpleMap();
+		Pattern exPattern = this.excludePropertyNamesPattern;
+		if ( datumProps != null ) {
+			for ( Map.Entry<String, ?> me : datumProps.entrySet() ) {
+				String datumPropName = me.getKey();
+				if ( exPattern != null && exPattern.matcher(datumPropName).matches() ) {
+					// exclude this property
+					continue;
+				}
+				map.put(datumPropName, me.getValue());
+			}
 		}
 		return map;
 	}

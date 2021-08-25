@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.runtime;
 
-import static net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean.BASE_CRON_EXPRESSION_KEY;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -119,7 +118,7 @@ import net.solarnetwork.node.job.ServiceProvider;
  * </dl>
  * 
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class ManagedJobServiceRegistrationListener implements ConfigurationListener {
 
@@ -201,13 +200,13 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 		}
 
 		Trigger t = instanceTrigger;
-		final String baseSchedule = instanceTrigger.getJobDataMap().getString(BASE_CRON_EXPRESSION_KEY);
+		final String schedule = trigJob.getTriggerScheduleExpression();
 		try {
-			long ms = Long.parseLong(baseSchedule);
+			long ms = Long.parseLong(schedule);
 			t = TriggerBuilder.newTrigger().withIdentity(t.getKey()).forJob(t.getJobKey())
 					.startAt(new Date(System.currentTimeMillis() + ms)).usingJobData(t.getJobDataMap())
 					.withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInMilliseconds(ms)
-							.withMisfireHandlingInstructionNextWithExistingCount())
+							.repeatForever().withMisfireHandlingInstructionNextWithExistingCount())
 					.build();
 		} catch ( NumberFormatException e ) {
 			// ignore and treat as-is

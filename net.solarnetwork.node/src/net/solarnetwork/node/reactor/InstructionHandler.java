@@ -129,6 +129,57 @@ public interface InstructionHandler {
 	String PARAM_SERVICE = "service";
 
 	/**
+	 * An instruction parameter for a service argument.
+	 * 
+	 * <p>
+	 * The nature of this parameter depends on the topic it is associated with.
+	 * Generally it is meant to refer to an argument to pass to a service to be
+	 * operated on.
+	 * </p>
+	 * 
+	 * @since 1.5
+	 */
+	String PARAM_SERVICE_ARGUMENT = "arg";
+
+	/**
+	 * An instruction parameter for a service result.
+	 * 
+	 * <p>
+	 * The nature of this parameter depends on the topic it is associated with.
+	 * Generally it is meant to refer to the result of some service execution.
+	 * </p>
+	 * 
+	 * @since 1.5
+	 */
+	String PARAM_SERVICE_RESULT = "result";
+
+	/**
+	 * An instruction parameter for a status code.
+	 * 
+	 * <p>
+	 * The nature of this parameter depends on the topic it is associated with.
+	 * Generally it is meant to refer to a standardized enumeration such as an
+	 * HTTP status code.
+	 * </p>
+	 * 
+	 * @since 1.5
+	 */
+	String PARAM_STATUS_CODE = "statusCode";
+
+	/**
+	 * An instruction parameter for a message.
+	 * 
+	 * <p>
+	 * The nature of this parameter depends on the topic it is associated with.
+	 * Generally it is meant to refer to a brief message to describe a service
+	 * result, such as a status code description.
+	 * </p>
+	 * 
+	 * @since 1.5
+	 */
+	String PARAM_MESSAGE = "message";
+
+	/**
 	 * Test if a topic is handled by this handler.
 	 * 
 	 * @param topic

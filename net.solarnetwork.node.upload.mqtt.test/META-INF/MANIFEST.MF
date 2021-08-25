@@ -2,9 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: MQTT upload tests
 Bundle-SymbolicName: net.solarnetwork.node.upload.mqtt.test
-Bundle-Version: 1.5.0
+Bundle-Version: 1.7.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.upload.mqtt;bundle-version="[1.8.2,2.0)"
+Fragment-Host: net.solarnetwork.node.upload.mqtt;bundle-version="[1.10,2.0)"
 Automatic-Module-Name: net.solarnetwork.node.upload.mqtt.test
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
@@ -16,10 +16,11 @@ Import-Package:
  io.moquette.interception.messages;version="[0.12,1.0)",
  io.netty.buffer;version="[4.1,5.0)",
  io.netty.handler.codec.mqtt;version="[4.1,5.0)",
- net.solarnetwork.common.mqtt.netty;version="1.0.0",
- net.solarnetwork.node.reactor.io.json;version="1.2.0",
- net.solarnetwork.node.test;version="1.3.0",
- net.solarnetwork.test.mqtt;version="1.0.0",
+ net.solarnetwork.common.mqtt.netty;version="[1.0,2.0)",
+ net.solarnetwork.node.reactor.io.json;version="[1.2,2.0)",
+ net.solarnetwork.node.test;version="[1.3,2.0)",
+ net.solarnetwork.test.mqtt;version="[1.0,2.0)",
+ net.solarnetwork.util;version="[1.51,2.0)",
  org.apache.commons.logging;version="[1.1,2.0)",
  org.easymock;version="[3.0,4.0)",
  org.hamcrest;version="[1.1,2.0)",

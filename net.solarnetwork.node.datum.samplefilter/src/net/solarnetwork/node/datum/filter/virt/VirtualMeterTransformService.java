@@ -60,7 +60,7 @@ import net.solarnetwork.util.OptionalService;
  * derived from another property.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.7
  * @since 1.4
  */
 public class VirtualMeterTransformService extends SamplesTransformerSupport
@@ -121,6 +121,7 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 
 		results.add(0, new BasicTitleSettingSpecifier("status", statusValue()));
 		populateBaseSampleTransformSupportSettings(results);
+		populateStatusSettings(results);
 
 		VirtualMeterConfig[] meterConfs = getVirtualMeterConfigs();
 		List<VirtualMeterConfig> meterConfsList = (meterConfs != null ? asList(meterConfs)
@@ -189,15 +190,19 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 	@Override
 	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
 			Map<String, Object> parameters) {
+		final long start = incrementInputStats();
 		if ( virtualMeterConfigs == null || virtualMeterConfigs.length < 1 || datum == null
 				|| datum.getSourceId() == null || samples == null ) {
+			incrementIgnoredStats(start);
 			return samples;
 		}
 		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
+			incrementIgnoredStats(start);
 			return samples;
 		}
 		GeneralDatumSamples s = new GeneralDatumSamples(samples);
 		populateDatumProperties(datum, s, virtualMeterConfigs, parameters);
+		incrementStats(start, samples, s);
 		return s;
 	}
 
@@ -288,8 +293,9 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 							metadataOut.getPropertyInfo());
 				} else if ( prevDate > date ) {
 					log.warn(
-							"Source [{}] virtual meter [{}] reading date [{}] newer than sample date [{}], will not populate reading",
-							d.getSourceId(), meterPropName, new Date(prevDate), new Date(date));
+							"Source [{}] virtual meter [{}] reading date [{}] newer than sample date [{}] by {}ms, will not populate reading",
+							d.getSourceId(), meterPropName, new Date(prevDate), new Date(date),
+							(prevDate - date));
 					continue;
 				} else if ( config.getMaxAgeSeconds() > 0
 						&& (date - prevDate) > config.getMaxAgeSeconds() * 1000 ) {

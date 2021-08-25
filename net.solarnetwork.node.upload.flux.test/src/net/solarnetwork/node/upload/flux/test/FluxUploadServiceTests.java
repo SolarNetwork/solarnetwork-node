@@ -46,11 +46,13 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
@@ -58,7 +60,6 @@ import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.osgi.service.event.Event;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.common.mqtt.MqttConnection;
@@ -72,16 +73,18 @@ import net.solarnetwork.dao.BasicBatchResult;
 import net.solarnetwork.dao.BatchableDao;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.io.ObjectEncoder;
-import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.DatumQueue;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.GeneralDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.support.BaseIdentifiable;
-import net.solarnetwork.node.support.DatumEvents;
 import net.solarnetwork.node.upload.flux.FluxFilterConfig;
 import net.solarnetwork.node.upload.flux.FluxUploadService;
+import net.solarnetwork.util.Half;
+import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.StaticOptionalService;
 import net.solarnetwork.util.StaticOptionalServiceCollection;
 
@@ -89,7 +92,7 @@ import net.solarnetwork.util.StaticOptionalServiceCollection;
  * Test cases for the {@link FluxUploadService} class.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class FluxUploadServiceTests {
 
@@ -103,9 +106,11 @@ public class FluxUploadServiceTests {
 	private ObjectEncoder encoder;
 	private OperationalModesService operationalModeService;
 	private GeneralDatumSamplesTransformService xformService;
+	private DatumQueue<GeneralDatum> datumQueue;
 	private Long nodeId;
 	private FluxUploadService service;
 
+	@SuppressWarnings("unchecked")
 	@Before
 	public void setup() {
 		connectionFactory = EasyMock.createMock(MqttConnectionFactory.class);
@@ -116,10 +121,12 @@ public class FluxUploadServiceTests {
 		operationalModeService = EasyMock.createMock(OperationalModesService.class);
 		objectMapper = new ObjectMapper();
 		xformService = EasyMock.createMock(GeneralDatumSamplesTransformService.class);
+		datumQueue = EasyMock.createMock(DatumQueue.class);
 
 		nodeId = Math.abs(UUID.randomUUID().getMostSignificantBits());
 
-		this.service = new FluxUploadService(connectionFactory, objectMapper, identityService);
+		this.service = new FluxUploadService(connectionFactory, objectMapper, identityService,
+				datumQueue);
 		this.service.setIncludeVersionTag(false);
 		service.setOpModesService(operationalModeService);
 		service.setTransformServices(new StaticOptionalServiceCollection<>(singleton(xformService)));
@@ -127,44 +134,23 @@ public class FluxUploadServiceTests {
 
 	private void replayAll() {
 		EasyMock.replay(connectionFactory, connection, identityService, encoder, operationalModeService,
-				messageDao, xformService);
+				messageDao, xformService, datumQueue);
 	}
 
 	@After
 	public void teardown() {
 		EasyMock.verify(connectionFactory, connection, identityService, encoder, operationalModeService,
-				messageDao, xformService);
+				messageDao, xformService, datumQueue);
 	}
 
 	private void expectMqttConnectionSetup() throws IOException {
+		datumQueue.addConsumer(service);
 		expect(identityService.getNodeId()).andReturn(nodeId).anyTimes();
 		expect(connectionFactory.createConnection(anyObject())).andReturn(connection);
 		expect(connection.open()).andReturn(completedFuture(Accepted));
 		connection.setConnectionObserver(service);
 		expectLastCall().anyTimes();
 		expect(connection.isEstablished()).andReturn(true).anyTimes();
-	}
-
-	private void postEvent(Map<String, Object> datumProps) {
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setCreated(new Date());
-		for ( Map.Entry<String, ?> me : datumProps.entrySet() ) {
-			String k = me.getKey();
-			Object v = me.getValue();
-			if ( v == null ) {
-				continue;
-			}
-			if ( Datum.SOURCE_ID.equals(k) ) {
-				datum.setSourceId(v.toString());
-			} else if ( v instanceof Number ) {
-				datum.putInstantaneousSampleValue(k, (Number) v);
-			} else {
-				datum.putStatusSampleValue(k, v);
-			}
-
-		}
-		Event event = DatumEvents.datumEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, datum);
-		service.handleEvent(event);
 	}
 
 	private void assertMessageMetadata(MqttMessage publishedMsg, String sourceId) {
@@ -175,7 +161,7 @@ public class FluxUploadServiceTests {
 		assertThat("MQTT message retained", publishedMsg.isRetained(), equalTo(true));
 	}
 
-	private void assertMessagePayloadJson(MqttMessage publishedMsg, Map<String, Object> datum) {
+	private void assertMessagePayloadJson(MqttMessage publishedMsg, Map<String, ?> datum) {
 		Map<String, Object> publishedMsgBody = JsonUtils
 				.getStringMap(new String(publishedMsg.getPayload(), Charset.forName("UTF-8")));
 		assertThat("Published data keys", publishedMsgBody.keySet(), equalTo(datum.keySet()));
@@ -184,24 +170,29 @@ public class FluxUploadServiceTests {
 				// ignore null values
 				continue;
 			}
-			assertThat("Published data prop " + me.getKey(), publishedMsgBody,
-					hasEntry(me.getKey(), me.getValue()));
+			Object v = me.getValue();
+			if ( v.getClass().isArray() ) {
+				// JSON array converted to List in message
+				v = Arrays.asList((Object[]) v);
+			}
+			assertThat("Published data prop " + me.getKey(), publishedMsgBody, hasEntry(me.getKey(), v));
 		}
 	}
 
-	private void assertMessage(MqttMessage publishedMsg, String sourceId, Map<String, Object> datum) {
+	private void assertMessage(MqttMessage publishedMsg, String sourceId, Map<String, ?> datum) {
 		assertMessageMetadata(publishedMsg, sourceId);
 		assertMessagePayloadJson(publishedMsg, datum);
 	}
 
-	private Map<String, Object> publishLoop(long length, Map<String, Object> datum) throws Exception {
+	private GeneralNodeDatum publishLoop(long length, GeneralNodeDatum datum) throws Exception {
 		final long end = System.currentTimeMillis() + length;
-		Map<String, Object> result = null;
+		GeneralNodeDatum result = null;
 		while ( System.currentTimeMillis() < end ) {
-			postEvent(datum);
+			datum = datum.clone();
+			datum.setCreated(new Date());
+			service.accept(datum);
 			if ( result == null ) {
-				result = new LinkedHashMap<>(datum);
-				result.put(Datum.TIMESTAMP, null);
+				result = datum;
 			}
 			Thread.sleep(200);
 		}
@@ -340,6 +331,23 @@ public class FluxUploadServiceTests {
 		}
 	}
 
+	private static Map<String, Object> datumMap(GeneralNodeDatum datum) {
+		return datumMap(datum, "_.*");
+	}
+
+	private static Map<String, Object> datumMap(GeneralNodeDatum datum, String exPattern) {
+		Pattern ex = (exPattern != null ? Pattern.compile(exPattern) : null);
+		@SuppressWarnings({ "rawtypes", "unchecked" })
+		Map<String, Object> m = (Map) datum.asSimpleMap();
+		for ( Iterator<Entry<String, Object>> itr = m.entrySet().iterator(); itr.hasNext(); ) {
+			Entry<String, Object> e = itr.next();
+			if ( ex != null && ex.matcher(e.getKey()).matches() ) {
+				itr.remove();
+			}
+		}
+		return m;
+	}
+
 	@Test
 	public void postDatum() throws Exception {
 		// GIVEN
@@ -352,15 +360,39 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
-		datum.put("watts", 1234);
-		postEvent(datum);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId(TEST_SOURCE_ID);
+		datum.putInstantaneousSampleValue("watts", 1234);
+		service.accept(datum);
 
 		// THEN
 		MqttMessage publishedMsg = msgCaptor.getValue();
-		datum.put(Datum.TIMESTAMP, null);
-		assertMessage(publishedMsg, TEST_SOURCE_ID, datum);
+		assertMessage(publishedMsg, TEST_SOURCE_ID, datumMap(datum));
+	}
+
+	@Test
+	public void postDatum_withHalf() throws Exception {
+		// GIVEN
+		expectMqttConnectionSetup();
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		Half h = new Half(1.23f);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId(TEST_SOURCE_ID);
+		datum.putInstantaneousSampleValue("watts", h);
+		service.accept(datum);
+
+		// THEN
+		MqttMessage publishedMsg = msgCaptor.getValue();
+		Map<String, Object> expectedMap = datumMap(datum);
+		expectedMap.put("watts", NumberUtils.bigDecimalForNumber(h));
+		assertMessage(publishedMsg, TEST_SOURCE_ID, expectedMap);
 	}
 
 	@Test
@@ -376,22 +408,23 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
-		datum.put("watts", 1234);
-		postEvent(datum);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId(TEST_SOURCE_ID);
+		datum.putInstantaneousSampleValue("watts", 1234);
+		service.accept(datum);
 
 		// THEN
 		MqttMessage publishedMsg = msgCaptor.getValue();
-		datum.put(FluxUploadService.TAG_VERSION, 2);
-		datum.put(Datum.TIMESTAMP, null);
-		assertMessage(publishedMsg, TEST_SOURCE_ID, datum);
+		Map<String, Object> expectedMap = datumMap(datum);
+		expectedMap.put(FluxUploadService.TAG_VERSION, 2);
+		assertMessage(publishedMsg, TEST_SOURCE_ID, expectedMap);
 	}
 
 	@Test
 	public void postDatum_globalExcludeProps() throws Exception {
 		// GIVEN
-		service.setExcludePropertyNamesRegex("w.*");
+		final String excludeRegex = "w.*";
+		service.setExcludePropertyNamesRegex(excludeRegex);
 
 		expectMqttConnectionSetup();
 
@@ -402,35 +435,27 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
-		datum.put("watts", 1234);
-		datum.put("wattHours", 2345);
-		datum.put("foo", 3456);
-		postEvent(datum);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId(TEST_SOURCE_ID);
+		datum.putInstantaneousSampleValue("watts", 1234);
+		datum.putAccumulatingSampleValue("wattHours", 2345);
+		datum.putInstantaneousSampleValue("foo", 3456);
+		service.accept(datum);
 
 		// THEN
 		MqttMessage publishedMsg = msgCaptor.getValue();
 
-		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
-		filteredDatum.put("_DatumType", "net.solarnetwork.node.domain.Datum");
-		// @formatter:off
-		filteredDatum.put("_DatumTypes", asList(
-				"net.solarnetwork.node.domain.Datum",
-				"net.solarnetwork.domain.datum.Datum",
-				"net.solarnetwork.node.domain.GeneralDatum",
-				"net.solarnetwork.domain.datum.GeneralDatum"));
-		// @formatter:on
-		filteredDatum.remove("watts");
-		filteredDatum.remove("wattHours");
-		filteredDatum.put(Datum.TIMESTAMP, null);
-		assertMessage(publishedMsg, TEST_SOURCE_ID, filteredDatum);
+		Map<String, Object> expectedMap = datumMap(datum, excludeRegex);
+		expectedMap.remove("watts");
+		expectedMap.remove("wattHours");
+		assertMessage(publishedMsg, TEST_SOURCE_ID, expectedMap);
 	}
 
 	@Test
 	public void postDatum_globalExcludeProps_underscoreOrSourceId() throws Exception {
 		// GIVEN
-		service.setExcludePropertyNamesRegex("(_.*|sourceId)");
+		final String excludeRegex = "(_.*|sourceId)";
+		service.setExcludePropertyNamesRegex(excludeRegex);
 
 		expectMqttConnectionSetup();
 
@@ -441,26 +466,26 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
-		datum.put("watts", 1234);
-		datum.put("wattHours", 2345);
-		postEvent(datum);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId(TEST_SOURCE_ID);
+		datum.putInstantaneousSampleValue("watts", 1234);
+		datum.putAccumulatingSampleValue("wattHours", 2345);
+		service.accept(datum);
 
 		// THEN
 		MqttMessage publishedMsg = msgCaptor.getValue();
 
-		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
-		filteredDatum.put(Datum.TIMESTAMP, null);
-		filteredDatum.remove(Datum.SOURCE_ID);
-		assertMessage(publishedMsg, TEST_SOURCE_ID, filteredDatum);
+		Map<String, Object> expectedMap = datumMap(datum, excludeRegex);
+		expectedMap.remove(Datum.SOURCE_ID);
+		assertMessage(publishedMsg, TEST_SOURCE_ID, expectedMap);
 	}
 
 	@Test
 	public void postDatum_excludeAllProps_anySource() throws Exception {
 		// GIVEN
+		final String excludeRegex = ".*";
 		FluxFilterConfig filter = new FluxFilterConfig();
-		filter.setPropExcludeValues(new String[] { ".*" });
+		filter.setPropExcludeValues(new String[] { excludeRegex });
 		filter.configurationChanged(null);
 		service.setFilters(new FluxFilterConfig[] { filter });
 
@@ -470,10 +495,10 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
-		datum.put("watts", 1234);
-		postEvent(datum);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId(TEST_SOURCE_ID);
+		datum.putInstantaneousSampleValue("watts", 1234);
+		service.accept(datum);
 
 		// THEN
 		// nothing
@@ -482,9 +507,10 @@ public class FluxUploadServiceTests {
 	@Test
 	public void postDatum_excludeAllProps_specificSource() throws Exception {
 		// GIVEN
+		final String excludeRegex = ".*";
 		FluxFilterConfig filter = new FluxFilterConfig();
 		filter.setSourceIdRegexValue("^test");
-		filter.setPropExcludeValues(new String[] { ".*" });
+		filter.setPropExcludeValues(new String[] { excludeRegex });
 		filter.configurationChanged(null);
 		service.setFilters(new FluxFilterConfig[] { filter });
 
@@ -497,18 +523,21 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
-		datum.put("watts", 1234);
-		postEvent(datum);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId(TEST_SOURCE_ID);
+		datum.putInstantaneousSampleValue("watts", 1234);
+		service.accept(datum);
 
-		datum.put(Datum.SOURCE_ID, "not.filtered");
-		postEvent(datum);
+		GeneralNodeDatum datum2 = new GeneralNodeDatum();
+		datum2.setSourceId("not.filtered");
+		datum2.putInstantaneousSampleValue("watts", 1234);
+		service.accept(datum2);
 
 		// THEN
 		MqttMessage publishedMsg = msgCaptor.getValue();
-		datum.put(Datum.TIMESTAMP, null);
-		assertMessage(publishedMsg, "not.filtered", datum);
+
+		Map<String, Object> expectedMap = datumMap(datum2);
+		assertMessage(publishedMsg, datum2.getSourceId(), expectedMap);
 	}
 
 	@Test
@@ -528,21 +557,18 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
-		datum.put("watts", 1234);
-		datum.put("wattHours", 2345);
-		datum.put("foo", 3456);
-		postEvent(datum);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId(TEST_SOURCE_ID);
+		datum.putInstantaneousSampleValue("watts", 1234);
+		datum.putAccumulatingSampleValue("wattHours", 2345);
+		datum.putInstantaneousSampleValue("foo", 3456);
+		service.accept(datum);
 
 		// THEN
 		MqttMessage publishedMsg = msgCaptor.getValue();
 
-		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
-		filteredDatum.remove("created");
-		filteredDatum.remove("foo");
-		filteredDatum.remove("sourceId");
-		assertMessage(publishedMsg, TEST_SOURCE_ID, filteredDatum);
+		Map<String, Object> expectedMap = datumMap(datum, "[^w].*");
+		assertMessage(publishedMsg, TEST_SOURCE_ID, expectedMap);
 	}
 
 	@Test
@@ -573,12 +599,12 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
-		datum.put("watts", 1234);
-		datum.put("wattHours", 2345);
-		datum.put("foo", 3456);
-		postEvent(datum);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId(TEST_SOURCE_ID);
+		datum.putInstantaneousSampleValue("watts", 1234);
+		datum.putAccumulatingSampleValue("wattHours", 2345);
+		datum.putInstantaneousSampleValue("foo", 3456);
+		service.accept(datum);
 
 		// THEN
 		MqttMessage publishedMsg = msgCaptor.getValue();
@@ -589,7 +615,7 @@ public class FluxUploadServiceTests {
 
 		GeneralDatumSamples filterInput = samplesCaptor.getValue();
 		assertThat("Input watts", filterInput.getInstantaneousSampleInteger("watts"), is(equalTo(1234)));
-		assertThat("Input wattHours", filterInput.getInstantaneousSampleInteger("wattHours"),
+		assertThat("Input wattHours", filterInput.getAccumulatingSampleInteger("wattHours"),
 				is(equalTo(2345)));
 		assertThat("Input foo", filterInput.getInstantaneousSampleInteger("foo"), is(equalTo(3456)));
 	}
@@ -611,21 +637,18 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
-		datum.put("watts", 1234);
-		datum.put("wattHours", 2345);
-		datum.put("foo", 3456);
-		postEvent(datum);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId(TEST_SOURCE_ID);
+		datum.putInstantaneousSampleValue("watts", 1234);
+		datum.putAccumulatingSampleValue("wattHours", 2345);
+		datum.putInstantaneousSampleValue("foo", 3456);
+		service.accept(datum);
 
 		// THEN
 		MqttMessage publishedMsg = msgCaptor.getValue();
 
-		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
-		filteredDatum.remove("watts");
-		filteredDatum.remove("wattHours");
-		filteredDatum.put(Datum.TIMESTAMP, null);
-		assertMessage(publishedMsg, TEST_SOURCE_ID, filteredDatum);
+		Map<String, Object> expectedMap = datumMap(datum, "(_.*|^watt.*)");
+		assertMessage(publishedMsg, TEST_SOURCE_ID, expectedMap);
 	}
 
 	@Test
@@ -646,21 +669,18 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
-		datum.put("watts", 1234);
-		datum.put("wattHours", 2345);
-		datum.put("foo", 3456);
-		postEvent(datum);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId(TEST_SOURCE_ID);
+		datum.putInstantaneousSampleValue("watts", 1234);
+		datum.putAccumulatingSampleValue("wattHours", 2345);
+		datum.putInstantaneousSampleValue("foo", 3456);
+		service.accept(datum);
 
 		// THEN
 		MqttMessage publishedMsg = msgCaptor.getValue();
 
-		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
-		filteredDatum.remove("foo");
-		filteredDatum.remove("wattHours");
-		filteredDatum.put(Datum.TIMESTAMP, null);
-		assertMessage(publishedMsg, TEST_SOURCE_ID, filteredDatum);
+		Map<String, Object> expectedMap = datumMap(datum, "(_.*|foo|wattHours)");
+		assertMessage(publishedMsg, TEST_SOURCE_ID, expectedMap);
 	}
 
 	@Test
@@ -680,10 +700,10 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		List<Map<String, Object>> publishedDatum = new ArrayList<Map<String, Object>>(2);
-		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, "s1");
-		datum.put("watts", 1234);
+		List<GeneralNodeDatum> publishedDatum = new ArrayList<GeneralNodeDatum>(2);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId("s1");
+		datum.putInstantaneousSampleValue("watts", 1234);
 
 		// post a bunch of events within the throttle window; only one should be captured
 		publishedDatum.add(publishLoop(1000, datum));
@@ -696,8 +716,8 @@ public class FluxUploadServiceTests {
 		List<MqttMessage> publishedMsgs = msgCaptor.getValues();
 		assertThat("Only 2 MQTT messages published because of throttle filter", publishedMsgs,
 				hasSize(2));
-		assertMessage(publishedMsgs.get(0), "s1", publishedDatum.get(0));
-		assertMessage(publishedMsgs.get(1), "s1", publishedDatum.get(1));
+		assertMessage(publishedMsgs.get(0), "s1", datumMap(publishedDatum.get(0)));
+		assertMessage(publishedMsgs.get(1), "s1", datumMap(publishedDatum.get(1)));
 	}
 
 	@Test
@@ -718,10 +738,10 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		List<Map<String, Object>> publishedDatum = new ArrayList<Map<String, Object>>(2);
-		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
-		datum.put("watts", 1234);
+		List<GeneralNodeDatum> publishedDatum = new ArrayList<GeneralNodeDatum>(2);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId(TEST_SOURCE_ID);
+		datum.putInstantaneousSampleValue("watts", 1234);
 
 		// post a bunch of events within the throttle window; only one should be captured
 		publishedDatum.add(publishLoop(1000, datum));
@@ -731,7 +751,7 @@ public class FluxUploadServiceTests {
 		publishedDatum.add(publishLoop(1000, datum));
 
 		// switch source ID to non-matching
-		datum.put(Datum.SOURCE_ID, "not.throttled.source");
+		datum.setSourceId("not.throttled.source");
 		publishLoop(1000, datum);
 
 		// THEN
@@ -740,10 +760,10 @@ public class FluxUploadServiceTests {
 				publishedMsgs.size(), greaterThan(2));
 
 		MqttMessage publishedMsg = publishedMsgs.get(0);
-		assertMessage(publishedMsg, TEST_SOURCE_ID, publishedDatum.get(0));
+		assertMessage(publishedMsg, TEST_SOURCE_ID, datumMap(publishedDatum.get(0)));
 
 		publishedMsg = publishedMsgs.get(1);
-		assertMessage(publishedMsg, TEST_SOURCE_ID, publishedDatum.get(1));
+		assertMessage(publishedMsg, TEST_SOURCE_ID, datumMap(publishedDatum.get(1)));
 
 		// remaining message should be other source
 		for ( int i = 2; i < publishedMsgs.size(); i++ ) {
@@ -773,10 +793,10 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		List<Map<String, Object>> publishedDatum = new ArrayList<Map<String, Object>>(2);
-		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, "s1");
-		datum.put("watts", 1234);
+		List<GeneralNodeDatum> publishedDatum = new ArrayList<GeneralNodeDatum>(2);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId("s1");
+		datum.putInstantaneousSampleValue("watts", 1234);
 
 		// post a bunch of events within the throttle window; only one should be captured
 		publishedDatum.add(publishLoop(1000, datum));
@@ -807,10 +827,10 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		List<Map<String, Object>> publishedDatum = new ArrayList<Map<String, Object>>(2);
-		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, "s1");
-		datum.put("watts", 1234);
+		List<GeneralNodeDatum> publishedDatum = new ArrayList<GeneralNodeDatum>(2);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId("s1");
+		datum.putInstantaneousSampleValue("watts", 1234);
 
 		// post a bunch of events within the throttle window; only one should be captured
 		publishedDatum.add(publishLoop(1000, datum));
@@ -823,8 +843,8 @@ public class FluxUploadServiceTests {
 		List<MqttMessage> publishedMsgs = msgCaptor.getValues();
 		assertThat("Only 2 MQTT messages published because of throttle filter", publishedMsgs,
 				hasSize(2));
-		assertMessage(publishedMsgs.get(0), "s1", publishedDatum.get(0));
-		assertMessage(publishedMsgs.get(1), "s1", publishedDatum.get(1));
+		assertMessage(publishedMsgs.get(0), "s1", datumMap(publishedDatum.get(0)));
+		assertMessage(publishedMsgs.get(1), "s1", datumMap(publishedDatum.get(1)));
 	}
 
 	private static final class TestInjectorTransformService extends BaseIdentifiable
@@ -899,20 +919,18 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, "s1");
-		datum.put("watts", 1234);
-
-		postEvent(datum);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId("s1");
+		datum.putInstantaneousSampleValue("watts", 1234);
+		service.accept(datum);
 
 		// THEN
 		List<MqttMessage> publishedMsgs = msgCaptor.getValues();
 		assertThat("1 MQTT messages published", publishedMsgs, hasSize(1));
 
-		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
-		filteredDatum.put(Datum.TIMESTAMP, null);
-		filteredDatum.put("foo", 1);
-		assertMessage(publishedMsgs.get(0), "s1", filteredDatum);
+		Map<String, Object> expectedMap = datumMap(datum);
+		expectedMap.put("foo", 1);
+		assertMessage(publishedMsgs.get(0), "s1", expectedMap);
 	}
 
 	@Test
@@ -947,20 +965,18 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, "s1");
-		datum.put("watts", 1234);
-
-		postEvent(datum);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId("s1");
+		datum.putInstantaneousSampleValue("watts", 1234);
+		service.accept(datum);
 
 		// THEN
 		List<MqttMessage> publishedMsgs = msgCaptor.getValues();
 		assertThat("1 MQTT messages published", publishedMsgs, hasSize(1));
 
-		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
-		filteredDatum.put(Datum.TIMESTAMP, null);
-		filteredDatum.put("bar", 1);
-		assertMessage(publishedMsgs.get(0), "s1", filteredDatum);
+		Map<String, Object> expectedMap = datumMap(datum);
+		expectedMap.put("bar", 1);
+		assertMessage(publishedMsgs.get(0), "s1", expectedMap);
 	}
 
 	@Test
@@ -990,10 +1006,10 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
-		datum.put("watts", 1234);
-		postEvent(datum);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId(TEST_SOURCE_ID);
+		datum.putInstantaneousSampleValue("watts", 1234);
+		service.accept(datum);
 
 		// THEN
 		MqttMessage publishedMsg = msgCaptor.getValue();
@@ -1030,10 +1046,10 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
-		datum.put("watts", 1234);
-		postEvent(datum);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId(TEST_SOURCE_ID);
+		datum.putInstantaneousSampleValue("watts", 1234);
+		service.accept(datum);
 
 		// THEN
 		MqttMessage publishedMsg = msgCaptor.getValue();
@@ -1075,10 +1091,10 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
-		datum.put("watts", 1234);
-		postEvent(datum);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId(TEST_SOURCE_ID);
+		datum.putInstantaneousSampleValue("watts", 1234);
+		service.accept(datum);
 
 		// THEN
 		MqttMessage publishedMsg = msgCaptor.getValue();
@@ -1114,20 +1130,20 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		Map<String, Object> datum = new HashMap<>(4);
-		datum.put(Datum.SOURCE_ID, TEST_SOURCE_ID);
-		datum.put("watts", 1234);
-		datum.put("wattHours", 2345);
-		datum.put("foo", 3456);
-		postEvent(datum);
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId(TEST_SOURCE_ID);
+		datum.putInstantaneousSampleValue("watts", 1234);
+		datum.putAccumulatingSampleValue("wattHours", 2345);
+		datum.putInstantaneousSampleValue("foo", 3456);
+		service.accept(datum);
 
 		// THEN
 		MqttMessage publishedMsg = msgCaptor.getValue();
 
-		Map<String, Object> filteredDatum = new LinkedHashMap<>(datum);
-		filteredDatum.remove("watts");
-		filteredDatum.remove("wattHours");
-		assertMessage(publishedMsg, TEST_SOURCE_ID, filteredDatum);
+		Map<String, Object> expectedMap = datumMap(datum);
+		expectedMap.remove("watts");
+		expectedMap.remove("wattHours");
+		assertMessage(publishedMsg, TEST_SOURCE_ID, expectedMap);
 	}
 
 }

@@ -22,16 +22,16 @@
 
 package net.solarnetwork.node.job;
 
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import org.quartz.JobDetail;
 import org.quartz.Trigger;
+import net.solarnetwork.node.settings.SettingSpecifierProvider;
 
 /**
  * A bean that combines a trigger and a job, designed to be managed via
  * settings.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public interface ManagedTriggerAndJobDetail extends SettingSpecifierProvider, ServiceProvider {
 
@@ -48,5 +48,18 @@ public interface ManagedTriggerAndJobDetail extends SettingSpecifierProvider, Se
 	 * @return the jobDetail
 	 */
 	JobDetail getJobDetail();
+
+	/**
+	 * Get the desired trigger schedule expression.
+	 * 
+	 * <p>
+	 * This might be a cron expression or a plain number representing a
+	 * millisecond period.
+	 * </p>
+	 * 
+	 * @return the schedule expression, never {@literal null}
+	 * @since 1.2
+	 */
+	String getTriggerScheduleExpression();
 
 }
