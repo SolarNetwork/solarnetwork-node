@@ -78,6 +78,7 @@ import net.solarnetwork.node.setup.SetupResourceProvider;
 import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.CloseableService;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.UrlUtils;
 
@@ -86,11 +87,11 @@ import net.solarnetwork.util.UrlUtils;
  * image change detection program.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class MotionCameraControl extends BaseIdentifiable
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler,
-		SetupResourceProvider, SettingsChangeObserver, MotionService {
+		SetupResourceProvider, SettingsChangeObserver, CloseableService, MotionService {
 
 	/** The default value of the {@code path} property. */
 	public static final String DEFAULT_PATH = "/var/lib/motion";
@@ -157,6 +158,18 @@ public class MotionCameraControl extends BaseIdentifiable
 	@Override
 	public synchronized void configurationChanged(Map<String, Object> properties) {
 		rescheduleSnapshotJobs();
+	}
+
+	/**
+	 * Call when this service has been configured.
+	 */
+	public synchronized void startup() {
+		rescheduleSnapshotJobs();
+	}
+
+	@Override
+	public void closeService() {
+		shutdown();
 	}
 
 	/**
@@ -585,7 +598,7 @@ public class MotionCameraControl extends BaseIdentifiable
 	 * resource.
 	 * </p>
 	 * 
-	 * @param filterm
+	 * @param filter
 	 *        the file name path filter pattern to use, or {@literal null} for
 	 *        all files
 	 */
@@ -611,7 +624,7 @@ public class MotionCameraControl extends BaseIdentifiable
 	 * resource.
 	 * </p>
 	 * 
-	 * @param filterm
+	 * @param filterValue
 	 *        the file name path filter pattern to use, or {@literal null} for
 	 *        all files
 	 */
@@ -710,7 +723,7 @@ public class MotionCameraControl extends BaseIdentifiable
 	 * media resource.
 	 * </p>
 	 * 
-	 * @param filterm
+	 * @param filter
 	 *        the file name path filter pattern to use, or {@literal null} for
 	 *        all files
 	 */
@@ -736,7 +749,7 @@ public class MotionCameraControl extends BaseIdentifiable
 	 * media resource.
 	 * </p>
 	 * 
-	 * @param filterm
+	 * @param filterValue
 	 *        the file name path filter pattern to use, or {@literal null} for
 	 *        all files
 	 */
@@ -753,6 +766,7 @@ public class MotionCameraControl extends BaseIdentifiable
 	 * 
 	 * @return the base URL; defaults to {@link #DEFAULT_MOTION_BASE_URL}
 	 */
+	@Override
 	public String getMotionBaseUrl() {
 		return motionBaseUrl;
 	}
