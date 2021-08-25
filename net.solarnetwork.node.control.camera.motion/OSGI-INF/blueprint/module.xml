@@ -81,7 +81,8 @@
 				</beans:list>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.control.camera.motion.MotionCameraControl">
+		<bean class="net.solarnetwork.node.control.camera.motion.MotionCameraControl" 
+				init-method="startup" destroy-method="shutdown">
 			<property name="messageSource" ref="messageSource"/>
 			<property name="mediaResourceProvider" ref="mediaResourceProvider"/>
 			<property name="scheduler" ref="scheduler"/>
