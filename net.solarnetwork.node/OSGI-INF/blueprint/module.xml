@@ -563,6 +563,7 @@
 				<argument ref="globalTransformServiceOptional"/>
 			</bean>
 		</argument>
+		<argument ref="eventAdmin"/>
 		<argument value="true"/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
@@ -597,15 +598,8 @@
 		<interfaces>
 			<value>net.solarnetwork.node.DatumQueue</value>
 			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
-			<value>org.osgi.service.event.EventHandler</value>
 		</interfaces>
 		<service-properties>
-			<entry key="datumClassName" value="net.solarnetwork.node.domain.GeneralDatum"/>
-			<entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
-				<array value-type="java.lang.String">
-					<value>#{T(net.solarnetwork.node.DatumDataSource).EVENT_TOPIC_DATUM_CAPTURED}</value>
-				</array>
-			</entry>
 			<entry key="role">
 				<array value-type="java.lang.String">
 					<value>global</value>
@@ -632,7 +626,6 @@
 		</service-properties>
 		<bean class="net.solarnetwork.node.dao.QueueGeneralDatumDao">
 			<argument ref="datumQueue"/>
-			<argument value="true"/>
 		</bean>
 	</service>
 

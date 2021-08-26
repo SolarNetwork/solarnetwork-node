@@ -22,17 +22,21 @@
 
 package net.solarnetwork.node.domain;
 
+import net.solarnetwork.domain.Differentiable;
+import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.GeneralDatumSamplesOperations;
 import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
+import net.solarnetwork.domain.datum.GeneralDatumSamplesContainer;
 
 /**
  * API for a general datum.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.57
  */
-public interface GeneralDatum extends Datum, net.solarnetwork.domain.datum.GeneralDatum {
+public interface GeneralDatum
+		extends Datum, net.solarnetwork.domain.datum.GeneralDatum, Differentiable<GeneralDatum> {
 
 	// for backwards compat
 	@Override
@@ -41,5 +45,23 @@ public interface GeneralDatum extends Datum, net.solarnetwork.domain.datum.Gener
 	// for backwards compat
 	@Override
 	MutableGeneralDatumSamplesOperations asMutableSampleOperations();
+
+	@Override
+	default boolean differsFrom(GeneralDatum other) {
+		if ( other == null ) {
+			return true;
+		} else if ( this == other ) {
+			return false;
+		}
+		if ( (this instanceof GeneralDatumSamplesContainer)
+				&& (other instanceof GeneralDatumSamplesContainer) ) {
+			GeneralDatumSamples me = ((GeneralDatumSamplesContainer) this).getSamples();
+			GeneralDatumSamples o = ((GeneralDatumSamplesContainer) other).getSamples();
+			if ( me != null && o != null ) {
+				return !me.equals(o);
+			}
+		}
+		return true;
+	}
 
 }
