@@ -283,7 +283,7 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 				return DeviceOperatingState.Starting;
 
 			case Sleep:
-				return DeviceOperatingState.Standby;
+				return DeviceOperatingState.Shutdown;
 
 			case Fault:
 			case LatchingFault:
@@ -293,7 +293,7 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 				return DeviceOperatingState.Disabled;
 
 			case Idle:
-				return DeviceOperatingState.Shutdown;
+				return DeviceOperatingState.Standby;
 
 			case CoolDown:
 				return DeviceOperatingState.Recovery;
