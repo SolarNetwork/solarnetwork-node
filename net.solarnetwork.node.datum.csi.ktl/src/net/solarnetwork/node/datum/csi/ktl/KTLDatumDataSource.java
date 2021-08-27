@@ -102,7 +102,6 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 
 	@Override
 	public GeneralNodePVEnergyDatum readCurrentDatum() {
-		final long start = System.currentTimeMillis();
 		try {
 			final KTLCTData currSample = getCurrentSample();
 			if ( currSample == null ) {
@@ -110,10 +109,6 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 			}
 			KTLDatum d = new KTLDatum(currSample);
 			d.setSourceId(resolvePlaceholders(sourceId));
-			if ( currSample.getDataTimestamp() >= start ) {
-				// we read from the device
-				postDatumCapturedEvent(d);
-			}
 			return d;
 		} catch ( IOException e ) {
 			log.error("Communication problem reading source {} from KTL device {}: {}", this.sourceId,

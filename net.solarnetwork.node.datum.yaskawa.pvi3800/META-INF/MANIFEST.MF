@@ -3,13 +3,13 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Solectria PVI-3800 Inverter Data Source
 Bundle-Description: Collect generation data from Solectria PVI-3800 series inverters.
 Bundle-SymbolicName: net.solarnetwork.node.datum.yaskawa.pvi3800
-Bundle-Version: 2.1.0
+Bundle-Version: 2.2.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.yaskawa.pvi3800
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
  net.solarnetwork.domain;version="[1.13,2.0)",
- net.solarnetwork.node;version="[1.23,2.0)",
+ net.solarnetwork.node;version="[1.35,2.0)",
  net.solarnetwork.node.domain;version="[1.12,2.0)",
  net.solarnetwork.node.hw.yaskawa.ecb;version="[1.1,2.0)",
  net.solarnetwork.node.io.serial;version="[2.0,3.0)",
@@ -20,11 +20,9 @@ Import-Package:
  net.solarnetwork.node.support;version="[1.21,2.0)",
  net.solarnetwork.node.util;version="[1.7.2,2.0)",
  net.solarnetwork.util;version="[1.40,2.0)",
- org.eclipse.gemini.blueprint.compendium.cm;version="[2.0,3.0)",
  org.joda.time;version="[2.4,3.0)",
  org.joda.time.base;version="[2.4,3.0)",
  org.joda.time.format;version="[2.4,3.0)",
- org.osgi.service.event;version="[1.2,2.0)",
  org.quartz;version="[2.2,3.0)",
  org.quartz.simpl;version="[2.2,3.0)",
  org.slf4j;version="[1.7,2.0)",

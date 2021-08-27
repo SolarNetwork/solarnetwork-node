@@ -52,7 +52,7 @@ import net.solarnetwork.util.StringUtils;
  * EM5600 series watt meter.
  * 
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM5600Data> implements
 		DatumDataSource<ACEnergyDatum>, MultiDatumDataSource<ACEnergyDatum>, SettingSpecifierProvider {
@@ -134,7 +134,6 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 
 	@Override
 	public GeneralNodeACEnergyDatum readCurrentDatum() {
-		final long start = System.currentTimeMillis();
 		final String sourceId = getSourceMapping().get(ACPhase.Total);
 		try {
 			final EM5600Data currSample = getCurrentSample();
@@ -143,10 +142,6 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 			}
 			EM5600Datum d = new EM5600Datum(currSample, ACPhase.Total, backwards);
 			d.setSourceId(resolvePlaceholders(sourceId));
-			if ( currSample.getDataTimestamp() >= start ) {
-				// we read from the device
-				postDatumCapturedEvent(d);
-			}
 			return d;
 		} catch ( IOException e ) {
 			log.error("Communication problem reading source {} from EM5600 device {}: {}", sourceId,
@@ -162,7 +157,6 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 
 	@Override
 	public Collection<ACEnergyDatum> readMultipleDatum() {
-		final long start = System.currentTimeMillis();
 		final List<ACEnergyDatum> results = new ArrayList<ACEnergyDatum>(4);
 		final EM5600Data currSample;
 		try {
@@ -174,67 +168,37 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 		if ( currSample == null ) {
 			return results;
 		}
-		final List<EM5600Datum> capturedResults = new ArrayList<EM5600Datum>(4);
-		final boolean postCapturedEvent = (currSample.getDataTimestamp() >= start);
-		if ( isCaptureTotal() || postCapturedEvent ) {
+		if ( isCaptureTotal() ) {
 			EM5600Datum d = new EM5600Datum(currSample, ACPhase.Total, backwards);
 			d.setSourceId(getSourceMapping().get(ACPhase.Total));
-			if ( postCapturedEvent ) {
-				// we read from the meter
-				postDatumCapturedEvent(d);
-			}
 			if ( isCaptureTotal() ) {
 				results.add(d);
-				if ( postCapturedEvent ) {
-					capturedResults.add(d);
-				}
 			}
 		}
-		if ( isCapturePhaseA() || postCapturedEvent ) {
+		if ( isCapturePhaseA() ) {
 			EM5600Datum d = new EM5600Datum(currSample, ACPhase.PhaseA, backwards);
 			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseA)));
-			if ( postCapturedEvent ) {
-				// we read from the meter
-				postDatumCapturedEvent(d);
-			}
 			if ( isCapturePhaseA() ) {
 				results.add(d);
-				if ( postCapturedEvent ) {
-					capturedResults.add(d);
-				}
 			}
 		}
-		if ( isCapturePhaseB() || postCapturedEvent ) {
+		if ( isCapturePhaseB() ) {
 			EM5600Datum d = new EM5600Datum(currSample, ACPhase.PhaseB, backwards);
 			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseB)));
-			if ( postCapturedEvent ) {
-				// we read from the meter
-				postDatumCapturedEvent(d);
-			}
 			if ( isCapturePhaseB() ) {
 				results.add(d);
-				if ( postCapturedEvent ) {
-					capturedResults.add(d);
-				}
 			}
 		}
-		if ( isCapturePhaseC() || postCapturedEvent ) {
+		if ( isCapturePhaseC() ) {
 			EM5600Datum d = new EM5600Datum(currSample, ACPhase.PhaseC, backwards);
 			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseC)));
-			if ( postCapturedEvent ) {
-				// we read from the meter
-				postDatumCapturedEvent(d);
-			}
 			if ( isCapturePhaseC() ) {
 				results.add(d);
-				if ( postCapturedEvent ) {
-					capturedResults.add(d);
-				}
 			}
 		}
 
-		for ( EM5600Datum d : capturedResults ) {
-			addEnergyDatumSourceMetadata(d);
+		for ( ACEnergyDatum d : results ) {
+			addEnergyDatumSourceMetadata((EM5600Datum) d);
 		}
 
 		return results;

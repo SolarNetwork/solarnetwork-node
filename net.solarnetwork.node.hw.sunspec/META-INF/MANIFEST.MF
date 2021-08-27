@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SunSpec Support
 Bundle-SymbolicName: net.solarnetwork.node.hw.sunspec
 Bundle-Description: Hardware support for SunSpec devices.
-Bundle-Version: 2.5.0
+Bundle-Version: 2.6.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.hw.sunspec
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -11,10 +11,10 @@ Export-Package:
  net.solarnetwork.node.hw.sunspec;version="2.3.0",
  net.solarnetwork.node.hw.sunspec.inverter;version="2.1.0",
  net.solarnetwork.node.hw.sunspec.meter;version="2.0.0",
- net.solarnetwork.node.hw.sunspec.support;version="2.3.0"
+ net.solarnetwork.node.hw.sunspec.support;version="2.4.0"
 Import-Package: 
  net.solarnetwork.domain;version="[1.29,2.0)",
- net.solarnetwork.node;version="[1.23,2.0)",
+ net.solarnetwork.node;version="[1.35,2.0)",
  net.solarnetwork.node.domain;version="[1.25,2.0)",
  net.solarnetwork.node.io.modbus;version="[3.2,4.0)",
  net.solarnetwork.node.io.modbus.support;version="[3.3,4.0)",

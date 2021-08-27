@@ -58,7 +58,9 @@ public interface DatumQueue {
 	 *        the datum to offer
 	 * @return {@literal true} if the datum was accepted
 	 */
-	boolean offer(GeneralDatum datum);
+	default boolean offer(GeneralDatum datum) {
+		return offer(datum, true);
+	}
 
 	/**
 	 * Offer a new datum to the queue, optionally persisting.

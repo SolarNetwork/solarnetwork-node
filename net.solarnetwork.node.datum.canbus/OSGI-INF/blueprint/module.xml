@@ -76,9 +76,9 @@
 		<property name="delegate" ref="messageSource"/>
 	</bean>
 
-	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
+	<bean id="datumQueue" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.DatumQueue"/>
 		<property name="sticky" value="true"/>
 	</bean>
 
@@ -174,7 +174,7 @@
 								<bean class="net.solarnetwork.node.datum.canbus.CanbusDatumDataSource" init-method="serviceDidStartup">
 									<property name="taskScheduler" ref="taskScheduler"/>
 									<property name="datumMetadataService" ref="datumMetadataService"/>
-									<property name="eventAdmin" ref="eventAdmin"/>
+									<property name="datumQueue" ref="datumQueue"/>
 									<property name="measurementHelper" ref="measurementHelper"/>
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="placeholderService" ref="placeholderService"/>

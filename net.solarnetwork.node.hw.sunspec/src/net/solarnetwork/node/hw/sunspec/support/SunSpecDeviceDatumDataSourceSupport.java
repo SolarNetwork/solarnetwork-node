@@ -50,7 +50,7 @@ import net.solarnetwork.util.StringUtils;
  * implementations for SunSpec devices.
  * 
  * @author matt
- * @version 1.7
+ * @version 1.8
  * @since 1.1
  */
 public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDatumDataSourceSupport {
@@ -219,13 +219,12 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 		return data.getDeviceInfo();
 	}
 
-	@Override
-	protected String deviceInfoSourceId() {
-		return getSourceId();
+	public String deviceInfoSourceId() {
+		return resolvePlaceholders(getSourceId());
 	}
 
 	@Override
-	protected DeviceInfo deviceInfo() {
+	public DeviceInfo deviceInfo() {
 		getDeviceInfo(); // make sure common model populated
 		ModelData s = sample.get();
 		return (s != null ? s.deviceInfo() : null);

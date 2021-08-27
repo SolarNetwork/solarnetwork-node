@@ -56,7 +56,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * </ul>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class DTSConsumptionDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource<ACEnergyDatum>, SettingSpecifierProvider {
@@ -95,7 +95,6 @@ public class DTSConsumptionDatumDataSource extends ModbusDeviceDatumDataSourceSu
 							return (d.getWattHourReading() != null ? d : null);
 						}
 					});
-			postDatumCapturedEvent(datum);
 			return datum;
 		} catch ( IOException e ) {
 			log.error("Error communicating with meter: {}", e.getMessage());

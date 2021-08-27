@@ -229,7 +229,7 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 				return true;
 			}
 		}).copy();
-		postDatumCapturedEvent(createDatum(data));
+		offerDatumCapturedEvent(createDatum(data));
 	}
 
 	private void handleDebug(CanbusFrame frame) {

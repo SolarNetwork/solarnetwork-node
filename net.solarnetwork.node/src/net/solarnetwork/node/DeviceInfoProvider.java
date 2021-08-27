@@ -1,7 +1,7 @@
 /* ==================================================================
- * MultiDatumDataSource.java - Apr 8, 2010 7:32:57 AM
+ * DeviceInfoProvider.java - 27/08/2021 4:56:11 PM
  * 
- * Copyright 2007-2010 SolarNetwork.net Dev Team
+ * Copyright 2021 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -22,30 +22,43 @@
 
 package net.solarnetwork.node;
 
-import java.util.Collection;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.domain.DeviceInfo;
 
 /**
- * API for collecting multiple {@link Datum} objects from some device.
+ * API for something that can provide device info.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
+ * @since 1.90
  */
-public interface MultiDatumDataSource<T extends Datum> extends Identifiable, DeviceInfoProvider {
+public interface DeviceInfoProvider {
 
 	/**
-	 * Get the class supported by this DataSource.
+	 * Get a {@link DeviceInfo} instance.
 	 * 
-	 * @return class
+	 * <p>
+	 * This method returns {@literal null}. Extending classes must override to
+	 * provide device info metadata.
+	 * </p>
+	 * 
+	 * @return the device info, or {@literal null} if none available
 	 */
-	Class<? extends T> getMultiDatumType();
+	default DeviceInfo deviceInfo() {
+		return null;
+	}
 
 	/**
-	 * Read multiple values from the data source, returning as a collection of
-	 * unpersisted {@link Datum} objects.
+	 * Get the source ID to publish device info under.
 	 * 
-	 * @return Datum
+	 * <p>
+	 * This method returns {@literal null}. Extending classes must override to
+	 * provide a source ID value if they wish to publish device info metadata.
+	 * </p>
+	 * 
+	 * @return the source ID to publish device info metadata to
 	 */
-	Collection<T> readMultipleDatum();
+	default String deviceInfoSourceId() {
+		return null;
+	}
 
 }

@@ -30,11 +30,11 @@ import net.solarnetwork.node.domain.Datum;
  * API for collecting {@link Datum} objects from some device.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @param <T>
  *        the Datum type
  */
-public interface DatumDataSource<T extends Datum> extends Identifiable {
+public interface DatumDataSource<T extends Datum> extends Identifiable, DeviceInfoProvider {
 
 	/**
 	 * An {@link org.osgi.service.event.Event} topic for when a {@link Datum}

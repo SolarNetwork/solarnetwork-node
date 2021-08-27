@@ -45,7 +45,7 @@ import net.solarnetwork.util.StringUtils;
  * {@link DatumDataSource} implementations.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSourceSupport {
 
@@ -217,8 +217,17 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 		this.deviceInfo = deviceInfo;
 	}
 
-	@Override
-	protected DeviceInfo deviceInfo() {
+	/**
+	 * Get device info.
+	 * 
+	 * @return the device info based on calling the {@link #getDeviceInfo()}
+	 *         method
+	 * @since 2.2
+	 */
+	public DeviceInfo deviceInfo() {
+		if ( !isPublishDeviceInfoMetadata() ) {
+			return null;
+		}
 		Map<String, ?> info = getDeviceInfo();
 		BasicDeviceInfo.Builder b = DataAccessor.deviceInfoBuilderForInfo(info);
 		return (b.isEmpty() ? null : b.build());

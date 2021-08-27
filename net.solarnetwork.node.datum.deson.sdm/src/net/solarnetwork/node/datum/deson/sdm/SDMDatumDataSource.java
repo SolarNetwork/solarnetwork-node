@@ -59,7 +59,7 @@ import net.solarnetwork.util.StringUtils;
  * with the SDM series watt meter.
  * 
  * @author matt
- * @version 2.4
+ * @version 2.5
  */
 public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData>
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
@@ -120,7 +120,6 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 
 	@Override
 	public GeneralNodeACEnergyDatum readCurrentDatum() {
-		final long start = System.currentTimeMillis();
 		final String sourceId = resolvePlaceholders(getSourceMapping().get(ACPhase.Total));
 		try {
 			final SDMData currSample = getCurrentSample();
@@ -129,10 +128,6 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 			}
 			SDMDatum d = new SDMDatum(currSample, ACPhase.Total, backwards);
 			d.setSourceId(sourceId);
-			if ( currSample.getDataTimestamp() >= start ) {
-				// we read from the device
-				postDatumCapturedEvent(d);
-			}
 			return d;
 		} catch ( IOException e ) {
 			log.error("Communication problem reading source {} from PM3200 device {}: {}", sourceId,
@@ -148,7 +143,6 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 
 	@Override
 	public Collection<GeneralNodeACEnergyDatum> readMultipleDatum() {
-		final long start = System.currentTimeMillis();
 		final List<GeneralNodeACEnergyDatum> results = new ArrayList<GeneralNodeACEnergyDatum>(4);
 		final SDMData currSample;
 		try {
@@ -160,51 +154,34 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 		if ( currSample == null ) {
 			return results;
 		}
-		final boolean postCapturedEvent = (currSample.getDataTimestamp() >= start);
-		if ( isCaptureTotal() || postCapturedEvent ) {
+		if ( isCaptureTotal() ) {
 			SDMDatum d = new SDMDatum(currSample, ACPhase.Total, backwards);
 			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.Total)));
 			populateExpressionDatumProperties(d, getExpressionConfigs());
-			if ( postCapturedEvent ) {
-				// we read from the meter
-				postDatumCapturedEvent(d);
-			}
 			if ( isCaptureTotal() ) {
 				results.add(d);
 			}
 		}
-		if ( currSample.supportsPhase(ACPhase.PhaseA) && (isCapturePhaseA() || postCapturedEvent) ) {
+		if ( currSample.supportsPhase(ACPhase.PhaseA) && (isCapturePhaseA()) ) {
 			SDMDatum d = new SDMDatum(currSample, ACPhase.PhaseA, backwards);
 			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseA)));
 			populateExpressionDatumProperties(d, getExpressionConfigs());
-			if ( postCapturedEvent ) {
-				// we read from the meter
-				postDatumCapturedEvent(d);
-			}
 			if ( isCapturePhaseA() ) {
 				results.add(d);
 			}
 		}
-		if ( currSample.supportsPhase(ACPhase.PhaseB) && (isCapturePhaseB() || postCapturedEvent) ) {
+		if ( currSample.supportsPhase(ACPhase.PhaseB) && (isCapturePhaseB()) ) {
 			SDMDatum d = new SDMDatum(currSample, ACPhase.PhaseB, backwards);
 			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseB)));
 			populateExpressionDatumProperties(d, getExpressionConfigs());
-			if ( postCapturedEvent ) {
-				// we read from the meter
-				postDatumCapturedEvent(d);
-			}
 			if ( isCapturePhaseB() ) {
 				results.add(d);
 			}
 		}
-		if ( currSample.supportsPhase(ACPhase.PhaseC) && (isCapturePhaseC() || postCapturedEvent) ) {
+		if ( currSample.supportsPhase(ACPhase.PhaseC) && (isCapturePhaseC()) ) {
 			SDMDatum d = new SDMDatum(currSample, ACPhase.PhaseC, backwards);
 			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseC)));
 			populateExpressionDatumProperties(d, getExpressionConfigs());
-			if ( postCapturedEvent ) {
-				// we read from the meter
-				postDatumCapturedEvent(d);
-			}
 			if ( isCapturePhaseC() ) {
 				results.add(d);
 			}

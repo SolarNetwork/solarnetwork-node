@@ -53,7 +53,7 @@ import net.solarnetwork.util.OptionalService;
  * Datum data source for GPS data collected from a {@link GpsdClientConnection}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class GpsDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeDatum>, MultiDatumDataSource<GeneralNodeDatum>,
@@ -137,7 +137,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 
 		GeneralNodeDatum d = createDatum(message);
 		if ( d != null ) {
-			postDatumCapturedEvent(d);
+			offerDatumCapturedEvent(d);
 		}
 	}
 

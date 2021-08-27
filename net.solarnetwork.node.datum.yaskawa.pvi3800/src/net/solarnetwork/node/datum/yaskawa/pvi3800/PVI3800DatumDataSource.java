@@ -54,7 +54,7 @@ import net.solarnetwork.util.CachedResult;
  * {@link DatumDataSource} for the Solectria PVI-3800 series inverter.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport
 		implements DatumDataSource<GeneralNodePVEnergyDatum>,
@@ -116,14 +116,9 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport
 
 	@Override
 	public GeneralNodePVEnergyDatum readCurrentDatum() {
-		final long start = System.currentTimeMillis();
 		final GeneralNodePVEnergyDatum currSample = getCurrentSample();
 		if ( currSample == null ) {
 			return null;
-		}
-		if ( currSample.getCreated().getTime() >= start ) {
-			// we read from the device
-			postDatumCapturedEvent(currSample);
 		}
 		return currSample;
 	}

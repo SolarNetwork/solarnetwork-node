@@ -50,12 +50,6 @@
 	</bean>	
 
 
-	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
-		<property name="sticky" value="true"/>
-	</bean>
-	
 	<!-- Published Services -->
 	
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
@@ -109,10 +103,10 @@
 					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
 					<property name="jobDataAsMap">
 						<map>
+							<entry key="datumMetadataService" value-ref="datumMetadataService"/>
 							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
 							<entry key="multiDatumDataSource">
 								<bean class="net.solarnetwork.node.datum.ae.ae250tx.AE250TxDatumDataSource">
-									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="placeholderService" ref="placeholderService"/>
 									<property name="datumMetadataService" ref="datumMetadataService"/>

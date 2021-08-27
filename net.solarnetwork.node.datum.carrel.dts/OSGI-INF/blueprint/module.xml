@@ -17,6 +17,7 @@
 	<bean id="placeholderService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
+		<property name="sticky" value="true"/>
 	</bean>
 	
 	<reference id="locationServiceRef" availability="optional" interface="net.solarnetwork.node.LocationService">

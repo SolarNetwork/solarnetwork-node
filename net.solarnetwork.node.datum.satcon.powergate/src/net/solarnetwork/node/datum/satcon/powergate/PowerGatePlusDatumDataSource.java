@@ -46,7 +46,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * with the PowerGate Plus series inverter.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class PowerGatePlusDatumDataSource extends ModbusDataDatumDataSourceSupport<PowerGatePlusData>
 		implements DatumDataSource<GeneralNodePVEnergyDatum>,
@@ -91,7 +91,6 @@ public class PowerGatePlusDatumDataSource extends ModbusDataDatumDataSourceSuppo
 
 	@Override
 	public GeneralNodePVEnergyDatum readCurrentDatum() {
-		final long start = System.currentTimeMillis();
 		try {
 			final PowerGatePlusData currSample = getCurrentSample();
 			if ( currSample == null ) {
@@ -99,10 +98,6 @@ public class PowerGatePlusDatumDataSource extends ModbusDataDatumDataSourceSuppo
 			}
 			PowerGateDatum d = new PowerGateDatum(currSample);
 			d.setSourceId(resolvePlaceholders(sourceId));
-			if ( currSample.getDataTimestamp() >= start ) {
-				// we read from the device
-				postDatumCapturedEvent(d);
-			}
 			return d;
 		} catch ( IOException e ) {
 			log.error("Communication problem reading source {} from PowerGate Plus device {}: {}",
