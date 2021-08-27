@@ -22,10 +22,10 @@
 
 package net.solarnetwork.node.weather.nz.metservice;
 
-import static net.solarnetwork.util.JsonUtils.parseBigDecimalAttribute;
-import static net.solarnetwork.util.JsonUtils.parseDateAttribute;
-import static net.solarnetwork.util.JsonUtils.parseIntegerAttribute;
-import static net.solarnetwork.util.JsonUtils.parseStringAttribute;
+import static net.solarnetwork.codec.JsonUtils.parseBigDecimalAttribute;
+import static net.solarnetwork.codec.JsonUtils.parseDateAttribute;
+import static net.solarnetwork.codec.JsonUtils.parseIntegerAttribute;
+import static net.solarnetwork.codec.JsonUtils.parseStringAttribute;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -52,7 +52,7 @@ import net.solarnetwork.node.support.UnicodeReader;
  * Basic implementation of {@link MetserviceClient}.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class BasicMetserviceClient extends HttpClientSupport implements MetserviceClient {
 
