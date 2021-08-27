@@ -33,7 +33,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
-import net.solarnetwork.domain.DeviceInfo;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.DatumDataSource;
@@ -580,14 +579,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 
 	/**
 	 * Get the desired device info metadata publish mode.
-	 * 
-	 * <p>
-	 * This feature requires the
-	 * {@link #setDatumMetadataService(OptionalService)} to be configured. It
-	 * will cause a {@link DeviceInfo} object to be published as source metadata
-	 * under a {@literal deviceInfo} property key, the first time
-	 * {@link #postDatumCapturedEvent(Datum)} is invoked.
-	 * </p>
 	 * 
 	 * @param publishDeviceInfoMetadata
 	 *        {@literal true} to publish device metadata once, after the first
