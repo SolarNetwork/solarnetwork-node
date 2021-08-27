@@ -17,7 +17,7 @@ Import-Package:
  net.solarnetwork.node;version="[1.35,2.0)",
  net.solarnetwork.node.domain;version="[1.25,2.0)",
  net.solarnetwork.node.io.modbus;version="[3.2,4.0)",
- net.solarnetwork.node.io.modbus.support;version="[3.3,4.0)",
+ net.solarnetwork.node.io.modbus.support;version="[3.4,4.0)",
  net.solarnetwork.node.settings;version="[1.10,2.0)",
  net.solarnetwork.node.settings.support;version="[1.8.1,2.0)",
  net.solarnetwork.node.support;version="[1.21,2.0)",

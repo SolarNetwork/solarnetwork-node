@@ -11,7 +11,7 @@ Import-Package:
  net.solarnetwork.node.domain;version="[1.16,2.0)",
  net.solarnetwork.node.hw.schneider.meter;version="[3.1,4.0)",
  net.solarnetwork.node.io.modbus;version="[3.2,4.0)",
- net.solarnetwork.node.io.modbus.support;version="[3.1,4.0)",
+ net.solarnetwork.node.io.modbus.support;version="[3.4,4.0)",
  net.solarnetwork.node.job;version="[1.10,2.0)",
  net.solarnetwork.node.settings;version="[1.8,2.0)",
  net.solarnetwork.node.settings.support;version="[1.6,2.0)",
