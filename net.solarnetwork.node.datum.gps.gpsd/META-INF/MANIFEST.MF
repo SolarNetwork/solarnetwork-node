@@ -20,7 +20,7 @@ Import-Package:
  net.solarnetwork.node.reactor.support;version="[1.4.1,2.0)",
  net.solarnetwork.node.settings;version="[1.10,2.0)",
  net.solarnetwork.node.settings.support;version="[1.8.1,2.0)",
- net.solarnetwork.node.support;version="[1.21,2.0)",
+ net.solarnetwork.node.support;version="[1.29,2.0)",
  net.solarnetwork.node.util;version="[1.7.2,2.0)",
  net.solarnetwork.util;version="[1.32,2.0)",
  org.joda.time;version="[2.4,3.0)",

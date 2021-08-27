@@ -126,6 +126,9 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	 */
 	protected boolean addSourceMetadata(final String sourceId, final GeneralDatumMetadata meta) {
 		final String resolvedSourceId = resolvePlaceholders(sourceId);
+		if ( resolvedSourceId == null ) {
+			return false;
+		}
 		GeneralDatumMetadata cached = SOURCE_METADATA_CACHE.get(resolvedSourceId);
 		if ( cached != null && meta.equals(cached) ) {
 			// we've already posted this metadata... don't bother doing it again
@@ -368,7 +371,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	 */
 	@Deprecated
 	public void setEventAdmin(OptionalService<?> eventAdmin) {
-		// for source compatibility only
+		throw new UnsupportedOperationException();
 	}
 
 	@Override

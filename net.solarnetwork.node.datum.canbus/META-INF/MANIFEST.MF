@@ -23,7 +23,7 @@ Import-Package:
  net.solarnetwork.node.job;version="[1.16,2.0)",
  net.solarnetwork.node.settings;version="[1.12,2.0)",
  net.solarnetwork.node.settings.support;version="[1.10,2.0)",
- net.solarnetwork.node.support;version="[1.21,2.0)",
+ net.solarnetwork.node.support;version="[1.29,2.0)",
  net.solarnetwork.node.util;version="[1.7.2,2.0)",
  net.solarnetwork.support;version="[1.11,2.0)",
  net.solarnetwork.util;version="[1.37,2.0)",
