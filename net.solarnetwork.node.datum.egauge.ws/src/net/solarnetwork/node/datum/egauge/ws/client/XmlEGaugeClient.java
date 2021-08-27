@@ -69,7 +69,7 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * to be returned by the {@code url}.
  * 
  * @author maxieduncan
- * @version 1.2
+ * @version 1.3
  */
 public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
@@ -167,9 +167,6 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 			return null;
 		}
 
-		if ( datum != null ) {
-			postDatumCapturedEvent(datum);
-		}
 		return datum;
 	}
 
@@ -528,6 +525,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	 *        the optional {@link ExpressionService} collection to use
 	 * @since 1.1
 	 */
+	@Override
 	public void setExpressionServices(OptionalServiceCollection<ExpressionService> expressionServices) {
 		this.expressionServices = expressionServices;
 	}

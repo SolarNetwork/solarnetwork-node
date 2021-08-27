@@ -27,11 +27,11 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.xpath.XPathExpression;
+import org.joda.time.LocalTime;
+import org.springframework.beans.BeanWrapper;
 import net.solarnetwork.node.support.XmlServiceSupport;
 import net.solarnetwork.util.JodaDateFormatEditor;
 import net.solarnetwork.util.JodaDateFormatEditor.ParseMode;
-import org.joda.time.LocalTime;
-import org.springframework.beans.BeanWrapper;
 
 /**
  * Helper class that can parse Current Cost XML messages into {@link CCDatum}
@@ -42,7 +42,7 @@ import org.springframework.beans.BeanWrapper;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class CCMessageParser extends XmlServiceSupport {
 
@@ -87,14 +87,12 @@ public class CCMessageParser extends XmlServiceSupport {
 			}
 		}
 		try {
-			extractBeanDataFromXml(
-					d,
-					getDocBuilderFactory().newDocumentBuilder().parse(
-							new ByteArrayInputStream(messageXML)), xpathMapping);
+			extractBeanDataFromXml(d, getDocBuilderFactory().newDocumentBuilder()
+					.parse(new ByteArrayInputStream(messageXML)), xpathMapping);
 		} catch ( Exception e ) {
 			try {
-				log.debug("XML parsing exception: {}; message: {}", e.getMessage(), new String(
-						messageXML, "US-ASCII"));
+				log.debug("XML parsing exception: {}; message: {}", e.getMessage(),
+						new String(messageXML, "US-ASCII"));
 			} catch ( UnsupportedEncodingException e1 ) {
 				log.debug("XML parsing exception: {}", e.getMessage());
 			}
@@ -104,7 +102,7 @@ public class CCMessageParser extends XmlServiceSupport {
 	}
 
 	@Override
-	protected void registerCustomEditors(BeanWrapper bean) {
+	public void registerCustomEditors(BeanWrapper bean) {
 		bean.registerCustomEditor(LocalTime.class, LOCAL_TIME_EDITOR);
 	}
 

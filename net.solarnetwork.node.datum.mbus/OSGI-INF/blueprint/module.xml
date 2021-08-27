@@ -57,11 +57,6 @@
 		<property name="delegate" ref="messageSourceWireless"/>
 	</bean>	
 
-	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
-	</bean>
-	
 	<bean id="expressionServices" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.support.ExpressionService"/>
@@ -121,7 +116,6 @@
 							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
 							<entry key="datumDataSource">
 								<bean class="net.solarnetwork.node.datum.mbus.MBusDatumDataSource">
-									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="datumMetadataService" ref="datumMetadataService"/>
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="mBusNetwork">
@@ -199,7 +193,6 @@
 							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
 							<entry key="datumDataSource">
 								<bean class="net.solarnetwork.node.datum.mbus.WMBusDatumDataSource">
-									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="datumMetadataService" ref="datumMetadataService"/>
 									<property name="messageSource" ref="jobMessageSourceWireless"/>
 									<property name="wMBusNetwork">
