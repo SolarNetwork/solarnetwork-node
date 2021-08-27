@@ -26,17 +26,18 @@ import java.io.IOException;
 import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.util.Arrays;
-import net.solarnetwork.node.hw.panasonic.battery.BatteryAPIException;
-import net.solarnetwork.node.hw.panasonic.battery.BatteryData;
-import net.solarnetwork.node.hw.panasonic.battery.BatteryDataDeserializer;
-import net.solarnetwork.node.hw.panasonic.battery.SimpleBatteryAPIClient;
-import net.solarnetwork.util.ObjectMapperFactoryBean;
+import java.util.function.Consumer;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.Assert;
 import org.junit.Test;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.node.hw.panasonic.battery.BatteryAPIException;
+import net.solarnetwork.node.hw.panasonic.battery.BatteryData;
+import net.solarnetwork.node.hw.panasonic.battery.BatteryDataDeserializer;
+import net.solarnetwork.node.hw.panasonic.battery.SimpleBatteryAPIClient;
+import net.solarnetwork.util.ObjectMapperFactoryBean;
 
 /**
  * Test cases for the {@link SimpleBatteryAPIClient} class.
@@ -50,8 +51,8 @@ public class SimpleBatteryAPIClientTests {
 
 	private ObjectMapper getObjectMapper() {
 		ObjectMapperFactoryBean factory = new ObjectMapperFactoryBean();
-		factory.setDeserializers(Arrays
-				.asList(new JsonDeserializer<?>[] { new BatteryDataDeserializer() }));
+		factory.setDeserializers(
+				Arrays.asList(new JsonDeserializer<?>[] { new BatteryDataDeserializer() }));
 		try {
 			return factory.getObject();
 		} catch ( Exception e ) {
@@ -66,12 +67,12 @@ public class SimpleBatteryAPIClientTests {
 		SimpleBatteryAPIClient client = new SimpleBatteryAPIClient() {
 
 			@Override
-			protected URLConnection getURLConnection(String url, String httpMethod, String accept)
-					throws IOException {
+			protected URLConnection getURLConnection(String url, String httpMethod, String accept,
+					Consumer<URLConnection> connectionCustomizer) throws IOException {
 				final String expectedURL = TEST_BASE_URL + "/BatteryByEmail?EmailID="
 						+ URLEncoder.encode(email, "UTF-8");
 				Assert.assertEquals(expectedURL, url);
-				return super.getURLConnection(fileURL, httpMethod, accept);
+				return super.getURLConnection(fileURL, httpMethod, accept, connectionCustomizer);
 			}
 
 		};
@@ -94,12 +95,12 @@ public class SimpleBatteryAPIClientTests {
 		SimpleBatteryAPIClient client = new SimpleBatteryAPIClient() {
 
 			@Override
-			protected URLConnection getURLConnection(String url, String httpMethod, String accept)
-					throws IOException {
+			protected URLConnection getURLConnection(String url, String httpMethod, String accept,
+					Consumer<URLConnection> connectionCustomizer) throws IOException {
 				final String expectedURL = TEST_BASE_URL + "/BatteryByEmail?EmailID="
 						+ URLEncoder.encode(email, "UTF-8");
 				Assert.assertEquals(expectedURL, url);
-				return super.getURLConnection(fileURL, httpMethod, accept);
+				return super.getURLConnection(fileURL, httpMethod, accept, connectionCustomizer);
 			}
 
 		};
@@ -121,11 +122,11 @@ public class SimpleBatteryAPIClientTests {
 		SimpleBatteryAPIClient client = new SimpleBatteryAPIClient() {
 
 			@Override
-			protected URLConnection getURLConnection(String url, String httpMethod, String accept)
-					throws IOException {
+			protected URLConnection getURLConnection(String url, String httpMethod, String accept,
+					Consumer<URLConnection> connectionCustomizer) throws IOException {
 				final String expectedURL = TEST_BASE_URL + "/BatteryByID?BatteryID=" + deviceID;
 				Assert.assertEquals(expectedURL, url);
-				return super.getURLConnection(fileURL, httpMethod, accept);
+				return super.getURLConnection(fileURL, httpMethod, accept, connectionCustomizer);
 			}
 
 		};
