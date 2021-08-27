@@ -343,4 +343,13 @@ public class ControlGroup extends BaseIdentifiable implements SettingSpecifierPr
 		return controls;
 	}
 
+	/**
+	 * Get the instruction execution service.
+	 * 
+	 * @return the service
+	 */
+	public OptionalService<InstructionExecutionService> getInstructionService() {
+		return instructionService;
+	}
+
 }
