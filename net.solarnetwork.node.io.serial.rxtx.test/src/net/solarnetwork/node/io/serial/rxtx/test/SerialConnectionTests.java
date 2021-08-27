@@ -49,7 +49,7 @@ import net.solarnetwork.util.ByteUtils;
  * Test cases for the {@link SerialPortConnection} class.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class SerialConnectionTests {
 
@@ -76,11 +76,12 @@ public class SerialConnectionTests {
 				return new TestSerialPortInputStream(new ByteArrayInputStream(xml), 0, 4, 0);
 			}
 		};
-		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
-				new SerialPortBeanParameters(), executor);
-		byte[] result = conn.readMarkedMessage("<msg>".getBytes(ByteUtils.ASCII),
-				"</msg>".getBytes(ByteUtils.ASCII));
-		Assert.assertArrayEquals(xml, result);
+		try (TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
+				new SerialPortBeanParameters(), executor)) {
+			byte[] result = conn.readMarkedMessage("<msg>".getBytes(ByteUtils.ASCII),
+					"</msg>".getBytes(ByteUtils.ASCII));
+			Assert.assertArrayEquals(xml, result);
+		}
 	}
 
 	@Test
@@ -96,10 +97,12 @@ public class SerialConnectionTests {
 		};
 		SerialPortBeanParameters serialParams = new SerialPortBeanParameters();
 		serialParams.setReceiveThreshold(64);
-		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort, serialParams, executor);
-		byte[] result = conn.readMarkedMessage("<msg>".getBytes(ByteUtils.ASCII),
-				"</msg>".getBytes(ByteUtils.ASCII));
-		Assert.assertArrayEquals(xml, result);
+		try (TestSerialPortConnection conn = new TestSerialPortConnection(serialPort, serialParams,
+				executor)) {
+			byte[] result = conn.readMarkedMessage("<msg>".getBytes(ByteUtils.ASCII),
+					"</msg>".getBytes(ByteUtils.ASCII));
+			Assert.assertArrayEquals(xml, result);
+		}
 	}
 
 	@Test
@@ -115,11 +118,12 @@ public class SerialConnectionTests {
 				return new TestSerialPortInputStream(new ByteArrayInputStream(msg), 0, 4, 0);
 			}
 		};
-		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
-				new SerialPortBeanParameters(), executor);
-		byte[] result = conn.readMarkedMessage("<msg>".getBytes(ByteUtils.ASCII),
-				"</msg>".getBytes(ByteUtils.ASCII));
-		Assert.assertArrayEquals(xml, result);
+		try (TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
+				new SerialPortBeanParameters(), executor)) {
+			byte[] result = conn.readMarkedMessage("<msg>".getBytes(ByteUtils.ASCII),
+					"</msg>".getBytes(ByteUtils.ASCII));
+			Assert.assertArrayEquals(xml, result);
+		}
 	}
 
 	@Test
@@ -132,10 +136,11 @@ public class SerialConnectionTests {
 				return new TestSerialPortInputStream(new ByteArrayInputStream(msg), 0, 4, 0);
 			}
 		};
-		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
-				new SerialPortBeanParameters(), executor);
-		byte[] result = conn.readMarkedMessage(new byte[] { msg[0] }, 10);
-		Assert.assertArrayEquals(msg, result);
+		try (TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
+				new SerialPortBeanParameters(), executor)) {
+			byte[] result = conn.readMarkedMessage(new byte[] { msg[0] }, 10);
+			Assert.assertArrayEquals(msg, result);
+		}
 	}
 
 	@Test(expected = LockTimeoutException.class)
@@ -149,8 +154,10 @@ public class SerialConnectionTests {
 				return new TestSerialPortInputStream(new ByteArrayInputStream(msg), 1000, 4, 0);
 			}
 		};
-		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort, serialParams, executor);
-		conn.readMarkedMessage(new byte[] { msg[0] }, 10);
+		try (TestSerialPortConnection conn = new TestSerialPortConnection(serialPort, serialParams,
+				executor)) {
+			conn.readMarkedMessage(new byte[] { msg[0] }, 10);
+		}
 	}
 
 	@Test
@@ -163,10 +170,11 @@ public class SerialConnectionTests {
 				return new TestSerialPortInputStream(new ByteArrayInputStream(msg), 0, 4, 0);
 			}
 		};
-		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
-				new SerialPortBeanParameters(), executor);
-		byte[] result = conn.drainInputBuffer();
-		Assert.assertArrayEquals(msg, result);
+		try (TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
+				new SerialPortBeanParameters(), executor)) {
+			byte[] result = conn.drainInputBuffer();
+			Assert.assertArrayEquals(msg, result);
+		}
 	}
 
 	@Test
@@ -180,10 +188,11 @@ public class SerialConnectionTests {
 				return byos;
 			}
 		};
-		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
-				new SerialPortBeanParameters(), executor);
-		conn.writeMessage(msg);
-		Assert.assertArrayEquals(msg, byos.toByteArray());
+		try (TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
+				new SerialPortBeanParameters(), executor)) {
+			conn.writeMessage(msg);
+			Assert.assertArrayEquals(msg, byos.toByteArray());
+		}
 	}
 
 	private SerialPortBeanParameters serialParamsWithTimeout() {
@@ -204,9 +213,11 @@ public class SerialConnectionTests {
 				return new TestSerialPortOutputStream(new BufferedOutputStream(byos), 0);
 			}
 		};
-		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort, serialParams, executor);
-		conn.writeMessage(msg);
-		Assert.assertArrayEquals(msg, byos.toByteArray());
+		try (TestSerialPortConnection conn = new TestSerialPortConnection(serialPort, serialParams,
+				executor)) {
+			conn.writeMessage(msg);
+			Assert.assertArrayEquals(msg, byos.toByteArray());
+		}
 	}
 
 	@Test(expected = LockTimeoutException.class)
@@ -221,9 +232,11 @@ public class SerialConnectionTests {
 				return new TestSerialPortOutputStream(new BufferedOutputStream(byos), 1000);
 			}
 		};
-		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort, serialParams, executor);
-		conn.writeMessage(msg);
-		Assert.assertArrayEquals(msg, byos.toByteArray());
+		try (TestSerialPortConnection conn = new TestSerialPortConnection(serialPort, serialParams,
+				executor)) {
+			conn.writeMessage(msg);
+			Assert.assertArrayEquals(msg, byos.toByteArray());
+		}
 	}
 
 }
