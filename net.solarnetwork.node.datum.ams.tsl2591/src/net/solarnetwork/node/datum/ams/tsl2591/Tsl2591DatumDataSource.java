@@ -56,7 +56,7 @@ import net.solarnetwork.util.CachedResult;
  * Datum data source for the TSL2591 light sensor.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class Tsl2591DatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, SettingsChangeObserver,
@@ -163,16 +163,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport
 
 	@Override
 	public GeneralNodeDatum readCurrentDatum() {
-		final long start = System.currentTimeMillis();
-		final GeneralNodeDatum currSample = getCurrentSample();
-		if ( currSample == null ) {
-			return null;
-		}
-		if ( currSample.getCreated().getTime() >= start ) {
-			// we read from the device
-			postDatumCapturedEvent(currSample);
-		}
-		return currSample;
+		return getCurrentSample();
 	}
 
 	private GeneralNodeDatum getCurrentSample() {

@@ -38,10 +38,9 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.osgi.service.event.Event;
-import org.osgi.service.event.EventAdmin;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import net.solarnetwork.codec.JsonUtils;
@@ -50,8 +49,10 @@ import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.domain.datum.ObjectDatumStreamMetadata;
 import net.solarnetwork.external.indriya.IndriyaMeasurementServiceProvider;
 import net.solarnetwork.node.DatumMetadataService;
+import net.solarnetwork.node.DatumQueue;
 import net.solarnetwork.node.datum.canbus.CanbusDatumDataSource;
 import net.solarnetwork.node.datum.canbus.KcdConfigurer;
+import net.solarnetwork.node.domain.GeneralDatum;
 import net.solarnetwork.node.io.canbus.CanbusFrame;
 import net.solarnetwork.node.io.canbus.CanbusFrameFlag;
 import net.solarnetwork.node.io.canbus.KcdParser;
@@ -316,36 +317,34 @@ public class CanbusDatumDataSourceSimulator {
 
 	}
 
-	private static final class InternalEventAdmin implements EventAdmin {
+	private static final class InternalDatumQueue implements DatumQueue {
 
 		private final PrintStream out;
 		private int count = 0;
 
-		private InternalEventAdmin(PrintStream out) {
+		private InternalDatumQueue(PrintStream out) {
 			super();
 			this.out = out;
 		}
 
 		@Override
-		public void postEvent(Event event) {
-			sendEvent(event);
+		public boolean offer(GeneralDatum datum, boolean persist) {
+			Map<String, ?> data = datum.asSimpleMap();
+			if ( data.size() > 1 ) {
+				String json = JsonUtils.getJSONString(data, "{}");
+				out.println(String.format("%05d %s", ++count, json));
+			}
+			return true;
 		}
 
 		@Override
-		public void sendEvent(Event event) {
-			Map<String, Object> data = new LinkedHashMap<>(event.getPropertyNames().length);
-			for ( String p : event.getPropertyNames() ) {
-				if ( p.startsWith("_") || "event.topics".equals(p) || "created".equals(p) ) {
-					continue;
-				}
-				data.put(p, event.getProperty(p));
-			}
-			if ( data.size() < 2 ) {
-				// only contains sourceId; skip
-				return;
-			}
-			String json = JsonUtils.getJSONString(data, "{}");
-			out.println(String.format("%05d %s", ++count, json));
+		public void addConsumer(Consumer<GeneralDatum> consumer) {
+			// nothing
+		}
+
+		@Override
+		public void removeConsumer(Consumer<GeneralDatum> consumer) {
+			// nothing
 		}
 
 	}
@@ -364,7 +363,7 @@ public class CanbusDatumDataSourceSimulator {
 	public void parseCandumpMessages(BufferedReader in, PrintStream out) throws IOException {
 		String l;
 		for ( CanbusDatumDataSource ds : dataSources.values() ) {
-			ds.setEventAdmin(new StaticOptionalService<>(new InternalEventAdmin(out)));
+			ds.setDatumQueue(new StaticOptionalService<>(new InternalDatumQueue(out)));
 		}
 		while ( (l = in.readLine()) != null ) {
 			Matcher m = CANDUMP_LOG_PATTERN.matcher(l);

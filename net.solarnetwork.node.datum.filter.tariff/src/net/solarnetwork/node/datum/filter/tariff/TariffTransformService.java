@@ -177,7 +177,8 @@ public class TariffTransformService extends BaseSamplesTransformSupport implemen
 		return result;
 	}
 
-	private String getStatusMessage() {
+	@Override
+	protected String getStatusMessage() {
 		StringBuilder buf = new StringBuilder();
 		TariffSchedule schedule = schedule();
 		CachedResult<TariffSchedule> cached = this.schedule.get();

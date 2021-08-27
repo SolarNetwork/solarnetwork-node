@@ -40,14 +40,13 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.osgi.service.event.Event;
-import org.osgi.service.event.EventHandler;
+import org.osgi.service.event.EventAdmin;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.datum.GeneralDatumSamplesContainer;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.DatumQueue;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralDatum;
 import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
@@ -56,19 +55,20 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.node.support.DatumEvents;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.OptionalService.OptionalFilterableService;
 import net.solarnetwork.util.StatCounter;
 
 /**
- * Default implementation of {@link DatumQueue} for {@link GeneralDatum}.
+ * Default implementation of {@link DatumQueue}.
  * 
  * <p>
  * Datum passed to {@link #offer(GeneralDatum)} will be persisted via one of the
  * configured {@link DatumDao} services, while Datum received via
- * {@link #handleEvent(Event)} with the
- * {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} topic will not be
- * persisted.
+ * {@link #offer(GeneralDatum, boolean)} with {@code persist} set to
+ * {@literal false} will not be persisted. All datum will then be passed to all
+ * registered consumers.
  * </p>
  * 
  * <p>
@@ -77,11 +77,11 @@ import net.solarnetwork.util.StatCounter;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.89
  */
-public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<GeneralDatum>,
-		EventHandler, SettingSpecifierProvider, UncaughtExceptionHandler {
+public class DefaultDatumQueue extends BaseIdentifiable
+		implements DatumQueue, SettingSpecifierProvider, UncaughtExceptionHandler {
 
 	/** The default value for the {@code queueDelayMs} property. */
 	public static final long DEFAULT_QUEUE_DELAY_MS = 200;
@@ -101,6 +101,7 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 
 	private final DatumDao<GeneralNodeDatum> nodeDatumDao;
 	private final DatumDao<GeneralLocationDatum> locationDatumDao;
+	private final OptionalService<EventAdmin> eventAdmin;
 	private long startupDelayMs = DEFAULT_STARTUP_DELAY_MS;
 	private long queueDelayMs = DEFAULT_QUEUE_DELAY_MS;
 	private OptionalFilterableService<GeneralDatumSamplesTransformService> transformService;
@@ -116,12 +117,26 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 	 *        the node datum DAO to use
 	 * @param locationDatumDao
 	 *        the location datum DAO to use
+	 * @param eventAdmin
+	 *        the event admin
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
 	 */
 	public DefaultDatumQueue(DatumDao<GeneralNodeDatum> nodeDatumDao,
-			DatumDao<GeneralLocationDatum> locationDatumDao) {
+			DatumDao<GeneralLocationDatum> locationDatumDao, OptionalService<EventAdmin> eventAdmin) {
 		super();
+		if ( nodeDatumDao == null ) {
+			throw new IllegalArgumentException("The nodeDatumDao argument must not be null.");
+		}
 		this.nodeDatumDao = nodeDatumDao;
+		if ( locationDatumDao == null ) {
+			throw new IllegalArgumentException("The locationDatumDao argument must not be null.");
+		}
 		this.locationDatumDao = locationDatumDao;
+		if ( eventAdmin == null ) {
+			throw new IllegalArgumentException("The eventAdmin argument must not be null.");
+		}
+		this.eventAdmin = eventAdmin;
 		this.processorStartupDelayMs = -1;
 	}
 
@@ -136,13 +151,16 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 	 *        the node datum DAO to use
 	 * @param locationDatumDao
 	 *        the location datum DAO to use
+	 * @param eventAdmin
+	 *        the event admin
 	 * @param yesReally
 	 *        unused
 	 */
 	@SuppressWarnings("unchecked")
-	public DefaultDatumQueue(Object nodeDatumDao, Object locationDatumDao, boolean yesReally) {
+	public DefaultDatumQueue(Object nodeDatumDao, Object locationDatumDao,
+			OptionalService<EventAdmin> eventAdmin, boolean yesReally) {
 		this((DatumDao<GeneralNodeDatum>) nodeDatumDao,
-				(DatumDao<GeneralLocationDatum>) locationDatumDao);
+				(DatumDao<GeneralLocationDatum>) locationDatumDao, eventAdmin);
 	}
 
 	/**
@@ -414,6 +432,7 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 							}
 						}
 						stats.incrementAndGet(QueueStats.Processed);
+						postEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, event.datum);
 						GeneralDatum result;
 						try {
 							result = applyTransform(event);
@@ -423,6 +442,7 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 							throw t;
 						}
 						if ( result != null ) {
+							postEvent(DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED, result);
 							if ( event.persist ) {
 								try {
 									persistDatum(result);
@@ -446,6 +466,16 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 			}
 		}
 
+	}
+
+	private void postEvent(String topic, GeneralDatum datum) {
+		final EventAdmin service = OptionalService.service(eventAdmin);
+		if ( service != null ) {
+			Event event = DatumEvents.datumEvent(topic, datum);
+			if ( event != null ) {
+				service.postEvent(event);
+			}
+		}
 	}
 
 	private GeneralDatum applyTransform(DelayedDatum event) {
@@ -486,11 +516,20 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 
 	@Override
 	public boolean offer(GeneralDatum datum) {
+		return offer(datum, true);
+	}
+
+	@Override
+	public boolean offer(GeneralDatum datum, boolean persist) {
 		if ( datum == null || datum.getSourceId() == null ) {
 			return false;
 		}
-		stats.incrementAndGet(QueueStats.Added);
-		return datumQueue.offer(new DelayedDatum(datum, queueDelayMs, true));
+		if ( persist ) {
+			stats.incrementAndGet(QueueStats.Added);
+		} else {
+			stats.incrementAndGet(QueueStats.Captured);
+		}
+		return datumQueue.offer(new DelayedDatum(datum, queueDelayMs, persist));
 	}
 
 	@Override
@@ -520,19 +559,6 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 	}
 
 	@Override
-	public void handleEvent(Event event) {
-		final String topic = event.getTopic();
-		if ( DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED.equals(topic) ) {
-			GeneralDatum datum = datumForEvent(event);
-			if ( datum == null || datum.getSourceId() == null ) {
-				return;
-			}
-			stats.incrementAndGet(QueueStats.Captured);
-			datumQueue.offer(new DelayedDatum(datum, queueDelayMs, false));
-		}
-	}
-
-	@Override
 	public void uncaughtException(Thread t, Throwable e) {
 		synchronized ( this ) {
 			datumProcessor = null;
@@ -541,14 +567,6 @@ public class DefaultDatumQueue extends BaseIdentifiable implements DatumQueue<Ge
 		if ( datumProcessorExceptionHandler != null ) {
 			datumProcessorExceptionHandler.uncaughtException(t, e);
 		}
-	}
-
-	private static GeneralDatum datumForEvent(Event event) {
-		if ( event == null ) {
-			return null;
-		}
-		Object o = event.getProperty(Datum.DATUM_PROPERTY);
-		return (o instanceof GeneralDatum ? (GeneralDatum) o : null);
 	}
 
 	@Override

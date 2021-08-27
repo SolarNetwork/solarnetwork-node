@@ -22,17 +22,26 @@
 
 package net.solarnetwork.node.job;
 
+import static net.solarnetwork.util.OptionalService.service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentSkipListSet;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.PersistJobDataAfterExecution;
 import org.springframework.context.MessageSource;
 import org.springframework.dao.DuplicateKeyException;
+import net.solarnetwork.codec.JsonUtils;
+import net.solarnetwork.domain.DeviceInfo;
+import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.DatumMetadataService;
+import net.solarnetwork.node.DeviceInfoProvider;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.domain.Datum;
@@ -51,16 +60,20 @@ import net.solarnetwork.util.OptionalService;
  * </p>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
 public class DatumDataSourceManagedLoggerJob<T extends Datum> extends AbstractJob
 		implements SettingSpecifierProvider {
 
+	// a static concurrent set to tack the publication of device infos
+	private static final Set<String> PUBLISHED_DEVICE_INFO_SOURCE_IDS = new ConcurrentSkipListSet<>();
+
 	private DatumDataSource<T> datumDataSource = null;
 	private MultiDatumDataSource<T> multiDatumDataSource = null;
 	private OptionalService<DatumDao<T>> datumDao = null;
+	private OptionalService<DatumMetadataService> datumMetadataService = null;
 
 	@Override
 	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
@@ -82,7 +95,7 @@ public class DatumDataSourceManagedLoggerJob<T extends Datum> extends AbstractJo
 		}
 		T datum = datumDataSource.readCurrentDatum();
 		if ( datum != null ) {
-			persistDatum(Collections.singleton(datum));
+			persistDatum(datumDataSource, Collections.singleton(datum));
 		} else {
 			log.debug("No data returned from [{}]", datumDataSource);
 		}
@@ -95,7 +108,7 @@ public class DatumDataSourceManagedLoggerJob<T extends Datum> extends AbstractJo
 		}
 		Collection<T> datum = multiDatumDataSource.readMultipleDatum();
 		if ( datum != null && datum.size() > 0 ) {
-			persistDatum(datum);
+			persistDatum(multiDatumDataSource, datum);
 		} else {
 			log.debug("No data returned from [{}]", multiDatumDataSource);
 		}
@@ -123,7 +136,7 @@ public class DatumDataSourceManagedLoggerJob<T extends Datum> extends AbstractJo
 		}
 	}
 
-	private void persistDatum(Collection<T> datumList) {
+	private void persistDatum(DeviceInfoProvider infoProvider, Collection<T> datumList) {
 		if ( datumList == null || datumList.size() < 1 ) {
 			return;
 		}
@@ -147,6 +160,29 @@ public class DatumDataSourceManagedLoggerJob<T extends Datum> extends AbstractJo
 				log.info("Duplicate datum {}; not persisting", datum);
 			}
 		}
+		publishDeviceInfoMetadata(infoProvider);
+	}
+
+	private void publishDeviceInfoMetadata(DeviceInfoProvider infoProvider) {
+		final String metaSourceId = infoProvider.deviceInfoSourceId();
+		if ( metaSourceId == null ) {
+			return;
+		}
+		final DatumMetadataService metadataService = service(datumMetadataService);
+		if ( metadataService == null ) {
+			return;
+		}
+		if ( PUBLISHED_DEVICE_INFO_SOURCE_IDS.contains(metaSourceId) ) {
+			return;
+		}
+		DeviceInfo info = infoProvider.deviceInfo();
+		Map<String, Object> m = JsonUtils.getStringMapFromObject(info);
+		if ( m != null && !m.isEmpty() ) {
+			GeneralDatumMetadata meta = new GeneralDatumMetadata(null,
+					Collections.singletonMap(DeviceInfo.DEVICE_INFO_METADATA_KEY, m));
+			metadataService.addSourceMetadata(metaSourceId, meta);
+		}
+		PUBLISHED_DEVICE_INFO_SOURCE_IDS.add(metaSourceId);
 	}
 
 	private SettingSpecifierProvider getSettingSpecifierProvider() {
@@ -228,6 +264,27 @@ public class DatumDataSourceManagedLoggerJob<T extends Datum> extends AbstractJo
 
 	public void setDatumDao(OptionalService<DatumDao<T>> datumDao) {
 		this.datumDao = datumDao;
+	}
+
+	/**
+	 * Get the configured {@link DatumMetadataService}.
+	 * 
+	 * @return the service to use
+	 * @since 2.2
+	 */
+	public OptionalService<DatumMetadataService> getDatumMetadataService() {
+		return datumMetadataService;
+	}
+
+	/**
+	 * Set a {@link DatumMetadataService} to use for managing datum metadata.
+	 * 
+	 * @param datumMetadataService
+	 *        the service to use
+	 * @since 2.2
+	 */
+	public void setDatumMetadataService(OptionalService<DatumMetadataService> datumMetadataService) {
+		this.datumMetadataService = datumMetadataService;
 	}
 
 }

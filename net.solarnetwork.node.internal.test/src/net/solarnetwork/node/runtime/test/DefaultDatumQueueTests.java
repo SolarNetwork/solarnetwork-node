@@ -22,10 +22,11 @@
 
 package net.solarnetwork.node.runtime.test;
 
+import static java.lang.String.format;
 import static java.lang.Thread.sleep;
-import static net.solarnetwork.node.support.DatumEvents.datumEvent;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expectLastCall;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -51,8 +52,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
+import org.osgi.service.event.EventAdmin;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.DatumQueue;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.domain.Datum;
@@ -67,7 +70,7 @@ import net.solarnetwork.util.StaticOptionalService;
  * Test cases for the {@link DefaultDatumQueue}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 
@@ -75,6 +78,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 
 	private DatumDao<GeneralNodeDatum> datumDao;
 	private DatumDao<GeneralLocationDatum> locationDatumDao;
+	private EventAdmin eventAdmin;
 	private Consumer<GeneralDatum> consumer;
 	private DefaultDatumQueue queue;
 	private Throwable datumProcessortException;
@@ -84,8 +88,10 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 	public void setup() {
 		datumDao = EasyMock.createMock(DatumDao.class);
 		locationDatumDao = EasyMock.createMock(DatumDao.class);
+		eventAdmin = EasyMock.createMock(EventAdmin.class);
 		consumer = EasyMock.createMock(Consumer.class);
-		queue = new DefaultDatumQueue(datumDao, locationDatumDao);
+		queue = new DefaultDatumQueue(datumDao, locationDatumDao,
+				new StaticOptionalService<>(eventAdmin));
 		queue.setStartupDelayMs(0);
 		queue.setDatumProcessorExceptionHandler(this);
 		queue.addConsumer(consumer);
@@ -99,16 +105,33 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 			datumProcessortException.printStackTrace();
 			fail("Datum processor threw exception: " + datumProcessortException);
 		}
-		EasyMock.verify(datumDao, locationDatumDao, consumer);
+		EasyMock.verify(datumDao, locationDatumDao, consumer, eventAdmin);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(datumDao, locationDatumDao, consumer);
+		EasyMock.replay(datumDao, locationDatumDao, consumer, eventAdmin);
 	}
 
 	@Override
 	public void uncaughtException(Thread t, Throwable e) {
 		datumProcessortException = e;
+	}
+
+	private void assertCapturedAcquiredEvents(List<Event> events, int index, GeneralDatum expected) {
+		assertCapturedAcquiredEvents(events, index, expected, expected);
+	}
+
+	private void assertCapturedAcquiredEvents(List<Event> events, int index,
+			GeneralDatum expectedCaptured, GeneralDatum expectedAcquired) {
+		assertThat("Two events posted for datum", events.size(), greaterThanOrEqualTo(index + 2));
+		assertThat(format("Event %d is DATUM_CAPTURED", index), events.get(index).getTopic(),
+				is(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
+		assertThat(format("Event %d datum", index), events.get(index).getProperty(Datum.DATUM_PROPERTY),
+				sameInstance(expectedCaptured));
+		assertThat(format("Event %d is DATUM_ACQUIRED", index + 1), events.get(index + 1).getTopic(),
+				is(DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED));
+		assertThat(format("Event %d datum", index + 1),
+				events.get(index + 1).getProperty(Datum.DATUM_PROPERTY), sameInstance(expectedAcquired));
 	}
 
 	@Test
@@ -122,6 +145,10 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		datumDao.storeDatum(datum);
 		consumer.accept(datum);
 
+		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall().times(2);
+
 		// WHEN
 		replayAll();
 		queue.offer(datum);
@@ -133,6 +160,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Processed), is(1L));
 		assertThat("One datum recorded as persisted",
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Persisted), is(1L));
+
+		assertCapturedAcquiredEvents(eventCaptor.getValues(), 0, datum);
 	}
 
 	@Test
@@ -147,6 +176,10 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		locationDatumDao.storeDatum(datum);
 		consumer.accept(datum);
 
+		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall().times(2);
+
 		// WHEN
 		replayAll();
 		queue.offer(datum);
@@ -158,6 +191,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Processed), is(1L));
 		assertThat("One datum recorded as persisted",
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Persisted), is(1L));
+
+		assertCapturedAcquiredEvents(eventCaptor.getValues(), 0, datum);
 	}
 
 	@Test
@@ -170,10 +205,13 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 
 		consumer.accept(datum);
 
+		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall().times(2);
+
 		// WHEN
 		replayAll();
-		Event event = datumEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, datum);
-		queue.handleEvent(event);
+		queue.offer(datum, false);
 
 		sleep(queue.getQueueDelayMs() + 300L);
 
@@ -182,6 +220,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Processed), is(1L));
 		assertThat("No datum recorded as persisted",
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Persisted), is(0L));
+
+		assertCapturedAcquiredEvents(eventCaptor.getValues(), 0, datum);
 	}
 
 	@Test
@@ -195,10 +235,13 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 
 		consumer.accept(datum);
 
+		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall().times(2);
+
 		// WHEN
 		replayAll();
-		Event event = datumEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, datum);
-		queue.handleEvent(event);
+		queue.offer(datum, false);
 
 		sleep(queue.getQueueDelayMs() + 300L);
 
@@ -207,6 +250,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Processed), is(1L));
 		assertThat("No datum recorded as persisted",
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Persisted), is(0L));
+
+		assertCapturedAcquiredEvents(eventCaptor.getValues(), 0, datum);
 	}
 
 	@Test
@@ -220,6 +265,10 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		datumDao.storeDatum(datum);
 		consumer.accept(datum);
 
+		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall().times(2);
+
 		// WHEN
 		replayAll();
 
@@ -229,8 +278,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 
 			@Override
 			public void run() {
-				Event event = datumEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, datum);
-				queue.handleEvent(event);
+				queue.offer(datum, false);
 			}
 
 		}).start();
@@ -241,6 +289,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		// THEN
 		assertThat("One datum recorded as duplicate",
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Duplicates), is(1L));
+
+		assertCapturedAcquiredEvents(eventCaptor.getValues(), 0, datum);
 	}
 
 	@Test
@@ -257,6 +307,10 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		Capture<GeneralDatum> generalDatumCaptor = new Capture<>(CaptureType.ALL);
 		consumer.accept(capture(generalDatumCaptor));
 		expectLastCall().anyTimes();//.times(count);
+
+		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall().times(count * 2);
 
 		// WHEN
 		replayAll();
@@ -279,8 +333,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 
 				@Override
 				public void run() {
-					Event event = datumEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, datum);
-					queue.handleEvent(event);
+					queue.offer(datum, false);
 				}
 
 			});
@@ -324,6 +377,10 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		datum.setSourceId(TEST_SOURCE_ID);
 		datum.putInstantaneousSampleValue("watts", 1234);
 
+		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall();
+
 		// WHEN
 		replayAll();
 		queue.offer(datum);
@@ -337,6 +394,12 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Filtered), is(1L));
 		assertThat("No datum recorded as persisted",
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Persisted), is(0L));
+
+		assertThat("Event 1 is DATUM_CAPTURED", eventCaptor.getValue().getTopic(),
+				is(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
+		assertThat("Event 1 datum", eventCaptor.getValue().getProperty(Datum.DATUM_PROPERTY),
+				sameInstance(datum));
+		// No ACQUIRED event because datum filtered
 	}
 
 	@Test
@@ -365,6 +428,10 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		Capture<GeneralDatum> generalDatumCaptor = new Capture<>();
 		consumer.accept(capture(generalDatumCaptor));
 
+		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall().times(2);
+
 		// WHEN
 		replayAll();
 		queue.offer(datum);
@@ -385,6 +452,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		assertThat("Consumed datum samples has been transformed",
 				((GeneralNodeDatum) generalDatumCaptor.getValue()).getSamples(),
 				is(sameInstance(transformed)));
+
+		assertCapturedAcquiredEvents(eventCaptor.getValues(), 0, datum, datumCaptor.getValue());
 	}
 
 	@Test
@@ -407,13 +476,17 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		GeneralNodeDatum datum2 = new GeneralNodeDatum();
 		datum2.setCreated(new Date());
 		datum2.setSourceId(TEST_SOURCE_ID);
-		datum2.putInstantaneousSampleValue("watts", 1234);
+		datum2.putInstantaneousSampleValue("watts", 2345);
 
 		datumDao.storeDatum(datum);
 		expectLastCall().andThrow(new RuntimeException("test"));
 
 		datumDao.storeDatum(datum2);
 		consumer.accept(datum2);
+
+		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall().times(4);
 
 		// WHEN
 		replayAll();
@@ -430,6 +503,9 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		assertThat("One datum recorded as error",
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Errors), is(1L));
 		assertThat("Exception passed to handler", exceptionRef.get(), is(notNullValue()));
+
+		assertCapturedAcquiredEvents(eventCaptor.getValues(), 0, datum);
+		assertCapturedAcquiredEvents(eventCaptor.getValues(), 2, datum2);
 	}
 
 	@Test
@@ -471,6 +547,10 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		datumDao.storeDatum(datum2);
 		consumer.accept(datum2);
 
+		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall().times(3);
+
 		// WHEN
 		replayAll();
 		queue.offer(datum);
@@ -486,6 +566,13 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		assertThat("One datum recorded as error",
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Errors), is(1L));
 		assertThat("Exception passed to handler", exceptionRef.get(), is(notNullValue()));
+
+		assertThat("Event 1 is DATUM_CAPTURED", eventCaptor.getValues().get(0).getTopic(),
+				is(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
+		assertThat("Event 1 datum", eventCaptor.getValues().get(0).getProperty(Datum.DATUM_PROPERTY),
+				sameInstance(datum));
+		// No ACQUIRED event because datum filter threw exception
+		assertCapturedAcquiredEvents(eventCaptor.getValues(), 1, datum2);
 	}
 
 	@Test
@@ -517,6 +604,10 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		datumDao.storeDatum(datum2);
 		consumer.accept(datum2);
 
+		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall().times(4);
+
 		// WHEN
 		replayAll();
 		queue.offer(datum);
@@ -532,6 +623,9 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		assertThat("One datum recorded as error",
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Errors), is(1L));
 		assertThat("Exception NOT passed to handler", exceptionRef.get(), is(nullValue()));
+
+		assertCapturedAcquiredEvents(eventCaptor.getValues(), 0, datum);
+		assertCapturedAcquiredEvents(eventCaptor.getValues(), 2, datum2);
 	}
 
 }

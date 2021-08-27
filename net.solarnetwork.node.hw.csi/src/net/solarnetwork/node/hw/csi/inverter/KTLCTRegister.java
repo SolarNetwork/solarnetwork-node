@@ -39,7 +39,7 @@ import net.solarnetwork.util.IntRangeSet;
  * Enumeration of Modbus register mappings for the CSI 50KTL-CT series inverter.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public enum KTLCTRegister implements ModbusReference {
 
@@ -53,7 +53,7 @@ public enum KTLCTRegister implements ModbusReference {
 	InfoSerialNumber(0x6, UInt64),
 
 	/** Inverter model name. */
-	InfoInverterModelName(0xA, 20, StringAscii),
+	InfoInverterModelName(0xA, 10, StringAscii),
 
 	/** Total active energy delivered, in kWh. */
 	InverterActiveEnergyDelivered(0x16, UInt32),

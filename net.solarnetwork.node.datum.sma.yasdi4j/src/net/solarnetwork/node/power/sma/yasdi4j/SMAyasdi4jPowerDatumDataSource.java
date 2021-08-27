@@ -57,7 +57,7 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		implements DatumDataSource<ACEnergyDatum>, SettingSpecifierProvider {
@@ -197,7 +197,6 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 			return null;
 		}
 
-		postDatumCapturedEvent(datum);
 		addEnergyDatumSourceMetadata(datum);
 
 		return datum;

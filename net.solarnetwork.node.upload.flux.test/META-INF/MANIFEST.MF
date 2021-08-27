@@ -2,8 +2,8 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SolarFlux Upload Test
 Bundle-SymbolicName: net.solarnetwork.node.upload.flux.test
-Bundle-Version: 1.5.0
-Fragment-Host: net.solarnetwork.node.upload.flux;bundle-version="[1.13,2.0)"
+Bundle-Version: 1.6.0
+Fragment-Host: net.solarnetwork.node.upload.flux;bundle-version="[1.14,2.0)"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Automatic-Module-Name: net.solarnetwork.node.upload.flux.test
 Import-Package: 

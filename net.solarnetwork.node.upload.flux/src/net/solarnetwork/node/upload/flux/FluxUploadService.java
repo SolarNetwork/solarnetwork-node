@@ -95,7 +95,7 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 1.12
+ * @version 1.13
  */
 public class FluxUploadService extends BaseMqttConnectionService
 		implements EventHandler, Consumer<GeneralDatum>, SettingSpecifierProvider,
@@ -147,7 +147,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 
 	private final ObjectMapper objectMapper;
 	private final IdentityService identityService;
-	private final DatumQueue<GeneralDatum> datumQueue;
+	private final DatumQueue datumQueue;
 	private String requiredOperationalMode;
 	private Pattern excludePropertyNamesPattern = DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN;
 	private OperationalModesService opModesService;
@@ -172,7 +172,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 	 *        the queue to accept datum from
 	 */
 	public FluxUploadService(MqttConnectionFactory connectionFactory, ObjectMapper objectMapper,
-			IdentityService identityService, DatumQueue<GeneralDatum> datumQueue) {
+			IdentityService identityService, DatumQueue datumQueue) {
 		super(connectionFactory, new MqttStats(100));
 		this.objectMapper = objectMapper;
 		this.identityService = identityService;
@@ -181,32 +181,6 @@ public class FluxUploadService extends BaseMqttConnectionService
 		getMqttConfig().setUsername(DEFAULT_MQTT_USERNAME);
 		getMqttConfig().setServerUriValue(DEFAULT_MQTT_HOST);
 		getMqttConfig().setVersion(DEFAULT_MQTT_VERSION);
-	}
-
-	/**
-	 * Constructor.
-	 * 
-	 * <p>
-	 * This constructor exists only to work around Gemini Blueprint "reified
-	 * type" bug.
-	 * </p>
-	 * 
-	 * @param connectionFactory
-	 *        the factory to use for {@link MqttConnection} instances
-	 * @param objectMapper
-	 *        the object mapper to use
-	 * @param identityService
-	 *        the identity service
-	 * @param datumQueue
-	 *        the queue to accept datum from
-	 * @param yesReally
-	 *        unused
-	 * @since 1.12
-	 */
-	@SuppressWarnings("unchecked")
-	public FluxUploadService(MqttConnectionFactory connectionFactory, ObjectMapper objectMapper,
-			IdentityService identityService, Object datumQueue, boolean yesReally) {
-		this(connectionFactory, objectMapper, identityService, (DatumQueue<GeneralDatum>) datumQueue);
 	}
 
 	@Override

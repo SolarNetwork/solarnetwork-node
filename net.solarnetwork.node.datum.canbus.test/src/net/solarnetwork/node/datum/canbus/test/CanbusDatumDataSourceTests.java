@@ -22,18 +22,19 @@
 
 package net.solarnetwork.node.datum.canbus.test;
 
-import static java.util.Collections.singletonMap;
+import static net.solarnetwork.domain.GeneralDatumSamplesType.Accumulating;
 import static net.solarnetwork.domain.GeneralDatumSamplesType.Instantaneous;
+import static net.solarnetwork.domain.GeneralDatumSamplesType.Status;
 import static net.solarnetwork.util.ByteUtils.decodeHexString;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
-import static org.easymock.EasyMock.expectLastCall;
+import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.isEmptyOrNullString;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -46,8 +47,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -58,8 +58,6 @@ import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.osgi.service.event.Event;
-import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
@@ -67,16 +65,17 @@ import net.solarnetwork.common.expr.spel.SpelExpressionService;
 import net.solarnetwork.domain.BitDataType;
 import net.solarnetwork.domain.ByteOrdering;
 import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.domain.GeneralDatumSamplesOperations;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.external.indriya.IndriyaMeasurementServiceProvider;
-import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.DatumMetadataService;
+import net.solarnetwork.node.DatumQueue;
 import net.solarnetwork.node.datum.canbus.CanbusDatumDataSource;
 import net.solarnetwork.node.datum.canbus.CanbusMessageConfig;
 import net.solarnetwork.node.datum.canbus.CanbusPropertyConfig;
 import net.solarnetwork.node.datum.canbus.ExpressionConfig;
-import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.GeneralDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.io.canbus.socketcand.msg.FrameMessageImpl;
@@ -100,17 +99,17 @@ public class CanbusDatumDataSourceTests {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	private EventAdmin eventAdmin;
+	private DatumQueue datumQueue;
 	private DatumMetadataService datumMetadataService;
 	private CanbusDatumDataSource dataSource;
 
 	@Before
 	public void setup() {
-		eventAdmin = EasyMock.createMock(EventAdmin.class);
+		datumQueue = EasyMock.createMock(DatumQueue.class);
 		datumMetadataService = EasyMock.createMock(DatumMetadataService.class);
 
 		dataSource = new CanbusDatumDataSource();
-		dataSource.setEventAdmin(new StaticOptionalService<EventAdmin>(eventAdmin));
+		dataSource.setDatumQueue(new StaticOptionalService<>(datumQueue));
 		dataSource.setDatumMetadataService(new StaticOptionalService<>(datumMetadataService));
 		dataSource.setMeasurementHelper(new MeasurementHelper(new StaticOptionalServiceCollection<>(
 				Arrays.asList(new IndriyaMeasurementServiceProvider(new UCUMServiceProvider()),
@@ -125,11 +124,11 @@ public class CanbusDatumDataSourceTests {
 
 	@After
 	public void teardown() {
-		EasyMock.verify(eventAdmin, datumMetadataService);
+		EasyMock.verify(datumQueue, datumMetadataService);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(eventAdmin, datumMetadataService);
+		EasyMock.replay(datumQueue, datumMetadataService);
 	}
 
 	@Test
@@ -166,32 +165,24 @@ public class CanbusDatumDataSourceTests {
 		assertThat("watts unit", meta.getPm().get("watts"), hasEntry("sourceUnit", "kW"));
 	}
 
-	private Map<String, Object> eventProps(Event evt) {
-		Map<String, Object> m = new HashMap<>();
-		for ( String n : evt.getPropertyNames() ) {
-			m.put(n, evt.getProperty(n));
-		}
-		return m;
-	}
-
-	private void assertDatumCapturedEvent(Event event, long minDate, String sourceId,
-			Map<String, Object> expectedData) {
-		assertThat("Event generated", event, notNullValue());
-		assertThat("Event topic", event.getTopic(), equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
-		Map<String, Object> evtProps = eventProps(event);
-		log.debug("Got datum captured event: {}", evtProps);
-		assertThat("Event property keys", evtProps.keySet(), containsInAnyOrder(Datum.DATUM_PROPERTY,
-				Datum.DATUM_TYPE_PROPERTY, Datum.DATUM_TYPES_PROPERTY, "event.topics"));
-		Object o = evtProps.get(Datum.DATUM_PROPERTY);
-		assertThat("Event Datum is GeneralDatum", o, instanceOf(GeneralDatum.class));
-		GeneralDatum datum = (GeneralDatum) o;
+	private void assertDatumCapturedEvent(GeneralDatum datum, long minDate, String sourceId,
+			GeneralDatumSamples expectedData) {
+		assertThat("Event generated", datum, notNullValue());
+		log.debug("Got datum captured event: {}", datum);
+		assertThat("Event source ID", datum.getSourceId(), is(sourceId));
 		assertThat("Event creation date at least", datum.getCreated().getTime(),
 				greaterThanOrEqualTo(minDate));
-		Map<String, ?> datumProps = datum.getSampleData();
-		for ( Map.Entry<String, Object> me : expectedData.entrySet() ) {
-			if ( me.getValue() != null ) {
-				assertThat("Event datum property " + me.getKey() + " value", datumProps.get(me.getKey()),
-						equalTo(me.getValue()));
+		GeneralDatumSamplesOperations expectedOps = datum.asSampleOperations();
+		GeneralDatumSamplesOperations datumOps = datum.asSampleOperations();
+		for ( GeneralDatumSamplesType type : EnumSet.of(Instantaneous, Accumulating, Status) ) {
+			Map<String, ?> data = expectedOps.getSampleData(type);
+			if ( data == null ) {
+				continue;
+			}
+			for ( String propName : data.keySet() ) {
+				assertThat(String.format("Event datum property %s value", propName),
+						datumOps.getSampleBigDecimal(type, propName),
+						equalTo(expectedOps.getSampleBigDecimal(type, propName)));
 			}
 		}
 	}
@@ -206,8 +197,8 @@ public class CanbusDatumDataSourceTests {
 		dataSource.setSourceId(TEST_SOURCE);
 		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
 
-		Capture<Event> eventCaptor = new Capture<>();
-		eventAdmin.postEvent(capture(eventCaptor));
+		Capture<GeneralDatum> eventCaptor = new Capture<>();
+		expect(datumQueue.offer(capture(eventCaptor), eq(false))).andReturn(true);
 
 		// WHEN
 		replayAll();
@@ -217,11 +208,9 @@ public class CanbusDatumDataSourceTests {
 		GeneralNodeDatum d = dataSource.readCurrentDatum();
 
 		// THEN
-		Event evt = eventCaptor.getValue();
-		assertThat("Event generated", evt, notNullValue());
-		assertThat("Event topic", evt.getTopic(), equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
-		Map<String, Object> expectedData = Collections.singletonMap("watts", 17);
-		assertDatumCapturedEvent(evt, start, TEST_SOURCE, expectedData);
+		GeneralDatumSamples expectedData = new GeneralDatumSamples();
+		expectedData.putInstantaneousSampleValue("watts", 17);
+		assertDatumCapturedEvent(eventCaptor.getValue(), start, TEST_SOURCE, expectedData);
 
 		assertThat("Datum captured", d, notNullValue());
 		assertThat("Datum watts instantaneous value", d.getInstantaneousSampleBigDecimal("watts"),
@@ -241,8 +230,8 @@ public class CanbusDatumDataSourceTests {
 		dataSource.setSourceId(TEST_SOURCE);
 		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
 
-		Capture<Event> eventCaptor = new Capture<>();
-		eventAdmin.postEvent(capture(eventCaptor));
+		Capture<GeneralDatum> eventCaptor = new Capture<>();
+		expect(datumQueue.offer(capture(eventCaptor), eq(false))).andReturn(true);
 
 		// WHEN
 		replayAll();
@@ -252,11 +241,9 @@ public class CanbusDatumDataSourceTests {
 		GeneralNodeDatum d = dataSource.readCurrentDatum();
 
 		// THEN
-		Event evt = eventCaptor.getValue();
-		assertThat("Event generated", evt, notNullValue());
-		assertThat("Event topic", evt.getTopic(), equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
-		Map<String, Object> expectedData = Collections.singletonMap("watts", new BigDecimal("34.7"));
-		assertDatumCapturedEvent(evt, start, TEST_SOURCE, expectedData);
+		GeneralDatumSamples expectedData = new GeneralDatumSamples();
+		expectedData.putInstantaneousSampleValue("watts", new BigDecimal("34.7"));
+		assertDatumCapturedEvent(eventCaptor.getValue(), start, TEST_SOURCE, expectedData);
 
 		assertThat("Datum captured", d, notNullValue());
 		assertThat("Datum watts instantaneous value", d.getInstantaneousSampleBigDecimal("watts"),
@@ -274,8 +261,8 @@ public class CanbusDatumDataSourceTests {
 		dataSource.setSourceId(TEST_SOURCE);
 		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
 
-		Capture<Event> eventCaptor = new Capture<>();
-		eventAdmin.postEvent(capture(eventCaptor));
+		Capture<GeneralDatum> eventCaptor = new Capture<>();
+		expect(datumQueue.offer(capture(eventCaptor), eq(false))).andReturn(true);
 
 		// WHEN
 		replayAll();
@@ -285,11 +272,9 @@ public class CanbusDatumDataSourceTests {
 		GeneralNodeDatum d = dataSource.readCurrentDatum();
 
 		// THEN
-		Event evt = eventCaptor.getValue();
-		assertThat("Event generated", evt, notNullValue());
-		assertThat("Event topic", evt.getTopic(), equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
-		Map<String, Object> expectedData = Collections.singletonMap("watts", 17000);
-		assertDatumCapturedEvent(evt, start, TEST_SOURCE, expectedData);
+		GeneralDatumSamples expectedData = new GeneralDatumSamples();
+		expectedData.putInstantaneousSampleValue("watts", 17000);
+		assertDatumCapturedEvent(eventCaptor.getValue(), start, TEST_SOURCE, expectedData);
 
 		assertThat("Datum captured", d, notNullValue());
 		assertThat("Datum watts instantaneous value", d.getInstantaneousSampleBigDecimal("watts"),
@@ -306,8 +291,8 @@ public class CanbusDatumDataSourceTests {
 		dataSource.setSourceId(TEST_SOURCE);
 		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
 
-		Capture<Event> eventCaptor = new Capture<>();
-		eventAdmin.postEvent(capture(eventCaptor));
+		Capture<GeneralDatum> eventCaptor = new Capture<>();
+		expect(datumQueue.offer(capture(eventCaptor), eq(false))).andReturn(true);
 
 		// WHEN
 		replayAll();
@@ -317,11 +302,9 @@ public class CanbusDatumDataSourceTests {
 		GeneralNodeDatum d = dataSource.readCurrentDatum();
 
 		// THEN
-		Event evt = eventCaptor.getValue();
-		assertThat("Event generated", evt, notNullValue());
-		assertThat("Event topic", evt.getTopic(), equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
-		Map<String, Object> expectedData = singletonMap("torque", 17);
-		assertDatumCapturedEvent(evt, start, TEST_SOURCE, expectedData);
+		GeneralDatumSamples expectedData = new GeneralDatumSamples();
+		expectedData.putInstantaneousSampleValue("torque", 17);
+		assertDatumCapturedEvent(eventCaptor.getValue(), start, TEST_SOURCE, expectedData);
 
 		assertThat("Datum captured", d, notNullValue());
 		assertThat("Datum distance instantaneous value", d.getInstantaneousSampleBigDecimal("torque"),
@@ -338,8 +321,8 @@ public class CanbusDatumDataSourceTests {
 		dataSource.setSourceId(TEST_SOURCE);
 		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
 
-		Capture<Event> eventCaptor = new Capture<>();
-		eventAdmin.postEvent(capture(eventCaptor));
+		Capture<GeneralDatum> eventCaptor = new Capture<>();
+		expect(datumQueue.offer(capture(eventCaptor), eq(false))).andReturn(true);
 
 		// WHEN
 		replayAll();
@@ -349,13 +332,9 @@ public class CanbusDatumDataSourceTests {
 		GeneralNodeDatum d = dataSource.readCurrentDatum();
 
 		// THEN
-		Event evt = eventCaptor.getValue();
-		assertThat("Event generated", evt, notNullValue());
-		assertThat("Event topic", evt.getTopic(), equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
-		assertDatumCapturedEvent(evt, start, TEST_SOURCE, singletonMap("distance", null));
-		Map<String, ?> eventDatumProps = ((Datum) evt.getProperty(Datum.DATUM_PROPERTY)).getSampleData();
-		assertThat("Event distance", ((Number) eventDatumProps.get("distance")).toString(),
-				equalTo("0.017"));
+		GeneralDatumSamples expectedData = new GeneralDatumSamples();
+		expectedData.putInstantaneousSampleValue("distance", new BigDecimal("0.017"));
+		assertDatumCapturedEvent(eventCaptor.getValue(), start, TEST_SOURCE, expectedData);
 
 		assertThat("Datum captured", d, notNullValue());
 		assertThat("Datum distance instantaneous value", d.getInstantaneousSampleBigDecimal("distance"),
@@ -403,8 +382,8 @@ public class CanbusDatumDataSourceTests {
 		dataSource.setSourceId(TEST_SOURCE);
 		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
 
-		Capture<Event> eventCaptor = new Capture<>();
-		eventAdmin.postEvent(capture(eventCaptor));
+		Capture<GeneralDatum> eventCaptor = new Capture<>();
+		expect(datumQueue.offer(capture(eventCaptor), eq(false))).andReturn(true);
 
 		// WHEN
 		replayAll();
@@ -414,11 +393,9 @@ public class CanbusDatumDataSourceTests {
 		GeneralNodeDatum d = dataSource.readCurrentDatum();
 
 		// THEN
-		Event evt = eventCaptor.getValue();
-		assertThat("Event generated", evt, notNullValue());
-		assertThat("Event topic", evt.getTopic(), equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
-		Map<String, Object> expectedData = Collections.singletonMap("watts", 2842398);
-		assertDatumCapturedEvent(evt, start, TEST_SOURCE, expectedData);
+		GeneralDatumSamples expectedData = new GeneralDatumSamples();
+		expectedData.putInstantaneousSampleValue("watts", 2842398);
+		assertDatumCapturedEvent(eventCaptor.getValue(), start, TEST_SOURCE, expectedData);
 
 		assertThat("Datum captured", d, notNullValue());
 		assertThat("Datum watts instantaneous value", d.getInstantaneousSampleBigDecimal("watts"),
@@ -439,9 +416,8 @@ public class CanbusDatumDataSourceTests {
 		dataSource.setSourceId(TEST_SOURCE);
 		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
 
-		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
-		eventAdmin.postEvent(capture(eventCaptor));
-		expectLastCall().times(3);
+		Capture<GeneralDatum> eventCaptor = new Capture<>(CaptureType.ALL);
+		expect(datumQueue.offer(capture(eventCaptor), eq(false))).andReturn(true).times(3);
 
 		// WHEN
 		replayAll();
@@ -455,13 +431,11 @@ public class CanbusDatumDataSourceTests {
 		datums.add(dataSource.readCurrentDatum());
 
 		// THEN
-		List<Event> evts = eventCaptor.getValues();
+		List<GeneralDatum> evts = eventCaptor.getValues();
 		assertThat("Events generated", evts, hasSize(3));
 		assertThat("Datum generated", datums, hasSize(3));
 		for ( int i = 0; i < 3; i++ ) {
-			Event evt = evts.get(i);
-			assertThat("Event topic", evt.getTopic(),
-					equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
+			GeneralDatum evt = evts.get(i);
 
 			String expectedLabel = null;
 			switch (i) {
@@ -477,10 +451,10 @@ public class CanbusDatumDataSourceTests {
 					// nothing
 			}
 
-			Map<String, Object> expectedData = new LinkedHashMap<>(2);
-			expectedData.put("watts", (i + 2));
+			GeneralDatumSamples expectedData = new GeneralDatumSamples();
+			expectedData.putInstantaneousSampleValue("watts", (i + 2));
 			if ( expectedLabel != null ) {
-				expectedData.put("wattsLabel", expectedLabel);
+				expectedData.putStatusSampleValue("wattsLabel", expectedLabel);
 			}
 			assertDatumCapturedEvent(evt, start, TEST_SOURCE, expectedData);
 
@@ -516,8 +490,8 @@ public class CanbusDatumDataSourceTests {
 						SpelExpressionService.class.getName()), };
 		dataSource.setExpressionConfigs(exprConfigs);
 
-		Capture<Event> eventCaptor = new Capture<>();
-		eventAdmin.postEvent(capture(eventCaptor));
+		Capture<GeneralDatum> eventCaptor = new Capture<>();
+		expect(datumQueue.offer(capture(eventCaptor), eq(false))).andReturn(true);
 
 		// WHEN
 		replayAll();
@@ -527,14 +501,11 @@ public class CanbusDatumDataSourceTests {
 		GeneralNodeDatum d = dataSource.readCurrentDatum();
 
 		// THEN
-		Event evt = eventCaptor.getValue();
-		assertThat("Event generated", evt, notNullValue());
-		assertThat("Event topic", evt.getTopic(), equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
-		Map<String, Object> expectedData = new HashMap<>(3);
-		expectedData.put("watts", 17);
-		expectedData.put("prop-val", 34);
-		expectedData.put("prop-multiply", 51);
-		assertDatumCapturedEvent(evt, start, TEST_SOURCE, expectedData);
+		GeneralDatumSamples expectedData = new GeneralDatumSamples();
+		expectedData.putInstantaneousSampleValue("watts", 17);
+		expectedData.putInstantaneousSampleValue("prop-val", 34);
+		expectedData.putInstantaneousSampleValue("prop-multiply", 51);
+		assertDatumCapturedEvent(eventCaptor.getValue(), start, TEST_SOURCE, expectedData);
 
 		assertThat("Datum captured", d, notNullValue());
 		assertThat("Datum watts instantaneous value", d.getInstantaneousSampleBigDecimal("watts"),
@@ -562,8 +533,8 @@ public class CanbusDatumDataSourceTests {
 						SpelExpressionService.class.getName()), };
 		dataSource.setExpressionConfigs(exprConfigs);
 
-		Capture<Event> eventCaptor = new Capture<>();
-		eventAdmin.postEvent(capture(eventCaptor));
+		Capture<GeneralDatum> eventCaptor = new Capture<>();
+		expect(datumQueue.offer(capture(eventCaptor), eq(false))).andReturn(true);
 
 		// WHEN
 		replayAll();
@@ -573,14 +544,11 @@ public class CanbusDatumDataSourceTests {
 		GeneralNodeDatum d = dataSource.readCurrentDatum();
 
 		// THEN
-		Event evt = eventCaptor.getValue();
-		assertThat("Event generated", evt, notNullValue());
-		assertThat("Event topic", evt.getTopic(), equalTo(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
-		Map<String, Object> expectedData = new HashMap<>(3);
-		expectedData.put("watts", 17);
-		expectedData.put("prop-val", -1);
-		expectedData.put("prop-multiply", 51);
-		assertDatumCapturedEvent(evt, start, TEST_SOURCE, expectedData);
+		GeneralDatumSamples expectedData = new GeneralDatumSamples();
+		expectedData.putInstantaneousSampleValue("watts", 17);
+		expectedData.putInstantaneousSampleValue("prop-val", -1);
+		expectedData.putInstantaneousSampleValue("prop-multiply", 51);
+		assertDatumCapturedEvent(eventCaptor.getValue(), start, TEST_SOURCE, expectedData);
 
 		assertThat("Datum captured", d, notNullValue());
 		assertThat("Datum watts instantaneous value", d.getInstantaneousSampleBigDecimal("watts"),

@@ -53,7 +53,7 @@ import net.solarnetwork.node.support.DatumDataSourceSupport;
  * </p>
  * 
  * @author robert
- * @version 1.4
+ * @version 1.5
  */
 public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
@@ -116,18 +116,16 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 
 		this.lastsample.compareAndSet(prev, datum);
 
-		postDatumCapturedEvent(datum);
-
 		return datum;
 	}
 
 	@Override
-	protected String deviceInfoSourceId() {
-		return sourceId;
+	public String deviceInfoSourceId() {
+		return resolvePlaceholders(sourceId);
 	}
 
 	@Override
-	protected DeviceInfo deviceInfo() {
+	public DeviceInfo deviceInfo() {
 		// @formatter:off
 		return BasicDeviceInfo.builder()
 				.withName("Mock Energy Meter")

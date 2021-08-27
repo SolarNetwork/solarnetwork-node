@@ -122,7 +122,7 @@ import net.solarnetwork.util.StringUtils;
  * </pre>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class OsStatDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
@@ -144,13 +144,9 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 
 	@Override
 	public GeneralNodeDatum readCurrentDatum() {
-		long start = System.currentTimeMillis();
 		GeneralNodeDatum d = getCurrentSample();
 		if ( d != null ) {
-			if ( d.getCreated() != null && d.getCreated().getTime() >= start ) {
-				postDatumCapturedEvent(d);
-				updateNodeMetadata();
-			}
+			updateNodeMetadata();
 		}
 		return d;
 	}

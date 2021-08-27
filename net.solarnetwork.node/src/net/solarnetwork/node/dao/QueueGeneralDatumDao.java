@@ -31,12 +31,12 @@ import net.solarnetwork.node.domain.GeneralDatum;
  * {@link DatumDao} that offers datum to a {@link DatumQueue}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.01
  * @since 1.89
  */
 public class QueueGeneralDatumDao implements DatumDao<GeneralDatum> {
 
-	private final DatumQueue<GeneralDatum> datumQueue;
+	private final DatumQueue datumQueue;
 
 	/**
 	 * Constructor.
@@ -44,27 +44,9 @@ public class QueueGeneralDatumDao implements DatumDao<GeneralDatum> {
 	 * @param datumQueue
 	 *        the queue
 	 */
-	public QueueGeneralDatumDao(DatumQueue<GeneralDatum> datumQueue) {
+	public QueueGeneralDatumDao(DatumQueue datumQueue) {
 		super();
 		this.datumQueue = datumQueue;
-	}
-
-	/**
-	 * Constructor hack.
-	 * 
-	 * <p>
-	 * This constructor is to work around Gemini Blueprint "reified type"
-	 * exceptions on DatumQueue&lt;T&gt;.
-	 * </p>
-	 * 
-	 * @param datumQueue
-	 *        the queue
-	 * @param yesReally
-	 *        ignored
-	 */
-	@SuppressWarnings("unchecked")
-	public QueueGeneralDatumDao(Object datumQueue, boolean yesReally) {
-		this((DatumQueue<GeneralDatum>) datumQueue);
 	}
 
 	@Override

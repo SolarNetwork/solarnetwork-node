@@ -48,6 +48,7 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.domain.Differentiable;
 import net.solarnetwork.domain.GeneralNodeDatumSamples;
 import net.solarnetwork.domain.datum.GeneralDatumSamplesContainer;
 import net.solarnetwork.node.dao.DatumDao;
@@ -155,7 +156,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		assertDatumEventEqualsDatum(event, DatumDao.EVENT_TOPIC_DATUM_STORED, datum,
 				new String[] { ACEnergyDatum.class.getName(), EnergyDatum.class.getName(),
 						Datum.class.getName(), net.solarnetwork.domain.datum.Datum.class.getName(),
-						GeneralDatum.class.getName(),
+						GeneralDatum.class.getName(), Differentiable.class.getName(),
 						net.solarnetwork.domain.datum.GeneralDatum.class.getName(),
 						GeneralDatumSamplesContainer.class.getName() });
 	}
@@ -164,7 +165,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		assertDatumEventEqualsDatum(event, DatumDao.EVENT_TOPIC_DATUM_STORED, datum, new String[] {
 				Datum.class.getName(), net.solarnetwork.domain.datum.Datum.class.getName(),
 				GeneralDatum.class.getName(), net.solarnetwork.domain.datum.GeneralDatum.class.getName(),
-				GeneralDatumSamplesContainer.class.getName() });
+				Differentiable.class.getName(), GeneralDatumSamplesContainer.class.getName() });
 	}
 
 	private void assertDatumEventEqualsDatum(Event event, String topic, GeneralNodeDatum datum,

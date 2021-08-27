@@ -38,7 +38,7 @@ import net.solarnetwork.node.io.modbus.ModbusNetwork;
  * object.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  * @since 2.9
  */
 public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & DataAccessor>
@@ -145,8 +145,14 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 		refreshDeviceInfo(connection, sample);
 	}
 
+	/**
+	 * Get the device info.
+	 * 
+	 * @return the info
+	 * @since 1.5
+	 */
 	@Override
-	protected DeviceInfo deviceInfo() {
+	public DeviceInfo deviceInfo() {
 		ModbusData s = sample.copy();
 		return s.deviceInfo();
 	}

@@ -78,7 +78,6 @@ import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.GeneralDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.support.BaseIdentifiable;
 import net.solarnetwork.node.upload.flux.FluxFilterConfig;
@@ -92,7 +91,7 @@ import net.solarnetwork.util.StaticOptionalServiceCollection;
  * Test cases for the {@link FluxUploadService} class.
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class FluxUploadServiceTests {
 
@@ -106,11 +105,10 @@ public class FluxUploadServiceTests {
 	private ObjectEncoder encoder;
 	private OperationalModesService operationalModeService;
 	private GeneralDatumSamplesTransformService xformService;
-	private DatumQueue<GeneralDatum> datumQueue;
+	private DatumQueue datumQueue;
 	private Long nodeId;
 	private FluxUploadService service;
 
-	@SuppressWarnings("unchecked")
 	@Before
 	public void setup() {
 		connectionFactory = EasyMock.createMock(MqttConnectionFactory.class);

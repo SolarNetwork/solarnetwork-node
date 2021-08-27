@@ -2,7 +2,7 @@
 
 	<property name="bundle.deps" value="true"/>
 	<dirset id="bundle.deps" dir="${basedir}/..">
-		<include name="net.solarnetwork.node.datum.filter"/>
+		<include name="net.solarnetwork.node.datum.samplefilter"/>
 	</dirset>
 	
 	<property name="dir.env.input" value="../net.solarnetwork.node.test"/>

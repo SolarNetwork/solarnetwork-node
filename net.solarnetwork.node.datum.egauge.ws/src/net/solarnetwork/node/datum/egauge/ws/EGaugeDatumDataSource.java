@@ -47,7 +47,8 @@ import net.solarnetwork.util.CachedResult;
  * </p>
  * 
  * @author maxieduncan
- * @version 1.1
+ * @author matt
+ * @version 1.2
  */
 public class EGaugeDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodePVEnergyDatum>, SettingSpecifierProvider {
@@ -117,13 +118,7 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 
 	@Override
 	public EGaugePowerDatum readCurrentDatum() {
-		final long start = System.currentTimeMillis();
-		EGaugePowerDatum d = getCurrentSample();
-		if ( d != null && d.getCreated() != null && d.getCreated().getTime() >= start ) {
-			// we read from the device
-			postDatumCapturedEvent(d);
-		}
-		return d;
+		return getCurrentSample();
 	}
 
 	public void init() {
