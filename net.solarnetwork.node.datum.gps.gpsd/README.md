@@ -34,6 +34,8 @@ Each device configuration contains the following overall settings:
 | Service Group      | A group name to associate this data source with. |
 | GPSd Connection    | The service name of the [GPSd Connection][gps-conn] component to use. |
 | Source ID          | The SolarNetwork source ID to assign to captured datum. |
+| Update Node Location | Toggle updating the node's own GPS coordinates in SolarNetwork. |
+| Update Max Error     | The maximum latitude/longitude error amount allowed for updating the node's own GPS coordinates. |
 
 ## Overall device settings notes
 
@@ -41,20 +43,18 @@ Each device configuration contains the following overall settings:
 	<dt>Source ID</dt>
 	<dd>This value unique identifies the data collected from this device, by this node,
 	 on SolarNetwork. Each configured device should use a different value.</dd>
+	 <dt>Update Node Location</dt>
+	 <dd>Enabling this feature means SolarNode will update the latitude, longitude, and elevation
+	 properties for the node's own location stored in SolarNetwork. The <b>Update Max Error</b>
+	 setting can be used to prevent low-quality GPS signals from getting used. Note that the 
+	 SolarNode <b>Location Service</b> might filter out slight changes of position so consult
+	 its available settings for details.</dd>
 </dl>
 
 # Events
 
-This plugin will listen for all GPSd "report" messages (`SKY` and `TPV` messages) and emit a
-[`net/solarnetwork/node/DatumDataSource/DATUM_CAPTURED`][evt-datum-captured] event for each one
-received. This means that other plugins can monitor the GPS data in real-time and do something
-interesting with it. The [SolarFlux Upload][solarflux-upload] plugin, for example, will upload the
-data to SolarFlux, providing client applications the ability to do real-time GPS tracking.
-
-> :round_pushpin: **NOTE:** although this plugin will emit `DATUM_CAPTURED` events for each report
-> it receives from GPSd, this is separate from the **Schedule** setting that determines how
-> frequently GPS datum are posted to SolarNetwork.
+This plugin will listen for all GPSd "report" messages (`SKY` and `TPV` messages) and offer 
+transient datum events for each of them to the node's [datum queue][datum-queue].
 
 [gps-conn]: ../net.solarnetwork.node.io.gpsd/
-[evt-datum-captured]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Events#datum-captured
-[solarflux-upload]: ../net.solarnetwork.node.upload.flux/
+[datum-queue]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Datum-Queue
