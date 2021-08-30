@@ -107,7 +107,7 @@
 						<map>
 							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
 							<entry key="multiDatumDataSource">
-								<bean class="net.solarnetwork.node.datum.gps.gpsd.GpsDatumDataSource">
+								<bean class="net.solarnetwork.node.datum.gps.gpsd.GpsDatumDataSource" init-method="startup">
 									<argument>
 										<bean class="net.solarnetwork.util.DynamicServiceTracker">
 											<property name="bundleContext" ref="bundleContext"/>
