@@ -27,6 +27,12 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="locationService" class="net.solarnetwork.util.DynamicServiceTracker">
+		<property name="bundleContext" ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.LocationService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
@@ -122,6 +128,7 @@
 									<property name="datumQueue" ref="datumQueue"/>
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="placeholderService" ref="placeholderService"/>
+									<property name="locationService" ref="locationService"/>
 								</bean>
 							</entry>
 						</map>

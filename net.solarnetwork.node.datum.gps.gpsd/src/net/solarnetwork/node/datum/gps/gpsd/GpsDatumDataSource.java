@@ -32,11 +32,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
+import net.solarnetwork.domain.SimpleLocation;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.LocationService;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.io.gpsd.domain.GpsdMessageType;
 import net.solarnetwork.node.io.gpsd.domain.GpsdReportMessage;
+import net.solarnetwork.node.io.gpsd.domain.NmeaMode;
 import net.solarnetwork.node.io.gpsd.domain.TpvReportMessage;
 import net.solarnetwork.node.io.gpsd.service.GpsdClientConnection;
 import net.solarnetwork.node.io.gpsd.service.GpsdClientStatus;
@@ -45,15 +48,17 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.support.DatumDataSourceSupport;
 import net.solarnetwork.util.FilterableService;
+import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.OptionalService;
 
 /**
  * Datum data source for GPS data collected from a {@link GpsdClientConnection}.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class GpsDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeDatum>, MultiDatumDataSource<GeneralNodeDatum>,
@@ -61,9 +66,20 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 
 	private final ConcurrentMap<GpsdMessageType, GpsdReportMessage> messageSamples = new ConcurrentHashMap<>(
 			4, 0.9f, 1);
-	private final OptionalService<GpsdClientConnection> client;
 
+	/**
+	 * The default {@code nodeLocationUpdateMaxLatLonErrorMeters} property
+	 * value.
+	 * 
+	 * @since 1.2
+	 */
+	public static final double DEFAULT_MAX_LAT_LON_ERROR_METERS = 10.0;
+
+	private final OptionalService<GpsdClientConnection> client;
+	private OptionalService<LocationService> locationService;
 	private String sourceId;
+	private boolean updateNodeLocation = false;
+	private double nodeLocationUpdateMaxLatLonErrorMeters = DEFAULT_MAX_LAT_LON_ERROR_METERS;
 
 	/**
 	 * Constructor.
@@ -139,6 +155,43 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 		if ( d != null ) {
 			offerDatumCapturedEvent(d);
 		}
+
+		if ( type == GpsdMessageType.TpvReport ) {
+			publishNodeLocation((TpvReportMessage) message);
+		}
+	}
+
+	private void publishNodeLocation(TpvReportMessage message) {
+		if ( message.getMode() != NmeaMode.ThreeDimensional ) {
+			return;
+		}
+		if ( nodeLocationUpdateMaxLatLonErrorMeters > 0.0 ) {
+			if ( message.getLatitudeError() == null || message.getLatitudeError()
+					.doubleValue() > nodeLocationUpdateMaxLatLonErrorMeters ) {
+				return;
+			}
+			if ( message.getLongitudeError() == null || message.getLongitudeError()
+					.doubleValue() > nodeLocationUpdateMaxLatLonErrorMeters ) {
+				return;
+			}
+		}
+		LocationService locService = OptionalService.service(locationService);
+		if ( locService != null ) {
+			net.solarnetwork.domain.Location loc = locationForTpvMessage(message);
+			if ( loc != null ) {
+				locService.updateNodeLocation(loc);
+			}
+		}
+	}
+
+	private net.solarnetwork.domain.Location locationForTpvMessage(TpvReportMessage message) {
+		SimpleLocation loc = new SimpleLocation();
+		loc.setElevation(NumberUtils.bigDecimalForNumber(message.getAltitude()));
+		loc.setLatitude(NumberUtils.bigDecimalForNumber(message.getLatitude()));
+		loc.setLongitude(NumberUtils.bigDecimalForNumber(message.getLongitude()));
+		return (loc.getElevation() != null && loc.getLatitude() != null && loc.getLongitude() != null
+				? loc
+				: null);
 	}
 
 	private GeneralNodeDatum createDatum(GpsdReportMessage message) {
@@ -233,6 +286,10 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
 
+		results.add(new BasicToggleSettingSpecifier("updateNodeLocation", Boolean.FALSE));
+		results.add(new BasicTextFieldSettingSpecifier("nodeLocationUpdateMaxLatLonErrorMeters",
+				String.valueOf(DEFAULT_MAX_LAT_LON_ERROR_METERS)));
+
 		return results;
 	}
 
@@ -294,6 +351,72 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 	 */
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
+	}
+
+	/**
+	 * Set the location service.
+	 * 
+	 * @return the location service
+	 * @since 1.2
+	 */
+	public OptionalService<LocationService> getLocationService() {
+		return locationService;
+	}
+
+	/**
+	 * Get the location service.
+	 * 
+	 * @param locationService
+	 *        the location service to set
+	 * @since 1.2
+	 */
+	public void setLocationService(OptionalService<LocationService> locationService) {
+		this.locationService = locationService;
+	}
+
+	/**
+	 * Get the maximum error meters allowed when publishing the node location.
+	 * 
+	 * @return the meters
+	 * @since 1.2
+	 */
+	public double getNodeLocationUpdateMaxLatLonErrorMeters() {
+		return nodeLocationUpdateMaxLatLonErrorMeters;
+	}
+
+	/**
+	 * Set the maximum error meters allowed when publishing the node location.
+	 * 
+	 * @param nodeLocationUpdateMaxLatLonErrorMeters
+	 *        the meters to set
+	 * @since 1.2
+	 */
+	public void setNodeLocationUpdateMaxLatLonErrorMeters(
+			double nodeLocationUpdateMaxLatLonErrorMeters) {
+		this.nodeLocationUpdateMaxLatLonErrorMeters = nodeLocationUpdateMaxLatLonErrorMeters;
+	}
+
+	/**
+	 * Get the update node location flag.
+	 * 
+	 * @return {@literal true} to update the node's location based on the GPS
+	 *         coordinates received from GPSd
+	 * @since 1.2
+	 */
+	public boolean isUpdateNodeLocation() {
+		return updateNodeLocation;
+	}
+
+	/**
+	 * Set the update node location flag.
+	 * 
+	 * @param updateNodeLocation
+	 *        {@literal true} to update the node's location based on the GPS
+	 *        coordinates received from GPSd
+	 * @since 1.2
+	 */
+	public void setUpdateNodeLocation(boolean updateNodeLocation) {
+		this.updateNodeLocation = updateNodeLocation;
 	}
 
 }

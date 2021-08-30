@@ -202,27 +202,6 @@ public class MockGpsdClientService extends BaseIdentifiable
 		consumer.accept(val);
 	}
 
-	/*-
-	//Position, decimal degrees
-	lat = 51.0
-	lon = 0.0
-	
-	//Earth’s radius, sphere
-	R=6378137
-	
-	//offsets in meters
-	dn = 100
-	de = 100
-	
-	//Coordinate offsets in radians
-	dLat = dn/R
-	dLon = de/(R*Cos(Pi*lat/180))
-	
-	//OffsetPosition, decimal degrees
-	latO = lat + dLat * 180/Pi
-	lonO = lon + dLon * 180/Pi 
-	 */
-
 	private static final double EARTH_RADIUS = 6_378_137.0;
 
 	private static final DoubleBinaryOperator LAT_PROJECTION = (lat, len) -> {
@@ -360,7 +339,8 @@ public class MockGpsdClientService extends BaseIdentifiable
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
 		results.addAll(baseIdentifiableSettings("", DEFAULT_UID, ""));
-		results.add(new BasicTextFieldSettingSpecifier("updatePeriod", valueOf(DEFAULT_UPDATE_PERIOD)));
+		results.add(
+				new BasicTextFieldSettingSpecifier("updatePeriodMs", valueOf(DEFAULT_UPDATE_PERIOD)));
 		results.add(new BasicTextFieldSettingSpecifier("fixDelayMs", valueOf(DEFAULT_FIX_DELAY)));
 		results.add(new BasicTextFieldSettingSpecifier("fixLockMs", valueOf(DEFAULT_FIX_LOCK)));
 		results.add(new BasicTextFieldSettingSpecifier("fixUnlockedVariationMultiplier",
