@@ -209,7 +209,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 			return;
 		}
 		try {
-			JobUtils.unscheduleJob(s, snapshotJobDescription(), triggerKey());
+			JobUtils.unscheduleJob(s, snapshotJobDescription(), snapshotTrigger.getKey());
 		} catch ( Exception e ) {
 			// ignore
 		}
@@ -225,7 +225,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 		if ( controlId == null ) {
 			controlId = "";
 		}
-		return new TriggerKey(controlId, SNAPSHOT_JOB_GROUP);
+		return new TriggerKey(String.format("Snapshot-%s", controlId), SNAPSHOT_JOB_GROUP);
 	}
 
 	@Override
