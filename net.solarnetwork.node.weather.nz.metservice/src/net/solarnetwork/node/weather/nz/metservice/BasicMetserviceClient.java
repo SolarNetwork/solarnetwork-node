@@ -437,6 +437,7 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	 * {@link #DEFAULT_ONE_MINUTE_OBS_SET_TEMPLATE}.
 	 * 
 	 * @param oneMinuteObsTemplate
+	 *        the template to use
 	 */
 	public void setOneMinuteObsTemplate(String oneMinuteObsTemplate) {
 		this.oneMinuteObsTemplate = oneMinuteObsTemplate;
@@ -451,7 +452,8 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	 * string parameter for the location key. Defaults to
 	 * {@link #DEFAULT_ONE_MINUTE_OBS_SET_TEMPLATE}.
 	 * 
-	 * @param oneMinuteObsTemplate
+	 * @param hourlyObsAndForecastTemplate
+	 *        the template to use
 	 */
 	public void setHourlyObsAndForecastTemplate(String hourlyObsAndForecastTemplate) {
 		this.hourlyObsAndForecastTemplate = hourlyObsAndForecastTemplate;
