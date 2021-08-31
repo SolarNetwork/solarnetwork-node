@@ -145,7 +145,8 @@ public class OperationalModeSwitchTests {
 
 		assertThat("Event datum types",
 				(String[]) ctlCapturedEvent.getProperty(Datum.DATUM_TYPES_PROPERTY),
-				arrayContaining(NodeControlInfo.class.getName(), Datum.class.getName()));
+				arrayContaining(NodeControlInfo.class.getName(), Datum.class.getName(),
+						net.solarnetwork.domain.datum.Datum.class.getName()));
 		assertThat("Event datum type", ctlCapturedEvent.getProperty(Datum.DATUM_TYPE_PROPERTY),
 				equalTo(NodeControlInfo.class.getName()));
 

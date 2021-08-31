@@ -45,7 +45,7 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * {@link DatumDataSource} for the AE 250TX series inverter.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.6
  */
 public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE250TxData>
 		implements DatumDataSource<GeneralNodePVEnergyDatum>,
@@ -71,8 +71,8 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 	}
 
 	@Override
-	protected String deviceInfoSourceId() {
-		return sourceId;
+	public String deviceInfoSourceId() {
+		return resolvePlaceholders(sourceId);
 	}
 
 	@Override
@@ -94,7 +94,6 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 
 	@Override
 	public GeneralNodePVEnergyDatum readCurrentDatum() {
-		final long start = System.currentTimeMillis();
 		try {
 			final AE250TxData currSample = getCurrentSample();
 			if ( currSample == null ) {
@@ -102,10 +101,6 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 			}
 			AE250TxDatum d = new AE250TxDatum(currSample);
 			d.setSourceId(resolvePlaceholders(sourceId));
-			if ( currSample.getDataTimestamp() >= start ) {
-				// we read from the device
-				postDatumCapturedEvent(d);
-			}
 			return d;
 		} catch ( IOException e ) {
 			log.error("Communication problem reading source {} from AE 250TX device {}: {}",

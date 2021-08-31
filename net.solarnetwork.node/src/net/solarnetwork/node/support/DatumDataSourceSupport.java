@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.support;
 
+import static net.solarnetwork.util.OptionalService.service;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -30,21 +31,18 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.osgi.service.event.Event;
-import org.osgi.service.event.EventAdmin;
 import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
-import net.solarnetwork.codec.JsonUtils;
-import net.solarnetwork.domain.DeviceInfo;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.DatumMetadataService;
+import net.solarnetwork.node.DatumQueue;
 import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.node.domain.ExpressionConfig;
 import net.solarnetwork.node.domain.ExpressionRoot;
+import net.solarnetwork.node.domain.GeneralDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
@@ -59,7 +57,7 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * {@link net.solarnetwork.node.MultiDatumDataSource} implementations to extend.
  * 
  * @author matt
- * @version 1.7
+ * @version 1.8
  * @since 1.51
  */
 public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEvents {
@@ -84,7 +82,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	public static final long DEFAULT_SUBSAMPLE_START_DELAY = 15000L;
 
 	private OptionalService<DatumMetadataService> datumMetadataService;
-	private OptionalService<EventAdmin> eventAdmin;
+	private OptionalService<DatumQueue> datumQueue;
 	private TaskScheduler taskScheduler = null;
 	private Long subSampleFrequency = null;
 	private long subSampleStartDelay = DEFAULT_SUBSAMPLE_START_DELAY;
@@ -92,104 +90,24 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	private ExpressionConfig[] expressionConfigs;
 	private boolean publishDeviceInfoMetadata = false;
 
-	private final AtomicBoolean deviceInfoMetadataPublished = new AtomicBoolean(false);
 	private ScheduledFuture<?> subSampleFuture;
 
 	/**
-	 * Post an {@link Event} for the
-	 * {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} topic.
+	 * Offer a non-persisted datum event to the configured {@link DatumQueue},
+	 * if available.
 	 * 
 	 * @param datum
-	 *        the datum that was stored
+	 *        the datum that was captured
+	 * @since 1.8
 	 */
-	protected final void postDatumCapturedEvent(Datum datum) {
-		if ( datum == null ) {
-			return;
-		}
-		Event event = datumCapturedEvent(datum);
-		log.debug("Created {} event with datum {}", event.getTopic(), datum);
-		postEvent(event);
-		publishDeviceInfoMetadata(deviceInfoSourceId());
-	}
-
-	/**
-	 * Get the source ID to publish device info under.
-	 * 
-	 * <p>
-	 * This method returns {@literal null}. Extending classes must override to
-	 * provide a source ID value if they wish to publish device info metadata.
-	 * </p>
-	 * 
-	 * @return the source ID to publish device info metadata to
-	 * @since 1.7
-	 */
-	protected String deviceInfoSourceId() {
-		return null;
-	}
-
-	/**
-	 * Publish the available device info from {@link #deviceInfo()} as source
-	 * metadata, if {@code publishDeviceInfoMetadata} is {@literal true} and the
-	 * metadata has not yet been published.
-	 * 
-	 * <p>
-	 * This requires the {@link #getDatumMetadataService()} to be available.
-	 * </p>
-	 * 
-	 * @param sourceId
-	 *        the source ID to publish the metadata to, or {@literal null} to
-	 *        not publish
-	 * @see #deviceInfo()
-	 * @since 1.7
-	 */
-	protected final void publishDeviceInfoMetadata(String sourceId) {
-		if ( sourceId == null || sourceId.isEmpty() || !publishDeviceInfoMetadata
-				|| deviceInfoMetadataPublished.get() ) {
-			return;
-		}
-		synchronized ( deviceInfoMetadataPublished ) {
-			if ( deviceInfoMetadataPublished.get() ) {
-				return;
+	protected final void offerDatumCapturedEvent(Datum datum) {
+		if ( datum instanceof GeneralDatum ) {
+			final DatumQueue queue = service(datumQueue);
+			if ( queue != null ) {
+				// offer datum to queue instead of posting as event, as we expect the queue to emit the event
+				queue.offer((GeneralDatum) datum, false);
 			}
-			DeviceInfo info = deviceInfo();
-			Map<String, Object> m = JsonUtils.getStringMapFromObject(info);
-			if ( m != null && !m.isEmpty() ) {
-				GeneralDatumMetadata meta = new GeneralDatumMetadata(null,
-						Collections.singletonMap(DeviceInfo.DEVICE_INFO_METADATA_KEY, m));
-				addSourceMetadata(sourceId, meta);
-			}
-			deviceInfoMetadataPublished.set(true);
 		}
-	}
-
-	/**
-	 * Get a {@link DeviceInfo} instance.
-	 * 
-	 * @return the device info, or {@literal null} if none available
-	 * @since 1.7
-	 */
-	protected DeviceInfo deviceInfo() {
-		return null;
-	}
-
-	/**
-	 * Post an {@link Event}.
-	 * 
-	 * <p>
-	 * This method only works if a {@link EventAdmin} has been configured via
-	 * {@link #setEventAdmin(OptionalService)}. Otherwise the event is silently
-	 * ignored.
-	 * </p>
-	 * 
-	 * @param event
-	 *        the event to post
-	 */
-	protected final void postEvent(Event event) {
-		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
-		if ( ea == null || event == null ) {
-			return;
-		}
-		ea.postEvent(event);
 	}
 
 	/**
@@ -208,6 +126,9 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	 */
 	protected boolean addSourceMetadata(final String sourceId, final GeneralDatumMetadata meta) {
 		final String resolvedSourceId = resolvePlaceholders(sourceId);
+		if ( resolvedSourceId == null ) {
+			return false;
+		}
 		GeneralDatumMetadata cached = SOURCE_METADATA_CACHE.get(resolvedSourceId);
 		if ( cached != null && meta.equals(cached) ) {
 			// we've already posted this metadata... don't bother doing it again
@@ -442,22 +363,15 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	}
 
 	/**
-	 * Get the {@link EventAdmin} service.
-	 * 
-	 * @return the EventAdmin service
-	 */
-	public OptionalService<EventAdmin> getEventAdmin() {
-		return eventAdmin;
-	}
-
-	/**
-	 * Set an {@link EventAdmin} service to use.
+	 * Set an event admin service to use.
 	 * 
 	 * @param eventAdmin
-	 *        the EventAdmin to use
+	 *        the service to use
+	 * @deprecated since 1.8 this is ignored
 	 */
-	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
-		this.eventAdmin = eventAdmin;
+	@Deprecated
+	public void setEventAdmin(OptionalService<?> eventAdmin) {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -669,14 +583,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	/**
 	 * Get the desired device info metadata publish mode.
 	 * 
-	 * <p>
-	 * This feature requires the
-	 * {@link #setDatumMetadataService(OptionalService)} to be configured. It
-	 * will cause a {@link DeviceInfo} object to be published as source metadata
-	 * under a {@literal deviceInfo} property key, the first time
-	 * {@link #postDatumCapturedEvent(Datum)} is invoked.
-	 * </p>
-	 * 
 	 * @param publishDeviceInfoMetadata
 	 *        {@literal true} to publish device metadata once, after the first
 	 *        datum has been captured
@@ -684,6 +590,27 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	 */
 	public void setPublishDeviceInfoMetadata(boolean publishDeviceInfoMetadata) {
 		this.publishDeviceInfoMetadata = publishDeviceInfoMetadata;
+	}
+
+	/**
+	 * Get the datum queue.
+	 * 
+	 * @return the queue
+	 * @since 1.8
+	 */
+	public OptionalService<DatumQueue> getDatumQueue() {
+		return datumQueue;
+	}
+
+	/**
+	 * Set the datum queue.
+	 * 
+	 * @param datumQueue
+	 *        the queue to set
+	 * @since 1.8
+	 */
+	public void setDatumQueue(OptionalService<DatumQueue> datumQueue) {
+		this.datumQueue = datumQueue;
 	}
 
 }

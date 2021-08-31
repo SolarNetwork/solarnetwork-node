@@ -23,27 +23,56 @@
 package net.solarnetwork.node;
 
 import java.util.function.Consumer;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.GeneralDatum;
 
 /**
  * Unified queue to process datum across all of SolarNode.
  * 
- * @param <T>
- *        the datum type
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.89
  */
-public interface DatumQueue<T extends Datum> {
+public interface DatumQueue {
 
 	/**
-	 * Offer a new datum to the queue.
+	 * An {@link org.osgi.service.event.Event} topic for when a
+	 * {@link GeneralDatum} has been acquired by a {@link DatumQueue}.
+	 * 
+	 * This event happens <b>after</b> any possible queue filtering has been
+	 * applied, which might filter out some of the datum offered to the queue or
+	 * transform their contents. The
+	 * {@link net.solarnetwork.node.domain.Datum#DATUM_PROPERTY} property will
+	 * be set to the datum instance that was acquired. In addition, the
+	 * {@link net.solarnetwork.node.domain.Datum#DATUM_TYPE_PROPERTY} property
+	 * shall be populated with the name of the <em>core</em> class name of the
+	 * datum type.
+	 * 
+	 * @since 2.0
+	 */
+	static final String EVENT_TOPIC_DATUM_ACQUIRED = "net/solarnetwork/node/DatumQueue/DATUM_ACQUIRED";
+
+	/**
+	 * Offer a new datum to the queue, with persistence enabled.
 	 * 
 	 * @param datum
 	 *        the datum to offer
 	 * @return {@literal true} if the datum was accepted
 	 */
-	boolean offer(T datum);
+	default boolean offer(GeneralDatum datum) {
+		return offer(datum, true);
+	}
+
+	/**
+	 * Offer a new datum to the queue, optionally persisting.
+	 * 
+	 * @param datum
+	 *        the datum to offer
+	 * @param persist
+	 *        {@literal true} to persist, or {@literal false} to only pass to
+	 *        consumers
+	 * @return {@literal true} if the datum was accepted
+	 */
+	boolean offer(GeneralDatum datum, boolean persist);
 
 	/**
 	 * Register a consumer to receive processed datum.
@@ -51,7 +80,7 @@ public interface DatumQueue<T extends Datum> {
 	 * @param consumer
 	 *        the consumer to register
 	 */
-	void addConsumer(Consumer<T> consumer);
+	void addConsumer(Consumer<GeneralDatum> consumer);
 
 	/**
 	 * De-register a previously registered consumer.
@@ -59,6 +88,6 @@ public interface DatumQueue<T extends Datum> {
 	 * @param consumer
 	 *        the consumer to remove
 	 */
-	void removeConsumer(Consumer<T> consumer);
+	void removeConsumer(Consumer<GeneralDatum> consumer);
 
 }

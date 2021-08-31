@@ -50,7 +50,7 @@ public class TpvGpsDatum extends GeneralNodeDatum {
 		setSamples(s);
 
 		putInstantaneousSampleValue("lat", tpv.getLatitude());
-		putInstantaneousSampleValue("latError", tpv.getLatitudeError());
+		putInstantaneousSampleValue("lat_ep", tpv.getLatitudeError());
 		putInstantaneousSampleValue("lon", tpv.getLongitude());
 		putInstantaneousSampleValue("lon_ep", tpv.getLongitudeError());
 		putInstantaneousSampleValue("alt", tpv.getAltitude());
@@ -60,7 +60,7 @@ public class TpvGpsDatum extends GeneralNodeDatum {
 		putInstantaneousSampleValue("speed", tpv.getSpeed());
 		putInstantaneousSampleValue("speed_ep", tpv.getSpeedError());
 		putInstantaneousSampleValue("climbRate", tpv.getClimbRate());
-		putInstantaneousSampleValue("climb_ep", tpv.getClimbRateError());
+		putInstantaneousSampleValue("climbRate_ep", tpv.getClimbRateError());
 	}
 
 }

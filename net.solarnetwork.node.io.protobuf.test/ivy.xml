@@ -21,6 +21,7 @@
 		
 		<!-- Testing support -->
 		<dependency org="commons-codec" name="commons-codec" rev="1.11"/>
+		<dependency org="net.solarnetwork.common.test" name="net.solarnetwork.common.test" rev="[1.16,)"/>
 		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common.jdt" rev="[1.0,)"/>
     </dependencies>
 </ivy-module>

@@ -69,7 +69,7 @@ import net.solarnetwork.util.OptionalService;
  * Data source for CozIR series CO2 sensors.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, SettingsChangeObserver,
@@ -195,16 +195,7 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
 
 	@Override
 	public GeneralNodeDatum readCurrentDatum() {
-		final long start = System.currentTimeMillis();
-		final GeneralNodeDatum currSample = getCurrentSample();
-		if ( currSample == null ) {
-			return null;
-		}
-		if ( currSample.getCreated().getTime() >= start ) {
-			// we read from the device
-			postDatumCapturedEvent(currSample);
-		}
-		return currSample;
+		return getCurrentSample();
 	}
 
 	public CachedResult<GeneralNodeDatum> getSample() {

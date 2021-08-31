@@ -44,7 +44,7 @@ import net.solarnetwork.util.OptionalService;
  * {@link DatumDataSource} for a {@link WebBoxDevice}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
@@ -172,7 +172,6 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 				if ( d.getSourceId() != null ) {
 					sample.populateDatumSamples(d.asMutableSampleOperations(), null);
 					d = applySamplesTransformer(d, null);
-					postDatumCapturedEvent(d);
 					return d;
 				}
 			}

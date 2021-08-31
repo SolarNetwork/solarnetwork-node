@@ -65,7 +65,7 @@ public class CCDatum implements Comparable<CCDatum> {
 	 * Secondary setter to set the time, to support both v1 and v2 message
 	 * format mapping.
 	 * 
-	 * @param time
+	 * @param timeString
 	 *        the time
 	 */
 	public void setLocalTime(String timeString) {

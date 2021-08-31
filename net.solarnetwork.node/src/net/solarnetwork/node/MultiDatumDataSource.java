@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node;
@@ -31,9 +29,9 @@ import net.solarnetwork.node.domain.Datum;
  * API for collecting multiple {@link Datum} objects from some device.
  * 
  * @author matt
- * @version $Id$
+ * @version 1.1
  */
-public interface MultiDatumDataSource<T extends Datum> extends Identifiable {
+public interface MultiDatumDataSource<T extends Datum> extends Identifiable, DeviceInfoProvider {
 
 	/**
 	 * Get the class supported by this DataSource.

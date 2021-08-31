@@ -36,8 +36,6 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TimeZone;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -60,7 +58,6 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
-import org.springframework.context.MessageSource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.FileCopyUtils;
 import org.w3c.dom.Document;
@@ -68,32 +65,16 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import net.solarnetwork.domain.GeneralDatumMetadata;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.DatumMetadataService;
-import net.solarnetwork.node.domain.Datum;
 import net.solarnetwork.util.ClassUtils;
 import net.solarnetwork.util.OptionalService;
 
 /**
- * An abstract class to support services that use XML.
- * 
- * <p>
- * This class provides similar support as {@link DatumDataSourceSupport}, but
- * with additional HTTP client and XML support.
- * </p>
+ * A helper class to support services that use XML.
  * 
  * @author matt
- * @version 1.6
+ * @version 1.7
  */
-public abstract class XmlServiceSupport extends HttpClientSupport implements DatumEvents {
-
-	/**
-	 * A global cache of source-based metadata, so only changes to metadata need
-	 * be posted.
-	 */
-	private static final ConcurrentMap<String, GeneralDatumMetadata> SOURCE_METADATA_CACHE = new ConcurrentHashMap<String, GeneralDatumMetadata>(
-			4);
+public class XmlServiceSupport extends HttpClientSupport {
 
 	/** Special attribute key for a node ID value. */
 	public static final String ATTR_NODE_ID = "node-id";
@@ -103,9 +84,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	private XPathFactory xpathFactory = null;
 	private TransformerFactory transformerFactory = null;
 
-	private MessageSource messageSource;
 	private OptionalService<EventAdmin> eventAdmin;
-	private OptionalService<DatumMetadataService> datumMetadataService;
 
 	/**
 	 * Initialize this class after properties are set.
@@ -121,7 +100,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 *        the XPath string expressions
 	 * @return the XPathExperssion mapping
 	 */
-	protected Map<String, XPathExpression> getXPathExpressionMap(Map<String, String> xpathMap) {
+	public Map<String, XPathExpression> getXPathExpressionMap(Map<String, String> xpathMap) {
 		Map<String, XPathExpression> datumXPathMap = new LinkedHashMap<String, XPathExpression>();
 		for ( Map.Entry<String, String> me : xpathMap.entrySet() ) {
 			try {
@@ -144,7 +123,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 *        the XSLT Resource to load
 	 * @return the compiled Templates
 	 */
-	protected Templates getTemplates(Resource resource) {
+	public Templates getTemplates(Resource resource) {
 		try {
 			return getTransformerFactory().newTemplates(new StreamSource(resource.getInputStream()));
 		} catch ( TransformerConfigurationException e ) {
@@ -176,7 +155,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 * @return the element, as XSLT Source
 	 * @see #getSimpleDocument(Object, String)
 	 */
-	protected Source getSimpleSource(Object o, String elementName) {
+	public Source getSimpleSource(Object o, String elementName) {
 		Document dom = getSimpleDocument(o, elementName);
 		return getSource(dom);
 	}
@@ -202,7 +181,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 *        the name of the XML element
 	 * @return the element, as an XML DOM Document
 	 */
-	protected Document getSimpleDocument(Object o, String elementName) {
+	public Document getSimpleDocument(Object o, String elementName) {
 		Document dom = null;
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 		sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -256,7 +235,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 *        the name of the XML element
 	 * @return the element, as an XML DOM Document
 	 */
-	protected Document getDocument(BeanWrapper bean, String elementName) {
+	public Document getDocument(BeanWrapper bean, String elementName) {
 		Document dom = null;
 		try {
 			dom = getDocBuilderFactory().newDocumentBuilder().newDocument();
@@ -295,7 +274,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 *        the XML document
 	 * @return the element, as an XML DOM Document
 	 */
-	protected Element getElement(BeanWrapper bean, Document dom) {
+	public Element getElement(BeanWrapper bean, Document dom) {
 		String elementName = bean.getWrappedInstance().getClass().getSimpleName();
 		return getElement(bean, elementName, dom);
 	}
@@ -329,7 +308,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 *        the XML document
 	 * @return the element, as an XML DOM Element
 	 */
-	protected Element getElement(BeanWrapper bean, String elementName, Document dom) {
+	public Element getElement(BeanWrapper bean, String elementName, Document dom) {
 		PropertyDescriptor[] props = bean.getPropertyDescriptors();
 		Element root = null;
 		root = dom.createElement(elementName);
@@ -384,7 +363,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 * @return the element, as XSLT Source
 	 * @see #getDocument(BeanWrapper, String)
 	 */
-	protected Source getSource(BeanWrapper bean, String elementName) {
+	public Source getSource(BeanWrapper bean, String elementName) {
 		Document dom = getDocument(bean, elementName);
 		return getSource(dom);
 	}
@@ -400,7 +379,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 *        the Document to turn into XSLT source
 	 * @return the document, as XSLT Source
 	 */
-	protected Source getSource(Document dom) {
+	public Source getSource(Document dom) {
 		DOMSource result = new DOMSource(dom);
 		if ( log.isDebugEnabled() ) {
 			log.debug("XML: " + getXmlAsString(result, true));
@@ -417,7 +396,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 *        if <em>true</em> then indent the result
 	 * @return the XML, as a String
 	 */
-	protected String getXmlAsString(Source source, boolean indent) {
+	public String getXmlAsString(Source source, boolean indent) {
 		ByteArrayOutputStream byos = new ByteArrayOutputStream();
 		try {
 			Transformer xform = getTransformerFactory().newTransformer();
@@ -449,7 +428,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 * @param xpathMap
 	 *        the mapping of JavaBean property names to XPaths
 	 */
-	protected void extractBeanDataFromXml(Object obj, Node xml, Map<String, XPathExpression> xpathMap) {
+	public void extractBeanDataFromXml(Object obj, Node xml, Map<String, XPathExpression> xpathMap) {
 		BeanWrapper bean;
 		if ( obj instanceof BeanWrapper ) {
 			bean = (BeanWrapper) obj;
@@ -481,7 +460,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 * @param bean
 	 *        the bean in question
 	 */
-	protected void registerCustomEditors(BeanWrapper bean) {
+	public void registerCustomEditors(BeanWrapper bean) {
 		// nothing here... bean.registerCustomEditor(...)
 	}
 
@@ -499,7 +478,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
-	protected InputSource getInputSourceFromURLConnection(URLConnection conn) throws IOException {
+	public InputSource getInputSourceFromURLConnection(URLConnection conn) throws IOException {
 		Reader resp = null;
 		try {
 			resp = getUnicodeReaderFromURLConnection(conn);
@@ -538,7 +517,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 *        extra POST attributes and bean override values
 	 * @return an InputSource to the response content XML
 	 */
-	protected InputSource webFormPost(BeanWrapper bean, String url, Map<String, ?> attributes) {
+	public InputSource webFormPost(BeanWrapper bean, String url, Map<String, ?> attributes) {
 		try {
 			URLConnection conn = getURLConnection(url, HTTP_METHOD_POST);
 
@@ -613,7 +592,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 *        extra GET attributes and bean override values
 	 * @return an InputSource to the response content XML
 	 */
-	protected InputSource webFormGet(BeanWrapper bean, String url, Map<String, ?> attributes) {
+	public InputSource webFormGet(BeanWrapper bean, String url, Map<String, ?> attributes) {
 		try {
 			String getUrl = url;
 			if ( bean != null ) {
@@ -650,8 +629,8 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 * @param xpathMap
 	 *        the mapping of JavaBean property names to XPaths
 	 */
-	protected void webFormPostForBean(BeanWrapper bean, Object obj, String url,
-			Map<String, ?> attributes, Map<String, XPathExpression> xpathMap) {
+	public void webFormPostForBean(BeanWrapper bean, Object obj, String url, Map<String, ?> attributes,
+			Map<String, XPathExpression> xpathMap) {
 		InputSource is = webFormPost(bean, url, attributes);
 		Document doc;
 		try {
@@ -688,7 +667,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 *        the mapping of JavaBean property names to XPaths
 	 * @see #webFormGet(BeanWrapper, String, Map)
 	 */
-	protected void webFormGetForBean(BeanWrapper bean, Object obj, String url, Map<String, ?> attributes,
+	public void webFormGetForBean(BeanWrapper bean, Object obj, String url, Map<String, ?> attributes,
 			Map<String, XPathExpression> xpathMap) {
 		InputSource is = webFormGet(bean, url, attributes);
 		Document doc;
@@ -716,7 +695,7 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 *        the XPath as a string (for debugging)
 	 * @return the tracking ID, or <em>null</em> if not found
 	 */
-	protected Long extractTrackingId(InputSource xml, XPathExpression xp, String xpath) {
+	public Long extractTrackingId(InputSource xml, XPathExpression xp, String xpath) {
 		Double tid;
 		try {
 			tid = (Double) xp.evaluate(xml, XPathConstants.NUMBER);
@@ -745,52 +724,12 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 *        extra POST attributes and bean override values
 	 * @return the extracted tracking ID, or <em>null</em> if none found
 	 */
-	protected Long webFormPostForTrackingId(BeanWrapper bean, String url,
-			XPathExpression trackingIdXPath, String xpath, Map<String, ?> attributes) {
+	public Long webFormPostForTrackingId(BeanWrapper bean, String url, XPathExpression trackingIdXPath,
+			String xpath, Map<String, ?> attributes) {
 		InputSource is = webFormPost(bean, url, attributes);
 
 		// extract the returned tracking ID via XPath
 		return extractTrackingId(is, trackingIdXPath, xpath);
-	}
-
-	/**
-	 * Add source metadata using the configured {@link DatumMetadataService} (if
-	 * available). The metadata will be cached so that subsequent calls to this
-	 * method with the same metadata value will not try to re-save the unchanged
-	 * value. This method will catch all exceptions and silently discard them.
-	 * 
-	 * @param sourceId
-	 *        the source ID to add metadata to
-	 * @param meta
-	 *        the metadata to add
-	 * @return {@literal true} if the metadata was saved successfully, or does
-	 *         not need to be updated
-	 */
-	protected boolean addSourceMetadata(final String sourceId, final GeneralDatumMetadata meta) {
-		if ( sourceId == null ) {
-			return false;
-		}
-		GeneralDatumMetadata cached = SOURCE_METADATA_CACHE.get(sourceId);
-		if ( cached != null && meta.equals(cached) ) {
-			// we've already posted this metadata... don't bother doing it again
-			log.debug("Source {} metadata already added, not posting again", sourceId);
-			return true;
-		}
-		DatumMetadataService service = null;
-		if ( datumMetadataService != null ) {
-			service = datumMetadataService.service();
-		}
-		if ( service == null ) {
-			return false;
-		}
-		try {
-			service.addSourceMetadata(sourceId, meta);
-			SOURCE_METADATA_CACHE.put(sourceId, meta);
-			return true;
-		} catch ( Exception e ) {
-			log.debug("Error saving source {} metadata: {}", sourceId, e.getMessage());
-		}
-		return false;
 	}
 
 	/**
@@ -806,29 +745,12 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 *        the event to post
 	 * @since 1.5
 	 */
-	protected final void postEvent(Event event) {
+	public final void postEvent(Event event) {
 		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
 		if ( ea == null || event == null ) {
 			return;
 		}
 		ea.postEvent(event);
-	}
-
-	/**
-	 * Post an {@link Event} for the
-	 * {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} topic.
-	 * 
-	 * @param datum
-	 *        the datum that was stored
-	 * @since 1.5
-	 */
-	protected final void postDatumCapturedEvent(Datum datum) {
-		if ( datum == null ) {
-			return;
-		}
-		Event event = datumCapturedEvent(datum);
-		log.debug("Created {} event with datum {}", event.getTopic(), datum);
-		postEvent(event);
 	}
 
 	/**
@@ -973,48 +895,6 @@ public abstract class XmlServiceSupport extends HttpClientSupport implements Dat
 	 */
 	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
-	}
-
-	/**
-	 * Get the configured {@link MessageSource}.
-	 * 
-	 * @return the message source, or {@literal null}
-	 * @since 1.5
-	 */
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	/**
-	 * Set a {@link MessageSource} to use for resolving localized messages.
-	 * 
-	 * @param messageSource
-	 *        the message source to use
-	 * @since 1.5
-	 */
-	@Override
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
-
-	/**
-	 * Get the configured {@link DatumMetadataService}.
-	 * 
-	 * @return the service to use
-	 */
-	public OptionalService<DatumMetadataService> getDatumMetadataService() {
-		return datumMetadataService;
-	}
-
-	/**
-	 * Set a {@link DatumMetadataService} to use for managing datum metadata.
-	 * 
-	 * @param datumMetadataService
-	 *        the service to use
-	 */
-	public void setDatumMetadataService(OptionalService<DatumMetadataService> datumMetadataService) {
-		this.datumMetadataService = datumMetadataService;
 	}
 
 }

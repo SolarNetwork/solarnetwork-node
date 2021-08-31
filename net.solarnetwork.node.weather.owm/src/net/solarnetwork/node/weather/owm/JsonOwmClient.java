@@ -22,8 +22,8 @@
 
 package net.solarnetwork.node.weather.owm;
 
-import static net.solarnetwork.util.JsonUtils.parseBigDecimalAttribute;
-import static net.solarnetwork.util.JsonUtils.parseIntegerAttribute;
+import static net.solarnetwork.codec.JsonUtils.parseBigDecimalAttribute;
+import static net.solarnetwork.codec.JsonUtils.parseIntegerAttribute;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -38,18 +38,18 @@ import org.joda.time.LocalTime;
 import org.springframework.web.util.UriComponentsBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.node.domain.AtmosphericDatum;
 import net.solarnetwork.node.domain.DayDatum;
 import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
 import net.solarnetwork.node.domain.GeneralDayDatum;
 import net.solarnetwork.node.support.JsonHttpClientSupport;
-import net.solarnetwork.util.JsonUtils;
 
 /**
  * JSON implementation of {@link OwmClient}
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 

@@ -75,10 +75,10 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * 
  * <dt>multiAmpSensorIndexFlags</dt>
  * <dd>A bitmask flag for which amp sensor index readings to return from
- * {@link #readMultipleDatum()}. The amp sensors number 1 - 3. Enable reading
- * each index by adding together each index as 2 ^ (index - 1). Thus to enable
- * reading from all 3 indexes set this value to <em>7</em> (2^0 + 2^1 + 2^2) =
- * 7). Defaults to 7.</dd>
+ * {@link net.solarnetwork.node.MultiDatumDataSource#readMultipleDatum()}. The
+ * amp sensors number 1 - 3. Enable reading each index by adding together each
+ * index as 2 ^ (index - 1). Thus to enable reading from all 3 indexes set this
+ * value to <em>7</em> (2^0 + 2^1 + 2^2) = 7). Defaults to 7.</dd>
  * 
  * <dt>addressSourceMapping</dt>
  * <dd>If configured, a mapping of device address ID values to Datum sourceId
@@ -188,7 +188,7 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	 * 
 	 * <p>
 	 * This will contain all the addresses previously passed to
-	 * {@link #addKnownAddress(String)} and that have not been removed via
+	 * {@link #addKnownAddress(CCDatum)} and that have not been removed via
 	 * {@link #clearKnownAddresses(Collection)}.
 	 * </p>
 	 * 
@@ -277,6 +277,7 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	 * </p>
 	 * 
 	 * @param mapping
+	 *        the delimited source mapping
 	 */
 	public void setAddressSourceMappingValue(String mapping) {
 		if ( mapping == null || mapping.length() < 1 ) {
@@ -305,6 +306,7 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	 * </p>
 	 * 
 	 * @param filters
+	 *        the comma-delimited filter list
 	 */
 	public void setSourceIdFilterValue(String filters) {
 		if ( filters == null || filters.length() < 1 ) {

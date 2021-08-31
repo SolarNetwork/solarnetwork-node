@@ -47,7 +47,7 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * {@link DatumDataSource} for the Shark 100 series meter.
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Shark100Data>
 		implements DatumDataSource<GeneralNodeACEnergyDatum>,
@@ -94,7 +94,6 @@ public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Sh
 
 	@Override
 	public GeneralNodeACEnergyDatum readCurrentDatum() {
-		final long start = System.currentTimeMillis();
 		try {
 			final Shark100Data currSample = getCurrentSample();
 			if ( currSample == null ) {
@@ -106,10 +105,6 @@ public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Sh
 				d.populatePhaseMeasurementProperties(currSample);
 			}
 			d.setSourceId(resolvePlaceholders(sourceId));
-			if ( currSample.getDataTimestamp() >= start ) {
-				// we read from the device
-				postDatumCapturedEvent(d);
-			}
 			return d;
 		} catch ( IOException e ) {
 			log.error("Communication problem reading source {} from Shark 100 device {}: {}",

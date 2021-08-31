@@ -57,7 +57,7 @@ public enum DataCollectionMode {
 	/**
 	 * Get a friendly display version of the enumeration.
 	 * 
-	 * @return
+	 * @return the display string
 	 */
 	public String toDisplayString() {
 		switch (this) {

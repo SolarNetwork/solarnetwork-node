@@ -43,6 +43,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.support.DatumDataSourceSupport;
 import net.solarnetwork.node.support.XmlServiceSupport;
 import net.solarnetwork.util.StringUtils;
 
@@ -95,7 +96,7 @@ import net.solarnetwork.util.StringUtils;
  * @author matt
  * @version 1.1
  */
-public class EnaSolarXMLDatumDataSource extends XmlServiceSupport
+public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource<GeneralNodePVEnergyDatum>, SettingSpecifierProvider {
 
 	/** The {@link SettingDao} key for a Long counter of 0 watt readings. */
@@ -109,6 +110,7 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport
 
 	private static final Pattern DATA_VALUE_XPATH_NAME = Pattern.compile("key='(\\w+)'");
 
+	private final XmlServiceSupport xmlSupport = new XmlServiceSupport();
 	private String[] urls;
 	private String sourceId;
 	private Map<String, XPathExpression> xpathMapping;
@@ -128,7 +130,7 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport
 			sampleException = null;
 			for ( String url : urls ) {
 				try {
-					webFormGetForBean(null, datum, url, null, xpathMapping);
+					xmlSupport.webFormGetForBean(null, datum, url, null, xpathMapping);
 				} catch ( RuntimeException e ) {
 					Throwable root = e;
 					while ( root.getCause() != null ) {
@@ -153,7 +155,6 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport
 			if ( datum != null ) {
 				sample = datum;
 				addEnergyDatumSourceMetadata(datum);
-				postDatumCapturedEvent(datum);
 			}
 		} else {
 			datum = sample;
@@ -181,9 +182,10 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport
 		return "Enasolar" + (sourceId == null ? "" : "-" + sourceId);
 	}
 
-	@Override
+	/**
+	 * Call after properties configured to initialize the service.
+	 */
 	public void init() {
-		super.init();
 		if ( xpathMapping == null ) {
 			setXpathMap(defaultXpathMap());
 		}
@@ -300,7 +302,7 @@ public class EnaSolarXMLDatumDataSource extends XmlServiceSupport
 	 */
 	public void setXpathMap(Map<String, String> xpathMap) {
 		this.xpathMap = xpathMap;
-		setXpathMapping(getXPathExpressionMap(xpathMap));
+		setXpathMapping(xmlSupport.getXPathExpressionMap(xpathMap));
 	}
 
 	/**

@@ -33,10 +33,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -44,6 +40,10 @@ import org.supercsv.io.CsvBeanReader;
 import org.supercsv.io.ICsvBeanReader;
 import org.supercsv.prefs.CsvPreference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Base class to support MetService Day and Weather data sources.
@@ -102,8 +102,8 @@ public abstract class MetserviceSupport<T extends Datum> {
 			result.add(menuSpec);
 		} else {
 			// fall back to manual value
-			result.add(new BasicTextFieldSettingSpecifier("locationIdentifier", defaults
-					.getLocationIdentifier()));
+			result.add(new BasicTextFieldSettingSpecifier("locationIdentifier",
+					defaults.getLocationIdentifier()));
 		}
 
 		return result;
@@ -174,7 +174,7 @@ public abstract class MetserviceSupport<T extends Datum> {
 	/**
 	 * Get a cache to support queries resulting in unchanged data.
 	 * 
-	 * @return
+	 * @return the cache
 	 */
 	protected Map<String, T> getDatumCache() {
 		return datumCache;

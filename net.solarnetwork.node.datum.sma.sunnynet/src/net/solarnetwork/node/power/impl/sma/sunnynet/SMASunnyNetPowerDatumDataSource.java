@@ -155,7 +155,7 @@ import net.solarnetwork.util.StringUtils;
  * </pre>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSupport
 		implements DatumDataSource<ACEnergyDatum>,
@@ -263,7 +263,6 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 			dataCollector = getDataCollectorInstance();
 			if ( dataCollector != null ) {
 				GeneralNodeACEnergyDatum datum = dataCollector.collectData(this);
-				postDatumCapturedEvent(datum);
 				addEnergyDatumSourceMetadata(datum);
 				return datum;
 			}

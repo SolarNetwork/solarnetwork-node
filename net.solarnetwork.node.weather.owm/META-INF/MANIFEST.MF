@@ -3,13 +3,14 @@ Bundle-ManifestVersion: 2
 Bundle-Name: OpenWeatherMap Weather
 Bundle-Description: Collect weather data from the OpenWeatherMap.
 Bundle-SymbolicName: net.solarnetwork.node.weather.owm
-Bundle-Version: 1.1.0
+Bundle-Version: 1.1.2
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.weather.owm
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
  com.fasterxml.jackson.core;version="[2.4,3.0)",
  com.fasterxml.jackson.databind;version="[2.4,3.0)",
+ net.solarnetwork.codec;version="[1.3,2.0)",
  net.solarnetwork.domain;version="1.14.0",
  net.solarnetwork.node;version="1.24.0",
  net.solarnetwork.node.domain;version="1.15.0",
@@ -27,11 +28,11 @@ Import-Package:
  org.quartz;version="[2.2,3.0)",
  org.quartz.simpl;version="[2.2,3.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.beans;version="[4.2,5.0)",
- org.springframework.beans.factory.config;version="[4.2,5.0)",
- org.springframework.beans.propertyeditors;version="[4.2,5.0)",
- org.springframework.context;version="[4.2,5.0)",
- org.springframework.context.support;version="[4.2,5.0)",
- org.springframework.scheduling.quartz;version="[4.2,5.0)",
- org.springframework.util;version="[4.2,5.0)",
- org.springframework.web.util;version="[4.2,5.0)"
+ org.springframework.beans;version="[4.3,5.0)",
+ org.springframework.beans.factory.config;version="[4.3,5.0)",
+ org.springframework.beans.propertyeditors;version="[4.3,5.0)",
+ org.springframework.context;version="[4.3,5.0)",
+ org.springframework.context.support;version="[4.3,5.0)",
+ org.springframework.scheduling.quartz;version="[4.3,5.0)",
+ org.springframework.util;version="[4.3,5.0)",
+ org.springframework.web.util;version="[4.3,5.0)"

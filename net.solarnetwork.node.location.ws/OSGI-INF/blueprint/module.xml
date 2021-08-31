@@ -24,9 +24,16 @@
 	
 	<reference id="identityService" availability="optional" interface="net.solarnetwork.node.IdentityService"/>
 
+	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
+
 	<!-- Published Services -->
 
-	<service ref="wsLocationServiceService" interface="net.solarnetwork.node.LocationService" ranking="1"/>
+	<service ref="wsLocationServiceService" ranking="1">
+		<interfaces>
+			<value>net.solarnetwork.node.LocationService</value>
+			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+		</interfaces>
+	</service>
 
 	<!-- Supporting Services -->
 	
@@ -40,7 +47,18 @@
 		</property>
 	</bean>
 	
-	<bean id="wsLocationServiceService" class="net.solarnetwork.node.location.ws.WebServiceLocationService">
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<array>
+				<value>net.solarnetwork.node.location.ws.WebServiceLocationService</value>
+			</array>
+		</property>
+	</bean>
+	
+	<bean id="wsLocationServiceService" class="net.solarnetwork.node.location.ws.WebServiceLocationService"
+			init-method="startup">
+		<argument ref="settingDao"/>
+		<property name="messageSource" ref="messageSource"/>
 		<property name="objectMapper" ref="objectMapper"/>
 		<property name="identityService" ref="identityService"/>
 		<property name="sslService">

@@ -99,7 +99,7 @@ public abstract class ConfigurableOwmClientService<T extends Datum> implements I
 	}
 
 	/**
-	 * Alias for {@link @getUID()}.
+	 * Alias for {@link #getUID()}.
 	 * 
 	 * @return the UID
 	 */

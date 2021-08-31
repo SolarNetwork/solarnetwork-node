@@ -22,10 +22,10 @@
 
 package net.solarnetwork.node.weather.nz.metservice;
 
-import static net.solarnetwork.util.JsonUtils.parseBigDecimalAttribute;
-import static net.solarnetwork.util.JsonUtils.parseDateAttribute;
-import static net.solarnetwork.util.JsonUtils.parseIntegerAttribute;
-import static net.solarnetwork.util.JsonUtils.parseStringAttribute;
+import static net.solarnetwork.codec.JsonUtils.parseBigDecimalAttribute;
+import static net.solarnetwork.codec.JsonUtils.parseDateAttribute;
+import static net.solarnetwork.codec.JsonUtils.parseIntegerAttribute;
+import static net.solarnetwork.codec.JsonUtils.parseStringAttribute;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -52,7 +52,7 @@ import net.solarnetwork.node.support.UnicodeReader;
  * Basic implementation of {@link MetserviceClient}.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class BasicMetserviceClient extends HttpClientSupport implements MetserviceClient {
 
@@ -437,6 +437,7 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	 * {@link #DEFAULT_ONE_MINUTE_OBS_SET_TEMPLATE}.
 	 * 
 	 * @param oneMinuteObsTemplate
+	 *        the template to use
 	 */
 	public void setOneMinuteObsTemplate(String oneMinuteObsTemplate) {
 		this.oneMinuteObsTemplate = oneMinuteObsTemplate;
@@ -451,7 +452,8 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	 * string parameter for the location key. Defaults to
 	 * {@link #DEFAULT_ONE_MINUTE_OBS_SET_TEMPLATE}.
 	 * 
-	 * @param oneMinuteObsTemplate
+	 * @param hourlyObsAndForecastTemplate
+	 *        the template to use
 	 */
 	public void setHourlyObsAndForecastTemplate(String hourlyObsAndForecastTemplate) {
 		this.hourlyObsAndForecastTemplate = hourlyObsAndForecastTemplate;

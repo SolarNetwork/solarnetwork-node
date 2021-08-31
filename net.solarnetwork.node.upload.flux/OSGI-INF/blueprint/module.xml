@@ -19,8 +19,7 @@
 
 	<reference id="mqttConnectionFactory" interface="net.solarnetwork.common.mqtt.MqttConnectionFactory"/>
 	
-	<reference id="datumQueue" interface="net.solarnetwork.node.DatumQueue" 
-		filter="(datumClassName=net.solarnetwork.node.domain.GeneralDatum)"/>
+	<reference id="datumQueue" interface="net.solarnetwork.node.DatumQueue"/>
 
 	<bean id="sslService" class="net.solarnetwork.util.DynamicServiceTracker">
 		<property name="bundleContext" ref="bundleContext"/>
@@ -93,7 +92,6 @@
 			<argument ref="objectMapper"/>
 			<argument ref="identityService"/>
 			<argument ref="datumQueue"/>
-			<argument value="true"/>
 			<property name="messageSource" ref="messageSource"/>
 			<property name="executor" ref="executor"/>
 			<property name="opModesService" ref="opModesService"/>

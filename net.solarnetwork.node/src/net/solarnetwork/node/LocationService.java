@@ -28,10 +28,10 @@ import net.solarnetwork.domain.GeneralLocationSourceMetadata;
 import net.solarnetwork.node.domain.Location;
 
 /**
- * API for querying for locations.
+ * API for managing locations.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public interface LocationService {
 
@@ -102,4 +102,18 @@ public interface LocationService {
 	 * @since 1.1
 	 */
 	GeneralLocationSourceMetadata getLocationMetadata(Long locationId, String sourceId);
+
+	/**
+	 * Update the node's own location details in SolarNetwork.
+	 * 
+	 * <p>
+	 * This is meant to support updating a node's own GPS coordinates. Other
+	 * location properties may or may not be supported.
+	 * </p>
+	 * 
+	 * @param location
+	 *        the location details to update
+	 * @since 1.2
+	 */
+	void updateNodeLocation(net.solarnetwork.domain.Location location);
 }

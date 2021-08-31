@@ -54,10 +54,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.core.task.TaskExecutor;
 import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.node.DatumQueue;
 import net.solarnetwork.node.Identifiable;
 import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.GeneralDatum;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
@@ -65,13 +67,24 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.OptionalServiceCollection;
 
 /**
- * Manage a collection of
+ * Poll a set of {@link DatumDataSource} services at a configurable frequency
+ * when an operational mode is active.
+ * 
+ * <p>
+ * This service is configured with a <em>target</em> operational mode and a set
+ * of configurations that each define a source ID filter and associated
+ * schedule. When the target mode becomes active, it will schedule jobs for each
+ * configuration to poll from all matching {@link DatumDataSource} service,
+ * passing all returned datum to {@link DatumQueue#offer(GeneralDatum, boolean)}
+ * with {@code persisted} set to {@literal false}.
+ * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.2
  */
 public class DatumDataSourceOpModeInvoker
 		implements Identifiable, SettingSpecifierProvider, DatumDataSourceScheduleService, EventHandler {
@@ -91,6 +104,7 @@ public class DatumDataSourceOpModeInvoker
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
+	private final OptionalService<DatumQueue> datumQueue;
 	private final OptionalServiceCollection<DatumDataSource<? extends Datum>> dataSources;
 	private final OptionalServiceCollection<MultiDatumDataSource<? extends Datum>> multiDataSources;
 
@@ -108,15 +122,18 @@ public class DatumDataSourceOpModeInvoker
 	/**
 	 * Constructor.
 	 * 
+	 * @param datumQueue
+	 *        the queue
 	 * @param dataSources
 	 *        the data sources
 	 * @param multiDataSources
 	 *        the multi data sources
 	 */
-	public DatumDataSourceOpModeInvoker(
+	public DatumDataSourceOpModeInvoker(OptionalService<DatumQueue> datumQueue,
 			OptionalServiceCollection<DatumDataSource<? extends Datum>> dataSources,
 			OptionalServiceCollection<MultiDatumDataSource<? extends Datum>> multiDataSources) {
 		super();
+		this.datumQueue = datumQueue;
 		this.dataSources = dataSources;
 		this.multiDataSources = multiDataSources;
 	}
@@ -219,6 +236,7 @@ public class DatumDataSourceOpModeInvoker
 		if ( config == null ) {
 			return;
 		}
+		final DatumQueue queue = OptionalService.service(datumQueue);
 		Set<Object> handled = new HashSet<>();
 		if ( dataSources != null ) {
 			for ( DatumDataSource<? extends Datum> dataSource : dataSources.services() ) {
@@ -231,6 +249,9 @@ public class DatumDataSourceOpModeInvoker
 				if ( config.matches(dataSource) ) {
 					Datum datum = dataSource.readCurrentDatum();
 					log.debug("Invoked DatumDataSource {} and got {}", dsName, datum);
+					if ( datum instanceof GeneralDatum ) {
+						queue.offer((GeneralDatum) datum, false);
+					}
 				}
 			}
 		}
@@ -243,8 +264,15 @@ public class DatumDataSourceOpModeInvoker
 				String dsName = displayNameForIdentifiable(dataSource);
 				log.trace("Inspecting MultiDatumDataSource {} against config {}", dsName, config);
 				if ( config.matches(dataSource) ) {
-					Collection<? extends Datum> datum = dataSource.readMultipleDatum();
-					log.debug("Invoked MultiDatumDataSource {} and got {}", dsName, datum);
+					Collection<? extends Datum> datums = dataSource.readMultipleDatum();
+					log.debug("Invoked MultiDatumDataSource {} and got {}", dsName, datums);
+					if ( datums != null ) {
+						for ( Datum datum : datums ) {
+							if ( datum instanceof GeneralDatum ) {
+								queue.offer((GeneralDatum) datum, false);
+							}
+						}
+					}
 				}
 			}
 		}
@@ -430,6 +458,7 @@ public class DatumDataSourceOpModeInvoker
 	 * Set the unique ID for this service.
 	 * 
 	 * @param uid
+	 *        the ID to use
 	 */
 	public void setUid(String uid) {
 		this.uid = uid;
