@@ -84,7 +84,7 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class DatumDataSourceOpModeInvoker
 		implements Identifiable, SettingSpecifierProvider, DatumDataSourceScheduleService, EventHandler {
@@ -458,6 +458,7 @@ public class DatumDataSourceOpModeInvoker
 	 * Set the unique ID for this service.
 	 * 
 	 * @param uid
+	 *        the ID to use
 	 */
 	public void setUid(String uid) {
 		this.uid = uid;

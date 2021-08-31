@@ -39,7 +39,9 @@ public class ScheduledDatumDataSourceConfig {
 	 * Constructor.
 	 * 
 	 * @param config
-	 *        the config
+	 *        the configuration
+	 * @param trigger
+	 *        the trigger
 	 */
 	public ScheduledDatumDataSourceConfig(DatumDataSourceScheduleConfig config, Trigger trigger) {
 		super();
