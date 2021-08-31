@@ -196,7 +196,8 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	private boolean isSnapshotConfigurationValid() {
 		return ffmpegPath != null && !ffmpegPath.isEmpty() && ffmpegSnapshotOptions != null
-				&& !ffmpegSnapshotOptions.isEmpty();
+				&& !ffmpegSnapshotOptions.isEmpty() && outputFileTemplate != null
+				&& !outputFileTemplate.isEmpty();
 	}
 
 	private synchronized void unscheduleSnapshotJob() {
