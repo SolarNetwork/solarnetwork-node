@@ -1,7 +1,9 @@
 # SolarNode Camera Control via FFmpeg
 
 This SolarNode plugin provides a component that can integrate with [ffmpeg][ffmpeg] to support
-capturing snapshot images from a video stream.
+capturing snapshot images from a video stream. The captured images are stored on the local file 
+system. The [Storage Service Upload][storge-service-upload] plugin can be used to watch for newly
+created snapshots and upload them, creating a datum stream that references the uploaded images.
 
 ![FFmpeg Camera Control settings](docs/solarnode-ffmpeg-camera-settings.png)
 
@@ -42,3 +44,4 @@ would be used:
 [cron-exp]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Cron-Job-Syntax
 [ffmpeg]: https://www.ffmpeg.org/
 [signal-instr]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#signal
+[storge-service-upload]: ../net.solarnetwork.node.upload.resource/
