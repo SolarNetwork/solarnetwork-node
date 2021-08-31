@@ -1,0 +1,32 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Camera Control via FFmpeg
+Bundle-Description: Capture camera images via the ffmpeg system tool.
+Bundle-SymbolicName: net.solarnetwork.node.control.camera.ffmpeg
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Automatic-Module-Name: net.solarnetwork.node.control.camera.ffmpeg
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Import-Package: 
+ net.solarnetwork.domain;version="[1.31,2.0)",
+ net.solarnetwork.io;version="[1.6,2.0)",
+ net.solarnetwork.node;version="[1.36,2.0)",
+ net.solarnetwork.node.job;version="[1.17,2.0)",
+ net.solarnetwork.node.reactor;version="[1.8,2.0)",
+ net.solarnetwork.node.settings;version="[1.15,2.0)",
+ net.solarnetwork.node.settings.support;version="[1.12,2.0)",
+ net.solarnetwork.node.setup;version="[1.13,2.0)",
+ net.solarnetwork.node.support;version="[1.29,2.0)",
+ net.solarnetwork.settings;version="[1.4,2.0)",
+ net.solarnetwork.util;version="[1.52,2.0)",
+ org.quartz;version="[2.2,3.0)",
+ org.quartz.simpl;version="[2.2,3.0)",
+ org.quartz.utils;version="[2.2,3.0)",
+ org.slf4j;version="[1.7,2.0)",
+ org.springframework.beans;version="[4.3,5.0)",
+ org.springframework.context;version="[4.3,5.0)",
+ org.springframework.context.support;version="[4.3,5.0)",
+ org.springframework.core.io;version="[4.3,5.0)",
+ org.springframework.scheduling;version="[4.3,5.0)",
+ org.springframework.scheduling.quartz;version="[4.3,5.0)",
+ org.springframework.util;version="[4.3,5.0)"
