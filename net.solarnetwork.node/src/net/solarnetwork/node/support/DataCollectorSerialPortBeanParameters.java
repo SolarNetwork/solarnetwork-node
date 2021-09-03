@@ -23,7 +23,7 @@
 package net.solarnetwork.node.support;
 
 import java.util.List;
-import net.solarnetwork.node.DataCollector;
+import net.solarnetwork.node.service.DataCollector;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;

@@ -24,30 +24,28 @@
 
 package net.solarnetwork.node.dao;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.NodeDatum;
 
 /**
- * Data Access Object (DAO) API for {@link Datum} objects.
+ * Data Access Object (DAO) API for {@link NodeDatum} objects.
  * 
  * @author matt
- * @version 1.2
- * @param <T>
- *        the type of Datum this DAO supports
+ * @version 2.0
  */
-public interface DatumDao<T extends Datum> {
+public interface DatumDao {
 
 	/**
-	 * An {@link org.osgi.service.event.Event} topic for when a {@link Datum}
-	 * has been persisted.
+	 * An {@link org.osgi.service.event.Event} topic for when a
+	 * {@link NodeDatum} has been persisted.
 	 * 
 	 * <p>
 	 * The properties of the event shall be any of the JavaBean properties of
 	 * the Datum supported by events (i.e. any simple Java property such as
-	 * numbers and strings). In addition, the {@link Datum#DATUM_TYPE_PROPERTY}
-	 * property shall be populated with the name of the <em>core</em> class name
-	 * of the datum type.
+	 * numbers and strings). In addition, the
+	 * {@link NodeDatum#DATUM_TYPE_PROPERTY} property shall be populated with
+	 * the name of the <em>core</em> class name of the datum type.
 	 * </p>
 	 * 
 	 * @since 1.2
@@ -55,19 +53,12 @@ public interface DatumDao<T extends Datum> {
 	public static final String EVENT_TOPIC_DATUM_STORED = "net/solarnetwork/node/dao/DATUM_STORED";
 
 	/**
-	 * Get the class supported by this Dao.
-	 * 
-	 * @return class
-	 */
-	Class<? extends T> getDatumType();
-
-	/**
 	 * Store (create or update) a datum.
 	 * 
 	 * @param datum
 	 *        the datum to persist
 	 */
-	void storeDatum(T datum);
+	void storeDatum(NodeDatum datum);
 
 	/**
 	 * Get a List of Datum instances that have not been uploaded yet to a
@@ -83,7 +74,7 @@ public interface DatumDao<T extends Datum> {
 	 *        the destination to check
 	 * @return list of Datum, or empty List if none available
 	 */
-	List<T> getDatumNotUploaded(String destination);
+	List<NodeDatum> getDatumNotUploaded(String destination);
 
 	/**
 	 * Mark a datum as uploaded.
@@ -97,7 +88,7 @@ public interface DatumDao<T extends Datum> {
 	 * @param trackingId
 	 *        the remote tracking ID assigned to the uploaded Datum
 	 */
-	void setDatumUploaded(T datum, Date date, String destination, String trackingId);
+	void setDatumUploaded(NodeDatum datum, Instant date, String destination, String trackingId);
 
 	/**
 	 * Delete both Datum and DatumUpload objects that have been successfully

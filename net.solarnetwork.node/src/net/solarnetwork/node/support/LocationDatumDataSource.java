@@ -34,17 +34,17 @@ import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import net.solarnetwork.domain.GeneralLocationSourceMetadata;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.LocationService;
-import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.domain.BasicGeneralLocation;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.NodeDatum;
 import net.solarnetwork.node.domain.GeneralLocation;
 import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
-import net.solarnetwork.node.domain.Location;
+import net.solarnetwork.node.domain.DatumLocation;
 import net.solarnetwork.node.domain.PriceLocation;
 import net.solarnetwork.node.domain.PricedDatum;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.LocationService;
+import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -60,7 +60,7 @@ import net.solarnetwork.util.OptionalServiceTracker;
  * 
  * <p>
  * This is to be used to easily augment various datum that relate to a location
- * with the necessary {@link Location#getLocationId()} ID. This class also
+ * with the necessary {@link DatumLocation#getLocationId()} ID. This class also
  * implements the {@link MultiDatumDataSource} API, and will call the methods of
  * that API on the configured {@code delegate} if that also implements
  * {@link MultiDatumDataSource}. If the {@code delegate} does not implement
@@ -72,7 +72,7 @@ import net.solarnetwork.util.OptionalServiceTracker;
  * @author matt
  * @version 1.6
  */
-public class LocationDatumDataSource<T extends Datum>
+public class LocationDatumDataSource<T extends NodeDatum>
 		implements DatumDataSource<T>, MultiDatumDataSource<T>, SettingSpecifierProvider {
 
 	/** Default value for the {@code locationIdPropertyName} property. */
@@ -86,7 +86,7 @@ public class LocationDatumDataSource<T extends Datum>
 
 	private DatumDataSource<T> delegate;
 	private OptionalService<LocationService> locationService;
-	private String locationType = Location.PRICE_TYPE;
+	private String locationType = DatumLocation.PRICE_TYPE;
 	private String locationIdPropertyName = DEFAULT_LOCATION_ID_PROP_NAME;
 	private String sourceIdPropertyName = DEFAULT_SOURCE_ID_PROP_NAME;
 	private boolean requireLocationService = false;
@@ -117,9 +117,9 @@ public class LocationDatumDataSource<T extends Datum>
 	 *        the location service
 	 * @return the data source
 	 */
-	public static LocationDatumDataSource<? extends Datum> getInstance(Object delegate,
+	public static LocationDatumDataSource<? extends NodeDatum> getInstance(Object delegate,
 			OptionalServiceTracker<LocationService> locationService) {
-		LocationDatumDataSource<? extends Datum> ds = new LocationDatumDataSource<Datum>();
+		LocationDatumDataSource<? extends NodeDatum> ds = new LocationDatumDataSource<NodeDatum>();
 		ds.setDelegate(delegate);
 		ds.setLocationService(locationService);
 		return ds;
@@ -356,7 +356,7 @@ public class LocationDatumDataSource<T extends Datum>
 	}
 
 	/**
-	 * Get the {@link LocationService} to use to lookup {@link Location}
+	 * Get the {@link LocationService} to use to lookup {@link DatumLocation}
 	 * instances via the configured {@code locationId} property.
 	 * 
 	 * @return the location service
@@ -366,7 +366,7 @@ public class LocationDatumDataSource<T extends Datum>
 	}
 
 	/**
-	 * Set the {@link LocationService} to use to lookup {@link Location}
+	 * Set the {@link LocationService} to use to lookup {@link DatumLocation}
 	 * instances via the configured {@code locationId} property.
 	 * 
 	 * @param locationService
@@ -378,7 +378,7 @@ public class LocationDatumDataSource<T extends Datum>
 
 	/**
 	 * Get the JavaBean property name to set the found
-	 * {@link Location#getLocationId()} to on the {@link Datum} returned from
+	 * {@link DatumLocation#getLocationId()} to on the {@link NodeDatum} returned from
 	 * the configured {@code delegate}.
 	 * 
 	 * @return the location ID property name; defaults to
@@ -390,7 +390,7 @@ public class LocationDatumDataSource<T extends Datum>
 
 	/**
 	 * Set the JavaBean property name to set the found
-	 * {@link Location#getLocationId()} to on the {@link Datum} returned from
+	 * {@link DatumLocation#getLocationId()} to on the {@link NodeDatum} returned from
 	 * the configured {@code delegate}.
 	 * 
 	 * <p>
@@ -495,7 +495,7 @@ public class LocationDatumDataSource<T extends Datum>
 	}
 
 	/**
-	 * Get the {@link Location} ID to assign to datum.
+	 * Get the {@link DatumLocation} ID to assign to datum.
 	 * 
 	 * @return the location ID
 	 */
@@ -504,7 +504,7 @@ public class LocationDatumDataSource<T extends Datum>
 	}
 
 	/**
-	 * Set the {@link Location} ID to assign to datum.
+	 * Set the {@link DatumLocation} ID to assign to datum.
 	 * 
 	 * @param locationId
 	 *        the location ID
@@ -543,7 +543,7 @@ public class LocationDatumDataSource<T extends Datum>
 
 	/**
 	 * Get the JavaBean property name to set the found
-	 * {@link Location#getSourceId()} to on the {@link Datum} returned from the
+	 * {@link DatumLocation#getSourceId()} to on the {@link NodeDatum} returned from the
 	 * configured {@code delegate}.
 	 * 
 	 * @return the source ID property name; defaults to
@@ -555,7 +555,7 @@ public class LocationDatumDataSource<T extends Datum>
 
 	/**
 	 * Set the JavaBean property name to set the found
-	 * {@link Location#getSourceId()} to on the {@link Datum} returned from the
+	 * {@link DatumLocation#getSourceId()} to on the {@link NodeDatum} returned from the
 	 * configured {@code delegate}.
 	 * 
 	 * <p>

@@ -31,18 +31,18 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.node.OperationalModesService;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.GeneralDatumSamplesTransformerStats;
+import net.solarnetwork.node.domain.NodeDatum;
+import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.service.DatumFilterStats;
 import net.solarnetwork.util.StatCounter;
 import net.solarnetwork.util.StatCounter.Stat;
 
 /**
  * Base class for services like
- * {@link net.solarnetwork.node.GeneralDatumSamplesTransformService} to extend.
+ * {@link net.solarnetwork.service.DatumFilterService} to extend.
  * 
  * @author matt
  * @version 1.2
@@ -66,7 +66,7 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	 * A stats counter.
 	 * 
 	 * <p>
-	 * The base stats will be {@link GeneralDatumSamplesTransformerStats}.
+	 * The base stats will be {@link DatumFilterStats}.
 	 * </p>
 	 * 
 	 * @since 1.2
@@ -94,7 +94,7 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	public BaseSamplesTransformSupport(Stat[] stats) {
 		super();
 		this.stats = new StatCounter("Transform", "", log, DEFAULT_STAT_LOG_FREQUENCY,
-				GeneralDatumSamplesTransformerStats.values(), stats);
+				DatumFilterStats.values(), stats);
 	}
 
 	/**
@@ -155,7 +155,7 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	 * 
 	 * <p>
 	 * This will resolve the {@literal status.msg} message and pass in
-	 * parameters for all of the {@link GeneralDatumSamplesTransformerStats}
+	 * parameters for all of the {@link DatumFilterStats}
 	 * values along with a processing time average and "not ignored" processing
 	 * time average.
 	 * </p>
@@ -163,28 +163,28 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	 * @return the status message
 	 */
 	protected String getStatusMessage() {
-		final int len = GeneralDatumSamplesTransformerStats.values().length;
+		final int len = DatumFilterStats.values().length;
 		Object[] params = new Object[len + 2];
 		for ( int i = 0; i < len; i++ ) {
-			params[i] = stats.get(GeneralDatumSamplesTransformerStats.values()[i]);
+			params[i] = stats.get(DatumFilterStats.values()[i]);
 		}
 
 		// convert processing times to friendly strings and add averages
 
-		long inputCount = (long) params[GeneralDatumSamplesTransformerStats.Input.ordinal()];
+		long inputCount = (long) params[DatumFilterStats.Input.ordinal()];
 
-		long totalTime = (Long) params[GeneralDatumSamplesTransformerStats.ProcessingTimeTotal
+		long totalTime = (Long) params[DatumFilterStats.ProcessingTimeTotal
 				.ordinal()];
-		params[GeneralDatumSamplesTransformerStats.ProcessingTimeTotal
+		params[DatumFilterStats.ProcessingTimeTotal
 				.ordinal()] = formatHoursMinutesSeconds(totalTime);
 		params[params.length - 2] = (inputCount > 0 ? String.format("%dms", totalTime / inputCount)
 				: "-");
 
 		long notIgnoredCount = inputCount
-				- (long) params[GeneralDatumSamplesTransformerStats.Ignored.ordinal()];
-		long notIgnoredTime = (Long) params[GeneralDatumSamplesTransformerStats.ProcessingTimeNotIgnoredTotal
+				- (long) params[DatumFilterStats.Ignored.ordinal()];
+		long notIgnoredTime = (Long) params[DatumFilterStats.ProcessingTimeNotIgnoredTotal
 				.ordinal()];
-		params[GeneralDatumSamplesTransformerStats.ProcessingTimeNotIgnoredTotal
+		params[DatumFilterStats.ProcessingTimeNotIgnoredTotal
 				.ordinal()] = formatHoursMinutesSeconds(notIgnoredTime);
 		params[params.length - 1] = (notIgnoredCount > 0
 				? String.format("%dms", notIgnoredTime / notIgnoredCount)
@@ -203,7 +203,7 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	 * @since 1.2
 	 */
 	protected long incrementInputStats() {
-		stats.incrementAndGet(GeneralDatumSamplesTransformerStats.Input);
+		stats.incrementAndGet(DatumFilterStats.Input);
 		return System.currentTimeMillis();
 	}
 
@@ -216,8 +216,8 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	 */
 	protected void incrementIgnoredStats(final long startTime) {
 		final long end = System.currentTimeMillis();
-		stats.incrementAndGet(GeneralDatumSamplesTransformerStats.Ignored);
-		stats.addAndGet(GeneralDatumSamplesTransformerStats.ProcessingTimeTotal, end - startTime, true);
+		stats.incrementAndGet(DatumFilterStats.Ignored);
+		stats.addAndGet(DatumFilterStats.ProcessingTimeTotal, end - startTime, true);
 	}
 
 	/**
@@ -235,13 +235,13 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 			final GeneralDatumSamples out) {
 		final long duration = System.currentTimeMillis() - startTime;
 		if ( out == null ) {
-			stats.incrementAndGet(GeneralDatumSamplesTransformerStats.Filtered);
+			stats.incrementAndGet(DatumFilterStats.Filtered);
 		} else if ( out != in && out != null && !out.equals(in) ) {
-			stats.incrementAndGet(GeneralDatumSamplesTransformerStats.Modified);
+			stats.incrementAndGet(DatumFilterStats.Modified);
 		}
-		stats.addAndGet(GeneralDatumSamplesTransformerStats.ProcessingTimeNotIgnoredTotal, duration,
+		stats.addAndGet(DatumFilterStats.ProcessingTimeNotIgnoredTotal, duration,
 				true);
-		stats.addAndGet(GeneralDatumSamplesTransformerStats.ProcessingTimeTotal, duration, true);
+		stats.addAndGet(DatumFilterStats.ProcessingTimeTotal, duration, true);
 	}
 
 	/**
@@ -312,7 +312,7 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	 * @return {@literal true} if the datum's {@code sourceId} value matches the
 	 *         configured source ID pattern, or no pattern is configured
 	 */
-	protected boolean sourceIdMatches(Datum datum) {
+	protected boolean sourceIdMatches(NodeDatum datum) {
 		Pattern sourceIdPat = getSourceIdPattern();
 		if ( sourceIdPat != null ) {
 			if ( datum == null || datum.getSourceId() == null
@@ -395,12 +395,12 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	 * Set a source ID pattern to match samples against.
 	 * 
 	 * Samples will only be considered for filtering if
-	 * {@link net.solarnetwork.node.domain.Datum#getSourceId()} matches this
+	 * {@link net.solarnetwork.node.domain.NodeDatum#getSourceId()} matches this
 	 * pattern.
 	 * 
 	 * The {@code sourceIdPattern} must be a valid {@link Pattern} regular
 	 * expression. The expression will be allowed to match anywhere in
-	 * {@link net.solarnetwork.node.domain.Datum#getSourceId()} values, so if
+	 * {@link net.solarnetwork.node.domain.NodeDatum#getSourceId()} values, so if
 	 * the pattern must match the full value only then use pattern positional
 	 * expressions like {@code ^} and {@code $}.
 	 * 

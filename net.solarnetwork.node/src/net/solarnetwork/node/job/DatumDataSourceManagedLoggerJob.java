@@ -39,12 +39,12 @@ import org.springframework.dao.DuplicateKeyException;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.domain.DeviceInfo;
 import net.solarnetwork.domain.GeneralDatumMetadata;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.DatumMetadataService;
-import net.solarnetwork.node.DeviceInfoProvider;
-import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.NodeDatum;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.DatumMetadataService;
+import net.solarnetwork.node.service.DeviceInfoProvider;
+import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -64,7 +64,7 @@ import net.solarnetwork.util.OptionalService;
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
-public class DatumDataSourceManagedLoggerJob<T extends Datum> extends AbstractJob
+public class DatumDataSourceManagedLoggerJob<T extends NodeDatum> extends AbstractJob
 		implements SettingSpecifierProvider {
 
 	// a static concurrent set to tack the publication of device infos

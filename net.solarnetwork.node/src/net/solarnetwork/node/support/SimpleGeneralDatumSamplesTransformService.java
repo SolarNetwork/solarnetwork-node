@@ -29,17 +29,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.node.GeneralDatumSamplesTransformService;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.NodeDatum;
 import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
 import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.MappableSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.service.DatumFilterService;
 import net.solarnetwork.settings.SettingsChangeObserver;
 
 /**
- * Basic implementation of {@link GeneralDatumSamplesTransformService} that
+ * Basic implementation of {@link DatumFilterService} that
  * adapts a collection of {@link GeneralDatumSamplesTransformer} into a single
  * service.
  * 
@@ -48,7 +48,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * @since 1.66
  */
 public class SimpleGeneralDatumSamplesTransformService extends BaseIdentifiable implements
-		GeneralDatumSamplesTransformService, SettingsChangeObserver, SettingSpecifierProvider {
+		DatumFilterService, SettingsChangeObserver, SettingSpecifierProvider {
 
 	private final String settingUid;
 	private final Map<String, Object> staticParameters;
@@ -87,9 +87,9 @@ public class SimpleGeneralDatumSamplesTransformService extends BaseIdentifiable 
 	 * <p>
 	 * The {@code staticParameters} can be used to pass a fixed set of
 	 * parameters to every invocation of
-	 * {@link GeneralDatumSamplesTransformer#transformSamples(Datum, GeneralDatumSamples, Map)}.
+	 * {@link GeneralDatumSamplesTransformer#filter(NodeDatum, GeneralDatumSamples, Map)}.
 	 * Any parameters passed to
-	 * {@link #transformSamples(Datum, GeneralDatumSamples, Map)} will be added
+	 * {@link #filter(NodeDatum, GeneralDatumSamples, Map)} will be added
 	 * to the static parameters, overriding duplicate values.
 	 * </p>
 	 * 
@@ -123,14 +123,14 @@ public class SimpleGeneralDatumSamplesTransformService extends BaseIdentifiable 
 	}
 
 	@Override
-	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
+	public GeneralDatumSamples transformSamples(NodeDatum datum, GeneralDatumSamples samples,
 			Map<String, Object> parameters) {
 		GeneralDatumSamples result = samples;
 		List<GeneralDatumSamplesTransformer> xforms = sampleTransformers;
 		Map<String, ?> xformParams = xformParameterMap(parameters);
 		if ( result != null && xforms != null ) {
 			for ( GeneralDatumSamplesTransformer xform : xforms ) {
-				result = xform.transformSamples(datum, result, xformParams);
+				result = xform.filter(datum, result, xformParams);
 				if ( result == null ) {
 					break;
 				}

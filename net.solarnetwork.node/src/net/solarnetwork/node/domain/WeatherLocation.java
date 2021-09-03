@@ -24,12 +24,12 @@ package net.solarnetwork.node.domain;
 
 
 /**
- * Extension of {@link BasicLocation} for weather data.
+ * Extension of {@link SimpleDatumLocation} for weather data.
  * 
  * @author matt
  * @version 1.0
  */
-public class WeatherLocation extends BasicLocation {
+public class WeatherLocation extends SimpleDatumLocation {
 
 	/**
 	 * Default constructor.

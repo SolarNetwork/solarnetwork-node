@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.support;
 
-import net.solarnetwork.node.PlatformPackageService.PlatformPackage;
+import net.solarnetwork.node.service.PlatformPackageService.PlatformPackage;
 
 /**
  * Basic immutable implementation of {@link PlatformPackage}.

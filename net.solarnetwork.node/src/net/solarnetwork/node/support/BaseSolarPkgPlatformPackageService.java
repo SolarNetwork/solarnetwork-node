@@ -39,7 +39,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.springframework.util.StringUtils;
 import net.solarnetwork.node.Constants;
-import net.solarnetwork.node.PlatformPackageService;
+import net.solarnetwork.node.service.PlatformPackageService;
 import net.solarnetwork.util.ProgressListener;
 
 /**

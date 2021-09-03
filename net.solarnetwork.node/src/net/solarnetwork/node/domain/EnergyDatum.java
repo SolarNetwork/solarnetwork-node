@@ -22,6 +22,10 @@
 
 package net.solarnetwork.node.domain;
 
+import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import net.solarnetwork.domain.datum.MutableDatumSamplesOperations;
+
 /**
  * Standardized API for energy related datum to implement. By "energy" we simply
  * mean this datum represents information tracked during the production or
@@ -31,43 +35,60 @@ package net.solarnetwork.node.domain;
  * power and accumulated energy production readings.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
-public interface EnergyDatum extends Datum {
+public interface EnergyDatum extends net.solarnetwork.domain.datum.EnergyDatum, MutableNodeDatum {
 
 	/**
-	 * The {@link net.solarnetwork.domain.GeneralNodeDatumSamples} accumulating
-	 * sample key for {@link #getWattHourReading()} values.
-	 */
-	public static final String WATT_HOUR_READING_KEY = "wattHours";
-
-	/**
-	 * The {@link net.solarnetwork.domain.GeneralNodeDatumSamples} instantaneous
-	 * sample key for {@link #getWatts()} values.
-	 */
-	public static final String WATTS_KEY = "watts";
-
-	/** A tag for "consumption" of energy. */
-	public static final String TAG_CONSUMPTION = "consumption";
-
-	/** A tag for "generation" of energy. */
-	public static final String TAG_GENERATION = "power";
-
-	/**
-	 * Get a watt-hour reading. Generally this is an accumulating value and
-	 * represents the overall energy used or produced since some reference date.
-	 * Often the reference date if fixed, but it could also shift, for example
-	 * shift to the last time a reading was taken.
+	 * Set a watt-hour reading.
 	 * 
-	 * @return the watt hour reading, or <em>null</em> if not available
+	 * @param value
+	 *        the watt hour reading
 	 */
-	public Long getWattHourReading();
+	default void getWattHourReading(Long value) {
+		asMutableSampleOperations().putSampleValue(Accumulating, WATT_HOUR_READING_KEY, value);
+	}
+
+	/**
+	 * Set a reverse watt-hour reading.
+	 * 
+	 * @return the reverse watt hour reading
+	 */
+	default void setReverseWattHourReading(Long value) {
+		asMutableSampleOperations().putSampleValue(Accumulating,
+				WATT_HOUR_READING_KEY + REVERSE_ACCUMULATING_SUFFIX_KEY, value);
+	}
 
 	/**
 	 * Get the instantaneous watts.
 	 * 
-	 * @return watts, or <em>null</em> if not available
+	 * @param value
+	 *        the watts
 	 */
-	public Integer getWatts();
+	default void getWatts(Integer value) {
+		asMutableSampleOperations().putSampleValue(Instantaneous, WATTS_KEY, value);
+	}
+
+	/**
+	 * Tag this datum with the consumption tag, removing the generation tag.
+	 * 
+	 * @return {@literal true} if the consumption tag as added
+	 */
+	default boolean tagAsConsumption() {
+		MutableDatumSamplesOperations ops = asMutableSampleOperations();
+		ops.removeTag(TAG_GENERATION);
+		return ops.addTag(TAG_CONSUMPTION);
+	}
+
+	/**
+	 * Tag this datum with the generation tag, removing the consumption tag.
+	 * 
+	 * @return {@literal true} if the generation tag as added
+	 */
+	default boolean tagAsGeneration() {
+		MutableDatumSamplesOperations ops = asMutableSampleOperations();
+		ops.removeTag(TAG_CONSUMPTION);
+		return ops.addTag(TAG_GENERATION);
+	}
 
 }

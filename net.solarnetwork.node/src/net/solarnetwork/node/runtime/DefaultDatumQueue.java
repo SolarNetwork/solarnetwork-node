@@ -43,19 +43,19 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.datum.GeneralDatumSamplesContainer;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.DatumQueue;
-import net.solarnetwork.node.GeneralDatumSamplesTransformService;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.domain.GeneralDatum;
 import net.solarnetwork.node.domain.GeneralLocationDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.support.BaseIdentifiable;
-import net.solarnetwork.node.support.DatumEvents;
+import net.solarnetwork.service.DatumFilterService;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.OptionalService.OptionalFilterableService;
 import net.solarnetwork.util.StatCounter;
@@ -104,7 +104,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	private final OptionalService<EventAdmin> eventAdmin;
 	private long startupDelayMs = DEFAULT_STARTUP_DELAY_MS;
 	private long queueDelayMs = DEFAULT_QUEUE_DELAY_MS;
-	private OptionalFilterableService<GeneralDatumSamplesTransformService> transformService;
+	private OptionalFilterableService<DatumFilterService> transformService;
 	private UncaughtExceptionHandler datumProcessorExceptionHandler;
 
 	private long processorStartupDelayMs;
@@ -482,12 +482,12 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		if ( !(event.datum instanceof GeneralDatumSamplesContainer) ) {
 			return event.datum;
 		}
-		GeneralDatumSamplesTransformService xform = OptionalService.service(transformService);
+		DatumFilterService xform = OptionalService.service(transformService);
 		if ( xform == null ) {
 			return event.datum;
 		}
 		GeneralDatumSamples in = ((GeneralDatumSamplesContainer) event.datum).getSamples();
-		GeneralDatumSamples out = xform.transformSamples(event.datum, in, new HashMap<>(4));
+		GeneralDatumSamples out = xform.filter(event.datum, in, new HashMap<>(4));
 		if ( out == null ) {
 			stats.incrementAndGet(QueueStats.Filtered);
 			return null;
@@ -652,7 +652,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 * 
 	 * @return the transform service, or {@literal null}
 	 */
-	public OptionalFilterableService<GeneralDatumSamplesTransformService> getTransformService() {
+	public OptionalFilterableService<DatumFilterService> getTransformService() {
 		return transformService;
 	}
 
@@ -663,7 +663,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 *        the transform service to set
 	 */
 	public void setTransformService(
-			OptionalFilterableService<GeneralDatumSamplesTransformService> transformService) {
+			OptionalFilterableService<DatumFilterService> transformService) {
 		this.transformService = transformService;
 	}
 

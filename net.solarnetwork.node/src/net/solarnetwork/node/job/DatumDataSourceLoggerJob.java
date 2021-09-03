@@ -32,10 +32,10 @@ import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.PersistJobDataAfterExecution;
 import org.springframework.dao.DuplicateKeyException;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
 import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.NodeDatum;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
 
 /**
  * Job to collect data from a {@link DatumDataSource} and persist that via a
@@ -43,7 +43,7 @@ import net.solarnetwork.node.domain.Datum;
  * 
  * <p>
  * This job simply calls {@link DatumDataSource#readCurrentDatum()} and if that
- * returns a non-null object, passes that to {@link DatumDao#storeDatum(Datum)}.
+ * returns a non-null object, passes that to {@link DatumDao#storeDatum(NodeDatum)}.
  * In essence, this job is for reading the current data available on some device
  * and then persisting it to a (probably local) database.
  * </p>
@@ -71,8 +71,8 @@ import net.solarnetwork.node.domain.Datum;
  * 
  * <dt>datumDao</dt>
  * <dd>The {@link DatumDao} to persist the collected data to. The
- * {@link DatumDao#storeDatum(Datum)} method will be called with the
- * {@link Datum} returned by {@link DatumDataSource#readCurrentDatum()}, if it
+ * {@link DatumDao#storeDatum(NodeDatum)} method will be called with the
+ * {@link NodeDatum} returned by {@link DatumDataSource#readCurrentDatum()}, if it
  * is non-null.</dd>
  * </dl>
  * 
@@ -83,7 +83,7 @@ import net.solarnetwork.node.domain.Datum;
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
-public class DatumDataSourceLoggerJob<T extends Datum> extends AbstractJob {
+public class DatumDataSourceLoggerJob<T extends NodeDatum> extends AbstractJob {
 
 	private List<DatumDataSource<T>> datumDataSources = null;
 	private DatumDao<T> datumDao = null;

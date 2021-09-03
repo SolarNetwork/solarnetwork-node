@@ -54,13 +54,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.util.FileCopyUtils;
-import net.solarnetwork.node.IdentityService;
+import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicSliderSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.service.OptionalService;
 
 /**
  * {@link BackupService} implementation that copies files to another location in
@@ -80,7 +80,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class FileSystemBackupService extends BackupServiceSupport implements SettingSpecifierProvider {
 

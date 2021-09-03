@@ -22,197 +22,129 @@
 
 package net.solarnetwork.node.domain;
 
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import java.math.BigDecimal;
 
 /**
  * Standardized API for atmospheric related datum to implement.
  * 
  * @author matt
- * @version 1.4
+ * @version 2.0
  */
-public interface AtmosphericDatum extends Datum {
+public interface AtmosphericDatum
+		extends net.solarnetwork.domain.datum.AtmosphericDatum, MutableNodeDatum {
 
 	/**
-	 * A {@link net.solarnetwork.domain.GeneralNodeDatumSamples} instantaneous
-	 * sample key for {@link AtmosphericDatum#getTemperature()} values.
-	 */
-	String TEMPERATURE_KEY = "temp";
-
-	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
-	 * sample key for {@link AtmosphericDatum#getHumidity()} values.
-	 */
-	String HUMIDITY_KEY = "humidity";
-
-	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
-	 * sample key for {@link AtmosphericDatum#getDewPoint()} values.
-	 */
-	String DEW_POINT_KEY = "dew";
-
-	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
-	 * sample key for {@link AtmosphericDatum#getAtmosphericPressure()} values.
-	 */
-	String ATMOSPHERIC_PRESSURE_KEY = "atm";
-
-	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
-	 * sample key for {@link AtmosphericDatum#getAtmosphericPressure()} values.
-	 */
-	String VISIBILITY_KEY = "visibility";
-
-	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
-	 * for {@link AtmosphericDatum#getSkyConditions()} values.
-	 */
-	String SKY_CONDITIONS_KEY = "sky";
-
-	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
-	 * for a bitmask of {@link net.solarnetwork.domain.SkyCondition#getCode()}
-	 * values.
+	 * Set the instantaneous temperature, in degrees Celsius.
 	 * 
-	 * @since 1.4
+	 * @param value
+	 *        the temperature, in degrees Celsius
 	 */
-	String SKY_CONDITION_CODES_KEY = "skies";
+	default void setTemperature(BigDecimal value) {
+		asMutableSampleOperations().putSampleValue(Instantaneous, TEMPERATURE_KEY, value);
+	}
 
 	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
-	 * for {@link AtmosphericDatum#getWindSpeed()} values.
+	 * Set the instantaneous dew point, in degrees Celsius.
 	 * 
-	 * @since 1.2
+	 * @param value
+	 *        the dew point, in degrees Celsius
 	 */
-	String WIND_SPEED_KEY = "wspeed";
+	default void setDewPoint(BigDecimal value) {
+		asMutableSampleOperations().putSampleValue(Instantaneous, DEW_POINT_KEY, value);
+	}
 
 	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
-	 * for {@link AtmosphericDatum#getWindDirection()} values.
-	 * 
-	 * @since 1.2
-	 */
-	String WIND_DIRECTION_KEY = "wdir";
-
-	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
-	 * for {@link AtmosphericDatum#getRain()} values.
-	 * 
-	 * @since 1.2
-	 */
-	String RAIN_KEY = "rain";
-
-	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
-	 * for {@link AtmosphericDatum#getSnow()} values.
-	 * 
-	 * @since 1.2
-	 */
-	String SNOW_KEY = "snow";
-
-	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
-	 * for {@link AtmosphericDatum#getIrradiance()} values.
-	 * 
-	 * @since 1.3
-	 */
-	String IRRADIANCE_KEY = "irradiance";
-
-	/** A tag for an "indoor" atmosphere sample. */
-	String TAG_ATMOSPHERE_INDOOR = "indoor";
-
-	/** A tag for an "outdoor" atmosphere sample. */
-	String TAG_ATMOSPHERE_OUTDOOR = "outdoor";
-
-	/**
-	 * A tag for a forecast atmosphere sample, as opposed to an actual
-	 * measurement.
-	 * 
-	 * @since 1.2
-	 */
-	String TAG_FORECAST = "forecast";
-
-	/**
-	 * Get the instantaneous temperature, in degrees Celsius.
-	 * 
-	 * @return the temperature, in degrees Celsius
-	 */
-	BigDecimal getTemperature();
-
-	/**
-	 * Get the instantaneous dew point, in degrees Celsius.
-	 * 
-	 * @return the dew point, in degrees celsius
-	 */
-	BigDecimal getDewPoint();
-
-	/**
-	 * Get the instantaneous humidity, as an integer percentage (where 100
+	 * Set the instantaneous humidity, as an integer percentage (where 100
 	 * represents 100%).
 	 * 
-	 * @return the humidity, as an integer percentage
+	 * @param value
+	 *        the humidity, as an integer percentage
 	 */
-	Integer getHumidity();
+	default void setHumidity(Integer value) {
+		asMutableSampleOperations().putSampleValue(Instantaneous, HUMIDITY_KEY, value);
+	}
 
 	/**
-	 * Get the instantaneous atmospheric pressure, in pascals.
+	 * Set the instantaneous atmospheric pressure, in pascals.
 	 * 
-	 * @return the atmospheric pressure, in pascals
+	 * @param value
+	 *        the atmospheric pressure, in pascals
 	 */
-	Integer getAtmosphericPressure();
+	default void setAtmosphericPressure(Integer value) {
+		asMutableSampleOperations().putSampleValue(Instantaneous, ATMOSPHERIC_PRESSURE_KEY, value);
+	}
 
 	/**
-	 * Get the instantaneous visibility, in meters.
+	 * Set the instantaneous visibility, in meters.
 	 * 
-	 * @return visibility, in meters
+	 * @param value
+	 *        visibility, in meters
 	 */
-	Integer getVisibility();
+	default void setVisibility(Integer value) {
+		asMutableSampleOperations().putSampleValue(Instantaneous, VISIBILITY_KEY, value);
+	}
 
 	/**
-	 * Get a textual description of the sky conditions, e.g. "clear", "cloudy",
+	 * Set a textual description of the sky conditions, e.g. "clear", "cloudy",
 	 * etc.
 	 * 
-	 * @return general sky conditions
+	 * @param value
+	 *        general sky conditions
 	 */
-	String getSkyConditions();
+	default void setSkyConditions(String value) {
+		asMutableSampleOperations().putSampleValue(Status, SKY_CONDITIONS_KEY, value);
+	}
 
 	/**
-	 * Get the wind speed, in meters / second.
+	 * Set the wind speed, in meters / second.
 	 * 
-	 * @return wind speed
-	 * @since 1.2
+	 * @param value
+	 *        the wind speed
 	 */
-	BigDecimal getWindSpeed();
+	default void setWindSpeed(BigDecimal value) {
+		asMutableSampleOperations().putSampleValue(Instantaneous, WIND_SPEED_KEY, value);
+	}
 
 	/**
-	 * Get the wind direction, in degrees.
+	 * Set the wind direction, in degrees.
 	 * 
-	 * @return wind direction
-	 * @since 1.2
+	 * @param value
+	 *        the wind direction
 	 */
-	Integer getWindDirection();
+	default void setWindDirection(Integer value) {
+		asMutableSampleOperations().putSampleValue(Instantaneous, WIND_DIRECTION_KEY, value);
+	}
 
 	/**
-	 * Get the rain accumulation, in millimeters.
+	 * Set the rain accumulation, in millimeters.
 	 * 
-	 * @return rain accumulation
-	 * @since 1.2
+	 * @param value
+	 *        rain accumulation
 	 */
-	Integer getRain();
+	default void setRain(Integer value) {
+		asMutableSampleOperations().putSampleValue(Instantaneous, RAIN_KEY, value);
+	}
 
 	/**
-	 * Get the snow accumulation, in millimeters.
+	 * Set the snow accumulation, in millimeters.
 	 * 
-	 * @return snow accumulation
-	 * @since 1.2
+	 * @param value
+	 *        snow accumulation
 	 */
-	Integer getSnow();
+	default void setSnow(Integer value) {
+		asMutableSampleOperations().putSampleValue(Instantaneous, SNOW_KEY, value);
+	}
 
 	/**
-	 * Get the solar irradiance level, in watts / square meter.
+	 * Set the solar irradiance level, in watts / square meter.
 	 * 
-	 * @return irradiance level
-	 * @since 1.3
+	 * @param value
+	 *        irradiance level
 	 */
-	BigDecimal getIrradiance();
+	default void setIrradiance(BigDecimal value) {
+		asMutableSampleOperations().putSampleValue(Instantaneous, IRRADIANCE_KEY, value);
+	}
 
 }

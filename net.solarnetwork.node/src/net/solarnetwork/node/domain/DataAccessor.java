@@ -22,7 +22,10 @@
 
 package net.solarnetwork.node.domain;
 
+import java.time.DateTimeException;
 import java.time.LocalDate;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
 import java.util.Map;
 import net.solarnetwork.domain.BasicDeviceInfo;
 import net.solarnetwork.domain.DeviceInfo;
@@ -31,7 +34,7 @@ import net.solarnetwork.domain.DeviceInfo;
  * API for accessing properties from a snapshot of data captured from a device.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  * @since 1.60
  */
 public interface DataAccessor {
@@ -127,13 +130,12 @@ public interface DataAccessor {
 				b.withVersion(o.toString());
 			}
 			o = info.get(INFO_KEY_DEVICE_MANUFACTURE_DATE);
-			if ( o instanceof org.joda.time.ReadablePartial ) {
-				org.joda.time.ReadablePartial p = (org.joda.time.ReadablePartial) o;
+			if ( o instanceof TemporalAccessor ) {
+				TemporalAccessor p = (TemporalAccessor) o;
 				try {
-					b.withManufactureDate(LocalDate.of(p.get(org.joda.time.DateTimeFieldType.year()),
-							p.get(org.joda.time.DateTimeFieldType.monthOfYear()),
-							p.get(org.joda.time.DateTimeFieldType.dayOfMonth())));
-				} catch ( IllegalArgumentException e ) {
+					b.withManufactureDate(LocalDate.of(p.get(ChronoField.YEAR),
+							p.get(ChronoField.MONTH_OF_YEAR), p.get(ChronoField.DAY_OF_MONTH)));
+				} catch ( DateTimeException e ) {
 					// ignore
 				}
 			}

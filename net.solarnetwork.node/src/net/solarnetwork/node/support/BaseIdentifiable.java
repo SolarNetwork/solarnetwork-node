@@ -22,25 +22,24 @@
 
 package net.solarnetwork.node.support;
 
-import static net.solarnetwork.util.OptionalServiceCollection.services;
+import static net.solarnetwork.service.OptionalServiceCollection.services;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 import org.springframework.expression.ExpressionException;
-import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
-import net.solarnetwork.node.Identifiable;
-import net.solarnetwork.node.PlaceholderService;
-import net.solarnetwork.node.domain.ExpressionConfig;
+import net.solarnetwork.domain.datum.MutableDatumSamplesOperations;
+import net.solarnetwork.node.service.PlaceholderService;
+import net.solarnetwork.node.service.support.ExpressionConfig;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.support.BasicIdentifiable;
-import net.solarnetwork.support.ExpressionService;
-import net.solarnetwork.support.ExpressionServiceExpression;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.OptionalServiceCollection;
+import net.solarnetwork.service.ExpressionService;
+import net.solarnetwork.service.Identifiable;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.OptionalServiceCollection;
+import net.solarnetwork.service.support.BasicIdentifiable;
+import net.solarnetwork.service.support.ExpressionServiceExpression;
 
 /**
  * Basic implementation of {@link Identifiable} and
@@ -51,11 +50,10 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * </p>
  * 
  * @author matt
- * @version 1.5
+ * @version 2.0
  * @since 1.67
  */
-public abstract class BaseIdentifiable extends net.solarnetwork.support.BasicIdentifiable
-		implements Identifiable, net.solarnetwork.domain.Identifiable {
+public abstract class BaseIdentifiable extends BasicIdentifiable implements Identifiable {
 
 	/**
 	 * A class-level logger.
@@ -149,7 +147,7 @@ public abstract class BaseIdentifiable extends net.solarnetwork.support.BasicIde
 	 *        the expression root object
 	 * @since 1.4
 	 */
-	protected void populateExpressionDatumProperties(final MutableGeneralDatumSamplesOperations d,
+	protected void populateExpressionDatumProperties(final MutableDatumSamplesOperations d,
 			final ExpressionConfig[] expressionConfs, final Object root) {
 		Iterable<ExpressionService> services = services(expressionServices);
 		if ( services == null || expressionConfs == null || expressionConfs.length < 1
@@ -193,94 +191,6 @@ public abstract class BaseIdentifiable extends net.solarnetwork.support.BasicIde
 				d.putSampleValue(config.getDatumPropertyType(), config.getName(), propValue);
 			}
 		}
-	}
-
-	/**
-	 * Alias for {@link #getUid()}.
-	 * 
-	 * {@inheritDoc}
-	 */
-	@Override
-	public String getUID() {
-		return getUid();
-	}
-
-	/**
-	 * Set the UID.
-	 * 
-	 * <p>
-	 * This is an alias for {@link #setUid(String)}.
-	 * </p>
-	 * 
-	 * @param uid
-	 *        the UID to set
-	 */
-	public void setUID(String uid) {
-		setUid(uid);
-	}
-
-	/**
-	 * Alias for {@link #getGroupUid()}.
-	 * 
-	 * {@inheritDoc}
-	 */
-	@Override
-	public String getGroupUID() {
-		return getGroupUid();
-	}
-
-	/**
-	 * Set the group UID.
-	 * 
-	 * <p>
-	 * This is an alias for {@link #setGroupUid(String)}.
-	 * </p>
-	 * 
-	 * @param groupUid
-	 *        the group UID to set
-	 */
-	public void setGroupUID(String groupUid) {
-		setGroupUid(groupUid);
-	}
-
-	/*-----
-	 * The following methods are here for package-import
-	 * backwards-compatibility, before BasicIdentifiable existed.
-	 *----- */
-
-	@Override
-	public String getUid() {
-		return super.getUid();
-	}
-
-	@Override
-	public void setUid(String uid) {
-		super.setUid(uid);
-	}
-
-	@Override
-	public String getGroupUid() {
-		return super.getGroupUid();
-	}
-
-	@Override
-	public void setGroupUid(String groupUid) {
-		super.setGroupUid(groupUid);
-	}
-
-	@Override
-	public void setDisplayName(String displayName) {
-		super.setDisplayName(displayName);
-	}
-
-	@Override
-	public MessageSource getMessageSource() {
-		return super.getMessageSource();
-	}
-
-	@Override
-	public void setMessageSource(MessageSource messageSource) {
-		super.setMessageSource(messageSource);
 	}
 
 	/**

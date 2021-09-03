@@ -32,10 +32,10 @@ import java.util.Map;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.PersistJobDataAfterExecution;
-import net.solarnetwork.node.BulkUploadResult;
-import net.solarnetwork.node.BulkUploadService;
 import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.NodeDatum;
+import net.solarnetwork.node.service.BulkUploadResult;
+import net.solarnetwork.node.service.BulkUploadService;
 import net.solarnetwork.node.setup.SetupException;
 
 /**
@@ -49,7 +49,7 @@ import net.solarnetwork.node.setup.SetupException;
  * non-null {@link BulkUploadResult#getId()} tracking ID returned, the
  * associated {@link BulkUploadResult#getDatum()} will be passed to the
  * appropriate {@link DatumDao} instance's
- * {@link DatumDao#setDatumUploaded(Datum, Date, String, String)} method.
+ * {@link DatumDao#setDatumUploaded(NodeDatum, Date, String, String)} method.
  * </p>
  * 
  * <p>
@@ -72,17 +72,17 @@ import net.solarnetwork.node.setup.SetupException;
 @DisallowConcurrentExecution
 public class DatumDaoBulkUploadJob extends AbstractJob {
 
-	private Collection<DatumDao<Datum>> daos;
+	private Collection<DatumDao<NodeDatum>> daos;
 	private BulkUploadService uploadService;
 
 	@Override
 	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
-		Map<Class<? extends Datum>, DatumDao<Datum>> daoMapping = new LinkedHashMap<Class<? extends Datum>, DatumDao<Datum>>(
+		Map<Class<? extends NodeDatum>, DatumDao<NodeDatum>> daoMapping = new LinkedHashMap<Class<? extends NodeDatum>, DatumDao<NodeDatum>>(
 				daos.size());
 
-		List<Datum> uploadList = new ArrayList<Datum>();
+		List<NodeDatum> uploadList = new ArrayList<NodeDatum>();
 
-		for ( DatumDao<Datum> datumDao : daos ) {
+		for ( DatumDao<NodeDatum> datumDao : daos ) {
 			if ( log.isDebugEnabled() ) {
 				log.debug("Collecting [{}] data to bulk upload to [{}]",
 						datumDao.getDatumType().getSimpleName(), uploadService.getKey());
@@ -90,7 +90,7 @@ public class DatumDaoBulkUploadJob extends AbstractJob {
 
 			daoMapping.put(datumDao.getDatumType(), datumDao);
 
-			List<Datum> toUpload = datumDao.getDatumNotUploaded(uploadService.getKey());
+			List<NodeDatum> toUpload = datumDao.getDatumNotUploaded(uploadService.getKey());
 
 			if ( log.isDebugEnabled() ) {
 				log.debug("Found " + toUpload.size() + " [" + datumDao.getDatumType().getSimpleName()
@@ -119,7 +119,7 @@ public class DatumDaoBulkUploadJob extends AbstractJob {
 					}
 
 					if ( tid != null ) {
-						DatumDao<Datum> datumDao = daoMapping.get(result.getDatum().getClass());
+						DatumDao<NodeDatum> datumDao = daoMapping.get(result.getDatum().getClass());
 						datumDao.setDatumUploaded(result.getDatum(), uploadDate, uploadService.getKey(),
 								tid);
 						count++;
@@ -149,7 +149,7 @@ public class DatumDaoBulkUploadJob extends AbstractJob {
 		}
 	}
 
-	public void setDaos(Collection<DatumDao<Datum>> daos) {
+	public void setDaos(Collection<DatumDao<NodeDatum>> daos) {
 		this.daos = daos;
 	}
 

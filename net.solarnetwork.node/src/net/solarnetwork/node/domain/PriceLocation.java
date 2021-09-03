@@ -29,7 +29,7 @@ package net.solarnetwork.node.domain;
  * @author matt
  * @version 1.1
  */
-public class PriceLocation extends BasicLocation {
+public class PriceLocation extends SimpleDatumLocation {
 
 	private String currency;
 	private String unit;

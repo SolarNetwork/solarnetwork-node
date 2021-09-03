@@ -22,19 +22,22 @@
 
 package net.solarnetwork.node.domain.test;
 
-import static net.solarnetwork.node.domain.ACPhase.PhaseA;
-import static net.solarnetwork.node.domain.ACPhase.PhaseB;
-import static net.solarnetwork.node.domain.ACPhase.PhaseC;
-import static net.solarnetwork.node.domain.ACPhase.Total;
+import static net.solarnetwork.domain.datum.AcPhase.PhaseA;
+import static net.solarnetwork.domain.datum.AcPhase.PhaseB;
+import static net.solarnetwork.domain.datum.AcPhase.PhaseC;
+import static net.solarnetwork.domain.datum.AcPhase.Total;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
+import java.time.Instant;
 import org.junit.Test;
-import net.solarnetwork.node.domain.ACEnergyDatum;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.AcEnergyDatum;
+import net.solarnetwork.node.domain.SimpleAcEnergyDatum;
 
 /**
- * Test cases for the {@link GeneralNodeACEnergyDatum} class.
+ * Test cases for the {@link SimpleAcEnergyDatum} class.
  * 
  * @author matt
  * @version 1.0
@@ -48,20 +51,22 @@ public class GeneralNodeACEnergyDatumTests {
 
 	@Test
 	public void lineVoltage() {
-		GeneralNodeACEnergyDatum d = new GeneralNodeACEnergyDatum();
+		SimpleAcEnergyDatum d = new SimpleAcEnergyDatum("foo", Instant.now(), new DatumSamples());
 		d.setLineVoltage(F);
 
 		assertThat("Accessor", d.getLineVoltage(), equalTo(F));
-		assertThat("Direct", d.getInstantaneousSampleFloat(ACEnergyDatum.LINE_VOLTAGE_KEY), equalTo(F));
+		assertThat("Direct",
+				d.asSampleOperations().getSampleFloat(Instantaneous, AcEnergyDatum.LINE_VOLTAGE_KEY),
+				equalTo(F));
 	}
 
 	@Test
 	public void lineVoltagePhased() {
-		GeneralNodeACEnergyDatum d = new GeneralNodeACEnergyDatum();
-		d.setLineVoltage(Fa, PhaseA);
-		d.setLineVoltage(Fb, PhaseB);
-		d.setLineVoltage(Fc, PhaseC);
-		d.setLineVoltage(F, Total);
+		SimpleAcEnergyDatum d = new SimpleAcEnergyDatum("foo", Instant.now(), new DatumSamples());
+		d.setLineVoltage(PhaseA, Fa);
+		d.setLineVoltage(PhaseB, Fb);
+		d.setLineVoltage(PhaseC, Fc);
+		d.setLineVoltage(Total, F);
 
 		assertThat("Accessor non-phased", d.getLineVoltage(), nullValue());
 		assertThat("Accessor a", d.getLineVoltage(PhaseA), equalTo(Fa));
@@ -69,37 +74,37 @@ public class GeneralNodeACEnergyDatumTests {
 		assertThat("Accessor c", d.getLineVoltage(PhaseC), equalTo(Fc));
 		assertThat("Accessor t", d.getLineVoltage(Total), equalTo(F));
 
-		assertThat("Direct non-phased", d.getInstantaneousSampleFloat(ACEnergyDatum.LINE_VOLTAGE_KEY),
+		assertThat("Direct non-phased",
+				d.asSampleOperations().getSampleFloat(Instantaneous, AcEnergyDatum.LINE_VOLTAGE_KEY),
 				nullValue());
-		assertThat("Direct a",
-				d.getInstantaneousSampleFloat(PhaseA.withLineKey(ACEnergyDatum.VOLTAGE_KEY)),
-				equalTo(Fa));
-		assertThat("Direct b",
-				d.getInstantaneousSampleFloat(PhaseB.withLineKey(ACEnergyDatum.VOLTAGE_KEY)),
-				equalTo(Fb));
-		assertThat("Direct c",
-				d.getInstantaneousSampleFloat(PhaseC.withLineKey(ACEnergyDatum.VOLTAGE_KEY)),
-				equalTo(Fc));
-		assertThat("Direct t",
-				d.getInstantaneousSampleFloat(Total.withLineKey(ACEnergyDatum.VOLTAGE_KEY)), equalTo(F));
+		assertThat("Direct a", d.asSampleOperations().getSampleFloat(Instantaneous,
+				PhaseA.withLineKey(AcEnergyDatum.VOLTAGE_KEY)), equalTo(Fa));
+		assertThat("Direct b", d.asSampleOperations().getSampleFloat(Instantaneous,
+				PhaseB.withLineKey(AcEnergyDatum.VOLTAGE_KEY)), equalTo(Fb));
+		assertThat("Direct c", d.asSampleOperations().getSampleFloat(Instantaneous,
+				PhaseC.withLineKey(AcEnergyDatum.VOLTAGE_KEY)), equalTo(Fc));
+		assertThat("Direct t", d.asSampleOperations().getSampleFloat(Instantaneous,
+				Total.withLineKey(AcEnergyDatum.VOLTAGE_KEY)), equalTo(F));
 	}
 
 	@Test
 	public void phaseVoltage() {
-		GeneralNodeACEnergyDatum d = new GeneralNodeACEnergyDatum();
+		SimpleAcEnergyDatum d = new SimpleAcEnergyDatum("foo", Instant.now(), new DatumSamples());
 		d.setPhaseVoltage(F);
 
 		assertThat("Accessor", d.getPhaseVoltage(), equalTo(F));
-		assertThat("Direct", d.getInstantaneousSampleFloat(ACEnergyDatum.PHASE_VOLTAGE_KEY), equalTo(F));
+		assertThat("Direct",
+				d.asSampleOperations().getSampleFloat(Instantaneous, AcEnergyDatum.PHASE_VOLTAGE_KEY),
+				equalTo(F));
 	}
 
 	@Test
 	public void phaseVoltagePhased() {
-		GeneralNodeACEnergyDatum d = new GeneralNodeACEnergyDatum();
-		d.setVoltage(Fa, PhaseA);
-		d.setVoltage(Fb, PhaseB);
-		d.setVoltage(Fc, PhaseC);
-		d.setVoltage(F, Total);
+		SimpleAcEnergyDatum d = new SimpleAcEnergyDatum("foo", Instant.now(), new DatumSamples());
+		d.setVoltage(PhaseA, Fa);
+		d.setVoltage(PhaseB, Fb);
+		d.setVoltage(PhaseC, Fc);
+		d.setVoltage(Total, F);
 
 		assertThat("Accessor non-phased", d.getPhaseVoltage(), nullValue());
 		assertThat("Accessor a", d.getVoltage(PhaseA), equalTo(Fa));
@@ -107,34 +112,37 @@ public class GeneralNodeACEnergyDatumTests {
 		assertThat("Accessor c", d.getVoltage(PhaseC), equalTo(Fc));
 		assertThat("Accessor t", d.getVoltage(Total), equalTo(F));
 
-		assertThat("Direct non-phased", d.getInstantaneousSampleFloat(ACEnergyDatum.PHASE_VOLTAGE_KEY),
+		assertThat("Direct non-phased",
+				d.asSampleOperations().getSampleFloat(Instantaneous, AcEnergyDatum.PHASE_VOLTAGE_KEY),
 				nullValue());
-		assertThat("Direct a", d.getInstantaneousSampleFloat(PhaseA.withKey(ACEnergyDatum.VOLTAGE_KEY)),
-				equalTo(Fa));
-		assertThat("Direct b", d.getInstantaneousSampleFloat(PhaseB.withKey(ACEnergyDatum.VOLTAGE_KEY)),
-				equalTo(Fb));
-		assertThat("Direct c", d.getInstantaneousSampleFloat(PhaseC.withKey(ACEnergyDatum.VOLTAGE_KEY)),
-				equalTo(Fc));
-		assertThat("Direct t", d.getInstantaneousSampleFloat(Total.withKey(ACEnergyDatum.VOLTAGE_KEY)),
-				equalTo(F));
+		assertThat("Direct a", d.asSampleOperations().getSampleFloat(Instantaneous,
+				PhaseA.withKey(AcEnergyDatum.VOLTAGE_KEY)), equalTo(Fa));
+		assertThat("Direct b", d.asSampleOperations().getSampleFloat(Instantaneous,
+				PhaseB.withKey(AcEnergyDatum.VOLTAGE_KEY)), equalTo(Fb));
+		assertThat("Direct c", d.asSampleOperations().getSampleFloat(Instantaneous,
+				PhaseC.withKey(AcEnergyDatum.VOLTAGE_KEY)), equalTo(Fc));
+		assertThat("Direct t", d.asSampleOperations().getSampleFloat(Instantaneous,
+				Total.withKey(AcEnergyDatum.VOLTAGE_KEY)), equalTo(F));
 	}
 
 	@Test
 	public void current() {
-		GeneralNodeACEnergyDatum d = new GeneralNodeACEnergyDatum();
+		SimpleAcEnergyDatum d = new SimpleAcEnergyDatum("foo", Instant.now(), new DatumSamples());
 		d.setCurrent(F);
 
 		assertThat("Accessor", d.getCurrent(), equalTo(F));
-		assertThat("Direct", d.getInstantaneousSampleFloat(ACEnergyDatum.CURRENT_KEY), equalTo(F));
+		assertThat("Direct",
+				d.asSampleOperations().getSampleFloat(Instantaneous, AcEnergyDatum.CURRENT_KEY),
+				equalTo(F));
 	}
 
 	@Test
 	public void currentPhased() {
-		GeneralNodeACEnergyDatum d = new GeneralNodeACEnergyDatum();
-		d.setCurrent(Fa, PhaseA);
-		d.setCurrent(Fb, PhaseB);
-		d.setCurrent(Fc, PhaseC);
-		d.setCurrent(F, Total);
+		SimpleAcEnergyDatum d = new SimpleAcEnergyDatum("foo", Instant.now(), new DatumSamples());
+		d.setCurrent(PhaseA, Fa);
+		d.setCurrent(PhaseB, Fb);
+		d.setCurrent(PhaseC, Fc);
+		d.setCurrent(Total, F);
 
 		assertThat("Accessor non-phased", d.getCurrent(), nullValue());
 		assertThat("Accessor a", d.getCurrent(PhaseA), equalTo(Fa));
@@ -142,15 +150,16 @@ public class GeneralNodeACEnergyDatumTests {
 		assertThat("Accessor c", d.getCurrent(PhaseC), equalTo(Fc));
 		assertThat("Accessor t", d.getCurrent(Total), equalTo(F));
 
-		assertThat("Direct non-phased", d.getInstantaneousSampleFloat(ACEnergyDatum.CURRENT_KEY),
+		assertThat("Direct non-phased",
+				d.asSampleOperations().getSampleFloat(Instantaneous, AcEnergyDatum.CURRENT_KEY),
 				nullValue());
-		assertThat("Direct a", d.getInstantaneousSampleFloat(PhaseA.withKey(ACEnergyDatum.CURRENT_KEY)),
-				equalTo(Fa));
-		assertThat("Direct b", d.getInstantaneousSampleFloat(PhaseB.withKey(ACEnergyDatum.CURRENT_KEY)),
-				equalTo(Fb));
-		assertThat("Direct c", d.getInstantaneousSampleFloat(PhaseC.withKey(ACEnergyDatum.CURRENT_KEY)),
-				equalTo(Fc));
-		assertThat("Direct t", d.getInstantaneousSampleFloat(Total.withKey(ACEnergyDatum.CURRENT_KEY)),
-				equalTo(F));
+		assertThat("Direct a", d.asSampleOperations().getSampleFloat(Instantaneous,
+				PhaseA.withKey(AcEnergyDatum.CURRENT_KEY)), equalTo(Fa));
+		assertThat("Direct b", d.asSampleOperations().getSampleFloat(Instantaneous,
+				PhaseB.withKey(AcEnergyDatum.CURRENT_KEY)), equalTo(Fb));
+		assertThat("Direct c", d.asSampleOperations().getSampleFloat(Instantaneous,
+				PhaseC.withKey(AcEnergyDatum.CURRENT_KEY)), equalTo(Fc));
+		assertThat("Direct t", d.asSampleOperations().getSampleFloat(Instantaneous,
+				Total.withKey(AcEnergyDatum.CURRENT_KEY)), equalTo(F));
 	}
 }

@@ -22,217 +22,90 @@
 
 package net.solarnetwork.node.domain;
 
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import java.math.BigDecimal;
-import org.joda.time.LocalTime;
+import java.time.LocalTime;
+import net.solarnetwork.util.DateUtils;
 
 /**
  * Solar day related datum.
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
-public interface DayDatum extends Datum {
+public interface DayDatum
+		extends AtmosphericDatum, net.solarnetwork.domain.datum.DayDatum, MutableNodeDatum {
 
 	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
-	 * sample key for {@link DayDatum#getSunrise()} values.
-	 */
-	static final String SUNRISE_KEY = "sunrise";
-
-	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
-	 * sample key for {@link DayDatum#getSunset()} values.
-	 */
-	static final String SUNSET_KEY = "sunset";
-
-	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
-	 * sample key for {@link DayDatum#getSunrise()} values.
+	 * Set the sunrise time.
 	 * 
-	 * @since 1.1
+	 * @param value
+	 *        the sunrise
 	 */
-	static final String MOONRISE_KEY = "moonrise";
+	default void setSunriseTime(LocalTime value) {
+		asMutableSampleOperations().putSampleValue(Status, SUNRISE_KEY, DateUtils.format(value));
+	}
 
 	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
-	 * sample key for {@link DayDatum#getSunset()} values.
+	 * Set the sunset time.
 	 * 
-	 * @since 1.1
+	 * @param value
+	 *        the sunset
 	 */
-	static final String MOONSET_KEY = "moonset";
+	default void setSunsetTime(LocalTime value) {
+		asMutableSampleOperations().putSampleValue(Status, SUNSET_KEY, DateUtils.format(value));
+	}
 
 	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
-	 * sample key for {@link DayDatum#getTemperatureMaximum()} values.
+	 * Set the moon rise time.
 	 * 
-	 * @since 1.1
+	 * @param value
+	 *        the moon rise
 	 */
-	static final String TEMPERATURE_MAXIMUM_KEY = "tempMax";
+	default void setMoonriseTime(LocalTime value) {
+		asMutableSampleOperations().putSampleValue(Status, MOONRISE_KEY, DateUtils.format(value));
+	}
 
 	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
-	 * sample key for {@link DayDatum#getTemperatureMinimum()} values.
+	 * Set the moon set time.
 	 * 
-	 * @since 1.1
+	 * @param value
+	 *        the moon set
 	 */
-	static final String TEMPERATURE_MINIMUM_KEY = "tempMin";
+	default void setMoonsetTime(LocalTime value) {
+		asMutableSampleOperations().putSampleValue(Status, MOONSET_KEY, DateUtils.format(value));
+	}
 
 	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
-	 * for {@link DayDatum#getSkyConditions()} values.
-	 */
-	static final String SKY_CONDITIONS_KEY = "sky";
-
-	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
-	 * for a bitmask of {@link net.solarnetwork.domain.SkyCondition#getCode()}
-	 * values.
+	 * Set the minimum temperature for the day.
 	 * 
-	 * @since 1.3
+	 * @param value
+	 *        the minimum temperature
 	 */
-	String SKY_CONDITION_CODES_KEY = "skies";
+	default void setTemperatureMinimum(BigDecimal value) {
+		asMutableSampleOperations().putSampleValue(Instantaneous, TEMPERATURE_MINIMUM_KEY, value);
+	}
 
 	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
-	 * for {@link DayDatum#getBriefOverview()} values.
+	 * Set the maximum temperature for the day.
 	 * 
-	 * @since 1.2
+	 * @param value
+	 *        the maximum temperature
 	 */
-	static final String BRIEF_OVERVIEW_KEY = "brief";
+	default void setTemperatureMaximum(BigDecimal value) {
+		asMutableSampleOperations().putSampleValue(Instantaneous, TEMPERATURE_MAXIMUM_KEY, value);
+	}
 
 	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
-	 * for {@link AtmosphericDatum#getWindSpeed()} values.
-	 * 
-	 * @since 1.2
-	 */
-	static final String WIND_SPEED_KEY = "wspeed";
-
-	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
-	 * for {@link AtmosphericDatum#getWindDirection()} values.
-	 * 
-	 * @since 1.2
-	 */
-	static final String WIND_DIRECTION_KEY = "wdir";
-
-	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
-	 * for {@link AtmosphericDatum#getRain()} values.
-	 * 
-	 * @since 1.2
-	 */
-	static final String RAIN_KEY = "rain";
-
-	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
-	 * for {@link AtmosphericDatum#getSnow()} values.
-	 * 
-	 * @since 1.2
-	 */
-	static final String SNOW_KEY = "snow";
-
-	/**
-	 * A tag for a forecast day sample, as opposed to an actual measurement.
-	 * 
-	 * @since 1.2
-	 */
-	static final String TAG_FORECAST = "forecast";
-
-	/**
-	 * Get the sunrise time.
-	 * 
-	 * @return the sunrise
-	 */
-	LocalTime getSunrise();
-
-	/**
-	 * Get the sunset time.
-	 * 
-	 * @return the sunset
-	 */
-	LocalTime getSunset();
-
-	/**
-	 * Get the sunrise time.
-	 * 
-	 * @return the moonrise
-	 * @since 1.1
-	 */
-	LocalTime getMoonrise();
-
-	/**
-	 * Get the moonset time.
-	 * 
-	 * @return the moonset
-	 * @since 1.1
-	 */
-	LocalTime getMoonset();
-
-	/**
-	 * Get the minimum temperature for the day.
-	 * 
-	 * @return The minimum temperature.
-	 * @since 1.1
-	 */
-	BigDecimal getTemperatureMinimum();
-
-	/**
-	 * Get the maximum temperature for the day.
-	 * 
-	 * @return The maximum temperature.
-	 * @since 1.1
-	 */
-	BigDecimal getTemperatureMaximum();
-
-	/**
-	 * Get a textual description of the sky conditions, e.g. "clear", "cloudy",
-	 * etc.
-	 * 
-	 * @return general sky conditions
-	 * @since 1.1
-	 */
-	String getSkyConditions();
-
-	/**
-	 * Get a brief textual description of the overall conditions, e.g. "Sunshine
+	 * Set a brief textual description of the overall conditions, e.g. "Sunshine
 	 * and some clouds. High 18C. Winds N at 10 to 15 km/h."
 	 * 
-	 * @return general overall conditions description
-	 * @since 1.2
+	 * @param value
+	 *        general overall conditions description
 	 */
-	String getBriefOverview();
-
-	/**
-	 * Get the wind speed, in meters / second.
-	 * 
-	 * @return wind speed
-	 * @since 1.2
-	 */
-	BigDecimal getWindSpeed();
-
-	/**
-	 * Get the wind direction, in degrees.
-	 * 
-	 * @return wind direction
-	 * @since 1.2
-	 */
-	Integer getWindDirection();
-
-	/**
-	 * Get the rain accumulation, in millimeters.
-	 * 
-	 * @return rain accumulation
-	 * @since 1.2
-	 */
-	Integer getRain();
-
-	/**
-	 * Get the snow accumulation, in millimeters.
-	 * 
-	 * @return snow accumulation
-	 * @since 1.2
-	 */
-	Integer getSnow();
+	default void setBriefOverview(String value) {
+		asMutableSampleOperations().putSampleValue(Status, BRIEF_OVERVIEW_KEY, value);
+	}
 
 }

@@ -35,15 +35,15 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.springframework.util.PathMatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.DatumService;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.NodeDatum;
 import net.solarnetwork.node.domain.GeneralDatum;
 import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -94,9 +94,9 @@ public class DefaultDatumService implements DatumService, EventHandler, Feedback
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T extends Datum> Collection<T> latest(Set<String> sourceIdFilter, Class<T> type) {
+	public <T extends NodeDatum> Collection<T> latest(Set<String> sourceIdFilter, Class<T> type) {
 		List<T> result = new ArrayList<>();
-		for ( Datum d : history.latest() ) {
+		for ( NodeDatum d : history.latest() ) {
 			if ( !type.isAssignableFrom(d.getClass()) ) {
 				continue;
 			}
@@ -120,9 +120,9 @@ public class DefaultDatumService implements DatumService, EventHandler, Feedback
 		if ( !DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED.equals(topic) ) {
 			return;
 		}
-		Object d = event.getProperty(Datum.DATUM_PROPERTY);
-		if ( d instanceof Datum ) {
-			history.add((Datum) d);
+		Object d = event.getProperty(NodeDatum.DATUM_PROPERTY);
+		if ( d instanceof NodeDatum ) {
+			history.add((NodeDatum) d);
 		}
 	}
 

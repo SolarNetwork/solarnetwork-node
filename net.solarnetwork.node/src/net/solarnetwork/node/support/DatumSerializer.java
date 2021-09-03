@@ -31,17 +31,17 @@ import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.NodeDatum;
 import net.solarnetwork.util.ClassUtils;
 
 /**
- * Serialize {@link Datum} to JSON.
+ * Serialize {@link NodeDatum} to JSON.
  * 
  * @author matt
  * @version 1.0
  * @since 1.58
  */
-public class DatumSerializer extends StdScalarSerializer<Datum> implements Serializable {
+public class DatumSerializer extends StdScalarSerializer<NodeDatum> implements Serializable {
 
 	private static final long serialVersionUID = -523673923281012956L;
 
@@ -49,11 +49,11 @@ public class DatumSerializer extends StdScalarSerializer<Datum> implements Seria
 	 * Default constructor.
 	 */
 	public DatumSerializer() {
-		super(Datum.class);
+		super(NodeDatum.class);
 	}
 
 	@Override
-	public void serialize(Datum datum, JsonGenerator generator, SerializerProvider provider)
+	public void serialize(NodeDatum datum, JsonGenerator generator, SerializerProvider provider)
 			throws IOException, JsonGenerationException {
 		generator.writeStartObject();
 		generator.writeStringField("__type__", datum.getClass().getSimpleName());

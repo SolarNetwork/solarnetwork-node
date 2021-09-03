@@ -27,12 +27,12 @@ package net.solarnetwork.node.job;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.PersistJobDataAfterExecution;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.UploadService;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.NodeDatum;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.UploadService;
 
 /**
- * Job that obtains a {@link Datum} from a {@link DatumDataSource} and then
+ * Job that obtains a {@link NodeDatum} from a {@link DatumDataSource} and then
  * uploads it immediately via {@link UploadService}, without persisting the
  * Datum locally first.
  * 
@@ -63,7 +63,7 @@ import net.solarnetwork.node.domain.Datum;
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
-public class DatumDataSourceUploadJob<T extends Datum> extends AbstractJob {
+public class DatumDataSourceUploadJob<T extends NodeDatum> extends AbstractJob {
 
 	private DatumDataSource<T> datumDataSource = null;
 	private UploadService uploadService;

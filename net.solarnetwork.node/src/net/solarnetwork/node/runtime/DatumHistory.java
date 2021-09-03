@@ -28,14 +28,14 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.NodeDatum;
 import net.solarnetwork.util.CircularFifoQueue;
 
 /**
  * Class to help track the history of datum capture, by source ID.
  * 
  * <p>
- * This class maintains a fixed-size history of {@link Datum} at various time
+ * This class maintains a fixed-size history of {@link NodeDatum} at various time
  * levels:
  * </p>
  * 
@@ -61,7 +61,7 @@ public class DatumHistory {
 	public static final Configuration DEFAULT_CONFIG = new Configuration(5);
 
 	private final Configuration config;
-	private final ConcurrentMap<String, Queue<Datum>> raw;
+	private final ConcurrentMap<String, Queue<NodeDatum>> raw;
 
 	/**
 	 * History configuration.
@@ -137,7 +137,7 @@ public class DatumHistory {
 	 * @throws IllegalArgumentException
 	 *         if {@code config} is {@literal null}
 	 */
-	public DatumHistory(Configuration config, ConcurrentMap<String, Queue<Datum>> raw) {
+	public DatumHistory(Configuration config, ConcurrentMap<String, Queue<NodeDatum>> raw) {
 		super();
 		if ( config == null ) {
 			throw new IllegalArgumentException("The config argument must not be null.");
@@ -157,11 +157,11 @@ public class DatumHistory {
 	 * @param datum
 	 *        the datum to add
 	 */
-	public void add(Datum datum) {
+	public void add(NodeDatum datum) {
 		if ( datum == null || datum.getSourceId() == null || datum.getCreated() == null ) {
 			return;
 		}
-		Queue<Datum> q = raw.computeIfAbsent(datum.getSourceId(),
+		Queue<NodeDatum> q = raw.computeIfAbsent(datum.getSourceId(),
 				k -> new CircularFifoQueue<>(config.rawCount));
 		synchronized ( q ) {
 			q.add(datum);
@@ -173,19 +173,19 @@ public class DatumHistory {
 	 * 
 	 * @return the iterable, never {@literal null}
 	 */
-	public Iterable<Datum> latest() {
+	public Iterable<NodeDatum> latest() {
 		// 
-		return new Iterable<Datum>() {
+		return new Iterable<NodeDatum>() {
 
 			@Override
-			public Iterator<Datum> iterator() {
-				final List<Datum> datum = new ArrayList<>(raw.size());
-				for ( Queue<Datum> q : raw.values() ) {
-					Datum d;
+			public Iterator<NodeDatum> iterator() {
+				final List<NodeDatum> datum = new ArrayList<>(raw.size());
+				for ( Queue<NodeDatum> q : raw.values() ) {
+					NodeDatum d;
 					synchronized ( q ) {
 						int end = q.size() - 1;
 						if ( end >= 0 ) {
-							d = ((CircularFifoQueue<Datum>) q).get(end);
+							d = ((CircularFifoQueue<NodeDatum>) q).get(end);
 						} else {
 							d = null;
 						}

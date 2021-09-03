@@ -66,7 +66,7 @@ public class GeneralNodeDatumSerializer extends StdScalarSerializer<GeneralNodeD
 				? samplesTransformService.service()
 				: null);
 		if ( samples != null && xformService != null ) {
-			samples = xformService.transformSamples(datum, samples, null);
+			samples = xformService.filter(datum, samples, null);
 		}
 
 		List<GeneralDatumSamplesTransformer> xforms = sampleTransformers;

@@ -23,6 +23,7 @@
 package net.solarnetwork.node.domain;
 
 import java.math.BigDecimal;
+import net.solarnetwork.domain.datum.DatumSamplesType;
 
 /**
  * API for price data.
@@ -30,12 +31,9 @@ import java.math.BigDecimal;
  * @author matt
  * @version 1.1
  */
-public interface PriceDatum extends Datum {
+public interface PriceDatum extends MutableNodeDatum {
 
-	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} instantaneous
-	 * sample key for {@link PriceDatum#getPrice()} values.
-	 */
+	/** An instantaneous sample key for price values. */
 	static final String PRICE_KEY = "price";
 
 	/**
@@ -43,6 +41,18 @@ public interface PriceDatum extends Datum {
 	 * 
 	 * @return the price
 	 */
-	BigDecimal getPrice();
+	default BigDecimal getPrice() {
+		return asSampleOperations().getSampleBigDecimal(DatumSamplesType.Instantaneous, PRICE_KEY);
+	}
+
+	/**
+	 * Set the price value.
+	 * 
+	 * @param value
+	 *        the price to set
+	 */
+	default void setPrice(BigDecimal value) {
+		asMutableSampleOperations().putSampleValue(DatumSamplesType.Instantaneous, PRICE_KEY, value);
+	}
 
 }

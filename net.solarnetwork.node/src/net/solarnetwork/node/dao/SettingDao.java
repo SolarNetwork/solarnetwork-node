@@ -26,7 +26,7 @@ package net.solarnetwork.node.dao;
 
 import java.util.Date;
 import java.util.List;
-import net.solarnetwork.node.Setting;
+import net.solarnetwork.node.domain.Setting;
 
 /**
  * Data access object API for setting key/value pairs.

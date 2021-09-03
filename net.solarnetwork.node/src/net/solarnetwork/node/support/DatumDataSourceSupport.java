@@ -35,26 +35,27 @@ import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.DatumMetadataService;
-import net.solarnetwork.node.DatumQueue;
-import net.solarnetwork.node.GeneralDatumSamplesTransformService;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.ExpressionConfig;
+import net.solarnetwork.node.domain.NodeDatum;
 import net.solarnetwork.node.domain.ExpressionRoot;
 import net.solarnetwork.node.domain.GeneralDatum;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.DatumMetadataService;
+import net.solarnetwork.node.service.DatumQueue;
+import net.solarnetwork.node.service.support.ExpressionConfig;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.service.DatumFilterService;
 import net.solarnetwork.support.ExpressionService;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.OptionalServiceCollection;
 
 /**
- * Helper class for {@link net.solarnetwork.node.DatumDataSource} and
- * {@link net.solarnetwork.node.MultiDatumDataSource} implementations to extend.
+ * Helper class for {@link net.solarnetwork.node.service.DatumDataSource} and
+ * {@link net.solarnetwork.node.service.MultiDatumDataSource} implementations to extend.
  * 
  * @author matt
  * @version 1.8
@@ -86,7 +87,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	private TaskScheduler taskScheduler = null;
 	private Long subSampleFrequency = null;
 	private long subSampleStartDelay = DEFAULT_SUBSAMPLE_START_DELAY;
-	private OptionalService<GeneralDatumSamplesTransformService> samplesTransformService;
+	private OptionalService<DatumFilterService> samplesTransformService;
 	private ExpressionConfig[] expressionConfigs;
 	private boolean publishDeviceInfoMetadata = false;
 
@@ -100,7 +101,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	 *        the datum that was captured
 	 * @since 1.8
 	 */
-	protected final void offerDatumCapturedEvent(Datum datum) {
+	protected final void offerDatumCapturedEvent(NodeDatum datum) {
 		if ( datum instanceof GeneralDatum ) {
 			final DatumQueue queue = service(datumQueue);
 			if ( queue != null ) {
@@ -277,17 +278,17 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	 *        the datum to possibly filter
 	 * @param props
 	 *        optional transform properties to pass to
-	 *        {@link GeneralDatumSamplesTransformService#transformSamples(Datum, GeneralDatumSamples, Map)}
+	 *        {@link DatumFilterService#filter(NodeDatum, GeneralDatumSamples, Map)}
 	 * @return the same datum, possibly transformed, or {@literal null} if the
 	 *         datum has been filtered out completely
 	 * @since 1.1
 	 */
 	protected <T extends GeneralNodeDatum> T applySamplesTransformer(T datum,
 			Map<String, Object> props) {
-		GeneralDatumSamplesTransformService xformService = OptionalService
+		DatumFilterService xformService = OptionalService
 				.service(getSamplesTransformService());
 		if ( xformService != null ) {
-			GeneralDatumSamples out = xformService.transformSamples(datum, datum.getSamples(), props);
+			GeneralDatumSamples out = xformService.filter(datum, datum.getSamples(), props);
 			if ( out == null ) {
 				return null;
 			} else if ( out != datum.getSamples() ) {
@@ -477,7 +478,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	 * @return the service
 	 * @since 1.1
 	 */
-	public OptionalService<GeneralDatumSamplesTransformService> getSamplesTransformService() {
+	public OptionalService<DatumFilterService> getSamplesTransformService() {
 		return samplesTransformService;
 	}
 
@@ -489,7 +490,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	 * @since 1.1
 	 */
 	public void setSamplesTransformService(
-			OptionalService<GeneralDatumSamplesTransformService> samplesTransformService) {
+			OptionalService<DatumFilterService> samplesTransformService) {
 		this.samplesTransformService = samplesTransformService;
 	}
 

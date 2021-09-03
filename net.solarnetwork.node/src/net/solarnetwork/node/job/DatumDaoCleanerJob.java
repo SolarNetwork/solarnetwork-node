@@ -29,9 +29,9 @@ package net.solarnetwork.node.job;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.PersistJobDataAfterExecution;
-import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.NodeDatum;
+import net.solarnetwork.node.service.UploadService;
 
 /**
  * Job to query a {@link DatumDao} for data to upload via an
@@ -48,7 +48,7 @@ import net.solarnetwork.node.domain.Datum;
  * 
  * <dl class="class-properties">
  * <dt>datumDao</dt>
- * <dd>The {@link DatumDao} to use to query for {@link Datum} to upload.</dd>
+ * <dd>The {@link DatumDao} to use to query for {@link NodeDatum} to upload.</dd>
  * 
  * <dt>hours</dt>
  * <dd>The minimum age of data that has been uploaded to delete. Defaults to
@@ -62,7 +62,7 @@ import net.solarnetwork.node.domain.Datum;
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
-public class DatumDaoCleanerJob<T extends Datum> extends AbstractJob {
+public class DatumDaoCleanerJob<T extends NodeDatum> extends AbstractJob {
 
 	/** The default value for the {@code hours} property. */
 	public static final int DEFAULT_HOURS = 4;

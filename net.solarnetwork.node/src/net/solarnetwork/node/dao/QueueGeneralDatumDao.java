@@ -22,19 +22,19 @@
 
 package net.solarnetwork.node.dao;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
-import net.solarnetwork.node.DatumQueue;
-import net.solarnetwork.node.domain.GeneralDatum;
+import net.solarnetwork.node.domain.NodeDatum;
+import net.solarnetwork.node.service.DatumQueue;
 
 /**
  * {@link DatumDao} that offers datum to a {@link DatumQueue}.
  * 
  * @author matt
- * @version 1.01
+ * @version 2.0
  * @since 1.89
  */
-public class QueueGeneralDatumDao implements DatumDao<GeneralDatum> {
+public class QueueGeneralDatumDao implements DatumDao {
 
 	private final DatumQueue datumQueue;
 
@@ -50,22 +50,17 @@ public class QueueGeneralDatumDao implements DatumDao<GeneralDatum> {
 	}
 
 	@Override
-	public Class<? extends GeneralDatum> getDatumType() {
-		return GeneralDatum.class;
-	}
-
-	@Override
-	public void storeDatum(GeneralDatum datum) {
+	public void storeDatum(NodeDatum datum) {
 		datumQueue.offer(datum);
 	}
 
 	@Override
-	public List<GeneralDatum> getDatumNotUploaded(String destination) {
+	public List<NodeDatum> getDatumNotUploaded(String destination) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public void setDatumUploaded(GeneralDatum datum, Date date, String destination, String trackingId) {
+	public void setDatumUploaded(NodeDatum datum, Instant date, String destination, String trackingId) {
 		throw new UnsupportedOperationException();
 	}
 

@@ -28,7 +28,7 @@ import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.task.AsyncTaskExecutor;
-import net.solarnetwork.node.PlatformPackageService;
+import net.solarnetwork.node.service.PlatformPackageService;
 import net.solarnetwork.util.OptionalService;
 
 /**

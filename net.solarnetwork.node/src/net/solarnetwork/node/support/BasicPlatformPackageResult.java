@@ -25,8 +25,8 @@ package net.solarnetwork.node.support;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
-import net.solarnetwork.node.PlatformPackageService;
-import net.solarnetwork.node.PlatformPackageService.PlatformPackageResult;
+import net.solarnetwork.node.service.PlatformPackageService;
+import net.solarnetwork.node.service.PlatformPackageService.PlatformPackageResult;
 
 /**
  * A basic, immutable implementation of

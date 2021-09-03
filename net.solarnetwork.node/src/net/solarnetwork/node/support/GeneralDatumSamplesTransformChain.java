@@ -31,8 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.node.GeneralDatumSamplesTransformService;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.NodeDatum;
 import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
@@ -40,6 +39,7 @@ import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.service.DatumFilterService;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.WeakValueConcurrentHashMap;
 
@@ -57,16 +57,16 @@ import net.solarnetwork.util.WeakValueConcurrentHashMap;
  * @version 1.4
  */
 public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSupport
-		implements GeneralDatumSamplesTransformService, SettingSpecifierProvider {
+		implements DatumFilterService, SettingSpecifierProvider {
 
 	private final String settingUid;
-	private final List<GeneralDatumSamplesTransformService> transformServices;
+	private final List<DatumFilterService> transformServices;
 	private final boolean configurableUid;
-	private final GeneralDatumSamplesTransformService staticService;
+	private final DatumFilterService staticService;
 	private String[] transformUids;
 	private List<GeneralDatumSamplesTransformer> sampleTransformers;
 
-	private final ConcurrentMap<String, GeneralDatumSamplesTransformService> serviceCache = new WeakValueConcurrentHashMap<>(
+	private final ConcurrentMap<String, DatumFilterService> serviceCache = new WeakValueConcurrentHashMap<>(
 			16, 0.9f, 2);
 
 	/**
@@ -85,7 +85,7 @@ public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSuppo
 	 *         {@literal null}
 	 */
 	public GeneralDatumSamplesTransformChain(String settingUid,
-			List<GeneralDatumSamplesTransformService> transformServices) {
+			List<DatumFilterService> transformServices) {
 		this(settingUid, transformServices, true, null);
 	}
 
@@ -104,7 +104,7 @@ public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSuppo
 	 *         {@literal null}
 	 */
 	public GeneralDatumSamplesTransformChain(String settingUid,
-			List<GeneralDatumSamplesTransformService> transformServices, boolean configurableUid) {
+			List<DatumFilterService> transformServices, boolean configurableUid) {
 		this(settingUid, transformServices, configurableUid, null);
 	}
 
@@ -125,8 +125,8 @@ public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSuppo
 	 *         {@literal null}
 	 */
 	public GeneralDatumSamplesTransformChain(String settingUid,
-			List<GeneralDatumSamplesTransformService> transformServices, boolean configurableUid,
-			GeneralDatumSamplesTransformService staticService) {
+			List<DatumFilterService> transformServices, boolean configurableUid,
+			DatumFilterService staticService) {
 		super();
 		if ( settingUid == null || settingUid.isEmpty() ) {
 			throw new IllegalArgumentException("The settingUid argument must not be null.");
@@ -198,7 +198,7 @@ public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSuppo
 
 	private String availableUidsStatus() {
 		List<String> uids = new ArrayList<>();
-		for ( GeneralDatumSamplesTransformService s : transformServices ) {
+		for ( DatumFilterService s : transformServices ) {
 			String uid = s.getUid();
 			if ( uid != null && !uid.isEmpty() && !uid.equalsIgnoreCase(getUid()) ) {
 				uids.add(uid);
@@ -216,13 +216,13 @@ public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSuppo
 		return buf.toString();
 	}
 
-	private GeneralDatumSamplesTransformService findService(String uid) {
+	private DatumFilterService findService(String uid) {
 		return serviceCache.compute(uid, (k, v) -> {
 			// have to re-check UID, as these can change
 			if ( v != null && uid.equals(v.getUid()) ) {
 				return v;
 			}
-			for ( GeneralDatumSamplesTransformService s : transformServices ) {
+			for ( DatumFilterService s : transformServices ) {
 				String serviceUid = s.getUid();
 				if ( uid.equals(serviceUid) ) {
 					return s;
@@ -233,7 +233,7 @@ public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSuppo
 	}
 
 	@Override
-	public GeneralDatumSamples transformSamples(final Datum datum, final GeneralDatumSamples samples,
+	public GeneralDatumSamples transformSamples(final NodeDatum datum, final GeneralDatumSamples samples,
 			final Map<String, Object> parameters) {
 		final long start = incrementInputStats();
 		if ( !operationalModeMatches() ) {
@@ -246,7 +246,7 @@ public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSuppo
 			if ( p == null ) {
 				p = new HashMap<>(8);
 			}
-			out = staticService.transformSamples(datum, out, parameters);
+			out = staticService.filter(datum, out, parameters);
 			if ( out == null ) {
 				incrementStats(start, samples, out);
 				return null;
@@ -261,12 +261,12 @@ public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSuppo
 			if ( uid == null || uid.isEmpty() ) {
 				continue;
 			}
-			GeneralDatumSamplesTransformService s = findService(uid);
+			DatumFilterService s = findService(uid);
 			if ( s != null ) {
 				if ( p == null ) {
 					p = new HashMap<>(8);
 				}
-				out = s.transformSamples(datum, out, p);
+				out = s.filter(datum, out, p);
 				if ( out == null ) {
 					incrementStats(start, samples, out);
 					return null;
@@ -290,7 +290,7 @@ public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSuppo
 	 * Set the transform UIDs to use.
 	 * 
 	 * <p>
-	 * This list defines the {@link GeneralDatumSamplesTransformService}
+	 * This list defines the {@link DatumFilterService}
 	 * instances to apply, from the list of available services.
 	 * </p>
 	 * 

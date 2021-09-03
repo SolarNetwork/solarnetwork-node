@@ -41,7 +41,7 @@ import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 import net.solarnetwork.domain.Result;
-import net.solarnetwork.node.PlatformService;
+import net.solarnetwork.node.service.PlatformService;
 import net.solarnetwork.util.OptionalService;
 
 /**

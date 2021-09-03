@@ -23,9 +23,9 @@
 package net.solarnetwork.node.domain;
 
 import java.util.Map;
-import net.solarnetwork.domain.DatumSamplesExpressionRoot;
-import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesExpressionRoot;
 
 /**
  * An object to use as the "root" for
@@ -38,7 +38,7 @@ import net.solarnetwork.domain.datum.Datum;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  * @since 1.79
  */
 public class ExpressionRoot extends DatumSamplesExpressionRoot {
@@ -61,7 +61,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	 * @param samples
 	 *        the samples
 	 */
-	public ExpressionRoot(Datum datum, GeneralDatumSamples samples) {
+	public ExpressionRoot(Datum datum, DatumSamples samples) {
 		this(datum, samples, null);
 	}
 
@@ -88,7 +88,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	 * @param parameters
 	 *        the parameters
 	 */
-	public ExpressionRoot(Datum datum, GeneralDatumSamples samples, Map<String, ?> parameters) {
+	public ExpressionRoot(Datum datum, DatumSamples samples, Map<String, ?> parameters) {
 		super(datum, samples, parameters);
 	}
 

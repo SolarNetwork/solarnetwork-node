@@ -33,9 +33,9 @@ import java.util.List;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.PersistJobDataAfterExecution;
-import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.NodeDatum;
+import net.solarnetwork.node.service.UploadService;
 
 /**
  * Job to query a {@link DatumDao} for data to upload via an
@@ -43,9 +43,9 @@ import net.solarnetwork.node.domain.Datum;
  * 
  * <p>
  * This job will call {@link DatumDao#getDatumNotUploaded(String)} and for each
- * {@link Datum} returned pass that to {@link UploadService#uploadDatum(Datum)}.
+ * {@link NodeDatum} returned pass that to {@link UploadService#uploadDatum(NodeDatum)}.
  * If that returns a non-null tracking ID, then that will be passed to
- * {@link DatumDao#setDatumUploaded(Datum, Date, String, String)}.
+ * {@link DatumDao#setDatumUploaded(NodeDatum, Date, String, String)}.
  * </p>
  * 
  * <p>
@@ -54,7 +54,7 @@ import net.solarnetwork.node.domain.Datum;
  * 
  * <dl class="class-properties">
  * <dt>datumDao</dt>
- * <dd>The {@link DatumDao} to use to query for {@link Datum} to upload.</dd>
+ * <dd>The {@link DatumDao} to use to query for {@link NodeDatum} to upload.</dd>
  * 
  * <dt>uploadService</dt>
  * <dd>The {@link UploadService} implementation to use to upload the datum
@@ -68,14 +68,14 @@ import net.solarnetwork.node.domain.Datum;
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
-public class DatumDaoUploadJob<T extends Datum> extends AbstractJob {
+public class DatumDaoUploadJob<T extends NodeDatum> extends AbstractJob {
 
-	private Collection<DatumDao<Datum>> daos;
+	private Collection<DatumDao<NodeDatum>> daos;
 	private UploadService uploadService = null;
 
 	@Override
 	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
-		for ( DatumDao<Datum> datumDao : daos ) {
+		for ( DatumDao<NodeDatum> datumDao : daos ) {
 			if ( log.isInfoEnabled() ) {
 				log.info("Collecting [" + datumDao.getDatumType().getSimpleName()
 						+ "] data to bulk upload to [" + uploadService.getKey() + ']');
@@ -86,7 +86,7 @@ public class DatumDaoUploadJob<T extends Datum> extends AbstractJob {
 						+ uploadService.getKey() + ']');
 			}
 
-			List<Datum> toUpload = datumDao.getDatumNotUploaded(uploadService.getKey());
+			List<NodeDatum> toUpload = datumDao.getDatumNotUploaded(uploadService.getKey());
 			int count = 0;
 
 			if ( log.isDebugEnabled() ) {
@@ -95,7 +95,7 @@ public class DatumDaoUploadJob<T extends Datum> extends AbstractJob {
 			}
 			final Date uploadDate = new Date();
 			try {
-				for ( Datum datum : toUpload ) {
+				for ( NodeDatum datum : toUpload ) {
 					String tid = uploadService.uploadDatum(datum);
 					if ( log.isTraceEnabled() ) {
 						log.trace("Just uploaded [" + datumDao.getDatumType().getSimpleName() + "] ["
@@ -135,7 +135,7 @@ public class DatumDaoUploadJob<T extends Datum> extends AbstractJob {
 	 * @param daos
 	 *        the daos to set
 	 */
-	public void setDaos(Collection<DatumDao<Datum>> daos) {
+	public void setDaos(Collection<DatumDao<NodeDatum>> daos) {
 		this.daos = daos;
 	}
 

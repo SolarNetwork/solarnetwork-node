@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.settings.support;
 
-import net.solarnetwork.node.domain.Location;
+import net.solarnetwork.node.domain.DatumLocation;
 import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
 import net.solarnetwork.node.settings.MappableSpecifier;
 import net.solarnetwork.node.settings.SettingSpecifier;
@@ -36,7 +36,7 @@ import net.solarnetwork.node.settings.SettingSpecifier;
 public class BasicLocationLookupSettingSpecifier extends BaseKeyedSettingSpecifier<Long> implements
 		LocationLookupSettingSpecifier {
 
-	private final Location location;
+	private final DatumLocation location;
 	private final String locationType;
 
 	/**
@@ -49,7 +49,7 @@ public class BasicLocationLookupSettingSpecifier extends BaseKeyedSettingSpecifi
 	 * @param location
 	 *        the location
 	 */
-	public BasicLocationLookupSettingSpecifier(String key, String locationType, Location location) {
+	public BasicLocationLookupSettingSpecifier(String key, String locationType, DatumLocation location) {
 		super(key, (location == null ? null : location.getLocationId()));
 		this.locationType = locationType;
 		this.location = location;
@@ -78,7 +78,7 @@ public class BasicLocationLookupSettingSpecifier extends BaseKeyedSettingSpecifi
 	}
 
 	@Override
-	public Location getLocation() {
+	public DatumLocation getLocation() {
 		return location;
 	}
 
