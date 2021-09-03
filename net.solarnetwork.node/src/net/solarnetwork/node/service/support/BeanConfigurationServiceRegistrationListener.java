@@ -20,13 +20,14 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.util;
+package net.solarnetwork.node.service.support;
 
 import java.util.Hashtable;
 import java.util.Map;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
-import net.solarnetwork.node.util.BeanConfigurationServiceRegistrationListener.BeanConfigurationRegisteredService;
+import net.solarnetwork.node.service.BeanConfiguration;
+import net.solarnetwork.node.service.support.BeanConfigurationServiceRegistrationListener.BeanConfigurationRegisteredService;
 
 /**
  * An OSGi service registration listener for {@link BeanConfiguration} objects,

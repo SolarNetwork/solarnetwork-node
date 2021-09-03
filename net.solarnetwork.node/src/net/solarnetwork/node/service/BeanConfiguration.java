@@ -22,9 +22,10 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.util;
+package net.solarnetwork.node.service;
 
 import java.util.Map;
+import net.solarnetwork.node.service.support.BeanConfigurationServiceRegistrationListener;
 
 /**
  * API for a configuration object.

@@ -18,7 +18,7 @@
  * ===================================================================
  */
 
-package net.solarnetwork.node.support;
+package net.solarnetwork.node.service.support;
 
 import java.beans.PropertyDescriptor;
 import java.beans.PropertyEditor;
@@ -65,14 +65,15 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.util.ClassUtils;
-import net.solarnetwork.util.OptionalService;
 
 /**
  * A helper class to support services that use XML.
  * 
  * @author matt
- * @version 1.7
+ * @version 1.0
+ * @since 2.0
  */
 public class XmlServiceSupport extends HttpClientSupport {
 

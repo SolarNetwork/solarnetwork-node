@@ -20,12 +20,13 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.util;
+package net.solarnetwork.node.service.support;
 
 import java.util.Map;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.beans.factory.FactoryBean;
+import net.solarnetwork.node.service.BeanConfiguration;
 
 /**
  * {@link FactoryBean} implementation that creates objects based on properties

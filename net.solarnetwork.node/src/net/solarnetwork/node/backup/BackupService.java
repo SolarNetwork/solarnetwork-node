@@ -25,13 +25,13 @@ package net.solarnetwork.node.backup;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * API for node backup.
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
 public interface BackupService {
 

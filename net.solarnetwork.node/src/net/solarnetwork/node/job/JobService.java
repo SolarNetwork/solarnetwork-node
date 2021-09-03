@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.job;
 
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * API for a simple job service that extends {@link SettingSpecifierProvider}.

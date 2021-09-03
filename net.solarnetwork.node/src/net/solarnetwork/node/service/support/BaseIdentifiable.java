@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.expression.ExpressionException;
 import net.solarnetwork.domain.datum.MutableDatumSamplesOperations;
 import net.solarnetwork.node.service.PlaceholderService;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.service.ExpressionService;
 import net.solarnetwork.service.Identifiable;
 import net.solarnetwork.service.OptionalService;
@@ -39,6 +38,7 @@ import net.solarnetwork.service.OptionalServiceCollection;
 import net.solarnetwork.service.support.BasicIdentifiable;
 import net.solarnetwork.service.support.ExpressionServiceExpression;
 import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Extension of {@link BasicIdentifiable} with node-specific helpers.

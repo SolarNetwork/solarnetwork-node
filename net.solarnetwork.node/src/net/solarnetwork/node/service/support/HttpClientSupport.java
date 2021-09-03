@@ -20,9 +20,9 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.support;
+package net.solarnetwork.node.service.support;
 
-import static net.solarnetwork.web.security.AuthorizationV2Builder.httpDate;
+import static net.solarnetwork.security.AuthorizationUtils.AUTHORIZATION_DATE_HEADER_FORMATTER;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,8 +34,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.time.Instant;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -46,17 +46,18 @@ import javax.net.ssl.SSLSocketFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
+import net.solarnetwork.io.UnicodeReader;
 import net.solarnetwork.node.service.IdentityService;
-import net.solarnetwork.node.service.support.BaseIdentifiable;
-import net.solarnetwork.support.SSLService;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.web.security.AuthorizationV2Builder;
+import net.solarnetwork.security.Snws2AuthorizationBuilder;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.SSLService;
 
 /**
  * Supporting methods for HTTP client operations.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.0
+ * @since 2.0
  */
 public abstract class HttpClientSupport extends BaseIdentifiable {
 
@@ -275,8 +276,8 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	 *        any additional headers to populate on the request
 	 * @since 1.5
 	 */
-	public void setupTokenAuthorization(URLConnection conn, AuthorizationV2Builder builder,
-			Date requestDate, Map<String, List<String>> headers) {
+	public void setupTokenAuthorization(URLConnection conn, Snws2AuthorizationBuilder builder,
+			Instant requestDate, Map<String, List<String>> headers) {
 		if ( headers != null ) {
 			for ( Map.Entry<String, List<String>> me : headers.entrySet() ) {
 				boolean first = true;
@@ -300,10 +301,10 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 		builder.host(host).path(url.getPath());
 
 		if ( log.isTraceEnabled() ) {
-			log.trace("Canonical request data: {}", builder.buildCanonicalRequestData());
+			log.trace("Canonical request data: {}", builder.computeCanonicalRequestMessage());
 		}
 
-		conn.setRequestProperty("Date", httpDate(requestDate));
+		conn.setRequestProperty("Date", AUTHORIZATION_DATE_HEADER_FORMATTER.format(requestDate));
 		conn.setRequestProperty("Authorization", builder.build());
 	}
 

@@ -20,29 +20,30 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.support;
+package net.solarnetwork.node.service.support;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.springframework.context.MessageSource;
-import net.solarnetwork.domain.GeneralDatumMetadata;
 import net.solarnetwork.domain.NetworkIdentity;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.domain.NodeAppConfiguration;
 import net.solarnetwork.node.service.MetadataService;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.setup.SetupService;
+import net.solarnetwork.security.Snws2AuthorizationBuilder;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.CachedResult;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.web.security.AuthorizationV2Builder;
 
 /**
  * Implementation of {@link MetadataService} that uses SolarQuery to find
@@ -100,10 +101,10 @@ public class UserMetadataService extends JsonHttpClientSupport
 		try {
 			final InputStream in = jsonGET(url, conn -> {
 				if ( token != null && !token.isEmpty() && secret != null && !secret.isEmpty() ) {
-					Date now = new Date();
-					AuthorizationV2Builder auth = new AuthorizationV2Builder(token)
+					Instant now = Instant.now();
+					Snws2AuthorizationBuilder auth = new Snws2AuthorizationBuilder(token)
 							.saveSigningKey(secret);
-					auth.saveSigningKey(secret);//.host(host).header("X-SN-Date", httpDate(now));
+					auth.saveSigningKey(secret);
 					setupTokenAuthorization(conn, auth, now, null);
 				}
 			});

@@ -1,5 +1,5 @@
 /* ==================================================================
- * BaseSamplesTransformSupport.java - 12/05/2021 7:03:29 AM
+ * BaseDatumFilterSupport.java - 12/05/2021 7:03:29 AM
  * 
  * Copyright 2021 SolarNetwork.net Dev Team
  * 
@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.support;
+package net.solarnetwork.node.service.support;
 
 import static net.solarnetwork.util.DateUtils.formatHoursMinutesSeconds;
 import java.util.LinkedHashMap;
@@ -30,14 +30,14 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.springframework.context.MessageSource;
-import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.OperationalModesService;
-import net.solarnetwork.node.service.support.BaseIdentifiable;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.service.DatumFilterStats;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.StatCounter;
 import net.solarnetwork.util.StatCounter.Stat;
 
@@ -46,10 +46,10 @@ import net.solarnetwork.util.StatCounter.Stat;
  * {@link net.solarnetwork.service.DatumFilterService} to extend.
  * 
  * @author matt
- * @version 1.2
- * @since 1.83
+ * @version 1.0
+ * @since 2.0
  */
-public class BaseSamplesTransformSupport extends BaseIdentifiable {
+public class BaseDatumFilterSupport extends BaseIdentifiable {
 
 	/**
 	 * The default value for the UID property.
@@ -81,7 +81,7 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	/**
 	 * Constructor.
 	 */
-	public BaseSamplesTransformSupport() {
+	public BaseDatumFilterSupport() {
 		this(null);
 	}
 
@@ -92,14 +92,14 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	 *        the status to use (can be {@literal null}
 	 * @since 1.2
 	 */
-	public BaseSamplesTransformSupport(Stat[] stats) {
+	public BaseDatumFilterSupport(Stat[] stats) {
 		super();
 		this.stats = new StatCounter("Transform", "", log, DEFAULT_STAT_LOG_FREQUENCY,
 				DatumFilterStats.values(), stats);
 	}
 
 	/**
-	 * Populate settings for the {@code BaseSamplesTransformSupport} class.
+	 * Populate settings for the {@code BaseDatumFilterSupport} class.
 	 * 
 	 * <p>
 	 * This will use {@literal null} for all default values.
@@ -108,7 +108,7 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	 * @param settings
 	 *        the settings to populate
 	 * @since 1.1
-	 * @see BaseSamplesTransformSupport#populateBaseSampleTransformSupportSettings(List,
+	 * @see BaseDatumFilterSupport#populateBaseSampleTransformSupportSettings(List,
 	 *      String, String)
 	 */
 	public static void populateBaseSampleTransformSupportSettings(List<SettingSpecifier> settings) {
@@ -116,7 +116,7 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	}
 
 	/**
-	 * Populate settings for the {@code BaseSamplesTransformSupport} class.
+	 * Populate settings for the {@code BaseDatumFilterSupport} class.
 	 * 
 	 * <p>
 	 * This will add settings for the {@code sourceId} and
@@ -156,9 +156,8 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	 * 
 	 * <p>
 	 * This will resolve the {@literal status.msg} message and pass in
-	 * parameters for all of the {@link DatumFilterStats}
-	 * values along with a processing time average and "not ignored" processing
-	 * time average.
+	 * parameters for all of the {@link DatumFilterStats} values along with a
+	 * processing time average and "not ignored" processing time average.
 	 * </p>
 	 * 
 	 * @return the status message
@@ -174,19 +173,15 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 
 		long inputCount = (long) params[DatumFilterStats.Input.ordinal()];
 
-		long totalTime = (Long) params[DatumFilterStats.ProcessingTimeTotal
-				.ordinal()];
-		params[DatumFilterStats.ProcessingTimeTotal
-				.ordinal()] = formatHoursMinutesSeconds(totalTime);
+		long totalTime = (Long) params[DatumFilterStats.ProcessingTimeTotal.ordinal()];
+		params[DatumFilterStats.ProcessingTimeTotal.ordinal()] = formatHoursMinutesSeconds(totalTime);
 		params[params.length - 2] = (inputCount > 0 ? String.format("%dms", totalTime / inputCount)
 				: "-");
 
-		long notIgnoredCount = inputCount
-				- (long) params[DatumFilterStats.Ignored.ordinal()];
-		long notIgnoredTime = (Long) params[DatumFilterStats.ProcessingTimeNotIgnoredTotal
-				.ordinal()];
-		params[DatumFilterStats.ProcessingTimeNotIgnoredTotal
-				.ordinal()] = formatHoursMinutesSeconds(notIgnoredTime);
+		long notIgnoredCount = inputCount - (long) params[DatumFilterStats.Ignored.ordinal()];
+		long notIgnoredTime = (Long) params[DatumFilterStats.ProcessingTimeNotIgnoredTotal.ordinal()];
+		params[DatumFilterStats.ProcessingTimeNotIgnoredTotal.ordinal()] = formatHoursMinutesSeconds(
+				notIgnoredTime);
 		params[params.length - 1] = (notIgnoredCount > 0
 				? String.format("%dms", notIgnoredTime / notIgnoredCount)
 				: "-");
@@ -199,8 +194,7 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	 * 
 	 * @return the current time, for passing to
 	 *         {@link #incrementIgnoredStats(long)} or
-	 *         {@link #incrementStats(long, GeneralDatumSamples, GeneralDatumSamples)}
-	 *         later
+	 *         {@link #incrementStats(long, DatumSamples, DatumSamples)} later
 	 * @since 1.2
 	 */
 	protected long incrementInputStats() {
@@ -232,16 +226,15 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	 *        the output samples
 	 * @since 1.2
 	 */
-	protected void incrementStats(final long startTime, final GeneralDatumSamples in,
-			final GeneralDatumSamples out) {
+	protected void incrementStats(final long startTime, final DatumSamplesOperations in,
+			final DatumSamplesOperations out) {
 		final long duration = System.currentTimeMillis() - startTime;
 		if ( out == null ) {
 			stats.incrementAndGet(DatumFilterStats.Filtered);
 		} else if ( out != in && out != null && !out.equals(in) ) {
 			stats.incrementAndGet(DatumFilterStats.Modified);
 		}
-		stats.addAndGet(DatumFilterStats.ProcessingTimeNotIgnoredTotal, duration,
-				true);
+		stats.addAndGet(DatumFilterStats.ProcessingTimeNotIgnoredTotal, duration, true);
 		stats.addAndGet(DatumFilterStats.ProcessingTimeTotal, duration, true);
 	}
 
@@ -258,8 +251,8 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	 *        the samples to copy
 	 * @return the copied samples instance
 	 */
-	public static GeneralDatumSamples copy(GeneralDatumSamples samples) {
-		GeneralDatumSamples copy = new GeneralDatumSamples(
+	public static DatumSamples copy(DatumSamples samples) {
+		DatumSamples copy = new DatumSamples(
 				samples.getInstantaneous() != null
 						? new LinkedHashMap<String, Number>(samples.getInstantaneous())
 						: null,
@@ -396,14 +389,14 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	 * Set a source ID pattern to match samples against.
 	 * 
 	 * Samples will only be considered for filtering if
-	 * {@link net.solarnetwork.node.domain.datum.NodeDatum#getSourceId()} matches this
-	 * pattern.
+	 * {@link net.solarnetwork.node.domain.datum.NodeDatum#getSourceId()}
+	 * matches this pattern.
 	 * 
 	 * The {@code sourceIdPattern} must be a valid {@link Pattern} regular
 	 * expression. The expression will be allowed to match anywhere in
-	 * {@link net.solarnetwork.node.domain.datum.NodeDatum#getSourceId()} values, so if
-	 * the pattern must match the full value only then use pattern positional
-	 * expressions like {@code ^} and {@code $}.
+	 * {@link net.solarnetwork.node.domain.datum.NodeDatum#getSourceId()}
+	 * values, so if the pattern must match the full value only then use pattern
+	 * positional expressions like {@code ^} and {@code $}.
 	 * 
 	 * @param sourceIdPattern
 	 *        The source ID regex to match. Syntax errors in the pattern will be

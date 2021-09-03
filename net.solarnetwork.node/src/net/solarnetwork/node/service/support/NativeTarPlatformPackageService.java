@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.support;
+package net.solarnetwork.node.service.support;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -38,7 +38,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import net.solarnetwork.node.service.PlatformPackageService;
-import net.solarnetwork.util.ProgressListener;
+import net.solarnetwork.service.ProgressListener;
 
 /**
  * {@link PlatformPackageService} that extracts tar archives using the host's
@@ -46,7 +46,7 @@ import net.solarnetwork.util.ProgressListener;
  * 
  * @author matt
  * @version 1.0
- * @since 1.68
+ * @since 2.0
  */
 public class NativeTarPlatformPackageService extends BasePlatformPackageService {
 

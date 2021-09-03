@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.support;
+package net.solarnetwork.node.service.support;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,16 +30,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
-import net.solarnetwork.node.domain.datum.NodeDatum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.service.DatumFilterService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.WeakValueConcurrentHashMap;
 
@@ -54,9 +53,10 @@ import net.solarnetwork.util.WeakValueConcurrentHashMap;
  * </p>
  * 
  * @author matt
- * @version 1.4
+ * @version 1.0
+ * @since 2.0
  */
-public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSupport
+public class DatumFilterChainService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
 
 	private final String settingUid;
@@ -64,7 +64,7 @@ public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSuppo
 	private final boolean configurableUid;
 	private final DatumFilterService staticService;
 	private String[] transformUids;
-	private List<GeneralDatumSamplesTransformer> sampleTransformers;
+	private List<DatumFilterService> sampleTransformers;
 
 	private final ConcurrentMap<String, DatumFilterService> serviceCache = new WeakValueConcurrentHashMap<>(
 			16, 0.9f, 2);
@@ -84,8 +84,7 @@ public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSuppo
 	 *         if {@code settingUid} or {@code transformServices} are
 	 *         {@literal null}
 	 */
-	public GeneralDatumSamplesTransformChain(String settingUid,
-			List<DatumFilterService> transformServices) {
+	public DatumFilterChainService(String settingUid, List<DatumFilterService> transformServices) {
 		this(settingUid, transformServices, true, null);
 	}
 
@@ -103,8 +102,8 @@ public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSuppo
 	 *         if {@code settingUid} or {@code transformServices} are
 	 *         {@literal null}
 	 */
-	public GeneralDatumSamplesTransformChain(String settingUid,
-			List<DatumFilterService> transformServices, boolean configurableUid) {
+	public DatumFilterChainService(String settingUid, List<DatumFilterService> transformServices,
+			boolean configurableUid) {
 		this(settingUid, transformServices, configurableUid, null);
 	}
 
@@ -124,9 +123,8 @@ public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSuppo
 	 *         if {@code settingUid} or {@code transformServices} are
 	 *         {@literal null}
 	 */
-	public GeneralDatumSamplesTransformChain(String settingUid,
-			List<DatumFilterService> transformServices, boolean configurableUid,
-			DatumFilterService staticService) {
+	public DatumFilterChainService(String settingUid, List<DatumFilterService> transformServices,
+			boolean configurableUid, DatumFilterService staticService) {
 		super();
 		if ( settingUid == null || settingUid.isEmpty() ) {
 			throw new IllegalArgumentException("The settingUid argument must not be null.");
@@ -165,8 +163,8 @@ public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSuppo
 		// list of UIDs
 		String[] uids = getTransformUids();
 		List<String> uidsList = (uids != null ? Arrays.asList(uids) : Collections.emptyList());
-		BasicGroupSettingSpecifier uidsGroup = SettingsUtil.dynamicListSettingSpecifier("transformUids",
-				uidsList, new SettingsUtil.KeyedListCallback<String>() {
+		BasicGroupSettingSpecifier uidsGroup = SettingUtils.dynamicListSettingSpecifier("transformUids",
+				uidsList, new SettingUtils.KeyedListCallback<String>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(String value, int index,
@@ -181,7 +179,7 @@ public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSuppo
 
 	private String availableTransformerUidsStatus() {
 		List<String> names = new ArrayList<>();
-		for ( GeneralDatumSamplesTransformer s : sampleTransformers ) {
+		for ( DatumFilterService s : sampleTransformers ) {
 			names.add(s.getDescription());
 		}
 		if ( names.isEmpty() ) {
@@ -233,7 +231,7 @@ public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSuppo
 	}
 
 	@Override
-	public GeneralDatumSamples transformSamples(final NodeDatum datum, final GeneralDatumSamples samples,
+	public DatumSamplesOperations filter(final Datum datum, final DatumSamplesOperations samples,
 			final Map<String, Object> parameters) {
 		final long start = incrementInputStats();
 		if ( !operationalModeMatches() ) {
@@ -241,7 +239,7 @@ public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSuppo
 			return samples;
 		}
 		Map<String, Object> p = parameters;
-		GeneralDatumSamples out = samples;
+		DatumSamplesOperations out = samples;
 		if ( staticService != null ) {
 			if ( p == null ) {
 				p = new HashMap<>(8);
@@ -290,8 +288,8 @@ public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSuppo
 	 * Set the transform UIDs to use.
 	 * 
 	 * <p>
-	 * This list defines the {@link DatumFilterService}
-	 * instances to apply, from the list of available services.
+	 * This list defines the {@link DatumFilterService} instances to apply, from
+	 * the list of available services.
 	 * </p>
 	 * 
 	 * @param transformUids
@@ -333,7 +331,7 @@ public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSuppo
 	 * @param sampleTransformers
 	 *        the transformers to use
 	 */
-	public void setSampleTransformers(List<GeneralDatumSamplesTransformer> sampleTransformers) {
+	public void setSampleTransformers(List<DatumFilterService> sampleTransformers) {
 		this.sampleTransformers = sampleTransformers;
 	}
 

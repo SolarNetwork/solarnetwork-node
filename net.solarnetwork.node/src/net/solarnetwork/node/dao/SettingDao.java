@@ -26,6 +26,7 @@ package net.solarnetwork.node.dao;
 
 import java.util.Date;
 import java.util.List;
+import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.domain.Setting;
 
 /**
@@ -122,25 +123,11 @@ public interface SettingDao extends BatchableDao<Setting> {
 	 * 
 	 * @param key
 	 *        the key to get the settings for
-	 * @return list of {@link net.solarnetwork.node.support.KeyValuePair}
-	 *         objects, where the {@code key} will be set to the {@code type}
-	 *         value
-	 * @deprecated since 1.3
-	 * @see #getSettingValues(String)
-	 */
-	@Deprecated
-	List<net.solarnetwork.node.support.KeyValuePair> getSettings(String key);
-
-	/**
-	 * Get all settings for a specific key.
-	 * 
-	 * @param key
-	 *        the key to get the settings for
 	 * @return list of {@link net.solarnetwork.domain.KeyValuePair} objects,
 	 *         where the {@code key} will be set to the {@code type} value
 	 * @since 1.3
 	 */
-	List<net.solarnetwork.domain.KeyValuePair> getSettingValues(String key);
+	List<KeyValuePair> getSettingValues(String key);
 
 	/**
 	 * Get the value for a key+type.

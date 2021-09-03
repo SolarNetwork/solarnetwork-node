@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.support.test;
+package net.solarnetwork.node.service.support.test;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
@@ -30,7 +30,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
-import java.util.Date;
+import java.time.Instant;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -39,16 +39,16 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.codec.ObjectMapperFactoryBean;
 import net.solarnetwork.domain.NetworkIdentity;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.domain.NodeAppConfiguration;
+import net.solarnetwork.node.service.support.UserMetadataService;
 import net.solarnetwork.node.setup.SetupService;
-import net.solarnetwork.node.support.UserMetadataService;
 import net.solarnetwork.node.test.internal.AbstractHttpClientTests;
 import net.solarnetwork.node.test.internal.TestHttpHandler;
-import net.solarnetwork.util.ObjectMapperFactoryBean;
-import net.solarnetwork.util.StaticOptionalService;
-import net.solarnetwork.web.security.AuthorizationV2Builder;
+import net.solarnetwork.security.Snws2AuthorizationBuilder;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link UserMetadataService} class.
@@ -151,9 +151,9 @@ public class UserMetadataServiceTests extends AbstractHttpClientTests {
 				assertThat("Request path", request.getPathInfo(), equalTo(p));
 
 				long reqDate = request.getDateHeader("Date");
-				String auth = new AuthorizationV2Builder(token).saveSigningKey(secret)
-						.host("localhost:" + getHttpServerPort()).path(p).date(new Date(reqDate))
-						.build();
+				String auth = new Snws2AuthorizationBuilder(token).saveSigningKey(secret)
+						.host("localhost:" + getHttpServerPort()).path(p)
+						.date(Instant.ofEpochMilli(reqDate)).build();
 				assertThat("Request auth", request.getHeader("Authorization"), equalTo(auth));
 
 				respondWithJsonResource(response, "meta-01.json");

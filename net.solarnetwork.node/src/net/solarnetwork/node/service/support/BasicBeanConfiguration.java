@@ -22,11 +22,10 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.support;
+package net.solarnetwork.node.service.support;
 
 import java.util.Map;
-
-import net.solarnetwork.node.util.BeanConfiguration;
+import net.solarnetwork.node.service.BeanConfiguration;
 
 /**
  * Basic implementation of {@link BeanConfiguration}.

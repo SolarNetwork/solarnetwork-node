@@ -20,39 +20,33 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.support;
+package net.solarnetwork.node.service.support;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanWrapper;
-import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
-import net.solarnetwork.domain.GeneralLocationSourceMetadata;
-import net.solarnetwork.node.domain.BasicGeneralLocation;
-import net.solarnetwork.node.domain.GeneralLocation;
-import net.solarnetwork.node.domain.GeneralLocationDatum;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.domain.datum.DatumId;
+import net.solarnetwork.domain.datum.GeneralLocationSourceMetadata;
+import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.node.domain.datum.DatumLocation;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.PriceLocation;
-import net.solarnetwork.node.domain.datum.PricedDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatumLocation;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.LocationService;
 import net.solarnetwork.node.service.MultiDatumDataSource;
-import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.BasicLocationLookupSettingSpecifier;
 import net.solarnetwork.node.util.PrefixedMessageSource;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.OptionalServiceTracker;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.KeyedSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * {@link DatumDataSource} that augments some other data source's datum values
@@ -70,10 +64,11 @@ import net.solarnetwork.util.OptionalServiceTracker;
  * </p>
  * 
  * @author matt
- * @version 1.6
+ * @version 1.0
+ * @since 2.0
  */
-public class LocationDatumDataSource<T extends NodeDatum>
-		implements DatumDataSource<T>, MultiDatumDataSource<T>, SettingSpecifierProvider {
+public class LocationDatumDataSource
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	/** Default value for the {@code locationIdPropertyName} property. */
 	public static final String DEFAULT_LOCATION_ID_PROP_NAME = "locationId";
@@ -84,7 +79,7 @@ public class LocationDatumDataSource<T extends NodeDatum>
 	/** Bundle name for price location lookup messages. */
 	public static final String PRICE_LOCATION_MESSAGE_BUNDLE = "net.solarnetwork.node.support.PriceLocationDatumDataSource";
 
-	private DatumDataSource<T> delegate;
+	private DatumDataSource delegate;
 	private OptionalService<LocationService> locationService;
 	private String locationType = DatumLocation.PRICE_TYPE;
 	private String locationIdPropertyName = DEFAULT_LOCATION_ID_PROP_NAME;
@@ -95,81 +90,57 @@ public class LocationDatumDataSource<T extends NodeDatum>
 	private String sourceId = null;
 	private Set<String> datumClassNameIgnore;
 
-	private GeneralLocation location = null;
+	private DatumLocation location = null;
 	private MessageSource messageSource;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	/**
-	 * Factory method.
-	 * 
-	 * <p>
-	 * This method exists to work around issues with wiring this class via
-	 * Gemini Blueprint 2.2. It throws a
-	 * {@code SpringBlueprintConverterService$BlueprintConverterException} if
-	 * the delegate parameter is defined as {@code DatumDataSource}.
-	 * </p>
-	 * 
-	 * @param delegate
-	 *        the delegate, must implement
-	 *        {@code DatumDataSource<? extends Datum>}
-	 * @param locationService
-	 *        the location service
-	 * @return the data source
-	 */
-	public static LocationDatumDataSource<? extends NodeDatum> getInstance(Object delegate,
-			OptionalServiceTracker<LocationService> locationService) {
-		LocationDatumDataSource<? extends NodeDatum> ds = new LocationDatumDataSource<NodeDatum>();
-		ds.setDelegate(delegate);
-		ds.setLocationService(locationService);
-		return ds;
-	}
-
 	@Override
-	public Class<? extends T> getDatumType() {
+	public Class<? extends NodeDatum> getDatumType() {
 		return delegate.getDatumType();
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	public Class<? extends T> getMultiDatumType() {
+	public Class<? extends NodeDatum> getMultiDatumType() {
 		if ( delegate instanceof MultiDatumDataSource ) {
-			return ((MultiDatumDataSource<T>) delegate).getMultiDatumType();
+			return ((MultiDatumDataSource) delegate).getMultiDatumType();
 		}
 		return delegate.getDatumType();
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	public Collection<T> readMultipleDatum() {
-		Collection<T> results = null;
+	public Collection<NodeDatum> readMultipleDatum() {
+		Collection<NodeDatum> datumList = null;
 		if ( delegate instanceof MultiDatumDataSource ) {
-			results = ((MultiDatumDataSource<T>) delegate).readMultipleDatum();
+			datumList = ((MultiDatumDataSource) delegate).readMultipleDatum();
 		} else {
 			// fake multi API
-			results = new ArrayList<T>(1);
-			T datum = delegate.readCurrentDatum();
+			datumList = new ArrayList<>(1);
+			NodeDatum datum = delegate.readCurrentDatum();
 			if ( datum != null ) {
-				results.add(datum);
+				datumList.add(datum);
 			}
 		}
-		if ( results != null && locationId != null ) {
-			for ( T datum : results ) {
-				populateLocation(datum);
+		List<NodeDatum> result = new ArrayList<>();
+		if ( datumList != null && locationId != null ) {
+			for ( NodeDatum datum : datumList ) {
+				NodeDatum d = populateLocation(datum);
+				if ( d != null ) {
+					result.add(d);
+				}
 			}
-		} else if ( results != null && results.size() > 0 && locationId == null
+		} else if ( datumList != null && !datumList.isEmpty() && locationId == null
 				&& requireLocationService ) {
-			log.warn("Location required but not available, discarding datum: {}", results);
-			results = Collections.emptyList();
+			log.warn("Location required but not available, discarding datum: {}", datumList);
 		}
-		return results;
+		return result;
 	}
 
 	@Override
-	public T readCurrentDatum() {
-		T datum = delegate.readCurrentDatum();
+	public NodeDatum readCurrentDatum() {
+		NodeDatum datum = delegate.readCurrentDatum();
 		if ( datum != null && locationId != null ) {
-			populateLocation(datum);
+			datum = populateLocation(datum);
 		} else if ( datum != null && locationId == null && requireLocationService ) {
 			log.warn("LocationService required but not available, discarding datum: {}", datum);
 			datum = null;
@@ -177,31 +148,20 @@ public class LocationDatumDataSource<T extends NodeDatum>
 		return datum;
 	}
 
-	private void populateLocation(T datum) {
+	private NodeDatum populateLocation(NodeDatum datum) {
 		if ( locationId != null && sourceId != null && !shouldIgnoreDatum(datum) ) {
 			log.debug("Augmenting datum {} with locaiton ID {} ({})", datum, locationId, sourceId);
-			if ( datum instanceof GeneralLocationDatum ) {
-				GeneralLocationDatum gDatum = (GeneralLocationDatum) datum;
-				gDatum.setLocationId(locationId);
-				gDatum.setSourceId(sourceId);
-			} else if ( datum instanceof GeneralNodeDatum ) {
-				GeneralNodeDatum gDatum = (GeneralNodeDatum) datum;
-				gDatum.putStatusSampleValue(PricedDatum.PRICE_LOCATION_KEY, locationId);
-				gDatum.putStatusSampleValue(PricedDatum.PRICE_SOURCE_KEY, sourceId);
-			} else {
-				BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(datum);
-				if ( bean.isWritableProperty(locationIdPropertyName)
-						&& bean.isWritableProperty(sourceIdPropertyName) ) {
-					bean.setPropertyValue(locationIdPropertyName, locationId);
-					bean.setPropertyValue(sourceIdPropertyName, sourceId);
-				}
+			if ( datum.getKind() == ObjectDatumKind.Location ) {
+				return datum.copyWithId(
+						new DatumId(datum.getKind(), locationId, sourceId, datum.getTimestamp()));
 			}
 		}
+		return datum;
 	}
 
-	private boolean shouldIgnoreDatum(T datum) {
-		return (datumClassNameIgnore != null
-				&& datumClassNameIgnore.contains(datum.getClass().getName()));
+	private boolean shouldIgnoreDatum(NodeDatum datum) {
+		return (datum == null || (datumClassNameIgnore != null
+				&& datumClassNameIgnore.contains(datum.getClass().getName())));
 	}
 
 	@Override
@@ -211,13 +171,31 @@ public class LocationDatumDataSource<T extends NodeDatum>
 	}
 
 	@Override
-	public String getUID() {
-		return delegate.getUID();
+	public String getUid() {
+		return delegate.getUid();
 	}
 
 	@Override
+	public String getGroupUid() {
+		return delegate.getGroupUid();
+	}
+
+	/**
+	 * Alias for {@link #getUid()} for backwards compatibility.
+	 * 
+	 * @return the UID
+	 */
+	public String getUID() {
+		return delegate.getUid();
+	}
+
+	/**
+	 * Alias for {@link #getGroupUid()} for backwards compatibility.
+	 * 
+	 * @return the group UID
+	 */
 	public String getGroupUID() {
-		return delegate.getGroupUID();
+		return delegate.getGroupUid();
 	}
 
 	@Override
@@ -292,11 +270,11 @@ public class LocationDatumDataSource<T extends NodeDatum>
 			LocationService service = locationService.service();
 			if ( service != null ) {
 				GeneralLocationSourceMetadata meta = service.getLocationMetadata(locationId, sourceId);
-				BasicGeneralLocation loc = new BasicGeneralLocation();
+				SimpleDatumLocation loc = new SimpleDatumLocation();
 				loc.setLocationId(locationId);
 				loc.setSourceId(sourceId);
 				loc.setSourceMetadata(meta);
-				location = loc;
+				this.location = loc;
 			}
 		}
 		return new BasicLocationLookupSettingSpecifier("locationKey", locationType, location);
@@ -305,53 +283,19 @@ public class LocationDatumDataSource<T extends NodeDatum>
 	/**
 	 * Get the delegate.
 	 * 
-	 * <p>
-	 * This getter is used to work around a <i>No conversion found for generic
-	 * argument(s) for reified type</i> bug with Spring/Gemini Blueprint wiring.
-	 * </p>
-	 * 
 	 * @return the delegate
-	 * @see #getDelegateDatumDataSource()
 	 */
-	public Object getDelegate() {
-		return getDelegateDatumDataSource();
+	public DatumDataSource getDelegate() {
+		return delegate;
 	}
 
 	/**
 	 * Set the delegate.
 	 * 
-	 * <p>
-	 * This getter is used to work around a <i>No conversion found for generic
-	 * argument(s) for reified type</i> bug with Spring/Gemini Blueprint wiring.
-	 * </p>
-	 * 
 	 * @param delegate
-	 *        the delegate to set; must implement {@link DatumDataSource}
-	 * @see #setDelegateDatumDataSource(DatumDataSource)
+	 *        the delegate to set
 	 */
-	@SuppressWarnings("unchecked")
-	public void setDelegate(Object delegate) {
-		setDelegateDatumDataSource((DatumDataSource<T>) delegate);
-	}
-
-	/**
-	 * Get the delegate {@link DatumDataSource}.
-	 * 
-	 * @return the delegate
-	 * @since 1.6
-	 */
-	public Object getDelegateDatumDataSource() {
-		return delegate;
-	}
-
-	/**
-	 * Set the delegate {@link DatumDataSource}.
-	 * 
-	 * @param delegate
-	 *        the delegate
-	 * @since 1.6
-	 */
-	public void setDelegateDatumDataSource(DatumDataSource<T> delegate) {
+	public void setDelegate(DatumDataSource delegate) {
 		this.delegate = delegate;
 	}
 
@@ -378,8 +322,8 @@ public class LocationDatumDataSource<T extends NodeDatum>
 
 	/**
 	 * Get the JavaBean property name to set the found
-	 * {@link DatumLocation#getLocationId()} to on the {@link NodeDatum} returned from
-	 * the configured {@code delegate}.
+	 * {@link DatumLocation#getLocationId()} to on the {@link NodeDatum}
+	 * returned from the configured {@code delegate}.
 	 * 
 	 * @return the location ID property name; defaults to
 	 *         {@link #DEFAULT_LOCATION_ID_PROP_NAME}
@@ -390,8 +334,8 @@ public class LocationDatumDataSource<T extends NodeDatum>
 
 	/**
 	 * Set the JavaBean property name to set the found
-	 * {@link DatumLocation#getLocationId()} to on the {@link NodeDatum} returned from
-	 * the configured {@code delegate}.
+	 * {@link DatumLocation#getLocationId()} to on the {@link NodeDatum}
+	 * returned from the configured {@code delegate}.
 	 * 
 	 * <p>
 	 * The object must support a JavaBean setter method for this property.
@@ -517,7 +461,7 @@ public class LocationDatumDataSource<T extends NodeDatum>
 		this.locationId = locationId;
 	}
 
-	public GeneralLocation getLocation() {
+	public DatumLocation getLocation() {
 		return location;
 	}
 
@@ -543,8 +487,8 @@ public class LocationDatumDataSource<T extends NodeDatum>
 
 	/**
 	 * Get the JavaBean property name to set the found
-	 * {@link DatumLocation#getSourceId()} to on the {@link NodeDatum} returned from the
-	 * configured {@code delegate}.
+	 * {@link DatumLocation#getSourceId()} to on the {@link NodeDatum} returned
+	 * from the configured {@code delegate}.
 	 * 
 	 * @return the source ID property name; defaults to
 	 *         {@link #DEFAULT_SOURCE_ID_PROP_NAME}
@@ -555,8 +499,8 @@ public class LocationDatumDataSource<T extends NodeDatum>
 
 	/**
 	 * Set the JavaBean property name to set the found
-	 * {@link DatumLocation#getSourceId()} to on the {@link NodeDatum} returned from the
-	 * configured {@code delegate}.
+	 * {@link DatumLocation#getSourceId()} to on the {@link NodeDatum} returned
+	 * from the configured {@code delegate}.
 	 * 
 	 * <p>
 	 * The object must support a JavaBean setter method for this property.

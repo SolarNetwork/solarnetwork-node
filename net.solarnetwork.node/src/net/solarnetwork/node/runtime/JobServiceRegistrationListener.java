@@ -49,9 +49,9 @@ import org.quartz.SimpleScheduleBuilder;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 import net.solarnetwork.node.job.TriggerAndJobDetail;
+import net.solarnetwork.node.service.support.BaseServiceListener;
+import net.solarnetwork.node.service.support.RegisteredService;
 import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.util.BaseServiceListener;
-import net.solarnetwork.node.util.RegisteredService;
 
 /**
  * An OSGi service registration listener for jobs, so they can be automatically

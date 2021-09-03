@@ -44,10 +44,10 @@ import net.solarnetwork.node.service.DatumMetadataService;
 import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.DeviceInfoProvider;
 import net.solarnetwork.node.service.MultiDatumDataSource;
-import net.solarnetwork.node.settings.KeyedSettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.KeyedSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * Job to poll a {@link DatumDataSource} or {@link MultiDatumDataSource} for

@@ -20,9 +20,9 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.support;
+package net.solarnetwork.node.service.support;
 
-import static net.solarnetwork.util.OptionalService.service;
+import static net.solarnetwork.service.OptionalService.service;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -31,38 +31,33 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
-import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
-import net.solarnetwork.domain.GeneralDatumMetadata;
-import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.domain.ExpressionRoot;
-import net.solarnetwork.node.domain.GeneralDatum;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.domain.datum.MutableNodeDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.DatumDataSource;
-import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.DatumMetadataService;
 import net.solarnetwork.node.service.DatumQueue;
-import net.solarnetwork.node.service.support.BaseIdentifiable;
-import net.solarnetwork.node.service.support.ExpressionConfig;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.service.DatumFilterService;
-import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.ArrayUtils;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.OptionalServiceCollection;
 
 /**
  * Helper class for {@link net.solarnetwork.node.service.DatumDataSource} and
- * {@link net.solarnetwork.node.service.MultiDatumDataSource} implementations to extend.
+ * {@link net.solarnetwork.node.service.MultiDatumDataSource} implementations to
+ * extend.
  * 
  * @author matt
- * @version 1.8
- * @since 1.51
+ * @version 1.0
+ * @since 2.0
  */
-public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEvents {
+public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * A transform properties instance that can be used to signal "sub-sampling"
@@ -103,11 +98,11 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	 * @since 1.8
 	 */
 	protected final void offerDatumCapturedEvent(NodeDatum datum) {
-		if ( datum instanceof GeneralDatum ) {
+		if ( datum != null ) {
 			final DatumQueue queue = service(datumQueue);
 			if ( queue != null ) {
 				// offer datum to queue instead of posting as event, as we expect the queue to emit the event
-				queue.offer((GeneralDatum) datum, false);
+				queue.offer(datum, false);
 			}
 		}
 	}
@@ -201,8 +196,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	 * @see #stopSubSampling()
 	 * @since 1.1
 	 */
-	protected synchronized ScheduledFuture<?> startSubSampling(
-			DatumDataSource<? extends GeneralNodeDatum> dataSource) {
+	protected synchronized ScheduledFuture<?> startSubSampling(DatumDataSource dataSource) {
 		stopSubSampling();
 		final long freq = (subSampleFrequency != null ? subSampleFrequency.longValue() : 0);
 		if ( taskScheduler == null || freq < 1 ) {
@@ -240,8 +234,8 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	 *        {@link #startSubSampling(DatumDataSource)}
 	 * @since 1.1
 	 */
-	protected void readSubSampleDatum(DatumDataSource<? extends GeneralNodeDatum> dataSource) {
-		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+	protected void readSubSampleDatum(DatumDataSource dataSource) {
+		NodeDatum datum = dataSource.readCurrentDatum();
 		log.debug("Got sub-sample datum: {}", datum);
 	}
 
@@ -279,21 +273,19 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	 *        the datum to possibly filter
 	 * @param props
 	 *        optional transform properties to pass to
-	 *        {@link DatumFilterService#filter(NodeDatum, GeneralDatumSamples, Map)}
+	 *        {@link DatumFilterService#filter(NodeDatum, DatumSamples, Map)}
 	 * @return the same datum, possibly transformed, or {@literal null} if the
 	 *         datum has been filtered out completely
 	 * @since 1.1
 	 */
-	protected <T extends GeneralNodeDatum> T applySamplesTransformer(T datum,
-			Map<String, Object> props) {
-		DatumFilterService xformService = OptionalService
-				.service(getSamplesTransformService());
+	protected NodeDatum applySamplesTransformer(NodeDatum datum, Map<String, Object> props) {
+		DatumFilterService xformService = OptionalService.service(getSamplesTransformService());
 		if ( xformService != null ) {
-			GeneralDatumSamples out = xformService.filter(datum, datum.getSamples(), props);
+			DatumSamplesOperations out = xformService.filter(datum, datum.asSampleOperations(), props);
 			if ( out == null ) {
 				return null;
-			} else if ( out != datum.getSamples() ) {
-				datum.setSamples(out);
+			} else if ( out != datum.asSampleOperations() ) {
+				datum = datum.copyWithSamples(out);
 			}
 		}
 		return datum;
@@ -317,7 +309,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	 *      ExpressionConfig[], Object)
 	 * @since 1.3
 	 */
-	protected void populateExpressionDatumProperties(final GeneralNodeDatum d,
+	protected void populateExpressionDatumProperties(final MutableNodeDatum d,
 			final ExpressionConfig[] expressionConfs) {
 		populateExpressionDatumProperties(d, expressionConfs, new ExpressionRoot(d));
 	}
@@ -334,56 +326,9 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	 *        the expression root object
 	 * @since 1.3
 	 */
-	protected void populateExpressionDatumProperties(final GeneralNodeDatum d,
+	protected void populateExpressionDatumProperties(final MutableNodeDatum d,
 			final ExpressionConfig[] expressionConfs, final Object root) {
 		super.populateExpressionDatumProperties(d.asMutableSampleOperations(), expressionConfs, root);
-	}
-
-	@Override
-	public String getUID() {
-		return super.getUID();
-	}
-
-	@Override
-	public String getUid() {
-		return super.getUid();
-	}
-
-	@Override
-	public void setUid(String uid) {
-		super.setUid(uid);
-	}
-
-	@Override
-	public String getGroupUID() {
-		return super.getGroupUID();
-	}
-
-	@Override
-	public void setGroupUID(String groupUID) {
-		super.setGroupUID(groupUID);
-	}
-
-	/**
-	 * Set an event admin service to use.
-	 * 
-	 * @param eventAdmin
-	 *        the service to use
-	 * @deprecated since 1.8 this is ignored
-	 */
-	@Deprecated
-	public void setEventAdmin(OptionalService<?> eventAdmin) {
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public MessageSource getMessageSource() {
-		return super.getMessageSource();
-	}
-
-	@Override
-	public void setMessageSource(MessageSource messageSource) {
-		super.setMessageSource(messageSource);
 	}
 
 	/**
@@ -490,8 +435,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	 *        the service to set
 	 * @since 1.1
 	 */
-	public void setSamplesTransformService(
-			OptionalService<DatumFilterService> samplesTransformService) {
+	public void setSamplesTransformService(OptionalService<DatumFilterService> samplesTransformService) {
 		this.samplesTransformService = samplesTransformService;
 	}
 
@@ -542,34 +486,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable implements DatumEve
 	public void setExpressionConfigsCount(int count) {
 		this.expressionConfigs = ArrayUtils.arrayWithLength(this.expressionConfigs, count,
 				ExpressionConfig.class, null);
-	}
-
-	/**
-	 * Get an optional collection of {@link ExpressionService}.
-	 * 
-	 * @return the optional {@link ExpressionService} collection to use
-	 * @since 1.3
-	 */
-	@Override
-	public OptionalServiceCollection<ExpressionService> getExpressionServices() {
-		return super.getExpressionServices();
-	}
-
-	/**
-	 * Configure an optional collection of {@link ExpressionService}.
-	 * 
-	 * <p>
-	 * Configuring these services allows expressions to be defined to calculate
-	 * dynamic datum property values at runtime.
-	 * </p>
-	 * 
-	 * @param expressionServices
-	 *        the optional {@link ExpressionService} collection to use
-	 * @since 1.3
-	 */
-	@Override
-	public void setExpressionServices(OptionalServiceCollection<ExpressionService> expressionServices) {
-		super.setExpressionServices(expressionServices);
 	}
 
 	/**

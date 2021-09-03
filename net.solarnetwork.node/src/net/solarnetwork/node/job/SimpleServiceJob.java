@@ -28,9 +28,9 @@ import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.PersistJobDataAfterExecution;
 import org.springframework.context.MessageSource;
-import net.solarnetwork.node.settings.MappableSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.MappableSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * Simple stateful job to execute {@link JobService#executeJobService()}.

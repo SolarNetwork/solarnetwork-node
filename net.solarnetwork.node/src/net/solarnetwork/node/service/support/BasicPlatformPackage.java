@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.support;
+package net.solarnetwork.node.service.support;
 
 import net.solarnetwork.node.service.PlatformPackageService.PlatformPackage;
 

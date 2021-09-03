@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.support;
+package net.solarnetwork.node.service.support;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -29,14 +29,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.task.AsyncTaskExecutor;
 import net.solarnetwork.node.service.PlatformPackageService;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.service.OptionalService;
 
 /**
  * Base implementation of {@link PlatformPackageService}.
  * 
  * @author matt
  * @version 1.0
- * @since 1.68
+ * @since 2.0
  */
 public abstract class BasePlatformPackageService implements PlatformPackageService {
 

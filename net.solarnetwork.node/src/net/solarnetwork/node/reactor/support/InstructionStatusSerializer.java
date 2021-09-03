@@ -1,5 +1,5 @@
 /* ==================================================================
- * InstructionSerializer.java - Aug 25, 2014 2:21:07 PM
+ * InstructionStatusSerializer.java - Aug 25, 2014 2:21:07 PM
  * 
  * Copyright 2007-2014 SolarNetwork.net Dev Team
  * 
@@ -20,32 +20,38 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.support;
+package net.solarnetwork.node.reactor.support;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.ser.std.StdScalarSerializer;
 import net.solarnetwork.node.reactor.Instruction;
 
 /**
- * Serialize {@link Instruction} to JSON.
+ * Serialize {@link Instruction} to JSON, suitable for posting status details to
+ * SolarNetwork.
  * 
  * @author matt
  * @version 1.0
- * @since 1.58
+ * @since 2.0
  */
-public class InstructionSerializer extends StdScalarSerializer<Instruction> implements Serializable {
+public class InstructionStatusSerializer extends StdScalarSerializer<Instruction>
+		implements Serializable {
 
 	private static final long serialVersionUID = 1968483113822863563L;
+
+	/** A default instance. */
+	public static final JsonSerializer<Instruction> INSTANCE = new InstructionStatusSerializer();
 
 	/**
 	 * Default constructor.
 	 */
-	public InstructionSerializer() {
+	public InstructionStatusSerializer() {
 		super(Instruction.class);
 	}
 

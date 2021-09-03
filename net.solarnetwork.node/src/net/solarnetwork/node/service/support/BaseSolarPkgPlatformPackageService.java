@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.support;
+package net.solarnetwork.node.service.support;
 
 import static net.solarnetwork.util.StringUtils.delimitedStringFromCollection;
 import static net.solarnetwork.util.StringUtils.parseBoolean;
@@ -40,7 +40,7 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.util.StringUtils;
 import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.service.PlatformPackageService;
-import net.solarnetwork.util.ProgressListener;
+import net.solarnetwork.service.ProgressListener;
 
 /**
  * Base implementation of {@link PlatformPackageService}, with support for using
@@ -99,7 +99,7 @@ import net.solarnetwork.util.ProgressListener;
  * 
  * @author matt
  * @version 1.0
- * @since 1.68
+ * @since 2.0
  */
 public abstract class BaseSolarPkgPlatformPackageService extends BasePlatformPackageService {
 

@@ -29,13 +29,13 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Future;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * Manager API for node-level backups.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public interface BackupManager extends SettingSpecifierProvider {
 

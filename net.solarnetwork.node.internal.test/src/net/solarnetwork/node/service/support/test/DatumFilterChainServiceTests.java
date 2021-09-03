@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.support.test;
+package net.solarnetwork.node.service.support.test;
 
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.equalTo;
@@ -29,44 +29,45 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.node.GeneralDatumSamplesTransformService;
-import net.solarnetwork.node.OperationalModesService;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
-import net.solarnetwork.node.support.BaseSamplesTransformSupport;
-import net.solarnetwork.node.support.GeneralDatumSamplesTransformChain;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
+import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
+import net.solarnetwork.node.service.support.DatumFilterChainService;
+import net.solarnetwork.service.DatumFilterService;
 
 /**
- * Test cases for the {@link GeneralDatumSamplesTransformChain} class.
+ * Test cases for the {@link DatumFilterChainService} class.
  * 
  * @author matt
  * @version 1.0
  */
-public class GeneralDatumSamplesTransformChainTests {
+public class DatumFilterChainServiceTests {
 
 	private static final String TEST_UID = "test";
 	private static final String TEST_UID2 = "test2";
 
 	private OperationalModesService opModesService;
 
-	private List<GeneralDatumSamplesTransformService> xforms;
-	private GeneralDatumSamplesTransformChain chain;
+	private List<DatumFilterService> xforms;
+	private DatumFilterChainService chain;
 
 	@Before
 	public void setup() {
 		opModesService = EasyMock.createMock(OperationalModesService.class);
 
 		xforms = new ArrayList<>();
-		chain = new GeneralDatumSamplesTransformChain(TEST_UID, xforms);
+		chain = new DatumFilterChainService(TEST_UID, xforms);
 		chain.setOpModesService(opModesService);
 	}
 
@@ -79,13 +80,9 @@ public class GeneralDatumSamplesTransformChainTests {
 		EasyMock.replay(opModesService);
 	}
 
-	private GeneralNodeDatum createTestDatum() {
-		GeneralNodeDatum d = new GeneralNodeDatum();
-		d.setCreated(new Date());
-		d.setSourceId("test.source");
-		GeneralDatumSamples s = new GeneralDatumSamples();
-		s.putInstantaneousSampleValue("foo", 1);
-		d.setSamples(s);
+	private SimpleDatum createTestDatum() {
+		SimpleDatum d = SimpleDatum.nodeDatum("test.source", Instant.now(), new DatumSamples());
+		d.getSamples().putInstantaneousSampleValue("foo", 1);
 		return d;
 	}
 
@@ -96,24 +93,24 @@ public class GeneralDatumSamplesTransformChainTests {
 
 		expect(opModesService.isOperationalModeActive("foo")).andReturn(false);
 
-		GeneralNodeDatum d = createTestDatum();
+		SimpleDatum d = createTestDatum();
 
 		// WHEN
 		replayAll();
-		GeneralDatumSamples s = new GeneralDatumSamples(d.getSamples());
-		GeneralDatumSamples result = chain.transformSamples(d, s, null);
+		DatumSamples s = new DatumSamples(d.getSamples());
+		DatumSamplesOperations result = chain.filter(d, s, null);
 
 		// THEN
 		assertThat("Input instance returned because op mode disabled", result, is(sameInstance(s)));
 		assertThat("Samples unchanged", result, is(equalTo(d.getSamples())));
 	}
 
-	private static class InvocationCountingTransform extends BaseSamplesTransformSupport
-			implements GeneralDatumSamplesTransformService {
+	private static class InvocationCountingTransform extends BaseDatumFilterSupport
+			implements DatumFilterService {
 
 		private int count = 0;
-		private final List<GeneralDatumSamples> input = new ArrayList<>();
-		private final List<GeneralDatumSamples> output = new ArrayList<>();
+		private final List<DatumSamplesOperations> input = new ArrayList<>();
+		private final List<DatumSamplesOperations> output = new ArrayList<>();
 		private final List<Map<String, Object>> params = new ArrayList<>();
 
 		public InvocationCountingTransform(String uid) {
@@ -122,11 +119,11 @@ public class GeneralDatumSamplesTransformChainTests {
 		}
 
 		@Override
-		public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
+		public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
 				Map<String, Object> parameters) {
 			count++;
 			input.add(samples);
-			GeneralDatumSamples out = new GeneralDatumSamples(samples);
+			DatumSamples out = new DatumSamples(samples);
 			output.add(out);
 			params.add(parameters);
 			return out;
@@ -144,12 +141,12 @@ public class GeneralDatumSamplesTransformChainTests {
 
 		expect(opModesService.isOperationalModeActive("foo")).andReturn(true);
 
-		GeneralNodeDatum d = createTestDatum();
+		SimpleDatum d = createTestDatum();
 
 		// WHEN
 		replayAll();
-		GeneralDatumSamples s = new GeneralDatumSamples(d.getSamples());
-		GeneralDatumSamples result = chain.transformSamples(d, s, null);
+		DatumSamples s = new DatumSamples(d.getSamples());
+		DatumSamplesOperations result = chain.filter(d, s, null);
 
 		// THEN
 		assertThat("Different instance returned because op mode enabled", result,
@@ -167,12 +164,12 @@ public class GeneralDatumSamplesTransformChainTests {
 		xforms.add(xform);
 		chain.setTransformUids(new String[] { TEST_UID });
 
-		GeneralNodeDatum d = createTestDatum();
+		SimpleDatum d = createTestDatum();
 
 		// WHEN
 		replayAll();
-		GeneralDatumSamples s = new GeneralDatumSamples(d.getSamples());
-		GeneralDatumSamples result = chain.transformSamples(d, s, null);
+		DatumSamples s = new DatumSamples(d.getSamples());
+		DatumSamplesOperations result = chain.filter(d, s, null);
 
 		// THEN
 		assertThat("Different instance returned because op mode enabled", result,
@@ -192,12 +189,12 @@ public class GeneralDatumSamplesTransformChainTests {
 		xforms.add(xform2);
 		chain.setTransformUids(new String[] { TEST_UID, TEST_UID2 });
 
-		GeneralNodeDatum d = createTestDatum();
+		SimpleDatum d = createTestDatum();
 
 		// WHEN
 		replayAll();
-		GeneralDatumSamples s = new GeneralDatumSamples(d.getSamples());
-		GeneralDatumSamples result = chain.transformSamples(d, s, null);
+		DatumSamples s = new DatumSamples(d.getSamples());
+		DatumSamplesOperations result = chain.filter(d, s, null);
 
 		// THEN
 		assertThat("Different instance returned because op mode enabled", result,

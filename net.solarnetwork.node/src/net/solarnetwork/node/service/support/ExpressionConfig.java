@@ -35,12 +35,12 @@ import java.util.Properties;
 import org.springframework.expression.Expression;
 import net.solarnetwork.domain.datum.DatumSamplePropertyConfig;
 import net.solarnetwork.domain.datum.DatumSamplesType;
-import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingValueBean;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.service.ExpressionService;
 import net.solarnetwork.service.support.ExpressionServiceExpression;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Configuration for a single datum property to be set via an expression.

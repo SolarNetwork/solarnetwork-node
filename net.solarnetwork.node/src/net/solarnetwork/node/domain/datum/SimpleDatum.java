@@ -121,6 +121,13 @@ public class SimpleDatum extends GeneralDatum implements MutableNodeDatum, Clone
 	}
 
 	@Override
+	public NodeDatum copyWithId(DatumId id) {
+		SimpleDatum d = new SimpleDatum(id, getSamples());
+		d.uploaded = this.uploaded;
+		return d;
+	}
+
+	@Override
 	public Instant getUploaded() {
 		return uploaded;
 	}

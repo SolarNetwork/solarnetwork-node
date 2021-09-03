@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.util;
+package net.solarnetwork.node.service.support;
 
 import java.util.ArrayList;
 import java.util.Arrays;

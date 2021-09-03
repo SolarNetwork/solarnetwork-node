@@ -26,6 +26,7 @@ package net.solarnetwork.node.domain.datum;
 
 import java.time.Instant;
 import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 
 /**
@@ -69,5 +70,13 @@ public interface NodeDatum extends Datum, Cloneable {
 	 */
 	@Override
 	NodeDatum copyWithSamples(DatumSamplesOperations samples);
+
+	/**
+	 * Get a copy of this datum with a new ID
+	 * 
+	 * @return the copy with the given ID
+	 */
+	@Override
+	NodeDatum copyWithId(DatumId id);
 
 }

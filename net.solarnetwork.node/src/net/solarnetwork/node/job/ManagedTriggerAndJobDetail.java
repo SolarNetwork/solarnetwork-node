@@ -24,7 +24,7 @@ package net.solarnetwork.node.job;
 
 import org.quartz.JobDetail;
 import org.quartz.Trigger;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * A bean that combines a trigger and a job, designed to be managed via

@@ -55,12 +55,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.node.service.IdentityService;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicSliderSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicSliderSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * {@link BackupService} implementation that copies files to another location in
