@@ -20,16 +20,17 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.setup;
+package net.solarnetwork.node.service;
 
 import java.security.cert.X509Certificate;
-import net.solarnetwork.support.CertificateException;
+import net.solarnetwork.service.CertificateException;
 
 /**
  * API for managing the node's certificate infrastructure.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
+ * @since 2.0
  */
 public interface PKIService {
 

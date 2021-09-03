@@ -52,11 +52,11 @@ import org.springframework.context.HierarchicalMessageSource;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.util.FileCopyUtils;
-import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.service.DynamicServiceUnavailableException;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicRadioGroupSettingSpecifier;
+import net.solarnetwork.support.PrefixedMessageSource;
 import net.solarnetwork.util.StringUtils;
 import net.solarnetwork.util.UnionIterator;
 

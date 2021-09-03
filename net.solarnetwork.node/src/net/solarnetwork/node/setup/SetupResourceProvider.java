@@ -24,11 +24,10 @@ package net.solarnetwork.node.setup;
 
 import java.util.Collection;
 import java.util.Locale;
-import net.solarnetwork.node.settings.SettingSpecifier;
 
 /**
- * API for a provider of resource(s) to support {@link SettingSpecifier}
- * clients.
+ * API for a provider of resource(s) to support
+ * {@link net.solarnetwork.settings.SettingSpecifier} clients.
  * 
  * @author matt
  * @version 1.0
@@ -42,10 +41,10 @@ public interface SetupResourceProvider {
 	 * Get a specific resource for a resource UID.
 	 * 
 	 * @param resourceUID
-	 *        The ID of the resource to get.
+	 *        the ID of the resource to get
 	 * @param locale
-	 *        The desired locale.
-	 * @return The resource, or {@code null} if not available.
+	 *        the desired locale
+	 * @return the resource, or {@code null} if not available
 	 */
 	SetupResource getSetupResource(String resourceUID, Locale locale);
 
@@ -58,10 +57,10 @@ public interface SetupResourceProvider {
 	 * JavaScript, CSS, images, etc.
 	 * 
 	 * @param consumerType
-	 *        The consumer type to get all appropriate resources for.
+	 *        the consumer type to get all appropriate resources for.
 	 * @param locale
-	 *        The desired locale.
-	 * @return All matching resources, never <em>null</em>.
+	 *        the desired locale.
+	 * @return all matching resources, never {@literal null
 	 */
 	Collection<SetupResource> getSetupResourcesForConsumer(String consumerType, Locale locale);
 

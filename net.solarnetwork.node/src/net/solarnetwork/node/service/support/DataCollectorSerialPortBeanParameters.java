@@ -20,15 +20,15 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.support;
+package net.solarnetwork.node.service.support;
 
 import java.util.List;
-import net.solarnetwork.node.service.DataCollector;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
+import net.solarnetwork.node.service.DataCollector;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * Configuration bean for {@link DataCollector}.
@@ -72,11 +72,11 @@ public class DataCollectorSerialPortBeanParameters extends SerialPortBeanParamet
 			DataCollectorSerialPortBeanParameters defaults, String prefix) {
 		List<SettingSpecifier> results = SerialPortBeanParameters.getDefaultSettingSpecifiers(defaults,
 				prefix);
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "bufferSize", String.valueOf(defaults
-				.getBufferSize())));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "bufferSize",
+				String.valueOf(defaults.getBufferSize())));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "magicHex", defaults.getMagicHex()));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "readSize", String.valueOf(defaults
-				.getReadSize())));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "readSize",
+				String.valueOf(defaults.getReadSize())));
 		results.add(new BasicToggleSettingSpecifier(prefix + "toggleDtr", defaults.isToggleDtr()));
 		results.add(new BasicToggleSettingSpecifier(prefix + "toggleRts", defaults.isToggleRts()));
 		return results;
@@ -96,10 +96,11 @@ public class DataCollectorSerialPortBeanParameters extends SerialPortBeanParamet
 			DataCollectorSerialPortBeanParameters defaults, String prefix) {
 		List<SettingSpecifier> results = SerialPortBeanParameters.getDefaultSettingSpecifiers(defaults,
 				prefix);
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "bufferSize", String.valueOf(defaults
-				.getBufferSize())));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "bufferSize",
+				String.valueOf(defaults.getBufferSize())));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "magicHex", defaults.getMagicHex()));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "magicEOFHex", defaults.getMagicEOFHex()));
+		results.add(
+				new BasicTextFieldSettingSpecifier(prefix + "magicEOFHex", defaults.getMagicEOFHex()));
 		results.add(new BasicToggleSettingSpecifier(prefix + "toggleDtr", defaults.isToggleDtr()));
 		results.add(new BasicToggleSettingSpecifier(prefix + "toggleRts", defaults.isToggleRts()));
 		return results;

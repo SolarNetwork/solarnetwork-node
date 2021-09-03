@@ -37,14 +37,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.settings.support.KeyedSmartQuotedTemplateMapper;
-import net.solarnetwork.node.util.PrefixedMessageSource;
-import net.solarnetwork.node.util.TemplatedMessageSource;
 import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.MappableSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.settings.support.BasicCronExpressionSettingSpecifier;
+import net.solarnetwork.support.PrefixedMessageSource;
+import net.solarnetwork.support.TemplatedMessageSource;
 
 /**
  * Extension of {@link SimpleTriggerAndJobDetail} that supports a

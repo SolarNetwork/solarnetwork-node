@@ -42,11 +42,11 @@ import net.solarnetwork.node.service.LocationService;
 import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicLocationLookupSettingSpecifier;
-import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.KeyedSettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.support.PrefixedMessageSource;
 
 /**
  * {@link DatumDataSource} that augments some other data source's datum values
