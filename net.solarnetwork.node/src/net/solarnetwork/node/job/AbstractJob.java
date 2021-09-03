@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.util.ClassUtils;
 
 /**
- * Abstract Quartz job to handle exceptions in consistent fashion.
+ * Abstract Quartz job to handle exceptions in a consistent fashion.
  * 
  * @author matt
  * @version 1.2

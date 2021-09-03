@@ -24,7 +24,7 @@ package net.solarnetwork.node.settings.support;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.solarnetwork.node.settings.KeyedSettingSpecifier.Mapper;
+import net.solarnetwork.settings.MappableSpecifier.Mapper;
 
 /**
  * Dynamically maps property keys to support nested collections.
@@ -35,20 +35,9 @@ import net.solarnetwork.node.settings.KeyedSettingSpecifier.Mapper;
  * letters, numbers, and underscore characters.
  * </p>
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>template</dt>
- * <dd>A format template that accepts a single parameter to be within the
- * template quote.</dd>
- * </dl>
- * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-@SuppressWarnings("deprecation")
 public class KeyedSmartQuotedTemplateMapper implements Mapper {
 
 	private static final Pattern PROPERTY_PATTERN = Pattern.compile("([a-zA-Z0-9_]+)(.*)");
@@ -69,10 +58,22 @@ public class KeyedSmartQuotedTemplateMapper implements Mapper {
 		return String.format(template, quoteParam) + suffix;
 	}
 
+	/**
+	 * Get the format template that accepts a single parameter to be within the
+	 * template quote.
+	 * 
+	 * @return the template
+	 */
 	public String getTemplate() {
 		return template;
 	}
 
+	/**
+	 * Set the format template that accepts a single parameter to be within the
+	 * template quote.
+	 * 
+	 * @param template
+	 */
 	public void setTemplate(String template) {
 		this.template = template;
 	}

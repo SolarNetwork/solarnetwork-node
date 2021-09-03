@@ -32,13 +32,18 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.core.io.Resource;
 import net.solarnetwork.node.Constants;
-import net.solarnetwork.support.SearchFilter;
+import net.solarnetwork.settings.FactorySettingSpecifierProvider;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingSpecifierProviderFactory;
+import net.solarnetwork.util.SearchFilter;
 
 /**
  * Service API for settings.
  * 
  * @author matt
- * @version 1.6
+ * @version 1.0
+ * @since 2.0
  */
 public interface SettingsService {
 

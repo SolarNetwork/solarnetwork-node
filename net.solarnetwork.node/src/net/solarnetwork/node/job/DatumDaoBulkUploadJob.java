@@ -23,47 +23,30 @@
 package net.solarnetwork.node.job;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.LinkedHashMap;
+import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.PersistJobDataAfterExecution;
 import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.domain.NodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.BulkUploadResult;
 import net.solarnetwork.node.service.BulkUploadService;
 import net.solarnetwork.node.setup.SetupException;
 
 /**
- * Job to query a collection of {@link DatumDao} instances for data to upload
- * via a {@link BulkUploadService}.
+ * Job to query a {@link DatumDao} for datum to upload via a
+ * {@link BulkUploadService}.
  * 
  * <p>
- * This job will call {@link DatumDao#getDatumNotUploaded(String)} for each
- * configured {@link DatumDao} and combine them into a single collection to pass
- * to {@link BulkUploadService#uploadBulkDatum(java.util.Collection)}. For each
+ * This job will call {@link DatumDao#getDatumNotUploaded(String)} for datum to
+ * upload and pass them to
+ * {@link BulkUploadService#uploadBulkDatum(java.util.Collection)}. For each
  * non-null {@link BulkUploadResult#getId()} tracking ID returned, the
- * associated {@link BulkUploadResult#getDatum()} will be passed to the
- * appropriate {@link DatumDao} instance's
- * {@link DatumDao#setDatumUploaded(NodeDatum, Date, String, String)} method.
+ * associated {@link BulkUploadResult#getDatum()} will be passed to
+ * {@link DatumDao#setDatumUploaded(NodeDatum, Instant, String, String)} method
+ * so it can be marked as uploaded.
  * </p>
- * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>daos</dt>
- * <dd>A collection of {@link DatumDao} instances to collect Datum objects from
- * that need uploading, and to then store the uploaded tracking IDs with.</dd>
- * 
- * <dt>uploadService</dt>
- * <dd>The {@link BulkUploadService} to upload the data with.</dd>
- * </dl>
  * 
  * @author matt
  * @version 2.0
@@ -72,56 +55,38 @@ import net.solarnetwork.node.setup.SetupException;
 @DisallowConcurrentExecution
 public class DatumDaoBulkUploadJob extends AbstractJob {
 
-	private Collection<DatumDao<NodeDatum>> daos;
+	private DatumDao dao;
 	private BulkUploadService uploadService;
 
 	@Override
 	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
-		Map<Class<? extends NodeDatum>, DatumDao<NodeDatum>> daoMapping = new LinkedHashMap<Class<? extends NodeDatum>, DatumDao<NodeDatum>>(
-				daos.size());
-
-		List<NodeDatum> uploadList = new ArrayList<NodeDatum>();
-
-		for ( DatumDao<NodeDatum> datumDao : daos ) {
-			if ( log.isDebugEnabled() ) {
-				log.debug("Collecting [{}] data to bulk upload to [{}]",
-						datumDao.getDatumType().getSimpleName(), uploadService.getKey());
-			}
-
-			daoMapping.put(datumDao.getDatumType(), datumDao);
-
-			List<NodeDatum> toUpload = datumDao.getDatumNotUploaded(uploadService.getKey());
-
-			if ( log.isDebugEnabled() ) {
-				log.debug("Found " + toUpload.size() + " [" + datumDao.getDatumType().getSimpleName()
-						+ "] data to bulk upload to [" + uploadService.getKey() + ']');
-			}
-
-			uploadList.addAll(toUpload);
+		if ( log.isDebugEnabled() ) {
+			log.debug("Collecting datum to bulk upload to [{}]", uploadService.getKey());
 		}
-		if ( log.isInfoEnabled() ) {
-			log.info("Collected {} datum to bulk upload to [{}]", uploadList.size(),
-					uploadService.getKey());
+
+		List<NodeDatum> toUpload = dao.getDatumNotUploaded(uploadService.getKey());
+
+		if ( log.isDebugEnabled() ) {
+			log.debug("Found {} datum to bulk upload to [{}]", toUpload.size(), uploadService.getKey());
 		}
-		final Date uploadDate = new Date();
+
+		final Instant uploadDate = Instant.now();
 		try {
 			int count = 0;
-			List<BulkUploadResult> results = uploadService.uploadBulkDatum(uploadList);
+			List<BulkUploadResult> results = uploadService.uploadBulkDatum(toUpload);
 			if ( results != null ) {
 				for ( BulkUploadResult result : results ) {
 					String tid = result.getId();
 					if ( log.isTraceEnabled() ) {
 						log.trace("Bulk uploaded [{} {}] [{}] and received tid [{}]",
 								new Object[] { result.getDatum().getClass().getSimpleName(),
-										(result.getDatum().getCreated() == null ? null
-												: result.getDatum().getCreated().getTime()),
+										(result.getDatum().getTimestamp() == null ? null
+												: result.getDatum().getTimestamp().toEpochMilli()),
 										result.getDatum().getSourceId(), tid });
 					}
 
 					if ( tid != null ) {
-						DatumDao<NodeDatum> datumDao = daoMapping.get(result.getDatum().getClass());
-						datumDao.setDatumUploaded(result.getDatum(), uploadDate, uploadService.getKey(),
-								tid);
+						dao.setDatumUploaded(result.getDatum(), uploadDate, uploadService.getKey(), tid);
 						count++;
 					}
 				}
@@ -149,10 +114,22 @@ public class DatumDaoBulkUploadJob extends AbstractJob {
 		}
 	}
 
-	public void setDaos(Collection<DatumDao<NodeDatum>> daos) {
-		this.daos = daos;
+	/**
+	 * Set the DAO to get datum to upload from.
+	 * 
+	 * @param dao
+	 *        the DAO
+	 */
+	public void setDatumDao(DatumDao dao) {
+		this.dao = dao;
 	}
 
+	/**
+	 * Set the upload service to upload to.
+	 * 
+	 * @param uploadService
+	 *        the service
+	 */
 	public void setUploadService(BulkUploadService uploadService) {
 		this.uploadService = uploadService;
 	}

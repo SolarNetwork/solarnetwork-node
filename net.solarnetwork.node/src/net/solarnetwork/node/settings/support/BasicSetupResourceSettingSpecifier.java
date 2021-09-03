@@ -25,12 +25,13 @@ package net.solarnetwork.node.settings.support;
 import java.util.Map;
 import net.solarnetwork.node.settings.SetupResourceSettingSpecifier;
 import net.solarnetwork.node.setup.SetupResourceProvider;
+import net.solarnetwork.settings.support.BaseSettingSpecifier;
 
 /**
  * Basic implementation of {@link SetupResourceSettingSpecifier}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class BasicSetupResourceSettingSpecifier extends BaseSettingSpecifier
 		implements SetupResourceSettingSpecifier {

@@ -32,8 +32,8 @@ import java.util.Locale;
 import org.easymock.EasyMock;
 import org.junit.Test;
 import org.springframework.context.MessageSource;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.support.SettingSpecifierProviderMessageComparator;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * Test cases for the {@link SettingSpecifierProviderMessageComparator} class.

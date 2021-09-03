@@ -31,8 +31,9 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.node.domain.NodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
@@ -395,12 +396,12 @@ public class BaseSamplesTransformSupport extends BaseIdentifiable {
 	 * Set a source ID pattern to match samples against.
 	 * 
 	 * Samples will only be considered for filtering if
-	 * {@link net.solarnetwork.node.domain.NodeDatum#getSourceId()} matches this
+	 * {@link net.solarnetwork.node.domain.datum.NodeDatum#getSourceId()} matches this
 	 * pattern.
 	 * 
 	 * The {@code sourceIdPattern} must be a valid {@link Pattern} regular
 	 * expression. The expression will be allowed to match anywhere in
-	 * {@link net.solarnetwork.node.domain.NodeDatum#getSourceId()} values, so if
+	 * {@link net.solarnetwork.node.domain.datum.NodeDatum#getSourceId()} values, so if
 	 * the pattern must match the full value only then use pattern positional
 	 * expressions like {@code ^} and {@code $}.
 	 * 

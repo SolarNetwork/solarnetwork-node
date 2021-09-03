@@ -25,14 +25,15 @@ package net.solarnetwork.node.settings.support;
 import java.util.Set;
 import org.springframework.core.io.Resource;
 import net.solarnetwork.node.settings.FileSettingSpecifier;
-import net.solarnetwork.node.settings.MappableSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.settings.MappableSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BaseKeyedSettingSpecifier;
 
 /**
  * Basic implementation of {@link FileSettingSpecifier}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class BasicFileSettingSpecifier extends BaseKeyedSettingSpecifier<Resource>
 		implements FileSettingSpecifier {
@@ -85,13 +86,6 @@ public class BasicFileSettingSpecifier extends BaseKeyedSettingSpecifier<Resourc
 		spec.setTitle(getTitle());
 		spec.setDescriptionArguments(getDescriptionArguments());
 		return spec;
-	}
-
-	@SuppressWarnings("deprecation")
-	@Override
-	public SettingSpecifier mappedWithMapper(
-			net.solarnetwork.node.settings.KeyedSettingSpecifier.Mapper mapper) {
-		return mappedWithMapper((MappableSpecifier.Mapper) mapper);
 	}
 
 	@Override

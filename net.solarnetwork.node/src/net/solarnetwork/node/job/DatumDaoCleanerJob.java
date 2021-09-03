@@ -30,67 +30,52 @@ import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.PersistJobDataAfterExecution;
 import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.domain.NodeDatum;
-import net.solarnetwork.node.service.UploadService;
 
 /**
- * Job to query a {@link DatumDao} for data to upload via an
- * {@link UploadService}.
+ * Job to delete locally persisted datum that have been uploaded already and are
+ * safe to remove.
  * 
  * <p>
  * This job will call {@link DatumDao#deleteUploadedDataOlderThan(int)} and emit
  * a log line if this returns a positive value.
  * </p>
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>datumDao</dt>
- * <dd>The {@link DatumDao} to use to query for {@link NodeDatum} to upload.</dd>
- * 
- * <dt>hours</dt>
- * <dd>The minimum age of data that has been uploaded to delete. Defaults to
- * {@link #DEFAULT_HOURS}</dd>
- * </dl>
- *
- * @param <T>
- *        the Datum type for this job
  * @author matt
  * @version 2.0
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
-public class DatumDaoCleanerJob<T extends NodeDatum> extends AbstractJob {
+public class DatumDaoCleanerJob extends AbstractJob {
 
 	/** The default value for the {@code hours} property. */
 	public static final int DEFAULT_HOURS = 4;
 
 	private int hours = DEFAULT_HOURS;
-	private DatumDao<T> datumDao = null;
+	private DatumDao datumDao = null;
 
 	@Override
 	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
 		if ( log.isDebugEnabled() ) {
-			log.debug("Deleting [" + datumDao.getDatumType().getSimpleName() + "] data older than ["
-					+ hours + "] hours");
+			log.debug("Deleting datum data older than [{}] hours", hours);
 		}
 		int result = datumDao.deleteUploadedDataOlderThan(hours);
 		if ( log.isInfoEnabled() && result > 0 ) {
-			log.info("Deleted " + result + " [" + datumDao.getDatumType().getSimpleName()
-					+ "] entities older than " + hours + " hours");
+			log.info("Deleted {} datum older than {} hours", hours);
 		}
 	}
 
 	/**
-	 * @return the hours
+	 * Get he minimum age of data that has been uploaded to delete.
+	 * 
+	 * @return the hours; defaults to {@link #DEFAULT_HOURS}
 	 */
 	public int getHours() {
 		return hours;
 	}
 
 	/**
+	 * Set he minimum age of data that has been uploaded to delete.
+	 * 
 	 * @param hours
 	 *        the hours to set
 	 */
@@ -99,17 +84,21 @@ public class DatumDaoCleanerJob<T extends NodeDatum> extends AbstractJob {
 	}
 
 	/**
+	 * Get the datum DAO.
+	 * 
 	 * @return the datumDao
 	 */
-	public DatumDao<T> getDatumDao() {
+	public DatumDao getDatumDao() {
 		return datumDao;
 	}
 
 	/**
+	 * Set the datum DAO.
+	 * 
 	 * @param datumDao
 	 *        the datumDao to set
 	 */
-	public void setDatumDao(DatumDao<T> datumDao) {
+	public void setDatumDao(DatumDao datumDao) {
 		this.datumDao = datumDao;
 	}
 

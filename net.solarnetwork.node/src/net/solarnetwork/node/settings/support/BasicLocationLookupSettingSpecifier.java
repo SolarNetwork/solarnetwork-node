@@ -22,19 +22,21 @@
 
 package net.solarnetwork.node.settings.support;
 
-import net.solarnetwork.node.domain.DatumLocation;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
+import net.solarnetwork.node.domain.datum.DatumLocation;
 import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
-import net.solarnetwork.node.settings.MappableSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.settings.MappableSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BaseKeyedSettingSpecifier;
 
 /**
  * Basic implementation of {@link LocationLookupSettingSpecifier}.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
-public class BasicLocationLookupSettingSpecifier extends BaseKeyedSettingSpecifier<Long> implements
-		LocationLookupSettingSpecifier {
+public class BasicLocationLookupSettingSpecifier extends BaseKeyedSettingSpecifier<Long>
+		implements LocationLookupSettingSpecifier {
 
 	private final DatumLocation location;
 	private final String locationType;
@@ -61,12 +63,6 @@ public class BasicLocationLookupSettingSpecifier extends BaseKeyedSettingSpecifi
 				String.format(template, getKey()), locationType, location);
 		spec.setTitle(getTitle());
 		return spec;
-	}
-
-	@SuppressWarnings("deprecation")
-	@Override
-	public SettingSpecifier mappedWithMapper(Mapper mapper) {
-		return mappedWithMapper((MappableSpecifier.Mapper) mapper);
 	}
 
 	@Override
@@ -100,6 +96,11 @@ public class BasicLocationLookupSettingSpecifier extends BaseKeyedSettingSpecifi
 	@Override
 	public String getSourceName() {
 		return (location == null ? null : location.getSourceName());
+	}
+
+	@Override
+	public GeneralDatumMetadata getMetadata() {
+		return (location == null ? null : location.getMetadata());
 	}
 
 	@Override

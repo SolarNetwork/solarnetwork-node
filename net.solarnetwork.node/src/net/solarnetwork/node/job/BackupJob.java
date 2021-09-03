@@ -26,7 +26,7 @@ import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.PersistJobDataAfterExecution;
 import net.solarnetwork.node.backup.BackupManager;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.service.OptionalService;
 
 /**
  * Scheduled backup job using {@link BackupManager}.
@@ -42,7 +42,7 @@ public class BackupJob extends AbstractJob {
 
 	@Override
 	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
-		BackupManager manager = backupManagerTracker.service();
+		BackupManager manager = OptionalService.service(backupManagerTracker);
 		if ( manager == null ) {
 			log.debug("No backup manager available, cannot perform backup");
 			return;

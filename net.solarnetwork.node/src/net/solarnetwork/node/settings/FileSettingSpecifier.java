@@ -24,6 +24,7 @@ package net.solarnetwork.node.settings;
 
 import java.util.Set;
 import org.springframework.core.io.Resource;
+import net.solarnetwork.settings.KeyedSettingSpecifier;
 
 /**
  * A file-upload setting specifier.
@@ -36,7 +37,7 @@ import org.springframework.core.io.Resource;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.70
  */
 public interface FileSettingSpecifier extends KeyedSettingSpecifier<Resource> {

@@ -24,7 +24,7 @@ package net.solarnetwork.node.service;
 
 import java.util.Collection;
 import java.util.Set;
-import net.solarnetwork.node.domain.NodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 
 /**
  * API for a service that supports node-wide datum information.

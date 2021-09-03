@@ -24,7 +24,7 @@ package net.solarnetwork.node.service;
 
 import java.util.function.Consumer;
 import net.solarnetwork.domain.datum.GeneralDatum;
-import net.solarnetwork.node.domain.NodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 
 /**
  * Unified queue to process datum across all of SolarNode.

@@ -42,8 +42,8 @@ public interface NodeControlProvider extends Identifiable {
 	 * An {@link org.osgi.service.event.Event} topic for when a
 	 * {@link NodeControlInfo} has been read, sampled, or in some way captured
 	 * by a {@link NodeControlProvider}. If the {@code NodeControlInfo} also
-	 * implements {@link net.solarnetwork.node.domain.NodeDatum} then the
-	 * {@link net.solarnetwork.node.domain.NodeDatum#DATUM_PROPERTY} event property
+	 * implements {@link net.solarnetwork.node.domain.datum.NodeDatum} then the
+	 * {@link net.solarnetwork.node.domain.datum.NodeDatum#DATUM_PROPERTY} event property
 	 * will be populated with the instance. Otherwise, the properties of the
 	 * event shall be any of the JavaBean properties of the NodeControlInfo
 	 * supported by events (i.e. any simple Java property such as numbers and
@@ -57,8 +57,8 @@ public interface NodeControlProvider extends Identifiable {
 	 * An {@link org.osgi.service.event.Event} topic for when a
 	 * {@link NodeControlInfo} has in some way been changed. If the
 	 * {@code NodeControlInfo} also implements
-	 * {@link net.solarnetwork.node.domain.NodeDatum} then the
-	 * {@link net.solarnetwork.node.domain.NodeDatum#DATUM_PROPERTY} event property
+	 * {@link net.solarnetwork.node.domain.datum.NodeDatum} then the
+	 * {@link net.solarnetwork.node.domain.datum.NodeDatum#DATUM_PROPERTY} event property
 	 * will be populated with the instance. Otherwise, the properties of the
 	 * event shall be any of the JavaBean properties of the NodeControlInfo
 	 * supported by events (i.e. any simple Java property such as numbers and

@@ -24,7 +24,7 @@ package net.solarnetwork.node.dao;
 
 import java.time.Instant;
 import java.util.List;
-import net.solarnetwork.node.domain.NodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.DatumQueue;
 
 /**

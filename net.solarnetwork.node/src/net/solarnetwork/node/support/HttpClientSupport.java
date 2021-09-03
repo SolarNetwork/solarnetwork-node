@@ -47,6 +47,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.node.service.IdentityService;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.support.SSLService;
 import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.web.security.AuthorizationV2Builder;

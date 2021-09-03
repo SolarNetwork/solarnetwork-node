@@ -43,8 +43,8 @@ import net.solarnetwork.node.settings.support.BasicCronExpressionSettingSpecifie
 import net.solarnetwork.node.settings.support.KeyedSmartQuotedTemplateMapper;
 import net.solarnetwork.node.util.PrefixedMessageSource;
 import net.solarnetwork.node.util.TemplatedMessageSource;
+import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.SettingsChangeObserver;
-import net.solarnetwork.support.ServiceLifecycleObserver;
 
 /**
  * Extension of {@link SimpleTriggerAndJobDetail} that supports a

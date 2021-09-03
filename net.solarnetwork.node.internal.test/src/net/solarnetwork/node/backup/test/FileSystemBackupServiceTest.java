@@ -42,7 +42,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.util.FileCopyUtils;
-import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.backup.BackupResourceIterable;
@@ -51,14 +50,15 @@ import net.solarnetwork.node.backup.BackupServiceInfo;
 import net.solarnetwork.node.backup.BackupStatus;
 import net.solarnetwork.node.backup.FileSystemBackupService;
 import net.solarnetwork.node.backup.ResourceBackupResource;
+import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test case for the {@link FileSystemBackupService}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class FileSystemBackupServiceTest {
 

@@ -24,7 +24,7 @@
 
 package net.solarnetwork.node.service;
 
-import net.solarnetwork.node.domain.NodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.service.Identifiable;
 
 /**
@@ -32,18 +32,16 @@ import net.solarnetwork.service.Identifiable;
  * 
  * @author matt
  * @version 2.0
- * @param <T>
- *        the Datum type
  */
-public interface DatumDataSource<T extends NodeDatum> extends Identifiable, DeviceInfoProvider {
+public interface DatumDataSource extends Identifiable, DeviceInfoProvider {
 
 	/**
-	 * An {@link org.osgi.service.event.Event} topic for when a {@link NodeDatum}
-	 * has been read, sampled, or in some way captured by a
-	 * {@link DatumDataSource}. The {@link NodeDatum#DATUM_PROPERTY} property will
-	 * be set to the datum instance that was captured. In addition, the
-	 * {@link NodeDatum#DATUM_TYPE_PROPERTY} property shall be populated with the
-	 * name of the <em>core</em> class name of the datum type.
+	 * An {@link org.osgi.service.event.Event} topic for when a
+	 * {@link NodeDatum} has been read, sampled, or in some way captured by a
+	 * {@link DatumDataSource}. The {@link NodeDatum#DATUM_PROPERTY} property
+	 * will be set to the datum instance that was captured. In addition, the
+	 * {@link NodeDatum#DATUM_TYPE_PROPERTY} property shall be populated with
+	 * the name of the <em>core</em> class name of the datum type.
 	 * 
 	 * @since 1.2
 	 */
@@ -54,7 +52,7 @@ public interface DatumDataSource<T extends NodeDatum> extends Identifiable, Devi
 	 * 
 	 * @return class
 	 */
-	Class<? extends T> getDatumType();
+	Class<? extends NodeDatum> getDatumType();
 
 	/**
 	 * Read the current value from the data source, returning as an unpersisted
@@ -62,6 +60,6 @@ public interface DatumDataSource<T extends NodeDatum> extends Identifiable, Devi
 	 * 
 	 * @return Datum
 	 */
-	T readCurrentDatum();
+	NodeDatum readCurrentDatum();
 
 }

@@ -24,7 +24,7 @@ package net.solarnetwork.node.service;
 
 import java.util.Collection;
 import java.util.List;
-import net.solarnetwork.node.domain.NodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 
 /**
  * API for posting local SolarNode data to a remote server in bulk.

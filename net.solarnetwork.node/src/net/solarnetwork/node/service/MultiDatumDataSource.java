@@ -23,7 +23,7 @@
 package net.solarnetwork.node.service;
 
 import java.util.Collection;
-import net.solarnetwork.node.domain.NodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.service.Identifiable;
 
 /**
@@ -32,14 +32,14 @@ import net.solarnetwork.service.Identifiable;
  * @author matt
  * @version 2.0
  */
-public interface MultiDatumDataSource<T extends NodeDatum> extends Identifiable, DeviceInfoProvider {
+public interface MultiDatumDataSource extends Identifiable, DeviceInfoProvider {
 
 	/**
 	 * Get the class supported by this DataSource.
 	 * 
 	 * @return class
 	 */
-	Class<? extends T> getMultiDatumType();
+	Class<? extends NodeDatum> getMultiDatumType();
 
 	/**
 	 * Read multiple values from the data source, returning as a collection of
@@ -47,6 +47,6 @@ public interface MultiDatumDataSource<T extends NodeDatum> extends Identifiable,
 	 * 
 	 * @return Datum
 	 */
-	Collection<T> readMultipleDatum();
+	Collection<NodeDatum> readMultipleDatum();
 
 }
