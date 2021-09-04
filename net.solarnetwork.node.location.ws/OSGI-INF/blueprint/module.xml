@@ -22,30 +22,30 @@
 	
 	<!-- Referenced Services -->
 	
-	<reference id="identityService" availability="optional" interface="net.solarnetwork.node.IdentityService"/>
+	<reference id="identityService" availability="optional" 
+		interface="net.solarnetwork.node.service.IdentityService"/>
 
 	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
+
+	<reference id="objectMapperService" 
+		interface="net.solarnetwork.service.ObjectMapperService"
+		filter="(function=node)"/>
+		
+	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
+		factory-ref="objectMapperService" factory-method="getObjectMapper"/>
 
 	<!-- Published Services -->
 
 	<service ref="wsLocationServiceService" ranking="1">
 		<interfaces>
-			<value>net.solarnetwork.node.LocationService</value>
-			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+			<value>net.solarnetwork.node.service.LocationService</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 		</interfaces>
 	</service>
 
 	<!-- Supporting Services -->
 	
 	<ctx:property-placeholder properties-ref="ws.cfg"/>
-	
-	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">
-		<property name="deserializers">
-			<list>
-				<bean class="net.solarnetwork.util.JodaDateTimeDeserializer"/>
-			</list>
-		</property>
-	</bean>
 	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
@@ -62,10 +62,11 @@
 		<property name="objectMapper" ref="objectMapper"/>
 		<property name="identityService" ref="identityService"/>
 		<property name="sslService">
-			<bean class="net.solarnetwork.util.DynamicServiceTracker">
-				<property name="bundleContext" ref="bundleContext"/>
-				<property name="serviceClassName" value="net.solarnetwork.support.SSLService"/>
-			</bean>	
+			<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+				<argument ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.service.SSLService"/>
+				<property name="sticky" value="true"/>
+			</bean>
 		</property>
 		<property name="cacheTtl" value="${WebServiceLocationService.cacheTtl}"/>
 	</bean>
