@@ -27,7 +27,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.Date;
+import java.sql.Types;
+import java.time.Instant;
 import java.util.List;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DuplicateKeyException;
@@ -35,22 +36,26 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.domain.GeneralNodeDatumSamples;
+import net.solarnetwork.domain.datum.DatumId;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesContainer;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.node.dao.jdbc.AbstractJdbcDatumDao;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
 
 /**
  * JDBC-based implementation of {@link net.solarnetwork.node.dao.DatumDao} for
- * {@link GeneralNodeDatum} domain objects.
+ * {@link NodeDatum} domain objects.
  * 
  * @author matt
  * @version 1.3
  */
-public class JdbcGeneralNodeDatumDao extends AbstractJdbcDatumDao<GeneralNodeDatum> {
+public class JdbcGeneralNodeDatumDao extends AbstractJdbcDatumDao {
 
 	/** The default tables version. */
-	public static final int DEFAULT_TABLES_VERSION = 3;
+	public static final int DEFAULT_TABLES_VERSION = 4;
 
 	/** The table name for datum. */
 	public static final String TABLE_GENERAL_NODE_DATUM = "sn_general_node_datum";
@@ -77,24 +82,19 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDatumDao<GeneralNodeDat
 	}
 
 	@Override
-	public Class<? extends GeneralNodeDatum> getDatumType() {
-		return GeneralNodeDatum.class;
-	}
-
-	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED, noRollbackFor = DuplicateKeyException.class)
-	public void storeDatum(GeneralNodeDatum datum) {
+	public void storeDatum(NodeDatum datum) {
 		try {
 			storeDomainObject(datum);
 		} catch ( DuplicateKeyException e ) {
-			List<GeneralNodeDatum> existing = findDatum(SQL_RESOURCE_FIND_FOR_PRIMARY_KEY,
-					preparedStatementSetterForPrimaryKey(datum.getCreated(), datum.getSourceId()),
+			List<NodeDatum> existing = findDatum(SQL_RESOURCE_FIND_FOR_PRIMARY_KEY,
+					preparedStatementSetterForPrimaryKey(datum.getTimestamp(), datum.getSourceId()),
 					rowMapper());
 			if ( existing.size() > 0 ) {
 				// only update if the samples have changed
-				GeneralDatumSamples existingSamples = existing.get(0).getSamples();
-				GeneralDatumSamples newSamples = datum.getSamples();
-				if ( !newSamples.equals(existingSamples) ) {
+				DatumSamplesOperations existingSamples = existing.get(0).asSampleOperations();
+				DatumSamplesOperations newSamples = datum.asSampleOperations();
+				if ( newSamples.differsFrom(existingSamples) ) {
 					updateDomainObject(datum, getSqlResource(SQL_RESOURCE_UPDATE_DATA));
 				}
 			}
@@ -102,19 +102,17 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDatumDao<GeneralNodeDat
 	}
 
 	@Override
-	protected void setUpdateStatementValues(GeneralNodeDatum datum, PreparedStatement ps)
-			throws SQLException {
+	protected void setUpdateStatementValues(NodeDatum datum, PreparedStatement ps) throws SQLException {
 		int col = 1;
 		ps.setString(col++, jsonForSamples(datum));
-		ps.setTimestamp(col++, new Timestamp(datum.getCreated().getTime()));
+		ps.setTimestamp(col++, Timestamp.from(datum.getTimestamp()));
 		ps.setString(col++, datum.getSourceId());
 	}
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public void setDatumUploaded(GeneralNodeDatum datum, Date date, String destination,
-			String trackingId) {
-		updateDatumUpload(datum, date == null ? System.currentTimeMillis() : date.getTime());
+	public void setDatumUploaded(NodeDatum datum, Instant date, String destination, String trackingId) {
+		updateDatumUpload(datum, date == null ? System.currentTimeMillis() : date.toEpochMilli());
 	}
 
 	@Override
@@ -123,59 +121,64 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDatumDao<GeneralNodeDat
 		return deleteUploadedDataOlderThanHours(hours);
 	}
 
-	private RowMapper<GeneralNodeDatum> rowMapper() {
-		return new RowMapper<GeneralNodeDatum>() {
+	private RowMapper<NodeDatum> rowMapper() {
+		return new RowMapper<NodeDatum>() {
 
 			@Override
-			public GeneralNodeDatum mapRow(ResultSet rs, int rowNum) throws SQLException {
+			public NodeDatum mapRow(ResultSet rs, int rowNum) throws SQLException {
 				if ( log.isTraceEnabled() ) {
 					log.trace("Handling result row " + rowNum);
 				}
-				GeneralNodeDatum datum = new GeneralNodeDatum();
 				int col = 0;
-				datum.setCreated(rs.getTimestamp(++col));
-				datum.setSourceId(rs.getString(++col));
+				Instant ts = rs.getTimestamp(++col).toInstant();
+				String sourceId = rs.getString(++col);
+				Long locationId = (Long) rs.getObject(++col);
 
+				DatumId id = (locationId != null ? DatumId.locationId(locationId, sourceId, ts)
+						: DatumId.nodeId(null, sourceId, ts));
+				DatumSamples s = null;
 				String jdata = rs.getString(++col);
 				if ( jdata != null ) {
-					GeneralNodeDatumSamples s;
 					try {
-						s = objectMapper.readValue(jdata, GeneralNodeDatumSamples.class);
-						datum.setSamples(s);
+						s = objectMapper.readValue(jdata, DatumSamples.class);
 					} catch ( IOException e ) {
 						log.error("Error deserializing JSON into GeneralNodeDatumSamples: {}",
 								e.getMessage());
 					}
 				}
-				return datum;
+				return new SimpleDatum(id, s);
 			}
 		};
 	}
 
 	@Override
 	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
-	public List<GeneralNodeDatum> getDatumNotUploaded(String destination) {
+	public List<NodeDatum> getDatumNotUploaded(String destination) {
 		return findDatumNotUploaded(rowMapper());
 	}
 
-	private String jsonForSamples(GeneralNodeDatum datum) {
+	private String jsonForSamples(NodeDatum datum) {
 		String json;
 		try {
-			json = objectMapper.writeValueAsString(datum.getSamples());
+			json = objectMapper.writeValueAsString(((DatumSamplesContainer) datum).getSamples());
 		} catch ( IOException e ) {
-			log.error("Error serializing GeneralDatumSamples into JSON: {}", e.getMessage());
+			log.error("Error serializing DatumSamples into JSON: {}", e.getMessage());
 			json = "{}";
 		}
 		return json;
 	}
 
 	@Override
-	protected void setStoreStatementValues(GeneralNodeDatum datum, PreparedStatement ps)
-			throws SQLException {
+	protected void setStoreStatementValues(NodeDatum datum, PreparedStatement ps) throws SQLException {
 		int col = 0;
-		ps.setTimestamp(++col, new java.sql.Timestamp(
-				datum.getCreated() == null ? System.currentTimeMillis() : datum.getCreated().getTime()));
+		ps.setTimestamp(++col,
+				Timestamp.from(datum.getTimestamp() == null ? Instant.now() : datum.getTimestamp()));
 		ps.setString(++col, datum.getSourceId() == null ? "" : datum.getSourceId());
+		if ( datum.getKind() == ObjectDatumKind.Location ) {
+			ps.setObject(++col, datum.getObjectId());
+		} else {
+			ps.setNull(++col, Types.CHAR);
+		}
 
 		String json = jsonForSamples(datum);
 		ps.setString(++col, json);

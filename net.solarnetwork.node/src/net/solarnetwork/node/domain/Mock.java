@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.domain;
@@ -28,8 +26,8 @@ package net.solarnetwork.node.domain;
  * A marker interface to signal an object represents mock or test data.
  * 
  * @author matt
- * @version $Id$
+ * @version 1.0
  */
 public interface Mock {
-
+	// no methods
 }

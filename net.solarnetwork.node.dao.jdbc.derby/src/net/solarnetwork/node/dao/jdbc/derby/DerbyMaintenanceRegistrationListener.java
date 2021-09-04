@@ -43,8 +43,8 @@ import net.solarnetwork.node.dao.jdbc.JdbcDao;
 import net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean;
 import net.solarnetwork.node.job.SimpleTriggerAndJobDetail;
 import net.solarnetwork.node.job.TriggerAndJobDetail;
-import net.solarnetwork.node.util.BaseServiceListener;
-import net.solarnetwork.node.util.RegisteredService;
+import net.solarnetwork.node.service.support.BaseServiceListener;
+import net.solarnetwork.node.service.support.RegisteredService;
 
 /**
  * An OSGi service registration listener for JdbcDao services, so various
@@ -108,7 +108,7 @@ import net.solarnetwork.node.util.RegisteredService;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class DerbyMaintenanceRegistrationListener
 		extends BaseServiceListener<JdbcDao, RegisteredService<JdbcDao>> {

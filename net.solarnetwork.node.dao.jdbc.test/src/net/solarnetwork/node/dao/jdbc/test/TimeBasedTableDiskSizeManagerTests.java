@@ -45,7 +45,7 @@ import net.solarnetwork.node.dao.jdbc.TimeBasedTableDiskSizeManager;
 import net.solarnetwork.node.dao.jdbc.derby.DerbyDatabaseSystemService;
 import net.solarnetwork.node.dao.jdbc.derby.DerbyFullCompressTablesService;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Tests for the {@link TimeBasedTableDiskSizeManager} class.

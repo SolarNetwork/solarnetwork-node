@@ -52,7 +52,7 @@ import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StringUtils;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.service.OptionalService;
 
 /**
  * Base class for JDBC based DAO implementations.
@@ -65,7 +65,7 @@ import net.solarnetwork.util.OptionalService;
  * </p>
  * 
  * @author matt
- * @version 1.6
+ * @version 2.0
  * @param <T>
  *        the domain object type managed by this DAO
  */

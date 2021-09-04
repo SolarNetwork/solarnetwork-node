@@ -39,9 +39,9 @@ import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Resource;
 import javax.sql.DataSource;
-import org.apache.commons.lang3.mutable.MutableInt;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.dao.DataAccessException;
@@ -140,7 +140,7 @@ public class PreparedStatementCsvReaderTests extends AbstractNodeTransactionalTe
 		final String tableName = "SOLARNODE.TEST_CSV_IO";
 		executeSqlScript("net/solarnetwork/node/dao/jdbc/test/csv-data-01.sql", false);
 		importData(tableName);
-		final MutableInt row = new MutableInt(0);
+		final AtomicInteger row = new AtomicInteger(0);
 		final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
 		sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 		final Calendar utcCalendar = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
@@ -156,7 +156,7 @@ public class PreparedStatementCsvReaderTests extends AbstractNodeTransactionalTe
 
 			@Override
 			public void processRow(ResultSet rs) throws SQLException {
-				row.increment();
+				row.incrementAndGet();
 				final int i = row.intValue();
 				assertEquals("PK " + i, i, rs.getLong(1));
 				if ( i == 2 ) {

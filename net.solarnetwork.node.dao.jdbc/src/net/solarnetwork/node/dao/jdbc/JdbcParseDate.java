@@ -22,24 +22,22 @@
 
 package net.solarnetwork.node.dao.jdbc;
 
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import org.supercsv.cellprocessor.CellProcessorAdaptor;
 import org.supercsv.cellprocessor.ift.DateCellProcessor;
 import org.supercsv.cellprocessor.ift.StringCellProcessor;
 import org.supercsv.util.CsvContext;
 
 /**
- * Format dates using a Joda {@link DateTimeFormatter}.
+ * Format dates using a {@link DateTimeFormatter}.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public abstract class JdbcParseDate extends CellProcessorAdaptor implements StringCellProcessor {
-
-	private static final String DATE_PATTERN = "yyyy-MM-dd";
-	private static final String TIME_PATTERN = "HH:mm:ss.SSS";
-	private static final String TIMESTAMP_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 
 	protected final DateTimeFormatter dateFormatter;
 
@@ -56,16 +54,16 @@ public abstract class JdbcParseDate extends CellProcessorAdaptor implements Stri
 	public static final class Timestamp extends JdbcParseDate {
 
 		public Timestamp() {
-			super(DateTimeFormat.forPattern(TIMESTAMP_PATTERN).withZoneUTC());
+			super(DateTimeFormatter.ISO_INSTANT);
 		}
 
 		public Timestamp(DateCellProcessor next) {
-			super(DateTimeFormat.forPattern(TIMESTAMP_PATTERN).withZoneUTC(), next);
+			super(DateTimeFormatter.ISO_INSTANT, next);
 		}
 
 		@Override
 		protected Object parseObject(Object value, CsvContext context) {
-			return new java.sql.Timestamp(dateFormatter.parseDateTime(value.toString()).getMillis());
+			return java.sql.Timestamp.from(dateFormatter.parse(value.toString(), Instant::from));
 		}
 
 	}
@@ -73,33 +71,32 @@ public abstract class JdbcParseDate extends CellProcessorAdaptor implements Stri
 	public static final class Date extends JdbcParseDate {
 
 		public Date() {
-			super(DateTimeFormat.forPattern(DATE_PATTERN));
+			super(DateTimeFormatter.ISO_LOCAL_DATE);
 		}
 
 		public Date(DateCellProcessor next) {
-			super(DateTimeFormat.forPattern(DATE_PATTERN), next);
+			super(DateTimeFormatter.ISO_LOCAL_DATE, next);
 		}
 
 		@Override
 		protected Object parseObject(Object value, CsvContext context) {
-			return new java.sql.Date(dateFormatter.parseLocalDate(value.toString()).toDate().getTime());
+			return java.sql.Date.valueOf(dateFormatter.parse(value.toString(), LocalDate::from));
 		}
 	}
 
 	public static final class Time extends JdbcParseDate {
 
 		public Time() {
-			super(DateTimeFormat.forPattern(TIME_PATTERN));
+			super(DateTimeFormatter.ISO_LOCAL_TIME);
 		}
 
 		public Time(DateCellProcessor next) {
-			super(DateTimeFormat.forPattern(TIME_PATTERN), next);
+			super(DateTimeFormatter.ISO_LOCAL_TIME, next);
 		}
 
 		@Override
 		protected Object parseObject(Object value, CsvContext context) {
-			return new java.sql.Time(
-					dateFormatter.parseLocalTime(value.toString()).toDateTimeToday().getMillis());
+			return java.sql.Time.valueOf(dateFormatter.parse(value.toString(), LocalTime::from));
 		}
 	}
 

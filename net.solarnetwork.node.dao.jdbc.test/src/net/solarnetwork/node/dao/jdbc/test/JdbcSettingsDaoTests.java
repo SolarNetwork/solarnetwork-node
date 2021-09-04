@@ -26,9 +26,9 @@ import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 import static org.junit.Assert.assertEquals;
 import java.util.EnumSet;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Resource;
 import javax.sql.DataSource;
-import org.apache.commons.lang3.mutable.MutableInt;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.Assert;
@@ -40,16 +40,16 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.solarnetwork.node.Setting;
-import net.solarnetwork.node.Setting.SettingFlag;
 import net.solarnetwork.node.dao.BasicBatchOptions;
 import net.solarnetwork.node.dao.BatchableDao;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.dao.jdbc.JdbcSettingDao;
+import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.domain.Setting.SettingFlag;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link JdbcSettingDao}.
@@ -216,14 +216,14 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 
 		Assert.assertTrue(result);
 	}
-	
+
 	@Test
 	public void batchRead() {
 		final int count = 5;
 		for ( int i = 0; i < count; i += 1 ) {
 			settingDao.storeSetting(TEST_KEY + i, TEST_TYPE, TEST_VALUE);
 		}
-		final MutableInt processed = new MutableInt(0);
+		final AtomicInteger processed = new AtomicInteger(0);
 		settingDao.batchProcess(new BatchableDao.BatchCallback<Setting>() {
 
 			@Override
@@ -232,7 +232,7 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 				if ( TEST_TYPE.equals(domainObject.getType()) ) { // skip other stuff
 					assertEquals(TEST_KEY + processed.intValue(), domainObject.getKey());
 					assertEquals(TEST_VALUE, domainObject.getValue());
-					processed.increment();
+					processed.incrementAndGet();
 				}
 				return BatchableDao.BatchCallbackResult.CONTINUE;
 			}
@@ -246,7 +246,7 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 		for ( int i = 0; i < count; i += 1 ) {
 			settingDao.storeSetting(TEST_KEY + i, TEST_TYPE, TEST_VALUE);
 		}
-		final MutableInt processed = new MutableInt(0);
+		final AtomicInteger processed = new AtomicInteger(0);
 		settingDao.batchProcess(new BatchableDao.BatchCallback<Setting>() {
 
 			@Override
@@ -267,7 +267,7 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 				} else {
 					action = BatchCallbackResult.CONTINUE;
 				}
-				processed.increment();
+				processed.incrementAndGet();
 				return action;
 			}
 		}, new BasicBatchOptions("Test", BasicBatchOptions.DEFAULT_BATCH_SIZE, true, null));

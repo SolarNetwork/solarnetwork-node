@@ -35,7 +35,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 
 /**
  * Class to initialize a database for first-time use by a Solar Node.
@@ -61,7 +61,7 @@ import net.solarnetwork.node.domain.Datum;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class DatabaseSetup {
 
@@ -100,7 +100,7 @@ public class DatabaseSetup {
 	 * Helper implementation of AbstractJdbcDao so we can make use of some of
 	 * its functionality in setting up the database.
 	 */
-	private class JdbcDao extends AbstractJdbcDao<Datum> {
+	private class JdbcDao extends AbstractJdbcDao<NodeDatum> {
 
 		private JdbcDao() {
 			setDataSource(DatabaseSetup.this.dataSource);

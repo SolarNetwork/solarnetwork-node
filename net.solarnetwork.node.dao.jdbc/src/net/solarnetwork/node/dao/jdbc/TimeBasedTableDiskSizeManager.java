@@ -44,7 +44,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.service.OptionalService;
 
 /**
  * Service that deletes rows from a database table when disk space is running
@@ -68,7 +68,7 @@ import net.solarnetwork.util.OptionalService;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.19
  */
 public class TimeBasedTableDiskSizeManager {

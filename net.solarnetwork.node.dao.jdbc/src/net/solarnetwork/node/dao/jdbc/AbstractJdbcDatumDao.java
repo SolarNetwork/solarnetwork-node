@@ -29,29 +29,27 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import org.osgi.service.event.Event;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
-import net.solarnetwork.node.Mock;
+import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.Mock;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.DatumEvents;
 
 /**
  * Abstract DAO implementation with support for DAOs that need to manage
  * "upload" tasks.
  * 
  * @author matt
- * @version 1.3
- * @param <T>
- *        the domain object type managed by this DAO
+ * @version 2.0
  */
-public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbcDao<T>
-		implements DatumDao<T> {
+public abstract class AbstractJdbcDatumDao extends AbstractJdbcDao<NodeDatum> implements DatumDao {
 
 	/** The default value for the {@code maxFetchForUpload} property. */
 	public static final int DEFAULT_MAX_FETCH_FOR_UPLOAD = 60;
@@ -121,8 +119,8 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 *        found rows
 	 * @return the matching rows, never <em>null</em>
 	 */
-	protected List<T> findDatumNotUploaded(final RowMapper<T> rowMapper) {
-		List<T> result = getJdbcTemplate().query(new PreparedStatementCreator() {
+	protected List<NodeDatum> findDatumNotUploaded(final RowMapper<NodeDatum> rowMapper) {
+		List<NodeDatum> result = getJdbcTemplate().query(new PreparedStatementCreator() {
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
@@ -158,9 +156,9 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 * @return the matching rows, never <em>null</em>
 	 * @since 1.2
 	 */
-	protected List<T> findDatum(final String sqlResource, final PreparedStatementSetter setter,
-			final RowMapper<T> rowMapper) {
-		List<T> result = getJdbcTemplate().query(new PreparedStatementCreator() {
+	protected List<NodeDatum> findDatum(final String sqlResource, final PreparedStatementSetter setter,
+			final RowMapper<NodeDatum> rowMapper) {
+		List<NodeDatum> result = getJdbcTemplate().query(new PreparedStatementCreator() {
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
@@ -191,13 +189,13 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 * @see #findDatum(String, PreparedStatementSetter, RowMapper)
 	 * @since 1.2
 	 */
-	protected PreparedStatementSetter preparedStatementSetterForPrimaryKey(final Date created,
+	protected PreparedStatementSetter preparedStatementSetterForPrimaryKey(final Instant created,
 			final String sourceId) {
 		return new PreparedStatementSetter() {
 
 			@Override
 			public void setValues(PreparedStatement ps) throws SQLException {
-				ps.setTimestamp(1, new Timestamp(created.getTime()));
+				ps.setTimestamp(1, Timestamp.from(created));
 				ps.setString(2, sourceId);
 			}
 		};
@@ -215,7 +213,7 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 * @param datum
 	 *        the datum to persist
 	 */
-	protected void storeDomainObject(final T datum) {
+	protected void storeDomainObject(final NodeDatum datum) {
 		if ( ignoreMockData && datum instanceof Mock ) {
 			if ( log.isDebugEnabled() ) {
 				log.debug("Not persisting Mock datum: " + datum);
@@ -235,7 +233,7 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 * @since 1.3
 	 */
 	@Override
-	protected int updateDomainObject(T datum, String sqlUpdate) {
+	protected int updateDomainObject(NodeDatum datum, String sqlUpdate) {
 		int result = super.updateDomainObject(datum, sqlUpdate);
 		if ( result > 0 ) {
 			postDatumStoredEvent(datum);
@@ -248,8 +246,8 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 * 
 	 * <p>
 	 * This method will call {@link #updateDatumUpload(long, Object, long)}
-	 * passing in {@link T#getCreated()}, {@link T#getSourceId()}, and
-	 * {@code timestamp}.
+	 * passing in {@link NodeDatum#getCreated()},
+	 * {@link NodeDatum#getSourceId()}, and {@code timestamp}.
 	 * </p>
 	 * 
 	 * @param datum
@@ -257,8 +255,8 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 * @param timestamp
 	 *        the date the upload happened
 	 */
-	protected void updateDatumUpload(final T datum, final long timestamp) {
-		updateDatumUpload(datum.getCreated().getTime(), datum.getSourceId(), timestamp);
+	protected void updateDatumUpload(final NodeDatum datum, final long timestamp) {
+		updateDatumUpload(datum.getTimestamp().toEpochMilli(), datum.getSourceId(), timestamp);
 	}
 
 	/**
@@ -307,7 +305,7 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 *        the datum that was stored
 	 * @since 1.3
 	 */
-	protected final void postDatumStoredEvent(T datum) {
+	protected final void postDatumStoredEvent(NodeDatum datum) {
 		Event event = createDatumStoredEvent(datum);
 		postEvent(event);
 	}
@@ -326,10 +324,8 @@ public abstract class AbstractJdbcDatumDao<T extends Datum> extends AbstractJdbc
 	 * @return the new Event instance
 	 * @since 1.3
 	 */
-	protected Event createDatumStoredEvent(final T datum) {
-		Map<String, ?> props = datum.asSimpleMap();
-		log.debug("Created {} event with props {}", EVENT_TOPIC_DATUM_STORED, props);
-		return new Event(EVENT_TOPIC_DATUM_STORED, props);
+	protected Event createDatumStoredEvent(final NodeDatum datum) {
+		return DatumEvents.datumEvent(EVENT_TOPIC_DATUM_STORED, datum);
 	}
 
 	/**

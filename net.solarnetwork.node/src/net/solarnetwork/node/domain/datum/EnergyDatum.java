@@ -45,7 +45,7 @@ public interface EnergyDatum extends net.solarnetwork.domain.datum.EnergyDatum, 
 	 * @param value
 	 *        the watt hour reading
 	 */
-	default void getWattHourReading(Long value) {
+	default void setWattHourReading(Long value) {
 		asMutableSampleOperations().putSampleValue(Accumulating, WATT_HOUR_READING_KEY, value);
 	}
 
@@ -65,7 +65,7 @@ public interface EnergyDatum extends net.solarnetwork.domain.datum.EnergyDatum, 
 	 * @param value
 	 *        the watts
 	 */
-	default void getWatts(Integer value) {
+	default void setWatts(Integer value) {
 		asMutableSampleOperations().putSampleValue(Instantaneous, WATTS_KEY, value);
 	}
 
