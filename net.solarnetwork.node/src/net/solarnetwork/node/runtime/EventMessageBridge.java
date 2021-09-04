@@ -40,14 +40,14 @@ import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.NodeControlProvider;
 import net.solarnetwork.node.service.PlatformService;
 import net.solarnetwork.node.service.UploadService;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * Bridge between OSGi EventAdmin events and a Spring Messaging.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class EventMessageBridge implements EventHandler {
 

@@ -45,7 +45,7 @@ public interface DatumDataSource extends Identifiable, DeviceInfoProvider {
 	 * 
 	 * @since 1.2
 	 */
-	public static final String EVENT_TOPIC_DATUM_CAPTURED = "net/solarnetwork/node/DatumDataSource/DATUM_CAPTURED";
+	public static final String EVENT_TOPIC_DATUM_CAPTURED = "net/solarnetwork/node/service/DatumDataSource/DATUM_CAPTURED";
 
 	/**
 	 * Get the class supported by this DataSource.

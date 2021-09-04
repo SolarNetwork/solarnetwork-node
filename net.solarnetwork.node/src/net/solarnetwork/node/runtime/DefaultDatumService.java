@@ -35,7 +35,6 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.springframework.util.PathMatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.solarnetwork.node.domain.GeneralDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
@@ -43,6 +42,7 @@ import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.util.StringUtils;
 
@@ -55,7 +55,7 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class DefaultDatumService implements DatumService, EventHandler, FeedbackInstructionHandler {
 
@@ -120,7 +120,7 @@ public class DefaultDatumService implements DatumService, EventHandler, Feedback
 		if ( !DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED.equals(topic) ) {
 			return;
 		}
-		Object d = event.getProperty(NodeDatum.DATUM_PROPERTY);
+		Object d = event.getProperty(DatumEvents.DATUM_PROPERTY);
 		if ( d instanceof NodeDatum ) {
 			history.add((NodeDatum) d);
 		}
@@ -159,7 +159,7 @@ public class DefaultDatumService implements DatumService, EventHandler, Feedback
 				sourceIdFilters = StringUtils.commaDelimitedStringToSet(serviceIdFilterParam);
 			}
 		}
-		Collection<GeneralDatum> latest = latest(sourceIdFilters, GeneralDatum.class);
+		Collection<NodeDatum> latest = latest(sourceIdFilters, NodeDatum.class);
 		return InstructionStatus.createStatus(instruction, InstructionState.Completed, new Date(),
 				Collections.singletonMap(InstructionHandler.PARAM_SERVICE_RESULT, latest));
 	}

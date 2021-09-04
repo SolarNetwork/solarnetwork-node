@@ -37,10 +37,10 @@ import org.springframework.context.NoSuchMessageException;
 import org.springframework.context.support.AbstractMessageSource;
 import org.springframework.util.StringUtils;
 import net.solarnetwork.node.job.TriggerAndJobDetail;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.TextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.TextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * {@link SettingSpecifierProvider} for Quartz job triggers.
@@ -61,7 +61,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 3.0
  */
 public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 

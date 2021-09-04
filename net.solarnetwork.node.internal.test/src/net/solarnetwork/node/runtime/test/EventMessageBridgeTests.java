@@ -24,11 +24,14 @@ package net.solarnetwork.node.runtime.test;
 
 import static org.easymock.EasyMock.capture;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.After;
@@ -37,12 +40,13 @@ import org.junit.Test;
 import org.osgi.service.event.Event;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import net.solarnetwork.domain.Result;
-import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.runtime.EventMessageBridge;
-import net.solarnetwork.node.support.DatumEvents;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link EventMessageBridge} class.
@@ -124,6 +128,7 @@ public class EventMessageBridgeTests {
 		assertThat("Message data", msgData, equalTo((Object) expectedMsgData));
 	}
 
+	@SuppressWarnings("unchecked")
 	@Test
 	public void handleDatumCapturedEvent_datum() {
 		Capture<String> destCaptor = new Capture<String>();
@@ -133,10 +138,9 @@ public class EventMessageBridgeTests {
 
 		replayAll();
 
-		GeneralNodeDatum d = new GeneralNodeDatum();
-		d.setSourceId("test-source");
-		d.putInstantaneousSampleValue("wattts", 123);
-		d.putAccumulatingSampleValue("wattHours", 12345L);
+		SimpleDatum d = SimpleDatum.nodeDatum("test-source", Instant.now(), new DatumSamples());
+		d.getSamples().putInstantaneousSampleValue("wattts", 123);
+		d.getSamples().putAccumulatingSampleValue("wattHours", 12345L);
 		Event event = DatumEvents.datumEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, d);
 		eventMessageBridge.handleEvent(event);
 
@@ -148,7 +152,11 @@ public class EventMessageBridgeTests {
 		Map<String, Object> expectedMsgData = new LinkedHashMap<>();
 		expectedMsgData.putAll(d.asSimpleMap());
 		expectedMsgData.put("event.topics", DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED);
-		assertThat("Message data", msgData, equalTo((Object) expectedMsgData));
+		expectedMsgData.remove("_DatumTypes");
+		for ( Entry<String, Object> me : expectedMsgData.entrySet() ) {
+			String prop = me.getKey();
+			assertThat("Message data " + prop, (Map<String, ?>) msgData, hasEntry(prop, me.getValue()));
+		}
 	}
 
 }

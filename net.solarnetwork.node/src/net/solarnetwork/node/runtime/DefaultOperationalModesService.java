@@ -44,7 +44,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import org.joda.time.DateTime;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
@@ -62,10 +61,10 @@ import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * Default implementation of {@link OperationalModesService}.
@@ -346,7 +345,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable
 		if ( modes == null || modes.length < 1 ) {
 			return InstructionState.Declined;
 		}
-		DateTime expire = OperationalModesService.expirationDate(instruction);
+		Instant expire = OperationalModesService.expirationDate(instruction);
 		Set<String> opModes = new LinkedHashSet<>(Arrays.asList(modes));
 		switch (topic) {
 			case TOPIC_ENABLE_OPERATIONAL_MODES:
@@ -412,12 +411,12 @@ public class DefaultOperationalModesService extends BaseIdentifiable
 	}
 
 	@Override
-	public synchronized Set<String> enableOperationalModes(Set<String> modes, DateTime expire) {
+	public synchronized Set<String> enableOperationalModes(Set<String> modes, Instant expire) {
 		if ( modes == null || modes.isEmpty() ) {
 			return activeOperationalModes();
 		}
 		Set<String> toActivate = null;
-		Long expireMs = (expire != null ? expire.getMillis() : null);
+		Long expireMs = (expire != null ? expire.toEpochMilli() : null);
 		for ( String mode : modes ) {
 			if ( mode == null ) {
 				continue;

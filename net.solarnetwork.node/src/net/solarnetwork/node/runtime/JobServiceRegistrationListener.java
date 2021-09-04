@@ -51,7 +51,7 @@ import org.quartz.TriggerBuilder;
 import net.solarnetwork.node.job.TriggerAndJobDetail;
 import net.solarnetwork.node.service.support.BaseServiceListener;
 import net.solarnetwork.node.service.support.RegisteredService;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * An OSGi service registration listener for jobs, so they can be automatically
@@ -99,7 +99,7 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
  * </dl>
  * 
  * @author matt
- * @version 2.2
+ * @version 3.0
  * @see ManagedJobServiceRegistrationListener for alternative using
  *      settings-based job factories
  */

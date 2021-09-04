@@ -39,15 +39,15 @@ public interface UploadService {
 	 * 
 	 * @since 1.2
 	 */
-	public static final String EVENT_TOPIC_DATUM_UPLOADED = "net/solarnetwork/node/UploadService/DATUM_UPLOADED";
+	public static final String EVENT_TOPIC_DATUM_UPLOADED = "net/solarnetwork/node/service/UploadService/DATUM_UPLOADED";
 
 	/**
 	 * Get a unique key for this service.
 	 * 
 	 * <p>
-	 * This key can be used as the {@code destination} value for {@link NodeDatum}
-	 * objects. It need be unique across other UploadService implementations
-	 * only.
+	 * This key can be used as the {@code destination} value for
+	 * {@link NodeDatum} objects. It need be unique across other UploadService
+	 * implementations only.
 	 * </p>
 	 * 
 	 * @return unique key

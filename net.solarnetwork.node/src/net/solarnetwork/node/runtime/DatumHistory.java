@@ -35,8 +35,8 @@ import net.solarnetwork.util.CircularFifoQueue;
  * Class to help track the history of datum capture, by source ID.
  * 
  * <p>
- * This class maintains a fixed-size history of {@link NodeDatum} at various time
- * levels:
+ * This class maintains a fixed-size history of {@link NodeDatum} at various
+ * time levels:
  * </p>
  * 
  * <dl>
@@ -158,7 +158,7 @@ public class DatumHistory {
 	 *        the datum to add
 	 */
 	public void add(NodeDatum datum) {
-		if ( datum == null || datum.getSourceId() == null || datum.getCreated() == null ) {
+		if ( datum == null || datum.getSourceId() == null || datum.getTimestamp() == null ) {
 			return;
 		}
 		Queue<NodeDatum> q = raw.computeIfAbsent(datum.getSourceId(),

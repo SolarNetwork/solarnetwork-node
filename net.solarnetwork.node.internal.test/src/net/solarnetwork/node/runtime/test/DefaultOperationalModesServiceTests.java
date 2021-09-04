@@ -39,6 +39,8 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -50,7 +52,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
-import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -61,10 +62,10 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.SimpleTransactionStatus;
 import net.solarnetwork.domain.KeyValuePair;
-import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.runtime.DefaultOperationalModesService;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link DefaultOperationalModesService} class.
@@ -405,14 +406,14 @@ public class DefaultOperationalModesServiceTests {
 
 		// WHEN
 		replayAll();
-		DateTime expire = new DateTime().plusHours(1);
+		Instant expire = Instant.now().plus(1, ChronoUnit.HOURS);
 		Set<String> active = service.enableOperationalModes(singleton("test"), expire);
 
 		// THEN
 		assertThat("Mode activated", active, containsInAnyOrder("test"));
 		assertModesChangedEvent("Activated ", eventCaptor.getValue(), "test");
 		assertThat("Expire value saved", expireCaptor.getValue(),
-				is(equalTo(String.valueOf(expire.getMillis()))));
+				is(equalTo(String.valueOf(expire.toEpochMilli()))));
 	}
 
 	@Test
@@ -440,21 +441,21 @@ public class DefaultOperationalModesServiceTests {
 
 		// WHEN
 		replayAll();
-		DateTime expire = new DateTime().plusHours(1);
+		Instant expire = Instant.now().plus(1, ChronoUnit.HOURS);
 		Set<String> active = service.enableOperationalModes(singleton("test"), expire);
 
 		// THEN
 		assertThat("Mode activated", active, containsInAnyOrder("test"));
 		assertModesChangedEvent("Activated ", eventCaptor.getValue(), "test");
 		assertThat("Expire value saved", expireCaptor.getValue(),
-				is(equalTo(String.valueOf(expire.getMillis()))));
+				is(equalTo(String.valueOf(expire.toEpochMilli()))));
 	}
 
 	@Test
 	public void enableMode_expiring_unchanged() {
 		// GIVEN
-		DateTime expire = new DateTime().plusHours(1);
-		activeModeCache.put("test", expire.getMillis());
+		Instant expire = Instant.now().plus(1, ChronoUnit.HOURS);
+		activeModeCache.put("test", expire.toEpochMilli());
 
 		// WHEN
 		replayAll();
@@ -468,8 +469,8 @@ public class DefaultOperationalModesServiceTests {
 	public void enableMode_expiring_unchanged_tx() {
 		// GIVEN
 		service.setTransactionManager(new StaticOptionalService<>(txManager));
-		DateTime expire = new DateTime().plusHours(1);
-		activeModeCache.put("test", expire.getMillis());
+		Instant expire = Instant.now().plus(1, ChronoUnit.HOURS);
+		activeModeCache.put("test", expire.toEpochMilli());
 
 		// WHEN
 		replayAll();

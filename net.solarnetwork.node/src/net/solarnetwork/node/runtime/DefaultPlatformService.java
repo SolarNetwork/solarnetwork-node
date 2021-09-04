@@ -42,13 +42,13 @@ import org.springframework.messaging.support.GenericMessage;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
 import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.service.PlatformService;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.service.OptionalService;
 
 /**
  * Default implementation of {@link PlatformService}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class DefaultPlatformService implements PlatformService {
 

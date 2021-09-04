@@ -25,9 +25,9 @@ package net.solarnetwork.node.runtime;
 import static java.util.stream.Collectors.joining;
 import static net.solarnetwork.util.DateUtils.formatHoursMinutesSeconds;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -41,23 +41,21 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.domain.datum.GeneralDatumSamplesContainer;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.GeneralDatum;
 import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.domain.GeneralDatum;
-import net.solarnetwork.node.domain.GeneralLocationDatum;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.service.DatumFilterService;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.OptionalService.OptionalFilterableService;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.StatCounter;
 
 /**
@@ -77,7 +75,7 @@ import net.solarnetwork.util.StatCounter;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  * @since 1.89
  */
 public class DefaultDatumQueue extends BaseIdentifiable
@@ -99,8 +97,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	private final StatCounter stats = new StatCounter("DatumQueue", "", log, DEFAULT_STAT_LOG_FREQUENCY,
 			QueueStats.values());
 
-	private final DatumDao<GeneralNodeDatum> nodeDatumDao;
-	private final DatumDao<GeneralLocationDatum> locationDatumDao;
+	private final DatumDao nodeDatumDao;
 	private final OptionalService<EventAdmin> eventAdmin;
 	private long startupDelayMs = DEFAULT_STARTUP_DELAY_MS;
 	private long queueDelayMs = DEFAULT_QUEUE_DELAY_MS;
@@ -115,52 +112,22 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 * 
 	 * @param nodeDatumDao
 	 *        the node datum DAO to use
-	 * @param locationDatumDao
-	 *        the location datum DAO to use
 	 * @param eventAdmin
 	 *        the event admin
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public DefaultDatumQueue(DatumDao<GeneralNodeDatum> nodeDatumDao,
-			DatumDao<GeneralLocationDatum> locationDatumDao, OptionalService<EventAdmin> eventAdmin) {
+	public DefaultDatumQueue(DatumDao nodeDatumDao, OptionalService<EventAdmin> eventAdmin) {
 		super();
 		if ( nodeDatumDao == null ) {
 			throw new IllegalArgumentException("The nodeDatumDao argument must not be null.");
 		}
 		this.nodeDatumDao = nodeDatumDao;
-		if ( locationDatumDao == null ) {
-			throw new IllegalArgumentException("The locationDatumDao argument must not be null.");
-		}
-		this.locationDatumDao = locationDatumDao;
 		if ( eventAdmin == null ) {
 			throw new IllegalArgumentException("The eventAdmin argument must not be null.");
 		}
 		this.eventAdmin = eventAdmin;
 		this.processorStartupDelayMs = -1;
-	}
-
-	/**
-	 * Constructor.
-	 * 
-	 * <p>
-	 * Hask for Gemini Blueprint reified type bug.
-	 * </p>
-	 * 
-	 * @param nodeDatumDao
-	 *        the node datum DAO to use
-	 * @param locationDatumDao
-	 *        the location datum DAO to use
-	 * @param eventAdmin
-	 *        the event admin
-	 * @param yesReally
-	 *        unused
-	 */
-	@SuppressWarnings("unchecked")
-	public DefaultDatumQueue(Object nodeDatumDao, Object locationDatumDao,
-			OptionalService<EventAdmin> eventAdmin, boolean yesReally) {
-		this((DatumDao<GeneralNodeDatum>) nodeDatumDao,
-				(DatumDao<GeneralLocationDatum>) locationDatumDao, eventAdmin);
 	}
 
 	/**
@@ -251,16 +218,16 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	private static final class DelayedDatum implements Delayed {
 
-		private final GeneralDatum datum;
+		private final NodeDatum datum;
 		private final long ts;
 		private final boolean persist;
 
-		private DelayedDatum(GeneralDatum datum, long delayMs, boolean persist) {
+		private DelayedDatum(NodeDatum datum, long delayMs, boolean persist) {
 			super();
 			this.datum = datum;
-			Date date = datum.getCreated();
+			Instant date = datum.getTimestamp();
 			// we really don't expect date to be null here, but just to be pragmatic we test
-			this.ts = (date != null ? date.getTime() : System.currentTimeMillis()) + delayMs;
+			this.ts = (date != null ? date.toEpochMilli() : System.currentTimeMillis()) + delayMs;
 			this.persist = persist;
 		}
 
@@ -291,14 +258,14 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	}
 
-	private final class ConsumerThread extends Thread implements Consumer<GeneralDatum> {
+	private final class ConsumerThread extends Thread implements Consumer<NodeDatum> {
 
-		private final Consumer<GeneralDatum> consumer;
-		private final BlockingQueue<GeneralDatum> queue;
+		private final Consumer<NodeDatum> consumer;
+		private final BlockingQueue<NodeDatum> queue;
 
 		private boolean processing;
 
-		private ConsumerThread(Consumer<GeneralDatum> consumer) {
+		private ConsumerThread(Consumer<NodeDatum> consumer) {
 			super("DatumQueue Consumer " + consumer);
 			setDaemon(true);
 			this.consumer = consumer;
@@ -307,7 +274,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		}
 
 		@Override
-		public void accept(GeneralDatum datum) {
+		public void accept(NodeDatum datum) {
 			this.queue.add(datum);
 		}
 
@@ -319,7 +286,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		@Override
 		public void run() {
 			do {
-				GeneralDatum datum = null;
+				NodeDatum datum = null;
 				try {
 					datum = queue.take();
 					consumer.accept(datum);
@@ -433,7 +400,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 						}
 						stats.incrementAndGet(QueueStats.Processed);
 						postEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, event.datum);
-						GeneralDatum result;
+						NodeDatum result;
 						try {
 							result = applyTransform(event);
 						} catch ( Throwable t ) {
@@ -452,7 +419,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 									throw t;
 								}
 							}
-							for ( Consumer<GeneralDatum> consumer : consumers ) {
+							for ( Consumer<NodeDatum> consumer : consumers ) {
 								consumer.accept(result);
 							}
 						}
@@ -468,7 +435,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	}
 
-	private void postEvent(String topic, GeneralDatum datum) {
+	private void postEvent(String topic, NodeDatum datum) {
 		final EventAdmin service = OptionalService.service(eventAdmin);
 		if ( service != null ) {
 			Event event = DatumEvents.datumEvent(topic, datum);
@@ -478,16 +445,13 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		}
 	}
 
-	private GeneralDatum applyTransform(DelayedDatum event) {
-		if ( !(event.datum instanceof GeneralDatumSamplesContainer) ) {
-			return event.datum;
-		}
+	private NodeDatum applyTransform(DelayedDatum event) {
 		DatumFilterService xform = OptionalService.service(transformService);
 		if ( xform == null ) {
 			return event.datum;
 		}
-		GeneralDatumSamples in = ((GeneralDatumSamplesContainer) event.datum).getSamples();
-		GeneralDatumSamples out = xform.filter(event.datum, in, new HashMap<>(4));
+		DatumSamplesOperations in = event.datum.asSampleOperations();
+		DatumSamplesOperations out = xform.filter(event.datum, in, new HashMap<>(4));
 		if ( out == null ) {
 			stats.incrementAndGet(QueueStats.Filtered);
 			return null;
@@ -495,32 +459,24 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		if ( out == in ) {
 			return event.datum;
 		}
-		return (GeneralDatum) ((GeneralDatumSamplesContainer) event.datum).copyWithSamples(out);
+		return event.datum.copyWithSamples(out);
 	}
 
-	@SuppressWarnings({ "unchecked", "rawtypes" })
-	private void persistDatum(GeneralDatum result) {
+	private void persistDatum(NodeDatum result) {
 		final long start = System.currentTimeMillis();
-		final DatumDao<GeneralDatum> dao;
-		if ( result instanceof GeneralLocationDatum ) {
-			dao = (DatumDao) getLocationDatumDao();
-		} else if ( result instanceof GeneralNodeDatum ) {
-			dao = (DatumDao) getNodeDatumDao();
-		} else {
-			return;
-		}
+		final DatumDao dao = getNodeDatumDao();
 		dao.storeDatum(result);
 		stats.incrementAndGet(QueueStats.Persisted);
 		stats.addAndGet(QueueStats.PersistingTimeTotal, System.currentTimeMillis() - start, true);
 	}
 
 	@Override
-	public boolean offer(GeneralDatum datum) {
+	public boolean offer(NodeDatum datum) {
 		return offer(datum, true);
 	}
 
 	@Override
-	public boolean offer(GeneralDatum datum, boolean persist) {
+	public boolean offer(NodeDatum datum, boolean persist) {
 		if ( datum == null || datum.getSourceId() == null ) {
 			return false;
 		}
@@ -533,7 +489,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	}
 
 	@Override
-	public synchronized void addConsumer(Consumer<GeneralDatum> consumer) {
+	public synchronized void addConsumer(Consumer<NodeDatum> consumer) {
 		for ( ConsumerThread t : consumers ) {
 			if ( t.consumer == consumer ) {
 				return;
@@ -547,7 +503,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	}
 
 	@Override
-	public synchronized void removeConsumer(Consumer<GeneralDatum> consumer) {
+	public synchronized void removeConsumer(Consumer<NodeDatum> consumer) {
 		for ( Iterator<ConsumerThread> itr = consumers.iterator(); itr.hasNext(); ) {
 			ConsumerThread t = itr.next();
 			if ( t.consumer == consumer ) {
@@ -662,8 +618,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 * @param transformService
 	 *        the transform service to set
 	 */
-	public void setTransformService(
-			OptionalFilterableService<DatumFilterService> transformService) {
+	public void setTransformService(OptionalFilterableService<DatumFilterService> transformService) {
 		this.transformService = transformService;
 	}
 
@@ -691,17 +646,8 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 * 
 	 * @return the DAO
 	 */
-	public DatumDao<GeneralNodeDatum> getNodeDatumDao() {
+	public DatumDao getNodeDatumDao() {
 		return nodeDatumDao;
-	}
-
-	/**
-	 * Get the DAO to persist node datum with.
-	 * 
-	 * @return the DAO
-	 */
-	public DatumDao<GeneralLocationDatum> getLocationDatumDao() {
-		return locationDatumDao;
 	}
 
 	/**
