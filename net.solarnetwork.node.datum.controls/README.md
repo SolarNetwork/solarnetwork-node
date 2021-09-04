@@ -1,14 +1,15 @@
-# SolarNode Simple Control Datum Logger
+# SolarNode Controls Datum Data Source
 
-This SolarNode plugin enables logging of SolarNode control values as a datum stream.
+This project provides SolarNode plugin that can collect data from all available controls
+configured in SolarNode.
 
-![Simple Control Logger settings](docs/solarnode-control-simple-settings.png)
+![Controls data source settings](docs/solarnode-controls-data-source-settings.png)
 
 # Install
 
 The plugin can be installed via the **Plugins** page on your SolarNode. It appears under the
-**Control** category as **Core Control Datum DataSource**. Once installed, a **Control Datum Source
-Logger** service will become available.
+**Datum** category as **Controls Datum Data Source**. Once installed, a 
+**Controls Data Source** service will become available.
 
 # Configuration
 

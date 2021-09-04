@@ -1,0 +1,27 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Controls Data Source
+Bundle-SymbolicName: net.solarnetwork.node.datum.controls
+Automatic-Module-Name: net.solarnetwork.node.datum.controls
+Bundle-Description: Collect samples from configured controls into datum streams.
+Bundle-Version: 1.0.0
+Bundle-Vendor: SolarNetwork
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Import-Package: 
+ net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
+ net.solarnetwork.domain;version="[2.0,3.0)",
+ net.solarnetwork.domain.datum;version="[2.0,3.0)",
+ net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
+ net.solarnetwork.node.job;version="[2.0,3.0)",
+ net.solarnetwork.node.service;version="[1.0,2.0)",
+ net.solarnetwork.node.service.support;version="[1.0,2.0)",
+ net.solarnetwork.settings;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[2.0,3.0)",
+ org.quartz;version="[2.2,3.0)",
+ org.quartz.simpl;version="[2.2,3.0)",
+ org.slf4j;version="[1.7,2.0)",
+ org.springframework.beans.factory;version="[4.3,5.0)",
+ org.springframework.context;version="[4.3,5.0)",
+ org.springframework.context.support;version="[4.3,5.0)",
+ org.springframework.core;version="[4.3,5.0)",
+ org.springframework.scheduling.quartz;version="[4.3,5.0)"
