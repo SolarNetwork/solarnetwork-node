@@ -17,7 +17,7 @@
 	<reference-list id="providers" interface="net.solarnetwork.node.NodeControlProvider" availability="optional"/>
 
 	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
+		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
 		<property name="sticky" value="true"/>
 	</bean>
