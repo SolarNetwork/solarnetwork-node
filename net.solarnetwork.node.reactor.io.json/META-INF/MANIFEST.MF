@@ -2,9 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Reactor JSON Support
 Bundle-SymbolicName: net.solarnetwork.node.reactor.io.json
+Automatic-Module-Name: net.solarnetwork.node.reactor.io.json
 Bundle-Description: Communication support for SolarNet JSON based Reactor messages.
-Bundle-Version: 1.2.1
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-Version: 2.0.0
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: 
  net.solarnetwork.node.reactor.io.json;version="1.2.0"
 Import-Package: 
@@ -13,6 +14,7 @@ Import-Package:
  com.fasterxml.jackson.databind;version="[2.4,3.0)",
  com.fasterxml.jackson.databind.deser.std;version="[2.4,3.0)",
  com.fasterxml.jackson.databind.ser.std;version="[2.4,3.0)",
- net.solarnetwork.node.reactor;version="1.1.0",
- net.solarnetwork.node.reactor.support;version="1.2.0",
- net.solarnetwork.node.support;version="1.13.0"
+ net.solarnetwork.codec;version="[2.0,3.0)",
+ net.solarnetwork.node.reactor;version="[1.1,2.0)",
+ net.solarnetwork.node.reactor.support;version="[1.2,2.0)",
+ net.solarnetwork.service;version="[1.0,2.0)"

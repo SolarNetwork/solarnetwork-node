@@ -23,18 +23,17 @@
 package net.solarnetwork.node.reactor.io.json;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.ReactorSerializationService;
 import net.solarnetwork.node.reactor.support.BasicInstruction;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * JSON-based IO support for ReactorService.
@@ -44,15 +43,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class JsonReactorSerializationService implements ReactorSerializationService {
 
-	private ObjectMapper objectMapper = defaultObjectMapper();
-
-	private static ObjectMapper defaultObjectMapper() {
-		ObjectMapper mapper = new ObjectMapper();
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS'Z'");
-		sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
-		mapper.setDateFormat(sdf);
-		return mapper;
-	}
+	private ObjectMapper objectMapper = JsonUtils.newObjectMapper();
 
 	@Override
 	public List<Instruction> decodeInstructions(String instructorId, Object in, String type,
@@ -114,8 +105,8 @@ public class JsonReactorSerializationService implements ReactorSerializationServ
 		final String topic = getStringFieldValue(node, "topic", null);
 		final String instructionId = getStringFieldValue(node, "id", null);
 		final String instructionDate = getStringFieldValue(node, "instructionDate", null);
-		final Date date = (instructionDate == null ? null : objectMapper.convertValue(instructionDate,
-				Date.class));
+		final Date date = (instructionDate == null ? null
+				: objectMapper.convertValue(instructionDate, Date.class));
 
 		BasicInstruction result = new BasicInstruction(topic, date, instructionId, instructorId, null);
 

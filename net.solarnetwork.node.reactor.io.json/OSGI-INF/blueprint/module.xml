@@ -5,6 +5,13 @@
 		http://www.osgi.org/xmlns/blueprint/v1.0.0
 		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd">
 
+	<reference id="objectMapperService" 
+		interface="net.solarnetwork.service.ObjectMapperService"
+		filter="(function=node)"/>
+		
+	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
+		factory-ref="objectMapperService" factory-method="getObjectMapper"/>
+	
 	<!-- Published Services -->
 
 	<service ref="jsonReactorSerializationService" ranking="1"
