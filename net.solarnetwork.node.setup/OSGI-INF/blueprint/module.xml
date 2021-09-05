@@ -33,27 +33,38 @@
 	
 	<!-- Service References -->
 	
-	<bean id="settingDao" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
+	<bean id="settingDao" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.dao.SettingDao"/>
+		<property name="sticky" value="true"/>
 	</bean>
 	
 	<reference id="certificateService" interface="net.solarnetwork.support.CertificateService"/>
 	
-	<reference id="backupManagerService" interface="net.solarnetwork.node.backup.BackupManager" availability="optional">
-		<reference-listener ref="backupManager" bind-method="onBind" unbind-method="onUnbind"/>
-	</reference>
+	<bean id="backupManager" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.backup.BackupManager"/>
+		<property name="sticky" value="true"/>
+	</bean>
 	
-	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
+	<bean id="eventAdmin" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+		<property name="sticky" value="true"/>
 	</bean>
 
+	<reference id="objectMapperService" 
+		interface="net.solarnetwork.service.ObjectMapperService"
+		filter="(function=node)"/>
+		
+	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
+		factory-ref="objectMapperService" factory-method="getObjectMapper"/>
+	
 	<!-- Published Services -->
 	
 	<service ref="setupService">
 		<interfaces>
-			<value>net.solarnetwork.node.IdentityService</value>
+			<value>net.solarnetwork.node.service.IdentityService</value>
 			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
 			<value>net.solarnetwork.node.setup.SetupService</value>
 		</interfaces>
@@ -61,8 +72,8 @@
 
 	<service ref="pkiService">
 		<interfaces>
-			<value>net.solarnetwork.support.SSLService</value>
-			<value>net.solarnetwork.node.setup.PKIService</value>
+			<value>net.solarnetwork.service.SSLService</value>
+			<value>net.solarnetwork.node.service.PKIService</value>
 			<value>net.solarnetwork.node.backup.BackupResourceProvider</value>
 		</interfaces>
 	</service>
@@ -74,12 +85,6 @@
 	</service>
 	
 	<!--  Supporting Services -->
-
-	<bean id="backupManager" class="net.solarnetwork.util.OptionalServiceTracker">
-		<property name="service" ref="backupManagerService"/>
-	</bean>
-
-	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean"/>
 
 	<bean id="setupIdentityDao" class="net.solarnetwork.node.setup.impl.DefaultSetupIdentityDao">
 		<argument ref="objectMapper"/>

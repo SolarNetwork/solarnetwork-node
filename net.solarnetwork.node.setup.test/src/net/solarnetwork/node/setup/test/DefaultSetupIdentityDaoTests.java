@@ -39,11 +39,11 @@ import org.junit.Before;
 import org.junit.Test;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.solarnetwork.node.SetupSettings;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.setup.SetupSettings;
 import net.solarnetwork.node.setup.impl.DefaultSetupIdentityDao;
 import net.solarnetwork.node.setup.impl.SetupIdentityInfo;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link DefaultSetupIdentityDao} class.

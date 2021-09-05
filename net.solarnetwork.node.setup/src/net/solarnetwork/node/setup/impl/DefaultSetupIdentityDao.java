@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.setup.impl;
 
-import static net.solarnetwork.node.SetupSettings.SETUP_TYPE_KEY;
+import static net.solarnetwork.node.setup.SetupSettings.SETUP_TYPE_KEY;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -49,14 +49,14 @@ import net.solarnetwork.node.backup.ResourceBackupResource;
 import net.solarnetwork.node.backup.SimpleBackupResourceInfo;
 import net.solarnetwork.node.backup.SimpleBackupResourceProviderInfo;
 import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.service.OptionalService;
 
 /**
  * Default implementation of {@link SetupIdentityDao} that saves data to a JSON
  * file.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  * @since 1.18
  */
 public class DefaultSetupIdentityDao implements SetupIdentityDao, BackupResourceProvider {

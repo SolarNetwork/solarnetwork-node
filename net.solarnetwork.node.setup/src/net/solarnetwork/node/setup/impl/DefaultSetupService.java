@@ -22,13 +22,16 @@
 
 package net.solarnetwork.node.setup.impl;
 
-import static net.solarnetwork.node.SetupSettings.KEY_NODE_ID;
+import static net.solarnetwork.node.setup.SetupSettings.KEY_NODE_ID;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLConnection;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -38,33 +41,30 @@ import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import javax.xml.xpath.XPathExpression;
 import org.apache.commons.codec.binary.Base64InputStream;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
 import org.osgi.service.event.Event;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.util.FileCopyUtils;
+import net.solarnetwork.codec.JavaBeanXmlSerializer;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
 import net.solarnetwork.domain.NetworkCertificate;
 import net.solarnetwork.domain.NetworkIdentity;
-import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.SetupSettings;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.NodeAppConfiguration;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.service.IdentityService;
+import net.solarnetwork.node.service.PKIService;
+import net.solarnetwork.node.service.support.XmlServiceSupport;
 import net.solarnetwork.node.setup.InvalidVerificationCodeException;
-import net.solarnetwork.node.setup.PKIService;
 import net.solarnetwork.node.setup.SetupException;
 import net.solarnetwork.node.setup.SetupService;
-import net.solarnetwork.node.support.XmlServiceSupport;
-import net.solarnetwork.support.CertificateException;
-import net.solarnetwork.util.JavaBeanXmlSerializer;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.setup.SetupSettings;
+import net.solarnetwork.service.CertificateException;
+import net.solarnetwork.service.OptionalService;
 
 /**
  * Implementation of {@link SetupService}.
@@ -104,7 +104,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.13
+ * @version 2.0
  */
 public class DefaultSetupService extends XmlServiceSupport
 		implements SetupService, IdentityService, InstructionHandler {
@@ -366,10 +366,8 @@ public class DefaultSetupService extends XmlServiceSupport
 						+ " not found in verification code: " + verificationCode);
 			}
 			try {
-				DateTimeFormatter fmt = ISODateTimeFormat.dateTime();
-				DateTime expirationDate = fmt.parseDateTime(expiration);
-				details.setExpiration(expirationDate.toDate());
-			} catch ( IllegalArgumentException e ) {
+				details.setExpiration(DateTimeFormatter.ISO_INSTANT.parse(expiration, Instant::from));
+			} catch ( DateTimeParseException e ) {
 				throw new InvalidVerificationCodeException("Invalid expiration date value", e);
 			}
 

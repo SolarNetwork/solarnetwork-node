@@ -75,7 +75,7 @@ import net.solarnetwork.node.setup.impl.DefaultSetupService;
 import net.solarnetwork.node.setup.impl.SetupIdentityDao;
 import net.solarnetwork.node.setup.impl.SetupIdentityInfo;
 import net.solarnetwork.pki.bc.BCCertificateService;
-import net.solarnetwork.support.CertificateException;
+import net.solarnetwork.service.CertificateException;
 
 /**
  * Test cases for the {@link DefaultSetupService} class.

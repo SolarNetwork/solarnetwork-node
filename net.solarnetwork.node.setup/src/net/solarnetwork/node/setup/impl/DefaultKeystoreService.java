@@ -61,10 +61,10 @@ import net.solarnetwork.node.backup.BackupResourceProviderInfo;
 import net.solarnetwork.node.backup.ResourceBackupResource;
 import net.solarnetwork.node.backup.SimpleBackupResourceInfo;
 import net.solarnetwork.node.backup.SimpleBackupResourceProviderInfo;
-import net.solarnetwork.node.setup.PKIService;
-import net.solarnetwork.support.CertificateException;
-import net.solarnetwork.support.CertificateService;
-import net.solarnetwork.support.ConfigurableSSLService;
+import net.solarnetwork.node.service.PKIService;
+import net.solarnetwork.service.CertificateException;
+import net.solarnetwork.service.CertificateService;
+import net.solarnetwork.service.support.ConfigurableSSLService;
 
 /**
  * Service for managing a {@link KeyStore}.
@@ -80,7 +80,7 @@ import net.solarnetwork.support.ConfigurableSSLService;
  * </p>
  * 
  * @author matt
- * @version 1.5
+ * @version 2.0
  */
 public class DefaultKeystoreService extends ConfigurableSSLService
 		implements PKIService, BackupResourceProvider {
