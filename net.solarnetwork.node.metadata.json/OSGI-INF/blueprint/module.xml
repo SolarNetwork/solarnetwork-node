@@ -16,36 +16,36 @@
 
 	<!-- Service References -->
 	
-	<bean id="sslService" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.support.SSLService"/>
+	<bean id="sslService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.service.SSLService"/>
 	</bean>
 	
 	<reference id="identityService" availability="optional"
-		interface="net.solarnetwork.node.IdentityService"/>
+		interface="net.solarnetwork.node.service.IdentityService"/>
 	
 	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
 
 	<reference id="settingsService" interface="net.solarnetwork.node.settings.SettingsService"/>
 	
 	<reference id="objectMapperService" 
-		interface="net.solarnetwork.util.ObjectMapperService"
+		interface="net.solarnetwork.service.ObjectMapperService"
 		filter="(function=node)"/>
 		
+	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
+		factory-ref="objectMapperService" factory-method="getObjectMapper"/>
+	
 	<reference id="taskScheduler" 
 		interface="org.springframework.scheduling.TaskScheduler"
 		filter="(function=node)"/>
-	
-	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
-		factory-ref="objectMapperService" factory-method="getObjectMapper"/>
 	
 	<!-- Published Services -->
 	
 	<service>
 		<interfaces>
-			<value>net.solarnetwork.node.DatumMetadataService</value>
+			<value>net.solarnetwork.node.service.DatumMetadataService</value>
 			<value>net.solarnetwork.node.settings.SettingResourceHandler</value>
-			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 		</interfaces>
 		<bean class="net.solarnetwork.node.metadata.json.JsonDatumMetadataService" init-method="startup">
 			<osgix:managed-properties persistent-id="net.solarnetwork.node.metadata.json.JsonDatumMetadataService" 

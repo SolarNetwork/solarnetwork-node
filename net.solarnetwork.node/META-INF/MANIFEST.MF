@@ -38,6 +38,7 @@ Import-Package:
  javax.xml.transform.stream,
  javax.xml.xpath,
  net.solarnetwork.codec;version="[2.0,3.0)",
+ net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
  net.solarnetwork.domain;version="[2.0,3.0)",
  net.solarnetwork.domain.datum;version="[2.0,3.0)",
  net.solarnetwork.io;version="[2.0,3.0)",

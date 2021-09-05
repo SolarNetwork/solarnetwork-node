@@ -66,18 +66,18 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.DigestUtils;
 import org.springframework.util.FileCopyUtils;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.codec.ObjectMapperFactoryBean;
 import net.solarnetwork.domain.datum.BasicObjectDatumStreamMetadata;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.domain.datum.ObjectDatumStreamMetadata;
 import net.solarnetwork.domain.datum.ObjectDatumStreamMetadataId;
-import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.metadata.json.JsonDatumMetadataService;
 import net.solarnetwork.node.metadata.json.JsonDatumMetadataService.CachedMetadata;
+import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.util.CachedResult;
-import net.solarnetwork.util.ObjectMapperFactoryBean;
 
 /**
  * Test cases for the {@link JsonDatumMetadataService} class.

@@ -1,5 +1,5 @@
 /* ==================================================================
- * QueueGeneralDatumDao.java - 22/08/2021 8:13:53 AM
+ * QueueDatumDao.java - 22/08/2021 8:13:53 AM
  * 
  * Copyright 2021 SolarNetwork.net Dev Team
  * 
@@ -34,7 +34,7 @@ import net.solarnetwork.node.service.DatumQueue;
  * @version 2.0
  * @since 1.89
  */
-public class QueueGeneralDatumDao implements DatumDao {
+public class QueueDatumDao implements DatumDao {
 
 	private final DatumQueue datumQueue;
 
@@ -44,7 +44,7 @@ public class QueueGeneralDatumDao implements DatumDao {
 	 * @param datumQueue
 	 *        the queue
 	 */
-	public QueueGeneralDatumDao(DatumQueue datumQueue) {
+	public QueueDatumDao(DatumQueue datumQueue) {
 		super();
 		this.datumQueue = datumQueue;
 	}
