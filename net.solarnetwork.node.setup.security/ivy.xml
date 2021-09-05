@@ -13,10 +13,10 @@
 		<artifact type="sources" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
-	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.89,)"/>
+	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[2.0,)"/>
 		<dependency org="org.osgi" name="org.osgi.core" rev="5.0.0"/>
     	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>
-		<dependency org="org.springframework" name="spring-context-support" rev="4.2.6.RELEASE"/>
+		<dependency org="org.springframework" name="spring-context-support" rev="4.3.23.RELEASE"/>
 		<dependency org="org.springframework.security" name="spring-security-core" rev="4.1.0.RELEASE"/>
 	</dependencies>
 </ivy-module>
