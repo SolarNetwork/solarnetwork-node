@@ -69,11 +69,11 @@
 		</property>
 	</bean>
 	
-	<reference-list id="factoryList" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory" availability="optional">
+	<reference-list id="factoryList" interface="net.solarnetwork.settings.SettingSpecifierProviderFactory" availability="optional">
 		<reference-listener ref="settingsService" bind-method="onBindFactory" unbind-method="onUnbindFactory"/>
 	</reference-list>
 	
-	<reference-list id="providerList" interface="net.solarnetwork.node.settings.SettingSpecifierProvider" availability="optional">
+	<reference-list id="providerList" interface="net.solarnetwork.settings.SettingSpecifierProvider" availability="optional">
 		<reference-listener ref="settingsService" bind-method="onBind" unbind-method="onUnbind"/>
 	</reference-list>
 	

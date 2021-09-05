@@ -18,25 +18,21 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.settings.ca;
 
 import java.util.List;
-
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-
 import org.springframework.context.MessageSource;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * {@link SettingSpecifierProvider} with additional metadata to work with
  * ConfigurationAdmin.
  * 
  * @author matt
- * @version $Revision$
+ * @version 2.0
  */
 public class CASettingSpecifierProvider implements SettingSpecifierProvider {
 

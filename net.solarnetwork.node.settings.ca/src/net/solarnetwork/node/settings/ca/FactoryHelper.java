@@ -29,16 +29,16 @@ import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.settings.SettingResourceHandler;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
-import net.solarnetwork.support.MapPathMatcher;
-import net.solarnetwork.support.SearchFilter;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingSpecifierProviderFactory;
+import net.solarnetwork.util.MapPathMatcher;
+import net.solarnetwork.util.SearchFilter;
 
 /**
  * Helper class for managing factory providers.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public final class FactoryHelper {
 

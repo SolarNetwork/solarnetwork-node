@@ -60,17 +60,17 @@ import org.osgi.service.cm.ConfigurationAdmin;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import net.solarnetwork.node.Constants;
-import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.dao.BasicBatchResult;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.settings.SettingResourceHandler;
-import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
 import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.ca.CASettingsService;
+import net.solarnetwork.settings.SettingSpecifierProviderFactory;
 
 /**
  * Test cases for the {@link CASettingsService} class.

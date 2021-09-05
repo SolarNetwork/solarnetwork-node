@@ -92,9 +92,6 @@ import org.supercsv.prefs.CsvPreference;
 import org.supercsv.util.CsvContext;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.io.TransferrableResource;
-import net.solarnetwork.node.Setting;
-import net.solarnetwork.node.Setting.SettingFlag;
-import net.solarnetwork.node.SetupSettings;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.backup.BackupResourceInfo;
 import net.solarnetwork.node.backup.BackupResourceProvider;
@@ -106,25 +103,28 @@ import net.solarnetwork.node.dao.BasicBatchOptions;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.domain.Setting.SettingFlag;
 import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
-import net.solarnetwork.node.settings.FactorySettingSpecifierProvider;
-import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.SettingResourceHandler;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
 import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsImportOptions;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.SettingsUpdates;
-import net.solarnetwork.node.settings.support.BasicFactorySettingSpecifierProvider;
-import net.solarnetwork.support.SearchFilter;
+import net.solarnetwork.node.setup.SetupSettings;
+import net.solarnetwork.settings.FactorySettingSpecifierProvider;
+import net.solarnetwork.settings.KeyedSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingSpecifierProviderFactory;
+import net.solarnetwork.settings.support.BasicFactorySettingSpecifierProvider;
+import net.solarnetwork.util.SearchFilter;
 
 /**
  * Implementation of {@link SettingsService} that uses
@@ -132,7 +132,7 @@ import net.solarnetwork.support.SearchFilter;
  * {@link SettingDao} to persist changes between application restarts.
  * 
  * @author matt
- * @version 1.10
+ * @version 2.0
  */
 public class CASettingsService
 		implements SettingsService, BackupResourceProvider, FeedbackInstructionHandler {
@@ -162,9 +162,9 @@ public class CASettingsService
 	private MessageSource messageSource;
 	private TaskExecutor taskExecutor;
 
-	private final Map<String, FactoryHelper> factories = new ConcurrentSkipListMap<String, FactoryHelper>();
-	private final Map<String, ProviderHelper> providers = new ConcurrentSkipListMap<String, ProviderHelper>();
-	private final Map<String, SettingResourceHandler> handlers = new ConcurrentSkipListMap<String, SettingResourceHandler>();
+	private final Map<String, FactoryHelper> factories = new ConcurrentSkipListMap<>();
+	private final Map<String, ProviderHelper> providers = new ConcurrentSkipListMap<>();
+	private final Map<String, SettingResourceHandler> handlers = new ConcurrentSkipListMap<>();
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -479,7 +479,7 @@ public class CASettingsService
 	 */
 	private List<SettingsCommand> orderedUpdateGroups(SettingsUpdates updates, String defaultProviderKey,
 			String defaultInstanceKey) {
-		Map<String, SettingsCommand> groups = new LinkedHashMap<String, SettingsCommand>(8);
+		Map<String, SettingsCommand> groups = new LinkedHashMap<>(8);
 		if ( updates != null ) {
 			for ( SettingsUpdates.Change change : updates.getSettingValueUpdates() ) {
 				final String providerKey = change.getProviderKey() != null ? change.getProviderKey()
@@ -549,7 +549,7 @@ public class CASettingsService
 		}
 		Dictionary<String, Object> props = conf.getProperties();
 		if ( props == null ) {
-			props = new Hashtable<String, Object>();
+			props = new Hashtable<>();
 		}
 
 		// track configuration changes, to only update if there are actual changes
@@ -681,7 +681,7 @@ public class CASettingsService
 			Configuration conf = getConfiguration(factoryUID, instanceUID);
 			Dictionary<String, Object> props = conf.getProperties();
 			if ( props == null ) {
-				props = new Hashtable<String, Object>();
+				props = new Hashtable<>();
 			}
 			props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceUID);
 			conf.update(props);
@@ -699,7 +699,7 @@ public class CASettingsService
 	@Override
 	public void exportSettingsCSV(Writer out) throws IOException {
 		final ICsvBeanWriter writer = new CsvBeanWriter(out, CsvPreference.STANDARD_PREFERENCE);
-		final List<IOException> errors = new ArrayList<IOException>(1);
+		final List<IOException> errors = new ArrayList<>(1);
 		final CellProcessor[] processors = new CellProcessor[] {
 				new org.supercsv.cellprocessor.Optional(), new org.supercsv.cellprocessor.Optional(),
 				new org.supercsv.cellprocessor.Optional(), new CellProcessor() {
@@ -707,9 +707,9 @@ public class CASettingsService
 					@SuppressWarnings("unchecked")
 					@Override
 					public Object execute(Object value, CsvContext ctx) {
-						Set<net.solarnetwork.node.Setting.SettingFlag> set = (Set<net.solarnetwork.node.Setting.SettingFlag>) value;
+						Set<SettingFlag> set = (Set<SettingFlag>) value;
 						if ( set != null ) {
-							return net.solarnetwork.node.Setting.SettingFlag.maskForSet(set);
+							return SettingFlag.maskForSet(set);
 						}
 						return 0;
 					}
@@ -805,16 +805,16 @@ public class CASettingsService
 					@SuppressWarnings("unchecked")
 					@Override
 					public Object execute(Object arg, CsvContext ctx) {
-						Set<net.solarnetwork.node.Setting.SettingFlag> set = null;
+						Set<Setting.SettingFlag> set = null;
 						if ( arg != null ) {
 							int mask = Integer.parseInt(arg.toString());
-							set = net.solarnetwork.node.Setting.SettingFlag.setForMask(mask);
+							set = Setting.SettingFlag.setForMask(mask);
 						}
 						return set;
 					}
 				}, new org.supercsv.cellprocessor.ParseDate(SETTING_MODIFIED_DATE_FORMAT) };
 		reader.getHeader(true);
-		final List<Setting> importedSettings = new ArrayList<Setting>();
+		final List<Setting> importedSettings = new ArrayList<>();
 		transactionTemplate.execute(new TransactionCallbackWithoutResult() {
 
 			@Override

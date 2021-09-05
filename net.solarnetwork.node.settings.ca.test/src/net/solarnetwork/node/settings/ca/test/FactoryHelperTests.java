@@ -39,9 +39,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.node.settings.SettingResourceHandler;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
 import net.solarnetwork.node.settings.ca.FactoryHelper;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingSpecifierProviderFactory;
 
 /**
  * Test cases for the {@link FactoryHelper} class.
