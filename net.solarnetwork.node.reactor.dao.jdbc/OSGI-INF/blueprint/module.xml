@@ -31,6 +31,13 @@
 	<reference id="txManager" interface="org.springframework.transaction.PlatformTransactionManager"
 		filter="(db=node)"/>
 	
+	<reference id="objectMapperService" 
+		interface="net.solarnetwork.service.ObjectMapperService"
+		filter="(function=node)"/>
+		
+	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
+		factory-ref="objectMapperService" factory-method="getObjectMapper"/>
+	
 	<!-- Published Services -->
 
 	<service ref="jdbcInstructionDao" ranking="1">
@@ -43,14 +50,6 @@
 	<!-- Supporting Services -->
 	
 	<ctx:property-placeholder properties-ref="dao.jdbc.reactor.cfg"/>
-
-	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">
-		<property name="featuresToEnable">
-			<list>
-				<value>#{T(com.fasterxml.jackson.databind.DeserializationFeature).USE_BIG_DECIMAL_FOR_FLOATS}</value>
-			</list>
-		</property>
-	</bean>
 
 	<bean id="jdbcInstructionDao" class="net.solarnetwork.node.dao.jdbc.reactor.JdbcInstructionDao"
 		init-method="init">

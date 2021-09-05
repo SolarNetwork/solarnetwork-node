@@ -57,7 +57,7 @@ import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
  * JDBC implementation of {@link JdbcInstructionDao}.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class JdbcInstructionDao extends AbstractJdbcDao<Instruction>
 		implements net.solarnetwork.node.reactor.InstructionDao {
