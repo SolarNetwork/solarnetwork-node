@@ -25,6 +25,7 @@ package net.solarnetwork.node.settings.ca;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -90,6 +91,7 @@ import org.supercsv.io.ICsvBeanReader;
 import org.supercsv.io.ICsvBeanWriter;
 import org.supercsv.prefs.CsvPreference;
 import org.supercsv.util.CsvContext;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.io.TransferrableResource;
 import net.solarnetwork.node.backup.BackupResource;
@@ -105,11 +107,9 @@ import net.solarnetwork.node.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.domain.Setting.SettingFlag;
-import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
 import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.SettingsBackup;
@@ -134,8 +134,7 @@ import net.solarnetwork.util.SearchFilter;
  * @author matt
  * @version 2.0
  */
-public class CASettingsService
-		implements SettingsService, BackupResourceProvider, FeedbackInstructionHandler {
+public class CASettingsService implements SettingsService, BackupResourceProvider, InstructionHandler {
 
 	/** The OSGi service property key for the setting PID. */
 	public static final String OSGI_PROPERTY_KEY_SETTING_PID = "settingPid";
@@ -1356,16 +1355,9 @@ public class CASettingsService
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
-		InstructionStatus status = processInstructionWithFeedback(instruction);
-		return (status != null ? status.getInstructionState() : null);
-	}
-
-	@Override
-	public InstructionStatus processInstructionWithFeedback(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		final String topic = (instruction != null ? instruction.getTopic() : null);
 		if ( TOPIC_UPDATE_SETTING.equals(topic) ) {
-			final InstructionStatus status = (instruction != null ? instruction.getStatus() : null);
 			// support passing any number of settings, which must be defined in parameter order
 			final String[] keys = instruction.getAllParameterValues(PARAM_UPDATE_SETTING_KEY);
 			final String[] types = instruction.getAllParameterValues(PARAM_UPDATE_SETTING_TYPE);
@@ -1401,16 +1393,11 @@ public class CASettingsService
 							"Invalid settings parameters: must have equal number of keys/types/values but found %d/%d/%d.",
 							keys.length, (types != null ? types.length : 0),
 							(values != null ? values.length : 0)));
-					return (status != null
-							? status.newCopyWithState(InstructionState.Declined, resultParams)
-							: new BasicInstructionStatus(instruction.getId(), InstructionState.Declined,
-									new Date(), null, resultParams));
+					return createStatus(instruction, InstructionState.Declined, resultParams);
 				} catch ( IOException e ) {
 					log.warn("Error applying updated settings values {}: {}", added, e.toString());
 				}
-				return (status != null ? status.newCopyWithState(InstructionState.Completed)
-						: new BasicInstructionStatus(instruction.getId(), InstructionState.Completed,
-								new Date()));
+				return createStatus(instruction, InstructionState.Completed);
 
 			}
 		}
