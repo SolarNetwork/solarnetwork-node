@@ -8,9 +8,10 @@ Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
+ net.solarnetwork.domain;version="[2.0,3.0)",
  net.solarnetwork.node.job;version="[2.0,3.0)",
- net.solarnetwork.node.reactor;version="[1.4,2.0)",
- net.solarnetwork.node.reactor.support;version="[1.4,2.0)",
+ net.solarnetwork.node.reactor;version="[2.0,3.0)",
+ net.solarnetwork.node.setup;version="[1.13,2.0)",
  org.aopalliance.aop;version="[1.0,2.0)",
  org.quartz;version="[2.2,3.0)",
  org.quartz.simpl;version="[2.2,3.0)",
@@ -18,10 +19,10 @@ Import-Package:
  org.springframework.aop;version="[4.3,5.0)",
  org.springframework.aop.framework;version="[4.3,5.0)",
  org.springframework.beans.factory;version="[4.3,5.0)",
- org.springframework.core;version="[4.3,5.0)",
- org.springframework.core.io;version="[4.3,5.0)",
  org.springframework.context;version="[4.3,5.0)",
  org.springframework.context.support;version="[4.3,5.0)",
+ org.springframework.core;version="[4.3,5.0)",
+ org.springframework.core.io;version="[4.3,5.0)",
  org.springframework.dao;version="[4.3,5.0)",
  org.springframework.dao.support;version="[4.3,5.0)",
  org.springframework.jdbc.core;version="[4.3,5.0)",

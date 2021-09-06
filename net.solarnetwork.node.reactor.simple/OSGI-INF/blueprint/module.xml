@@ -35,17 +35,11 @@
 	<reference id="instructionDao"  availability="optional"
 		interface="net.solarnetwork.node.reactor.InstructionDao"/>
 	
-	<reference-list id="serializationServices" availability="optional" 
-		interface="net.solarnetwork.node.reactor.ReactorSerializationService"/>
-	
 	<reference id="instructionAcknowledgementService" availability="optional"
 		interface="net.solarnetwork.node.reactor.InstructionAcknowledgementService"/>
 
 	<reference-list id="instructionHandlers" availability="optional"
 		interface="net.solarnetwork.node.reactor.InstructionHandler"/>
-	
-	<reference-list id="feedbackInstructionHandlers" availability="optional"
-		interface="net.solarnetwork.node.reactor.FeedbackInstructionHandler"/>
 	
 	<!-- Published Services -->
 
@@ -68,16 +62,14 @@
 	</bean>
 
 	<bean id="simpleReactorService" class="net.solarnetwork.node.reactor.simple.SimpleReactorService">
-		<property name="instructionDao" ref="instructionDao"/>
-		<property name="serializationServices" ref="serializationServices"/>
+		<argument ref="instructionDao"/>
 	</bean>
 
 	<!-- Use Java @Transactional annotations to declare transactions. -->
 	<tx:annotation-driven transaction-manager="txManager"/>
 	
-	<bean id="instructionExecutionService" class="net.solarnetwork.node.reactor.support.DefaultInstructionExecutionService">
+	<bean id="instructionExecutionService" class="net.solarnetwork.node.reactor.simple.SimpleInstructionExecutionService">
 		<property name="handlers" ref="instructionHandlers"/>
-		<property name="feedbackHandlers" ref="feedbackInstructionHandlers"/>
 		<property name="executionReceivedHourLimit" value="${job.instructionExecution.executionReceivedHourLimit}"/>
 	</bean>
 	
@@ -98,7 +90,7 @@
 	</bean>
 	
 	<bean id="instructionAckJob" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-		<property name="jobClass" value="net.solarnetwork.node.reactor.InstructionAcknowledgeJob"/>
+		<property name="jobClass" value="net.solarnetwork.node.reactor.simple.InstructionAcknowledgeJob"/>
 		<property name="jobDataAsMap">
 			<map>
 				<entry key="instructionDao" value-ref="instructionDao"/>
@@ -124,7 +116,7 @@
 	</bean>
 	
 	<bean id="instructionExecutionJob" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-		<property name="jobClass" value="net.solarnetwork.node.reactor.InstructionExecutionJob"/>
+		<property name="jobClass" value="net.solarnetwork.node.reactor.simple.InstructionExecutionJob"/>
 		<property name="jobDataAsMap">
 			<map>
 				<entry key="instructionDao" value-ref="instructionDao"/>
@@ -150,7 +142,7 @@
 	</bean>
 	
 	<bean id="instructionCleanerJob" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-		<property name="jobClass" value="net.solarnetwork.node.reactor.InstructionCleanerJob"/>
+		<property name="jobClass" value="net.solarnetwork.node.reactor.simple.InstructionCleanerJob"/>
 		<property name="jobDataAsMap">
 			<map>
 				<entry key="instructionDao" value-ref="instructionDao"/>

@@ -54,11 +54,13 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.OptionalService;
@@ -333,7 +335,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		if ( instruction == null ) {
 			return null;
 		}
@@ -343,7 +345,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable
 		}
 		String[] modes = instruction.getAllParameterValues(INSTRUCTION_PARAM_OPERATIONAL_MODE);
 		if ( modes == null || modes.length < 1 ) {
-			return InstructionState.Declined;
+			return InstructionUtils.createStatus(instruction, InstructionState.Declined);
 		}
 		Instant expire = OperationalModesService.expirationDate(instruction);
 		Set<String> opModes = new LinkedHashSet<>(Arrays.asList(modes));
@@ -357,7 +359,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable
 				break;
 
 		}
-		return InstructionState.Completed;
+		return InstructionUtils.createStatus(instruction, InstructionState.Completed);
 	}
 
 	@Override

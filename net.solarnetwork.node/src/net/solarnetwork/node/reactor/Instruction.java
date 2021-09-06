@@ -22,14 +22,6 @@
 
 package net.solarnetwork.node.reactor;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-
 /**
  * API for a single, immutable instruction with associated parameters.
  * 
@@ -45,41 +37,15 @@ import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
-public interface Instruction {
+public interface Instruction extends net.solarnetwork.domain.Instruction {
 
-	/** An ID to use for locally-initiated instructions. */
+	/**
+	 * An ID to use for locally-initiated instructions, in
+	 * {@link #getInstructorId()}.
+	 */
 	String LOCAL_INSTRUCTION_ID = "LOCAL";
-
-	/**
-	 * Get a locally-assigned unique ID.
-	 * 
-	 * @return local unique ID
-	 */
-	Long getId();
-
-	/**
-	 * Get the topic of the instruction -- a unique identifier for the
-	 * instruction type.
-	 * 
-	 * @return the topic name
-	 */
-	String getTopic();
-
-	/**
-	 * Get the date/time the instruction was requested.
-	 * 
-	 * @return the date
-	 */
-	Date getInstructionDate();
-
-	/**
-	 * Get the SolarNet-assigned unique ID for this instruction.
-	 * 
-	 * @return unique ID
-	 */
-	String getRemoteInstructionId();
 
 	/**
 	 * Get the unique ID for the sender of the instruction, for example the DN
@@ -90,92 +56,11 @@ public interface Instruction {
 	String getInstructorId();
 
 	/**
-	 * Get an Iterator of all unique instruction parameter names.
-	 * 
-	 * @return iterator, never {@literal null}
-	 */
-	Iterable<String> getParameterNames();
-
-	/**
-	 * Test if a specific parameter has an associated value available.
-	 * 
-	 * @param parameterName
-	 *        the parameter name to test for
-	 * @return {@literal true} if the parameter name has at least one value
-	 *         available
-	 */
-	boolean isParameterAvailable(String parameterName);
-
-	/**
-	 * Get a single parameter value for a specific parameter name.
-	 * 
-	 * @param parameterName
-	 *        the parameter name to get the value for
-	 * @return the first available parameter name, or {@literal null} if not
-	 *         available
-	 */
-	String getParameterValue(String parameterName);
-
-	/**
-	 * Get all parameter values for a specific parameter name;
-	 * 
-	 * @param parameterName
-	 *        the parameter name to get the values for
-	 * @return all available parameter values, or {@literal null} if not
-	 *         available
-	 */
-	String[] getAllParameterValues(String parameterName);
-
-	/**
-	 * Get the instruction status.
-	 * 
-	 * @return the status
-	 */
-	InstructionStatus getStatus();
-
-	/**
 	 * Get the instruction state.
 	 * 
 	 * @return the state, or {@literal null} if none available
-	 * @since 1.1
 	 */
-	default InstructionState getInstructionState() {
-		InstructionStatus status = getStatus();
-		return (status != null ? status.getInstructionState() : null);
-	}
-
-	/**
-	 * Get a single-valued map of all parameter values.
-	 * 
-	 * @return the parameters as a map, never {@literal null}
-	 * @since 1.1
-	 */
-	default Map<String, String> getParameterMap() {
-		Map<String, String> result = null;
-		for ( String paramName : getParameterNames() ) {
-			if ( result == null ) {
-				result = new LinkedHashMap<>(4);
-			}
-			result.put(paramName, getParameterValue(paramName));
-		}
-		return (result != null ? result : Collections.emptyMap());
-	}
-
-	/**
-	 * Get a multi-valued map of all parameter values.
-	 * 
-	 * @return the parameters as a multi-valued map, never {@literal null}
-	 * @since 1.1
-	 */
-	default Map<String, List<String>> getParameterMultiMap() {
-		Map<String, List<String>> result = null;
-		for ( String paramName : getParameterNames() ) {
-			if ( result == null ) {
-				result = new LinkedHashMap<>(4);
-			}
-			result.put(paramName, Arrays.asList(getAllParameterValues(paramName)));
-		}
-		return (result != null ? result : Collections.emptyMap());
-	}
+	@Override
+	InstructionStatus getStatus();
 
 }

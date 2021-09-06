@@ -23,11 +23,11 @@
 package net.solarnetwork.node.runtime;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -35,12 +35,12 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.springframework.util.PathMatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.domain.datum.NodeDatum;
-import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.DatumService;
@@ -57,7 +57,7 @@ import net.solarnetwork.util.StringUtils;
  * @author matt
  * @version 2.0
  */
-public class DefaultDatumService implements DatumService, EventHandler, FeedbackInstructionHandler {
+public class DefaultDatumService implements DatumService, EventHandler, InstructionHandler {
 
 	/** The service name to retrieve the latest datum. */
 	public static final String SETUP_SERVICE_LATEST_DATUM = "/setup/datum/latest";
@@ -132,12 +132,7 @@ public class DefaultDatumService implements DatumService, EventHandler, Feedback
 	}
 
 	@Override
-	public InstructionState processInstruction(final Instruction instruction) {
-		return null;
-	}
-
-	@Override
-	public InstructionStatus processInstructionWithFeedback(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		if ( instruction == null || !handlesTopic(instruction.getTopic()) ) {
 			return null;
 		}
@@ -160,7 +155,7 @@ public class DefaultDatumService implements DatumService, EventHandler, Feedback
 			}
 		}
 		Collection<NodeDatum> latest = latest(sourceIdFilters, NodeDatum.class);
-		return InstructionStatus.createStatus(instruction, InstructionState.Completed, new Date(),
+		return InstructionUtils.createStatus(instruction, InstructionState.Completed, Instant.now(),
 				Collections.singletonMap(InstructionHandler.PARAM_SERVICE_RESULT, latest));
 	}
 
