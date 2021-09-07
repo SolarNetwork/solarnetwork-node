@@ -23,22 +23,21 @@
 package net.solarnetwork.node.setup.system.mock;
 
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.InstructionUtils;
 
 /**
  * Support for making tea.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class TeapotSetupHandler implements FeedbackInstructionHandler {
+public class TeapotSetupHandler implements InstructionHandler {
 
 	public static final String SERVICE_COFFEE_ORDER = "/coffee/order";
 
@@ -50,12 +49,7 @@ public class TeapotSetupHandler implements FeedbackInstructionHandler {
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
-		return null;
-	}
-
-	@Override
-	public InstructionStatus processInstructionWithFeedback(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		if ( instruction == null || !handlesTopic(instruction.getTopic()) ) {
 			return null;
 		}
@@ -72,12 +66,11 @@ public class TeapotSetupHandler implements FeedbackInstructionHandler {
 		Map<String, Object> resultParams = new LinkedHashMap<>(2);
 		resultParams.put(InstructionHandler.PARAM_STATUS_CODE, 418);
 		resultParams.put(InstructionHandler.PARAM_MESSAGE, "I'm a tea pot.");
-		return InstructionStatus.createStatus(instruction, InstructionState.Declined, new Date(),
-				resultParams);
+		return InstructionUtils.createStatus(instruction, InstructionState.Declined, resultParams);
 	}
 
 	private InstructionStatus handleTeaOrder(Instruction instruction) {
-		return InstructionStatus.createStatus(instruction, InstructionState.Completed, new Date(),
+		return InstructionUtils.createStatus(instruction, InstructionState.Completed,
 				Collections.singletonMap(InstructionHandler.PARAM_MESSAGE, "Order placed."));
 	}
 
