@@ -22,9 +22,10 @@
 	
 	<service ref="s3SetupManager" interface="net.solarnetwork.node.reactor.FeedbackInstructionHandler"/>
 	
-	<bean id="platformPackageServices" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.PlatformPackageService"/>
+	<bean id="platformPackageServices" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlatformPackageService"/>
+		<property name="sticky" value="true"/>
 	</bean>	
 	
 	<!-- Supporting Services -->
@@ -43,21 +44,24 @@
 			</bean>
 		</property>
 		<property name="nodeMetadataService">
-			<bean class="net.solarnetwork.util.DynamicServiceTracker">
-				<property name="bundleContext" ref="bundleContext"/>
-				<property name="serviceClassName" value="net.solarnetwork.node.NodeMetadataService"/>
+			<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+				<argument ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.service.NodeMetadataService"/>
+				<property name="sticky" value="true"/>
 			</bean>	
 		</property>
 		<property name="systemService">
-			<bean class="net.solarnetwork.util.DynamicServiceTracker">
-				<property name="bundleContext" ref="bundleContext"/>
-				<property name="serviceClassName" value="net.solarnetwork.node.SystemService"/>
+			<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+				<argument ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.service.SystemService"/>
+				<property name="sticky" value="true"/>
 			</bean>	
 		</property>
 		<property name="platformService">
-			<bean class="net.solarnetwork.util.DynamicServiceTracker">
-				<property name="bundleContext" ref="bundleContext"/>
-				<property name="serviceClassName" value="net.solarnetwork.node.PlatformService"/>
+			<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+				<argument ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.service.PlatformService"/>
+				<property name="sticky" value="true"/>
 			</bean>	
 		</property>
 	</bean>
