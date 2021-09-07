@@ -24,7 +24,7 @@ package net.solarnetwork.node.setup.stomp.server.test;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
-import static net.solarnetwork.node.reactor.InstructionStatus.createStatus;
+import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
 import static net.solarnetwork.node.setup.stomp.SetupTopic.Authenticate;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
@@ -38,7 +38,6 @@ import static org.springframework.security.core.userdetails.User.withUsername;
 import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -73,13 +72,13 @@ import io.netty.handler.codec.stomp.StompCommand;
 import io.netty.handler.codec.stomp.StompFrame;
 import io.netty.handler.codec.stomp.StompHeaders;
 import net.solarnetwork.codec.BasicGeneralDatumSerializer;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.datum.GeneralDatum;
-import net.solarnetwork.node.DatumService;
-import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.SimpleInstructionExecutionService;
+import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.node.setup.UserAuthenticationInfo;
 import net.solarnetwork.node.setup.UserService;
 import net.solarnetwork.node.setup.stomp.SetupHeader;
@@ -94,7 +93,7 @@ import net.solarnetwork.test.CallingThreadExecutorService;
  * Test cases for the {@link StompSetupServerHandler} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class StompSetupServerHandlerTests {
 
@@ -106,7 +105,7 @@ public class StompSetupServerHandlerTests {
 	private UserService userService;
 	private UserDetailsService userDetailsService;
 	private DatumService datumService;
-	private FeedbackInstructionHandler instructionHandler;
+	private InstructionHandler instructionHandler;
 	private StompSetupServerService serverService;
 	private ObjectMapper objectMapper;
 	private ChannelHandlerContext ctx;
@@ -119,9 +118,10 @@ public class StompSetupServerHandlerTests {
 		userService = EasyMock.createMock(UserService.class);
 		userDetailsService = EasyMock.createMock(UserDetailsService.class);
 		datumService = EasyMock.createMock(DatumService.class);
-		instructionHandler = EasyMock.createMock(FeedbackInstructionHandler.class);
+		instructionHandler = EasyMock.createMock(InstructionHandler.class);
 		serverService = new StompSetupServerService(userService, userDetailsService,
-				new AntPathMatcher(), singletonList(instructionHandler));
+				new AntPathMatcher(),
+				new SimpleInstructionExecutionService(singletonList(instructionHandler)));
 		objectMapper = createObjectMapper();
 		ctx = EasyMock.createMock(ChannelHandlerContext.class);
 		channel = EasyMock.createMock(Channel.class);
@@ -505,7 +505,7 @@ public class StompSetupServerHandlerTests {
 		final String arg = "Hello, world.";
 		final String res = "Good day to you, sir.";
 		Capture<Instruction> instrCaptor = new Capture<>();
-		expect(instructionHandler.processInstructionWithFeedback(capture(instrCaptor)))
+		expect(instructionHandler.processInstruction(capture(instrCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 
 					@Override
@@ -528,7 +528,7 @@ public class StompSetupServerHandlerTests {
 								is(contentType));
 						assertThat("Custom STOMP header provided as parameter",
 								instr.getParameterValue("foo"), is("bar"));
-						return createStatus(instr, InstructionState.Completed, new Date(),
+						return createStatus(instr, InstructionState.Completed,
 								singletonMap(InstructionHandler.PARAM_SERVICE_RESULT, res));
 					}
 
@@ -616,7 +616,7 @@ public class StompSetupServerHandlerTests {
 
 		final String arg = "Hello, world.";
 		Capture<Instruction> instrCaptor = new Capture<>();
-		expect(instructionHandler.processInstructionWithFeedback(capture(instrCaptor)))
+		expect(instructionHandler.processInstruction(capture(instrCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 
 					@Override
@@ -629,7 +629,7 @@ public class StompSetupServerHandlerTests {
 						assertThat("Instruction service arg is STOMP body",
 								instr.getParameterValue(InstructionHandler.PARAM_SERVICE_ARGUMENT),
 								is(arg));
-						return createStatus(instr, InstructionState.Executing, new Date(), null);
+						return createStatus(instr, InstructionState.Executing, null);
 					}
 
 				});
@@ -673,7 +673,7 @@ public class StompSetupServerHandlerTests {
 
 		final String arg = "Hello, world.";
 		Capture<Instruction> instrCaptor = new Capture<>();
-		expect(instructionHandler.processInstructionWithFeedback(capture(instrCaptor)))
+		expect(instructionHandler.processInstruction(capture(instrCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 
 					@Override
@@ -686,7 +686,7 @@ public class StompSetupServerHandlerTests {
 						assertThat("Instruction service arg is STOMP body",
 								instr.getParameterValue(InstructionHandler.PARAM_SERVICE_ARGUMENT),
 								is(arg));
-						return createStatus(instr, InstructionState.Declined, new Date(), null);
+						return createStatus(instr, InstructionState.Declined, null);
 					}
 
 				});
@@ -731,7 +731,7 @@ public class StompSetupServerHandlerTests {
 		final String arg = "Hello, world.";
 		final String error = "No way!";
 		Capture<Instruction> instrCaptor = new Capture<>();
-		expect(instructionHandler.processInstructionWithFeedback(capture(instrCaptor)))
+		expect(instructionHandler.processInstruction(capture(instrCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 
 					@Override
@@ -784,7 +784,7 @@ public class StompSetupServerHandlerTests {
 		final int statusCode = 8675309;
 		final String message = "Jenny I've got your number.";
 		Capture<Instruction> instrCaptor = new Capture<>();
-		expect(instructionHandler.processInstructionWithFeedback(capture(instrCaptor)))
+		expect(instructionHandler.processInstruction(capture(instrCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 
 					@Override
@@ -797,7 +797,7 @@ public class StompSetupServerHandlerTests {
 						Map<String, Object> resultParams = new HashMap<>();
 						resultParams.put(InstructionHandler.PARAM_STATUS_CODE, statusCode);
 						resultParams.put(InstructionHandler.PARAM_MESSAGE, message);
-						return createStatus(instr, InstructionState.Completed, new Date(), resultParams);
+						return createStatus(instr, InstructionState.Completed, resultParams);
 					}
 
 				});

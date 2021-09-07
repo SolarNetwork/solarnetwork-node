@@ -475,7 +475,8 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 			}
 		}
 
-		Instruction instr = InstructionUtils.createLocalInstruction(topic, instrParams);
+		Instruction instr = InstructionUtils
+				.createLocalInstruction(InstructionHandler.TOPIC_SYSTEM_CONFIGURE, instrParams);
 
 		// execute instruction in new task
 		executor.execute(new Runnable() {
