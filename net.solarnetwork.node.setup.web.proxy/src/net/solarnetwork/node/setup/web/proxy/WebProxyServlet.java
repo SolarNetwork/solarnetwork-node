@@ -56,7 +56,7 @@ import org.slf4j.LoggerFactory;
  * HTTP proxy servlet configured via a {@link WebProxyConfiguration}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class WebProxyServlet extends ProxyServlet {
 
@@ -109,8 +109,8 @@ public class WebProxyServlet extends ProxyServlet {
 		if ( configuration == null ) {
 			throw new IllegalArgumentException("WebProxyConfiguration is required");
 		}
-		if ( configuration.getUID() == null ) {
-			throw new IllegalArgumentException("WebProxyConfiguration.UID is required");
+		if ( configuration.getUid() == null ) {
+			throw new IllegalArgumentException("WebProxyConfiguration.uid is required");
 		}
 		if ( proxyPathPrefix == null ) {
 			throw new IllegalArgumentException("A proxy path prefix is required");

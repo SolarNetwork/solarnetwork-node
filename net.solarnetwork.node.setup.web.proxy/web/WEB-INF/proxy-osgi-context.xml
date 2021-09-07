@@ -11,8 +11,8 @@
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
 		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd">
 
-	<bean id="webProxyConfigurations" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
+	<bean id="webProxyConfigurations" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<constructor-arg ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.setup.web.proxy.WebProxyConfiguration"/>
 	</bean>
 
@@ -50,8 +50,8 @@
 		</bean>
 	</osgi:service>
 	
-	<osgi:service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<osgi:service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Web Proxy"/>
 			<property name="factoryUID" value="net.solarnetwork.node.setup.web.proxy.config"/>
 			<property name="messageSource" ref="proxyMessageSource"/>
@@ -61,7 +61,7 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.setup.web.proxy.config" autowire-on-update="true">
 		<osgix:interfaces>
 			<value>net.solarnetwork.node.setup.web.proxy.WebProxyConfiguration</value>
-			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<entry key="settingPid" value="net.solarnetwork.node.setup.web.proxy.config"/>

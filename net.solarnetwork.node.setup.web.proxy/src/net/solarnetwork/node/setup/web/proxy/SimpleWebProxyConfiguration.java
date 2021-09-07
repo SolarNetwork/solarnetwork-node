@@ -27,33 +27,31 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.springframework.context.MessageSource;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.node.settings.support.BasicSetupResourceSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.node.setup.SetupResourceProvider;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * Simple implementation of {@link WebProxyConfiguration}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class SimpleWebProxyConfiguration implements WebProxyConfiguration, SettingSpecifierProvider {
+public class SimpleWebProxyConfiguration extends BaseIdentifiable
+		implements WebProxyConfiguration, SettingSpecifierProvider {
 
-	private final String uid;
 	private String proxyPath;
-	private String groupUID;
 	private String proxyTargetUri;
 	private boolean contentLinksRewrite = true;
-	private MessageSource messageSource;
 	private SetupResourceProvider settingResourceProvider;
 
 	public SimpleWebProxyConfiguration() {
 		super();
-		this.uid = UUID.randomUUID().toString();
+		setUid(UUID.randomUUID().toString());
 	}
 
 	@Override
@@ -70,20 +68,6 @@ public class SimpleWebProxyConfiguration implements WebProxyConfiguration, Setti
 		}
 
 		return results;
-	}
-
-	@Override
-	public String getUID() {
-		return uid;
-	}
-
-	@Override
-	public String getGroupUID() {
-		return groupUID;
-	}
-
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
 	}
 
 	@Override
@@ -105,15 +89,6 @@ public class SimpleWebProxyConfiguration implements WebProxyConfiguration, Setti
 		return "Web Proxy Configuration";
 	}
 
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
-
 	public SetupResourceProvider getSettingResourceProvider() {
 		return settingResourceProvider;
 	}
@@ -124,7 +99,7 @@ public class SimpleWebProxyConfiguration implements WebProxyConfiguration, Setti
 
 	@Override
 	public String getProxyPath() {
-		return proxyPath != null ? proxyPath : uid;
+		return proxyPath != null ? proxyPath : getUid();
 	}
 
 	public void setProxyPath(String proxyPath) {
