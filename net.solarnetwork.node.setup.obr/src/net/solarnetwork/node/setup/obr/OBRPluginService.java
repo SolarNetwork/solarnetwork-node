@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.setup.obr;
 
+import static net.solarnetwork.service.OptionalService.service;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -58,11 +59,8 @@ import org.osgi.service.obr.Resource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
-import net.solarnetwork.node.SystemService;
 import net.solarnetwork.node.backup.BackupManager;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.service.SystemService;
 import net.solarnetwork.node.setup.BundlePlugin;
 import net.solarnetwork.node.setup.LocalizedPlugin;
 import net.solarnetwork.node.setup.Plugin;
@@ -70,10 +68,13 @@ import net.solarnetwork.node.setup.PluginProvisionException;
 import net.solarnetwork.node.setup.PluginProvisionStatus;
 import net.solarnetwork.node.setup.PluginQuery;
 import net.solarnetwork.node.setup.PluginService;
-import net.solarnetwork.support.SearchFilter;
-import net.solarnetwork.support.SearchFilter.CompareOperator;
-import net.solarnetwork.support.SearchFilter.LogicOperator;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.util.SearchFilter;
+import net.solarnetwork.util.SearchFilter.CompareOperator;
+import net.solarnetwork.util.SearchFilter.LogicOperator;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -389,8 +390,7 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 		status.setPluginsToRemove(pluginsToRemove);
 		status.setRestartRequired(true);
 		OBRProvisionTask task = new OBRProvisionTask(bundleContext, status, new File(downloadPath),
-				(backupManager != null ? backupManager.service() : null),
-				(systemService != null ? systemService.service() : null));
+				service(backupManager), service(systemService));
 		saveProvisionTask(task);
 
 		Future<OBRPluginProvisionStatus> future = executorService.submit(task);

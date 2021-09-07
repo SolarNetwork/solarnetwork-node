@@ -57,9 +57,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.StringUtils;
-import net.solarnetwork.node.SystemService;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
+import net.solarnetwork.node.service.SystemService;
 import net.solarnetwork.node.setup.BundlePlugin;
 import net.solarnetwork.node.setup.Plugin;
 
@@ -67,7 +67,7 @@ import net.solarnetwork.node.setup.Plugin;
  * Task to install plugins.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 
