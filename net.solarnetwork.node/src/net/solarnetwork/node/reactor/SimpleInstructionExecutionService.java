@@ -74,7 +74,7 @@ public class SimpleInstructionExecutionService implements InstructionExecutionSe
 			return null;
 		}
 		final String topic = instruction.getTopic();
-		log.trace("Passing instruction {} [{}] to handlers", instruction.getId(), topic);
+		log.trace("Passing instruction {} [{}] to handlers", instruction.getIdentifier(), topic);
 		for ( InstructionHandler handler : handlers ) {
 			if ( !handler.handlesTopic(topic) ) {
 				continue;
@@ -82,20 +82,26 @@ public class SimpleInstructionExecutionService implements InstructionExecutionSe
 			try {
 				InstructionStatus status = handler.processInstruction(instruction);
 				if ( status != null && (startingStatus == null || !startingStatus.equals(status)) ) {
-					log.info("Instruction {} [{}] state changed to {}", instruction.getId(), topic,
-							status.getInstructionState());
+					log.info("Instruction {} [{}] state changed to {}", instruction.getIdentifier(),
+							topic, status.getInstructionState());
 					return status;
 				}
 			} catch ( Exception e ) {
-				log.error("Handler {} threw exception processing instruction {} [{}]", handler,
-						instruction.getId(), topic, e);
+				Throwable root = e;
+				while ( root.getCause() != null ) {
+					root = root.getCause();
+				}
+				String msg = String.format("Error handling instruction %s [%s] in handler %s: %s",
+						instruction.getIdentifier(), topic, handler, root.getMessage());
+				log.error(msg, e);
+				throw new RuntimeException(msg, e);
 			}
 		}
 		if ( instruction.getInstructionDate() != null ) {
 			long diffMs = now - instruction.getInstructionDate().toEpochMilli();
 			if ( diffMs > timeLimitMs ) {
 				log.info("Instruction {} [{}] not handled within {} hours; declining",
-						instruction.getId(), topic, executionReceivedHourLimit);
+						instruction.getIdentifier(), topic, executionReceivedHourLimit);
 				return InstructionUtils.createStatus(instruction, InstructionState.Declined);
 			}
 		}

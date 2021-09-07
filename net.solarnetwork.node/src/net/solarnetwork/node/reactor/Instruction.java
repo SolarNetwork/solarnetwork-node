@@ -48,6 +48,20 @@ public interface Instruction extends net.solarnetwork.domain.Instruction {
 	String LOCAL_INSTRUCTION_ID = "LOCAL";
 
 	/**
+	 * Get an identifier for this instruction.
+	 * 
+	 * <p>
+	 * This can be used for logging, display, etc.
+	 * </p>
+	 * 
+	 * @return an identifier, never {@literal null}
+	 */
+	default String getIdentifier() {
+		Long id = getId();
+		return (id != null ? id.toString() : LOCAL_INSTRUCTION_ID);
+	}
+
+	/**
 	 * Get the unique ID for the sender of the instruction, for example the DN
 	 * of the sender's certificate.
 	 * 

@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.reactor.simple.test;
+package net.solarnetwork.node.reactor.test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -28,7 +28,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import java.time.Instant;
 import java.util.Arrays;
-import org.junit.Before;
+import java.util.Collections;
 import org.junit.Test;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.BasicInstruction;
@@ -36,7 +36,7 @@ import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
-import net.solarnetwork.node.reactor.simple.SimpleInstructionExecutionService;
+import net.solarnetwork.node.reactor.SimpleInstructionExecutionService;
 
 /**
  * Test cases for the {@link SimpleInstructionExecutionService} class.
@@ -48,8 +48,6 @@ public class SimpleInstructionExecutionServiceTests {
 
 	private static final String TEST_TOPIC = "test.topic";
 
-	private SimpleInstructionExecutionService service;
-
 	private static abstract class TestTopicInstructionHandler implements InstructionHandler {
 
 		@Override
@@ -58,14 +56,11 @@ public class SimpleInstructionExecutionServiceTests {
 		}
 	}
 
-	@Before
-	public void setup() {
-		service = new SimpleInstructionExecutionService();
-	}
-
 	@Test
 	public void nullInstruction() {
 		// when
+		SimpleInstructionExecutionService service = new SimpleInstructionExecutionService(
+				Collections.emptyList());
 		InstructionStatus status = service.executeInstruction(null);
 
 		// then
@@ -75,6 +70,8 @@ public class SimpleInstructionExecutionServiceTests {
 	@Test
 	public void noHandlersConfigured() {
 		// given
+		SimpleInstructionExecutionService service = new SimpleInstructionExecutionService(
+				Collections.emptyList());
 		final Instant now = Instant.now();
 		BasicInstruction instr = new BasicInstruction(1L, TEST_TOPIC, now,
 				Instruction.LOCAL_INSTRUCTION_ID, null);
@@ -97,8 +94,8 @@ public class SimpleInstructionExecutionServiceTests {
 			}
 
 		};
-
-		service.setHandlers(Arrays.asList(handler));
+		SimpleInstructionExecutionService service = new SimpleInstructionExecutionService(
+				Collections.singletonList(handler));
 
 		final Instant now = Instant.now();
 		BasicInstruction instr = new BasicInstruction(1L, TEST_TOPIC, now,
@@ -113,7 +110,7 @@ public class SimpleInstructionExecutionServiceTests {
 		assertThat("Acknoledged state", status.getAcknowledgedInstructionState(), nullValue());
 	}
 
-	@Test
+	@Test(expected = RuntimeException.class)
 	public void handlerThrowsException() {
 		// given
 		InstructionHandler handler = new TestTopicInstructionHandler() {
@@ -125,52 +122,15 @@ public class SimpleInstructionExecutionServiceTests {
 
 		};
 
-		service.setHandlers(Arrays.asList(handler));
+		SimpleInstructionExecutionService service = new SimpleInstructionExecutionService(
+				Collections.singletonList(handler));
 
 		final Instant now = Instant.now();
 		BasicInstruction instr = new BasicInstruction(1L, TEST_TOPIC, now,
 				Instruction.LOCAL_INSTRUCTION_ID, null);
 
 		// when
-		InstructionStatus status = service.executeInstruction(instr);
-
-		// then
-		assertThat("Result status", status, nullValue());
-	}
-
-	@Test
-	public void handlerThrowsExceptionAnotherHandlerCompletes() {
-		// given
-		InstructionHandler handler = new TestTopicInstructionHandler() {
-
-			@Override
-			public InstructionStatus processInstruction(Instruction instruction) {
-				throw new UnsupportedOperationException("boo");
-			}
-
-		};
-		InstructionHandler handler2 = new TestTopicInstructionHandler() {
-
-			@Override
-			public InstructionStatus processInstruction(Instruction instruction) {
-				return InstructionUtils.createStatus(instruction, InstructionState.Completed);
-			}
-
-		};
-
-		service.setHandlers(Arrays.asList(handler, handler2));
-
-		final Instant now = Instant.now();
-		BasicInstruction instr = new BasicInstruction(1L, TEST_TOPIC, now,
-				Instruction.LOCAL_INSTRUCTION_ID, null);
-
-		// when
-		InstructionStatus status = service.executeInstruction(instr);
-
-		// then
-		assertThat("Result status", status, notNullValue());
-		assertThat("State", status.getInstructionState(), equalTo(InstructionState.Completed));
-		assertThat("Acknoledged state", status.getAcknowledgedInstructionState(), nullValue());
+		service.executeInstruction(instr);
 	}
 
 	@Test
@@ -193,7 +153,8 @@ public class SimpleInstructionExecutionServiceTests {
 
 		};
 
-		service.setHandlers(Arrays.asList(handler, handler2));
+		SimpleInstructionExecutionService service = new SimpleInstructionExecutionService(
+				Arrays.asList(handler, handler2));
 
 		final Instant now = Instant.now();
 		BasicInstruction instr = new BasicInstruction(1L, TEST_TOPIC, now,
