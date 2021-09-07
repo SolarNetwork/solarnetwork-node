@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.reactor;
@@ -30,15 +28,16 @@ import java.util.Collection;
  * API for acknowledging instructions to SolarNet.
  * 
  * @author matt
- * @version $Revision$
+ * @version 2.0
  */
 public interface InstructionAcknowledgementService {
-	
+
 	/**
-	 * Acknowledge a collection of instructions.
+	 * Acknowledge a collection of instruction status.
 	 * 
-	 * @param instructions the instructions to acknowledge
+	 * @param statuses
+	 *        the statuses to acknowledge
 	 */
-	void acknowledgeInstructions(Collection<Instruction> instructions);
-	
+	void acknowledgeInstructions(Collection<InstructionStatus> statuses);
+
 }

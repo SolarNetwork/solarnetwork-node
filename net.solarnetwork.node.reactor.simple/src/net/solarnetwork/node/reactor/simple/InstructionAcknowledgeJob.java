@@ -24,6 +24,7 @@ package net.solarnetwork.node.reactor.simple;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.PersistJobDataAfterExecution;
@@ -31,6 +32,7 @@ import net.solarnetwork.node.job.AbstractJob;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionAcknowledgementService;
 import net.solarnetwork.node.reactor.InstructionDao;
+import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.setup.SetupException;
 
 /**
@@ -51,7 +53,9 @@ public class InstructionAcknowledgeJob extends AbstractJob {
 		try {
 			List<Instruction> instructions = instructionDao.findInstructionsForAcknowledgement();
 			if ( instructions.size() > 0 ) {
-				instructionAcknowledgementService.acknowledgeInstructions(instructions);
+				List<InstructionStatus> statuses = instructions.stream().map(Instruction::getStatus)
+						.collect(Collectors.toList());
+				instructionAcknowledgementService.acknowledgeInstructions(statuses);
 				for ( Instruction instruction : instructions ) {
 					instructionDao.storeInstructionStatus(instruction.getId(),
 							instruction.getInstructorId(),

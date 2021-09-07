@@ -40,8 +40,7 @@ public interface ReactorService {
 	InstructionStatus processInstruction(Instruction instruction);
 
 	/**
-	 * Store an Instruction instance in local storage and return its primary
-	 * key.
+	 * Store an Instruction instance in local storage.
 	 * 
 	 * @param instruction
 	 *        the instruction to store

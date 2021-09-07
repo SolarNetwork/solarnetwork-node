@@ -24,6 +24,7 @@ package net.solarnetwork.node.reactor;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -40,6 +41,31 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 	private static final long serialVersionUID = 3391977559465548659L;
 
 	private final String instructorId;
+
+	/**
+	 * Create a new {@code BasicInstruction} from a common instruction.
+	 * 
+	 * @param instr
+	 *        the common instruction
+	 * @param instructorId
+	 *        the instructor ID
+	 * @return the new instruction, or {@literal null} if {@code instr} is
+	 *         {@literal null}
+	 */
+	public static BasicInstruction from(net.solarnetwork.domain.Instruction instr, String instructorId) {
+		if ( instr == null ) {
+			return null;
+		}
+		BasicInstruction result = new BasicInstruction(instr.getId(), instr.getTopic(),
+				instr.getInstructionDate(), instructorId, null);
+		for ( String paramName : instr.getParameterNames() ) {
+			String[] paramValues = instr.getAllParameterValues(paramName);
+			if ( paramValues != null ) {
+				result.putParameters(paramName, Arrays.asList(paramValues));
+			}
+		}
+		return result;
+	}
 
 	/**
 	 * Constructor.
