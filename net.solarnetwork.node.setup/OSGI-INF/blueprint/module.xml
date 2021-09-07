@@ -39,7 +39,7 @@
 		<property name="sticky" value="true"/>
 	</bean>
 	
-	<reference id="certificateService" interface="net.solarnetwork.support.CertificateService"/>
+	<reference id="certificateService" interface="net.solarnetwork.service.CertificateService"/>
 	
 	<bean id="backupManager" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>

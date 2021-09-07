@@ -46,6 +46,7 @@ import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.codec.JavaBeanXmlSerializer;
 import net.solarnetwork.codec.JsonUtils;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NetworkAssociation;
 import net.solarnetwork.domain.NetworkAssociationDetails;
 import net.solarnetwork.domain.NetworkCertificate;
@@ -55,7 +56,8 @@ import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.NodeAppConfiguration;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.service.PKIService;
 import net.solarnetwork.node.service.support.XmlServiceSupport;
@@ -491,7 +493,7 @@ public class DefaultSetupService extends XmlServiceSupport
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		if ( !INSTRUCTION_TOPIC_RENEW_CERTIFICATE.equalsIgnoreCase(instruction.getTopic()) ) {
 			return null;
 		}
@@ -502,7 +504,7 @@ public class DefaultSetupService extends XmlServiceSupport
 		String[] certParts = instruction.getAllParameterValues(INSTRUCTION_PARAM_CERTIFICATE);
 		if ( certParts == null ) {
 			log.warn("Certificate not provided with renew instruction");
-			return InstructionState.Declined;
+			return InstructionUtils.createStatus(instruction, InstructionState.Declined);
 		}
 		String cert = org.springframework.util.StringUtils.arrayToDelimitedString(certParts, "");
 		log.debug("Got certificate renewal instruction with certificate data: {}", cert);
@@ -513,7 +515,7 @@ public class DefaultSetupService extends XmlServiceSupport
 				log.info("Installed node certificate {}, valid to {}", nodeCert.getSerialNumber(),
 						nodeCert.getNotAfter());
 			}
-			return InstructionState.Completed;
+			return InstructionUtils.createStatus(instruction, InstructionState.Completed);
 		} catch ( CertificateException e ) {
 			log.error("Failed to install renewed certificate", e);
 		}
