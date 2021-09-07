@@ -27,22 +27,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Scanner;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
-import net.solarnetwork.node.SystemService;
-import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.SystemService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -50,10 +49,10 @@ import net.solarnetwork.util.StringUtils;
  * functions.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class CmdlineSystemService
-		implements SystemService, SettingSpecifierProvider, FeedbackInstructionHandler {
+		implements SystemService, SettingSpecifierProvider, InstructionHandler {
 
 	/** The default value for the {@code exitCommand} property. */
 	public static final String DEFAULT_EXIT_COMMAND = "sudo systemctl restart solarnode";
@@ -72,12 +71,34 @@ public class CmdlineSystemService
 	private String resetCommand = DEFAULT_RESET_COMMAND;
 	private String resetAppCommand = DEFAULT_RESET_APP_COMMAND;
 
-	private BundleContext bundleContext;
+	private final BundleContext bundleContext;
 	private MessageSource messageSource;
 
 	private Thread shutdownThread;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	/**
+	 * Constructor.
+	 * 
+	 * <p>
+	 * No {@link BundleContext} will be available.
+	 * </p>
+	 */
+	public CmdlineSystemService() {
+		this(null);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param bundleContext
+	 *        the bundle context
+	 */
+	public CmdlineSystemService(BundleContext bundleContext) {
+		super();
+		this.bundleContext = bundleContext;
+	}
 
 	@Override
 	public synchronized void exit(final boolean syncState) {
@@ -266,15 +287,8 @@ public class CmdlineSystemService
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
-		InstructionStatus status = processInstructionWithFeedback(instruction);
-		return (status != null ? status.getInstructionState() : null);
-	}
-
-	@Override
-	public InstructionStatus processInstructionWithFeedback(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		final String topic = (instruction != null ? instruction.getTopic() : null);
-		final InstructionStatus status = (instruction != null ? instruction.getStatus() : null);
 		if ( TOPIC_REBOOT.equals(topic) ) {
 			reboot();
 		} else if ( TOPIC_RESTART.equals(topic) ) {
@@ -284,10 +298,7 @@ public class CmdlineSystemService
 					: null);
 			reset(StringUtils.parseBoolean(appOnly));
 		}
-
-		return status != null ? status.newCopyWithState(InstructionState.Completed)
-				: new BasicInstructionStatus(instruction.getId(), InstructionState.Completed,
-						new Date());
+		return InstructionUtils.createStatus(instruction, InstructionState.Completed);
 	}
 
 	// Settings
@@ -306,10 +317,8 @@ public class CmdlineSystemService
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(2);
 
-		CmdlineSystemService defaults = new CmdlineSystemService();
-
-		results.add(new BasicTextFieldSettingSpecifier("exitCommand", defaults.exitCommand));
-		results.add(new BasicTextFieldSettingSpecifier("rebootCommand", defaults.rebootCommand));
+		results.add(new BasicTextFieldSettingSpecifier("exitCommand", DEFAULT_EXIT_COMMAND));
+		results.add(new BasicTextFieldSettingSpecifier("rebootCommand", DEFAULT_REBOOT_COMMAND));
 
 		return results;
 	}
@@ -327,16 +336,6 @@ public class CmdlineSystemService
 	 */
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
-	}
-
-	/**
-	 * Set a bundle context to use.
-	 * 
-	 * @param bundleContext
-	 *        The bundle context.
-	 */
-	public void setBundleContext(BundleContext bundleContext) {
-		this.bundleContext = bundleContext;
 	}
 
 	/**

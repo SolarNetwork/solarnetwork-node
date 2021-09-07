@@ -31,7 +31,7 @@
 		</service-properties>
 		<bean class="net.solarnetwork.node.system.cmdline.CmdlineSystemService">
 			<osgix:managed-properties persistent-id="net.solarnetwork.node.system.cmdline.CmdlineSystemService" autowire-on-update="true"/>
-			<property name="bundleContext" ref="bundleContext"/>
+			<argument ref="bundleContext"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
