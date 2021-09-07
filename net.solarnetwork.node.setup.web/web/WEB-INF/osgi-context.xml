@@ -47,35 +47,48 @@
 	<osgi:reference id="userDetailsService" interface="org.springframework.security.core.userdetails.UserDetailsService"
 		filter="(app=node)"/>
 	
-	<osgi:reference id="sslServiceRef" availability="optional"
-		interface="net.solarnetwork.support.SSLService">
-		<osgi:reference-listener ref="sslService" bind-method="onBind" unbind-method="onUnbind"/>
-	</osgi:reference>
+	<bean id="settingsService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">		
+		<constructor-arg ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.settings.SettingsService"/>
+		<property name="sticky" value="true"/>
+	</bean>
 	
-	<osgi:reference id="settingsServiceRef" availability="optional"
-		interface="net.solarnetwork.node.settings.SettingsService">
-		<osgi:listener ref="settingsService" bind-method="onBind" unbind-method="onUnbind"/>
-	</osgi:reference>
+	<bean id="sslService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">		
+		<constructor-arg ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.service.SSLService"/>
+		<property name="sticky" value="true"/>
+	</bean>
 	
-	<osgi:reference id="backupManagerRef" availability="optional"
-		interface="net.solarnetwork.node.backup.BackupManager">
-		<osgi:listener ref="backupManager" bind-method="onBind" unbind-method="onUnbind"/>
-	</osgi:reference>
-
+	<bean id="backupManager" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">		
+		<constructor-arg ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.backup.BackupManager"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
+	<bean id="pluginService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">		
+		<constructor-arg ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.setup.PluginService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
+	<bean id="systemService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">		
+		<constructor-arg ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.SystemService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
+	<bean id="instructionExecutionService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">		
+		<constructor-arg ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionExecutionService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
 	<osgi:list id="nodeControlProviderList" availability="optional"
-		interface="net.solarnetwork.node.NodeControlProvider"/>
+		interface="net.solarnetwork.node.service.NodeControlProvider"/>
 
 	<osgi:list id="instructionHandlerList" availability="optional"
 		interface="net.solarnetwork.node.reactor.InstructionHandler"/>
 
-	<osgi:reference id="pluginServiceRef" interface="net.solarnetwork.node.setup.PluginService" availability="optional">
-		<osgi:listener ref="pluginService" bind-method="onBind" unbind-method="onUnbind"/>
-	</osgi:reference>
-	
-	<osgi:reference id="systemServiceRef" interface="net.solarnetwork.node.SystemService" availability="optional">
-		<osgi:listener ref="systemService" bind-method="onBind" unbind-method="onUnbind"/>
-	</osgi:reference>
-	
 	<osgi:reference id="setupResourceService" availability="optional"
 		interface="net.solarnetwork.node.setup.SetupResourceService"/>
 	
@@ -91,16 +104,18 @@
 		<bean class="net.solarnetwork.util.SimpMessageSendingOperationsFactoryBean" autowire="byType"/>
 	</osgi:service>
 	
-	<bean id="csrfIgnoreRequestMatchers" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
+	<bean id="csrfIgnoreRequestMatchers" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">		
+		<constructor-arg ref="bundleContext"/>
 		<property name="serviceClassName" value="org.springframework.security.web.util.matcher.RequestMatcher"/>
 		<property name="serviceFilter" value="(mode=csrf-ignore)"/>
+		<property name="sticky" value="true"/>
 	</bean>
 	
-	<bean id="associationSettingProviders" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
+	<bean id="associationSettingProviders" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<constructor-arg ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.settings.SettingSpecifierProvider"/>
 		<property name="serviceFilter" value="(on-association=true)"/>
+		<property name="sticky" value="true"/>
 	</bean>
 
 </beans>

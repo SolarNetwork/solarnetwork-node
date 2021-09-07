@@ -32,14 +32,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.socket.messaging.SessionSubscribeEvent;
-import net.solarnetwork.node.PlatformService;
+import net.solarnetwork.node.service.PlatformService;
 import net.solarnetwork.web.domain.Response;
 
 /**
  * Web controller for platform service support.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 @RestController
 public class PlatformController extends BaseSetupWebServiceController

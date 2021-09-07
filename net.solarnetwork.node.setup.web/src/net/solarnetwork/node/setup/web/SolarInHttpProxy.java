@@ -38,10 +38,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.support.HttpClientSupport;
-import net.solarnetwork.support.SSLService;
-import net.solarnetwork.util.OptionalServiceTracker;
+import net.solarnetwork.node.service.IdentityService;
+import net.solarnetwork.node.service.support.HttpClientSupport;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.SSLService;
 
 /**
  * Proxy HTTP requests to SolarIn.
@@ -53,7 +53,7 @@ import net.solarnetwork.util.OptionalServiceTracker;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 @Controller
 public class SolarInHttpProxy extends HttpClientSupport {
@@ -66,7 +66,7 @@ public class SolarInHttpProxy extends HttpClientSupport {
 
 	@Autowired
 	public SolarInHttpProxy(@Qualifier("identityService") IdentityService identityService,
-			@Qualifier("sslService") OptionalServiceTracker<SSLService> sslService) {
+			@Qualifier("sslService") OptionalService<SSLService> sslService) {
 		super();
 		setIdentityService(identityService);
 		setSslService(sslService);

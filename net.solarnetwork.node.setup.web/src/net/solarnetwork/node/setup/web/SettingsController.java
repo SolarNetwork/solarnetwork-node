@@ -54,15 +54,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
-import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
 import net.solarnetwork.node.backup.BackupServiceSupport;
-import net.solarnetwork.node.settings.FactorySettingSpecifierProvider;
+import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.settings.SettingResourceHandler;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
 import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
@@ -71,8 +68,11 @@ import net.solarnetwork.node.settings.support.SettingSpecifierProviderFactoryMes
 import net.solarnetwork.node.settings.support.SettingSpecifierProviderMessageComparator;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
-import net.solarnetwork.support.SearchFilter;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.FactorySettingSpecifierProvider;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingSpecifierProviderFactory;
+import net.solarnetwork.util.SearchFilter;
 import net.solarnetwork.web.domain.Response;
 import net.solarnetwork.web.support.MultipartFileResource;
 
@@ -80,7 +80,7 @@ import net.solarnetwork.web.support.MultipartFileResource;
  * Web controller for the settings UI.
  * 
  * @author matt
- * @version 1.10
+ * @version 2.0
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")

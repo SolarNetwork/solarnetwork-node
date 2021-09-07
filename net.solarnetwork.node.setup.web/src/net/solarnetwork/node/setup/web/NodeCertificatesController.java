@@ -40,14 +40,14 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
-import net.solarnetwork.node.setup.PKIService;
+import net.solarnetwork.node.service.PKIService;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 
 /**
  * Controller for node certificate management.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 @ServiceAwareController
 @RequestMapping("/a/certs")

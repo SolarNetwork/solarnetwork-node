@@ -25,7 +25,6 @@ package net.solarnetwork.node.setup.web;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
@@ -36,18 +35,22 @@ import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
-import net.solarnetwork.node.NodeControlProvider;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.support.BasicInstruction;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.NodeControlProvider;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
+import net.solarnetwork.service.OptionalService;
 
 /**
  * Controller to act as a local Instructor to the local node.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 @ServiceAwareController
 @RequestMapping("/a/controls")
@@ -62,8 +65,8 @@ public class InstructorController {
 	@Resource(name = "nodeControlProviderList")
 	private Collection<NodeControlProvider> providers = Collections.emptyList();
 
-	@Resource(name = "instructionHandlerList")
-	private Collection<InstructionHandler> handlers = Collections.emptyList();
+	@Resource(name = "instructionExecutionService")
+	private OptionalService<InstructionExecutionService> instructionService;
 
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String settingsList(ModelMap model) {
@@ -107,18 +110,17 @@ public class InstructorController {
 	@RequestMapping(value = "/setControlParameter", method = RequestMethod.POST)
 	public String setControlParameter(SetControlParameterInstruction instruction, ModelMap model,
 			HttpServletRequest request) {
-		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER,
-				new Date(), "LOCAL", "LOCAL", null);
-		instr.addParameter(instruction.getControlId(), instruction.getParameterValue());
-		InstructionStatus.InstructionState result = null;
+
+		Instruction instr = InstructionUtils.createLocalInstruction(
+				InstructionHandler.TOPIC_SET_CONTROL_PARAMETER, instruction.getControlId(),
+				instruction.getParameterValue());
+		InstructionExecutionService service = OptionalService.service(instructionService);
+		InstructionStatus result = null;
 		try {
-			for ( InstructionHandler handler : handlers ) {
-				if ( handler.handlesTopic(instr.getTopic()) ) {
-					result = handler.processInstruction(instr);
-				}
-				if ( result != null ) {
-					break;
-				}
+			if ( service == null ) {
+				result = InstructionUtils.createStatus(instr, InstructionState.Declined);
+			} else {
+				result = service.executeInstruction(instr);
 			}
 		} catch ( RuntimeException e ) {
 			log.error("Exception setting control parameter {} to {}", instruction.getControlId(),
@@ -126,9 +128,11 @@ public class InstructorController {
 		}
 		if ( result == null ) {
 			// nobody handled it!
-			result = InstructionStatus.InstructionState.Declined;
+			result = InstructionUtils.createStatus(instr, InstructionState.Declined);
 		}
-		String keyPrefix = (result == InstructionStatus.InstructionState.Completed ? "status" : "error");
+		String keyPrefix = (result.getInstructionState() == InstructionStatus.InstructionState.Completed
+				? "status"
+				: "error");
 		HttpSession session = request.getSession();
 		session.setAttribute(keyPrefix + "MessageKey", "controls.manage.SetControlParameter.result");
 		session.setAttribute(keyPrefix + "MessageParam0", result);
@@ -139,8 +143,8 @@ public class InstructorController {
 		this.providers = providers;
 	}
 
-	public void setHandlers(Collection<InstructionHandler> handlers) {
-		this.handlers = handlers;
+	public void setInstructionService(OptionalService<InstructionExecutionService> instructionService) {
+		this.instructionService = instructionService;
 	}
 
 }

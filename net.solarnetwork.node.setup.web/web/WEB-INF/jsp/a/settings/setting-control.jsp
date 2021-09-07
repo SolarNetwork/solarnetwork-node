@@ -12,7 +12,7 @@
 --%>
 <c:set var="settingValue" scope="page">
 	<setup:settingValue service='${settingsService}' provider='${provider}' setting='${setting}' 
-		escapeXml="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.MarkupSetting') 
+		escapeXml="${setup:instanceOf(setting, 'net.solarnetwork.settings.MarkupSetting') 
 			? !setting.markup : true}"/>
 </c:set>
 <c:choose>
@@ -29,14 +29,14 @@
 			data-group-index="${groupIndex}"
 			/>
 	</c:when>
-	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.KeyedSettingSpecifier')}">
+	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.KeyedSettingSpecifier')}">
 		<div class="control-group" id="cg-${settingId}">
 			<label class="control-label" for="${settingId}">
 				<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}" index="${groupIndex}"/>
 			</label>
-			<div class="controls ${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TitleSettingSpecifier') ? 'static' : ''}">
+			<div class="controls ${setup:instanceOf(setting, 'net.solarnetwork.settings.TitleSettingSpecifier') ? 'static' : ''}">
 				<c:choose>
-					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.SliderSettingSpecifier')}">
+					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.SliderSettingSpecifier')}">
 						<div id="${settingId}" class="setting slider span5"></div>
 						<script>
 						$(function() {
@@ -54,7 +54,7 @@
 						});
 						</script>
 					</c:when>
-					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.ToggleSettingSpecifier')}">
+					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.ToggleSettingSpecifier')}">
 					    <button type="button" class="toggle btn<c:if test='${settingValue eq  setting.trueValue}'> btn-success active</c:if>" 
 					    	id="${settingId}">
 					    	<c:choose>
@@ -83,7 +83,7 @@
 						});
 						</script>
 					</c:when>
-					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.RadioGroupSettingSpecifier')}">
+					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.RadioGroupSettingSpecifier')}">
 						<c:forEach items="${setting.valueTitles}" var="entry">
 							<label class="radio inline">
 								<input type="radio" name="${settingId}" id="${settingId}" value="${entry.key}"
@@ -116,7 +116,7 @@
 						});
 						</script>
 					</c:when>
-					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.MultiValueSettingSpecifier')}">
+					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.MultiValueSettingSpecifier')}">
 						<select name="${settingId}" id="${settingId}">
 							<c:forEach items="${setting.valueTitles}" var="entry">
 								<option value="${entry.key}"
@@ -138,7 +138,7 @@
 						});
 						</script>
 					</c:when>
-					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TextAreaSettingSpecifier')}">
+					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.TextAreaSettingSpecifier')}">
 						<textarea  name="${settingId}" id="${settingId}" class="span5">${settingValue}</textarea>
 						<button type="button" class="btn setting-resource-upload"
 							data-action="<setup:url value='/a/settings/importResource'/>"
@@ -151,7 +151,7 @@
 							<fmt:message key="settings.resource.upload.action"/>
 						</button>
 					</c:when>
-					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TextFieldSettingSpecifier')}">
+					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier')}">
 						<input type="${setting.secureTextEntry == true ? 'password' : 'text' }" name="${settingId}" id="${settingId}" 
 							class="span5" maxLength="255"
 							<c:choose>
@@ -175,7 +175,7 @@
 						});
 						</script>
 					</c:when>
-					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.TitleSettingSpecifier')}">
+					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.TitleSettingSpecifier')}">
 						<c:choose>
 							<c:when test="${setting.markup}">
 								<div class="title">${settingValue}</div>
@@ -258,8 +258,8 @@
 				
 				<span class="help-inline active-value clean"><span class="text-info">
 					<c:choose>
-						<c:when test="${(setup:instanceOf(setting, 'net.solarnetwork.node.settings.TextFieldSettingSpecifier') and setting.secureTextEntry == true)
-									|| setup:instanceOf(setting, 'net.solarnetwork.node.settings.TextAreaSettingSpecifier')
+						<c:when test="${(setup:instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier') and setting.secureTextEntry == true)
+									|| setup:instanceOf(setting, 'net.solarnetwork.settings.TextAreaSettingSpecifier')
 									|| setup:instanceOf(setting, 'net.solarnetwork.node.settings.FileSettingSpecifier')}">
 							<fmt:message key="settings.changed.value.label"/>
 						</c:when>
@@ -267,7 +267,7 @@
 							<fmt:message key="settings.current.value.label"/>:
 							<code class="value">
 								<c:choose>
-									<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.ToggleSettingSpecifier')}">
+									<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.ToggleSettingSpecifier')}">
 								    	<c:choose>
 								    		<c:when test="${settingValue eq  setting.trueValue}">
 								    			<fmt:message key="settings.toggle.on"/>
@@ -288,7 +288,7 @@
 			</div>
 		</div>
 	</c:when>
-	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.GroupSettingSpecifier') and not empty setting.key}">
+	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.GroupSettingSpecifier') and not empty setting.key}">
 		<div class="control-group grouped">
 			<label class="control-label">
 				<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}"/>
@@ -348,7 +348,7 @@
 			</c:if>
 		</fieldset>
 	</c:when>
-	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.GroupSettingSpecifier')}">
+	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.GroupSettingSpecifier')}">
 		<c:if test="${not empty setting.groupSettings}">
 			<fieldset>
 				<c:set var="origSetting" value="${setting}"/>

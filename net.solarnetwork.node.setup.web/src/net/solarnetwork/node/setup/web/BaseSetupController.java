@@ -28,7 +28,7 @@ import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import net.solarnetwork.node.IdentityService;
+import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.setup.SetupService;
 
 /**
@@ -49,7 +49,7 @@ import net.solarnetwork.node.setup.SetupService;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class BaseSetupController {
 
