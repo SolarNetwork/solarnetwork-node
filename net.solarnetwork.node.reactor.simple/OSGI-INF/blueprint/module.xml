@@ -68,8 +68,8 @@
 	<!-- Use Java @Transactional annotations to declare transactions. -->
 	<tx:annotation-driven transaction-manager="txManager"/>
 	
-	<bean id="instructionExecutionService" class="net.solarnetwork.node.reactor.simple.SimpleInstructionExecutionService">
-		<property name="handlers" ref="instructionHandlers"/>
+	<bean id="instructionExecutionService" class="net.solarnetwork.node.reactor.SimpleInstructionExecutionService">
+		<argument ref="instructionHandlers"/>
 		<property name="executionReceivedHourLimit" value="${job.instructionExecution.executionReceivedHourLimit}"/>
 	</bean>
 	

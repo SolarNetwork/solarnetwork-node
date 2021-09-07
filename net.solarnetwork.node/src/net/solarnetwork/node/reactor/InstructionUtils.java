@@ -24,6 +24,7 @@ package net.solarnetwork.node.reactor;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Map.Entry;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 
 /**
@@ -90,7 +91,30 @@ public final class InstructionUtils {
 	}
 
 	/**
-	 * Create a new local instruction for
+	 * Create a new local instruction with an optional parameter.
+	 * 
+	 * @param topic
+	 *        the instruction topic
+	 * @param paramName
+	 *        an optional parameter name
+	 * @param paramValue
+	 *        if {@code paramName} provided then the corresponding parameter
+	 *        value
+	 * @return the new instruction, never {@literal null}
+	 */
+	public static Instruction createLocalInstruction(String topic, Map<String, String> params) {
+		BasicInstruction instr = new BasicInstruction(null, topic, Instant.now(),
+				Instruction.LOCAL_INSTRUCTION_ID, null);
+		if ( params != null ) {
+			for ( Entry<String, String> me : params.entrySet() ) {
+				instr.addParameter(me.getKey(), me.getValue());
+			}
+		}
+		return instr;
+	}
+
+	/**
+	 * Create a new local instruction with an optional parameter.
 	 * 
 	 * @param topic
 	 *        the instruction topic

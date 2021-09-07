@@ -20,19 +20,12 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.reactor.simple;
+package net.solarnetwork.node.reactor;
 
-import java.time.Instant;
-import java.util.Collections;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
-import net.solarnetwork.node.reactor.BasicInstructionStatus;
-import net.solarnetwork.node.reactor.Instruction;
-import net.solarnetwork.node.reactor.InstructionExecutionService;
-import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus;
 
 /**
  * Default implementation of {@link InstructionExecutionService}.
@@ -46,10 +39,26 @@ public class SimpleInstructionExecutionService implements InstructionExecutionSe
 	/** Default value for the {@code executionReceivedHourLimit} property. */
 	public static final int DEFAULT_EXECUTION_RECEIVED_HOUR_LIMIT = 24;
 
-	private List<InstructionHandler> handlers = Collections.emptyList();
+	private final List<InstructionHandler> handlers;
 	private int executionReceivedHourLimit = DEFAULT_EXECUTION_RECEIVED_HOUR_LIMIT;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param handlers
+	 *        the handlers
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
+	public SimpleInstructionExecutionService(List<InstructionHandler> handlers) {
+		super();
+		if ( handlers == null ) {
+			throw new IllegalArgumentException("The handlers argument must not be null.");
+		}
+		this.handlers = handlers;
+	}
 
 	@Override
 	public synchronized InstructionStatus executeInstruction(Instruction instruction) {
@@ -87,26 +96,12 @@ public class SimpleInstructionExecutionService implements InstructionExecutionSe
 			if ( diffMs > timeLimitMs ) {
 				log.info("Instruction {} [{}] not handled within {} hours; declining",
 						instruction.getId(), topic, executionReceivedHourLimit);
-				return (startingStatus != null
-						? startingStatus.newCopyWithState(InstructionState.Declined)
-						: new BasicInstructionStatus(instruction.getId(), InstructionState.Declined,
-								Instant.now()));
+				return InstructionUtils.createStatus(instruction, InstructionState.Declined);
 			}
 		}
 
 		// not handled
 		return null;
-	}
-
-	/**
-	 * Set a list of {@link InstructionHandler} instances to process
-	 * instructions with.
-	 * 
-	 * @param handlers
-	 *        the handlers
-	 */
-	public void setHandlers(List<InstructionHandler> handlers) {
-		this.handlers = (handlers != null ? handlers : Collections.emptyList());
 	}
 
 	/**
