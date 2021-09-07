@@ -60,17 +60,22 @@
 		<property name="basenames" value="net.solarnetwork.node.setup.obr.SimpleOBRRepository"/>
 	</bean>
 	
-	<bean id="repoSettingsFactory" 
-		class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
-		<property name="displayName" value="OBR Plugin Repository"/>
-		<property name="factoryUID" value="net.solarnetwork.node.setup.obr.repo"/>
-		<property name="messageSource" ref="repoMessageSource"/>
-	</bean>
-	
 	<!-- Published Services -->
 	
-	<service ref="repoSettingsFactory" 
-		interface="net.solarnetwork.settings.SettingSpecifierProviderFactory"/>
+	<service ref="repoService">
+		<interfaces>
+			<value>net.solarnetwork.node.setup.PluginService</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
+		</interfaces>
+	</service>
+
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="OBR Plugin Repository"/>
+			<property name="factoryUID" value="net.solarnetwork.node.setup.obr.repo"/>
+			<property name="messageSource" ref="repoMessageSource"/>
+		</bean>
+	</service>
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.setup.obr.repo" autowire-on-update="true">
 		<osgix:interfaces>
@@ -85,11 +90,4 @@
 		</bean>
 	</osgix:managed-service-factory>
 	
-	<service ref="repoService">
-		<interfaces>
-			<value>net.solarnetwork.node.setup.PluginService</value>
-			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
-		</interfaces>
-	</service>
-
 </blueprint>
