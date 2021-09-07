@@ -156,7 +156,8 @@ public class FluxUploadServiceTests {
 		assertThat("MQTT message topic", publishedMsg.getTopic(),
 				equalTo(format("node/%d/datum/0/%s", nodeId, sourceId)));
 		assertThat("MQTT message QOS", publishedMsg.getQosLevel(), equalTo(MqttQos.AtMostOnce));
-		assertThat("MQTT message retained", publishedMsg.isRetained(), equalTo(true));
+		assertThat("MQTT message retained", publishedMsg.isRetained(),
+				equalTo(service.isPublishRetained()));
 	}
 
 	private void assertMessagePayloadJson(MqttMessage publishedMsg, Map<String, ?> datum) {
@@ -349,6 +350,29 @@ public class FluxUploadServiceTests {
 	@Test
 	public void postDatum() throws Exception {
 		// GIVEN
+		expectMqttConnectionSetup();
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		GeneralNodeDatum datum = new GeneralNodeDatum();
+		datum.setSourceId(TEST_SOURCE_ID);
+		datum.putInstantaneousSampleValue("watts", 1234);
+		service.accept(datum);
+
+		// THEN
+		MqttMessage publishedMsg = msgCaptor.getValue();
+		assertMessage(publishedMsg, TEST_SOURCE_ID, datumMap(datum));
+	}
+
+	@Test
+	public void postDatum_notRetained() throws Exception {
+		// GIVEN
+		service.setPublishRetained(false);
 		expectMqttConnectionSetup();
 
 		Capture<MqttMessage> msgCaptor = new Capture<>();

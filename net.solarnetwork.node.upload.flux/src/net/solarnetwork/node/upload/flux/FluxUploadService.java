@@ -95,7 +95,7 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 1.13
+ * @version 1.14
  */
 public class FluxUploadService extends BaseMqttConnectionService
 		implements EventHandler, Consumer<GeneralDatum>, SettingSpecifierProvider,
@@ -142,6 +142,13 @@ public class FluxUploadService extends BaseMqttConnectionService
 	 */
 	public static final int DEFAULT_CACHED_MESSAGE_PUBLISH_MAXIMUM = 200;
 
+	/**
+	 * The default value for the {@code publishRetained} property.
+	 * 
+	 * @since 1.14
+	 */
+	public static final boolean DEFAULT_PUBLISH_RETAINED = true;
+
 	private final ConcurrentMap<String, Long> SOURCE_CAPTURE_TIMES = new ConcurrentHashMap<>(16, 0.9f,
 			2);
 
@@ -158,6 +165,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 	private OptionalServiceCollection<GeneralDatumSamplesTransformService> transformServices;
 	private OptionalService<MqttMessageDao> mqttMessageDao;
 	private int cachedMessagePublishMaximum = DEFAULT_CACHED_MESSAGE_PUBLISH_MAXIMUM;
+	private boolean publishRetained = DEFAULT_PUBLISH_RETAINED;
 
 	/**
 	 * Constructor.
@@ -455,6 +463,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 			return;
 		}
 		final MqttMessageDao dao = OptionalService.service(mqttMessageDao);
+		final boolean retained = isPublishRetained();
 		MqttMessage msgToPersist = null;
 		MqttConnection conn = connection();
 		if ( dao != null || (conn != null && conn.isEstablished()) ) {
@@ -473,7 +482,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 					payload = objectMapper.writeValueAsBytes(jsonData);
 					log.trace("Publishing to MQTT topic {} JSON:\n{}", topic, jsonData);
 				}
-				msg = new BasicMqttMessage(topic, true, getPublishQos(), payload);
+				msg = new BasicMqttMessage(topic, retained, getPublishQos(), payload);
 				if ( conn != null && conn.isEstablished() ) {
 					if ( log.isTraceEnabled() ) {
 						log.trace("Publishing to MQTT topic {}\n{}", topic,
@@ -630,6 +639,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 		versionSpec.setValueTitles(versionTitles);
 		results.add(versionSpec);
 
+		results.add(new BasicToggleSettingSpecifier("publishRetained", DEFAULT_PUBLISH_RETAINED));
 		results.add(new BasicToggleSettingSpecifier("wireLogging", false));
 
 		// filter list
@@ -980,6 +990,26 @@ public class FluxUploadService extends BaseMqttConnectionService
 	 */
 	public void setCachedMessagePublishMaximum(int cachedMessagePublishMaximum) {
 		this.cachedMessagePublishMaximum = cachedMessagePublishMaximum;
+	}
+
+	/**
+	 * Get the "publish retained" message flag setting.
+	 * 
+	 * @return {@literal true} to publish messages with the MQTT retained flag;
+	 *         defaults to {@code #DEFAULT_PUBLISH_RETAINED}
+	 */
+	public boolean isPublishRetained() {
+		return publishRetained;
+	}
+
+	/**
+	 * Set the "publish retained" message flag setting.
+	 * 
+	 * @param publishRetained
+	 *        {@literal true} to publish messages with the MQTT retained flag
+	 */
+	public void setPublishRetained(boolean publishRetained) {
+		this.publishRetained = publishRetained;
 	}
 
 }

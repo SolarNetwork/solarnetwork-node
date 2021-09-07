@@ -96,6 +96,12 @@ public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PV
 			setOperatingState(data.getOperatingState());
 			setDeviceOperatingState(data.getOperatingState().asDeviceOperatingState());
 		}
+
+		putInstantaneousSampleValue("temp", data.getCabinetTemperature());
+		putInstantaneousSampleValue("temp_heatSink", data.getHeatSinkTemperature());
+		putInstantaneousSampleValue("temp_transformer", data.getTransformerTemperature());
+		putInstantaneousSampleValue("temp_other", data.getOtherTemperature());
+
 		setEvents(data.getEvents());
 	}
 

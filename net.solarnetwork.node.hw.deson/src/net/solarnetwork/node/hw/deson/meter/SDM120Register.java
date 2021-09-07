@@ -35,7 +35,7 @@ import net.solarnetwork.util.IntRangeSet;
  * Enumeration of Modbus register mappings for the SDM 120 series meter.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public enum SDM120Register implements ModbusReference {
@@ -75,8 +75,8 @@ public enum SDM120Register implements ModbusReference {
 	/** Total reactive energy received (exported), in kVARh. */
 	MeterReactiveEnergyReceived(78);
 
-	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createAddressSet(
-			SDM630Register.class, new HashSet<>(asList("Meter"))).immutableCopy();
+	private static final IntRangeSet METER_REGISTER_ADDRESS_SET = createAddressSet(SDM120Register.class,
+			new HashSet<>(asList("Meter"))).immutableCopy();
 
 	private final int address;
 	private final ModbusDataType dataType;
