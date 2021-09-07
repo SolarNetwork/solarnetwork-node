@@ -16,8 +16,8 @@
 		
 	<service ref="sshService">
 		<interfaces>
-			<value>net.solarnetwork.node.reactor.FeedbackInstructionHandler</value>
-			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 		</interfaces>
 	</service>
 	
@@ -30,9 +30,10 @@
 		<property name="messageSource" ref="messageSource"/>
 		<property name="taskScheduler" ref="taskScheduler"/>
 		<property name="nodeMetadataService">
-			<bean class="net.solarnetwork.util.DynamicServiceTracker">
-				<property name="bundleContext" ref="bundleContext"/>
-				<property name="serviceClassName" value="net.solarnetwork.node.NodeMetadataService"/>
+			<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+				<argument ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.service.NodeMetadataService"/>
+				<property name="sticky" value="true"/>
 			</bean>
 		</property>
 	</bean>
