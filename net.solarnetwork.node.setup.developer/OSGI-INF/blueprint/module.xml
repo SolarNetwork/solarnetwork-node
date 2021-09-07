@@ -26,11 +26,7 @@
 	
 	<!-- Published Services -->
 	
-	<service ref="identityService">
-		<interfaces>
-			<value>net.solarnetwork.node.IdentityService</value>
-		</interfaces>
-	</service>
+	<service ref="identityService" interface="net.solarnetwork.node.service.IdentityService"/>
 
 	<ctx:property-placeholder properties-ref="setup.cfg"/>
 	
