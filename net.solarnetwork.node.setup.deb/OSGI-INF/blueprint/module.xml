@@ -8,8 +8,8 @@
 
 	<!-- Service references -->
 
-	<bean id="taskExecutor" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
+	<bean id="taskExecutor" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="org.springframework.core.task.AsyncTaskExecutor"/>
 		<property name="serviceFilter" value="(function=node)"/>
 	</bean>	
