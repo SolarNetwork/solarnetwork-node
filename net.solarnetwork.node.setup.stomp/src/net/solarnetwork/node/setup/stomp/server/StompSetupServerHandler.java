@@ -30,10 +30,11 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
@@ -65,13 +66,11 @@ import io.netty.handler.codec.stomp.StompHeaders;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.GenericFutureListener;
-import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.reactor.support.BasicInstruction;
-import net.solarnetwork.node.reactor.support.InstructionUtils;
+import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.setup.UserAuthenticationInfo;
 import net.solarnetwork.node.setup.stomp.SetupHeader;
 import net.solarnetwork.node.setup.stomp.SetupStatus;
@@ -127,7 +126,7 @@ import net.solarnetwork.security.SnsAuthorizationInfo;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 
@@ -454,8 +453,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 
 	private void executeInstruction(final ChannelHandlerContext ctx, final StompFrame frame,
 			final SetupSession session, final String topic) {
-		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_SYSTEM_CONFIGURE,
-				new Date(), Instruction.LOCAL_INSTRUCTION_ID, Instruction.LOCAL_INSTRUCTION_ID, null);
+		Map<String, String> instrParams = new LinkedHashMap<>();
 		StompHeaders headers = frame.headers();
 		MultiValueMap<String, String> reqHeaders = new LinkedMultiValueMap<>(headers.size());
 		for ( Iterator<Entry<String, String>> itr = headers.iteratorAsString(); itr.hasNext(); ) {
@@ -465,17 +463,19 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 			reqHeaders.add(key, value);
 			if ( StompHeader.ContentType.getValue().equals(key)
 					|| !(STOMP_HEADER_NAMES.contains(key) || SETUP_HEADER_NAMES.contains(key)) ) {
-				instr.addParameter(key, value);
+				instrParams.put(key, value);
 			}
 		}
-		instr.addParameter(InstructionHandler.PARAM_SERVICE, topic);
+		instrParams.put(InstructionHandler.PARAM_SERVICE, topic);
 		if ( frame.content().isReadable() ) {
 			byte[] data = ByteBufUtil.getBytes(frame.content());
 			if ( data != null && data.length > 0 ) {
 				String s = new String(data, StompUtils.UTF8);
-				instr.addParameter(InstructionHandler.PARAM_SERVICE_ARGUMENT, s);
+				instrParams.put(InstructionHandler.PARAM_SERVICE_ARGUMENT, s);
 			}
 		}
+
+		Instruction instr = InstructionUtils.createLocalInstruction(topic, instrParams);
 
 		// execute instruction in new task
 		executor.execute(new Runnable() {
@@ -486,8 +486,8 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 					// become the user we authenticated as in order to execute the instruction
 					SecurityContextHolder.getContext().setAuthentication(session.getAuthentication());
 
-					InstructionStatus status = InstructionUtils.handleInstructionWithFeedback(
-							serverService.getInstructionHandlers(), instr);
+					InstructionStatus status = serverService.getInstructionService()
+							.executeInstruction(instr);
 					int statusCode = 0;
 					String message = null;
 					Object result = null;
