@@ -22,24 +22,25 @@
  * ===================================================================
  */
 
-package net.solarnetwork.node.upload;
+package net.solarnetwork.node.upload.mock;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
-import net.solarnetwork.node.BulkUploadResult;
-import net.solarnetwork.node.BulkUploadService;
-import net.solarnetwork.node.UploadService;
-import net.solarnetwork.node.domain.Datum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.BulkUploadResult;
+import net.solarnetwork.node.service.BulkUploadService;
+import net.solarnetwork.node.service.UploadService;
 
 /**
  * Mock implementation of {@link UploadService}.
  *
  * @author matt
- * @version 1.1
+ * @version 1.0
+ * @since 2.0
  */
 public class MockUploadService implements UploadService, BulkUploadService {
 
@@ -53,7 +54,7 @@ public class MockUploadService implements UploadService, BulkUploadService {
 	}
 
 	@Override
-	public String uploadDatum(Datum data) {
+	public String uploadDatum(NodeDatum data) {
 		if ( log.isDebugEnabled() ) {
 			log.debug("MOCK: uploading datum [" + data + ']');
 		}
@@ -61,9 +62,9 @@ public class MockUploadService implements UploadService, BulkUploadService {
 	}
 
 	@Override
-	public List<BulkUploadResult> uploadBulkDatum(Collection<Datum> data) {
+	public List<BulkUploadResult> uploadBulkDatum(Collection<NodeDatum> data) {
 		List<BulkUploadResult> results = new ArrayList<BulkUploadResult>(data.size());
-		for ( Datum d : data ) {
+		for ( NodeDatum d : data ) {
 			results.add(new BulkUploadResult(d, String.valueOf(TRACKER_ID.incrementAndGet())));
 		}
 		return results;

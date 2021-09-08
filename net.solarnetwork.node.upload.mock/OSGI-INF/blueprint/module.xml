@@ -18,13 +18,13 @@
 
 	<service ref="mockUploadService" ranking="-1">
 		<interfaces>
-			<value>net.solarnetwork.node.UploadService</value>
-			<value>net.solarnetwork.node.BulkUploadService</value>
+			<value>net.solarnetwork.node.service.UploadService</value>
+			<value>net.solarnetwork.node.service.BulkUploadService</value>
 		</interfaces>
 	</service>
 
 	<bean id="mockUploadService"
-		class="net.solarnetwork.node.upload.MockUploadService"/>
+		class="net.solarnetwork.node.upload.mock.MockUploadService"/>
 
 	<!-- Upload job -->
 	
