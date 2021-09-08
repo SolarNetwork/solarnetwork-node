@@ -151,10 +151,8 @@ public class LocationDatumDataSource
 	private NodeDatum populateLocation(NodeDatum datum) {
 		if ( locationId != null && sourceId != null && !shouldIgnoreDatum(datum) ) {
 			log.debug("Augmenting datum {} with locaiton ID {} ({})", datum, locationId, sourceId);
-			if ( datum.getKind() == ObjectDatumKind.Location ) {
-				return datum.copyWithId(
-						new DatumId(datum.getKind(), locationId, sourceId, datum.getTimestamp()));
-			}
+			return datum.copyWithId(
+					new DatumId(ObjectDatumKind.Location, locationId, sourceId, datum.getTimestamp()));
 		}
 		return datum;
 	}

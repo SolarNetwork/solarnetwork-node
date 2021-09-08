@@ -1,11 +1,13 @@
 
 package net.solarnetwork.node.weather.ibm.wc.test;
 
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import java.math.BigDecimal;
-import java.text.SimpleDateFormat;
-import java.util.Collection;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.Before;
@@ -13,18 +15,20 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.solarnetwork.node.domain.GeneralDayDatum;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.node.domain.datum.AtmosphericDatum;
+import net.solarnetwork.node.domain.datum.DayDatum;
 import net.solarnetwork.node.weather.ibm.wc.BasicWCClient;
 import net.solarnetwork.node.weather.ibm.wc.DailyDatumPeriod;
 import net.solarnetwork.node.weather.ibm.wc.HourlyDatumPeriod;
 import net.solarnetwork.node.weather.ibm.wc.MeasurementUnit;
-import net.solarnetwork.node.weather.ibm.wc.WCHourlyDatum;
+import net.solarnetwork.util.DateUtils;
 
 /**
  * Test cases for the {@link BasicWCClient} class.
  * 
  * @author matt frost
- * @version 1.0
+ * @version 2.0
  */
 public class BasicWCClientTests extends AbstractHttpClientTests {
 
@@ -67,28 +71,30 @@ public class BasicWCClientTests extends AbstractHttpClientTests {
 			}
 		};
 		getHttpServer().addHandler(handler);
-		Collection<WCHourlyDatum> datum = c.readHourlyForecast("NZDA", "abc1234",
-				HourlyDatumPeriod.ONEDAY);
-		log.debug(datum.toString());
-		WCHourlyDatum first = (WCHourlyDatum) datum.toArray()[0];
-		SimpleDateFormat hour = new SimpleDateFormat("HH:mm EE d MMMM yyyy");
-		assertNotNull(first);
+		List<AtmosphericDatum> datum = c.readHourlyForecast("NZDA", "abc1234", HourlyDatumPeriod.ONEDAY)
+				.stream().collect(Collectors.toList());
+		log.debug("Parsed datum: [\n\t{}\n]",
+				datum.stream().map(AtmosphericDatum::toString).collect(Collectors.joining("\n\t")));
+		AtmosphericDatum first = datum.get(0);
+		log.debug("Timestamp = {}", first.getTimestamp());
 
-		assertNotNull(first.getCreated());
+		assertThat("Timestamp",
+				BasicWCClient.OFFSET_DATE_TIME
+						.format(first.getTimestamp().atOffset(ZoneOffset.ofHours(-6))),
+				is("2018-07-09T18:00:00-0600"));
 
-		assertEquals(hour.format(first.getCreated()), "12:00 Tue 10 July 2018");
+		assertThat("Temp", first.getTemperature(), is(new BigDecimal(86)));
 
-		assertEquals(first.getTemperature(), new BigDecimal(86));
+		assertThat("Vis", first.getVisibility(), is(10));
 
-		assertEquals(first.getVisibility().intValue(), 10);
+		assertThat("Wind dir", first.getWindDirection(), is(135));
 
-		assertEquals(first.getWindDirection().intValue(), 135);
+		assertThat("Wind speed", first.getWindSpeed(), is(new BigDecimal("12")));
 
-		assertEquals(first.getWindSpeed().intValue(), 12);
+		assertThat("Humidity", first.getHumidity(), is(16));
 
-		assertEquals(first.getHumidity().intValue(), 16);
-
-		assertEquals(first.getCloudCover().intValue(), 28);
+		assertThat("Cloud cover", first.asSampleOperations().getSampleInteger(
+				DatumSamplesType.Instantaneous, BasicWCClient.CLOUD_COVER_PROPERTY), is(28));
 	}
 
 	@Test
@@ -113,31 +119,29 @@ public class BasicWCClientTests extends AbstractHttpClientTests {
 		};
 
 		getHttpServer().addHandler(handler);
-		Collection<GeneralDayDatum> datum = c.readDailyForecast("NZDA", "abc1234",
-				DailyDatumPeriod.TENDAY);
-		log.debug(datum.toString());
-		GeneralDayDatum first = (GeneralDayDatum) datum.toArray()[1];
-		SimpleDateFormat day = new SimpleDateFormat("d MMMM yyyy");
-		SimpleDateFormat time = new SimpleDateFormat("HH:mm");
-		assertNotNull(first);
+		List<DayDatum> datum = c.readDailyForecast("NZDA", "abc1234", DailyDatumPeriod.TENDAY).stream()
+				.collect(Collectors.toList());
+		log.debug("Parsed datum: [\n\t{}\n]",
+				datum.stream().map(DayDatum::toString).collect(Collectors.joining("\n\t")));
+		DayDatum first = datum.get(1); // actually 2nd to skip null max temp data
+		log.debug("Timestamp = {}", first.getTimestamp());
 
-		assertNotNull(first.getCreated());
+		assertThat("Timestamp",
+				BasicWCClient.OFFSET_DATE_TIME
+						.format(first.getTimestamp().atOffset(ZoneOffset.ofHours(-6))),
+				is("2018-07-06T07:00:00-0600"));
 
-		log.debug(first.getCreated().toString());
+		assertThat("Temp max", first.getTemperatureMaximum().intValue(), is(92));
 
-		assertEquals(day.format(first.getCreated()), "7 July 2018");
+		assertThat("Temp min", first.getTemperatureMinimum().intValue(), is(64));
 
-		assertEquals(first.getTemperatureMaximum().intValue(), 92);
+		assertThat("Sunrise", DateUtils.format(first.getSunriseTime()), is("05:37"));
 
-		assertEquals(first.getTemperatureMinimum().intValue(), 64);
+		assertThat("Sunset", DateUtils.format(first.getSunsetTime()), is("20:29"));
 
-		assertEquals(time.format(first.getSunrise().toDateTimeToday().toDate()), "05:37");
+		assertThat("Moonrise", DateUtils.format(first.getMoonriseTime()), is("00:57"));
 
-		assertEquals(time.format(first.getSunset().toDateTimeToday().toDate()), "20:29");
-
-		assertEquals(time.format(first.getMoonrise().toDateTimeToday().toDate()), "00:57");
-
-		assertEquals(time.format(first.getMoonset().toDateTimeToday().toDate()), "13:33");
+		assertThat("Moonset", DateUtils.format(first.getMoonsetTime()), is("13:33"));
 
 	}
 

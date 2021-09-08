@@ -20,25 +20,19 @@
 
 package net.solarnetwork.node.weather.ibm.wc;
 
-import org.springframework.context.MessageSource;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
 
 /**
  * Simplifies the datum data source classes by providing shared methods.
  * 
  * @author matt frost
- *
- * @param <T>
  */
-public abstract class WCSupport<T extends Datum> {
+public abstract class WCSupport extends DatumDataSourceSupport {
 
-	private String uid;
-	private String groupUID;
 	private String locationIdentifier;
 	private WCClient client;
 	private String apiKey;
 	private String datumPeriod;
-	private MessageSource messageSource;
 	private String language;
 
 	public WCSupport() {
@@ -47,22 +41,6 @@ public abstract class WCSupport<T extends Datum> {
 	}
 
 	//TODO add a dropdown specifier for the period of the data (ie. 7day, 10day)
-
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
-
-	public String getUID() {
-		return getUid();
-	}
-
-	public String getUid() {
-		return uid;
-	}
-
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
 
 	public String getApiKey() {
 		return this.apiKey;
@@ -80,30 +58,12 @@ public abstract class WCSupport<T extends Datum> {
 		this.datumPeriod = datumPeriod;
 	}
 
-	/**
-	 * Get a {@link MessageSource} for supporting message resolution.
-	 * 
-	 * @return the message source
-	 */
-
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
 	public WCClient getClient() {
 		return this.client;
 	}
 
 	public void setClient(WCClient client) {
 		this.client = client;
-	}
-
-	public String getGroupUID() {
-		return groupUID;
-	}
-
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
 	}
 
 	public String getLocationIdentifier() {

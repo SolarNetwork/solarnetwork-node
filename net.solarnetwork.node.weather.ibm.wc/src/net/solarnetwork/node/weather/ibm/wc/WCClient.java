@@ -21,13 +21,15 @@
 package net.solarnetwork.node.weather.ibm.wc;
 
 import java.util.Collection;
-import net.solarnetwork.node.domain.GeneralDayDatum;
+import net.solarnetwork.node.domain.datum.AtmosphericDatum;
+import net.solarnetwork.node.domain.datum.DayDatum;
 
 /**
  * This is an API for accessing and storing data from the IBM Weather Company
  * APIs
  * 
  * @author matt frost
+ * @version 2.0
  */
 public interface WCClient {
 
@@ -40,7 +42,7 @@ public interface WCClient {
 	 *        the period over which the datum can be retrieved from
 	 * @return the results, never {@literal null}
 	 */
-	Collection<GeneralDayDatum> readDailyForecast(String locationIdentifier, String apiKey,
+	Collection<DayDatum> readDailyForecast(String locationIdentifier, String apiKey,
 			DailyDatumPeriod datumPeriod);
 
 	/**
@@ -52,7 +54,7 @@ public interface WCClient {
 	 *        the period over which the datum can be retrieved from
 	 * @return the results, never {@literal null}
 	 */
-	Collection<WCHourlyDatum> readHourlyForecast(String locationIdentifier, String apiKey,
+	Collection<AtmosphericDatum> readHourlyForecast(String locationIdentifier, String apiKey,
 			HourlyDatumPeriod datumPeriod);
 
 }

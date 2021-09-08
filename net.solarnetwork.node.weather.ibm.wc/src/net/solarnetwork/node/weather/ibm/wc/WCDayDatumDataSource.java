@@ -25,24 +25,24 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.GeneralDayDatum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.domain.datum.DayDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * The WCDayDatumDataSource class provides GUI settings and an entry point for
  * retrieving daily datum.
  * 
  * @author matt frost
- *
+ * @version 2.0
  */
-public class WCDayDatumDataSource extends WCSupport<GeneralDayDatum>
-		implements DatumDataSource<GeneralDayDatum>, MultiDatumDataSource<GeneralDayDatum>,
-		SettingSpecifierProvider {
+public class WCDayDatumDataSource extends WCSupport
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	public WCDayDatumDataSource() {
 		super();
@@ -51,7 +51,7 @@ public class WCDayDatumDataSource extends WCSupport<GeneralDayDatum>
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>(1);
+		List<SettingSpecifier> result = new ArrayList<>(1);
 		result.add(new BasicTextFieldSettingSpecifier("uid", null));
 		result.add(new BasicTextFieldSettingSpecifier("apiKey", null));
 		BasicMultiValueSettingSpecifier menuSpec = new BasicMultiValueSettingSpecifier("datumPeriod",
@@ -78,25 +78,26 @@ public class WCDayDatumDataSource extends WCSupport<GeneralDayDatum>
 	}
 
 	@Override
-	public Class<? extends GeneralDayDatum> getDatumType() {
-		return GeneralDayDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return DayDatum.class;
 	}
 
 	@Override
-	public GeneralDayDatum readCurrentDatum() {
-		Collection<GeneralDayDatum> results = readMultipleDatum();
+	public NodeDatum readCurrentDatum() {
+		Collection<NodeDatum> results = readMultipleDatum();
 		return (results.isEmpty() ? null : results.iterator().next());
 	}
 
 	@Override
-	public Class<? extends GeneralDayDatum> getMultiDatumType() {
-		return GeneralDayDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return DayDatum.class;
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Override
-	public Collection<GeneralDayDatum> readMultipleDatum() {
-		return this.getClient().readDailyForecast(this.getLocationIdentifier(), this.getApiKey(),
-				DailyDatumPeriod.forPeriod(this.getDatumPeriod()));
+	public Collection<NodeDatum> readMultipleDatum() {
+		return (Collection) this.getClient().readDailyForecast(this.getLocationIdentifier(),
+				this.getApiKey(), DailyDatumPeriod.forPeriod(this.getDatumPeriod()));
 	}
 
 }

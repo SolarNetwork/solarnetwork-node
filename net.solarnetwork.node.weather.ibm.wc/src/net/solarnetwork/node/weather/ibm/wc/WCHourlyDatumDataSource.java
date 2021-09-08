@@ -25,22 +25,24 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.domain.datum.AtmosphericDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * The WCHourlyDatumDataSource class provides GUI settings and an entry point
  * for retrieving hourly datum.
  * 
  * @author matt frost
- *
+ * @version 2.0
  */
-public class WCHourlyDatumDataSource extends WCSupport<WCHourlyDatum> implements
-		SettingSpecifierProvider, DatumDataSource<WCHourlyDatum>, MultiDatumDataSource<WCHourlyDatum> {
+public class WCHourlyDatumDataSource extends WCSupport
+		implements SettingSpecifierProvider, DatumDataSource, MultiDatumDataSource {
 
 	public WCHourlyDatumDataSource() {
 		super();
@@ -76,24 +78,26 @@ public class WCHourlyDatumDataSource extends WCSupport<WCHourlyDatum> implements
 	}
 
 	@Override
-	public Class<? extends WCHourlyDatum> getMultiDatumType() {
-		return WCHourlyDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AtmosphericDatum.class;
 	}
 
 	@Override
-	public Collection<WCHourlyDatum> readMultipleDatum() {
-		return this.getClient().readHourlyForecast(this.getLocationIdentifier(), this.getApiKey(),
-				HourlyDatumPeriod.forPeriod(this.getDatumPeriod()));
-	}
-
-	@Override
-	public Class<? extends WCHourlyDatum> getDatumType() {
-		return WCHourlyDatum.class;
-	}
-
-	@Override
-	public WCHourlyDatum readCurrentDatum() {
-		Collection<WCHourlyDatum> results = readMultipleDatum();
+	public NodeDatum readCurrentDatum() {
+		Collection<NodeDatum> results = readMultipleDatum();
 		return (results.isEmpty() ? null : results.iterator().next());
 	}
+
+	@Override
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return AtmosphericDatum.class;
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Override
+	public Collection<NodeDatum> readMultipleDatum() {
+		return (Collection) this.getClient().readHourlyForecast(this.getLocationIdentifier(),
+				this.getApiKey(), HourlyDatumPeriod.forPeriod(this.getDatumPeriod()));
+	}
+
 }
