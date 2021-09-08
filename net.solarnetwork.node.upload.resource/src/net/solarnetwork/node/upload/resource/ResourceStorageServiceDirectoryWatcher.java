@@ -26,6 +26,7 @@ import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
+import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.FileSystems;
@@ -38,6 +39,7 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -52,35 +54,32 @@ import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import org.osgi.service.event.Event;
-import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.scheduling.TaskScheduler;
-import net.solarnetwork.io.ResourceStorageService;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
+import net.solarnetwork.node.service.DatumQueue;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.ProgressListener;
+import net.solarnetwork.service.ResourceStorageService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.ProgressListener;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * Service to watch a directory for file changes, and when a change is
  * encountered then copy the file to a {@link ResourceStorageService}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 		implements SettingSpecifierProvider, SettingsChangeObserver, ProgressListener<Resource> {
@@ -100,8 +99,7 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 	private final Executor executor;
 	private final AtomicIntegerArray statistics;
 	private TaskScheduler taskScheduler;
-	private OptionalService<DatumDao<GeneralNodeDatum>> datumDao;
-	private OptionalService<EventAdmin> eventAdmin;
+	private OptionalService<DatumQueue> datumQueue;
 	private String resourceStorageDatumSourceId;
 	private String path;
 	private boolean recursive;
@@ -251,11 +249,6 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 		return (scheduler != null ? getSaveDelay() : 0);
 	}
 
-	private DatumDao<GeneralNodeDatum> datumDao() {
-		OptionalService<DatumDao<GeneralNodeDatum>> s = getDatumDao();
-		return (s != null ? s.service() : null);
-	}
-
 	private void generateDatum(ResourceStorageService service, String savePath, Path resourcePath) {
 		final String sourceId = getResourceStorageDatumSourceId();
 		if ( sourceId == null || sourceId.isEmpty() ) {
@@ -268,34 +261,33 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 			return;
 		}
 
-		final DatumDao<GeneralNodeDatum> dao = datumDao();
-		if ( dao == null ) {
-			log.warn("No DatumDao available: cannot generate datum for source {}", sourceId);
+		final DatumQueue queue = service(datumQueue);
+		if ( queue == null ) {
+			log.warn("No DatumQueue available: cannot generate datum for source {}", sourceId);
 			return;
 		}
 
-		final GeneralNodeDatum d = new GeneralNodeDatum();
-		d.setSourceId(sourceId);
-		d.setCreated(new Date());
+		Instant ts = Instant.now();
 		if ( Files.isReadable(resourcePath) ) {
 			try {
-				d.setCreated(new Date(Files.getLastModifiedTime(resourcePath).toMillis()));
+				ts = Files.getLastModifiedTime(resourcePath).toInstant();
 			} catch ( IOException e ) {
 				log.warn("Unable to determine modified time of resource {}: {}", resourcePath,
 						e.toString());
 			}
 		}
 
+		final SimpleDatum d = SimpleDatum.nodeDatum(sourceId, ts, new DatumSamples());
 		final URL resourceStorageUrl = service.resourceStorageUrl(savePath);
 		if ( resourceStorageUrl != null ) {
-			d.putStatusSampleValue("url", resourceStorageUrl.toString());
+			d.getSamples().putStatusSampleValue("url", resourceStorageUrl.toString());
 		}
 		if ( savePath != null ) {
-			d.putStatusSampleValue("path", savePath);
+			d.getSamples().putStatusSampleValue("path", savePath);
 		}
 		if ( Files.isReadable(resourcePath) ) {
 			try {
-				d.putInstantaneousSampleValue("size", Files.size(resourcePath));
+				d.getSamples().putInstantaneousSampleValue("size", Files.size(resourcePath));
 			} catch ( IOException e ) {
 				log.warn("Unable to determine size of resource {}: {}", resourcePath, e.toString());
 			}
@@ -308,70 +300,13 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 
 		log.info("Generated resource storage datum {}", d);
 
-		postDatumCapturedEvent(d);
-
-		dao.storeDatum(d);
+		queue.offer(d);
 	}
 
 	@Override
 	public void progressChanged(Resource context, double amountComplete) {
 		log.info("{}% complete saving resource {} to {}", String.format("%.1f", amountComplete * 100),
 				context.getFilename(), storageService.service());
-	}
-
-	/**
-	 * Post an {@link Event} for the
-	 * {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} topic.
-	 * 
-	 * @param datum
-	 *        the datum that was stored
-	 */
-	protected final void postDatumCapturedEvent(Datum datum) {
-		if ( datum == null ) {
-			return;
-		}
-		Event event = createDatumCapturedEvent(datum);
-		postEvent(event);
-	}
-
-	/**
-	 * Create a new {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED}
-	 * {@link Event} object out of a {@link Datum}.
-	 * 
-	 * <p>
-	 * This method uses the result of {@link Datum#asSimpleMap()} as the event
-	 * properties.
-	 * </p>
-	 * 
-	 * @param datum
-	 *        the datum to create the event for
-	 * @return the new Event instance
-	 */
-	protected Event createDatumCapturedEvent(Datum datum) {
-		Map<String, ?> props = datum.asSimpleMap();
-		log.debug("Created {} event with props {}", DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
-		return new Event(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, props);
-	}
-
-	/**
-	 * Post an {@link Event}.
-	 * 
-	 * <p>
-	 * This method only works if a {@link EventAdmin} has been configured via
-	 * {@link #setEventAdmin(OptionalService)}. Otherwise the event is silently
-	 * ignored.
-	 * </p>
-	 * 
-	 * @param event
-	 *        the event to post
-	 */
-	protected final void postEvent(Event event) {
-		OptionalService<EventAdmin> s = getEventAdmin();
-		EventAdmin ea = (s != null ? eventAdmin.service() : null);
-		if ( ea == null || event == null ) {
-			return;
-		}
-		ea.postEvent(event);
 	}
 
 	private enum Statistic {
@@ -645,22 +580,22 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 	}
 
 	/**
-	 * Get the DAO to save generated datum to.
+	 * Get the datum queue to offer generated datum to.
 	 * 
-	 * @return the datumDao the datum dao
+	 * @return the queue
 	 */
-	public OptionalService<DatumDao<GeneralNodeDatum>> getDatumDao() {
-		return datumDao;
+	public OptionalService<DatumQueue> getDatumQueue() {
+		return datumQueue;
 	}
 
 	/**
-	 * Set the DAO to save generated datum to.
+	 * Set the datum queue to offer generated datum to.
 	 * 
-	 * @param datumDao
-	 *        the datumDao to set
+	 * @param datumQueue
+	 *        the datum queue to set
 	 */
-	public void setDatumDao(OptionalService<DatumDao<GeneralNodeDatum>> datumDao) {
-		this.datumDao = datumDao;
+	public void setDatumQueue(OptionalService<DatumQueue> datumQueue) {
+		this.datumQueue = datumQueue;
 	}
 
 	/**
@@ -682,25 +617,6 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 	 */
 	public void setResourceStorageDatumSourceId(String resourceStorageDatumSourceId) {
 		this.resourceStorageDatumSourceId = resourceStorageDatumSourceId;
-	}
-
-	/**
-	 * Get the optional {@link EventAdmin} service.
-	 * 
-	 * @return the eventAdmin the service
-	 */
-	public OptionalService<EventAdmin> getEventAdmin() {
-		return eventAdmin;
-	}
-
-	/**
-	 * Set the optional {@link EventAdmin} service.
-	 * 
-	 * @param eventAdmin
-	 *        the service to set
-	 */
-	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
-		this.eventAdmin = eventAdmin;
 	}
 
 	/**

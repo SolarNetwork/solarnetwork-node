@@ -29,14 +29,12 @@ import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.contains;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import org.easymock.Capture;
@@ -46,24 +44,23 @@ import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.osgi.service.event.Event;
-import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.util.FileCopyUtils;
-import net.solarnetwork.io.ResourceStorageService;
-import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.upload.resource.ResourceStorageServiceDirectoryWatcher;
+import net.solarnetwork.service.ResourceStorageService;
+import net.solarnetwork.service.StaticOptionalService;
 import net.solarnetwork.test.CallingThreadExecutorService;
-import net.solarnetwork.util.StaticOptionalService;
 
 /**
  * Test cases for the {@link ResourceStorageServiceDirectoryWatcher} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ResourceStorageServiceDirectoryWatcherTests {
 
@@ -73,28 +70,24 @@ public class ResourceStorageServiceDirectoryWatcherTests {
 
 	private Path tmpDir;
 	private ResourceStorageService storageService;
-	private DatumDao<GeneralNodeDatum> datumDao;
-	private EventAdmin eventAdmin;
+	private DatumQueue datumQueue;
 	private ResourceStorageServiceDirectoryWatcher watcher;
 
-	@SuppressWarnings("unchecked")
 	@Before
 	public void setup() throws IOException {
 		tmpDir = Files.createTempDirectory("test-storage-service-dir-watcher-");
 		storageService = EasyMock.createMock(ResourceStorageService.class);
-		datumDao = EasyMock.createMock(DatumDao.class);
-		eventAdmin = EasyMock.createMock(EventAdmin.class);
+		datumQueue = EasyMock.createMock(DatumQueue.class);
 		watcher = new ResourceStorageServiceDirectoryWatcher(new StaticOptionalService<>(storageService),
 				new CallingThreadExecutorService());
 		watcher.setPath(tmpDir.toAbsolutePath().toString());
 		watcher.setResourceStorageDatumSourceId(TEST_SOURCE_ID);
-		watcher.setDatumDao(new StaticOptionalService<>(datumDao));
-		watcher.setEventAdmin(new StaticOptionalService<>(eventAdmin));
+		watcher.setDatumQueue(new StaticOptionalService<>(datumQueue));
 	}
 
 	@After
 	public void teardown() throws IOException {
-		EasyMock.verify(storageService, datumDao, eventAdmin);
+		EasyMock.verify(storageService, datumQueue);
 		watcher.shutdown();
 		if ( tmpDir != null ) {
 			log.info("Deleting dir {}", tmpDir);
@@ -109,7 +102,7 @@ public class ResourceStorageServiceDirectoryWatcherTests {
 	}
 
 	private void replayAll() {
-		EasyMock.replay(storageService, datumDao, eventAdmin);
+		EasyMock.replay(storageService, datumQueue);
 	}
 
 	private Path createFileInWatchDir() throws IOException {
@@ -174,11 +167,8 @@ public class ResourceStorageServiceDirectoryWatcherTests {
 		URL storageUrl = new URL("http://example.com/file.txt");
 		expect(storageService.resourceStorageUrl(capture(pathCaptor))).andReturn(storageUrl);
 
-		Capture<GeneralNodeDatum> datumCaptor = new Capture<>();
-		datumDao.storeDatum(capture(datumCaptor));
-
-		Capture<Event> eventCaptor = new Capture<>();
-		eventAdmin.postEvent(capture(eventCaptor));
+		Capture<NodeDatum> datumCaptor = new Capture<>();
+		expect(datumQueue.offer(capture(datumCaptor))).andReturn(true);
 
 		// WHEN
 		replayAll();
@@ -200,18 +190,18 @@ public class ResourceStorageServiceDirectoryWatcherTests {
 		assertThat("Saved resource is created file", resourceCaptor.getValue().getFile(),
 				equalTo(newFile.toFile()));
 
-		GeneralNodeDatum d = datumCaptor.getValue();
+		NodeDatum d = datumCaptor.getValue();
 		assertThat("Generated datum source ID", d.getSourceId(), equalTo(TEST_SOURCE_ID));
-		assertThat("Generated datum date equal to file modification time", d.getCreated().getTime(),
-				equalTo(Files.getLastModifiedTime(newFile).toMillis()));
-		Map<String, ?> props = d.asSimpleMap();
-		assertThat("Generated datum properties", props.keySet(), containsInAnyOrder("created",
-				"sourceId", "url", "path", "size", "_DatumType", "_DatumTypes"));
-		assertThat("Generated datum property URL is storage URL", d.getStatusSampleString("url"),
+		assertThat("Generated datum date equal to file modification time", d.getTimestamp(),
+				equalTo(Files.getLastModifiedTime(newFile).toInstant()));
+		assertThat("Generated datum property URL is storage URL",
+				d.asSampleOperations().getSampleString(DatumSamplesType.Status, "url"),
 				equalTo(storageUrl.toString()));
-		assertThat("Generated datum property path is storage path", d.getStatusSampleString("path"),
+		assertThat("Generated datum property path is storage path",
+				d.asSampleOperations().getSampleString(DatumSamplesType.Status, "path"),
 				equalTo(newFile.getFileName().toString()));
-		assertThat("Generated datum property size is file size", d.getInstantaneousSampleLong("size"),
+		assertThat("Generated datum property size is file size",
+				d.asSampleOperations().getSampleLong(DatumSamplesType.Instantaneous, "size"),
 				equalTo(Files.size(newFile)));
 	}
 }
