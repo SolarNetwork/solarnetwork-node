@@ -15,50 +15,42 @@
 	
 	<reference id="opModesService" interface="net.solarnetwork.node.OperationalModesService"/>
 
-	<reference id="identityService" availability="optional" interface="net.solarnetwork.node.IdentityService"/>
+	<reference id="identityService" availability="optional" interface="net.solarnetwork.node.service.IdentityService"/>
 
 	<reference id="mqttConnectionFactory" interface="net.solarnetwork.common.mqtt.MqttConnectionFactory"/>
 	
-	<reference id="datumQueue" interface="net.solarnetwork.node.DatumQueue"/>
+	<reference id="datumQueue" interface="net.solarnetwork.node.service.DatumQueue"/>
 
-	<bean id="sslService" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.support.SSLService"/>
+	<bean id="sslService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.service.SSLService"/>
 		<property name="sticky" value="true"/>
 	</bean>
 
-	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">
-		<property name="jsonFactory">
+	<bean id="objectMapper" class="net.solarnetwork.codec.JsonUtils" factory-method="newDatumObjectMapper">
+		<argument>
 			<bean class="com.fasterxml.jackson.dataformat.cbor.CBORFactory"/>
-		</property>
-		<property name="serializers">
-			<list>
-				<bean class="net.solarnetwork.node.support.GeneralNodeDatumSerializer"/>
-				<bean class="net.solarnetwork.node.support.DatumSerializer"/>
-				<bean class="net.solarnetwork.node.support.InstructionSerializer"/>
-				<bean class="net.solarnetwork.node.support.NodeControlInfoSerializer"/>
-			</list>
-		</property>
+		</argument>
 	</bean>
 	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basename" value="net.solarnetwork.node.upload.flux.FluxUploadService"/>
 	</bean>
 
-	<bean id="datumEncoders" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
+	<bean id="datumEncoders" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.io.ObjectEncoder"/>
 		<property name="serviceFilter" value="(&amp;(function=node)(function=datum)(objectType=java.util.Map))"/>
 	</bean>
 
-	<bean id="transformServices" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
+	<bean id="transformServices" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
 		<property name="serviceFilter" value="(!(role=global))"/>
 	</bean>
 	
-	<bean id="mqttMessageDao" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
+	<bean id="mqttMessageDao" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.common.mqtt.dao.MqttMessageDao"/>
 		<property name="sticky" value="true"/>
 	</bean>

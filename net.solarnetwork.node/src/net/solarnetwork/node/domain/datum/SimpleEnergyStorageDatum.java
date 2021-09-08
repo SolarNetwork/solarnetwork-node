@@ -25,6 +25,7 @@ package net.solarnetwork.node.domain.datum;
 import java.time.Instant;
 import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
 
 /**
  * GeneralNodeDatum that also implements {@link EnergyStorageDatum}.
@@ -58,9 +59,35 @@ public class SimpleEnergyStorageDatum extends SimpleDatum implements EnergyStora
 		super(DatumId.nodeId(null, sourceId, timestamp), samples);
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param id
+	 *        the ID
+	 * @param samples
+	 *        the samples
+	 */
+	public SimpleEnergyStorageDatum(DatumId id, DatumSamples samples) {
+		super(id, samples);
+	}
+
 	@Override
 	protected String[] datumTypes() {
 		return DATUM_TYPES;
+	}
+
+	@Override
+	public SimpleEnergyStorageDatum copyWithSamples(DatumSamplesOperations samples) {
+		DatumSamples newSamples = new DatumSamples();
+		newSamples.copyFrom(samples);
+		return new SimpleEnergyStorageDatum(getId(), newSamples);
+	}
+
+	@Override
+	public SimpleEnergyStorageDatum copyWithId(DatumId id) {
+		SimpleEnergyStorageDatum d = new SimpleEnergyStorageDatum(id, getSamples());
+		d.setUploaded(this.getUploaded());
+		return d;
 	}
 
 }

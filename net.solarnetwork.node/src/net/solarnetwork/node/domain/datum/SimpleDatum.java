@@ -116,12 +116,14 @@ public class SimpleDatum extends GeneralDatum implements NodeDatum, MutableNodeD
 	}
 
 	@Override
-	public NodeDatum copyWithSamples(DatumSamplesOperations samples) {
-		return (NodeDatum) super.copyWithSamples(samples);
+	public SimpleDatum copyWithSamples(DatumSamplesOperations samples) {
+		DatumSamples newSamples = new DatumSamples();
+		newSamples.copyFrom(samples);
+		return new SimpleDatum(getId(), newSamples);
 	}
 
 	@Override
-	public NodeDatum copyWithId(DatumId id) {
+	public SimpleDatum copyWithId(DatumId id) {
 		SimpleDatum d = new SimpleDatum(id, getSamples());
 		d.uploaded = this.uploaded;
 		return d;

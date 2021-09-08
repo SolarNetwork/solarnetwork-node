@@ -25,6 +25,7 @@ package net.solarnetwork.node.domain.datum;
 import java.time.Instant;
 import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
 
 /**
  * Extension of {@link GeneralLocationDatum} that implements {@link PriceDatum}.
@@ -56,9 +57,35 @@ public class SimplePriceDatum extends SimpleDatum implements PriceDatum {
 		super(DatumId.locationId(locationId, sourceId, timestamp), samples);
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param id
+	 *        the ID
+	 * @param samples
+	 *        the samples
+	 */
+	public SimplePriceDatum(DatumId id, DatumSamples samples) {
+		super(id, samples);
+	}
+
 	@Override
 	protected String[] datumTypes() {
 		return DATUM_TYPES;
+	}
+
+	@Override
+	public SimplePriceDatum copyWithSamples(DatumSamplesOperations samples) {
+		DatumSamples newSamples = new DatumSamples();
+		newSamples.copyFrom(samples);
+		return new SimplePriceDatum(getId(), newSamples);
+	}
+
+	@Override
+	public SimplePriceDatum copyWithId(DatumId id) {
+		SimplePriceDatum d = new SimplePriceDatum(id, getSamples());
+		d.setUploaded(this.getUploaded());
+		return d;
 	}
 
 }

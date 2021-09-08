@@ -25,6 +25,7 @@ package net.solarnetwork.node.domain.datum;
 import java.time.Instant;
 import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
 
 /**
  * Extension of {@link GeneralLocationDatum} with {@link DayDatum} support.
@@ -74,9 +75,35 @@ public class SimpleDayDatum extends SimpleDatum implements DayDatum {
 		super(DatumId.locationId(locationId, sourceId, timestamp), samples);
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param id
+	 *        the ID
+	 * @param samples
+	 *        the samples
+	 */
+	public SimpleDayDatum(DatumId id, DatumSamples samples) {
+		super(id, samples);
+	}
+
 	@Override
 	protected String[] datumTypes() {
 		return DATUM_TYPES;
+	}
+
+	@Override
+	public SimpleDayDatum copyWithSamples(DatumSamplesOperations samples) {
+		DatumSamples newSamples = new DatumSamples();
+		newSamples.copyFrom(samples);
+		return new SimpleDayDatum(getId(), newSamples);
+	}
+
+	@Override
+	public SimpleDayDatum copyWithId(DatumId id) {
+		SimpleDayDatum d = new SimpleDayDatum(id, getSamples());
+		d.setUploaded(this.getUploaded());
+		return d;
 	}
 
 }

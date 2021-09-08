@@ -23,7 +23,9 @@
 package net.solarnetwork.node.domain.datum;
 
 import java.time.Instant;
+import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
 
 /**
  * GeneralNodeDatum that also implements {@link AcEnergyDatum}.
@@ -58,9 +60,35 @@ public class SimpleDcEnergyDatum extends SimpleEnergyDatum implements DcEnergyDa
 		super(sourceId, timestamp, samples);
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param id
+	 *        the ID
+	 * @param samples
+	 *        the samples
+	 */
+	public SimpleDcEnergyDatum(DatumId id, DatumSamples samples) {
+		super(id, samples);
+	}
+
 	@Override
 	protected String[] datumTypes() {
 		return DATUM_TYPES;
+	}
+
+	@Override
+	public SimpleDcEnergyDatum copyWithSamples(DatumSamplesOperations samples) {
+		DatumSamples newSamples = new DatumSamples();
+		newSamples.copyFrom(samples);
+		return new SimpleDcEnergyDatum(getId(), newSamples);
+	}
+
+	@Override
+	public SimpleDcEnergyDatum copyWithId(DatumId id) {
+		SimpleDcEnergyDatum d = new SimpleDcEnergyDatum(id, getSamples());
+		d.setUploaded(this.getUploaded());
+		return d;
 	}
 
 }
