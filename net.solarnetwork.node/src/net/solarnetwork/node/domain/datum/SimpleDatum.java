@@ -37,7 +37,7 @@ import net.solarnetwork.domain.datum.GeneralDatum;
  * @version 1.0
  * @since 2.0
  */
-public class SimpleDatum extends GeneralDatum implements MutableNodeDatum, Cloneable {
+public class SimpleDatum extends GeneralDatum implements NodeDatum, MutableNodeDatum, Cloneable {
 
 	private static final long serialVersionUID = 6865265065461341282L;
 

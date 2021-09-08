@@ -23,12 +23,18 @@
 package net.solarnetwork.node.service;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.osgi.service.event.Event;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.MutableDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.util.ClassUtils;
 
@@ -36,17 +42,62 @@ import net.solarnetwork.util.ClassUtils;
  * Support for {@link NodeDatum} {@link Event} handling.
  * 
  * @author matt
- * @version 2.0
- * @since 1.81
+ * @version 1.0
+ * @since 2.0
  */
-public interface DatumEvents {
+public final class DatumEvents {
+
+	private static final Logger log = LoggerFactory.getLogger(DatumEvents.class);
+
+	private DatumEvents() {
+		// can't construct me
+	}
 
 	/**
 	 * A property name for a {@code Datum} instance associated with an event.
 	 * 
 	 * @since 2.0
 	 */
-	String DATUM_PROPERTY = "_Datum";
+	public static final String DATUM_PROPERTY = "_Datum";
+
+	/**
+	 * Create an event with a datum class and property map.
+	 * 
+	 * @param topic
+	 *        the event topic
+	 * @param clazz
+	 *        the datum class
+	 * @param datumMap
+	 *        the datum properties
+	 * @return the new event, or {@literal null} if {@code datumMap} is
+	 *         {@literal null} or empty
+	 */
+	public static Event datumEvent(String topic, Class<? extends Datum> clazz, Map<String, ?> datumMap) {
+		if ( datumMap == null || datumMap.isEmpty() ) {
+			return null;
+		}
+		Map<String, Object> props = new LinkedHashMap<>(datumMap.size());
+		for ( Entry<String, ?> me : datumMap.entrySet() ) {
+			String k = me.getKey();
+			Object o = datumMap.get(k);
+			if ( o instanceof Map<?, ?> ) {
+				for ( Entry<?, ?> e : ((Map<?, ?>) o).entrySet() ) {
+					props.put(e.getKey().toString(), e.getValue());
+				}
+			} else {
+				props.put(k, o);
+			}
+		}
+		String[] types = DatumEvents.datumTypes(clazz);
+		if ( types != null && types.length > 0 ) {
+			props.put(Datum.DATUM_TYPE_PROPERTY, types[0]);
+			props.put(Datum.DATUM_TYPES_PROPERTY, types);
+		}
+		if ( log.isTraceEnabled() ) {
+			log.trace("Created {} event with props {}", topic, props);
+		}
+		return new Event(topic, props);
+	}
 
 	/**
 	 * Create an event with a datum.
@@ -58,7 +109,7 @@ public interface DatumEvents {
 	 *        property
 	 * @return the new event instance
 	 */
-	static Event datumEvent(String topic, NodeDatum datum) {
+	public static Event datumEvent(String topic, NodeDatum datum) {
 		if ( datum == null ) {
 			return new Event(topic, Collections.emptyMap());
 		}
@@ -71,6 +122,9 @@ public interface DatumEvents {
 			props.put(DATUM_PROPERTY, datum);
 		} else {
 			props = Collections.singletonMap(DATUM_PROPERTY, datum);
+		}
+		if ( log.isTraceEnabled() ) {
+			log.trace("Created {} event with props {}", topic, props);
 		}
 		return new Event(topic, props);
 	}
@@ -88,7 +142,7 @@ public interface DatumEvents {
 	 *        the event to get a map of event properties for
 	 * @return the event properties as a map, never {@literal null}
 	 */
-	static Map<String, Object> datumEventMap(Event event) {
+	public static Map<String, Object> datumEventMap(Event event) {
 		String[] propNames = event.getPropertyNames();
 		Map<String, Object> map = new LinkedHashMap<String, Object>(propNames.length);
 		for ( String propName : propNames ) {
@@ -116,7 +170,7 @@ public interface DatumEvents {
 	 * @return the new event instance
 	 * @see DatumEvents#datumEvent(String, NodeDatum)
 	 */
-	default Event datumCapturedEvent(NodeDatum datum) {
+	public static Event datumCapturedEvent(NodeDatum datum) {
 		return datumEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, datum);
 	}
 
@@ -127,7 +181,7 @@ public interface DatumEvents {
 	 * The {@link #datumTypes(Class)} method populates this cache.
 	 * </p>
 	 */
-	ConcurrentMap<Class<?>, String[]> DATUM_TYPE_CACHE = new ConcurrentHashMap<Class<?>, String[]>();
+	private static final ConcurrentMap<Class<?>, String[]> DATUM_TYPE_CACHE = new ConcurrentHashMap<Class<?>, String[]>();
 
 	/**
 	 * Get an array of datum types for a class.
@@ -140,12 +194,21 @@ public interface DatumEvents {
 	 *        the datum class to get the types for
 	 * @return the types
 	 */
-	static String[] datumTypes(Class<?> clazz) {
+	public static String[] datumTypes(Class<?> clazz) {
 		String[] result = DATUM_TYPE_CACHE.get(clazz);
 		if ( result != null ) {
 			return result;
 		}
 		Set<Class<?>> interfaces = ClassUtils.getAllNonJavaInterfacesForClassAsSet(clazz);
+
+		// remove all but Datum extensions, excluding MutableDatum
+		for ( Iterator<Class<?>> itr = interfaces.iterator(); itr.hasNext(); ) {
+			Class<?> c = itr.next();
+			if ( !Datum.class.isAssignableFrom(c) || MutableDatum.class.isAssignableFrom(c) ) {
+				itr.remove();
+			}
+		}
+
 		result = new String[interfaces.size()];
 		int i = 0;
 		for ( Class<?> intf : interfaces ) {

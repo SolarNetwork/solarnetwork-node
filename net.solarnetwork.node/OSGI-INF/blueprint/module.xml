@@ -93,42 +93,7 @@
 			<property name="objectMapper" ref="objectMapper"/>
 		</bean>
 	</service>
-	<bean id="objectMapper" class="net.solarnetwork.codec.ObjectMapperFactoryBean" >
-		<property name="serializers">
-			<list>
-				<bean class="net.solarnetwork.codec.JsonDateUtils.InstantSerializer"/>
-				<bean class="net.solarnetwork.codec.JsonDateUtils.ZonedDateTimeSerializer"/>
-				<bean class="net.solarnetwork.codec.JsonDateUtils.LocalDateTimeSerializer"/>
-				<bean class="net.solarnetwork.codec.BasicGeneralDatumSerializer"/>
-				<bean class="net.solarnetwork.codec.BasicLocationSerializer"/>
-				<bean class="net.solarnetwork.codec.BasicObjectDatumStreamMetadataSerializer"/>
-				<bean class="net.solarnetwork.codec.BasicStreamDatumArraySerializer"/>
-			</list>
-		</property>
-		<property name="deserializers">
-			<list>
-				<bean class="net.solarnetwork.codec.JsonDateUtils.InstantDeserializer"/>
-				<bean class="net.solarnetwork.codec.JsonDateUtils.ZonedDateTimeDeserializer"/>
-				<bean class="net.solarnetwork.codec.JsonDateUtils.LocalDateTimeDeserializer"/>
-				<bean class="net.solarnetwork.codec.BasicGeneralDatumDeserializer"/>
-				<bean class="net.solarnetwork.codec.BasicLocationDeserializer"/>
-				<bean class="net.solarnetwork.codec.BasicObjectDatumStreamMetadataDeserializer"/>
-				<bean class="net.solarnetwork.codec.BasicStreamDatumArrayDeserializer"/>
-			</list>
-		</property>
-		<property name="featuresToDisable">
-			<list>
-				<value>#{T(com.fasterxml.jackson.databind.DeserializationFeature).FAIL_ON_UNKNOWN_PROPERTIES}</value>
-				<value>#{T(com.fasterxml.jackson.databind.DeserializationFeature).WRITE_DATES_AS_TIMESTAMPS}</value>
-				<value>#{T(com.fasterxml.jackson.databind.DeserializationFeature).WRITE_DATE_TIMESTAMPS_AS_NANOSECONDS}</value>
-			</list>
-		</property>
-		<property name="featuresToEnable">
-			<list>
-				<value>#{T(com.fasterxml.jackson.databind.DeserializationFeature).USE_BIG_DECIMAL_FOR_FLOATS}</value>
-			</list>
-		</property>
-	</bean>
+	<bean id="objectMapper" class="net.solarnetwork.codec.JsonUtils" factory-method="getObjectMapper"/>
 
 	<service ref="scheduler" interface="org.quartz.Scheduler">
 		<service-properties>

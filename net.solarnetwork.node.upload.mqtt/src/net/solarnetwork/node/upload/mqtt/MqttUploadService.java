@@ -23,12 +23,13 @@
 package net.solarnetwork.node.upload.mqtt;
 
 import static java.lang.String.format;
+import static net.solarnetwork.node.service.DatumEvents.datumEvent;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -59,34 +60,32 @@ import net.solarnetwork.common.mqtt.MqttPropertyType;
 import net.solarnetwork.common.mqtt.MqttQos;
 import net.solarnetwork.common.mqtt.MqttStats;
 import net.solarnetwork.common.mqtt.MqttVersion;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.datum.BasicStreamDatum;
+import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumProperties;
-import net.solarnetwork.domain.datum.GeneralDatum;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.domain.datum.ObjectDatumStreamMetadata;
-import net.solarnetwork.node.DatumMetadataService;
-import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.UploadService;
-import net.solarnetwork.node.domain.BaseDatum;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.GeneralLocationDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.reactor.BasicInstruction;
+import net.solarnetwork.node.reactor.BasicInstructionStatus;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.ReactorService;
-import net.solarnetwork.node.reactor.support.BasicInstruction;
-import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.service.DatumMetadataService;
+import net.solarnetwork.node.service.IdentityService;
+import net.solarnetwork.node.service.UploadService;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * {@link UploadService} using MQTT.
  * 
  * @author matt
- * @version 1.7
+ * @version 2.0
  */
 public class MqttUploadService extends BaseMqttConnectionService
 		implements UploadService, MqttMessageHandler, MqttConnectionObserver, SettingSpecifierProvider {
@@ -256,7 +255,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 	}
 
 	@Override
-	public String uploadDatum(Datum data) {
+	public String uploadDatum(NodeDatum datum) {
 		final Long nodeId = identityService.getNodeId();
 		final DatumMetadataService datumMetadataService = OptionalService
 				.service(datumMetadataServiceOpt);
@@ -266,29 +265,20 @@ public class MqttUploadService extends BaseMqttConnectionService
 				String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, nodeId);
 				try {
 					byte[] messageData = null;
-					JsonNode jsonData = objectMapper.valueToTree(data);
-					ObjectDatumKind kind;
-					Long objectId;
-					if ( data instanceof GeneralLocationDatum ) {
-						GeneralLocationDatum locDatum = (GeneralLocationDatum) data;
-						kind = ObjectDatumKind.Location;
-						objectId = locDatum.getLocationId();
-					} else {
-						kind = ObjectDatumKind.Node;
-						objectId = nodeId;
-					}
-					if ( datumMetadataService != null && data instanceof GeneralDatum ) {
+					JsonNode jsonData = objectMapper.valueToTree(datum);
+					ObjectDatumKind kind = datum.getKind();
+					Long objectId = (kind == ObjectDatumKind.Node ? nodeId : datum.getObjectId());
+					if ( datumMetadataService != null ) {
 						// try to post as stream datum, if metadata available
 						ObjectDatumStreamMetadata meta = datumMetadataService
-								.getDatumStreamMetadata(kind, objectId, data.getSourceId());
+								.getDatumStreamMetadata(kind, objectId, datum.getSourceId());
 						if ( meta != null ) {
 							// we've got stream metadata: post as this if all properties accounted for
 							try {
-								DatumProperties datumProps = DatumProperties
-										.propertiesFrom((GeneralDatum) data, meta);
+								DatumProperties datumProps = DatumProperties.propertiesFrom(datum, meta);
 								if ( datumProps != null ) {
 									BasicStreamDatum streamDatum = new BasicStreamDatum(
-											meta.getStreamId(), data.getTimestamp(), datumProps);
+											meta.getStreamId(), datum.getTimestamp(), datumProps);
 									messageData = objectMapper.writeValueAsBytes(streamDatum);
 								}
 							} catch ( IllegalArgumentException e ) {
@@ -300,27 +290,24 @@ public class MqttUploadService extends BaseMqttConnectionService
 					}
 					if ( messageData == null ) {
 						if ( includeVersionTag ) {
-							JsonNode samplesData = jsonData.path("samples");
-							if ( samplesData.isObject() ) {
-								JsonNode tagsData = samplesData.path("t");
-								ArrayNode tagsArrayNode = null;
-								if ( tagsData.isArray() ) {
-									tagsArrayNode = (ArrayNode) tagsData;
-								} else if ( tagsData.isNull() || tagsData.isMissingNode() ) {
-									tagsArrayNode = ((JsonNodeCreator) samplesData).arrayNode(1);
-									((ObjectNode) samplesData).set("t", tagsArrayNode);
+							JsonNode tagsData = jsonData.path("t");
+							ArrayNode tagsArrayNode = null;
+							if ( tagsData.isArray() ) {
+								tagsArrayNode = (ArrayNode) tagsData;
+							} else if ( tagsData.isNull() || tagsData.isMissingNode() ) {
+								tagsArrayNode = ((JsonNodeCreator) jsonData).arrayNode(1);
+								((ObjectNode) jsonData).set("t", tagsArrayNode);
+							}
+							if ( tagsArrayNode != null ) {
+								boolean found = false;
+								for ( JsonNode t : tagsArrayNode ) {
+									if ( TAG_VERSION_2.equals(t.textValue()) ) {
+										found = true;
+										break;
+									}
 								}
-								if ( tagsArrayNode != null ) {
-									boolean found = false;
-									for ( JsonNode t : tagsArrayNode ) {
-										if ( TAG_VERSION_2.equals(t.textValue()) ) {
-											found = true;
-											break;
-										}
-									}
-									if ( !found ) {
-										tagsArrayNode.add(TAG_VERSION_2);
-									}
+								if ( !found ) {
+									tagsArrayNode.add(TAG_VERSION_2);
 								}
 							}
 						}
@@ -332,11 +319,11 @@ public class MqttUploadService extends BaseMqttConnectionService
 						getMqttStats().incrementAndGet(
 								kind == ObjectDatumKind.Location ? SolarInCountStat.LocationDatumPosted
 										: SolarInCountStat.NodeDatumPosted);
-						postDatumUploadedEvent(data, jsonData);
-						log.info("Uploaded datum via MQTT: {}", data);
+						postDatumUploadedEvent(datum, jsonData);
+						log.info("Uploaded datum via MQTT: {}", datum);
 					}
-					return DigestUtils.md5DigestAsHex(String.format("%tQ;%s;%d;%s", data.getCreated(),
-							data.getSourceId(), objectId, kind).getBytes());
+					return DigestUtils.md5DigestAsHex(String.format("%tQ;%s;%d;%s", datum.getTimestamp(),
+							datum.getSourceId(), objectId, kind).getBytes());
 				} catch ( IOException | InterruptedException | ExecutionException
 						| TimeoutException e ) {
 					Throwable root = e;
@@ -346,10 +333,10 @@ public class MqttUploadService extends BaseMqttConnectionService
 					String msg = (root instanceof TimeoutException ? "timeout" : root.getMessage());
 					if ( log.isDebugEnabled() ) {
 						log.warn("Error posting datum {} via MQTT @ {}, falling back to batch mode",
-								data, getMqttConfig().getServerUri(), e);
+								datum, getMqttConfig().getServerUri(), e);
 					} else {
 						log.warn("Error posting datum {} via MQTT @ {}, falling back to batch mode: {}",
-								data, getMqttConfig().getServerUri(), msg);
+								datum, getMqttConfig().getServerUri(), msg);
 					}
 				}
 			}
@@ -361,35 +348,8 @@ public class MqttUploadService extends BaseMqttConnectionService
 	// what was actually uploaded
 	private void postDatumUploadedEvent(Datum datum, JsonNode node) {
 		Map<String, Object> props = JsonUtils.getStringMapFromTree(node);
-		if ( props != null && !props.isEmpty() ) {
-			if ( !(props.get("samples") instanceof Map<?, ?>) ) {
-				// no sample data; this must have been filtered out via transform
-				return;
-			}
-
-			// convert samples, which can contain nested maps for a/i/s 
-			@SuppressWarnings("unchecked")
-			Map<String, ?> samples = (Map<String, ?>) props.get("samples");
-			props.remove("samples");
-			for ( Map.Entry<String, ?> me : samples.entrySet() ) {
-				Object val = me.getValue();
-				if ( val instanceof Map<?, ?> ) {
-					@SuppressWarnings("unchecked")
-					Map<String, ?> subMap = (Map<String, ?>) val;
-					props.putAll(subMap);
-				} else {
-					props.put(me.getKey(), val);
-				}
-			}
-
-			String[] types = BaseDatum.getDatumTypes(datum.getClass());
-			if ( types != null && types.length > 0 ) {
-				props.put(Datum.DATUM_TYPE_PROPERTY, types[0]);
-				props.put(Datum.DATUM_TYPES_PROPERTY, types);
-			}
-			log.trace("Created {} event with props {}", UploadService.EVENT_TOPIC_DATUM_UPLOADED, props);
-			postEvent(new Event(UploadService.EVENT_TOPIC_DATUM_UPLOADED, props));
-		}
+		Event event = datumEvent(UploadService.EVENT_TOPIC_DATUM_UPLOADED, datum.getClass(), props);
+		postEvent(event);
 	}
 
 	private void postEvent(Event event) {
@@ -401,18 +361,17 @@ public class MqttUploadService extends BaseMqttConnectionService
 	}
 
 	private boolean publishInstructionAck(MqttConnection conn, Long nodeId, Instruction instr) {
-		if ( conn != null && nodeId != null ) {
-			final ReactorService reactor = (reactorServiceOpt != null ? reactorServiceOpt.service()
-					: null);
+		if ( conn != null && nodeId != null && instr != null && instr.getStatus() != null ) {
+			final ReactorService reactor = OptionalService.service(reactorServiceOpt);
 			final String topic = String.format(NODE_DATUM_TOPIC_TEMPLATE, nodeId);
+			final InstructionStatus status = instr.getStatus();
 			try {
 				conn.publish(new BasicMqttMessage(topic, false, getPublishQos(),
-						objectMapper.writeValueAsBytes(instr)))
+						objectMapper.writeValueAsBytes(status)))
 						.get(getMqttConfig().getConnectTimeoutSeconds(), TimeUnit.SECONDS);
 				getMqttStats().incrementAndGet(SolarInCountStat.InstructionStatusPosted);
-				log.info("Posted Instruction {} {} (local {}) acknowledgement state: {}",
-						instr.getRemoteInstructionId(), instr.getTopic(), instr.getId(),
-						instr.getInstructionState());
+				log.info("Posted Instruction {} [{}] acknowledgement status: {}",
+						status.getInstructionId(), instr.getTopic(), instr.getInstructionState());
 				return true;
 			} catch ( Exception e ) {
 				Throwable root = e;
@@ -439,7 +398,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 		}
 		MqttConnection conn = connection();
 		Long nodeId = identityService.getNodeId();
-		ReactorService reactor = (reactorServiceOpt != null ? reactorServiceOpt.service() : null);
+		ReactorService reactor = OptionalService.service(reactorServiceOpt);
 		if ( conn == null || nodeId == null ) {
 			// save locally for batch upload
 			if ( reactor != null ) {
@@ -478,69 +437,76 @@ public class MqttUploadService extends BaseMqttConnectionService
 
 	private void handleMqttMessage(MqttMessage message) {
 		final String topic = message.getTopic();
+		// look for and process instructions from message body, as JSON array
+		final ReactorService reactor = OptionalService.service(reactorServiceOpt);
+		if ( reactor == null ) {
+			return;
+		}
+		final InstructionExecutionService executor = OptionalService
+				.service(instructionExecutionServiceOpt);
+		final String instructorId = identityService.getSolarInBaseUrl();
 		try {
-			// look for and process instructions from message body, as JSON array
-			ReactorService reactor = (reactorServiceOpt != null ? reactorServiceOpt.service() : null);
-			if ( reactor != null ) {
-				JsonNode root = objectMapper.readTree(message.getPayload());
-				JsonNode instrArray = root.path("instructions");
-				if ( instrArray != null && instrArray.isArray() ) {
-					InstructionExecutionService executor = (instructionExecutionServiceOpt != null
-							? instructionExecutionServiceOpt.service()
-							: null);
-					List<Instruction> resultInstructions = new ArrayList<>(8);
-					// manually parse instruction, so we can immediately execute
-					List<Instruction> instructions = reactor.parseInstructions(
-							identityService.getSolarInBaseUrl(), instrArray, JSON_MIME_TYPE, null);
-					MqttConnection conn = connection();
-					Long nodeId = identityService.getNodeId();
-					for ( Instruction instr : instructions ) {
-						if ( log.isInfoEnabled() ) {
-							log.info("Instruction {} {} received with parameters: {}",
-									instr.getRemoteInstructionId(), instr.getTopic(),
-									instr.getParameterMap());
-						}
-						getMqttStats().incrementAndGet(SolarInCountStat.InstructionsReceived);
-						try {
-							InstructionStatus status = null;
-							if ( executor != null ) {
-								// save with Executing state immediately, to prevent reactor job from picking up
-								status = new BasicInstructionStatus(instr.getId(),
-										InstructionState.Executing, new Date());
-								Long id = reactor.storeInstruction(new BasicInstruction(instr, status));
-								instr = new BasicInstruction(instr, id, status);
+			JsonNode root = objectMapper.readTree(message.getPayload());
+			JsonNode instrArray = root.path("instructions");
+			if ( instrArray == null || !instrArray.isArray() ) {
+				return;
+			}
 
-								// execute immediately with our executor; pass Executing status back first
-								publishInstructionAck(conn, nodeId, instr);
-								status = executor.executeInstruction(instr);
-
-								if ( status == null ) {
-									log.info(
-											"No handler available for instruction {} {}: deferring to Received state",
-											instr.getRemoteInstructionId(), instr.getTopic());
-									// instruction not handled: change instruction status to Received
-									status = new BasicInstructionStatus(instr.getId(),
-											InstructionState.Received, new Date());
-								}
-							} else {
-								// execution didn't happen, so pass to deferred executor
-								status = reactor.processInstruction(instr);
-							}
-							if ( status == null ) {
-								// deferred executor didn't handle, so decline
-								status = new BasicInstructionStatus(instr.getId(),
-										InstructionState.Declined, new Date());
-							}
-							instr = new BasicInstruction(instr, status);
-							reactor.storeInstruction(instr);
-							resultInstructions.add(instr);
-						} catch ( Exception e ) {
-							log.error("Error handling instruction {}", instr, e);
-						}
+			final MqttConnection conn = connection();
+			final Long nodeId = identityService.getNodeId();
+			final List<Instruction> resultInstructions = new ArrayList<>();
+			for ( JsonNode instrNode : instrArray ) {
+				try {
+					net.solarnetwork.domain.Instruction commonInstr = objectMapper.treeToValue(instrNode,
+							net.solarnetwork.domain.Instruction.class);
+					if ( commonInstr == null ) {
+						continue;
 					}
-					postInstructionAcks(resultInstructions);
+					Instruction instr = BasicInstruction.from(commonInstr, instructorId);
+					if ( log.isInfoEnabled() ) {
+						log.info("Instruction {} {} received with parameters: {}", instr.getId(),
+								instr.getTopic(), instr.getParameterMap());
+					}
+					getMqttStats().incrementAndGet(SolarInCountStat.InstructionsReceived);
+
+					InstructionStatus status = null;
+					if ( executor != null ) {
+						// save with Executing state immediately, to prevent reactor job from picking up
+						status = new BasicInstructionStatus(instr.getId(), InstructionState.Executing,
+								Instant.now());
+						instr = new BasicInstruction(instr, status);
+						reactor.storeInstruction(instr);
+
+						// execute immediately with our executor; pass Executing status back first
+						publishInstructionAck(conn, nodeId, instr);
+						status = executor.executeInstruction(instr);
+
+						if ( status == null ) {
+							log.info(
+									"No handler available for instruction {} {}: deferring to Received state",
+									instr.getId(), instr.getTopic());
+							// instruction not handled: change instruction status to Received
+							status = new BasicInstructionStatus(instr.getId(), InstructionState.Received,
+									Instant.now());
+						}
+					} else {
+						// execution didn't happen, so pass to deferred executor
+						status = reactor.processInstruction(instr);
+					}
+					if ( status == null ) {
+						// deferred executor didn't handle, so decline
+						status = new BasicInstructionStatus(instr.getId(), InstructionState.Declined,
+								Instant.now());
+					}
+					instr = new BasicInstruction(instr, status);
+					reactor.storeInstruction(instr);
+					postInstructionAcks(null);
+					resultInstructions.add(instr);
+				} catch ( Exception e ) {
+					log.warn("Unable to accept instruction JSON [{}]: {}", instrNode, e.toString());
 				}
 			}
+			postInstructionAcks(resultInstructions);
 		} catch ( RuntimeException | IOException e ) {
 			log.error("Error handling MQTT message on topic {}", topic, e);
 		}

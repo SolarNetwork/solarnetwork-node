@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.upload.bulkjsonwebpost;
 
+import static net.solarnetwork.node.service.DatumEvents.datumEvent;
 import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
@@ -30,17 +31,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.springframework.context.MessageSource;
 import org.springframework.util.DigestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import net.solarnetwork.codec.JsonUtils;
-import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.reactor.BasicInstruction;
 import net.solarnetwork.node.reactor.InstructionAcknowledgementService;
@@ -48,7 +46,6 @@ import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.ReactorService;
 import net.solarnetwork.node.service.BulkUploadResult;
 import net.solarnetwork.node.service.BulkUploadService;
-import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.UploadService;
 import net.solarnetwork.node.service.support.JsonHttpClientSupport;
 import net.solarnetwork.service.OptionalService;
@@ -288,24 +285,8 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	// what was actually uploaded
 	private void postDatumUploadedEvent(NodeDatum datum, JsonNode node) {
 		Map<String, Object> props = JsonUtils.getStringMapFromTree(node);
-		if ( props != null && !props.isEmpty() ) {
-			for ( String k : new LinkedHashSet<>(props.keySet()) ) {
-				Object o = props.get(k);
-				if ( o instanceof Map<?, ?> ) {
-					props.remove(k);
-					for ( Entry<?, ?> e : ((Map<?, ?>) o).entrySet() ) {
-						props.put(e.getKey().toString(), e.getValue());
-					}
-				}
-			}
-			String[] types = DatumEvents.datumTypes(datum.getClass());
-			if ( types != null && types.length > 0 ) {
-				props.put(Datum.DATUM_TYPE_PROPERTY, types[0]);
-				props.put(Datum.DATUM_TYPES_PROPERTY, types);
-			}
-			log.debug("Created {} event with props {}", UploadService.EVENT_TOPIC_DATUM_UPLOADED, props);
-			postEvent(new Event(UploadService.EVENT_TOPIC_DATUM_UPLOADED, props));
-		}
+		Event event = datumEvent(UploadService.EVENT_TOPIC_DATUM_UPLOADED, datum.getClass(), props);
+		postEvent(event);
 	}
 
 	private void postEvent(Event event) {

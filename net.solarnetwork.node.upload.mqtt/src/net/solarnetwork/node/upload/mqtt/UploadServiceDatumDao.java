@@ -23,26 +23,24 @@
 package net.solarnetwork.node.upload.mqtt;
 
 import java.io.IOException;
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.UploadService;
 
 /**
  * {@link DatumDao} that delegates to another {@link DatumDao} only when an
  * {@link UploadService} fails to upload a datum.
  * 
- * @param T
- *        the datum type
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
-public class UploadServiceDatumDao<T extends Datum> implements DatumDao<T> {
+public class UploadServiceDatumDao implements DatumDao {
 
-	private final DatumDao<T> delegate;
+	private final DatumDao delegate;
 	private final UploadService uploadService;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -55,41 +53,14 @@ public class UploadServiceDatumDao<T extends Datum> implements DatumDao<T> {
 	 * @param delegate
 	 *        the delegate DAO
 	 */
-	public UploadServiceDatumDao(UploadService uploadService, DatumDao<T> delegate) {
+	public UploadServiceDatumDao(UploadService uploadService, DatumDao delegate) {
 		super();
 		this.delegate = delegate;
 		this.uploadService = uploadService;
 	}
 
-	/**
-	 * Gemini Blueprint hack constructor.
-	 * 
-	 * <p>
-	 * This constructor exists to work around a Gemini Blueprint bug where it
-	 * complains about setting the DatumDao&lt;T&gt; argument due to some
-	 * reified type error.
-	 * </p>
-	 * 
-	 * @param delegate
-	 *        the delegate DAO; will be cast to DatumDao&lt;T&gt;
-	 * @param uploadService
-	 *        the upload service
-	 * @param yesReally
-	 *        unused
-	 * @see #UploadServiceDatumDao(UploadService, DatumDao)
-	 */
-	@SuppressWarnings("unchecked")
-	public UploadServiceDatumDao(Object delegate, UploadService uploadService, boolean yesReally) {
-		this(uploadService, (DatumDao<T>) delegate);
-	}
-
 	@Override
-	public Class<? extends T> getDatumType() {
-		return delegate.getDatumType();
-	}
-
-	@Override
-	public void storeDatum(T datum) {
+	public void storeDatum(NodeDatum datum) {
 		try {
 			String id = uploadService.uploadDatum(datum);
 			if ( id != null ) {
@@ -113,12 +84,12 @@ public class UploadServiceDatumDao<T extends Datum> implements DatumDao<T> {
 	}
 
 	@Override
-	public List<T> getDatumNotUploaded(String destination) {
+	public List<NodeDatum> getDatumNotUploaded(String destination) {
 		return delegate.getDatumNotUploaded(destination);
 	}
 
 	@Override
-	public void setDatumUploaded(T datum, Date date, String destination, String trackingId) {
+	public void setDatumUploaded(NodeDatum datum, Instant date, String destination, String trackingId) {
 		delegate.setDatumUploaded(datum, date, destination, trackingId);
 	}
 
