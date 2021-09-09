@@ -22,9 +22,12 @@
 
 package net.solarnetwork.node.datum.energymeter.mock;
 
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -33,14 +36,16 @@ import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 import net.solarnetwork.domain.BasicDeviceInfo;
 import net.solarnetwork.domain.DeviceInfo;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.domain.ACEnergyDatum;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.node.support.DatumDataSourceSupport;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleAcEnergyDatum;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * Mock plugin to be the source of values for a GeneralNodeACEnergyDatum, this
@@ -56,7 +61,7 @@ import net.solarnetwork.node.support.DatumDataSourceSupport;
  * @version 1.5
  */
 public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
-		implements DatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, SettingSpecifierProvider {
 
 	// default values
 	private String sourceId = "Mock Energy Meter";
@@ -72,7 +77,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 
 	private Random rng = new Random();
 
-	private final AtomicReference<GeneralNodeACEnergyDatum> lastsample = new AtomicReference<GeneralNodeACEnergyDatum>();
+	private final AtomicReference<AcEnergyDatum> lastsample = new AtomicReference<>();
 
 	/**
 	 * Get a mock starting value for our meter based on the current time so the
@@ -89,8 +94,8 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	}
 
 	@Override
-	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
-		return GeneralNodeACEnergyDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AcEnergyDatum.class;
 	}
 
 	/***
@@ -101,22 +106,21 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * @return A {@link GeneralNodeACEnergyDatum}
 	 */
 	@Override
-	public GeneralNodeACEnergyDatum readCurrentDatum() {
-		GeneralNodeACEnergyDatum prev = this.lastsample.get();
-		GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
-		datum.setCreated(new Date());
-		datum.setSourceId(resolvePlaceholders(sourceId));
+	public NodeDatum readCurrentDatum() {
+		AcEnergyDatum prev = this.lastsample.get();
+		AcEnergyDatum datum = new SimpleAcEnergyDatum(resolvePlaceholders(sourceId), Instant.now(),
+				new DatumSamples());
 
 		// the values for most datum variables are calculated here
 		calcVariables(datum);
 
 		calcWattHours(prev, datum);
 
-		datum = applySamplesTransformer(datum, null);
-
 		this.lastsample.compareAndSet(prev, datum);
 
-		return datum;
+		NodeDatum result = applyDatumFilter(datum, null);
+
+		return result;
 	}
 
 	@Override
@@ -164,7 +168,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * @param f
 	 *        the frequency to use
 	 */
-	private void calcVariables(GeneralNodeACEnergyDatum datum) {
+	private void calcVariables(AcEnergyDatum datum) {
 		double vrms = readVoltage();
 		datum.setVoltage((float) vrms);
 
@@ -187,7 +191,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 
 		double phasecurrent = phasevoltage / impedance;
 		datum.setCurrent((float) phasecurrent);
-		datum.putInstantaneousSampleValue(ACEnergyDatum.CURRENT_KEY,
+		datum.asMutableSampleOperations().putSampleValue(Instantaneous, AcEnergyDatum.CURRENT_KEY,
 				BigDecimal.valueOf(phasecurrent).setScale(6, RoundingMode.HALF_UP));
 		double current = vrms / impedance;
 
@@ -202,16 +206,16 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		datum.setWatts((int) watts);
 
 		double phaseAngle = Math.atan(inductiveReactance / R);
-		datum.putInstantaneousSampleValue(ACEnergyDatum.POWER_FACTOR_KEY,
+		datum.asMutableSampleOperations().putSampleValue(Instantaneous, AcEnergyDatum.POWER_FACTOR_KEY,
 				BigDecimal.valueOf(Math.cos(phaseAngle)).setScale(8, RoundingMode.HALF_UP));
 	}
 
-	private void calcWattHours(GeneralNodeACEnergyDatum prev, GeneralNodeACEnergyDatum datum) {
+	private void calcWattHours(AcEnergyDatum prev, AcEnergyDatum datum) {
 		if ( prev == null ) {
 			datum.setWattHourReading(meterStartValue());
 		} else {
-			double diffHours = ((datum.getCreated().getTime() - prev.getCreated().getTime())
-					/ (double) (1000 * 60 * 60));
+			double diffHours = prev.getTimestamp().until(datum.getTimestamp(), ChronoUnit.MILLIS)
+					/ (double) (1000 * 60 * 60);
 			long wh = (long) (datum.getRealPower() * diffHours);
 			long newWh = prev.getWattHourReading() + wh;
 			datum.setWattHourReading(newWh);
