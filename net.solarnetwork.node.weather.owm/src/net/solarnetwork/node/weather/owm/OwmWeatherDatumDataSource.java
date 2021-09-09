@@ -27,24 +27,23 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.AtmosphericDatum;
-import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.node.domain.datum.AtmosphericDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
 
 /**
  * OpenWeatherMap implementation of a {@link AtmosphericDatum}
  * {@link DatumDataSource}.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
-public class OwmWeatherDatumDataSource extends ConfigurableOwmClientService<AtmosphericDatum>
-		implements SettingSpecifierProvider, DatumDataSource<AtmosphericDatum>,
-		MultiDatumDataSource<AtmosphericDatum> {
+public class OwmWeatherDatumDataSource extends ConfigurableOwmClientService
+		implements SettingSpecifierProvider, DatumDataSource, MultiDatumDataSource {
 
 	private DataCollectionMode dataCollectionMode = DataCollectionMode.Mixed;
 
@@ -59,13 +58,13 @@ public class OwmWeatherDatumDataSource extends ConfigurableOwmClientService<Atmo
 	}
 
 	@Override
-	public Class<? extends AtmosphericDatum> getDatumType() {
-		return GeneralAtmosphericDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AtmosphericDatum.class;
 	}
 
 	@Override
-	public Class<? extends AtmosphericDatum> getMultiDatumType() {
-		return GeneralAtmosphericDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return AtmosphericDatum.class;
 	}
 
 	@Override
@@ -78,14 +77,13 @@ public class OwmWeatherDatumDataSource extends ConfigurableOwmClientService<Atmo
 	}
 
 	@Override
-	public Collection<AtmosphericDatum> readMultipleDatum() {
+	public Collection<NodeDatum> readMultipleDatum() {
 		AtmosphericDatum curr = readCurrentDatum();
 		Collection<AtmosphericDatum> forecast = null;
 		if ( dataCollectionMode != DataCollectionMode.Observation ) {
 			forecast = getClient().getHourlyForecast(getLocationIdentifier());
 		}
-		List<AtmosphericDatum> results = new ArrayList<AtmosphericDatum>(
-				(forecast != null ? forecast.size() : 0) + 1);
+		List<NodeDatum> results = new ArrayList<>((forecast != null ? forecast.size() : 0) + 1);
 		if ( curr != null ) {
 			results.add(curr);
 		}

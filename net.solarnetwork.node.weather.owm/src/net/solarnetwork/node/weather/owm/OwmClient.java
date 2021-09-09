@@ -23,14 +23,14 @@
 package net.solarnetwork.node.weather.owm;
 
 import java.util.Collection;
-import net.solarnetwork.node.domain.AtmosphericDatum;
-import net.solarnetwork.node.domain.DayDatum;
+import net.solarnetwork.node.domain.datum.AtmosphericDatum;
+import net.solarnetwork.node.domain.datum.DayDatum;
 
 /**
  * API for accessing OWM information.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public interface OwmClient {
 

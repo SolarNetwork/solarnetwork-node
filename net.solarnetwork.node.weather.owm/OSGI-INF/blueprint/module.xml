@@ -14,15 +14,23 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 	
-	<bean id="generalLocationDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
-		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralLocationDatum)"/>
+	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
+		<property name="sticky" value="true"/>
 	</bean>	
 
-	<bean id="locationService" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.LocationService"/>
+	<reference id="objectMapperService" 
+		interface="net.solarnetwork.service.ObjectMapperService"
+		filter="(function=node)"/>
+		
+	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
+		factory-ref="objectMapperService" factory-method="getObjectMapper"/>
+
+	<bean id="locationService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.LocationService"/>
+		<property name="sticky" value="true"/>
 	</bean>
 
 	<service interface="net.solarnetwork.node.setup.SetupResourceProvider">
@@ -59,14 +67,14 @@
 		</property>
 	</bean>
 	
-	<bean id="dayJobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+	<bean id="dayJobMessageSource" class="net.solarnetwork.support.PrefixedMessageSource">
 		<property name="prefix" value="datumDataSource."/>
 		<property name="delegate">
-			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+			<bean class="net.solarnetwork.support.PrefixedMessageSource">
 				<property name="prefix" value="delegate."/>
 				<property name="delegate">
 					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-						<property name="basenames" value="net.solarnetwork.node.support.WeatherLocationDatumDataSource"/>
+						<property name="basenames" value="net.solarnetwork.node.service.support.WeatherLocationDatumDataSource"/>
 						<property name="parentMessageSource" ref="dayMessageSource"/>
 					</bean>
 				</property>
@@ -74,8 +82,8 @@
 		</property>
 	</bean>
 
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="OpenWeatherMap day information"/>
 			<property name="factoryUID" value="net.solarnetwork.node.weather.owm.day"/>
 			<property name="messageSource" ref="dayMessageSource"/>
@@ -85,7 +93,7 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.weather.owm.day" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.weather.owm.day"/>
@@ -93,7 +101,7 @@
 		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
 			<property name="trigger">
 				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-					<property name="name" value="owmDayDatumLoggerTrigger"/>
+					<property name="name" value="owmDayDatumPollTrigger"/>
 					<property name="cronExpression" value="0 15 2,12,22 * * ?"/>
 					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 					<property name="randomSecond" value="true"/>
@@ -101,13 +109,13 @@
 			</property>
 			<property name="jobDetail">
 				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-					<property name="name" value="owmDayDatumLoggerJob"/>
-					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
+					<property name="name" value="owmDayDatumPollJob"/>
+					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourcePollJob"/>
 					<property name="jobDataAsMap">
 						<map>
-							<entry key="datumDao" value-ref="generalLocationDatumDao"/>
+							<entry key="datumQueue" value-ref="datumQueue"/>
 							<entry key="multiDatumDataSource">
-								<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
+								<bean class="net.solarnetwork.node.service.support.LocationDatumDataSource">
 									<property name="messageSource" ref="dayJobMessageSource"/>
 									<property name="delegate">
 										<bean class="net.solarnetwork.node.weather.owm.OwmDayDatumDataSource">
@@ -119,7 +127,7 @@
 									<property name="locationService" ref="locationService"/>
 									<property name="requireLocationService" value="true"/>
 									<property name="locationType" value="day"/>
-									<property name="messageBundleBasename" value="net.solarnetwork.node.support.WeatherLocationDatumDataSource"/>
+									<property name="messageBundleBasename" value="net.solarnetwork.node.service.support.WeatherLocationDatumDataSource"/>
 								</bean>
 							</entry>
 						</map>
@@ -140,14 +148,14 @@
 		</property>
 	</bean>
 	
-	<bean id="weatherJobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+	<bean id="weatherJobMessageSource" class="net.solarnetwork.support.PrefixedMessageSource">
 		<property name="prefix" value="datumDataSource."/>
 		<property name="delegate">
-			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+			<bean class="net.solarnetwork.support.PrefixedMessageSource">
 				<property name="prefix" value="delegate."/>
 				<property name="delegate">
 					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-						<property name="basenames" value="net.solarnetwork.node.support.WeatherLocationDatumDataSource"/>
+						<property name="basenames" value="net.solarnetwork.node.service.support.WeatherLocationDatumDataSource"/>
 						<property name="parentMessageSource" ref="weatherMessageSource"/>
 					</bean>
 				</property>
@@ -155,8 +163,8 @@
 		</property>
 	</bean>
 
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="OpenWeatherMap weather information"/>
 			<property name="factoryUID" value="net.solarnetwork.node.weather.owm.weather"/>
 			<property name="messageSource" ref="weatherMessageSource"/>
@@ -166,7 +174,7 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.weather.owm.weather" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.weather.owm.weather"/>
@@ -174,7 +182,7 @@
 		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
 			<property name="trigger">
 				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-					<property name="name" value="owmWeatherDatumLoggerTrigger"/>
+					<property name="name" value="owmWeatherDatumPollTrigger"/>
 					<property name="cronExpression" value="0 10 * * * ?"/>
 					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 					<property name="randomSecond" value="true"/>
@@ -182,13 +190,13 @@
 			</property>
 			<property name="jobDetail">
 				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-					<property name="name" value="owmWeatherDatumLoggerJob"/>
-					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
+					<property name="name" value="owmWeatherDatumPollJob"/>
+					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourcePollJob"/>
 					<property name="jobDataAsMap">
 						<map>
-							<entry key="datumDao" value-ref="generalLocationDatumDao"/>
+							<entry key="datumQueue" value-ref="datumQueue"/>
 							<entry key="multiDatumDataSource">
-								<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
+								<bean class="net.solarnetwork.node.service.support.LocationDatumDataSource">
 									<property name="messageSource" ref="weatherJobMessageSource"/>
 									<property name="delegate">
 										<bean class="net.solarnetwork.node.weather.owm.OwmWeatherDatumDataSource">
@@ -200,7 +208,7 @@
 									<property name="locationService" ref="locationService"/>
 									<property name="requireLocationService" value="true"/>
 									<property name="locationType" value="weather"/>
-									<property name="messageBundleBasename" value="net.solarnetwork.node.support.WeatherLocationDatumDataSource"/>
+									<property name="messageBundleBasename" value="net.solarnetwork.node.service.support.WeatherLocationDatumDataSource"/>
 								</bean>
 							</entry>
 						</map>

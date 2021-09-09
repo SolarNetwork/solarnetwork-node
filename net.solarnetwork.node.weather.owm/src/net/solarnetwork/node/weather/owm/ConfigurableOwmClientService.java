@@ -29,22 +29,20 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.springframework.context.MessageSource;
-import net.solarnetwork.node.Identifiable;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
 import net.solarnetwork.node.settings.support.BasicSetupResourceSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.node.setup.SetupResourceProvider;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
- * Support class for configurable {@link OwmClient} based services.
+ * Support class for configurable {@link OwmClient} based data sources.
  * 
- * @param <T>
- *        the {@link Datum} type used for this service
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public abstract class ConfigurableOwmClientService<T extends Datum> implements Identifiable {
+public abstract class ConfigurableOwmClientService extends DatumDataSourceSupport {
 
 	/** A key to use for the "last datum" in the local cache. */
 	protected static final String LAST_DATUM_CACHE_KEY = "last";
@@ -61,11 +59,11 @@ public abstract class ConfigurableOwmClientService<T extends Datum> implements I
 	private SetupResourceProvider locationSettingResourceProvider;
 
 	/** A map to be used for caching datum data. */
-	protected final ConcurrentMap<String, T> datumCache;
+	protected final ConcurrentMap<String, NodeDatum> datumCache;
 
 	public ConfigurableOwmClientService() {
 		super();
-		datumCache = new ConcurrentHashMap<String, T>(4);
+		datumCache = new ConcurrentHashMap<>(4);
 	}
 
 	/**
@@ -76,8 +74,7 @@ public abstract class ConfigurableOwmClientService<T extends Datum> implements I
 	 */
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(8);
-		results.add(new BasicTextFieldSettingSpecifier("uid", null));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
+		results.addAll(baseIdentifiableSettings(null));
 		results.add(new BasicTextFieldSettingSpecifier("client.apiKey", null));
 		results.add(new BasicTextFieldSettingSpecifier("timeZoneId", DEFAULT_TIME_ZONE_ID));
 		results.add(new BasicTextFieldSettingSpecifier("locationIdentifier", null));
@@ -103,6 +100,7 @@ public abstract class ConfigurableOwmClientService<T extends Datum> implements I
 	 * 
 	 * @return the UID
 	 */
+	@Override
 	public String getUid() {
 		return uid;
 	}
@@ -113,6 +111,7 @@ public abstract class ConfigurableOwmClientService<T extends Datum> implements I
 	 * @param uid
 	 *        the UID to set
 	 */
+	@Override
 	public void setUid(String uid) {
 		this.uid = uid;
 	}
@@ -128,6 +127,7 @@ public abstract class ConfigurableOwmClientService<T extends Datum> implements I
 	 * @param groupUID
 	 *        the group UID to set
 	 */
+	@Override
 	public void setGroupUID(String groupUID) {
 		this.groupUID = groupUID;
 	}
@@ -156,6 +156,7 @@ public abstract class ConfigurableOwmClientService<T extends Datum> implements I
 	 * 
 	 * @return the message source
 	 */
+	@Override
 	public MessageSource getMessageSource() {
 		return messageSource;
 	}
@@ -166,6 +167,7 @@ public abstract class ConfigurableOwmClientService<T extends Datum> implements I
 	 * @param messageSource
 	 *        the message source to set
 	 */
+	@Override
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}

@@ -27,29 +27,32 @@ import static net.solarnetwork.codec.JsonUtils.parseIntegerAttribute;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.LocalTime;
 import org.springframework.web.util.UriComponentsBuilder;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.codec.JsonUtils;
-import net.solarnetwork.node.domain.AtmosphericDatum;
-import net.solarnetwork.node.domain.DayDatum;
-import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
-import net.solarnetwork.node.domain.GeneralDayDatum;
-import net.solarnetwork.node.support.JsonHttpClientSupport;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.node.domain.datum.AtmosphericDatum;
+import net.solarnetwork.node.domain.datum.DayDatum;
+import net.solarnetwork.node.domain.datum.SimpleAtmosphericDatum;
+import net.solarnetwork.node.domain.datum.SimpleDayDatum;
+import net.solarnetwork.node.service.support.JsonHttpClientSupport;
 
 /**
  * JSON implementation of {@link OwmClient}
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 
@@ -78,7 +81,7 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 			return null;
 		}
 		final String url = uriForLocation(identifier, "/data/2.5/weather").build().toUriString();
-		GeneralDayDatum result = null;
+		DayDatum result = null;
 		try {
 			JsonNode data = getObjectMapper().readTree(jsonGET(url));
 			result = parseDay(data, timeZoneId);
@@ -88,19 +91,18 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 		return result;
 	}
 
-	private GeneralDayDatum parseDay(JsonNode node, String timeZoneId) {
+	private DayDatum parseDay(JsonNode node, String timeZoneId) {
 		if ( node == null ) {
 			return null;
 		}
-		final DateTimeZone zone = (timeZoneId != null ? DateTimeZone.forID(timeZoneId)
-				: DateTimeZone.UTC);
-		GeneralDayDatum datum = new GeneralDayDatum();
+		final ZoneId zone = (timeZoneId != null ? ZoneId.of(timeZoneId) : ZoneOffset.UTC);
 
-		datum.setCreated(date(dayStart(parseTimestampNode(node, "dt"), zone)));
+		Instant ts = dayStart(parseTimestampNode(node, "dt"), zone);
+		SimpleDayDatum datum = new SimpleDayDatum(null, ts, new DatumSamples());
 
 		JsonNode sysNode = node.get("sys");
-		datum.setSunrise(localTime(parseTimestampNode(sysNode, "sunrise"), zone));
-		datum.setSunset(localTime(parseTimestampNode(sysNode, "sunset"), zone));
+		datum.setSunriseTime(localTime(parseTimestampNode(sysNode, "sunrise"), zone));
+		datum.setSunsetTime(localTime(parseTimestampNode(sysNode, "sunset"), zone));
 
 		return datum;
 	}
@@ -111,7 +113,7 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 			return null;
 		}
 		final String url = uriForLocation(identifier, "/data/2.5/weather").build().toUriString();
-		GeneralAtmosphericDatum result = null;
+		AtmosphericDatum result = null;
 		try {
 			JsonNode data = getObjectMapper().readTree(jsonGET(url));
 			result = parseWeatherData(data);
@@ -121,15 +123,17 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 		return result;
 	}
 
-	private GeneralAtmosphericDatum parseWeatherData(JsonNode node) {
-		GeneralAtmosphericDatum datum = parseForecastData(node);
+	private AtmosphericDatum parseWeatherData(JsonNode node) {
+		AtmosphericDatum datum = parseForecastData(node);
 		if ( datum != null ) {
 			// remove min/max temps, which for conditions data is not what we want
-			datum.putInstantaneousSampleValue(DayDatum.TEMPERATURE_MINIMUM_KEY, null);
-			datum.putInstantaneousSampleValue(DayDatum.TEMPERATURE_MAXIMUM_KEY, null);
+			datum.asMutableSampleOperations().putSampleValue(DatumSamplesType.Instantaneous,
+					DayDatum.TEMPERATURE_MINIMUM_KEY, null);
+			datum.asMutableSampleOperations().putSampleValue(DatumSamplesType.Instantaneous,
+					DayDatum.TEMPERATURE_MAXIMUM_KEY, null);
 
 			// remove forecast tag (all tags)
-			datum.getSamples().setTags(null);
+			datum.asMutableSampleOperations().setTags(null);
 		}
 		return datum;
 	}
@@ -146,7 +150,7 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 			JsonNode list = data.path("list");
 			if ( list.isArray() ) {
 				for ( JsonNode item : list ) {
-					GeneralAtmosphericDatum d = parseForecastData(item);
+					AtmosphericDatum d = parseForecastData(item);
 					if ( d != null ) {
 						results.add(d);
 					}
@@ -158,20 +162,20 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 		return results;
 	}
 
-	private GeneralAtmosphericDatum parseForecastData(JsonNode node) {
+	private AtmosphericDatum parseForecastData(JsonNode node) {
 		if ( node == null || !node.isObject() ) {
 			return null;
 		}
-		GeneralAtmosphericDatum d = new GeneralAtmosphericDatum();
-		d.setCreated(date(parseTimestampNode(node, "dt")));
+		Instant ts = parseTimestampNode(node, "dt");
+		SimpleAtmosphericDatum d = new SimpleAtmosphericDatum(null, ts, new DatumSamples());
 		d.addTag(AtmosphericDatum.TAG_FORECAST);
 
 		JsonNode main = node.path("main");
 		d.setTemperature(JsonUtils.parseBigDecimalAttribute(main, "temp"));
-		d.putInstantaneousSampleValue(DayDatum.TEMPERATURE_MINIMUM_KEY,
-				parseBigDecimalAttribute(main, "temp_min"));
-		d.putInstantaneousSampleValue(DayDatum.TEMPERATURE_MAXIMUM_KEY,
-				parseBigDecimalAttribute(main, "temp_max"));
+		d.asMutableSampleOperations().putSampleValue(DatumSamplesType.Instantaneous,
+				DayDatum.TEMPERATURE_MINIMUM_KEY, parseBigDecimalAttribute(main, "temp_min"));
+		d.asMutableSampleOperations().putSampleValue(DatumSamplesType.Instantaneous,
+				DayDatum.TEMPERATURE_MAXIMUM_KEY, parseBigDecimalAttribute(main, "temp_max"));
 		BigDecimal hPa = parseBigDecimalAttribute(main, "pressure");
 		if ( hPa != null ) {
 			d.setAtmosphericPressure(hPa.multiply(new BigDecimal(100)).intValue());
@@ -184,7 +188,8 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 		if ( weather.isArray() && weather.size() > 0 ) {
 			weather = weather.iterator().next();
 			d.setSkyConditions(weather.path("main").asText());
-			d.putStatusSampleValue("iconId", weather.path("icon").asText());
+			d.asMutableSampleOperations().putSampleValue(DatumSamplesType.Status, "iconId",
+					weather.path("icon").asText());
 		}
 
 		JsonNode wind = node.path("wind");
@@ -193,10 +198,12 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 			d.setWindDirection(wdir.setScale(0, RoundingMode.HALF_UP).intValue());
 		}
 		d.setWindSpeed(parseBigDecimalAttribute(wind, "speed"));
-		d.putInstantaneousSampleValue("wgust", parseBigDecimalAttribute(wind, "gust"));
+		d.asMutableSampleOperations().putSampleValue(DatumSamplesType.Instantaneous, "wgust",
+				parseBigDecimalAttribute(wind, "gust"));
 
 		JsonNode clouds = node.path("clouds");
-		d.putInstantaneousSampleValue("cloudiness", parseIntegerAttribute(clouds, "all"));
+		d.asMutableSampleOperations().putSampleValue(DatumSamplesType.Instantaneous, "cloudiness",
+				parseIntegerAttribute(clouds, "all"));
 
 		JsonNode rain = node.path("rain");
 		BigDecimal threeHourRain = parseBigDecimalAttribute(rain, "3h");
@@ -207,33 +214,26 @@ public class JsonOwmClient extends JsonHttpClientSupport implements OwmClient {
 		return d;
 	}
 
-	private DateTime parseTimestampNode(JsonNode node, String key) {
+	private Instant parseTimestampNode(JsonNode node, String key) {
 		Integer val = parseIntegerAttribute(node, key);
 		if ( val == null ) {
 			return null;
 		}
-		return new DateTime(val * 1000L, DateTimeZone.UTC);
+		return Instant.ofEpochMilli(val * 1000L);
 	}
 
-	private DateTime dayStart(DateTime ts, DateTimeZone zone) {
+	private Instant dayStart(Instant ts, ZoneId zone) {
 		if ( ts == null ) {
 			return null;
 		}
-		return ts.withZone(zone).dayOfMonth().roundFloorCopy();
+		return ts.atZone(zone).truncatedTo(ChronoUnit.DAYS).toInstant();
 	}
 
-	private LocalTime localTime(DateTime ts, DateTimeZone zone) {
+	private LocalTime localTime(Instant ts, ZoneId zone) {
 		if ( ts == null ) {
 			return null;
 		}
-		return ts.withZone(zone).toLocalTime();
-	}
-
-	private Date date(DateTime ts) {
-		if ( ts == null ) {
-			return null;
-		}
-		return ts.toDate();
+		return ts.atZone(zone).toLocalTime();
 	}
 
 	@Override

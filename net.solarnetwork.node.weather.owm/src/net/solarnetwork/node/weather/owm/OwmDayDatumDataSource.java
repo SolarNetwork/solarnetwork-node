@@ -22,39 +22,39 @@
 
 package net.solarnetwork.node.weather.owm;
 
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Collections;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.DayDatum;
-import net.solarnetwork.node.domain.GeneralDayDatum;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.domain.datum.DayDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * OWM implementation of a {@link DayDatum} {@link DatumDataSource}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class OwmDayDatumDataSource extends ConfigurableOwmClientService<DayDatum>
-		implements SettingSpecifierProvider, DatumDataSource<DayDatum>, MultiDatumDataSource<DayDatum> {
+public class OwmDayDatumDataSource extends ConfigurableOwmClientService
+		implements SettingSpecifierProvider, DatumDataSource, MultiDatumDataSource {
 
 	@Override
-	public Class<? extends DayDatum> getDatumType() {
-		return GeneralDayDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return DayDatum.class;
 	}
 
 	@Override
-	public DayDatum readCurrentDatum() {
+	public NodeDatum readCurrentDatum() {
 		// first see if we have cached data
-		DayDatum result = datumCache.get(LAST_DATUM_CACHE_KEY);
-		if ( result != null && result.getCreated() != null ) {
-			Calendar now = Calendar.getInstance();
-			Calendar datumCal = Calendar.getInstance();
-			datumCal.setTime(result.getCreated());
-			if ( now.get(Calendar.YEAR) == datumCal.get(Calendar.YEAR)
-					&& now.get(Calendar.DAY_OF_YEAR) == datumCal.get(Calendar.DAY_OF_YEAR) ) {
+		NodeDatum result = datumCache.get(LAST_DATUM_CACHE_KEY);
+		if ( result != null && result.getTimestamp() != null ) {
+			ZoneId zone = ZoneId.of(getTimeZoneId());
+			LocalDate today = LocalDate.now(zone);
+			LocalDate datumDay = result.getTimestamp().atZone(zone).toLocalDate();
+			if ( today.compareTo(datumDay) == 0 ) {
 				// cached data is for same date, so return that
 				return result;
 			}
@@ -73,12 +73,12 @@ public class OwmDayDatumDataSource extends ConfigurableOwmClientService<DayDatum
 	}
 
 	@Override
-	public Class<? extends DayDatum> getMultiDatumType() {
-		return GeneralDayDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return DayDatum.class;
 	}
 
 	@Override
-	public Collection<DayDatum> readMultipleDatum() {
+	public Collection<NodeDatum> readMultipleDatum() {
 		return Collections.singleton(readCurrentDatum());
 	}
 

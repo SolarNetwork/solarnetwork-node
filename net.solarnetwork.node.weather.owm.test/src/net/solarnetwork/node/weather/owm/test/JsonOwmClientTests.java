@@ -26,29 +26,30 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Collection;
-import java.util.Date;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
-import org.joda.time.LocalTime;
 import org.junit.Before;
 import org.junit.Test;
-import net.solarnetwork.node.domain.AtmosphericDatum;
-import net.solarnetwork.node.domain.DayDatum;
-import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
-import net.solarnetwork.node.domain.GeneralDayDatum;
+import net.solarnetwork.node.domain.datum.AtmosphericDatum;
+import net.solarnetwork.node.domain.datum.DayDatum;
+import net.solarnetwork.node.domain.datum.SimpleAtmosphericDatum;
+import net.solarnetwork.node.domain.datum.SimpleDayDatum;
 import net.solarnetwork.node.weather.owm.JsonOwmClient;
 
 /**
  * Test cases for the {@link JsonOwmClient} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class JsonOwmClientTests extends AbstractHttpClientTests {
 
@@ -88,15 +89,16 @@ public class JsonOwmClientTests extends AbstractHttpClientTests {
 
 		DayDatum datum = client.getCurrentDay(owmLocationId, "Pacific/Auckland");
 		assertThat("Request handled", handler.isHandled(), equalTo(true));
-		assertThat("GeneralDayDatum", datum, instanceOf(GeneralDayDatum.class));
+		assertThat("SimpleDayDatum", datum, instanceOf(SimpleDayDatum.class));
 
-		assertThat("Created", datum.getCreated(), equalTo(
-				new DateTime(2018, 9, 17, 0, 0, DateTimeZone.forID("Pacific/Auckland")).toDate()));
+		Instant ts = ZonedDateTime.of(2018, 9, 17, 0, 0, 0, 0, ZoneId.of("Pacific/Auckland"))
+				.toInstant();
+		assertThat("Created", datum.getTimestamp(), is(ts));
 
-		assertThat("Sunrise", datum.getSunrise(), equalTo(new LocalTime(6, 19)));
-		assertThat("Sunset", datum.getSunset(), equalTo(new LocalTime(18, 11)));
+		assertThat("Sunrise", datum.getSunriseTime(), is(LocalTime.of(6, 19)));
+		assertThat("Sunset", datum.getSunsetTime(), is(LocalTime.of(18, 11)));
 
-		assertThat("No forecast tag", ((GeneralDayDatum) datum).hasTag(DayDatum.TAG_FORECAST),
+		assertThat("No forecast tag", datum.asSampleOperations().hasTag(DayDatum.TAG_FORECAST),
 				equalTo(false));
 	}
 
@@ -128,8 +130,8 @@ public class JsonOwmClientTests extends AbstractHttpClientTests {
 		assertThat("Forecast resultcount", results, hasSize(40));
 
 		AtmosphericDatum datum = results.iterator().next();
-		assertThat("GeneralAtmosphericDatum", datum, instanceOf(GeneralAtmosphericDatum.class));
-		assertThat("Created", datum.getCreated(), equalTo(new Date(1537142400000L)));
+		assertThat("SimpleAtmosphericDatum", datum, instanceOf(SimpleAtmosphericDatum.class));
+		assertThat("Created", datum.getTimestamp(), equalTo(Instant.ofEpochMilli(1537142400000L)));
 		assertThat("Temperature", datum.getTemperature(), equalTo(new BigDecimal("15.44")));
 		assertThat("Temperature min", datum.getSampleData().get("tempMin"),
 				equalTo(new BigDecimal("13.72")));
@@ -145,8 +147,8 @@ public class JsonOwmClientTests extends AbstractHttpClientTests {
 
 		assertThat("Rain", datum.getRain(), equalTo(0));
 
-		assertThat("Forecast tag",
-				((GeneralAtmosphericDatum) datum).hasTag(AtmosphericDatum.TAG_FORECAST), equalTo(true));
+		assertThat("Forecast tag", datum.asSampleOperations().hasTag(AtmosphericDatum.TAG_FORECAST),
+				equalTo(true));
 	}
 
 	@Test
@@ -175,8 +177,8 @@ public class JsonOwmClientTests extends AbstractHttpClientTests {
 		AtmosphericDatum datum = client.getCurrentConditions(owmLocationId);
 		assertTrue("Request handled", handler.isHandled());
 
-		assertThat("GeneralAtmosphericDatum", datum, instanceOf(GeneralAtmosphericDatum.class));
-		assertThat("Created", datum.getCreated(), equalTo(new Date(1537138800000L)));
+		assertThat("SimpleAtmosphericDatum", datum, instanceOf(SimpleAtmosphericDatum.class));
+		assertThat("Created", datum.getTimestamp(), equalTo(Instant.ofEpochMilli(1537138800000L)));
 		assertThat("Temperature", datum.getTemperature(), equalTo(new BigDecimal("14.0")));
 		assertThat("Temperature min", datum.getSampleData().get("tempMin"), nullValue());
 		assertThat("Temperature min", datum.getSampleData().get("tempMax"), nullValue());
@@ -191,7 +193,7 @@ public class JsonOwmClientTests extends AbstractHttpClientTests {
 
 		assertThat("Rain", datum.getRain(), nullValue());
 
-		assertThat("No tags", ((GeneralAtmosphericDatum) datum).getSamples().getTags(), nullValue());
+		assertThat("No tags", datum.asSampleOperations().getTags(), nullValue());
 	}
 
 }
