@@ -24,8 +24,11 @@ package net.solarnetwork.node.service.support;
 
 import java.util.Hashtable;
 import java.util.Map;
+import org.osgi.framework.BundleContext;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
+import net.solarnetwork.common.osgi.service.BaseServiceListener;
+import net.solarnetwork.common.osgi.service.RegisteredService;
 import net.solarnetwork.node.service.BeanConfiguration;
 import net.solarnetwork.node.service.support.BeanConfigurationServiceRegistrationListener.BeanConfigurationRegisteredService;
 
@@ -101,7 +104,7 @@ import net.solarnetwork.node.service.support.BeanConfigurationServiceRegistratio
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class BeanConfigurationServiceRegistrationListener
 		extends BaseServiceListener<BeanConfiguration, BeanConfigurationRegisteredService> {
@@ -109,6 +112,18 @@ public class BeanConfigurationServiceRegistrationListener
 	private Class<?> serviceClass = null;
 	private String[] serviceInterfaces = null;
 	private Map<String, Object> serviceProperties = null;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param bundleContext
+	 *        the bundle context
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
+	public BeanConfigurationServiceRegistrationListener(BundleContext bundleContext) {
+		super(bundleContext);
+	}
 
 	/**
 	 * Callback when an object has been registered.

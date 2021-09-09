@@ -56,7 +56,7 @@
 
 	<bean id="identityService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext" />
-		<property name="serviceClassName" value="net.solarnetwork.node.IdentityService" />
+		<property name="serviceClassName" value="net.solarnetwork.node.service.IdentityService" />
 		<property name="sticky" value="true"/>
 	</bean>
 
@@ -143,15 +143,13 @@
 		</property>
 	</bean>
 
-	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">
-		<property name="featuresToEnable">
-			<list>
-				<value>#{T(com.fasterxml.jackson.databind.DeserializationFeature).USE_BIG_DECIMAL_FOR_FLOATS}
-				</value>
-			</list>
-		</property>
-	</bean>
-
+	<reference id="objectMapperService" 
+		interface="net.solarnetwork.service.ObjectMapperService"
+		filter="(function=node)"/>
+		
+	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
+		factory-ref="objectMapperService" factory-method="getObjectMapper"/>
+	
 	<!-- Use Java @Transactional annotations to declare transactions. -->
 	<tx:annotation-driven transaction-manager="txManager" />
 

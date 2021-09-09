@@ -45,7 +45,7 @@
 		<property name="identityService">
 			<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 				<argument ref="bundleContext"/>
-				<property name="serviceClassName" value="net.solarnetwork.node.IdentityService"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.service.IdentityService"/>
 				<property name="sticky" value="true"/>
 			</bean>	
 		</property>

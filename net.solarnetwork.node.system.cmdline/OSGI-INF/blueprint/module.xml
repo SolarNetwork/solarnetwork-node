@@ -17,9 +17,9 @@
 	
 	<service>
 		<interfaces>
-			<value>net.solarnetwork.node.SystemService</value>
+			<value>net.solarnetwork.node.service.SystemService</value>
 			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
-			<value>net.solarnetwork.node.reactor.FeedbackInstructionHandler</value>
+			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
 		</interfaces>
 		<service-properties>
 			<entry key="instruction">

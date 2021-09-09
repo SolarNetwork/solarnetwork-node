@@ -82,7 +82,7 @@ import net.solarnetwork.util.StringUtils;
  * implementation.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class OBRPluginService implements PluginService, SettingSpecifierProvider {
 
@@ -99,8 +99,8 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 			"net\\.solarnetwork\\.node\\.dao(?:\\..*)*", "net\\.solarnetwork\\.node\\.setup(?:\\..*)*",
 			"net\\.solarnetwork\\.node\\.settings(?:\\..*)*" };
 
+	private final BundleContext bundleContext;
 	private RepositoryAdmin repositoryAdmin;
-	private BundleContext bundleContext;
 	private List<OBRRepository> repositories;
 	private String downloadPath = "app/main";
 	private String[] restrictingSymbolicNameFilters = DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER;
@@ -143,29 +143,24 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 		}
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param bundleContext
+	 *        the bundle context
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
+	public OBRPluginService(BundleContext bundleContext) {
+		super();
+		this.bundleContext = bundleContext;
+	}
+
 	@Override
 	protected void finalize() throws Throwable {
 		// just in case... clean up our timers
 		destroy();
 		super.finalize();
-	}
-
-	/**
-	 * Call to initialize the service, after all properties have been
-	 * configured.
-	 */
-	public void init() {
-		if ( repositories != null && repositoryAdmin != null ) {
-			executorService.execute(new Runnable() {
-
-				@Override
-				public void run() {
-					for ( OBRRepository repo : repositories ) {
-						configureOBRRepository(repo);
-					}
-				}
-			});
-		}
 	}
 
 	/**
@@ -610,10 +605,10 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		OBRPluginService defaults = new OBRPluginService();
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>();
 		result.add(new BasicTextFieldSettingSpecifier("restrictingSymbolicNameFilter",
-				defaults.getRestrictingSymbolicNameFilter()));
+				StringUtils.commaDelimitedStringFromCollection(
+						Arrays.asList(DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER))));
 		return result;
 	}
 
@@ -691,16 +686,6 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 	 */
 	public void setExclusionSymbolicNameFilters(String[] exclusionSymbolicNameFilters) {
 		this.exclusionSymbolicNameFilters = exclusionSymbolicNameFilters;
-	}
-
-	/**
-	 * Set the OSGi {@link BundleContext} to enable installing/removing plugins.
-	 * 
-	 * @param bundleContext
-	 *        the context to use
-	 */
-	public void setBundleContext(BundleContext bundleContext) {
-		this.bundleContext = bundleContext;
 	}
 
 	public void setDownloadPath(String downloadPath) {

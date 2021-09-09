@@ -31,6 +31,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 import org.quartz.CronTrigger;
 import org.quartz.JobDetail;
@@ -39,12 +40,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.scheduling.quartz.JobDetailFactoryBean;
+import net.solarnetwork.common.osgi.service.BaseServiceListener;
+import net.solarnetwork.common.osgi.service.RegisteredService;
 import net.solarnetwork.node.dao.jdbc.JdbcDao;
 import net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean;
 import net.solarnetwork.node.job.SimpleTriggerAndJobDetail;
 import net.solarnetwork.node.job.TriggerAndJobDetail;
-import net.solarnetwork.node.service.support.BaseServiceListener;
-import net.solarnetwork.node.service.support.RegisteredService;
 
 /**
  * An OSGi service registration listener for JdbcDao services, so various
@@ -126,6 +127,18 @@ public class DerbyMaintenanceRegistrationListener
 	private JdbcOperations jdbcOperations = null;
 	private Properties maintenanceProperties = null;
 	private String compressTableCronExpression = DEFAULT_COMPRESS_TABLE_CRON_EXPRESSION;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param bundleContext
+	 *        the bundle context
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
+	public DerbyMaintenanceRegistrationListener(BundleContext bundleContext) {
+		super(bundleContext);
+	}
 
 	/**
 	 * Callback when a JdbcDao has been registered.

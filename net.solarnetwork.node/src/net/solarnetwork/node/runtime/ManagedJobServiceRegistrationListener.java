@@ -118,18 +118,40 @@ import net.solarnetwork.node.job.ServiceProvider;
  * </dl>
  * 
  * @author matt
- * @version 2.4
+ * @version 3.0
  */
 public class ManagedJobServiceRegistrationListener implements ConfigurationListener {
 
-	private Scheduler scheduler;
-	private BundleContext bundleContext;
-
+	private final BundleContext bundleContext;
+	private final Scheduler scheduler;
 	private ServiceRegistration<ConfigurationListener> configurationListenerRef;
+
 	private final Map<String, List<ServiceRegistration<?>>> registeredServices = new HashMap<String, List<ServiceRegistration<?>>>();
 	private final Map<String, ManagedTriggerAndJobDetail> pidMap = new HashMap<String, ManagedTriggerAndJobDetail>();
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param bundleContext
+	 *        the bundle context
+	 * @param scheduler
+	 *        the scheduler
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
+	public ManagedJobServiceRegistrationListener(BundleContext bundleContext, Scheduler scheduler) {
+		super();
+		if ( bundleContext == null ) {
+			throw new IllegalArgumentException("The bundleContext argument must not be null.");
+		}
+		this.bundleContext = bundleContext;
+		if ( scheduler == null ) {
+			throw new IllegalArgumentException("The scheduler argument must not be null.");
+		}
+		this.scheduler = scheduler;
+	}
 
 	/**
 	 * Call to close down this instance.
@@ -335,12 +357,13 @@ public class ManagedJobServiceRegistrationListener implements ConfigurationListe
 		}
 	}
 
-	public void setScheduler(Scheduler scheduler) {
-		this.scheduler = scheduler;
-	}
-
-	public void setBundleContext(BundleContext bundleContext) {
-		this.bundleContext = bundleContext;
+	/**
+	 * Get the scheduler.
+	 * 
+	 * @return the scheduler
+	 */
+	public Scheduler getScheduler() {
+		return scheduler;
 	}
 
 }

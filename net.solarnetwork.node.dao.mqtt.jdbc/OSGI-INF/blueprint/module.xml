@@ -27,11 +27,11 @@
 
 	<!-- Service References -->
 
-	<reference id="dataSource" interface="javax.sql.DataSource" filter="(db=node-data)" />
+	<reference id="dataSource" interface="javax.sql.DataSource" filter="(db=node-data)"/>
 
 	<bean id="eventAdmin" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext" />
-		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin" />
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
 		<property name="sticky" value="true"/>
 	</bean>
 	

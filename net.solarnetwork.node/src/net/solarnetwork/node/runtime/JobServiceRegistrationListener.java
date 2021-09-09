@@ -35,6 +35,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.Configuration;
@@ -48,9 +49,9 @@ import org.quartz.SchedulerException;
 import org.quartz.SimpleScheduleBuilder;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
+import net.solarnetwork.common.osgi.service.BaseServiceListener;
+import net.solarnetwork.common.osgi.service.RegisteredService;
 import net.solarnetwork.node.job.TriggerAndJobDetail;
-import net.solarnetwork.node.service.support.BaseServiceListener;
-import net.solarnetwork.node.service.support.RegisteredService;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
@@ -107,11 +108,29 @@ public class JobServiceRegistrationListener
 		extends BaseServiceListener<TriggerAndJobDetail, RegisteredService<TriggerAndJobDetail>>
 		implements ConfigurationListener {
 
-	private Scheduler scheduler;
+	private final Scheduler scheduler;
 
 	private ServiceRegistration<ConfigurationListener> configurationListenerRef;
 
-	private final Map<String, JobSettingSpecifierProvider> providerMap = new TreeMap<String, JobSettingSpecifierProvider>();
+	private final Map<String, JobSettingSpecifierProvider> providerMap = new TreeMap<>();
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param bundleContext
+	 *        the bundle context
+	 * @param scheduler
+	 *        the scheduler
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
+	public JobServiceRegistrationListener(BundleContext bundleContext, Scheduler scheduler) {
+		super(bundleContext);
+		if ( scheduler == null ) {
+			throw new IllegalArgumentException("The scheduler argument must not be null.");
+		}
+		this.scheduler = scheduler;
+	}
 
 	private String pidForSymbolicName(String name) {
 		return name + ".JOBS";
@@ -283,12 +302,13 @@ public class JobServiceRegistrationListener
 		}
 	}
 
+	/**
+	 * Get the scheduler.
+	 * 
+	 * @return the scheduler
+	 */
 	public Scheduler getScheduler() {
 		return scheduler;
-	}
-
-	public void setScheduler(Scheduler scheduler) {
-		this.scheduler = scheduler;
 	}
 
 }

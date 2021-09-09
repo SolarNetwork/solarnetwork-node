@@ -101,7 +101,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	private final OptionalService<EventAdmin> eventAdmin;
 	private long startupDelayMs = DEFAULT_STARTUP_DELAY_MS;
 	private long queueDelayMs = DEFAULT_QUEUE_DELAY_MS;
-	private OptionalFilterableService<DatumFilterService> transformService;
+	private OptionalFilterableService<DatumFilterService> datumFilterService;
 	private UncaughtExceptionHandler datumProcessorExceptionHandler;
 
 	private long processorStartupDelayMs;
@@ -446,7 +446,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	}
 
 	private NodeDatum applyTransform(DelayedDatum event) {
-		DatumFilterService xform = OptionalService.service(transformService);
+		DatumFilterService xform = OptionalService.service(datumFilterService);
 		if ( xform == null ) {
 			return event.datum;
 		}
@@ -608,8 +608,8 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 * 
 	 * @return the transform service, or {@literal null}
 	 */
-	public OptionalFilterableService<DatumFilterService> getTransformService() {
-		return transformService;
+	public OptionalFilterableService<DatumFilterService> getDatumFilterService() {
+		return datumFilterService;
 	}
 
 	/**
@@ -618,8 +618,8 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 * @param transformService
 	 *        the transform service to set
 	 */
-	public void setTransformService(OptionalFilterableService<DatumFilterService> transformService) {
-		this.transformService = transformService;
+	public void setDatumFilterService(OptionalFilterableService<DatumFilterService> transformService) {
+		this.datumFilterService = transformService;
 	}
 
 	/**
@@ -628,7 +628,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 * @return the service UID
 	 */
 	public String getTransformServiceUid() {
-		return transformService.getPropertyValue(UID_PROPERTY);
+		return datumFilterService.getPropertyValue(UID_PROPERTY);
 	}
 
 	/**
@@ -638,7 +638,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 *        the service UID
 	 */
 	public void setTransformServiceUid(String uid) {
-		transformService.setPropertyFilter(UID_PROPERTY, uid);
+		datumFilterService.setPropertyFilter(UID_PROPERTY, uid);
 	}
 
 	/**

@@ -352,7 +352,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 	@Test
 	public void offer_datum_filtered() throws InterruptedException {
 		// GIVEN
-		queue.setTransformService(new StaticOptionalService<>(new TestTransformService() {
+		queue.setDatumFilterService(new StaticOptionalService<>(new TestTransformService() {
 
 			@Override
 			public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
@@ -395,7 +395,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		// GIVEN
 		final DatumSamples transformed = new DatumSamples();
 		transformed.putInstantaneousSampleValue("foo", 1234);
-		queue.setTransformService(new StaticOptionalService<>(new TestTransformService() {
+		queue.setDatumFilterService(new StaticOptionalService<>(new TestTransformService() {
 
 			@Override
 			public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
@@ -501,7 +501,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 				exceptionRef.set(e);
 			}
 		});
-		queue.setTransformService(new StaticOptionalService<>(new TestTransformService() {
+		queue.setDatumFilterService(new StaticOptionalService<>(new TestTransformService() {
 
 			private int count = 0;
 

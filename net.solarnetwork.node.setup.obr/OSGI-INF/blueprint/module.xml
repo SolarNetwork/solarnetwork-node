@@ -20,11 +20,7 @@
 
 	<reference id="repositoryAdmin" availability="mandatory" interface="org.osgi.service.obr.RepositoryAdmin"/>
 
-	<bean id="obrRepos" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
-		<argument ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.setup.obr.OBRRepository"/>
-		<property name="sticky" value="true"/>
-	</bean>
+	<reference-list id="obrRepos" interface="net.solarnetwork.node.setup.obr.OBRRepository" availability="optional"/>
 
 	<bean id="backupManager" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
@@ -41,7 +37,7 @@
 	<!-- Supporting Services -->
 	
 	<bean id="repoService" class="net.solarnetwork.node.setup.obr.OBRPluginService" 
-			init-method="init" destroy-method="destroy">
+			destroy-method="destroy">
 		<osgix:managed-properties persistent-id="net.solarnetwork.node.setup.obr.OBRPluginService" 
              autowire-on-update="true"/>
 		<argument ref="bundleContext"/>

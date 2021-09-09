@@ -13,7 +13,7 @@
 		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
-	
+
 	<!-- Configuration -->
 
 	<osgix:cm-properties id="core.cfg" persistent-id="net.solarnetwork.node.core">
@@ -25,7 +25,7 @@
 	</osgix:cm-properties>
 
 	<ctx:property-placeholder properties-ref="core.cfg"/>
-	
+
 	<!-- Service References -->
 
 	<bean id="eventAdmin" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
@@ -33,7 +33,7 @@
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
 		<property name="sticky" value="true"/>
 	</bean>
-	
+
 	<bean id="settingDao" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.dao.SettingDao"/>
@@ -50,8 +50,8 @@
 	<reference-list id="triggers" interface="net.solarnetwork.node.job.TriggerAndJobDetail" availability="optional">
 		<reference-listener bind-method="onBind" unbind-method="onUnbind">
 			<bean class="net.solarnetwork.node.runtime.JobServiceRegistrationListener">
-				<property name="scheduler" ref="scheduler"/>
 				<argument ref="bundleContext"/>
+				<argument ref="scheduler"/>
 			</bean>
 		</reference-listener>
 	</reference-list>
@@ -61,29 +61,29 @@
 	</reference-list>
 	<bean id="managedJobsListener" class="net.solarnetwork.node.runtime.ManagedJobServiceRegistrationListener"
 		destroy-method="finish">
-		<property name="scheduler" ref="scheduler"/>
 		<argument ref="bundleContext"/>
+		<argument ref="scheduler"/>
 	</bean>
 
 	<reference-list id="backupServices" availability="optional"
 		interface="net.solarnetwork.node.backup.BackupService"/>
-	
+
 	<reference-list id="backupResourceProviders" availability="optional"
 		interface="net.solarnetwork.node.backup.BackupResourceProvider"/>
-	
-	<!-- 
+
+	<!--
 		Track CloseableService instances so they can be released automatically;
-		this is useful because the destroy-method Blueprint property is not 
+		this is useful because the destroy-method Blueprint property is not
 		available on nested bean elements (e.g. prototype beans). To work around
 		that for services that would like to have a "destroy" hook, they can
-		publish themselves as a net.solarnetwork.util.CloseableService. 
+		publish themselves as a net.solarnetwork.util.CloseableService.
 	 -->
 	<reference-list availability="optional" interface="net.solarnetwork.service.CloseableService">
 		<reference-listener unbind-method="onReleased">
 			<bean class="net.solarnetwork.service.CloseableServiceTracker"/>
 		</reference-listener>
 	</reference-list>
-	
+
 	<!-- Provide a centralized ObjectMapper for JSON processing. -->
 	<service interface="net.solarnetwork.service.ObjectMapperService">
 		<service-properties>
@@ -93,14 +93,14 @@
 			<property name="objectMapper" ref="objectMapper"/>
 		</bean>
 	</service>
-	<bean id="objectMapper" class="net.solarnetwork.codec.JsonUtils" factory-method="getObjectMapper"/>
+	<bean id="objectMapper" class="net.solarnetwork.codec.JsonUtils" factory-method="newObjectMapper"/>
 
 	<service ref="scheduler" interface="org.quartz.Scheduler">
 		<service-properties>
 			<entry key="function" value="node"/>
 		</service-properties>
 	</service>
-	
+
 	<service ref="taskScheduler">
 		<interfaces>
 			<value>org.springframework.scheduling.TaskScheduler</value>
@@ -110,7 +110,7 @@
 			<entry key="function" value="node"/>
 		</service-properties>
 	</service>
-	
+
 	<service ref="taskExecutor">
 		<interfaces>
 			<value>org.springframework.core.task.AsyncListenableTaskExecutor</value>
@@ -122,23 +122,23 @@
 			<entry key="function" value="node"/>
 		</service-properties>
 	</service>
-	
+
 	<service ref="fsBackupService" interface="net.solarnetwork.node.backup.BackupService"/>
-	
+
 	<service ref="backupManager">
 		<interfaces>
 			<value>net.solarnetwork.node.backup.BackupManager</value>
 			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 		</interfaces>
 	</service>
-	
-	<service ref="backupJob" 
+
+	<service ref="backupJob"
 		interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
-		
+
 	<service interface="net.solarnetwork.node.backup.BackupResourceProvider">
 		<bean class="net.solarnetwork.node.backup.FileBackupResourceProvider">
-			<osgix:managed-properties 
-				persistent-id="net.solarnetwork.node.backup.FileBackupResourceProvider" 
+			<osgix:managed-properties
+				persistent-id="net.solarnetwork.node.backup.FileBackupResourceProvider"
 				autowire-on-update="true"/>
 			<property name="messageSource">
 				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
@@ -147,7 +147,7 @@
 			</property>
 		</bean>
 	</service>
-	
+
 	<service interface="net.solarnetwork.node.setup.SetupResourceService">
 		<bean class="net.solarnetwork.node.setup.SimpleSetupResourceService">
 			<property name="setupResourceProviders">
@@ -155,15 +155,15 @@
 			</property>
 		</bean>
 	</service>
-	
-	<reference-list id="globalDatumFilterServices" interface="net.solarnetwork.service.DatumFilterService" 
+
+	<reference-list id="globalDatumFilterServices" interface="net.solarnetwork.service.DatumFilterService"
 		filter="(role=global)" availability="optional"/>
-		
-	<reference-list id="userDatumFilterServices" interface="net.solarnetwork.service.DatumFilterService" 
+
+	<reference-list id="userDatumFilterServices" interface="net.solarnetwork.service.DatumFilterService"
 		filter="(!(role=global))" availability="optional"/>
-	
-	<!-- 
-		Global GeneralDatumSamplesTransformService that applies all available 
+
+	<!--
+		Global GeneralDatumSamplesTransformService that applies all available
 		GeneralDatumSamplesTransformer services at runtime. This special GeneralDatumSamplesTransformService
 		serves as a "applicable to all persisted datum" transform service.
 	 -->
@@ -190,7 +190,7 @@
 					</list>
 				</property>
 			</bean>
-		</property>			
+		</property>
 	</bean>
 	<service ranking="10" ref="globalDatumFilterService">
 		<interfaces>
@@ -206,8 +206,8 @@
 			</entry>
 		</service-properties>
 	</service>
-	
-	<!-- User Datum Filter Chain factory -->	
+
+	<!-- User Datum Filter Chain factory -->
 	<bean id="userDatumFilterChainMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
@@ -217,7 +217,7 @@
 			</list>
 		</property>
 	</bean>
-	
+
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<service-properties>
 			<entry key="role">
@@ -233,7 +233,7 @@
 			<property name="messageSource" ref="userDatumFilterChainMessageSource"/>
 		</bean>
 	</service>
-	
+
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.xform.user" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
@@ -251,16 +251,14 @@
 		<bean class="net.solarnetwork.node.service.support.DatumFilterChainService">
 			<argument value="net.solarnetwork.node.datum.xform.user"/>
 			<argument ref="userDatumFilterServices"/>
-			<argument value="true"/>
-			<argument><null/></argument>
 			<property name="messageSource" ref="userDatumFilterChainMessageSource"/>
 			<property name="opModesService" ref="opModesService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
-	<!-- Platform package service -->	
-	<service interface="net.solarnetwork.node.PlatformPackageService">
-		<bean class="net.solarnetwork.node.support.NativeTarPlatformPackageService">
+	<!-- Platform package service -->
+	<service interface="net.solarnetwork.node.service.PlatformPackageService">
+		<bean class="net.solarnetwork.node.service.support.NativeTarPlatformPackageService">
 			<property name="taskExecutor">
 				<bean class="net.solarnetwork.service.StaticOptionalService">
 					<argument ref="taskExecutor"/>
@@ -268,7 +266,7 @@
 			</property>
 		</bean>
 	</service>
-	
+
 	<!-- Quartz scheduler for scheduling all jobs -->
 	<bean id="scheduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">
 		<property name="applicationContextSchedulerContextKey" value="applicationContext"/>
@@ -284,14 +282,14 @@
 			<bean class="org.springframework.scheduling.quartz.SpringBeanJobFactory"/>
 		</property>
 	</bean>
-	
+
 	<!-- Task scheduler for simple repeating tasks -->
 	<bean id="taskScheduler" class="org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler">
 		<property name="poolSize" value="${taskScheduler.poolSize}"/>
-		<property name="threadNamePrefix" value="SolarNode-TaskScheduler-"/>	
+		<property name="threadNamePrefix" value="SolarNode-TaskScheduler-"/>
 		<property name="removeOnCancelPolicy" value="true"/>
 	</bean>
-	
+
 	<!-- Task executor for simple tasks -->
 	<bean id="executorService" class="java.util.concurrent.Executors" factory-method="newFixedThreadPool" destroy-method="shutdown">
 		<argument value="#{T(java.lang.Runtime).getRuntime().availableProcessors() + 1}"/>
@@ -305,18 +303,18 @@
 	<bean id="taskExecutor" class="org.springframework.core.task.support.TaskExecutorAdapter">
 		<argument ref="executorService"/>
 	</bean>
-		
+
 	<bean id="backupManager" class="net.solarnetwork.node.backup.DefaultBackupManager" init-method="init">
-		<osgix:managed-properties 
-			persistent-id="net.solarnetwork.node.backup.DefaultBackupManager" 
+		<osgix:managed-properties
+			persistent-id="net.solarnetwork.node.backup.DefaultBackupManager"
 			autowire-on-update="true"/>
 		<property name="backupServices" ref="backupServices"/>
 		<property name="resourceProviders" ref="backupResourceProviders"/>
 	</bean>
 
 	<bean id="fsBackupService" class="net.solarnetwork.node.backup.FileSystemBackupService">
-		<osgix:managed-properties 
-			persistent-id="net.solarnetwork.node.backup.FileSystemBackupService" 
+		<osgix:managed-properties
+			persistent-id="net.solarnetwork.node.backup.FileSystemBackupService"
 			autowire-on-update="true"/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
@@ -326,8 +324,8 @@
 		<property name="identityService">
 			<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 				<argument ref="bundleContext"/>
-				<property name="serviceClassName" value="net.solarnetwork.node.IdentityService"/>
-			</bean>	
+				<property name="serviceClassName" value="net.solarnetwork.node.service.IdentityService"/>
+			</bean>
 		</property>
 	</bean>
 
@@ -359,7 +357,7 @@
 		</property>
 		<property name="messageSource" ref="jobMessageSource"/>
 	</bean>
-	
+
 	<!-- Messaging -->
 
 	<bean id="messageSendingOperations" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
@@ -381,16 +379,16 @@
 			<argument ref="messageSendingOperations"/>
 		</bean>
 	</service>
-	
+
 	<!-- PlatformService -->
 
-	<service interface="net.solarnetwork.node.PlatformService">
+	<service interface="net.solarnetwork.node.service.PlatformService">
 		<bean class="net.solarnetwork.node.runtime.DefaultPlatformService">
 			<property name="eventAdmin" ref="eventAdmin"/>
 			<property name="messageSendingOperations" ref="messageSendingOperations"/>
 		</bean>
 	</service>
-	
+
 	<!-- OperationalModesService -->
 
 	<service ref="opModesService">
@@ -409,11 +407,11 @@
 				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 					<property name="basename" value="net.solarnetwork.node.runtime.DefaultOperationalModesService"/>
 				</bean>
-			</property>			
+			</property>
 	</bean>
-	
+
 	<!-- PlaceholderService -->
-	
+
 	<service interface="net.solarnetwork.node.service.PlaceholderService">
 		<bean class="net.solarnetwork.node.service.support.SettingsPlaceholderService">
 			<argument ref="settingDao"/>
@@ -421,9 +419,9 @@
 			<property name="taskExecutor" ref="taskExecutor"/>
 		</bean>
 	</service>
-	
+
 	<!-- User Metadata Service -->
-	
+
 	<bean id="userMetadataMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
@@ -432,13 +430,13 @@
 			</list>
 		</property>
 	</bean>
-	
+
 	<bean id="setupService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.setup.SetupService"/>
 		<property name="sticky" value="true"/>
 	</bean>
-	
+
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="User Metadata Service"/>
@@ -447,7 +445,7 @@
 		</bean>
 	</service>
 
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.metadata.user" 
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.metadata.user"
 			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.service.MetadataService</beans:value>
@@ -462,11 +460,11 @@
 			<property name="messageSource" ref="userMetadataMessageSource"/>
 		</bean>
 	</osgix:managed-service-factory>
-	
+
 	<service>
 		<interfaces>
 			<value>net.solarnetwork.node.service.DatumService</value>
-			<value>net.solarnetwork.node.reactor.FeedbackInstructionHandler</value>
+			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
 			<value>org.osgi.service.event.EventHandler</value>
 		</interfaces>
 		<service-properties>
@@ -491,14 +489,14 @@
 			<argument ref="objectMapper"/>
 		</bean>
 	</service>
-	
-	<!-- 
+
+	<!--
 		DatumQueue: serialized processing of captured datum.
-		
+
 		This queue serves as sort of serial queue for captured datum across all of SolarNode.
 		For Datum to be added to the queue, processed, and then persisted (i.e. for SolarIn)
-		we publish DatumDao services of rank 1000 that add datum to the queue insted of 
-		persisting them directly. Once processed, those datum are then 
+		we publish DatumDao services of rank 1000 that add datum to the queue insted of
+		persisting them directly. Once processed, those datum are then
 	 -->
 	<bean id="datumQueue" class="net.solarnetwork.node.runtime.DefaultDatumQueue" init-method="startup" destroy-method="shutdown">
 		<osgix:managed-properties persistent-id="net.solarnetwork.node.runtime.dq" autowire-on-update="true"/>
@@ -512,11 +510,10 @@
 						<property name="sticky" value="true"/>
 					</bean>
 				</argument>
-				<argument ref="globalTransformServiceOptional"/>
+				<argument ref="globalDatumFilterServiceOptional"/>
 			</bean>
 		</argument>
 		<argument ref="eventAdmin"/>
-		<argument value="true"/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 				<property name="basenames">
@@ -526,7 +523,7 @@
 				</property>
 			</bean>
 		</property>
-		<property name="transformService">
+		<property name="datumFilterService">
 			<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 				<argument ref="bundleContext"/>
 				<property name="serviceClassName" value="net.solarnetwork.service.DatumFilterService"/>
@@ -541,14 +538,14 @@
 			</bean>
 		</property>
 	</bean>
-	
-	<bean id="globalTransformServiceOptional" class="net.solarnetwork.util.StaticOptionalService">
-		<argument ref="globalTransformService"/>
+
+	<bean id="globalDatumFilterServiceOptional" class="net.solarnetwork.service.StaticOptionalService">
+		<argument ref="globalDatumFilterService"/>
 	</bean>
-	
+
 	<service ref="datumQueue">
 		<interfaces>
-			<value>net.solarnetwork.node.DatumQueue</value>
+			<value>net.solarnetwork.node.service.DatumQueue</value>
 			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 		</interfaces>
 		<service-properties>
@@ -561,10 +558,10 @@
 		</service-properties>
 	</service>
 
-	<!-- 
+	<!--
 		DatumDao that offers datum to DatumQueue for serialzied processing.
 		This has a high ranking so it is preferred by default for all DatumDataSource jobs.
-	 -->	
+	 -->
 	<service ranking="1000" interface="net.solarnetwork.node.dao.DatumDao">
 		<service-properties>
 			<entry key="datumClassName">

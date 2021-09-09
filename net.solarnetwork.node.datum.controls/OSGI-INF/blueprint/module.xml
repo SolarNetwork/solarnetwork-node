@@ -14,7 +14,7 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
-	<reference-list id="providers" interface="net.solarnetwork.node.NodeControlProvider" availability="optional"/>
+	<reference-list id="providers" interface="net.solarnetwork.node.service.NodeControlProvider" availability="optional"/>
 
 	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>

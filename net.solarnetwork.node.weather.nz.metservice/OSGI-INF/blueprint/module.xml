@@ -81,7 +81,7 @@
 		
 	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
 		factory-ref="objectMapperService" factory-method="getObjectMapper"/>
-	
+		
 	<!-- Published Services -->
 	
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
@@ -121,7 +121,11 @@
 									<property name="messageSource" ref="dayJobMessageSource"/>
 									<property name="delegate">
 										<bean class="net.solarnetwork.node.weather.nz.metservice.MetserviceDayDatumDataSource">
-											<property name="objectMapper" ref="objectMapper"/>
+											<property name="client">
+												<bean class="net.solarnetwork.node.weather.nz.metservice.BasicMetserviceClient">
+													<property name="objectMapper" ref="objectMapper"/>
+												</bean>
+											</property>
 											<property name="messageSource" ref="dayMessageSource"/>
 										</bean>
 									</property>
@@ -175,7 +179,11 @@
 									<property name="messageSource" ref="weatherJobMessageSource"/>
 									<property name="delegate">
 										<bean class="net.solarnetwork.node.weather.nz.metservice.MetserviceWeatherDatumDataSource">
-											<property name="objectMapper" ref="objectMapper"/>
+											<property name="client">
+												<bean class="net.solarnetwork.node.weather.nz.metservice.BasicMetserviceClient">
+													<property name="objectMapper" ref="objectMapper"/>
+												</bean>
+											</property>
 											<property name="messageSource" ref="weatherMessageSource"/>
 										</bean>
 									</property>

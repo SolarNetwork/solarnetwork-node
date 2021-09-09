@@ -40,7 +40,7 @@
 		<interfaces>
 			<value>net.solarnetwork.node.settings.SettingsService</value>
 			<value>net.solarnetwork.node.backup.BackupResourceProvider</value>
-			<value>net.solarnetwork.node.reactor.FeedbackInstructionHandler</value>
+			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
 		</interfaces>
 		<service-properties>
 			<entry key="instruction">
