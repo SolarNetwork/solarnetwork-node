@@ -30,9 +30,9 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.springframework.context.MessageSource;
+import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
-import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.service.DatumFilterStats;
 import net.solarnetwork.settings.SettingSpecifier;
@@ -306,7 +306,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * @return {@literal true} if the datum's {@code sourceId} value matches the
 	 *         configured source ID pattern, or no pattern is configured
 	 */
-	protected boolean sourceIdMatches(NodeDatum datum) {
+	protected boolean sourceIdMatches(Datum datum) {
 		Pattern sourceIdPat = getSourceIdPattern();
 		if ( sourceIdPat != null ) {
 			if ( datum == null || datum.getSourceId() == null
