@@ -1,5 +1,5 @@
 /* ==================================================================
- * OperationalModeTransformServiceTests.java - 4/07/2021 2:51:24 PM
+ * OperationalModeDatumFilterServiceTests.java - 4/07/2021 2:51:24 PM
  * 
  * Copyright 2021 SolarNetwork.net Dev Team
  * 
@@ -31,24 +31,23 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
-import java.util.Date;
+import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
-import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.common.expr.spel.SpelExpressionService;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
-import net.solarnetwork.node.OperationalModesService;
-import net.solarnetwork.node.datum.filter.opmode.OperationalModeTransformConfig;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.datum.filter.opmode.OperationalModeDatumFilterService;
+import net.solarnetwork.node.datum.filter.opmode.OperationalModeTransformConfig;
 import net.solarnetwork.node.datum.filter.std.ThrottlingDatumFilterService;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
-import net.solarnetwork.support.ExpressionService;
-import net.solarnetwork.util.StaticOptionalServiceCollection;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
+import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.service.ExpressionService;
+import net.solarnetwork.service.StaticOptionalServiceCollection;
 
 /**
  * Test cases for the {@link OperationalModeDatumFilterService} class.
@@ -56,7 +55,7 @@ import net.solarnetwork.util.StaticOptionalServiceCollection;
  * @author matt
  * @version 1.0
  */
-public class OperationalModeTransformServiceTests {
+public class OperationalModeDatumFilterServiceTests {
 
 	private static final String SOURCE_ID = "FILTER_ME";
 	private static final String PROP_WATTS = "watts";
@@ -86,11 +85,9 @@ public class OperationalModeTransformServiceTests {
 		EasyMock.replay(opModesService);
 	}
 
-	private GeneralNodeDatum createTestGeneralNodeDatum(String sourceId) {
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setCreated(new Date());
-		datum.setSourceId(sourceId);
-		datum.putInstantaneousSampleValue(PROP_WATTS, 23.4);
+	private SimpleDatum createTestSimpleDatum(String sourceId) {
+		SimpleDatum datum = SimpleDatum.nodeDatum(sourceId);
+		datum.getSamples().putInstantaneousSampleValue(PROP_WATTS, 23.4);
 		return datum;
 	}
 
@@ -108,8 +105,8 @@ public class OperationalModeTransformServiceTests {
 
 		// WHEN
 		replayAll();
-		GeneralNodeDatum d = createTestGeneralNodeDatum(SOURCE_ID);
-		GeneralDatumSamples result = xform.transformSamples(d, d.getSamples(), null);
+		SimpleDatum d = createTestSimpleDatum(SOURCE_ID);
+		DatumSamplesOperations result = xform.filter(d, d.getSamples(), null);
 
 		// THEN
 		assertThat("Result unchanged", result, is(sameInstance(d.getSamples())));
@@ -128,8 +125,8 @@ public class OperationalModeTransformServiceTests {
 
 		// WHEN
 		replayAll();
-		GeneralNodeDatum d = createTestGeneralNodeDatum(SOURCE_ID);
-		GeneralDatumSamples result = xform.transformSamples(d, d.getSamples(), null);
+		SimpleDatum d = createTestSimpleDatum(SOURCE_ID);
+		DatumSamplesOperations result = xform.filter(d, d.getSamples(), null);
 
 		// THEN
 		assertThat("Result unchanged", result, is(sameInstance(d.getSamples())));
@@ -146,20 +143,21 @@ public class OperationalModeTransformServiceTests {
 		xform.setExpressionConfigs(new OperationalModeTransformConfig[] { config });
 
 		// not already active, so activate now
-		Capture<DateTime> expireCaptor = new Capture<>();
+		Capture<Instant> expireCaptor = new Capture<>();
 		expect(opModesService.enableOperationalModes(eq(singleton(OP_MODE)), capture(expireCaptor)))
 				.andReturn(singleton(OP_MODE));
 
 		// WHEN
 		replayAll();
-		GeneralNodeDatum d = createTestGeneralNodeDatum(SOURCE_ID);
+		SimpleDatum d = createTestSimpleDatum(SOURCE_ID);
 		final long expire = System.currentTimeMillis()
 				+ TimeUnit.SECONDS.toMillis(config.getExpireSeconds());
-		GeneralDatumSamples result = xform.transformSamples(d, d.getSamples(), null);
+		DatumSamplesOperations result = xform.filter(d, d.getSamples(), null);
 
 		// THEN
 		assertThat("Result unchanged", result, is(sameInstance(d.getSamples())));
-		assertThat("Expire date set", expireCaptor.getValue().isBefore(expire), is(equalTo(false)));
+		assertThat("Expire date set", expireCaptor.getValue().isBefore(Instant.ofEpochMilli(expire)),
+				is(equalTo(false)));
 
 	}
 
@@ -175,8 +173,8 @@ public class OperationalModeTransformServiceTests {
 
 		// WHEN
 		replayAll();
-		GeneralNodeDatum d = createTestGeneralNodeDatum(SOURCE_ID);
-		GeneralDatumSamples result = xform.transformSamples(d, d.getSamples(), null);
+		SimpleDatum d = createTestSimpleDatum(SOURCE_ID);
+		DatumSamplesOperations result = xform.filter(d, d.getSamples(), null);
 
 		// THEN
 		assertThat("Result unchanged", result, is(sameInstance(d.getSamples())));
@@ -190,7 +188,7 @@ public class OperationalModeTransformServiceTests {
 		config.setOperationalMode(OP_MODE);
 		config.setExpression("watts > 10");
 		config.setName("FooMode");
-		config.setDatumPropertyType(GeneralDatumSamplesType.Tag);
+		config.setDatumPropertyType(DatumSamplesType.Tag);
 		xform.setExpressionConfigs(new OperationalModeTransformConfig[] { config });
 
 		expect(opModesService.enableOperationalModes(singleton(OP_MODE), null))
@@ -198,8 +196,8 @@ public class OperationalModeTransformServiceTests {
 
 		// WHEN
 		replayAll();
-		GeneralNodeDatum d = createTestGeneralNodeDatum(SOURCE_ID);
-		GeneralDatumSamples result = xform.transformSamples(d, d.getSamples(), null);
+		SimpleDatum d = createTestSimpleDatum(SOURCE_ID);
+		DatumSamplesOperations result = xform.filter(d, d.getSamples(), null);
 
 		// THEN
 		assertThat("Result changed to set tag", result, is(not(sameInstance(d.getSamples()))));
@@ -214,16 +212,16 @@ public class OperationalModeTransformServiceTests {
 		config.setOperationalMode(OP_MODE);
 		config.setExpression("watts > 100");
 		config.setName("FooMode");
-		config.setDatumPropertyType(GeneralDatumSamplesType.Tag);
+		config.setDatumPropertyType(DatumSamplesType.Tag);
 		xform.setExpressionConfigs(new OperationalModeTransformConfig[] { config });
 
 		expect(opModesService.disableOperationalModes(singleton(OP_MODE))).andReturn(singleton(OP_MODE));
 
 		// WHEN
 		replayAll();
-		GeneralNodeDatum d = createTestGeneralNodeDatum(SOURCE_ID);
+		SimpleDatum d = createTestSimpleDatum(SOURCE_ID);
 		d.addTag("FooMode");
-		GeneralDatumSamples result = xform.transformSamples(d, d.getSamples(), null);
+		DatumSamplesOperations result = xform.filter(d, d.getSamples(), null);
 
 		// THEN
 		assertThat("Result changed to set tag", result, is(not(sameInstance(d.getSamples()))));
@@ -238,7 +236,7 @@ public class OperationalModeTransformServiceTests {
 		config.setOperationalMode(OP_MODE);
 		config.setExpression("watts > 10");
 		config.setName("FooMode");
-		config.setDatumPropertyType(GeneralDatumSamplesType.Status);
+		config.setDatumPropertyType(DatumSamplesType.Status);
 		xform.setExpressionConfigs(new OperationalModeTransformConfig[] { config });
 
 		expect(opModesService.enableOperationalModes(singleton(OP_MODE), null))
@@ -246,12 +244,13 @@ public class OperationalModeTransformServiceTests {
 
 		// WHEN
 		replayAll();
-		GeneralNodeDatum d = createTestGeneralNodeDatum(SOURCE_ID);
-		GeneralDatumSamples result = xform.transformSamples(d, d.getSamples(), null);
+		SimpleDatum d = createTestSimpleDatum(SOURCE_ID);
+		DatumSamplesOperations result = xform.filter(d, d.getSamples(), null);
 
 		// THEN
 		assertThat("Result changed to set tag", result, is(not(sameInstance(d.getSamples()))));
-		assertThat("Result status set", result.getStatusSampleString("FooMode"), is(equalTo("true")));
+		assertThat("Result status set", result.getSampleString(DatumSamplesType.Status, "FooMode"),
+				is(equalTo("true")));
 	}
 
 	@Test
@@ -262,20 +261,21 @@ public class OperationalModeTransformServiceTests {
 		config.setOperationalMode(OP_MODE);
 		config.setExpression("watts > 100");
 		config.setName("FooMode");
-		config.setDatumPropertyType(GeneralDatumSamplesType.Status);
+		config.setDatumPropertyType(DatumSamplesType.Status);
 		xform.setExpressionConfigs(new OperationalModeTransformConfig[] { config });
 
 		expect(opModesService.disableOperationalModes(singleton(OP_MODE))).andReturn(singleton(OP_MODE));
 
 		// WHEN
 		replayAll();
-		GeneralNodeDatum d = createTestGeneralNodeDatum(SOURCE_ID);
+		SimpleDatum d = createTestSimpleDatum(SOURCE_ID);
 		d.addTag("FooMode");
-		GeneralDatumSamples result = xform.transformSamples(d, d.getSamples(), null);
+		DatumSamplesOperations result = xform.filter(d, d.getSamples(), null);
 
 		// THEN
 		assertThat("Result changed to set tag", result, is(not(sameInstance(d.getSamples()))));
-		assertThat("Result status set", result.getStatusSampleString("FooMode"), is(equalTo("false")));
+		assertThat("Result status set", result.getSampleString(DatumSamplesType.Status, "FooMode"),
+				is(equalTo("false")));
 	}
 
 	@Test
@@ -286,7 +286,7 @@ public class OperationalModeTransformServiceTests {
 		config.setOperationalMode(OP_MODE);
 		config.setExpression("watts > 10");
 		config.setName("FooMode");
-		config.setDatumPropertyType(GeneralDatumSamplesType.Instantaneous);
+		config.setDatumPropertyType(DatumSamplesType.Instantaneous);
 		xform.setExpressionConfigs(new OperationalModeTransformConfig[] { config });
 
 		expect(opModesService.enableOperationalModes(singleton(OP_MODE), null))
@@ -294,13 +294,13 @@ public class OperationalModeTransformServiceTests {
 
 		// WHEN
 		replayAll();
-		GeneralNodeDatum d = createTestGeneralNodeDatum(SOURCE_ID);
-		GeneralDatumSamples result = xform.transformSamples(d, d.getSamples(), null);
+		SimpleDatum d = createTestSimpleDatum(SOURCE_ID);
+		DatumSamplesOperations result = xform.filter(d, d.getSamples(), null);
 
 		// THEN
 		assertThat("Result changed to set tag", result, is(not(sameInstance(d.getSamples()))));
-		assertThat("Result instantaneous set", result.getInstantaneousSampleInteger("FooMode"),
-				is(equalTo(1)));
+		assertThat("Result instantaneous set",
+				result.getSampleInteger(DatumSamplesType.Instantaneous, "FooMode"), is(equalTo(1)));
 	}
 
 	@Test
@@ -311,21 +311,21 @@ public class OperationalModeTransformServiceTests {
 		config.setOperationalMode(OP_MODE);
 		config.setExpression("watts > 100");
 		config.setName("FooMode");
-		config.setDatumPropertyType(GeneralDatumSamplesType.Instantaneous);
+		config.setDatumPropertyType(DatumSamplesType.Instantaneous);
 		xform.setExpressionConfigs(new OperationalModeTransformConfig[] { config });
 
 		expect(opModesService.disableOperationalModes(singleton(OP_MODE))).andReturn(singleton(OP_MODE));
 
 		// WHEN
 		replayAll();
-		GeneralNodeDatum d = createTestGeneralNodeDatum(SOURCE_ID);
+		SimpleDatum d = createTestSimpleDatum(SOURCE_ID);
 		d.addTag("FooMode");
-		GeneralDatumSamples result = xform.transformSamples(d, d.getSamples(), null);
+		DatumSamplesOperations result = xform.filter(d, d.getSamples(), null);
 
 		// THEN
 		assertThat("Result changed to set tag", result, is(not(sameInstance(d.getSamples()))));
-		assertThat("Result instantaneous set", result.getInstantaneousSampleInteger("FooMode"),
-				is(equalTo(0)));
+		assertThat("Result instantaneous set",
+				result.getSampleInteger(DatumSamplesType.Instantaneous, "FooMode"), is(equalTo(0)));
 	}
 
 }

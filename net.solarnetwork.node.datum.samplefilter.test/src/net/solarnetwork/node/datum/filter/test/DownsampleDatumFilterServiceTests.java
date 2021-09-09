@@ -34,10 +34,11 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import org.easymock.EasyMock;
 import org.junit.Test;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.node.OperationalModesService;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.datum.filter.std.DownsampleDatumFilterService;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
+import net.solarnetwork.node.service.OperationalModesService;
 
 /**
  * Test cases for the {@link DownsampleDatumFilterService}.
@@ -45,7 +46,7 @@ import net.solarnetwork.node.domain.GeneralNodeDatum;
  * @author matt
  * @version 1.1
  */
-public class DownsampleTransformServiceTests {
+public class DownsampleDatumFilterServiceTests {
 
 	private static final String TEST_PROP = "foo";
 	private static final String TEST_SOURCE = "test.source";
@@ -59,30 +60,31 @@ public class DownsampleTransformServiceTests {
 
 		// first some sub-samples
 		for ( int i = 0; i < 4; i++ ) {
-			GeneralNodeDatum d = new GeneralNodeDatum();
-			d.setSourceId(TEST_SOURCE);
-			d.putInstantaneousSampleValue(TEST_PROP, (i + 1));
+			SimpleDatum d = SimpleDatum.nodeDatum(TEST_SOURCE);
+			d.getSamples().putInstantaneousSampleValue(TEST_PROP, (i + 1));
 
-			GeneralDatumSamples out = xs.transformSamples(d, d.getSamples(),
+			DatumSamplesOperations out = xs.filter(d, d.getSamples(),
 					DownsampleDatumFilterService.SUB_SAMPLE_PROPS);
 			assertThat("Sub-sample should be filtered out", out, nullValue());
 		}
 
 		// then our final non-sub-sample
-		GeneralNodeDatum d = new GeneralNodeDatum();
-		d.setSourceId(TEST_SOURCE);
-		d.putInstantaneousSampleValue(TEST_PROP, 5);
+		SimpleDatum d = SimpleDatum.nodeDatum(TEST_SOURCE);
+		d.getSamples().putInstantaneousSampleValue(TEST_PROP, 5);
 
-		GeneralDatumSamples out = xs.transformSamples(d, d.getSamples(), null);
+		DatumSamplesOperations out = xs.filter(d, d.getSamples(), null);
 
 		// THEN
 		assertThat("Final output should not be null", out, notNullValue());
 		assertThat("Final output contains property average",
-				out.getInstantaneousSampleBigDecimal(TEST_PROP), equalTo(new BigDecimal("3")));
+				out.getSampleBigDecimal(DatumSamplesType.Instantaneous, TEST_PROP),
+				equalTo(new BigDecimal("3")));
 		assertThat("Final output contains property min",
-				out.getInstantaneousSampleBigDecimal(TEST_PROP + "_min"), equalTo(new BigDecimal("1")));
+				out.getSampleBigDecimal(DatumSamplesType.Instantaneous, TEST_PROP + "_min"),
+				equalTo(new BigDecimal("1")));
 		assertThat("Final output contains property max",
-				out.getInstantaneousSampleBigDecimal(TEST_PROP + "_max"), equalTo(new BigDecimal("5")));
+				out.getSampleBigDecimal(DatumSamplesType.Instantaneous, TEST_PROP + "_max"),
+				equalTo(new BigDecimal("5")));
 	}
 
 	@Test
@@ -95,29 +97,30 @@ public class DownsampleTransformServiceTests {
 
 		// first some sub-samples
 		for ( int i = 0; i < 4; i++ ) {
-			GeneralNodeDatum d = new GeneralNodeDatum();
-			d.setSourceId(TEST_SOURCE);
-			d.putInstantaneousSampleValue(TEST_PROP, (i + 1));
+			SimpleDatum d = SimpleDatum.nodeDatum(TEST_SOURCE);
+			d.getSamples().putInstantaneousSampleValue(TEST_PROP, (i + 1));
 
-			GeneralDatumSamples out = xs.transformSamples(d, d.getSamples(), Collections.emptyMap());
+			DatumSamplesOperations out = xs.filter(d, d.getSamples(), Collections.emptyMap());
 			assertThat(String.format("Sub-sample %d should be filtered out", i + 1), out, nullValue());
 		}
 
 		// then our final non-sub-sample
-		GeneralNodeDatum d = new GeneralNodeDatum();
-		d.setSourceId(TEST_SOURCE);
-		d.putInstantaneousSampleValue(TEST_PROP, 5);
+		SimpleDatum d = SimpleDatum.nodeDatum(TEST_SOURCE);
+		d.getSamples().putInstantaneousSampleValue(TEST_PROP, 5);
 
-		GeneralDatumSamples out = xs.transformSamples(d, d.getSamples(), null);
+		DatumSamplesOperations out = xs.filter(d, d.getSamples(), null);
 
 		// THEN
 		assertThat("Final output should not be null", out, notNullValue());
 		assertThat("Final output contains property average",
-				out.getInstantaneousSampleBigDecimal(TEST_PROP), equalTo(new BigDecimal("3")));
+				out.getSampleBigDecimal(DatumSamplesType.Instantaneous, TEST_PROP),
+				equalTo(new BigDecimal("3")));
 		assertThat("Final output contains property min",
-				out.getInstantaneousSampleBigDecimal(TEST_PROP + "_min"), equalTo(new BigDecimal("1")));
+				out.getSampleBigDecimal(DatumSamplesType.Instantaneous, TEST_PROP + "_min"),
+				equalTo(new BigDecimal("1")));
 		assertThat("Final output contains property max",
-				out.getInstantaneousSampleBigDecimal(TEST_PROP + "_max"), equalTo(new BigDecimal("5")));
+				out.getSampleBigDecimal(DatumSamplesType.Instantaneous, TEST_PROP + "_max"),
+				equalTo(new BigDecimal("5")));
 	}
 
 	@Test
@@ -129,26 +132,25 @@ public class DownsampleTransformServiceTests {
 
 		// first some sub-samples
 		for ( int i = 0; i < 4; i++ ) {
-			GeneralNodeDatum d = new GeneralNodeDatum();
-			d.setSourceId(TEST_SOURCE);
-			d.putAccumulatingSampleValue(TEST_PROP, (i + 1));
+			SimpleDatum d = SimpleDatum.nodeDatum(TEST_SOURCE);
+			d.getSamples().putAccumulatingSampleValue(TEST_PROP, (i + 1));
 
-			GeneralDatumSamples out = xs.transformSamples(d, d.getSamples(),
+			DatumSamplesOperations out = xs.filter(d, d.getSamples(),
 					DownsampleDatumFilterService.SUB_SAMPLE_PROPS);
 			assertThat("Sub-sample should be filtered out", out, nullValue());
 		}
 
 		// then our final non-sub-sample
-		GeneralNodeDatum d = new GeneralNodeDatum();
-		d.setSourceId(TEST_SOURCE);
-		d.putAccumulatingSampleValue(TEST_PROP, 5);
+		SimpleDatum d = SimpleDatum.nodeDatum(TEST_SOURCE);
+		d.getSamples().putAccumulatingSampleValue(TEST_PROP, 5);
 
-		GeneralDatumSamples out = xs.transformSamples(d, d.getSamples(), null);
+		DatumSamplesOperations out = xs.filter(d, d.getSamples(), null);
 
 		// THEN
 		assertThat("Final output should not be null", out, notNullValue());
 		assertThat("Final output contains property last value",
-				out.getAccumulatingSampleBigDecimal(TEST_PROP), equalTo(new BigDecimal(5)));
+				out.getSampleBigDecimal(DatumSamplesType.Accumulating, TEST_PROP),
+				equalTo(new BigDecimal(5)));
 	}
 
 	@Test
@@ -161,25 +163,24 @@ public class DownsampleTransformServiceTests {
 
 		// first some sub-samples
 		for ( int i = 0; i < 4; i++ ) {
-			GeneralNodeDatum d = new GeneralNodeDatum();
-			d.setSourceId(TEST_SOURCE);
-			d.putAccumulatingSampleValue(TEST_PROP, (i + 1));
+			SimpleDatum d = SimpleDatum.nodeDatum(TEST_SOURCE);
+			d.getSamples().putAccumulatingSampleValue(TEST_PROP, (i + 1));
 
-			GeneralDatumSamples out = xs.transformSamples(d, d.getSamples(), Collections.emptyMap());
+			DatumSamplesOperations out = xs.filter(d, d.getSamples(), Collections.emptyMap());
 			assertThat(String.format("Sub-sample %d should be filtered out", i), out, nullValue());
 		}
 
 		// then our final non-sub-sample
-		GeneralNodeDatum d = new GeneralNodeDatum();
-		d.setSourceId(TEST_SOURCE);
-		d.putAccumulatingSampleValue(TEST_PROP, 5);
+		SimpleDatum d = SimpleDatum.nodeDatum(TEST_SOURCE);
+		d.getSamples().putAccumulatingSampleValue(TEST_PROP, 5);
 
-		GeneralDatumSamples out = xs.transformSamples(d, d.getSamples(), null);
+		DatumSamplesOperations out = xs.filter(d, d.getSamples(), null);
 
 		// THEN
 		assertThat("Final output should not be null", out, notNullValue());
 		assertThat("Final output contains property last value",
-				out.getAccumulatingSampleBigDecimal(TEST_PROP), equalTo(new BigDecimal(5)));
+				out.getSampleBigDecimal(DatumSamplesType.Accumulating, TEST_PROP),
+				equalTo(new BigDecimal(5)));
 	}
 
 	@Test
@@ -194,11 +195,10 @@ public class DownsampleTransformServiceTests {
 
 		// WHEN
 		replay(opModesService);
-		GeneralNodeDatum d = new GeneralNodeDatum();
-		d.setSourceId(TEST_SOURCE);
-		d.putAccumulatingSampleValue(TEST_PROP, 5);
+		SimpleDatum d = SimpleDatum.nodeDatum(TEST_SOURCE);
+		d.getSamples().putAccumulatingSampleValue(TEST_PROP, 5);
 
-		GeneralDatumSamples out = xs.transformSamples(d, d.getSamples(), null);
+		DatumSamplesOperations out = xs.filter(d, d.getSamples(), null);
 
 		// THEN
 		assertThat("No change because required operational mode not active", out,

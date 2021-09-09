@@ -1,5 +1,5 @@
 /* ==================================================================
- * PropertyFilterSampleTransformerTests.java - 31/10/2016 2:34:10 PM
+ * PropertyDatumFilterServiceTests.java - 31/10/2016 2:34:10 PM
  * 
  * Copyright 2007-2016 SolarNetwork.net Dev Team
  * 
@@ -22,6 +22,10 @@
 
 package net.solarnetwork.node.datum.filter.test;
 
+import static java.util.Collections.emptyMap;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import static net.solarnetwork.node.datum.filter.std.DatumFilterSupport.SETTING_KEY_TEMPLATE;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
@@ -39,6 +43,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -49,14 +54,17 @@ import org.easymock.CaptureType;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
-import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.KeyValuePair;
-import net.solarnetwork.node.OperationalModesService;
-import net.solarnetwork.node.Setting;
+import net.solarnetwork.domain.datum.DatumId;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.node.datum.filter.std.PropertyFilterConfig;
 import net.solarnetwork.node.datum.filter.std.PropertyDatumFilterService;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.datum.filter.std.PropertyFilterConfig;
+import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
+import net.solarnetwork.node.service.OperationalModesService;
 
 /**
  * Test cases for the {@link PropertyDatumFilterService} class.
@@ -64,7 +72,7 @@ import net.solarnetwork.node.domain.GeneralNodeDatum;
  * @author matt
  * @version 1.0
  */
-public class PropertyFilterSampleTransformerTests {
+public class PropertyDatumFilterServiceTests {
 
 	private static final String TEST_SOURCE_ID = "test.source";
 	private static final int TEST_FREQ = 1;
@@ -76,13 +84,12 @@ public class PropertyFilterSampleTransformerTests {
 	private static final String PROP_FREQUENCY = "frequency";
 	private static final String PROP_PHASE = "phase";
 
-	private GeneralNodeDatum createTestGeneralNodeDatum(String sourceId) {
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId(sourceId);
-		datum.putAccumulatingSampleValue(PROP_WATTHOURS, 1239340349L);
-		datum.putInstantaneousSampleValue(PROP_FREQUENCY, 50.1);
-		datum.putInstantaneousSampleValue(PROP_WATTS, 23.4);
-		datum.putStatusSampleValue(PROP_PHASE, "Total");
+	private SimpleDatum createTestGeneralNodeDatum(String sourceId) {
+		SimpleDatum datum = SimpleDatum.nodeDatum(sourceId);
+		datum.getSamples().putAccumulatingSampleValue(PROP_WATTHOURS, 1239340349L);
+		datum.getSamples().putInstantaneousSampleValue(PROP_FREQUENCY, 50.1);
+		datum.getSamples().putInstantaneousSampleValue(PROP_WATTS, 23.4);
+		datum.getSamples().putStatusSampleValue(PROP_PHASE, "Total");
 		return datum;
 	}
 
@@ -91,127 +98,51 @@ public class PropertyFilterSampleTransformerTests {
 		PropertyDatumFilterService.clearSettingCache();
 	}
 
-	@SuppressWarnings("deprecation")
-	@Test
-	public void testInclude() {
-		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		PropertyDatumFilterService xform = new PropertyDatumFilterService();
-		xform.setSourceId("^test");
-		xform.setIncludes(new String[] { "^watt" });
-		xform.init();
-		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
-		assertNotSame("New sample instance", datum.getSamples(), result);
-		assertEquals("Watts", datum.getSamples().getInstantaneousSampleDouble(PROP_WATTS),
-				result.getInstantaneousSampleDouble(PROP_WATTS));
-		assertNull("Frequency filtered", result.getInstantaneousSampleDouble(PROP_FREQUENCY));
-		assertEquals("Watt hours", datum.getSamples().getAccumulatingSampleLong(PROP_WATTHOURS),
-				result.getAccumulatingSampleLong(PROP_WATTHOURS));
-		assertNull("Phase filtered", result.getStatusSampleString(PROP_PHASE));
-	}
-
-	@SuppressWarnings("deprecation")
-	@Test
-	public void testIncludeMultiplePatterns() {
-		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		PropertyDatumFilterService xform = new PropertyDatumFilterService();
-		xform.setSourceId("^test");
-		xform.setIncludes(new String[] { "^watt", "^phase$" });
-		xform.init();
-		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
-		assertNotSame("New sample instance", datum.getSamples(), result);
-		assertEquals("Watts", datum.getSamples().getInstantaneousSampleDouble(PROP_WATTS),
-				result.getInstantaneousSampleDouble(PROP_WATTS));
-		assertNull("Frequency filtered", result.getInstantaneousSampleDouble(PROP_FREQUENCY));
-		assertEquals("Watt hours", datum.getSamples().getAccumulatingSampleLong(PROP_WATTHOURS),
-				result.getAccumulatingSampleLong(PROP_WATTHOURS));
-		assertEquals("Phase", datum.getSamples().getStatusSampleString(PROP_PHASE),
-				result.getStatusSampleString(PROP_PHASE));
-	}
-
 	@Test
 	public void testExclude() {
-		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
+		SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
 		PropertyDatumFilterService xform = new PropertyDatumFilterService();
 		xform.setSourceId("^test");
 		xform.setExcludes(new String[] { "^watt" });
 		xform.init();
-		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
+		DatumSamplesOperations result = xform.filter(datum, datum.getSamples(), emptyMap());
 		assertNotSame("New sample instance", datum.getSamples(), result);
-		assertNull("Watts filtered", result.getInstantaneousSampleDouble(PROP_WATTS));
-		assertEquals("Frequency", datum.getSamples().getInstantaneousSampleDouble(PROP_FREQUENCY),
-				result.getInstantaneousSampleDouble(PROP_FREQUENCY));
-		assertNull("Watt hours filtered", result.getAccumulatingSampleLong(PROP_WATTHOURS));
-		assertEquals("Phase", datum.getSamples().getStatusSampleString(PROP_PHASE),
-				result.getStatusSampleString(PROP_PHASE));
+		assertNull("Watts filtered", result.getSampleDouble(DatumSamplesType.Instantaneous, PROP_WATTS));
+		assertEquals("Frequency",
+				datum.getSamples().getSampleDouble(DatumSamplesType.Instantaneous, PROP_FREQUENCY),
+				result.getSampleDouble(DatumSamplesType.Instantaneous, PROP_FREQUENCY));
+		assertNull("Watt hours filtered",
+				result.getSampleLong(DatumSamplesType.Accumulating, PROP_WATTHOURS));
+		assertEquals("Phase", datum.getSamples().getSampleString(DatumSamplesType.Status, PROP_PHASE),
+				result.getSampleString(DatumSamplesType.Status, PROP_PHASE));
 	}
 
 	@Test
 	public void testExcludeMultiplePatterns() {
-		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
+		SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
 		PropertyDatumFilterService xform = new PropertyDatumFilterService();
 		xform.setSourceId("^test");
 		xform.setExcludes(new String[] { "^watt", "^phase$" });
 		xform.init();
-		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
+		DatumSamplesOperations result = xform.filter(datum, datum.getSamples(), emptyMap());
 		assertNotSame("New sample instance", datum.getSamples(), result);
-		assertNull("Watts filtered", result.getInstantaneousSampleDouble(PROP_WATTS));
-		assertEquals("Frequency", datum.getSamples().getInstantaneousSampleDouble(PROP_FREQUENCY),
-				result.getInstantaneousSampleDouble(PROP_FREQUENCY));
-		assertNull("Watt hours filtered", result.getAccumulatingSampleLong(PROP_WATTHOURS));
-		assertNull("Phase filtered", result.getStatusSampleString(PROP_PHASE));
-	}
-
-	@SuppressWarnings("deprecation")
-	@Test
-	public void testIncludeAndExclude() {
-		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		PropertyDatumFilterService xform = new PropertyDatumFilterService();
-		xform.setSourceId("^test");
-		xform.setIncludes(new String[] { "^watt" });
-		xform.setExcludes(new String[] { "^watts$" });
-		xform.init();
-		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
-		assertNotSame("New sample instance", datum.getSamples(), result);
-		assertNull("Watts filtered", result.getInstantaneousSampleDouble(PROP_WATTS));
-		assertNull("Frequency filtered", result.getInstantaneousSampleDouble(PROP_FREQUENCY));
-		assertEquals("Watt hours", datum.getSamples().getAccumulatingSampleLong(PROP_WATTHOURS),
-				result.getAccumulatingSampleLong(PROP_WATTHOURS));
-		assertNull("Phase filtered", result.getStatusSampleString(PROP_PHASE));
-	}
-
-	@SuppressWarnings("deprecation")
-	@Test
-	public void testNonMatchingSourceId() {
-		GeneralNodeDatum datum = createTestGeneralNodeDatum("other.source");
-		PropertyDatumFilterService xform = new PropertyDatumFilterService();
-		xform.setSourceId("^test");
-		xform.setIncludes(new String[] { "^watt" });
-		xform.setExcludes(new String[] { "^watts$" });
-		xform.init();
-		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
-		assertSame("Sample sample instance", datum.getSamples(), result);
-	}
-
-	@SuppressWarnings("deprecation")
-	@Test
-	public void testNoMatchingIncludes() {
-		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		PropertyDatumFilterService xform = new PropertyDatumFilterService();
-		xform.setSourceId("^test");
-		xform.setIncludes(new String[] { "^foo" });
-		xform.init();
-		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
-		assertNull("Entire sample filtered", result);
+		assertNull("Watts filtered", result.getSampleDouble(DatumSamplesType.Instantaneous, PROP_WATTS));
+		assertEquals("Frequency",
+				datum.getSamples().getSampleDouble(DatumSamplesType.Instantaneous, PROP_FREQUENCY),
+				result.getSampleDouble(DatumSamplesType.Instantaneous, PROP_FREQUENCY));
+		assertNull("Watt hours filtered",
+				result.getSampleLong(DatumSamplesType.Accumulating, PROP_WATTHOURS));
+		assertNull("Phase filtered", result.getSampleString(DatumSamplesType.Status, PROP_PHASE));
 	}
 
 	@Test
 	public void testNoMatchingExcludes() {
-		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
+		SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
 		PropertyDatumFilterService xform = new PropertyDatumFilterService();
 		xform.setSourceId("^test");
 		xform.setExcludes(new String[] { "^foo" });
 		xform.init();
-		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
+		DatumSamplesOperations result = xform.filter(datum, datum.getSamples(), emptyMap());
 		assertSame("Sample sample instance", datum.getSamples(), result);
 	}
 
@@ -240,15 +171,16 @@ public class PropertyFilterSampleTransformerTests {
 
 		replay(settingDao);
 
-		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		GeneralDatumSamples expectedSamples = new GeneralDatumSamples();
-		expectedSamples.putAccumulatingSampleValue(PROP_WATTHOURS, 1239340349L);
+		SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
+		DatumSamples expectedSamples = new DatumSamples();
 		expectedSamples.putInstantaneousSampleValue(PROP_WATTS, 23.4);
+		expectedSamples.putAccumulatingSampleValue(PROP_WATTHOURS, 1239340349L);
 
 		long stop = System.currentTimeMillis() + TEST_FREQ * 900L;
 		int count = 0;
 		while ( stop > System.currentTimeMillis() ) {
-			GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
+			SimpleDatum d = datum.copyWithId(DatumId.nodeId(null, datum.getSourceId(), Instant.now()));
+			DatumSamplesOperations result = xform.filter(d, d.getSamples(), emptyMap());
 			if ( count == 0 ) {
 				assertEquals("Not limited filter " + count, expectedSamples, result);
 			} else {
@@ -274,11 +206,11 @@ public class PropertyFilterSampleTransformerTests {
 			String expectedPropName = null;
 			switch (itr.previousIndex()) {
 				case 0:
-					expectedPropName = "wattHours";
+					expectedPropName = "watts";
 					break;
 
 				case 1:
-					expectedPropName = "watts";
+					expectedPropName = "wattHours";
 					break;
 
 			}
@@ -312,15 +244,16 @@ public class PropertyFilterSampleTransformerTests {
 
 		replay(settingDao);
 
-		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		GeneralDatumSamples expectedSamples = new GeneralDatumSamples();
-		expectedSamples.putAccumulatingSampleValue(PROP_WATTHOURS, 1239340349L);
+		SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
+		DatumSamples expectedSamples = new DatumSamples();
 		expectedSamples.putInstantaneousSampleValue(PROP_WATTS, 23.4);
+		expectedSamples.putAccumulatingSampleValue(PROP_WATTHOURS, 1239340349L);
 
 		long stop = System.currentTimeMillis() + TEST_FREQ * 900L;
 		int count = 0;
 		while ( stop > System.currentTimeMillis() ) {
-			GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
+			SimpleDatum d = datum.copyWithId(DatumId.nodeId(null, datum.getSourceId(), Instant.now()));
+			DatumSamplesOperations result = xform.filter(d, d.getSamples(), emptyMap());
 			if ( count == 0 ) {
 				assertEquals("Not limited filter " + count, expectedSamples, result);
 			} else {
@@ -346,11 +279,11 @@ public class PropertyFilterSampleTransformerTests {
 			String expectedPropName = null;
 			switch (itr.previousIndex()) {
 				case 0:
-					expectedPropName = "wattHours";
+					expectedPropName = "watts";
 					break;
 
 				case 1:
-					expectedPropName = "watts";
+					expectedPropName = "wattHours";
 					break;
 
 			}
@@ -384,19 +317,19 @@ public class PropertyFilterSampleTransformerTests {
 
 		replay(settingDao);
 
-		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
+		SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
 
-		GeneralDatumSamples firstExpectedSamples = new GeneralDatumSamples();
+		DatumSamples firstExpectedSamples = new DatumSamples();
 		firstExpectedSamples.putAccumulatingSampleValue(PROP_WATTHOURS, 1239340349L);
 
-		GeneralDatumSamples expectedSamples = new GeneralDatumSamples();
+		DatumSamples expectedSamples = new DatumSamples();
 		expectedSamples.putAccumulatingSampleValue(PROP_WATTHOURS, 1239340349L);
 		expectedSamples.putInstantaneousSampleValue(PROP_WATTS, 23.4);
 
 		long stop = System.currentTimeMillis() + TEST_FREQ * 900L;
 		int count = 0;
 		while ( stop > System.currentTimeMillis() ) {
-			GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
+			DatumSamplesOperations result = xform.filter(datum, datum.getSamples(), emptyMap());
 			if ( count == 0 ) {
 				assertEquals("First limited filter " + count, firstExpectedSamples, result);
 			} else {
@@ -452,14 +385,14 @@ public class PropertyFilterSampleTransformerTests {
 
 		replay(settingDao);
 
-		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		GeneralDatumSamples expectedSamples = new GeneralDatumSamples();
+		SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
+		DatumSamples expectedSamples = new DatumSamples();
 		expectedSamples.putInstantaneousSampleValue(PROP_WATTS, 23.4);
 
 		long stop = System.currentTimeMillis() + TEST_FREQ * 900L;
 		int count = 0;
 		while ( stop > System.currentTimeMillis() ) {
-			GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
+			DatumSamplesOperations result = xform.filter(datum, datum.getSamples(), emptyMap());
 			if ( count == 0 ) {
 				assertEquals("First limited filter " + count, expectedSamples, result);
 			} else {
@@ -503,9 +436,9 @@ public class PropertyFilterSampleTransformerTests {
 
 		// WHEN
 		replay(opModesService);
-		GeneralNodeDatum d = createTestGeneralNodeDatum(TEST_SOURCE_ID);
+		SimpleDatum d = createTestGeneralNodeDatum(TEST_SOURCE_ID);
 
-		GeneralDatumSamples out = xs.transformSamples(d, d.getSamples(), null);
+		DatumSamplesOperations out = xs.filter(d, d.getSamples(), null);
 
 		// THEN
 		assertThat("No change because required operational mode not active", out,
@@ -528,20 +461,20 @@ public class PropertyFilterSampleTransformerTests {
 
 		// WHEN
 		replay(opModesService);
-		GeneralNodeDatum d = createTestGeneralNodeDatum(TEST_SOURCE_ID);
+		SimpleDatum d = createTestGeneralNodeDatum(TEST_SOURCE_ID);
 
-		GeneralDatumSamples out = xs.transformSamples(d, d.getSamples(), null);
+		DatumSamplesOperations out = xs.filter(d, d.getSamples(), null);
 
 		// THEN
 		assertThat("Change because required operational mode active", out,
 				is(not(sameInstance(d.getSamples()))));
-		assertThat("Watts filtered", out.getInstantaneousSampleDouble(PROP_WATTS), is(nullValue()));
-		assertThat("Frequency", d.getInstantaneousSampleBigDecimal(PROP_FREQUENCY),
-				is(equalTo(out.getInstantaneousSampleBigDecimal(PROP_FREQUENCY))));
-		assertThat("Watt hours filtered", out.getAccumulatingSampleLong(PROP_WATTHOURS),
+		assertThat("Watts filtered", out.getSampleDouble(Instantaneous, PROP_WATTS), is(nullValue()));
+		assertThat("Frequency", d.getSampleBigDecimal(Instantaneous, PROP_FREQUENCY),
+				is(equalTo(out.getSampleBigDecimal(Instantaneous, PROP_FREQUENCY))));
+		assertThat("Watt hours filtered", out.getSampleLong(Accumulating, PROP_WATTHOURS),
 				is(nullValue()));
-		assertThat("Phase", d.getStatusSampleString(PROP_PHASE),
-				is(equalTo(out.getStatusSampleString(PROP_PHASE))));
+		assertThat("Phase", d.getSampleString(Status, PROP_PHASE),
+				is(equalTo(out.getSampleString(Status, PROP_PHASE))));
 		verify(opModesService);
 	}
 

@@ -1,5 +1,5 @@
 /* ==================================================================
- * SourceThrottlingSamplesTransformerTests.java - 8/08/2017 4:32:44 PM
+ * ThrottlingDatumFilterServiceTests.java - 8/08/2017 4:32:44 PM
  * 
  * Copyright 2017 SolarNetwork.net Dev Team
  * 
@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.filter.test;
 
+import static java.util.Collections.emptyMap;
 import static net.solarnetwork.node.datum.filter.std.DatumFilterSupport.SETTING_KEY_TEMPLATE;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
@@ -38,6 +39,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -49,20 +51,22 @@ import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 import org.junit.Before;
 import org.junit.Test;
-import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.KeyValuePair;
-import net.solarnetwork.node.Setting;
+import net.solarnetwork.domain.datum.DatumId;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.datum.filter.std.ThrottlingDatumFilterService;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
 
 /**
  * Test cases for the {@link ThrottlingDatumFilterService} class.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.0
  */
-public class SourceThrottlingSamplesTransformerTests {
+public class ThrottlingDatumFilterServiceTests {
 
 	private static final int TEST_FREQ = 1;
 	private static final int TEST_SETTING_CACHE_SECS = 3;
@@ -85,20 +89,20 @@ public class SourceThrottlingSamplesTransformerTests {
 		xform.init();
 	}
 
-	private GeneralNodeDatum createTestGeneralNodeDatum(String sourceId) {
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId(sourceId);
-		datum.putInstantaneousSampleValue(PROP_WATTS, 23.4);
+	private SimpleDatum createTestGeneralNodeDatum(String sourceId) {
+		SimpleDatum datum = new SimpleDatum(DatumId.nodeId(null, sourceId, Instant.now()),
+				new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue(PROP_WATTS, 23.4);
 		return datum;
 	}
 
 	@Test
 	public void testSourceNoMatch() {
-		GeneralNodeDatum datum = createTestGeneralNodeDatum("a");
+		SimpleDatum datum = createTestGeneralNodeDatum("a");
 		long stop = System.currentTimeMillis() + TEST_FREQ * 2 * 1000L + 100;
 		int count = 0;
 		while ( stop > System.currentTimeMillis() ) {
-			GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
+			DatumSamplesOperations result = xform.filter(datum, datum.getSamples(), emptyMap());
 			assertSame("Not filtered sample " + count, datum.getSamples(), result);
 			count++;
 			try {
@@ -121,11 +125,11 @@ public class SourceThrottlingSamplesTransformerTests {
 
 		replay(settingDao);
 
-		GeneralNodeDatum datum = createTestGeneralNodeDatum("FILTER_ME");
+		SimpleDatum datum = createTestGeneralNodeDatum("FILTER_ME");
 		long stop = System.currentTimeMillis() + TEST_FREQ * 900L;
 		int count = 0;
 		while ( stop > System.currentTimeMillis() ) {
-			GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
+			DatumSamplesOperations result = xform.filter(datum, datum.getSamples(), emptyMap());
 			if ( count == 0 ) {
 				assertSame("Not filtered sample " + count, datum.getSamples(), result);
 			} else {
@@ -155,7 +159,7 @@ public class SourceThrottlingSamplesTransformerTests {
 
 	@Test
 	public void testSourceMatchExpiredSetting() {
-		final GeneralNodeDatum datum = createTestGeneralNodeDatum("FILTER_ME");
+		final SimpleDatum datum = createTestGeneralNodeDatum("FILTER_ME");
 
 		final String settingKey = String.format(SETTING_KEY_TEMPLATE, TEST_UID);
 		List<KeyValuePair> initialSettings = Collections
@@ -171,7 +175,7 @@ public class SourceThrottlingSamplesTransformerTests {
 		long stop = System.currentTimeMillis() + TEST_FREQ * 900L;
 		int count = 0;
 		while ( stop > System.currentTimeMillis() ) {
-			GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
+			DatumSamplesOperations result = xform.filter(datum, datum.getSamples(), emptyMap());
 			if ( count == 0 ) {
 				assertSame("Not filtered sample " + count, datum.getSamples(), result);
 			} else {
@@ -201,14 +205,14 @@ public class SourceThrottlingSamplesTransformerTests {
 
 	@Test
 	public void testSourceMatchNonExpiredSetting() {
-		final GeneralNodeDatum datum = createTestGeneralNodeDatum("FILTER_ME");
+		final SimpleDatum datum = createTestGeneralNodeDatum("FILTER_ME");
 		final long start = System.currentTimeMillis();
 		final String settingKey = String.format(SETTING_KEY_TEMPLATE, TEST_UID);
 		List<KeyValuePair> initialSettings = Collections
 				.singletonList(new KeyValuePair(datum.getSourceId(), Long.toString(start, 16)));
 		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
-		Capture<Setting> savedSettingCapture = new Capture<Setting>();
+		Capture<Setting> savedSettingCapture = new Capture<>();
 		settingDao.storeSetting(capture(savedSettingCapture));
 
 		replay(settingDao);
@@ -218,11 +222,13 @@ public class SourceThrottlingSamplesTransformerTests {
 		int nonFilterCount = 0;
 		while ( stop > System.currentTimeMillis() ) {
 			long now = System.currentTimeMillis();
-			GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
+			SimpleDatum d = datum
+					.copyWithId(DatumId.nodeId(null, datum.getSourceId(), Instant.ofEpochMilli(now)));
+			DatumSamplesOperations result = xform.filter(d, d.getSamples(), emptyMap());
 			if ( nonFilterCount > 0 || now < start + TEST_FREQ * 1000L ) {
 				assertNull("Filtered sample " + count, result);
 			} else if ( nonFilterCount == 0 ) {
-				assertSame("Not filtered sample " + count, datum.getSamples(), result);
+				assertSame("Not filtered sample " + count, d.getSamples(), result);
 				nonFilterCount += 1;
 			}
 			count++;
@@ -277,17 +283,19 @@ public class SourceThrottlingSamplesTransformerTests {
 
 		replay(settingDao);
 
-		GeneralNodeDatum datum = createTestGeneralNodeDatum("FILTER_ME");
+		SimpleDatum datum = createTestGeneralNodeDatum("FILTER_ME");
 
-		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
+		DatumSamplesOperations result = xform.filter(datum, datum.getSamples(), emptyMap());
 		assertThat("Non-filtered 1st result", result, notNullValue());
 
-		result = xform.transformSamples(datum, datum.getSamples());
+		datum = datum.copyWithId(DatumId.nodeId(null, datum.getSourceId(), Instant.now()));
+		result = xform.filter(datum, datum.getSamples(), emptyMap());
 		assertThat("Filtered 2nd result", result, nullValue());
 
 		Thread.sleep(TEST_SETTING_CACHE_SECS * 1000L + 200);
 
-		result = xform.transformSamples(datum, datum.getSamples());
+		datum = datum.copyWithId(DatumId.nodeId(null, datum.getSourceId(), Instant.now()));
+		result = xform.filter(datum, datum.getSamples(), emptyMap());
 		assertThat("Non-filtered 3rd result", result, notNullValue());
 
 		Thread.sleep(100);
@@ -309,7 +317,7 @@ public class SourceThrottlingSamplesTransformerTests {
 
 	@Test
 	public void settingCacheExpiresInitiallyNotExpired() throws InterruptedException {
-		final GeneralNodeDatum datum = createTestGeneralNodeDatum("FILTER_ME");
+		final SimpleDatum datum = createTestGeneralNodeDatum("FILTER_ME");
 		final long start = System.currentTimeMillis();
 		final String settingKey = String.format(SETTING_KEY_TEMPLATE, TEST_UID);
 		List<KeyValuePair> initialSettings = Collections
@@ -324,12 +332,14 @@ public class SourceThrottlingSamplesTransformerTests {
 
 		replay(settingDao);
 
-		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples());
+		SimpleDatum d = datum.copyWithId(DatumId.nodeId(null, datum.getSourceId(), Instant.now()));
+		DatumSamplesOperations result = xform.filter(d, d.getSamples(), emptyMap());
 		assertThat("Filtered 1st result", result, nullValue());
 
 		Thread.sleep(TEST_SETTING_CACHE_SECS * 1000L + 200);
 
-		result = xform.transformSamples(datum, datum.getSamples());
+		d = datum.copyWithId(DatumId.nodeId(null, datum.getSourceId(), Instant.now()));
+		result = xform.filter(d, d.getSamples(), emptyMap());
 		assertThat("Non-filtered 2rd result", result, notNullValue());
 
 		Thread.sleep(100);
