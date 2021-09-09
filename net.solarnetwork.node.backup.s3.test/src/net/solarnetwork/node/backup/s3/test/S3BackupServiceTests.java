@@ -42,12 +42,14 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 import net.solarnetwork.common.s3.S3Client;
 import net.solarnetwork.common.s3.S3ObjectMeta;
 import net.solarnetwork.common.s3.S3ObjectReference;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.s3.S3BackupService;
+import net.solarnetwork.test.SystemPropertyMatchTestRule;
 
 /**
  * Test cases for the {@link S3BackupService} class.
@@ -58,6 +60,10 @@ import net.solarnetwork.node.backup.s3.S3BackupService;
 public class S3BackupServiceTests {
 
 	private S3BackupService service;
+
+	/** Only run when the {@code s3-int} system property is defined. */
+	@ClassRule
+	public static SystemPropertyMatchTestRule PROFILE_RULE = new SystemPropertyMatchTestRule("s3-int");
 
 	@Before
 	public void setup() throws IOException {
