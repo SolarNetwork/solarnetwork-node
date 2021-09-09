@@ -113,7 +113,7 @@
 	
 	<bean id="associationSettingProviders" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<constructor-arg ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.settings.SettingSpecifierProvider"/>
+		<property name="serviceClassName" value="net.solarnetwork.settings.SettingSpecifierProvider"/>
 		<property name="serviceFilter" value="(on-association=true)"/>
 		<property name="sticky" value="true"/>
 	</bean>

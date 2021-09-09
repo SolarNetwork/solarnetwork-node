@@ -18,7 +18,7 @@
 	<service>
 		<interfaces>
 			<value>net.solarnetwork.node.SystemService</value>
-			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 			<value>net.solarnetwork.node.reactor.FeedbackInstructionHandler</value>
 		</interfaces>
 		<service-properties>

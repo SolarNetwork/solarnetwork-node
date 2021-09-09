@@ -22,7 +22,7 @@
 	<reference-list id="instructionHandlers" interface="net.solarnetwork.node.reactor.InstructionHandler"
 		filter="(instruction=SystemConfigure)"/>
 	
-	<service ref="stompServer" interface="net.solarnetwork.node.settings.SettingSpecifierProvider"/>
+	<service ref="stompServer" interface="net.solarnetwork.settings.SettingSpecifierProvider"/>
 
 	<reference id="objectMapperService" 
 		interface="net.solarnetwork.service.ObjectMapperService"

@@ -24,7 +24,7 @@
 		</property>
 	</bean>
 
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<service-properties>
 			<entry key="role">
 				<array value-type="java.lang.String">
@@ -33,7 +33,7 @@
 				</array>
 			</entry>
 		</service-properties>
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Time-based Tariff Filter"/>
 			<property name="factoryUID" value="net.solarnetwork.node.datum.filter.tariff"/>
 			<property name="messageSource" ref="tariffFilterMessageSource"/>

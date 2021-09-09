@@ -53,7 +53,7 @@
 		</property>
 	</bean>
 
-	<bean id="dayJobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+	<bean id="dayJobMessageSource" class="net.solarnetwork.support.PrefixedMessageSource">
 		<property name="prefix" value="datumDataSource."/>
 		<property name="delegate">
 			<bean class="net.solarnetwork.support.PrefixedMessageSource">
@@ -68,7 +68,7 @@
 		</property>
 	</bean>
 	
-	<bean id="hourlyJobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+	<bean id="hourlyJobMessageSource" class="net.solarnetwork.support.PrefixedMessageSource">
 		<property name="prefix" value="datumDataSource."/>
 		<property name="delegate">
 			<bean class="net.solarnetwork.support.PrefixedMessageSource">
