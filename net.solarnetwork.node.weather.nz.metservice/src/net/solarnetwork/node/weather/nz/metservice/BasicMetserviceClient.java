@@ -30,29 +30,35 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.net.URLConnection;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
-import java.util.TimeZone;
-import org.joda.time.LocalTime;
+import java.util.Locale;
 import org.springframework.util.FileCopyUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
-import net.solarnetwork.node.domain.GeneralDayDatum;
-import net.solarnetwork.node.domain.GeneralLocationDatum;
-import net.solarnetwork.node.support.HttpClientSupport;
-import net.solarnetwork.node.support.UnicodeReader;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.io.UnicodeReader;
+import net.solarnetwork.node.domain.datum.AtmosphericDatum;
+import net.solarnetwork.node.domain.datum.DayDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleAtmosphericDatum;
+import net.solarnetwork.node.domain.datum.SimpleDayDatum;
+import net.solarnetwork.node.service.support.HttpClientSupport;
 
 /**
  * Basic implementation of {@link MetserviceClient}.
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
 public class BasicMetserviceClient extends HttpClientSupport implements MetserviceClient {
 
@@ -127,51 +133,113 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		timeZoneId = DEFAULT_TIME_ZONE_ID;
 	}
 
+	/**
+	 * Get a date formatter suitable for parsing the configured day date format.
+	 * 
+	 * @return the formatter
+	 */
+	public DateTimeFormatter dayFormatter() {
+		final ZoneId zone = ZoneId.of(getTimeZoneId());
+		// @formatter:off
+		return new DateTimeFormatterBuilder()
+				.parseCaseInsensitive()
+				.appendPattern(getDayDateFormat())
+				.toFormatter().withZone(zone)
+				.withLocale(Locale.ENGLISH);
+		// @formatter:on
+	}
+
+	/**
+	 * Get a date formatter suitable for parsing the configured day date format.
+	 * 
+	 * @return the formatter
+	 */
+	public DateTimeFormatter timeFormatter() {
+		final ZoneId zone = ZoneId.of(getTimeZoneId());
+		// @formatter:off
+		return new DateTimeFormatterBuilder()
+				.parseCaseInsensitive()
+				.appendPattern(getTimeDateFormat())
+				.toFormatter().withZone(zone)
+				.withLocale(Locale.ENGLISH);
+		// @formatter:on
+	}
+
+	/**
+	 * Get a date formatter suitable for parsing the configured day date format.
+	 * 
+	 * @return the formatter
+	 */
+	public DateTimeFormatter timestampFormatter() {
+		final ZoneId zone = ZoneId.of(getTimeZoneId());
+		// @formatter:off
+		return new DateTimeFormatterBuilder()
+				.parseCaseInsensitive()
+				.appendPattern(getTimestampDateFormat())
+				.toFormatter().withZone(zone)
+				.withLocale(Locale.ENGLISH);
+		// @formatter:on
+	}
+
+	/**
+	 * Get a date formatter suitable for parsing the configured day date format.
+	 * 
+	 * @return the formatter
+	 */
+	public DateTimeFormatter timestampHourFormatter() {
+		final ZoneId zone = ZoneId.of(getTimeZoneId());
+		// @formatter:off
+		return new DateTimeFormatterBuilder()
+				.parseCaseInsensitive()
+				.appendPattern(getTimestampHourDateFormat())
+				.toFormatter().withZone(zone)
+				.withLocale(Locale.ENGLISH);
+		// @formatter:on
+	}
+
 	private String getURLForLocationTemplate(String template, String locationKey) {
 		return getBaseUrl() + '/' + String.format(template, locationKey);
 	}
 
 	@Override
-	public GeneralDayDatum readCurrentRiseSet(final String locationKey) {
+	public DayDatum readCurrentRiseSet(final String locationKey) {
 		if ( locationKey == null ) {
 			return null;
 		}
 		final String url = getURLForLocationTemplate(getRiseSetTemplate(), locationKey);
-		final SimpleDateFormat timeFormat = new SimpleDateFormat(getTimeDateFormat());
-		final SimpleDateFormat dayFormat = new SimpleDateFormat(getDayDateFormat());
-		dayFormat.setCalendar(Calendar.getInstance(TimeZone.getTimeZone(getTimeZoneId())));
-		GeneralDayDatum result = null;
+		final DateTimeFormatter dayFormat = dayFormatter();
+		final DateTimeFormatter timeFormat = timeFormatter();
+		DayDatum result = null;
 		try {
 			URLConnection conn = getURLConnection(url, HTTP_METHOD_GET);
 			JsonNode data = getObjectMapper().readTree(getInputStreamFromURLConnection(conn));
-			result = parseRiseSet(data, dayFormat, timeFormat);
+			result = parseRiseSet(data, dayFormat, timeFormat, dayFormat.getZone());
 		} catch ( IOException e ) {
 			log.warn("Error reading MetService URL [{}]: {}", url, e.getMessage());
 		}
 		return result;
 	}
 
-	private GeneralDayDatum parseRiseSet(JsonNode data, SimpleDateFormat dayFormat,
-			SimpleDateFormat timeFormat) {
+	private DayDatum parseRiseSet(JsonNode data, DateTimeFormatter dayFormat,
+			DateTimeFormatter timeFormat, ZoneId zone) {
 		if ( data == null ) {
 			return null;
 		}
-		GeneralDayDatum result = null;
-		Date day = parseDateAttribute(data, "day", dayFormat);
-		Date sunrise = parseDateAttribute(data, "sunRise", timeFormat);
-		Date sunset = parseDateAttribute(data, "sunSet", timeFormat);
-		Date moonrise = parseDateAttribute(data, "moonRise", timeFormat);
-		Date moonset = parseDateAttribute(data, "moonSet", timeFormat);
+		SimpleDayDatum result = null;
+		LocalDate day = parseDateAttribute(data, "day", dayFormat, LocalDate::from);
+		LocalTime sunrise = parseDateAttribute(data, "sunRise", timeFormat, LocalTime::from);
+		LocalTime sunset = parseDateAttribute(data, "sunSet", timeFormat, LocalTime::from);
+		LocalTime moonrise = parseDateAttribute(data, "moonRise", timeFormat, LocalTime::from);
+		LocalTime moonset = parseDateAttribute(data, "moonSet", timeFormat, LocalTime::from);
 		if ( day != null && sunrise != null && sunset != null ) {
-			result = new GeneralDayDatum();
-			result.setCreated(day);
-			result.setSunrise(new LocalTime(sunrise));
-			result.setSunset(new LocalTime(sunset));
+			result = new SimpleDayDatum(null, day.atStartOfDay(zone).toInstant(), new DatumSamples());
+			result.setSunriseTime(sunrise);
+			result.setSunsetTime(sunset);
 			if ( moonrise != null ) {
-				result.setMoonrise(new LocalTime(moonrise));
+				result.setMoonriseTime(moonrise);
 			}
 			if ( moonset != null ) {
-				result.setMoonset(new LocalTime(moonset));
+				result.setMoonsetTime(moonset);
 			}
 			log.debug("Parsed DayDatum from rise set: {}", result);
 		}
@@ -179,14 +247,13 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	}
 
 	@Override
-	public Collection<GeneralLocationDatum> readCurrentLocalObservations(String locationKey) {
+	public Collection<NodeDatum> readCurrentLocalObservations(String locationKey) {
 		if ( locationKey == null ) {
 			return null;
 		}
-		final List<GeneralLocationDatum> result = new ArrayList<GeneralLocationDatum>(4);
+		final List<NodeDatum> result = new ArrayList<>(4);
 		final String url = getURLForLocationTemplate(getLocalObsTemplate(), locationKey);
-		final SimpleDateFormat tsFormat = new SimpleDateFormat(getTimestampDateFormat());
-		tsFormat.setCalendar(Calendar.getInstance(TimeZone.getTimeZone(getTimeZoneId())));
+		final DateTimeFormatter tsFormat = timestampFormatter();
 
 		JsonNode root;
 		try {
@@ -201,16 +268,15 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		if ( data == null ) {
 			log.warn("Local observation container key 'threeHour' not found in {}", url);
 		} else {
-			Date infoDate = parseDateAttribute(data, "dateTime", tsFormat);
+			Instant infoDate = parseDateAttribute(data, "dateTime", tsFormat, Instant::from);
 			BigDecimal temp = parseBigDecimalAttribute(data, "temp");
 
 			if ( infoDate == null || temp == null ) {
 				log.debug("Date and/or temperature missing from key 'threeHour' in {}", url);
 			} else {
-				GeneralAtmosphericDatum weather = new GeneralAtmosphericDatum();
-				weather.setCreated(infoDate);
+				SimpleAtmosphericDatum weather = new SimpleAtmosphericDatum(null, infoDate,
+						new DatumSamples());
 				weather.setTemperature(temp);
-
 				weather.setHumidity(parseIntegerAttribute(data, "humidity"));
 
 				BigDecimal millibar = parseBigDecimalAttribute(data, "pressure");
@@ -227,15 +293,14 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		if ( data == null ) {
 			log.warn("Local observation container key 'twentyFourHour' not found in {}", url);
 		} else {
-			Date infoDate = parseDateAttribute(data, "dateTime", tsFormat);
+			Instant infoDate = parseDateAttribute(data, "dateTime", tsFormat, Instant::from);
 			BigDecimal maxTemp = parseBigDecimalAttribute(data, "maxTemp");
 			BigDecimal minTemp = parseBigDecimalAttribute(data, "minTemp");
 			if ( infoDate == null || minTemp == null || maxTemp == null ) {
 				log.debug("Date and/or temperature extremes missing from key 'twentyFourHour' in {}",
 						url);
 			} else {
-				GeneralDayDatum day = new GeneralDayDatum();
-				day.setCreated(infoDate);
+				SimpleDayDatum day = new SimpleDayDatum(null, infoDate, new DatumSamples());
 				day.setTemperatureMinimum(minTemp);
 				day.setTemperatureMaximum(maxTemp);
 				// TODO: rainfall?
@@ -247,13 +312,12 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	}
 
 	@Override
-	public Collection<GeneralDayDatum> readLocalForecast(String locationKey) {
+	public Collection<DayDatum> readLocalForecast(String locationKey) {
 		// get local forecast
 		final String url = getURLForLocationTemplate(getLocalForecastTemplate(), locationKey);
-		final List<GeneralDayDatum> result = new ArrayList<GeneralDayDatum>(4);
-		final SimpleDateFormat timeFormat = new SimpleDateFormat(getTimeDateFormat());
-		final SimpleDateFormat dayFormat = new SimpleDateFormat(getDayDateFormat());
-		dayFormat.setCalendar(Calendar.getInstance(TimeZone.getTimeZone(getTimeZoneId())));
+		final List<DayDatum> result = new ArrayList<>(4);
+		final DateTimeFormatter dayFormat = dayFormatter();
+		final DateTimeFormatter timeFormat = timeFormatter();
 
 		JsonNode root;
 		try {
@@ -267,7 +331,8 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		JsonNode days = root.get("days");
 		if ( days.isArray() ) {
 			for ( JsonNode dayNode : days ) {
-				GeneralDayDatum day = parseRiseSet(dayNode.get("riseSet"), dayFormat, timeFormat);
+				DayDatum day = parseRiseSet(dayNode.get("riseSet"), dayFormat, timeFormat,
+						dayFormat.getZone());
 				if ( day != null ) {
 					day.setSkyConditions(parseStringAttribute(dayNode, "forecastWord"));
 					day.setTemperatureMinimum(parseBigDecimalAttribute(dayNode, "min"));
@@ -281,11 +346,10 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	}
 
 	@Override
-	public Collection<GeneralAtmosphericDatum> readHourlyForecast(String locationKey) {
+	public Collection<AtmosphericDatum> readHourlyForecast(String locationKey) {
 		final String url = getURLForLocationTemplate(getHourlyObsAndForecastTemplate(), locationKey);
-		final List<GeneralAtmosphericDatum> result = new ArrayList<GeneralAtmosphericDatum>(4);
-		final SimpleDateFormat hourTimestampFormat = new SimpleDateFormat(getTimestampHourDateFormat());
-		hourTimestampFormat.setCalendar(Calendar.getInstance(TimeZone.getTimeZone(getTimeZoneId())));
+		final List<AtmosphericDatum> result = new ArrayList<>(4);
+		final DateTimeFormatter hourTimestampFormat = timestampHourFormatter();
 
 		JsonNode root;
 		try {
@@ -302,24 +366,23 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 				String time = parseStringAttribute(hourNode, "timeFrom");
 				String date = parseStringAttribute(hourNode, "date");
 				BigDecimal temp = parseBigDecimalAttribute(hourNode, "temperature");
-				Date infoDate = null;
+				Instant infoDate = null;
 				if ( time != null && date != null ) {
 					String dateString = time + " " + date;
 					try {
-						infoDate = hourTimestampFormat.parse(dateString);
-					} catch ( ParseException e ) {
+						infoDate = hourTimestampFormat.parse(dateString, Instant::from);
+					} catch ( DateTimeParseException e ) {
 						log.debug(
 								"Error parsing date attribute [timeFrom date] value [{}] using pattern {}: {}",
-								new Object[] { dateString, hourTimestampFormat.toPattern(),
-										e.getMessage() });
+								dateString, hourTimestampFormat, e.getMessage());
 					}
 				}
 				if ( infoDate == null || temp == null ) {
 					continue;
 				}
 
-				GeneralAtmosphericDatum weather = new GeneralAtmosphericDatum();
-				weather.setCreated(infoDate);
+				SimpleAtmosphericDatum weather = new SimpleAtmosphericDatum(null, infoDate,
+						new DatumSamples());
 				weather.setTemperature(temp);
 				result.add(weather);
 			}

@@ -23,15 +23,15 @@
 package net.solarnetwork.node.weather.nz.metservice;
 
 import java.util.Collection;
-import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
-import net.solarnetwork.node.domain.GeneralDayDatum;
-import net.solarnetwork.node.domain.GeneralLocationDatum;
+import net.solarnetwork.node.domain.datum.AtmosphericDatum;
+import net.solarnetwork.node.domain.datum.DayDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 
 /**
  * API for accessing Metservice information.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public interface MetserviceClient {
 
@@ -42,7 +42,7 @@ public interface MetserviceClient {
 	 *        The location identifier.
 	 * @return The day data.
 	 */
-	GeneralDayDatum readCurrentRiseSet(String locationIdentifier);
+	DayDatum readCurrentRiseSet(String locationIdentifier);
 
 	/**
 	 * Read the current "local observations" data for a location. This includes
@@ -53,7 +53,7 @@ public interface MetserviceClient {
 	 * @return A collection of {@link GeneralDayDatum} and
 	 *         {@link GeneralAtmosphericDatum}.
 	 */
-	Collection<GeneralLocationDatum> readCurrentLocalObservations(String locationIdentifier);
+	Collection<NodeDatum> readCurrentLocalObservations(String locationIdentifier);
 
 	/**
 	 * Read the "local forecast" data for a location.
@@ -63,7 +63,7 @@ public interface MetserviceClient {
 	 * @return A collection of {@link GeneralDayDatum}, which can be for dates
 	 *         in the future.
 	 */
-	Collection<GeneralDayDatum> readLocalForecast(String locationIdentifier);
+	Collection<DayDatum> readLocalForecast(String locationIdentifier);
 
 	/**
 	 * Read the "hourly observations and forecast" data for a location,
@@ -74,6 +74,6 @@ public interface MetserviceClient {
 	 * @return A collection of {@link GeneralAtmosphericDatum}, which can be for
 	 *         dates in the future.
 	 */
-	Collection<GeneralAtmosphericDatum> readHourlyForecast(String locationIdentifier);
+	Collection<AtmosphericDatum> readHourlyForecast(String locationIdentifier);
 
 }

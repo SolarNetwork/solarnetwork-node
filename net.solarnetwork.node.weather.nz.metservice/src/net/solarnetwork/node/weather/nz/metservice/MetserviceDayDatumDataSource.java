@@ -22,16 +22,16 @@
 
 package net.solarnetwork.node.weather.nz.metservice;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.DayDatum;
-import net.solarnetwork.node.domain.GeneralDayDatum;
-import net.solarnetwork.node.domain.GeneralLocationDatum;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.domain.datum.DayDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * MetService implementation of a {@link GeneralDayDatum}
@@ -43,28 +43,25 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 3.0
  */
-public class MetserviceDayDatumDataSource extends MetserviceSupport<GeneralDayDatum> implements
-		DatumDataSource<GeneralLocationDatum>, MultiDatumDataSource<GeneralLocationDatum>,
-		SettingSpecifierProvider {
+public class MetserviceDayDatumDataSource extends MetserviceSupport
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	@Override
-	public Class<? extends GeneralLocationDatum> getDatumType() {
-		return GeneralDayDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return DayDatum.class;
 	}
 
 	@Override
-	public GeneralLocationDatum readCurrentDatum() {
+	public NodeDatum readCurrentDatum() {
 
 		// first see if we have cached data
-		GeneralDayDatum result = getDatumCache().get(LAST_DATUM_CACHE_KEY);
+		NodeDatum result = getDatumCache().get(LAST_DATUM_CACHE_KEY);
 		if ( result != null ) {
-			Calendar now = Calendar.getInstance();
-			Calendar datumCal = Calendar.getInstance();
-			datumCal.setTime(result.getCreated());
-			if ( now.get(Calendar.YEAR) == datumCal.get(Calendar.YEAR)
-					&& now.get(Calendar.DAY_OF_YEAR) == datumCal.get(Calendar.DAY_OF_YEAR) ) {
+			LocalDate today = LocalDate.now();
+			LocalDate datumDay = result.getTimestamp().atZone(ZoneId.systemDefault()).toLocalDate();
+			if ( today.compareTo(datumDay) == 0 ) {
 				// cached data is for same date, so return that
 				return result;
 			}
@@ -73,38 +70,38 @@ public class MetserviceDayDatumDataSource extends MetserviceSupport<GeneralDayDa
 			getDatumCache().remove(LAST_DATUM_CACHE_KEY);
 		}
 
-		result = getClient().readCurrentRiseSet(getLocationIdentifier());
+		DayDatum dayResult = getClient().readCurrentRiseSet(getLocationIdentifier());
 
-		Collection<GeneralLocationDatum> observations = getClient().readCurrentLocalObservations(
-				getLocationIdentifier());
-		for ( GeneralLocationDatum observation : observations ) {
+		Collection<NodeDatum> observations = getClient()
+				.readCurrentLocalObservations(getLocationIdentifier());
+		for ( NodeDatum observation : observations ) {
 			if ( observation instanceof DayDatum ) {
 				DayDatum day = (DayDatum) observation;
-				result.setTemperatureMinimum(day.getTemperatureMinimum());
-				result.setTemperatureMaximum(day.getTemperatureMaximum());
+				dayResult.setTemperatureMinimum(day.getTemperatureMinimum());
+				dayResult.setTemperatureMaximum(day.getTemperatureMaximum());
 			}
 		}
-		getDatumCache().put(LAST_DATUM_CACHE_KEY, result);
+		getDatumCache().put(LAST_DATUM_CACHE_KEY, dayResult);
 
-		return result;
+		return dayResult;
 	}
 
 	@Override
-	public Class<? extends GeneralLocationDatum> getMultiDatumType() {
-		return GeneralDayDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return DayDatum.class;
 	}
 
 	@Override
-	public Collection<GeneralLocationDatum> readMultipleDatum() {
-		List<GeneralLocationDatum> result = new ArrayList<GeneralLocationDatum>(10);
-		GeneralDayDatum today = (GeneralDayDatum) readCurrentDatum();
+	public Collection<NodeDatum> readMultipleDatum() {
+		List<NodeDatum> result = new ArrayList<>(10);
+		DayDatum today = (DayDatum) readCurrentDatum();
 		if ( today != null ) {
 			result.add(today);
 		}
-		Collection<GeneralDayDatum> forecast = getClient().readLocalForecast(getLocationIdentifier());
+		Collection<DayDatum> forecast = getClient().readLocalForecast(getLocationIdentifier());
 		if ( forecast != null ) {
-			for ( GeneralDayDatum day : forecast ) {
-				if ( day.getCreated().equals(today.getCreated()) ) {
+			for ( DayDatum day : forecast ) {
+				if ( day.getTimestamp().equals(today.getTimestamp()) ) {
 					if ( today.getSkyConditions() == null ) {
 						// copy from forecast
 						today.setSkyConditions(day.getSkyConditions());

@@ -26,14 +26,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.TimeZone;
 import org.junit.Test;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
-import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
+import net.solarnetwork.node.domain.datum.AtmosphericDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.weather.nz.metservice.BasicMetserviceClient;
 import net.solarnetwork.node.weather.nz.metservice.MetserviceWeatherDatumDataSource;
 
@@ -41,9 +40,9 @@ import net.solarnetwork.node.weather.nz.metservice.MetserviceWeatherDatumDataSou
  * Test case for the {@link MetserviceWeatherDatumDataSource} class.
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
-public class MetserviceWeatherDatumDataSourceTest extends AbstractNodeTransactionalTest {
+public class MetserviceWeatherDatumDataSourceTest {
 
 	private BasicMetserviceClient createClientInstance() throws Exception {
 		URL url = getClass().getResource("localObs_wellington-city.json");
@@ -74,14 +73,13 @@ public class MetserviceWeatherDatumDataSourceTest extends AbstractNodeTransactio
 	public void readCurrentDatum() throws Exception {
 		final MetserviceWeatherDatumDataSource ds = createDataSourceInstance();
 		final BasicMetserviceClient client = (BasicMetserviceClient) ds.getClient();
-		final SimpleDateFormat tsFormat = new SimpleDateFormat(client.getTimestampDateFormat());
-		tsFormat.setTimeZone(TimeZone.getTimeZone(client.getTimeZoneId()));
+		final DateTimeFormatter tsFormat = client.timestampFormatter();
 
-		GeneralAtmosphericDatum datum = (GeneralAtmosphericDatum) ds.readCurrentDatum();
+		AtmosphericDatum datum = (AtmosphericDatum) ds.readCurrentDatum();
 		assertNotNull(datum);
 
-		assertNotNull(datum.getCreated());
-		assertEquals("2:00pm monday 1 sep 2014", tsFormat.format(datum.getCreated()).toLowerCase());
+		assertNotNull(datum.getTimestamp());
+		assertEquals("2:00pm monday 1 sep 2014", tsFormat.format(datum.getTimestamp()).toLowerCase());
 
 		assertNotNull(datum.getTemperature());
 		assertEquals(14.0, datum.getTemperature().doubleValue(), 0.001);
@@ -99,18 +97,17 @@ public class MetserviceWeatherDatumDataSourceTest extends AbstractNodeTransactio
 	public void readMultipleDatum() throws Exception {
 		final MetserviceWeatherDatumDataSource ds = createDataSourceInstance();
 		final BasicMetserviceClient client = (BasicMetserviceClient) ds.getClient();
-		final SimpleDateFormat tsFormat = new SimpleDateFormat(client.getTimestampDateFormat());
-		tsFormat.setTimeZone(TimeZone.getTimeZone(client.getTimeZoneId()));
+		final DateTimeFormatter tsFormat = client.timestampFormatter();
 
-		Collection<GeneralAtmosphericDatum> result = ds.readMultipleDatum();
+		Collection<NodeDatum> result = ds.readMultipleDatum();
 		assertNotNull(result);
 		assertEquals(25, result.size());
 
-		Iterator<GeneralAtmosphericDatum> itr = result.iterator();
+		Iterator<NodeDatum> itr = result.iterator();
 
-		GeneralAtmosphericDatum datum = itr.next();
-		assertNotNull(datum.getCreated());
-		assertEquals("2:00pm monday 1 sep 2014", tsFormat.format(datum.getCreated()).toLowerCase());
+		AtmosphericDatum datum = (AtmosphericDatum) itr.next();
+		assertNotNull(datum.getTimestamp());
+		assertEquals("2:00pm monday 1 sep 2014", tsFormat.format(datum.getTimestamp()).toLowerCase());
 
 		assertNotNull(datum.getTemperature());
 		assertEquals(14.0, datum.getTemperature().doubleValue(), 0.001);
@@ -123,9 +120,9 @@ public class MetserviceWeatherDatumDataSourceTest extends AbstractNodeTransactio
 
 		assertEquals("Fine", datum.getSkyConditions());
 
-		datum = itr.next();
-		assertNotNull(datum.getCreated());
-		assertEquals("10:00am sunday 29 may 2016", tsFormat.format(datum.getCreated()).toLowerCase());
+		datum = (AtmosphericDatum) itr.next();
+		assertNotNull(datum.getTimestamp());
+		assertEquals("10:00am sunday 29 may 2016", tsFormat.format(datum.getTimestamp()).toLowerCase());
 		assertEquals(new BigDecimal("11.0"), datum.getTemperature());
 	}
 

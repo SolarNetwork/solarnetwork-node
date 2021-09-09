@@ -26,11 +26,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import org.junit.Test;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.solarnetwork.node.domain.GeneralDayDatum;
-import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
+import net.solarnetwork.node.domain.datum.DayDatum;
 import net.solarnetwork.node.weather.nz.metservice.BasicMetserviceClient;
 import net.solarnetwork.node.weather.nz.metservice.MetserviceDayDatumDataSource;
 
@@ -38,9 +37,9 @@ import net.solarnetwork.node.weather.nz.metservice.MetserviceDayDatumDataSource;
  * Test case for the {@link MetserviceDayDatumDataSource} class.
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
-public class MetserviceDayDatumDataSourceTest extends AbstractNodeTransactionalTest {
+public class MetserviceDayDatumDataSourceTest {
 
 	private static final String RISE_SET_RESOURCE_NAME = "riseSet_wellington-city.json";
 
@@ -72,22 +71,20 @@ public class MetserviceDayDatumDataSourceTest extends AbstractNodeTransactionalT
 	public void readCurrentDatum() throws Exception {
 		final MetserviceDayDatumDataSource ds = createDataSourceInstance();
 		final BasicMetserviceClient client = (BasicMetserviceClient) ds.getClient();
-		final SimpleDateFormat dayFormat = new SimpleDateFormat(client.getDayDateFormat());
-		final SimpleDateFormat timeFormat = new SimpleDateFormat(client.getTimeDateFormat());
+		final DateTimeFormatter dayFormat = client.dayFormatter();
+		final DateTimeFormatter timeFormat = client.timeFormatter();
 
-		GeneralDayDatum datum = (GeneralDayDatum) ds.readCurrentDatum();
+		DayDatum datum = (DayDatum) ds.readCurrentDatum();
 		assertNotNull(datum);
 
-		assertNotNull(datum.getCreated());
-		assertEquals("1 September 2014", dayFormat.format(datum.getCreated()));
+		assertNotNull(datum.getTimestamp());
+		assertEquals("1 September 2014", dayFormat.format(datum.getTimestamp()));
 
-		assertNotNull(datum.getSunrise());
-		assertEquals("6:47am",
-				timeFormat.format(datum.getSunrise().toDateTimeToday().toDate()).toLowerCase());
+		assertNotNull(datum.getSunriseTime());
+		assertEquals("6:47am", timeFormat.format(datum.getSunriseTime()).toLowerCase());
 
-		assertNotNull(datum.getSunset());
-		assertEquals("5:56pm",
-				timeFormat.format(datum.getSunset().toDateTimeToday().toDate()).toLowerCase());
+		assertNotNull(datum.getSunsetTime());
+		assertEquals("5:56pm", timeFormat.format(datum.getSunsetTime()).toLowerCase());
 
 		assertEquals(new BigDecimal("5.0"), datum.getTemperatureMinimum());
 		assertEquals(new BigDecimal("15.0"), datum.getTemperatureMaximum());

@@ -22,16 +22,17 @@
 
 package net.solarnetwork.node.weather.nz.metservice;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
-import net.solarnetwork.node.domain.GeneralDayDatum;
-import net.solarnetwork.node.domain.GeneralLocationDatum;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import org.joda.time.LocalDate;
+import net.solarnetwork.node.domain.datum.AtmosphericDatum;
+import net.solarnetwork.node.domain.datum.DayDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * MetService implementation of a {@link GeneralAtmosphericDatum}
@@ -43,40 +44,37 @@ import org.joda.time.LocalDate;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 3.0
  */
-public class MetserviceWeatherDatumDataSource extends MetserviceSupport<GeneralAtmosphericDatum>
-		implements DatumDataSource<GeneralLocationDatum>, MultiDatumDataSource<GeneralAtmosphericDatum>,
-		SettingSpecifierProvider {
+public class MetserviceWeatherDatumDataSource extends MetserviceSupport
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	@Override
-	public Class<? extends GeneralLocationDatum> getDatumType() {
-		return GeneralAtmosphericDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AtmosphericDatum.class;
 	}
 
 	@Override
-	public GeneralLocationDatum readCurrentDatum() {
-		Collection<GeneralLocationDatum> results = getClient().readCurrentLocalObservations(
-				getLocationIdentifier());
-		GeneralAtmosphericDatum result = null;
+	public NodeDatum readCurrentDatum() {
+		Collection<NodeDatum> results = getClient()
+				.readCurrentLocalObservations(getLocationIdentifier());
+		AtmosphericDatum result = null;
 		if ( results != null ) {
-			for ( GeneralLocationDatum datum : results ) {
-				if ( datum instanceof GeneralAtmosphericDatum ) {
-					result = (GeneralAtmosphericDatum) datum;
+			for ( NodeDatum datum : results ) {
+				if ( datum instanceof AtmosphericDatum ) {
+					result = (AtmosphericDatum) datum;
 					break;
 				}
 			}
 		}
 
 		if ( result != null && result.getSkyConditions() == null ) {
-			Collection<GeneralDayDatum> forecast = getClient()
-					.readLocalForecast(getLocationIdentifier());
+			LocalDate resultDay = result.getTimestamp().atZone(ZoneId.systemDefault()).toLocalDate();
+			Collection<DayDatum> forecast = getClient().readLocalForecast(getLocationIdentifier());
 			if ( forecast != null ) {
-				LocalDate resultDate = new LocalDate(result.getCreated());
-				for ( GeneralDayDatum day : forecast ) {
-					LocalDate dayDate = new LocalDate(day.getCreated());
-					if ( dayDate.getYear() == resultDate.getYear()
-							&& dayDate.getDayOfYear() == resultDate.getDayOfYear() ) {
+				for ( DayDatum day : forecast ) {
+					LocalDate dayDay = day.getTimestamp().atZone(ZoneId.systemDefault()).toLocalDate();
+					if ( dayDay.compareTo(resultDay) == 0 ) {
 						result.setSkyConditions(day.getSkyConditions());
 						break;
 					}
@@ -88,21 +86,21 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<GeneralA
 	}
 
 	@Override
-	public Class<? extends GeneralAtmosphericDatum> getMultiDatumType() {
-		return GeneralAtmosphericDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return AtmosphericDatum.class;
 	}
 
 	@Override
-	public Collection<GeneralAtmosphericDatum> readMultipleDatum() {
-		List<GeneralAtmosphericDatum> result = new ArrayList<GeneralAtmosphericDatum>(10);
-		GeneralAtmosphericDatum now = (GeneralAtmosphericDatum) readCurrentDatum();
+	public Collection<NodeDatum> readMultipleDatum() {
+		List<NodeDatum> result = new ArrayList<>(10);
+		AtmosphericDatum now = (AtmosphericDatum) readCurrentDatum();
 		if ( now != null ) {
 			result.add(now);
-			Collection<GeneralAtmosphericDatum> forecast = getClient().readHourlyForecast(
-					getLocationIdentifier());
+			Collection<AtmosphericDatum> forecast = getClient()
+					.readHourlyForecast(getLocationIdentifier());
 			if ( forecast != null ) {
-				for ( GeneralAtmosphericDatum hour : forecast ) {
-					if ( hour.getCreated().after(now.getCreated()) ) {
+				for ( AtmosphericDatum hour : forecast ) {
+					if ( hour.getTimestamp().isAfter(now.getTimestamp()) ) {
 						result.add(hour);
 					}
 				}
@@ -119,19 +117,6 @@ public class MetserviceWeatherDatumDataSource extends MetserviceSupport<GeneralA
 	@Override
 	public String getDisplayName() {
 		return "New Zealand Metservice weather information";
-	}
-
-	/**
-	 * This method is here to preserve backwards compatibility with settings
-	 * only.
-	 * 
-	 * @param localObsContainerKey
-	 *        The container key.
-	 * @deprecated No longer used.
-	 */
-	@Deprecated
-	public void setLocalObsContainerKey(String localObsContainerKey) {
-		// nothing here
 	}
 
 }

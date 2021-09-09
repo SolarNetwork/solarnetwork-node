@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -35,25 +34,22 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 import org.supercsv.io.CsvBeanReader;
 import org.supercsv.io.ICsvBeanReader;
 import org.supercsv.prefs.CsvPreference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Base class to support MetService Day and Weather data sources.
  * 
- * @param T
- *        the datum type
  * @author matt
  * @version 2.0
  */
-public abstract class MetserviceSupport<T extends Datum> {
+public abstract class MetserviceSupport extends DatumDataSourceSupport {
 
 	/** The default value for the {@code locationIdentifier} property. */
 	public static final String DEFAULT_LOCATION_IDENTIFIER = "wellington-city";
@@ -61,19 +57,13 @@ public abstract class MetserviceSupport<T extends Datum> {
 	/** A key to use for the "last datum" in the local cache. */
 	protected static final String LAST_DATUM_CACHE_KEY = "last";
 
-	private String uid;
-	private String groupUID;
 	private String locationIdentifier;
 	private MetserviceClient client;
-	private MessageSource messageSource;
 
-	private final Map<String, T> datumCache;
-
-	/** A class-level logger. */
-	protected Logger log = LoggerFactory.getLogger(getClass());
+	private final Map<String, NodeDatum> datumCache;
 
 	public MetserviceSupport() {
-		datumCache = new ConcurrentHashMap<String, T>(2);
+		datumCache = new ConcurrentHashMap<>(2);
 		locationIdentifier = DEFAULT_LOCATION_IDENTIFIER;
 		client = new BasicMetserviceClient();
 	}
@@ -84,17 +74,15 @@ public abstract class MetserviceSupport<T extends Datum> {
 	 * @return List of setting specifiers.
 	 */
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		MetserviceDayDatumDataSource defaults = new MetserviceDayDatumDataSource();
-		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>(8);
-		result.add(new BasicTextFieldSettingSpecifier("uid", null));
-		result.add(new BasicTextFieldSettingSpecifier("groupUID", null));
+		List<SettingSpecifier> result = new ArrayList<>(8);
+		result.addAll(getIdentifiableSettingSpecifiers());
 
 		List<NewZealandWeatherLocation> locs = availableWeatherLocations();
 		if ( locs != null ) {
 			// drop-down menu for all possible location keys
 			BasicMultiValueSettingSpecifier menuSpec = new BasicMultiValueSettingSpecifier(
-					"locationIdentifier", defaults.getLocationIdentifier());
-			Map<String, String> menuValues = new LinkedHashMap<String, String>(3);
+					"locationIdentifier", DEFAULT_LOCATION_IDENTIFIER);
+			Map<String, String> menuValues = new LinkedHashMap<>(3);
 			for ( NewZealandWeatherLocation loc : locs ) {
 				menuValues.put(loc.getKey(), loc.getName());
 			}
@@ -103,7 +91,7 @@ public abstract class MetserviceSupport<T extends Datum> {
 		} else {
 			// fall back to manual value
 			result.add(new BasicTextFieldSettingSpecifier("locationIdentifier",
-					defaults.getLocationIdentifier()));
+					DEFAULT_LOCATION_IDENTIFIER));
 		}
 
 		return result;
@@ -176,159 +164,8 @@ public abstract class MetserviceSupport<T extends Datum> {
 	 * 
 	 * @return the cache
 	 */
-	protected Map<String, T> getDatumCache() {
+	protected Map<String, NodeDatum> getDatumCache() {
 		return datumCache;
-	}
-
-	/**
-	 * The base URL for queries to MetService.
-	 * 
-	 * @param baseUrl
-	 *        The base URL to use.
-	 * @deprecated Configure {@link #setClient(MetserviceClient)} instead.
-	 */
-	@Deprecated
-	public void setBaseUrl(String baseUrl) {
-		if ( client instanceof BasicMetserviceClient ) {
-			((BasicMetserviceClient) client).setBaseUrl(baseUrl);
-		}
-	}
-
-	/**
-	 * Set the {@link ObjectMapper} to use for parsing JSON.
-	 * 
-	 * @param objectMapper
-	 *        The object mapper.
-	 * @deprecated Configure {@link #setClient(MetserviceClient)} instead.
-	 */
-	@Deprecated
-	public void setObjectMapper(ObjectMapper objectMapper) {
-		if ( client instanceof BasicMetserviceClient ) {
-			((BasicMetserviceClient) client).setObjectMapper(objectMapper);
-		}
-	}
-
-	private void setLocationIdentifierFromSuffix(final String prefix, final String value) {
-		if ( prefix == null || value == null ) {
-			return;
-		}
-		if ( value.startsWith(prefix) && value.length() > prefix.length() ) {
-			setLocationIdentifier(value.substring(prefix.length()));
-		}
-	}
-
-	/**
-	 * The name of the "localObs" file to parse.
-	 * 
-	 * @param localObs
-	 *        The file name to use.
-	 * @deprecated Configure {@link #setLocationIdentifier(String)} instead.
-	 */
-	@Deprecated
-	public void setLocalObs(String localObs) {
-		setLocationIdentifierFromSuffix("localObs_", localObs);
-	}
-
-	/**
-	 * The name of the "localForecast" file to parse.
-	 * 
-	 * @param localForecast
-	 *        The file name to use.
-	 * @deprecated Configure {@link #setLocationIdentifier(String)} instead.
-	 */
-	@Deprecated
-	public void setLocalForecastTemplate(String localForecast) {
-		setLocationIdentifierFromSuffix("localForecast", localForecast);
-	}
-
-	/**
-	 * The name of the "riseSet" file to parse.
-	 * 
-	 * @param riseSet
-	 *        The file name to use.
-	 * @deprecated Configure {@link #setLocationIdentifier(String)} instead.
-	 */
-	@Deprecated
-	public void setRiseSetTemplate(String riseSet) {
-		setLocationIdentifierFromSuffix("riseSet_", riseSet);
-	}
-
-	/**
-	 * The {@link SimpleDateFormat} date format to use to parse the day date.
-	 * 
-	 * @param dayDateFormat
-	 *        The date format to use.
-	 * @deprecated Configure {@link #setClient(MetserviceClient)} instead.
-	 */
-	@Deprecated
-	public void setDayDateFormat(String dayDateFormat) {
-		if ( client instanceof BasicMetserviceClient ) {
-			((BasicMetserviceClient) client).setDayDateFormat(dayDateFormat);
-		}
-	}
-
-	/**
-	 * Set a {@link SimpleDateFormat} time format to use to parse sunrise/sunset
-	 * times.
-	 * 
-	 * @param timeDateFormat
-	 *        The date format to use.
-	 * @deprecated Configure {@link #setClient(MetserviceClient)} instead.
-	 */
-	@Deprecated
-	public void setTimeDateFormat(String timeDateFormat) {
-		if ( client instanceof BasicMetserviceClient ) {
-			((BasicMetserviceClient) client).setTimeDateFormat(timeDateFormat);
-		}
-	}
-
-	/**
-	 * Set a {@link SimpleDateFormat} date and time pattern for parsing the
-	 * information date from the {@code oneMinObs} file.
-	 * 
-	 * @param timestampDateFormat
-	 *        The date format to use.
-	 * @deprecated Configure {@link #setClient(MetserviceClient)} instead.
-	 */
-	@Deprecated
-	public void setTimestampDateFormat(String timestampDateFormat) {
-		if ( client instanceof BasicMetserviceClient ) {
-			((BasicMetserviceClient) client).setTimestampDateFormat(timestampDateFormat);
-		}
-	}
-
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	/**
-	 * Set a message source to use for resolving messages.
-	 * 
-	 * @param messageSource
-	 *        The message source to use.
-	 */
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
-
-	public String getUID() {
-		return getUid();
-	}
-
-	public String getUid() {
-		return uid;
-	}
-
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	public String getGroupUID() {
-		return groupUID;
-	}
-
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
 	}
 
 	public String getLocationIdentifier() {

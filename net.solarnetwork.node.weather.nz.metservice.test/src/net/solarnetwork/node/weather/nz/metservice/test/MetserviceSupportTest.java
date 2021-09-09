@@ -23,12 +23,11 @@
 package net.solarnetwork.node.weather.nz.metservice.test;
 
 import java.util.List;
-import net.solarnetwork.node.test.AbstractNodeTest;
+import org.junit.Assert;
+import org.junit.Test;
 import net.solarnetwork.node.weather.nz.metservice.MetserviceSupport;
 import net.solarnetwork.node.weather.nz.metservice.NewZealandWeatherLocation;
 import net.solarnetwork.util.ClassUtils;
-import org.junit.Assert;
-import org.junit.Test;
 
 /**
  * Test cases for the MetserviceSupport class.
@@ -36,7 +35,7 @@ import org.junit.Test;
  * @author matt
  * @version 1.0
  */
-public class MetserviceSupportTest extends AbstractNodeTest {
+public class MetserviceSupportTest {
 
 	@Test
 	public void loadWeatherLocationCSV() {
