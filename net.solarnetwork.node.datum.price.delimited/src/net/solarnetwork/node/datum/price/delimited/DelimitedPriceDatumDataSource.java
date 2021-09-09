@@ -32,10 +32,10 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -44,14 +44,16 @@ import java.util.TimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.domain.GeneralPriceDatum;
-import net.solarnetwork.node.domain.PriceDatum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.DatumDataSourceSupport;
-import net.solarnetwork.node.util.LimitedSizeDeque;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.PriceDatum;
+import net.solarnetwork.node.domain.datum.SimplePriceDatum;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.util.LimitedSizeDeque;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -65,56 +67,11 @@ import net.solarnetwork.util.StringUtils;
  * into an array using the configured delimiter.
  * </p>
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>url</dt>
- * <dd>The URL template for accessing the delimited price data from. This will
- * be passed through {@link String#format(String, Object...)} with the current
- * date as the only parameter, allowing the URL to contain a date requeset
- * parameter if needed. For example, a value of
- * {@code http://some.place/prices?date=%1$tY-%1$tm-%1$td} would resolve to
- * something like {@code http://some.place/prices?date=2009-08-08}.</dd>
- * 
- * <dt>delimiter</dt>
- * <dd>A regular expression delimiter to split the lines of text with. Defaults
- * to {@link #DEFAULT_DELIMITER}.</dd>
- * 
- * <dt>skipLines</dt>
- * <dd>The number of lines of text to skip. This is useful for skipping a
- * "header" row with column names. Defaults to {@code 1}.</dd>
- * 
- * <dt>connectionTimeout</dt>
- * <dd>A URL connection timeout to apply when requesting the data. Defaults to
- * {@link #DEFAULT_CONNECTION_TIMEOUT}.</dd>
- * 
- * <dt>priceColumn</dt>
- * <dd>The result column index for the price. This is assumed to be parsable as
- * a double value.</dd>
- * 
- * <dt>sourceIdColumn</dt>
- * <dd>An optional column index to use for the {@link PriceDatum#getSourceId()}
- * value. If not configured, the URL used to request the data will be used.</dd>
- * 
- * <dt>dateTimeColumns</dt>
- * <dd>An array of column indices to use as the {@link PriceDatum#getCreated()}
- * value. This is provided as an array in case the date and time of the price is
- * split across multiple columns. If multiple columns are configured, they will
- * be joined with a space character before parsing the result into a Date
- * object.</dd>
- * 
- * <dt>dateFormat</dt>
- * <dd>The {@link SimpleDateFormat} format to use for parsing the price date
- * value into a Date object. Defaults to {@link #DEFAULT_DATE_FORMAT}.</dd>
- * </dl>
- * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
 public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
-		implements DatumDataSource<PriceDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, SettingSpecifierProvider {
 
 	/** The default value for the {@code delimiter} property. */
 	public static final String DEFAULT_DELIMITER = ",";
@@ -173,8 +130,8 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 	private String stationId = DEFAULT_STATION_ID;
 
 	@Override
-	public Class<? extends PriceDatum> getDatumType() {
-		return GeneralPriceDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return PriceDatum.class;
 	}
 
 	@Override
@@ -216,26 +173,21 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 		if ( log.isTraceEnabled() ) {
 			log.trace("Parsing price date [" + dateTimeStr + ']');
 		}
-		SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
-		Date created;
-		try {
-			created = sdf.parse(dateTimeStr);
-		} catch ( ParseException e ) {
-			throw new RuntimeException(e);
-		}
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateFormat)
+				.withZone(ZoneId.of(timeZoneId));
+		Instant created = formatter.parse(dateTimeStr, Instant::from);
 
 		BigDecimal price = new BigDecimal(data[priceColumn]);
 
-		GeneralPriceDatum datum = new GeneralPriceDatum();
-		datum.setCreated(created);
+		SimplePriceDatum datum = new SimplePriceDatum(null, null, created, new DatumSamples());
 		datum.setPrice(price);
 		return datum;
 	}
 
 	private URL getFormattedUrl() {
-		SimpleDateFormat sdf = new SimpleDateFormat(urlDateFormat);
-		sdf.setTimeZone(TimeZone.getTimeZone(timeZoneId));
-		String today = sdf.format(new Date());
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern(urlDateFormat)
+				.withZone(ZoneId.of(timeZoneId));
+		String today = formatter.format(Instant.now());
 		Map<String, Object> variables = new HashMap<String, Object>();
 		variables.put("stationId", this.stationId);
 		variables.put("date", today);
@@ -346,58 +298,174 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 		return result;
 	}
 
+	/**
+	 * Get the URL template.
+	 * 
+	 * @return the template
+	 */
 	public String getUrl() {
 		return url;
 	}
 
+	/**
+	 * Set the URL template to retrieve price data from.
+	 * 
+	 * <p>
+	 * This template is for accessing the delimited price data from. This will
+	 * be passed through {@link StringUtils#expandTemplateString(String, Map)}
+	 * with the current date and the configured {@link #getStationId()} as
+	 * <code>{date}</code> and <code>{stationId</code> parameters. The date
+	 * parameter will be formatted using the {@link #getUrlDateFormat()}
+	 * pattern. For example, a value of
+	 * <code>http://some.place/prices?date={date}</code> might resolve to
+	 * something like {@code http://some.place/prices?date=2009-08-08}.
+	 * </p>
+	 * 
+	 * @param url
+	 *        the URL template
+	 */
 	public void setUrl(String url) {
 		this.url = url;
 	}
 
+	/**
+	 * Get the field delimiter regular expression.
+	 * 
+	 * @return the field delimiter; defaults to {@link #DEFAULT_DELIMITER}
+	 */
 	public String getDelimiter() {
 		return delimiter;
 	}
 
+	/**
+	 * Set the field delimiter regular expression.
+	 * <p>
+	 * A regular expression delimiter that will be used to split the lines of
+	 * text into fields.
+	 * </p>
+	 * 
+	 * @param delimiter
+	 *        the field delimiter
+	 */
 	public void setDelimiter(String delimiter) {
 		this.delimiter = delimiter;
 	}
 
+	/**
+	 * Get the URL connection timeout to apply when requesting the data.
+	 * 
+	 * @return the connection timeout, in milliseconds; defaults to
+	 *         {@link #DEFAULT_CONNECTION_TIMEOUT}
+	 */
 	public int getConnectionTimeout() {
 		return connectionTimeout;
 	}
 
+	/**
+	 * Set the URL connection timeout to apply when requesting the data.
+	 * 
+	 * @param connectionTimeout
+	 *        the timeout, in milliseconds
+	 */
 	public void setConnectionTimeout(int connectionTimeout) {
 		this.connectionTimeout = connectionTimeout;
 	}
 
+	/**
+	 * Get the number of lines of text to skip.
+	 * 
+	 * <p>
+	 * When greater than {@literal 0} this will skip "header" rows. When
+	 * {@literal 0} the first line will be used. When less than {@literal 0}
+	 * then this line starting from the last available will be used, for example
+	 * {@literal -1} will cause the last line to be used.
+	 * </p>
+	 * 
+	 * @return the number of lines to skip; defaults to
+	 *         {@link #DEFAULT_SKIP_LINES}
+	 */
 	public int getSkipLines() {
 		return skipLines;
 	}
 
+	/**
+	 * Set the number of lines of text to skip.
+	 * 
+	 * @param skipLines
+	 *        the number of lines, or {@literal 0} to not skip any lines
+	 */
 	public void setSkipLines(int skipLines) {
 		this.skipLines = skipLines;
 	}
 
+	/**
+	 * Get an array of {@literal 0}-based column indices to use as the time
+	 * stamp value for datum.
+	 * 
+	 * <p>
+	 * This is provided as an array in case the date and time of the price is
+	 * split across multiple columns. If multiple columns are configured, they
+	 * will be joined with a space character before parsing the result into a
+	 * time stamp value
+	 * </p>
+	 * 
+	 * @return the date time columns; defaults to
+	 *         {@link #DEFAULT_DATE_TIME_COLUMNS}
+	 */
 	public int[] getDateTimeColumns() {
 		return dateTimeColumns;
 	}
 
+	/**
+	 * Set an array of {@literal 0}-based column indices to use as the time
+	 * stamp value for datum.
+	 * 
+	 * @param dateTimeColumns
+	 */
 	public void setDateTimeColumns(int[] dateTimeColumns) {
 		this.dateTimeColumns = dateTimeColumns;
 	}
 
+	/**
+	 * Get the {@literal 0}-based result column index for the price.
+	 * 
+	 * <p>
+	 * This is assumed to be parsable as a double value.
+	 * </p>
+	 * 
+	 * @return the price column index
+	 */
 	public int getPriceColumn() {
 		return priceColumn;
 	}
 
+	/**
+	 * Set the {@literal 0}-based result column index for the price.
+	 * 
+	 * @param priceColumn
+	 *        the price column index
+	 */
 	public void setPriceColumn(int priceColumn) {
 		this.priceColumn = priceColumn;
 	}
 
+	/**
+	 * Get the {@link DateTimeFormatter} pattern to use for parsing the price
+	 * date value into a time stamp.
+	 * 
+	 * @return the date pattern; defaults to {@link #DEFAULT_DATE_FORMAT}.
+	 */
 	public String getDateFormat() {
 		return dateFormat;
 	}
 
+	/**
+	 * Set the {@link DateTimeFormatter} pattern to use for parsing the price
+	 * date value into a time stamp.
+	 * 
+	 * @param dateFormat
+	 *        the date pattern
+	 */
 	public void setDateFormat(String dateFormat) {
 		this.dateFormat = dateFormat;
 	}
