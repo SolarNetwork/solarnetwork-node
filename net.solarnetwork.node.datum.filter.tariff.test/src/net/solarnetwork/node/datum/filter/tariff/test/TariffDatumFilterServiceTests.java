@@ -1,5 +1,5 @@
 /* ==================================================================
- * TariffTransformServiceTests.java - 13/05/2021 11:57:35 AM
+ * TariffDatumFilterServiceTests.java - 13/05/2021 11:57:35 AM
  * 
  * Copyright 2021 SolarNetwork.net Dev Team
  * 
@@ -24,7 +24,6 @@ package net.solarnetwork.node.datum.filter.tariff.test;
 
 import static java.util.Collections.emptyMap;
 import static org.easymock.EasyMock.expect;
-import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -34,39 +33,40 @@ import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Date;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.util.FileCopyUtils;
-import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.tariff.SimpleTemporalRangesTariffEvaluator;
-import net.solarnetwork.node.MetadataService;
-import net.solarnetwork.node.OperationalModesService;
-import net.solarnetwork.node.datum.filter.tariff.TariffTransformService;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.node.datum.filter.tariff.TariffDatumFilterService;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
+import net.solarnetwork.node.service.MetadataService;
+import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
- * Test cases for the {@link TariffTransformService} class.
+ * Test cases for the {@link TariffDatumFilterService} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class TariffTransformServiceTests {
+public class TariffDatumFilterServiceTests {
 
 	private static final String META_PATH = "/pm/tariffs/foo";
 
 	private MetadataService metadataService;
 	private OperationalModesService opModesService;
-	private TariffTransformService service;
+	private TariffDatumFilterService service;
 
 	@Before
 	public void setup() {
 		metadataService = EasyMock.createMock(MetadataService.class);
 		opModesService = EasyMock.createMock(OperationalModesService.class);
-		service = new TariffTransformService(new StaticOptionalService<>(metadataService),
+		service = new TariffDatumFilterService(new StaticOptionalService<>(metadataService),
 				new StaticOptionalService<>(SimpleTemporalRangesTariffEvaluator.DEFAULT_EVALUATOR));
 		service.setTariffMetadataPath(META_PATH);
 		service.setFirstMatchOnly(true);
@@ -98,18 +98,16 @@ public class TariffTransformServiceTests {
 		expect(metadataService.metadataAtPath(META_PATH)).andReturn(csv);
 
 		LocalDateTime datumDate = LocalDateTime.of(2021, 5, 13, 12, 15);
-		GeneralNodeDatum d = new GeneralNodeDatum();
-		d.setSamples(new GeneralDatumSamples());
-		d.setCreated(new Date(datumDate.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+		SimpleDatum d = SimpleDatum.nodeDatum("test",
+				datumDate.atZone(ZoneId.systemDefault()).toInstant(), new DatumSamples());
 
 		// WHEN
 		replayAll();
-		GeneralDatumSamples result = service.transformSamples(d, d.getSamples(), emptyMap());
+		DatumSamplesOperations result = service.filter(d, d.getSamples(), emptyMap());
 
 		// THEN
 		assertThat("Result changed", result, is(not(sameInstance(d.getSamples()))));
-		assertThat("Single rate added", result.getSampleData().keySet(), contains("rate"));
-		assertThat("Rate applied", result.getInstantaneousSampleBigDecimal("rate"),
+		assertThat("Rate applied", result.getSampleBigDecimal(DatumSamplesType.Instantaneous, "rate"),
 				is(equalTo(new BigDecimal("11.00"))));
 	}
 
@@ -121,20 +119,19 @@ public class TariffTransformServiceTests {
 		expect(metadataService.metadataAtPath(META_PATH)).andReturn(csv);
 
 		LocalDateTime datumDate = LocalDateTime.of(2021, 5, 15, 2, 0);
-		GeneralNodeDatum d = new GeneralNodeDatum();
-		d.setSamples(new GeneralDatumSamples());
-		d.setCreated(new Date(datumDate.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+		SimpleDatum d = SimpleDatum.nodeDatum("test",
+				datumDate.atZone(ZoneId.systemDefault()).toInstant(), new DatumSamples());
 
 		// WHEN
 		replayAll();
-		GeneralDatumSamples result = service.transformSamples(d, d.getSamples(), emptyMap());
+		DatumSamplesOperations result = service.filter(d, d.getSamples(), emptyMap());
 
 		// THEN
 		assertThat("Result changed", result, is(not(sameInstance(d.getSamples()))));
-		assertThat("Two rates added", result.getSampleData().keySet(), contains("tou", "line"));
-		assertThat("TOU rate applied", result.getInstantaneousSampleBigDecimal("tou"),
+		assertThat("TOU rate applied", result.getSampleBigDecimal(DatumSamplesType.Instantaneous, "tou"),
 				is(equalTo(new BigDecimal("9.19"))));
-		assertThat("Line rate applied", result.getInstantaneousSampleBigDecimal("line"),
+		assertThat("Line rate applied",
+				result.getSampleBigDecimal(DatumSamplesType.Instantaneous, "line"),
 				is(equalTo(new BigDecimal("9.99"))));
 	}
 
@@ -145,13 +142,12 @@ public class TariffTransformServiceTests {
 		expect(opModesService.isOperationalModeActive("foo")).andReturn(false);
 
 		LocalDateTime datumDate = LocalDateTime.of(2021, 5, 13, 12, 15);
-		GeneralNodeDatum d = new GeneralNodeDatum();
-		d.setSamples(new GeneralDatumSamples());
-		d.setCreated(new Date(datumDate.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+		SimpleDatum d = SimpleDatum.nodeDatum("test",
+				datumDate.atZone(ZoneId.systemDefault()).toInstant(), new DatumSamples());
 
 		// WHEN
 		replayAll();
-		GeneralDatumSamples result = service.transformSamples(d, d.getSamples(), emptyMap());
+		DatumSamplesOperations result = service.filter(d, d.getSamples(), emptyMap());
 
 		// THEN
 		assertThat("Result unchanged because required operational mode not active", result,
@@ -168,19 +164,17 @@ public class TariffTransformServiceTests {
 		expect(metadataService.metadataAtPath(META_PATH)).andReturn(csv);
 
 		LocalDateTime datumDate = LocalDateTime.of(2021, 5, 13, 12, 15);
-		GeneralNodeDatum d = new GeneralNodeDatum();
-		d.setSamples(new GeneralDatumSamples());
-		d.setCreated(new Date(datumDate.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+		SimpleDatum d = SimpleDatum.nodeDatum("test",
+				datumDate.atZone(ZoneId.systemDefault()).toInstant(), new DatumSamples());
 
 		// WHEN
 		replayAll();
-		GeneralDatumSamples result = service.transformSamples(d, d.getSamples(), emptyMap());
+		DatumSamplesOperations result = service.filter(d, d.getSamples(), emptyMap());
 
 		// THEN
 		assertThat("Result changed because required operational mode active", result,
 				is(not(sameInstance(d.getSamples()))));
-		assertThat("Single rate added", result.getSampleData().keySet(), contains("rate"));
-		assertThat("Rate applied", result.getInstantaneousSampleBigDecimal("rate"),
+		assertThat("Rate applied", result.getSampleBigDecimal(DatumSamplesType.Instantaneous, "rate"),
 				is(equalTo(new BigDecimal("11.00"))));
 	}
 

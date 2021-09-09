@@ -1,5 +1,5 @@
 /* ==================================================================
- * TariffTransformService.java - 12/05/2021 6:58:01 AM
+ * TariffDatumFilterService.java - 12/05/2021 6:58:01 AM
  * 
  * Copyright 2021 SolarNetwork.net Dev Team
  * 
@@ -24,8 +24,8 @@ package net.solarnetwork.node.datum.filter.tariff;
 
 import static java.time.format.TextStyle.SHORT;
 import static net.solarnetwork.domain.tariff.SimpleTemporalRangesTariffEvaluator.DEFAULT_EVALUATOR;
+import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.DateUtils.formatRange;
-import static net.solarnetwork.util.OptionalService.service;
 import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigDecimal;
@@ -43,8 +43,10 @@ import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.context.MessageSource;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.tariff.CompositeTariff;
 import net.solarnetwork.domain.tariff.CsvTemporalRangeTariffParser;
 import net.solarnetwork.domain.tariff.SimpleTariffRate;
@@ -54,28 +56,28 @@ import net.solarnetwork.domain.tariff.Tariff.Rate;
 import net.solarnetwork.domain.tariff.TariffSchedule;
 import net.solarnetwork.domain.tariff.TemporalRangesTariff;
 import net.solarnetwork.domain.tariff.TemporalRangesTariffEvaluator;
-import net.solarnetwork.node.GeneralDatumSamplesTransformService;
-import net.solarnetwork.node.MetadataService;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.node.support.BaseSamplesTransformSupport;
+import net.solarnetwork.node.service.MetadataService;
+import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
+import net.solarnetwork.service.DatumFilterService;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.CachedResult;
-import net.solarnetwork.util.OptionalService.OptionalFilterableService;
 
 /**
  * Transform service that can resolve a time-of-use based tarrif from
  * spreadsheet style tariff metadata.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
+ * @since 2.0
  */
-public class TariffTransformService extends BaseSamplesTransformSupport implements
-		GeneralDatumSamplesTransformService, SettingSpecifierProvider, SettingsChangeObserver {
+public class TariffDatumFilterService extends BaseDatumFilterSupport
+		implements DatumFilterService, SettingSpecifierProvider, SettingsChangeObserver {
 
 	/** The {@code tariffMetadataPath} default value. */
 	public static final String DEFAULT_TARIFF_METADATA_PATH = "/pm/tariffs/schedule";
@@ -102,7 +104,7 @@ public class TariffTransformService extends BaseSamplesTransformSupport implemen
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public TariffTransformService(OptionalFilterableService<MetadataService> metadataService,
+	public TariffDatumFilterService(OptionalFilterableService<MetadataService> metadataService,
 			OptionalFilterableService<TemporalRangesTariffEvaluator> evaluator) {
 		super();
 		if ( metadataService == null ) {
@@ -116,24 +118,24 @@ public class TariffTransformService extends BaseSamplesTransformSupport implemen
 	}
 
 	@Override
-	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
+	public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
 			Map<String, Object> parameters) {
 		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
 			return samples;
 		}
-		final LocalDateTime date = (datum.getCreated() != null
-				? LocalDateTime.ofInstant(datum.getCreated().toInstant(), ZoneId.systemDefault())
+		final LocalDateTime date = (datum.getTimestamp() != null
+				? LocalDateTime.ofInstant(datum.getTimestamp(), ZoneId.systemDefault())
 				: LocalDateTime.now());
 		Tariff tariff = resolveTariff(date, parameters);
 
 		if ( tariff != null ) {
-			GeneralDatumSamples s = new GeneralDatumSamples(samples);
+			DatumSamples s = new DatumSamples(samples);
 			for ( Rate rate : tariff.getRates().values() ) {
 				String id = rate.getId();
-				if ( !s.hasSampleValue(GeneralDatumSamplesType.Instantaneous, id) ) {
+				if ( !s.hasSampleValue(DatumSamplesType.Instantaneous, id) ) {
 					log.debug("Populating tariff property [{}] with {} for datum {}", id,
 							rate.getAmount(), datum);
-					s.putSampleValue(GeneralDatumSamplesType.Instantaneous, id, rate.getAmount());
+					s.putSampleValue(DatumSamplesType.Instantaneous, id, rate.getAmount());
 				} else {
 					log.debug(
 							"Instantenous property [{}] already exists for datum {}, will not populate tariff rate {}",
