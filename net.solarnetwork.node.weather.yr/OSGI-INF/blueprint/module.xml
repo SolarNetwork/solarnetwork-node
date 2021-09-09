@@ -169,7 +169,7 @@
 						<map>
 							<entry key="datumDao" value-ref="generalLocationDatumDao"/>
 							<entry key="multiDatumDataSource">
-								<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
+								<bean class="net.solarnetwork.node.service.support.LocationDatumDataSource">
 									<property name="messageSource" ref="weatherJobMessageSource"/>
 									<property name="delegate">
 										<bean class="net.solarnetwork.node.weather.yr.YrWeatherDatumDataSource">

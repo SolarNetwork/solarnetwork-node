@@ -66,7 +66,7 @@
 		
 	<bean id="locationService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.LocationService"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.LocationService"/>
 	</bean>	
 
 	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
