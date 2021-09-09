@@ -58,7 +58,7 @@ import net.solarnetwork.node.backup.SimpleBackupResourceProviderInfo;
  * </ol>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class SolarBackupResourceProvider implements BackupResourceProvider {
 

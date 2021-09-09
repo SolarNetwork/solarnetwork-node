@@ -3,13 +3,13 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Backup External Filesystems
 Bundle-Description: Backup device filesystem resources.
 Bundle-SymbolicName: net.solarnetwork.node.backup.ext
-Bundle-Version: 1.0.2
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.backup.ext
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
- net.solarnetwork.node;version="[1.30,2.0)",
- net.solarnetwork.node.backup;version="[1.6.4,2.0)",
+ net.solarnetwork.node;version="[2.0,3.0)",
+ net.solarnetwork.node.backup;version="[2.0,3.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.beans.factory;version="[4.3,5.0)",
  org.springframework.context;version="[4.3,5.0)",
