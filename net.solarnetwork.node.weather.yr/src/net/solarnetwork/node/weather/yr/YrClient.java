@@ -23,14 +23,14 @@
 package net.solarnetwork.node.weather.yr;
 
 import java.util.List;
-import net.solarnetwork.node.domain.AtmosphericDatum;
-import net.solarnetwork.node.domain.DayDatum;
+import net.solarnetwork.node.domain.datum.AtmosphericDatum;
+import net.solarnetwork.node.domain.datum.DayDatum;
 
 /**
  * API for accessing Yr information.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public interface YrClient {
 

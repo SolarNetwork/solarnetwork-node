@@ -26,15 +26,15 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URLConnection;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.xpath.XPathConstants;
@@ -48,15 +48,15 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import net.solarnetwork.node.domain.AtmosphericDatum;
-import net.solarnetwork.node.domain.DayDatum;
-import net.solarnetwork.node.support.XmlServiceSupport;
+import net.solarnetwork.node.domain.datum.AtmosphericDatum;
+import net.solarnetwork.node.domain.datum.DayDatum;
+import net.solarnetwork.node.service.support.XmlServiceSupport;
 
 /**
  * Implementation of {@link YrClient} that queries XML weather resources.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class XmlYrClient extends XmlServiceSupport implements YrClient {
 
@@ -71,6 +71,9 @@ public class XmlYrClient extends XmlServiceSupport implements YrClient {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
+	/**
+	 * Constructor.
+	 */
 	public XmlYrClient() {
 		super();
 		setBaseUrl(DEFAULT_API_BASE_URL);
@@ -166,19 +169,17 @@ public class XmlYrClient extends XmlServiceSupport implements YrClient {
 		List<AtmosphericDatum> forecast = getAtmosphericDatumList(identifier, url);
 
 		// construct 2d array of atmos; grouped by day, to average out values for single DayDatum
-		SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
-		boolean tzNeeded = true;
-		List<List<YrAtmosphericDatum>> dayRangeForecasts = new ArrayList<List<YrAtmosphericDatum>>(
-				forecast.size() / 4 + 1);
+		List<List<YrAtmosphericDatum>> dayRangeForecasts = new ArrayList<>(forecast.size() / 4 + 1);
 		List<YrAtmosphericDatum> currDays = null;
+
+		final ZoneId zone = (!forecast.isEmpty()
+				? ZoneId.of(((YrAtmosphericDatum) forecast.get(0)).getLocation().getTimeZoneId())
+				: ZoneOffset.UTC);
+		final DateTimeFormatter timeFormat = DateTimeFormatter.ofPattern("HH:mm").withZone(zone);
+
 		for ( AtmosphericDatum ad : forecast ) {
 			YrAtmosphericDatum atmo = (YrAtmosphericDatum) ad;
-			if ( tzNeeded ) {
-				TimeZone tz = TimeZone.getTimeZone(atmo.getLocation().getTimeZoneId());
-				timeFormat.setTimeZone(tz);
-				tzNeeded = false;
-			}
-			String hourMinute = timeFormat.format(atmo.getCreated());
+			String hourMinute = timeFormat.format(atmo.getTimestamp());
 			if ( "00:00".equals(hourMinute) ) {
 				if ( currDays != null ) {
 					dayRangeForecasts.add(currDays);
@@ -235,8 +236,7 @@ public class XmlYrClient extends XmlServiceSupport implements YrClient {
 			}
 
 			YrAtmosphericDatum first = dayRange.get(0);
-			YrDayDatum dayDatum = new YrDayDatum(first.getLocation());
-			dayDatum.setCreated(first.getCreated());
+			YrDayDatum dayDatum = new YrDayDatum(first.getTimestamp(), first.getLocation());
 			dayDatum.addTag(DayDatum.TAG_FORECAST);
 
 			if ( dayValues.containsKey(AtmosphericDatum.RAIN_KEY) ) {
@@ -260,7 +260,7 @@ public class XmlYrClient extends XmlServiceSupport implements YrClient {
 						dayValues.get(AtmosphericDatum.SKY_CONDITIONS_KEY).mostFrequentStatus());
 			}
 			if ( dayValues.containsKey(YrAtmosphericDatum.SYMBOL_VAR_KEY) ) {
-				dayDatum.putStatusSampleValue(YrDayDatum.SYMBOL_VAR_KEY,
+				dayDatum.getSamples().putStatusSampleValue(YrDayDatum.SYMBOL_VAR_KEY,
 						dayValues.get(YrAtmosphericDatum.SYMBOL_VAR_KEY).mostFrequentStatus());
 			}
 			result.add(dayDatum);
@@ -282,16 +282,15 @@ public class XmlYrClient extends XmlServiceSupport implements YrClient {
 			loc.setIdentifier(identifier);
 			extractBeanDataFromXml(loc, root, locationXPathMapping);
 
-			final DateFormat parseDateFormat = xmlTimestampParseDateFormat(loc.getTimeZoneId());
-			final DateFormat dateFormat = iso8601TimestampDateFormat();
+			final DateTimeFormatter parseDateFormat = xmlTimestampParseDateFormat(loc.getTimeZoneId());
 
 			NodeList timeNodes = (NodeList) forecastDataXPath.evaluate(root, XPathConstants.NODESET);
 			for ( int i = 0, len = timeNodes.getLength(); i < len; i++ ) {
 				Node n = timeNodes.item(i);
-				YrAtmosphericDatum datum = new YrAtmosphericDatum(loc, parseDateFormat, dateFormat);
+				YrAtmosphericDatum datum = new YrAtmosphericDatum(loc, parseDateFormat);
 				extractBeanDataFromXml(datum, n, timeNodeXPathMapping);
-				if ( datum.getCreated() != null && datum.getSamples().getInstantaneous() != null ) {
-					results.add(datum);
+				if ( datum.getFromTimestamp() != null && !datum.isEmpty() ) {
+					results.add(datum.copyUsingFromTimestamp());
 				} else {
 					String s = getXmlAsString(new DOMSource(n), false);
 					log.warn("Ignoring hourly datum that did not include any data: {}", s);
@@ -320,16 +319,8 @@ public class XmlYrClient extends XmlServiceSupport implements YrClient {
 		}
 	}
 
-	private DateFormat xmlTimestampParseDateFormat(String timeZoneId) {
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-		sdf.setTimeZone(TimeZone.getTimeZone(timeZoneId));
-		return sdf;
-	}
-
-	private DateFormat iso8601TimestampDateFormat() {
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-		sdf.setTimeZone(TimeZone.getTimeZone("GMT"));
-		return sdf;
+	private DateTimeFormatter xmlTimestampParseDateFormat(String timeZoneId) {
+		return DateTimeFormatter.ISO_LOCAL_DATE_TIME.withZone(ZoneId.of(timeZoneId));
 	}
 
 	private String urlForPlacePath(String identifier, String resource) {

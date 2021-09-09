@@ -22,17 +22,21 @@
 
 package net.solarnetwork.node.weather.yr;
 
-import java.text.ParseException;
-import org.joda.time.LocalTime;
-import net.solarnetwork.node.domain.GeneralDayDatum;
+import java.time.Instant;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.SimpleDayDatum;
 
 /**
  * Extension of {@link GeneralDayDatum} to support Yr data.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class YrDayDatum extends GeneralDayDatum {
+public class YrDayDatum extends SimpleDayDatum {
+
+	private static final long serialVersionUID = 8230332231861429332L;
 
 	/**
 	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
@@ -42,22 +46,29 @@ public class YrDayDatum extends GeneralDayDatum {
 
 	private final YrLocation location;
 
-	public YrDayDatum(YrLocation location) {
-		super();
+	/**
+	 * Constructor.
+	 * 
+	 * @param timestamp
+	 *        the timestamp
+	 * @param location
+	 *        the location
+	 */
+	public YrDayDatum(Instant timestamp, YrLocation location) {
+		super(null, timestamp, new DatumSamples());
 		this.location = location;
-		setSamples(newSamplesInstance());
 	}
 
-	private LocalTime parseTime(String ts) throws ParseException {
+	private LocalTime parseTime(String ts) throws DateTimeParseException {
 		int idx = ts.indexOf('T');
 		if ( idx != 0 ) {
 			String time = ts.substring(idx + 1);
 			String[] components = time.split(":", 3);
 			if ( components.length > 2 ) {
-				return new LocalTime(Integer.valueOf(components[0]), Integer.valueOf(components[1]),
+				return LocalTime.of(Integer.valueOf(components[0]), Integer.valueOf(components[1]),
 						Integer.valueOf(components[2]));
 			} else {
-				throw new ParseException("Cannot parse time from [" + ts + "]", idx + 1);
+				throw new DateTimeParseException("Cannot parse time", ts, idx + 1);
 			}
 		}
 		return null;
@@ -77,14 +88,11 @@ public class YrDayDatum extends GeneralDayDatum {
 	 * 
 	 * @param ts
 	 *        the date string to parse
-	 * @throws ParseException
+	 * @throws DateTimeParseException
 	 *         if a parsing error occurs
 	 */
-	public void setSunriseTimestamp(String ts) throws ParseException {
-		LocalTime t = parseTime(ts);
-		if ( t != null ) {
-			setSunrise(t);
-		}
+	public void setSunriseTimestamp(String ts) throws DateTimeParseException {
+		setSunriseTime(parseTime(ts));
 	}
 
 	/**
@@ -92,13 +100,10 @@ public class YrDayDatum extends GeneralDayDatum {
 	 * 
 	 * @param ts
 	 *        the date string to parse
-	 * @throws ParseException
+	 * @throws DateTimeParseException
 	 *         if a parsing error occurs
 	 */
-	public void setSunsetTimestamp(String ts) throws ParseException {
-		LocalTime t = parseTime(ts);
-		if ( t != null ) {
-			setSunset(t);
-		}
+	public void setSunsetTimestamp(String ts) throws DateTimeParseException {
+		setSunsetTime(parseTime(ts));
 	}
 }

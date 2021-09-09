@@ -24,18 +24,21 @@ package net.solarnetwork.node.weather.yr;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.util.Date;
-import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.SimpleAtmosphericDatum;
 
 /**
  * Extension of {@link GeneralAtmosphericDatum} to support Yr data.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class YrAtmosphericDatum extends GeneralAtmosphericDatum {
+public class YrAtmosphericDatum extends SimpleAtmosphericDatum {
+
+	private static final long serialVersionUID = 2265538882543293937L;
 
 	/**
 	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
@@ -50,15 +53,19 @@ public class YrAtmosphericDatum extends GeneralAtmosphericDatum {
 	public static final String SYMBOL_VAR_KEY = "symbolVar";
 
 	private final YrLocation location;
-	private final DateFormat dateParseFormat;
-	private final DateFormat dateFormat;
+	private final DateTimeFormatter dateParseFormatter;
+	private Instant fromTimestamp;
 
-	public YrAtmosphericDatum(YrLocation location, DateFormat dateParseFormat, DateFormat dateFormat) {
-		super();
+	public YrAtmosphericDatum(YrLocation location, DateTimeFormatter dateParseFormatter) {
+		super(null, null, new DatumSamples());
 		this.location = location;
-		this.dateParseFormat = dateParseFormat;
-		this.dateFormat = dateFormat;
-		setSamples(newSamplesInstance());
+		this.dateParseFormatter = dateParseFormatter;
+	}
+
+	private YrAtmosphericDatum(YrAtmosphericDatum other) {
+		super(other.getSourceId(), other.fromTimestamp, other.getSamples());
+		this.location = other.location;
+		this.dateParseFormatter = null;
 	}
 
 	/**
@@ -71,6 +78,24 @@ public class YrAtmosphericDatum extends GeneralAtmosphericDatum {
 	}
 
 	/**
+	 * Get the "from" timestamp.
+	 * 
+	 * @return the timestamp
+	 */
+	public Instant getFromTimestamp() {
+		return fromTimestamp;
+	}
+
+	/**
+	 * Create a copy using the {@code fromTimestamp} as the datum timestamp.
+	 * 
+	 * @return the new datum
+	 */
+	public YrAtmosphericDatum copyUsingFromTimestamp() {
+		return new YrAtmosphericDatum(this);
+	}
+
+	/**
 	 * Set the created date via a string.
 	 * 
 	 * <p>
@@ -80,11 +105,11 @@ public class YrAtmosphericDatum extends GeneralAtmosphericDatum {
 	 * 
 	 * @param ts
 	 *        the date string to parse
-	 * @throws ParseException
+	 * @throws DateTimeParseException
 	 *         if a parsing error occurs
 	 */
-	public void setCreatedTimestamp(String ts) throws ParseException {
-		setCreated(dateParseFormat.parse(ts));
+	public void setCreatedTimestamp(String ts) throws DateTimeParseException {
+		this.fromTimestamp = dateParseFormatter.parse(ts, Instant::from);
 	}
 
 	/**
@@ -98,12 +123,12 @@ public class YrAtmosphericDatum extends GeneralAtmosphericDatum {
 	 * 
 	 * @param ts
 	 *        the date string to parse
-	 * @throws ParseException
+	 * @throws DateTimeParseException
 	 *         if a parsing error occurs
 	 */
-	public void setValidToTimestamp(String ts) throws ParseException {
-		Date date = dateParseFormat.parse(ts);
-		getSamples().putStatusSampleValue(VALID_TO_KEY, dateFormat.format(date));
+	public void setValidToTimestamp(String ts) throws DateTimeParseException {
+		Instant date = dateParseFormatter.parse(ts, Instant::from);
+		getSamples().putStatusSampleValue(VALID_TO_KEY, DateTimeFormatter.ISO_INSTANT.format(date));
 	}
 
 	/**

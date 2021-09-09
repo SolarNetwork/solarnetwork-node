@@ -23,11 +23,11 @@
 package net.solarnetwork.node.weather.yr;
 
 import java.util.Collection;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.AtmosphericDatum;
-import net.solarnetwork.node.domain.GeneralAtmosphericDatum;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.domain.datum.AtmosphericDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * Yr implementation of a {@link AtmosphericDatum} {@link DatumDataSource}.
@@ -35,13 +35,12 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
  * @author matt
  * @version 1.0
  */
-public class YrWeatherDatumDataSource extends ConfigurableYrClientService<AtmosphericDatum>
-		implements DatumDataSource<AtmosphericDatum>, MultiDatumDataSource<AtmosphericDatum>,
-		SettingSpecifierProvider {
+public class YrWeatherDatumDataSource extends ConfigurableYrClientService
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	@Override
-	public Class<? extends AtmosphericDatum> getDatumType() {
-		return GeneralAtmosphericDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AtmosphericDatum.class;
 	}
 
 	@Override
@@ -61,13 +60,14 @@ public class YrWeatherDatumDataSource extends ConfigurableYrClientService<Atmosp
 	}
 
 	@Override
-	public Class<? extends AtmosphericDatum> getMultiDatumType() {
-		return GeneralAtmosphericDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return AtmosphericDatum.class;
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
-	public Collection<AtmosphericDatum> readMultipleDatum() {
-		return getClient().getHourlyForecast(getLocationIdentifier());
+	public Collection<NodeDatum> readMultipleDatum() {
+		return (Collection) getClient().getHourlyForecast(getLocationIdentifier());
 	}
 
 }

@@ -23,24 +23,24 @@
 package net.solarnetwork.node.weather.yr;
 
 import java.util.Collection;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.DayDatum;
-import net.solarnetwork.node.domain.GeneralDayDatum;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.domain.datum.DayDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * Yr implementation of a {@link DayDatum} {@link DatumDataSource}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class YrDayDatumDataSource extends ConfigurableYrClientService<DayDatum>
-		implements SettingSpecifierProvider, DatumDataSource<DayDatum>, MultiDatumDataSource<DayDatum> {
+public class YrDayDatumDataSource extends ConfigurableYrClientService
+		implements SettingSpecifierProvider, DatumDataSource, MultiDatumDataSource {
 
 	@Override
-	public Class<? extends DayDatum> getDatumType() {
-		return GeneralDayDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return DayDatum.class;
 	}
 
 	@Override
@@ -50,13 +50,14 @@ public class YrDayDatumDataSource extends ConfigurableYrClientService<DayDatum>
 	}
 
 	@Override
-	public Class<? extends DayDatum> getMultiDatumType() {
-		return GeneralDayDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return DayDatum.class;
 	}
 
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	@Override
-	public Collection<DayDatum> readMultipleDatum() {
-		return getClient().getTenDayForecast(getLocationIdentifier());
+	public Collection<NodeDatum> readMultipleDatum() {
+		return (Collection) getClient().getTenDayForecast(getLocationIdentifier());
 	}
 
 	@Override
