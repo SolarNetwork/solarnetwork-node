@@ -1,5 +1,5 @@
 /* ==================================================================
- * VirtualMeterTransformServiceTests.java - 16/02/2021 10:18:36 AM
+ * VirtualMeterDatumFilterServiceTests.java - 16/02/2021 10:18:36 AM
  * 
  * Copyright 2021 SolarNetwork.net Dev Team
  * 
@@ -45,7 +45,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,27 +65,30 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.common.expr.spel.SpelExpressionService;
-import net.solarnetwork.domain.GeneralDatumMetadata;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
-import net.solarnetwork.node.DatumMetadataService;
-import net.solarnetwork.node.OperationalModesService;
-import net.solarnetwork.node.datum.filter.std.SourceThrottlingSamplesTransformer;
+import net.solarnetwork.domain.datum.DatumId;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
+import net.solarnetwork.node.datum.filter.std.ThrottlingDatumFilterService;
 import net.solarnetwork.node.datum.filter.virt.VirtualMeterConfig;
+import net.solarnetwork.node.datum.filter.virt.VirtualMeterDatumFilterService;
 import net.solarnetwork.node.datum.filter.virt.VirtualMeterExpressionConfig;
-import net.solarnetwork.node.datum.filter.virt.VirtualMeterTransformService;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
-import net.solarnetwork.support.ExpressionService;
-import net.solarnetwork.util.StaticOptionalService;
-import net.solarnetwork.util.StaticOptionalServiceCollection;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
+import net.solarnetwork.node.service.DatumMetadataService;
+import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.service.ExpressionService;
+import net.solarnetwork.service.StaticOptionalService;
+import net.solarnetwork.service.StaticOptionalServiceCollection;
 
 /**
- * Test cases for the {@link VirtualMeterTransformService} class.
+ * Test cases for the {@link VirtualMeterDatumFilterService} class.
  * 
  * @author matt
  * @version 1.0
+ * @since 2.0
  */
-public class VirtualMeterTransformServiceTests {
+public class VirtualMeterDatumFilterServiceTests {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -100,14 +102,14 @@ public class VirtualMeterTransformServiceTests {
 
 	private DatumMetadataService datumMetadataService;
 	private OperationalModesService opModesService;
-	private VirtualMeterTransformService xform;
+	private VirtualMeterDatumFilterService xform;
 
 	@Before
 	public void setup() {
 		datumMetadataService = EasyMock.createMock(DatumMetadataService.class);
 		opModesService = EasyMock.createMock(OperationalModesService.class);
-		SourceThrottlingSamplesTransformer.clearSettingCache();
-		xform = new VirtualMeterTransformService(new StaticOptionalService<>(datumMetadataService));
+		ThrottlingDatumFilterService.clearSettingCache();
+		xform = new VirtualMeterDatumFilterService(new StaticOptionalService<>(datumMetadataService));
 		xform.setUid(TEST_UID);
 		xform.setSourceId("^F");
 		xform.setOpModesService(opModesService);
@@ -122,11 +124,9 @@ public class VirtualMeterTransformServiceTests {
 		EasyMock.replay(datumMetadataService, opModesService);
 	}
 
-	private static GeneralNodeDatum createTestGeneralNodeDatum(String sourceId) {
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setCreated(new Date());
-		datum.setSourceId(sourceId);
-		datum.putInstantaneousSampleValue(PROP_WATTS, 23.4);
+	private static SimpleDatum createTestGeneralNodeDatum(String sourceId) {
+		SimpleDatum datum = SimpleDatum.nodeDatum(sourceId, Instant.now(), new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue(PROP_WATTS, 23.4);
 		return datum;
 	}
 
@@ -138,21 +138,22 @@ public class VirtualMeterTransformServiceTests {
 		return vmConfig;
 	}
 
-	private static void assertOutputValue(String msg, GeneralDatumSamples result,
+	private static void assertOutputValue(String msg, DatumSamplesOperations result,
 			BigDecimal expectedValue, BigDecimal expectedDerived) {
 		assertOutputValue(msg, result, PROP_WATTS, PROP_WATTS_SECONDS, expectedValue, expectedDerived);
 	}
 
-	private static void assertOutputValue(String msg, GeneralDatumSamples result, String propName,
+	private static void assertOutputValue(String msg, DatumSamplesOperations result, String propName,
 			String readingPropName, BigDecimal expectedValue, BigDecimal expectedDerived) {
 		Number n = result.findSampleValue(propName); // use find to support both i & a styles
 		assertThat("Prop " + propName + " value " + msg, n.doubleValue(),
 				closeTo(expectedValue.doubleValue(), 0.1));
 		if ( expectedDerived == null ) {
 			assertThat("Meter value not available " + msg,
-					result.getAccumulatingSampleDouble(readingPropName), nullValue());
+					result.getSampleDouble(DatumSamplesType.Accumulating, readingPropName), nullValue());
 		} else {
-			assertThat("Meter value approx " + msg, result.getAccumulatingSampleDouble(readingPropName),
+			assertThat("Meter value approx " + msg,
+					result.getSampleDouble(DatumSamplesType.Accumulating, readingPropName),
 					closeTo(expectedDerived.doubleValue(), 1.0));
 		}
 
@@ -166,20 +167,20 @@ public class VirtualMeterTransformServiceTests {
 	private static void assertVirtualMeterMetadata(String msg, GeneralDatumMetadata meta,
 			String readingPropName, long date, BigDecimal expectedValue, BigDecimal expectedReading) {
 		assertThat("Virtual meter date saved " + msg,
-				meta.getInfoLong(readingPropName, VirtualMeterTransformService.VIRTUAL_METER_DATE_KEY),
+				meta.getInfoLong(readingPropName, VirtualMeterDatumFilterService.VIRTUAL_METER_DATE_KEY),
 				equalTo(date));
 		assertThat("Virtual meter value saved " + msg, meta.getInfoBigDecimal(readingPropName,
-				VirtualMeterTransformService.VIRTUAL_METER_VALUE_KEY), equalTo(expectedValue));
+				VirtualMeterDatumFilterService.VIRTUAL_METER_VALUE_KEY), equalTo(expectedValue));
 		assertThat("Virtual meter reading saved " + msg,
 				meta.getInfoBigDecimal(readingPropName,
-						VirtualMeterTransformService.VIRTUAL_METER_READING_KEY),
+						VirtualMeterDatumFilterService.VIRTUAL_METER_READING_KEY),
 				equalTo(expectedReading));
 	}
 
 	@Test
 	public void filter_rollingAverage_firstSample() {
 		// GIVEN
-		final GeneralNodeDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final SimpleDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
 		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATTS);
 		vmConfig.setRollingAverageCount(4);
 		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
@@ -193,20 +194,20 @@ public class VirtualMeterTransformServiceTests {
 
 		// WHEN
 		replayAll();
-		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples(), null);
+		DatumSamplesOperations result = xform.filter(datum, datum.getSamples(), null);
 
 		// THEN
 		assertOutputValue("at first sample", result, new BigDecimal("23.4"), null);
 
 		GeneralDatumMetadata meta = metaCaptor.getValue();
-		assertVirtualMeterMetadata("first", meta, datum.getCreated().getTime(), new BigDecimal("23.4"),
-				BigDecimal.ZERO);
+		assertVirtualMeterMetadata("first", meta, datum.getTimestamp().toEpochMilli(),
+				new BigDecimal("23.4"), BigDecimal.ZERO);
 	}
 
 	@Test
 	public void filter_rollingAverage_firstSample_customReadingPropertyName() {
 		// GIVEN
-		final GeneralNodeDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final SimpleDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
 		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATTS);
 		vmConfig.setRollingAverageCount(4);
 		vmConfig.setReadingPropertyName("foobar");
@@ -221,20 +222,20 @@ public class VirtualMeterTransformServiceTests {
 
 		// WHEN
 		replayAll();
-		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples(), null);
+		DatumSamplesOperations result = xform.filter(datum, datum.getSamples(), null);
 
 		// THEN
 		assertOutputValue("at first sample", result, PROP_WATTS, "foobar", new BigDecimal("23.4"), null);
 
 		GeneralDatumMetadata meta = metaCaptor.getValue();
-		assertVirtualMeterMetadata("first", meta, "foobar", datum.getCreated().getTime(),
+		assertVirtualMeterMetadata("first", meta, "foobar", datum.getTimestamp().toEpochMilli(),
 				new BigDecimal("23.4"), BigDecimal.ZERO);
 	}
 
 	@Test
 	public void filter_rollingAverage_multiSamples() throws InterruptedException {
 		// GIVEN
-		final GeneralNodeDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final SimpleDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
 		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATTS);
 		vmConfig.setRollingAverageCount(4);
 		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
@@ -249,15 +250,15 @@ public class VirtualMeterTransformServiceTests {
 
 		// WHEN
 		replayAll();
-		List<GeneralDatumSamples> outputs = new ArrayList<>();
-		List<Date> dates = new ArrayList<>();
-		final Date start = new Date(
-				LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC).toEpochMilli());
+		List<DatumSamplesOperations> outputs = new ArrayList<>();
+		List<Instant> dates = new ArrayList<>();
+		final Instant start = LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC);
 		for ( int i = 0; i < 3; i++ ) {
-			datum.setCreated(new Date(start.getTime() + TimeUnit.SECONDS.toMillis(i)));
-			datum.putInstantaneousSampleValue(PROP_WATTS, 5 * (i + 1));
-			dates.add(datum.getCreated());
-			outputs.add(xform.transformSamples(datum, datum.getSamples(), null));
+			Instant ts = start.plusMillis(TimeUnit.SECONDS.toMillis(i));
+			SimpleDatum d = datum.copyWithId(DatumId.nodeId(null, datum.getSourceId(), ts));
+			d.getSamples().putInstantaneousSampleValue(PROP_WATTS, 5 * (i + 1));
+			dates.add(ts);
+			outputs.add(xform.filter(d, d.getSamples(), null));
 		}
 
 		// THEN
@@ -268,7 +269,7 @@ public class VirtualMeterTransformServiceTests {
 				new BigDecimal("20") };
 
 		for ( int i = 0; i < 3; i++ ) {
-			GeneralDatumSamples result = outputs.get(i);
+			DatumSamplesOperations result = outputs.get(i);
 			assertOutputValue("at sample " + i, result, expectedValues[i], expectedReadings[i]);
 		}
 	}
@@ -276,7 +277,7 @@ public class VirtualMeterTransformServiceTests {
 	@Test
 	public void filter_rollingAverage_multiSamples_rollover() {
 		// GIVEN
-		final GeneralNodeDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final SimpleDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
 		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATTS);
 		vmConfig.setRollingAverageCount(4);
 		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
@@ -292,15 +293,15 @@ public class VirtualMeterTransformServiceTests {
 
 		// WHEN
 		replayAll();
-		List<GeneralDatumSamples> outputs = new ArrayList<>();
-		List<Date> dates = new ArrayList<>();
-		final Date start = new Date(
-				LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC).toEpochMilli());
+		List<DatumSamplesOperations> outputs = new ArrayList<>();
+		List<Instant> dates = new ArrayList<>();
+		final Instant start = LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC);
 		for ( int i = 0; i < iterations; i++ ) {
-			datum.setCreated(new Date(start.getTime() + TimeUnit.SECONDS.toMillis(i)));
-			datum.putInstantaneousSampleValue(PROP_WATTS, 5 * (i + 1));
-			dates.add(datum.getCreated());
-			outputs.add(xform.transformSamples(datum, datum.getSamples(), null));
+			Instant ts = start.plusMillis(TimeUnit.SECONDS.toMillis(i));
+			SimpleDatum d = datum.copyWithId(DatumId.nodeId(null, datum.getSourceId(), ts));
+			d.getSamples().putInstantaneousSampleValue(PROP_WATTS, 5 * (i + 1));
+			dates.add(ts);
+			outputs.add(xform.filter(d, d.getSamples(), null));
 		}
 
 		// THEN
@@ -313,7 +314,7 @@ public class VirtualMeterTransformServiceTests {
 				new BigDecimal("87.5") };
 
 		for ( int i = 0; i < iterations; i++ ) {
-			GeneralDatumSamples result = outputs.get(i);
+			DatumSamplesOperations result = outputs.get(i);
 			assertOutputValue("at sample " + i, result, expectedValues[i], expectedReadings[i]);
 		}
 	}
@@ -321,9 +322,9 @@ public class VirtualMeterTransformServiceTests {
 	@Test
 	public void filter_accumulating() {
 		// GIVEN
-		final GeneralNodeDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final SimpleDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
 		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATT_HOURS);
-		vmConfig.setPropertyType(GeneralDatumSamplesType.Accumulating);
+		vmConfig.setPropertyType(DatumSamplesType.Accumulating);
 		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
 
 		// no metadata available yet
@@ -337,15 +338,15 @@ public class VirtualMeterTransformServiceTests {
 
 		// WHEN
 		replayAll();
-		List<GeneralDatumSamples> outputs = new ArrayList<>();
-		List<Date> dates = new ArrayList<>();
-		final Date start = new Date(
-				LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC).toEpochMilli());
+		List<DatumSamplesOperations> outputs = new ArrayList<>();
+		List<Instant> dates = new ArrayList<>();
+		final Instant start = LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC);
 		for ( int i = 0; i < iterations; i++ ) {
-			datum.setCreated(new Date(start.getTime() + TimeUnit.SECONDS.toMillis(i)));
-			datum.putAccumulatingSampleValue(PROP_WATT_HOURS, 5 * (i + 1));
-			dates.add(datum.getCreated());
-			outputs.add(xform.transformSamples(datum, datum.getSamples(), emptyMap()));
+			Instant ts = start.plusMillis(TimeUnit.SECONDS.toMillis(i));
+			SimpleDatum d = datum.copyWithId(DatumId.nodeId(null, datum.getSourceId(), ts));
+			d.getSamples().putAccumulatingSampleValue(PROP_WATT_HOURS, 5 * (i + 1));
+			dates.add(ts);
+			outputs.add(xform.filter(d, d.getSamples(), emptyMap()));
 		}
 
 		// THEN
@@ -356,7 +357,7 @@ public class VirtualMeterTransformServiceTests {
 				new BigDecimal("10") };
 
 		for ( int i = 0; i < iterations; i++ ) {
-			GeneralDatumSamples result = outputs.get(i);
+			DatumSamplesOperations result = outputs.get(i);
 			assertOutputValue("at sample " + i, result, PROP_WATT_HOURS, PROP_WATT_HOURS_SECONDS,
 					expectedValues[i], expectedReadings[i]);
 		}
@@ -365,16 +366,15 @@ public class VirtualMeterTransformServiceTests {
 	@Test
 	public void filter_accumulating_expression() {
 		// GIVEN
-		final GeneralNodeDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final SimpleDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
 		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATT_HOURS);
-		vmConfig.setPropertyType(GeneralDatumSamplesType.Accumulating);
+		vmConfig.setPropertyType(DatumSamplesType.Accumulating);
 		vmConfig.setReadingPropertyName(PROP_COST);
 		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
 
 		ExpressionService exprService = new SpelExpressionService();
 		VirtualMeterExpressionConfig exprConfig = new VirtualMeterExpressionConfig(PROP_COST,
-				GeneralDatumSamplesType.Accumulating, "prevReading + (inputDiff * 3)",
-				exprService.getUid());
+				DatumSamplesType.Accumulating, "prevReading + (inputDiff * 3)", exprService.getUid());
 		xform.setExpressionConfigs(new VirtualMeterExpressionConfig[] { exprConfig });
 		xform.setExpressionServices(new StaticOptionalServiceCollection<>(singleton(exprService)));
 
@@ -389,17 +389,17 @@ public class VirtualMeterTransformServiceTests {
 
 		// WHEN
 		replayAll();
-		List<GeneralDatumSamples> outputs = new ArrayList<>();
-		List<Date> dates = new ArrayList<>();
+		List<DatumSamplesOperations> outputs = new ArrayList<>();
+		List<Instant> dates = new ArrayList<>();
+		final Instant start = LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC);
 		List<Map<String, ?>> parameters = new ArrayList<>();
-		final Date start = new Date(
-				LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC).toEpochMilli());
 		for ( int i = 0; i < iterations; i++ ) {
-			datum.setCreated(new Date(start.getTime() + TimeUnit.SECONDS.toMillis(i)));
-			datum.putAccumulatingSampleValue(PROP_WATT_HOURS, 5 * (i + 1));
-			dates.add(datum.getCreated());
+			Instant ts = start.plusMillis(TimeUnit.SECONDS.toMillis(i));
+			SimpleDatum d = datum.copyWithId(DatumId.nodeId(null, datum.getSourceId(), ts));
+			d.getSamples().putAccumulatingSampleValue(PROP_WATT_HOURS, 5 * (i + 1));
+			dates.add(ts);
 			Map<String, Object> p = new LinkedHashMap<>();
-			outputs.add(xform.transformSamples(datum, datum.getSamples(), p));
+			outputs.add(xform.filter(d, d.getSamples(), p));
 			parameters.add(p);
 		}
 
@@ -410,7 +410,7 @@ public class VirtualMeterTransformServiceTests {
 				new BigDecimal("30") };
 
 		for ( int i = 0; i < iterations; i++ ) {
-			GeneralDatumSamples result = outputs.get(i);
+			DatumSamplesOperations result = outputs.get(i);
 			assertOutputValue("at sample " + i, result, PROP_WATT_HOURS, PROP_COST, expectedValues[i],
 					expectedReadings[i]);
 			Map<String, ?> p = parameters.get(i);
@@ -446,16 +446,16 @@ public class VirtualMeterTransformServiceTests {
 	@Test
 	public void filter_accumulating_expression_unchangedReading() {
 		// GIVEN
-		final GeneralNodeDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final SimpleDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
 		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATT_HOURS);
-		vmConfig.setPropertyType(GeneralDatumSamplesType.Accumulating);
+		vmConfig.setPropertyType(DatumSamplesType.Accumulating);
 		vmConfig.setReadingPropertyName(PROP_COST);
 		vmConfig.setTrackOnlyWhenReadingChanges(true);
 		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
 
 		ExpressionService exprService = new SpelExpressionService();
 		VirtualMeterExpressionConfig exprConfig = new VirtualMeterExpressionConfig(PROP_COST,
-				GeneralDatumSamplesType.Accumulating,
+				DatumSamplesType.Accumulating,
 				"currInput == 15 ? prevReading : prevReading + (inputDiff * 3)", exprService.getUid());
 		xform.setExpressionConfigs(new VirtualMeterExpressionConfig[] { exprConfig });
 		xform.setExpressionServices(new StaticOptionalServiceCollection<>(singleton(exprService)));
@@ -472,15 +472,15 @@ public class VirtualMeterTransformServiceTests {
 
 		// WHEN
 		replayAll();
-		List<GeneralDatumSamples> outputs = new ArrayList<>();
-		List<Date> dates = new ArrayList<>();
-		final Date start = new Date(
-				LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC).toEpochMilli());
+		List<DatumSamplesOperations> outputs = new ArrayList<>();
+		List<Instant> dates = new ArrayList<>();
+		final Instant start = LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC);
 		for ( int i = 0; i < iterations; i++ ) {
-			datum.setCreated(new Date(start.getTime() + TimeUnit.SECONDS.toMillis(i)));
-			datum.putAccumulatingSampleValue(PROP_WATT_HOURS, inputs.get(i));
-			dates.add(datum.getCreated());
-			outputs.add(xform.transformSamples(datum, datum.getSamples(), emptyMap()));
+			Instant ts = start.plusMillis(TimeUnit.SECONDS.toMillis(i));
+			SimpleDatum d = datum.copyWithId(DatumId.nodeId(null, datum.getSourceId(), ts));
+			d.getSamples().putAccumulatingSampleValue(PROP_WATT_HOURS, inputs.get(i));
+			dates.add(ts);
+			outputs.add(xform.filter(d, d.getSamples(), emptyMap()));
 		}
 
 		// THEN
@@ -491,7 +491,7 @@ public class VirtualMeterTransformServiceTests {
 				new BigDecimal("15"), new BigDecimal("45") };
 
 		for ( int i = 0; i < iterations; i++ ) {
-			GeneralDatumSamples result = outputs.get(i);
+			DatumSamplesOperations result = outputs.get(i);
 			assertOutputValue("at sample " + i, result, PROP_WATT_HOURS, PROP_COST, expectedValues[i],
 					expectedReadings[i]);
 		}
@@ -499,18 +499,18 @@ public class VirtualMeterTransformServiceTests {
 		List<GeneralDatumMetadata> savedMetas = metaCaptor.getValues();
 		assertThat("Saved one less meter metdata because of track only changes", savedMetas, hasSize(3));
 
-		assertVirtualMeterMetadata("first", savedMetas.get(0), PROP_COST, dates.get(0).getTime(),
+		assertVirtualMeterMetadata("first", savedMetas.get(0), PROP_COST, dates.get(0).toEpochMilli(),
 				new BigDecimal("5"), BigDecimal.ZERO);
-		assertVirtualMeterMetadata("second", savedMetas.get(1), PROP_COST, dates.get(1).getTime(),
+		assertVirtualMeterMetadata("second", savedMetas.get(1), PROP_COST, dates.get(1).toEpochMilli(),
 				new BigDecimal("10"), new BigDecimal("15"));
 		assertVirtualMeterMetadata("third (after skip)", savedMetas.get(2), PROP_COST,
-				dates.get(3).getTime(), new BigDecimal("20"), new BigDecimal("45"));
+				dates.get(3).toEpochMilli(), new BigDecimal("20"), new BigDecimal("45"));
 	}
 
 	@Test
 	public void operationalMode_noMatch() {
 		// GIVEN
-		final GeneralNodeDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final SimpleDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
 		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATTS);
 		vmConfig.setRollingAverageCount(4);
 		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
@@ -520,7 +520,7 @@ public class VirtualMeterTransformServiceTests {
 
 		// WHEN
 		replayAll();
-		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples(), null);
+		DatumSamplesOperations result = xform.filter(datum, datum.getSamples(), null);
 
 		// THEN
 		assertThat("No change because required operational mode not active", result,
@@ -530,7 +530,7 @@ public class VirtualMeterTransformServiceTests {
 	@Test
 	public void operationalMode_match() {
 		// GIVEN
-		final GeneralNodeDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final SimpleDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
 		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATTS);
 		vmConfig.setRollingAverageCount(4);
 		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
@@ -547,35 +547,36 @@ public class VirtualMeterTransformServiceTests {
 
 		// WHEN
 		replayAll();
-		GeneralDatumSamples result = xform.transformSamples(datum, datum.getSamples(), null);
+		DatumSamplesOperations result = xform.filter(datum, datum.getSamples(), null);
 
 		// THEN
 		assertOutputValue("at first sample", result, new BigDecimal("23.4"), null);
 
 		GeneralDatumMetadata meta = metaCaptor.getValue();
-		assertVirtualMeterMetadata("first", meta, datum.getCreated().getTime(), new BigDecimal("23.4"),
-				BigDecimal.ZERO);
+		assertVirtualMeterMetadata("first", meta, datum.getTimestamp().toEpochMilli(),
+				new BigDecimal("23.4"), BigDecimal.ZERO);
 	}
 
 	private static final long DELAY_MILLISECONDS = 200L;
 
 	private static class DelayedDatum implements Delayed {
 
-		private final GeneralNodeDatum datum;
+		private final SimpleDatum datum;
 
-		private DelayedDatum(GeneralNodeDatum datum) {
+		private DelayedDatum(SimpleDatum datum) {
 			super();
 			this.datum = datum;
 		}
 
 		@Override
 		public int compareTo(Delayed o) {
-			return datum.getCreated().compareTo(((DelayedDatum) o).datum.getCreated());
+			return datum.getTimestamp().compareTo(((DelayedDatum) o).datum.getTimestamp());
 		}
 
 		@Override
 		public long getDelay(TimeUnit unit) {
-			long ms = datum.getCreated().getTime() + DELAY_MILLISECONDS - System.currentTimeMillis();
+			long ms = datum.getTimestamp().toEpochMilli() + DELAY_MILLISECONDS
+					- System.currentTimeMillis();
 			return unit.convert(ms, TimeUnit.MILLISECONDS);
 		}
 
@@ -591,9 +592,9 @@ public class VirtualMeterTransformServiceTests {
 	@Test
 	public void filter_concurrently() throws InterruptedException {
 		// GIVEN
-		final GeneralNodeDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final SimpleDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
 		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATT_HOURS);
-		vmConfig.setPropertyType(GeneralDatumSamplesType.Accumulating);
+		vmConfig.setPropertyType(DatumSamplesType.Accumulating);
 		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
 
 		// start with given metadata
@@ -628,10 +629,9 @@ public class VirtualMeterTransformServiceTests {
 						}
 						long date = start + TimeUnit.MILLISECONDS.toMillis(i * 10);
 						log.debug("Generating datum {} @ {}", i, date);
-						GeneralNodeDatum d = datum.clone();
-						d.setSamples(new GeneralDatumSamples(d.getSamples()));
-						d.setCreated(new Date(date));
-						d.putAccumulatingSampleValue(PROP_WATT_HOURS, (i + 1));
+						SimpleDatum d = datum.copyWithId(
+								DatumId.nodeId(null, datum.getSourceId(), Instant.ofEpochMilli(date)));
+						d.getSamples().putAccumulatingSampleValue(PROP_WATT_HOURS, (i + 1));
 						inputs.offer(new DelayedDatum(d));
 					}
 				}
@@ -641,7 +641,7 @@ public class VirtualMeterTransformServiceTests {
 
 		// WHEN
 		replayAll();
-		final List<GeneralDatumSamples> outputs = Collections.synchronizedList(new ArrayList<>());
+		final List<DatumSamplesOperations> outputs = Collections.synchronizedList(new ArrayList<>());
 
 		// start consuming
 		Thread consumer = new Thread(new Runnable() {
@@ -656,8 +656,8 @@ public class VirtualMeterTransformServiceTests {
 						continue;
 					}
 					if ( d != null ) {
-						log.debug("Processing datum {}", d.datum.getCreated().getTime());
-						outputs.add(xform.transformSamples(d.datum, d.datum.getSamples(), emptyMap()));
+						log.debug("Processing datum {}", d.datum.getTimestamp().toEpochMilli());
+						outputs.add(xform.filter(d.datum, d.datum.getSamples(), emptyMap()));
 					}
 				} while ( latch.get() || d != null );
 			}
@@ -672,7 +672,7 @@ public class VirtualMeterTransformServiceTests {
 		// THEN
 		assertThat("All inputs processed", outputs, hasSize(iterations));
 		for ( int i = 0; i < iterations; i++ ) {
-			GeneralDatumSamples result = outputs.get(i);
+			DatumSamplesOperations result = outputs.get(i);
 			BigDecimal expectedValue = new BigDecimal(i + 1);
 			BigDecimal expectedReading = (i == 0 ? null : new BigDecimal(i - 1));
 			assertOutputValue("at sample " + i, result, PROP_WATT_HOURS, PROP_WATT_HOURS_SECONDS,

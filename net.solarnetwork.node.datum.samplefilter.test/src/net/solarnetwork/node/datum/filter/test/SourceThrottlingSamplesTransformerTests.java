@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.datum.filter.test;
 
-import static net.solarnetwork.node.datum.filter.std.SamplesTransformerSupport.SETTING_KEY_TEMPLATE;
+import static net.solarnetwork.node.datum.filter.std.DatumFilterSupport.SETTING_KEY_TEMPLATE;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
@@ -53,11 +53,11 @@ import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.node.datum.filter.std.SourceThrottlingSamplesTransformer;
+import net.solarnetwork.node.datum.filter.std.ThrottlingDatumFilterService;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 
 /**
- * Test cases for the {@link SourceThrottlingSamplesTransformer} class.
+ * Test cases for the {@link ThrottlingDatumFilterService} class.
  * 
  * @author matt
  * @version 1.2
@@ -70,13 +70,13 @@ public class SourceThrottlingSamplesTransformerTests {
 	private static final String TEST_UID = "test";
 
 	private SettingDao settingDao;
-	private SourceThrottlingSamplesTransformer xform;
+	private ThrottlingDatumFilterService xform;
 
 	@Before
 	public void setup() {
-		SourceThrottlingSamplesTransformer.clearSettingCache();
+		ThrottlingDatumFilterService.clearSettingCache();
 		settingDao = EasyMock.createMock(SettingDao.class);
-		xform = new SourceThrottlingSamplesTransformer();
+		xform = new ThrottlingDatumFilterService();
 		xform.setFrequencySeconds(TEST_FREQ);
 		xform.setSourceId("^F");
 		xform.setSettingDao(settingDao);

@@ -128,7 +128,7 @@
 	<service ref="backupManager">
 		<interfaces>
 			<value>net.solarnetwork.node.backup.BackupManager</value>
-			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 		</interfaces>
 	</service>
 	
@@ -529,7 +529,7 @@
 		<property name="transformService">
 			<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 				<argument ref="bundleContext"/>
-				<property name="serviceClassName" value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
+				<property name="serviceClassName" value="net.solarnetwork.service.DatumFilterService"/>
 				<property name="serviceFilter" value="(!(role=global))"/>
 				<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 				<property name="propertyFilters">
@@ -549,7 +549,7 @@
 	<service ref="datumQueue">
 		<interfaces>
 			<value>net.solarnetwork.node.DatumQueue</value>
-			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 		</interfaces>
 		<service-properties>
 			<entry key="role">

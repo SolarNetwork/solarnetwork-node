@@ -1,5 +1,5 @@
 /* ==================================================================
- * VirtualMeterTransformService.java - 16/09/2020 9:14:27 AM
+ * VirtualMeterDatumFilterService.java - 16/09/2020 9:14:27 AM
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -25,7 +25,7 @@ package net.solarnetwork.node.datum.filter.virt;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static net.solarnetwork.util.OptionalServiceCollection.services;
+import static net.solarnetwork.service.OptionalServiceCollection.services;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -38,33 +38,34 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.domain.GeneralDatumMetadata;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
-import net.solarnetwork.node.DatumMetadataService;
-import net.solarnetwork.node.GeneralDatumSamplesTransformService;
-import net.solarnetwork.node.datum.filter.std.SamplesTransformerSupport;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.ExpressionConfig;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
-import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
+import net.solarnetwork.node.datum.filter.std.DatumFilterSupport;
+import net.solarnetwork.node.service.DatumMetadataService;
+import net.solarnetwork.node.service.support.ExpressionConfig;
+import net.solarnetwork.service.DatumFilterService;
+import net.solarnetwork.service.ExpressionService;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
-import net.solarnetwork.util.OptionalService;
 
 /**
  * Samples transform service that simulates an accumulating meter property,
  * derived from another property.
  * 
  * @author matt
- * @version 1.7
+ * @version 2.0
  * @since 1.4
  */
-public class VirtualMeterTransformService extends SamplesTransformerSupport
-		implements GeneralDatumSamplesTransformService, SettingSpecifierProvider {
+public class VirtualMeterDatumFilterService extends DatumFilterSupport
+		implements DatumFilterService, SettingSpecifierProvider {
 
 	/** The datum metadata key for a virtual meter sample value. */
 	public static final String VIRTUAL_METER_VALUE_KEY = "vm-value";
@@ -84,7 +85,7 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 
 	private static final BigDecimal TWO = new BigDecimal("2");
 
-	private static final Logger log = LoggerFactory.getLogger(VirtualMeterTransformService.class);
+	private static final Logger log = LoggerFactory.getLogger(VirtualMeterDatumFilterService.class);
 
 	private final ConcurrentMap<String, GeneralDatumMetadata> sourceMetas = new ConcurrentHashMap<>(8,
 			0.9f, 2);
@@ -102,7 +103,7 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public VirtualMeterTransformService(OptionalService<DatumMetadataService> datumMetadataService) {
+	public VirtualMeterDatumFilterService(OptionalService<DatumMetadataService> datumMetadataService) {
 		super();
 		if ( datumMetadataService == null ) {
 			throw new IllegalArgumentException("The datumMetadataService must not be null.");
@@ -126,8 +127,8 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 		VirtualMeterConfig[] meterConfs = getVirtualMeterConfigs();
 		List<VirtualMeterConfig> meterConfsList = (meterConfs != null ? asList(meterConfs)
 				: emptyList());
-		results.add(SettingsUtil.dynamicListSettingSpecifier("virtualMeterConfigs", meterConfsList,
-				new SettingsUtil.KeyedListCallback<VirtualMeterConfig>() {
+		results.add(SettingUtils.dynamicListSettingSpecifier("virtualMeterConfigs", meterConfsList,
+				new SettingUtils.KeyedListCallback<VirtualMeterConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(VirtualMeterConfig value,
@@ -142,8 +143,8 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 		if ( exprServices != null ) {
 			VirtualMeterExpressionConfig[] exprConfs = getExpressionConfigs();
 			List<ExpressionConfig> exprConfsList = (exprConfs != null ? asList(exprConfs) : emptyList());
-			results.add(SettingsUtil.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
-					new SettingsUtil.KeyedListCallback<ExpressionConfig>() {
+			results.add(SettingUtils.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
+					new SettingUtils.KeyedListCallback<ExpressionConfig>() {
 
 						@Override
 						public Collection<SettingSpecifier> mapListSettingKey(ExpressionConfig value,
@@ -188,7 +189,7 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 	}
 
 	@Override
-	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
+	public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
 			Map<String, Object> parameters) {
 		final long start = incrementInputStats();
 		if ( virtualMeterConfigs == null || virtualMeterConfigs.length < 1 || datum == null
@@ -200,7 +201,7 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 			incrementIgnoredStats(start);
 			return samples;
 		}
-		GeneralDatumSamples s = new GeneralDatumSamples(samples);
+		DatumSamples s = new DatumSamples(samples);
 		populateDatumProperties(datum, s, virtualMeterConfigs, parameters);
 		incrementStats(start, samples, s);
 		return s;
@@ -234,8 +235,8 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 		});
 	}
 
-	private void populateDatumProperties(Datum d, GeneralDatumSamples samples,
-			VirtualMeterConfig[] meterConfs, Map<String, Object> parameters) {
+	private void populateDatumProperties(Datum d, DatumSamples samples, VirtualMeterConfig[] meterConfs,
+			Map<String, Object> parameters) {
 		final DatumMetadataService service = OptionalService.service(datumMetadataService);
 		if ( service == null ) {
 			// the metadata service is required for virtual meters
@@ -249,7 +250,8 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 			return;
 		}
 
-		final long date = d.getCreated() != null ? d.getCreated().getTime() : System.currentTimeMillis();
+		final long date = d.getTimestamp() != null ? d.getTimestamp().toEpochMilli()
+				: System.currentTimeMillis();
 
 		for ( VirtualMeterConfig config : meterConfs ) {
 			if ( config.getPropertyKey() == null || config.getPropertyKey().isEmpty()
@@ -258,7 +260,7 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 			}
 			final TimeUnit timeUnit = config.getTimeUnit();
 			final String meterPropName = config.readingPropertyName();
-			if ( samples.hasSampleValue(GeneralDatumSamplesType.Accumulating, meterPropName) ) {
+			if ( samples.hasSampleValue(DatumSamplesType.Accumulating, meterPropName) ) {
 				// accumulating value exists for this property already, do not overwrite
 				log.warn(
 						"Source {} accumulating property [{}] already exists, will not populate virtual meter reading for [{}]",
@@ -342,7 +344,7 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 						}
 						meterDiff = newReading.subtract(prevReading); // for debug log
 					} else {
-						if ( config.getPropertyType() == GeneralDatumSamplesType.Accumulating ) {
+						if ( config.getPropertyType() == DatumSamplesType.Accumulating ) {
 							// accumulation is simply difference between current value and previous
 							meterDiff = currVal.subtract(prevVal);
 						} else {

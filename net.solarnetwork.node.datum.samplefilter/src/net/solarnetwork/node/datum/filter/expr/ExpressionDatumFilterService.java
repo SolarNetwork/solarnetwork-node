@@ -1,5 +1,5 @@
 /* ==================================================================
- * ExpressionTransformService.java - 13/05/2021 8:27:17 PM
+ * ExpressionDatumFilterService.java - 13/05/2021 8:27:17 PM
  * 
  * Copyright 2021 SolarNetwork.net Dev Team
  * 
@@ -24,22 +24,23 @@ package net.solarnetwork.node.datum.filter.expr;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
-import static net.solarnetwork.util.OptionalServiceCollection.services;
+import static net.solarnetwork.service.OptionalServiceCollection.services;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.domain.DatumSamplesExpressionRoot;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.node.GeneralDatumSamplesTransformService;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.ExpressionConfig;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
-import net.solarnetwork.node.support.BaseSamplesTransformSupport;
-import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesExpressionRoot;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
+import net.solarnetwork.node.service.support.ExpressionConfig;
+import net.solarnetwork.service.DatumFilterService;
+import net.solarnetwork.service.ExpressionService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
 
 /**
@@ -47,16 +48,16 @@ import net.solarnetwork.util.ArrayUtils;
  * on the output samples.
  * 
  * @author matt
- * @version 1.2
- * @since 1.6
+ * @version 1.0
+ * @since 2.0
  */
-public class ExpressionTransformService extends BaseSamplesTransformSupport
-		implements GeneralDatumSamplesTransformService, SettingSpecifierProvider {
+public class ExpressionDatumFilterService extends BaseDatumFilterSupport
+		implements DatumFilterService, SettingSpecifierProvider {
 
 	private ExpressionTransformConfig[] expressionConfigs;
 
 	@Override
-	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
+	public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
 			Map<String, Object> parameters) {
 		final long start = incrementInputStats();
 		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
@@ -64,7 +65,7 @@ public class ExpressionTransformService extends BaseSamplesTransformSupport
 			return samples;
 		}
 		DatumSamplesExpressionRoot root = new DatumSamplesExpressionRoot(datum, samples, parameters);
-		GeneralDatumSamples s = new GeneralDatumSamples(samples);
+		DatumSamples s = new DatumSamples(samples);
 		populateExpressionDatumProperties(s, getExpressionConfigs(), root);
 		incrementStats(start, samples, s);
 		return s;
@@ -85,14 +86,14 @@ public class ExpressionTransformService extends BaseSamplesTransformSupport
 		if ( exprServices != null ) {
 			ExpressionTransformConfig[] exprConfs = getExpressionConfigs();
 			List<ExpressionConfig> exprConfsList = (exprConfs != null ? asList(exprConfs) : emptyList());
-			result.add(SettingsUtil.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
-					new SettingsUtil.KeyedListCallback<ExpressionConfig>() {
+			result.add(SettingUtils.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
+					new SettingUtils.KeyedListCallback<ExpressionConfig>() {
 
 						@Override
 						public Collection<SettingSpecifier> mapListSettingKey(ExpressionConfig value,
 								int index, String key) {
 							SettingSpecifier configGroup = new BasicGroupSettingSpecifier(
-									ExpressionConfig.settings(ExpressionTransformService.class,
+									ExpressionConfig.settings(ExpressionDatumFilterService.class,
 											key + ".", exprServices));
 							return Collections.singletonList(configGroup);
 						}

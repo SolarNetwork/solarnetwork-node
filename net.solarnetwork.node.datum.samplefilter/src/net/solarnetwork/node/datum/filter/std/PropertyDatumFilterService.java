@@ -1,5 +1,5 @@
 /* ==================================================================
- * PropertyFilterSamplesTransformer.java - 28/10/2016 3:00:56 PM
+ * PropertyDatumFilterService.java - 28/10/2016 3:00:56 PM
  * 
  * Copyright 2007-2016 SolarNetwork.net Dev Team
  * 
@@ -22,23 +22,29 @@
 
 package net.solarnetwork.node.datum.filter.std;
 
+import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import static net.solarnetwork.util.StringUtils.patterns;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.service.DatumFilterService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 
 /**
  * {@link GeneralDatumSamplesTransformer} that can filter out sample properties
@@ -46,15 +52,15 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * 
  * <p>
  * If all properties of a datum are filtered out of a datum then
- * {@link #transformSamples(Datum, GeneralDatumSamples)} will return
- * {@literal null}.
+ * {@link #transformSamples(Datum, DatumSamples)} will return {@literal null}.
  * </p>
  * 
  * @author matt
- * @version 1.6
+ * @version 1.0
+ * @since 2.0
  */
-public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
-		implements GeneralDatumSamplesTransformer, SettingSpecifierProvider, SettingsChangeObserver {
+public class PropertyDatumFilterService extends DatumFilterSupport
+		implements DatumFilterService, SettingSpecifierProvider, SettingsChangeObserver {
 
 	private PropertyFilterConfig[] propIncludes;
 	private String[] excludes;
@@ -62,7 +68,8 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 	private Pattern[] excludePatterns;
 
 	@Override
-	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples) {
+	public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
+			Map<String, Object> params) {
 		final long start = incrementInputStats();
 		final String settingKey = settingKey();
 		if ( settingKey == null ) {
@@ -82,68 +89,33 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 		final ConcurrentMap<String, String> lastSeenMap = loadSettingsIfFrequencyLimitConfigured(
 				settingKey, incs);
 
-		final long now = (datum != null && datum.getCreated() != null ? datum.getCreated().getTime()
+		final long now = (datum != null && datum.getTimestamp() != null
+				? datum.getTimestamp().toEpochMilli()
 				: System.currentTimeMillis());
 		log.trace("Examining datum {} @ {}", datum, now);
 
-		GeneralDatumSamples copy = null;
+		DatumSamples copy = null;
 
 		// handle property inclusion rules
 		if ( incs != null && incs.length > 0 ) {
-			Map<String, ?> map = samples.getAccumulating();
-			if ( map != null ) {
-				for ( String propName : map.keySet() ) {
-					PropertyFilterConfig match = findMatch(incs, propName, true);
-					String lastSeenKey = (lastSeenMap != null && match != null
-							? datum.getSourceId() + ';' + propName
-							: null);
-					if ( match == null
-							|| shouldLimitByFrequency(match, lastSeenKey, lastSeenMap, now) ) {
-						if ( copy == null ) {
-							copy = copy(samples);
+			for ( DatumSamplesType t : EnumSet.of(Instantaneous, Accumulating, Status) ) {
+				Map<String, ?> map = samples.getSampleData(t);
+				if ( map != null ) {
+					for ( String propName : map.keySet() ) {
+						PropertyFilterConfig match = findMatch(incs, propName, true);
+						String lastSeenKey = (lastSeenMap != null && match != null
+								? datum.getSourceId() + ';' + propName
+								: null);
+						if ( match == null
+								|| shouldLimitByFrequency(match, lastSeenKey, lastSeenMap, now) ) {
+							if ( copy == null ) {
+								copy = new DatumSamples(samples);
+							}
+							copy.putSampleValue(t, propName, null);
+						} else if ( lastSeenMap != null && match != null ) {
+							saveLastSeenSetting(match.getFrequencySeconds(), now, settingKey,
+									lastSeenKey, lastSeenMap);
 						}
-						copy.getAccumulating().remove(propName);
-					} else if ( lastSeenMap != null && match != null ) {
-						saveLastSeenSetting(match.getFrequencySeconds(), now, settingKey, lastSeenKey,
-								lastSeenMap);
-					}
-				}
-			}
-			map = samples.getInstantaneous();
-			if ( map != null ) {
-				for ( String propName : map.keySet() ) {
-					PropertyFilterConfig match = findMatch(incs, propName, true);
-					String lastSeenKey = (lastSeenMap != null && match != null
-							? datum.getSourceId() + ';' + propName
-							: null);
-					if ( match == null || shouldLimitByFrequency(match,
-							datum.getSourceId() + ';' + propName, lastSeenMap, now) ) {
-						if ( copy == null ) {
-							copy = copy(samples);
-						}
-						copy.getInstantaneous().remove(propName);
-					} else if ( lastSeenMap != null && match != null ) {
-						saveLastSeenSetting(match.getFrequencySeconds(), now, settingKey, lastSeenKey,
-								lastSeenMap);
-					}
-				}
-			}
-			map = samples.getStatus();
-			if ( map != null ) {
-				for ( String propName : map.keySet() ) {
-					PropertyFilterConfig match = findMatch(incs, propName, true);
-					String lastSeenKey = (lastSeenMap != null && match != null
-							? datum.getSourceId() + ';' + propName
-							: null);
-					if ( match == null || shouldLimitByFrequency(match,
-							datum.getSourceId() + ';' + propName, lastSeenMap, now) ) {
-						if ( copy == null ) {
-							copy = copy(samples);
-						}
-						copy.getStatus().remove(propName);
-					} else if ( lastSeenMap != null && match != null ) {
-						saveLastSeenSetting(match.getFrequencySeconds(), now, settingKey, lastSeenKey,
-								lastSeenMap);
 					}
 				}
 			}
@@ -152,36 +124,16 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 		// handle property exclusion rules
 		Pattern[] excs = this.excludePatterns;
 		if ( excs != null && excs.length > 0 ) {
-			Map<String, ?> map = samples.getAccumulating();
-			if ( map != null ) {
-				for ( String propName : map.keySet() ) {
-					if ( matchesAny(excs, propName, false) ) {
-						if ( copy == null ) {
-							copy = copy(samples);
+			for ( DatumSamplesType t : EnumSet.of(Instantaneous, Accumulating, Status) ) {
+				Map<String, ?> map = samples.getSampleData(t);
+				if ( map != null ) {
+					for ( String propName : map.keySet() ) {
+						if ( matchesAny(excs, propName, false) ) {
+							if ( copy == null ) {
+								copy = new DatumSamples(samples);
+							}
+							copy.putSampleValue(t, propName, null);
 						}
-						copy.getAccumulating().remove(propName);
-					}
-				}
-			}
-			map = samples.getInstantaneous();
-			if ( map != null ) {
-				for ( String propName : map.keySet() ) {
-					if ( matchesAny(excs, propName, false) ) {
-						if ( copy == null ) {
-							copy = copy(samples);
-						}
-						copy.getInstantaneous().remove(propName);
-					}
-				}
-			}
-			map = samples.getStatus();
-			if ( map != null ) {
-				for ( String propName : map.keySet() ) {
-					if ( matchesAny(excs, propName, false) ) {
-						if ( copy == null ) {
-							copy = copy(samples);
-						}
-						copy.getStatus().remove(propName);
 					}
 				}
 			}
@@ -205,7 +157,7 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 			}
 		}
 
-		GeneralDatumSamples out = (copy != null ? copy : samples);
+		DatumSamplesOperations out = (copy != null ? copy : samples);
 		incrementStats(start, samples, out);
 		return out;
 	}
@@ -270,8 +222,8 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 		PropertyFilterConfig[] incs = getPropIncludes();
 		List<PropertyFilterConfig> incsList = (incs != null ? Arrays.asList(incs)
 				: Collections.<PropertyFilterConfig> emptyList());
-		results.add(SettingsUtil.dynamicListSettingSpecifier("propIncludes", incsList,
-				new SettingsUtil.KeyedListCallback<PropertyFilterConfig>() {
+		results.add(SettingUtils.dynamicListSettingSpecifier("propIncludes", incsList,
+				new SettingUtils.KeyedListCallback<PropertyFilterConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(PropertyFilterConfig value,
@@ -285,8 +237,8 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 		String[] excs = getExcludes();
 		List<String> listStrings = (excs != null ? Arrays.asList(excs)
 				: Collections.<String> emptyList());
-		results.add(SettingsUtil.dynamicListSettingSpecifier("excludes", listStrings,
-				new SettingsUtil.KeyedListCallback<String>() {
+		results.add(SettingUtils.dynamicListSettingSpecifier("excludes", listStrings,
+				new SettingUtils.KeyedListCallback<String>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(String value, int index,
@@ -297,70 +249,6 @@ public class PropertyFilterSamplesTransformer extends SamplesTransformerSupport
 				}));
 
 		return results;
-	}
-
-	/**
-	 * Get the property include expressions.
-	 * 
-	 * @return The property include expressions.
-	 * @deprecated use {@link #getPropIncludes()}
-	 */
-	@Deprecated
-	public String[] getIncludes() {
-		PropertyFilterConfig[] configurations = getPropIncludes();
-		String[] includes = null;
-		if ( configurations != null ) {
-			includes = new String[configurations.length];
-			for ( int i = 0; i < configurations.length; i++ ) {
-				includes[i] = configurations[i].getName();
-			}
-		}
-		return includes;
-	}
-
-	/**
-	 * Set an array of property include expressions.
-	 * 
-	 * @param includeExpressions
-	 *        The property include expressions.
-	 * @deprecated use {@link #setPropIncludes(PropertyFilterConfig[])}
-	 */
-	@Deprecated
-	public void setIncludes(String[] includeExpressions) {
-		PropertyFilterConfig[] configurations = null;
-		if ( includeExpressions != null ) {
-			configurations = new PropertyFilterConfig[includeExpressions.length];
-			for ( int i = 0; i < includeExpressions.length; i++ ) {
-				PropertyFilterConfig config = new PropertyFilterConfig();
-				config.setName(includeExpressions[i]);
-				configurations[i] = config;
-			}
-		}
-		setPropIncludes(configurations);
-	}
-
-	/**
-	 * Get the number of configured {@code includes} elements.
-	 * 
-	 * @return The number of {@code includes} elements.
-	 * @deprecated use {@link #getPropIncludesCount()}
-	 */
-	@Deprecated
-	public int getIncludesCount() {
-		return getPropIncludesCount();
-	}
-
-	/**
-	 * Adjust the number of configured {@code includes} elements. Any newly
-	 * added element values will be {@code null}.
-	 * 
-	 * @param count
-	 *        The desired number of {@code includes} elements.
-	 * @deprecated use {@link #setPropIncludesCount(int)}
-	 */
-	@Deprecated
-	public void setIncludesCount(int count) {
-		setPropIncludesCount(count);
 	}
 
 	/**

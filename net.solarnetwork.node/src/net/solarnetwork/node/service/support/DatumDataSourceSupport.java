@@ -43,6 +43,7 @@ import net.solarnetwork.node.service.DatumMetadataService;
 import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.service.DatumFilterService;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
@@ -83,7 +84,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	private TaskScheduler taskScheduler = null;
 	private Long subSampleFrequency = null;
 	private long subSampleStartDelay = DEFAULT_SUBSAMPLE_START_DELAY;
-	private OptionalService<DatumFilterService> samplesTransformService;
+	private OptionalFilterableService<DatumFilterService> datumFilterService;
 	private ExpressionConfig[] expressionConfigs;
 	private boolean publishDeviceInfoMetadata = false;
 
@@ -167,8 +168,8 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 */
 	protected List<SettingSpecifier> getSubSampleSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
-		results.add(new BasicTextFieldSettingSpecifier("samplesTransformService.propertyFilters['UID']",
-				null));
+		results.add(
+				new BasicTextFieldSettingSpecifier("datumFilterService.propertyFilters['UID']", null));
 		results.add(new BasicTextFieldSettingSpecifier("subSampleFrequency", null));
 		results.add(new BasicTextFieldSettingSpecifier("subSampleStartDelay",
 				String.valueOf(DEFAULT_SUBSAMPLE_START_DELAY)));
@@ -265,7 +266,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	}
 
 	/**
-	 * Apply the configured samples transformer service to a given datum.
+	 * Apply the configured datum filter service to a given datum.
 	 * 
 	 * @param <T>
 	 *        the type of datum
@@ -276,10 +277,10 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *        {@link DatumFilterService#filter(NodeDatum, DatumSamples, Map)}
 	 * @return the same datum, possibly transformed, or {@literal null} if the
 	 *         datum has been filtered out completely
-	 * @since 1.1
+	 * @since 2.0
 	 */
-	protected NodeDatum applySamplesTransformer(NodeDatum datum, Map<String, Object> props) {
-		DatumFilterService xformService = OptionalService.service(getSamplesTransformService());
+	protected NodeDatum applyDatumFilter(NodeDatum datum, Map<String, Object> props) {
+		DatumFilterService xformService = OptionalService.service(getDatumFilterService());
 		if ( xformService != null ) {
 			DatumSamplesOperations out = xformService.filter(datum, datum.asSampleOperations(), props);
 			if ( out == null ) {
@@ -387,8 +388,8 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * 
 	 * <p>
 	 * This is designed to work with a
-	 * {@link #setSamplesTransformService(OptionalService)} transformer that
-	 * performs down-sampling of higher frequency data.
+	 * {@link #setDatumFilterService(OptionalService)} transformer that performs
+	 * down-sampling of higher frequency data.
 	 * 
 	 * @param subSampleFrequency
 	 *        the frequency, to set, in milliseconds
@@ -419,24 +420,24 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	}
 
 	/**
-	 * Get a samples transformer to use.
+	 * Get a datum filter service to use.
 	 * 
 	 * @return the service
-	 * @since 1.1
+	 * @since 2.0
 	 */
-	public OptionalService<DatumFilterService> getSamplesTransformService() {
-		return samplesTransformService;
+	public OptionalFilterableService<DatumFilterService> getDatumFilterService() {
+		return datumFilterService;
 	}
 
 	/**
-	 * Set a samples transformer to use.
+	 * Set a datum filter service to use.
 	 * 
-	 * @param samplesTransformService
+	 * @param datumFilterService
 	 *        the service to set
-	 * @since 1.1
+	 * @since 2.0
 	 */
-	public void setSamplesTransformService(OptionalService<DatumFilterService> samplesTransformService) {
-		this.samplesTransformService = samplesTransformService;
+	public void setDatumFilterService(OptionalFilterableService<DatumFilterService> datumFilterService) {
+		this.datumFilterService = datumFilterService;
 	}
 
 	/**

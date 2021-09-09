@@ -44,14 +44,14 @@ import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.datum.filter.opmode.OperationalModeTransformConfig;
-import net.solarnetwork.node.datum.filter.opmode.OperationalModeTransformService;
-import net.solarnetwork.node.datum.filter.std.SourceThrottlingSamplesTransformer;
+import net.solarnetwork.node.datum.filter.opmode.OperationalModeDatumFilterService;
+import net.solarnetwork.node.datum.filter.std.ThrottlingDatumFilterService;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 import net.solarnetwork.support.ExpressionService;
 import net.solarnetwork.util.StaticOptionalServiceCollection;
 
 /**
- * Test cases for the {@link OperationalModeTransformService} class.
+ * Test cases for the {@link OperationalModeDatumFilterService} class.
  * 
  * @author matt
  * @version 1.0
@@ -64,13 +64,13 @@ public class OperationalModeTransformServiceTests {
 
 	private OperationalModesService opModesService;
 	private ExpressionService exprService;
-	private OperationalModeTransformService xform;
+	private OperationalModeDatumFilterService xform;
 
 	@Before
 	public void setup() {
 		opModesService = EasyMock.createMock(OperationalModesService.class);
-		SourceThrottlingSamplesTransformer.clearSettingCache();
-		xform = new OperationalModeTransformService();
+		ThrottlingDatumFilterService.clearSettingCache();
+		xform = new OperationalModeDatumFilterService();
 		xform.setSourceId("^F");
 		xform.setOpModesService(opModesService);
 		exprService = new SpelExpressionService();

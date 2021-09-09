@@ -23,8 +23,6 @@
 package net.solarnetwork.node.service.support;
 
 import static net.solarnetwork.util.DateUtils.formatHoursMinutesSeconds;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -236,33 +234,6 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 		}
 		stats.addAndGet(DatumFilterStats.ProcessingTimeNotIgnoredTotal, duration, true);
 		stats.addAndGet(DatumFilterStats.ProcessingTimeTotal, duration, true);
-	}
-
-	/**
-	 * Copy a samples object.
-	 * 
-	 * <p>
-	 * This method copies the {@code samples} instance and the
-	 * {@code instantaneous}, {@code accumulating}, {@code status}, and
-	 * {@code tags} collection instances.
-	 * </p>
-	 * 
-	 * @param samples
-	 *        the samples to copy
-	 * @return the copied samples instance
-	 */
-	public static DatumSamples copy(DatumSamples samples) {
-		DatumSamples copy = new DatumSamples(
-				samples.getInstantaneous() != null
-						? new LinkedHashMap<String, Number>(samples.getInstantaneous())
-						: null,
-				samples.getAccumulating() != null
-						? new LinkedHashMap<String, Number>(samples.getAccumulating())
-						: null,
-				samples.getStatus() != null ? new LinkedHashMap<String, Object>(samples.getStatus())
-						: null);
-		copy.setTags(samples.getTags() != null ? new LinkedHashSet<String>(samples.getTags()) : null);
-		return copy;
 	}
 
 	/**

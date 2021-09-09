@@ -24,17 +24,17 @@ package net.solarnetwork.node.datum.filter.virt;
 
 import java.math.BigDecimal;
 import java.util.Map;
-import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.ExpressionRoot;
-import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.service.ExpressionService;
 
 /**
  * An object to use as the "root" for virtual meter {@link ExpressionService}
  * evaluation.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.6
  */
 public class VirtualMeterExpressionRootImpl extends ExpressionRoot
@@ -69,9 +69,9 @@ public class VirtualMeterExpressionRootImpl extends ExpressionRoot
 	 * @param prevReading
 	 *        the previous reading
 	 */
-	public VirtualMeterExpressionRootImpl(Datum datum, GeneralDatumSamples samples,
-			Map<String, ?> parameters, VirtualMeterConfig config, long prevDate, long currDate,
-			BigDecimal prevInput, BigDecimal currInput, BigDecimal prevReading) {
+	public VirtualMeterExpressionRootImpl(Datum datum, DatumSamples samples, Map<String, ?> parameters,
+			VirtualMeterConfig config, long prevDate, long currDate, BigDecimal prevInput,
+			BigDecimal currInput, BigDecimal prevReading) {
 		super(datum, samples, parameters);
 		this.config = config;
 		this.prevDate = prevDate;

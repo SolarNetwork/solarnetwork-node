@@ -1,5 +1,5 @@
 /* ==================================================================
- * OperationalModeTransformService.java - 4/07/2021 1:26:27 PM
+ * OperationalModeDatumFilterService.java - 4/07/2021 1:26:27 PM
  * 
  * Copyright 2021 SolarNetwork.net Dev Team
  * 
@@ -25,28 +25,29 @@ package net.solarnetwork.node.datum.filter.opmode;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
-import static net.solarnetwork.util.OptionalServiceCollection.services;
+import static net.solarnetwork.service.OptionalServiceCollection.services;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import org.joda.time.DateTime;
 import org.springframework.expression.ExpressionException;
-import net.solarnetwork.domain.DatumSamplesExpressionRoot;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
-import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
-import net.solarnetwork.node.GeneralDatumSamplesTransformService;
-import net.solarnetwork.node.OperationalModesService;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
-import net.solarnetwork.node.support.BaseSamplesTransformSupport;
-import net.solarnetwork.support.ExpressionService;
-import net.solarnetwork.support.ExpressionServiceExpression;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesExpressionRoot;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.domain.datum.MutableDatumSamplesOperations;
+import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
+import net.solarnetwork.service.DatumFilterService;
+import net.solarnetwork.service.ExpressionService;
+import net.solarnetwork.service.support.ExpressionServiceExpression;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
 
 /**
@@ -54,16 +55,16 @@ import net.solarnetwork.util.ArrayUtils;
  * the mode as a datum property.
  * 
  * @author matt
- * @version 1.1
- * @since 1.8
+ * @version 1.0
+ * @since 2.0
  */
-public class OperationalModeTransformService extends BaseSamplesTransformSupport
-		implements GeneralDatumSamplesTransformService, SettingSpecifierProvider {
+public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
+		implements DatumFilterService, SettingSpecifierProvider {
 
 	private OperationalModeTransformConfig[] expressionConfigs;
 
 	@Override
-	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
+	public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
 			Map<String, Object> parameters) {
 		final long start = incrementInputStats();
 		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
@@ -78,8 +79,11 @@ public class OperationalModeTransformService extends BaseSamplesTransformSupport
 			return samples;
 		}
 		DatumSamplesExpressionRoot root = new DatumSamplesExpressionRoot(datum, samples, parameters);
-		GeneralDatumSamples s = samplesForEvaluation(samples, configs);
-		evaluateExpressions(s, configs, root, services, opModesService);
+		DatumSamplesOperations s = samplesForEvaluation(samples, configs);
+		if ( s instanceof MutableDatumSamplesOperations ) {
+			evaluateExpressions((MutableDatumSamplesOperations) s, configs, root, services,
+					opModesService);
+		}
 		incrementStats(start, samples, s);
 		return s;
 	}
@@ -99,7 +103,7 @@ public class OperationalModeTransformService extends BaseSamplesTransformSupport
 	 *        the configurations
 	 * @return the samples to use
 	 */
-	private static GeneralDatumSamples samplesForEvaluation(GeneralDatumSamples s,
+	private static DatumSamplesOperations samplesForEvaluation(DatumSamplesOperations s,
 			OperationalModeTransformConfig[] configs) {
 		boolean needCopy = false;
 		for ( OperationalModeTransformConfig config : configs ) {
@@ -109,10 +113,10 @@ public class OperationalModeTransformService extends BaseSamplesTransformSupport
 				break;
 			}
 		}
-		return (needCopy ? new GeneralDatumSamples(s) : s);
+		return (needCopy ? new DatumSamples(s) : s);
 	}
 
-	private void evaluateExpressions(final MutableGeneralDatumSamplesOperations d,
+	private void evaluateExpressions(final MutableDatumSamplesOperations d,
 			final OperationalModeTransformConfig[] configs, final Object root,
 			final Iterable<ExpressionService> services, final OperationalModesService opModesService) {
 		for ( OperationalModeTransformConfig config : configs ) {
@@ -155,9 +159,9 @@ public class OperationalModeTransformService extends BaseSamplesTransformSupport
 			}
 			if ( exprResult != null ) {
 				if ( exprResult.booleanValue() ) {
-					DateTime expire = null;
+					Instant expire = null;
 					if ( config.getExpireSeconds() > 0 ) {
-						expire = new DateTime(System.currentTimeMillis()
+						expire = Instant.ofEpochMilli(System.currentTimeMillis()
 								+ TimeUnit.SECONDS.toMillis(config.getExpireSeconds()));
 					}
 					opModesService.enableOperationalModes(singleton(config.getOperationalMode()),
@@ -168,9 +172,9 @@ public class OperationalModeTransformService extends BaseSamplesTransformSupport
 				if ( config.getName() != null && !config.getName().trim().isEmpty()
 						&& config.getDatumPropertyType() != null ) {
 					Object propValue;
-					if ( config.getDatumPropertyType() == GeneralDatumSamplesType.Status ) {
+					if ( config.getDatumPropertyType() == DatumSamplesType.Status ) {
 						propValue = exprResult;
-					} else if ( config.getDatumPropertyType() == GeneralDatumSamplesType.Tag ) {
+					} else if ( config.getDatumPropertyType() == DatumSamplesType.Tag ) {
 						propValue = (exprResult ? config.getName() : null);
 					} else {
 						propValue = (exprResult.booleanValue() ? 1 : 0);
@@ -197,8 +201,8 @@ public class OperationalModeTransformService extends BaseSamplesTransformSupport
 			OperationalModeTransformConfig[] exprConfs = getExpressionConfigs();
 			List<OperationalModeTransformConfig> exprConfsList = (exprConfs != null ? asList(exprConfs)
 					: emptyList());
-			result.add(SettingsUtil.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
-					new SettingsUtil.KeyedListCallback<OperationalModeTransformConfig>() {
+			result.add(SettingUtils.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
+					new SettingUtils.KeyedListCallback<OperationalModeTransformConfig>() {
 
 						@Override
 						public Collection<SettingSpecifier> mapListSettingKey(

@@ -1,5 +1,5 @@
 /* ==================================================================
- * SourceThrottlingSamplesTransformer.java - 8/08/2017 2:02:11 PM
+ * ThrottlingDatumFilterService.java - 8/08/2017 2:02:11 PM
  * 
  * Copyright 2017 SolarNetwork.net Dev Team
  * 
@@ -23,24 +23,26 @@
 package net.solarnetwork.node.datum.filter.std;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.GeneralDatumSamplesTransformer;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.service.DatumFilterService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * {@link GeneralDatumSamplesTransformer} that can filter out samples based on a
  * basic frequency constraint.
  * 
  * @author matt
- * @version 1.6
+ * @version 1.0
+ * @since 2.0
  */
-public class SourceThrottlingSamplesTransformer extends SamplesTransformerSupport
-		implements GeneralDatumSamplesTransformer, SettingSpecifierProvider, SettingsChangeObserver {
+public class ThrottlingDatumFilterService extends DatumFilterSupport
+		implements DatumFilterService, SettingSpecifierProvider, SettingsChangeObserver {
 
 	/**
 	 * The default interval at which to save {@code Datum} instances, in
@@ -50,13 +52,14 @@ public class SourceThrottlingSamplesTransformer extends SamplesTransformerSuppor
 
 	private int frequencySeconds;
 
-	public SourceThrottlingSamplesTransformer() {
+	public ThrottlingDatumFilterService() {
 		super();
 		setFrequencySeconds(DEFAULT_FREQUENCY_SECONDS);
 	}
 
 	@Override
-	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples) {
+	public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
+			Map<String, Object> params) {
 		final long start = incrementInputStats();
 		final String settingKey = settingKey();
 		if ( settingKey == null ) {
@@ -75,7 +78,8 @@ public class SourceThrottlingSamplesTransformer extends SamplesTransformerSuppor
 		// load all Datum "last created" settings
 		final ConcurrentMap<String, String> createdSettings = loadSettings(settingKey);
 
-		final long now = (datum != null && datum.getCreated() != null ? datum.getCreated().getTime()
+		final long now = (datum != null && datum.getTimestamp() != null
+				? datum.getTimestamp().toEpochMilli()
 				: System.currentTimeMillis());
 		final long offset = frequencySeconds * 1000L;
 

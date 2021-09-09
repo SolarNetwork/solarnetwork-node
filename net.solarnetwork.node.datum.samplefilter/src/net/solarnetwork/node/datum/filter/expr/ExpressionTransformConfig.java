@@ -23,16 +23,16 @@
 package net.solarnetwork.node.datum.filter.expr;
 
 import java.util.List;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
-import net.solarnetwork.node.domain.ExpressionConfig;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.node.service.support.ExpressionConfig;
+import net.solarnetwork.service.ExpressionService;
+import net.solarnetwork.settings.SettingSpecifier;
 
 /**
  * Expression transform service configuration.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.6
  */
 public class ExpressionTransformConfig extends ExpressionConfig {
@@ -56,8 +56,8 @@ public class ExpressionTransformConfig extends ExpressionConfig {
 	 * @param expressionServiceId
 	 *        the expression service ID
 	 */
-	public ExpressionTransformConfig(String name, GeneralDatumSamplesType propertyType,
-			String expression, String expressionServiceId) {
+	public ExpressionTransformConfig(String name, DatumSamplesType propertyType, String expression,
+			String expressionServiceId) {
 		super(name, propertyType, expression, expressionServiceId);
 	}
 
@@ -72,8 +72,7 @@ public class ExpressionTransformConfig extends ExpressionConfig {
 	 */
 	public static List<SettingSpecifier> settings(String prefix,
 			Iterable<ExpressionService> expressionServices) {
-		return net.solarnetwork.node.domain.ExpressionConfig.settings(ExpressionTransformConfig.class,
-				prefix, expressionServices);
+		return ExpressionConfig.settings(ExpressionTransformConfig.class, prefix, expressionServices);
 	}
 
 }

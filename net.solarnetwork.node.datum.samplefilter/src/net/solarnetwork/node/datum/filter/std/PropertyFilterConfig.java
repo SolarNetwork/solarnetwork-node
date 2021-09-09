@@ -28,15 +28,15 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.util.SerializeIgnore;
+import net.solarnetwork.domain.SerializeIgnore;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Configuration object for datum property filtering.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class PropertyFilterConfig {
 

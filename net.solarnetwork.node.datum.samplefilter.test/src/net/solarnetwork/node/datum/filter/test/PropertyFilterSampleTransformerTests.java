@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.datum.filter.test;
 
-import static net.solarnetwork.node.datum.filter.std.SamplesTransformerSupport.SETTING_KEY_TEMPLATE;
+import static net.solarnetwork.node.datum.filter.std.DatumFilterSupport.SETTING_KEY_TEMPLATE;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
@@ -55,11 +55,11 @@ import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.datum.filter.std.PropertyFilterConfig;
-import net.solarnetwork.node.datum.filter.std.PropertyFilterSamplesTransformer;
+import net.solarnetwork.node.datum.filter.std.PropertyDatumFilterService;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 
 /**
- * Test cases for the {@link PropertyFilterSamplesTransformer} class.
+ * Test cases for the {@link PropertyDatumFilterService} class.
  * 
  * @author matt
  * @version 1.0
@@ -88,14 +88,14 @@ public class PropertyFilterSampleTransformerTests {
 
 	@Before
 	public void setup() {
-		PropertyFilterSamplesTransformer.clearSettingCache();
+		PropertyDatumFilterService.clearSettingCache();
 	}
 
 	@SuppressWarnings("deprecation")
 	@Test
 	public void testInclude() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		PropertyFilterSamplesTransformer xform = new PropertyFilterSamplesTransformer();
+		PropertyDatumFilterService xform = new PropertyDatumFilterService();
 		xform.setSourceId("^test");
 		xform.setIncludes(new String[] { "^watt" });
 		xform.init();
@@ -113,7 +113,7 @@ public class PropertyFilterSampleTransformerTests {
 	@Test
 	public void testIncludeMultiplePatterns() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		PropertyFilterSamplesTransformer xform = new PropertyFilterSamplesTransformer();
+		PropertyDatumFilterService xform = new PropertyDatumFilterService();
 		xform.setSourceId("^test");
 		xform.setIncludes(new String[] { "^watt", "^phase$" });
 		xform.init();
@@ -131,7 +131,7 @@ public class PropertyFilterSampleTransformerTests {
 	@Test
 	public void testExclude() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		PropertyFilterSamplesTransformer xform = new PropertyFilterSamplesTransformer();
+		PropertyDatumFilterService xform = new PropertyDatumFilterService();
 		xform.setSourceId("^test");
 		xform.setExcludes(new String[] { "^watt" });
 		xform.init();
@@ -148,7 +148,7 @@ public class PropertyFilterSampleTransformerTests {
 	@Test
 	public void testExcludeMultiplePatterns() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		PropertyFilterSamplesTransformer xform = new PropertyFilterSamplesTransformer();
+		PropertyDatumFilterService xform = new PropertyDatumFilterService();
 		xform.setSourceId("^test");
 		xform.setExcludes(new String[] { "^watt", "^phase$" });
 		xform.init();
@@ -165,7 +165,7 @@ public class PropertyFilterSampleTransformerTests {
 	@Test
 	public void testIncludeAndExclude() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		PropertyFilterSamplesTransformer xform = new PropertyFilterSamplesTransformer();
+		PropertyDatumFilterService xform = new PropertyDatumFilterService();
 		xform.setSourceId("^test");
 		xform.setIncludes(new String[] { "^watt" });
 		xform.setExcludes(new String[] { "^watts$" });
@@ -183,7 +183,7 @@ public class PropertyFilterSampleTransformerTests {
 	@Test
 	public void testNonMatchingSourceId() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum("other.source");
-		PropertyFilterSamplesTransformer xform = new PropertyFilterSamplesTransformer();
+		PropertyDatumFilterService xform = new PropertyDatumFilterService();
 		xform.setSourceId("^test");
 		xform.setIncludes(new String[] { "^watt" });
 		xform.setExcludes(new String[] { "^watts$" });
@@ -196,7 +196,7 @@ public class PropertyFilterSampleTransformerTests {
 	@Test
 	public void testNoMatchingIncludes() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		PropertyFilterSamplesTransformer xform = new PropertyFilterSamplesTransformer();
+		PropertyDatumFilterService xform = new PropertyDatumFilterService();
 		xform.setSourceId("^test");
 		xform.setIncludes(new String[] { "^foo" });
 		xform.init();
@@ -207,7 +207,7 @@ public class PropertyFilterSampleTransformerTests {
 	@Test
 	public void testNoMatchingExcludes() {
 		GeneralNodeDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
-		PropertyFilterSamplesTransformer xform = new PropertyFilterSamplesTransformer();
+		PropertyDatumFilterService xform = new PropertyDatumFilterService();
 		xform.setSourceId("^test");
 		xform.setExcludes(new String[] { "^foo" });
 		xform.init();
@@ -222,7 +222,7 @@ public class PropertyFilterSampleTransformerTests {
 	@Test
 	public void testIncludeLimitNoInitialSetting() {
 		SettingDao settingDao = EasyMock.createMock(SettingDao.class);
-		PropertyFilterSamplesTransformer xform = new PropertyFilterSamplesTransformer();
+		PropertyDatumFilterService xform = new PropertyDatumFilterService();
 		xform.setSettingDao(settingDao);
 		xform.setSettingCacheSecs(TEST_SETTING_CACHE_SECS);
 		xform.setUid(TEST_UID);
@@ -292,7 +292,7 @@ public class PropertyFilterSampleTransformerTests {
 	@Test
 	public void testIncludeLimitExpiredSetting() {
 		SettingDao settingDao = EasyMock.createMock(SettingDao.class);
-		PropertyFilterSamplesTransformer xform = new PropertyFilterSamplesTransformer();
+		PropertyDatumFilterService xform = new PropertyDatumFilterService();
 		xform.setSettingDao(settingDao);
 		xform.setSettingCacheSecs(TEST_SETTING_CACHE_SECS);
 		xform.setUid(TEST_UID);
@@ -364,7 +364,7 @@ public class PropertyFilterSampleTransformerTests {
 	@Test
 	public void testIncludeLimitNonExpiredSetting() {
 		SettingDao settingDao = EasyMock.createMock(SettingDao.class);
-		PropertyFilterSamplesTransformer xform = new PropertyFilterSamplesTransformer();
+		PropertyDatumFilterService xform = new PropertyDatumFilterService();
 		xform.setSettingDao(settingDao);
 		xform.setSettingCacheSecs(TEST_SETTING_CACHE_SECS);
 		xform.setUid(TEST_UID);
@@ -428,7 +428,7 @@ public class PropertyFilterSampleTransformerTests {
 	@Test
 	public void testIncludeLimitDifferentExpiredSettings() {
 		SettingDao settingDao = EasyMock.createMock(SettingDao.class);
-		PropertyFilterSamplesTransformer xform = new PropertyFilterSamplesTransformer();
+		PropertyDatumFilterService xform = new PropertyDatumFilterService();
 		xform.setSettingDao(settingDao);
 		xform.setSettingCacheSecs(TEST_SETTING_CACHE_SECS);
 		xform.setUid(TEST_UID);
@@ -491,7 +491,7 @@ public class PropertyFilterSampleTransformerTests {
 	@Test
 	public void operationalMode_noMatch() {
 		// GIVEN
-		PropertyFilterSamplesTransformer xs = new PropertyFilterSamplesTransformer();
+		PropertyDatumFilterService xs = new PropertyDatumFilterService();
 		xs.setSourceId("^test");
 		xs.setExcludes(new String[] { "^watt" });
 		xs.init();
@@ -516,7 +516,7 @@ public class PropertyFilterSampleTransformerTests {
 	@Test
 	public void operationalMode_match() {
 		// GIVEN
-		PropertyFilterSamplesTransformer xs = new PropertyFilterSamplesTransformer();
+		PropertyDatumFilterService xs = new PropertyDatumFilterService();
 		xs.setSourceId("^test");
 		xs.setExcludes(new String[] { "^watt" });
 		xs.init();

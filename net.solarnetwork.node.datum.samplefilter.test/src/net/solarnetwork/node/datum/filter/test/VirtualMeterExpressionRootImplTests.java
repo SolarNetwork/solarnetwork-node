@@ -32,37 +32,39 @@ import java.math.RoundingMode;
 import java.time.Instant;
 import org.junit.Test;
 import net.solarnetwork.common.expr.spel.SpelExpressionService;
-import net.solarnetwork.domain.GeneralDatum;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.domain.datum.GeneralDatum;
 import net.solarnetwork.node.datum.filter.virt.VirtualMeterConfig;
 import net.solarnetwork.node.datum.filter.virt.VirtualMeterExpressionRoot;
 import net.solarnetwork.node.datum.filter.virt.VirtualMeterExpressionRootImpl;
-import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
+import net.solarnetwork.service.ExpressionService;
 
 /**
  * Test cases for the {@link VirtualMeterExpressionRootImpl} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class VirtualMeterExpressionRootImplTests {
 
-	private GeneralDatum testDatum() {
-		return new GeneralDatum("test", Instant.now());
+	private SimpleDatum testDatum() {
+		return SimpleDatum.nodeDatum("test", Instant.now(), new DatumSamples());
 	}
 
 	private VirtualMeterConfig testConfig() {
 		VirtualMeterConfig config = new VirtualMeterConfig();
 		config.setPropertyKey("test");
 		config.setReadingPropertyName("testHours");
-		config.setPropertyType(GeneralDatumSamplesType.Instantaneous);
+		config.setPropertyType(DatumSamplesType.Instantaneous);
 		return config;
 	}
 
 	@Test
 	public void timeUnits() {
 		// GIVEN
-		GeneralDatum d = testDatum();
+		SimpleDatum d = testDatum();
 		VirtualMeterConfig c = testConfig();
 		long currDate = d.getTimestamp().toEpochMilli();
 		long prevDate = currDate - 60_000L;
@@ -83,7 +85,7 @@ public class VirtualMeterExpressionRootImplTests {
 	public void eval() {
 		// GIVEN
 		GeneralDatum d = testDatum();
-		d.putSampleValue(GeneralDatumSamplesType.Instantaneous, "tou", new BigDecimal("11.50"));
+		d.putSampleValue(DatumSamplesType.Instantaneous, "tou", new BigDecimal("11.50"));
 		VirtualMeterConfig c = testConfig();
 		long currDate = d.getTimestamp().toEpochMilli();
 		long prevDate = currDate - 60_000L;
@@ -109,7 +111,7 @@ public class VirtualMeterExpressionRootImplTests {
 	public void eval_underscoreProperty() {
 		// GIVEN
 		GeneralDatum d = testDatum();
-		d.putSampleValue(GeneralDatumSamplesType.Instantaneous, "my_rate", new BigDecimal("11.50"));
+		d.putSampleValue(DatumSamplesType.Instantaneous, "my_rate", new BigDecimal("11.50"));
 		VirtualMeterConfig c = testConfig();
 		long currDate = d.getTimestamp().toEpochMilli();
 		long prevDate = currDate - 60_000L;
@@ -135,8 +137,8 @@ public class VirtualMeterExpressionRootImplTests {
 	public void eval_conditional() {
 		// GIVEN
 		GeneralDatum d = testDatum();
-		d.putSampleValue(GeneralDatumSamplesType.Instantaneous, "tou", new BigDecimal("11.50"));
-		d.putSampleValue(GeneralDatumSamplesType.Instantaneous, "watts", new BigDecimal("100000"));
+		d.putSampleValue(DatumSamplesType.Instantaneous, "tou", new BigDecimal("11.50"));
+		d.putSampleValue(DatumSamplesType.Instantaneous, "watts", new BigDecimal("100000"));
 		VirtualMeterConfig c = testConfig();
 		long currDate = d.getTimestamp().toEpochMilli();
 		long prevDate = currDate - 60_000L;
@@ -154,7 +156,7 @@ public class VirtualMeterExpressionRootImplTests {
 				"prevReading + (timeUnits * (inputDiff / 1000) * (watts > 50000 ? tou * 10 : tou))",
 				null, root, null, BigDecimal.class);
 
-		d.putSampleValue(GeneralDatumSamplesType.Instantaneous, "watts", new BigDecimal("25000"));
+		d.putSampleValue(DatumSamplesType.Instantaneous, "watts", new BigDecimal("25000"));
 		BigDecimal result2 = exprService.evaluateExpression(
 				"prevReading + (timeUnits * (inputDiff / 1000) * (watts > 50000 ? tou * 10 : tou))",
 				null, root, null, BigDecimal.class);
@@ -170,7 +172,7 @@ public class VirtualMeterExpressionRootImplTests {
 	public void eval_conditional_missingCondition() {
 		// GIVEN
 		GeneralDatum d = testDatum();
-		d.putSampleValue(GeneralDatumSamplesType.Instantaneous, "watts", new BigDecimal("100000"));
+		d.putSampleValue(DatumSamplesType.Instantaneous, "watts", new BigDecimal("100000"));
 		VirtualMeterConfig c = testConfig();
 		long currDate = d.getTimestamp().toEpochMilli();
 		long prevDate = currDate - 60_000L;
@@ -196,7 +198,7 @@ public class VirtualMeterExpressionRootImplTests {
 	public void eval_conditional_missingCondition_alias() {
 		// GIVEN
 		GeneralDatum d = testDatum();
-		d.putSampleValue(GeneralDatumSamplesType.Instantaneous, "watts", new BigDecimal("100000"));
+		d.putSampleValue(DatumSamplesType.Instantaneous, "watts", new BigDecimal("100000"));
 		VirtualMeterConfig c = testConfig();
 		long currDate = d.getTimestamp().toEpochMilli();
 		long prevDate = currDate - 60_000L;

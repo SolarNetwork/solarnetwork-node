@@ -24,17 +24,17 @@ package net.solarnetwork.node.datum.filter.opmode;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
-import net.solarnetwork.node.domain.ExpressionConfig;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.node.service.support.ExpressionConfig;
+import net.solarnetwork.service.ExpressionService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Operational mode expression configuration.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.8
  */
 public class OperationalModeTransformConfig extends ExpressionConfig {
@@ -61,8 +61,8 @@ public class OperationalModeTransformConfig extends ExpressionConfig {
 	 * @param expressionServiceId
 	 *        the expression service ID
 	 */
-	public OperationalModeTransformConfig(String name, GeneralDatumSamplesType propertyType,
-			String expression, String expressionServiceId) {
+	public OperationalModeTransformConfig(String name, DatumSamplesType propertyType, String expression,
+			String expressionServiceId) {
 		super(name, propertyType, expression, expressionServiceId);
 	}
 
@@ -80,8 +80,8 @@ public class OperationalModeTransformConfig extends ExpressionConfig {
 		List<SettingSpecifier> result = new ArrayList<>(5);
 		result.add(new BasicTextFieldSettingSpecifier(prefix + "operationalMode", null));
 		result.add(new BasicTextFieldSettingSpecifier(prefix + "expireSeconds", null));
-		result.addAll(net.solarnetwork.node.domain.ExpressionConfig
-				.settings(OperationalModeTransformConfig.class, prefix, expressionServices));
+		result.addAll(ExpressionConfig.settings(OperationalModeTransformConfig.class, prefix,
+				expressionServices));
 		return result;
 	}
 

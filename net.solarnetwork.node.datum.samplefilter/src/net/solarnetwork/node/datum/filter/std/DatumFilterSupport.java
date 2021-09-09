@@ -1,5 +1,5 @@
 /* ==================================================================
- * SamplesTransformerSupport.java - 8/08/2017 3:22:32 PM
+ * DatumFilterSupport.java - 8/08/2017 3:22:32 PM
  * 
  * Copyright 2017 SolarNetwork.net Dev Team
  * 
@@ -33,23 +33,22 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.domain.KeyValuePair;
-import net.solarnetwork.node.Setting;
-import net.solarnetwork.node.Setting.SettingFlag;
 import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
-import net.solarnetwork.node.support.BaseSamplesTransformSupport;
+import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.domain.Setting.SettingFlag;
+import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingsChangeObserver;
-import net.solarnetwork.support.BasicIdentifiable;
 
 /**
  * Support class for sample transformers.
  * 
  * @author matt
- * @version 1.5
+ * @version 1.0
+ * @since 2.0
  */
-public class SamplesTransformerSupport extends BaseSamplesTransformSupport
-		implements SettingsChangeObserver {
+public class DatumFilterSupport extends BaseDatumFilterSupport implements SettingsChangeObserver {
 
 	/** The default value for the {@code settingCacheSecs} property. */
 	public static final int DEFAULT_SETTING_CACHE_SECS = 15;
@@ -83,7 +82,7 @@ public class SamplesTransformerSupport extends BaseSamplesTransformSupport
 		SETTING_CACHE.clear();
 	}
 
-	public SamplesTransformerSupport() {
+	public DatumFilterSupport() {
 		super();
 		setUid(DEFAULT_UID);
 		setSettingCacheSecs(DEFAULT_SETTING_CACHE_SECS);
@@ -103,8 +102,7 @@ public class SamplesTransformerSupport extends BaseSamplesTransformSupport
 	}
 
 	/**
-	 * Get settings for the configurable properties of
-	 * {@link BasicIdentifiable}.
+	 * Get settings for the configurable properties of {@code Identifiable}.
 	 * 
 	 * <p>
 	 * Empty strings are used for the default {@code uid} and {@code groupUid}

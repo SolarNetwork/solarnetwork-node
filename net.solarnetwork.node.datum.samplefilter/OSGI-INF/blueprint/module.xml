@@ -14,18 +14,19 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
-	<bean id="expressionServices" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.support.ExpressionService"/>
+	<bean id="expressionServices" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.service.ExpressionService"/>
 	</bean>
 
-	<reference id="opModesService" interface="net.solarnetwork.node.OperationalModesService"/>
+	<reference id="opModesService" interface="net.solarnetwork.node.service.OperationalModesService"/>
 
 	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
 
-	<bean id="datumMetadataService" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.DatumMetadataService"/>
+	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
+		<property name="sticky" value="true"/>
 	</bean>
 		
 	<!-- 
@@ -35,14 +36,14 @@
 	<bean id="simpleFilterMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.datum.filter.std.PropertyFilterSamplesTransformer</value>
+				<value>net.solarnetwork.node.datum.filter.std.PropertyDatumFilterService</value>
 				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</list>
 		</property>
 	</bean>
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<service-properties>
 			<entry key="role">
 				<array value-type="java.lang.String">
@@ -51,7 +52,7 @@
 				</array>
 			</entry>
 		</service-properties>
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Datum Sample Property Filter"/>
 			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.simple"/>
 			<property name="messageSource" ref="simpleFilterMessageSource"/>
@@ -61,8 +62,8 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.simple" 
 		autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.domain.GeneralDatumSamplesTransformer</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.samplefilter.simple"/>
@@ -73,7 +74,7 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.datum.filter.std.PropertyFilterSamplesTransformer" init-method="init">
+		<bean class="net.solarnetwork.node.datum.filter.std.PropertyDatumFilterService" init-method="init">
 			<property name="settingDao" ref="settingDao"/>
 			<property name="messageSource" ref="simpleFilterMessageSource"/>
 			<property name="opModesService" ref="opModesService"/>
@@ -89,18 +90,18 @@
 			<list>
 				<value>net.solarnetwork.node.datum.filter.std.DatumPropertyTransformService</value>
 				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</list>
 		</property>
 		<property name="parentMessageSource">
-			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+			<bean class="net.solarnetwork.support.PrefixedMessageSource">
 				<property name="prefix" value="sampleTransformer."/>
 				<property name="delegate" ref="simpleFilterMessageSource"/>
 			</bean>
 		</property>
 	</bean>
 
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<service-properties>
 			<entry key="role">
 				<array value-type="java.lang.String">
@@ -109,7 +110,7 @@
 				</array>
 			</entry>
 		</service-properties>
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Property Datum Filter"/>
 			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.prop"/>
 			<property name="messageSource" ref="propFilterMessageSource"/>
@@ -119,8 +120,8 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.prop" 
 		autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.GeneralDatumSamplesTransformService</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.samplefilter.prop"/>
@@ -134,7 +135,7 @@
 		<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService">
 			<argument value="net.solarnetwork.node.datum.samplefilter.prop"/>
 			<property name="sampleTransformer">
-				<bean class="net.solarnetwork.node.datum.filter.std.PropertyFilterSamplesTransformer" init-method="init">
+				<bean class="net.solarnetwork.node.datum.filter.std.PropertyDatumFilterService" init-method="init">
 					<property name="settingDao" ref="settingDao"/>
 					<property name="excludeBaseIdentifiableSettings" value="true"/>
 					<property name="opModesService" ref="opModesService"/>
@@ -151,14 +152,14 @@
 	<bean id="sourceThrottleMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.datum.filter.std.SourceThrottlingSamplesTransformer</value>
+				<value>net.solarnetwork.node.datum.filter.std.ThrottlingDatumFilterService</value>
 				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</list>
 		</property>
 	</bean>
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<service-properties>
 			<entry key="role">
 				<array value-type="java.lang.String">
@@ -167,7 +168,7 @@
 				</array>
 			</entry>
 		</service-properties>
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Datum Sample Throttle Filter"/>
 			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.throttle"/>
 			<property name="messageSource" ref="sourceThrottleMessageSource"/>
@@ -177,8 +178,8 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.throttle" 
 		autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.domain.GeneralDatumSamplesTransformer</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.samplefilter.throttle"/>
@@ -189,7 +190,7 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.datum.filter.std.SourceThrottlingSamplesTransformer" init-method="init">
+		<bean class="net.solarnetwork.node.datum.filter.std.ThrottlingDatumFilterService" init-method="init">
 			<property name="settingDao" ref="settingDao"/>
 			<property name="messageSource" ref="sourceThrottleMessageSource"/>
 			<property name="opModesService" ref="opModesService"/>
@@ -205,18 +206,18 @@
 			<list>
 				<value>net.solarnetwork.node.datum.filter.std.DatumThrottleTransformService</value>
 				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</list>
 		</property>
 		<property name="parentMessageSource">
-			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+			<bean class="net.solarnetwork.support.PrefixedMessageSource">
 				<property name="prefix" value="sampleTransformer."/>
 				<property name="delegate" ref="sourceThrottleMessageSource"/>
 			</bean>
 		</property>
 	</bean>
 
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<service-properties>
 			<entry key="role">
 				<array value-type="java.lang.String">
@@ -225,7 +226,7 @@
 				</array>
 			</entry>
 		</service-properties>
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Throttle Datum Filter"/>
 			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.limiter"/>
 			<property name="messageSource" ref="throttleFilterMessageSource"/>
@@ -235,8 +236,8 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.limiter" 
 		autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.GeneralDatumSamplesTransformService</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.samplefilter.limiter"/>
@@ -250,7 +251,7 @@
 		<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService">
 			<argument value="net.solarnetwork.node.datum.samplefilter.limiter"/>
 			<property name="sampleTransformer">
-				<bean class="net.solarnetwork.node.datum.filter.std.SourceThrottlingSamplesTransformer" init-method="init">
+				<bean class="net.solarnetwork.node.datum.filter.std.ThrottlingDatumFilterService" init-method="init">
 					<property name="settingDao" ref="settingDao"/>
 					<property name="messageSource" ref="sourceThrottleMessageSource"/>
 					<property name="excludeBaseIdentifiableSettings" value="true"/>
@@ -268,14 +269,14 @@
 	<bean id="downsamplerMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<array>
-				<value>net.solarnetwork.node.datum.filter.std.DownsampleTransformService</value>
+				<value>net.solarnetwork.node.datum.filter.std.DownsampleDatumFilterService</value>
 				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</array>
 		</property>
 	</bean>
 
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<service-properties>
 			<entry key="role">
 				<array value-type="java.lang.String">
@@ -284,7 +285,7 @@
 				</array>
 			</entry>
 		</service-properties>
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Downsampler Datum Filter"/>
 			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.downsample"/>
 			<property name="messageSource" ref="downsamplerMessageSource"/>
@@ -294,8 +295,8 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.downsample" 
 			autowire-on-update="true">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.GeneralDatumSamplesTransformService</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.samplefilter.downsample"/>
@@ -306,7 +307,7 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.datum.filter.std.DownsampleTransformService">
+		<bean class="net.solarnetwork.node.datum.filter.std.DownsampleDatumFilterService">
 			<property name="messageSource" ref="downsamplerMessageSource"/>
 			<property name="opModesService" ref="opModesService"/>
 		</bean>
@@ -319,15 +320,15 @@
 	<bean id="virtualMeterMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<array>
-				<value>net.solarnetwork.node.datum.filter.virt.VirtualMeterTransformService</value>
+				<value>net.solarnetwork.node.datum.filter.virt.VirtualMeterDatumFilterService</value>
 				<value>net.solarnetwork.node.domain.ExpressionConfig</value>
 				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</array>
 		</property>
 	</bean>
 
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<service-properties>
 			<entry key="role">
 				<array value-type="java.lang.String">
@@ -336,7 +337,7 @@
 				</array>
 			</entry>
 		</service-properties>
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Virtual Meter Filter"/>
 			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.virtmeter"/>
 			<property name="messageSource" ref="virtualMeterMessageSource"/>
@@ -346,8 +347,8 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.virtmeter" 
 			autowire-on-update="true">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.GeneralDatumSamplesTransformService</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.samplefilter.virtmeter"/>
@@ -358,7 +359,7 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.datum.filter.virt.VirtualMeterTransformService">
+		<bean class="net.solarnetwork.node.datum.filter.virt.VirtualMeterDatumFilterService">
 			<argument ref="datumMetadataService"/>
 			<property name="messageSource" ref="virtualMeterMessageSource"/>
 			<property name="expressionServices" ref="expressionServices"/>
@@ -373,15 +374,15 @@
 	<bean id="expressionMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<array>
-				<value>net.solarnetwork.node.datum.filter.expr.ExpressionTransformService</value>
+				<value>net.solarnetwork.node.datum.filter.expr.ExpressionDatumFilterService</value>
 				<value>net.solarnetwork.node.domain.ExpressionConfig</value>
 				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</array>
 		</property>
 	</bean>
 
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<service-properties>
 			<entry key="role">
 				<array value-type="java.lang.String">
@@ -390,7 +391,7 @@
 				</array>
 			</entry>
 		</service-properties>
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Expression Filter"/>
 			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.expression"/>
 			<property name="messageSource" ref="expressionMessageSource"/>
@@ -400,8 +401,8 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.expression" 
 			autowire-on-update="true">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.GeneralDatumSamplesTransformService</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.samplefilter.expression"/>
@@ -412,7 +413,7 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.datum.filter.expr.ExpressionTransformService">
+		<bean class="net.solarnetwork.node.datum.filter.expr.ExpressionDatumFilterService">
 			<property name="expressionServices" ref="expressionServices"/>
 			<property name="messageSource" ref="expressionMessageSource"/>
 			<property name="opModesService" ref="opModesService"/>
@@ -426,15 +427,15 @@
 	<bean id="opModeMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<array>
-				<value>net.solarnetwork.node.datum.filter.opmode.OperationalModeTransformService</value>
+				<value>net.solarnetwork.node.datum.filter.opmode.OperationalModeDatumFilterService</value>
 				<value>net.solarnetwork.node.domain.ExpressionConfig</value>
 				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</array>
 		</property>
 	</bean>
 
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<service-properties>
 			<entry key="role">
 				<array value-type="java.lang.String">
@@ -443,7 +444,7 @@
 				</array>
 			</entry>
 		</service-properties>
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Operational Mode Filter"/>
 			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.opmode"/>
 			<property name="messageSource" ref="opModeMessageSource"/>
@@ -453,8 +454,8 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.opmode" 
 			autowire-on-update="true">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.GeneralDatumSamplesTransformService</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.samplefilter.opmode"/>
@@ -465,7 +466,7 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.datum.filter.opmode.OperationalModeTransformService">
+		<bean class="net.solarnetwork.node.datum.filter.opmode.OperationalModeDatumFilterService">
 			<property name="expressionServices" ref="expressionServices"/>
 			<property name="messageSource" ref="opModeMessageSource"/>
 			<property name="opModesService" ref="opModesService"/>

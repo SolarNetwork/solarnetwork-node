@@ -1,5 +1,5 @@
 /* ==================================================================
- * DownsampleTransformService.java - 24/08/2020 3:47:12 PM
+ * DownsampleDatumFilterService.java - 24/08/2020 3:47:12 PM
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -27,14 +27,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import net.solarnetwork.domain.AggregateDatumSamples;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.node.GeneralDatumSamplesTransformService;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.domain.datum.AggregateDatumSamples;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.service.DatumFilterService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * Samples transform service that accumulates "sub-sample" values and then
@@ -51,11 +52,11 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * <p>
  * When {@code sampleCount} is <b>not</b> configured, then sub-samples are
  * signaled by passing the {@link #SUB_SAMPLE_PROP} key in the {@code parameter}
- * map passed to {@link #transformSamples(Datum, GeneralDatumSamples, Map)}.
- * When invoked in this way the method will always return {@literal null}. Then
- * when a down-sampled output value is needed call
- * {@link #transformSamples(Datum, GeneralDatumSamples, Map)} again but without
- * the {@link #SUB_SAMPLE_PROP} key. Then a computed value derived from the
+ * map passed to {@link #transformSamples(Datum, DatumSamples, Map)}. When
+ * invoked in this way the method will always return {@literal null}. Then when
+ * a down-sampled output value is needed call
+ * {@link #transformSamples(Datum, DatumSamples, Map)} again but without the
+ * {@link #SUB_SAMPLE_PROP} key. Then a computed value derived from the
  * collected sub-samples will be returned:
  * </p>
  * 
@@ -74,11 +75,11 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * </ul>
  * 
  * @author matt
- * @version 1.4
- * @since 1.2
+ * @version 1.0
+ * @since 2.0
  */
-public class DownsampleTransformService extends SamplesTransformerSupport
-		implements GeneralDatumSamplesTransformService, SettingSpecifierProvider {
+public class DownsampleDatumFilterService extends DatumFilterSupport
+		implements DatumFilterService, SettingSpecifierProvider {
 
 	/** The "sub sample" transform property flag. */
 	public static final String SUB_SAMPLE_PROP = "subsample";
@@ -115,7 +116,7 @@ public class DownsampleTransformService extends SamplesTransformerSupport
 	private Integer sampleCount = DEFAULT_SAMPLE_COUNT;
 
 	@Override
-	public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
+	public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
 			Map<String, Object> parameters) {
 		final long start = incrementInputStats();
 		if ( datum == null || datum.getSourceId() == null || samples == null ) {
@@ -133,8 +134,7 @@ public class DownsampleTransformService extends SamplesTransformerSupport
 		synchronized ( agg ) {
 			agg.addSample(samples);
 			if ( (count < 1 && !sub) || (count > 1 && agg.addedSampleCount() >= count) ) {
-				GeneralDatumSamples out = agg.average(decimalScale, minPropertyFormat,
-						maxPropertyFormat);
+				DatumSamples out = agg.average(decimalScale, minPropertyFormat, maxPropertyFormat);
 				subSamplesBySource.remove(datum.getSourceId(), agg);
 				incrementStats(start, samples, out);
 				return out;

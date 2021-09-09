@@ -30,14 +30,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.support.ExpressionService;
-import net.solarnetwork.util.OptionalServiceCollection;
+import net.solarnetwork.domain.datum.DatumSamplePropertyConfig;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.service.ExpressionService;
+import net.solarnetwork.service.OptionalServiceCollection;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * Configuration for a single datum property to use virtual metering on.
@@ -47,13 +47,13 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * </p>
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  * @since 1.6
  */
-public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInteger> {
+public class VirtualMeterConfig extends DatumSamplePropertyConfig<BigInteger> {
 
 	/** The {@code propertyType} default value. */
-	public static final GeneralDatumSamplesType DEFAULT_PROPERTY_TYPE = GeneralDatumSamplesType.Instantaneous;
+	public static final DatumSamplesType DEFAULT_PROPERTY_TYPE = DatumSamplesType.Instantaneous;
 
 	/**
 	 * The {@code timeUnit} default value.
@@ -111,8 +111,8 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
 				prefix + "propertyTypeKey", Character.toString(DEFAULT_PROPERTY_TYPE.toKey()));
 		Map<String, String> propTypeTitles = new LinkedHashMap<String, String>(3);
-		for ( GeneralDatumSamplesType e : EnumSet.of(GeneralDatumSamplesType.Instantaneous,
-				GeneralDatumSamplesType.Accumulating, GeneralDatumSamplesType.Status) ) {
+		for ( DatumSamplesType e : EnumSet.of(DatumSamplesType.Instantaneous,
+				DatumSamplesType.Accumulating, DatumSamplesType.Status) ) {
 			propTypeTitles.put(Character.toString(e.toKey()), e.toString());
 		}
 		propTypeSpec.setValueTitles(propTypeTitles);

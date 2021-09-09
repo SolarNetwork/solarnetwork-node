@@ -1,5 +1,5 @@
 /* ==================================================================
- * DownsampleTransformService.java - 24/08/2020 4:42:55 PM
+ * DownsampleDatumFilterService.java - 24/08/2020 4:42:55 PM
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -36,11 +36,11 @@ import org.easymock.EasyMock;
 import org.junit.Test;
 import net.solarnetwork.domain.GeneralDatumSamples;
 import net.solarnetwork.node.OperationalModesService;
-import net.solarnetwork.node.datum.filter.std.DownsampleTransformService;
+import net.solarnetwork.node.datum.filter.std.DownsampleDatumFilterService;
 import net.solarnetwork.node.domain.GeneralNodeDatum;
 
 /**
- * Test cases for the {@link DownsampleTransformService}.
+ * Test cases for the {@link DownsampleDatumFilterService}.
  * 
  * @author matt
  * @version 1.1
@@ -53,7 +53,7 @@ public class DownsampleTransformServiceTests {
 	@Test
 	public void instantaneous_typical() {
 		// GIVEN
-		DownsampleTransformService xs = new DownsampleTransformService();
+		DownsampleDatumFilterService xs = new DownsampleDatumFilterService();
 
 		// WHEN
 
@@ -64,7 +64,7 @@ public class DownsampleTransformServiceTests {
 			d.putInstantaneousSampleValue(TEST_PROP, (i + 1));
 
 			GeneralDatumSamples out = xs.transformSamples(d, d.getSamples(),
-					DownsampleTransformService.SUB_SAMPLE_PROPS);
+					DownsampleDatumFilterService.SUB_SAMPLE_PROPS);
 			assertThat("Sub-sample should be filtered out", out, nullValue());
 		}
 
@@ -88,7 +88,7 @@ public class DownsampleTransformServiceTests {
 	@Test
 	public void instantaneous_typical_sampleCount() {
 		// GIVEN
-		DownsampleTransformService xs = new DownsampleTransformService();
+		DownsampleDatumFilterService xs = new DownsampleDatumFilterService();
 		xs.setSampleCount(5);
 
 		// WHEN
@@ -123,7 +123,7 @@ public class DownsampleTransformServiceTests {
 	@Test
 	public void accumulating_typical() {
 		// GIVEN
-		DownsampleTransformService xs = new DownsampleTransformService();
+		DownsampleDatumFilterService xs = new DownsampleDatumFilterService();
 
 		// WHEN
 
@@ -134,7 +134,7 @@ public class DownsampleTransformServiceTests {
 			d.putAccumulatingSampleValue(TEST_PROP, (i + 1));
 
 			GeneralDatumSamples out = xs.transformSamples(d, d.getSamples(),
-					DownsampleTransformService.SUB_SAMPLE_PROPS);
+					DownsampleDatumFilterService.SUB_SAMPLE_PROPS);
 			assertThat("Sub-sample should be filtered out", out, nullValue());
 		}
 
@@ -154,7 +154,7 @@ public class DownsampleTransformServiceTests {
 	@Test
 	public void accumulating_typical_sampleCount() {
 		// GIVEN
-		DownsampleTransformService xs = new DownsampleTransformService();
+		DownsampleDatumFilterService xs = new DownsampleDatumFilterService();
 		xs.setSampleCount(5);
 
 		// WHEN
@@ -185,7 +185,7 @@ public class DownsampleTransformServiceTests {
 	@Test
 	public void operationalMode_noMatch() {
 		// GIVEN
-		DownsampleTransformService xs = new DownsampleTransformService();
+		DownsampleDatumFilterService xs = new DownsampleDatumFilterService();
 		OperationalModesService opModesService = EasyMock.createMock(OperationalModesService.class);
 		xs.setOpModesService(opModesService);
 		xs.setRequiredOperationalMode("foo");
