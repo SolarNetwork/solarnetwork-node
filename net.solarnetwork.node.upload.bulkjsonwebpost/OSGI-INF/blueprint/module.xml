@@ -50,6 +50,12 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<!-- Published Services -->
 
 	<service ref="bulkDatumUploader" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
@@ -69,9 +75,11 @@
 		class="net.solarnetwork.node.upload.bulkjsonwebpost.BulkJsonWebPostUploadService">
 		<osgix:managed-properties persistent-id="net.solarnetwork.node.upload.bulkjsonwebpost.BulkJsonWebPostUploadService"
              autowire-on-update="true"/>
+        <argument ref="reactorService"/>
+		<argument ref="eventAdmin"/>
+		<argument ref="datumMetadataService"/>
 		<property name="objectMapper" ref="objectMapper"/>
 		<property name="identityService" ref="identityService"/>
-		<property name="reactorService" ref="reactorService"/>
 		<property name="sslService" ref="sslService"/>
 		<property name="url" value="/bulkCollector.do"/>
 		<property name="uploadEmptyDataset" value="false"/>
@@ -80,7 +88,6 @@
 				<property name="basenames" value="net.solarnetwork.node.upload.bulkjsonwebpost.BulkJsonWebPostUploadService"/>
 			</bean>
 		</property>
-		<property name="eventAdmin" ref="eventAdmin"/>
 	</bean>
 
 	<!-- Upload job -->

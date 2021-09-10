@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.easymock.Capture;
@@ -53,8 +54,12 @@ import org.skyscreamer.jsonassert.JSONAssert;
 import org.springframework.util.DigestUtils;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
+import net.solarnetwork.domain.datum.BasicObjectDatumStreamMetadata;
+import net.solarnetwork.domain.datum.BasicStreamDatum;
 import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumProperties;
 import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleEnergyDatum;
 import net.solarnetwork.node.reactor.BasicInstructionStatus;
@@ -63,6 +68,7 @@ import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.ReactorService;
 import net.solarnetwork.node.service.BulkUploadResult;
 import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.DatumMetadataService;
 import net.solarnetwork.node.service.UploadService;
 import net.solarnetwork.node.upload.bulkjsonwebpost.BulkJsonWebPostUploadService;
 import net.solarnetwork.service.StaticOptionalService;
@@ -83,30 +89,32 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 
 	private EventAdmin eventAdmin;
 	private ReactorService reactorService;
+	private DatumMetadataService datumMetadataService;
 	private TestIdentityService identityService;
 
 	@Before
 	public void setupService() throws Exception {
 		eventAdmin = EasyMock.createMock(EventAdmin.class);
 		reactorService = EasyMock.createMock(ReactorService.class);
+		datumMetadataService = EasyMock.createMock(DatumMetadataService.class);
 
 		identityService = new TestIdentityService(TEST_NODE_ID, getHttpServerPort());
 
-		service = new BulkJsonWebPostUploadService();
+		service = new BulkJsonWebPostUploadService(new StaticOptionalService<>(reactorService),
+				new StaticOptionalService<>(eventAdmin),
+				new StaticOptionalService<>(datumMetadataService));
 		service.setObjectMapper(JsonUtils.newDatumObjectMapper());
 		service.setIdentityService(identityService);
 		service.setUrl("/bulkupload");
-		service.setReactorService(new StaticOptionalService<>(reactorService));
-		service.setEventAdmin(new StaticOptionalService<>(eventAdmin));
 	}
 
 	@After
 	public void finish() {
-		EasyMock.verify(eventAdmin, reactorService);
+		EasyMock.verify(eventAdmin, reactorService, datumMetadataService);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(eventAdmin, reactorService);
+		EasyMock.replay(eventAdmin, reactorService, datumMetadataService);
 	}
 
 	@Test
@@ -156,6 +164,7 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 
 	@Test
 	public void uploadSingleDatum() throws Exception {
+		// GIVEN
 		final Instant now = Instant.now();
 
 		TestBulkUploadHttpHandler handler = new TestBulkUploadHttpHandler() {
@@ -183,19 +192,84 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		d.setWattHourReading(2L);
 		data.add(d);
 
+		// no stream metadata available
+		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Node, TEST_NODE_ID,
+				TEST_SOURCE_ID)).andReturn(null);
+
 		Capture<Event> eventCaptor = new Capture<Event>(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(eventCaptor));
 
+		// WHEN
 		replayAll();
-
 		List<BulkUploadResult> result = service.uploadBulkDatum(data);
 
+		// THEN
 		assertNotNull(result);
 		assertEquals(1, result.size());
 
 		BulkUploadResult datumResult = result.get(0);
 		assertEquals(datumResult.getId(), "abc123");
 		assertEquals(d, datumResult.getDatum());
+
+		assertThat("Event count", eventCaptor.getValues(), hasSize(1));
+		Event event = eventCaptor.getValue();
+		assertDatumUploadEventEqualsDatum(event, d);
+	}
+
+	@Test
+	public void uploadSingleDatum_streamDatum() throws Exception {
+		// GIVEN
+		final Instant now = Instant.now();
+		final SimpleEnergyDatum d = new SimpleEnergyDatum(TEST_SOURCE_ID, now, new DatumSamples());
+		d.setWatts(1);
+		d.setWattHourReading(2L);
+
+		final BasicObjectDatumStreamMetadata meta = new BasicObjectDatumStreamMetadata(UUID.randomUUID(),
+				"Pacific/Auckland", ObjectDatumKind.Node, TEST_NODE_ID, TEST_SOURCE_ID,
+				new String[] { "watts" }, new String[] { "wattHours" }, null);
+
+		TestBulkUploadHttpHandler handler = new TestBulkUploadHttpHandler() {
+
+			@Override
+			protected void handleJsonPost(HttpServletRequest request, HttpServletResponse response,
+					String json) throws Exception {
+				DatumProperties props = DatumProperties.propertiesFrom(d, meta);
+				BasicStreamDatum streamDatum = new BasicStreamDatum(meta.getStreamId(), d.getTimestamp(),
+						props);
+
+				JSONAssert.assertEquals(
+						"[" + service.getObjectMapper().writeValueAsString(streamDatum) + "]", json,
+						true);
+
+				respondWithJsonString(response, true,
+						"{\"success\":true,\"data\":{\"datum\":[{\"streamId\":\""
+								+ meta.getStreamId().toString() + "\",\"timestamp\":"
+								+ now.toEpochMilli() + "}]}}");
+			}
+
+		};
+		getHttpServer().addHandler(handler);
+
+		List<NodeDatum> data = new ArrayList<>();
+		data.add(d);
+
+		// stream metadata available
+		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Node, TEST_NODE_ID,
+				TEST_SOURCE_ID)).andReturn(meta).times(2);
+
+		Capture<Event> eventCaptor = new Capture<Event>(CaptureType.ALL);
+		eventAdmin.postEvent(EasyMock.capture(eventCaptor));
+
+		// WHEN
+		replayAll();
+		List<BulkUploadResult> result = service.uploadBulkDatum(data);
+
+		// THEN
+		assertThat("Result size", result, hasSize(1));
+
+		BulkUploadResult datumResult = result.get(0);
+		assertThat("Upload ID is synthetic stream datum ID", datumResult.getId(), is(tid(d)));
+		assertThat("Upload result datum", datumResult.getDatum(), is(d));
 
 		assertThat("Event count", eventCaptor.getValues(), hasSize(1));
 		Event event = eventCaptor.getValue();
@@ -259,6 +333,7 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 
 	@Test
 	public void processInstruction() throws Exception {
+		// GIVEN
 		final Instant now = Instant.now();
 
 		TestBulkUploadHttpHandler handler = new TestBulkUploadHttpHandler() {
@@ -290,6 +365,10 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		d.setWatts(1);
 		data.add(d);
 
+		// no stream metadata available
+		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Node, TEST_NODE_ID,
+				TEST_SOURCE_ID)).andReturn(null);
+
 		List<InstructionStatus> statusResult = new ArrayList<>(2);
 		statusResult
 				.add(new BasicInstructionStatus(123L, InstructionStatus.InstructionState.Received, now));
@@ -302,10 +381,11 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(eventCaptor));
 
+		// WHEN
 		replayAll();
-
 		List<BulkUploadResult> result = service.uploadBulkDatum(data);
 
+		// THEN
 		assertThat("Result provided", result, is(notNullValue()));
 		assertEquals(1, result.size());
 

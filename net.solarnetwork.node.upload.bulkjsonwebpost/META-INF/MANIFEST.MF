@@ -12,6 +12,7 @@ Import-Package:
  com.fasterxml.jackson.core;version="[2.4,3.0)",
  com.fasterxml.jackson.databind;version="[2.4,3.0)",
  com.fasterxml.jackson.databind.annotation;version="[2.4,3.0)",
+ com.fasterxml.jackson.databind.node;version="2.10.1",
  com.fasterxml.jackson.databind.ser.std;version="[2.4,3.0)",
  net.solarnetwork.codec;version="[2.0,3.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
