@@ -128,7 +128,7 @@
 				<property name="prefix" value="delegate."/>
 				<property name="delegate">
 					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-						<property name="basenames" value="net.solarnetwork.node.support.WeatherLocationDatumDataSource"/>
+						<property name="basenames" value="net.solarnetwork.node.service.support.WeatherLocationDatumDataSource"/>
 						<property name="parentMessageSource" ref="weatherMessageSource"/>
 					</bean>
 				</property>
@@ -180,7 +180,7 @@
 									<property name="locationService" ref="locationService"/>
 									<property name="requireLocationService" value="true"/>
 									<property name="locationType" value="weather"/>
-									<property name="messageBundleBasename" value="net.solarnetwork.node.support.WeatherLocationDatumDataSource"/>
+									<property name="messageBundleBasename" value="net.solarnetwork.node.service.support.WeatherLocationDatumDataSource"/>
 								</bean>
 							</entry>
 						</map>

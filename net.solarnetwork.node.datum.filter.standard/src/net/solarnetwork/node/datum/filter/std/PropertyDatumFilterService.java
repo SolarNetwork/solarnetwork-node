@@ -62,6 +62,10 @@ import net.solarnetwork.settings.support.SettingUtils;
 public class PropertyDatumFilterService extends DatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider, SettingsChangeObserver {
 
+	/** The default {@code settingUid} property value. */
+	public static final String DEFAULT_SETTING_UID = "net.solarnetwork.node.datum.samplefilter.simple";
+
+	private String settingUid = DEFAULT_SETTING_UID;
 	private PropertyFilterConfig[] propIncludes;
 	private String[] excludes;
 
@@ -205,7 +209,7 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 
 	@Override
 	public String getSettingUID() {
-		return "net.solarnetwork.node.datum.samplefilter.simple";
+		return settingUid;
 	}
 
 	@Override
@@ -360,6 +364,16 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 			}
 			this.excludes = newPats;
 		}
+	}
+
+	/**
+	 * The setting UID to use.
+	 * 
+	 * @param settingUid
+	 *        the setting UID
+	 */
+	public void setSettingUid(String settingUid) {
+		this.settingUid = settingUid;
 	}
 
 }

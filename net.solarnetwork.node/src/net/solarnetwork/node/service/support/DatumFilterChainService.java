@@ -64,7 +64,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	private final boolean configurableUid;
 	private final DatumFilterService staticService;
 	private String[] transformUids;
-	private List<DatumFilterService> sampleTransformers;
+	private List<DatumFilterService> alternateDatumFilterServices;
 
 	private final ConcurrentMap<String, DatumFilterService> serviceCache = new WeakValueConcurrentHashMap<>(
 			16, 0.9f, 2);
@@ -146,9 +146,9 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = new ArrayList<>(8);
-		if ( sampleTransformers != null ) {
-			result.add(new BasicTitleSettingSpecifier("availableTransformerUids",
-					availableTransformerUidsStatus(), true, true));
+		if ( alternateDatumFilterServices != null ) {
+			result.add(new BasicTitleSettingSpecifier("availableAlternateDatumFilterUids",
+					availableAlternateDatumFilterUidsStatus(), true, true));
 		}
 
 		result.add(new BasicTitleSettingSpecifier("availableUids", availableUidsStatus(), true, true));
@@ -177,9 +177,9 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 		return result;
 	}
 
-	private String availableTransformerUidsStatus() {
+	private String availableAlternateDatumFilterUidsStatus() {
 		List<String> names = new ArrayList<>();
-		for ( DatumFilterService s : sampleTransformers ) {
+		for ( DatumFilterService s : alternateDatumFilterServices ) {
 			names.add(s.getDescription());
 		}
 		if ( names.isEmpty() ) {
@@ -331,8 +331,8 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	 * @param sampleTransformers
 	 *        the transformers to use
 	 */
-	public void setSampleTransformers(List<DatumFilterService> sampleTransformers) {
-		this.sampleTransformers = sampleTransformers;
+	public void setAlternateDatumFilterServices(List<DatumFilterService> alternateDatumFilterServices) {
+		this.alternateDatumFilterServices = alternateDatumFilterServices;
 	}
 
 }

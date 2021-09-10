@@ -50,7 +50,11 @@ public class ThrottlingDatumFilterService extends DatumFilterSupport
 	 */
 	public static final int DEFAULT_FREQUENCY_SECONDS = 60;
 
+	/** The default {@code settingUid} property value. */
+	public static final String DEFAULT_SETTING_UID = "net.solarnetwork.node.datum.samplefilter.throttle";
+
 	private int frequencySeconds;
+	private String settingUid = DEFAULT_SETTING_UID;
 
 	public ThrottlingDatumFilterService() {
 		super();
@@ -110,7 +114,7 @@ public class ThrottlingDatumFilterService extends DatumFilterSupport
 
 	@Override
 	public String getSettingUID() {
-		return "net.solarnetwork.node.datum.samplefilter.throttle";
+		return settingUid;
 	}
 
 	@Override
@@ -137,6 +141,16 @@ public class ThrottlingDatumFilterService extends DatumFilterSupport
 	 */
 	public void setFrequencySeconds(int frequencySeconds) {
 		this.frequencySeconds = frequencySeconds;
+	}
+
+	/**
+	 * The setting UID to use.
+	 * 
+	 * @param settingUid
+	 *        the setting UID
+	 */
+	public void setSettingUid(String settingUid) {
+		this.settingUid = settingUid;
 	}
 
 }

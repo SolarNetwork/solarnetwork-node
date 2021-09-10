@@ -93,7 +93,7 @@
 			<property name="objectMapper" ref="objectMapper"/>
 		</bean>
 	</service>
-	<bean id="objectMapper" class="net.solarnetwork.codec.JsonUtils" factory-method="newObjectMapper"/>
+	<bean id="objectMapper" class="net.solarnetwork.codec.JsonUtils" factory-method="newDatumObjectMapper"/>
 
 	<service ref="scheduler" interface="org.quartz.Scheduler">
 		<service-properties>
@@ -157,14 +157,14 @@
 	</service>
 
 	<reference-list id="globalDatumFilterServices" interface="net.solarnetwork.service.DatumFilterService"
-		filter="(role=global)" availability="optional"/>
+		filter="(&amp;(role=global)(!(role=internal)))" availability="optional"/>
 
 	<reference-list id="userDatumFilterServices" interface="net.solarnetwork.service.DatumFilterService"
 		filter="(!(role=global))" availability="optional"/>
 
 	<!--
 		Global GeneralDatumSamplesTransformService that applies all available
-		GeneralDatumSamplesTransformer services at runtime. This special GeneralDatumSamplesTransformService
+		GeneralDatumSamplesTransformer services at runtime. This special DatumFilterService
 		serves as a "applicable to all persisted datum" transform service.
 	 -->
 	<bean id="globalDatumFilterService" class="net.solarnetwork.node.service.support.DatumFilterChainService">
@@ -179,14 +179,14 @@
 				<argument value="false"/>
 			</bean>
 		</argument>
-		<property name="sampleTransformers" ref="globalDatumFilterServices"/>
+		<property name="alternateDatumFilterServices" ref="globalDatumFilterServices"/>
 		<property name="uid" value="SolarIn"/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 				<property name="basenames">
 					<list>
-						<value>net.solarnetwork.node.support.SolarInGeneralDatumSamplesTransformChain</value>
-						<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
+						<value>net.solarnetwork.node.service.support.SolarInDatumFilterChainService</value>
+						<value>net.solarnetwork.node.service.support.BaseDatumFilterSupport</value>
 					</list>
 				</property>
 			</bean>
@@ -202,6 +202,7 @@
 				<array value-type="java.lang.String">
 					<value>global</value>
 					<value>datum-filter</value>
+					<value>internal</value>
 				</array>
 			</entry>
 		</service-properties>
@@ -211,7 +212,7 @@
 	<bean id="userDatumFilterChainMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.service.support.UserDatumFitlerChainService</value>
+				<value>net.solarnetwork.node.service.support.UserDatumFilterChainService</value>
 				<value>net.solarnetwork.node.service.support.BaseDatumFilterSupport</value>
 				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</list>

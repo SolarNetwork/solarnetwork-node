@@ -18,21 +18,21 @@
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
 		<property name="sticky" value="true"/>
-	</bean>	
-	
+	</bean>
+
 	<bean id="locationService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.LocationService"/>
 		<property name="sticky" value="true"/>
-	</bean>	
+	</bean>
 
-	<reference id="objectMapperService" 
+	<reference id="objectMapperService"
 		interface="net.solarnetwork.service.ObjectMapperService"
 		filter="(function=node)"/>
-		
-	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
+
+	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper"
 		factory-ref="objectMapperService" factory-method="getObjectMapper"/>
-	
+
 	<bean id="dayMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
@@ -42,7 +42,7 @@
 			</list>
 		</property>
 	</bean>
-	
+
 	<bean id="hourlyMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
@@ -67,7 +67,7 @@
 			</bean>
 		</property>
 	</bean>
-	
+
 	<bean id="hourlyJobMessageSource" class="net.solarnetwork.support.PrefixedMessageSource">
 		<property name="prefix" value="datumDataSource."/>
 		<property name="delegate">
@@ -86,7 +86,7 @@
 	<bean id="basicClient" class="net.solarnetwork.node.weather.ibm.wc.BasicWCClient">
 		<property name="objectMapper" ref="objectMapper"/>
 	</bean>
-	
+
 	<!-- daily data source -->
 
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
@@ -141,8 +141,8 @@
 				</bean>
 			</property>
 		</bean>
-	</osgix:managed-service-factory>	
-	
+	</osgix:managed-service-factory>
+
 	<!-- hourly data source -->
 
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
@@ -189,7 +189,7 @@
 									<property name="locationService" ref="locationService"/>
 									<property name="requireLocationService" value="true"/>
 									<property name="locationType" value="weather"/>
-									<property name="messageBundleBasename" value="net.solarnetwork.node.support.WeatherLocationDatumDataSource"/>
+									<property name="messageBundleBasename" value="net.solarnetwork.node.service.support.WeatherLocationDatumDataSource"/>
 								</bean>
 							</entry>
 						</map>
@@ -198,6 +198,6 @@
 			</property>
 		</bean>
 	</osgix:managed-service-factory>
-	
+
 
 </blueprint>

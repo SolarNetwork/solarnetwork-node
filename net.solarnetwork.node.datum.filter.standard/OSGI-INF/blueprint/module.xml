@@ -37,7 +37,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.filter.std.PropertyDatumFilterService</value>
-				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
+				<value>net.solarnetwork.node.service.support.BaseDatumFilterSupport</value>
 				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</list>
 		</property>
@@ -69,7 +69,7 @@
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.samplefilter.simple"/>
 			<beans:entry key="role">
 				<beans:array value-type="java.lang.String">
-					<beans:value>glboal</beans:value>
+					<beans:value>global</beans:value>
 					<beans:value>datum-filter</beans:value>
 				</beans:array>
 			</beans:entry>
@@ -78,6 +78,7 @@
 			<property name="settingDao" ref="settingDao"/>
 			<property name="messageSource" ref="simpleFilterMessageSource"/>
 			<property name="opModesService" ref="opModesService"/>
+			<property name="settingUid" value="net.solarnetwork.node.datum.samplefilter.simple"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -89,7 +90,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.filter.std.DatumPropertyTransformService</value>
-				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
+				<value>net.solarnetwork.node.service.support.BaseDatumFilterSupport</value>
 				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</list>
 		</property>
@@ -134,9 +135,9 @@
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.datum.filter.std.PropertyDatumFilterService" init-method="init">
 			<property name="settingDao" ref="settingDao"/>
-			<property name="excludeBaseIdentifiableSettings" value="true"/>
 			<property name="opModesService" ref="opModesService"/>
 			<property name="messageSource" ref="propFilterMessageSource"/>
+			<property name="settingUid" value="net.solarnetwork.node.datum.samplefilter.prop"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -148,7 +149,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.filter.std.ThrottlingDatumFilterService</value>
-				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
+				<value>net.solarnetwork.node.service.support.BaseDatumFilterSupport</value>
 				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</list>
 		</property>
@@ -189,6 +190,7 @@
 			<property name="settingDao" ref="settingDao"/>
 			<property name="messageSource" ref="sourceThrottleMessageSource"/>
 			<property name="opModesService" ref="opModesService"/>
+			<property name="settingUid" value="net.solarnetwork.node.datum.samplefilter.throttle"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -200,7 +202,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.filter.std.DatumThrottleTransformService</value>
-				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
+				<value>net.solarnetwork.node.service.support.BaseDatumFilterSupport</value>
 				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</list>
 		</property>
@@ -245,9 +247,9 @@
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.datum.filter.std.ThrottlingDatumFilterService" init-method="init">
 			<property name="settingDao" ref="settingDao"/>
-			<property name="excludeBaseIdentifiableSettings" value="true"/>
 			<property name="opModesService" ref="opModesService"/>
 			<property name="messageSource" ref="throttleFilterMessageSource"/>
+			<property name="settingUid" value="net.solarnetwork.node.datum.samplefilter.limiter"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -259,7 +261,7 @@
 		<property name="basenames">
 			<array>
 				<value>net.solarnetwork.node.datum.filter.std.DownsampleDatumFilterService</value>
-				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
+				<value>net.solarnetwork.node.service.support.BaseDatumFilterSupport</value>
 				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</array>
 		</property>
@@ -310,8 +312,8 @@
 		<property name="basenames">
 			<array>
 				<value>net.solarnetwork.node.datum.filter.virt.VirtualMeterDatumFilterService</value>
-				<value>net.solarnetwork.node.domain.ExpressionConfig</value>
-				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
+				<value>net.solarnetwork.node.service.support.ExpressionConfig</value>
+				<value>net.solarnetwork.node.service.support.BaseDatumFilterSupport</value>
 				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</array>
 		</property>
@@ -364,8 +366,8 @@
 		<property name="basenames">
 			<array>
 				<value>net.solarnetwork.node.datum.filter.expr.ExpressionDatumFilterService</value>
-				<value>net.solarnetwork.node.domain.ExpressionConfig</value>
-				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
+				<value>net.solarnetwork.node.service.support.ExpressionConfig</value>
+				<value>net.solarnetwork.node.service.support.BaseDatumFilterSupport</value>
 				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</array>
 		</property>
@@ -417,8 +419,8 @@
 		<property name="basenames">
 			<array>
 				<value>net.solarnetwork.node.datum.filter.opmode.OperationalModeDatumFilterService</value>
-				<value>net.solarnetwork.node.domain.ExpressionConfig</value>
-				<value>net.solarnetwork.node.support.BaseSamplesTransformSupport</value>
+				<value>net.solarnetwork.node.service.support.ExpressionConfig</value>
+				<value>net.solarnetwork.node.service.support.BaseDatumFilterSupport</value>
 				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</array>
 		</property>

@@ -15,23 +15,24 @@
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
 	<!-- Service References -->
-	
+
 	<bean id="locationService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.LocationService"/>
 		<property name="sticky" value="true"/>
-	</bean>	
+	</bean>
 
 	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
 		<property name="sticky" value="true"/>
 	</bean>
-	
+
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.price.delimited.DelimitedPriceDatumDataSource</value>
+				<value>net.solarnetwork.node.service.support.PriceLocationDatumDataSource</value>
 				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</list>
 		</property>
@@ -42,18 +43,13 @@
 		<property name="delegate">
 			<bean class="net.solarnetwork.support.PrefixedMessageSource">
 				<property name="prefix" value="delegate."/>
-				<property name="delegate">
-					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-						<property name="basenames" value="net.solarnetwork.node.support.PriceLocationDatumDataSource"/>
-						<property name="parentMessageSource" ref="messageSource"/>
-					</bean>
-				</property>
+				<property name="delegate" ref="messageSource"/>
 			</bean>
 		</property>
-	</bean>	
+	</bean>
 
 	<!-- Published Services -->
-	
+
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Delimited energy price lookup"/>
@@ -64,8 +60,8 @@
 				</bean>
 			</property>
 		</bean>
-	</service>	
-	
+	</service>
+
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.price.delimited" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
