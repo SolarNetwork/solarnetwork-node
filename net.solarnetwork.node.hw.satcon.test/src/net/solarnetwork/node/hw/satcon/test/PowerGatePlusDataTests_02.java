@@ -42,7 +42,7 @@ import net.solarnetwork.node.test.DataUtils;
  * Test cases for the {@link PowerGatePlusData} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class PowerGatePlusDataTests_02 {
 
@@ -163,13 +163,13 @@ public class PowerGatePlusDataTests_02 {
 
 	@Test
 	public void dcVoltage() {
-		assertThat("DC voltage", data.getDCVoltage(), equalTo(387f));
+		assertThat("DC voltage", data.getDcVoltage(), equalTo(387f));
 	}
 
 	@Test
 	public void dcPower() {
 		// 387 * 13
-		assertThat("DC power", data.getDCPower(), equalTo(5031));
+		assertThat("DC power", data.getDcPower(), equalTo(5031));
 	}
 
 	@Test
