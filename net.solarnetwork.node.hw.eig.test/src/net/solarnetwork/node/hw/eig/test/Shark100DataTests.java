@@ -28,8 +28,8 @@ import java.io.IOException;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.hw.eig.meter.Shark100Data;
 import net.solarnetwork.node.hw.eig.meter.Shark100DataAccessor;
 import net.solarnetwork.node.hw.eig.meter.SharkPowerEnergyFormat;
@@ -41,7 +41,7 @@ import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
  * Test cases for the {@link Shark100Data} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class Shark100DataTests {
 
@@ -348,15 +348,15 @@ public class Shark100DataTests {
 	@Test
 	public void phaseVoltage() {
 		Shark100DataAccessor data = getTestDataInstance();
-		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		AcEnergyDataAccessor phaseData = data.accessorForPhase(AcPhase.PhaseA);
 		assertThat("Phase a", phaseData.getVoltage(), equalTo(279.6871f));
 		assertThat("Phase a line", phaseData.getLineVoltage(), equalTo(494.24512f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseB);
+		phaseData = data.accessorForPhase(AcPhase.PhaseB);
 		assertThat("Phase b", phaseData.getVoltage(), equalTo(291.0842f));
 		assertThat("Phase b line", phaseData.getLineVoltage(), equalTo(501.91223f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		phaseData = data.accessorForPhase(AcPhase.PhaseC);
 		assertThat("Phase c", phaseData.getVoltage(), equalTo(288.5289f));
 		assertThat("Phase c line", phaseData.getLineVoltage(), equalTo(492.03482f));
 	}
@@ -364,13 +364,13 @@ public class Shark100DataTests {
 	@Test
 	public void phaseCurrent() {
 		Shark100DataAccessor data = getTestDataInstance();
-		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		AcEnergyDataAccessor phaseData = data.accessorForPhase(AcPhase.PhaseA);
 		assertThat("Phase a", phaseData.getCurrent(), equalTo(1190.7518f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseB);
+		phaseData = data.accessorForPhase(AcPhase.PhaseB);
 		assertThat("Phase b", phaseData.getCurrent(), equalTo(1186.4622f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		phaseData = data.accessorForPhase(AcPhase.PhaseC);
 		assertThat("Phase c", phaseData.getCurrent(), equalTo(1191.4934f));
 	}
 }

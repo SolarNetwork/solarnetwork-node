@@ -25,8 +25,8 @@ package net.solarnetwork.node.hw.eig.meter;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -35,7 +35,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * Data object for the Shark 100 series meter.
  * 
  * @author matt
- * @version 1.4
+ * @version 2.0
  */
 public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 
@@ -150,8 +150,8 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 	 *        the phase to get an accessor for
 	 * @return the accessor
 	 */
-	public Shark100DataAccessor dataAccessorForPhase(ACPhase phase) {
-		if ( phase == ACPhase.Total ) {
+	public Shark100DataAccessor dataAccessorForPhase(AcPhase phase) {
+		if ( phase == AcPhase.Total ) {
 			return this;
 		}
 		return new PhaseMeterDataAccessor(phase);
@@ -168,12 +168,12 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 	}
 
 	@Override
-	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+	public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 		return dataAccessorForPhase(phase);
 	}
 
 	@Override
-	public ACEnergyDataAccessor reversed() {
+	public AcEnergyDataAccessor reversed() {
 		return reversedDataAccessor();
 	}
 
@@ -337,9 +337,9 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 
 	private class PhaseMeterDataAccessor implements Shark100DataAccessor {
 
-		private final ACPhase phase;
+		private final AcPhase phase;
 
-		private PhaseMeterDataAccessor(ACPhase phase) {
+		private PhaseMeterDataAccessor(AcPhase phase) {
 			super();
 			this.phase = phase;
 		}
@@ -380,12 +380,12 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		}
 
 		@Override
-		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 			return Shark100Data.this.accessorForPhase(phase);
 		}
 
 		@Override
-		public ACEnergyDataAccessor reversed() {
+		public AcEnergyDataAccessor reversed() {
 			return Shark100Data.this.reversed();
 		}
 
@@ -544,7 +544,7 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		}
 
 		@Override
-		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 			return delegate.accessorForPhase(phase);
 		}
 
@@ -559,7 +559,7 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		}
 
 		@Override
-		public ACEnergyDataAccessor reversed() {
+		public AcEnergyDataAccessor reversed() {
 			return delegate;
 		}
 
