@@ -53,7 +53,7 @@ public interface BackupResourceProvider {
 	/**
 	 * Get the resources that should be backed up.
 	 * 
-	 * @return the resources, never <em>null</em>
+	 * @return the resources, never {@literal null}
 	 */
 	Iterable<BackupResource> getBackupResources();
 

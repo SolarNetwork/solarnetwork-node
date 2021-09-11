@@ -112,9 +112,9 @@ public abstract class SMAInverterDataSourceSupport extends DatumDataSourceSuppor
 	}
 
 	/**
-	 * Get the last known day value, or <em>null</em> if not known.
+	 * Get the last known day value, or {@literal null} if not known.
 	 * 
-	 * @return the date, or <em>null</em> if not known
+	 * @return the date, or {@literal null} if not known
 	 */
 	protected final Calendar getLastKnownDay() {
 		String lastKnownDayOfYear = getLastKnownDayOfYearValue();

@@ -198,7 +198,7 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 	/**
 	 * Get the trigger cron expression, if available.
 	 * 
-	 * @return The cron expression, or <em>null</em> if not configured or the
+	 * @return The cron expression, or {@literal null} if not configured or the
 	 *         configured {@code Trigger} is not a {@code CronTrigger}.
 	 * @since 2.0
 	 */

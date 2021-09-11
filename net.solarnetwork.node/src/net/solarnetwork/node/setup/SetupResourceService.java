@@ -51,7 +51,7 @@ public interface SetupResourceService {
 	 *        The consumer type to get resources for.
 	 * @param locale
 	 *        The desired locale.
-	 * @return All matching resources, never <em>null</em>.
+	 * @return All matching resources, never {@literal null}.
 	 */
 	Collection<SetupResource> getSetupResourcesForConsumer(String consumerType, Locale locale);
 

@@ -29,7 +29,7 @@ import java.io.IOException;
  * 
  * <p>
  * If no result object is needed, simply use {@link Object} as the parameter
- * type and return <em>null</em> from
+ * type and return {@literal null} from
  * {@link #doWithConnection(ModbusConnection)}.
  * </p>
  * 
@@ -44,7 +44,7 @@ public interface ModbusConnectionAction<T> {
 
 	/**
 	 * Perform an action with a {@link ModbusConnection}. If no result object is
-	 * needed, simply return <em>null</em>.
+	 * needed, simply return {@literal null}.
 	 * 
 	 * @param conn
 	 *        the connection

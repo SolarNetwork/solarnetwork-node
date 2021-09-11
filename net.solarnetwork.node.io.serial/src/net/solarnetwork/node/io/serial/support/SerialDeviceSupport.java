@@ -76,7 +76,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get the {@link SerialNetwork} from the configured {@code serialNetwork}
-	 * service, or <em>null</em> if not available or not configured.
+	 * service, or {@literal null} if not available or not configured.
 	 * 
 	 * @return SerialNetwork
 	 */
@@ -100,8 +100,8 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	/**
 	 * Return an informational message composed of general device info. This
 	 * method will call {@link #getDeviceInfo()} and return a {@code /} (forward
-	 * slash) delimited string of the resulting values, or <em>null</em> if that
-	 * method returns <em>null</em>.
+	 * slash) delimited string of the resulting values, or {@literal null} if that
+	 * method returns {@literal null}.
 	 * 
 	 * @return info message
 	 */
@@ -119,7 +119,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	 * subsequent calls will not attempt to read from the device. Note the
 	 * returned map cannot be modified.
 	 * 
-	 * @return the device info, or <em>null</em>
+	 * @return the device info, or {@literal null}
 	 * @see #readDeviceInfo(SerialConnection)
 	 */
 	public Map<String, ?> getDeviceInfo() {
@@ -153,7 +153,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	 *        the action result type
 	 * @param action
 	 *        the connection action
-	 * @return the result of the callback, or <em>null</em> if the action is
+	 * @return the result of the callback, or {@literal null} if the action is
 	 *         never invoked
 	 * @throws IOException
 	 *         if any IO error occurs
@@ -170,14 +170,14 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	/**
 	 * Get direct access to the device info data.
 	 * 
-	 * @return the device info, or <em>null</em>
+	 * @return the device info, or {@literal null}
 	 */
 	protected Map<String, Object> getDeviceInfoMap() {
 		return deviceInfo;
 	}
 
 	/**
-	 * Set the device info data. Setting the {@code deviceInfo} to <em>null</em>
+	 * Set the device info data. Setting the {@code deviceInfo} to {@literal null}
 	 * will force the next call to {@link #getDeviceInfo()} to read from the
 	 * device to populate this data, and setting this to anything else will
 	 * force all subsequent calls to {@link #getDeviceInfo()} to simply return

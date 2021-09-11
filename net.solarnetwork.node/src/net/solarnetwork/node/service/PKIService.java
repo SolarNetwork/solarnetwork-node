@@ -52,7 +52,7 @@ public interface PKIService {
 	/**
 	 * Get the configured CA certificate.
 	 * 
-	 * @return the CA certificate, or <em>null</em> if not available
+	 * @return the CA certificate, or {@literal null} if not available
 	 * @throws CertificateException
 	 *         if any certificate related error occurs
 	 */
@@ -61,7 +61,7 @@ public interface PKIService {
 	/**
 	 * Get the configured node certificate.
 	 * 
-	 * @return the node certificate, or <em>null</em> if not available
+	 * @return the node certificate, or {@literal null} if not available
 	 * @throws CertificateException
 	 *         if any certificate related error occurs
 	 */

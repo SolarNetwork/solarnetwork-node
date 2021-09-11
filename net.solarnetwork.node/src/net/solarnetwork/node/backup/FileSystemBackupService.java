@@ -348,7 +348,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	 * Get all available backup files, ordered in desending backup order (newest
 	 * to oldest).
 	 * 
-	 * @return ordered array of backup files, or <em>null</em> if directory does
+	 * @return ordered array of backup files, or {@literal null} if directory does
 	 *         not exist
 	 */
 	private File[] getAvailableBackupFiles() {

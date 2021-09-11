@@ -58,7 +58,7 @@ public interface BackupManager extends SettingSpecifierProvider {
 	/**
 	 * Get the active {@link BackupService}.
 	 * 
-	 * @return the BackupService, or <em>null</em> if none configured
+	 * @return the BackupService, or {@literal null} if none configured
 	 */
 	BackupService activeBackupService();
 
@@ -72,7 +72,7 @@ public interface BackupManager extends SettingSpecifierProvider {
 	/**
 	 * Create a new Backup, using the active backup service.
 	 * 
-	 * @return the backup, or <em>null</em> if none could be created
+	 * @return the backup, or {@literal null} if none could be created
 	 */
 	Backup createBackup();
 
@@ -81,7 +81,7 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 * 
 	 * @param props
 	 *        An optional set of properties to customize the backup with.
-	 * @return the backup, or <em>null</em> if none could be created
+	 * @return the backup, or {@literal null} if none could be created
 	 * @since 1.1
 	 */
 	Backup createBackup(Map<String, String> props);
@@ -91,7 +91,7 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 * This method will immediately return a Future where you can track the
 	 * status of the background backup, if desired.
 	 * 
-	 * @return the backup, or <em>null</em> if none could be created
+	 * @return the backup, or {@literal null} if none could be created
 	 */
 	Future<Backup> createAsynchronousBackup();
 
@@ -102,7 +102,7 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 * 
 	 * @param props
 	 *        An optional set of properties to customize the backup with.
-	 * @return the backup, or <em>null</em> if none could be created
+	 * @return the backup, or {@literal null} if none could be created
 	 * @since 1.1
 	 */
 	Future<Backup> createAsynchronousBackup(Map<String, String> props);

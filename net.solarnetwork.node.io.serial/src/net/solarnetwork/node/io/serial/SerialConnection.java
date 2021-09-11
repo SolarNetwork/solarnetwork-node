@@ -100,7 +100,7 @@ public interface SerialConnection extends Closeable {
 	 * 
 	 * @throws IOException
 	 *         if the connection fails
-	 * @return the drained bytes (never <em>null</em>)
+	 * @return the drained bytes (never {@literal null})
 	 */
 	byte[] drainInputBuffer() throws IOException;
 

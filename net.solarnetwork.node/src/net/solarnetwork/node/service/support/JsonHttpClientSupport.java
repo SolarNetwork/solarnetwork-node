@@ -201,7 +201,7 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 	 *        from this method
 	 * @param dataType
 	 *        the type of object to extract from the response
-	 * @return the extracted object, or <em>null</em>
+	 * @return the extracted object, or {@literal null}
 	 * @throws RemoteServiceException
 	 *         if the response does not include the success flag
 	 * @throws IOException

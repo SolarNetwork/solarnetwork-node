@@ -37,14 +37,14 @@ public interface IdentityService {
 	/**
 	 * Get the ID of the current node.
 	 * 
-	 * @return node ID, or <em>null</em> if the ID is not known
+	 * @return node ID, or {@literal null} if the ID is not known
 	 */
 	Long getNodeId();
 
 	/**
 	 * Get a {@link Principal} for the current node.
 	 * 
-	 * @return The node Principal, or <em>null</em> if none available.
+	 * @return The node Principal, or {@literal null} if none available.
 	 */
 	Principal getNodePrincipal();
 

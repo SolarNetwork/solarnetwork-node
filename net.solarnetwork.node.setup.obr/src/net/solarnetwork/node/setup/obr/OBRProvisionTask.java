@@ -159,7 +159,7 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 	 *        The maximum version to include in the result.
 	 * @return All found bundles whose symbolic name matches and has a version
 	 *         less than {@code maxVersion}, in largest to smallest order, or
-	 *         <em>null</em> if none found.
+	 *         {@literal null} if none found.
 	 */
 	private List<Bundle> findBundlesOlderThanVersion(String symbolicName, Version maxVersion) {
 		List<Bundle> olderBundles = null;

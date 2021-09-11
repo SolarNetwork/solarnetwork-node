@@ -40,7 +40,7 @@ public interface Backup extends BackupIdentity {
 	/**
 	 * Get the size, in bytes, of this backup.
 	 * 
-	 * @return the size in bytes, or <em>null</em> if not known
+	 * @return the size in bytes, or {@literal null} if not known
 	 */
 	Long getSize();
 }

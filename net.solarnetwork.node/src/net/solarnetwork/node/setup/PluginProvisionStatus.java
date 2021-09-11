@@ -61,7 +61,7 @@ public interface PluginProvisionStatus {
 	 * Get an overall number of bytes that must be downloaded to complete the
 	 * provisioning operation.
 	 * 
-	 * @return number of bytes, or <em>null</em> if not known
+	 * @return number of bytes, or {@literal null} if not known
 	 */
 	Long getOverallDownloadSize();
 
@@ -69,7 +69,7 @@ public interface PluginProvisionStatus {
 	 * Get the number of bytes that have been downloaded so far while executing
 	 * this provisioning operation.
 	 * 
-	 * @return number of bytes, or <em>null</em> if not known
+	 * @return number of bytes, or {@literal null} if not known
 	 */
 	Long getOverallDownloadedSize();
 

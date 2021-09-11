@@ -585,7 +585,7 @@ public class XmlServiceSupport extends HttpClientSupport {
 	 * response content.
 	 * 
 	 * @param bean
-	 *        the bean to extract GET parameters from, or <em>null</em> for no
+	 *        the bean to extract GET parameters from, or {@literal null} for no
 	 *        parameters
 	 * @param url
 	 *        the URL to GET to
@@ -657,7 +657,7 @@ public class XmlServiceSupport extends HttpClientSupport {
 	 * 
 	 * @param bean
 	 *        the bean whose properties to send as GET parameters, or
-	 *        <em>null</em> for no parameters
+	 *        {@literal null} for no parameters
 	 * @param obj
 	 *        the result bean to populate from the HTTP response XML
 	 * @param url
@@ -694,7 +694,7 @@ public class XmlServiceSupport extends HttpClientSupport {
 	 *        the XPath to use that returns a number
 	 * @param xpath
 	 *        the XPath as a string (for debugging)
-	 * @return the tracking ID, or <em>null</em> if not found
+	 * @return the tracking ID, or {@literal null} if not found
 	 */
 	public Long extractTrackingId(InputSource xml, XPathExpression xp, String xpath) {
 		Double tid;
@@ -723,7 +723,7 @@ public class XmlServiceSupport extends HttpClientSupport {
 	 *        the trackingIdXPath as a String (for debugging)
 	 * @param attributes
 	 *        extra POST attributes and bean override values
-	 * @return the extracted tracking ID, or <em>null</em> if none found
+	 * @return the extracted tracking ID, or {@literal null} if none found
 	 */
 	public Long webFormPostForTrackingId(BeanWrapper bean, String url, XPathExpression trackingIdXPath,
 			String xpath, Map<String, ?> attributes) {

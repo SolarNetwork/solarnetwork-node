@@ -70,7 +70,7 @@ public interface YasdiMaster {
 	/**
 	 * Get all available {@link YasdiDevice} instances for this master.
 	 * 
-	 * @return YasdiDevice collection (never <em>null</em>)
+	 * @return YasdiDevice collection (never {@literal null})
 	 */
 	Collection<YasdiDevice> getDevices();
 
@@ -79,7 +79,7 @@ public interface YasdiMaster {
 	 * 
 	 * @param serialNumber
 	 *        the device serialNumber to get
-	 * @return the device, or <em>null</em> if not found
+	 * @return the device, or {@literal null} if not found
 	 */
 	YasdiDevice getDevice(long serialNumber);
 
@@ -88,7 +88,7 @@ public interface YasdiMaster {
 	 * 
 	 * @param name
 	 *        the device name to match; will match substrings
-	 * @return the device, or <em>null</em> if not found
+	 * @return the device, or {@literal null} if not found
 	 */
 	YasdiDevice getDeviceMatchingName(String name);
 

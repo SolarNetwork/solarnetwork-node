@@ -150,7 +150,7 @@ public class SettingsUserService implements UserService, UserDetailsService {
 	 *         settings.
 	 * @throws IllegalArgumentException
 	 *         if the {@code newPassword} and {@code newPasswordAgain} values do
-	 *         not match, or are <em>null</em>
+	 *         not match, or are {@literal null}
 	 */
 	@Override
 	public void changePassword(final String existingPassword, final String newPassword,

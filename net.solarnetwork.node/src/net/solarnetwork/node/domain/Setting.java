@@ -92,7 +92,7 @@ public class Setting {
 		 * 
 		 * @param mask
 		 *        the mask
-		 * @return the set (never <em>null</em>)
+		 * @return the set (never {@literal null})
 		 */
 		public static Set<SettingFlag> setForMask(int mask) {
 			Set<SettingFlag> maskSet = new HashSet<Setting.SettingFlag>();

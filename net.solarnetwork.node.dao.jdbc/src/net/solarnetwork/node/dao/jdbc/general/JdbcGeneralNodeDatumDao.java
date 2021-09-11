@@ -266,7 +266,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implemen
 	 * @param rowMapper
 	 *        a {@link RowMapper} implementation to instantiate entities from
 	 *        found rows
-	 * @return the matching rows, never <em>null</em>
+	 * @return the matching rows, never {@literal null}
 	 */
 	protected List<NodeDatum> findDatumNotUploaded(final RowMapper<NodeDatum> rowMapper) {
 		List<NodeDatum> result = getJdbcTemplate().query(new PreparedStatementCreator() {
@@ -302,7 +302,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implemen
 	 * @param rowMapper
 	 *        a {@link RowMapper} implementation to instantiate entities from
 	 *        found rows
-	 * @return the matching rows, never <em>null</em>
+	 * @return the matching rows, never {@literal null}
 	 * @since 1.2
 	 */
 	protected List<NodeDatum> findDatum(final String sqlResource, final PreparedStatementSetter setter,

@@ -61,11 +61,11 @@ public interface TriggerAndJobDetail {
 	 * Get a MessageSource to localize the setting text.
 	 * 
 	 * <p>
-	 * This method can return <em>null</em> if the provider does not have any
+	 * This method can return {@literal null} if the provider does not have any
 	 * localized resources.
 	 * </p>
 	 * 
-	 * @return the MessageSource, or <em>null</em>
+	 * @return the MessageSource, or {@literal null}
 	 */
 	MessageSource getMessageSource();
 }

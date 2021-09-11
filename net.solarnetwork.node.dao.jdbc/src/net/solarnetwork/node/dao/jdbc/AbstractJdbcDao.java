@@ -361,7 +361,7 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 	 * @param conn
 	 *        the connection
 	 * @param aSchemaName
-	 *        the schema name to look for (or <em>null</em> for any schema)
+	 *        the schema name to look for (or {@literal null} for any schema)
 	 * @param aTableName
 	 *        the table name to look for
 	 * @return boolean if table is found

@@ -736,7 +736,7 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 	 * values.
 	 * 
 	 * @return {@code coreFeatureSymbolicNamePatterns} as strings, or
-	 *         <em>null</em>
+	 *         {@literal null}
 	 */
 	public String[] getCoreFeatureSymbolicNameExpressions() {
 		return StringUtils.expressions(coreFeatureSymbolicNamePatterns);
