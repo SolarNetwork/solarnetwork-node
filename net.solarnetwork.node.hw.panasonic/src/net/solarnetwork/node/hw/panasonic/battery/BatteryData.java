@@ -22,25 +22,24 @@
 
 package net.solarnetwork.node.hw.panasonic.battery;
 
-import net.solarnetwork.node.domain.EnergyStorageDatum;
-import net.solarnetwork.node.domain.GeneralNodeEnergyStorageDatum;
-import org.joda.time.DateTime;
+import java.time.Instant;
+import net.solarnetwork.node.domain.datum.EnergyStorageDatum;
 
 /**
  * Sample data for a battery.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class BatteryData {
 
 	private final String deviceID;
-	private final DateTime date;
+	private final Instant date;
 	private final String status;
 	private final Integer availableCapacity;
 	private final Integer totalCapacity;
 
-	public BatteryData(String deviceID, DateTime date, String status, Integer availableCapacity,
+	public BatteryData(String deviceID, Instant date, String status, Integer availableCapacity,
 			Integer totalCapacity) {
 		super();
 		this.deviceID = deviceID;
@@ -56,7 +55,7 @@ public class BatteryData {
 	 * @param datum
 	 *        The datum to populate with values from this instance.
 	 */
-	public void populateMeasurements(final GeneralNodeEnergyStorageDatum datum) {
+	public void populateMeasurements(final EnergyStorageDatum datum) {
 		if ( availableCapacity != null ) {
 			datum.setAvailableEnergy(availableCapacity.longValue());
 			if ( totalCapacity != null && totalCapacity.intValue() > 0 ) {
@@ -70,16 +69,15 @@ public class BatteryData {
 	 * Get a brief information message about the operational status of the
 	 * sample, such as the overall power being used, etc.
 	 * 
-	 * @return A brief status message, or <em>null</em> if none available.
+	 * @return A brief status message, or {@literal null} if none available.
 	 */
 	public String getOperationStatusMessage() {
 		StringBuilder buf = new StringBuilder();
 		buf.append("Device = ").append(deviceID != null ? deviceID : "N/A");
 		buf.append(", Status = ").append(status != null ? status : "N/A");
 		if ( availableCapacity != null && totalCapacity != null && totalCapacity.intValue() > 0 ) {
-			buf.append(String.format(", Available capacity = %d Wh (%d%%)", availableCapacity,
-					(int) Math.round(100.0 * (availableCapacity.doubleValue() / totalCapacity
-							.doubleValue()))));
+			buf.append(String.format(", Available capacity = %d Wh (%d%%)", availableCapacity, (int) Math
+					.round(100.0 * (availableCapacity.doubleValue() / totalCapacity.doubleValue()))));
 		}
 		return buf.toString();
 	}
@@ -104,7 +102,7 @@ public class BatteryData {
 	 * 
 	 * @return The date of the sample data.
 	 */
-	public DateTime getDate() {
+	public Instant getDate() {
 		return date;
 	}
 

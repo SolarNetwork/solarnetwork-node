@@ -23,11 +23,9 @@
 package net.solarnetwork.node.hw.panasonic.battery;
 
 import java.io.IOException;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.ObjectCodec;
@@ -35,17 +33,24 @@ import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.deser.std.StdScalarDeserializer;
+import net.solarnetwork.codec.JsonUtils;
 
 /**
  * Parse JSON into BatteryData instances.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class BatteryDataDeserializer extends StdScalarDeserializer<BatteryData> {
 
+	private static final long serialVersionUID = 7986330830501564619L;
+
 	/** The date + time pattern used by the API. */
 	public static final String DATE_TIME_PATTERN = "yyyyMMdd_HHmmss";
+
+	/** The {@link DateTimeFormatter} for parsing dates. */
+	private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter
+			.ofPattern(DATE_TIME_PATTERN).withZone(ZoneOffset.UTC);
 
 	/**
 	 * Default constructor.
@@ -53,14 +58,6 @@ public class BatteryDataDeserializer extends StdScalarDeserializer<BatteryData> 
 	public BatteryDataDeserializer() {
 		super(BatteryData.class);
 	}
-
-	private static final long serialVersionUID = 7986330830501564619L;
-
-	private static final Logger LOG = LoggerFactory.getLogger(BatteryDataDeserializer.class);
-
-	/** The {@link DateTimeFormatter} for parsing dates. */
-	private final DateTimeFormatter formatter = DateTimeFormat.forPattern(DATE_TIME_PATTERN)
-			.withZoneUTC();
 
 	private String getString(TreeNode node, String key) {
 		TreeNode n = node.get(key);
@@ -73,19 +70,6 @@ public class BatteryDataDeserializer extends StdScalarDeserializer<BatteryData> 
 		return (num != null ? Integer.valueOf(num.intValue()) : null);
 	}
 
-	private DateTime getDateTime(TreeNode node, String key) {
-		String s = getString(node, key);
-		DateTime dt = null;
-		if ( s != null ) {
-			try {
-				dt = formatter.parseDateTime(s);
-			} catch ( IllegalArgumentException e ) {
-				LOG.warn("Unable to parse date from [{}]", s);
-			}
-		}
-		return dt;
-	}
-
 	@Override
 	public BatteryData deserialize(JsonParser parser, DeserializationContext context)
 			throws IOException, JsonProcessingException {
@@ -93,12 +77,13 @@ public class BatteryDataDeserializer extends StdScalarDeserializer<BatteryData> 
 		TreeNode node = oc.readTree(parser);
 
 		String deviceId = getString(node, "DeviceID");
-		DateTime date = getDateTime(node, "ReportDate");
+		Instant date = JsonUtils.parseDateAttribute(node, "ReportDate", TIMESTAMP_FORMATTER,
+				Instant::from);
 		String status = getString(node, "Status");
 		Integer availableCapacity = getInteger(node, "CurrentCapacity");
 		Integer totalCapacity = getInteger(node, "TotalCapacity");
 
-		return new BatteryData(deviceId, (date != null ? date : new DateTime()), status,
+		return new BatteryData(deviceId, (date != null ? date : Instant.now()), status,
 				availableCapacity, totalCapacity);
 	}
 

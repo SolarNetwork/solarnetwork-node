@@ -24,14 +24,14 @@ package net.solarnetwork.node.hw.panasonic.battery;
 
 import java.io.IOException;
 import java.io.InputStream;
-import net.solarnetwork.node.support.JsonHttpClientSupport;
 import com.fasterxml.jackson.databind.JsonNode;
+import net.solarnetwork.node.service.support.JsonHttpClientSupport;
 
 /**
  * Implementation of {@link BatteryAPIClient}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class SimpleBatteryAPIClient extends JsonHttpClientSupport implements BatteryAPIClient {
 
