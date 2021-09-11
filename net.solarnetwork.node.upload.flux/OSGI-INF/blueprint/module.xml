@@ -39,7 +39,7 @@
 
 	<bean id="datumEncoders" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.io.ObjectEncoder"/>
+		<property name="serviceClassName" value="net.solarnetwork.codec.ObjectEncoder"/>
 		<property name="serviceFilter" value="(&amp;(function=node)(function=datum)(objectType=java.util.Map))"/>
 	</bean>
 
