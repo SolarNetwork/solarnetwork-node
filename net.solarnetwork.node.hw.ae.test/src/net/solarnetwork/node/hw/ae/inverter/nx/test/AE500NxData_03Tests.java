@@ -49,7 +49,7 @@ import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnec
  * Test cases for reading AE500Nx sample data.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class AE500NxData_03Tests {
 
@@ -115,12 +115,12 @@ public class AE500NxData_03Tests {
 
 	@Test
 	public void dcPower() {
-		assertThat("DC power", data.getDCPower(), equalTo(0));
+		assertThat("DC power", data.getDcPower(), equalTo(0));
 	}
 
 	@Test
 	public void dcVoltage() {
-		assertThat("DC voltage", data.getDCVoltage(), equalTo(0f));
+		assertThat("DC voltage", data.getDcVoltage(), equalTo(0f));
 	}
 
 	@Test

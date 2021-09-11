@@ -30,10 +30,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.Bitmaskable;
 import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -44,7 +44,7 @@ import net.solarnetwork.util.NumberUtils;
  * Data object for the AE 250TX series inverter.
  * 
  * @author matt
- * @version 1.4
+ * @version 2.0
  */
 public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 
@@ -178,12 +178,12 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	}
 
 	@Override
-	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+	public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public ACEnergyDataAccessor reversed() {
+	public AcEnergyDataAccessor reversed() {
 		throw new UnsupportedOperationException();
 	}
 
@@ -349,13 +349,13 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	}
 
 	@Override
-	public Float getDCVoltage() {
+	public Float getDcVoltage() {
 		Number n = getNumber(AE250TxRegister.InverterDcVoltage);
 		return (n != null ? n.floatValue() : null);
 	}
 
 	@Override
-	public Integer getDCPower() {
+	public Integer getDcPower() {
 		return getKiloValueAsInteger(AE250TxRegister.InverterDcPower);
 	}
 
