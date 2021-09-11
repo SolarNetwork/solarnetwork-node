@@ -27,8 +27,8 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusDataUtils;
@@ -248,8 +248,8 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 	}
 
 	@Override
-	public boolean supportsPhase(ACPhase phase) {
-		if ( phase == ACPhase.Total ) {
+	public boolean supportsPhase(AcPhase phase) {
+		if ( phase == AcPhase.Total ) {
 			return true;
 		}
 		SDMWiringMode wiringMode = getWiringMode();
@@ -312,15 +312,15 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 	}
 
 	@Override
-	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
-		if ( phase == ACPhase.Total ) {
+	public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
+		if ( phase == AcPhase.Total ) {
 			return this;
 		}
 		return new PhaseMeterDataAccessor(phase);
 	}
 
 	@Override
-	public ACEnergyDataAccessor reversed() {
+	public AcEnergyDataAccessor reversed() {
 		return new ReversedMeterDataAccessor(this);
 	}
 
@@ -485,9 +485,9 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 
 	private class PhaseMeterDataAccessor implements SDMDataAccessor {
 
-		private final ACPhase phase;
+		private final AcPhase phase;
 
-		private PhaseMeterDataAccessor(ACPhase phase) {
+		private PhaseMeterDataAccessor(AcPhase phase) {
 			super();
 			this.phase = phase;
 		}
@@ -508,17 +508,17 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 		}
 
 		@Override
-		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 			return SDMData.this.accessorForPhase(phase);
 		}
 
 		@Override
-		public ACEnergyDataAccessor reversed() {
+		public AcEnergyDataAccessor reversed() {
 			return new ReversedMeterDataAccessor(this);
 		}
 
 		@Override
-		public boolean supportsPhase(ACPhase phase) {
+		public boolean supportsPhase(AcPhase phase) {
 			return SDMData.this.supportsPhase(phase);
 		}
 
@@ -767,7 +767,7 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 		}
 
 		@Override
-		public boolean supportsPhase(ACPhase phase) {
+		public boolean supportsPhase(AcPhase phase) {
 			return delegate.supportsPhase(phase);
 		}
 
@@ -797,12 +797,12 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 		}
 
 		@Override
-		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 			return new ReversedMeterDataAccessor((SDMDataAccessor) delegate.accessorForPhase(phase));
 		}
 
 		@Override
-		public ACEnergyDataAccessor reversed() {
+		public AcEnergyDataAccessor reversed() {
 			return delegate;
 		}
 
