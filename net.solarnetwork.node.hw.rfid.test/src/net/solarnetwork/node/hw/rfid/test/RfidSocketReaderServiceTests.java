@@ -41,17 +41,20 @@ import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.hw.rfid.RfidSocketReaderService;
-import net.solarnetwork.node.test.AbstractNodeTest;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Unit tests for the {@link RfidSocketReaderService} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class RfidSocketReaderServiceTests extends AbstractNodeTest {
+public class RfidSocketReaderServiceTests {
+
+	private Logger log = LoggerFactory.getLogger(getClass());
 
 	private ServerSocket server;
 	private Thread serverThread;

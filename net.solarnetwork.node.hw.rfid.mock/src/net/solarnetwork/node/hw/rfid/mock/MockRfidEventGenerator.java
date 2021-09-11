@@ -22,35 +22,34 @@
 
 package net.solarnetwork.node.hw.rfid.mock;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
-import org.springframework.context.MessageSource;
+import net.solarnetwork.domain.BasicNodeControlInfo;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.domain.NodeControlInfoDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.service.support.BasicIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * Mock RFID scanner that exposes a {@link NodeControlProvider} and
  * {@link InstructionHandler} for issuing RFID "message received" events.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class MockRfidEventGenerator
+public class MockRfidEventGenerator extends BasicIdentifiable
 		implements InstructionHandler, NodeControlProvider, SettingSpecifierProvider {
 
 	/** A prefix added to {@link #getUID()} to form the control ID used. */
@@ -77,13 +76,21 @@ public class MockRfidEventGenerator
 	/** Event parameter for the configured {@code groupUID}. */
 	public static final String EVENT_PARAM_GROUP_UID = "groupUID";
 
-	private EventAdmin eventAdmin;
-	private MessageSource messageSource;
+	/** The {@code uid} property default value. */
+	public static final String DEFAULT_UID = "MockIdTag";
 
-	private String uid = "MockIdTag";
-	private String groupUID;
+	private EventAdmin eventAdmin;
 
 	private final AtomicInteger count = new AtomicInteger(0);
+
+	/**
+	 * Constructor.
+	 */
+	public MockRfidEventGenerator() {
+		super();
+		setUid(DEFAULT_UID);
+		setDisplayName(getClass().getSimpleName());
+	}
 
 	@Override
 	public boolean handlesTopic(String topic) {
@@ -91,10 +98,10 @@ public class MockRfidEventGenerator
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		// look for a parameter name that matches a control ID
 		InstructionState result = null;
-		final String expectedControlId = CONTROL_ID_PREFIX + uid;
+		final String expectedControlId = CONTROL_ID_PREFIX + getUid();
 		for ( String controlId : instruction.getParameterNames() ) {
 			if ( expectedControlId.equals(controlId) ) {
 				// doesn't matter what we try to set the control to, all we do is trigger the event here
@@ -102,16 +109,16 @@ public class MockRfidEventGenerator
 				result = InstructionState.Completed;
 			}
 		}
-		return result;
+		return InstructionUtils.createStatus(instruction, result);
 	}
 
 	private void postRfidScannedEvent() {
-		Map<String, Object> props = new HashMap<String, Object>();
+		Map<String, Object> props = new HashMap<>();
 		props.put(EVENT_PARAM_COUNT, count.incrementAndGet());
 		props.put(EVENT_PARAM_DATE, System.currentTimeMillis());
-		props.put(EVENT_PARAM_MESSAGE, uid);
-		props.put(EVENT_PARAM_UID, CONTROL_ID_PREFIX + uid);
-		props.put(EVENT_PARAM_GROUP_UID, groupUID);
+		props.put(EVENT_PARAM_MESSAGE, getUid());
+		props.put(EVENT_PARAM_UID, CONTROL_ID_PREFIX + getUid());
+		props.put(EVENT_PARAM_GROUP_UID, getGroupUid());
 		Event event = new Event(TOPIC_RFID_MESSAGE_RECEIVED, props);
 		EventAdmin ea = eventAdmin;
 		if ( ea != null ) {
@@ -121,34 +128,18 @@ public class MockRfidEventGenerator
 
 	@Override
 	public List<String> getAvailableControlIds() {
-		return Arrays.asList(CONTROL_ID_PREFIX + uid);
+		return Arrays.asList(CONTROL_ID_PREFIX + getUid());
 	}
 
 	@Override
 	public NodeControlInfo getCurrentControlInfo(String controlId) {
-		if ( controlId == null || !controlId.equals(CONTROL_ID_PREFIX + uid) ) {
+		if ( controlId == null || !controlId.equals(CONTROL_ID_PREFIX + getUid()) ) {
 			return null;
 		}
-		NodeControlInfoDatum info = new NodeControlInfoDatum();
-		info.setCreated(new Date());
-		info.setSourceId(controlId);
-		info.setType(NodeControlPropertyType.Boolean);
-		info.setReadonly(false);
-
-		// the control value never changes, just when set to "true" we'll trigger RFID event
-		info.setValue(Boolean.FALSE.toString());
-
+		BasicNodeControlInfo info = BasicNodeControlInfo.builder().withControlId(controlId)
+				.withType(NodeControlPropertyType.Boolean).withReadonly(false)
+				.withValue(Boolean.FALSE.toString()).build();
 		return info;
-	}
-
-	@Override
-	public String getUID() {
-		return uid;
-	}
-
-	@Override
-	public String getGroupUID() {
-		return groupUID;
 	}
 
 	@Override
@@ -157,53 +148,18 @@ public class MockRfidEventGenerator
 	}
 
 	@Override
-	public String getDisplayName() {
-		return getClass().getSimpleName();
-	}
-
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		MockRfidEventGenerator defaults = new MockRfidEventGenerator();
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(2);
-		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.uid));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
-		return results;
+		return basicIdentifiableSettings("", DEFAULT_UID, null);
 	}
 
+	/**
+	 * Set the event admin.
+	 * 
+	 * @param eventAdmin
+	 *        the service
+	 */
 	public void setEventAdmin(EventAdmin eventAdmin) {
 		this.eventAdmin = eventAdmin;
-	}
-
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
-
-	/**
-	 * Set the UID for this RFID scanner, which is also the control ID.
-	 * 
-	 * @param uid
-	 *        The UID to set.
-	 */
-	public void setUid(String uid) {
-		if ( uid == null ) {
-			return;
-		}
-		this.uid = uid;
-	}
-
-	/**
-	 * Set the group UID to use.
-	 * 
-	 * @param groupUID
-	 *        The group UID to set.
-	 */
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
 	}
 
 }
