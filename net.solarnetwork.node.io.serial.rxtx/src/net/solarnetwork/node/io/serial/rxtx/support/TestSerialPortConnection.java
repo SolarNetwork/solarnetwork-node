@@ -22,18 +22,18 @@
 
 package net.solarnetwork.node.io.serial.rxtx.support;
 
-import gnu.io.SerialPort;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
-import net.solarnetwork.node.LockTimeoutException;
+import gnu.io.SerialPort;
 import net.solarnetwork.node.io.serial.rxtx.SerialPortConnection;
-import net.solarnetwork.node.support.SerialPortBeanParameters;
+import net.solarnetwork.node.service.LockTimeoutException;
+import net.solarnetwork.node.service.support.SerialPortBeanParameters;
 
 /**
  * Implementation of {@link SerialPortConnection} for testing.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class TestSerialPortConnection extends SerialPortConnection {
 

@@ -14,13 +14,13 @@
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames" value="net.solarnetwork.node.io.serial.rxtx.SerialPortNetwork"/>
 		<property name="parentMessageSource">
-			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+			<bean class="net.solarnetwork.support.PrefixedMessageSource">
 				<property name="prefix" value="serialParams."/>
 				<property name="delegate">
 					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 						<property name="basenames">
 							<list>
-								<value>net.solarnetwork.node.support.SerialPortBeanParameters</value>
+								<value>net.solarnetwork.node.service.support.SerialPortBeanParameters</value>
 							</list>
 						</property>
 					</bean>
@@ -29,20 +29,20 @@
 		</property>
 	</bean>
 	
-	<bean id="settingsFactory" class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-		<property name="displayName" value="Serial port"/>
-		<property name="factoryUID" value="net.solarnetwork.node.io.serial"/>
-		<property name="messageSource" ref="messageSource"/>
-	</bean>
-
 	<!-- Published Services -->
 	
-	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Serial port"/>
+			<property name="factoryUID" value="net.solarnetwork.node.io.serial"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>	
+	</service>
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.serial" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.io.serial.SerialNetwork</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.serial"/>

@@ -25,12 +25,12 @@ package net.solarnetwork.node.io.serial.support;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
-import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.node.io.serial.SerialNetwork;
-import net.solarnetwork.node.support.DatumDataSourceSupport;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -38,7 +38,7 @@ import net.solarnetwork.util.StringUtils;
  * {@link DatumDataSource} implementations.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.3
  */
 public abstract class SerialDeviceDatumDataSourceSupport extends DatumDataSourceSupport {

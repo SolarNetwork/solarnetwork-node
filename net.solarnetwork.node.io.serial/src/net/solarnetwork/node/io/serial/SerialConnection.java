@@ -24,7 +24,7 @@ package net.solarnetwork.node.io.serial;
 
 import java.io.Closeable;
 import java.io.IOException;
-import net.solarnetwork.node.LockTimeoutException;
+import net.solarnetwork.node.service.LockTimeoutException;
 
 /**
  * @author matt

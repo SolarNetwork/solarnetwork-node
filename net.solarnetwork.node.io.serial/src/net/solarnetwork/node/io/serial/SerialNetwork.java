@@ -23,7 +23,7 @@
 package net.solarnetwork.node.io.serial;
 
 import java.io.IOException;
-import net.solarnetwork.node.Identifiable;
+import net.solarnetwork.service.Identifiable;
 
 /**
  * High level serial network API.
@@ -34,7 +34,7 @@ import net.solarnetwork.node.Identifiable;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public interface SerialNetwork extends Identifiable {
 

@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.io.serial;
 
-import net.solarnetwork.node.support.SerialPortBeanParameters;
+import net.solarnetwork.node.service.support.SerialPortBeanParameters;
 
 /**
  * A configurable serial network.

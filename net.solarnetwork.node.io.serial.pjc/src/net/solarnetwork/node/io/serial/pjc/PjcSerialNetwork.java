@@ -32,33 +32,37 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
-import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.io.serial.ConfigurableSerialNetwork;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.node.io.serial.SerialNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.SerialPortBean;
-import net.solarnetwork.node.support.SerialPortBeanParameters;
+import net.solarnetwork.node.service.LockTimeoutException;
+import net.solarnetwork.node.service.support.SerialPortBean;
+import net.solarnetwork.node.service.support.SerialPortBeanParameters;
+import net.solarnetwork.service.support.BasicIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * PureJavaComm implementation of {@link SerialNetwork}.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
-public class PjcSerialNetwork implements ConfigurableSerialNetwork, SettingSpecifierProvider {
+public class PjcSerialNetwork extends BasicIdentifiable
+		implements ConfigurableSerialNetwork, SettingSpecifierProvider {
+
+	/** The {@code uid} property default value. */
+	public static final String DEFAULT_UID = "Serial Port";
+
+	/** The {@code timeout} property default value. */
+	public static final long DEFAULT_TIMEOUT_SECS = 10L;
 
 	private SerialPortBeanParameters serialParams = getDefaultSerialParametersInstance();
-	private String uid = "Serial Port";
-	private String groupUID;
-	private long timeout = 10L;
+	private long timeout = DEFAULT_TIMEOUT_SECS;
 	private TimeUnit unit = TimeUnit.SECONDS;
-	private MessageSource messageSource;
 
 	private final ExecutorService executor = Executors
 			.newSingleThreadExecutor(new CustomizableThreadFactory("PJC-SerialPort-"));
@@ -77,6 +81,14 @@ public class PjcSerialNetwork implements ConfigurableSerialNetwork, SettingSpeci
 	}
 
 	/**
+	 * Constructor.
+	 */
+	public PjcSerialNetwork() {
+		super();
+		setUid(DEFAULT_UID);
+	}
+
+	/**
 	 * Call to shut down internal resources. Once called, this network may not
 	 * be used again.
 	 */
@@ -90,16 +102,6 @@ public class PjcSerialNetwork implements ConfigurableSerialNetwork, SettingSpeci
 	public String getPortName() {
 		SerialPortBeanParameters params = getSerialParams();
 		return (params != null ? params.getSerialPort() : null);
-	}
-
-	@Override
-	public String getUID() {
-		return uid;
-	}
-
-	@Override
-	public String getGroupUID() {
-		return groupUID;
 	}
 
 	@Override
@@ -221,21 +223,14 @@ public class PjcSerialNetwork implements ConfigurableSerialNetwork, SettingSpeci
 		return getDefaultSettingSpecifiers();
 	}
 
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers() {
-		PjcSerialNetwork defaults = new PjcSerialNetwork();
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
-		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.uid));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
+		List<SettingSpecifier> results = new ArrayList<>(20);
+		results.addAll(basicIdentifiableSettings("", DEFAULT_UID, null));
 
 		SerialPortBeanParameters defaultSerialParams = getDefaultSerialParametersInstance();
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.serialPort",
 				defaultSerialParams.getSerialPort()));
-		results.add(new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.timeout)));
+		results.add(new BasicTextFieldSettingSpecifier("timeout", String.valueOf(DEFAULT_TIMEOUT_SECS)));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.maxWait",
 				String.valueOf(defaultSerialParams.getMaxWait())));
 		results.addAll(SerialPortBean.getDefaultSettingSpecifiers(defaultSerialParams, "serialParams."));
@@ -252,10 +247,6 @@ public class PjcSerialNetwork implements ConfigurableSerialNetwork, SettingSpeci
 		return serialParams;
 	}
 
-	public String getUid() {
-		return uid;
-	}
-
 	public long getTimeout() {
 		return timeout;
 	}
@@ -264,24 +255,12 @@ public class PjcSerialNetwork implements ConfigurableSerialNetwork, SettingSpeci
 		return unit;
 	}
 
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
-	}
-
 	public void setTimeout(long timeout) {
 		this.timeout = timeout;
 	}
 
 	public void setUnit(TimeUnit unit) {
 		this.unit = unit;
-	}
-
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
 	}
 
 }

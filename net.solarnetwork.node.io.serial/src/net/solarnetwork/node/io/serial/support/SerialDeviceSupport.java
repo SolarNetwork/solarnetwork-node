@@ -35,32 +35,17 @@ import org.springframework.context.MessageSource;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.node.io.serial.SerialNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * A base helper class to support {@link SerialNetwork} based services.
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>serialNetwork</dt>
- * <dd>The {@link SerialNetwork} to use.</dd>
- * 
- * <dt>uid</dt>
- * <dd>A service name to use.</dd>
- * 
- * <dt>groupUID</dt>
- * <dd>A service group to use.</dd>
- * </dl>
- * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public abstract class SerialDeviceSupport extends BaseIdentifiable {
 

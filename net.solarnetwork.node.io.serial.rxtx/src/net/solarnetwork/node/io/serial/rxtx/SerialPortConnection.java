@@ -44,16 +44,16 @@ import gnu.io.SerialPort;
 import gnu.io.SerialPortEvent;
 import gnu.io.SerialPortEventListener;
 import gnu.io.UnsupportedCommOperationException;
-import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.io.serial.SerialConnection;
-import net.solarnetwork.node.support.SerialPortBeanParameters;
+import net.solarnetwork.node.service.LockTimeoutException;
+import net.solarnetwork.node.service.support.SerialPortBeanParameters;
 import net.solarnetwork.util.ByteList;
 
 /**
  * RXTX implementation of {@link SerialConnection}.
  * 
  * @author matt
- * @version 2.0
+ * @version 3.0
  */
 public class SerialPortConnection implements SerialConnection, SerialPortEventListener {
 
