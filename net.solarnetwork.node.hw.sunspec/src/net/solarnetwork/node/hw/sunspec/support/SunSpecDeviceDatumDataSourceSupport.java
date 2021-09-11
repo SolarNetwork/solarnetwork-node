@@ -46,7 +46,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
- * Supporting class for {@link net.solarnetwork.node.DatumDataSource}
+ * Supporting class for {@link net.solarnetwork.node.service.DatumDataSource}
  * implementations for SunSpec devices.
  * 
  * @author matt

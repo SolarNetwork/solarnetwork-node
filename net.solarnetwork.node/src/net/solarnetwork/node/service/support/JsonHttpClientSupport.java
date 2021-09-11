@@ -34,7 +34,7 @@ import java.util.function.Consumer;
 import java.util.zip.GZIPOutputStream;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.solarnetwork.node.service.RemoteServiceException;
+import net.solarnetwork.service.RemoteServiceException;
 
 /**
  * An abstract class to support HTTP based services that use JSON.

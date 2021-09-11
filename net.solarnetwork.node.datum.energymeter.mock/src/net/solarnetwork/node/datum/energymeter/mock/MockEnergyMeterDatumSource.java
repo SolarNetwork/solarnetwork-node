@@ -102,7 +102,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	 * Returns a {@link GeneralNodeACEnergyDatum} the data in the datum is the
 	 * state of the simulated circuit.
 	 * 
-	 * @see net.solarnetwork.node.DatumDataSource#readCurrentDatum()
+	 * @see net.solarnetwork.node.service.DatumDataSource#readCurrentDatum()
 	 * @return A {@link GeneralNodeACEnergyDatum}
 	 */
 	@Override

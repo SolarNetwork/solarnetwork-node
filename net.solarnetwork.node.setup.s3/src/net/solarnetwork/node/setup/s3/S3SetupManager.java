@@ -79,7 +79,7 @@ import net.solarnetwork.node.service.PlatformService;
 import net.solarnetwork.node.service.PlatformService.PlatformState;
 import net.solarnetwork.node.service.PlatformService.PlatformTask;
 import net.solarnetwork.node.service.PlatformService.PlatformTaskStatusHandler;
-import net.solarnetwork.node.service.RemoteServiceException;
+import net.solarnetwork.service.RemoteServiceException;
 import net.solarnetwork.node.service.SystemService;
 import net.solarnetwork.node.setup.SetupException;
 import net.solarnetwork.node.setup.SetupSettings;
