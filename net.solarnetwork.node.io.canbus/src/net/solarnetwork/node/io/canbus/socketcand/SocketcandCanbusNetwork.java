@@ -27,16 +27,16 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import net.solarnetwork.node.io.canbus.CanbusConnection;
 import net.solarnetwork.node.io.canbus.support.AbstractCanbusNetwork;
-import net.solarnetwork.node.settings.MappableSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.MappableSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * CAN bus network implementation using the socketcand server protocol.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @see <a href=
  *      "https://github.com/linux-can/socketcand">linux-can/socketcand</a>
  */
@@ -107,7 +107,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork implements Se
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(12);
-		results.addAll(baseIdentifiableSettings("", DEFAULT_UID, ""));
+		results.addAll(basicIdentifiableSettings("", DEFAULT_UID, ""));
 		results.add(new BasicTextFieldSettingSpecifier("host", DEFAULT_HOST));
 		results.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(DEFAULT_PORT)));
 

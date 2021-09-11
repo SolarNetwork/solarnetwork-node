@@ -36,11 +36,11 @@ import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.canbus.CanbusConnection;
 import net.solarnetwork.node.io.canbus.CanbusFrameListener;
 import net.solarnetwork.node.io.canbus.CanbusNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.service.ServiceLifecycleObserver;
+import net.solarnetwork.service.support.BasicIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingsChangeObserver;
-import net.solarnetwork.support.ServiceLifecycleObserver;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Base implementation of {@link CanbusNetwork} for other implementations to
@@ -56,9 +56,9 @@ import net.solarnetwork.support.ServiceLifecycleObserver;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public abstract class AbstractCanbusNetwork extends BaseIdentifiable
+public abstract class AbstractCanbusNetwork extends BasicIdentifiable
 		implements CanbusNetwork, SettingsChangeObserver, ServiceLifecycleObserver {
 
 	/** The default value for the {@code timeout} property. */

@@ -27,16 +27,16 @@ import java.util.List;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.io.canbus.socketcand.CanbusSocket;
 import net.solarnetwork.node.io.canbus.socketcand.CanbusSocketProvider;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * {@link CanbusSocketProvider} for {@link SocketCanbusSocket} instances.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class SocketCanbusSocketProvider implements CanbusSocketProvider, SettingSpecifierProvider {
 
