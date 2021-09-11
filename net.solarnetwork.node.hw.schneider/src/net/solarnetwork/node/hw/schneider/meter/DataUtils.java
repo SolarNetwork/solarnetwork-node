@@ -22,13 +22,14 @@
 
 package net.solarnetwork.node.hw.schneider.meter;
 
-import org.joda.time.LocalDateTime;
+import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Utilities for dealing with Schneider meter data.
  * 
  * @author matt
- * @version 2.0
+ * @version 3.0
  * @since 2.4
  */
 public final class DataUtils {
@@ -55,7 +56,8 @@ public final class DataUtils {
 			int ms = (data[3] & 0xFFFF); // this is really seconds + milliseconds
 			int sec = ms / 1000;
 			ms = ms - (sec * 1000);
-			result = new LocalDateTime(year, month, day, hour, minute, sec, ms);
+			result = LocalDateTime.of(year, month, day, hour, minute, sec,
+					(int) TimeUnit.MILLISECONDS.toNanos(ms));
 		}
 		return result;
 	}

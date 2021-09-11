@@ -26,8 +26,8 @@ import static net.solarnetwork.util.CollectionUtils.coveringIntRanges;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.domain.datum.AcPhase;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -138,20 +138,20 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 	 *        the phase to get an accessor for
 	 * @return the accessor
 	 */
-	public PM5100DataAccessor dataAccessorForPhase(ACPhase phase) {
-		if ( phase == ACPhase.Total ) {
+	public PM5100DataAccessor dataAccessorForPhase(AcPhase phase) {
+		if ( phase == AcPhase.Total ) {
 			return this;
 		}
 		return new PhaseMeterDataAccessor(phase);
 	}
 
 	@Override
-	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+	public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 		return dataAccessorForPhase(phase);
 	}
 
 	@Override
-	public ACEnergyDataAccessor reversed() {
+	public AcEnergyDataAccessor reversed() {
 		return new ReversedMeterDataAccessor(this);
 	}
 
@@ -308,9 +308,9 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 
 	private class PhaseMeterDataAccessor implements PM5100DataAccessor {
 
-		private final ACPhase phase;
+		private final AcPhase phase;
 
-		private PhaseMeterDataAccessor(ACPhase phase) {
+		private PhaseMeterDataAccessor(AcPhase phase) {
 			super();
 			this.phase = phase;
 		}
@@ -356,12 +356,12 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 		}
 
 		@Override
-		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 			return PM5100Data.this.accessorForPhase(phase);
 		}
 
 		@Override
-		public ACEnergyDataAccessor reversed() {
+		public AcEnergyDataAccessor reversed() {
 			return new ReversedMeterDataAccessor(this);
 		}
 
@@ -525,7 +525,7 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 		}
 
 		@Override
-		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 			return new ReversedMeterDataAccessor((PM5100DataAccessor) delegate.accessorForPhase(phase));
 		}
 
@@ -560,7 +560,7 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 		}
 
 		@Override
-		public ACEnergyDataAccessor reversed() {
+		public AcEnergyDataAccessor reversed() {
 			return delegate;
 		}
 

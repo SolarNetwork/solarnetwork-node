@@ -22,13 +22,13 @@
 
 package net.solarnetwork.node.hw.schneider.meter;
 
-import org.joda.time.LocalDateTime;
+import java.time.LocalDateTime;
 
 /**
  * API for reading PM3200 series meter data.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public interface PM3200DataAccessor extends MeterDataAccessor {
 

@@ -22,9 +22,9 @@
 
 package net.solarnetwork.node.hw.schneider.test;
 
-import static net.solarnetwork.node.domain.ACPhase.PhaseA;
-import static net.solarnetwork.node.domain.ACPhase.PhaseB;
-import static net.solarnetwork.node.domain.ACPhase.PhaseC;
+import static net.solarnetwork.domain.datum.AcPhase.PhaseA;
+import static net.solarnetwork.domain.datum.AcPhase.PhaseB;
+import static net.solarnetwork.domain.datum.AcPhase.PhaseC;
 import static net.solarnetwork.node.hw.schneider.meter.PM3200Register.MeterActivePowerPhaseA;
 import static net.solarnetwork.node.hw.schneider.meter.PM3200Register.MeterActivePowerTotal;
 import static net.solarnetwork.node.hw.schneider.meter.PM3200Register.MeterApparentPowerPhaseA;
@@ -41,15 +41,15 @@ import static org.junit.Assert.assertThat;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Map;
-import org.joda.time.LocalDate;
-import org.joda.time.LocalDateTime;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.domain.datum.AcPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Data;
 import net.solarnetwork.node.hw.schneider.meter.PM3200DataAccessor;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Register;
@@ -187,7 +187,7 @@ public class PM3200DataTests {
 		assertThat("Name", data.getName(), equalTo("Energy Meter"));
 		assertThat("Manufacturer", data.getManufacturer(), equalTo("Schneider Electric"));
 		assertThat("Manufacture date", data.getManufactureDate(),
-				equalTo(new LocalDateTime(2016, 6, 1, 0, 0)));
+				equalTo(LocalDateTime.of(2016, 6, 1, 0, 0)));
 	}
 
 	@Test
@@ -202,7 +202,7 @@ public class PM3200DataTests {
 		assertThat("Serial number", info,
 				hasEntry(ModbusDeviceSupport.INFO_KEY_DEVICE_SERIAL_NUMBER, 16233039L));
 		assertThat("Manufacture date", info, hasEntry(
-				ModbusDeviceSupport.INFO_KEY_DEVICE_MANUFACTURE_DATE, new LocalDate(2016, 6, 1)));
+				ModbusDeviceSupport.INFO_KEY_DEVICE_MANUFACTURE_DATE, LocalDate.of(2016, 6, 1)));
 	}
 
 	@Test
@@ -220,13 +220,13 @@ public class PM3200DataTests {
 		PM3200DataAccessor data = getTestDataInstance("test-pm3200-data-01.txt");
 		assertThat("Power", data.getActivePower(), equalTo(-607));
 
-		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		AcEnergyDataAccessor phaseData = data.accessorForPhase(AcPhase.PhaseA);
 		assertThat("Phase power a", phaseData.getActivePower(), equalTo(602));
 
 		phaseData = data.accessorForPhase(PhaseB);
 		assertThat("Phase power b", phaseData.getActivePower(), equalTo(506));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		phaseData = data.accessorForPhase(AcPhase.PhaseC);
 		assertThat("Phase power c", phaseData.getActivePower(), equalTo(-1715));
 	}
 
@@ -274,13 +274,13 @@ public class PM3200DataTests {
 		PM3200DataAccessor data = getTestDataInstance("test-pm3200-data-01.txt");
 		assertThat("Current", data.getCurrent(), equalTo(4.4700837f));
 
-		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		AcEnergyDataAccessor phaseData = data.accessorForPhase(AcPhase.PhaseA);
 		assertThat("Phase current a", phaseData.getCurrent(), equalTo(2.601986408f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseB);
+		phaseData = data.accessorForPhase(AcPhase.PhaseB);
 		assertThat("Phase current b", phaseData.getCurrent(), equalTo(3.6124866f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		phaseData = data.accessorForPhase(AcPhase.PhaseC);
 		assertThat("Phase current c", phaseData.getCurrent(), equalTo(7.1957783699f));
 	}
 
@@ -289,13 +289,13 @@ public class PM3200DataTests {
 		PM3200DataAccessor data = getTestDataInstance("test-pm3200-data-01.txt");
 		assertThat("Voltage", data.getVoltage(), equalTo(241.9366f));
 
-		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		AcEnergyDataAccessor phaseData = data.accessorForPhase(AcPhase.PhaseA);
 		assertThat("Phase voltage a", phaseData.getVoltage(), equalTo(239.2910919f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseB);
+		phaseData = data.accessorForPhase(AcPhase.PhaseB);
 		assertThat("Phase voltage b", phaseData.getVoltage(), equalTo(240.9434509f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		phaseData = data.accessorForPhase(AcPhase.PhaseC);
 		assertThat("Phase voltage c", phaseData.getVoltage(), equalTo(245.575286865f));
 	}
 
@@ -304,13 +304,13 @@ public class PM3200DataTests {
 		PM3200DataAccessor data = getTestDataInstance("test-pm3200-data-01.txt");
 		assertThat("Line voltage", data.getLineVoltage(), equalTo(419.00527954f));
 
-		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		AcEnergyDataAccessor phaseData = data.accessorForPhase(AcPhase.PhaseA);
 		assertThat("Line voltage ab", phaseData.getLineVoltage(), equalTo(416.4808654785f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseB);
+		phaseData = data.accessorForPhase(AcPhase.PhaseB);
 		assertThat("Line voltage bc", phaseData.getLineVoltage(), equalTo(418.658172607f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		phaseData = data.accessorForPhase(AcPhase.PhaseC);
 		assertThat("Line voltage ca", phaseData.getLineVoltage(), equalTo(421.876831f));
 	}
 }

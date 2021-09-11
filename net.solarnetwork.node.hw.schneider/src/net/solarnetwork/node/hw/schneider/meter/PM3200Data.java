@@ -24,12 +24,12 @@ package net.solarnetwork.node.hw.schneider.meter;
 
 import static net.solarnetwork.util.CollectionUtils.coveringIntRanges;
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.joda.time.LocalDateTime;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.domain.datum.AcPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -39,7 +39,7 @@ import net.solarnetwork.util.IntRange;
  * Encapsulates raw Modbus register data from the PM3200 meters.
  * 
  * @author matt
- * @version 2.1
+ * @version 3.0
  */
 public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 
@@ -258,20 +258,20 @@ public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 	 *        the phase to get an accessor for
 	 * @return the accessor
 	 */
-	public PM3200DataAccessor dataAccessorForPhase(ACPhase phase) {
-		if ( phase == ACPhase.Total ) {
+	public PM3200DataAccessor dataAccessorForPhase(AcPhase phase) {
+		if ( phase == AcPhase.Total ) {
 			return this;
 		}
 		return new PhaseMeterDataAccessor(phase);
 	}
 
 	@Override
-	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+	public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 		return dataAccessorForPhase(phase);
 	}
 
 	@Override
-	public ACEnergyDataAccessor reversed() {
+	public AcEnergyDataAccessor reversed() {
 		return new ReversedMeterDataAccessor(this);
 	}
 
@@ -440,9 +440,9 @@ public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 
 	private class PhaseMeterDataAccessor implements PM3200DataAccessor {
 
-		private final ACPhase phase;
+		private final AcPhase phase;
 
-		private PhaseMeterDataAccessor(ACPhase phase) {
+		private PhaseMeterDataAccessor(AcPhase phase) {
 			super();
 			this.phase = phase;
 		}
@@ -503,12 +503,12 @@ public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 		}
 
 		@Override
-		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 			return PM3200Data.this.accessorForPhase(phase);
 		}
 
 		@Override
-		public ACEnergyDataAccessor reversed() {
+		public AcEnergyDataAccessor reversed() {
 			return new ReversedMeterDataAccessor(this);
 		}
 
@@ -720,7 +720,7 @@ public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 		}
 
 		@Override
-		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 			return new ReversedMeterDataAccessor((PM3200DataAccessor) delegate.accessorForPhase(phase));
 		}
 
@@ -770,7 +770,7 @@ public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 		}
 
 		@Override
-		public ACEnergyDataAccessor reversed() {
+		public AcEnergyDataAccessor reversed() {
 			return delegate;
 		}
 
