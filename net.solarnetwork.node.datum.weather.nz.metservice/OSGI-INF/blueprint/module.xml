@@ -19,7 +19,7 @@
 			<list>
 				<value>net.solarnetwork.node.weather.nz.metservice.MetserviceDayDatumDataSource</value>
 				<value>net.solarnetwork.node.weather.nz.metservice.MetserviceSupport</value>
-				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
@@ -44,7 +44,7 @@
 			<list>
 				<value>net.solarnetwork.node.weather.nz.metservice.MetserviceWeatherDatumDataSource</value>
 				<value>net.solarnetwork.node.weather.nz.metservice.MetserviceSupport</value>
-				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>

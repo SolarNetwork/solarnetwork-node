@@ -35,7 +35,7 @@
 			<list>
 				<value>net.solarnetwork.node.weather.yr.ConfigurableYrClientService</value>
 				<value>net.solarnetwork.node.weather.yr.YrDayDatumDataSource</value>
-				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
@@ -116,7 +116,7 @@
 			<list>
 				<value>net.solarnetwork.node.weather.yr.ConfigurableYrClientService</value>
 				<value>net.solarnetwork.node.weather.yr.YrWeatherDatumDataSource</value>
-				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>

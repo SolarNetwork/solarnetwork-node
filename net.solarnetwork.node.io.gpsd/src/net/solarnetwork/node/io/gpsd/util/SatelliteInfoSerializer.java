@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.io.gpsd.util;
 
-import static net.solarnetwork.node.io.gpsd.util.JsonUtils.writeNumberField;
+import static net.solarnetwork.codec.JsonUtils.writeNumberField;
 import static net.solarnetwork.node.io.gpsd.util.SatelliteInfoDeserializer.AZIMUTH_FIELD;
 import static net.solarnetwork.node.io.gpsd.util.SatelliteInfoDeserializer.ELEVATION_FIELD;
 import static net.solarnetwork.node.io.gpsd.util.SatelliteInfoDeserializer.PRN_FIELD;
@@ -38,7 +38,7 @@ import net.solarnetwork.node.io.gpsd.domain.SatelliteInfo;
  * JSON serializer for {@link SatelliteInfo} objects.
  * 
  * @author matt
- * @version 1.0
+ * @version 120
  */
 public class SatelliteInfoSerializer extends StdSerializer<SatelliteInfo> {
 

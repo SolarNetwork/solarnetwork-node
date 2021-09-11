@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.gpsd.domain;
 
+import static net.solarnetwork.codec.JsonUtils.iso8610Timestamp;
 import static net.solarnetwork.node.io.gpsd.util.SkyReportMessageSerializer.ALTITUDE__DOP_FIELD;
 import static net.solarnetwork.node.io.gpsd.util.SkyReportMessageSerializer.DEVICE_FIELD;
 import static net.solarnetwork.node.io.gpsd.util.SkyReportMessageSerializer.HORIZONTAL_DOP_FIELD;
@@ -42,13 +43,12 @@ import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import net.solarnetwork.node.io.gpsd.util.JsonUtils;
 
 /**
  * A GPS satellite sky view report message.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 @JsonDeserialize(builder = SkyReportMessage.Builder.class)
 @JsonSerialize(using = net.solarnetwork.node.io.gpsd.util.SkyReportMessageSerializer.class)
@@ -132,7 +132,7 @@ public class SkyReportMessage extends AbstractGpsdReportMessage {
 		}
 
 		public Builder withTimestamp(String timestamp) {
-			return withTimestamp(JsonUtils.iso8610Timestamp(timestamp));
+			return withTimestamp(iso8610Timestamp(timestamp));
 		}
 
 		public Builder withTimestamp(Instant timestamp) {

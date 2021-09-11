@@ -63,7 +63,7 @@
 			<list>
 				<value>net.solarnetwork.node.weather.owm.ConfigurableOwmClientService</value>
 				<value>net.solarnetwork.node.weather.owm.OwmDayDatumDataSource</value>
-				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
@@ -145,7 +145,7 @@
 			<list>
 				<value>net.solarnetwork.node.weather.owm.ConfigurableOwmClientService</value>
 				<value>net.solarnetwork.node.weather.owm.OwmWeatherDatumDataSource</value>
-				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>

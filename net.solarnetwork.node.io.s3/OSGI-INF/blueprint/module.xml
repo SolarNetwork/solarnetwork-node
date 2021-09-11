@@ -22,7 +22,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.io.s3.NodeS3ResourceStorageService</value>
-				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 		<property name="parentMessageSource">

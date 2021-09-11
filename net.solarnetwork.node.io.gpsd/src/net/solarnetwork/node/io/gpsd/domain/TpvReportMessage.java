@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.gpsd.domain;
 
+import static net.solarnetwork.codec.JsonUtils.iso8610Timestamp;
 import static net.solarnetwork.node.io.gpsd.util.TpvReportMessageSerializer.ALTITUDE_ERROR_FIELD;
 import static net.solarnetwork.node.io.gpsd.util.TpvReportMessageSerializer.ALTITUDE_FIELD;
 import static net.solarnetwork.node.io.gpsd.util.TpvReportMessageSerializer.CLIMB_RATE_ERROR_FIELD;
@@ -44,13 +45,12 @@ import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import net.solarnetwork.node.io.gpsd.util.JsonUtils;
 
 /**
  * A time-position-velocity report message.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 @JsonDeserialize(builder = TpvReportMessage.Builder.class)
 @JsonSerialize(using = net.solarnetwork.node.io.gpsd.util.TpvReportMessageSerializer.class)
@@ -163,7 +163,7 @@ public class TpvReportMessage extends AbstractGpsdReportMessage {
 		}
 
 		public Builder withTimestamp(String timestamp) {
-			return withTimestamp(JsonUtils.iso8610Timestamp(timestamp));
+			return withTimestamp(iso8610Timestamp(timestamp));
 		}
 
 		public Builder withTimestamp(Instant timestamp) {

@@ -39,7 +39,7 @@
 			<array>
 				<value>net.solarnetwork.node.datum.energymeter.mock.MockEnergyMeterDatumSource</value>
 				<value>net.solarnetwork.node.service.support.DatumDataSourceSupport</value>
-				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</array>
 		</property>
 	</bean>

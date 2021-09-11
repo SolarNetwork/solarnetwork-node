@@ -33,7 +33,7 @@
 			<list>
 				<value>net.solarnetwork.node.datum.price.delimited.DelimitedPriceDatumDataSource</value>
 				<value>net.solarnetwork.node.service.support.PriceLocationDatumDataSource</value>
-				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>

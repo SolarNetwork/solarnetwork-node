@@ -27,7 +27,7 @@
 		<property name="basenames">
 			<array>
 				<value>net.solarnetwork.node.io.modbus.server.impl.ModbusServer</value>
-				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</array>
 		</property>
 		<property name="parentMessageSource">

@@ -17,6 +17,7 @@ Import-Package:
  net.solarnetwork.node.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.0,3.0)",
  net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  org.quartz;version="[2.2,3.0)",
  org.quartz.simpl;version="[2.2,3.0)",

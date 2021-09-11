@@ -17,7 +17,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.io.protobuf.DatumProtobufObjectCodec</value>
-				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
@@ -78,7 +78,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.io.protobuf.ProtocProtobufCompilerService</value>
-				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>

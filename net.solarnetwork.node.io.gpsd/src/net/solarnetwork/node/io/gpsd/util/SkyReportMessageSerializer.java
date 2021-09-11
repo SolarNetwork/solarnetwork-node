@@ -22,8 +22,8 @@
 
 package net.solarnetwork.node.io.gpsd.util;
 
-import static net.solarnetwork.node.io.gpsd.util.JsonUtils.writeIso8601Timestamp;
-import static net.solarnetwork.node.io.gpsd.util.JsonUtils.writeNumberField;
+import static net.solarnetwork.codec.JsonUtils.writeIso8601Timestamp;
+import static net.solarnetwork.codec.JsonUtils.writeNumberField;
 import java.io.IOException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -34,7 +34,7 @@ import net.solarnetwork.node.io.gpsd.domain.SkyReportMessage;
  * Serializer for {@link SkyReportMessage} objects.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class SkyReportMessageSerializer extends AbstractGpsdMessageSerializer<SkyReportMessage> {
 

@@ -53,20 +53,20 @@ import net.solarnetwork.node.io.gpsd.domain.WatchMessage;
 import net.solarnetwork.node.io.gpsd.service.GpsdClientConnection;
 import net.solarnetwork.node.io.gpsd.service.GpsdClientStatus;
 import net.solarnetwork.node.io.gpsd.service.GpsdMessageListener;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.support.BasicIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Mock implementation of {@link GpsdClientConnection} for testing purposes.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class MockGpsdClientService extends BaseIdentifiable
+public class MockGpsdClientService extends BasicIdentifiable
 		implements GpsdClientConnection, SettingSpecifierProvider, SettingsChangeObserver, Runnable {
 
 	private final ConcurrentMap<Class<? extends GpsdMessage>, Set<GpsdMessageListener<GpsdMessage>>> messageListeners = new ConcurrentHashMap<>(
@@ -338,7 +338,7 @@ public class MockGpsdClientService extends BaseIdentifiable
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
-		results.addAll(baseIdentifiableSettings("", DEFAULT_UID, ""));
+		results.addAll(basicIdentifiableSettings("", DEFAULT_UID, ""));
 		results.add(
 				new BasicTextFieldSettingSpecifier("updatePeriodMs", valueOf(DEFAULT_UPDATE_PERIOD)));
 		results.add(new BasicTextFieldSettingSpecifier("fixDelayMs", valueOf(DEFAULT_FIX_DELAY)));

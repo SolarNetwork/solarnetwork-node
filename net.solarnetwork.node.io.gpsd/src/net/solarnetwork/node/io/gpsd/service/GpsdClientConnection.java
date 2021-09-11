@@ -23,20 +23,19 @@
 package net.solarnetwork.node.io.gpsd.service;
 
 import java.util.concurrent.Future;
-import net.solarnetwork.node.Identifiable;
 import net.solarnetwork.node.io.gpsd.domain.GpsdMessage;
 import net.solarnetwork.node.io.gpsd.domain.GpsdReportMessage;
 import net.solarnetwork.node.io.gpsd.domain.VersionMessage;
 import net.solarnetwork.node.io.gpsd.domain.WatchMessage;
+import net.solarnetwork.service.Identifiable;
 
 /**
  * API for a GPSd client.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public interface GpsdClientConnection
-		extends GpsdMessageBroker, Identifiable, net.solarnetwork.domain.Identifiable {
+public interface GpsdClientConnection extends GpsdMessageBroker, Identifiable {
 
 	/**
 	 * An {@link org.osgi.service.event.Event} topic for when a

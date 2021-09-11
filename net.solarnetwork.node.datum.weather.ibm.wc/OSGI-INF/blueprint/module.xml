@@ -38,7 +38,7 @@
 			<list>
 				<value>net.solarnetwork.node.weather.ibm.wc.WCDayDatumDataSource</value>
 				<value>net.solarnetwork.node.weather.ibm.wc.WCSupport</value>
-				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
@@ -48,7 +48,7 @@
 			<list>
 				<value>net.solarnetwork.node.weather.ibm.wc.WCHourlyDatumDataSource</value>
 				<value>net.solarnetwork.node.weather.ibm.wc.WCSupport</value>
-				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
