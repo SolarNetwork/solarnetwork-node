@@ -39,7 +39,7 @@ public class YrDayDatum extends SimpleDayDatum {
 	private static final long serialVersionUID = 8230332231861429332L;
 
 	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
+	 * A {@link net.solarnetwork.domain.datum.DatumSamples} status sample key
 	 * for the Yr sky conditions symbol.
 	 */
 	public static final String SYMBOL_VAR_KEY = "symbolVar";

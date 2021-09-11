@@ -41,13 +41,13 @@ public class YrAtmosphericDatum extends SimpleAtmosphericDatum {
 	private static final long serialVersionUID = 2265538882543293937L;
 
 	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
+	 * A {@link net.solarnetwork.domain.datum.DatumSamples} status sample key
 	 * for the date the samples are valid to.
 	 */
 	public static final String VALID_TO_KEY = "validTo";
 
 	/**
-	 * A {@link net.solarnetwork.domain.GeneralDatumSamples} status sample key
+	 * A {@link net.solarnetwork.domain.datum.DatumSamples} status sample key
 	 * for the Yr sky conditions symbol.
 	 */
 	public static final String SYMBOL_VAR_KEY = "symbolVar";
