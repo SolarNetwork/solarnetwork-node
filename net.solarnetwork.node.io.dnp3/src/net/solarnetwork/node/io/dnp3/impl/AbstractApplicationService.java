@@ -30,33 +30,37 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.TaskScheduler;
 import com.automatak.dnp3.Channel;
 import net.solarnetwork.node.io.dnp3.ChannelService;
 import net.solarnetwork.node.io.dnp3.OutstationService;
 import net.solarnetwork.node.io.dnp3.domain.LinkLayerConfig;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.support.BasicIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Abstract implementation of {@link OutstationService}.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
-public abstract class AbstractApplicationService implements OutstationService {
+public abstract class AbstractApplicationService extends BasicIdentifiable implements OutstationService {
+
+	/**
+	 * The {@code uid} property default value.
+	 * 
+	 * @since 2.0
+	 */
+	public static final String DEFAULT_UID = "DNP3 Outstation";
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final OptionalService<ChannelService> dnp3Channel;
 
-	private String uid = "DNP3 Outstation";
-	private String groupUID;
-	private MessageSource messageSource;
 	private TaskExecutor taskExecutor;
 	private TaskScheduler taskScheduler;
 	private final LinkLayerConfig linkLayerConfig = new LinkLayerConfig(false);
@@ -70,6 +74,7 @@ public abstract class AbstractApplicationService implements OutstationService {
 	public AbstractApplicationService(OptionalService<ChannelService> dnp3Channel) {
 		super();
 		this.dnp3Channel = dnp3Channel;
+		setUid(DEFAULT_UID);
 	}
 
 	/**
@@ -190,54 +195,6 @@ public abstract class AbstractApplicationService implements OutstationService {
 				String.valueOf(defaults.remoteAddr)));
 
 		return results;
-	}
-
-	/**
-	 * Alias for the {@link #getUID()} method.
-	 * 
-	 * @return the unique ID
-	 * @see #getUID()
-	 */
-	public String getUid() {
-		return uid;
-	}
-
-	/**
-	 * Set the unique ID to identify this service with.
-	 * 
-	 * @param uid
-	 *        the unique ID; defaults to {@literal Modbus Port}
-	 */
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	@Override
-	public String getUID() {
-		return uid;
-	}
-
-	@Override
-	public String getGroupUID() {
-		return groupUID;
-	}
-
-	/**
-	 * Set the group unique ID to identify this service with.
-	 * 
-	 * @param groupUID
-	 *        the group unique ID
-	 */
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
-	}
-
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
 	}
 
 	public TaskExecutor getTaskExecutor() {

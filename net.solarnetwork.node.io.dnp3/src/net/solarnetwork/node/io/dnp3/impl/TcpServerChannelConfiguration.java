@@ -23,15 +23,15 @@
 package net.solarnetwork.node.io.dnp3.impl;
 
 import java.util.List;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * A set of configuration options for a TCP server (outstation) based DNP3
  * channel.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class TcpServerChannelConfiguration extends BaseChannelConfiguration {
 

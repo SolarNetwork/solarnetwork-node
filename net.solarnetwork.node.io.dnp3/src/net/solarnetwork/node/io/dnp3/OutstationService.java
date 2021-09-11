@@ -22,13 +22,13 @@
 
 package net.solarnetwork.node.io.dnp3;
 
-import net.solarnetwork.node.Identifiable;
+import net.solarnetwork.service.Identifiable;
 
 /**
  * API for a DNP3 "outstation" service.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public interface OutstationService extends Identifiable {
 

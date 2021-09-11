@@ -28,10 +28,9 @@ import com.automatak.dnp3.Channel;
 import com.automatak.dnp3.DNP3Exception;
 import com.automatak.dnp3.DNP3Manager;
 import com.automatak.dnp3.enums.ServerAcceptMode;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * TCP based server (outstation) channel service.
@@ -65,12 +64,11 @@ public class TcpServerChannelService extends AbstractChannelService<TcpServerCha
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> result = new ArrayList<>(8);
+		List<net.solarnetwork.settings.SettingSpecifier> result = new ArrayList<>(8);
 
 		result.add(new BasicTitleSettingSpecifier("status", getChannelStatusMessage(), true));
 
-		result.add(new BasicTextFieldSettingSpecifier("uid", DEFAULT_UID));
-		result.add(new BasicTextFieldSettingSpecifier("groupUID", ""));
+		result.addAll(basicIdentifiableSettings("", DEFAULT_UID, null));
 
 		result.addAll(TcpServerChannelConfiguration.settings("config."));
 
