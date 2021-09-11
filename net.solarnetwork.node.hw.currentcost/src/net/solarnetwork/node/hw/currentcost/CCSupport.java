@@ -38,10 +38,10 @@ import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialNetwork;
 import net.solarnetwork.node.io.serial.support.SerialDeviceDatumDataSourceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * Support class for reading CurrentCost watt meter data from a serial
@@ -115,7 +115,7 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * </dl>
  * 
  * @author matt
- * @version 2.2
+ * @version 3.0
  */
 public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 
@@ -170,7 +170,7 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	 * This adds the address to the cached set of <em>known</em> addresses,
 	 * which are shown as a read-only setting property to aid in mapping the
 	 * right device address, as long as the {@link CCDatum#getDeviceAddress()}
-	 * value is not <em>null</em>.
+	 * value is not {@literal null}.
 	 * </p>
 	 * 
 	 * @param datum

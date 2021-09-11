@@ -26,19 +26,19 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import java.io.IOException;
-import net.solarnetwork.node.hw.currentcost.CCDatum;
-import net.solarnetwork.node.hw.currentcost.CCMessageParser;
-import org.joda.time.LocalTime;
+import java.time.LocalTime;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
+import net.solarnetwork.node.hw.currentcost.CCDatum;
+import net.solarnetwork.node.hw.currentcost.CCMessageParser;
 
 /**
  * Unit test for the {@link CCMessageParser} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class CCMessageParserTest {
 
@@ -61,7 +61,7 @@ public class CCMessageParserTest {
 		assertEquals("1", datum.getDeviceType());
 		assertNotNull("temperature", datum.getTemperature());
 		assertEquals("temperature value", 22.6, datum.getTemperature().doubleValue(), 0.01);
-		assertEquals(new LocalTime(10, 43, 49), datum.getTime());
+		assertEquals(LocalTime.of(10, 43, 49), datum.getTime());
 	}
 
 	@Test
@@ -81,7 +81,7 @@ public class CCMessageParserTest {
 		assertEquals("1", datum.getDeviceType());
 		assertNotNull("temperature", datum.getTemperature());
 		assertEquals("temperature value", 24.6, datum.getTemperature().doubleValue(), 0.01);
-		assertEquals(new LocalTime(14, 14, 27), datum.getTime());
+		assertEquals(LocalTime.of(14, 14, 27), datum.getTime());
 	}
 
 }

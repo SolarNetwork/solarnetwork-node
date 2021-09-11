@@ -23,10 +23,9 @@
 package net.solarnetwork.node.hw.currentcost;
 
 import java.text.SimpleDateFormat;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import org.joda.time.LocalTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 
 /**
  * A CurrentCost datum.
@@ -75,8 +74,7 @@ public class CCDatum implements Comparable<CCDatum> {
 			if ( timeString.startsWith(":") ) {
 				timeString = timeString.replaceAll("^:+", "");
 			}
-			DateTimeFormatter dtf = DateTimeFormat.forPattern("HH:mm:ss");
-			t = dtf.parseLocalTime(timeString);
+			t = DateTimeFormatter.ISO_LOCAL_TIME.parse(timeString, LocalTime::from);
 		}
 		this.time = t;
 	}
