@@ -26,7 +26,7 @@ import static net.solarnetwork.node.hw.sunspec.DataClassification.Enumeration;
 import static net.solarnetwork.node.hw.sunspec.DataClassification.ScaleFactor;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.domain.datum.AcPhase;
 import net.solarnetwork.node.hw.sunspec.ApparentPowerCalculationMethod;
 import net.solarnetwork.node.hw.sunspec.DataClassification;
 import net.solarnetwork.node.hw.sunspec.ReactivePowerAction;
@@ -43,7 +43,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.2
  */
 public enum InverterBasicSettingsRegister implements SunspecModbusReference {
@@ -161,7 +161,7 @@ public enum InverterBasicSettingsRegister implements SunspecModbusReference {
 
 	// Phase
 
-	/** Connected phase for single-phase inverters, see {@link ACPhase}. */
+	/** Connected phase for single-phase inverters, see {@link AcPhase}. */
 	ConnectedPhase(19, UInt16);
 
 	private final int address;

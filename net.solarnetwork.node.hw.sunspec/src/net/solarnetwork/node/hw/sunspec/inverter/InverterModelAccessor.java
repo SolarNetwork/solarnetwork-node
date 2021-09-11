@@ -23,7 +23,7 @@
 package net.solarnetwork.node.hw.sunspec.inverter;
 
 import java.util.Set;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.domain.datum.AcPhase;
 import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.OperatingState;
@@ -32,7 +32,7 @@ import net.solarnetwork.node.hw.sunspec.OperatingState;
  * API for accessing inverter model data.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public interface InverterModelAccessor extends ModelAccessor {
 
@@ -162,5 +162,5 @@ public interface InverterModelAccessor extends ModelAccessor {
 	 *        the phase to get an accessor for
 	 * @return the accessor
 	 */
-	InverterModelAccessor accessorForPhase(ACPhase phase);
+	InverterModelAccessor accessorForPhase(AcPhase phase);
 }

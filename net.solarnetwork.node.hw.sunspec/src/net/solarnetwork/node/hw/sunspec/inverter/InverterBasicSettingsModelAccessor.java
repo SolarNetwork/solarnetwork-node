@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.hw.sunspec.inverter;
 
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.domain.datum.AcPhase;
 import net.solarnetwork.node.hw.sunspec.ApparentPowerCalculationMethod;
 import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ReactivePowerAction;
@@ -31,7 +31,7 @@ import net.solarnetwork.node.hw.sunspec.ReactivePowerAction;
  * API for accessing inverter basic settings model data.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.2
  */
 public interface InverterBasicSettingsModelAccessor extends ModelAccessor {
@@ -185,6 +185,6 @@ public interface InverterBasicSettingsModelAccessor extends ModelAccessor {
 	 * 
 	 * @return the connected phase
 	 */
-	ACPhase getConnectedPhase();
+	AcPhase getConnectedPhase();
 
 }

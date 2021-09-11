@@ -22,9 +22,9 @@
 
 package net.solarnetwork.node.hw.sunspec.meter.test;
 
-import static net.solarnetwork.node.domain.ACPhase.PhaseA;
-import static net.solarnetwork.node.domain.ACPhase.PhaseB;
-import static net.solarnetwork.node.domain.ACPhase.PhaseC;
+import static net.solarnetwork.domain.datum.AcPhase.PhaseA;
+import static net.solarnetwork.domain.datum.AcPhase.PhaseB;
+import static net.solarnetwork.domain.datum.AcPhase.PhaseC;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertThat;

@@ -24,7 +24,7 @@ package net.solarnetwork.node.hw.sunspec.meter;
 
 import java.util.Map;
 import java.util.Set;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.domain.datum.AcPhase;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
@@ -133,8 +133,8 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 	}
 
 	@Override
-	public MeterModelAccessor accessorForPhase(ACPhase phase) {
-		if ( phase == ACPhase.Total ) {
+	public MeterModelAccessor accessorForPhase(AcPhase phase) {
+		if ( phase == AcPhase.Total ) {
 			return this;
 		}
 		return new PhaseMeterModelAccessor(phase);
@@ -263,9 +263,9 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 
 	private class PhaseMeterModelAccessor implements MeterModelAccessor {
 
-		private final ACPhase phase;
+		private final AcPhase phase;
 
-		private PhaseMeterModelAccessor(ACPhase phase) {
+		private PhaseMeterModelAccessor(AcPhase phase) {
 			super();
 			this.phase = phase;
 		}
@@ -311,7 +311,7 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 		}
 
 		@Override
-		public MeterModelAccessor accessorForPhase(ACPhase phase) {
+		public MeterModelAccessor accessorForPhase(AcPhase phase) {
 			return IntegerMeterModelAccessor.this.accessorForPhase(phase);
 		}
 
