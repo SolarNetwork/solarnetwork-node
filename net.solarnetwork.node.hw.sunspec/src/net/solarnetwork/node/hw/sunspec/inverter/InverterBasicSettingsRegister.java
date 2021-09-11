@@ -26,7 +26,7 @@ import static net.solarnetwork.node.hw.sunspec.DataClassification.Enumeration;
 import static net.solarnetwork.node.hw.sunspec.DataClassification.ScaleFactor;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
-import net.solarnetwork.domain.datum.AcPhase;
+import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.hw.sunspec.ApparentPowerCalculationMethod;
 import net.solarnetwork.node.hw.sunspec.DataClassification;
 import net.solarnetwork.node.hw.sunspec.ReactivePowerAction;

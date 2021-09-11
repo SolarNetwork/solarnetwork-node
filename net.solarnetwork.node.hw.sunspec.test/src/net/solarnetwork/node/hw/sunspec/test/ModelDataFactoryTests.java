@@ -22,9 +22,9 @@
 
 package net.solarnetwork.node.hw.sunspec.test;
 
-import static net.solarnetwork.domain.datum.AcPhase.PhaseA;
-import static net.solarnetwork.domain.datum.AcPhase.PhaseB;
-import static net.solarnetwork.domain.datum.AcPhase.PhaseC;
+import static net.solarnetwork.domain.AcPhase.PhaseA;
+import static net.solarnetwork.domain.AcPhase.PhaseB;
+import static net.solarnetwork.domain.AcPhase.PhaseC;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;

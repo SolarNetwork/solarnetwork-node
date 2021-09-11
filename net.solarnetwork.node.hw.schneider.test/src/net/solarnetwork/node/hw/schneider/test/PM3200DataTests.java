@@ -22,9 +22,9 @@
 
 package net.solarnetwork.node.hw.schneider.test;
 
-import static net.solarnetwork.domain.datum.AcPhase.PhaseA;
-import static net.solarnetwork.domain.datum.AcPhase.PhaseB;
-import static net.solarnetwork.domain.datum.AcPhase.PhaseC;
+import static net.solarnetwork.domain.AcPhase.PhaseA;
+import static net.solarnetwork.domain.AcPhase.PhaseB;
+import static net.solarnetwork.domain.AcPhase.PhaseC;
 import static net.solarnetwork.node.hw.schneider.meter.PM3200Register.MeterActivePowerPhaseA;
 import static net.solarnetwork.node.hw.schneider.meter.PM3200Register.MeterActivePowerTotal;
 import static net.solarnetwork.node.hw.schneider.meter.PM3200Register.MeterApparentPowerPhaseA;
@@ -48,7 +48,7 @@ import java.util.Map;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.domain.datum.AcPhase;
+import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Data;
 import net.solarnetwork.node.hw.schneider.meter.PM3200DataAccessor;

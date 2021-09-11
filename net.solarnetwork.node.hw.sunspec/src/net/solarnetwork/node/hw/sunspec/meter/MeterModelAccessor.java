@@ -23,7 +23,7 @@
 package net.solarnetwork.node.hw.sunspec.meter;
 
 import java.util.Set;
-import net.solarnetwork.domain.datum.AcPhase;
+import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;

@@ -25,7 +25,7 @@ package net.solarnetwork.node.hw.yaskawa.mb.inverter;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import net.solarnetwork.domain.datum.AcPhase;
+import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;

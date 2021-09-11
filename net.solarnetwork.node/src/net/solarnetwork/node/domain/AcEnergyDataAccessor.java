@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.domain;
 
-import net.solarnetwork.domain.datum.AcPhase;
+import net.solarnetwork.domain.AcPhase;
 
 /**
  * API for accessing AC energy data from an object, such as a power meter.
