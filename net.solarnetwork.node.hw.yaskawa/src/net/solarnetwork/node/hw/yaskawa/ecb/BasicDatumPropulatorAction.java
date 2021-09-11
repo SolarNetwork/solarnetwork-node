@@ -22,12 +22,14 @@
 
 package net.solarnetwork.node.hw.yaskawa.ecb;
 
-import static net.solarnetwork.node.domain.EnergyDatum.WATTS_KEY;
-import static net.solarnetwork.node.domain.EnergyDatum.WATT_HOUR_READING_KEY;
+import static net.solarnetwork.domain.datum.EnergyDatum.WATTS_KEY;
+import static net.solarnetwork.domain.datum.EnergyDatum.WATT_HOUR_READING_KEY;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.Date;
-import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
+import java.time.Instant;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
+import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
 
@@ -36,9 +38,9 @@ import net.solarnetwork.node.io.serial.SerialConnectionAction;
  * {@link GeneralNodePVEnergyDatum} object.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
-public class BasicDatumPropulatorAction implements SerialConnectionAction<GeneralNodePVEnergyDatum> {
+public class BasicDatumPropulatorAction implements SerialConnectionAction<AcDcEnergyDatum> {
 
 	private final int unitId;
 
@@ -48,20 +50,20 @@ public class BasicDatumPropulatorAction implements SerialConnectionAction<Genera
 	}
 
 	@Override
-	public GeneralNodePVEnergyDatum doWithConnection(SerialConnection conn) throws IOException {
-		GeneralNodePVEnergyDatum d = new GeneralNodePVEnergyDatum();
-		d.setCreated(new Date());
+	public AcDcEnergyDatum doWithConnection(SerialConnection conn) throws IOException {
+		SimpleAcDcEnergyDatum d = new SimpleAcDcEnergyDatum(null, Instant.now(), new DatumSamples());
 
 		Packet power = PacketUtils.sendPacket(conn,
 				PVI3800Command.MeterReadAcCombinedActivePower.request(unitId));
 		if ( power != null ) {
-			d.putInstantaneousSampleValue(WATTS_KEY, new BigInteger(1, power.getBody()));
+			d.getSamples().putInstantaneousSampleValue(WATTS_KEY, new BigInteger(1, power.getBody()));
 		}
 
 		Packet energy = PacketUtils.sendPacket(conn,
 				PVI3800Command.MeterReadLifetimeTotalEnergy.request(unitId));
 		if ( power != null ) {
-			d.putAccumulatingSampleValue(WATT_HOUR_READING_KEY, new BigInteger(1, energy.getBody()));
+			d.getSamples().putAccumulatingSampleValue(WATT_HOUR_READING_KEY,
+					new BigInteger(1, energy.getBody()));
 		}
 
 		return d;

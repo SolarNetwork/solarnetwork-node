@@ -37,13 +37,13 @@ import net.solarnetwork.node.hw.yaskawa.ecb.PacketUtils;
 import net.solarnetwork.node.io.serial.ConfigurableSerialNetwork;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialNetwork;
-import net.solarnetwork.node.support.SerialPortBeanParameters;
+import net.solarnetwork.node.service.support.SerialPortBeanParameters;
 
 /**
  * Interactive diagnostic app for the Yaskawa ECB protocol.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class Cmdline {
 
