@@ -28,16 +28,16 @@ import java.util.concurrent.TimeUnit;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.wimpi.modbus.net.SerialConnection;
 
 /**
  * Jamod implementation of {@link ModbusNetwork} using a serial connection.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class JamodSerialModbusNetwork extends AbstractModbusNetwork implements SettingSpecifierProvider {
 
@@ -70,8 +70,8 @@ public class JamodSerialModbusNetwork extends AbstractModbusNetwork implements S
 	}
 
 	@Override
-	public String getUID() {
-		String uid = super.getUID();
+	public String getUid() {
+		String uid = super.getUid();
 		if ( uid != null ) {
 			return uid;
 		}

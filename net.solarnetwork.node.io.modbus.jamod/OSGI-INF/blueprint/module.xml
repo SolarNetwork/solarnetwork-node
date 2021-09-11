@@ -22,8 +22,8 @@
 		</property>
 	</bean>
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Modbus serial connection"/>
 			<property name="factoryUID" value="net.solarnetwork.node.io.modbus"/>
 			<property name="messageSource" ref="messageSource"/>
@@ -33,7 +33,7 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.modbus" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.io.modbus.ModbusNetwork</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.modbus"/>
@@ -54,8 +54,8 @@
 		</property>
 	</bean>
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Modbus TCP connection"/>
 			<property name="factoryUID" value="net.solarnetwork.node.io.modbus.tcp"/>
 			<property name="messageSource" ref="messageSourceTcp"/>
@@ -65,7 +65,7 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.modbus.tcp" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.io.modbus.ModbusNetwork</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.modbus.tcp"/>
@@ -86,8 +86,8 @@
 		</property>
 	</bean>
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Modbus UDP connection"/>
 			<property name="factoryUID" value="net.solarnetwork.node.io.modbus.udp"/>
 			<property name="messageSource" ref="messageSourceUdp"/>
@@ -97,7 +97,7 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.modbus.udp" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.io.modbus.ModbusNetwork</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.modbus.udp"/>

@@ -37,10 +37,10 @@ import java.util.concurrent.locks.Lock;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.ClassUtils;
 import net.wimpi.modbus.ModbusIOException;
 import net.wimpi.modbus.io.ModbusTransport;
@@ -58,7 +58,7 @@ import net.wimpi.modbus.net.TCPMasterConnection;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements SettingSpecifierProvider {
 

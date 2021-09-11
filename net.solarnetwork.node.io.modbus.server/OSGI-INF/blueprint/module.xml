@@ -15,8 +15,8 @@
 	
 	<reference id="taskExecutor" interface="org.springframework.core.task.TaskExecutor" filter="(function=node)"/>
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Modbus Server (TCP)"/>
 			<property name="factoryUID" value="net.solarnetwork.node.io.modbus.server"/>
 			<property name="messageSource" ref="messageSource"/>
@@ -27,23 +27,23 @@
 		<property name="basenames">
 			<array>
 				<value>net.solarnetwork.node.io.modbus.server.impl.ModbusServer</value>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</array>
 		</property>
 		<property name="parentMessageSource">
-			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+			<bean class="net.solarnetwork.support.PrefixedMessageSource">
 				<property name="prefix" value="unitConfigsItem."/>
 				<property name="delegate">
 					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 						<property name="basenames" value="net.solarnetwork.node.io.modbus.server.domain.UnitConfig"/>
 						<property name="parentMessageSource">
-							<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+							<bean class="net.solarnetwork.support.PrefixedMessageSource">
 								<property name="prefix" value="registerBlockConfigsItem."/>
 								<property name="delegate">
 									<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 										<property name="basenames" value="net.solarnetwork.node.io.modbus.server.domain.RegisterBlockConfig"/>
 										<property name="parentMessageSource">
-											<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+											<bean class="net.solarnetwork.support.PrefixedMessageSource">
 												<property name="prefix" value="measurementConfigsItem."/>
 												<property name="delegate">
 													<bean class="org.springframework.context.support.ResourceBundleMessageSource">
@@ -64,16 +64,16 @@
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.modbus.server" autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 			<beans:value>org.osgi.service.event.EventHandler</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.modbus.server"/>
 			<beans:entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
 				<beans:array value-type="java.lang.String">
-					<beans:value>#{T(net.solarnetwork.node.DatumDataSource).EVENT_TOPIC_DATUM_CAPTURED}</beans:value>
-					<beans:value>#{T(net.solarnetwork.node.NodeControlProvider).EVENT_TOPIC_CONTROL_INFO_CAPTURED}</beans:value>
-					<beans:value>#{T(net.solarnetwork.node.NodeControlProvider).EVENT_TOPIC_CONTROL_INFO_CHANGED}</beans:value>
+					<beans:value>#{T(net.solarnetwork.node.service.DatumDataSource).EVENT_TOPIC_DATUM_CAPTURED}</beans:value>
+					<beans:value>#{T(net.solarnetwork.node.service.NodeControlProvider).EVENT_TOPIC_CONTROL_INFO_CAPTURED}</beans:value>
+					<beans:value>#{T(net.solarnetwork.node.service.NodeControlProvider).EVENT_TOPIC_CONTROL_INFO_CHANGED}</beans:value>
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>

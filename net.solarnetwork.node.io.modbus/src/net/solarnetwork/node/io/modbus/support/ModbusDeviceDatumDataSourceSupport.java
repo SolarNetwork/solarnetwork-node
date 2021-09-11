@@ -29,15 +29,15 @@ import java.util.List;
 import java.util.Map;
 import net.solarnetwork.domain.BasicDeviceInfo;
 import net.solarnetwork.domain.DeviceInfo;
-import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.DatumDataSourceSupport;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -45,7 +45,7 @@ import net.solarnetwork.util.StringUtils;
  * {@link DatumDataSource} implementations.
  * 
  * @author matt
- * @version 2.2
+ * @version 3.0
  */
 public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSourceSupport {
 

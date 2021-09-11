@@ -32,17 +32,17 @@ import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * A base helper class to support {@link ModbusNetwork} based services.
  * 
  * @author matt
- * @version 2.0
+ * @version 3.0
  * @since 2.0
  */
 public abstract class ModbusDeviceSupport extends BaseIdentifiable {

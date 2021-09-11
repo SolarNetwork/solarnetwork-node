@@ -25,12 +25,12 @@ package net.solarnetwork.node.io.modbus.support;
 import java.io.IOException;
 import java.util.Map;
 import net.solarnetwork.domain.DeviceInfo;
-import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
+import net.solarnetwork.node.service.DatumDataSource;
 
 /**
  * A base helper class to support {@link ModbusNetwork} based
@@ -38,7 +38,7 @@ import net.solarnetwork.node.io.modbus.ModbusNetwork;
  * object.
  * 
  * @author matt
- * @version 1.5
+ * @version 2.0
  * @since 2.9
  */
 public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & DataAccessor>

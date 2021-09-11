@@ -31,8 +31,8 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * A base helper class to support {@link ModbusNetwork} based device
@@ -41,7 +41,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * @param <T>
  *        the {@link ModbusData} type
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 2.14
  */
 public abstract class ModbusDataDeviceSupport<T extends ModbusData & DataAccessor>

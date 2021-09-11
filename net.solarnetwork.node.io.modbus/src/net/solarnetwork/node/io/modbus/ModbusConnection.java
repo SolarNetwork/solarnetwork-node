@@ -26,7 +26,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.BitSet;
-import net.solarnetwork.node.LockTimeoutException;
+import net.solarnetwork.node.service.LockTimeoutException;
 
 /**
  * High level Modbus connection API.
@@ -37,7 +37,7 @@ import net.solarnetwork.node.LockTimeoutException;
  * </p>
  * 
  * @author matt
- * @version 2.1
+ * @version 3.0
  * @since 2.0
  */
 public interface ModbusConnection extends Closeable {
