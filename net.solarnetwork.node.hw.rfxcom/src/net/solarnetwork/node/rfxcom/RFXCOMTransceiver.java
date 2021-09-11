@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.rfxcom;
@@ -28,31 +26,29 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import net.solarnetwork.node.ConversationalDataCollector;
-import net.solarnetwork.node.DataCollectorFactory;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.node.support.SerialPortBeanParameters;
-import net.solarnetwork.node.util.PrefixedMessageSource;
-import net.solarnetwork.util.DynamicServiceTracker;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
+import net.solarnetwork.node.service.ConversationalDataCollector;
+import net.solarnetwork.node.service.DataCollectorFactory;
+import net.solarnetwork.node.service.support.SerialPortBeanParameters;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.support.PrefixedMessageSource;
 
 /**
- * {@link SettingSpecifierProvider} for RFXCOM transceiver, allowing
- * for the configuration of the transceiver via settings.
+ * {@link SettingSpecifierProvider} for RFXCOM transceiver, allowing for the
+ * configuration of the transceiver via settings.
  * 
  * @author matt
- * @version $Revision$
+ * @version 2.0
  */
 public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 
@@ -73,26 +69,28 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 	private static final Object MONITOR = new Object();
 	private static MessageSource MESSAGE_SOURCE;
 
-	private DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory;
+	private OptionalFilterableService<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory;
 	private SerialPortBeanParameters serialParams = getDefaultSerialParameters();
 
 	private final MessageFactory mf = new MessageFactory();
 	private StatusMessage status = null;
-	
+
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
 	 * Get the default serial parameters used for RFXCOM transceivers.
+	 * 
 	 * @return
 	 */
 	public static final SerialPortBeanParameters getDefaultSerialParameters() {
-		return (SerialPortBeanParameters)DEFAULT_SERIAL_PARAMS.clone();
+		return (SerialPortBeanParameters) DEFAULT_SERIAL_PARAMS.clone();
 	}
-	
+
 	@Override
 	public String getUID() {
-		return (dataCollectorFactory == null ? null : dataCollectorFactory.getPropertyFilters() == null ? null
-				: (String)dataCollectorFactory.getPropertyFilters().get("UID"));
+		return (dataCollectorFactory == null ? null
+				: dataCollectorFactory.getPropertyFilters() == null ? null
+						: (String) dataCollectorFactory.getPropertyFilters().get("UID"));
 	}
 
 	@Override
@@ -104,6 +102,7 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 		ConversationalDataCollector dc = df.getConversationalDataCollectorInstance(getSerialParams());
 		if ( status == null ) {
 			status = dc.collectData(new ConversationalDataCollector.Moderator<StatusMessage>() {
+
 				@Override
 				public StatusMessage conductConversation(ConversationalDataCollector dataCollector) {
 					return getStatus(dataCollector);
@@ -125,7 +124,7 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 
 	@Override
 	public MessageSource getMessageSource() {
-		synchronized (MONITOR) {
+		synchronized ( MONITOR ) {
 			if ( MESSAGE_SOURCE == null ) {
 				ResourceBundleMessageSource serial = new ResourceBundleMessageSource();
 				serial.setBundleClassLoader(SerialPortBeanParameters.class.getClassLoader());
@@ -144,18 +143,18 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 		}
 		return MESSAGE_SOURCE;
 	}
-	
+
 	private void addToggleSetting(List<SettingSpecifier> results, PropertyAccessor bean, String name) {
-		results.add(new BasicToggleSettingSpecifier(name, 
+		results.add(new BasicToggleSettingSpecifier(name,
 				(bean == null ? Boolean.FALSE : bean.getPropertyValue(name)), true));
 	}
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
-		results.add(new BasicTextFieldSettingSpecifier(
-				"dataCollectorFactory.propertyFilters['UID']", "/dev/ttyUSB0"));
-		
+		results.add(new BasicTextFieldSettingSpecifier("dataCollectorFactory.propertyFilters['UID']",
+				"/dev/ttyUSB0"));
+
 		if ( status == null ) {
 			try {
 				updateStatus();
@@ -164,18 +163,17 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 			}
 		}
 		if ( status != null ) {
-			log.debug("RFXCOM status: firmware {}, product {}, Oregon {}", new Object[] {
-					status.getFirmwareVersion(),
-					status.getTransceiverType().getDescription(),
-					status.isOregonEnabled()
-			});
-			
-			results.add(new BasicTitleSettingSpecifier("firmwareVersion", 
+			log.debug("RFXCOM status: firmware {}, product {}, Oregon {}",
+					new Object[] { status.getFirmwareVersion(),
+							status.getTransceiverType().getDescription(), status.isOregonEnabled() });
+
+			results.add(new BasicTitleSettingSpecifier("firmwareVersion",
 					(status == null ? "N/A" : String.valueOf(status.getFirmwareVersion())), true));
-			results.add(new BasicTitleSettingSpecifier("transceiverType", 
+			results.add(new BasicTitleSettingSpecifier("transceiverType",
 					(status == null ? "N/A" : status.getTransceiverType().getDescription()), true));
-			
-			PropertyAccessor bean = (status == null ? null : PropertyAccessorFactory.forBeanPropertyAccess(status));
+
+			PropertyAccessor bean = (status == null ? null
+					: PropertyAccessorFactory.forBeanPropertyAccess(status));
 			addToggleSetting(results, bean, "ACEnabled");
 			addToggleSetting(results, bean, "ADEnabled");
 			addToggleSetting(results, bean, "ARCEnabled");
@@ -190,7 +188,7 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 			addToggleSetting(results, bean, "proGuardEnabled");
 			addToggleSetting(results, bean, "visonicEnabled");
 			addToggleSetting(results, bean, "x10Enabled");
-			
+
 			addToggleSetting(results, bean, "undecodedMode");
 		}
 
@@ -198,7 +196,7 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 				RFXCOMTransceiver.getDefaultSerialParameters(), "serialParams."));
 		return results;
 	}
-	
+
 	public void updateModeSetting(String name, Object value) {
 		if ( this.status == null ) {
 			updateStatus();
@@ -213,23 +211,26 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 			}
 		}
 	}
-	
+
 	/**
 	 * Update the settings of this class.
 	 * 
-	 * <p>This method is designed to work with Spring's bean-managed OSGi Configuration
-	 * Admin service, rather than the container-managed approach of setting properties
-	 * directly. This is because many of the supported properties require communicating
-	 * with the RFXCOM device, but those can all be set via a single call. Thus the
-	 * supported properties of this method are those properties directly available on
-	 * this class itself, and those available on the {@link SetModeMessage} class.
+	 * <p>
+	 * This method is designed to work with Spring's bean-managed OSGi
+	 * Configuration Admin service, rather than the container-managed approach
+	 * of setting properties directly. This is because many of the supported
+	 * properties require communicating with the RFXCOM device, but those can
+	 * all be set via a single call. Thus the supported properties of this
+	 * method are those properties directly available on this class itself, and
+	 * those available on the {@link SetModeMessage} class.
 	 * 
-	 * @param properties the properties to change
+	 * @param properties
+	 *        the properties to change
 	 */
 	public void updateConfiguration(Map<String, ?> properties) {
 		Map<String, Object> setModeProperties = new HashMap<String, Object>(properties);
 		PropertyAccessor bean = PropertyAccessorFactory.forBeanPropertyAccess(this);
-		
+
 		// if this is NOT something that must be handled via a SetMode command, apply those directly...
 		for ( Map.Entry<String, ?> me : properties.entrySet() ) {
 			if ( bean.isWritableProperty(me.getKey()) ) {
@@ -238,10 +239,10 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 				setModeProperties.put(me.getKey(), me.getValue());
 			}
 		}
-		
+
 		// and now apply remaining properties via single SetMode, so we only have to talk to
 		// device one time
-		
+
 		if ( this.status == null ) {
 			updateStatus();
 		}
@@ -266,7 +267,7 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 				setMode(msg);
 			}
 		}
-		
+
 	}
 
 	private void updateStatus() {
@@ -276,6 +277,7 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 		}
 		try {
 			status = dc.collectData(new ConversationalDataCollector.Moderator<StatusMessage>() {
+
 				@Override
 				public StatusMessage conductConversation(ConversationalDataCollector dataCollector) {
 					return getStatus(dataCollector);
@@ -294,26 +296,27 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 			if ( dc == null ) {
 				return;
 			}
-			StatusMessage result = dc.collectData(new ConversationalDataCollector.Moderator<StatusMessage>() {
-				@Override
-				public StatusMessage conductConversation(ConversationalDataCollector dc) {
-					dc.speakAndListen(msg.getMessagePacket(), listener);
-					
-					Message msg = mf.parseMessage(dc.getCollectedData(), 0);
-					StatusMessage result = null;
-					if ( msg instanceof StatusMessage ) {
-						result = (StatusMessage)msg;
-					}
-					return result;
-				}
-			});
+			StatusMessage result = dc
+					.collectData(new ConversationalDataCollector.Moderator<StatusMessage>() {
+
+						@Override
+						public StatusMessage conductConversation(ConversationalDataCollector dc) {
+							dc.speakAndListen(msg.getMessagePacket(), listener);
+
+							Message msg = mf.parseMessage(dc.getCollectedData(), 0);
+							StatusMessage result = null;
+							if ( msg instanceof StatusMessage ) {
+								result = (StatusMessage) msg;
+							}
+							return result;
+						}
+					});
 			if ( result != null ) {
 				if ( log.isDebugEnabled() ) {
-					log.debug("RFXCOM status: firmware {}, product {}, Oregon {}", new Object[] {
-							status.getFirmwareVersion(),
-							status.getTransceiverType().getDescription(),
-							status.isOregonEnabled()
-					});
+					log.debug("RFXCOM status: firmware {}, product {}, Oregon {}",
+							new Object[] { status.getFirmwareVersion(),
+									status.getTransceiverType().getDescription(),
+									status.isOregonEnabled() });
 				}
 				status = result;
 			}
@@ -323,44 +326,43 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 			}
 		}
 	}
-	
+
 	private StatusMessage getStatus(ConversationalDataCollector dc) {
 		final MessageListener listener = new MessageListener();
 
 		// send reset, followed by status to see how rfxcom is configured
 		dc.speak(new CommandMessage(Command.Reset).getMessagePacket());
-		
+
 		// wait at least 50ms
 		try {
 			Thread.sleep(100);
 		} catch ( InterruptedException e ) {
 			// ignore
 		}
-		
-		dc.speakAndListen(new CommandMessage(Command.Status, 
-				mf.incrementAndGetSequenceNumber()).getMessagePacket(), listener);
-		
+
+		dc.speakAndListen(new CommandMessage(Command.Status, mf.incrementAndGetSequenceNumber())
+				.getMessagePacket(), listener);
+
 		Message msg = mf.parseMessage(dc.getCollectedData(), 0);
 		StatusMessage result = null;
 		if ( msg instanceof StatusMessage ) {
-			result = (StatusMessage)msg;
+			result = (StatusMessage) msg;
 			if ( log.isDebugEnabled() ) {
-				log.debug("RFXCOM status: firmware {}, product {}, Oregon {}", new Object[] {
-						result.getFirmwareVersion(),
-						result.getTransceiverType().getDescription(),
-						result.isOregonEnabled()
-				});
+				log.debug("RFXCOM status: firmware {}, product {}, Oregon {}",
+						new Object[] { result.getFirmwareVersion(),
+								result.getTransceiverType().getDescription(),
+								result.isOregonEnabled() });
 			}
 		}
 		return result;
 	}
 
-	public DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> getDataCollectorFactory() {
+	public OptionalFilterableService<DataCollectorFactory<SerialPortBeanParameters>> getDataCollectorFactory() {
 		return dataCollectorFactory;
 	}
 
 	public void setDataCollectorFactory(
-			DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory) {
+			OptionalFilterableService<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory) {
 		this.dataCollectorFactory = dataCollectorFactory;
 	}
 

@@ -27,14 +27,14 @@ package net.solarnetwork.node.rfxcom;
 import static net.solarnetwork.util.NumberUtils.unsigned;
 import java.io.IOException;
 import java.io.OutputStream;
-import net.solarnetwork.node.ConversationalDataCollector;
+import net.solarnetwork.node.service.ConversationalDataCollector;
 
 /**
  * A {@link ConversationalDataCollector.DataListener} suitable for parsing
  * RFXCOM messages.
  * 
  * @author matt
- * @version $Revision$
+ * @version 2.0
  */
 public class MessageListener implements ConversationalDataCollector.DataListener {
 
