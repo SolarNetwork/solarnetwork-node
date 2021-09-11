@@ -24,14 +24,14 @@ package net.solarnetwork.node.io.yasdi4j;
 
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
-import net.solarnetwork.node.LockTimeoutException;
 import de.michaeldenk.yasdi4j.YasdiDevice;
+import net.solarnetwork.node.service.LockTimeoutException;
 
 /**
  * API for a YASDI master component.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public interface YasdiMaster {
 

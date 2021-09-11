@@ -18,22 +18,19 @@
 
 	<reference-list id="dataCollectorFactoryConfigurationList"
 		interface="net.solarnetwork.node.util.BeanConfiguration" availability="optional"
-		filter="(&amp;(beanConfigurationTarget=org.springframework.beans.factory.ObjectFactory)(factoryObjectClassName=net.solarnetwork.node.DataCollector)(io=url))">
+		filter="(&amp;(beanConfigurationTarget=org.springframework.beans.factory.ObjectFactory)(factoryObjectClassName=net.solarnetwork.node.service.DataCollector)(io=url))">
 		<reference-listener bind-method="onBind" unbind-method="onUnbind" ref="dataCollectorFactory"/>
 	</reference-list>
-	
-	<bean id="dataCollectorFactory" 
-		class="net.solarnetwork.node.util.BeanConfigurationServiceRegistrationListener">
-		<property name="serviceClass"
-			value="net.solarnetwork.node.io.url.UrlDataCollectorFactory"/>
-		<property name="serviceInterfaces"
-			value="org.springframework.beans.factory.ObjectFactory"/>
+
+	<bean id="dataCollectorFactory" class="net.solarnetwork.node.service.support.BeanConfigurationServiceRegistrationListener">
+		<argument ref="bundleContext"/>
+		<property name="serviceClass" value="net.solarnetwork.node.io.url.UrlDataCollectorFactory"/>
+		<property name="serviceInterfaces" value="org.springframework.beans.factory.ObjectFactory"/>
 		<property name="serviceProperties">
 			<map>
-				<entry key="factoryObjectClassName" value="net.solarnetwork.node.DataCollector"/>
+				<entry key="factoryObjectClassName" value="net.solarnetwork.node.service.DataCollector"/>
 			</map>
 		</property>
-		<property name="bundleContext" ref="bundleContext"/>
 	</bean>
-	
+
 </blueprint>

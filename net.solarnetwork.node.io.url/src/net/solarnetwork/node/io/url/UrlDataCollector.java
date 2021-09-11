@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.io.url;
@@ -34,75 +32,76 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import net.solarnetwork.node.DataCollector;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectFactory;
+import net.solarnetwork.node.service.DataCollector;
 
 /**
- * Implementation of {@link DataCollector} that reads lines of characters from
- * a URL.
+ * Implementation of {@link DataCollector} that reads lines of characters from a
+ * URL.
  * 
- * <p>This class expects the configured URL to return a character data stream
- * with newline characters separating records of data.
+ * <p>
+ * This class expects the configured URL to return a character data stream with
+ * newline characters separating records of data.
  * 
- * <p>The configurable properties of this class are:</p>
+ * <p>
+ * The configurable properties of this class are:
+ * </p>
  * 
  * <dl class="class-properties">
- *   <dt>url</dt>
- *   <dd>The URL to access the character data from. Either this or 
- *   {@code urlFactory} must be configured.</dd>
- *   
- *   <dt>urlFactory</dt>
- *   <dd>A factory for creating URL values dynamically. This allows dynamic
- *   URLs to be used, such as those with the current date in the path. Either
- *   this or {@code url} must be configured. If this is configured it will
- *   take precedence over any configured {@code url} value.</dd>
- *   
- *   <dt>connectionTimeout</dt>
- *   <dd>A timeout to use for connecting to the configured {@code url}.
- *   Defaults to </dd>
- *   
- *   <dt>matchExpression</dt>
- *   <dd>A regular expression to match against lines of data read from the URL.
- *   The collector will ignore all lines of data until this expression matches
- *   a line read from the configured URL. Once a match is found, it will stop
- *   reading any further data. Defaults to 
- *   {@link #DEFAULT_MATCH_EXPRESSION}.</dd>
- *   
- *   <dt>encoding</dt>
- *   <dd>The character encoding to use for reading the URL data. If configured
- *   as <em>null</em> then this class will attempt to use the encoding
- *   specified by the URL connection itself. If the URL connection does not
- *   provide an encoding, {@link #DEFAULT_ENCODING} will be used. Defaults to
- *   <em>null</em>.</dd>
- *   
- *   <dt>skipToLastLine</dt>
- *   <dd>If <em>true</em> then read all available data from the URL and 
- *   return the last line found, as long as it also matches the configured
- *   {@code matchExpression} property. This mode means that the entire URL
- *   data stream must be read each time {@link #collectData()} is called.
- *   Defaults to <em>false</em>.</dd>
+ * <dt>url</dt>
+ * <dd>The URL to access the character data from. Either this or
+ * {@code urlFactory} must be configured.</dd>
+ * 
+ * <dt>urlFactory</dt>
+ * <dd>A factory for creating URL values dynamically. This allows dynamic URLs
+ * to be used, such as those with the current date in the path. Either this or
+ * {@code url} must be configured. If this is configured it will take precedence
+ * over any configured {@code url} value.</dd>
+ * 
+ * <dt>connectionTimeout</dt>
+ * <dd>A timeout to use for connecting to the configured {@code url}. Defaults
+ * to</dd>
+ * 
+ * <dt>matchExpression</dt>
+ * <dd>A regular expression to match against lines of data read from the URL.
+ * The collector will ignore all lines of data until this expression matches a
+ * line read from the configured URL. Once a match is found, it will stop
+ * reading any further data. Defaults to {@link #DEFAULT_MATCH_EXPRESSION}.</dd>
+ * 
+ * <dt>encoding</dt>
+ * <dd>The character encoding to use for reading the URL data. If configured as
+ * <em>null</em> then this class will attempt to use the encoding specified by
+ * the URL connection itself. If the URL connection does not provide an
+ * encoding, {@link #DEFAULT_ENCODING} will be used. Defaults to
+ * <em>null</em>.</dd>
+ * 
+ * <dt>skipToLastLine</dt>
+ * <dd>If <em>true</em> then read all available data from the URL and return the
+ * last line found, as long as it also matches the configured
+ * {@code matchExpression} property. This mode means that the entire URL data
+ * stream must be read each time {@link #collectData()} is called. Defaults to
+ * <em>false</em>.</dd>
  * </dl>
  * 
  * @author matt
- * @version $Id$
+ * @version 2.0
  */
 public class UrlDataCollector implements DataCollector {
-	
+
 	/**
-	 * The default {@code encoding} to use if {@code encoding} is not
-	 * configured and the URL connection does not specify an encoding. */
+	 * The default {@code encoding} to use if {@code encoding} is not configured
+	 * and the URL connection does not specify an encoding.
+	 */
 	public static final String DEFAULT_ENCODING = "UTF-8";
-	
+
 	/** The default value for the {@code connectionTimeout} property. */
 	public static final int DEFAULT_CONNECTION_TIMEOUT = 15000;
 
 	/** The default value for the {@code matchExpression} property. */
 	public static final String DEFAULT_MATCH_EXPRESSION = "^A";
-	
+
 	private String url = null;
 	private ObjectFactory<String> urlFactory = null;
 	private int connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
@@ -111,17 +110,15 @@ public class UrlDataCollector implements DataCollector {
 	private boolean skipToLastLine = false;
 
 	private StringBuilder buffer = null;
-	
+
 	private final Logger log = LoggerFactory.getLogger(UrlDataCollector.class);
-	
+
 	@Override
 	public int bytesRead() {
 		String enc = getEncodingToUse();
 		try {
-			return buffer == null 
-					? 0 
-					: buffer.toString().getBytes(enc).length;
-		} catch (UnsupportedEncodingException e) {
+			return buffer == null ? 0 : buffer.toString().getBytes(enc).length;
+		} catch ( UnsupportedEncodingException e ) {
 			throw new RuntimeException(e);
 		}
 	}
@@ -136,10 +133,10 @@ public class UrlDataCollector implements DataCollector {
 		try {
 			dataUrl = new URL(resolvedUrl);
 		} catch ( MalformedURLException e ) {
-			throw new RuntimeException("Bad url configured: " +resolvedUrl);
+			throw new RuntimeException("Bad url configured: " + resolvedUrl);
 		}
-		if ( log.isDebugEnabled() )  {
-			log.debug("Connecting to URL [" +resolvedUrl +']');
+		if ( log.isDebugEnabled() ) {
+			log.debug("Connecting to URL [" + resolvedUrl + ']');
 		}
 		BufferedReader reader = null;
 		String data = null;
@@ -155,7 +152,7 @@ public class UrlDataCollector implements DataCollector {
 				enc = conn.getContentEncoding();
 				if ( enc != null ) {
 					if ( log.isTraceEnabled() ) {
-						log.trace("Using connection encoding [" +enc +']');
+						log.trace("Using connection encoding [" + enc + ']');
 					}
 					this.encoding = enc;
 				}
@@ -177,7 +174,7 @@ public class UrlDataCollector implements DataCollector {
 				Matcher m = pat.matcher(line);
 				if ( m.find() ) {
 					if ( log.isDebugEnabled() ) {
-						log.debug("Found matching data line [" +line +']');
+						log.debug("Found matching data line [" + line + ']');
 					}
 					data = line;
 					keepGoing = false;
@@ -193,7 +190,7 @@ public class UrlDataCollector implements DataCollector {
 					reader.close();
 				} catch ( IOException e ) {
 					if ( log.isWarnEnabled() ) {
-						log.warn("IOException closing input stream: " +e);
+						log.warn("IOException closing input stream: " + e);
 					}
 				}
 			}
@@ -213,10 +210,8 @@ public class UrlDataCollector implements DataCollector {
 	public byte[] getCollectedData() {
 		String enc = getEncodingToUse();
 		try {
-			return buffer == null 
-					? new byte[0]
-					: buffer.toString().getBytes(enc);
-		} catch (UnsupportedEncodingException e) {
+			return buffer == null ? new byte[0] : buffer.toString().getBytes(enc);
+		} catch ( UnsupportedEncodingException e ) {
 			throw new RuntimeException(e);
 		}
 	}
@@ -245,7 +240,8 @@ public class UrlDataCollector implements DataCollector {
 	}
 
 	/**
-	 * @param url the url to set
+	 * @param url
+	 *        the url to set
 	 */
 	public void setUrl(String url) {
 		this.url = url;
@@ -259,7 +255,8 @@ public class UrlDataCollector implements DataCollector {
 	}
 
 	/**
-	 * @param connectionTimeout the connectionTimeout to set
+	 * @param connectionTimeout
+	 *        the connectionTimeout to set
 	 */
 	public void setConnectionTimeout(int connectionTimeout) {
 		this.connectionTimeout = connectionTimeout;
@@ -273,7 +270,8 @@ public class UrlDataCollector implements DataCollector {
 	}
 
 	/**
-	 * @param matchExpression the matchExpression to set
+	 * @param matchExpression
+	 *        the matchExpression to set
 	 */
 	public void setMatchExpression(String matchExpression) {
 		this.matchExpression = matchExpression;
@@ -287,7 +285,8 @@ public class UrlDataCollector implements DataCollector {
 	}
 
 	/**
-	 * @param encoding the encoding to set
+	 * @param encoding
+	 *        the encoding to set
 	 */
 	public void setEncoding(String encoding) {
 		this.encoding = encoding;
@@ -301,7 +300,8 @@ public class UrlDataCollector implements DataCollector {
 	}
 
 	/**
-	 * @param skipToLastLine the skipToLastLine to set
+	 * @param skipToLastLine
+	 *        the skipToLastLine to set
 	 */
 	public void setSkipToLastLine(boolean skipToLastLine) {
 		this.skipToLastLine = skipToLastLine;
@@ -315,7 +315,8 @@ public class UrlDataCollector implements DataCollector {
 	}
 
 	/**
-	 * @param urlFactory the urlFactory to set
+	 * @param urlFactory
+	 *        the urlFactory to set
 	 */
 	public void setUrlFactory(ObjectFactory<String> urlFactory) {
 		this.urlFactory = urlFactory;
