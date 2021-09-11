@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
 import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
+import net.solarnetwork.domain.datum.MutableDatumSamplesOperations;
 import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceType;
 import net.solarnetwork.node.hw.sma.modbus.SmaDeviceData;
@@ -120,7 +120,7 @@ public class WebBoxData extends SmaDeviceData implements WebBoxDataAccessor {
 	}
 
 	@Override
-	public void populateDatumSamples(MutableGeneralDatumSamplesOperations samples,
+	public void populateDatumSamples(MutableDatumSamplesOperations samples,
 			Map<String, ?> parameters) {
 		// TODO Auto-generated method stub
 

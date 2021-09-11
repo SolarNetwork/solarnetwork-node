@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.hw.sma.modbus.webbox;
 
-import static net.solarnetwork.util.OptionalService.service;
+import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceDataAccessor;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
@@ -30,14 +30,14 @@ import net.solarnetwork.node.hw.sma.modbus.SmaDeviceData;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.service.OptionalService;
 
 /**
  * Implementation of {@link WebBoxDevice} based on a {@link SmaDeviceData}
  * instance.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class WebBoxDataDevice<T extends SmaDeviceData & SmaDeviceDataAccessor> implements WebBoxDevice {
 

@@ -25,40 +25,18 @@ package net.solarnetwork.node.hw.sma;
 import java.util.Calendar;
 import java.util.EnumSet;
 import java.util.Set;
-import org.osgi.service.event.EventAdmin;
-import net.solarnetwork.domain.GeneralDatumMetadata;
-import net.solarnetwork.node.DatumMetadataService;
-import net.solarnetwork.node.Setting;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.EnergyDatum;
-import net.solarnetwork.node.support.DatumDataSourceSupport;
+import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.domain.datum.EnergyDatum;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
 
 /**
  * Supporting class for SMA inverter data sources.
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>settingDao</dt>
- * <dd>The {@link SettingDao} to persist settings with.</dd>
- * 
- * <dt>sourceId</dt>
- * <dd>A source ID value to use for captured datums. Defaults to
- * {@link #DEFAULT_SOURCE_ID}.</dd>
- * 
- * <dt>eventAdmin</dt>
- * <dd>An optional {@link EventAdmin} service to use for posting events.</dd>
- * 
- * <dt>datumMetadataService</dt>
- * <dd>An optional {@link DatumMetadataService} to use for managing
- * metadata.</dd>
- * </dl>
- * 
  * @author matt
- * @version 1.5
+ * @version 2.0
  */
 public abstract class SMAInverterDataSourceSupport extends DatumDataSourceSupport {
 
@@ -87,7 +65,7 @@ public abstract class SMAInverterDataSourceSupport extends DatumDataSourceSuppor
 	 * 
 	 * @param key
 	 *        the setting key
-	 * @return the setting value, or <em>null</em> if not found
+	 * @return the setting value, or {@literal null} if not found
 	 */
 	protected final String getVolatileSetting(String key) {
 		return (settingDao == null ? null : settingDao.getSetting(key));

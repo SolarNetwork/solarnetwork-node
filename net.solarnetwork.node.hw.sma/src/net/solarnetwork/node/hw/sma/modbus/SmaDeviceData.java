@@ -28,7 +28,7 @@ import java.math.RoundingMode;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import net.solarnetwork.domain.CodedValue;
-import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.hw.sma.domain.SmaCodedValue;
 import net.solarnetwork.node.hw.sma.domain.SmaCommonStatusCode;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceDataAccessor;
@@ -42,7 +42,7 @@ import net.solarnetwork.util.NumberUtils;
  * Base {@link ModbusData} for SMA devices.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public abstract class SmaDeviceData extends ModbusData implements SmaDeviceDataAccessor {
 
