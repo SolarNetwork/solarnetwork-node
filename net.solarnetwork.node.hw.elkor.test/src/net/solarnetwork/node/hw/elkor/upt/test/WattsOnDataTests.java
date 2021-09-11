@@ -22,9 +22,9 @@
 
 package net.solarnetwork.node.hw.elkor.upt.test;
 
-import static net.solarnetwork.node.domain.ACPhase.PhaseA;
-import static net.solarnetwork.node.domain.ACPhase.PhaseB;
-import static net.solarnetwork.node.domain.ACPhase.PhaseC;
+import static net.solarnetwork.domain.AcPhase.PhaseA;
+import static net.solarnetwork.domain.AcPhase.PhaseB;
+import static net.solarnetwork.domain.AcPhase.PhaseC;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import java.io.BufferedReader;
@@ -36,8 +36,8 @@ import java.util.Map;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.hw.elkor.upt.Ratio;
 import net.solarnetwork.node.hw.elkor.upt.WattsOnData;
 import net.solarnetwork.node.hw.elkor.upt.WattsOnDataAccessor;
@@ -49,7 +49,7 @@ import net.solarnetwork.node.test.DataUtils;
  * Test cases for the {@link WattsOnData} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class WattsOnDataTests {
 
@@ -133,13 +133,13 @@ public class WattsOnDataTests {
 		WattsOnDataAccessor data = getTestDataInstance();
 		assertThat("Power", data.getActivePower(), equalTo(20800));
 
-		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		AcEnergyDataAccessor phaseData = data.accessorForPhase(AcPhase.PhaseA);
 		assertThat("Phase power a", phaseData.getActivePower(), equalTo(6944));
 
 		phaseData = data.accessorForPhase(PhaseB);
 		assertThat("Phase power b", phaseData.getActivePower(), equalTo(7040));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		phaseData = data.accessorForPhase(AcPhase.PhaseC);
 		assertThat("Phase power c", phaseData.getActivePower(), equalTo(6816));
 	}
 
@@ -187,13 +187,13 @@ public class WattsOnDataTests {
 		WattsOnDataAccessor data = getTestDataInstance();
 		assertThat("Current", data.getCurrent(), equalTo(26.08f));
 
-		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		AcEnergyDataAccessor phaseData = data.accessorForPhase(AcPhase.PhaseA);
 		assertThat("Phase current a", phaseData.getCurrent(), equalTo(25.92f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseB);
+		phaseData = data.accessorForPhase(AcPhase.PhaseB);
 		assertThat("Phase current b", phaseData.getCurrent(), equalTo(26.24f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		phaseData = data.accessorForPhase(AcPhase.PhaseC);
 		assertThat("Phase current c", phaseData.getCurrent(), equalTo(25.76f));
 	}
 
@@ -202,13 +202,13 @@ public class WattsOnDataTests {
 		WattsOnDataAccessor data = getTestDataInstance();
 		assertThat("Voltage", data.getVoltage(), equalTo(285.8f));
 
-		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		AcEnergyDataAccessor phaseData = data.accessorForPhase(AcPhase.PhaseA);
 		assertThat("Phase voltage a", phaseData.getVoltage(), equalTo(284.8f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseB);
+		phaseData = data.accessorForPhase(AcPhase.PhaseB);
 		assertThat("Phase voltage b", phaseData.getVoltage(), equalTo(287.6f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		phaseData = data.accessorForPhase(AcPhase.PhaseC);
 		assertThat("Phase voltage c", phaseData.getVoltage(), equalTo(285.1f));
 	}
 
@@ -217,13 +217,13 @@ public class WattsOnDataTests {
 		WattsOnDataAccessor data = getTestDataInstance();
 		assertThat("Line voltage", data.getLineVoltage(), equalTo(495.f));
 
-		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		AcEnergyDataAccessor phaseData = data.accessorForPhase(AcPhase.PhaseA);
 		assertThat("Line voltage ab", phaseData.getLineVoltage(), equalTo(495.7f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseB);
+		phaseData = data.accessorForPhase(AcPhase.PhaseB);
 		assertThat("Line voltage bc", phaseData.getLineVoltage(), equalTo(495.9f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		phaseData = data.accessorForPhase(AcPhase.PhaseC);
 		assertThat("Line voltage ca", phaseData.getLineVoltage(), equalTo(493.5f));
 	}
 
