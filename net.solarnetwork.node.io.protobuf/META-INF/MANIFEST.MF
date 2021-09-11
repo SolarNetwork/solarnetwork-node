@@ -3,22 +3,26 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SolarNode Protobuf I/O
 Bundle-SymbolicName: net.solarnetwork.node.io.protobuf
 Bundle-Description: SolarNode support for the Protobuf serialization protocol.
-Bundle-Version: 1.0.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.protobuf
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
- net.solarnetwork.common.protobuf;version="[0.1,2.0)",
- net.solarnetwork.common.protobuf.protoc;version="[0.1,2.0)",
- net.solarnetwork.domain;version="[1.26,2.0)",
- net.solarnetwork.io;version="[1.6,2.0)",
- net.solarnetwork.node;version="[1.31,2.0)",
- net.solarnetwork.node.domain;version="[1.23,2.0)",
- net.solarnetwork.node.settings;version="[1.13,2.0)",
- net.solarnetwork.node.settings.support;version="[1.11,2.0)",
- net.solarnetwork.node.support;version="[1.24,2.0)",
- net.solarnetwork.settings;version="[1.3,2.0)",
- net.solarnetwork.util;version="[1.47,2.0)",
+ net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
+ net.solarnetwork.common.protobuf;version="[2.0,3.0)",
+ net.solarnetwork.common.protobuf.protoc;version="[2.0,3.0)",
+ net.solarnetwork.domain.datum;version="[2.0,3.0)",
+ net.solarnetwork.node.domain;version="[2.0,3.0)",
+ net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
+ net.solarnetwork.node.service;version="[1.0,2.0)",
+ net.solarnetwork.node.service.support;version="[1.0,2.0)",
+ net.solarnetwork.node.settings;version="[2.0,3.0)",
+ net.solarnetwork.node.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.service;version="[1.0,2.0)",
+ net.solarnetwork.service.support;version="[1.0,2.0)",
+ net.solarnetwork.settings;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.util;version="[2.0,3.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.beans;version="[4.3,5.0)",
  org.springframework.context;version="[4.3,5.0)",

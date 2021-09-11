@@ -30,14 +30,14 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import net.solarnetwork.common.jdt.JdtJavaCompiler;
 import net.solarnetwork.common.protobuf.protoc.ProtocProtobufCompilerService;
+import net.solarnetwork.service.JavaCompiler;
 import net.solarnetwork.test.SystemPropertyMatchTestRule;
-import net.solarnetwork.util.JavaCompiler;
 
 /**
  * Testing support for {@literal protoc} based tests.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class BaseProtocProtobufCompilerServiceTestSupport {
 

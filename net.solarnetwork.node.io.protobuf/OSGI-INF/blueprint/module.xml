@@ -11,19 +11,19 @@
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
 		
-	<reference id="compiler" interface="net.solarnetwork.util.JavaCompiler"/>
+	<reference id="compiler" interface="net.solarnetwork.service.JavaCompiler"/>
 
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.io.protobuf.DatumProtobufObjectCodec</value>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</list>
 		</property>
 	</bean>
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Protobuf Datum Encoder"/>
 			<property name="factoryUID" value="net.solarnetwork.node.io.protobuf.enc.datum"/>
 			<property name="messageSource" ref="messageSource"/>
@@ -33,11 +33,11 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.protobuf.enc.datum" 
 			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.io.ObjectCodec</beans:value>
-			<beans:value>net.solarnetwork.io.ObjectDecoder</beans:value>
-			<beans:value>net.solarnetwork.io.ObjectEncoder</beans:value>
+			<beans:value>net.solarnetwork.codec.ObjectCodec</beans:value>
+			<beans:value>net.solarnetwork.codec.ObjectDecoder</beans:value>
+			<beans:value>net.solarnetwork.codec.ObjectEncoder</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingResourceHandler</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.protobuf.enc.datum"/>
@@ -57,8 +57,8 @@
 		<bean class="net.solarnetwork.node.io.protobuf.DatumProtobufObjectCodec">
 			<property name="messageSource" ref="messageSource"/>
 			<property name="compilerService">
-				<bean class="net.solarnetwork.util.DynamicServiceTracker">
-					<property name="bundleContext" ref="bundleContext"/>
+				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+					<argument ref="bundleContext"/>
 					<property name="serviceClassName" value="net.solarnetwork.common.protobuf.ProtobufCompilerService"/>
 					<property name="propertyFilters">
 						<map>
@@ -78,13 +78,13 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.io.protobuf.ProtocProtobufCompilerService</value>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
 			</list>
 		</property>
 	</bean>
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Protobuf Compiler (protoc)"/>
 			<property name="factoryUID" value="net.solarnetwork.node.io.protobuf.protoc"/>
 			<property name="messageSource" ref="protocMessageSource"/>
@@ -94,7 +94,7 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.protobuf.protoc" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.common.protobuf.ProtobufCompilerService</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.protobuf.protoc"/>
