@@ -24,16 +24,16 @@ package net.solarnetwork.node.hw.csi.inverter;
 
 import java.util.Set;
 import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.PVEnergyDataAccessor;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.DcEnergyDataAccessor;
 
 /**
  * API for reading CSI 50KTL-CT inverter series data.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
-public interface KTLCTDataAccessor extends PVEnergyDataAccessor, ACEnergyDataAccessor {
+public interface KTLCTDataAccessor extends DcEnergyDataAccessor, AcEnergyDataAccessor {
 
 	/**
 	 * Get the inverter device type.

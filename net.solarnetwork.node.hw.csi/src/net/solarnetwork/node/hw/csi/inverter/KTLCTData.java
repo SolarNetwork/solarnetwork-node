@@ -27,10 +27,10 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.Bitmaskable;
 import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -42,7 +42,7 @@ import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
  * 
  * @author maxieduncan
  * @author matt
- * @version 1.7
+ * @version 2.0
  */
 public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 
@@ -241,12 +241,12 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 	}
 
 	@Override
-	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+	public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public ACEnergyDataAccessor reversed() {
+	public AcEnergyDataAccessor reversed() {
 		throw new UnsupportedOperationException();
 	}
 
@@ -329,12 +329,12 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 	}
 
 	@Override
-	public Float getDCVoltage() {
+	public Float getDcVoltage() {
 		return getPv1Voltage();
 	}
 
 	@Override
-	public Integer getDCPower() {
+	public Integer getDcPower() {
 		return Math.round(getPv1Voltage() * getPv1Current());
 	}
 
