@@ -36,15 +36,16 @@ import net.solarnetwork.node.io.mbus.MBusMessageHandler;
 import net.solarnetwork.node.io.mbus.MBusSecondaryAddress;
 import net.solarnetwork.node.io.mbus.WMBusConnection;
 import net.solarnetwork.node.io.mbus.WMBusNetwork;
-import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.service.support.BasicIdentifiable;
 
 /**
  * Abstract jMBus implementation of {@link WMBusNetwork}.
  * 
  * @author alex
- * @version 1.0
+ * @version 2.0
  */
-public abstract class JMBusWMBusNetwork extends BaseIdentifiable implements WMBusNetwork, WMBusListener {
+public abstract class JMBusWMBusNetwork extends BasicIdentifiable
+		implements WMBusNetwork, WMBusListener {
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());

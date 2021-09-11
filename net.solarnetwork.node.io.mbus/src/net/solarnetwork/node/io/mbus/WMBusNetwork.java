@@ -22,13 +22,13 @@
 
 package net.solarnetwork.node.io.mbus;
 
-import net.solarnetwork.node.Identifiable;
+import net.solarnetwork.service.Identifiable;
 
 /**
  * High level Wireless M-Bus network API.
  * 
  * @author alex
- * @version 1.0
+ * @version 2.0
  */
 public interface WMBusNetwork extends Identifiable {
 

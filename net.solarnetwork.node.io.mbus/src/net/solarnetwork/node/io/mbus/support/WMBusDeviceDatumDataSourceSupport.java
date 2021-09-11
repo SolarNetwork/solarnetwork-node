@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.io.mbus.support;
 
-import static net.solarnetwork.util.OptionalService.service;
+import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,10 +34,10 @@ import net.solarnetwork.node.io.mbus.MBusMessageHandler;
 import net.solarnetwork.node.io.mbus.MBusSecondaryAddress;
 import net.solarnetwork.node.io.mbus.WMBusConnection;
 import net.solarnetwork.node.io.mbus.WMBusNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.DatumDataSourceSupport;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceSupport
 		implements MBusMessageHandler {
