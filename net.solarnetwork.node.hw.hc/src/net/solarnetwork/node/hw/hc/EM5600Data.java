@@ -25,11 +25,11 @@ package net.solarnetwork.node.hw.hc;
 import static net.solarnetwork.util.NumberUtils.bigDecimalForNumber;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.joda.time.LocalDateTime;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -39,7 +39,7 @@ import net.solarnetwork.util.NumberUtils;
  * Encapsulates raw Modbus register data from the EM5600 meters.
  * 
  * @author matt
- * @version 2.1
+ * @version 3.0
  */
 public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 
@@ -101,15 +101,15 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 	}
 
 	@Override
-	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
-		if ( phase == ACPhase.Total ) {
+	public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
+		if ( phase == AcPhase.Total ) {
 			return this;
 		}
 		return new PhaseMeterDataAccessor(phase);
 	}
 
 	@Override
-	public ACEnergyDataAccessor reversed() {
+	public AcEnergyDataAccessor reversed() {
 		return new ReversedMeterDataAccessor(this);
 	}
 
@@ -445,7 +445,7 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 			int day = (int) ((l >> 24) & 0x1F); // 1 - 31
 			int year = 2000 + (int) ((l >> 8) & 0xFF); // 0 - 255
 			int month = ((int) l & 0xF); //1-12
-			result = new LocalDateTime(year, month, day, 0, 0, 0, 0);
+			result = LocalDateTime.of(year, month, day, 0, 0, 0, 0);
 		}
 		return result;
 	}
@@ -476,9 +476,9 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 
 	private class PhaseMeterDataAccessor implements EM5600DataAccessor {
 
-		private final ACPhase phase;
+		private final AcPhase phase;
 
-		private PhaseMeterDataAccessor(ACPhase phase) {
+		private PhaseMeterDataAccessor(AcPhase phase) {
 			super();
 			this.phase = phase;
 		}
@@ -534,12 +534,12 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 		}
 
 		@Override
-		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 			return EM5600Data.this.accessorForPhase(phase);
 		}
 
 		@Override
-		public ACEnergyDataAccessor reversed() {
+		public AcEnergyDataAccessor reversed() {
 			return new ReversedMeterDataAccessor(this);
 		}
 
@@ -676,7 +676,7 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 		@Override
 		public Long getActiveEnergyDelivered() {
 			Long n = null;
-			if ( phase == ACPhase.Total ) {
+			if ( phase == AcPhase.Total ) {
 				n = EM5600Data.this.getActiveEnergyDelivered();
 			}
 			return n;
@@ -685,7 +685,7 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 		@Override
 		public Long getActiveEnergyReceived() {
 			Long n = null;
-			if ( phase == ACPhase.Total ) {
+			if ( phase == AcPhase.Total ) {
 				n = EM5600Data.this.getActiveEnergyReceived();
 			}
 			return n;
@@ -694,7 +694,7 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 		@Override
 		public Long getReactiveEnergyDelivered() {
 			Long n = null;
-			if ( phase == ACPhase.Total ) {
+			if ( phase == AcPhase.Total ) {
 				n = EM5600Data.this.getReactiveEnergyDelivered();
 			}
 			return n;
@@ -703,7 +703,7 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 		@Override
 		public Long getReactiveEnergyReceived() {
 			Long n = null;
-			if ( phase == ACPhase.Total ) {
+			if ( phase == AcPhase.Total ) {
 				n = EM5600Data.this.getReactiveEnergyReceived();
 			}
 			return n;
@@ -712,7 +712,7 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 		@Override
 		public Long getApparentEnergyDelivered() {
 			Long n = null;
-			if ( phase == ACPhase.Total ) {
+			if ( phase == AcPhase.Total ) {
 				n = EM5600Data.this.getApparentEnergyDelivered();
 			}
 			return n;
@@ -721,7 +721,7 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 		@Override
 		public Long getApparentEnergyReceived() {
 			Long n = null;
-			if ( phase == ACPhase.Total ) {
+			if ( phase == AcPhase.Total ) {
 				n = EM5600Data.this.getApparentEnergyReceived();
 			}
 			return n;
@@ -744,12 +744,12 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 		}
 
 		@Override
-		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 			return new ReversedMeterDataAccessor((EM5600DataAccessor) delegate.accessorForPhase(phase));
 		}
 
 		@Override
-		public ACEnergyDataAccessor reversed() {
+		public AcEnergyDataAccessor reversed() {
 			return delegate;
 		}
 
@@ -887,7 +887,7 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 	 *        the datum to populate data into
 	 * @since 1.2
 	 *
-	public void populateMeasurements(final ACPhase phase, final GeneralNodeACEnergyDatum datum) {
+	public void populateMeasurements(final AcPhase phase, final GeneralNodeACEnergyDatum datum) {
 		switch (phase) {
 			case Total:
 				populateTotalMeasurements(this, datum);
