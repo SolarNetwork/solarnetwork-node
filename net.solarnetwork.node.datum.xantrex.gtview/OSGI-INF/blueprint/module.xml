@@ -21,15 +21,15 @@
 	
 	<reference id="xantrexGtViewDataCollectorFactory" 
 		interface="org.springframework.beans.factory.ObjectFactory"
-		filter="(&amp;(datumClassName=net.solarnetwork.node.power.PowerDatum)(factoryObjectClassName=net.solarnetwork.node.DataCollector))"/>
+		filter="(&amp;(datumClassName=net.solarnetwork.node.power.PowerDatum)(factoryObjectClassName=net.solarnetwork.node.service.DataCollector))"/>
 	
 	<!-- Published Services -->
 	
 	<service ref="xantrexGtViewPowerDatumDataSource" 
-		interface="net.solarnetwork.node.DatumDataSource"
+		interface="net.solarnetwork.node.service.DatumDataSource"
 		ranking="1">
 		<service-properties>
-			<entry key="datumClassName" value="net.solarnetwork.node.power.PowerDatum"/>
+			<entry key="datumClassName" value="net.solarnetwork.node.domain.datum.DcEnergyDatum"/>
 		</service-properties>
 	</service>
 	

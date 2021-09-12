@@ -48,13 +48,18 @@
 
 package net.solarnetwork.node.power.impl;
 
+import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectFactory;
-import net.solarnetwork.node.DataCollector;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
-import net.solarnetwork.node.domain.PVEnergyDatum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
+import net.solarnetwork.node.domain.datum.DcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDcEnergyDatum;
+import net.solarnetwork.node.service.DataCollector;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
 
 /**
  * Implementation of {@link GenerationDataSource} for the Xantrex series of
@@ -67,21 +72,11 @@ import net.solarnetwork.node.domain.PVEnergyDatum;
  * called.
  * </p>
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>dataCollectorFactory</dt>
- * <dd>The factory for creating {@link DataCollector} instances with.
- * {@link GenericObjectFactory#getObject()} will be called on each invocation of
- * {@link #readCurrentConsumptionDatum()}.</dd>
- * </dl>
- * 
  * @author matt, mike
- * @version 1.2
+ * @version 2.0
  */
-public class XantrexGtViewPowerDatumDataSource implements DatumDataSource<PVEnergyDatum> {
+public class XantrexGtViewPowerDatumDataSource extends DatumDataSourceSupport
+		implements DatumDataSource {
 
 	private static final int FRAME_IDX_PV_VOLTS = 2;
 	private static final int FRAME_IDX_PV_WATTS = 5;
@@ -93,23 +88,23 @@ public class XantrexGtViewPowerDatumDataSource implements DatumDataSource<PVEner
 
 	private ObjectFactory<DataCollector> dataCollectorFactory;
 
-	@Override
-	public String getUID() {
-		return getClass().getName();
+	private String sourceId;
+
+	/**
+	 * Constructor.
+	 */
+	public XantrexGtViewPowerDatumDataSource() {
+		super();
+		setUid(getClass().getName());
 	}
 
 	@Override
-	public String getGroupUID() {
-		return null;
+	public Class<? extends NodeDatum> getDatumType() {
+		return DcEnergyDatum.class;
 	}
 
 	@Override
-	public Class<? extends PVEnergyDatum> getDatumType() {
-		return GeneralNodePVEnergyDatum.class;
-	}
-
-	@Override
-	public PVEnergyDatum readCurrentDatum() {
+	public DcEnergyDatum readCurrentDatum() {
 		DataCollector dataCollector = null;
 		String data = null;
 		try {
@@ -131,7 +126,7 @@ public class XantrexGtViewPowerDatumDataSource implements DatumDataSource<PVEner
 
 	}
 
-	private GeneralNodePVEnergyDatum getPowerDatumInstance(String data) {
+	private SimpleDcEnergyDatum getPowerDatumInstance(String data) {
 		if ( log.isDebugEnabled() ) {
 			log.debug("Raw last sample data in file: " + data);
 		}
@@ -146,8 +141,9 @@ public class XantrexGtViewPowerDatumDataSource implements DatumDataSource<PVEner
 			return null;
 		}
 
-		GeneralNodePVEnergyDatum datum = new GeneralNodePVEnergyDatum();
-		datum.setDCPower(d.intValue());
+		SimpleDcEnergyDatum datum = new SimpleDcEnergyDatum(resolvePlaceholders(sourceId), Instant.now(),
+				new DatumSamples());
+		datum.setDcPower(d.intValue());
 
 		// Field 0: Date: unused
 
@@ -156,7 +152,7 @@ public class XantrexGtViewPowerDatumDataSource implements DatumDataSource<PVEner
 		// Field 2: DC Volts
 		Double pvVolts = getFrameDouble(tokens, FRAME_IDX_PV_VOLTS);
 		if ( pvVolts != null ) {
-			datum.setDCVoltage(pvVolts.floatValue());
+			datum.setDcVoltage(pvVolts.floatValue());
 			log.debug("DC Volts: {}", pvVolts);
 		}
 
@@ -178,7 +174,7 @@ public class XantrexGtViewPowerDatumDataSource implements DatumDataSource<PVEner
 		// Field 8: AC Volts
 		d = getFrameDouble(tokens, FRAME_IDX_AC_VOLTS);
 		if ( d != null ) {
-			datum.setVoltage(d.floatValue());
+			datum.getSamples().putInstantaneousSampleValue(AcEnergyDatum.VOLTAGE_KEY, pvVolts);
 			log.debug("AC Volts: {}", d);
 		}
 
@@ -206,6 +202,25 @@ public class XantrexGtViewPowerDatumDataSource implements DatumDataSource<PVEner
 
 	public void setDataCollectorFactory(ObjectFactory<DataCollector> dataCollectorFactory) {
 		this.dataCollectorFactory = dataCollectorFactory;
+	}
+
+	/**
+	 * Get the source ID.
+	 * 
+	 * @return the source ID
+	 */
+	public String getSourceId() {
+		return sourceId;
+	}
+
+	/**
+	 * Set the source ID.
+	 * 
+	 * @param sourceId
+	 *        the source ID
+	 */
+	public void setSourceId(String sourceId) {
+		this.sourceId = sourceId;
 	}
 
 }

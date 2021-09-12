@@ -11,7 +11,7 @@
 		ref="xantrexGtViewDataCollectorConfiguration">
 		<osgi:service-properties>
 			<entry key="beanConfigurationTarget" value="org.springframework.beans.factory.ObjectFactory"/>
-			<entry key="factoryObjectClassName" value="net.solarnetwork.node.DataCollector"/>
+			<entry key="factoryObjectClassName" value="net.solarnetwork.node.service.DataCollector"/>
 			<entry key="io" value="url"/>
 		</osgi:service-properties>
 	</osgi:service>
