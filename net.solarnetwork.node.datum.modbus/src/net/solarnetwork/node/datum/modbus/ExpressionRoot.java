@@ -26,16 +26,16 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.io.modbus.ModbusData;
-import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.service.ExpressionService;
 import net.solarnetwork.util.IntRangeSet;
 
 /**
  * An object to use as the "root" for {@link ExpressionService} evaluation.
  * 
  * @author matt
- * @version 2.3
+ * @version 3.0
  */
 public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot {
 
@@ -81,7 +81,7 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	 * @param sample
 	 *        the current Modbus sample data
 	 */
-	public ExpressionRoot(GeneralNodeDatum datum, ModbusData sample) {
+	public ExpressionRoot(NodeDatum datum, ModbusData sample) {
 		super(datum);
 		this.sample = sample;
 		this.sampleUnsignedData = (sample != null ? sample.getUnsignedDataMap()
