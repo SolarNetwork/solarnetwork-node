@@ -22,11 +22,10 @@
 
 package net.solarnetwork.node.datum.hc.em5600;
 
-import java.util.Date;
-import java.util.Map;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.datum.SimpleAcEnergyDatum;
 import net.solarnetwork.node.hw.hc.EM5600DataAccessor;
 
 /**
@@ -34,38 +33,39 @@ import net.solarnetwork.node.hw.hc.EM5600DataAccessor;
  * supported by the EM5600 series meters.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 2.0
  */
-public class EM5600Datum extends GeneralNodeACEnergyDatum implements ACEnergyDataAccessor {
+public class EM5600Datum extends SimpleAcEnergyDatum {
+
+	private static final long serialVersionUID = 3929665682204910961L;
 
 	private final EM5600DataAccessor data;
-	private final boolean backwards;
 
 	/**
 	 * Construct with a sample.
 	 * 
 	 * @param data
 	 *        the accessor
+	 * @param sourceId
+	 *        the source ID
 	 * @param phase
 	 *        the phase
 	 * @param backwards
 	 *        {@literal true} to reverse the direction of current
 	 */
-	public EM5600Datum(EM5600DataAccessor data, ACPhase phase, boolean backwards) {
-		super();
+	public EM5600Datum(EM5600DataAccessor data, String sourceId, AcPhase phase, boolean backwards) {
+		super(sourceId, data.getDataTimestamp(), new DatumSamples());
 		this.data = data;
-		this.backwards = backwards;
-		if ( data.getDataTimestamp() > 0 ) {
-			setCreated(new Date(data.getDataTimestamp()));
+		AcEnergyDataAccessor accessor = data.accessorForPhase(phase);
+		if ( backwards ) {
+			accessor = accessor.reversed();
 		}
-		setPhase(phase);
-		ACEnergyDataAccessor phaseData = accessorForPhase(phase);
-		populateMeasurements(phaseData, phase);
+		populateMeasurements(accessor, phase);
 	}
 
-	private void populateMeasurements(ACEnergyDataAccessor data, ACPhase phase) {
-		setPhase(phase);
+	private void populateMeasurements(AcEnergyDataAccessor data, AcPhase phase) {
+		setAcPhase(phase);
 		setFrequency(data.getFrequency());
 		setVoltage(data.getVoltage());
 		setLineVoltage(data.getLineVoltage());
@@ -88,63 +88,13 @@ public class EM5600Datum extends GeneralNodeACEnergyDatum implements ACEnergyDat
 		return (getWatts() != null || getWattHourReading() != null);
 	}
 
-	@Override
-	public long getDataTimestamp() {
-		return data.getDataTimestamp();
-	}
-
-	@Override
-	public Map<String, Object> getDeviceInfo() {
-		return data.getDeviceInfo();
-	}
-
-	@Override
-	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
-		ACEnergyDataAccessor phaseData = data.accessorForPhase(phase);
-		if ( backwards ) {
-			phaseData = phaseData.reversed();
-		}
-		return phaseData;
-	}
-
-	@Override
-	public ACEnergyDataAccessor reversed() {
-		return data.reversed();
-	}
-
-	@Override
-	public Integer getActivePower() {
-		return data.getActivePower();
-	}
-
-	@Override
-	public Long getActiveEnergyDelivered() {
-		return data.getActiveEnergyDelivered();
-	}
-
-	@Override
-	public Long getActiveEnergyReceived() {
-		return data.getActiveEnergyReceived();
-	}
-
-	@Override
-	public Long getApparentEnergyDelivered() {
-		return data.getApparentEnergyDelivered();
-	}
-
-	@Override
-	public Long getApparentEnergyReceived() {
-		return data.getApparentEnergyReceived();
-	}
-
-	@Override
-	public Long getReactiveEnergyDelivered() {
-		return data.getReactiveEnergyDelivered();
-	}
-
-	@Override
-	public Long getReactiveEnergyReceived() {
-		return data.getReactiveEnergyReceived();
+	/**
+	 * Get the source data.
+	 * 
+	 * @return the data
+	 */
+	public EM5600DataAccessor getData() {
+		return data;
 	}
 
 }
