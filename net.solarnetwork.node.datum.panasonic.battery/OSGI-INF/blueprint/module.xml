@@ -40,13 +40,6 @@
 		<property name="delegate" ref="messageSource"/>
 	</bean>
 
-	<bean id="settingsFactory"
-		class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
-		<property name="displayName" value="Panasonic Battery API Energy Storage"/>
-		<property name="factoryUid" value="net.solarnetwork.node.datum.panasonic.battery"/>
-		<property name="messageSource" ref="messageSource"/>
-	</bean>
-
 	<bean id="objectMapper" class="net.solarnetwork.codec.ObjectMapperFactoryBean">
 		<property name="deserializers">
 			<list>
@@ -57,7 +50,13 @@
 
 	<!-- Published Services -->
 
-	<service ref="settingsFactory" interface="net.solarnetwork.settings.SettingSpecifierProviderFactory"/>
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Panasonic Battery API Energy Storage"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.panasonic.battery"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
 
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.panasonic.battery" autowire-on-update="true">
 		<osgix:interfaces>

@@ -24,18 +24,26 @@
 
 package net.solarnetwork.node.power.impl;
 
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectFactory;
-import net.solarnetwork.node.DataCollector;
-import net.solarnetwork.node.DataCollectorFactory;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
-import net.solarnetwork.node.domain.PVEnergyDatum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.DcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDcEnergyDatum;
+import net.solarnetwork.node.service.DataCollector;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
- * Implementation of {@link net.solarnetwork.node.DatumDataSource} for
- * {@link PVEnergyDatum} the Outback MX60, communicating via the
+ * Implementation of {@link net.solarnetwork.node.service.DatumDataSource} for
+ * {@link DcEnergyDatum} the Outback MX60, communicating via the
  * {@code DataCollector} serial API.
  * 
  * <p>
@@ -56,20 +64,11 @@ import net.solarnetwork.node.domain.PVEnergyDatum;
  * <dd>60000</dt>
  * </dl>
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>dataCollectorFactory</dt>
- * <dd>The {@link DataCollectorFactory} to use to obtain {@link DataCollector}
- * instances for reading the Outback MX60 data.</dd>
- * </dl>
- * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class OutbackMX60PowerDatumDataSource implements DatumDataSource<PVEnergyDatum> {
+public class OutbackMX60PowerDatumDataSource extends DatumDataSourceSupport
+		implements DatumDataSource, SettingSpecifierProvider {
 
 	/**
 	 * The {@link net.solarnetwork.domain.GeneralNodeDatumSamples} instantaneous
@@ -93,16 +92,17 @@ public class OutbackMX60PowerDatumDataSource implements DatumDataSource<PVEnergy
 	private static final double KWATT_HOURS_MULTIPLIER = 0.1;
 
 	private ObjectFactory<DataCollector> dataCollectorFactory;
+	private String sourceId;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Override
-	public Class<? extends PVEnergyDatum> getDatumType() {
-		return GeneralNodePVEnergyDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return DcEnergyDatum.class;
 	}
 
 	@Override
-	public PVEnergyDatum readCurrentDatum() {
+	public DcEnergyDatum readCurrentDatum() {
 		DataCollector dataCollector = null;
 		String data = null;
 		try {
@@ -140,7 +140,7 @@ public class OutbackMX60PowerDatumDataSource implements DatumDataSource<PVEnergy
 	 *        the serial data string
 	 * @return a PowerDatum instance
 	 */
-	private GeneralNodePVEnergyDatum getPowerDatumInstance(String data) {
+	private DcEnergyDatum getPowerDatumInstance(String data) {
 
 		// split data on comma
 		String[] frame = data.split(",");
@@ -151,26 +151,28 @@ public class OutbackMX60PowerDatumDataSource implements DatumDataSource<PVEnergy
 			return null;
 		}
 
-		GeneralNodePVEnergyDatum pd = new GeneralNodePVEnergyDatum();
+		SimpleDcEnergyDatum pd = new SimpleDcEnergyDatum(resolvePlaceholders(sourceId), Instant.now(),
+				new DatumSamples());
 
 		Double pvAmps = getFrameDouble(frame, FRAME_IDX_PV_AMPS);
 
 		Double pvVolts = getFrameDouble(frame, FRAME_IDX_PV_VOLTS);
 		if ( pvVolts != null ) {
-			pd.setDCVoltage(pvVolts.floatValue());
+			pd.setDcVoltage(pvVolts.floatValue());
 			if ( pvAmps != null ) {
-				pd.setDCPower((int) Math.round(pvAmps.doubleValue() * pvVolts.doubleValue()));
+				pd.setDcPower((int) Math.round(pvAmps.doubleValue() * pvVolts.doubleValue()));
 			}
 		}
 
 		Double d = getFrameDouble(frame, FRAME_IDX_DC_AMPS);
 		if ( d != null ) {
-			pd.putInstantaneousSampleValue("dcOutputAmps", d.floatValue());
+			pd.getSamples().putInstantaneousSampleValue("dcOutputAmps", d.floatValue());
 		}
 
 		d = getFrameDouble(frame, FRAME_IDX_BAT_VOLTS);
 		if ( d != null ) {
-			pd.putInstantaneousSampleValue("batteryVoltage", d.floatValue() * BAT_VOLTS_MULTIPLIER);
+			pd.getSamples().putInstantaneousSampleValue("batteryVoltage",
+					d.floatValue() * BAT_VOLTS_MULTIPLIER);
 		}
 
 		d = getFrameDouble(frame, FRAME_IDX_KWATT_HOURS);
@@ -188,22 +190,35 @@ public class OutbackMX60PowerDatumDataSource implements DatumDataSource<PVEnergy
 		return null;
 	}
 
-	@Override
-	public String getUID() {
-		return getClass().getName();
-	}
-
-	@Override
-	public String getGroupUID() {
-		return null;
-	}
-
 	public ObjectFactory<DataCollector> getDataCollectorFactory() {
 		return dataCollectorFactory;
 	}
 
 	public void setDataCollectorFactory(ObjectFactory<DataCollector> dataCollectorFactory) {
 		this.dataCollectorFactory = dataCollectorFactory;
+	}
+
+	@Override
+	public String getSettingUid() {
+		return "net.solarnetwork.node.datum.outback.mx60";
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		List<SettingSpecifier> result = new ArrayList<>(3);
+		result.addAll(baseIdentifiableSettings(""));
+		result.add(new BasicTextFieldSettingSpecifier("sourceId", null));
+		return result;
+	}
+
+	/**
+	 * Set the source ID.
+	 * 
+	 * @param sourceId
+	 *        the source ID
+	 */
+	public void setSourceId(String sourceId) {
+		this.sourceId = sourceId;
 	}
 
 }
