@@ -12,7 +12,12 @@
 		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
 	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames" value="net.solarnetwork.node.io.serial.rxtx.SerialPortNetwork"/>
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.io.serial.rxtx.SerialPortNetwork</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</list>
+		</property>
 		<property name="parentMessageSource">
 			<bean class="net.solarnetwork.support.PrefixedMessageSource">
 				<property name="prefix" value="serialParams."/>

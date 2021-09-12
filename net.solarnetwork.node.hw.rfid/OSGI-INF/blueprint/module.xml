@@ -49,7 +49,12 @@
 	<!-- Supporting service -->
 	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
-		<property name="basenames" value="net.solarnetwork.node.hw.rfid.RfidSocketReaderService"/>
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.hw.rfid.RfidSocketReaderService</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</list>
+		</property>
 	</bean>
 
 </blueprint>

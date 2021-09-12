@@ -18,6 +18,7 @@
 			<list>
 				<value>net.solarnetwork.node.io.modbus.jamod.JamodSerialModbusNetwork</value>
 				<value>net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
@@ -50,6 +51,7 @@
 			<list>
 				<value>net.solarnetwork.node.io.modbus.jamod.JamodTcpModbusNetwork</value>
 				<value>net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
@@ -82,6 +84,7 @@
 			<list>
 				<value>net.solarnetwork.node.io.modbus.jamod.JamodUdpModbusNetwork</value>
 				<value>net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
