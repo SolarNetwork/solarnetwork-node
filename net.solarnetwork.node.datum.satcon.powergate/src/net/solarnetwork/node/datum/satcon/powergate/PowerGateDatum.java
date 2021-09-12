@@ -33,7 +33,7 @@ import net.solarnetwork.node.hw.satcon.Fault;
 import net.solarnetwork.node.hw.satcon.PowerGateInverterDataAccessor;
 
 /**
- * Datum for Power Gade.
+ * Datum for Power Gate.
  * 
  * @author matt
  * @version 2.0
