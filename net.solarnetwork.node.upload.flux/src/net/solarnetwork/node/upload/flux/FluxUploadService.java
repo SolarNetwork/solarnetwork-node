@@ -591,7 +591,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.upload.flux";
 	}
 

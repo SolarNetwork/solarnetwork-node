@@ -545,7 +545,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.upload.mqtt";
 	}
 

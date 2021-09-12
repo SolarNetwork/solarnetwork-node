@@ -31,7 +31,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.upload.resource.ResourceStorageServiceDirectoryWatcher</value>
-				<value>net.solarnetwork.node.service.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
@@ -39,7 +39,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Storage Service Directory Watcher"/>
-			<property name="factoryUID" value="net.solarnetwork.node.upload.resource.dirwatcher"/>
+			<property name="factoryUid" value="net.solarnetwork.node.upload.resource.dirwatcher"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>

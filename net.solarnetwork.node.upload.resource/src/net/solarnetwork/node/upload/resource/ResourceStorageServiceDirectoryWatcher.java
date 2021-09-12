@@ -173,7 +173,7 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.upload.resource.dirwatcher";
 	}
 
@@ -186,7 +186,7 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>(4);
 		result.add(new BasicTitleSettingSpecifier("status", statusValue(Locale.getDefault()), true));
-		result.add(new BasicTextFieldSettingSpecifier("storageService.propertyFilters['UID']", ""));
+		result.add(new BasicTextFieldSettingSpecifier("storageService.propertyFilters['uid']", ""));
 		result.add(new BasicTextFieldSettingSpecifier("path", ""));
 		result.add(new BasicTextFieldSettingSpecifier("filterValue", DEFAULT_FILTER.pattern()));
 		result.add(new BasicToggleSettingSpecifier("recursive", Boolean.FALSE));
