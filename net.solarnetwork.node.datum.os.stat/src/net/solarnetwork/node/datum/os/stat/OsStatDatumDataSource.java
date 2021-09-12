@@ -45,7 +45,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.context.MessageSource;
-import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.domain.datum.MutableNodeDatum;
@@ -166,8 +165,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		}
 
 		// Cache has expired so initiate new instance and cache
-		SimpleDatum result = SimpleDatum.nodeDatum(resolvePlaceholders(sourceId), Instant.now(),
-				new DatumSamples());
+		SimpleDatum result = SimpleDatum.nodeDatum(resolvePlaceholders(sourceId));
 
 		for ( String action : actions ) {
 			List<Map<String, String>> data = commandRunner.executeAction(action);

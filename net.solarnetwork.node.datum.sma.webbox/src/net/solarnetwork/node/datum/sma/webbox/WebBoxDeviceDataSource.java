@@ -26,7 +26,6 @@ import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceDataAccessor;
@@ -163,7 +162,7 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 			if ( sample != null && sample.getDataTimestamp() != null ) {
 				lastSample = sample;
 				SimpleDatum d = SimpleDatum.nodeDatum(resolvePlaceholders(getSourceId()),
-						sample.getDataTimestamp(), new DatumSamples());
+						sample.getDataTimestamp());
 				if ( d.getSourceId() != null ) {
 					sample.populateDatumSamples(d.asMutableSampleOperations(), null);
 					return d;

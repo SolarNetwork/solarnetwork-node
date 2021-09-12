@@ -65,6 +65,25 @@ public class SimpleDatum extends GeneralDatum implements NodeDatum, MutableNodeD
 	 * 
 	 * <p>
 	 * The {@code nodeId} property will be set to {@literal null} and presumed
+	 * to be equal to the ID of the running node. A new {@code samples} instance
+	 * will be created.
+	 * </p>
+	 * 
+	 * @param sourceId
+	 *        the source ID
+	 * @param timestamp
+	 *        the timestamp
+	 * @return the new instance
+	 */
+	public static SimpleDatum nodeDatum(String sourceId, Instant timestamp) {
+		return nodeDatum(sourceId, timestamp, new DatumSamples());
+	}
+
+	/**
+	 * Create a node datum.
+	 * 
+	 * <p>
+	 * The {@code nodeId} property will be set to {@literal null} and presumed
 	 * to be equal to the ID of the running node.
 	 * </p>
 	 * 
@@ -78,6 +97,25 @@ public class SimpleDatum extends GeneralDatum implements NodeDatum, MutableNodeD
 	 */
 	public static SimpleDatum nodeDatum(String sourceId, Instant timestamp, DatumSamples samples) {
 		return new SimpleDatum(DatumId.nodeId(null, sourceId, timestamp), samples);
+	}
+
+	/**
+	 * Create a location datum.
+	 * 
+	 * <p>
+	 * A new {@code samples} instance will be created.
+	 * </p>
+	 * 
+	 * @param locationId
+	 *        the location ID
+	 * @param sourceId
+	 *        the source ID
+	 * @param timestamp
+	 *        the timestamp
+	 * @return the new instance
+	 */
+	public static SimpleDatum locationDatum(Long locationId, String sourceId, Instant timestamp) {
+		return locationDatum(locationId, sourceId, timestamp, new DatumSamples());
 	}
 
 	/**
