@@ -22,14 +22,14 @@
 
 package net.solarnetwork.node.io.mbus;
 
-import java.util.Date;
+import java.time.Instant;
 
 /**
  * 
  * A class representing an MBus Message
  * 
  * @author alex
- * @version 1.0
+ * @version 2.0
  */
 public class MBusMessage extends MBusData {
 
@@ -39,7 +39,7 @@ public class MBusMessage extends MBusData {
 		super(data);
 	}
 
-	public MBusMessage(Date receivedTime) {
+	public MBusMessage(Instant receivedTime) {
 		super(receivedTime);
 	}
 

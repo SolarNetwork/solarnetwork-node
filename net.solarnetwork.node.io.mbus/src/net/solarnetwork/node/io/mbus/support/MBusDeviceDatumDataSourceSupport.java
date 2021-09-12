@@ -24,6 +24,8 @@ package net.solarnetwork.node.io.mbus.support;
 
 import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -155,8 +157,8 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 		MBusData currSample = null;
 		synchronized ( dataLock ) {
 			// Check latest sample to see if it's current enough to use
-			if ( latestData == null
-					|| ((System.currentTimeMillis() - latestData.getDataTimestamp()) > sampleCacheMs) ) {
+			if ( latestData == null || latestData.getDataTimestamp() == null || ((latestData
+					.getDataTimestamp().until(Instant.now(), ChronoUnit.MILLIS)) > sampleCacheMs) ) {
 				try {
 					latestData = performRead();
 					currSample = new MBusData(latestData);
