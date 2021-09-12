@@ -24,6 +24,8 @@ package net.solarnetwork.node.hw.sma.modbus.webbox;
 
 import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceDataAccessor;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
 import net.solarnetwork.node.hw.sma.modbus.SmaDeviceData;
@@ -118,9 +120,8 @@ public class WebBoxDataDevice<T extends SmaDeviceData & SmaDeviceDataAccessor> i
 	@Override
 	public synchronized SmaDeviceDataAccessor refreshData(long maxAge) throws IOException {
 		if ( maxAge > 0 ) {
-			long now = System.currentTimeMillis();
-			long ts = data.getDataTimestamp();
-			if ( ts > 0 && ts + maxAge > now ) {
+			Instant ts = data.getDataTimestamp();
+			if ( ts != null && ts.until(Instant.now(), ChronoUnit.MILLIS) > maxAge ) {
 				// data has not expired
 				return data.copy();
 			}

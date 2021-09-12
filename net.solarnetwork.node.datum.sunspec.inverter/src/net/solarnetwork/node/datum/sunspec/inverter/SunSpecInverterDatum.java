@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.datum.sunspec.inverter;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -73,8 +72,7 @@ public class SunSpecInverterDatum extends SimpleAcDcEnergyDatum {
 	 *        the phase to associate with the data
 	 */
 	public SunSpecInverterDatum(InverterModelAccessor data, String sourceId, AcPhase phase) {
-		super(sourceId, (data.getDataTimestamp() > 0 ? Instant.ofEpochMilli(data.getDataTimestamp())
-				: Instant.now()), new DatumSamples());
+		super(sourceId, data.getDataTimestamp(), new DatumSamples());
 		this.data = data;
 		populateMeasurements(data, phase);
 	}

@@ -27,6 +27,7 @@ import static net.solarnetwork.util.NumberUtils.maximumDecimalScale;
 import static net.solarnetwork.util.NumberUtils.scaled;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -341,7 +342,7 @@ public class WattsOnData extends ModbusData implements WattsOnDataAccessor {
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return WattsOnData.this.getDataTimestamp();
 		}
 
@@ -545,7 +546,7 @@ public class WattsOnData extends ModbusData implements WattsOnDataAccessor {
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return delegate.getDataTimestamp();
 		}
 

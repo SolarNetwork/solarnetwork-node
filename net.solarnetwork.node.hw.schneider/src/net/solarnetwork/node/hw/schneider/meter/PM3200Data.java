@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.schneider.meter;
 
 import static net.solarnetwork.util.CollectionUtils.coveringIntRanges;
 import java.io.IOException;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -498,7 +499,7 @@ public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return PM3200Data.this.getDataTimestamp();
 		}
 
@@ -775,7 +776,7 @@ public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return delegate.getDataTimestamp();
 		}
 

@@ -23,6 +23,8 @@
 package net.solarnetwork.node.hw.sunspec.support;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -238,10 +240,10 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 * @return {@literal true} if the sample data has expired
 	 */
 	protected boolean isCachedSampleExpired(ModelData data) {
-		if ( data == null ) {
+		if ( data == null || data.getDataTimestamp() == null ) {
 			return true;
 		}
-		final long lastReadDiff = System.currentTimeMillis() - data.getDataTimestamp();
+		final long lastReadDiff = data.getDataTimestamp().until(Instant.now(), ChronoUnit.MILLIS);
 		if ( lastReadDiff > sampleCacheMs ) {
 			return true;
 		}

@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.eig.meter;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import net.solarnetwork.domain.AcPhase;
@@ -375,7 +376,7 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return Shark100Data.this.getDataTimestamp();
 		}
 
@@ -569,7 +570,7 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return delegate.getDataTimestamp();
 		}
 

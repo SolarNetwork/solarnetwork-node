@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.sunspec.meter;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import net.solarnetwork.domain.AcPhase;
@@ -276,7 +277,7 @@ public class IntegerMeterModelAccessor extends BaseModelAccessor implements Mete
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return IntegerMeterModelAccessor.this.getDataTimestamp();
 		}
 

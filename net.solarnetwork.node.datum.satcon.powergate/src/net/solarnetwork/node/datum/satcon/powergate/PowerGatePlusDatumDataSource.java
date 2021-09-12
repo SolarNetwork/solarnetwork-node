@@ -23,7 +23,6 @@
 package net.solarnetwork.node.datum.satcon.powergate;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -157,7 +156,7 @@ public class PowerGatePlusDatumDataSource extends ModbusDataDatumDataSourceSuppo
 	}
 
 	private String getSampleMessage(PowerGateInverterDataAccessor data) {
-		if ( data.getDataTimestamp() < 1 ) {
+		if ( data.getDataTimestamp() == null ) {
 			return "N/A";
 		}
 		StringBuilder buf = new StringBuilder();
@@ -168,7 +167,7 @@ public class PowerGatePlusDatumDataSource extends ModbusDataDatumDataSourceSuppo
 		buf.append(", W = ").append(data.getActivePower());
 		buf.append(", Wh today = ").append(data.getActiveEnergyDeliveredToday());
 		buf.append(", Wh total = ").append(data.getActiveEnergyDelivered());
-		buf.append("; sampled at ").append(Instant.ofEpochMilli(data.getDataTimestamp()));
+		buf.append("; sampled at ").append(data.getDataTimestamp());
 		return buf.toString();
 	}
 

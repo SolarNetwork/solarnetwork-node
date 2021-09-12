@@ -46,7 +46,7 @@ public class CanbusDataTests {
 	@Test
 	public void construct() {
 		CanbusData d = new CanbusData();
-		assertThat("Initial timestamp", d.getDataTimestamp(), equalTo(0L));
+		assertThat("Initial timestamp", d.getDataTimestamp().toEpochMilli(), equalTo(0L));
 	}
 
 	@Test
@@ -61,7 +61,7 @@ public class CanbusDataTests {
 			}
 		});
 
-		assertThat("Tmestamp updated", d.getDataTimestamp(), greaterThanOrEqualTo(now));
+		assertThat("Tmestamp updated", d.getDataTimestamp().toEpochMilli(), greaterThanOrEqualTo(now));
 	}
 
 	@Test
@@ -75,7 +75,7 @@ public class CanbusDataTests {
 			}
 		});
 
-		assertThat("Tmestamp not updated", d.getDataTimestamp(), equalTo(0L));
+		assertThat("Tmestamp not updated", d.getDataTimestamp().toEpochMilli(), equalTo(0L));
 	}
 
 	@Test

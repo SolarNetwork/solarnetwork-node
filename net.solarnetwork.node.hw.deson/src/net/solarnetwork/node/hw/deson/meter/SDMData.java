@@ -24,11 +24,12 @@ package net.solarnetwork.node.hw.deson.meter;
 
 import static net.solarnetwork.util.CollectionUtils.coveringIntRanges;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusDataUtils;
@@ -503,7 +504,7 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return SDMData.this.getDataTimestamp();
 		}
 
@@ -807,7 +808,7 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return delegate.getDataTimestamp();
 		}
 

@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.sunspec;
 
+import java.time.Instant;
 import net.solarnetwork.util.IntRange;
 
 /**
@@ -37,7 +38,7 @@ public interface ModelAccessor {
 	 * 
 	 * @return the data time stamp
 	 */
-	long getDataTimestamp();
+	Instant getDataTimestamp();
 
 	/**
 	 * Get the base address of this model.

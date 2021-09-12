@@ -23,7 +23,6 @@
 package net.solarnetwork.node.datum.schneider.pm3200;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
@@ -108,7 +107,7 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 	}
 
 	private String getSampleMessage(PM3200Data data) {
-		if ( data.getDataTimestamp() < 1 ) {
+		if ( data.getDataTimestamp() == null ) {
 			return "N/A";
 		}
 		StringBuilder buf = new StringBuilder();
@@ -117,7 +116,7 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 		buf.append(", Wh rec = ").append(data.getActiveEnergyReceived());
 		buf.append(", Wh del = ").append(data.getActiveEnergyDelivered());
 		buf.append(", cos \ud835\udf11 = ").append(data.getEffectiveTotalPowerFactor());
-		buf.append("; sampled at ").append(Instant.ofEpochMilli(data.getDataTimestamp()));
+		buf.append("; sampled at ").append(data.getDataTimestamp());
 		return buf.toString();
 	}
 

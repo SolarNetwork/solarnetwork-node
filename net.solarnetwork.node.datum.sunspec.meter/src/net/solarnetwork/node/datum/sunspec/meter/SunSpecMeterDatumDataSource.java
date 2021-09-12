@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.datum.sunspec.meter;
 
-import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -155,7 +154,7 @@ public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSup
 
 	@Override
 	protected String getSampleMessage(ModelData sample) {
-		if ( sample == null || sample.getDataTimestamp() < 1 ) {
+		if ( sample == null || sample.getDataTimestamp() == null ) {
 			return "N/A";
 		}
 		MeterModelAccessor data = sample.findTypedModel(MeterModelAccessor.class);
@@ -167,7 +166,7 @@ public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSup
 		buf.append(", freq = ").append(data.getFrequency());
 		buf.append(", Wh imp = ").append(data.getActiveEnergyImported());
 		buf.append(", Wh exp = ").append(data.getActiveEnergyExported());
-		buf.append("; sampled at ").append(Instant.ofEpochMilli(data.getDataTimestamp()));
+		buf.append("; sampled at ").append(data.getDataTimestamp());
 		return buf.toString();
 	}
 

@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.datum.sunspec.meter;
 
-import java.time.Instant;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
@@ -59,8 +58,7 @@ public class SunSpecMeterDatum extends SimpleAcDcEnergyDatum {
 	 */
 	public SunSpecMeterDatum(MeterModelAccessor data, String sourceId, AcPhase phase,
 			boolean backwards) {
-		super(sourceId, (data.getDataTimestamp() > 0 ? Instant.ofEpochMilli(data.getDataTimestamp())
-				: Instant.now()), new DatumSamples());
+		super(sourceId, data.getDataTimestamp(), new DatumSamples());
 		this.data = data;
 		MeterModelAccessor phaseData = data.accessorForPhase(phase);
 		if ( backwards ) {

@@ -27,6 +27,7 @@ import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -51,7 +52,7 @@ import net.solarnetwork.util.IntShortMap;
  * </p>
  * 
  * @author matt
- * @version 2.4
+ * @version 3.0
  * @since 2.3
  */
 public class ModbusData implements DataAccessor {
@@ -88,8 +89,8 @@ public class ModbusData implements DataAccessor {
 	}
 
 	@Override
-	public long getDataTimestamp() {
-		return dataTimestamp;
+	public Instant getDataTimestamp() {
+		return dataTimestamp > 0 ? Instant.ofEpochMilli(dataTimestamp) : null;
 	}
 
 	@Override

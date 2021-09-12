@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.sunspec.inverter;
 
+import java.time.Instant;
 import java.util.Set;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
@@ -294,7 +295,7 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return IntegerInverterModelAccessor.this.getDataTimestamp();
 		}
 

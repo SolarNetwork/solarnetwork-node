@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.datum.yaskawa.pvitl;
 
-import java.time.Instant;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.AcEnergyDatum;
 import net.solarnetwork.node.domain.datum.DcEnergyDatum;
@@ -34,7 +33,7 @@ import net.solarnetwork.node.hw.yaskawa.mb.inverter.PVITLDataAccessor;
  * samples.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class PVITLDatum extends SimpleAcDcEnergyDatum {
 
@@ -51,8 +50,7 @@ public class PVITLDatum extends SimpleAcDcEnergyDatum {
 	 *        the source ID
 	 */
 	public PVITLDatum(PVITLDataAccessor sample, String sourceId) {
-		super(sourceId, (sample.getDataTimestamp() > 0 ? Instant.ofEpochMilli(sample.getDataTimestamp())
-				: Instant.now()), new DatumSamples());
+		super(sourceId, sample.getDataTimestamp(), new DatumSamples());
 		this.sample = sample;
 		populateMeasurements(sample);
 	}

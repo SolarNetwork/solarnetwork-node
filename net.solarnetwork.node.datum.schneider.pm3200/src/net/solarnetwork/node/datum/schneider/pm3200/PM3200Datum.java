@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.datum.schneider.pm3200;
 
-import java.time.Instant;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
@@ -55,8 +54,7 @@ public class PM3200Datum extends SimpleAcEnergyDatum {
 	 *        {@literal true} to reverse current direction
 	 */
 	public PM3200Datum(PM3200DataAccessor data, String sourceId, AcPhase phase, boolean backwards) {
-		super(sourceId, (data.getDataTimestamp() > 0 ? Instant.ofEpochMilli(data.getDataTimestamp())
-				: Instant.now()), new DatumSamples());
+		super(sourceId, data.getDataTimestamp(), new DatumSamples());
 		this.data = data;
 		AcEnergyDataAccessor accessor = data.accessorForPhase(phase);
 		if ( backwards ) {

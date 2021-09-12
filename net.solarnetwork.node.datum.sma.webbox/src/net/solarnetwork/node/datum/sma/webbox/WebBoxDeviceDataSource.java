@@ -24,7 +24,6 @@ package net.solarnetwork.node.datum.sma.webbox;
 
 import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import net.solarnetwork.domain.datum.DatumSamples;
@@ -125,7 +124,7 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 	}
 
 	private String sampleMessage(SmaDeviceDataAccessor data) {
-		if ( data == null || data.getDataTimestamp() < 1 ) {
+		if ( data == null || data.getDataTimestamp() == null ) {
 			return "N/A";
 		}
 		return data.getDataDescription();
@@ -159,13 +158,12 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 		if ( device == null ) {
 			return null;
 		}
-		final long now = System.currentTimeMillis();
 		try {
 			SmaDeviceDataAccessor sample = device.refreshData(getSampleCacheMs());
-			if ( sample != null && sample.getDataTimestamp() >= now ) {
+			if ( sample != null && sample.getDataTimestamp() != null ) {
 				lastSample = sample;
 				SimpleDatum d = SimpleDatum.nodeDatum(resolvePlaceholders(getSourceId()),
-						Instant.ofEpochMilli(sample.getDataTimestamp()), new DatumSamples());
+						sample.getDataTimestamp(), new DatumSamples());
 				if ( d.getSourceId() != null ) {
 					sample.populateDatumSamples(d.asMutableSampleOperations(), null);
 					return d;

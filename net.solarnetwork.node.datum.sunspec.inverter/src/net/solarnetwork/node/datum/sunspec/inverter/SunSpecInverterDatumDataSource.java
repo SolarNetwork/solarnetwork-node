@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.datum.sunspec.inverter;
 
-import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -201,7 +200,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 
 	@Override
 	protected String getSampleMessage(ModelData sample) {
-		if ( sample == null || sample.getDataTimestamp() < 1 ) {
+		if ( sample == null || sample.getDataTimestamp() == null ) {
 			return "N/A";
 		}
 		InverterModelAccessor data;
@@ -239,7 +238,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 			}
 		}
 
-		buf.append("; sampled at ").append(Instant.ofEpochMilli(data.getDataTimestamp()));
+		buf.append("; sampled at ").append(data.getDataTimestamp());
 		return buf.toString();
 	}
 

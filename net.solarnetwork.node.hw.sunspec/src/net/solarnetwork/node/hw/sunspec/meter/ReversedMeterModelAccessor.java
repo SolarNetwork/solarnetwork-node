@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.sunspec.meter;
 
+import java.time.Instant;
 import java.util.Map;
 import java.util.Set;
 import net.solarnetwork.domain.AcPhase;
@@ -32,7 +33,7 @@ import net.solarnetwork.node.hw.sunspec.ModelId;
  * A "reversed" meter model accessor that swaps import/export values.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.3
  */
 public class ReversedMeterModelAccessor implements MeterModelAccessor {
@@ -66,7 +67,7 @@ public class ReversedMeterModelAccessor implements MeterModelAccessor {
 	}
 
 	@Override
-	public long getDataTimestamp() {
+	public Instant getDataTimestamp() {
 		return delegate.getDataTimestamp();
 	}
 

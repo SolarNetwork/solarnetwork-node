@@ -25,6 +25,7 @@ package net.solarnetwork.node.hw.schneider.meter;
 import static net.solarnetwork.util.CollectionUtils.coveringIntRanges;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
 import net.solarnetwork.domain.AcPhase;
@@ -410,7 +411,7 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return ION6200Data.this.getDataTimestamp();
 		}
 
@@ -614,7 +615,7 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return delegate.getDataTimestamp();
 		}
 

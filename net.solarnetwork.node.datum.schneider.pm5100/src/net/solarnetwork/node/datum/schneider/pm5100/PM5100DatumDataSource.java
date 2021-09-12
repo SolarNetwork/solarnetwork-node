@@ -24,6 +24,7 @@ package net.solarnetwork.node.datum.schneider.pm5100;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -178,7 +179,11 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 * @return {@literal true} if the sample data has expired
 	 */
 	protected boolean isCachedSampleExpired() {
-		final long lastReadDiff = System.currentTimeMillis() - sample.getDataTimestamp();
+		final Instant ts = sample.getDataTimestamp();
+		if ( ts == null ) {
+			return true;
+		}
+		final long lastReadDiff = sample.getDataTimestamp().until(Instant.now(), ChronoUnit.MILLIS);
 		if ( lastReadDiff > sampleCacheMs ) {
 			return true;
 		}
@@ -228,7 +233,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	}
 
 	private String getSampleMessage(PM5100Data data) {
-		if ( data.getDataTimestamp() < 1 ) {
+		if ( data.getDataTimestamp() == null ) {
 			return "N/A";
 		}
 		StringBuilder buf = new StringBuilder();
@@ -236,7 +241,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		buf.append(", VAR = ").append(sample.getReactivePower());
 		buf.append(", Wh rec = ").append(sample.getActiveEnergyReceived());
 		buf.append(", Wh del = ").append(sample.getActiveEnergyDelivered());
-		buf.append("; sampled at ").append(Instant.ofEpochMilli(sample.getDataTimestamp()));
+		buf.append("; sampled at ").append(sample.getDataTimestamp());
 		return buf.toString();
 	}
 

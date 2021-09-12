@@ -23,6 +23,7 @@
 package net.solarnetwork.node.domain;
 
 import java.time.DateTimeException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.ChronoField;
 import java.time.temporal.TemporalAccessor;
@@ -60,9 +61,10 @@ public interface DataAccessor {
 	/**
 	 * Gets the time stamp of the data.
 	 * 
-	 * @return the data time stamp
+	 * @return the data time stamp, or {@literal null} if no data has been
+	 *         collected yet
 	 */
-	long getDataTimestamp();
+	Instant getDataTimestamp();
 
 	/**
 	 * Get descriptive information about the device the data was captured from.

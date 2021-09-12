@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.schneider.meter;
 
 import static net.solarnetwork.util.CollectionUtils.coveringIntRanges;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
 import net.solarnetwork.domain.AcPhase;
@@ -351,7 +352,7 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return PM5100Data.this.getDataTimestamp();
 		}
 
@@ -565,7 +566,7 @@ public class PM5100Data extends ModbusData implements PM5100DataAccessor {
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return delegate.getDataTimestamp();
 		}
 

@@ -25,6 +25,7 @@ package net.solarnetwork.node.hw.hc;
 import static net.solarnetwork.util.NumberUtils.bigDecimalForNumber;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -529,7 +530,7 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return EM5600Data.this.getDataTimestamp();
 		}
 
@@ -794,7 +795,7 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return delegate.getDataTimestamp();
 		}
 

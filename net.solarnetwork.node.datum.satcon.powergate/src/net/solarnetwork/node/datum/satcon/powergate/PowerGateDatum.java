@@ -23,7 +23,6 @@
 package net.solarnetwork.node.datum.satcon.powergate;
 
 import static net.solarnetwork.domain.Bitmaskable.bitmaskValue;
-import java.time.Instant;
 import java.util.Set;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.domain.datum.Datum;
@@ -53,8 +52,7 @@ public class PowerGateDatum extends SimpleAcDcEnergyDatum {
 	 *        the source ID
 	 */
 	public PowerGateDatum(PowerGateInverterDataAccessor sample, String sourceId) {
-		super(sourceId, (sample.getDataTimestamp() > 0 ? Instant.ofEpochMilli(sample.getDataTimestamp())
-				: Instant.now()), new DatumSamples());
+		super(sourceId, sample.getDataTimestamp(), new DatumSamples());
 		this.sample = sample;
 		populateMeasurements(sample);
 	}

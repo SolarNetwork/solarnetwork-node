@@ -25,13 +25,14 @@ package net.solarnetwork.node.hw.sunspec;
 import static net.solarnetwork.util.NumberUtils.maximumDecimalScale;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.time.Instant;
 import net.solarnetwork.node.io.modbus.ModbusReference;
 
 /**
  * Base class for {@link ModelAccessor} implementations.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public abstract class BaseModelAccessor implements ModelAccessor {
 
@@ -67,7 +68,7 @@ public abstract class BaseModelAccessor implements ModelAccessor {
 	}
 
 	@Override
-	public long getDataTimestamp() {
+	public Instant getDataTimestamp() {
 		return data.getDataTimestamp();
 	}
 
