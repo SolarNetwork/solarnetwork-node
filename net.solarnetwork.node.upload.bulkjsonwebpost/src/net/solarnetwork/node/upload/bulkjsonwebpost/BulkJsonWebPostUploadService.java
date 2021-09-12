@@ -404,7 +404,7 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	// Settings
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.upload.bulkjsonwebpost.BulkJsonWebPostUploadService";
 	}
 
