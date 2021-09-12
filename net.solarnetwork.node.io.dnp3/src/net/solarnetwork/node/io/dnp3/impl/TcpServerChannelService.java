@@ -81,7 +81,7 @@ public class TcpServerChannelService extends AbstractChannelService<TcpServerCha
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.dnp3.tcp";
 	}
 

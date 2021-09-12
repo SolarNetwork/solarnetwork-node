@@ -893,10 +893,10 @@ public class OutstationService extends AbstractApplicationService
 		result.add(new BasicTitleSettingSpecifier("status", getStackStatusMessage(), true));
 
 		result.add(new BasicTextFieldSettingSpecifier("uid", DEFAULT_UID));
-		result.add(new BasicTextFieldSettingSpecifier("groupUID", ""));
+		result.add(new BasicTextFieldSettingSpecifier("groupUid", ""));
 		result.add(new BasicTextFieldSettingSpecifier("eventBufferSize",
 				String.valueOf(DEFAULT_EVENT_BUFFER_SIZE)));
-		result.add(new BasicTextFieldSettingSpecifier("dnp3Channel.propertyFilters['UID']",
+		result.add(new BasicTextFieldSettingSpecifier("dnp3Channel.propertyFilters['uid']",
 				TcpServerChannelService.DEFAULT_UID));
 
 		result.addAll(linkLayerSettings("linkLayerConfig.", new LinkLayerConfig(false)));
@@ -942,7 +942,7 @@ public class OutstationService extends AbstractApplicationService
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.dnp3.outstation";
 	}
 
