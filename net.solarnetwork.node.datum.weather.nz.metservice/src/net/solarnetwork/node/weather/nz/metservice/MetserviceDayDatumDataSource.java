@@ -115,7 +115,7 @@ public class MetserviceDayDatumDataSource extends MetserviceSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.weather.nz.metservice.day";
 	}
 

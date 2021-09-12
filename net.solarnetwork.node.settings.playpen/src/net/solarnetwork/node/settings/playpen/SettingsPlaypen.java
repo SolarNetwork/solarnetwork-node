@@ -117,7 +117,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 	private SetupResourceProvider customSettingResourceProvider;
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.settings.playpen";
 	}
 

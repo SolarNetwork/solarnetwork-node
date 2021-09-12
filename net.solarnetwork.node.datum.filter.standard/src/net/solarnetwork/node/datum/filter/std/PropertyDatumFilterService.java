@@ -208,7 +208,7 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return settingUid;
 	}
 

@@ -86,7 +86,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="OpenWeatherMap day information"/>
-			<property name="factoryUID" value="net.solarnetwork.node.weather.owm.day"/>
+			<property name="factoryUid" value="net.solarnetwork.node.weather.owm.day"/>
 			<property name="messageSource" ref="dayMessageSource"/>
 		</bean>
 	</service>
@@ -168,7 +168,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="OpenWeatherMap weather information"/>
-			<property name="factoryUID" value="net.solarnetwork.node.weather.owm.weather"/>
+			<property name="factoryUid" value="net.solarnetwork.node.weather.owm.weather"/>
 			<property name="messageSource" ref="weatherMessageSource"/>
 		</bean>
 	</service>

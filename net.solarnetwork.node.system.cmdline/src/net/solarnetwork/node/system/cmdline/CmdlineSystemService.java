@@ -304,7 +304,7 @@ public class CmdlineSystemService
 	// Settings
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.system.cmdline.CmdlineSystemService";
 	}
 

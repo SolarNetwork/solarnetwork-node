@@ -25,7 +25,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Protobuf Datum Encoder"/>
-			<property name="factoryUID" value="net.solarnetwork.node.io.protobuf.enc.datum"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.protobuf.enc.datum"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
@@ -86,7 +86,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Protobuf Compiler (protoc)"/>
-			<property name="factoryUID" value="net.solarnetwork.node.io.protobuf.protoc"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.protobuf.protoc"/>
 			<property name="messageSource" ref="protocMessageSource"/>
 		</bean>
 	</service>

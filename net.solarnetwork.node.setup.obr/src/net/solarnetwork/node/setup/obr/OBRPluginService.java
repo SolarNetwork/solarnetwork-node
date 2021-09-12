@@ -589,7 +589,7 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 	// Settings
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return getClass().getName();
 	}
 

@@ -130,7 +130,7 @@ public class RfidSocketReaderServiceTests {
 		service.setConnectRetryMinutes(0);
 		service.setEventAdmin(new StaticOptionalService<EventAdmin>(eventAdmin));
 		service.setUid(TEST_UID);
-		service.setGroupUID(TEST_GROUP_UID);
+		service.setGroupUid(TEST_GROUP_UID);
 		service.init();
 
 		serverThread.join(2000);
@@ -238,7 +238,7 @@ public class RfidSocketReaderServiceTests {
 		service.setConnectRetryMinutes(0);
 		service.setEventAdmin(new StaticOptionalService<EventAdmin>(eventAdmin));
 		service.setUid(TEST_UID);
-		service.setGroupUID(TEST_GROUP_UID);
+		service.setGroupUid(TEST_GROUP_UID);
 		service.setWatchdogSeconds(1);
 		service.init();
 

@@ -60,7 +60,7 @@ public abstract class ModbusDataDeviceSupport<T extends ModbusData & DataAccesso
 
 	/**
 	 * Get setting specifiers for the {@literal unitId} and
-	 * {@literal modbusNetwork.propertyFilters['UID']} properties.
+	 * {@literal modbusNetwork.propertyFilters['uid']} properties.
 	 * 
 	 * @param prefix
 	 *        a setting prefix to prepend

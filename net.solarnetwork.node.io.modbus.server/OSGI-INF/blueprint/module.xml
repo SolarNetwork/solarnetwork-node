@@ -18,7 +18,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Modbus Server (TCP)"/>
-			<property name="factoryUID" value="net.solarnetwork.node.io.modbus.server"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.modbus.server"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>

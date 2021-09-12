@@ -252,7 +252,7 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.yasdi4j";
 	}
 

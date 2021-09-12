@@ -68,7 +68,7 @@ public class WCDayDatumDataSource extends WCSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.weather.ibm.wc.day";
 	}
 

@@ -523,7 +523,7 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 	// SettingsSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.gpsd.client";
 	}
 

@@ -25,7 +25,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Modbus serial connection"/>
-			<property name="factoryUID" value="net.solarnetwork.node.io.modbus"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.modbus"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
@@ -57,7 +57,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Modbus TCP connection"/>
-			<property name="factoryUID" value="net.solarnetwork.node.io.modbus.tcp"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.modbus.tcp"/>
 			<property name="messageSource" ref="messageSourceTcp"/>
 		</bean>
 	</service>
@@ -89,7 +89,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Modbus UDP connection"/>
-			<property name="factoryUID" value="net.solarnetwork.node.io.modbus.udp"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.modbus.udp"/>
 			<property name="messageSource" ref="messageSourceUdp"/>
 		</bean>
 	</service>

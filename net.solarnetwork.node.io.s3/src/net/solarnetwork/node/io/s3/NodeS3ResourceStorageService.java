@@ -170,7 +170,7 @@ public class NodeS3ResourceStorageService extends BaseIdentifiable
 	// SettingsSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.s3";
 	}
 

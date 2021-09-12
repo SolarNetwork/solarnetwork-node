@@ -46,7 +46,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Solectria PVI-3800 Inverter"/>
-			<property name="factoryUID" value="net.solarnetwork.node.datum.yaskawa.pvi3800"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.yaskawa.pvi3800"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>

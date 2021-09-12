@@ -511,7 +511,7 @@ public class S3BackupService extends BackupServiceSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return getClass().getName();
 	}
 

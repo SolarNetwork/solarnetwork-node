@@ -186,7 +186,7 @@ public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.samplefilter.opmode";
 	}
 

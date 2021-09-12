@@ -148,7 +148,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.sunspec.inverter";
 	}
 

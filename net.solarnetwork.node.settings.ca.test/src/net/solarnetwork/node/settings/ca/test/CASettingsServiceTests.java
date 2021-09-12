@@ -126,7 +126,7 @@ public class CASettingsServiceTests {
 		SettingResourceHandler handler = EasyMock.createMock(SettingResourceHandler.class);
 		mocks.add(handler);
 
-		expect(handler.getSettingUID()).andReturn(handlerKey).anyTimes();
+		expect(handler.getSettingUid()).andReturn(handlerKey).anyTimes();
 
 		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
 		expect(handler.applySettingResources(eq(settingKey), capture(resourceCaptor)))
@@ -165,7 +165,7 @@ public class CASettingsServiceTests {
 		SettingResourceHandler handler = EasyMock.createMock(SettingResourceHandler.class);
 		mocks.add(handler);
 
-		expect(handler.getSettingUID()).andReturn(handlerKey).anyTimes();
+		expect(handler.getSettingUid()).andReturn(handlerKey).anyTimes();
 
 		Configuration config1 = EasyMock.createMock(Configuration.class);
 		mocks.add(config1);
@@ -271,8 +271,8 @@ public class CASettingsServiceTests {
 		Hashtable<String, Object> configProps = new Hashtable<>();
 		configProps.put(CASettingsService.class.getName() + ".FACTORY_INSTANCE_KEY", instanceKey);
 
-		expect(handler.getSettingUID()).andReturn(factoryKey).anyTimes();
-		expect(factory.getFactoryUID()).andReturn(factoryKey).anyTimes();
+		expect(handler.getSettingUid()).andReturn(factoryKey).anyTimes();
+		expect(factory.getFactoryUid()).andReturn(factoryKey).anyTimes();
 		expect(dao.getSettingValues(factoryKey + ".FACTORY")).andReturn(emptyList());
 		expect(ca.getConfiguration(instancePid, null)).andReturn(config);
 		expect(config.getFactoryPid()).andReturn(factoryKey).anyTimes();
@@ -334,8 +334,8 @@ public class CASettingsServiceTests {
 		configProps.put("bazam", "shazam");
 		configProps.put("hi", "there");
 
-		expect(handler.getSettingUID()).andReturn(factoryKey).anyTimes();
-		expect(factory.getFactoryUID()).andReturn(factoryKey).anyTimes();
+		expect(handler.getSettingUid()).andReturn(factoryKey).anyTimes();
+		expect(factory.getFactoryUid()).andReturn(factoryKey).anyTimes();
 		expect(dao.getSettingValues(factoryKey + ".FACTORY")).andReturn(emptyList());
 		expect(ca.getConfiguration(instancePid, null)).andReturn(config);
 		expect(config.getFactoryPid()).andReturn(factoryKey).anyTimes();
@@ -408,7 +408,7 @@ public class CASettingsServiceTests {
 		SettingResourceHandler handler = EasyMock.createMock(SettingResourceHandler.class);
 		mocks.add(handler);
 
-		expect(handler.getSettingUID()).andReturn(handlerKey).anyTimes();
+		expect(handler.getSettingUid()).andReturn(handlerKey).anyTimes();
 
 		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
 		expect(handler.applySettingResources(eq(settingKey), capture(resourceCaptor)))

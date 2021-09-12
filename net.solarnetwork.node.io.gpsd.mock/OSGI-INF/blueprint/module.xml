@@ -34,7 +34,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Mock GPSd connection"/>
-			<property name="factoryUID" value="net.solarnetwork.node.io.gpsd.mock"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.gpsd.mock"/>
 			<property name="messageSource" ref="gpsdClientMessageSource"/>
 		</bean>
 	</service>

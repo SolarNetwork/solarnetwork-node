@@ -206,7 +206,7 @@ public class SerialPortNetwork extends BasicIdentifiable
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.serial";
 	}
 

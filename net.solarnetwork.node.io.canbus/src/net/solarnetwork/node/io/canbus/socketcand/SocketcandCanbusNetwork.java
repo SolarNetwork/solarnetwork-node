@@ -100,7 +100,7 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork implements Se
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.canbus.tcp";
 	}
 

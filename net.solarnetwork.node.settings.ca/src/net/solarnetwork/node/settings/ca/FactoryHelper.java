@@ -120,19 +120,19 @@ public final class FactoryHelper {
 	/**
 	 * Add a provider for a given instance ID.
 	 * 
-	 * @param instanceUID
+	 * @param instanceUid
 	 *        the ID of the instance to add the provider to
 	 * @param provider
 	 *        the provider to add
 	 * @since 1.1
 	 */
-	public void addProvider(String instanceUID, SettingSpecifierProvider provider) {
+	public void addProvider(String instanceUid, SettingSpecifierProvider provider) {
 		synchronized ( instanceMap ) {
-			SettingSpecifierProvider existing = instanceMap.putIfAbsent(instanceUID, provider);
+			SettingSpecifierProvider existing = instanceMap.putIfAbsent(instanceUid, provider);
 			if ( existing != null ) {
 				log.warn(
 						"Duplicate setting provider instance {} for provider {} ignored; already configured as {}",
-						instanceUID, provider, existing);
+						instanceUid, provider, existing);
 			}
 		}
 	}
@@ -140,19 +140,19 @@ public final class FactoryHelper {
 	/**
 	 * Add a handler for a given instance ID.
 	 * 
-	 * @param instanceUID
+	 * @param instanceUid
 	 *        the ID of the instance to add the handler to
 	 * @param handler
 	 *        the handler to add
 	 * @since 1.1
 	 */
-	public void addHandler(String instanceUID, SettingResourceHandler handler) {
+	public void addHandler(String instanceUid, SettingResourceHandler handler) {
 		synchronized ( handlerMap ) {
-			SettingResourceHandler existing = handlerMap.putIfAbsent(instanceUID, handler);
+			SettingResourceHandler existing = handlerMap.putIfAbsent(instanceUid, handler);
 			if ( existing != null ) {
 				log.warn(
 						"Duplicate setting resource handler instance {} for provider {} ignored; already configured as {}",
-						instanceUID, handler, existing);
+						instanceUid, handler, existing);
 			}
 		}
 	}
@@ -171,14 +171,14 @@ public final class FactoryHelper {
 	/**
 	 * Get the complete set setting resource handlers.
 	 * 
-	 * @param instanceUID
+	 * @param instanceUid
 	 *        the handler key to get
 	 * @return the handler, or {@literal null} if none available
 	 * @since 1.1
 	 */
-	public SettingResourceHandler getHandler(String instanceUID) {
+	public SettingResourceHandler getHandler(String instanceUid) {
 		synchronized ( handlerMap ) {
-			return handlerMap.get(instanceUID);
+			return handlerMap.get(instanceUid);
 		}
 	}
 

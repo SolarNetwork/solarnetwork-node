@@ -75,8 +75,8 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 	/** Event parameter for the configured {@code uid}. */
 	public static final String EVENT_PARAM_UID = "uid";
 
-	/** Event parameter for the configured {@code groupUID}. */
-	public static final String EVENT_PARAM_GROUP_UID = "groupUID";
+	/** Event parameter for the configured {@code groupUid}. */
+	public static final String EVENT_PARAM_GROUP_UID = "groupUid";
 
 	private OptionalService<EventAdmin> eventAdmin;
 	private MessageSource messageSource;
@@ -84,7 +84,7 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 	private int port = 9090;
 	private String host = "localhost";
 	private String uid;
-	private String groupUID;
+	private String groupUid;
 	private int connectRetryMinutes = 1;
 	private int watchdogSeconds = 0;
 
@@ -293,15 +293,15 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 		if ( uid != null ) {
 			props.put(EVENT_PARAM_UID, uid);
 		}
-		if ( groupUID != null ) {
-			props.put(EVENT_PARAM_GROUP_UID, groupUID);
+		if ( groupUid != null ) {
+			props.put(EVENT_PARAM_GROUP_UID, groupUid);
 		}
 		Event event = new Event(TOPIC_RFID_MESSAGE_RECEIVED, props);
 		ea.postEvent(event);
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.hw.rfid.client";
 	}
 
@@ -321,7 +321,7 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(8);
 		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(Locale.getDefault()), true));
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.uid));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
+		results.add(new BasicTextFieldSettingSpecifier("groupUid", defaults.groupUid));
 		results.add(new BasicTextFieldSettingSpecifier("host", defaults.host));
 		results.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(defaults.port)));
 		return results;
@@ -446,12 +446,12 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 		this.uid = uid;
 	}
 
-	public String getGroupUID() {
-		return groupUID;
+	public String getGroupUid() {
+		return groupUid;
 	}
 
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
+	public void setGroupUid(String groupUid) {
+		this.groupUid = groupUid;
 	}
 
 	public void setMessageSource(MessageSource messageSource) {

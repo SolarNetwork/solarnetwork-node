@@ -23,7 +23,7 @@
 			wrapperElement="div"
 			wrapperClass="control-group setup-resource-container"
 			id="cg-${settingId}" 
-			data-provider-id="${provider.settingUID}"
+			data-provider-id="${provider.settingUid}"
 			data-setting-id="${settingId}"
 			data-instance-id="${instanceId}"
 			data-group-index="${groupIndex}"
@@ -47,7 +47,7 @@
 								step: '${setting.step}',
 								value: '${fn:escapeXml(settingValue)}',
 								xint: '${setting["transient"]}',
-								provider: '${provider.settingUID}',
+								provider: '${provider.settingUid}',
 								setting: '${setup:js(setting.key)}',
 								instance: '${instanceId}'
 							});
@@ -76,7 +76,7 @@
 								offLabel: '<fmt:message key="settings.toggle.off"/>',
 								value: '${fn:escapeXml(settingValue)}',
 								xint: '${setting["transient"]}',
-								provider: '${provider.settingUID}',
+								provider: '${provider.settingUid}',
 								setting: '${setup:js(setting.key)}',
 								instance: '${instanceId}'
 							});
@@ -109,7 +109,7 @@
 							SolarNode.Settings.addRadio({
 								key: '${settingId}',
 								xint: '${setting["transient"]}',
-								provider: '${provider.settingUID}',
+								provider: '${provider.settingUid}',
 								setting: '${setup:js(setting.key)}',
 								instance: '${instanceId}'
 							});
@@ -131,7 +131,7 @@
 							SolarNode.Settings.addSelect({
 								key: '${settingId}',
 								xint: '${setting["transient"]}',
-								provider: '${provider.settingUID}',
+								provider: '${provider.settingUid}',
 								setting: '${setup:js(setting.key)}',
 								instance: '${instanceId}'
 							});
@@ -144,7 +144,7 @@
 							data-action="<setup:url value='/a/settings/importResource'/>"
 							data-key="${settingId}" 
 							data-xint="${setting['transient']}"
-							data-provider="${provider.settingUID}"
+							data-provider="${provider.settingUid}"
 							data-setting="${setup:js(setting.key)}"
 							data-instance="${instanceId}"
 							>
@@ -168,7 +168,7 @@
 							SolarNode.Settings.addTextField({
 								key: '${settingId}',
 								xint: '${setting["transient"]}',
-								provider: '${provider.settingUID}',
+								provider: '${provider.settingUid}',
 								setting: '${setup:js(setting.key)}',
 								instance: '${instanceId}'
 							});
@@ -209,7 +209,7 @@
 								valueLabel: '<fmt:message key="lookup.selected.item"/>',
 								value: '${fn:escapeXml(settingValue)}',
 								xint: '${setting["transient"]}',
-								provider: '${provider.settingUID}',
+								provider: '${provider.settingUid}',
 								setting: '${setup:js(setting.key)}',
 								instance: '${instanceId}'
 							});
@@ -234,7 +234,7 @@
 							data-action="<setup:url value='/a/settings/importResource'/>"
 							data-key="${settingId}" 
 							data-xint="${setting['transient']}"
-							data-provider="${provider.settingUID}"
+							data-provider="${provider.settingUid}"
 							data-setting="${setup:js(setting.key)}"
 							data-instance="${instanceId}"
 							data-multiple="${!!setting.multiple}"
@@ -318,7 +318,7 @@
 					$(function() {
 						SolarNode.Settings.addGroupedSetting({
 							key: '${settingId}',
-							provider: '${provider.settingUID}',
+							provider: '${provider.settingUid}',
 							setting: '${setup:js(setting.key)}Count',
 							instance: '${instanceId}',
 							indexed: '${setup:js(setting.key)}'

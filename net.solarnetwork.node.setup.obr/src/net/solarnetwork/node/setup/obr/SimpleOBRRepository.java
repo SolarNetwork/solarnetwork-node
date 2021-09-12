@@ -67,7 +67,7 @@ public class SimpleOBRRepository implements OBRRepository {
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.setup.obr.repo";
 	}
 

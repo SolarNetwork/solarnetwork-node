@@ -56,7 +56,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="S3 Storage Service"/>
-			<property name="factoryUID" value="net.solarnetwork.node.io.s3"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.s3"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>

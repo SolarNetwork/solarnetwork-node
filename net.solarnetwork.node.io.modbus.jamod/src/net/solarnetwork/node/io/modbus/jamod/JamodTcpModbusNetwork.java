@@ -289,7 +289,7 @@ public class JamodTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.modbus.tcp";
 	}
 

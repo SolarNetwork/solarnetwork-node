@@ -48,7 +48,7 @@ public class OwmWeatherDatumDataSource extends ConfigurableOwmClientService
 	private DataCollectionMode dataCollectionMode = DataCollectionMode.Mixed;
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.weather.owm.weather";
 	}
 

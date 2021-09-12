@@ -113,7 +113,7 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.rfxcom";
 	}
 
@@ -152,7 +152,7 @@ public class RFXCOMTransceiver implements RFXCOM, SettingSpecifierProvider {
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
-		results.add(new BasicTextFieldSettingSpecifier("dataCollectorFactory.propertyFilters['UID']",
+		results.add(new BasicTextFieldSettingSpecifier("dataCollectorFactory.propertyFilters['uid']",
 				"/dev/ttyUSB0"));
 
 		if ( status == null ) {

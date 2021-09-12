@@ -68,7 +68,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="OBR Plugin Repository"/>
-			<property name="factoryUID" value="net.solarnetwork.node.setup.obr.repo"/>
+			<property name="factoryUid" value="net.solarnetwork.node.setup.obr.repo"/>
 			<property name="messageSource" ref="repoMessageSource"/>
 		</bean>
 	</service>

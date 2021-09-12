@@ -73,8 +73,8 @@ public class MockRfidEventGenerator extends BasicIdentifiable
 	/** Event parameter for the configured {@code uid}. */
 	public static final String EVENT_PARAM_UID = "uid";
 
-	/** Event parameter for the configured {@code groupUID}. */
-	public static final String EVENT_PARAM_GROUP_UID = "groupUID";
+	/** Event parameter for the configured {@code groupUid}. */
+	public static final String EVENT_PARAM_GROUP_UID = "groupUid";
 
 	/** The {@code uid} property default value. */
 	public static final String DEFAULT_UID = "MockIdTag";
@@ -143,7 +143,7 @@ public class MockRfidEventGenerator extends BasicIdentifiable
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.hw.rfid.mock";
 	}
 

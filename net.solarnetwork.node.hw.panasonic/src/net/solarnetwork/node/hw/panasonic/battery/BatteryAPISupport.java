@@ -80,7 +80,7 @@ public class BatteryAPISupport extends BaseIdentifiable {
 		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(sample), true));
 
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
+		results.add(new BasicTextFieldSettingSpecifier("groupUid", defaults.getGroupUid()));
 
 		if ( client instanceof SimpleBatteryAPIClient ) {
 			SimpleBatteryAPIClient c = (SimpleBatteryAPIClient) client;
@@ -126,47 +126,6 @@ public class BatteryAPISupport extends BaseIdentifiable {
 	 */
 	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
-	}
-
-	/**
-	 * Get a unique ID for this service.
-	 * 
-	 * @return The unique ID.
-	 */
-	@Override
-	public String getUid() {
-		return super.getUid();
-	}
-
-	@Override
-	public void setUid(String uid) {
-		super.setUid(uid);
-	}
-
-	/**
-	 * Get a unique ID for this service. This is an alias for
-	 * {@link BatteryAPISupport#getUid()}.
-	 * 
-	 * @return The unique ID.
-	 */
-	@Override
-	public String getUID() {
-		return super.getUID();
-	}
-
-	/**
-	 * Get a group ID to use for this service.
-	 * 
-	 * @return The group ID.
-	 */
-	@Override
-	public String getGroupUID() {
-		return super.getGroupUID();
-	}
-
-	@Override
-	public void setGroupUID(String groupUID) {
-		super.setGroupUID(groupUID);
 	}
 
 	/**

@@ -184,14 +184,14 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 
 	/**
 	 * Get setting specifiers for the {@literal unitId} and
-	 * {@literal wMBusNetwork.propertyFilters['UID']} properties.
+	 * {@literal wMBusNetwork.propertyFilters['uid']} properties.
 	 * 
 	 * @return list of setting specifiers
 	 * @since 1.1
 	 */
 	protected List<SettingSpecifier> getWMBusNetworkSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
-		results.add(new BasicTextFieldSettingSpecifier("wMBusNetwork.propertyFilters['UID']",
+		results.add(new BasicTextFieldSettingSpecifier("wMBusNetwork.propertyFilters['uid']",
 				"M-Bus (Wireless) Port"));
 		results.add(new BasicTextFieldSettingSpecifier("secondaryAddress", ""));
 		results.add(new BasicTextFieldSettingSpecifier("key", "", true));

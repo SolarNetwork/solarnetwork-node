@@ -72,7 +72,7 @@ public class ExpressionDatumFilterService extends BaseDatumFilterSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.samplefilter.expression";
 	}
 

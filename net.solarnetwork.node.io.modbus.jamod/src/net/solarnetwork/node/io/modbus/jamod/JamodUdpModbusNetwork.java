@@ -81,7 +81,7 @@ public class JamodUdpModbusNetwork extends AbstractModbusNetwork implements Sett
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.modbus.udp";
 	}
 

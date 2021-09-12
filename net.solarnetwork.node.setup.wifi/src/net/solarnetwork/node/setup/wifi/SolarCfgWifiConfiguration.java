@@ -65,7 +65,7 @@ public class SolarCfgWifiConfiguration extends BaseIdentifiable
 	 * Constructor.
 	 */
 	public SolarCfgWifiConfiguration() {
-		setUID("net.solarnetwork.node.setup.wifi.SolarCfgWifiConfiguration");
+		setUid("net.solarnetwork.node.setup.wifi.SolarCfgWifiConfiguration");
 		setDisplayName("WiFi Setup");
 	}
 
@@ -90,8 +90,8 @@ public class SolarCfgWifiConfiguration extends BaseIdentifiable
 	}
 
 	@Override
-	public String getSettingUID() {
-		return getUID();
+	public String getSettingUid() {
+		return getUid();
 	}
 
 	@Override

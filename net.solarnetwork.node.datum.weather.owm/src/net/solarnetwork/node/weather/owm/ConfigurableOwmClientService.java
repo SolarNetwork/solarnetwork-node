@@ -51,7 +51,7 @@ public abstract class ConfigurableOwmClientService extends DatumDataSourceSuppor
 	public static final String DEFAULT_TIME_ZONE_ID = "UTC";
 
 	private String uid;
-	private String groupUID;
+	private String groupUid;
 	private String locationIdentifier;
 	private String timeZoneId = DEFAULT_TIME_ZONE_ID;
 	private OwmClient client;
@@ -117,19 +117,19 @@ public abstract class ConfigurableOwmClientService extends DatumDataSourceSuppor
 	}
 
 	@Override
-	public String getGroupUID() {
-		return groupUID;
+	public String getGroupUid() {
+		return groupUid;
 	}
 
 	/**
 	 * Set the group UID.
 	 * 
-	 * @param groupUID
+	 * @param groupUid
 	 *        the group UID to set
 	 */
 	@Override
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
+	public void setGroupUid(String groupUid) {
+		this.groupUid = groupUid;
 	}
 
 	/**

@@ -240,7 +240,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 				final String sourceKey = DigestUtils.md5DigestAsHex(sourceId.getBytes(UTF8));
 				byte[] json = getObjectMapper().writeValueAsBytes(meta);
 				ByteArrayResource r = new ByteArrayResource(json, sourceId + " metadata");
-				settingsService.importSettingResources(getSettingUID(), null, sourceKey, singleton(r));
+				settingsService.importSettingResources(getSettingUid(), null, sourceKey, singleton(r));
 				setPersisted(timestamp);
 			} catch ( IOException e ) {
 				log.error("Error generating cached metadata JSON for source {}: {}", sourceId,
@@ -302,7 +302,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.metadata.json.JsonDatumMetadataService";
 	}
 
@@ -376,7 +376,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	private GeneralDatumMetadata loadPersistedMetadata(String sourceId) {
 		final String sourceKey = DigestUtils.md5DigestAsHex(sourceId.getBytes(UTF8));
 		try {
-			Iterable<Resource> resources = settingsService.getSettingResources(getSettingUID(), null,
+			Iterable<Resource> resources = settingsService.getSettingResources(getSettingUid(), null,
 					sourceKey);
 			if ( resources != null ) {
 				// use only first resource

@@ -83,7 +83,7 @@ public class OwmDayDatumDataSource extends ConfigurableOwmClientService
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.weather.owm.day";
 	}
 

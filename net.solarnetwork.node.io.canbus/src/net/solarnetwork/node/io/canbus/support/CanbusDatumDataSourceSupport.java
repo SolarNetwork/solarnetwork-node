@@ -78,7 +78,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	/**
 	 * Get setting specifiers for the
-	 * {@literal canbusNetwork.propertyFilters['UID']} and {@literal busName}
+	 * {@literal canbusNetwork.propertyFilters['uid']} and {@literal busName}
 	 * properties.
 	 * 
 	 * @param prefix
@@ -91,7 +91,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 		}
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
 		results.add(
-				new BasicTextFieldSettingSpecifier(prefix + "canbusNetwork.propertyFilters['UID']", ""));
+				new BasicTextFieldSettingSpecifier(prefix + "canbusNetwork.propertyFilters['uid']", ""));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "busName", ""));
 		return results;
 	}

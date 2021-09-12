@@ -73,14 +73,14 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 
 	/**
 	 * Get setting specifiers for the {@literal unitId} and
-	 * {@literal modbusNetwork.propertyFilters['UID']} properties.
+	 * {@literal modbusNetwork.propertyFilters['uid']} properties.
 	 * 
 	 * @return list of setting specifiers
 	 * @since 1.1
 	 */
 	protected List<SettingSpecifier> getModbusNetworkSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
-		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['uid']",
 				"Modbus Port"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", "1"));
 		return results;

@@ -86,7 +86,7 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get setting specifiers for the {@literal unitId} and
-	 * {@literal modbusNetwork.propertyFilters['UID']} properties.
+	 * {@literal modbusNetwork.propertyFilters['uid']} properties.
 	 * 
 	 * @param prefix
 	 *        the setting prefix to prepend
@@ -98,7 +98,7 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 			prefix = "";
 		}
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(2);
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "modbusNetwork.propertyFilters['UID']",
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "modbusNetwork.propertyFilters['uid']",
 				DEFAULT_NETWORK_UID));
 		results.add(
 				new BasicTextFieldSettingSpecifier(prefix + "unitId", String.valueOf(DEFAULT_UNIT_ID)));

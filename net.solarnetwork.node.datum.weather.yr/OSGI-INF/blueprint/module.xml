@@ -58,7 +58,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Yr day information"/>
-			<property name="factoryUID" value="net.solarnetwork.node.weather.yr.day"/>
+			<property name="factoryUid" value="net.solarnetwork.node.weather.yr.day"/>
 			<property name="messageSource" ref="dayMessageSource"/>
 		</bean>
 	</service>
@@ -139,7 +139,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Yr weather information"/>
-			<property name="factoryUID" value="net.solarnetwork.node.weather.yr.weather"/>
+			<property name="factoryUid" value="net.solarnetwork.node.weather.yr.weather"/>
 			<property name="messageSource" ref="weatherMessageSource"/>
 		</bean>
 	</service>

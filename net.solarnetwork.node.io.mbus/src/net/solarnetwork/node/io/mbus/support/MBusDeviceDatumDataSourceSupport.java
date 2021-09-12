@@ -197,7 +197,7 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 
 	/**
 	 * Get setting specifiers for the {@literal unitId} and
-	 * {@literal mBusNetwork.propertyFilters['UID']} properties.
+	 * {@literal mBusNetwork.propertyFilters['uid']} properties.
 	 * 
 	 * @return list of setting specifiers
 	 * @since 1.1
@@ -205,7 +205,7 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 	protected List<SettingSpecifier> getMBusNetworkSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
 		results.add(
-				new BasicTextFieldSettingSpecifier("mBusNetwork.propertyFilters['UID']", "M-Bus Port"));
+				new BasicTextFieldSettingSpecifier("mBusNetwork.propertyFilters['uid']", "M-Bus Port"));
 		results.add(new BasicTextFieldSettingSpecifier("address", ""));
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));

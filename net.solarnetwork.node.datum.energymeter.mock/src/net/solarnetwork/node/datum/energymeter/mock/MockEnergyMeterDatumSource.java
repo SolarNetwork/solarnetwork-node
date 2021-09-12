@@ -281,7 +281,7 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.energymeter.mock";
 	}
 

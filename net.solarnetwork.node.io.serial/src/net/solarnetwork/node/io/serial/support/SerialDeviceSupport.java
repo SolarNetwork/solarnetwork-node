@@ -100,8 +100,8 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	/**
 	 * Return an informational message composed of general device info. This
 	 * method will call {@link #getDeviceInfo()} and return a {@code /} (forward
-	 * slash) delimited string of the resulting values, or {@literal null} if that
-	 * method returns {@literal null}.
+	 * slash) delimited string of the resulting values, or {@literal null} if
+	 * that method returns {@literal null}.
 	 * 
 	 * @return info message
 	 */
@@ -177,11 +177,11 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	}
 
 	/**
-	 * Set the device info data. Setting the {@code deviceInfo} to {@literal null}
-	 * will force the next call to {@link #getDeviceInfo()} to read from the
-	 * device to populate this data, and setting this to anything else will
-	 * force all subsequent calls to {@link #getDeviceInfo()} to simply return
-	 * that map.
+	 * Set the device info data. Setting the {@code deviceInfo} to
+	 * {@literal null} will force the next call to {@link #getDeviceInfo()} to
+	 * read from the device to populate this data, and setting this to anything
+	 * else will force all subsequent calls to {@link #getDeviceInfo()} to
+	 * simply return that map.
 	 * 
 	 * @param deviceInfo
 	 *        the device info map to set
@@ -191,7 +191,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	}
 
 	/**
-	 * Get setting specifiers for the {@code uid} and {@code groupUID}
+	 * Get setting specifiers for the {@code uid} and {@code groupUid}
 	 * properties.
 	 * 
 	 * @return list of setting specifiers
@@ -199,7 +199,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	protected List<SettingSpecifier> getIdentifiableSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
 		results.add(new BasicTextFieldSettingSpecifier("uid", null));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
+		results.add(new BasicTextFieldSettingSpecifier("groupUid", null));
 		return results;
 	}
 
@@ -221,31 +221,6 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 			return;
 		}
 		ea.postEvent(event);
-	}
-
-	@Override
-	public String getUID() {
-		return super.getUID();
-	}
-
-	@Override
-	public String getUid() {
-		return super.getUid();
-	}
-
-	@Override
-	public void setUid(String uid) {
-		super.setUid(uid);
-	}
-
-	@Override
-	public String getGroupUID() {
-		return super.getGroupUID();
-	}
-
-	@Override
-	public void setGroupUID(String groupUID) {
-		super.setGroupUID(groupUID);
 	}
 
 	public OptionalService<SerialNetwork> getSerialNetwork() {

@@ -398,7 +398,7 @@ public class ModbusServer extends BaseIdentifiable
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.modbus.server";
 	}
 

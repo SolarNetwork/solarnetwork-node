@@ -186,7 +186,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	 */
 	public void onBindFactory(SettingSpecifierProviderFactory provider, Map<String, ?> properties) {
 		log.debug("Bind called on factory {} with props {}", provider, properties);
-		final String factoryPid = provider.getFactoryUID();
+		final String factoryPid = provider.getFactoryUid();
 		synchronized ( factories ) {
 			factories.put(factoryPid, new FactoryHelper(provider, properties));
 
@@ -256,7 +256,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			return;
 		}
 		log.debug("Unbind called on factory {} with props {}", provider, properties);
-		final String pid = provider.getFactoryUID();
+		final String pid = provider.getFactoryUid();
 		synchronized ( factories ) {
 			factories.remove(pid);
 		}
@@ -272,7 +272,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	 */
 	public void onBind(SettingSpecifierProvider provider, Map<String, ?> properties) {
 		log.debug("Bind called on {} with props {}", provider, properties);
-		final String pid = provider.getSettingUID();
+		final String pid = provider.getSettingUid();
 
 		boolean factoryFound = false;
 		String factoryInstanceKey = null;
@@ -344,7 +344,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			return;
 		}
 		log.debug("Unbind called on {} with props {}", provider, properties);
-		final String pid = provider.getSettingUID();
+		final String pid = provider.getSettingUid();
 
 		synchronized ( factories ) {
 			FactoryHelper helper = factories.get(pid);
@@ -380,8 +380,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	@Override
-	public SettingSpecifierProviderFactory getProviderFactory(String factoryUID) {
-		FactoryHelper helper = factories.get(factoryUID);
+	public SettingSpecifierProviderFactory getProviderFactory(String factoryUid) {
+		FactoryHelper helper = factories.get(factoryUid);
 		if ( helper != null ) {
 			return helper.getFactory();
 		}
@@ -389,14 +389,14 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	@Override
-	public Map<String, FactorySettingSpecifierProvider> getProvidersForFactory(String factoryUID) {
+	public Map<String, FactorySettingSpecifierProvider> getProvidersForFactory(String factoryUid) {
 		Map<String, FactorySettingSpecifierProvider> results = new LinkedHashMap<>();
-		FactoryHelper helper = factories.get(factoryUID);
+		FactoryHelper helper = factories.get(factoryUid);
 		if ( helper != null ) {
 			for ( Map.Entry<String, SettingSpecifierProvider> me : helper.instanceEntrySet() ) {
-				String instanceUID = me.getKey();
-				results.put(instanceUID,
-						new BasicFactorySettingSpecifierProvider(instanceUID, me.getValue()));
+				String instanceUid = me.getKey();
+				results.put(instanceUid,
+						new BasicFactorySettingSpecifierProvider(instanceUid, me.getValue()));
 			}
 		}
 		return results;
@@ -409,12 +409,12 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			if ( keyedSetting.isTransient() ) {
 				return keyedSetting.getDefaultValue();
 			}
-			final String providerUID = provider.getSettingUID();
-			final String instanceUID = (provider instanceof FactorySettingSpecifierProvider
+			final String providerUID = provider.getSettingUid();
+			final String instanceUid = (provider instanceof FactorySettingSpecifierProvider
 					? ((FactorySettingSpecifierProvider) provider).getFactoryInstanceUID()
 					: null);
 			try {
-				Configuration conf = getConfiguration(providerUID, instanceUID);
+				Configuration conf = getConfiguration(providerUID, instanceUid);
 				Dictionary<String, ?> props = conf.getProperties();
 				Object val = (props == null ? null : props.get(keyedSetting.getKey()));
 				if ( val == null ) {
@@ -620,10 +620,10 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	@Override
-	public String addProviderFactoryInstance(String factoryUID) {
+	public String addProviderFactoryInstance(String factoryUid) {
 		synchronized ( factories ) {
 			List<KeyValuePair> instanceKeys = settingDao
-					.getSettingValues(getFactorySettingKey(factoryUID));
+					.getSettingValues(getFactorySettingKey(factoryUid));
 			int next = instanceKeys.size() + 1;
 			// verify key doesn't exist
 			boolean done = false;
@@ -637,23 +637,23 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				}
 			}
 			String newInstanceKey = String.valueOf(next);
-			addProviderFactoryInstance(factoryUID, newInstanceKey);
-			log.info("Registered component [{}] instance {}", factoryUID, newInstanceKey);
+			addProviderFactoryInstance(factoryUid, newInstanceKey);
+			log.info("Registered component [{}] instance {}", factoryUid, newInstanceKey);
 			return newInstanceKey;
 		}
 	}
 
 	@Override
-	public void deleteProviderFactoryInstance(String factoryUID, String instanceUID) {
+	public void deleteProviderFactoryInstance(String factoryUid, String instanceUid) {
 		synchronized ( factories ) {
 			// delete factory reference
-			settingDao.deleteSetting(getFactorySettingKey(factoryUID), instanceUID);
+			settingDao.deleteSetting(getFactorySettingKey(factoryUid), instanceUid);
 
 			// delete Configuration
 			try {
-				Configuration conf = getConfiguration(factoryUID, instanceUID);
+				Configuration conf = getConfiguration(factoryUid, instanceUid);
 				conf.delete();
-				log.info("Deleted component [{}] instance {}", factoryUID, instanceUID);
+				log.info("Deleted component [{}] instance {}", factoryUid, instanceUid);
 			} catch ( IOException e ) {
 				throw new RuntimeException(e);
 			} catch ( InvalidSyntaxException e ) {
@@ -663,26 +663,26 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	@Override
-	public void resetProviderFactoryInstance(String factoryUID, String instanceUID) {
+	public void resetProviderFactoryInstance(String factoryUid, String instanceUid) {
 		synchronized ( factories ) {
-			deleteProviderFactoryInstance(factoryUID, instanceUID);
+			deleteProviderFactoryInstance(factoryUid, instanceUid);
 
 			// delete instance values
-			settingDao.deleteSetting(getFactoryInstanceSettingKey(factoryUID, instanceUID));
+			settingDao.deleteSetting(getFactoryInstanceSettingKey(factoryUid, instanceUid));
 
-			addProviderFactoryInstance(factoryUID, instanceUID);
+			addProviderFactoryInstance(factoryUid, instanceUid);
 		}
 	}
 
-	private void addProviderFactoryInstance(String factoryUID, String instanceUID) {
-		settingDao.storeSetting(getFactorySettingKey(factoryUID), instanceUID, instanceUID);
+	private void addProviderFactoryInstance(String factoryUid, String instanceUid) {
+		settingDao.storeSetting(getFactorySettingKey(factoryUid), instanceUid, instanceUid);
 		try {
-			Configuration conf = getConfiguration(factoryUID, instanceUID);
+			Configuration conf = getConfiguration(factoryUid, instanceUid);
 			Dictionary<String, Object> props = conf.getProperties();
 			if ( props == null ) {
 				props = new Hashtable<>();
 			}
-			props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceUID);
+			props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceUid);
 			conf.update(props);
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
@@ -944,7 +944,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	 */
 	public void onBindHandler(SettingResourceHandler handler, Map<String, ?> properties) {
 		log.debug("Bind called on handler {} with props {}", handler, properties);
-		final String pid = handler.getSettingUID();
+		final String pid = handler.getSettingUid();
 
 		boolean factoryFound = false;
 		String factoryInstanceKey = null;
@@ -991,7 +991,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			return;
 		}
 		log.debug("Unbind called on handler {} with props {}", handler, properties);
-		final String pid = handler.getSettingUID();
+		final String pid = handler.getSettingUid();
 
 		synchronized ( factories ) {
 			FactoryHelper helper = factories.get(pid);

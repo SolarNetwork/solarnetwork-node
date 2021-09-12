@@ -92,7 +92,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value=" Weather Channel Plugin - Daily"/>
-			<property name="factoryUID" value="net.solarnetwork.node.weather.ibm.wc.day"/>
+			<property name="factoryUid" value="net.solarnetwork.node.weather.ibm.wc.day"/>
 			<property name="messageSource" ref="dayMessageSource"/>
 		</bean>
 	</service>
@@ -148,7 +148,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value=" Weather Channel Plugin - Hourly"/>
-			<property name="factoryUID" value="net.solarnetwork.node.weather.ibm.wc.hour"/>
+			<property name="factoryUid" value="net.solarnetwork.node.weather.ibm.wc.hour"/>
 			<property name="messageSource" ref="hourlyMessageSource"/>
 		</bean>
 	</service>

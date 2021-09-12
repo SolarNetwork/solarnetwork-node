@@ -16,7 +16,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="YASDI Serial"/>
-			<property name="factoryUID" value="net.solarnetwork.node.io.yasdi4j"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.yasdi4j"/>
 			<property name="messageSource">
 				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 					<property name="basenames" value="net.solarnetwork.node.io.yasdi4j.YasdiMasterDeviceFactory"/>

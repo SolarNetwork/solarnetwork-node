@@ -30,7 +30,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Mock RFID Scanner"/>
-			<property name="factoryUID" value="net.solarnetwork.node.hw.rfid.mock"/>
+			<property name="factoryUid" value="net.solarnetwork.node.hw.rfid.mock"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>

@@ -80,7 +80,7 @@ public class SimpleWebProxyConfiguration extends BaseIdentifiable
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.setup.web.proxy.config";
 	}
 

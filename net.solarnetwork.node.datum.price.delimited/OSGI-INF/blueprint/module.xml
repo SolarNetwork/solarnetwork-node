@@ -53,7 +53,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Delimited energy price lookup"/>
-			<property name="factoryUID" value="net.solarnetwork.node.datum.price.delimited"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.price.delimited"/>
 			<property name="messageSource">
 				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 					<property name="basenames" value="net.solarnetwork.node.datum.price.delimited.DelimitedPriceDatumDataSource"/>

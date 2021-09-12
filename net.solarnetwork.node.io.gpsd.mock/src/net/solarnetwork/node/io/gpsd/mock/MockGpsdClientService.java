@@ -331,7 +331,7 @@ public class MockGpsdClientService extends BasicIdentifiable
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.gpsd.mock";
 	}
 

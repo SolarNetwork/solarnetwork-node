@@ -56,8 +56,8 @@ public class CASettingSpecifierProvider implements SettingSpecifierProvider {
 	}
 
 	@Override
-	public String getSettingUID() {
-		return (pid != null ? pid : delegate.getSettingUID());
+	public String getSettingUid() {
+		return (pid != null ? pid : delegate.getSettingUid());
 	}
 
 	@Override

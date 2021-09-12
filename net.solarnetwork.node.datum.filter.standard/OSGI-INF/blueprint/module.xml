@@ -54,7 +54,7 @@
 		</service-properties>
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Datum Sample Property Filter"/>
-			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.simple"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.samplefilter.simple"/>
 			<property name="messageSource" ref="simpleFilterMessageSource"/>
 		</bean>
 	</service>
@@ -113,7 +113,7 @@
 		</service-properties>
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Property Datum Filter"/>
-			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.prop"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.samplefilter.prop"/>
 			<property name="messageSource" ref="propFilterMessageSource"/>
 		</bean>
 	</service>
@@ -166,7 +166,7 @@
 		</service-properties>
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Datum Sample Throttle Filter"/>
-			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.throttle"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.samplefilter.throttle"/>
 			<property name="messageSource" ref="sourceThrottleMessageSource"/>
 		</bean>
 	</service>
@@ -225,7 +225,7 @@
 		</service-properties>
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Throttle Datum Filter"/>
-			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.limiter"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.samplefilter.limiter"/>
 			<property name="messageSource" ref="throttleFilterMessageSource"/>
 		</bean>
 	</service>
@@ -278,7 +278,7 @@
 		</service-properties>
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Downsampler Datum Filter"/>
-			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.downsample"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.samplefilter.downsample"/>
 			<property name="messageSource" ref="downsamplerMessageSource"/>
 		</bean>
 	</service>
@@ -330,7 +330,7 @@
 		</service-properties>
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Virtual Meter Filter"/>
-			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.virtmeter"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.samplefilter.virtmeter"/>
 			<property name="messageSource" ref="virtualMeterMessageSource"/>
 		</bean>
 	</service>
@@ -384,7 +384,7 @@
 		</service-properties>
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Expression Filter"/>
-			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.expression"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.samplefilter.expression"/>
 			<property name="messageSource" ref="expressionMessageSource"/>
 		</bean>
 	</service>
@@ -437,7 +437,7 @@
 		</service-properties>
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Operational Mode Filter"/>
-			<property name="factoryUID" value="net.solarnetwork.node.datum.samplefilter.opmode"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.samplefilter.opmode"/>
 			<property name="messageSource" ref="opModeMessageSource"/>
 		</bean>
 	</service>

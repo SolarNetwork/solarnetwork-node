@@ -46,7 +46,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="CAN bus TCP connection"/>
-			<property name="factoryUID" value="net.solarnetwork.node.io.canbus.tcp"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.canbus.tcp"/>
 			<property name="messageSource" ref="messageSourceTcp"/>
 		</bean>
 	</service>

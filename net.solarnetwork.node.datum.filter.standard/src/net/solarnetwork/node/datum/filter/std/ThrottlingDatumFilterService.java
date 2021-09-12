@@ -113,7 +113,7 @@ public class ThrottlingDatumFilterService extends DatumFilterSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return settingUid;
 	}
 

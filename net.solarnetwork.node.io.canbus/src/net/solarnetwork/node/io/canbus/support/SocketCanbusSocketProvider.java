@@ -60,7 +60,7 @@ public class SocketCanbusSocketProvider implements CanbusSocketProvider, Setting
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.canbus.support.SocketCanbusSocketProvider";
 	}
 

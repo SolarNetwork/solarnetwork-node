@@ -173,7 +173,7 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.yaskawa.pvi3800";
 	}
 
@@ -191,7 +191,7 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport
 		results.addAll(getIdentifiableSettingSpecifiers());
 
 		PVI3800DatumDataSource defaults = new PVI3800DatumDataSource();
-		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['UID']",
+		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['uid']",
 				"Serial Port"));
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(defaults.getSampleCacheMs())));

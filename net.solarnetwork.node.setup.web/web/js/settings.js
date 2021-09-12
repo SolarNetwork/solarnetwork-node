@@ -378,7 +378,7 @@ SolarNode.Settings.addFactoryConfiguration = function(params) {
 	$.ajax({
 		type : 'POST',
 		url : params.url,
-		data : {uid:params.factoryUID},
+		data : {uid:params.factoryUid},
 		beforeSend: function(xhr) {
 			SolarNode.csrf(xhr);
         },
@@ -421,7 +421,7 @@ SolarNode.Settings.showConfirmation = function(params) {
 		$.ajax({
 			type : 'POST',
 			url : params.url,
-			data : {uid: params.factoryUID, instance: params.instanceUID},
+			data : {uid: params.factoryUid, instance: params.instanceUid},
 			beforeSend: function(xhr) {
 				SolarNode.csrf(xhr);
 	        },

@@ -182,7 +182,7 @@ public class DatumProtobufObjectCodec extends net.solarnetwork.common.protobuf.P
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return SETTING_UID;
 	}
 

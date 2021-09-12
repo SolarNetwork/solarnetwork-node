@@ -71,7 +71,7 @@ public class JMBusSerialWMBusNetwork extends JMBusWMBusNetwork implements Settin
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.mbus.wireless.serial";
 	}
 

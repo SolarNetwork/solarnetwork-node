@@ -50,7 +50,7 @@ public class ProtocProtobufCompilerService
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.protobuf.protoc";
 	}
 

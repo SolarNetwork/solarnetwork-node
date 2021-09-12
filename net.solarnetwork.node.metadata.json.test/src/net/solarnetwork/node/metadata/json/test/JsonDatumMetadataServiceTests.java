@@ -139,7 +139,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		expect(identityService.getSolarInBaseUrl()).andReturn(getHttpServerBaseUrl()).anyTimes();
 
 		// no cached metadata available
-		expect(settingsService.getSettingResources(service.getSettingUID(), null, settingKey))
+		expect(settingsService.getSettingResources(service.getSettingUid(), null, settingKey))
 				.andReturn(Collections.emptyList());
 
 		// also fall back to legacy data
@@ -193,7 +193,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		// cached metadata available
 		ByteArrayResource jsonResource = new ByteArrayResource(
 				"{\"m\":{\"foo\":\"bar\"}}".getBytes(Charset.forName("UTF-8")));
-		expect(settingsService.getSettingResources(service.getSettingUID(), null, settingKey))
+		expect(settingsService.getSettingResources(service.getSettingUid(), null, settingKey))
 				.andReturn(Collections.singleton(jsonResource));
 
 		// WHEN
@@ -219,7 +219,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		// cached metadata available
 		ByteArrayResource jsonResource = new ByteArrayResource(
 				"{\"m\":{\"foo\":\"bar\"}}".getBytes(Charset.forName("UTF-8")));
-		expect(settingsService.getSettingResources(service.getSettingUID(), null, settingKey))
+		expect(settingsService.getSettingResources(service.getSettingUid(), null, settingKey))
 				.andReturn(Collections.singleton(jsonResource));
 
 		// WHEN
@@ -247,7 +247,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		expect(identityService.getSolarInBaseUrl()).andReturn(getHttpServerBaseUrl()).anyTimes();
 
 		// no cached metadata available
-		expect(settingsService.getSettingResources(service.getSettingUID(), null, settingKey))
+		expect(settingsService.getSettingResources(service.getSettingUid(), null, settingKey))
 				.andReturn(Collections.emptyList());
 
 		// also fall back to legacy data
@@ -286,7 +286,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 
 		// then persist copy locally as settings resource
 		Capture<Iterable<Resource>> resourcesCaptor = new Capture<>();
-		settingsService.importSettingResources(eq(service.getSettingUID()), isNull(), eq(settingKey),
+		settingsService.importSettingResources(eq(service.getSettingUid()), isNull(), eq(settingKey),
 				capture(resourcesCaptor));
 
 		// WHEN
@@ -316,7 +316,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		expect(identityService.getSolarInBaseUrl()).andReturn(getHttpServerBaseUrl()).anyTimes();
 
 		// no cached metadata available 
-		expect(settingsService.getSettingResources(service.getSettingUID(), null, settingKey))
+		expect(settingsService.getSettingResources(service.getSettingUid(), null, settingKey))
 				.andReturn(Collections.emptyList());
 
 		// legacy cached metadata *is* available (first to look up, second before saving)
@@ -325,7 +325,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 
 		// then store as settings resource
 		Capture<Iterable<Resource>> resourcesCaptor = new Capture<>();
-		settingsService.importSettingResources(eq(service.getSettingUID()), isNull(), eq(settingKey),
+		settingsService.importSettingResources(eq(service.getSettingUid()), isNull(), eq(settingKey),
 				capture(resourcesCaptor));
 
 		TestHttpHandler handler = new TestHttpHandler() {
@@ -378,12 +378,12 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		// cached metadata available
 		ByteArrayResource jsonResource = new ByteArrayResource(
 				"{\"m\":{\"foo\":\"bar\"}}".getBytes(Charset.forName("UTF-8")));
-		expect(settingsService.getSettingResources(service.getSettingUID(), null, settingKey))
+		expect(settingsService.getSettingResources(service.getSettingUid(), null, settingKey))
 				.andReturn(Collections.singleton(jsonResource));
 
 		// then store as settings resource
 		Capture<Iterable<Resource>> resourcesCaptor = new Capture<>();
-		settingsService.importSettingResources(eq(service.getSettingUID()), isNull(), eq(settingKey),
+		settingsService.importSettingResources(eq(service.getSettingUid()), isNull(), eq(settingKey),
 				capture(resourcesCaptor));
 
 		TestHttpHandler handler = new TestHttpHandler() {
@@ -436,12 +436,12 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		// cached metadata available
 		ByteArrayResource jsonResource = new ByteArrayResource(
 				"{\"m\":{\"foo\":\"bar\"}}".getBytes(Charset.forName("UTF-8")));
-		expect(settingsService.getSettingResources(service.getSettingUID(), null, settingKey))
+		expect(settingsService.getSettingResources(service.getSettingUid(), null, settingKey))
 				.andReturn(Collections.singleton(jsonResource));
 
 		// then store as settings resource
 		Capture<Iterable<Resource>> resourcesCaptor = new Capture<>(CaptureType.ALL);
-		settingsService.importSettingResources(eq(service.getSettingUID()), isNull(), eq(settingKey),
+		settingsService.importSettingResources(eq(service.getSettingUid()), isNull(), eq(settingKey),
 				capture(resourcesCaptor));
 		expectLastCall().times(2);
 
@@ -513,12 +513,12 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		// cached metadata available
 		ByteArrayResource jsonResource = new ByteArrayResource(
 				"{\"m\":{\"foo\":\"bar\"}}".getBytes(Charset.forName("UTF-8")));
-		expect(settingsService.getSettingResources(service.getSettingUID(), null, settingKey))
+		expect(settingsService.getSettingResources(service.getSettingUid(), null, settingKey))
 				.andReturn(Collections.singleton(jsonResource));
 
 		// then store as settings resource
 		Capture<Iterable<Resource>> resourcesCaptor = new Capture<>(CaptureType.ALL);
-		settingsService.importSettingResources(eq(service.getSettingUID()), isNull(), eq(settingKey),
+		settingsService.importSettingResources(eq(service.getSettingUid()), isNull(), eq(settingKey),
 				capture(resourcesCaptor));
 		expectLastCall().times(2); // persisted locally each time
 
@@ -592,7 +592,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		// cached metadata available
 		ByteArrayResource jsonResource = new ByteArrayResource(
 				"{\"m\":{\"foo\":\"bar\"}}".getBytes(Charset.forName("UTF-8")));
-		expect(settingsService.getSettingResources(service.getSettingUID(), null, settingKey))
+		expect(settingsService.getSettingResources(service.getSettingUid(), null, settingKey))
 				.andReturn(Collections.singleton(jsonResource));
 
 		// WHEN
@@ -635,7 +635,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		// cached metadata available
 		ByteArrayResource jsonResource = new ByteArrayResource(
 				"{\"m\":{\"foo\":\"bar\"}}".getBytes(Charset.forName("UTF-8")));
-		expect(settingsService.getSettingResources(service.getSettingUID(), null, settingKey))
+		expect(settingsService.getSettingResources(service.getSettingUid(), null, settingKey))
 				.andReturn(Collections.singleton(jsonResource));
 
 		// create delayed persist task
@@ -656,7 +656,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 
 		// then store as settings resource
 		Capture<Iterable<Resource>> resourcesCaptor = new Capture<>();
-		settingsService.importSettingResources(eq(service.getSettingUID()), isNull(), eq(settingKey),
+		settingsService.importSettingResources(eq(service.getSettingUid()), isNull(), eq(settingKey),
 				capture(resourcesCaptor));
 
 		// WHEN

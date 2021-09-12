@@ -17,7 +17,7 @@
 	<bean id="settingsFactory" 
 		class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 		<property name="displayName" value="RFXCOM transceiver"/>
-		<property name="factoryUID" value="net.solarnetwork.node.rfxcom"/>
+		<property name="factoryUid" value="net.solarnetwork.node.rfxcom"/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 				<property name="basenames" value="net.solarnetwork.node.rfxcom.RFXCOMTransceiver"/>
@@ -45,7 +45,7 @@
 					<property name="serviceClassName" value="net.solarnetwork.node.DataCollectorFactory"/>
 					<property name="propertyFilters">
 						<map>
-							<entry key="UID" value="/dev/ttyUSB0"/>
+							<entry key="uid" value="/dev/ttyUSB0"/>
 						</map>
 					</property>
 				</bean>	

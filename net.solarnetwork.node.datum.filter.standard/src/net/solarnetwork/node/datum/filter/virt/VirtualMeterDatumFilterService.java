@@ -112,7 +112,7 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.samplefilter.virtmeter";
 	}
 

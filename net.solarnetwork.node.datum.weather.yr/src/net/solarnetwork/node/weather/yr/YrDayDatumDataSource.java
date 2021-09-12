@@ -61,7 +61,7 @@ public class YrDayDatumDataSource extends ConfigurableYrClientService
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.weather.yr.day";
 	}
 

@@ -209,7 +209,7 @@ public class PjcSerialNetwork extends BasicIdentifiable
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.serial.pjc";
 	}
 
