@@ -35,19 +35,20 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.ConversationalDataCollector;
 import net.solarnetwork.node.datum.rfxcom.RFXCOMDatumDataSource;
-import net.solarnetwork.node.domain.ACEnergyDatum;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.rfxcom.Message;
 import net.solarnetwork.node.rfxcom.MessageFactory;
 import net.solarnetwork.node.rfxcom.RFXCOM;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.service.ConversationalDataCollector;
+import net.solarnetwork.service.OptionalService;
 
 /**
  * Test cases for the @{link RFXCOMDatumDataSource} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class RFXCOMDatumDataSourceTests {
 
@@ -74,7 +75,7 @@ public class RFXCOMDatumDataSourceTests {
 		messageFactory = new MessageFactory();
 	}
 
-	private Collection<ACEnergyDatum> doReadDatum(String messageString) {
+	private Collection<NodeDatum> doReadDatum(String messageString) {
 		final List<Message> messages = new ArrayList<Message>();
 		messages.add(messageFactory.parseMessage(TestUtils.bytesFromHexString(messageString), 0));
 		expect(rfxcomTracker.service()).andReturn(rfxcom);
@@ -84,19 +85,19 @@ public class RFXCOMDatumDataSourceTests {
 
 		replay(rfxcomTracker, rfxcom, dc);
 
-		Collection<ACEnergyDatum> datum = dataSource.readMultipleDatum();
+		Collection<NodeDatum> datum = dataSource.readMultipleDatum();
 
 		verify(rfxcomTracker, rfxcom, dc);
 
 		return datum;
 	}
 
-	private List<ACEnergyDatum>[] doReadMultipleDatum(String[] messages) {
+	private List<NodeDatum>[] doReadMultipleDatum(String[] messages) {
 		@SuppressWarnings("unchecked")
-		List<ACEnergyDatum>[] results = new List[messages.length];
+		List<NodeDatum>[] results = new List[messages.length];
 		int i = 0;
 		for ( String messageString : messages ) {
-			results[i++] = new ArrayList<ACEnergyDatum>(doReadDatum(messageString));
+			results[i++] = new ArrayList<>(doReadDatum(messageString));
 			EasyMock.reset(rfxcomTracker, rfxcom, dc);
 		}
 		return results;
@@ -104,22 +105,22 @@ public class RFXCOMDatumDataSourceTests {
 
 	@Test
 	public void getValidACEnergyDatumNoChange() {
-		Collection<ACEnergyDatum>[] results = doReadMultipleDatum(new String[] {
+		Collection<NodeDatum>[] results = doReadMultipleDatum(new String[] {
 				"115A010188F200000000000000000036B079", "115A010188F200000000000000000036B079",
 				"115A010188F200000000000000000036B079" });
 		log.debug("Got results: {}", Arrays.asList(results));
 		assertEquals(0, results[0].size());
 		assertEquals(0, results[1].size());
 		assertEquals(3, results[2].size());
-		for ( ACEnergyDatum datum : results[2] ) {
+		for ( NodeDatum datum : results[2] ) {
 			assertEquals("88F2", datum.getSourceId());
-			assertEquals("Use", Long.valueOf(63L), datum.getWattHourReading());
+			assertEquals("Use", Long.valueOf(63L), ((AcEnergyDatum) datum).getWattHourReading());
 		}
 	}
 
 	@Test
 	public void getBadACEnergyDatum() {
-		List<ACEnergyDatum>[] results = doReadMultipleDatum(
+		List<NodeDatum>[] results = doReadMultipleDatum(
 				new String[] { "115a011b6b120000000162000000d0666559",
 						"115a011c6b120000000172000000d06bc159", "115a011d6b120000000172000000d0716159",
 						"115a011f6b120000000182000000d0769359", "115a01206b120200000152006b00115a0121", // this should return null
@@ -136,14 +137,14 @@ public class RFXCOMDatumDataSourceTests {
 		assertEquals(0, results[5].size());
 		assertEquals(0, results[6].size());
 		assertEquals(3, results[7].size());
-		assertEquals(61093L, results[7].get(0).getWattHourReading().longValue());
-		assertEquals(61099L, results[7].get(1).getWattHourReading().longValue());
-		assertEquals(61104L, results[7].get(2).getWattHourReading().longValue());
+		assertEquals(61093L, ((AcEnergyDatum) results[7].get(0)).getWattHourReading().longValue());
+		assertEquals(61099L, ((AcEnergyDatum) results[7].get(1)).getWattHourReading().longValue());
+		assertEquals(61104L, ((AcEnergyDatum) results[7].get(2)).getWattHourReading().longValue());
 	}
 
 	@Test
 	public void getBadACEnergyDatumWhileWarmingUp() {
-		List<ACEnergyDatum>[] results = doReadMultipleDatum(new String[] {
+		List<NodeDatum>[] results = doReadMultipleDatum(new String[] {
 				"115a011f6b120000000182000000d0769359", "115a01206b120200000152006b00115a0121", // this should return null
 				"115a01236b120000000152000000d080fc59", "115a01246b120000000152000000d0862059",
 				"115a01256b120100000172000000d08a4459" });
@@ -156,14 +157,14 @@ public class RFXCOMDatumDataSourceTests {
 		assertEquals(0, results[2].size());
 		assertEquals(0, results[3].size());
 		assertEquals(3, results[4].size());
-		assertEquals(61093L, results[4].get(0).getWattHourReading().longValue());
-		assertEquals(61099L, results[4].get(1).getWattHourReading().longValue());
-		assertEquals(61104L, results[4].get(2).getWattHourReading().longValue());
+		assertEquals(61093L, ((AcEnergyDatum) results[4].get(0)).getWattHourReading().longValue());
+		assertEquals(61099L, ((AcEnergyDatum) results[4].get(1)).getWattHourReading().longValue());
+		assertEquals(61104L, ((AcEnergyDatum) results[4].get(2)).getWattHourReading().longValue());
 	}
 
 	@Test
 	public void getBadACEnergyDatumTurnsOutToBeGood() {
-		List<ACEnergyDatum>[] results = doReadMultipleDatum(new String[] {
+		List<NodeDatum>[] results = doReadMultipleDatum(new String[] {
 				"115a011f6b120000000182000000d0769359", "115a01206b120200000152006b00115a0121", // this is the "bad" data
 				"115a01206b120200000152006b00115a0121", // this is the "bad" data
 				"115a01206b120200000152006b00115a0121", // this is the "bad" data
@@ -176,9 +177,9 @@ public class RFXCOMDatumDataSourceTests {
 		assertEquals(0, results[1].size());
 		assertEquals(0, results[2].size());
 		assertEquals(3, results[3].size());
-		assertEquals(2054682597L, results[3].get(0).getWattHourReading().longValue());
-		assertEquals(2054682597L, results[3].get(1).getWattHourReading().longValue());
-		assertEquals(2054682597L, results[3].get(2).getWattHourReading().longValue());
+		assertEquals(2054682597L, ((AcEnergyDatum) results[3].get(0)).getWattHourReading().longValue());
+		assertEquals(2054682597L, ((AcEnergyDatum) results[3].get(1)).getWattHourReading().longValue());
+		assertEquals(2054682597L, ((AcEnergyDatum) results[3].get(2)).getWattHourReading().longValue());
 	}
 
 }
