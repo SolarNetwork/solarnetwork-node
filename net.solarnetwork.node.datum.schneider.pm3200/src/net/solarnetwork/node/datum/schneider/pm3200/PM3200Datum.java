@@ -22,49 +22,51 @@
 
 package net.solarnetwork.node.datum.schneider.pm3200;
 
-import java.util.Date;
-import java.util.Map;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import java.time.Instant;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.datum.SimpleAcEnergyDatum;
 import net.solarnetwork.node.hw.schneider.meter.PM3200DataAccessor;
 
 /**
- * Extension of {@link GeneralNodeACEnergyDatum} with additional properties
- * supported by the PM3200 series meters.
+ * Extension of {@link SimpleAcEnergyDatum} with additional properties supported
+ * by the PM3200 series meters.
  * 
  * @author matt
- * @version 3.0
+ * @version 4.0
  */
-public class PM3200Datum extends GeneralNodeACEnergyDatum implements ACEnergyDataAccessor {
+public class PM3200Datum extends SimpleAcEnergyDatum {
+
+	private static final long serialVersionUID = -298143693772962051L;
 
 	private final PM3200DataAccessor data;
-	private final boolean backwards;
 
 	/**
 	 * Construct with a sample.
 	 * 
 	 * @param data
 	 *        the accessor
+	 * @param sourceId
+	 *        the source ID
 	 * @param phase
 	 *        the phase
 	 * @param backwards
 	 *        {@literal true} to reverse current direction
 	 */
-	public PM3200Datum(PM3200DataAccessor data, ACPhase phase, boolean backwards) {
-		super();
+	public PM3200Datum(PM3200DataAccessor data, String sourceId, AcPhase phase, boolean backwards) {
+		super(sourceId, (data.getDataTimestamp() > 0 ? Instant.ofEpochMilli(data.getDataTimestamp())
+				: Instant.now()), new DatumSamples());
 		this.data = data;
-		this.backwards = backwards;
-		if ( data.getDataTimestamp() > 0 ) {
-			setCreated(new Date(data.getDataTimestamp()));
+		AcEnergyDataAccessor accessor = data.accessorForPhase(phase);
+		if ( backwards ) {
+			accessor = accessor.reversed();
 		}
-		setPhase(phase);
-		ACEnergyDataAccessor phaseData = accessorForPhase(phase);
-		populateMeasurements(phaseData, phase);
+		populateMeasurements(accessor, phase);
 	}
 
-	private void populateMeasurements(ACEnergyDataAccessor data, ACPhase phase) {
-		setPhase(phase);
+	private void populateMeasurements(AcEnergyDataAccessor data, AcPhase phase) {
+		setAcPhase(phase);
 		setFrequency(data.getFrequency());
 		setVoltage(data.getVoltage());
 		setLineVoltage(data.getLineVoltage());
@@ -87,63 +89,13 @@ public class PM3200Datum extends GeneralNodeACEnergyDatum implements ACEnergyDat
 		return (getWatts() != null || getWattHourReading() != null);
 	}
 
-	@Override
-	public long getDataTimestamp() {
-		return data.getDataTimestamp();
-	}
-
-	@Override
-	public Map<String, Object> getDeviceInfo() {
-		return data.getDeviceInfo();
-	}
-
-	@Override
-	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
-		ACEnergyDataAccessor phaseData = data.accessorForPhase(phase);
-		if ( backwards ) {
-			phaseData = phaseData.reversed();
-		}
-		return phaseData;
-	}
-
-	@Override
-	public ACEnergyDataAccessor reversed() {
-		return data.reversed();
-	}
-
-	@Override
-	public Integer getActivePower() {
-		return data.getActivePower();
-	}
-
-	@Override
-	public Long getActiveEnergyDelivered() {
-		return data.getActiveEnergyDelivered();
-	}
-
-	@Override
-	public Long getActiveEnergyReceived() {
-		return data.getActiveEnergyReceived();
-	}
-
-	@Override
-	public Long getApparentEnergyDelivered() {
-		return data.getApparentEnergyDelivered();
-	}
-
-	@Override
-	public Long getApparentEnergyReceived() {
-		return data.getApparentEnergyReceived();
-	}
-
-	@Override
-	public Long getReactiveEnergyDelivered() {
-		return data.getReactiveEnergyDelivered();
-	}
-
-	@Override
-	public Long getReactiveEnergyReceived() {
-		return data.getReactiveEnergyReceived();
+	/**
+	 * Get the data.
+	 * 
+	 * @return the data
+	 */
+	public PM3200DataAccessor getData() {
+		return data;
 	}
 
 }

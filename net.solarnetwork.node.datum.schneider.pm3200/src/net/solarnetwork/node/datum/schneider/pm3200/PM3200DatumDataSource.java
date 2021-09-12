@@ -23,24 +23,24 @@
 package net.solarnetwork.node.datum.schneider.pm3200;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Data;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -51,12 +51,11 @@ import net.solarnetwork.util.StringUtils;
  * @version 2.4
  */
 public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM3200Data>
-		implements DatumDataSource<GeneralNodeACEnergyDatum>,
-		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	public static final String MAIN_SOURCE_ID = "Main";
 
-	private Map<ACPhase, String> sourceMapping = getDefaulSourceMapping();
+	private Map<AcPhase, String> sourceMapping = getDefaulSourceMapping();
 	private boolean backwards = false;
 
 	/**
@@ -65,9 +64,9 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 	 * 
 	 * @return mapping
 	 */
-	public static Map<ACPhase, String> getDefaulSourceMapping() {
-		Map<ACPhase, String> result = new EnumMap<ACPhase, String>(ACPhase.class);
-		result.put(ACPhase.Total, MAIN_SOURCE_ID);
+	public static Map<AcPhase, String> getDefaulSourceMapping() {
+		Map<AcPhase, String> result = new EnumMap<AcPhase, String>(AcPhase.class);
+		result.put(AcPhase.Total, MAIN_SOURCE_ID);
 		return result;
 	}
 
@@ -118,26 +117,24 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 		buf.append(", Wh rec = ").append(data.getActiveEnergyReceived());
 		buf.append(", Wh del = ").append(data.getActiveEnergyDelivered());
 		buf.append(", cos \ud835\udf11 = ").append(data.getEffectiveTotalPowerFactor());
-		buf.append("; sampled at ")
-				.append(DateTimeFormat.forStyle("LS").print(new DateTime(data.getDataTimestamp())));
+		buf.append("; sampled at ").append(Instant.ofEpochMilli(data.getDataTimestamp()));
 		return buf.toString();
 	}
 
 	@Override
-	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
-		return PM3200Datum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AcEnergyDatum.class;
 	}
 
 	@Override
-	public GeneralNodeACEnergyDatum readCurrentDatum() {
-		final String sourceId = resolvePlaceholders(getSourceMapping().get(ACPhase.Total));
+	public AcEnergyDatum readCurrentDatum() {
+		final String sourceId = resolvePlaceholders(getSourceMapping().get(AcPhase.Total));
 		try {
 			final PM3200Data currSample = getCurrentSample();
 			if ( currSample == null ) {
 				return null;
 			}
-			PM3200Datum d = new PM3200Datum(currSample, ACPhase.Total, backwards);
-			d.setSourceId(sourceId);
+			PM3200Datum d = new PM3200Datum(currSample, sourceId, AcPhase.Total, backwards);
 			return d;
 		} catch ( IOException e ) {
 			log.error("Communication problem reading source {} from PM3200 device {}: {}", sourceId,
@@ -147,13 +144,13 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 	}
 
 	@Override
-	public Class<? extends GeneralNodeACEnergyDatum> getMultiDatumType() {
-		return PM3200Datum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return AcEnergyDatum.class;
 	}
 
 	@Override
-	public Collection<GeneralNodeACEnergyDatum> readMultipleDatum() {
-		final List<GeneralNodeACEnergyDatum> results = new ArrayList<GeneralNodeACEnergyDatum>(4);
+	public Collection<NodeDatum> readMultipleDatum() {
+		final List<NodeDatum> results = new ArrayList<>(4);
 		final PM3200Data currSample;
 		try {
 			currSample = getCurrentSample();
@@ -165,29 +162,33 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 			return results;
 		}
 		if ( isCaptureTotal() ) {
-			PM3200Datum d = new PM3200Datum(currSample, ACPhase.Total, backwards);
-			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.Total)));
+			PM3200Datum d = new PM3200Datum(currSample,
+					resolvePlaceholders(getSourceMapping().get(AcPhase.Total)), AcPhase.Total,
+					backwards);
 			if ( isCaptureTotal() ) {
 				results.add(d);
 			}
 		}
 		if ( isCapturePhaseA() ) {
-			PM3200Datum d = new PM3200Datum(currSample, ACPhase.PhaseA, backwards);
-			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseA)));
+			PM3200Datum d = new PM3200Datum(currSample,
+					resolvePlaceholders(getSourceMapping().get(AcPhase.PhaseA)), AcPhase.PhaseA,
+					backwards);
 			if ( isCapturePhaseA() ) {
 				results.add(d);
 			}
 		}
 		if ( isCapturePhaseB() ) {
-			PM3200Datum d = new PM3200Datum(currSample, ACPhase.PhaseB, backwards);
-			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseB)));
+			PM3200Datum d = new PM3200Datum(currSample,
+					resolvePlaceholders(getSourceMapping().get(AcPhase.PhaseB)), AcPhase.PhaseB,
+					backwards);
 			if ( isCapturePhaseB() ) {
 				results.add(d);
 			}
 		}
 		if ( isCapturePhaseC() ) {
-			PM3200Datum d = new PM3200Datum(currSample, ACPhase.PhaseC, backwards);
-			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseC)));
+			PM3200Datum d = new PM3200Datum(currSample,
+					resolvePlaceholders(getSourceMapping().get(AcPhase.PhaseC)), AcPhase.PhaseC,
+					backwards);
 			if ( isCapturePhaseC() ) {
 				results.add(d);
 			}
@@ -198,7 +199,7 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.consumption.schneider.pm3200";
 	}
 
@@ -224,11 +225,11 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 		return results;
 	}
 
-	public Map<ACPhase, String> getSourceMapping() {
+	public Map<AcPhase, String> getSourceMapping() {
 		return sourceMapping;
 	}
 
-	public void setSourceMapping(Map<ACPhase, String> sourceMapping) {
+	public void setSourceMapping(Map<AcPhase, String> sourceMapping) {
 		this.sourceMapping = sourceMapping;
 	}
 
@@ -254,15 +255,15 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 	 */
 	public void setSourceMappingValue(String mapping) {
 		Map<String, String> m = StringUtils.commaDelimitedStringToMap(mapping);
-		Map<ACPhase, String> kindMap = new EnumMap<>(ACPhase.class);
+		Map<AcPhase, String> kindMap = new EnumMap<>(AcPhase.class);
 		if ( m != null )
 			for ( Map.Entry<String, String> me : m.entrySet() ) {
 				String k = me.getKey();
-				ACPhase mk;
+				AcPhase mk;
 				try {
-					mk = ACPhase.valueOf(k);
+					mk = AcPhase.valueOf(k);
 				} catch ( RuntimeException e ) {
-					log.info("'{}' is not a valid ACPhase value, ignoring.", k);
+					log.info("'{}' is not a valid AcPhase value, ignoring.", k);
 					continue;
 				}
 				kindMap.put(mk, me.getValue());
@@ -294,26 +295,26 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 	 * 
 	 * @param kind
 	 *        the measurement kind
-	 * @return the source ID value, or <em>null</em> if not available
+	 * @return the source ID value, or {@literal null} if not available
 	 */
-	public String getSourceIdForACPhase(ACPhase kind) {
+	public String getSourceIdForACPhase(AcPhase kind) {
 		return (sourceMapping == null ? null : sourceMapping.get(kind));
 	}
 
 	public boolean isCaptureTotal() {
-		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.Total));
+		return (sourceMapping != null && sourceMapping.containsKey(AcPhase.Total));
 	}
 
 	public boolean isCapturePhaseA() {
-		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.PhaseA));
+		return (sourceMapping != null && sourceMapping.containsKey(AcPhase.PhaseA));
 	}
 
 	public boolean isCapturePhaseB() {
-		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.PhaseB));
+		return (sourceMapping != null && sourceMapping.containsKey(AcPhase.PhaseB));
 	}
 
 	public boolean isCapturePhaseC() {
-		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.PhaseC));
+		return (sourceMapping != null && sourceMapping.containsKey(AcPhase.PhaseC));
 	}
 
 	/**

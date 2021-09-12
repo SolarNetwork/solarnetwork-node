@@ -22,23 +22,24 @@
 
 package net.solarnetwork.node.datum.schneider.ion6200;
 
-import java.util.Date;
-import java.util.Map;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import java.time.Instant;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.datum.SimpleAcEnergyDatum;
 import net.solarnetwork.node.hw.schneider.meter.ION6200DataAccessor;
 
 /**
  * Datum for the ION6200 meter.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
-public class ION6200Datum extends GeneralNodeACEnergyDatum implements ACEnergyDataAccessor {
+public class ION6200Datum extends SimpleAcEnergyDatum {
+
+	private static final long serialVersionUID = 8425868115217879119L;
 
 	private final ION6200DataAccessor data;
-	private final boolean backwards;
 
 	/**
 	 * Construct from a sample.
@@ -55,19 +56,19 @@ public class ION6200Datum extends GeneralNodeACEnergyDatum implements ACEnergyDa
 	 *        energy will be captured as {@code wattHours} and <i>delivered</i>
 	 *        energy as {@code wattHoursReverse})
 	 */
-	public ION6200Datum(ION6200DataAccessor data, ACPhase phase, boolean backwards) {
-		super();
+	public ION6200Datum(ION6200DataAccessor data, String sourceId, AcPhase phase, boolean backwards) {
+		super(sourceId, (data.getDataTimestamp() > 0 ? Instant.ofEpochMilli(data.getDataTimestamp())
+				: Instant.now()), new DatumSamples());
 		this.data = data;
-		this.backwards = backwards;
-		if ( data.getDataTimestamp() > 0 ) {
-			setCreated(new Date(data.getDataTimestamp()));
+		AcEnergyDataAccessor accessor = data.accessorForPhase(phase);
+		if ( backwards ) {
+			accessor = accessor.reversed();
 		}
-		ACEnergyDataAccessor phaseData = accessorForPhase(phase);
-		populateMeasurements(phaseData, phase);
+		populateMeasurements(accessor, phase);
 	}
 
-	private void populateMeasurements(ACEnergyDataAccessor data, ACPhase phase) {
-		setPhase(phase);
+	private void populateMeasurements(AcEnergyDataAccessor data, AcPhase phase) {
+		setAcPhase(phase);
 		setFrequency(data.getFrequency());
 		setVoltage(data.getVoltage());
 		setLineVoltage(data.getLineVoltage());
@@ -88,65 +89,6 @@ public class ION6200Datum extends GeneralNodeACEnergyDatum implements ACEnergyDa
 	 */
 	public ION6200DataAccessor getData() {
 		return data;
-	}
-
-	@Override
-	public long getDataTimestamp() {
-		return data.getDataTimestamp();
-	}
-
-	@Override
-	public Map<String, Object> getDeviceInfo() {
-		return data.getDeviceInfo();
-	}
-
-	@Override
-	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
-		ACEnergyDataAccessor phaseData = data.accessorForPhase(phase);
-		if ( backwards ) {
-			phaseData = phaseData.reversed();
-		}
-		return phaseData;
-	}
-
-	@Override
-	public ACEnergyDataAccessor reversed() {
-		return data.reversed();
-	}
-
-	@Override
-	public Integer getActivePower() {
-		return data.getActivePower();
-	}
-
-	@Override
-	public Long getActiveEnergyDelivered() {
-		return data.getActiveEnergyDelivered();
-	}
-
-	@Override
-	public Long getActiveEnergyReceived() {
-		return data.getActiveEnergyReceived();
-	}
-
-	@Override
-	public Long getApparentEnergyDelivered() {
-		return data.getApparentEnergyDelivered();
-	}
-
-	@Override
-	public Long getApparentEnergyReceived() {
-		return data.getApparentEnergyReceived();
-	}
-
-	@Override
-	public Long getReactiveEnergyDelivered() {
-		return data.getReactiveEnergyDelivered();
-	}
-
-	@Override
-	public Long getReactiveEnergyReceived() {
-		return data.getReactiveEnergyReceived();
 	}
 
 }

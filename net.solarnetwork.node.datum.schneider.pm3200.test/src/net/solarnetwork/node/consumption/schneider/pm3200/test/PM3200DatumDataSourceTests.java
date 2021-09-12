@@ -39,23 +39,22 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.datum.schneider.pm3200.PM3200DatumDataSource;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Data;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnection;
-import net.solarnetwork.node.test.AbstractNodeTest;
 import net.solarnetwork.node.test.DataUtils;
+import net.solarnetwork.service.StaticOptionalService;
 import net.solarnetwork.util.IntShortMap;
-import net.solarnetwork.util.StaticOptionalService;
 
 /**
  * Test cases for the {@link PM3200DatumDataSource} class.
  * 
- * @author matt2.01.1
+ * @author matt
  */
-public class PM3200DatumDataSourceTests extends AbstractNodeTest {
+public class PM3200DatumDataSourceTests {
 
 	private final int UNIT_ID = 1;
 
@@ -109,8 +108,8 @@ public class PM3200DatumDataSourceTests extends AbstractNodeTest {
 
 		replay(modbus);
 
-		GeneralNodeACEnergyDatum result = service.readCurrentDatum();
-		log.debug("Read GeneralNodeACEnergyDatum: {}", result);
+		AcEnergyDatum result = service.readCurrentDatum();
+		log.debug("Read AcEnergyDatum: {}", result);
 
 		verify(modbus);
 

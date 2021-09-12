@@ -24,6 +24,7 @@ import java.io.IOException;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
+import net.solarnetwork.service.support.BasicIdentifiable;
 
 /**
  * Abstract implementation of {@link ModbusNetwork} to simplify testing.
@@ -31,17 +32,7 @@ import net.solarnetwork.node.io.modbus.ModbusNetwork;
  * @author matt
  * @version 1.0
  */
-public abstract class AbstractModbusNetwork implements ModbusNetwork {
-
-	@Override
-	public String getUID() {
-		return null;
-	}
-
-	@Override
-	public String getGroupUID() {
-		return null;
-	}
+public abstract class AbstractModbusNetwork extends BasicIdentifiable implements ModbusNetwork {
 
 	@Override
 	public <T> T performAction(int unitId, ModbusConnectionAction<T> action) throws IOException {
