@@ -26,24 +26,27 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 import java.io.IOException;
-import net.solarnetwork.node.datum.panasonic.battery.PanasonicBatteryDatumDataSource;
-import net.solarnetwork.node.domain.GeneralNodeEnergyStorageDatum;
-import net.solarnetwork.node.hw.panasonic.battery.BatteryAPIClient;
-import net.solarnetwork.node.hw.panasonic.battery.BatteryData;
-import net.solarnetwork.node.test.AbstractNodeTest;
+import java.time.Instant;
 import org.easymock.EasyMock;
-import org.joda.time.DateTime;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import net.solarnetwork.node.datum.panasonic.battery.PanasonicBatteryDatumDataSource;
+import net.solarnetwork.node.domain.datum.EnergyStorageDatum;
+import net.solarnetwork.node.hw.panasonic.battery.BatteryAPIClient;
+import net.solarnetwork.node.hw.panasonic.battery.BatteryData;
 
 /**
  * Test cases for the {@link PanasonicBatteryDatumDataSource} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class PanasonicBatteryDatumDataSourceTests extends AbstractNodeTest {
+public class PanasonicBatteryDatumDataSourceTests {
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final String TEST_EMAIL = "test@localhost";
 	private final String TEST_SOURCE_ID = "Test Battery";
@@ -62,12 +65,12 @@ public class PanasonicBatteryDatumDataSourceTests extends AbstractNodeTest {
 
 	@Test
 	public void testReadDatum() throws IOException {
-		final BatteryData data = new BatteryData("test", new DateTime(), "A", 10, 100);
+		final BatteryData data = new BatteryData("test", Instant.now(), "A", 10, 100);
 		expect(client.getCurrentBatteryDataForEmail(TEST_EMAIL)).andReturn(data);
 
 		replay(client);
 
-		GeneralNodeEnergyStorageDatum result = service.readCurrentDatum();
+		EnergyStorageDatum result = service.readCurrentDatum();
 		log.debug("Read GeneralNodeEnergyStorageDatum: {}", result);
 
 		verify(client);

@@ -14,15 +14,15 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
-	<bean id="placeholderService" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
 	</bean>
-	
-	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
-		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
+
+	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
+		<property name="sticky" value="true"/>
 	</bean>
 
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
@@ -30,28 +30,24 @@
 			<list>
 				<value>net.solarnetwork.node.datum.panasonic.battery.PanasonicBatteryDatumDataSource</value>
 				<value>net.solarnetwork.node.hw.panasonic.battery.BatteryAPISupport</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
-	
-	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+
+	<bean id="jobMessageSource" class="net.solarnetwork.support.PrefixedMessageSource">
 		<property name="prefix" value="multiDatumDataSource."/>
 		<property name="delegate" ref="messageSource"/>
-	</bean>	
+	</bean>
 
-	<bean id="settingsFactory" 
-		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<bean id="settingsFactory"
+		class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 		<property name="displayName" value="Panasonic Battery API Energy Storage"/>
-		<property name="factoryUID" value="net.solarnetwork.node.datum.panasonic.battery"/>
+		<property name="factoryUid" value="net.solarnetwork.node.datum.panasonic.battery"/>
 		<property name="messageSource" ref="messageSource"/>
 	</bean>
 
-	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
-	</bean>
-	
-	<bean id="objectMapper" class="net.solarnetwork.util.ObjectMapperFactoryBean">
+	<bean id="objectMapper" class="net.solarnetwork.codec.ObjectMapperFactoryBean">
 		<property name="deserializers">
 			<list>
 				<bean class="net.solarnetwork.node.hw.panasonic.battery.BatteryDataDeserializer"/>
@@ -60,14 +56,14 @@
 	</bean>
 
 	<!-- Published Services -->
-	
-	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
-	
+
+	<service ref="settingsFactory" interface="net.solarnetwork.settings.SettingSpecifierProviderFactory"/>
+
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.panasonic.battery" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
 			<beans:value>net.solarnetwork.node.job.ServiceProvider</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.panasonic.battery"/>
@@ -75,7 +71,7 @@
 		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
 			<property name="trigger">
 				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-					<property name="name" value="panasonicBatteryDatumLoggerTrigger"/>
+					<property name="name" value="panasonicBatteryDatumPollTrigger"/>
 					<property name="cronExpression" value="5 * * * * ?"/>
 					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 					<property name="randomSecond" value="true"/>
@@ -87,7 +83,7 @@
 						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
 							<property name="interfaces">
 								<list>
-									<value>net.solarnetwork.node.DatumDataSource</value>
+									<value>net.solarnetwork.node.service.DatumDataSource</value>
 								</list>
 							</property>
 							<property name="properties">
@@ -101,14 +97,13 @@
 			</property>
 			<property name="jobDetail">
 				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-					<property name="name" value="panasonicBatteryDatumLoggerJob"/>
-					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
+					<property name="name" value="panasonicBatteryDatumPollJob"/>
+					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourcePollJob"/>
 					<property name="jobDataAsMap">
 						<map>
-							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
+							<entry key="datumQueue" value-ref="datumQueue"/>
 							<entry key="datumDataSource">
 								<bean class="net.solarnetwork.node.datum.panasonic.battery.PanasonicBatteryDatumDataSource">
-									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="placeholderService" ref="placeholderService"/>
 									<property name="client">
