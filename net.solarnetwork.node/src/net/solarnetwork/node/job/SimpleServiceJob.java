@@ -50,8 +50,8 @@ public class SimpleServiceJob extends AbstractJob implements SettingSpecifierPro
 	}
 
 	@Override
-	public String getSettingUID() {
-		return service.getSettingUID();
+	public String getSettingUid() {
+		return service.getSettingUid();
 	}
 
 	@Override

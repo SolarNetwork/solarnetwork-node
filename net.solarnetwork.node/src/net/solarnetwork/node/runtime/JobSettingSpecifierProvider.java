@@ -74,7 +74,7 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 	/** The prefix to remove for display titles in setting UIDs. */
 	public static final String SN_NODE_PREFIX = "net.solarnetwork.node.";
 
-	private String settingUID;
+	private String settingUid;
 	private MessageSource messageSource = null;
 	private List<SettingSpecifier> specifiers = new ArrayList<SettingSpecifier>();
 	private final Map<String, MessageFormat> messages = new HashMap<String, MessageFormat>();
@@ -82,27 +82,27 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 	/**
 	 * Construct with settings UID.
 	 * 
-	 * @param settingUID
+	 * @param settingUid
 	 *        the setting UID
 	 */
-	public JobSettingSpecifierProvider(String settingUID) {
-		this(settingUID, null);
+	public JobSettingSpecifierProvider(String settingUid) {
+		this(settingUid, null);
 	}
 
 	/**
 	 * Construct with settings UID.
 	 * 
-	 * @param settingUID
+	 * @param settingUid
 	 *        the setting UID
 	 * @param source
 	 *        a message source
 	 */
-	public JobSettingSpecifierProvider(String settingUID, MessageSource source) {
+	public JobSettingSpecifierProvider(String settingUid, MessageSource source) {
 		super();
-		this.settingUID = settingUID;
+		this.settingUid = settingUid;
 		this.messageSource = source;
 		if ( source == null || !hasMessage(source, "title") ) {
-			messages.put("title", new MessageFormat(titleValue(settingUID)));
+			messages.put("title", new MessageFormat(titleValue(settingUid)));
 		}
 
 		AbstractMessageSource msgSource = new AbstractMessageSource() {
@@ -141,13 +141,13 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 	 * </p>
 	 * 
 	 * 
-	 * @param settingUID
+	 * @param settingUid
 	 *        the setting UID value
 	 * @return the generated title value
 	 */
-	private static String titleValue(String settingUID) {
-		if ( settingUID.startsWith(SN_NODE_PREFIX) && settingUID.length() > SN_NODE_PREFIX.length() ) {
-			String subPackage = settingUID.substring(SN_NODE_PREFIX.length());
+	private static String titleValue(String settingUid) {
+		if ( settingUid.startsWith(SN_NODE_PREFIX) && settingUid.length() > SN_NODE_PREFIX.length() ) {
+			String subPackage = settingUid.substring(SN_NODE_PREFIX.length());
 			if ( subPackage.endsWith(JOBS_PID_SUFFIX)
 					&& subPackage.length() > JOBS_PID_SUFFIX.length() ) {
 				subPackage = subPackage.substring(0, subPackage.length() - JOBS_PID_SUFFIX.length());
@@ -160,7 +160,7 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 			}
 			return subPackage;
 		}
-		return settingUID;
+		return settingUid;
 	}
 
 	/**
@@ -239,13 +239,13 @@ public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 	}
 
 	@Override
-	public String getSettingUID() {
-		return settingUID;
+	public String getSettingUid() {
+		return settingUid;
 	}
 
 	@Override
 	public String getDisplayName() {
-		return settingUID;
+		return settingUid;
 	}
 
 	@Override

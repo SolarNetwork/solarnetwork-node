@@ -26,6 +26,7 @@ package net.solarnetwork.node.power.impl.sma.sunnynet;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,12 +40,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
-import net.solarnetwork.node.ConversationalDataCollector;
-import net.solarnetwork.node.DataCollectorFactory;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.node.domain.ACEnergyDatum;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
+import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
 import net.solarnetwork.node.hw.sma.SMAInverterDataSourceSupport;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaChannel;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaChannelParam;
@@ -53,13 +52,16 @@ import net.solarnetwork.node.hw.sma.sunnynet.SmaControl;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaPacket;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaUserDataField;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaUtils;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.support.SerialPortBeanParameters;
-import net.solarnetwork.node.util.PrefixedMessageSource;
-import net.solarnetwork.util.DynamicServiceTracker;
+import net.solarnetwork.node.service.ConversationalDataCollector;
+import net.solarnetwork.node.service.DataCollectorFactory;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.support.SerialPortBeanParameters;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.support.PrefixedMessageSource;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -128,11 +130,6 @@ import net.solarnetwork.util.StringUtils;
  * the same day can be calculated as an offset from that initial value. Requires
  * the {@code settingDao} property to also be configured.</dd>
  * 
- * <dt>settingDao</dt>
- * <dd>The {@link SettingDao} to use, required by the
- * {@code channelNamesToResetDaily} property.</dd>
- * </dl>
- * 
  * <p>
  * Based on code from Gray Watson's sma.pl script, copyright included here:
  * </p>
@@ -155,11 +152,11 @@ import net.solarnetwork.util.StringUtils;
  * </pre>
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSupport
-		implements DatumDataSource<ACEnergyDatum>,
-		ConversationalDataCollector.Moderator<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, ConversationalDataCollector.Moderator<AcDcEnergyDatum>,
+		SettingSpecifierProvider {
 
 	/** The PV current channel name. */
 	public static final String CHANNEL_NAME_PV_AMPS = "Ipv";
@@ -200,19 +197,13 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 		DEFAULT_SERIAL_PARAMS.setMaxWait(65000);
 	}
 
-	private static final Object MONITOR = new Object();
-	private static MessageSource MESSAGE_SOURCE;
-
 	private String pvVoltsChannelName = CHANNEL_NAME_PV_VOLTS;
 	private String pvAmpsChannelName = CHANNEL_NAME_PV_AMPS;
 	private String kWhChannelName = CHANNEL_NAME_KWH;
 	private long synOnlineWaitMs = DEFAULT_SYN_ONLINE_WAIT_MS;
-	private String sourceId = "Main";
-	private String groupUID;
 
-	private DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory;
+	private OptionalFilterableService<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory;
 	private SerialPortBeanParameters serialParams = getDefaultSerialParameters();
-
 	private int smaAddress = -1;
 	private Map<String, SmaChannel> channelMap = null;
 
@@ -233,8 +224,8 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 	}
 
 	@Override
-	public Class<? extends ACEnergyDatum> getDatumType() {
-		return GeneralNodeACEnergyDatum.class;
+	public Class<? extends AcEnergyDatum> getDatumType() {
+		return AcDcEnergyDatum.class;
 	}
 
 	private ConversationalDataCollector getDataCollectorInstance() {
@@ -257,12 +248,12 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 	}
 
 	@Override
-	public ACEnergyDatum readCurrentDatum() {
+	public AcDcEnergyDatum readCurrentDatum() {
 		ConversationalDataCollector dataCollector = null;
 		try {
 			dataCollector = getDataCollectorInstance();
 			if ( dataCollector != null ) {
-				GeneralNodeACEnergyDatum datum = dataCollector.collectData(this);
+				AcDcEnergyDatum datum = dataCollector.collectData(this);
 				addEnergyDatumSourceMetadata(datum);
 				return datum;
 			}
@@ -275,7 +266,7 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 	}
 
 	@Override
-	public GeneralNodeACEnergyDatum conductConversation(ConversationalDataCollector dataCollector) {
+	public AcDcEnergyDatum conductConversation(ConversationalDataCollector dataCollector) {
 		SmaPacket req = null;
 		SmaPacket resp = null;
 		if ( this.smaAddress < 0 || this.channelMap == null ) {
@@ -323,8 +314,8 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 			// ignore this one
 		}
 
-		GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
-		datum.setSourceId(resolvePlaceholders(sourceId));
+		SimpleAcDcEnergyDatum datum = new SimpleAcDcEnergyDatum(resolvePlaceholders(getSourceId()),
+				Instant.now(), new DatumSamples());
 
 		// Issue GetData command for each channel we're interested in
 		Number pvVolts = getNumericDataValue(dataCollector, this.pvVoltsChannelName, Float.class);
@@ -569,7 +560,7 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.power.sma.sunnynet";
 	}
 
@@ -580,38 +571,33 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 
 	@Override
 	public MessageSource getMessageSource() {
-		synchronized ( MONITOR ) {
-			if ( MESSAGE_SOURCE == null ) {
-				ResourceBundleMessageSource serial = new ResourceBundleMessageSource();
-				serial.setBundleClassLoader(SerialPortBeanParameters.class.getClassLoader());
-				serial.setBasename(SerialPortBeanParameters.class.getName());
+		if ( super.getMessageSource() == null ) {
+			ResourceBundleMessageSource serial = new ResourceBundleMessageSource();
+			serial.setBundleClassLoader(SerialPortBeanParameters.class.getClassLoader());
+			serial.setBasename(SerialPortBeanParameters.class.getName());
 
-				PrefixedMessageSource serialSource = new PrefixedMessageSource();
-				serialSource.setDelegate(serial);
-				serialSource.setPrefix("serialParams.");
+			PrefixedMessageSource serialSource = new PrefixedMessageSource();
+			serialSource.setDelegate(serial);
+			serialSource.setPrefix("serialParams.");
 
-				ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-				source.setBundleClassLoader(SMASunnyNetPowerDatumDataSource.class.getClassLoader());
-				source.setBasename(SMASunnyNetPowerDatumDataSource.class.getName());
-				source.setParentMessageSource(serialSource);
-				MESSAGE_SOURCE = source;
-			}
+			ResourceBundleMessageSource source = new ResourceBundleMessageSource();
+			source.setBundleClassLoader(SMASunnyNetPowerDatumDataSource.class.getClassLoader());
+			source.setBasename(SMASunnyNetPowerDatumDataSource.class.getName());
+			source.setParentMessageSource(serialSource);
+			setMessageSource(source);
 		}
-		return MESSAGE_SOURCE;
+		return super.getMessageSource();
 	}
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
+		results.addAll(basicIdentifiableSettings());
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", DEFAULT_SOURCE_ID));
 		results.add(new BasicTitleSettingSpecifier("address",
 				(smaAddress < 0 ? "N/A" : String.valueOf(smaAddress)), true));
-
-		results.add(new BasicTextFieldSettingSpecifier("dataCollectorFactory.propertyFilters['UID']",
+		results.add(new BasicTextFieldSettingSpecifier("dataCollectorFactory.propertyFilters['uid']",
 				DEFAULT_SERIAL_PORT));
-
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", DEFAULT_SOURCE_ID));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
-
 		results.add(new BasicTextFieldSettingSpecifier("pvVoltsChannelName", CHANNEL_NAME_PV_VOLTS));
 		results.add(new BasicTextFieldSettingSpecifier("pvAmpsChannelName", CHANNEL_NAME_PV_AMPS));
 		results.add(new BasicTextFieldSettingSpecifier("kWhChannelName", CHANNEL_NAME_KWH));
@@ -667,38 +653,13 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 		this.serialParams = serialParams;
 	}
 
-	public DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> getDataCollectorFactory() {
+	public OptionalFilterableService<DataCollectorFactory<SerialPortBeanParameters>> getDataCollectorFactory() {
 		return dataCollectorFactory;
 	}
 
 	public void setDataCollectorFactory(
-			DynamicServiceTracker<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory) {
+			OptionalFilterableService<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory) {
 		this.dataCollectorFactory = dataCollectorFactory;
-	}
-
-	@Override
-	public String getUID() {
-		return getSourceId();
-	}
-
-	@Override
-	public String getSourceId() {
-		return sourceId;
-	}
-
-	@Override
-	public void setSourceId(String sourceId) {
-		this.sourceId = sourceId;
-	}
-
-	@Override
-	public String getGroupUID() {
-		return groupUID;
-	}
-
-	@Override
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
 	}
 
 }

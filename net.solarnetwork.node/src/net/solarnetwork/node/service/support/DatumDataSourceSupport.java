@@ -1,21 +1,21 @@
 /* ==================================================================
  * DatumDataSourceSupport.java - 26/09/2017 9:38:58 AM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -53,7 +53,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Helper class for {@link net.solarnetwork.node.service.DatumDataSource} and
  * {@link net.solarnetwork.node.service.MultiDatumDataSource} implementations to
  * extend.
- * 
+ *
  * @author matt
  * @version 1.0
  * @since 2.0
@@ -63,7 +63,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	/**
 	 * A transform properties instance that can be used to signal "sub-sampling"
 	 * mode to the transform service.2
-	 * 
+	 *
 	 * @since 1.1
 	 */
 	public static final Map<String, Object> SUB_SAMPLE_PROPS = Collections.singletonMap("subsample",
@@ -93,7 +93,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	/**
 	 * Offer a non-persisted datum event to the configured {@link DatumQueue},
 	 * if available.
-	 * 
+	 *
 	 * @param datum
 	 *        the datum that was captured
 	 * @since 1.8
@@ -113,7 +113,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * available). The metadata will be cached so that subsequent calls to this
 	 * method with the same metadata value will not try to re-save the unchanged
 	 * value. This method will catch all exceptions and silently discard them.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to add metadata to; place holders will be resolved
 	 *        via {@link #resolvePlaceholders(String)}
@@ -151,9 +151,9 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	}
 
 	/**
-	 * Get setting specifiers for the {@code uid} and {@code groupUID}
+	 * Get setting specifiers for the {@code uid} and {@code groupUid}
 	 * properties.
-	 * 
+	 *
 	 * @return list of setting specifiers
 	 */
 	protected List<SettingSpecifier> getIdentifiableSettingSpecifiers() {
@@ -162,14 +162,14 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get setting specifiers for the sub-sample supporting properties.
-	 * 
+	 *
 	 * @return list of setting specifiers
 	 * @since 1.1
 	 */
 	protected List<SettingSpecifier> getSubSampleSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
 		results.add(
-				new BasicTextFieldSettingSpecifier("datumFilterService.propertyFilters['UID']", null));
+				new BasicTextFieldSettingSpecifier("datumFilterService.propertyFilters['uid']", null));
 		results.add(new BasicTextFieldSettingSpecifier("subSampleFrequency", null));
 		results.add(new BasicTextFieldSettingSpecifier("subSampleStartDelay",
 				String.valueOf(DEFAULT_SUBSAMPLE_START_DELAY)));
@@ -178,7 +178,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get setting specifiers for device info metadata publishing support.
-	 * 
+	 *
 	 * @return list of settings
 	 * @since 1.7
 	 */
@@ -189,7 +189,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Schedule sub-sampling with the given data source.
-	 * 
+	 *
 	 * @param dataSource
 	 *        the data source
 	 * @return the scheduled future or {@literal null} if sub-sampling support
@@ -222,14 +222,14 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Read a sub-sample datum value.
-	 * 
+	 *
 	 * <p>
 	 * This method is invoked by a task scheduled after calling
 	 * {@link #startSubSampling(DatumDataSource)}. It simply calls
 	 * {@link DatumDataSource#readCurrentDatum()}. Extending classes may want to
 	 * override this behavior.
 	 * </p>
-	 * 
+	 *
 	 * @param dataSource
 	 *        the data source previously passed to
 	 *        {@link #startSubSampling(DatumDataSource)}
@@ -242,7 +242,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Stop any running sub-sampling task.
-	 * 
+	 *
 	 * @see DatumDataSourceSupport#startSubSampling(DatumDataSource)
 	 * @since 1.1
 	 */
@@ -256,7 +256,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Test if sub-sampling is currently active.
-	 * 
+	 *
 	 * @return {@literal true} if sub-sampling is active
 	 * @since 1.1
 	 */
@@ -267,7 +267,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Apply the configured datum filter service to a given datum.
-	 * 
+	 *
 	 * @param <T>
 	 *        the type of datum
 	 * @param datum
@@ -295,13 +295,13 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	/**
 	 * Evaluate a set of expression configurations and store the results as
 	 * properties on a datum.
-	 * 
+	 *
 	 * <p>
 	 * This method will create a new {@link ExpressionRoot} instance for the
 	 * expression root object and pass that to
 	 * {@link #populateExpressionDatumProperties(GeneralNodeDatum, ExpressionConfig[], Object)}.
 	 * </p>
-	 * 
+	 *
 	 * @param d
 	 *        the datum to store the results of expression evaluations on
 	 * @param expressionConfs
@@ -318,7 +318,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	/**
 	 * Evaluate a set of expression configurations and store the results as
 	 * properties on a datum.
-	 * 
+	 *
 	 * @param d
 	 *        the datum to store the results of expression evaluations on
 	 * @param expressionConfs
@@ -334,7 +334,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get the configured {@link DatumMetadataService}.
-	 * 
+	 *
 	 * @return the service to use
 	 */
 	public OptionalService<DatumMetadataService> getDatumMetadataService() {
@@ -343,7 +343,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Set a {@link DatumMetadataService} to use for managing datum metadata.
-	 * 
+	 *
 	 * @param datumMetadataService
 	 *        the service to use
 	 */
@@ -353,7 +353,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get the task scheduler.
-	 * 
+	 *
 	 * @return the task scheduler
 	 * @since 1.1
 	 */
@@ -363,7 +363,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Set the task scheduler.
-	 * 
+	 *
 	 * @param taskScheduler
 	 *        the task scheduler to set
 	 * @since 1.1
@@ -374,7 +374,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get a sub-sample frequency at which to request datum.
-	 * 
+	 *
 	 * @return the sub-sample frequency, in milliseconds, or {@literal null} or
 	 *         anything less than {@literal 1} to disable sub-sampling
 	 * @since 1.1
@@ -385,12 +385,12 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Set a sub-sample frequency at which to request datum.
-	 * 
+	 *
 	 * <p>
 	 * This is designed to work with a
 	 * {@link #setDatumFilterService(OptionalService)} transformer that performs
 	 * down-sampling of higher frequency data.
-	 * 
+	 *
 	 * @param subSampleFrequency
 	 *        the frequency, to set, in milliseconds
 	 * @since 1.1
@@ -401,7 +401,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get the sub-sample start delay.
-	 * 
+	 *
 	 * @return the delay, in milliseconds
 	 */
 	public long getSubSampleStartDelay() {
@@ -410,7 +410,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Set the sub-sample start delay.
-	 * 
+	 *
 	 * @param subSampleStartDelay
 	 *        the sub-sample start delay to set, in milliseconds
 	 * @since 1.1
@@ -421,7 +421,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get a datum filter service to use.
-	 * 
+	 *
 	 * @return the service
 	 * @since 2.0
 	 */
@@ -431,7 +431,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Set a datum filter service to use.
-	 * 
+	 *
 	 * @param datumFilterService
 	 *        the service to set
 	 * @since 2.0
@@ -442,7 +442,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get the expression configurations.
-	 * 
+	 *
 	 * @return the expression configurations
 	 * @since 1.3
 	 */
@@ -452,7 +452,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Set the expression configurations to use.
-	 * 
+	 *
 	 * @param expressionConfigs
 	 *        the configs to use
 	 * @since 1.3
@@ -463,7 +463,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get the number of configured {@code expressionConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code expressionConfigs} elements
 	 * @since 1.3
 	 */
@@ -474,12 +474,12 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Adjust the number of configured {@code ExpressionConfig} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link ExpressionConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code expressionConfigs} elements.
 	 * @since 1.5
@@ -491,7 +491,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get the desired device info metadata publish mode.
-	 * 
+	 *
 	 * @return {@literal true} to publish device metadata
 	 * @since 1.7
 	 */
@@ -501,7 +501,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get the desired device info metadata publish mode.
-	 * 
+	 *
 	 * @param publishDeviceInfoMetadata
 	 *        {@literal true} to publish device metadata once, after the first
 	 *        datum has been captured
@@ -513,7 +513,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get the datum queue.
-	 * 
+	 *
 	 * @return the queue
 	 * @since 1.8
 	 */
@@ -523,7 +523,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * Set the datum queue.
-	 * 
+	 *
 	 * @param datumQueue
 	 *        the queue to set
 	 * @since 1.8

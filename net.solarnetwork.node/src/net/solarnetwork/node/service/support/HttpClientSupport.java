@@ -452,29 +452,4 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 		this.sslService = sslService;
 	}
 
-	@Override
-	public String getUID() {
-		return getUid();
-	}
-
-	@Override
-	public String getUid() {
-		return super.getUid();
-	}
-
-	@Override
-	public void setUid(String uid) {
-		super.setUid(uid);
-	}
-
-	@Override
-	public String getGroupUID() {
-		return super.getGroupUID();
-	}
-
-	@Override
-	public void setGroupUID(String groupUID) {
-		super.setGroupUID(groupUID);
-	}
-
 }

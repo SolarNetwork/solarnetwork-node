@@ -144,7 +144,7 @@ public class DefaultBackupManager implements BackupManager {
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return getClass().getName();
 	}
 

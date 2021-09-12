@@ -526,7 +526,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.runtime.dq";
 	}
 

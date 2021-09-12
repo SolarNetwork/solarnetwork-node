@@ -77,7 +77,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	 * </p>
 	 * 
 	 * @param settingUid
-	 *        the {@link SettingSpecifierProvider#getSettingUID()} value to use
+	 *        the {@link SettingSpecifierProvider#getSettingUid()} value to use
 	 * @param transformServices
 	 *        the list of available services
 	 * @throws IllegalArgumentException
@@ -92,11 +92,11 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	 * Constructor.
 	 * 
 	 * @param settingUid
-	 *        the {@link SettingSpecifierProvider#getSettingUID()} value to use
+	 *        the {@link SettingSpecifierProvider#getSettingUid()} value to use
 	 * @param transformServices
 	 *        the list of available services
 	 * @param configurableUid
-	 *        {@literal true} to support the UID and groupUID values as setting
+	 *        {@literal true} to support the UID and groupUid values as setting
 	 *        specifiers
 	 * @throws IllegalArgumentException
 	 *         if {@code settingUid} or {@code transformServices} are
@@ -111,11 +111,11 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	 * Constructor.
 	 * 
 	 * @param settingUid
-	 *        the {@link SettingSpecifierProvider#getSettingUID()} value to use
+	 *        the {@link SettingSpecifierProvider#getSettingUid()} value to use
 	 * @param transformServices
 	 *        the list of available services
 	 * @param configurableUid
-	 *        {@literal true} to support the UID and groupUID values as setting
+	 *        {@literal true} to support the UID and groupUid values as setting
 	 *        specifiers
 	 * @param staticService
 	 *        an optional static service
@@ -139,7 +139,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return settingUid;
 	}
 

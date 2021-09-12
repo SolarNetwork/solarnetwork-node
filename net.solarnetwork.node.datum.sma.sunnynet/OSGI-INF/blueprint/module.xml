@@ -17,62 +17,119 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
-	<bean id="placeholderService" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
 		<property name="sticky" value="true"/>
 	</bean>
 	
-	<reference id="locationServiceRef" availability="optional" interface="net.solarnetwork.node.LocationService">
-		<reference-listener ref="locationService" bind-method="onBind" unbind-method="onUnbind"/>
-	</reference>
-
-	<bean id="locationService" class="net.solarnetwork.util.OptionalServiceTracker">
-		<property name="service" ref="locationServiceRef"/>
+	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
+		<property name="sticky" value="true"/>
 	</bean>
-	
-	<bean id="settingsFactory" 
-		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-		<property name="displayName" value="SMA SunnyNet inverter"/>
-		<property name="factoryUID" value="net.solarnetwork.node.power.sma.sunnynet"/>
-		<property name="messageSource">
-			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basenames" value="net.solarnetwork.node.power.impl.sma.sunnynet.SMASunnyNetPowerDatumDataSource"/>
+
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.power.impl.sma.sunnynet.SMASunnyNetPowerDatumDataSource</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</list>
+		</property>
+		<property name="parentMessageSource">
+			<bean class="net.solarnetwork.support.PrefixedMessageSource">
+				<property name="prefix" value="serialParams."/>
+				<property name="delegate">
+					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+						<property name="basenames">
+							<list>
+								<value>net.solarnetwork.node.service.support.SerialPortBeanParameters</value>
+							</list>
+						</property>
+					</bean>
+				</property>
 			</bean>
 		</property>
 	</bean>
 	
+	<bean id="jobMessageSource" class="net.solarnetwork.support.PrefixedMessageSource">
+		<property name="prefix" value="datumDataSource."/>
+		<property name="delegate" ref="messageSource"/>
+	</bean>	
 	<!-- Published services -->
 	
-	<service ref="settingsFactory" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
-	
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="SMA SunnyNet inverter"/>
+			<property name="factoryUid" value="net.solarnetwork.node.power.sma.sunnynet"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
+
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.power.sma.sunnynet" autowire-on-update="true">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.DatumDataSource</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
+			<beans:value>net.solarnetwork.node.job.ServiceProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
-			<beans:entry key="datumClassName" value="net.solarnetwork.node.power.PowerDatum"/>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.power.sma.sunnynet"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.support.LocationDatumDataSource">
-			<property name="delegate">
-				<bean class="net.solarnetwork.node.power.impl.sma.sunnynet.SMASunnyNetPowerDatumDataSource">
-					<property name="placeholderService" ref="placeholderService"/>
-					<property name="dataCollectorFactory">
-						<bean class="net.solarnetwork.util.DynamicServiceTracker">
-							<property name="bundleContext" ref="bundleContext"/>
-							<property name="serviceClassName" value="net.solarnetwork.node.DataCollectorFactory"/>
-							<property name="propertyFilters">
+		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
+			<property name="trigger">
+				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
+					<property name="name" value="smaSunnynetDatumPollTrigger"/>
+					<property name="cronExpression" value="5 * * * * ?"/>
+					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
+					<property name="randomSecond" value="true"/>
+				</bean>
+			</property>
+			<property name="serviceProviderConfigurations">
+				<map>
+					<entry key="datumDataSource">
+						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
+							<property name="interfaces">
+								<list>
+									<value>net.solarnetwork.node.service.DatumDataSource</value>
+								</list>
+							</property>
+							<property name="properties">
 								<map>
-									<entry key="UID" value="/dev/ttyS0"/>
+									<entry key="datumClassName" value="net.solarnetwork.node.domain.datum.AcDcEnergyDatum"/>
 								</map>
 							</property>
-						</bean>	
+						</bean>
+					</entry>
+				</map>
+			</property>
+			<property name="jobDetail">
+				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
+					<property name="name" value="smaSunnynetDatumPollJob"/>
+					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourcePollJob"/>
+					<property name="jobDataAsMap">
+						<map>
+							<entry key="datumQueue" value-ref="datumQueue"/>
+							<entry key="datumDataSource">
+								<bean class="net.solarnetwork.node.power.impl.sma.sunnynet.SMASunnyNetPowerDatumDataSource">
+									<property name="messageSource" ref="jobMessageSource"/>
+									<property name="placeholderService" ref="placeholderService"/>
+									<property name="dataCollectorFactory">
+										<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+											<argument ref="bundleContext"/>
+											<property name="serviceClassName" value="net.solarnetwork.node.DataCollectorFactory"/>
+											<property name="propertyFilters">
+												<map>
+													<entry key="uid" value="/dev/ttyS0"/>
+												</map>
+											</property>
+										</bean>	
+									</property>
+								</bean>
+							</entry>
+						</map>
 					</property>
 				</bean>
 			</property>
-			<property name="locationService" ref="locationService"/>
 		</bean>
 	</osgix:managed-service-factory>
 	

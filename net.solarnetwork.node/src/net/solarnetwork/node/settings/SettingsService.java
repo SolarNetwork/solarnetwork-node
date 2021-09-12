@@ -162,53 +162,53 @@ public interface SettingsService {
 	/**
 	 * Get a specific factory for a given UID.
 	 * 
-	 * @param factoryUID
+	 * @param factoryUid
 	 *        the factory UID to get the providers for
 	 * 
 	 * @return the factory, or {@literal null} if not available
 	 */
-	SettingSpecifierProviderFactory getProviderFactory(String factoryUID);
+	SettingSpecifierProviderFactory getProviderFactory(String factoryUid);
 
 	/**
 	 * Add a new factory instance, and return the new instance ID.
 	 * 
-	 * @param factoryUID
+	 * @param factoryUid
 	 *        the factory UID to create the new instance for
 	 * @return the new instance ID
 	 */
-	String addProviderFactoryInstance(String factoryUID);
+	String addProviderFactoryInstance(String factoryUid);
 
 	/**
 	 * Delete an existing factory instance.
 	 * 
-	 * @param factoryUID
+	 * @param factoryUid
 	 *        the factory UID to create the new instance for
-	 * @param instanceUID
+	 * @param instanceUid
 	 *        the instance UID to create the new instance for
 	 */
-	void deleteProviderFactoryInstance(String factoryUID, String instanceUID);
+	void deleteProviderFactoryInstance(String factoryUid, String instanceUid);
 
 	/**
 	 * Reset an existing factory instance to its default values.
 	 * 
-	 * @param factoryUID
+	 * @param factoryUid
 	 *        the factory UID to reset
-	 * @param instanceUID
+	 * @param instanceUid
 	 *        the instance UID to reset
 	 */
-	void resetProviderFactoryInstance(String factoryUID, String instanceUID);
+	void resetProviderFactoryInstance(String factoryUid, String instanceUid);
 
 	/**
 	 * Get all possible setting providers for a specific factory UID, grouped by
 	 * instance ID.
 	 * 
-	 * @param factoryUID
+	 * @param factoryUid
 	 *        the factory UID to get the providers for
 	 * 
 	 * @return mapping of instance IDs to associated setting providers (never
 	 *         {@literal null})
 	 */
-	Map<String, FactorySettingSpecifierProvider> getProvidersForFactory(String factoryUID);
+	Map<String, FactorySettingSpecifierProvider> getProvidersForFactory(String factoryUid);
 
 	/**
 	 * Get the current value of a setting.

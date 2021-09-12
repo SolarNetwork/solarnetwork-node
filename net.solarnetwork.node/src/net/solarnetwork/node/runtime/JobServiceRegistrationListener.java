@@ -220,7 +220,7 @@ public class JobServiceRegistrationListener
 					RegisteredService<TriggerAndJobDetail> rs = new RegisteredService<TriggerAndJobDetail>(
 							trigJob, properties);
 					Hashtable<String, Object> serviceProps = new Hashtable<String, Object>();
-					serviceProps.put("settingPid", provider.getSettingUID());
+					serviceProps.put("settingPid", provider.getSettingUid());
 					addRegisteredService(rs, provider,
 							new String[] { SettingSpecifierProvider.class.getName() }, serviceProps);
 				}

@@ -186,8 +186,8 @@ public class SimpleManagedTriggerAndJobDetail implements ManagedTriggerAndJobDet
 	}
 
 	@Override
-	public String getSettingUID() {
-		return getSettingSpecifierProvider().getSettingUID();
+	public String getSettingUid() {
+		return getSettingSpecifierProvider().getSettingUid();
 	}
 
 	@Override

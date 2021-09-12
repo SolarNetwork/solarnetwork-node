@@ -22,24 +22,37 @@
 
 package net.solarnetwork.node.power.sma.yasdi4j;
 
+import java.time.Instant;
 import java.util.Map;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
 
 /**
  * Extension of {@link GeneralNodeACEnergyDatum} with SMA-specific details.
  * 
  * @author matt
- * @version 2.0
+ * @version 3.0
  */
-public class SMAPowerDatum extends GeneralNodeACEnergyDatum {
+public class SMAPowerDatum extends SimpleAcDcEnergyDatum {
+
+	private static final long serialVersionUID = 7538663242395333405L;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param sourceId
+	 *        the source ID
+	 */
+	public SMAPowerDatum(String sourceId) {
+		super(sourceId, Instant.now(), new DatumSamples());
+	}
 
 	private String getStringChannelData(String key) {
-		return getStatusSampleString(key);
+		return getSamples().getStatusSampleString(key);
 	}
 
 	private void setChannelDataValue(String key, Object value) {
-		putStatusSampleValue(key, value);
+		getSamples().putStatusSampleValue(key, value);
 	}
 
 	public String getStatusMessage() {
@@ -63,11 +76,7 @@ public class SMAPowerDatum extends GeneralNodeACEnergyDatum {
 	}
 
 	public void setChannelData(Map<String, Object> channelData) {
-		if ( getSamples() == null ) {
-			setSamples(new GeneralDatumSamples(null, null, channelData));
-		} else {
-			getSamples().setStatus(channelData);
-		}
+		getSamples().setStatus(channelData);
 	}
 
 }

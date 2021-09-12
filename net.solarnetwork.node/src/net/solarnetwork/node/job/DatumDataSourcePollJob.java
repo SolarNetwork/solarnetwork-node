@@ -191,10 +191,10 @@ public class DatumDataSourcePollJob extends AbstractJob implements SettingSpecif
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		SettingSpecifierProvider delegate = getSettingSpecifierProvider();
 		if ( delegate != null ) {
-			return delegate.getSettingUID();
+			return delegate.getSettingUid();
 		}
 		return getDatumDataSource().getClass().getName();
 	}

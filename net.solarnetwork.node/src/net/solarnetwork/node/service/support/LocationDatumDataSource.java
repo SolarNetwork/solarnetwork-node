@@ -178,28 +178,10 @@ public class LocationDatumDataSource
 		return delegate.getGroupUid();
 	}
 
-	/**
-	 * Alias for {@link #getUid()} for backwards compatibility.
-	 * 
-	 * @return the UID
-	 */
-	public String getUID() {
-		return delegate.getUid();
-	}
-
-	/**
-	 * Alias for {@link #getGroupUid()} for backwards compatibility.
-	 * 
-	 * @return the group UID
-	 */
-	public String getGroupUID() {
-		return delegate.getGroupUid();
-	}
-
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		if ( delegate instanceof SettingSpecifierProvider ) {
-			return ((SettingSpecifierProvider) delegate).getSettingUID();
+			return ((SettingSpecifierProvider) delegate).getSettingUid();
 		}
 		return getClass().getName();
 	}

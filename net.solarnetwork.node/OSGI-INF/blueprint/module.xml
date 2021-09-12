@@ -230,7 +230,7 @@
 		</service-properties>
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Datum Filter Chain"/>
-			<property name="factoryUID" value="net.solarnetwork.node.datum.xform.user"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.xform.user"/>
 			<property name="messageSource" ref="userDatumFilterChainMessageSource"/>
 		</bean>
 	</service>
@@ -441,7 +441,7 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="User Metadata Service"/>
-			<property name="factoryUID" value="net.solarnetwork.node.metadata.user"/>
+			<property name="factoryUid" value="net.solarnetwork.node.metadata.user"/>
 			<property name="messageSource" ref="userMetadataMessageSource"/>
 		</bean>
 	</service>

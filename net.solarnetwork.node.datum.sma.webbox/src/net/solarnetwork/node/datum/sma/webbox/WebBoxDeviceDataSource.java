@@ -22,32 +22,34 @@
 
 package net.solarnetwork.node.datum.sma.webbox;
 
-import static net.solarnetwork.util.OptionalService.service;
+import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceDataAccessor;
 import net.solarnetwork.node.hw.sma.modbus.webbox.WebBoxDevice;
 import net.solarnetwork.node.hw.sma.modbus.webbox.WebBoxOperations;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.support.DatumDataSourceSupport;
-import net.solarnetwork.util.FilterableService;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.service.FilterableService;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * {@link DatumDataSource} for a {@link WebBoxDevice}.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class WebBoxDeviceDataSource extends DatumDataSourceSupport
-		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, SettingSpecifierProvider {
 
 	/** The {@code sourceId} property default value. */
 	public static final String DEFAULT_SOURCE_ID = "WebBox Device";
@@ -58,7 +60,7 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 	/** The {@code sampleCacheMs} property default value. */
 	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000L;
 
-	private final OptionalService<WebBoxOperations> webBox; // also FilterableService
+	private final OptionalFilterableService<WebBoxOperations> webBox;
 
 	private String sourceId = DEFAULT_SOURCE_ID;
 	private long sampleCacheMs = 5000;
@@ -73,12 +75,8 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 	 *        the {@link WebBoxOperations} to use; must also implement
 	 *        {@link FilterableService}
 	 */
-	public WebBoxDeviceDataSource(OptionalService<WebBoxOperations> webBox) {
+	public WebBoxDeviceDataSource(OptionalFilterableService<WebBoxOperations> webBox) {
 		super();
-		if ( !(webBox instanceof FilterableService) ) {
-			throw new IllegalArgumentException(
-					"The provided OptionalService must also implement FilterableService.");
-		}
 		this.webBox = webBox;
 	}
 
@@ -96,7 +94,7 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.sma.webbox.ds";
 	}
 
@@ -109,10 +107,10 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 
 		results.addAll(getIdentifiableSettingSpecifiers());
 		results.add(
-				new BasicTextFieldSettingSpecifier("webBox.propertyFilters['UID']", DEFAULT_WEBBOX_UID));
+				new BasicTextFieldSettingSpecifier("webBox.propertyFilters['uid']", DEFAULT_WEBBOX_UID));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", null));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", DEFAULT_SOURCE_ID));
-		results.add(new BasicTextFieldSettingSpecifier("samplesTransformService.propertyFilters['UID']",
+		results.add(new BasicTextFieldSettingSpecifier("samplesTransformService.propertyFilters['uid']",
 				null));
 
 		return results;
@@ -134,8 +132,8 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 	}
 
 	@Override
-	public Class<? extends GeneralNodeDatum> getDatumType() {
-		return GeneralNodeDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return NodeDatum.class;
 	}
 
 	private WebBoxDevice webBoxDevice() {
@@ -156,7 +154,7 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 	}
 
 	@Override
-	public GeneralNodeDatum readCurrentDatum() {
+	public NodeDatum readCurrentDatum() {
 		WebBoxDevice device = webBoxDevice();
 		if ( device == null ) {
 			return null;
@@ -166,12 +164,10 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 			SmaDeviceDataAccessor sample = device.refreshData(getSampleCacheMs());
 			if ( sample != null && sample.getDataTimestamp() >= now ) {
 				lastSample = sample;
-				GeneralNodeDatum d = new GeneralNodeDatum();
-				d.setCreated(new Date(sample.getDataTimestamp()));
-				d.setSourceId(resolvePlaceholders(getSourceId()));
+				SimpleDatum d = SimpleDatum.nodeDatum(resolvePlaceholders(getSourceId()),
+						Instant.ofEpochMilli(sample.getDataTimestamp()), new DatumSamples());
 				if ( d.getSourceId() != null ) {
 					sample.populateDatumSamples(d.asMutableSampleOperations(), null);
-					d = applySamplesTransformer(d, null);
 					return d;
 				}
 			}
@@ -186,7 +182,7 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 	 * 
 	 * @return the optional service, never {@literal null}
 	 */
-	public OptionalService<WebBoxOperations> getWebBox() {
+	public OptionalFilterableService<WebBoxOperations> getWebBox() {
 		return webBox;
 	}
 

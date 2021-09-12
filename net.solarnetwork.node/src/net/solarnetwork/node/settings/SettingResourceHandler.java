@@ -52,7 +52,7 @@ public interface SettingResourceHandler {
 	 * 
 	 * @return unique ID
 	 */
-	String getSettingUID();
+	String getSettingUid();
 
 	/**
 	 * Get the current setting resources for a specific key.

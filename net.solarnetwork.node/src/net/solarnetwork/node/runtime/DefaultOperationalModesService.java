@@ -297,7 +297,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return DefaultOperationalModesService.class.getName();
 	}
 

@@ -104,7 +104,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	private BackupStatus status = Configured;
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return getClass().getName();
 	}
 
@@ -412,8 +412,8 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 		return new SettingSpecifierProvider() {
 
 			@Override
-			public String getSettingUID() {
-				return FileSystemBackupService.this.getSettingUID();
+			public String getSettingUid() {
+				return FileSystemBackupService.this.getSettingUid();
 			}
 
 			@Override
