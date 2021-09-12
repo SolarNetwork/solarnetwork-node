@@ -23,12 +23,20 @@
 package net.solarnetwork.node.datum.os.stat;
 
 import static java.util.stream.Collectors.toCollection;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -36,25 +44,24 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import org.joda.time.Duration;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.springframework.context.MessageSource;
-import net.solarnetwork.domain.GeneralDatumMetadata;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.NodeMetadataService;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
-import net.solarnetwork.node.settings.MappableSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.support.DatumDataSourceSupport;
-import net.solarnetwork.node.util.PrefixedMessageSource;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
+import net.solarnetwork.node.domain.datum.MutableNodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.NodeMetadataService;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.MappableSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.support.PrefixedMessageSource;
 import net.solarnetwork.util.CachedResult;
-import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -125,9 +132,9 @@ import net.solarnetwork.util.StringUtils;
  * @version 1.3
  */
 public class OsStatDatumDataSource extends DatumDataSourceSupport
-		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, SettingSpecifierProvider {
 
-	private final AtomicReference<CachedResult<GeneralNodeDatum>> sampleCache = new AtomicReference<>();
+	private final AtomicReference<CachedResult<NodeDatum>> sampleCache = new AtomicReference<>();
 
 	private Set<String> actions = StatAction.ALL_ACTIONS;
 	private ActionCommandRunner commandRunner = new ProcessActionCommandRunner();
@@ -138,30 +145,29 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	private OptionalService<NodeMetadataService> nodeMetadataService;
 
 	@Override
-	public Class<? extends GeneralNodeDatum> getDatumType() {
-		return GeneralNodeDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return NodeDatum.class;
 	}
 
 	@Override
-	public GeneralNodeDatum readCurrentDatum() {
-		GeneralNodeDatum d = getCurrentSample();
+	public NodeDatum readCurrentDatum() {
+		NodeDatum d = getCurrentSample();
 		if ( d != null ) {
 			updateNodeMetadata();
 		}
 		return d;
 	}
 
-	private GeneralNodeDatum getCurrentSample() {
+	private NodeDatum getCurrentSample() {
 		// First check for a cached sample
-		CachedResult<GeneralNodeDatum> cache = sampleCache.get();
+		CachedResult<NodeDatum> cache = sampleCache.get();
 		if ( cache != null && cache.isValid() ) {
 			return cache.getResult();
 		}
 
 		// Cache has expired so initiate new instance and cache
-		GeneralNodeDatum result = new GeneralNodeDatum();
-		result.setCreated(new Date());
-		result.setSourceId(resolvePlaceholders(sourceId));
+		SimpleDatum result = SimpleDatum.nodeDatum(resolvePlaceholders(sourceId), Instant.now(),
+				new DatumSamples());
 
 		for ( String action : actions ) {
 			List<Map<String, String>> data = commandRunner.executeAction(action);
@@ -176,7 +182,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	}
 
 	private void populateActionData(String action, List<Map<String, String>> data,
-			GeneralNodeDatum result) {
+			MutableNodeDatum result) {
 		if ( data == null || data.isEmpty() ) {
 			return;
 		}
@@ -219,19 +225,19 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	}
 
 	private void populateInstantaneousValue(StatAction action, Map<String, String> row, String key,
-			String propName, GeneralNodeDatum result, BigDecimal scaleFactor) {
+			String propName, MutableNodeDatum result, BigDecimal scaleFactor) {
 		populateInstantaneousValue(action.getAction(), row, key, propName, result, scaleFactor);
 	}
 
 	private void populateInstantaneousValue(String action, Map<String, String> row, String key,
-			String propName, GeneralNodeDatum result, BigDecimal scaleFactor) {
+			String propName, MutableNodeDatum result, BigDecimal scaleFactor) {
 		BigDecimal d = null;
 		try {
 			d = new BigDecimal(row.get(key));
 			if ( scaleFactor != null ) {
 				d = d.multiply(scaleFactor);
 			}
-			result.putInstantaneousSampleValue(propName, d);
+			result.asMutableSampleOperations().putSampleValue(Instantaneous, propName, d);
 		} catch ( NullPointerException e ) {
 			// ignore, property not available
 		} catch ( NumberFormatException e ) {
@@ -241,19 +247,19 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	}
 
 	private void populateAccumulatingValue(StatAction action, Map<String, String> row, String key,
-			String propName, GeneralNodeDatum result, BigDecimal scaleFactor) {
+			String propName, MutableNodeDatum result, BigDecimal scaleFactor) {
 		populateAccumulatingValue(action.getAction(), row, key, propName, result, scaleFactor);
 	}
 
 	private void populateAccumulatingValue(String action, Map<String, String> row, String key,
-			String propName, GeneralNodeDatum result, BigDecimal scaleFactor) {
+			String propName, MutableNodeDatum result, BigDecimal scaleFactor) {
 		BigDecimal d = null;
 		try {
 			d = new BigDecimal(row.get(key));
 			if ( scaleFactor != null ) {
 				d = d.multiply(scaleFactor);
 			}
-			result.putAccumulatingSampleValue(propName, d);
+			result.asMutableSampleOperations().putSampleValue(Accumulating, propName, d);
 		} catch ( NullPointerException e ) {
 			// ignore, property not available
 		} catch ( NumberFormatException e ) {
@@ -263,12 +269,12 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	}
 
 	private void populateStatusValue(Map<String, String> row, String key, String propName,
-			GeneralNodeDatum result) {
-		result.putStatusSampleValue(propName, row.get(key));
+			MutableNodeDatum result) {
+		result.asMutableSampleOperations().putSampleValue(Status, propName, row.get(key));
 	}
 
 	private void populateGeneralActionResults(String action, List<Map<String, String>> data,
-			GeneralNodeDatum result) {
+			MutableNodeDatum result) {
 		Map<String, String> row = data.get(0);
 		for ( Map.Entry<String, String> me : row.entrySet() ) {
 			final String key = me.getKey();
@@ -296,7 +302,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		}
 	}
 
-	private void populateCpuUse(List<Map<String, String>> data, GeneralNodeDatum result) {
+	private void populateCpuUse(List<Map<String, String>> data, MutableNodeDatum result) {
 		// use only last available row, ignore date,period-secs
 		Map<String, String> row = data.get(data.size() - 1);
 		populateInstantaneousValue(StatAction.CpuUse, row, "user", "cpu_user", result, null);
@@ -304,7 +310,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		populateInstantaneousValue(StatAction.CpuUse, row, "idle", "cpu_idle", result, null);
 	}
 
-	private void populateFilesystemUse(List<Map<String, String>> data, GeneralNodeDatum result) {
+	private void populateFilesystemUse(List<Map<String, String>> data, MutableNodeDatum result) {
 		final BigDecimal kb = new BigDecimal("1024");
 		for ( Map<String, String> row : data ) {
 			String mount = row.get("mount");
@@ -320,33 +326,33 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		}
 	}
 
-	private void populateMemoryUse(List<Map<String, String>> data, GeneralNodeDatum result) {
+	private void populateMemoryUse(List<Map<String, String>> data, MutableNodeDatum result) {
 		final BigDecimal kb = new BigDecimal("1024");
 		Map<String, String> row = data.get(0);
 		populateInstantaneousValue(StatAction.MemoryUse, row, "total-kb", "ram_total", result, kb);
 		populateInstantaneousValue(StatAction.MemoryUse, row, "avail-kb", "ram_avail", result, kb);
-		BigDecimal total = result.getInstantaneousSampleBigDecimal("ram_total");
-		BigDecimal avail = result.getInstantaneousSampleBigDecimal("ram_avail");
+		BigDecimal total = result.asSampleOperations().getSampleBigDecimal(Instantaneous, "ram_total");
+		BigDecimal avail = result.asSampleOperations().getSampleBigDecimal(Instantaneous, "ram_avail");
 		if ( total != null && avail != null ) {
-			result.putInstantaneousSampleValue("ram_used_percent",
+			result.asMutableSampleOperations().putSampleValue(Instantaneous, "ram_used_percent",
 					total.subtract(avail).divide(total, 3, RoundingMode.HALF_UP)
 							.multiply(new BigDecimal("100"), new MathContext(3)));
 		}
 	}
 
-	private void populateSystemLoad(List<Map<String, String>> data, GeneralNodeDatum result) {
+	private void populateSystemLoad(List<Map<String, String>> data, MutableNodeDatum result) {
 		Map<String, String> row = data.get(0);
 		populateInstantaneousValue(StatAction.SystemLoad, row, "1min", "sys_load_1min", result, null);
 		populateInstantaneousValue(StatAction.SystemLoad, row, "5min", "sys_load_5min", result, null);
 		populateInstantaneousValue(StatAction.SystemLoad, row, "15min", "sys_load_15min", result, null);
 	}
 
-	private void populateSystemUptime(List<Map<String, String>> data, GeneralNodeDatum result) {
+	private void populateSystemUptime(List<Map<String, String>> data, MutableNodeDatum result) {
 		Map<String, String> row = data.get(0);
 		populateAccumulatingValue(StatAction.SystemUptime, row, "up-sec", "sys_up", result, null);
 	}
 
-	private void populateNetworkTraffic(List<Map<String, String>> data, GeneralNodeDatum result) {
+	private void populateNetworkTraffic(List<Map<String, String>> data, MutableNodeDatum result) {
 		for ( Map<String, String> row : data ) {
 			String dev = row.get("device");
 			if ( dev == null || !netDevices.contains(dev) ) {
@@ -389,7 +395,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.os.stat";
 	}
 
@@ -457,41 +463,42 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	}
 
 	private String getInfoMessage() {
-		GeneralNodeDatum d = getCurrentSample();
+		NodeDatum d = getCurrentSample();
 		if ( d == null ) {
 			return null;
 		}
-		GeneralDatumSamples s = d.getSamples();
+		DatumSamplesOperations s = d.asSampleOperations();
 		if ( s == null ) {
 			return null;
 		}
 		Map<String, Object> data = new LinkedHashMap<>(4);
-		if ( s.hasSampleValue(GeneralDatumSamplesType.Instantaneous, "cpu_user") ) {
-			data.put("CPU", String.format("%s%%", s.getInstantaneousSampleBigDecimal("cpu_user")));
+		if ( s.hasSampleValue(Instantaneous, "cpu_user") ) {
+			data.put("CPU", String.format("%s%%", s.getSampleBigDecimal(Instantaneous, "cpu_user")));
 		}
-		if ( s.hasSampleValue(GeneralDatumSamplesType.Instantaneous, "ram_used_percent") ) {
+		if ( s.hasSampleValue(Instantaneous, "ram_used_percent") ) {
 			data.put("RAM used",
-					String.format("%s%%", s.getInstantaneousSampleBigDecimal("ram_used_percent")));
+					String.format("%s%%", s.getSampleBigDecimal(Instantaneous, "ram_used_percent")));
 		}
-		if ( s.hasSampleValue(GeneralDatumSamplesType.Instantaneous, "sys_load_5min") ) {
+		if ( s.hasSampleValue(Instantaneous, "sys_load_5min") ) {
 			data.put("Load (5 min)",
-					String.format("%s", s.getInstantaneousSampleBigDecimal("sys_load_5min")));
+					String.format("%s", s.getSampleBigDecimal(Instantaneous, "sys_load_5min")));
 		}
-		if ( s.hasSampleValue(GeneralDatumSamplesType.Instantaneous, "fs_used_percent_/") ) {
+		if ( s.hasSampleValue(Instantaneous, "fs_used_percent_/") ) {
 			data.put("Root disk use",
-					String.format("%s%%", s.getInstantaneousSampleBigDecimal("fs_used_percent_/")));
+					String.format("%s%%", s.getSampleBigDecimal(Instantaneous, "fs_used_percent_/")));
 		}
-		if ( s.hasSampleValue(GeneralDatumSamplesType.Instantaneous, "fs_used_percent_/run") ) {
+		if ( s.hasSampleValue(Instantaneous, "fs_used_percent_/run") ) {
 			data.put("RAM disk use",
-					String.format("%s%%", s.getInstantaneousSampleBigDecimal("fs_used_percent_/run")));
+					String.format("%s%%", s.getSampleBigDecimal(Instantaneous, "fs_used_percent_/run")));
 		}
-		if ( s.hasSampleValue(GeneralDatumSamplesType.Accumulating, "sys_up") ) {
-			BigDecimal upSecs = s.getAccumulatingSampleBigDecimal("sys_up");
-			long now = System.currentTimeMillis();
-			long start = now - TimeUnit.SECONDS.toMillis(upSecs.longValue());
-			Duration dur = new Duration(now = start, now);
-			DateTimeFormatter fmt = DateTimeFormat.mediumDateTime();
-			data.put("Up since", String.format("%s (%d days)", fmt.print(start), dur.getStandardDays()));
+		if ( s.hasSampleValue(Accumulating, "sys_up") ) {
+			BigDecimal upSecs = s.getSampleBigDecimal(Accumulating, "sys_up");
+			Duration dur = Duration.ofSeconds(upSecs.longValue());
+			ZonedDateTime bootDate = Instant.now().minusSeconds(upSecs.longValue())
+					.atZone(ZoneId.systemDefault());
+			String bootDateStr = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+					.format(bootDate);
+			data.put("Up since", String.format("%s (%d days ago)", bootDateStr, dur.toDays()));
 		}
 		return StringUtils.delimitedStringFromMap(data, " = ", ", ");
 
