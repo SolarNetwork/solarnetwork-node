@@ -1,5 +1,5 @@
 /* ==================================================================
- * BasicDatumPropulatorAction.java - 18/05/2018 5:33:37 PM
+ * BasicDatumPopulatorAction.java - 18/05/2018 5:33:37 PM
  * 
  * Copyright 2018 SolarNetwork.net Dev Team
  * 
@@ -35,23 +35,25 @@ import net.solarnetwork.node.io.serial.SerialConnectionAction;
 
 /**
  * Serial port connection action to populate values onto a new
- * {@link GeneralNodePVEnergyDatum} object.
+ * {@link SimpleAcDcEnergyDatum} object.
  * 
  * @author matt
  * @version 2.0
  */
-public class BasicDatumPropulatorAction implements SerialConnectionAction<AcDcEnergyDatum> {
+public class BasicDatumPopulatorAction implements SerialConnectionAction<AcDcEnergyDatum> {
 
 	private final int unitId;
+	private final String sourceId;
 
-	public BasicDatumPropulatorAction(int unitId) {
+	public BasicDatumPopulatorAction(int unitId, String sourceId) {
 		super();
 		this.unitId = unitId;
+		this.sourceId = sourceId;
 	}
 
 	@Override
 	public AcDcEnergyDatum doWithConnection(SerialConnection conn) throws IOException {
-		SimpleAcDcEnergyDatum d = new SimpleAcDcEnergyDatum(null, Instant.now(), new DatumSamples());
+		SimpleAcDcEnergyDatum d = new SimpleAcDcEnergyDatum(sourceId, Instant.now(), new DatumSamples());
 
 		Packet power = PacketUtils.sendPacket(conn,
 				PVI3800Command.MeterReadAcCombinedActivePower.request(unitId));

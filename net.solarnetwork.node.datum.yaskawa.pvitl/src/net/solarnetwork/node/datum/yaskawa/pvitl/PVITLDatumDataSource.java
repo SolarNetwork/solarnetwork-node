@@ -23,34 +23,32 @@
 package net.solarnetwork.node.datum.yaskawa.pvitl;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.yaskawa.mb.inverter.PVITLData;
 import net.solarnetwork.node.hw.yaskawa.mb.inverter.PVITLDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * {@link DatumDataSource} implementation for {@link GeneralNodePVEnergyDatum}
  * with the PVI-XXTL series inverter.
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
 public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITLData>
-		implements DatumDataSource<GeneralNodePVEnergyDatum>,
-		MultiDatumDataSource<GeneralNodePVEnergyDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	private String sourceId = "PVI-XXTL";
 
@@ -82,20 +80,18 @@ public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITL
 	}
 
 	@Override
-	public Class<? extends GeneralNodePVEnergyDatum> getDatumType() {
+	public Class<? extends NodeDatum> getDatumType() {
 		return PVITLDatum.class;
 	}
 
 	@Override
-	public GeneralNodePVEnergyDatum readCurrentDatum() {
+	public PVITLDatum readCurrentDatum() {
 		try {
 			final PVITLData currSample = getCurrentSample();
 			if ( currSample == null ) {
 				return null;
 			}
-			PVITLDatum d = new PVITLDatum(currSample);
-			d.setSourceId(resolvePlaceholders(sourceId));
-			return d;
+			return new PVITLDatum(currSample, resolvePlaceholders(sourceId));
 		} catch ( IOException e ) {
 			log.error("Communication problem reading source {} from PVI-TL device {}: {}", this.sourceId,
 					modbusDeviceName(), e.getMessage());
@@ -104,13 +100,13 @@ public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITL
 	}
 
 	@Override
-	public Class<? extends GeneralNodePVEnergyDatum> getMultiDatumType() {
+	public Class<? extends NodeDatum> getMultiDatumType() {
 		return PVITLDatum.class;
 	}
 
 	@Override
-	public Collection<GeneralNodePVEnergyDatum> readMultipleDatum() {
-		GeneralNodePVEnergyDatum datum = readCurrentDatum();
+	public Collection<NodeDatum> readMultipleDatum() {
+		PVITLDatum datum = readCurrentDatum();
 		if ( datum != null ) {
 			return Collections.singletonList(datum);
 		}
@@ -168,8 +164,7 @@ public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITL
 		buf.append(", W = ").append(data.getActivePower());
 		buf.append(", Wh today = ").append(data.getActiveEnergyDeliveredToday());
 		buf.append(", Wh total = ").append(data.getActiveEnergyDelivered());
-		buf.append("; sampled at ")
-				.append(DateTimeFormat.forStyle("LS").print(new DateTime(data.getDataTimestamp())));
+		buf.append("; sampled at ").append(Instant.ofEpochMilli(data.getDataTimestamp()));
 		return buf.toString();
 	}
 

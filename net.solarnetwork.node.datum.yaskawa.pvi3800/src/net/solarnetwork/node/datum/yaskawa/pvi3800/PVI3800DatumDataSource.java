@@ -32,35 +32,33 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
-import net.solarnetwork.node.hw.yaskawa.ecb.BasicDatumPropulatorAction;
+import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.hw.yaskawa.ecb.BasicDatumPopulatorAction;
 import net.solarnetwork.node.hw.yaskawa.ecb.PVI3800Command;
 import net.solarnetwork.node.hw.yaskawa.ecb.PVI3800Identification;
 import net.solarnetwork.node.hw.yaskawa.ecb.Packet;
 import net.solarnetwork.node.hw.yaskawa.ecb.PacketUtils;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.support.SerialDeviceDatumDataSourceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.CachedResult;
 
 /**
  * {@link DatumDataSource} for the Solectria PVI-3800 series inverter.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport
-		implements DatumDataSource<GeneralNodePVEnergyDatum>,
-		MultiDatumDataSource<GeneralNodePVEnergyDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
-	private final AtomicReference<CachedResult<GeneralNodePVEnergyDatum>> sample;
+	private final AtomicReference<CachedResult<AcDcEnergyDatum>> sample;
 
 	private int unitId = 1;
 	private long sampleCacheMs = 5000;
@@ -79,21 +77,21 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport
 	 * @param sample
 	 *        the sample data to use
 	 */
-	public PVI3800DatumDataSource(AtomicReference<CachedResult<GeneralNodePVEnergyDatum>> sample) {
+	public PVI3800DatumDataSource(AtomicReference<CachedResult<AcDcEnergyDatum>> sample) {
 		super();
 		this.sample = sample;
 	}
 
-	private GeneralNodePVEnergyDatum getCurrentSample() {
-		CachedResult<GeneralNodePVEnergyDatum> cachedResult = sample.get();
-		GeneralNodePVEnergyDatum currSample = null;
+	private AcDcEnergyDatum getCurrentSample() {
+		CachedResult<AcDcEnergyDatum> cachedResult = sample.get();
+		AcDcEnergyDatum currSample = null;
 		if ( cachedResult == null || !cachedResult.isValid() ) {
 			try {
-				currSample = performAction(new BasicDatumPropulatorAction(unitId));
+				currSample = performAction(
+						new BasicDatumPopulatorAction(unitId, resolvePlaceholders(sourceId)));
 				if ( currSample != null ) {
-					currSample.setSourceId(resolvePlaceholders(sourceId));
-					sample.set(new CachedResult<GeneralNodePVEnergyDatum>(currSample,
-							currSample.getCreated().getTime(), sampleCacheMs, TimeUnit.MILLISECONDS));
+					sample.set(new CachedResult<>(currSample, currSample.getTimestamp().toEpochMilli(),
+							sampleCacheMs, TimeUnit.MILLISECONDS));
 				}
 				if ( log.isTraceEnabled() && currSample != null ) {
 					log.trace("Sample: {}", currSample.asSimpleMap());
@@ -110,13 +108,13 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport
 	}
 
 	@Override
-	public Class<? extends GeneralNodePVEnergyDatum> getDatumType() {
-		return GeneralNodePVEnergyDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AcDcEnergyDatum.class;
 	}
 
 	@Override
-	public GeneralNodePVEnergyDatum readCurrentDatum() {
-		final GeneralNodePVEnergyDatum currSample = getCurrentSample();
+	public AcDcEnergyDatum readCurrentDatum() {
+		final AcDcEnergyDatum currSample = getCurrentSample();
 		if ( currSample == null ) {
 			return null;
 		}
@@ -124,13 +122,13 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport
 	}
 
 	@Override
-	public Class<? extends GeneralNodePVEnergyDatum> getMultiDatumType() {
-		return GeneralNodePVEnergyDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return AcDcEnergyDatum.class;
 	}
 
 	@Override
-	public Collection<GeneralNodePVEnergyDatum> readMultipleDatum() {
-		GeneralNodePVEnergyDatum datum = readCurrentDatum();
+	public Collection<NodeDatum> readMultipleDatum() {
+		AcDcEnergyDatum datum = readCurrentDatum();
 		// TODO: support phases
 		if ( datum != null ) {
 			return Collections.singletonList(datum);
@@ -138,7 +136,7 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport
 		return Collections.emptyList();
 	}
 
-	public CachedResult<GeneralNodePVEnergyDatum> getSample() {
+	public CachedResult<AcDcEnergyDatum> getSample() {
 		return sample.get();
 	}
 
@@ -214,16 +212,15 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport
 		return (msg == null ? "N/A" : msg);
 	}
 
-	private String getSampleMessage(CachedResult<GeneralNodePVEnergyDatum> sample) {
+	private String getSampleMessage(CachedResult<AcDcEnergyDatum> sample) {
 		if ( sample == null ) {
 			return "N/A";
 		}
-		GeneralNodePVEnergyDatum data = sample.getResult();
+		AcDcEnergyDatum datum = sample.getResult();
 		StringBuilder buf = new StringBuilder();
-		buf.append("W = ").append(data.getWatts());
-		buf.append(", Wh = ").append(data.getWattHourReading());
-		buf.append("; sampled at ")
-				.append(DateTimeFormat.forStyle("LS").print(new DateTime(data.getCreated())));
+		buf.append("W = ").append(datum.getWatts());
+		buf.append(", Wh = ").append(datum.getWattHourReading());
+		buf.append("; sampled at ").append(datum.getTimestamp());
 		return buf.toString();
 	}
 
