@@ -22,29 +22,31 @@
 
 package net.solarnetwork.node.datum.sunspec.meter;
 
-import java.util.Date;
-import java.util.Map;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import java.time.Instant;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
 import net.solarnetwork.node.hw.sunspec.meter.MeterModelAccessor;
 
 /**
  * Datum for a SunSpec compatible meter.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
-public class SunSpecMeterDatum extends GeneralNodeACEnergyDatum implements ACEnergyDataAccessor {
+public class SunSpecMeterDatum extends SimpleAcDcEnergyDatum {
+
+	private static final long serialVersionUID = 7595473211731769270L;
 
 	private final MeterModelAccessor data;
-	private final boolean backwards;
 
 	/**
 	 * Construct from a sample.
 	 * 
 	 * @param data
 	 *        the sample data
+	 * @param sourceId
+	 *        the source ID
 	 * @param phase
 	 *        the phase to associate with the data
 	 * @param backwards
@@ -55,19 +57,20 @@ public class SunSpecMeterDatum extends GeneralNodeACEnergyDatum implements ACEne
 	 *        energy will be captured as {@code wattHours} and <i>delivered</i>
 	 *        energy as {@code wattHoursReverse})
 	 */
-	public SunSpecMeterDatum(MeterModelAccessor data, ACPhase phase, boolean backwards) {
-		super();
+	public SunSpecMeterDatum(MeterModelAccessor data, String sourceId, AcPhase phase,
+			boolean backwards) {
+		super(sourceId, (data.getDataTimestamp() > 0 ? Instant.ofEpochMilli(data.getDataTimestamp())
+				: Instant.now()), new DatumSamples());
 		this.data = data;
-		this.backwards = backwards;
-		if ( data.getDataTimestamp() > 0 ) {
-			setCreated(new Date(data.getDataTimestamp()));
+		MeterModelAccessor phaseData = data.accessorForPhase(phase);
+		if ( backwards ) {
+			phaseData = phaseData.reversed();
 		}
-		MeterModelAccessor phaseData = accessorForPhase(phase);
 		populateMeasurements(phaseData, phase);
 	}
 
-	private void populateMeasurements(MeterModelAccessor data, ACPhase phase) {
-		setPhase(phase);
+	private void populateMeasurements(MeterModelAccessor data, AcPhase phase) {
+		setAcPhase(phase);
 		setFrequency(data.getFrequency());
 		setVoltage(data.getVoltage());
 		setLineVoltage(data.getLineVoltage());
@@ -88,65 +91,6 @@ public class SunSpecMeterDatum extends GeneralNodeACEnergyDatum implements ACEne
 	 */
 	public MeterModelAccessor getData() {
 		return data;
-	}
-
-	@Override
-	public long getDataTimestamp() {
-		return data.getDataTimestamp();
-	}
-
-	@Override
-	public Map<String, Object> getDeviceInfo() {
-		return data.getDeviceInfo();
-	}
-
-	@Override
-	public MeterModelAccessor accessorForPhase(ACPhase phase) {
-		MeterModelAccessor phaseData = data.accessorForPhase(phase);
-		if ( backwards ) {
-			phaseData = phaseData.reversed();
-		}
-		return phaseData;
-	}
-
-	@Override
-	public ACEnergyDataAccessor reversed() {
-		return data.reversed();
-	}
-
-	@Override
-	public Integer getActivePower() {
-		return data.getActivePower();
-	}
-
-	@Override
-	public Long getActiveEnergyDelivered() {
-		return data.getActiveEnergyDelivered();
-	}
-
-	@Override
-	public Long getActiveEnergyReceived() {
-		return data.getActiveEnergyReceived();
-	}
-
-	@Override
-	public Long getApparentEnergyDelivered() {
-		return data.getApparentEnergyDelivered();
-	}
-
-	@Override
-	public Long getApparentEnergyReceived() {
-		return data.getApparentEnergyReceived();
-	}
-
-	@Override
-	public Long getReactiveEnergyDelivered() {
-		return data.getReactiveEnergyDelivered();
-	}
-
-	@Override
-	public Long getReactiveEnergyReceived() {
-		return data.getReactiveEnergyReceived();
 	}
 
 }

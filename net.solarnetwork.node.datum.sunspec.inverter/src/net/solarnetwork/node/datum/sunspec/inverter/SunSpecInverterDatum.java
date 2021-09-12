@@ -22,15 +22,16 @@
 
 package net.solarnetwork.node.datum.sunspec.inverter;
 
-import java.util.Date;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
-import net.solarnetwork.node.domain.PVEnergyDatum;
+import net.solarnetwork.domain.SerializeIgnore;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.OperatingState;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterModelAccessor;
@@ -38,15 +39,16 @@ import net.solarnetwork.node.hw.sunspec.inverter.InverterModelEvent;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterMpptExtensionModelAccessor;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterMpptExtensionModelAccessor.DcModule;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterOperatingState;
-import net.solarnetwork.util.SerializeIgnore;
 
 /**
  * Datum for a SunSpec compatible inverter.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
-public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PVEnergyDatum {
+public class SunSpecInverterDatum extends SimpleAcDcEnergyDatum {
+
+	private static final long serialVersionUID = -7099916188917660111L;
 
 	/**
 	 * The status sample key for {@link #getOperatingState()} values.
@@ -65,20 +67,20 @@ public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PV
 	 * 
 	 * @param data
 	 *        the sample data
+	 * @param sourceId
+	 *        the source ID
 	 * @param phase
 	 *        the phase to associate with the data
 	 */
-	public SunSpecInverterDatum(InverterModelAccessor data, ACPhase phase) {
-		super();
+	public SunSpecInverterDatum(InverterModelAccessor data, String sourceId, AcPhase phase) {
+		super(sourceId, (data.getDataTimestamp() > 0 ? Instant.ofEpochMilli(data.getDataTimestamp())
+				: Instant.now()), new DatumSamples());
 		this.data = data;
-		if ( data.getDataTimestamp() > 0 ) {
-			setCreated(new Date(data.getDataTimestamp()));
-		}
 		populateMeasurements(data, phase);
 	}
 
-	private void populateMeasurements(InverterModelAccessor data, ACPhase phase) {
-		setPhase(phase);
+	private void populateMeasurements(InverterModelAccessor data, AcPhase phase) {
+		setAcPhase(phase);
 		setFrequency(data.getFrequency());
 		setVoltage(data.getVoltage());
 		setCurrent(data.getCurrent());
@@ -86,8 +88,8 @@ public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PV
 		setApparentPower(data.getApparentPower());
 		setReactivePower(data.getReactivePower());
 
-		setDCVoltage(data.getDcVoltage());
-		setDCPower(data.getDcPower());
+		setDcVoltage(data.getDcVoltage());
+		setDcPower(data.getDcPower());
 
 		setWatts(data.getActivePower());
 		setWattHourReading(data.getActiveEnergyExported());
@@ -97,10 +99,10 @@ public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PV
 			setDeviceOperatingState(data.getOperatingState().asDeviceOperatingState());
 		}
 
-		putInstantaneousSampleValue("temp", data.getCabinetTemperature());
-		putInstantaneousSampleValue("temp_heatSink", data.getHeatSinkTemperature());
-		putInstantaneousSampleValue("temp_transformer", data.getTransformerTemperature());
-		putInstantaneousSampleValue("temp_other", data.getOtherTemperature());
+		getSamples().putInstantaneousSampleValue("temp", data.getCabinetTemperature());
+		getSamples().putInstantaneousSampleValue("temp_heatSink", data.getHeatSinkTemperature());
+		getSamples().putInstantaneousSampleValue("temp_transformer", data.getTransformerTemperature());
+		getSamples().putInstantaneousSampleValue("temp_other", data.getOtherTemperature());
 
 		setEvents(data.getEvents());
 	}
@@ -129,18 +131,21 @@ public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PV
 			if ( moduleId == null || moduleVoltage == null || modulePower == null ) {
 				continue;
 			}
-			putInstantaneousSampleValue(modulePropertyName(DC_VOLTAGE_KEY, moduleId), moduleVoltage);
-			putInstantaneousSampleValue(modulePropertyName(DC_POWER_KEY, moduleId), module.getDCPower());
-			putAccumulatingSampleValue(modulePropertyName(WATT_HOUR_READING_KEY, moduleId),
+			getSamples().putInstantaneousSampleValue(modulePropertyName(DC_VOLTAGE_KEY, moduleId),
+					moduleVoltage);
+			getSamples().putInstantaneousSampleValue(modulePropertyName(DC_POWER_KEY, moduleId),
+					module.getDCPower());
+			getSamples().putAccumulatingSampleValue(modulePropertyName(WATT_HOUR_READING_KEY, moduleId),
 					module.getDCEnergyDelivered());
-			putInstantaneousSampleValue(modulePropertyName("temp", moduleId), module.getTemperature());
+			getSamples().putInstantaneousSampleValue(modulePropertyName("temp", moduleId),
+					module.getTemperature());
 
 			OperatingState moduleState = module.getOperatingState();
-			putStatusSampleValue(modulePropertyName(OPERATING_STATE_KEY, moduleId),
+			getSamples().putStatusSampleValue(modulePropertyName(OPERATING_STATE_KEY, moduleId),
 					moduleState != null ? moduleState.getCode() : null);
 
 			long moduleEvents = ModelEvent.bitField32Value(module.getEvents());
-			putStatusSampleValue(modulePropertyName(EVENTS_KEY, moduleId), moduleEvents);
+			getSamples().putStatusSampleValue(modulePropertyName(EVENTS_KEY, moduleId), moduleEvents);
 		}
 	}
 
@@ -153,28 +158,6 @@ public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PV
 		return data;
 	}
 
-	@Override
-	@JsonIgnore
-	@SerializeIgnore
-	public Integer getDCPower() {
-		return getInstantaneousSampleInteger(DC_POWER_KEY);
-	}
-
-	public void setDCPower(Integer value) {
-		putInstantaneousSampleValue(DC_POWER_KEY, value);
-	}
-
-	@Override
-	@JsonIgnore
-	@SerializeIgnore
-	public Float getDCVoltage() {
-		return getInstantaneousSampleFloat(DC_VOLTAGE_KEY);
-	}
-
-	public void setDCVoltage(Float value) {
-		putInstantaneousSampleValue(DC_VOLTAGE_KEY, value);
-	}
-
 	/**
 	 * Get the operating state.
 	 * 
@@ -183,7 +166,7 @@ public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PV
 	@JsonIgnore
 	@SerializeIgnore
 	public OperatingState getOperatingState() {
-		Integer code = getStatusSampleInteger(OPERATING_STATE_KEY);
+		Integer code = getSamples().getStatusSampleInteger(OPERATING_STATE_KEY);
 		OperatingState result = null;
 		if ( code != null ) {
 			try {
@@ -203,7 +186,7 @@ public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PV
 	 */
 	public void setOperatingState(OperatingState state) {
 		Integer code = (state != null ? state.getCode() : null);
-		putStatusSampleValue(OPERATING_STATE_KEY, code);
+		getSamples().putStatusSampleValue(OPERATING_STATE_KEY, code);
 	}
 
 	/**
@@ -215,7 +198,7 @@ public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PV
 	@SerializeIgnore
 	public DeviceOperatingState getDeviceOperatingState() {
 		DeviceOperatingState result = null;
-		Integer code = getStatusSampleInteger(Datum.OP_STATE);
+		Integer code = getSamples().getStatusSampleInteger(Datum.OP_STATE);
 		if ( code != null ) {
 			try {
 				result = DeviceOperatingState.forCode(code);
@@ -239,7 +222,7 @@ public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PV
 	 */
 	public void setDeviceOperatingState(DeviceOperatingState state) {
 		Integer code = (state != null ? state.getCode() : null);
-		putStatusSampleValue(Datum.OP_STATE, code);
+		getSamples().putStatusSampleValue(Datum.OP_STATE, code);
 	}
 
 	/**
@@ -250,7 +233,7 @@ public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PV
 	@JsonIgnore
 	@SerializeIgnore
 	public Set<ModelEvent> getEvents() {
-		Long bitmask = getStatusSampleLong(EVENTS_KEY);
+		Long bitmask = getSamples().getStatusSampleLong(EVENTS_KEY);
 		Set<ModelEvent> result = null;
 		if ( bitmask != null ) {
 			try {
@@ -270,7 +253,7 @@ public class SunSpecInverterDatum extends GeneralNodeACEnergyDatum implements PV
 	 */
 	public void setEvents(Set<ModelEvent> events) {
 		long bitmask = ModelEvent.bitField32Value(events);
-		putStatusSampleValue(EVENTS_KEY, bitmask);
+		getSamples().putStatusSampleValue(EVENTS_KEY, bitmask);
 	}
 
 }

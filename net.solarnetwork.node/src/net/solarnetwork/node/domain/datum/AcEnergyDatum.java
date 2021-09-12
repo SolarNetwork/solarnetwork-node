@@ -129,6 +129,16 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	 * @param value
 	 *        the effective power factor
 	 */
+	default void setPowerFactor(Float value) {
+		asMutableSampleOperations().putSampleValue(Instantaneous, POWER_FACTOR_KEY, value);
+	}
+
+	/**
+	 * Set the instantaneous power factor.
+	 * 
+	 * @param value
+	 *        the effective power factor
+	 */
 	default void setEffectivePowerFactor(Float value) {
 		asMutableSampleOperations().putSampleValue(Instantaneous, EFFECTIVE_POWER_FACTOR_KEY, value);
 	}
