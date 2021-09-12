@@ -23,26 +23,24 @@
 package net.solarnetwork.node.datum.satcon.powergate;
 
 import static net.solarnetwork.domain.Bitmaskable.bitmaskValue;
-import java.util.Date;
+import java.time.Instant;
 import java.util.Set;
 import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.node.domain.ACEnergyDatum;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
 import net.solarnetwork.node.hw.satcon.Fault;
 import net.solarnetwork.node.hw.satcon.PowerGateInverterDataAccessor;
 
 /**
- * FIXME
- * 
- * <p>
- * TODO
- * </p>
+ * Datum for Power Gade.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class PowerGateDatum extends GeneralNodePVEnergyDatum {
+public class PowerGateDatum extends SimpleAcDcEnergyDatum {
+
+	private static final long serialVersionUID = -8054395654117410804L;
 
 	private final PowerGateInverterDataAccessor sample;
 
@@ -51,13 +49,13 @@ public class PowerGateDatum extends GeneralNodePVEnergyDatum {
 	 * 
 	 * @param sample
 	 *        the sample
+	 * @param sourceId
+	 *        the source ID
 	 */
-	public PowerGateDatum(PowerGateInverterDataAccessor sample) {
-		super();
+	public PowerGateDatum(PowerGateInverterDataAccessor sample, String sourceId) {
+		super(sourceId, (sample.getDataTimestamp() > 0 ? Instant.ofEpochMilli(sample.getDataTimestamp())
+				: Instant.now()), new DatumSamples());
 		this.sample = sample;
-		if ( sample.getDataTimestamp() > 0 ) {
-			setCreated(new Date(sample.getDataTimestamp()));
-		}
 		populateMeasurements(sample);
 	}
 
@@ -65,26 +63,26 @@ public class PowerGateDatum extends GeneralNodePVEnergyDatum {
 		for ( int i = 0; i <= 6; i++ ) {
 			Set<? extends Fault> bitmask = data.getFaults(i);
 			if ( bitmask != null && !bitmask.isEmpty() ) {
-				putStatusSampleValue("fault" + i, bitmaskValue(bitmask));
+				getSamples().putStatusSampleValue("fault" + i, bitmaskValue(bitmask));
 			}
 		}
 
 		// verify in Running/Derate work mode, else invalid data might be collected
 		DeviceOperatingState state = data.getDeviceOperatingState();
 		if ( !(state == DeviceOperatingState.Normal || state == DeviceOperatingState.Override) ) {
-			putStatusSampleValue(Datum.OP_STATE, state.getCode());
+			getSamples().putStatusSampleValue(Datum.OP_STATE, state.getCode());
 			return;
 		}
 
-		putInstantaneousSampleValue(ACEnergyDatum.FREQUENCY_KEY, data.getFrequency());
+		setFrequency(data.getFrequency());
 		setWatts(data.getActivePower());
 		setWattHourReading(data.getActiveEnergyDelivered());
-		putInstantaneousSampleValue(ACEnergyDatum.APPARENT_POWER_KEY, data.getApparentPower());
-		setDCVoltage(data.getDCVoltage());
-		setDCPower(data.getDCPower());
+		setApparentPower(data.getApparentPower());
+		setDcVoltage(data.getDcVoltage());
+		setDcPower(data.getDcPower());
 
-		putInstantaneousSampleValue("temp", data.getInverterTemperature());
-		putInstantaneousSampleValue("ambientTemp", data.getInternalTemperature());
+		getSamples().putInstantaneousSampleValue("temp", data.getInverterTemperature());
+		getSamples().putInstantaneousSampleValue("ambientTemp", data.getInternalTemperature());
 	}
 
 	/**

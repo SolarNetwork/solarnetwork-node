@@ -23,34 +23,33 @@
 package net.solarnetwork.node.datum.satcon.powergate;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
+import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.satcon.PowerGateInverterDataAccessor;
 import net.solarnetwork.node.hw.satcon.PowerGatePlusData;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * {@link DatumDataSource} implementation for {@link GeneralNodePVEnergyDatum}
  * with the PowerGate Plus series inverter.
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
 public class PowerGatePlusDatumDataSource extends ModbusDataDatumDataSourceSupport<PowerGatePlusData>
-		implements DatumDataSource<GeneralNodePVEnergyDatum>,
-		MultiDatumDataSource<GeneralNodePVEnergyDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	private String sourceId = "PowerGate Plus";
 
@@ -85,20 +84,18 @@ public class PowerGatePlusDatumDataSource extends ModbusDataDatumDataSourceSuppo
 	}
 
 	@Override
-	public Class<? extends GeneralNodePVEnergyDatum> getDatumType() {
-		return PowerGateDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AcDcEnergyDatum.class;
 	}
 
 	@Override
-	public GeneralNodePVEnergyDatum readCurrentDatum() {
+	public AcDcEnergyDatum readCurrentDatum() {
 		try {
 			final PowerGatePlusData currSample = getCurrentSample();
 			if ( currSample == null ) {
 				return null;
 			}
-			PowerGateDatum d = new PowerGateDatum(currSample);
-			d.setSourceId(resolvePlaceholders(sourceId));
-			return d;
+			return new PowerGateDatum(currSample, resolvePlaceholders(sourceId));
 		} catch ( IOException e ) {
 			log.error("Communication problem reading source {} from PowerGate Plus device {}: {}",
 					this.sourceId, modbusDeviceName(), e.getMessage());
@@ -107,13 +104,13 @@ public class PowerGatePlusDatumDataSource extends ModbusDataDatumDataSourceSuppo
 	}
 
 	@Override
-	public Class<? extends GeneralNodePVEnergyDatum> getMultiDatumType() {
-		return PowerGateDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return AcDcEnergyDatum.class;
 	}
 
 	@Override
-	public Collection<GeneralNodePVEnergyDatum> readMultipleDatum() {
-		GeneralNodePVEnergyDatum datum = readCurrentDatum();
+	public Collection<NodeDatum> readMultipleDatum() {
+		AcDcEnergyDatum datum = readCurrentDatum();
 		if ( datum != null ) {
 			return Collections.singletonList(datum);
 		}
@@ -123,7 +120,7 @@ public class PowerGatePlusDatumDataSource extends ModbusDataDatumDataSourceSuppo
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.satcon.powergateplus";
 	}
 
@@ -166,13 +163,12 @@ public class PowerGatePlusDatumDataSource extends ModbusDataDatumDataSourceSuppo
 		StringBuilder buf = new StringBuilder();
 		buf.append("state = ").append(data.getOperatingState());
 		buf.append(", Hz = ").append(data.getFrequency());
-		buf.append(", PV V = ").append(data.getDCVoltage());
-		buf.append(", PV W = ").append(data.getDCPower());
+		buf.append(", PV V = ").append(data.getDcVoltage());
+		buf.append(", PV W = ").append(data.getDcPower());
 		buf.append(", W = ").append(data.getActivePower());
 		buf.append(", Wh today = ").append(data.getActiveEnergyDeliveredToday());
 		buf.append(", Wh total = ").append(data.getActiveEnergyDelivered());
-		buf.append("; sampled at ")
-				.append(DateTimeFormat.forStyle("LS").print(new DateTime(data.getDataTimestamp())));
+		buf.append("; sampled at ").append(Instant.ofEpochMilli(data.getDataTimestamp()));
 		return buf.toString();
 	}
 
