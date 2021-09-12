@@ -24,19 +24,18 @@ package net.solarnetwork.node.datum.opmode;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.Identifiable;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicCronExpressionSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.service.Identifiable;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicCronExpressionSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Configuration for a {@link DatumDataSource} schedule filter.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class DatumDataSourceScheduleConfig {
 
@@ -44,7 +43,7 @@ public class DatumDataSourceScheduleConfig {
 	public static final String DEFAULT_SCHEDULE = "0/15 * * * * ?";
 
 	private String uid;
-	private String groupUID;
+	private String groupUid;
 	private String datumType;
 	private String schedule = DEFAULT_SCHEDULE;
 
@@ -60,7 +59,7 @@ public class DatumDataSourceScheduleConfig {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>();
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "uid", ""));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "groupUID", ""));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "groupUid", ""));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "datumType", ""));
 		results.add(new BasicCronExpressionSettingSpecifier(prefix + "schedule", DEFAULT_SCHEDULE));
 
@@ -68,11 +67,11 @@ public class DatumDataSourceScheduleConfig {
 	}
 
 	private boolean matchesIdentifiable(Identifiable identifiable) {
-		if ( uid != null && !uid.isEmpty() && !uid.equalsIgnoreCase(identifiable.getUID()) ) {
+		if ( uid != null && !uid.isEmpty() && !uid.equalsIgnoreCase(identifiable.getUid()) ) {
 			return false;
 		}
-		if ( groupUID != null && !groupUID.isEmpty()
-				&& !groupUID.equalsIgnoreCase(identifiable.getGroupUID()) ) {
+		if ( groupUid != null && !groupUid.isEmpty()
+				&& !groupUid.equalsIgnoreCase(identifiable.getGroupUid()) ) {
 			return false;
 		}
 		return true;
@@ -107,7 +106,7 @@ public class DatumDataSourceScheduleConfig {
 	 * @return {@literal true} if the configuration in this instance matches
 	 *         {@code dataSource}
 	 */
-	public boolean matches(DatumDataSource<? extends Datum> dataSource) {
+	public boolean matches(DatumDataSource dataSource) {
 		if ( dataSource == null ) {
 			return false;
 		}
@@ -125,7 +124,7 @@ public class DatumDataSourceScheduleConfig {
 	 * @return {@literal true} if the configuration in this instance matches
 	 *         {@code dataSource}
 	 */
-	public boolean matches(MultiDatumDataSource<? extends Datum> dataSource) {
+	public boolean matches(MultiDatumDataSource dataSource) {
 		if ( dataSource == null ) {
 			return false;
 		}
@@ -143,12 +142,12 @@ public class DatumDataSourceScheduleConfig {
 		this.uid = uid;
 	}
 
-	public String getGroupUID() {
-		return groupUID;
+	public String getGroupUid() {
+		return groupUid;
 	}
 
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
+	public void setGroupUid(String groupUid) {
+		this.groupUid = groupUid;
 	}
 
 	public String getDatumType() {

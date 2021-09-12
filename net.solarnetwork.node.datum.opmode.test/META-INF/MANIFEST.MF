@@ -2,9 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Operational Mode Data Source Scheduler Tests
 Bundle-SymbolicName: net.solarnetwork.node.datum.opmode.test
-Bundle-Version: 1.0.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.datum.opmode;bundle-version="1.0.0"
+Fragment-Host: net.solarnetwork.node.datum.opmode;bundle-version="[2.0,3.0)"
 Automatic-Module-Name: net.solarnetwork.node.datum.opmode.test
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
@@ -13,23 +13,4 @@ Import-Package:
  org.hamcrest;version="[1.3,2.0)",
  org.junit;version="[4.5,5.0)",
  org.junit.runner;version="[4.5,5.0)",
- org.slf4j;version="[1.7,2.0)",
- org.springframework.aop;version="[4.2,5.0)",
- org.springframework.aop.framework;version="[4.2,5.0)",
- org.springframework.asm;version="[4.2,5.0)",
- org.springframework.beans;version="[4.2,5.0)",
- org.springframework.beans.factory.annotation;version="[4.2,5.0)",
- org.springframework.context;version="[4.2,5.0)",
- org.springframework.core;version="[4.2,5.0)",
- org.springframework.dao;version="[4.2,5.0)",
- org.springframework.expression;version="[4.2,5.0)",
- org.springframework.jdbc.core.simple;version="[4.2,5.0)",
- org.springframework.test.annotation;version="[4.2,5.0)",
- org.springframework.test.context;version="[4.2,5.0)",
- org.springframework.test.context.junit4;version="[4.2,5.0)",
- org.springframework.test.context.support;version="[4.2,5.0)",
- org.springframework.test.context.transaction;version="[4.2,5.0)",
- org.springframework.transaction;version="[4.2,5.0)",
- org.springframework.transaction.annotation;version="[4.2,5.0)",
- org.springframework.util;version="[4.2,5.0)",
- org.springframework.validation;version="[4.2,5.0)"
+ org.slf4j;version="[1.7,2.0)"

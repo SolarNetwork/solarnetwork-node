@@ -51,24 +51,24 @@ import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 import org.springframework.core.task.TaskExecutor;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.DatumQueue;
-import net.solarnetwork.node.Identifiable;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.OperationalModesService;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.GeneralDatum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.domain.datum.GeneralDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.DatumQueue;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.service.Identifiable;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.OptionalServiceCollection;
+import net.solarnetwork.service.support.BasicIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.OptionalServiceCollection;
 
 /**
  * Poll a set of {@link DatumDataSource} services at a configurable frequency
@@ -84,10 +84,10 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
-public class DatumDataSourceOpModeInvoker
-		implements Identifiable, SettingSpecifierProvider, DatumDataSourceScheduleService, EventHandler {
+public class DatumDataSourceOpModeInvoker extends BasicIdentifiable
+		implements SettingSpecifierProvider, DatumDataSourceScheduleService, EventHandler {
 
 	/**
 	 * The group name used to schedule the invoker jobs as.
@@ -105,15 +105,12 @@ public class DatumDataSourceOpModeInvoker
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final OptionalService<DatumQueue> datumQueue;
-	private final OptionalServiceCollection<DatumDataSource<? extends Datum>> dataSources;
-	private final OptionalServiceCollection<MultiDatumDataSource<? extends Datum>> multiDataSources;
+	private final OptionalServiceCollection<DatumDataSource> dataSources;
+	private final OptionalServiceCollection<MultiDatumDataSource> multiDataSources;
 
-	private String uid;
-	private String groupUID;
 	private String operationalMode;
 	private Scheduler scheduler;
 	private DatumDataSourceScheduleConfig[] configurations;
-	private MessageSource messageSource;
 	private TaskExecutor taskExecutor;
 
 	private final ConcurrentMap<Integer, ScheduledDatumDataSourceConfig> activeConfigurations = new ConcurrentHashMap<>(
@@ -130,8 +127,8 @@ public class DatumDataSourceOpModeInvoker
 	 *        the multi data sources
 	 */
 	public DatumDataSourceOpModeInvoker(OptionalService<DatumQueue> datumQueue,
-			OptionalServiceCollection<DatumDataSource<? extends Datum>> dataSources,
-			OptionalServiceCollection<MultiDatumDataSource<? extends Datum>> multiDataSources) {
+			OptionalServiceCollection<DatumDataSource> dataSources,
+			OptionalServiceCollection<MultiDatumDataSource> multiDataSources) {
 		super();
 		this.datumQueue = datumQueue;
 		this.dataSources = dataSources;
@@ -163,7 +160,7 @@ public class DatumDataSourceOpModeInvoker
 		Set<String> activeOpModes = (Set) opModes;
 		boolean active = activeOpModes.contains(myOpMode);
 		log.info("DatumDataSource scheduler config [{}] operational mode [{}] {}",
-				this.uid != null ? this.uid : this.toString(), myOpMode, active ? "active" : "inactive");
+				getUid() != null ? getUid() : this.toString(), myOpMode, active ? "active" : "inactive");
 		Runnable task = new Runnable() {
 
 			@Override
@@ -226,8 +223,8 @@ public class DatumDataSourceOpModeInvoker
 	}
 
 	private String displayNameForIdentifiable(Identifiable identifiable) {
-		return (identifiable != null && identifiable.getUID() != null && !identifiable.getUID().isEmpty()
-				? identifiable.getUID()
+		return (identifiable != null && identifiable.getUid() != null && !identifiable.getUid().isEmpty()
+				? identifiable.getUid()
 				: identifiable != null ? identifiable.toString() : null);
 	}
 
@@ -239,7 +236,7 @@ public class DatumDataSourceOpModeInvoker
 		final DatumQueue queue = OptionalService.service(datumQueue);
 		Set<Object> handled = new HashSet<>();
 		if ( dataSources != null ) {
-			for ( DatumDataSource<? extends Datum> dataSource : dataSources.services() ) {
+			for ( DatumDataSource dataSource : dataSources.services() ) {
 				if ( handled.contains(dataSource) ) {
 					continue;
 				}
@@ -247,16 +244,14 @@ public class DatumDataSourceOpModeInvoker
 				String dsName = displayNameForIdentifiable(dataSource);
 				log.trace("Inspecting DatumDataSource {} against config {}", dsName, config);
 				if ( config.matches(dataSource) ) {
-					Datum datum = dataSource.readCurrentDatum();
+					NodeDatum datum = dataSource.readCurrentDatum();
 					log.debug("Invoked DatumDataSource {} and got {}", dsName, datum);
-					if ( datum instanceof GeneralDatum ) {
-						queue.offer((GeneralDatum) datum, false);
-					}
+					queue.offer(datum, false);
 				}
 			}
 		}
 		if ( multiDataSources != null ) {
-			for ( MultiDatumDataSource<? extends Datum> dataSource : multiDataSources.services() ) {
+			for ( MultiDatumDataSource dataSource : multiDataSources.services() ) {
 				if ( handled.contains(dataSource) ) {
 					continue;
 				}
@@ -264,13 +259,11 @@ public class DatumDataSourceOpModeInvoker
 				String dsName = displayNameForIdentifiable(dataSource);
 				log.trace("Inspecting MultiDatumDataSource {} against config {}", dsName, config);
 				if ( config.matches(dataSource) ) {
-					Collection<? extends Datum> datums = dataSource.readMultipleDatum();
+					Collection<NodeDatum> datums = dataSource.readMultipleDatum();
 					log.debug("Invoked MultiDatumDataSource {} and got {}", dsName, datums);
 					if ( datums != null ) {
-						for ( Datum datum : datums ) {
-							if ( datum instanceof GeneralDatum ) {
-								queue.offer((GeneralDatum) datum, false);
-							}
+						for ( NodeDatum datum : datums ) {
+							queue.offer(datum, false);
 						}
 					}
 				}
@@ -390,7 +383,7 @@ public class DatumDataSourceOpModeInvoker
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.opmode.invoker";
 	}
 
@@ -403,14 +396,13 @@ public class DatumDataSourceOpModeInvoker
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(8);
 		results.add(new BasicTitleSettingSpecifier("status", getStatusMessage(), true));
-		results.add(new BasicTextFieldSettingSpecifier("uid", null));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
+		results.addAll(basicIdentifiableSettings());
 		results.add(new BasicTextFieldSettingSpecifier("operationalMode", null));
 
 		DatumDataSourceScheduleConfig[] confs = getConfigurations();
 		List<DatumDataSourceScheduleConfig> confsList = (confs != null ? asList(confs) : emptyList());
-		results.add(SettingsUtil.dynamicListSettingSpecifier("configurations", confsList,
-				new SettingsUtil.KeyedListCallback<DatumDataSourceScheduleConfig>() {
+		results.add(SettingUtils.dynamicListSettingSpecifier("configurations", confsList,
+				new SettingUtils.KeyedListCallback<DatumDataSourceScheduleConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(
@@ -429,54 +421,6 @@ public class DatumDataSourceOpModeInvoker
 			return "Not active";
 		}
 		return "Active";
-	}
-
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
-
-	@Override
-	public String getUID() {
-		return getUid();
-	}
-
-	/**
-	 * Get a unique ID for this service.
-	 * 
-	 * @return the service unique ID
-	 */
-	public String getUid() {
-		return uid;
-	}
-
-	/**
-	 * Set the unique ID for this service.
-	 * 
-	 * @param uid
-	 *        the ID to use
-	 */
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	@Override
-	public String getGroupUID() {
-		return groupUID;
-	}
-
-	/**
-	 * Set a unique group ID for this service.
-	 * 
-	 * @param groupUID
-	 *        the group ID to use
-	 */
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
 	}
 
 	/**
