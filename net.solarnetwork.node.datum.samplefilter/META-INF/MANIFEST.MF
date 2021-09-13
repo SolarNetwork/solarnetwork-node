@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Datum Filters (Standard)
 Bundle-SymbolicName: net.solarnetwork.node.datum.samplefilter
 Bundle-Description: Services to filter out unwanted datum, or datum properties, from collected datum samples.
-Bundle-Version: 1.9.0
+Bundle-Version: 1.9.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
