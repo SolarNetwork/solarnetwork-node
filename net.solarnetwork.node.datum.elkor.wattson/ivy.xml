@@ -13,10 +13,9 @@
 		<artifact type="sources" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
-		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[1.90,)"/>
-		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.hw.elkor" rev="[1.0,)"/>
-		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.modbus" rev="[3.6,)"/>
-		<dependency org="joda-time" name="joda-time" rev="2.1"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[2.0,)"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.hw.elkor" rev="[2.0,)"/>
+		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.modbus" rev="[4.0,)"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>
 	</dependencies>
 </ivy-module>

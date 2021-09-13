@@ -22,30 +22,31 @@
 
 package net.solarnetwork.node.datum.elkor.wattson;
 
-import java.util.Date;
-import java.util.Map;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
-import net.solarnetwork.node.hw.elkor.upt.Ratio;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.datum.SimpleAcEnergyDatum;
 import net.solarnetwork.node.hw.elkor.upt.WattsOnDataAccessor;
 
 /**
  * Datum implementation for Elkor WattsOn meter devices.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class WattsOnDatum extends GeneralNodeACEnergyDatum implements WattsOnDataAccessor {
+public class WattsOnDatum extends SimpleAcEnergyDatum {
+
+	private static final long serialVersionUID = -9089223830028755982L;
 
 	private final WattsOnDataAccessor data;
-	private final boolean backwards;
 
 	/**
 	 * Construct from a sample.
 	 * 
 	 * @param data
 	 *        the sample data
+	 * @param sourceId
+	 *        the source ID
 	 * @param phase
 	 *        the phase to associate with the data
 	 * @param backwards
@@ -56,19 +57,18 @@ public class WattsOnDatum extends GeneralNodeACEnergyDatum implements WattsOnDat
 	 *        energy will be captured as {@code wattHours} and <i>delivered</i>
 	 *        energy as {@code wattHoursReverse})
 	 */
-	public WattsOnDatum(WattsOnDataAccessor data, ACPhase phase, boolean backwards) {
-		super();
+	public WattsOnDatum(WattsOnDataAccessor data, String sourceId, AcPhase phase, boolean backwards) {
+		super(sourceId, data.getDataTimestamp(), new DatumSamples());
 		this.data = data;
-		this.backwards = backwards;
-		if ( data.getDataTimestamp() > 0 ) {
-			setCreated(new Date(data.getDataTimestamp()));
+		AcEnergyDataAccessor accessor = data.accessorForPhase(phase);
+		if ( backwards ) {
+			accessor = accessor.reversed();
 		}
-		ACEnergyDataAccessor phaseData = accessorForPhase(phase);
-		populateMeasurements(phaseData, phase);
+		populateMeasurements(accessor, phase);
 	}
 
-	private void populateMeasurements(ACEnergyDataAccessor data, ACPhase phase) {
-		setPhase(phase);
+	private void populateMeasurements(AcEnergyDataAccessor data, AcPhase phase) {
+		setAcPhase(phase);
 		setFrequency(data.getFrequency());
 		setVoltage(data.getVoltage());
 		setLineVoltage(data.getLineVoltage());
@@ -89,85 +89,6 @@ public class WattsOnDatum extends GeneralNodeACEnergyDatum implements WattsOnDat
 	 */
 	public WattsOnDataAccessor getData() {
 		return data;
-	}
-
-	@Override
-	public long getDataTimestamp() {
-		return data.getDataTimestamp();
-	}
-
-	@Override
-	public Map<String, Object> getDeviceInfo() {
-		return data.getDeviceInfo();
-	}
-
-	@Override
-	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
-		ACEnergyDataAccessor phaseData = data.accessorForPhase(phase);
-		if ( backwards ) {
-			phaseData = phaseData.reversed();
-		}
-		return phaseData;
-	}
-
-	@Override
-	public ACEnergyDataAccessor reversed() {
-		return data.reversed();
-	}
-
-	@Override
-	public Number getSerialNumber() {
-		return data.getSerialNumber();
-	}
-
-	@Override
-	public Number getFirmwareRevision() {
-		return data.getFirmwareRevision();
-	}
-
-	@Override
-	public Ratio getPowerTransformerRatio() {
-		return data.getPowerTransformerRatio();
-	}
-
-	@Override
-	public Ratio getCurrentTransformerRatio() {
-		return data.getCurrentTransformerRatio();
-	}
-
-	@Override
-	public Integer getActivePower() {
-		return data.getActivePower();
-	}
-
-	@Override
-	public Long getActiveEnergyDelivered() {
-		return data.getActiveEnergyDelivered();
-	}
-
-	@Override
-	public Long getActiveEnergyReceived() {
-		return data.getActiveEnergyReceived();
-	}
-
-	@Override
-	public Long getApparentEnergyDelivered() {
-		return data.getApparentEnergyDelivered();
-	}
-
-	@Override
-	public Long getApparentEnergyReceived() {
-		return data.getApparentEnergyReceived();
-	}
-
-	@Override
-	public Long getReactiveEnergyDelivered() {
-		return data.getReactiveEnergyDelivered();
-	}
-
-	@Override
-	public Long getReactiveEnergyReceived() {
-		return data.getReactiveEnergyReceived();
 	}
 
 }
