@@ -14,22 +14,15 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
-	<bean id="placeholderService" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
 		<property name="sticky" value="true"/>
 	</bean>
 	
-	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
-		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
-		<property name="sticky" value="true"/>
-	</bean>
-
-	<bean id="locationService" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.LocationService"/>
+	<bean id="locationService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.LocationService"/>
 		<property name="sticky" value="true"/>
 	</bean>
 	
@@ -37,28 +30,28 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.gps.gpsd.GpsDatumDataSource</value>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
 	
-	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+	<bean id="jobMessageSource" class="net.solarnetwork.support.PrefixedMessageSource">
 		<property name="prefix" value="multiDatumDataSource."/>
 		<property name="delegate" ref="messageSource"/>
 	</bean>	
 
-	<bean id="datumQueue" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.DatumQueue"/>
+	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
 		<property name="sticky" value="true"/>
 	</bean>
 	
 	<!-- Published Services -->
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean  class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean  class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="GPSd Data Source"/>
-			<property name="factoryUID" value="net.solarnetwork.node.datum.gps.gpsd"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.gps.gpsd"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
@@ -67,7 +60,7 @@
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
 			<beans:value>net.solarnetwork.node.job.ServiceProvider</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.gps.gpsd"/>
@@ -75,7 +68,7 @@
 		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
 			<property name="trigger">
 				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-					<property name="name" value="gpsdDatumLoggerTrigger"/>
+					<property name="name" value="gpsdDatumPollTrigger"/>
 					<property name="cronExpression" value="5 * * * * ?"/>
 					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 					<property name="randomSecond" value="true"/>
@@ -87,8 +80,8 @@
 						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
 							<property name="interfaces">
 								<list>
-									<value>net.solarnetwork.node.DatumDataSource</value>
-									<value>net.solarnetwork.node.MultiDatumDataSource</value>
+									<value>net.solarnetwork.node.service.DatumDataSource</value>
+									<value>net.solarnetwork.node.service.MultiDatumDataSource</value>
 									<value>org.osgi.service.event.EventHandler</value>
 								</list>
 							</property>
@@ -107,20 +100,20 @@
 			</property>
 			<property name="jobDetail">
 				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-					<property name="name" value="gpsdDatumLoggerJob"/>
-					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
+					<property name="name" value="gpsdDatumPollJob"/>
+					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourcePollJob"/>
 					<property name="jobDataAsMap">
 						<map>
-							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
+							<entry key="datumQueue" value-ref="datumQueue"/>
 							<entry key="multiDatumDataSource">
 								<bean class="net.solarnetwork.node.datum.gps.gpsd.GpsDatumDataSource" init-method="startup">
 									<argument>
-										<bean class="net.solarnetwork.util.DynamicServiceTracker">
-											<property name="bundleContext" ref="bundleContext"/>
+										<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+											<argument ref="bundleContext"/>
 											<property name="serviceClassName" value="net.solarnetwork.node.io.gpsd.service.GpsdClientConnection"/>
 											<property name="propertyFilters">
 												<map>
-													<entry key="UID" value="GPSD"/>
+													<entry key="uid" value="GPSD"/>
 												</map>
 											</property>
 										</bean>	
