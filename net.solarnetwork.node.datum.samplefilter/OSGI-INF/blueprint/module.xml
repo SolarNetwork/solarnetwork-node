@@ -136,6 +136,7 @@
 			<property name="sampleTransformer">
 				<bean class="net.solarnetwork.node.datum.filter.std.PropertyFilterSamplesTransformer" init-method="init">
 					<property name="settingDao" ref="settingDao"/>
+					<property name="messageSource" ref="simpleFilterMessageSource"/>
 					<property name="excludeBaseIdentifiableSettings" value="true"/>
 					<property name="opModesService" ref="opModesService"/>
 				</bean>
