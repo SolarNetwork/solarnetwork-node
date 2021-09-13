@@ -63,6 +63,7 @@ Each component configuration contains the following overall settings:
 | Maximum Republish | If offline message persistence has been configured, then the maximum number of offline messages to publish in one go. See the [offline persistence](#offline-message-persistence) section for more information. |
 | Reliability | The MQTT _quality of service_ level to use. Normally the default of **At most once** is sufficient. |
 | Version | The MQTT protocol version to use. Startig with version 5 MQTT [topic aliases][mqtt-topic-aliases] will be used if the server supports it, which can save a significant amount of network bandwidth when long source IDs are in use.  |
+| Retained | Toggle the MQTT _retained_ message flag. When enabled the MQTT server will store the most recently published message on each topic so it is immediately available when clients connect.  |
 | Wire Logging | Toggle verbose logging on/off to support troubleshooting. The messages are logged to the `net.solarnetwork.mqtt` topic at `DEBUG` level. |
 | Filters | Any number of datum [filter configurations](#filter-settings). |
 
@@ -85,6 +86,10 @@ client authentication.
 	<dd>If you would like the ability to control when data is published to SolarFlux you can
 	configure an <a href="https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Operational-Modes">operational mode</a>,
 	and only when that mode is active will data get published to SolarFlux.</dd>
+	<dt>Retained</dt>
+	<dd>By default this plugin sets the <em>retained</em> flag on each MQTT message. This benefints clients as
+	when they connect and subscribe to datum topics they will immediately receive the most recently published
+	message instead of having to wait for SolarNode to publish a new message.</dd>
 </dl>
 
 # Filter settings

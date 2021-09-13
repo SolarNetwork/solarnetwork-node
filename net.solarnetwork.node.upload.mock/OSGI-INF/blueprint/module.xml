@@ -11,7 +11,7 @@
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
 
-	<reference-list id="datumDaoCollection" availability="optional" 
+	<reference-list id="datumDaoCollection" availability="optional" filter="(!(upload=false))"
 		interface="net.solarnetwork.node.dao.DatumDao"/>
 	
 	<service ref="bulkDatumUploader" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>

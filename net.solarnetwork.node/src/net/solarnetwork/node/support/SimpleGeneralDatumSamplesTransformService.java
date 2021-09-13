@@ -44,7 +44,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * service.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.66
  */
 public class SimpleGeneralDatumSamplesTransformService extends BaseIdentifiable implements
@@ -110,6 +110,15 @@ public class SimpleGeneralDatumSamplesTransformService extends BaseIdentifiable 
 		}
 		this.staticParameters = staticParameters;
 		setSampleTransformers(sampleTransformers);
+	}
+
+	/**
+	 * Call once to initialize.
+	 * 
+	 * @since 1.2
+	 */
+	public void init() {
+		configurationChanged(null);
 	}
 
 	@Override

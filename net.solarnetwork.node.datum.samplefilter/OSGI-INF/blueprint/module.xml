@@ -131,11 +131,12 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService">
+		<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService" init-method="init">
 			<argument value="net.solarnetwork.node.datum.samplefilter.prop"/>
 			<property name="sampleTransformer">
-				<bean class="net.solarnetwork.node.datum.filter.std.PropertyFilterSamplesTransformer" init-method="init">
+				<bean class="net.solarnetwork.node.datum.filter.std.PropertyFilterSamplesTransformer">
 					<property name="settingDao" ref="settingDao"/>
+					<property name="messageSource" ref="simpleFilterMessageSource"/>
 					<property name="excludeBaseIdentifiableSettings" value="true"/>
 					<property name="opModesService" ref="opModesService"/>
 				</bean>
@@ -247,10 +248,10 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService">
+		<bean class="net.solarnetwork.node.support.SimpleGeneralDatumSamplesTransformService" init-method="init">
 			<argument value="net.solarnetwork.node.datum.samplefilter.limiter"/>
 			<property name="sampleTransformer">
-				<bean class="net.solarnetwork.node.datum.filter.std.SourceThrottlingSamplesTransformer" init-method="init">
+				<bean class="net.solarnetwork.node.datum.filter.std.SourceThrottlingSamplesTransformer">
 					<property name="settingDao" ref="settingDao"/>
 					<property name="messageSource" ref="sourceThrottleMessageSource"/>
 					<property name="excludeBaseIdentifiableSettings" value="true"/>

@@ -36,6 +36,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
 import net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport;
 import net.solarnetwork.util.IntRange;
+import net.solarnetwork.util.IntRangeSet;
 import net.solarnetwork.util.IntShortMap;
 import net.solarnetwork.util.NumberUtils;
 
@@ -43,7 +44,7 @@ import net.solarnetwork.util.NumberUtils;
  * Encapsulates raw Modbus register data from the SDM meters.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class SDMData extends ModbusData implements SDMDataAccessor {
 
@@ -296,8 +297,18 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 	 *         if any communication error occurs
 	 */
 	public final void readMeterData(final ModbusConnection conn) throws IOException {
-		refreshData(conn, ModbusReadFunction.ReadInputRegister,
-				SDM630Register.getMeterRegisterAddressSet(), MAX_RESULTS);
+		IntRangeSet addr;
+		switch (deviceType) {
+			case SDM630:
+				addr = SDM630Register.getMeterRegisterAddressSet();
+				break;
+
+			default:
+				addr = SDM120Register.getMeterRegisterAddressSet();
+				break;
+
+		}
+		refreshData(conn, ModbusReadFunction.ReadInputRegister, addr, MAX_RESULTS);
 	}
 
 	@Override
