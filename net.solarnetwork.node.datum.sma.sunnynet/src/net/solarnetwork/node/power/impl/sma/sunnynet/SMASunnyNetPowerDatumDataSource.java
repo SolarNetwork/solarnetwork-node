@@ -24,6 +24,8 @@
 
 package net.solarnetwork.node.power.impl.sma.sunnynet;
 
+import static net.solarnetwork.util.NumberUtils.divide;
+import static net.solarnetwork.util.NumberUtils.multiply;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Instant;
@@ -35,16 +37,19 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
 import net.solarnetwork.node.domain.datum.AcEnergyDatum;
 import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
 import net.solarnetwork.node.hw.sma.SMAInverterDataSourceSupport;
+import net.solarnetwork.node.hw.sma.protocol.SmaSunnyNetFrame;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaChannel;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaChannelParam;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaCommand;
@@ -52,11 +57,11 @@ import net.solarnetwork.node.hw.sma.sunnynet.SmaControl;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaPacket;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaUserDataField;
 import net.solarnetwork.node.hw.sma.sunnynet.SmaUtils;
-import net.solarnetwork.node.service.ConversationalDataCollector;
-import net.solarnetwork.node.service.DataCollectorFactory;
+import net.solarnetwork.node.io.serial.SerialConnection;
+import net.solarnetwork.node.io.serial.SerialConnectionAction;
+import net.solarnetwork.node.io.serial.support.SerialDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.support.SerialPortBeanParameters;
-import net.solarnetwork.service.OptionalService.OptionalFilterableService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
@@ -68,9 +73,9 @@ import net.solarnetwork.util.StringUtils;
  * Implementation of {@link DatumDataSource} for SMA controllers.
  * 
  * <p>
- * In limited testing, the following
- * {@code SerialPortConversationalDataCollectorFactory} property values work
- * well for communicating with SMA over a RS-232 serial connection:
+ * In limited testing, the following serial settings values work well for
+ * communicating with SMA over a RS-232 serial connection using 8N1 data
+ * configuration:
  * </p>
  * 
  * <dl>
@@ -106,10 +111,6 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  * 
  * <dl class="class-properties">
- * <dt>dataCollectorFactory</dt>
- * <dd>The factory for creating {@link ConversationalDataCollector} instances
- * with.</dd>
- * 
  * <dt>synOnlineWaitMs</dt>
  * <dd>Number of milliseconds to wait after issuing the SynOnline command. A
  * wait seems to be necessary otherwise the first data request fails. Defaults
@@ -154,9 +155,8 @@ import net.solarnetwork.util.StringUtils;
  * @author matt
  * @version 2.0
  */
-public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSupport
-		implements DatumDataSource, ConversationalDataCollector.Moderator<AcDcEnergyDatum>,
-		SettingSpecifierProvider {
+public class SMASunnyNetPowerDatumDataSource extends SerialDeviceDatumDataSourceSupport<AcDcEnergyDatum>
+		implements DatumDataSource, SettingSpecifierProvider, SerialConnectionAction<AcDcEnergyDatum> {
 
 	/** The PV current channel name. */
 	public static final String CHANNEL_NAME_PV_AMPS = "Ipv";
@@ -181,59 +181,40 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 	/** The default value for the {@code synOnlineWaitMs} property. */
 	public static final long DEFAULT_SYN_ONLINE_WAIT_MS = 5000;
 
-	private static final String DEFAULT_SERIAL_PORT = "/dev/ttyS0";
-
-	private static final SerialPortBeanParameters DEFAULT_SERIAL_PARAMS = new SerialPortBeanParameters();
-
-	static {
-		DEFAULT_SERIAL_PARAMS.setBaud(1200);
-		DEFAULT_SERIAL_PARAMS.setDataBits(8);
-		DEFAULT_SERIAL_PARAMS.setStopBits(1);
-		DEFAULT_SERIAL_PARAMS.setParity(0);
-		DEFAULT_SERIAL_PARAMS.setDtrFlag(0);
-		DEFAULT_SERIAL_PARAMS.setRtsFlag(0);
-		DEFAULT_SERIAL_PARAMS.setReceiveThreshold(-1);
-		DEFAULT_SERIAL_PARAMS.setReceiveTimeout(2000);
-		DEFAULT_SERIAL_PARAMS.setMaxWait(65000);
-	}
-
+	private final SMAInverterDataSourceSupport smaSupport;
 	private String pvVoltsChannelName = CHANNEL_NAME_PV_VOLTS;
 	private String pvAmpsChannelName = CHANNEL_NAME_PV_AMPS;
 	private String kWhChannelName = CHANNEL_NAME_KWH;
 	private long synOnlineWaitMs = DEFAULT_SYN_ONLINE_WAIT_MS;
 
-	private OptionalFilterableService<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory;
-	private SerialPortBeanParameters serialParams = getDefaultSerialParameters();
 	private int smaAddress = -1;
 	private Map<String, SmaChannel> channelMap = null;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
+	/**
+	 * Constructor.
+	 */
 	public SMASunnyNetPowerDatumDataSource() {
-		super();
-		setChannelNamesToMonitor(DEFAULT_CHANNEL_NAMES_TO_MONITOR);
+		this(new AtomicReference<>());
 	}
 
 	/**
-	 * Get the default serial parameters used for SMA inverters.
+	 * Construct with cached sample.
 	 * 
-	 * @return the serial port parameters
+	 * @param sample
+	 *        the sample
 	 */
-	public static final SerialPortBeanParameters getDefaultSerialParameters() {
-		return (SerialPortBeanParameters) DEFAULT_SERIAL_PARAMS.clone();
+	public SMASunnyNetPowerDatumDataSource(AtomicReference<AcDcEnergyDatum> sample) {
+		super(sample);
+		setDisplayName("SMA SunnyNet Inverter");
+		smaSupport = new SMAInverterDataSourceSupport();
+		setChannelNamesToMonitor(DEFAULT_CHANNEL_NAMES_TO_MONITOR);
 	}
 
 	@Override
 	public Class<? extends AcEnergyDatum> getDatumType() {
 		return AcDcEnergyDatum.class;
-	}
-
-	private ConversationalDataCollector getDataCollectorInstance() {
-		final DataCollectorFactory<SerialPortBeanParameters> df = getDataCollectorFactory().service();
-		if ( df == null ) {
-			return null;
-		}
-		return df.getConversationalDataCollectorInstance(getSerialParams());
 	}
 
 	private void setupChannelNamesToMonitor() {
@@ -248,32 +229,45 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 	}
 
 	@Override
-	public AcDcEnergyDatum readCurrentDatum() {
-		ConversationalDataCollector dataCollector = null;
-		try {
-			dataCollector = getDataCollectorInstance();
-			if ( dataCollector != null ) {
-				AcDcEnergyDatum datum = dataCollector.collectData(this);
-				addEnergyDatumSourceMetadata(datum);
-				return datum;
-			}
-		} finally {
-			if ( dataCollector != null ) {
-				dataCollector.stopCollecting();
-			}
-		}
-		return null;
+	protected Map<String, Object> readDeviceInfo(SerialConnection conn) throws IOException {
+		// TODO implement?
+		return Collections.emptyMap();
 	}
 
 	@Override
-	public AcDcEnergyDatum conductConversation(ConversationalDataCollector dataCollector) {
+	public AcDcEnergyDatum readCurrentDatum() {
+		return getCurrentSample();
+	}
+
+	private AcDcEnergyDatum getCurrentSample() {
+		AcDcEnergyDatum sample = getSample();
+		if ( sample == null ) {
+			try {
+				sample = performAction(this);
+				if ( sample != null ) {
+					setCachedSample(sample);
+				}
+				if ( log.isTraceEnabled() && sample != null ) {
+					log.trace("Sample: {}", sample.asSimpleMap());
+				}
+				log.debug("Read SMA SunnyNet data: {}", sample);
+			} catch ( IOException e ) {
+				throw new RuntimeException(
+						"Communication problem reading from SMA SunnyNet device " + serialNetwork(), e);
+			}
+		}
+		return sample;
+	}
+
+	@Override
+	public AcDcEnergyDatum doWithConnection(SerialConnection conn) throws IOException {
 		SmaPacket req = null;
 		SmaPacket resp = null;
 		if ( this.smaAddress < 0 || this.channelMap == null ) {
 			// Issue NetStart command to find SMA address
-			req = writeCommand(dataCollector, SmaCommand.NetStart, 0, 0, SmaControl.RequestGroup,
+			req = writeCommand(conn, SmaCommand.NetStart, 0, 0, SmaControl.RequestGroup,
 					SmaPacket.EMPTY_DATA);
-			resp = decodeResponse(dataCollector, req);
+			resp = decodeResponse(conn, req);
 			if ( log.isTraceEnabled() ) {
 				log.trace("Got decoded NetStart response: " + resp);
 			}
@@ -287,9 +281,9 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 			// This returns a lot of data... so we just do it once and cache the 
 			// results for subsequent use
 			this.smaAddress = resp.getSrcAddress();
-			req = writeCommand(dataCollector, SmaCommand.GetChannelInfo, this.smaAddress, 0,
+			req = writeCommand(conn, SmaCommand.GetChannelInfo, this.smaAddress, 0,
 					SmaControl.RequestSingle, SmaPacket.EMPTY_DATA);
-			resp = decodeResponse(dataCollector, req);
+			resp = decodeResponse(conn, req);
 			if ( !resp.isValid() ) {
 				log.warn("Invalid response to GetChannelInfo command, cannot continue: " + resp);
 				return null;
@@ -304,7 +298,7 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 
 		// Issue SynOnline command
 		int pollTime = (int) Math.ceil(System.currentTimeMillis() / 1000.0);
-		req = writeProclamation(dataCollector, SmaCommand.SynOnline, 0, 0, SmaControl.RequestGroup,
+		req = writeCommand(conn, SmaCommand.SynOnline, 0, 0, SmaControl.RequestGroup,
 				SmaUtils.littleEndianBytes(pollTime));
 
 		// pause for a few secs, as first channel may not respond otherwise
@@ -318,13 +312,13 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 				Instant.now(), new DatumSamples());
 
 		// Issue GetData command for each channel we're interested in
-		Number pvVolts = getNumericDataValue(dataCollector, this.pvVoltsChannelName, Float.class);
-		Number pvAmps = getNumericDataValue(dataCollector, this.pvAmpsChannelName, Float.class);
+		Number pvVolts = getNumericDataValue(conn, this.pvVoltsChannelName, Float.class);
+		Number pvAmps = getNumericDataValue(conn, this.pvAmpsChannelName, Float.class);
 		if ( pvVolts != null && pvAmps != null ) {
 			datum.setWatts(Math.round(pvVolts.floatValue() * pvAmps.floatValue()));
 		}
 
-		Number wh = getNumericDataValue(dataCollector, this.kWhChannelName, Double.class);
+		Number wh = getNumericDataValue(conn, this.kWhChannelName, Double.class);
 		if ( wh != null ) {
 			datum.setWattHourReading(wh.longValue());
 		}
@@ -336,20 +330,22 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 	 * Issue a GetData command for a specific channel that returns a numeric
 	 * value and set that value onto a PowerDatum instance.
 	 * 
-	 * @param dataCollector
-	 *        the ConversationalDataCollector to collect the data from
+	 * @param conn
+	 *        the SerialConnection to collect the data from
 	 * @param channelName
 	 *        the name of the channel to read
 	 * @param propType
 	 *        the expected type of number for the channel
 	 * @return the value, or {@literal null} if not available or an error occurs
+	 * @throws IOException
+	 *         if an error occurs
 	 */
-	private Number getNumericDataValue(ConversationalDataCollector dataCollector, String channelName,
-			Class<? extends Number> propType) {
+	private Number getNumericDataValue(SerialConnection conn, String channelName,
+			Class<? extends Number> propType) throws IOException {
 		Number value = null;
 		if ( this.channelMap.containsKey(channelName) ) {
 			SmaChannel channel = this.channelMap.get(channelName);
-			SmaPacket resp = issueGetData(dataCollector, channel, this.smaAddress);
+			SmaPacket resp = issueGetData(conn, channel, this.smaAddress);
 			if ( resp.isValid() ) {
 				Number n = (Number) resp.getUserDataField(SmaUserDataField.Value);
 				if ( n != null ) {
@@ -357,14 +353,14 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 					Object unit = channel.getParameterValue(SmaChannelParam.Unit);
 					if ( unit != null ) {
 						if ( unit.toString().startsWith("m") ) {
-							value = divide(propType, n, Integer.valueOf(1000));
+							value = divide(n, 1000, propType);
 						} else if ( unit.toString().startsWith("k") ) {
-							value = mult(n, 1000);
+							value = multiply(n, 1000);
 						}
 					}
 					Object gain = channel.getParameterValue(SmaChannelParam.Gain);
 					if ( gain instanceof Number ) {
-						value = mult((Number) gain, value);
+						value = multiply((Number) gain, value);
 					}
 				}
 			} else {
@@ -374,16 +370,16 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 		return value;
 	}
 
-	private SmaPacket issueGetData(ConversationalDataCollector dataCollector, SmaChannel channel,
-			int address) {
+	private SmaPacket issueGetData(SerialConnection conn, SmaChannel channel, int address)
+			throws IOException {
 		if ( log.isTraceEnabled() ) {
 			log.trace("Getting data for channel " + channel);
 		}
 		byte[] data = SmaUtils.encodeGetDataRequestUserData(channel);
-		SmaPacket req = writeCommand(dataCollector, SmaCommand.GetData, address, 0,
-				SmaControl.RequestSingle, data);
+		SmaPacket req = writeCommand(conn, SmaCommand.GetData, address, 0, SmaControl.RequestSingle,
+				data);
 
-		return decodeResponse(dataCollector, req);
+		return decodeResponse(conn, req);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -412,8 +408,8 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 	 * 
 	 * <p>
 	 * The returned {@link SmaPacket} can be passed to
-	 * {@link #decodeResponse(ConversationalDataCollector, SmaPacket)} to obtain
-	 * the response value.
+	 * {@link #decodeResponse(SerialConnection, SmaPacket)} to obtain the
+	 * response value.
 	 * </p>
 	 * 
 	 * @param dataCollector
@@ -430,34 +426,10 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 	 *        the user data to include in the command
 	 * @return the command request packet
 	 */
-	private SmaPacket writeCommand(ConversationalDataCollector dataCollector, SmaCommand cmd,
-			int destAddr, int count, SmaControl control, byte[] data) {
+	private SmaPacket writeCommand(SerialConnection conn, SmaCommand cmd, int destAddr, int count,
+			SmaControl control, byte[] data) throws IOException {
 		SmaPacket packet = createRequestPacket(cmd, destAddr, count, control, data);
-		dataCollector.speakAndListen(packet.getPacket());
-		return packet;
-	}
-
-	/**
-	 * Write an SmaPacket without listening for a response.
-	 * 
-	 * @param dataCollector
-	 *        the data collector to use
-	 * @param cmd
-	 *        the command to write
-	 * @param destAddr
-	 *        the device destination address
-	 * @param count
-	 *        the packet count (usually this will be 0)
-	 * @param control
-	 *        the request control type (usually RequestGroup)
-	 * @param data
-	 *        the user data to include in the command
-	 * @return the command request packet
-	 */
-	private SmaPacket writeProclamation(ConversationalDataCollector dataCollector, SmaCommand cmd,
-			int destAddr, int count, SmaControl control, byte[] data) {
-		SmaPacket packet = createRequestPacket(cmd, destAddr, count, control, data);
-		dataCollector.speak(packet.getPacket());
+		conn.writeMessage(packet.getPacket());
 		return packet;
 	}
 
@@ -489,12 +461,15 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 		return packet;
 	}
 
+	private static final byte[] FRAME_START = new byte[] { SmaSunnyNetFrame.TELEGRAM };
+	private static final byte[] FRAME_END = new byte[] { SmaSunnyNetFrame.END };
+
 	/**
 	 * Decode a response to a request SmaPacket.
 	 * 
 	 * <p>
 	 * This is usually called after
-	 * {@link #writeCommand(ConversationalDataCollector, SmaCommand, int, int, SmaControl, byte[])}
+	 * {@link #writeCommand(SerialConnection, SmaCommand, int, int, SmaControl, byte[])}
 	 * to decode the response into a response SmaPacket instance.
 	 * </p>
 	 * 
@@ -503,10 +478,10 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 	 * the first response packet contains a {@code packetCounter} value greater
 	 * than 0. In this situation, this method will create new request packets
 	 * based on the original request packet passed into this method, and call
-	 * {@link ConversationalDataCollector#speakAndListen(byte[])} repeatedly
-	 * until the {@code packetCounter} gets to 0. The {@code userData} values
-	 * for each response packet will be combined into one byte array and
-	 * returned with the final response packet as the {@code userData} value.
+	 * {@link SerialConnection#writeMessage(byte[])} repeatedly until the
+	 * {@code packetCounter} gets to 0. The {@code userData} values for each
+	 * response packet will be combined into one byte array and returned with
+	 * the final response packet as the {@code userData} value.
 	 * </p>
 	 * 
 	 * @param dataCollector
@@ -515,15 +490,15 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 	 *        the original request packet
 	 * @return the response packet
 	 */
-	private SmaPacket decodeResponse(ConversationalDataCollector dataCollector,
-			SmaPacket originalRequest) {
+	private SmaPacket decodeResponse(SerialConnection conn, SmaPacket originalRequest)
+			throws IOException {
 		ByteArrayOutputStream byos = null;
 		SmaPacket curr = null;
 		// the packetCounter in the response is used to say "there are more packets of data coming"
 		// so we loop here, calling getCollectedData() for the first packet and then if more
 		// packets are available we write the original request command again but with the new count
 		while ( curr == null || curr.getPacketCounter() > 0 ) {
-			byte[] data = dataCollector.getCollectedData();
+			byte[] data = conn.readMarkedMessage(FRAME_START, FRAME_END);
 			if ( log.isDebugEnabled() ) {
 				log.debug("Got response data: " + String.valueOf(Hex.encodeHex(data)));
 			}
@@ -543,7 +518,7 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 							originalRequest.getDestAddress(), curr.getPacketCounter(),
 							originalRequest.getControl(), originalRequest.getCommand(),
 							originalRequest.getUserData());
-					dataCollector.speakAndListen(packet.getPacket());
+					conn.writeMessage(packet.getPacket());
 				}
 			}
 		}
@@ -591,23 +566,20 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
-		results.addAll(basicIdentifiableSettings());
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", DEFAULT_SOURCE_ID));
-		results.add(new BasicTitleSettingSpecifier("address",
+		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>(20);
+		result.addAll(basicIdentifiableSettings());
+		result.add(new BasicTextFieldSettingSpecifier("sourceId", null));
+		result.add(new BasicTitleSettingSpecifier("address",
 				(smaAddress < 0 ? "N/A" : String.valueOf(smaAddress)), true));
-		results.add(new BasicTextFieldSettingSpecifier("dataCollectorFactory.propertyFilters['uid']",
-				DEFAULT_SERIAL_PORT));
-		results.add(new BasicTextFieldSettingSpecifier("pvVoltsChannelName", CHANNEL_NAME_PV_VOLTS));
-		results.add(new BasicTextFieldSettingSpecifier("pvAmpsChannelName", CHANNEL_NAME_PV_AMPS));
-		results.add(new BasicTextFieldSettingSpecifier("kWhChannelName", CHANNEL_NAME_KWH));
+		result.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['uid']",
+				"Serial Port"));
+		result.add(new BasicTextFieldSettingSpecifier("pvVoltsChannelName", CHANNEL_NAME_PV_VOLTS));
+		result.add(new BasicTextFieldSettingSpecifier("pvAmpsChannelName", CHANNEL_NAME_PV_AMPS));
+		result.add(new BasicTextFieldSettingSpecifier("kWhChannelName", CHANNEL_NAME_KWH));
 
-		results.add(new BasicTextFieldSettingSpecifier("synOnlineWaitMs",
+		result.add(new BasicTextFieldSettingSpecifier("synOnlineWaitMs",
 				String.valueOf(DEFAULT_SYN_ONLINE_WAIT_MS)));
-
-		results.addAll(SerialPortBeanParameters.getDefaultSettingSpecifiers(
-				SMASunnyNetPowerDatumDataSource.getDefaultSerialParameters(), "serialParams."));
-		return results;
+		return result;
 	}
 
 	public long getSynOnlineWaitMs() {
@@ -645,21 +617,26 @@ public class SMASunnyNetPowerDatumDataSource extends SMAInverterDataSourceSuppor
 		setupChannelNamesToMonitor();
 	}
 
-	public SerialPortBeanParameters getSerialParams() {
-		return serialParams;
+	public Set<String> getChannelNamesToMonitor() {
+		return smaSupport.getChannelNamesToMonitor();
 	}
 
-	public void setSerialParams(SerialPortBeanParameters serialParams) {
-		this.serialParams = serialParams;
+	public void setChannelNamesToMonitor(Set<String> channelNamesToMonitor) {
+		smaSupport.setChannelNamesToMonitor(channelNamesToMonitor);
 	}
 
-	public OptionalFilterableService<DataCollectorFactory<SerialPortBeanParameters>> getDataCollectorFactory() {
-		return dataCollectorFactory;
+	@Override
+	public String getSourceId() {
+		return smaSupport.getSourceId();
 	}
 
-	public void setDataCollectorFactory(
-			OptionalFilterableService<DataCollectorFactory<SerialPortBeanParameters>> dataCollectorFactory) {
-		this.dataCollectorFactory = dataCollectorFactory;
+	@Override
+	public void setSourceId(String sourceId) {
+		smaSupport.setSourceId(sourceId);
+	}
+
+	public void setSettingDao(SettingDao settingDao) {
+		smaSupport.setSettingDao(settingDao);
 	}
 
 }

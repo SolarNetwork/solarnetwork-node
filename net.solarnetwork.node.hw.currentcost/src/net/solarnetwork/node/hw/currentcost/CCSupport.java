@@ -35,8 +35,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.concurrent.ConcurrentSkipListSet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import net.solarnetwork.domain.datum.AcEnergyDatum;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialNetwork;
 import net.solarnetwork.node.io.serial.support.SerialDeviceDatumDataSourceSupport;
@@ -116,10 +115,12 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
  * {@link #DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT}.</dd>
  * </dl>
  * 
+ * @param <S>
+ *        the sample type
  * @author matt
  * @version 3.0
  */
-public class CCSupport extends SerialDeviceDatumDataSourceSupport {
+public class CCSupport extends SerialDeviceDatumDataSourceSupport<AcEnergyDatum> {
 
 	/** The data byte index for the device's address ID. */
 	public static final int DEVICE_ADDRESS_IDX = 2;
@@ -147,13 +148,10 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	/** The ending message marker, which is the closing XML element. */
 	public static final String MESSAGE_END_MARKER = "</msg>";
 
-	/** A class-level logger. */
-	protected final Logger log = LoggerFactory.getLogger(getClass());
-
 	/** A CCMessageParser instance. */
 	protected final CCMessageParser messageParser = new CCMessageParser();
 
-	private final SortedSet<CCDatum> knownAddresses = new ConcurrentSkipListSet<CCDatum>();
+	private final SortedSet<CCDatum> knownAddresses = new ConcurrentSkipListSet<>();
 
 	private float voltage = DEFAULT_VOLTAGE;
 	private int ampSensorIndex = DEFAULT_AMP_SENSOR_INDEX;
@@ -163,7 +161,6 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	private Set<String> sourceIdFilter = null;
 	private boolean collectAllSourceIds = true;
 	private int collectAllSourceIdsTimeout = DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT;
-	private long sampleCacheMs = 5000;
 
 	/**
 	 * Add a new cached "known" address value.
@@ -249,8 +246,8 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 			for ( int i = 1; i <= 3; i++ ) {
 				String anAddress = addressValue(datum, i);
 				if ( captureAddresses.contains(anAddress) ) {
-					if ( sampleCacheMs < 1
-							|| datum.getCreated().until(now, ChronoUnit.MILLIS) <= sampleCacheMs ) {
+					if ( getSampleCacheMs() < 1
+							|| datum.getCreated().until(now, ChronoUnit.MILLIS) <= getSampleCacheMs() ) {
 						result.add(datum);
 						break;
 					}
@@ -333,21 +330,17 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 			}
 			status.append(datum.getStatusMessage());
 		}
-		CCSupport defaults = new CCSupport();
 		results.add(new BasicTitleSettingSpecifier("knownAddresses", status.toString(), true));
 		results.addAll(getIdentifiableSettingSpecifiers());
 		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['uid']",
 				"Serial Port"));
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
-				String.valueOf(defaults.getSampleCacheMs())));
+				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
 		results.add(new BasicTextFieldSettingSpecifier("voltage", String.valueOf(DEFAULT_VOLTAGE)));
 
-		results.add(new BasicToggleSettingSpecifier("multiCollectSensor1",
-				defaults.isMultiCollectSensor1()));
-		results.add(new BasicToggleSettingSpecifier("multiCollectSensor2",
-				defaults.isMultiCollectSensor2()));
-		results.add(new BasicToggleSettingSpecifier("multiCollectSensor3",
-				defaults.isMultiCollectSensor3()));
+		results.add(new BasicToggleSettingSpecifier("multiCollectSensor1", true));
+		results.add(new BasicToggleSettingSpecifier("multiCollectSensor2", true));
+		results.add(new BasicToggleSettingSpecifier("multiCollectSensor3", true));
 
 		results.add(new BasicTextFieldSettingSpecifier("sourceIdFormat", DEFAULT_SOURCE_ID_FORMAT));
 		results.add(new BasicTextFieldSettingSpecifier("addressSourceMappingValue", ""));
@@ -540,14 +533,6 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	@Override
 	public String getUID() {
 		return getUid();
-	}
-
-	public long getSampleCacheMs() {
-		return sampleCacheMs;
-	}
-
-	public void setSampleCacheMs(long sampleCacheMs) {
-		this.sampleCacheMs = sampleCacheMs;
 	}
 
 }

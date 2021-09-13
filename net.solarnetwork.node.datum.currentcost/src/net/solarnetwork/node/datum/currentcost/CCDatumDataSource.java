@@ -41,7 +41,6 @@ import net.solarnetwork.node.hw.currentcost.CCDatum;
 import net.solarnetwork.node.hw.currentcost.CCSupport;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
-import net.solarnetwork.node.service.DataCollector;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.settings.KeyedSettingSpecifier;
@@ -60,12 +59,6 @@ import net.solarnetwork.util.ByteUtils;
  * broadcast by a CurrentCost watt meters and write that data to a local serial
  * port. This class will read the device data from the serial port to generate
  * consumption data.
- * </p>
- * 
- * <p>
- * It assumes the {@link DataCollector} implementation blocks until appropriate
- * data is available when the {@link DataCollector#collectData()} method is
- * called.
  * </p>
  * 
  * @author matt

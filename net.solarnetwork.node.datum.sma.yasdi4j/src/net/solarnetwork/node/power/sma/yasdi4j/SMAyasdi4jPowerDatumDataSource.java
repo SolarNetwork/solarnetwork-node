@@ -35,12 +35,15 @@ import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.context.MessageSource;
 import de.michaeldenk.yasdi4j.YasdiChannel;
 import de.michaeldenk.yasdi4j.YasdiDevice;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
+import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
 import net.solarnetwork.node.domain.datum.AcEnergyDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.sma.SMAInverterDataSourceSupport;
 import net.solarnetwork.node.io.yasdi4j.YasdiMaster;
 import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
 import net.solarnetwork.service.OptionalService.OptionalFilterableService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -60,7 +63,7 @@ import net.solarnetwork.util.StringUtils;
  * @author matt
  * @version 2.0
  */
-public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
+public class SMAyasdi4jPowerDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider {
 
 	/** The default value for the {@code sourceId} property. */
@@ -92,6 +95,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 			.unmodifiableSet(new LinkedHashSet<String>(
 					Arrays.asList(CHANNEL_NAME_PV_AMPS, CHANNEL_NAME_PV_VOLTS, CHANNEL_NAME_KWH)));
 
+	private final SMAInverterDataSourceSupport smaSupport;
 	private String pvVoltsChannelName = CHANNEL_NAME_PV_VOLTS;
 	private String pvAmpsChannelName = CHANNEL_NAME_PV_AMPS;
 	private Set<String> pvWattsChannelNames = Collections.singleton(CHANNEL_NAME_WATTS);
@@ -106,6 +110,7 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 
 	public SMAyasdi4jPowerDatumDataSource() {
 		super();
+		smaSupport = new SMAInverterDataSourceSupport();
 		setChannelNamesToMonitor(DEFAULT_CHANNEL_NAMES_TO_MONITOR);
 	}
 
@@ -198,6 +203,13 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 		addEnergyDatumSourceMetadata(datum);
 
 		return datum;
+	}
+
+	private void addEnergyDatumSourceMetadata(NodeDatum d) {
+		// associate generation tags with this source
+		GeneralDatumMetadata sourceMeta = new GeneralDatumMetadata();
+		sourceMeta.addTag(AcDcEnergyDatum.TAG_GENERATION);
+		addSourceMetadata(d.getSourceId(), sourceMeta);
 	}
 
 	private boolean isValidDatum(SMAPowerDatum d) {
@@ -469,6 +481,26 @@ public class SMAyasdi4jPowerDatumDataSource extends SMAInverterDataSourceSupport
 
 	public int getChannelMaxAgeSeconds() {
 		return channelMaxAgeSeconds;
+	}
+
+	public Set<String> getChannelNamesToMonitor() {
+		return smaSupport.getChannelNamesToMonitor();
+	}
+
+	public void setChannelNamesToMonitor(Set<String> channelNamesToMonitor) {
+		smaSupport.setChannelNamesToMonitor(channelNamesToMonitor);
+	}
+
+	public String getSourceId() {
+		return smaSupport.getSourceId();
+	}
+
+	public void setSourceId(String sourceId) {
+		smaSupport.setSourceId(sourceId);
+	}
+
+	public void setSettingDao(SettingDao settingDao) {
+		smaSupport.setSettingDao(settingDao);
 	}
 
 }

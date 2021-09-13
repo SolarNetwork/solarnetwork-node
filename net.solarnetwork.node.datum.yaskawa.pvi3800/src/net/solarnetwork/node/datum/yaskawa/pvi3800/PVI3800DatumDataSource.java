@@ -111,11 +111,7 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport<A
 
 	@Override
 	public AcDcEnergyDatum readCurrentDatum() {
-		final AcDcEnergyDatum currSample = getCurrentSample();
-		if ( currSample == null ) {
-			return null;
-		}
-		return currSample;
+		return getCurrentSample();
 	}
 
 	@Override

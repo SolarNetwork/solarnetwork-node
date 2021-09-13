@@ -33,29 +33,18 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.power.impl.sma.sunnynet.SMASunnyNetPowerDatumDataSource</value>
+				<value>net.solarnetwork.node.io.serial.support.SerialDeviceDatumDataSourceSupport</value>
+				<value>net.solarnetwork.node.io.serial.support.SerialDeviceSupport</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
-		</property>
-		<property name="parentMessageSource">
-			<bean class="net.solarnetwork.support.PrefixedMessageSource">
-				<property name="prefix" value="serialParams."/>
-				<property name="delegate">
-					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-						<property name="basenames">
-							<list>
-								<value>net.solarnetwork.node.service.support.SerialPortBeanParameters</value>
-							</list>
-						</property>
-					</bean>
-				</property>
-			</bean>
 		</property>
 	</bean>
 	
 	<bean id="jobMessageSource" class="net.solarnetwork.support.PrefixedMessageSource">
 		<property name="prefix" value="datumDataSource."/>
 		<property name="delegate" ref="messageSource"/>
-	</bean>	
+	</bean>
+
 	<!-- Published services -->
 	
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
@@ -113,13 +102,13 @@
 								<bean class="net.solarnetwork.node.power.impl.sma.sunnynet.SMASunnyNetPowerDatumDataSource">
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="placeholderService" ref="placeholderService"/>
-									<property name="dataCollectorFactory">
+									<property name="serialNetwork">
 										<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 											<argument ref="bundleContext"/>
-											<property name="serviceClassName" value="net.solarnetwork.node.DataCollectorFactory"/>
+											<property name="serviceClassName" value="net.solarnetwork.node.io.serial.SerialNetwork"/>
 											<property name="propertyFilters">
 												<map>
-													<entry key="uid" value="/dev/ttyS0"/>
+													<entry key="uid" value="Serial Port"/>
 												</map>
 											</property>
 										</bean>	
