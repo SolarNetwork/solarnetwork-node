@@ -30,7 +30,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
@@ -47,7 +46,6 @@ import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.util.CachedResult;
 
 /**
  * {@link DatumDataSource} for the Solectria PVI-3800 series inverter.
@@ -55,14 +53,16 @@ import net.solarnetwork.util.CachedResult;
  * @author matt
  * @version 2.0
  */
-public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport
+public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport<AcDcEnergyDatum>
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
-	private final AtomicReference<CachedResult<AcDcEnergyDatum>> sample;
+	/** The {@code unitId} property default value. */
+	public static final int DEFAULT_UNIT_ID = 1;
 
-	private int unitId = 1;
-	private long sampleCacheMs = 5000;
-	private String sourceId = "PVI-3800";
+	/** The {@code sourceId} property default value. */
+	public static final String DEFAULT_SOURCE_ID = "PVI-3800";
+
+	private int unitId = DEFAULT_UNIT_ID;
 
 	/**
 	 * Default constructor.
@@ -77,34 +77,31 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport
 	 * @param sample
 	 *        the sample data to use
 	 */
-	public PVI3800DatumDataSource(AtomicReference<CachedResult<AcDcEnergyDatum>> sample) {
-		super();
-		this.sample = sample;
+	public PVI3800DatumDataSource(AtomicReference<AcDcEnergyDatum> sample) {
+		super(sample);
+		setDisplayName("Solectria PVI-3800 Meter");
+		setSourceId(DEFAULT_SOURCE_ID);
 	}
 
 	private AcDcEnergyDatum getCurrentSample() {
-		CachedResult<AcDcEnergyDatum> cachedResult = sample.get();
-		AcDcEnergyDatum currSample = null;
-		if ( cachedResult == null || !cachedResult.isValid() ) {
+		AcDcEnergyDatum sample = getSample();
+		if ( sample == null ) {
 			try {
-				currSample = performAction(
-						new BasicDatumPopulatorAction(unitId, resolvePlaceholders(sourceId)));
-				if ( currSample != null ) {
-					sample.set(new CachedResult<>(currSample, currSample.getTimestamp().toEpochMilli(),
-							sampleCacheMs, TimeUnit.MILLISECONDS));
+				sample = performAction(
+						new BasicDatumPopulatorAction(unitId, resolvePlaceholders(getSourceId())));
+				if ( sample != null ) {
+					setCachedSample(sample);
 				}
-				if ( log.isTraceEnabled() && currSample != null ) {
-					log.trace("Sample: {}", currSample.asSimpleMap());
+				if ( log.isTraceEnabled() && sample != null ) {
+					log.trace("Sample: {}", sample.asSimpleMap());
 				}
-				log.debug("Read PVI3800 data: {}", currSample);
+				log.debug("Read PVI3800 data: {}", sample);
 			} catch ( IOException e ) {
 				throw new RuntimeException(
 						"Communication problem reading from PVI3800 device " + serialNetwork(), e);
 			}
-		} else {
-			currSample = cachedResult.getResult();
 		}
-		return currSample;
+		return sample;
 	}
 
 	@Override
@@ -134,10 +131,6 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport
 			return Collections.singletonList(datum);
 		}
 		return Collections.emptyList();
-	}
-
-	public CachedResult<AcDcEnergyDatum> getSample() {
-		return sample.get();
 	}
 
 	@Override
@@ -178,28 +171,20 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport
 	}
 
 	@Override
-	public String getDisplayName() {
-		return "Solectria PVI-3800 Meter";
-	}
-
-	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<>(12);
-		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
-		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(getSample()), true));
+		List<SettingSpecifier> result = new ArrayList<>(12);
+		result.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
+		result.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(getSample()), true));
 
-		results.addAll(getIdentifiableSettingSpecifiers());
-
-		PVI3800DatumDataSource defaults = new PVI3800DatumDataSource();
-		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['uid']",
+		result.addAll(getIdentifiableSettingSpecifiers());
+		result.add(new BasicTextFieldSettingSpecifier("sourceId", DEFAULT_SOURCE_ID));
+		result.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['uid']",
 				"Serial Port"));
-		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
-				String.valueOf(defaults.getSampleCacheMs())));
+		result.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(DEFAULT_UNIT_ID)));
 
-		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.unitId)));
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
-
-		return results;
+		result.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
+				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
+		return result;
 	}
 
 	private String getInfoMessage() {
@@ -212,11 +197,10 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport
 		return (msg == null ? "N/A" : msg);
 	}
 
-	private String getSampleMessage(CachedResult<AcDcEnergyDatum> sample) {
-		if ( sample == null ) {
+	private String getSampleMessage(AcDcEnergyDatum datum) {
+		if ( datum == null ) {
 			return "N/A";
 		}
-		AcDcEnergyDatum datum = sample.getResult();
 		StringBuilder buf = new StringBuilder();
 		buf.append("W = ").append(datum.getWatts());
 		buf.append(", Wh = ").append(datum.getWattHourReading());
@@ -239,35 +223,6 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport
 			return;
 		}
 		this.unitId = unitId;
-	}
-
-	/**
-	 * Get the sample cache maximum age, in milliseconds.
-	 * 
-	 * @return the cache milliseconds
-	 */
-	public long getSampleCacheMs() {
-		return sampleCacheMs;
-	}
-
-	/**
-	 * Set the sample cache maximum age, in milliseconds.
-	 * 
-	 * @param sampleCacheMs
-	 *        the cache milliseconds
-	 */
-	public void setSampleCacheMs(long sampleCacheMs) {
-		this.sampleCacheMs = sampleCacheMs;
-	}
-
-	/**
-	 * Set the source ID to use for returned datum.
-	 * 
-	 * @param sourceId
-	 *        the source ID to use; defaults to {@literal PVI-3800}
-	 */
-	public void setSourceId(String sourceId) {
-		this.sourceId = sourceId;
 	}
 
 }

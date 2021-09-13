@@ -32,6 +32,7 @@
 		<property name="basenames">
 			<array>
 				<value>net.solarnetwork.node.datum.gss.cozir.CozIrDatumDataSource</value>
+				<value>net.solarnetwork.node.io.serial.support.SerialDeviceDatumDataSourceSupport</value>
 				<value>net.solarnetwork.node.io.serial.support.SerialDeviceSupport</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</array>

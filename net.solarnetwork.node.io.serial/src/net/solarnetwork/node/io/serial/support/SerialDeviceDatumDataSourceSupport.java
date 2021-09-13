@@ -23,8 +23,12 @@
 package net.solarnetwork.node.io.serial.support;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.node.io.serial.SerialNetwork;
@@ -37,11 +41,14 @@ import net.solarnetwork.util.StringUtils;
  * A base helper class to support {@link SerialNetwork} based
  * {@link DatumDataSource} implementations.
  * 
+ * @param <S>
+ *        the sample type
  * @author matt
  * @version 2.0
  * @since 1.3
  */
-public abstract class SerialDeviceDatumDataSourceSupport extends DatumDataSourceSupport {
+public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
+		extends DatumDataSourceSupport {
 
 	/** Key for the device name, as a String. */
 	public static final String INFO_KEY_DEVICE_NAME = SerialDeviceSupport.INFO_KEY_DEVICE_NAME;
@@ -61,8 +68,61 @@ public abstract class SerialDeviceDatumDataSourceSupport extends DatumDataSource
 	 */
 	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = SerialDeviceSupport.INFO_KEY_DEVICE_MANUFACTURE_DATE;
 
+	/** The {@code sampleCacheMs} property default value. */
+	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000L;
+
+	private final AtomicReference<S> sample;
+
+	private String sourceId;
+	private long sampleCacheMs = DEFAULT_SAMPLE_CACHE_MS;
 	private Map<String, Object> deviceInfo;
 	private OptionalService<SerialNetwork> serialNetwork;
+
+	/**
+	 * Construct with a specific sample data instance.
+	 * 
+	 * @param sample
+	 *        the sample data to use
+	 */
+	public SerialDeviceDatumDataSourceSupport() {
+		this(new AtomicReference<>());
+	}
+
+	/**
+	 * Construct with a specific sample data instance.
+	 * 
+	 * @param sample
+	 *        the sample data to use
+	 */
+	public SerialDeviceDatumDataSourceSupport(AtomicReference<S> sample) {
+		super();
+		this.sample = sample;
+	}
+
+	/**
+	 * Test if the sample data has expired.
+	 * 
+	 * @return {@literal true} if the sample data has expired
+	 */
+	protected boolean isCachedSampleExpired() {
+		return isCachedSampleExpired(getSample());
+	}
+
+	/**
+	 * Test if the sample data has expired.
+	 * 
+	 * @return {@literal true} if the sample data has expired
+	 */
+	protected boolean isCachedSampleExpired(S sample) {
+		if ( sample == null || sample.getTimestamp() == null ) {
+			return true;
+		}
+		final long diffMs = sample.getTimestamp().until(Instant.now(), ChronoUnit.MILLIS);
+		if ( diffMs > sampleCacheMs ) {
+			return true;
+		}
+		return false;
+	}
 
 	/**
 	 * Get the {@link SerialNetwork} from the configured {@code serialNetwork}
@@ -90,8 +150,8 @@ public abstract class SerialDeviceDatumDataSourceSupport extends DatumDataSource
 	/**
 	 * Return an informational message composed of general device info. This
 	 * method will call {@link #getDeviceInfo()} and return a {@code /} (forward
-	 * slash) delimited string of the resulting values, or {@literal null} if that
-	 * method returns {@literal null}.
+	 * slash) delimited string of the resulting values, or {@literal null} if
+	 * that method returns {@literal null}.
 	 * 
 	 * @return info message
 	 */
@@ -158,6 +218,39 @@ public abstract class SerialDeviceDatumDataSourceSupport extends DatumDataSource
 	}
 
 	/**
+	 * Get the non-expired cached sample instance.
+	 * 
+	 * @return the cached sample, or {@literal null} if the instance is not
+	 *         available or has expired
+	 */
+	public S getSample() {
+		S sample = getCachedSample();
+		if ( isCachedSampleExpired(sample) ) {
+			return null;
+		}
+		return sample;
+	}
+
+	/**
+	 * Get the cached sample data instance.
+	 * 
+	 * @return the data, or {@literal null}
+	 */
+	public S getCachedSample() {
+		return sample.get();
+	}
+
+	/**
+	 * Set the cached sample data instance.
+	 * 
+	 * @param sample
+	 *        the data to cache
+	 */
+	protected void setCachedSample(S sample) {
+		this.sample.set(sample);
+	}
+
+	/**
 	 * Get direct access to the device info data.
 	 * 
 	 * @return the device info, or {@literal null}
@@ -167,11 +260,11 @@ public abstract class SerialDeviceDatumDataSourceSupport extends DatumDataSource
 	}
 
 	/**
-	 * Set the device info data. Setting the {@code deviceInfo} to {@literal null}
-	 * will force the next call to {@link #getDeviceInfo()} to read from the
-	 * device to populate this data, and setting this to anything else will
-	 * force all subsequent calls to {@link #getDeviceInfo()} to simply return
-	 * that map.
+	 * Set the device info data. Setting the {@code deviceInfo} to
+	 * {@literal null} will force the next call to {@link #getDeviceInfo()} to
+	 * read from the device to populate this data, and setting this to anything
+	 * else will force all subsequent calls to {@link #getDeviceInfo()} to
+	 * simply return that map.
 	 * 
 	 * @param deviceInfo
 	 *        the device info map to set
@@ -197,6 +290,44 @@ public abstract class SerialDeviceDatumDataSourceSupport extends DatumDataSource
 	 */
 	public void setSerialNetwork(OptionalService<SerialNetwork> serialNetwork) {
 		this.serialNetwork = serialNetwork;
+	}
+
+	/**
+	 * Get the sample cache maximum age, in milliseconds.
+	 * 
+	 * @return the cache milliseconds
+	 */
+	public long getSampleCacheMs() {
+		return sampleCacheMs;
+	}
+
+	/**
+	 * Set the sample cache maximum age, in milliseconds.
+	 * 
+	 * @param sampleCacheMs
+	 *        the cache milliseconds
+	 */
+	public void setSampleCacheMs(long sampleCacheMs) {
+		this.sampleCacheMs = sampleCacheMs;
+	}
+
+	/**
+	 * Get the source ID to use for returned datum.
+	 * 
+	 * @return the source ID
+	 */
+	public String getSourceId() {
+		return sourceId;
+	}
+
+	/**
+	 * Set the source ID to use for returned datum.
+	 * 
+	 * @param sourceId
+	 *        the source ID to use; defaults to {@literal PVI-3800}
+	 */
+	public void setSourceId(String sourceId) {
+		this.sourceId = sourceId;
 	}
 
 }

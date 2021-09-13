@@ -17,11 +17,6 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
-	<!-- Service References -->
-	
-	<reference id="powerDataCollectorFactory" interface="org.springframework.beans.factory.ObjectFactory" availability="optional"
-		filter="(&amp;(datumClassName=net.solarnetwork.node.power.PowerDatum)(factoryObjectClassName=net.solarnetwork.node.service.DataCollector))"/>
-	
 	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
@@ -38,6 +33,8 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.power.impl.OutbackMX60PowerDatumDataSource</value>
+				<value>net.solarnetwork.node.io.serial.support.SerialDeviceDatumDataSourceSupport</value>
+				<value>net.solarnetwork.node.io.serial.support.SerialDeviceSupport</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
@@ -57,7 +54,7 @@
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
-
+	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.outback.mx60" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
@@ -87,7 +84,7 @@
 							</property>
 							<property name="properties">
 								<map>
-									<entry key="datumClassName" value="net.solarnetwork.node.domain.DcEnergyDatum"/>
+									<entry key="datumClassName" value="net.solarnetwork.node.domain.datum.DcEnergyDatum"/>
 								</map>
 							</property>
 						</bean>
@@ -105,7 +102,17 @@
 								<bean class="net.solarnetwork.node.power.impl.OutbackMX60PowerDatumDataSource">
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="placeholderService" ref="placeholderService"/>
-									<property name="dataCollectorFactory" ref="powerDataCollectorFactory"/>
+									<property name="serialNetwork">
+										<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+											<argument ref="bundleContext"/>
+											<property name="serviceClassName" value="net.solarnetwork.node.io.serial.SerialNetwork"/>
+											<property name="propertyFilters">
+												<map>
+													<entry key="uid" value="Serial Port"/>
+												</map>
+											</property>
+										</bean>	
+									</property>
 								</bean>
 							</entry>
 						</map>
