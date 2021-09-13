@@ -14,22 +14,21 @@
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
 
-	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
-		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
+	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
 		<property name="sticky" value="true"/>
 	</bean>
 	
-	<bean id="datumMetadataService" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.DatumMetadataService"/>
+	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
 		<property name="sticky" value="true"/>
 	</bean>
 		
-	<bean id="placeholderService" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
 		<property name="sticky" value="true"/>
 	</bean>
 
@@ -37,11 +36,11 @@
 		<property name="basenames">
 			<array>
 				<value>net.solarnetwork.node.datum.egauge.ws.EGaugeDatumDataSource</value>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</array>
 		</property>
 		<property name="parentMessageSource">
-			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+			<bean class="net.solarnetwork.support.PrefixedMessageSource">
 				<property name="prefix" value="client."/>
 				<property name="delegate" ref="xmlClientMessageSource"/>
 			</bean>	
@@ -52,22 +51,22 @@
 		<property name="basename" value="net.solarnetwork.node.datum.egauge.ws.client.XmlEGaugeClient"/>
 	</bean>
 	
-	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+	<bean id="jobMessageSource" class="net.solarnetwork.support.PrefixedMessageSource">
 		<property name="prefix" value="datumDataSource."/>
 		<property name="delegate" ref="messageSource"/>
 	</bean>	
 
-	<bean id="expressionServices" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.support.ExpressionService"/>
+	<bean id="expressionServices" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.service.ExpressionService"/>
 	</bean>
 
 	<!-- Published Services -->
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="eGauge Sytems service"/>
-			<property name="factoryUID" value="net.solarnetwork.node.datum.egauge.ws"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.egauge.ws"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
@@ -76,7 +75,7 @@
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
 			<beans:value>net.solarnetwork.node.job.ServiceProvider</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.egauge"/>
@@ -84,7 +83,7 @@
 		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
 			<property name="trigger">
 				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-					<property name="name" value="egaugeDatumLoggerTrigger"/>
+					<property name="name" value="egaugeDatumPollTrigger"/>
 					<property name="cronExpression" value="15 * * * * ?"/>
 					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
 					<property name="randomSecond" value="true"/>
@@ -96,12 +95,12 @@
 						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
 							<property name="interfaces">
 								<list>
-									<value>net.solarnetwork.node.DatumDataSource</value>
+									<value>net.solarnetwork.node.service.DatumDataSource</value>
 								</list>
 							</property>
 							<property name="properties">
 								<map>
-									<entry key="datumClassName" value="net.solarnetwork.node.domain.PVEnergyDatum"/>
+									<entry key="datumClassName" value="net.solarnetwork.node.domain.datum.AcDcEnergyDatum"/>
 								</map>
 							</property>
 						</bean>
@@ -110,13 +109,13 @@
 			</property>
 			<property name="jobDetail">
 				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-					<property name="name" value="egaugeDatumLoggerJob"/>
-					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
+					<property name="name" value="egaugeDatumPollJob"/>
+					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourcePollJob"/>
 					<property name="jobDataAsMap">
 						<map>
-							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
+							<entry key="datumQueue" value-ref="datumQueue"/>
 							<entry key="datumDataSource">
-								<bean init-method="init" class="net.solarnetwork.node.datum.egauge.ws.EGaugeDatumDataSource">
+								<bean class="net.solarnetwork.node.datum.egauge.ws.EGaugeDatumDataSource">
 									<property name="datumMetadataService" ref="datumMetadataService"/>
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="client">

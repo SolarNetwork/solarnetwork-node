@@ -22,15 +22,15 @@
 
 package net.solarnetwork.node.datum.egauge.ws.client;
 
-import net.solarnetwork.node.datum.egauge.ws.EGaugePowerDatum;
-import net.solarnetwork.node.domain.GeneralDatum;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * Interface for eGauge clients.
  * 
  * @author maxieduncan
- * @version 1.0
+ * @version 2.0
  */
 public interface EGaugeClient extends SettingSpecifierProvider {
 
@@ -39,7 +39,7 @@ public interface EGaugeClient extends SettingSpecifierProvider {
 	 * 
 	 * @return the current eGauge readings.
 	 */
-	EGaugePowerDatum getCurrent();
+	AcDcEnergyDatum getCurrent();
 
 	/**
 	 * Get information about a general datum sample.
@@ -53,7 +53,7 @@ public interface EGaugeClient extends SettingSpecifierProvider {
 	 *        the data sample to get information about
 	 * @return the information string
 	 */
-	String getSampleInfo(GeneralDatum snap);
+	String getSampleInfo(NodeDatum snap);
 
 	/**
 	 * Get the source ID the client is configured to populate returned datum

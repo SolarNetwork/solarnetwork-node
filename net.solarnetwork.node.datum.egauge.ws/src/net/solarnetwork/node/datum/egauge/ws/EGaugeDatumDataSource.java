@@ -22,20 +22,24 @@
 
 package net.solarnetwork.node.datum.egauge.ws;
 
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.datum.egauge.ws.client.EGaugeClient;
 import net.solarnetwork.node.datum.egauge.ws.client.XmlEGaugeClient;
-import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
-import net.solarnetwork.node.settings.MappableSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.support.DatumDataSourceSupport;
+import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.settings.MappableSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.CachedResult;
 
 /**
@@ -48,10 +52,10 @@ import net.solarnetwork.util.CachedResult;
  * 
  * @author maxieduncan
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class EGaugeDatumDataSource extends DatumDataSourceSupport
-		implements DatumDataSource<GeneralNodePVEnergyDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, SettingSpecifierProvider {
 
 	/**
 	 * The client that should be used to retrieve the eGauge data from the
@@ -68,17 +72,17 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 	 */
 	private Throwable sampleException;
 
-	private final AtomicReference<CachedResult<EGaugePowerDatum>> sampleCache = new AtomicReference<>();
+	private final AtomicReference<CachedResult<AcDcEnergyDatum>> sampleCache = new AtomicReference<>();
 
-	private EGaugePowerDatum getCurrentSample() {
+	private AcDcEnergyDatum getCurrentSample() {
 		// First check for a cached sample
-		CachedResult<EGaugePowerDatum> cache = sampleCache.get();
+		CachedResult<AcDcEnergyDatum> cache = sampleCache.get();
 		if ( cache != null && cache.isValid() ) {
 			return cache.getResult();
 		}
 
 		// Cache has expired so initiate new instance and cache
-		EGaugePowerDatum datum = null;
+		AcDcEnergyDatum datum = null;
 		try {
 			datum = getClient().getCurrent();
 		} catch ( RuntimeException e ) {
@@ -100,9 +104,9 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 
 	//	
 
-	private void setSampleCache(CachedResult<EGaugePowerDatum> cache, EGaugePowerDatum datum) {
+	private void setSampleCache(CachedResult<AcDcEnergyDatum> cache, AcDcEnergyDatum datum) {
 		sampleCache.compareAndSet(cache,
-				new CachedResult<EGaugePowerDatum>(datum, sampleCacheMs, TimeUnit.MILLISECONDS));
+				new CachedResult<>(datum, sampleCacheMs, TimeUnit.MILLISECONDS));
 	}
 
 	@Override
@@ -112,21 +116,17 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 	}
 
 	@Override
-	public Class<? extends GeneralNodePVEnergyDatum> getDatumType() {
-		return EGaugePowerDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AcDcEnergyDatum.class;
 	}
 
 	@Override
-	public EGaugePowerDatum readCurrentDatum() {
+	public AcDcEnergyDatum readCurrentDatum() {
 		return getCurrentSample();
 	}
 
-	public void init() {
-		// nothing to do
-	}
-
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.egauge.ws";
 	}
 
@@ -172,7 +172,7 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 	 * @return A status message.
 	 */
 	public String getInfoMessage() {
-		EGaugePowerDatum snap = null;
+		AcDcEnergyDatum snap = null;
 		try {
 			snap = getCurrentSample();
 		} catch ( Exception e ) {
@@ -191,11 +191,12 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 				}
 				buf.append(info);
 			}
-			if ( snap.getCreated() != null ) {
+			if ( snap.getTimestamp() != null ) {
 				if ( buf.length() > 0 ) {
 					buf.append("; ");
 				}
-				buf.append(String.format("%tc", snap.getCreated()));
+				buf.append(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT)
+						.format(snap.getTimestamp().atZone(ZoneId.systemDefault())));
 			}
 		}
 		return (buf.length() < 1 ? "N/A" : buf.toString());

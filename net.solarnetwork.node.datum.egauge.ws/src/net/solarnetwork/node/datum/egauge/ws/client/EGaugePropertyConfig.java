@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.datum.egauge.ws.client;
 
-import static net.solarnetwork.support.ExpressionService.getGeneralExpressionReferenceLink;
+import static net.solarnetwork.service.ExpressionService.getGeneralExpressionReferenceLink;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -33,17 +33,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import org.springframework.expression.Expression;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.support.ExpressionService;
-import net.solarnetwork.support.ExpressionServiceExpression;
+import net.solarnetwork.service.ExpressionService;
+import net.solarnetwork.service.support.ExpressionServiceExpression;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Stores the configuration for accessing an eGauge register.
  * 
  * @author maxieduncan
- * @version 1.1
+ * @version 2.0
  */
 public class EGaugePropertyConfig {
 
