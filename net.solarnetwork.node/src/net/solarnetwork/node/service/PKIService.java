@@ -78,7 +78,7 @@ public interface PKIService {
 	 * @param issuerDN
 	 *        the expected issuer subject DN
 	 * 
-	 * @return boolean <em>true</em> if considered valid
+	 * @return boolean {@literal true} if considered valid
 	 * @throws CertificateException
 	 *         if any certificate related error occurs
 	 */

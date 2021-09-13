@@ -162,9 +162,9 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	 * 
 	 * <p>
 	 * If the httpMethod equals {@code POST} then the connection's
-	 * {@code doOutput} property will be set to <em>true</em>, otherwise it will
-	 * be set to <em>false</em>. The {@code doInput} property is always set to
-	 * <em>true</em>.
+	 * {@code doOutput} property will be set to {@literal true}, otherwise it will
+	 * be set to {@literal false}. The {@code doInput} property is always set to
+	 * {@literal true}.
 	 * </p>
 	 * 
 	 * <p>

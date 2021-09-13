@@ -46,7 +46,7 @@ import net.solarnetwork.node.service.BeanConfiguration;
  * configure properties of any created object.</dd>
  * 
  * <dt>singleton</dt>
- * <dd>If <em>true</em> (the default) then only ever create one object instance.
+ * <dd>If {@literal true} (the default) then only ever create one object instance.
  * Otherwise a new object instance will be created each time
  * {@link #getObject()} is called.</dd>
  * 

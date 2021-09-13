@@ -394,7 +394,7 @@ public class XmlServiceSupport extends HttpClientSupport {
 	 * @param source
 	 *        the XML Source
 	 * @param indent
-	 *        if <em>true</em> then indent the result
+	 *        if {@literal true} then indent the result
 	 * @return the XML, as a String
 	 */
 	public String getXmlAsString(Source source, boolean indent) {

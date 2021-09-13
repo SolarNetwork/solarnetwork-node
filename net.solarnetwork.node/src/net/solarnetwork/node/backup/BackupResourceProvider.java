@@ -62,7 +62,7 @@ public interface BackupResourceProvider {
 	 * 
 	 * @param resource
 	 *        the resource to restore
-	 * @return <em>true</em> if successful, <em>false</em> otherwise
+	 * @return {@literal true} if successful, {@literal false} otherwise
 	 */
 	boolean restoreBackupResource(BackupResource resource);
 

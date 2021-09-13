@@ -127,11 +127,11 @@ public class RandomizedCronTriggerFactoryBean extends CronTriggerFactoryBean {
 	 * Set a flag to randomize the second field of the configured cron
 	 * expression.
 	 * 
-	 * If <em>true</em> then set the seconds value of the cron expression will
+	 * If {@literal true} then set the seconds value of the cron expression will
 	 * be set to a random value between 0-59. Will only replace the second value
 	 * if a simple second value is specified in the cron expression. For example
 	 * if the second value is {@code 0} it will be randomized, while if it is
-	 * {@code 0/5} it will not. Defaults to <em>true</em>.
+	 * {@code 0/5} it will not. Defaults to {@literal true}.
 	 * 
 	 * @param randomSecond
 	 *        The random second flag value to set.
@@ -143,7 +143,7 @@ public class RandomizedCronTriggerFactoryBean extends CronTriggerFactoryBean {
 	/**
 	 * Get the random second flag.
 	 * 
-	 * @return <em>true</em> if seconds should be randomized.
+	 * @return {@literal true} if seconds should be randomized.
 	 */
 	public String getBaseCronExpression() {
 		return baseCronExpression;

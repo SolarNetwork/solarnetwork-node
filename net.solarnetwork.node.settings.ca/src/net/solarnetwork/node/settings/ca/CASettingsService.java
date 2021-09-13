@@ -758,8 +758,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		 *        the setting value
 		 * @param value
 		 *        the setting value
-		 * @return <em>true</em> to allow the setting to be imported,
-		 *         <em>false</em> to skip
+		 * @return {@literal true} to allow the setting to be imported,
+		 *         {@literal false} to skip
 		 */
 		boolean shouldImportSetting(Setting setting);
 

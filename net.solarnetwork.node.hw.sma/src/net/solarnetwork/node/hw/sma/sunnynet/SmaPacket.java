@@ -146,7 +146,7 @@ public final class SmaPacket {
 	}
 
 	/**
-	 * Return <em>true</em> if this packet is valid according to the packet's
+	 * Return {@literal true} if this packet is valid according to the packet's
 	 * CRC check.
 	 * 
 	 * @return boolean

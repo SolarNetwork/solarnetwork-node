@@ -97,8 +97,8 @@ import net.solarnetwork.service.OptionalService;
  * {@link SetupSettings#KEY_SOLARNETWORK_HOST_PORT}.</dd>
  * 
  * <dt>forceTLS</dt>
- * <dd>If <em>true</em> then use TLS (SSL) even on a port other than {@code 443}
- * (the default TLS port). Defaults to <em>false</em>.</dd>
+ * <dd>If {@literal true} then use TLS (SSL) even on a port other than {@code 443}
+ * (the default TLS port). Defaults to {@literal false}.</dd>
  * 
  * <dt>solarInUrlPrefix</dt>
  * <dd>The URL prefix for the SolarIn service. Defaults to

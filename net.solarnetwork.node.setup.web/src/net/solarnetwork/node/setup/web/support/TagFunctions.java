@@ -40,7 +40,7 @@ public final class TagFunctions {
 	}
 
 	/**
-	 * Return <em>true</em> if {@code o} is an instance of the class {@code className}.
+	 * Return {@literal true} if {@code o} is an instance of the class {@code className}.
 	 * 
 	 * @param o the object to test
 	 * @param className the class name to test

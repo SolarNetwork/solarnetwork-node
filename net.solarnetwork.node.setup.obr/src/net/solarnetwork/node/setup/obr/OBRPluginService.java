@@ -746,7 +746,7 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 	 * Set a list of regular expressions to use to determine if a plugin is a
 	 * "core feature" or not. The expressions will be matched against bundle
 	 * symbolic names; if a match is found the plugin will have its
-	 * {@link Plugin#isCoreFeature()} flag set to <em>true</em>.
+	 * {@link Plugin#isCoreFeature()} flag set to {@literal true}.
 	 * 
 	 * @param coreFeatureSymbolicNamePatterns
 	 *        patterns to match against bundle symbolic names

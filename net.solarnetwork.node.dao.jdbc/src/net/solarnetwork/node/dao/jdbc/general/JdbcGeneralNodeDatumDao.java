@@ -354,7 +354,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implemen
 	 * Store a new domain object using the {@link #SQL_RESOURCE_INSERT} SQL.
 	 * 
 	 * <p>
-	 * If {@link #isIgnoreMockData()} returns <em>true</em> and {@code datum} is
+	 * If {@link #isIgnoreMockData()} returns {@literal true} and {@code datum} is
 	 * an instance of {@link Mock} then this method will not persist the object
 	 * and will simply return {@code -1}.
 	 * </p>
@@ -504,7 +504,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implemen
 	/**
 	 * Get the flag to ignore mock data.
 	 * 
-	 * @return <em>true</em> to not store any mock data
+	 * @return {@literal true} to not store any mock data
 	 */
 	public boolean isIgnoreMockData() {
 		return ignoreMockData;
@@ -515,8 +515,8 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implemen
 	 * {@link Mock} interface.
 	 * 
 	 * <p>
-	 * This defaults to <em>true</em>, but during development it can be useful
-	 * to configure this as <em>false</em> for testing.
+	 * This defaults to {@literal true}, but during development it can be useful
+	 * to configure this as {@literal false} for testing.
 	 * </p>
 	 * 
 	 * @param ignoreMockData

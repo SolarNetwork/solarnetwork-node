@@ -47,7 +47,7 @@ import net.solarnetwork.node.reactor.InstructionStatus;
  * <p>
  * This job will pass {@link Instruction#getTopic()} to every configured
  * {@link InstructionHandler#handlesTopic(String)} and if that returns
- * <em>true</em> the handler will be given the opportunity to handle the
+ * {@literal true} the handler will be given the opportunity to handle the
  * instruction via {@link InstructionHandler#processInstruction(Instruction)}.
  * If the handler returns {@literal null} or {@link InstructionState#Received}
  * (because it does not support the given Instruction) this job will move on to

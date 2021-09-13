@@ -31,7 +31,7 @@ package net.solarnetwork.node.setup;
 public interface PluginQuery {
 
 	/**
-	 * If <em>true</em> then only return the latest (highest) version available
+	 * If {@literal true} then only return the latest (highest) version available
 	 * for any given plugin.
 	 * 
 	 * @return boolean

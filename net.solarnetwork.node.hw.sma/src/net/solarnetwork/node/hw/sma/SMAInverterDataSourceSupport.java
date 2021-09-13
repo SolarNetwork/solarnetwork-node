@@ -138,8 +138,8 @@ public abstract class SMAInverterDataSourceSupport extends DatumDataSourceSuppor
 	 * <p>
 	 * If the {@code settingDao} to be configured, this method will use that to
 	 * load a "last known day" value. If that value is not found, or is
-	 * different from the current execution day, <em>true</em> will be returned.
-	 * Otherwise, <em>false</em> is returned.
+	 * different from the current execution day, {@literal true} will be returned.
+	 * Otherwise, {@literal false} is returned.
 	 * </p>
 	 * 
 	 * @return boolean

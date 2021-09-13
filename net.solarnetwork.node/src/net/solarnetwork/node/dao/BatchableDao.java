@@ -54,7 +54,7 @@ public interface BatchableDao<T> {
 		public int getBatchSize();
 		
 		/**
-		 * If <em>true</em> the batch should be updatable.
+		 * If {@literal true} the batch should be updatable.
 		 * 
 		 * @return boolean
 		 */

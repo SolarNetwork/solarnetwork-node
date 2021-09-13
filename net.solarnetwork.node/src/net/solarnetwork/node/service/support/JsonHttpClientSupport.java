@@ -45,7 +45,7 @@ import net.solarnetwork.service.RemoteServiceException;
  * 
  * <dl class="class-properties">
  * <dt>compress</dt>
- * <dd>Flag to compress the HTTP body content, defaults to <em>false</em>.</dd>
+ * <dd>Flag to compress the HTTP body content, defaults to {@literal false}.</dd>
  * 
  * <dt>objectMapper</dt>
  * <dd>The {@link ObjectMapper} to marshall/unmarshall objects to/from JSON

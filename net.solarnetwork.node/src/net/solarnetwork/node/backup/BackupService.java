@@ -112,7 +112,7 @@ public interface BackupService {
 	 *        clear a previous marked backup.
 	 * @param props
 	 *        An optional map of properties to save with the mark.
-	 * @return <em>true</em> on success
+	 * @return {@literal true} on success
 	 * @since 1.1
 	 */
 	boolean markBackupForRestore(Backup backup, Map<String, String> props);

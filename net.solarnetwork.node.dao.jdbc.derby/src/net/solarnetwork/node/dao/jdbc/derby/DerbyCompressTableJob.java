@@ -64,15 +64,15 @@ import net.solarnetwork.node.job.AbstractJob;
  * 
  * <dt>purgeRows</dt>
  * <dd>Boolean flag to pass to the SYSCS_UTIL.SYSCS_INPLACE_COMPRESS_TABLE
- * function. Defaults to <em>true</em>.</dd>
+ * function. Defaults to {@literal true}.</dd>
  * 
  * <dt>defragmentRows</dt>
  * <dd>Boolean flag to pass to the SYSCS_UTIL.SYSCS_INPLACE_COMPRESS_TABLE
- * function. Defaults to <em>true</em>.</dd>
+ * function. Defaults to {@literal true}.</dd>
  * 
  * <dt>truncateEnd</dt>
  * <dd>Boolean flag to pass to the SYSCS_UTIL.SYSCS_INPLACE_COMPRESS_TABLE
- * function. Defaults to <em>true</em>.</dd>
+ * function. Defaults to {@literal true}.</dd>
  * </dl>
  *
  * @author matt

@@ -40,7 +40,7 @@ public interface SDMDataAccessor extends AcEnergyDataAccessor {
 	 * 
 	 * @param phase
 	 *        The phase to test.
-	 * @return <em>true</em> if the given {@code phase} is supported
+	 * @return {@literal true} if the given {@code phase} is supported
 	 * @since 1.1
 	 */
 	boolean supportsPhase(AcPhase phase);

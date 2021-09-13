@@ -182,7 +182,7 @@ public interface InstructionHandler {
 	 * 
 	 * @param topic
 	 *        the topic
-	 * @return <em>true</em> only if this handler can execute the job for the
+	 * @return {@literal true} only if this handler can execute the job for the
 	 *         given topic
 	 */
 	boolean handlesTopic(String topic);

@@ -76,7 +76,7 @@ public class PVITLDatum extends SimpleAcDcEnergyDatum {
 	/**
 	 * Test if the data appears valid in this datum.
 	 * 
-	 * @return <em>true</em> if the data appears to be valid
+	 * @return {@literal true} if the data appears to be valid
 	 */
 	public boolean isValid() {
 		return (getWatts() != null || getWattHourReading() != null);

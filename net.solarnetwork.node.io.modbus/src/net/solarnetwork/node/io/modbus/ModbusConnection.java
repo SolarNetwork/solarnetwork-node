@@ -274,7 +274,7 @@ public interface ModbusConnection extends Closeable {
 	 * @param count
 	 *        the number of Modbus 16-bit registers to read
 	 * @param trim
-	 *        if <em>true</em> then remove leading/trailing whitespace from the
+	 *        if {@literal true} then remove leading/trailing whitespace from the
 	 *        resulting string
 	 * @param charset
 	 *        the character set to interpret the bytes as

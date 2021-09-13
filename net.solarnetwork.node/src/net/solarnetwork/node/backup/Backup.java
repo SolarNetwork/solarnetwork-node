@@ -33,7 +33,7 @@ public interface Backup extends BackupIdentity {
 	/**
 	 * Boolean flag indicating if this backup is complete.
 	 * 
-	 * @return <em>true</em> if the backup is finished, <em>false</em> otherwise
+	 * @return {@literal true} if the backup is finished, {@literal false} otherwise
 	 */
 	boolean isComplete();
 

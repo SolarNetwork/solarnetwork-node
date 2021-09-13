@@ -96,17 +96,17 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
  * occurred.</dd>
  * 
  * <dt>collectAllSourceIds</dt>
- * <dd>If <em>true</em> and the
+ * <dd>If {@literal true} and the
  * {@link net.solarnetwork.node.MultiDatumDataSource} API is used, then attempt
  * to read values for all sources configured in the {@code sourceIdFilter}
  * property and return all the data collected. The
  * {@code collectAllSourceIdsTimeout} property is used to limit the amount of
  * time spent collecting data, as there is no guarantee the application can read
  * from all sources: the device data is captured somewhat randomly. Defaults to
- * <em>true</em>.</dd>
+ * {@literal true}.</dd>
  * 
  * <dt>collectAllSourceIdsTimeout</dt>
- * <dd>When {@code collectAllSourceIds} is configured as <em>true</em> this is a
+ * <dd>When {@code collectAllSourceIds} is configured as {@literal true} this is a
  * timeout value, in seconds, the application should spend attempting to collect
  * data from all configured sources. If this amount of time is passed before
  * data for all sources has been collected, the application will give up and
@@ -426,7 +426,7 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	 * Test if sensor 1 should be collected when requesting multiple datum
 	 * samples.
 	 * 
-	 * @return <em>true</em> if sensor 1 should be collected
+	 * @return {@literal true} if sensor 1 should be collected
 	 * @see #getMultiAmpSensorIndexFlags()
 	 * @since 2.1
 	 */
@@ -439,7 +439,7 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	 * samples.
 	 * 
 	 * @param value
-	 *        <em>true</em> if sensor 1 should be collected
+	 *        {@literal true} if sensor 1 should be collected
 	 * @since 2.1
 	 */
 	public void setMultiCollectSensor1(boolean value) {
@@ -450,7 +450,7 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	 * Test if sensor 2 should be collected when requesting multiple datum
 	 * samples.
 	 * 
-	 * @return <em>true</em> if sensor 2 should be collected
+	 * @return {@literal true} if sensor 2 should be collected
 	 * @see #getMultiAmpSensorIndexFlags()
 	 * @since 2.1
 	 */
@@ -463,7 +463,7 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	 * samples.
 	 * 
 	 * @param value
-	 *        <em>true</em> if sensor 2 should be collected
+	 *        {@literal true} if sensor 2 should be collected
 	 * @since 2.1
 	 */
 	public void setMultiCollectSensor2(boolean value) {
@@ -474,7 +474,7 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	 * Test if sensor 3 should be collected when requesting multiple datum
 	 * samples.
 	 * 
-	 * @return <em>true</em> if sensor 3 should be collected
+	 * @return {@literal true} if sensor 3 should be collected
 	 * @see #getMultiAmpSensorIndexFlags()
 	 * @since 2.1
 	 */
@@ -487,7 +487,7 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	 * samples.
 	 * 
 	 * @param value
-	 *        <em>true</em> if sensor 3 should be collected
+	 *        {@literal true} if sensor 3 should be collected
 	 * @since 2.1
 	 */
 	public void setMultiCollectSensor3(boolean value) {
