@@ -88,6 +88,7 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 		}
 
 		final PropertyFilterConfig[] incs = this.propIncludes;
+		final Pattern[] excs = this.excludePatterns;
 
 		// load all Datum "last created" settings, if we need to throttle by frequency
 		final ConcurrentMap<String, String> lastSeenMap = loadSettingsIfFrequencyLimitConfigured(
@@ -96,7 +97,10 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 		final long now = (datum != null && datum.getTimestamp() != null
 				? datum.getTimestamp().toEpochMilli()
 				: System.currentTimeMillis());
-		log.trace("Examining datum {} @ {}", datum, now);
+		log.trace(
+				"Property filter [{}] examining datum {} @ {} with {} include and {} exclude configurations",
+				getUid(), datum, now, (incs != null ? incs.length : 0),
+				(excs != null ? excs.length : 0));
 
 		DatumSamples copy = null;
 
@@ -126,7 +130,6 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 		}
 
 		// handle property exclusion rules
-		Pattern[] excs = this.excludePatterns;
 		if ( excs != null && excs.length > 0 ) {
 			for ( DatumSamplesType t : EnumSet.of(Instantaneous, Accumulating, Status) ) {
 				Map<String, ?> map = samples.getSampleData(t);

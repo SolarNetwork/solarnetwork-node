@@ -282,8 +282,8 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 		if ( sourceIdPat != null ) {
 			if ( datum == null || datum.getSourceId() == null
 					|| !sourceIdPat.matcher(datum.getSourceId()).find() ) {
-				log.trace("Datum {} does not match source ID pattern {}; not filtering", datum,
-						sourceIdPat);
+				log.trace("Filter [{}] source ID pattern [{}] does not match datum {}; not filtering",
+						getUid(), sourceIdPat, datum);
 				return false;
 			}
 		}
