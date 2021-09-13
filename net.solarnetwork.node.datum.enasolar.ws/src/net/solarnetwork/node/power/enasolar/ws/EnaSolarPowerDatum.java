@@ -22,22 +22,59 @@
 
 package net.solarnetwork.node.power.enasolar.ws;
 
+import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
+import net.solarnetwork.domain.datum.DatumId;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
+import net.solarnetwork.node.domain.datum.SimpleAcEnergyDatum;
 
 /**
- * Extension of {@link GeneralNodePVEnergyDatum} to map EnaSolar data
+ * Extension of {@link SimpleAcDcEnergyDatum} to map EnaSolar data
  * appropriately.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
-public class EnaSolarPowerDatum extends GeneralNodePVEnergyDatum {
+public class EnaSolarPowerDatum extends SimpleAcDcEnergyDatum {
+
+	private static final long serialVersionUID = -90830213715572093L;
 
 	private static final Logger log = LoggerFactory.getLogger(EnaSolarPowerDatum.class);
 
 	private boolean usingDailyResettingTotal = false;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param sourceId
+	 *        the source ID
+	 * @param timestamp
+	 */
+	public EnaSolarPowerDatum(String sourceId, Instant timestamp) {
+		super(sourceId, timestamp, new DatumSamples());
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param id
+	 *        the ID
+	 * @param samples
+	 *        the samples
+	 */
+	public EnaSolarPowerDatum(DatumId id, DatumSamples samples) {
+		super(id.getSourceId(), id.getTimestamp(), samples);
+	}
+
+	@Override
+	public SimpleAcEnergyDatum copyWithSamples(DatumSamplesOperations samples) {
+		DatumSamples newSamples = new DatumSamples();
+		newSamples.copyFrom(samples);
+		return new EnaSolarPowerDatum(getId(), newSamples);
+	}
 
 	/**
 	 * Set the deca-watt hour total reading, as a hexidecimal string.
@@ -135,7 +172,7 @@ public class EnaSolarPowerDatum extends GeneralNodePVEnergyDatum {
 	 */
 	public void setInputPower(Float power) {
 		Integer w = (power == null ? null : (int) Math.round(power.floatValue() * 1000F));
-		setDCPower(w);
+		setDcPower(w);
 	}
 
 	/**
@@ -144,7 +181,7 @@ public class EnaSolarPowerDatum extends GeneralNodePVEnergyDatum {
 	 * @return the DC input power, in kW
 	 */
 	public Float getInputPower() {
-		Integer w = getDCPower();
+		Integer w = getDcPower();
 		return (w == null ? null : w.floatValue() / 1000F);
 	}
 
@@ -156,7 +193,7 @@ public class EnaSolarPowerDatum extends GeneralNodePVEnergyDatum {
 	 *        the input voltage, in volts
 	 */
 	public void setInputVoltage(Float value) {
-		setDCVoltage(value);
+		setDcVoltage(value);
 	}
 
 	/**
@@ -166,7 +203,7 @@ public class EnaSolarPowerDatum extends GeneralNodePVEnergyDatum {
 	 * @return the DC input voltage, in volts
 	 */
 	public Float getInputVoltage() {
-		return getDCVoltage();
+		return getDcVoltage();
 	}
 
 	/**
@@ -203,7 +240,7 @@ public class EnaSolarPowerDatum extends GeneralNodePVEnergyDatum {
 	}
 
 	/**
-	 * Return <em>true</em> if {@link #setKWattHoursToday(Double)} was called.
+	 * Return {@literal true} if {@link #setKWattHoursToday(Double)} was called.
 	 * 
 	 * @return boolean
 	 */

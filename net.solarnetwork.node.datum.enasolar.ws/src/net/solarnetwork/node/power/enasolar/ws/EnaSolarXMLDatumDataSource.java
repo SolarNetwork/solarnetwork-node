@@ -23,10 +23,14 @@
 package net.solarnetwork.node.power.enasolar.ws;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,16 +39,17 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.xpath.XPathExpression;
-import net.solarnetwork.domain.GeneralDatumMetadata;
-import net.solarnetwork.node.DatumDataSource;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.support.DatumDataSourceSupport;
-import net.solarnetwork.node.support.XmlServiceSupport;
+import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.node.service.support.XmlServiceSupport;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -97,7 +102,7 @@ import net.solarnetwork.util.StringUtils;
  * @version 1.1
  */
 public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
-		implements DatumDataSource<GeneralNodePVEnergyDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, SettingSpecifierProvider {
 
 	/** The {@link SettingDao} key for a Long counter of 0 watt readings. */
 	public static final String SETTING_ZERO_WATT_COUNT = "EnaSolarXMLDatumDataSource:0W";
@@ -119,14 +124,12 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 
 	private EnaSolarPowerDatum sample;
 	private Throwable sampleException;
-	private final Map<String, Long> validationCache = new HashMap<String, Long>(4);
+	private final Map<String, Long> validationCache = new HashMap<>(4);
 
 	private EnaSolarPowerDatum getCurrentSample() {
 		EnaSolarPowerDatum datum;
 		if ( isCachedSampleExpired() ) {
-			datum = new EnaSolarPowerDatum();
-			datum.setCreated(new Date());
-			datum.setSourceId(resolvePlaceholders(sourceId));
+			datum = new EnaSolarPowerDatum(resolvePlaceholders(sourceId), Instant.now());
 			sampleException = null;
 			for ( String url : urls ) {
 				try {
@@ -164,10 +167,10 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 
 	private boolean isCachedSampleExpired() {
 		EnaSolarPowerDatum snap = sample;
-		if ( snap == null || sample.getCreated() == null ) {
+		if ( snap == null || sample.getTimestamp() == null ) {
 			return true;
 		}
-		final long lastReadDiff = System.currentTimeMillis() - sample.getCreated().getTime();
+		final long lastReadDiff = sample.getTimestamp().until(Instant.now(), ChronoUnit.MILLIS);
 		if ( lastReadDiff > sampleCacheMs ) {
 			return true;
 		}
@@ -204,12 +207,12 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 	}
 
 	@Override
-	public Class<? extends GeneralNodePVEnergyDatum> getDatumType() {
-		return EnaSolarPowerDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AcDcEnergyDatum.class;
 	}
 
 	@Override
-	public GeneralNodePVEnergyDatum readCurrentDatum() {
+	public AcDcEnergyDatum readCurrentDatum() {
 		return getCurrentSample();
 	}
 
@@ -228,17 +231,14 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 		return (result == null ? 0L : result);
 	}
 
-	private boolean isSampleOnSameDay(final Date sampleDate) {
-		final Date lastKnownDate = (sample != null ? sample.getCreated() : null);
+	private boolean isSampleOnSameDay(final Instant sampleDate) {
+		final Instant lastKnownDate = (sample != null ? sample.getTimestamp() : null);
 		if ( sampleDate == null || lastKnownDate == null ) {
 			return false;
 		}
-		final Calendar sampleCal = Calendar.getInstance();
-		sampleCal.setTime(sampleDate);
-		final Calendar lastKnownCal = Calendar.getInstance();
-		lastKnownCal.setTime(lastKnownDate);
-		return (sampleCal.get(Calendar.DAY_OF_YEAR) == lastKnownCal.get(Calendar.DAY_OF_YEAR)
-				&& sampleCal.get(Calendar.YEAR) == lastKnownCal.get(Calendar.YEAR));
+		final LocalDate sampleDay = sampleDate.atZone(ZoneId.systemDefault()).toLocalDate();
+		final LocalDate lastKnownDay = lastKnownDate.atZone(ZoneId.systemDefault()).toLocalDate();
+		return (sampleDay.compareTo(lastKnownDay) == 0);
 	}
 
 	private EnaSolarPowerDatum validateDatum(EnaSolarPowerDatum datum) {
@@ -258,7 +258,7 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 					sourceId, currValue, lastKnownValue);
 			datum = null;
 		} else if ( currValue != null && currValue.longValue() < 1L && dailyResettingWh
-				&& isSampleOnSameDay(datum.getCreated()) == false ) {
+				&& isSampleOnSameDay(datum.getTimestamp()) == false ) {
 			log.debug("Resetting last known sample for new day zero Wh");
 			sample = datum;
 			datum = null;
@@ -285,7 +285,7 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 		}
 		// associate consumption/generation tags with this source
 		GeneralDatumMetadata sourceMeta = new GeneralDatumMetadata();
-		sourceMeta.addTag(net.solarnetwork.node.domain.EnergyDatum.TAG_GENERATION);
+		sourceMeta.addTag(AcDcEnergyDatum.TAG_GENERATION);
 		addSourceMetadata(d.getSourceId(), sourceMeta);
 	}
 
@@ -359,7 +359,7 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.power.enasolar";
 	}
 
@@ -376,7 +376,7 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 		results.add(new BasicTitleSettingSpecifier("info", getInfoMessage(), true));
 		results.add(new BasicTextFieldSettingSpecifier("urlList", defaults.getUrlList()));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
+		results.add(new BasicTextFieldSettingSpecifier("groupUid", null));
 		results.add(new BasicTextFieldSettingSpecifier("dataMapping", defaults.getDataMapping()));
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(defaults.sampleCacheMs)));
@@ -406,9 +406,24 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 			}
 			buf.append(snap.getWatts()).append(" W; ");
 			buf.append(snap.getWattHourReading()).append(" Wh; sample created ");
-			buf.append(String.format("%tc", snap.getCreated()));
+			buf.append(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT)
+					.format(snap.getTimestamp().atZone(ZoneId.systemDefault())));
 		}
 		return (buf.length() < 1 ? "N/A" : buf.toString());
+	}
+
+	/**
+	 * Set the cached sample.
+	 * 
+	 * <p>
+	 * This is meant to support unit tests.
+	 * </p>
+	 * 
+	 * @param datum
+	 *        the sample to set
+	 */
+	protected void setSample(EnaSolarPowerDatum datum) {
+		this.sample = datum;
 	}
 
 	public String getUrl() {
