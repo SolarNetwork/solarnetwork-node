@@ -22,20 +22,21 @@
 
 package net.solarnetwork.node.hw.currentcost;
 
-import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
+import java.time.format.FormatStyle;
 
 /**
  * A CurrentCost datum.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class CCDatum implements Comparable<CCDatum> {
 
-	private final long created;
+	private final Instant created;
 	private String deviceAddress;
 	private String deviceName;
 	private String deviceType;
@@ -52,7 +53,7 @@ public class CCDatum implements Comparable<CCDatum> {
 	 */
 	public CCDatum() {
 		super();
-		created = System.currentTimeMillis();
+		created = Instant.now();
 	}
 
 	@Override
@@ -89,7 +90,8 @@ public class CCDatum implements Comparable<CCDatum> {
 		return (deviceAddress + ": 1 = " + (channel1Watts == null ? "N/A" : channel1Watts) + ", 2 = "
 				+ (channel2Watts == null ? "N/A" : channel2Watts) + ", 3 = "
 				+ (channel3Watts == null ? "N/A" : channel3Watts) + (time == null ? "" : "; " + time)
-				+ "; " + new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(created)));
+				+ "; " + DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT)
+						.format(created.atZone(ZoneId.systemDefault())));
 	}
 
 	@Override
@@ -211,7 +213,7 @@ public class CCDatum implements Comparable<CCDatum> {
 		this.temperature = temperature;
 	}
 
-	public long getCreated() {
+	public Instant getCreated() {
 		return created;
 	}
 

@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.hw.currentcost;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -106,11 +108,11 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
  * {@literal true}.</dd>
  * 
  * <dt>collectAllSourceIdsTimeout</dt>
- * <dd>When {@code collectAllSourceIds} is configured as {@literal true} this is a
- * timeout value, in seconds, the application should spend attempting to collect
- * data from all configured sources. If this amount of time is passed before
- * data for all sources has been collected, the application will give up and
- * just return whatever data it has collected at that point. Defaults to
+ * <dd>When {@code collectAllSourceIds} is configured as {@literal true} this is
+ * a timeout value, in seconds, the application should spend attempting to
+ * collect data from all configured sources. If this amount of time is passed
+ * before data for all sources has been collected, the application will give up
+ * and just return whatever data it has collected at that point. Defaults to
  * {@link #DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT}.</dd>
  * </dl>
  * 
@@ -242,12 +244,13 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 			return Collections.emptySet();
 		}
 		Set<CCDatum> result = new HashSet<CCDatum>(4);
-		final long now = System.currentTimeMillis();
+		final Instant now = Instant.now();
 		for ( CCDatum datum : knownAddresses ) {
 			for ( int i = 1; i <= 3; i++ ) {
 				String anAddress = addressValue(datum, i);
 				if ( captureAddresses.contains(anAddress) ) {
-					if ( sampleCacheMs < 1 || (now - datum.getCreated()) <= sampleCacheMs ) {
+					if ( sampleCacheMs < 1
+							|| datum.getCreated().until(now, ChronoUnit.MILLIS) <= sampleCacheMs ) {
 						result.add(datum);
 						break;
 					}
