@@ -22,48 +22,49 @@
 
 package net.solarnetwork.node.datum.eig.shark100;
 
-import java.util.Date;
-import java.util.Map;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.datum.SimpleAcEnergyDatum;
 import net.solarnetwork.node.hw.eig.meter.Shark100DataAccessor;
 
 /**
  * Datum for the Shark 100 meter.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
-public class Shark100Datum extends GeneralNodeACEnergyDatum implements ACEnergyDataAccessor {
+public class Shark100Datum extends SimpleAcEnergyDatum {
+
+	private static final long serialVersionUID = -546770850559144044L;
 
 	private final Shark100DataAccessor data;
-	private final boolean backwards;
 
 	/**
 	 * Construct from a sample.
 	 * 
 	 * @param data
 	 *        the sample data
+	 * @param sourceId
+	 *        the source ID
 	 * @param phase
 	 *        the phase
 	 * @param backwards
 	 *        {@literal true} to reverse the current direction
 	 */
-	public Shark100Datum(Shark100DataAccessor data, ACPhase phase, boolean backwards) {
-		super();
+	public Shark100Datum(Shark100DataAccessor data, String sourceId, AcPhase phase, boolean backwards) {
+		super(sourceId, data.getDataTimestamp(), new DatumSamples());
 		this.data = data;
-		this.backwards = backwards;
-		if ( data.getDataTimestamp() > 0 ) {
-			setCreated(new Date(data.getDataTimestamp()));
+		AcEnergyDataAccessor accessor = data.accessorForPhase(phase);
+		if ( backwards ) {
+			accessor = accessor.reversed();
 		}
-		ACEnergyDataAccessor phaseData = accessorForPhase(phase);
-		populateMeasurements(phaseData, phase);
+		populateMeasurements(accessor, phase);
 	}
 
-	private void populateMeasurements(ACEnergyDataAccessor data, ACPhase phase) {
-		assert phase == ACPhase.Total;
-		setPhase(phase);
+	private void populateMeasurements(AcEnergyDataAccessor data, AcPhase phase) {
+		assert phase == AcPhase.Total;
+		setAcPhase(phase);
 		setFrequency(data.getFrequency());
 		setVoltage(data.getVoltage());
 		setLineVoltage(data.getLineVoltage());
@@ -84,65 +85,6 @@ public class Shark100Datum extends GeneralNodeACEnergyDatum implements ACEnergyD
 	 */
 	public Shark100DataAccessor getData() {
 		return data;
-	}
-
-	@Override
-	public long getDataTimestamp() {
-		return data.getDataTimestamp();
-	}
-
-	@Override
-	public Map<String, Object> getDeviceInfo() {
-		return data.getDeviceInfo();
-	}
-
-	@Override
-	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
-		ACEnergyDataAccessor phaseData = data.accessorForPhase(phase);
-		if ( backwards ) {
-			phaseData = phaseData.reversed();
-		}
-		return phaseData;
-	}
-
-	@Override
-	public ACEnergyDataAccessor reversed() {
-		return data.reversed();
-	}
-
-	@Override
-	public Integer getActivePower() {
-		return data.getActivePower();
-	}
-
-	@Override
-	public Long getActiveEnergyDelivered() {
-		return data.getActiveEnergyDelivered();
-	}
-
-	@Override
-	public Long getActiveEnergyReceived() {
-		return data.getActiveEnergyReceived();
-	}
-
-	@Override
-	public Long getApparentEnergyDelivered() {
-		return data.getApparentEnergyDelivered();
-	}
-
-	@Override
-	public Long getApparentEnergyReceived() {
-		return data.getApparentEnergyReceived();
-	}
-
-	@Override
-	public Long getReactiveEnergyDelivered() {
-		return data.getReactiveEnergyDelivered();
-	}
-
-	@Override
-	public Long getReactiveEnergyReceived() {
-		return data.getReactiveEnergyReceived();
 	}
 
 }
