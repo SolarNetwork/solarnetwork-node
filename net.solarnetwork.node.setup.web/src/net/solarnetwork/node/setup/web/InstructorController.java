@@ -135,7 +135,7 @@ public class InstructorController {
 				: "error");
 		HttpSession session = request.getSession();
 		session.setAttribute(keyPrefix + "MessageKey", "controls.manage.SetControlParameter.result");
-		session.setAttribute(keyPrefix + "MessageParam0", result);
+		session.setAttribute(keyPrefix + "MessageParam0", result.getInstructionState());
 		return "redirect:/a/controls/manage?id=" + instruction.getControlId();
 	}
 
