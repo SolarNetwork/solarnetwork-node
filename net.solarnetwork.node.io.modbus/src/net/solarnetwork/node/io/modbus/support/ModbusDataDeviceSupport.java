@@ -126,7 +126,7 @@ public abstract class ModbusDataDeviceSupport<T extends ModbusData & DataAccesso
 				@Override
 				public T doWithConnection(ModbusConnection conn) throws IOException {
 					T sample = getSample();
-					if ( sample.getDataTimestamp().toEpochMilli() == 0 ) {
+					if ( sample.getDataTimestamp() == null ) {
 						// first time also load info
 						readDeviceInfoFirstTime(conn, sample);
 					}
@@ -232,7 +232,11 @@ public abstract class ModbusDataDeviceSupport<T extends ModbusData & DataAccesso
 	 */
 	protected boolean isCachedSampleExpired() {
 		final T sample = getSample();
-		final long lastReadDiff = sample.getDataTimestamp().until(Instant.now(), ChronoUnit.MILLIS);
+		Instant ts = (sample != null ? sample.getDataTimestamp() : null);
+		if ( ts == null ) {
+			ts = Instant.EPOCH;
+		}
+		final long lastReadDiff = ts.until(Instant.now(), ChronoUnit.MILLIS);
 		if ( lastReadDiff > sampleCacheMs ) {
 			return true;
 		}
