@@ -22,28 +22,28 @@
 
 package net.solarnetwork.node.control.modbus;
 
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
+import net.solarnetwork.domain.BasicNodeControlInfo;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.domain.NodeControlInfoDatum;
+import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusData;
@@ -52,32 +52,34 @@ import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 import net.solarnetwork.node.io.modbus.ModbusDataUtils;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
-import net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport;
+import net.solarnetwork.node.io.modbus.support.ModbusDataDeviceSupport;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
-import net.solarnetwork.node.support.DatumEvents;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.ByteUtils;
 import net.solarnetwork.util.Half;
 import net.solarnetwork.util.NumberUtils;
-import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * Read and write a Modbus "coil" or "holding" type register.
  * 
  * @author matt
- * @version 2.3
+ * @version 3.0
  */
-public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifierProvider,
-		NodeControlProvider, InstructionHandler, ModbusConnectionAction<ModbusData>, DatumEvents {
+public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
+		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
 
 	/** The default value for the {@code address} property. */
 	public static final int DEFAULT_ADDRESS = 0x0;
@@ -85,28 +87,28 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 	/** The default value for the {@code controlId} property. */
 	public static final String DEFAULT_CONTROL_ID = "/thermostat/temp/comfort";
 
-	private long sampleCacheMs = 5000;
 	private ModbusWritePropertyConfig[] propConfigs;
 	private OptionalService<EventAdmin> eventAdmin;
 
-	private final ModbusData sample = new ModbusData();
-
-	@Override
-	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
-		return null;
+	/**
+	 * Constructor.
+	 */
+	public ModbusControl() {
+		super(new ModbusData());
 	}
 
-	private NodeControlInfoDatum currentValue(ModbusWritePropertyConfig config) throws IOException {
+	private SimpleNodeControlInfoDatum currentValue(ModbusWritePropertyConfig config)
+			throws IOException {
 		ModbusData currSample = getCurrentSample();
 		Object value = extractControlValue(config, currSample);
-		return newNodeControlInfoDatum(config, value);
+		return newSimpleNodeControlInfoDatum(config, value);
 	}
 
 	private Object extractControlValue(ModbusWritePropertyConfig config, ModbusData currSample) {
 		Object propVal = null;
 		switch (config.getDataType()) {
 			case Boolean:
-				propVal = sample.getBoolean(config.getAddress());
+				propVal = currSample.getBoolean(config.getAddress());
 				break;
 
 			case Bytes:
@@ -114,47 +116,47 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 				break;
 
 			case Float16:
-				propVal = sample.getFloat16(config.getAddress());
+				propVal = currSample.getFloat16(config.getAddress());
 				break;
 
 			case Float32:
-				propVal = sample.getFloat32(config.getAddress());
+				propVal = currSample.getFloat32(config.getAddress());
 				break;
 
 			case Float64:
-				propVal = sample.getFloat64(config.getAddress());
+				propVal = currSample.getFloat64(config.getAddress());
 				break;
 
 			case Int16:
-				propVal = sample.getInt16(config.getAddress());
+				propVal = currSample.getInt16(config.getAddress());
 				break;
 
 			case UInt16:
-				propVal = sample.getUnsignedInt16(config.getAddress());
+				propVal = currSample.getUnsignedInt16(config.getAddress());
 				break;
 
 			case Int32:
-				propVal = sample.getInt32(config.getAddress());
+				propVal = currSample.getInt32(config.getAddress());
 				break;
 
 			case UInt32:
-				propVal = sample.getUnsignedInt32(config.getAddress());
+				propVal = currSample.getUnsignedInt32(config.getAddress());
 				break;
 
 			case Int64:
-				propVal = sample.getInt64(config.getAddress());
+				propVal = currSample.getInt64(config.getAddress());
 				break;
 
 			case UInt64:
-				propVal = sample.getUnsignedInt64(config.getAddress());
+				propVal = currSample.getUnsignedInt64(config.getAddress());
 				break;
 
 			case StringAscii:
-				propVal = sample.getAsciiString(config.getAddress(), config.getWordLength(), true);
+				propVal = currSample.getAsciiString(config.getAddress(), config.getWordLength(), true);
 				break;
 
 			case StringUtf8:
-				propVal = sample.getUtf8String(config.getAddress(), config.getWordLength(), true);
+				propVal = currSample.getUtf8String(config.getAddress(), config.getWordLength(), true);
 				break;
 		}
 
@@ -196,27 +198,9 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 		return v.divide(multiplier);
 	}
 
-	private ModbusData getCurrentSample() {
-		ModbusData currSample = null;
-		if ( sample.getDataTimestamp() + sampleCacheMs < System.currentTimeMillis() ) {
-			try {
-				currSample = performAction(this);
-				if ( currSample != null && log.isTraceEnabled() ) {
-					log.trace(currSample.dataDebugString());
-				}
-			} catch ( IOException e ) {
-				Throwable t = e;
-				while ( t.getCause() != null ) {
-					t = t.getCause();
-				}
-				log.debug("Error reading from Modbus device {}", modbusDeviceName(), t);
-				log.warn("Communication problem reading from Modbus device {}: {}", modbusDeviceName(),
-						t.getMessage());
-			}
-		} else {
-			currSample = sample.copy();
-		}
-		return currSample;
+	@Override
+	protected void refreshDeviceInfo(ModbusConnection connection, ModbusData sample) throws IOException {
+		// nothing to do		
 	}
 
 	/**
@@ -360,9 +344,16 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 	}
 
 	@Override
-	public synchronized ModbusData doWithConnection(final ModbusConnection conn) throws IOException {
+	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
+		return null;
+	}
+
+	@Override
+	protected synchronized void refreshDeviceData(ModbusConnection conn, ModbusData sample)
+			throws IOException {
 		ModbusWritePropertyConfig[] configs = getPropConfigs();
 		if ( configs != null && configs.length > 0 ) {
+
 			sample.performUpdates(new ModbusDataUpdateAction() {
 
 				@Override
@@ -404,7 +395,6 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 				}
 			});
 		}
-		return sample.copy();
 	}
 
 	private static short[] shortArrayForBitSet(BitSet set, int start, int count) {
@@ -448,7 +438,7 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 		}
 		// read the control's current status
 		log.debug("Reading {} status", controlId);
-		NodeControlInfoDatum result = null;
+		SimpleNodeControlInfoDatum result = null;
 		try {
 			result = currentValue(config);
 		} catch ( Exception e ) {
@@ -460,20 +450,20 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 		return result;
 	}
 
-	private NodeControlInfoDatum newNodeControlInfoDatum(ModbusWritePropertyConfig config,
+	private SimpleNodeControlInfoDatum newSimpleNodeControlInfoDatum(ModbusWritePropertyConfig config,
 			Object value) {
-		NodeControlInfoDatum info = new NodeControlInfoDatum();
-		info.setCreated(new Date());
-		info.setSourceId(config.getControlId());
-		info.setType(config.getControlPropertyType());
-		info.setReadonly(false);
-		if ( value != null ) {
-			info.setValue(value.toString());
-		}
-		return info;
+		// @formatter:off
+		NodeControlInfo info = BasicNodeControlInfo.builder()
+				.withControlId(resolvePlaceholders(config.getControlId()))
+				.withType(config.getControlPropertyType())
+				.withReadonly(false)
+				.withValue(value != null ? value.toString() : null)
+				.build();
+		// @formatter:on
+		return new SimpleNodeControlInfoDatum(info, Instant.now());
 	}
 
-	private void postControlEvent(NodeControlInfoDatum info, String topic) {
+	private void postControlEvent(SimpleNodeControlInfoDatum info, String topic) {
 		final EventAdmin admin = (eventAdmin != null ? eventAdmin.service() : null);
 		if ( admin == null ) {
 			return;
@@ -490,7 +480,7 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		ModbusWritePropertyConfig[] configs = getPropConfigs();
 		if ( !InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(instruction.getTopic())
 				|| configs == null || configs.length < 1 ) {
@@ -516,13 +506,12 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 						config.getControlId(), e.getMessage());
 			}
 			if ( success ) {
-				sample.expire();
-				postControlEvent(newNodeControlInfoDatum(config, desiredValue),
+				getSample().expire();
+				postControlEvent(newSimpleNodeControlInfoDatum(config, desiredValue),
 						NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED);
-				return InstructionState.Completed;
-			} else {
-				return InstructionState.Declined;
+				return InstructionUtils.createStatus(instruction, InstructionState.Completed);
 			}
+			return InstructionUtils.createStatus(instruction, InstructionState.Declined);
 		}
 		return null;
 	}
@@ -530,7 +519,7 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.control.modbus";
 	}
 
@@ -541,7 +530,7 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 
 	private String getSampleMessage(ModbusData sample) {
 		ModbusWritePropertyConfig[] configs = getPropConfigs();
-		if ( sample.getDataTimestamp() < 1 || configs == null || configs.length < 1 ) {
+		if ( sample.getDataTimestamp() == null || configs == null || configs.length < 1 ) {
 			return "N/A";
 		}
 
@@ -559,21 +548,20 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 
 		StringBuilder buf = new StringBuilder();
 		buf.append(StringUtils.delimitedStringFromMap(data));
-		buf.append("; sampled at ")
-				.append(DateTimeFormat.forStyle("LS").print(new DateTime(sample.getDataTimestamp())));
+		buf.append("; sampled at ").append(formatForLocalDisplay(sample.getDataTimestamp()));
 		return buf.toString();
 	}
 
 	/**
 	 * Get setting specifiers for the {@literal unitId} and
-	 * {@literal modbusNetwork.propertyFilters['UID']} properties.
+	 * {@literal modbusNetwork.propertyFilters['uid']} properties.
 	 * 
 	 * @return list of setting specifiers
 	 * @since 1.1
 	 */
 	protected List<SettingSpecifier> getModbusNetworkSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
-		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['uid']",
 				"Modbus Port"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", "1"));
 		return results;
@@ -585,11 +573,12 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
 
 		// get current value
-		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(sample.copy()), true));
+		results.add(
+				new BasicTitleSettingSpecifier("sample", getSampleMessage(getSample().copy()), true));
 
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
-		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
+		results.add(new BasicTextFieldSettingSpecifier("groupUid", defaults.getGroupUid()));
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['uid']",
 				"Modbus Port"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.getUnitId())));
 
@@ -599,8 +588,8 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 		ModbusWritePropertyConfig[] confs = getPropConfigs();
 		List<ModbusWritePropertyConfig> confsList = (confs != null ? Arrays.asList(confs)
 				: Collections.<ModbusWritePropertyConfig> emptyList());
-		results.add(SettingsUtil.dynamicListSettingSpecifier("propConfigs", confsList,
-				new SettingsUtil.KeyedListCallback<ModbusWritePropertyConfig>() {
+		results.add(SettingUtils.dynamicListSettingSpecifier("propConfigs", confsList,
+				new SettingUtils.KeyedListCallback<ModbusWritePropertyConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(
@@ -620,25 +609,6 @@ public class ModbusControl extends ModbusDeviceSupport implements SettingSpecifi
 
 	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
-	}
-
-	/**
-	 * Get the sample cache maximum age, in milliseconds.
-	 * 
-	 * @return the cache milliseconds
-	 */
-	public long getSampleCacheMs() {
-		return sampleCacheMs;
-	}
-
-	/**
-	 * Set the sample cache maximum age, in milliseconds.
-	 * 
-	 * @param sampleCacheMs
-	 *        the cache milliseconds
-	 */
-	public void setSampleCacheMs(long sampleCacheMs) {
-		this.sampleCacheMs = sampleCacheMs;
 	}
 
 	/**
