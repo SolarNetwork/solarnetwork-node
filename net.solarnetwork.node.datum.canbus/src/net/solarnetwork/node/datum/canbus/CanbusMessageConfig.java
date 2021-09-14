@@ -32,12 +32,12 @@ import java.util.Map;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectFactory;
 import net.solarnetwork.domain.ByteOrdering;
-import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingValueBean;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
 
 /**
@@ -48,7 +48,7 @@ import net.solarnetwork.util.ArrayUtils;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class CanbusMessageConfig {
 
@@ -139,8 +139,8 @@ public class CanbusMessageConfig {
 		CanbusPropertyConfig[] confs = getPropConfigs();
 		List<CanbusPropertyConfig> confsList = (confs != null ? Arrays.asList(confs)
 				: Collections.<CanbusPropertyConfig> emptyList());
-		results.add(SettingsUtil.dynamicListSettingSpecifier(prefix + "propConfigs", confsList,
-				new SettingsUtil.KeyedListCallback<CanbusPropertyConfig>() {
+		results.add(SettingUtils.dynamicListSettingSpecifier(prefix + "propConfigs", confsList,
+				new SettingUtils.KeyedListCallback<CanbusPropertyConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(CanbusPropertyConfig value,
