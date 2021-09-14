@@ -18,40 +18,42 @@
 
 	<!-- Service references -->
 
-	<reference-list id="instructionHandlerList" availability="optional"
-		interface="net.solarnetwork.node.reactor.InstructionHandler"/>
+	<bean id="instructionExecutionService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionExecutionService"/>
+		<property name="sticky" value="true"/>
+	</bean>
 
-	<reference id="sslServiceRef" availability="optional"
-		interface="net.solarnetwork.support.SSLService">
-		<reference-listener ref="sslService" bind-method="onBind" unbind-method="onUnbind"/>
-	</reference>
-	
+	<bean id="sslService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.service.SSLService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<!-- Supporting Services -->
 	
-	<bean id="sslService" class="net.solarnetwork.util.OptionalServiceTracker">
-		<property name="service" ref="sslServiceRef"/>
-	</bean>
-	
-	<bean id="settingsFactory" 
-		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-		<property name="displayName" value="HTTP Ping"/>
-		<property name="factoryUID" value="net.solarnetwork.node.control.ping.http"/>
-		<property name="messageSource">
-			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basenames" value="net.solarnetwork.node.control.ping.HttpRequesterJob"/>
-			</bean>
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.control.ping.HttpRequesterJob</value>
+			</list>
 		</property>
 	</bean>
 
 	<!-- Published Services -->
 	
-	<service ref="settingsFactory" 
-		interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="HTTP Ping"/>
+			<property name="factoryUid" value="net.solarnetwork.node.control.ping.http"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.ping.http" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.control.ping.http"/>
@@ -71,14 +73,17 @@
 					<property name="jobClass" value="net.solarnetwork.node.control.ping.HttpRequesterJob"/>
 					<property name="jobDataAsMap">
 						<map>
-							<entry key="handlers" value-ref="instructionHandlerList"/>
+							<entry key="instructionExecutionService" value-ref="instructionExecutionService"/>
 							<entry key="sslService" value-ref="sslService"/>
+							<entry key="messageSource" value-ref="messageSource"/>
 						</map>
 					</property>
 				</bean>
 			</property>
 			<property name="settingSpecifierProvider">
-				<bean class="net.solarnetwork.node.control.ping.HttpRequesterJob"/>
+				<bean class="net.solarnetwork.node.control.ping.HttpRequesterJob">
+					<property name="messageSource" ref="messageSource"/>
+				</bean>
 			</property>
 		</bean>
 	</osgix:managed-service-factory>

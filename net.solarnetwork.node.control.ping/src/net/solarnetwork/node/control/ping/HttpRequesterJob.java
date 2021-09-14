@@ -22,13 +22,12 @@
 
 package net.solarnetwork.node.control.ping;
 
+import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 import javax.net.ssl.HttpsURLConnection;
@@ -37,17 +36,18 @@ import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.PersistJobDataAfterExecution;
 import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.job.AbstractJob;
-import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.reactor.support.InstructionUtils;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.support.SSLService;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionExecutionService;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.SSLService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * Make a HTTP request to test for network connectivity, and toggle a control
@@ -96,8 +96,8 @@ import net.solarnetwork.util.OptionalService;
  * 
  * <dt>sleepSeconds</dt>
  * <dd>The number of seconds to wait after toggling the control to
- * <em>false</em> before toggling the control back to <em>true</em>. Defaults to
- * <b>5</b>.</dd>
+ * {@literal false} before toggling the control back to {@literal true}.
+ * Defaults to <b>5</b>.</dd>
  * 
  * <dt>connectionTimeoutSeconds</dt>
  * <dd>The number of seconds to wait for the network connection request to
@@ -111,13 +111,11 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 2.0
+ * @version 3.0
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
 public class HttpRequesterJob extends AbstractJob implements SettingSpecifierProvider {
-
-	private static MessageSource MESSAGE_SOURCE;
 
 	private String controlId;
 	private String osCommandToggleOff;
@@ -127,13 +125,15 @@ public class HttpRequesterJob extends AbstractJob implements SettingSpecifierPro
 	private int sleepSeconds = 5;
 	private int connectionTimeoutSeconds = 15;
 	private String url = "http://www.google.com/";
-	private Collection<InstructionHandler> handlers = Collections.emptyList();
+	private MessageSource messageSource;
+	private OptionalService<InstructionExecutionService> instructionExecutionService;
 	private OptionalService<SSLService> sslService;
 
 	@Override
 	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
-		if ( handlers == null ) {
-			log.warn("No configured InstructionHandler collection");
+		InstructionExecutionService instructionService = service(instructionExecutionService);
+		if ( instructionService == null ) {
+			log.warn("InstructionExecutionService not available, cannot execute ping.");
 			return;
 		}
 		if ( controlId == null && osCommandToggleOff == null && osCommandToggleOn == null ) {
@@ -144,9 +144,10 @@ public class HttpRequesterJob extends AbstractJob implements SettingSpecifierPro
 			log.info("Ping {} successful", url);
 		} else {
 			handleOSCommand(osCommandToggleOff);
-			if ( controlId != null && toggleControl(failedToggleValue) == InstructionState.Completed ) {
+			if ( controlId != null && toggleControl(instructionService,
+					failedToggleValue) == InstructionState.Completed ) {
 				handleSleep();
-				toggleControl(!failedToggleValue);
+				toggleControl(instructionService, !failedToggleValue);
 			} else if ( osCommandToggleOn != null ) {
 				handleSleep();
 			}
@@ -248,29 +249,32 @@ public class HttpRequesterJob extends AbstractJob implements SettingSpecifierPro
 		}
 	}
 
-	private InstructionState toggleControl(final boolean value) {
-		InstructionState result = null;
+	private InstructionState toggleControl(final InstructionExecutionService service,
+			final boolean value) {
+		final Instruction instr = InstructionUtils.createSetControlValueLocalInstruction(controlId,
+				String.valueOf(value));
+		InstructionStatus result = null;
 		try {
-			result = InstructionUtils.setControlParameter(handlers, controlId, String.valueOf(value));
+			result = service.executeInstruction(instr);
 		} catch ( RuntimeException e ) {
 			log.error("Exception setting control parameter {} to {}", controlId, value, e);
 		}
 		if ( result == null ) {
 			// nobody handled it!
-			result = InstructionState.Declined;
-			log.warn("No InstructionHandler found for control {}", controlId);
-		} else if ( result == InstructionState.Completed ) {
+			result = InstructionUtils.createStatus(instr, InstructionState.Declined);
+			log.warn("No handler available to set control {} value", controlId);
+		} else if ( result.getInstructionState() == InstructionState.Completed ) {
 			log.info("Set {} value to {}", controlId, value);
 		} else {
 			log.warn("Unable to set {} to {}; result is {}", controlId, value, result);
 		}
-		return result;
+		return (result != null ? result.getInstructionState() : InstructionState.Declined);
 	}
 
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.control.ping.http";
 	}
 
@@ -299,15 +303,13 @@ public class HttpRequesterJob extends AbstractJob implements SettingSpecifierPro
 		return results;
 	}
 
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
+
 	@Override
 	public MessageSource getMessageSource() {
-		if ( MESSAGE_SOURCE == null ) {
-			ResourceBundleMessageSource source = new ResourceBundleMessageSource();
-			source.setBundleClassLoader(getClass().getClassLoader());
-			source.setBasename(getClass().getName());
-			MESSAGE_SOURCE = source;
-		}
-		return MESSAGE_SOURCE;
+		return messageSource;
 	}
 
 	public void setControlId(String value) {
@@ -319,10 +321,6 @@ public class HttpRequesterJob extends AbstractJob implements SettingSpecifierPro
 
 	public void setSleepSeconds(int sleepSeconds) {
 		this.sleepSeconds = sleepSeconds;
-	}
-
-	public void setHandlers(Collection<InstructionHandler> handlers) {
-		this.handlers = handlers;
 	}
 
 	public void setUrl(String url) {
@@ -357,6 +355,11 @@ public class HttpRequesterJob extends AbstractJob implements SettingSpecifierPro
 
 	public void setOsCommandSleepSeconds(int osCommandSleepSeconds) {
 		this.osCommandSleepSeconds = osCommandSleepSeconds;
+	}
+
+	public void setInstructionExecutionService(
+			OptionalService<InstructionExecutionService> instructionExecutionService) {
+		this.instructionExecutionService = instructionExecutionService;
 	}
 
 }
