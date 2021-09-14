@@ -3,25 +3,29 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Control Datum Source
 Bundle-Description: Generate datum from configured SolarNode controls.
 Bundle-SymbolicName: net.solarnetwork.node.datum.control
-Bundle-Version: 1.0.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.control
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
- net.solarnetwork.domain;version="[1.26,2.0)",
- net.solarnetwork.node;version="[1.31,2.0)",
- net.solarnetwork.node.dao;version="[1.10,2.0)",
- net.solarnetwork.node.domain;version="[1.23,2.0)",
- net.solarnetwork.node.settings;version="[1.13,2.0)",
- net.solarnetwork.node.settings.support;version="[1.11,2.0)",
- net.solarnetwork.node.support;version="[1.24,2.0)",
- net.solarnetwork.util;version="[1.46,2.0)",
+ net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
+ net.solarnetwork.domain;version="[2.0,3.0)",
+ net.solarnetwork.domain.datum;version="[2.0,3.0)",
+ net.solarnetwork.node.domain;version="[2.0,3.0)",
+ net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
+ net.solarnetwork.node.job;version="[2.0,3.0)",
+ net.solarnetwork.node.reactor;version="[2.0,3.0)",
+ net.solarnetwork.node.service;version="[1.0,2.0)",
+ net.solarnetwork.node.service.support;version="[1.0,2.0)",
+ net.solarnetwork.service;version="[1.0,2.0)",
+ net.solarnetwork.service.support;version="[1.0,2.0)",
+ net.solarnetwork.settings;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.support;version="[2.0,3.0)",
+ net.solarnetwork.util;version="[2.0,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",
- org.quartz;version="[2.2,3.0)",
- org.quartz.simpl;version="[2.2,3.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.beans.factory;version="[4.3,5.0)",
+ org.springframework.beans;version="[4.3,5.0)",
  org.springframework.context;version="[4.3,5.0)",
  org.springframework.context.support;version="[4.3,5.0)",
- org.springframework.core;version="[4.3,5.0)",
- org.springframework.scheduling.quartz;version="[4.3,5.0)"
+ org.springframework.core;version="[4.3,5.0)"

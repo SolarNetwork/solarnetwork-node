@@ -1,5 +1,5 @@
 /* ==================================================================
- * NodeControlInfoDatumDataSourceTests.java - 10/04/2021 8:27:12 AM
+ * SimpleNodeControlInfoDatumDataSourceTests.java - 10/04/2021 8:27:12 AM
  * 
  * Copyright 2021 SolarNetwork.net Dev Team
  * 
@@ -22,144 +22,156 @@
 
 package net.solarnetwork.node.datum.control.test;
 
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
-import java.util.Date;
+import java.time.Instant;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
+import net.solarnetwork.domain.BasicNodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.datum.control.ControlEventMode;
 import net.solarnetwork.node.datum.control.NodeControlInfoDatumDataSource;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
-import net.solarnetwork.node.domain.NodeControlInfoDatum;
-import net.solarnetwork.node.support.DatumEvents;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.DatumQueue;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link NodeControlInfoDatumDataSource} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class NodeControlInfoDatumDataSourceTests {
 
-	private DatumDao<GeneralNodeDatum> datumDao;
+	private DatumQueue datumQueue;
 	private NodeControlInfoDatumDataSource dataSource;
 
-	@SuppressWarnings("unchecked")
 	@Before
 	public void setup() {
-		datumDao = EasyMock.createMock(DatumDao.class);
-		dataSource = new NodeControlInfoDatumDataSource();
-		dataSource.setDatumDao(new StaticOptionalService<>(datumDao));
+		datumQueue = EasyMock.createMock(DatumQueue.class);
+		dataSource = new NodeControlInfoDatumDataSource(new StaticOptionalService<>(datumQueue));
 		dataSource.setEventMode(ControlEventMode.CaptureAndChange);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(datumDao);
+		EasyMock.replay(datumQueue);
 	}
 
 	@After
 	public void teardown() {
-		EasyMock.verify(datumDao);
+		EasyMock.verify(datumQueue);
 	}
 
-	private NodeControlInfoDatum createControlInfo() {
-		NodeControlInfoDatum info = new NodeControlInfoDatum();
-		info.setSourceId("test.source");
-		info.setCreated(new Date());
-		info.setType(NodeControlPropertyType.Integer);
-		info.setValue("1");
-		info.setReadonly(false);
-		return info;
+	private BasicNodeControlInfo.Builder createControlInfoBuilder() {
+		// @formatter:off
+		return BasicNodeControlInfo.builder()
+				.withControlId("test.source")
+				.withType(NodeControlPropertyType.Integer)
+				.withValue("1")
+				.withReadonly(false);
+		// @formatter:on
 	}
 
-	private Event createDatumEvent(String topic, NodeControlInfoDatum info) {
+	private SimpleNodeControlInfoDatum createControlInfo(BasicNodeControlInfo.Builder info) {
+		return new SimpleNodeControlInfoDatum(info.build(), Instant.now());
+	}
+
+	private Event createDatumEvent(String topic, SimpleNodeControlInfoDatum info) {
 		return DatumEvents.datumEvent(topic, info);
+	}
+
+	private SimpleNodeControlInfoDatum createControlInfo() {
+		return createControlInfo(createControlInfoBuilder());
 	}
 
 	@Test
 	public void handleChanged() {
 		// GIVEN
-		Capture<GeneralNodeDatum> datumCaptor = new Capture<>();
-		datumDao.storeDatum(capture(datumCaptor));
+		Capture<NodeDatum> datumCaptor = new Capture<>();
+		expect(datumQueue.offer(capture(datumCaptor))).andReturn(true);
 
 		// WHEN
 		replayAll();
-		NodeControlInfoDatum info = createControlInfo();
+		SimpleNodeControlInfoDatum info = createControlInfo();
 		Event event = createDatumEvent(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED, info);
 		dataSource.handleEvent(event);
 
 		// THEN
-		GeneralNodeDatum d = datumCaptor.getValue();
+		NodeDatum d = datumCaptor.getValue();
 		assertThat("Datum persisted", d, notNullValue());
 		assertThat("Created date near event date",
-				d.getCreated().getTime() - info.getCreated().getTime(),
+				d.getTimestamp().toEpochMilli() - info.getTimestamp().toEpochMilli(),
 				allOf(greaterThanOrEqualTo(0L), lessThanOrEqualTo(100L)));
 		assertThat("Control ID -> source ID", d.getSourceId(), equalTo(info.getControlId()));
-		assertThat("Integer value as instantaneous property v", d.getInstantaneousSampleInteger("v"),
-				equalTo(1));
-		assertThat("Integer value as status property val", d.getStatusSampleInteger("val"), equalTo(1));
+		assertThat("Integer value as instantaneous property v",
+				d.asSampleOperations().getSampleInteger(Instantaneous, "v"), equalTo(1));
+		assertThat("Integer value as status property val",
+				d.asSampleOperations().getSampleInteger(Status, "val"), equalTo(1));
 	}
 
 	@Test
 	public void handleChanged_explicitPropertyName() {
 		// GIVEN
-		Capture<GeneralNodeDatum> datumCaptor = new Capture<>();
-		datumDao.storeDatum(capture(datumCaptor));
+		Capture<NodeDatum> datumCaptor = new Capture<>();
+		expect(datumQueue.offer(capture(datumCaptor))).andReturn(true);
 
 		// WHEN
 		replayAll();
-		NodeControlInfoDatum info = createControlInfo();
-		info.setPropertyName("foo");
+		SimpleNodeControlInfoDatum info = createControlInfo(
+				createControlInfoBuilder().withPropertyName("foo"));
 		Event event = createDatumEvent(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED, info);
 		dataSource.handleEvent(event);
 
 		// THEN
-		GeneralNodeDatum d = datumCaptor.getValue();
+		NodeDatum d = datumCaptor.getValue();
 		assertThat("Datum persisted", d, notNullValue());
 		assertThat("Created date near event date",
-				d.getCreated().getTime() - info.getCreated().getTime(),
+				d.getTimestamp().toEpochMilli() - info.getTimestamp().toEpochMilli(),
 				allOf(greaterThanOrEqualTo(0L), lessThanOrEqualTo(100L)));
 		assertThat("Control ID -> source ID", d.getSourceId(), equalTo(info.getControlId()));
-		assertThat("Integer value as explicit status property foo", d.getStatusSampleInteger("foo"),
-				equalTo(1));
+		assertThat("Integer value as explicit status property foo",
+				d.asSampleOperations().getSampleInteger(Status, "foo"), equalTo(1));
 	}
 
 	@Test
 	public void handleChanged_controlIdFilter_match() {
 		// GIVEN
 		dataSource.setControlIdRegexValue("^test");
-		Capture<GeneralNodeDatum> datumCaptor = new Capture<>();
-		datumDao.storeDatum(capture(datumCaptor));
+		Capture<NodeDatum> datumCaptor = new Capture<>();
+		expect(datumQueue.offer(capture(datumCaptor))).andReturn(true);
 
 		// WHEN
 		replayAll();
-		NodeControlInfoDatum info = createControlInfo();
+		SimpleNodeControlInfoDatum info = createControlInfo();
 		Event event = createDatumEvent(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED, info);
 		dataSource.handleEvent(event);
 
 		// THEN
-		GeneralNodeDatum d = datumCaptor.getValue();
+		NodeDatum d = datumCaptor.getValue();
 		assertThat("Datum persisted", d, notNullValue());
 		assertThat("Created date near event date",
-				d.getCreated().getTime() - info.getCreated().getTime(),
+				d.getTimestamp().toEpochMilli() - info.getTimestamp().toEpochMilli(),
 				allOf(greaterThanOrEqualTo(0L), lessThanOrEqualTo(100L)));
 		assertThat("Control ID -> source ID", d.getSourceId(), equalTo(info.getControlId()));
-		assertThat("Integer value as instantaneous property v", d.getInstantaneousSampleInteger("v"),
-				equalTo(1));
-		assertThat("Integer value as status property val", d.getStatusSampleInteger("val"), equalTo(1));
+		assertThat("Integer value as instantaneous property v",
+				d.asSampleOperations().getSampleInteger(Instantaneous, "v"), equalTo(1));
+		assertThat("Integer value as status property val",
+				d.asSampleOperations().getSampleInteger(Status, "val"), equalTo(1));
 	}
 
 	@Test
@@ -169,7 +181,7 @@ public class NodeControlInfoDatumDataSourceTests {
 
 		// WHEN
 		replayAll();
-		NodeControlInfoDatum info = createControlInfo();
+		SimpleNodeControlInfoDatum info = createControlInfo();
 		Event event = createDatumEvent(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED, info);
 		dataSource.handleEvent(event);
 
@@ -179,25 +191,26 @@ public class NodeControlInfoDatumDataSourceTests {
 	@Test
 	public void handleCaptured() {
 		// GIVEN
-		Capture<GeneralNodeDatum> datumCaptor = new Capture<>();
-		datumDao.storeDatum(capture(datumCaptor));
+		Capture<NodeDatum> datumCaptor = new Capture<>();
+		expect(datumQueue.offer(capture(datumCaptor))).andReturn(true);
 
 		// WHEN
 		replayAll();
-		NodeControlInfoDatum info = createControlInfo();
+		SimpleNodeControlInfoDatum info = createControlInfo();
 		Event event = createDatumEvent(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED, info);
 		dataSource.handleEvent(event);
 
 		// THEN
-		GeneralNodeDatum d = datumCaptor.getValue();
+		NodeDatum d = datumCaptor.getValue();
 		assertThat("Datum persisted", d, notNullValue());
 		assertThat("Created date near event date",
-				d.getCreated().getTime() - info.getCreated().getTime(),
+				d.getTimestamp().toEpochMilli() - info.getTimestamp().toEpochMilli(),
 				allOf(greaterThanOrEqualTo(0L), lessThanOrEqualTo(100L)));
 		assertThat("Control ID -> source ID", d.getSourceId(), equalTo(info.getControlId()));
-		assertThat("Integer value as instantaneous property v", d.getInstantaneousSampleInteger("v"),
-				equalTo(1));
-		assertThat("Integer value as status property val", d.getStatusSampleInteger("val"), equalTo(1));
+		assertThat("Integer value as instantaneous property v",
+				d.asSampleOperations().getSampleInteger(Instantaneous, "v"), equalTo(1));
+		assertThat("Integer value as status property val",
+				d.asSampleOperations().getSampleInteger(Status, "val"), equalTo(1));
 	}
 
 	@Test
@@ -207,7 +220,7 @@ public class NodeControlInfoDatumDataSourceTests {
 
 		// WHEN
 		replayAll();
-		NodeControlInfoDatum info = createControlInfo();
+		SimpleNodeControlInfoDatum info = createControlInfo();
 		Event event = createDatumEvent(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED, info);
 		dataSource.handleEvent(event);
 
@@ -220,7 +233,7 @@ public class NodeControlInfoDatumDataSourceTests {
 
 		// WHEN
 		replayAll();
-		NodeControlInfoDatum info = createControlInfo();
+		SimpleNodeControlInfoDatum info = createControlInfo();
 		Event event = createDatumEvent("rando/event", info);
 		dataSource.handleEvent(event);
 

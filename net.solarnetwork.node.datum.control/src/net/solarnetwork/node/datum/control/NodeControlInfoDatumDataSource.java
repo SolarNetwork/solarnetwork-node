@@ -1,5 +1,5 @@
 /* ==================================================================
- * NodeControlInfoDatumDataSource.java - 9/04/2021 9:00:59 AM
+ * SimpleNodeControlInfoDatumDataSource.java - 9/04/2021 9:00:59 AM
  * 
  * Copyright 2021 SolarNetwork.net Dev Team
  * 
@@ -22,8 +22,8 @@
 
 package net.solarnetwork.node.datum.control;
 
-import static java.util.Collections.singleton;
-import static net.solarnetwork.util.OptionalService.service;
+import static net.solarnetwork.service.OptionalService.service;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,24 +38,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.NodeControlInfo;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.GeneralNodeControlInfoDatum;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.DatumQueue;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Data source for controls, supporting both scheduling polling and real-time
  * persisting of changes.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class NodeControlInfoDatumDataSource extends BaseIdentifiable
 		implements SettingSpecifierProvider, EventHandler {
@@ -65,10 +65,26 @@ public class NodeControlInfoDatumDataSource extends BaseIdentifiable
 
 	private static final Logger log = LoggerFactory.getLogger(NodeControlInfoDatumDataSource.class);
 
-	private OptionalService<DatumDao<GeneralNodeDatum>> datumDao;
+	private final OptionalService<DatumQueue> datumQueue;
 	private Executor executor;
 	private Pattern controlIdRegex;
 	private ControlEventMode eventMode = DEFAULT_EVENT_MODE;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param datumQueue
+	 *        the queue
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
+	public NodeControlInfoDatumDataSource(OptionalService<DatumQueue> datumQueue) {
+		super();
+		if ( datumQueue == null ) {
+			throw new IllegalArgumentException("The datumQueue argument must not be null.");
+		}
+		this.datumQueue = datumQueue;
+	}
 
 	@Override
 	public void handleEvent(Event event) {
@@ -84,7 +100,7 @@ public class NodeControlInfoDatumDataSource extends BaseIdentifiable
 		} else {
 			return;
 		}
-		final Object val = event.getProperty(Datum.DATUM_PROPERTY);
+		final Object val = event.getProperty(DatumEvents.DATUM_PROPERTY);
 		if ( val == null || !(val instanceof NodeControlInfo) ) {
 			return;
 		}
@@ -113,23 +129,23 @@ public class NodeControlInfoDatumDataSource extends BaseIdentifiable
 	}
 
 	private void persistDatum(NodeControlInfo info) {
-		final DatumDao<GeneralNodeDatum> dao = service(datumDao);
-		if ( dao == null ) {
-			log.warn("DAO not available to persist control info {}; discarding", info);
+		final DatumQueue queue = service(datumQueue);
+		if ( queue == null ) {
+			log.warn("DatumQueue not available to offer control info {}; discarding", info);
 			return;
 		}
-		GeneralNodeDatum datum;
-		if ( info instanceof GeneralNodeDatum ) {
-			datum = (GeneralNodeDatum) info;
+		NodeDatum datum;
+		if ( info instanceof NodeDatum ) {
+			datum = (NodeDatum) info;
 		} else {
-			datum = new GeneralNodeControlInfoDatum(singleton(info));
+			datum = new SimpleNodeControlInfoDatum(info, Instant.now());
 		}
-		log.debug("Persisting control datum {}", datum);
-		dao.storeDatum(datum);
+		log.debug("Offering control datum {}", datum);
+		queue.offer(datum);
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.control";
 	}
 
@@ -160,16 +176,6 @@ public class NodeControlInfoDatumDataSource extends BaseIdentifiable
 		results.add(propTypeSpec);
 
 		return results;
-	}
-
-	/**
-	 * Set the datum DAO to use for real-time persisting of changes.
-	 * 
-	 * @param datumDao
-	 *        the DAO to set
-	 */
-	public void setDatumDao(OptionalService<DatumDao<GeneralNodeDatum>> datumDao) {
-		this.datumDao = datumDao;
 	}
 
 	/**
