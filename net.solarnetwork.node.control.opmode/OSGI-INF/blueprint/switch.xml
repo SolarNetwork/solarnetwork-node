@@ -14,34 +14,34 @@
 	<bean id="messageSourceSwitch" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 				<value>net.solarnetwork.node.control.opmode.OperationalModeSwitch</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
 	
 	<!-- Published Services -->
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Operational Mode Switch"/>
-			<property name="factoryUID" value="net.solarnetwork.node.control.opmode.switch"/>
+			<property name="factoryUid" value="net.solarnetwork.node.control.opmode.switch"/>
 			<property name="messageSource" ref="messageSourceSwitch"/>
 		</bean>
 	</service>
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.opmode.switch" autowire-on-update="true">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.NodeControlProvider</beans:value>
+			<beans:value>net.solarnetwork.node.service.NodeControlProvider</beans:value>
 			<beans:value>net.solarnetwork.node.reactor.InstructionHandler</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 			<beans:value>org.osgi.service.event.EventHandler</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.control.opmode.switch"/>
 			<beans:entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
 				<beans:array value-type="java.lang.String">
-					<beans:value>#{T(net.solarnetwork.node.OperationalModesService).EVENT_TOPIC_OPERATIONAL_MODES_CHANGED}</beans:value>
+					<beans:value>#{T(net.solarnetwork.node.service.OperationalModesService).EVENT_TOPIC_OPERATIONAL_MODES_CHANGED}</beans:value>
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>

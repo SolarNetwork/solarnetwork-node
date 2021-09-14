@@ -23,12 +23,12 @@
 package net.solarnetwork.node.control.opmode;
 
 import static java.util.Collections.singleton;
-import static net.solarnetwork.node.OperationalModesService.EVENT_PARAM_ACTIVE_OPERATIONAL_MODES;
-import static net.solarnetwork.node.OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED;
 import static net.solarnetwork.node.reactor.InstructionHandler.TOPIC_SET_OPERATING_STATE;
+import static net.solarnetwork.node.service.OperationalModesService.EVENT_PARAM_ACTIVE_OPERATIONAL_MODES;
+import static net.solarnetwork.node.service.OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -49,18 +49,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.TaskExecutor;
 import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.node.OperationalModesService;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.BasicInstruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.reactor.support.BasicInstruction;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -76,7 +76,7 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class OperationalStateManager extends BaseIdentifiable
 		implements EventHandler, SettingSpecifierProvider {
@@ -135,10 +135,10 @@ public class OperationalStateManager extends BaseIdentifiable
 		private final CountDownLatch latch;
 		private final String controlId;
 		private final DeviceOperatingState state;
-		private final Date date;
+		private final Instant date;
 
-		public StateChanger(CountDownLatch latch, String controlId, DeviceOperatingState state,
-				Date date) {
+		private StateChanger(CountDownLatch latch, String controlId, DeviceOperatingState state,
+				Instant date) {
 			super();
 			this.latch = latch;
 			this.controlId = controlId;
@@ -150,7 +150,7 @@ public class OperationalStateManager extends BaseIdentifiable
 		public StateChangeResult call() throws Exception {
 			try {
 				BasicInstruction instr = new BasicInstruction(TOPIC_SET_OPERATING_STATE, date, null,
-						null, null);
+						null);
 				instr.addParameter(controlId, String.valueOf(state.getCode()));
 				InstructionExecutionService instrService = getInstructionExecutionService();
 				if ( instrService == null ) {
@@ -223,7 +223,7 @@ public class OperationalStateManager extends BaseIdentifiable
 			}
 			StateChangeManager retry = null;
 			try {
-				final Date start = new Date();
+				final Instant start = Instant.now();
 				log.info("Executing [{}] operational mode change operating state to [{}] on {} @ {}",
 						mode, state, controlIds, start);
 				final List<Future<StateChangeResult>> results = new ArrayList<>(controlIds.size());
@@ -380,7 +380,7 @@ public class OperationalStateManager extends BaseIdentifiable
 	// Settings
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.control.opmode.opstatemgr";
 	}
 
