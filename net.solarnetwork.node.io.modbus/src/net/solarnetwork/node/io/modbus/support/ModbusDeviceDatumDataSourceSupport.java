@@ -67,8 +67,11 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 */
 	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = ModbusDeviceSupport.INFO_KEY_DEVICE_MANUFACTURE_DATE;
 
+	/** The {@code unitId} property default value. */
+	public static final int DEFAULT_UNIT_ID = 1;
+
 	private Map<String, Object> deviceInfo;
-	private int unitId = 1;
+	private int unitId = DEFAULT_UNIT_ID;
 	private OptionalService<ModbusNetwork> modbusNetwork;
 
 	/**
@@ -262,10 +265,21 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 		this.modbusNetwork = modbusDevice;
 	}
 
+	/**
+	 * Get the Modbus unit ID.
+	 * 
+	 * @return the unit ID; defauts to {@link #DEFAULT_UNIT_ID}
+	 */
 	public int getUnitId() {
 		return unitId;
 	}
 
+	/**
+	 * Set the Modbus unit ID.
+	 * 
+	 * @param unitId
+	 *        the unit ID
+	 */
 	public void setUnitId(int unitId) {
 		this.unitId = unitId;
 	}
