@@ -14,20 +14,24 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
-	<bean id="settingsFactory" 
-		class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
-		<property name="displayName" value="RFXCOM transceiver"/>
-		<property name="factoryUid" value="net.solarnetwork.node.rfxcom"/>
-		<property name="messageSource">
-			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basenames" value="net.solarnetwork.node.rfxcom.RFXCOMTransceiver"/>
-			</bean>
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.rfxcom.RFXCOMTransceiver</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</list>
 		</property>
 	</bean>
 
 	<!-- Published Services -->
 	
-	<service ref="settingsFactory" interface="net.solarnetwork.settings.SettingSpecifierProviderFactory"/>
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="RFXCOM transceiver"/>
+			<property name="factoryUid" value="net.solarnetwork.node.rfxcom"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.rfxcom" 
 			update-method="updateConfiguration">
@@ -39,13 +43,14 @@
 			<beans:entry key="settingPid" value="net.solarnetwork.node.rfxcom"/>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.rfxcom.RFXCOMTransceiver">
-			<property name="dataCollectorFactory">
+			<property name="messageSource" ref="messageSource"/>
+			<property name="serialNetwork">
 				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 					<argument ref="bundleContext"/>
-					<property name="serviceClassName" value="net.solarnetwork.node.DataCollectorFactory"/>
+					<property name="serviceClassName" value="net.solarnetwork.node.io.serial.SerialNetwork"/>
 					<property name="propertyFilters">
 						<map>
-							<entry key="uid" value="/dev/ttyUSB0"/>
+							<entry key="uid" value="Serial Port"/>
 						</map>
 					</property>
 				</bean>	

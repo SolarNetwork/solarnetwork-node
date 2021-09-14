@@ -1,7 +1,7 @@
 /* ==================================================================
- * RFXCOM.java - Jul 9, 2012 3:37:58 PM
+ * MessageHandler.java - 14/09/2021 10:18:05 AM
  * 
- * Copyright 2007-2012 SolarNetwork.net Dev Team
+ * Copyright 2021 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -22,25 +22,23 @@
 
 package net.solarnetwork.node.rfxcom;
 
-import java.io.IOException;
-import net.solarnetwork.service.Identifiable;
-
 /**
- * API for working with RFXCOM transceivers.
+ * API for handling RFXCOM messages.
  * 
  * @author matt
- * @version 2.0
+ * @version 1.0
+ * @since 2.0
  */
-public interface RFXCOM extends Identifiable {
+public interface MessageHandler {
 
 	/**
-	 * Listen for messages.
+	 * Handle a message.
 	 * 
-	 * @param handler
-	 *        the handler to accept messages
-	 * @throws IOException
-	 *         if an error occurs
+	 * @param message
+	 *        the message to handle
+	 * @return {@literal true} to listen for more messages, {@literal false} to
+	 *         stop listening
 	 */
-	void listenForMessages(MessageHandler handler) throws IOException;
+	boolean handleMessage(Message message);
 
 }

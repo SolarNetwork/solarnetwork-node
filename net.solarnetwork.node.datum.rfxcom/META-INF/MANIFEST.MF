@@ -1,10 +1,10 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: RFXCOM Energy Meter Consumption Datum DataSource
+Bundle-Name: RFXCOM Meter Data Source
 Bundle-SymbolicName: net.solarnetwork.node.datum.rfxcom
 Automatic-Module-Name: net.solarnetwork.node.datum.rfxcom
-Bundle-Description: Collect consumption data from energy meter devices via 
- the RFXCOM RFXtrx433 wireless transceiver.
+Bundle-Description: Collect data from energy meter devices via the RFXCOM \
+ RFXtrx433 wireless transceiver.
 Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -24,10 +24,13 @@ Import-Package:
  net.solarnetwork.settings.support;version="[2.0,3.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
+ org.quartz;version="[2.2,3.0)",
+ org.quartz.simpl;version="[2.2,3.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.beans;version="[4.3,5.0)",
  org.springframework.beans.factory;version="[4.3,5.0)",
  org.springframework.beans.propertyeditors;version="[4.3,5.0)",
  org.springframework.context;version="[4.3,5.0)",
  org.springframework.context.support;version="[4.3,5.0)",
- org.springframework.core;version="[4.3,5.0)"
+ org.springframework.core;version="[4.3,5.0)",
+ org.springframework.scheduling.quartz;version="[4.3,5.0)"

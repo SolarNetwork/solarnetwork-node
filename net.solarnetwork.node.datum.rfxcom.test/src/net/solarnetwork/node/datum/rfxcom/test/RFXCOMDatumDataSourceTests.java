@@ -22,10 +22,11 @@
 
 package net.solarnetwork.node.datum.rfxcom.test;
 
-import static org.easymock.EasyMock.expect;
+import static net.solarnetwork.test.EasyMockUtils.assertWith;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 import static org.junit.Assert.assertEquals;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,9 +41,10 @@ import net.solarnetwork.node.domain.datum.AcEnergyDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.rfxcom.Message;
 import net.solarnetwork.node.rfxcom.MessageFactory;
+import net.solarnetwork.node.rfxcom.MessageHandler;
 import net.solarnetwork.node.rfxcom.RFXCOM;
-import net.solarnetwork.node.service.ConversationalDataCollector;
-import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.StaticOptionalService;
+import net.solarnetwork.test.Assertion;
 
 /**
  * Test cases for the @{link RFXCOMDatumDataSource} class.
@@ -53,41 +55,50 @@ import net.solarnetwork.service.OptionalService;
 public class RFXCOMDatumDataSourceTests {
 
 	private RFXCOMDatumDataSource dataSource;
-	private OptionalService<RFXCOM> rfxcomTracker;
 	private RFXCOM rfxcom;
-	private ConversationalDataCollector dc;
 	private MessageFactory messageFactory;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	@SuppressWarnings("unchecked")
 	@Before
 	public void setup() {
-		rfxcomTracker = EasyMock.createMock(OptionalService.class);
-
 		rfxcom = EasyMock.createMock(RFXCOM.class);
 
-		dc = EasyMock.createMock(ConversationalDataCollector.class);
-
 		dataSource = new RFXCOMDatumDataSource();
-		dataSource.setRfxcomTracker(rfxcomTracker);
+		dataSource.setRfxcomTracker(new StaticOptionalService<>(rfxcom));
 
 		messageFactory = new MessageFactory();
 	}
 
 	private Collection<NodeDatum> doReadDatum(String messageString) {
-		final List<Message> messages = new ArrayList<Message>();
+		// GIVEN
+		final List<Message> messages = new ArrayList<>();
 		messages.add(messageFactory.parseMessage(TestUtils.bytesFromHexString(messageString), 0));
-		expect(rfxcomTracker.service()).andReturn(rfxcom);
-		expect(rfxcom.getDataCollectorInstance()).andReturn(dc);
-		expect(dc.collectData(dataSource)).andReturn(messages);
-		dc.stopCollecting();
 
-		replay(rfxcomTracker, rfxcom, dc);
+		try {
+			rfxcom.listenForMessages(assertWith(new Assertion<MessageHandler>() {
 
+				@Override
+				public void check(MessageHandler handler) throws Throwable {
+					int i = 0;
+					while ( i < messages.size() ) {
+						if ( !handler.handleMessage(messages.get(i++)) ) {
+							break;
+						}
+					}
+				}
+
+			}));
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
+
+		// WHEN
+		replay(rfxcom);
 		Collection<NodeDatum> datum = dataSource.readMultipleDatum();
 
-		verify(rfxcomTracker, rfxcom, dc);
+		// THEN
+		verify(rfxcom);
 
 		return datum;
 	}
@@ -98,7 +109,7 @@ public class RFXCOMDatumDataSourceTests {
 		int i = 0;
 		for ( String messageString : messages ) {
 			results[i++] = new ArrayList<>(doReadDatum(messageString));
-			EasyMock.reset(rfxcomTracker, rfxcom, dc);
+			EasyMock.reset(rfxcom);
 		}
 		return results;
 	}
