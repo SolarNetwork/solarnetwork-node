@@ -3,26 +3,28 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Advanced Energy 250TX Inverter Data Source
 Bundle-Description: Collect data from Advanced Energy 250TX series inverters.
 Bundle-SymbolicName: net.solarnetwork.node.datum.ae.ae250tx
-Bundle-Version: 3.4.0
+Bundle-Version: 4.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.ae.ae250tx
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
- net.solarnetwork.domain;version="[1.30,2.0)",
- net.solarnetwork.node;version="[1.35,2.0)",
- net.solarnetwork.node.domain;version="[1.15,2.0)",
- net.solarnetwork.node.hw.ae.inverter.tx;version="[1.2,2.0)",
- net.solarnetwork.node.io.modbus;version="[3.2,4.0)",
- net.solarnetwork.node.io.modbus.support;version="[3.4,4.0)",
- net.solarnetwork.node.job;version="[1.13,2.0)",
- net.solarnetwork.node.settings;version="[1.10,2.0)",
- net.solarnetwork.node.settings.support;version="[1.8.1,2.0)",
- net.solarnetwork.node.support;version="[1.29,2.0)",
- net.solarnetwork.node.util;version="[1.7.2,2.0)",
- net.solarnetwork.util;version="[1.40,2.0)",
- org.joda.time;version="[2.4,3.0)",
- org.joda.time.base;version="[2.4,3.0)",
- org.joda.time.format;version="[2.4,3.0)",
+ net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
+ net.solarnetwork.domain;version="[2.0,3.0)",
+ net.solarnetwork.domain.datum;version="[2.0,3.0)",
+ net.solarnetwork.node.domain;version="[2.0,3.0)",
+ net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
+ net.solarnetwork.node.hw.ae.inverter.tx;version="[2.0,3.0)",
+ net.solarnetwork.node.io.modbus;version="[4.0,5.0)",
+ net.solarnetwork.node.io.modbus.support;version="[4.0,5.0)",
+ net.solarnetwork.node.job;version="[2.0,3.0)",
+ net.solarnetwork.node.service;version="[1.0,2.0)",
+ net.solarnetwork.node.service.support;version="[1.0,2.0)",
+ net.solarnetwork.service;version="[1.0,2.0)",
+ net.solarnetwork.service.support;version="[1.0,2.0)",
+ net.solarnetwork.settings;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.support;version="[2.0,3.0)",
+ net.solarnetwork.util;version="[2.0,3.0)",
  org.quartz;version="[2.2,3.0)",
  org.quartz.simpl;version="[2.2,3.0)",
  org.slf4j;version="[1.7,2.0)",

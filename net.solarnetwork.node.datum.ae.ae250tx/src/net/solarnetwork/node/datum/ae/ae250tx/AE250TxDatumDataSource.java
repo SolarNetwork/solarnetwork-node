@@ -23,35 +23,39 @@
 package net.solarnetwork.node.datum.ae.ae250tx;
 
 import java.io.IOException;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
+import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.ae.inverter.tx.AE250TxData;
 import net.solarnetwork.node.hw.ae.inverter.tx.AE250TxDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * {@link DatumDataSource} for the AE 250TX series inverter.
  * 
  * @author matt
- * @version 1.6
+ * @version 2.0
  */
 public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE250TxData>
-		implements DatumDataSource<GeneralNodePVEnergyDatum>,
-		MultiDatumDataSource<GeneralNodePVEnergyDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
-	private String sourceId = "AE 250TX";
+	/** The {@code sourceId} property default value. */
+	public static final String DEFAULT_SOURCE_ID = "AE 250TX";
+
+	private String sourceId = DEFAULT_SOURCE_ID;
 
 	/**
 	 * Default constructor.
@@ -68,6 +72,7 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 	 */
 	public AE250TxDatumDataSource(AE250TxData sample) {
 		super(sample);
+		setDisplayName("Advanced Energy 250TX Meter");
 	}
 
 	@Override
@@ -88,20 +93,18 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 	}
 
 	@Override
-	public Class<? extends GeneralNodePVEnergyDatum> getDatumType() {
-		return GeneralNodePVEnergyDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AcDcEnergyDatum.class;
 	}
 
 	@Override
-	public GeneralNodePVEnergyDatum readCurrentDatum() {
+	public AcDcEnergyDatum readCurrentDatum() {
 		try {
 			final AE250TxData currSample = getCurrentSample();
 			if ( currSample == null ) {
 				return null;
 			}
-			AE250TxDatum d = new AE250TxDatum(currSample);
-			d.setSourceId(resolvePlaceholders(sourceId));
-			return d;
+			return new AE250TxDatum(currSample, resolvePlaceholders(sourceId));
 		} catch ( IOException e ) {
 			log.error("Communication problem reading source {} from AE 250TX device {}: {}",
 					this.sourceId, modbusDeviceName(), e.getMessage());
@@ -110,13 +113,13 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 	}
 
 	@Override
-	public Class<? extends GeneralNodePVEnergyDatum> getMultiDatumType() {
-		return GeneralNodePVEnergyDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return AcDcEnergyDatum.class;
 	}
 
 	@Override
-	public Collection<GeneralNodePVEnergyDatum> readMultipleDatum() {
-		GeneralNodePVEnergyDatum datum = readCurrentDatum();
+	public Collection<NodeDatum> readMultipleDatum() {
+		AcDcEnergyDatum datum = readCurrentDatum();
 		// TODO: support phases
 		if ( datum != null ) {
 			return Collections.singletonList(datum);
@@ -127,13 +130,8 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.ae.ae250tx";
-	}
-
-	@Override
-	public String getDisplayName() {
-		return "Advanced Energy 250TX Meter";
 	}
 
 	@Override
@@ -143,12 +141,12 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(getSample()), true));
 
 		results.addAll(getIdentifiableSettingSpecifiers());
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", DEFAULT_SOURCE_ID));
 		results.addAll(getModbusNetworkSettingSpecifiers());
 
 		AE250TxDatumDataSource defaults = new AE250TxDatumDataSource();
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(defaults.getSampleCacheMs())));
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
 
 		results.addAll(getDeviceInfoMetadataSettingSpecifiers());
 
@@ -166,14 +164,15 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 	}
 
 	private String getSampleMessage(AE250TxDataAccessor data) {
-		if ( data.getDataTimestamp() < 1 ) {
+		if ( data.getDataTimestamp() == null ) {
 			return "N/A";
 		}
 		StringBuilder buf = new StringBuilder();
 		buf.append("W = ").append(data.getActivePower());
 		buf.append(", Wh = ").append(data.getActiveEnergyDelivered());
 		buf.append("; sampled at ")
-				.append(DateTimeFormat.forStyle("LS").print(new DateTime(data.getDataTimestamp())));
+				.append(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT)
+						.format(data.getDataTimestamp().atZone(ZoneId.systemDefault())));
 		return buf.toString();
 	}
 
