@@ -23,12 +23,12 @@
 package net.solarnetwork.node.control.modbus.heartbeat;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.joda.time.DateTime;
 import org.quartz.DisallowConcurrentExecution;
 import org.quartz.JobExecutionContext;
 import org.quartz.PersistJobDataAfterExecution;
@@ -37,12 +37,12 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.job.AbstractJob;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.util.DynamicServiceTracker;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * Periodically set a Modbus "coil" type register to a specific value, to act as
@@ -67,7 +67,7 @@ import net.solarnetwork.util.DynamicServiceTracker;
  * </dl>
  * 
  * @author matt
- * @version 3.0
+ * @version 4.0
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
@@ -76,7 +76,7 @@ public class ModbusHeartbeatJob extends AbstractJob implements SettingSpecifierP
 	private Integer address = 0x4008;
 	private Integer unitId = 1;
 	private Boolean registerValue = Boolean.TRUE;
-	private DynamicServiceTracker<ModbusNetwork> modbusNetwork;
+	private OptionalFilterableService<ModbusNetwork> modbusNetwork;
 	private MessageSource messageSource;
 
 	// static map to keep track of job execution status info
@@ -85,7 +85,7 @@ public class ModbusHeartbeatJob extends AbstractJob implements SettingSpecifierP
 
 	@Override
 	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
-		final DateTime heartbeatDate = new DateTime();
+		final Instant heartbeatDate = Instant.now();
 		String heartbeatMessage = null;
 		boolean heartbeatSuccess = false;
 		try {
@@ -138,7 +138,7 @@ public class ModbusHeartbeatJob extends AbstractJob implements SettingSpecifierP
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.control.modbus.heartbeat";
 	}
 
@@ -171,7 +171,7 @@ public class ModbusHeartbeatJob extends AbstractJob implements SettingSpecifierP
 					lastHeartbeatStatus.getMessage(), true));
 		}
 
-		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['uid']",
 				"Serial Port"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.unitId.toString()));
 		results.add(new BasicTextFieldSettingSpecifier("address", defaults.address.toString()));
@@ -197,7 +197,7 @@ public class ModbusHeartbeatJob extends AbstractJob implements SettingSpecifierP
 		this.messageSource = messageSource;
 	}
 
-	public void setModbusNetwork(DynamicServiceTracker<ModbusNetwork> modbusNetwork) {
+	public void setModbusNetwork(OptionalFilterableService<ModbusNetwork> modbusNetwork) {
 		this.modbusNetwork = modbusNetwork;
 	}
 

@@ -22,17 +22,17 @@
 
 package net.solarnetwork.node.control.modbus.heartbeat;
 
-import org.joda.time.DateTime;
+import java.time.Instant;
 
 /**
  * Heartbeat status info bean.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class JobStatus {
 
-	private final DateTime date;
+	private final Instant date;
 	private final boolean successful;
 	private final String message;
 
@@ -42,18 +42,18 @@ public class JobStatus {
 	 * @param date
 	 *        the date the heartbeat was executed
 	 * @param successful
-	 *        <em>true</em> if the heartbeat was executed successfully
+	 *        {@literal true} if the heartbeat was executed successfully
 	 * @param message
 	 *        a message
 	 */
-	public JobStatus(DateTime heartbeatDate, boolean successful, String heartbeatMessage) {
+	public JobStatus(Instant heartbeatDate, boolean successful, String heartbeatMessage) {
 		super();
 		this.date = heartbeatDate;
 		this.successful = successful;
 		this.message = heartbeatMessage;
 	}
 
-	public DateTime getDate() {
+	public Instant getDate() {
 		return date;
 	}
 
