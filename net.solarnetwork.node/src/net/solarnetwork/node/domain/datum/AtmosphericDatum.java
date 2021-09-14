@@ -147,4 +147,21 @@ public interface AtmosphericDatum
 		asMutableSampleOperations().putSampleValue(Instantaneous, IRRADIANCE_KEY, value);
 	}
 
+	/*
+	 * Set the instantaneous CO2 level, in parts-per-million.
+	 * 
+	 * @return the CO2, in parts-per-million
+	 */
+	default void setCO2(BigDecimal value) {
+		asMutableSampleOperations().putSampleValue(Instantaneous, CO2_KEY, value);
+	}
+
+	/**
+	 * Set the instantaneous luminosity level, in lux.
+	 * 
+	 * @return the luminosity, in lux
+	 */
+	default void setLux(BigDecimal value) {
+		asMutableSampleOperations().putSampleValue(Instantaneous, LUX_KEY, value);
+	}
 }
