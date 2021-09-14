@@ -19,6 +19,7 @@
 			<list>
 				<value>net.solarnetwork.node.control.stabiliti30c.Watchdog</value>
 				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>

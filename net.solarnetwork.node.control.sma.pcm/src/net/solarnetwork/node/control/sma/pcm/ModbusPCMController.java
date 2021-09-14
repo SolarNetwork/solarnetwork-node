@@ -24,32 +24,34 @@ package net.solarnetwork.node.control.sma.pcm;
 
 import static java.lang.String.valueOf;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
-import org.springframework.context.MessageSource;
+import net.solarnetwork.domain.BasicNodeControlInfo;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.NodeControlInfoDatum;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * Toggle four Modbus "coil" type addresses to control the SMA Power Control
@@ -74,7 +76,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 2.0
+ * @version 3.0
  */
 public class ModbusPCMController extends ModbusDeviceSupport
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
@@ -106,11 +108,9 @@ public class ModbusPCMController extends ModbusDeviceSupport
 	private final int[] addresses = DEFAULT_ADDRESSES.clone();
 
 	private String controlId = DEFAULT_CONTROL_ID;
-	private String groupUID;
 	private int sampleCacheSeconds = DEFAULT_SAMPLE_CACHE_SECS;
 
 	private OptionalService<EventAdmin> eventAdmin;
-	private MessageSource messageSource;
 
 	private final long sampleCaptureDate = 0;
 	private BitSet cachedSample = null;
@@ -146,7 +146,7 @@ public class ModbusPCMController extends ModbusDeviceSupport
 			});
 			log.debug("Read discreet PCM values: {}", result);
 			Integer status = integerValueForBitSet(result);
-			postControlCapturedEvent(newNodeControlInfoDatum(getPercentControlId(), status, true));
+			postControlCapturedEvent(newSimpleNodeControlInfoDatum(getPercentControlId(), status, true));
 			cachedSample = result;
 		} else {
 			result = cachedSample;
@@ -335,10 +335,10 @@ public class ModbusPCMController extends ModbusDeviceSupport
 	public NodeControlInfo getCurrentControlInfo(String controlId) {
 		// read the control's current status
 		log.debug("Reading PCM {} status", controlId);
-		NodeControlInfoDatum result = null;
+		SimpleNodeControlInfoDatum result = null;
 		try {
 			Integer value = integerValueForBitSet(currentDiscreetValue());
-			result = newNodeControlInfoDatum(controlId, value,
+			result = newSimpleNodeControlInfoDatum(controlId, value,
 					controlId.endsWith(PERCENT_CONTROL_ID_SUFFIX));
 		} catch ( Exception e ) {
 			log.error("Error reading PCM {} status: {}", controlId, e.getMessage());
@@ -346,19 +346,16 @@ public class ModbusPCMController extends ModbusDeviceSupport
 		return result;
 	}
 
-	private NodeControlInfoDatum newNodeControlInfoDatum(String controlId, Integer status,
+	private SimpleNodeControlInfoDatum newSimpleNodeControlInfoDatum(String controlId, Integer status,
 			boolean asPercent) {
-		NodeControlInfoDatum info = new NodeControlInfoDatum();
-		info.setCreated(new Date());
-		info.setSourceId(controlId);
-		info.setType(NodeControlPropertyType.Integer);
-		info.setReadonly(false);
+		BasicNodeControlInfo.Builder builder = BasicNodeControlInfo.builder().withControlId(controlId)
+				.withType(NodeControlPropertyType.Integer).withReadonly(false);
 		if ( asPercent ) {
-			info.setValue(percentValueForIntegerValue(status).toString());
+			builder.withValue(percentValueForIntegerValue(status).toString());
 		} else {
-			info.setValue(status.toString());
+			builder.withValue(status.toString());
 		}
-		return info;
+		return new SimpleNodeControlInfoDatum(builder.build(), Instant.now());
 	}
 
 	// InstructionHandler
@@ -370,7 +367,7 @@ public class ModbusPCMController extends ModbusDeviceSupport
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		// look for a parameter name that matches a control ID
 		InstructionState result = null;
 		log.debug("Inspecting instruction {} against control {}", instruction.getTopic(), controlId);
@@ -396,7 +393,7 @@ public class ModbusPCMController extends ModbusDeviceSupport
 				}
 			}
 		}
-		return result;
+		return InstructionUtils.createStatus(instruction, result);
 	}
 
 	/**
@@ -412,7 +409,7 @@ public class ModbusPCMController extends ModbusDeviceSupport
 	 *        the {@link NodeControlInfo} to post the event for
 	 * @since 1.2
 	 */
-	protected final void postControlCapturedEvent(final NodeControlInfoDatum info) {
+	protected final void postControlCapturedEvent(final SimpleNodeControlInfoDatum info) {
 		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
 		if ( ea == null || info == null ) {
 			return;
@@ -436,7 +433,7 @@ public class ModbusPCMController extends ModbusDeviceSupport
 	 * @return the new Event instance
 	 * @since 1.2
 	 */
-	protected Event createControlCapturedEvent(final NodeControlInfoDatum info) {
+	protected Event createControlCapturedEvent(final SimpleNodeControlInfoDatum info) {
 		Map<String, ?> props = info.asSimpleMap();
 		log.debug("Created {} event with props {}",
 				NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED, props);
@@ -446,7 +443,7 @@ public class ModbusPCMController extends ModbusDeviceSupport
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.control.sma.pcm";
 	}
 
@@ -477,8 +474,8 @@ public class ModbusPCMController extends ModbusDeviceSupport
 		results.add(status);
 
 		results.add(new BasicTextFieldSettingSpecifier("controlId", DEFAULT_CONTROL_ID));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", ""));
-		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']", ""));
+		results.add(new BasicTextFieldSettingSpecifier("groupUid", ""));
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['uid']", ""));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", valueOf(DEFAULT_UNIT_ID)));
 		results.add(new BasicTextFieldSettingSpecifier("d1Address", valueOf(DEFAULT_ADDRESSES[0])));
 		results.add(new BasicTextFieldSettingSpecifier("d2Address", valueOf(DEFAULT_ADDRESSES[1])));
@@ -489,16 +486,6 @@ public class ModbusPCMController extends ModbusDeviceSupport
 				valueOf(DEFAULT_SAMPLE_CACHE_SECS)));
 
 		return results;
-	}
-
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	@Override
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
 	}
 
 	public int getD1Address() {
@@ -539,16 +526,6 @@ public class ModbusPCMController extends ModbusDeviceSupport
 
 	public void setControlId(String controlId) {
 		this.controlId = controlId;
-	}
-
-	@Override
-	public String getGroupUID() {
-		return groupUID;
-	}
-
-	@Override
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
 	}
 
 	public OptionalService<EventAdmin> getEventAdmin() {

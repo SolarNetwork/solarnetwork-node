@@ -20,6 +20,7 @@
 				<value>net.solarnetwork.node.datum.stabiliti30c.Stabiliti30CDatumDataSource</value>
 				<value>net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport</value>
 				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
@@ -28,7 +29,6 @@
 		<property name="prefix" value="multiDatumDataSource."/>
 		<property name="delegate" ref="datumDataSourceMessageSource"/>
 	</bean>	
-
 
 	<!-- Published Services -->
 	
@@ -69,7 +69,7 @@
 							</property>
 							<property name="properties">
 								<map>
-									<entry key="datumClassName" value="net.solarnetwork.node.domain.Datum"/>
+									<entry key="datumClassName" value="net.solarnetwork.node.domain.datum.NodeDatum"/>
 								</map>
 							</property>
 						</bean>
@@ -82,10 +82,9 @@
 					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourcePollJob"/>
 					<property name="jobDataAsMap">
 						<map>
-							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
+							<entry key="datumQueue" value-ref="datumQueue"/>
 							<entry key="multiDatumDataSource">
 								<bean class="net.solarnetwork.node.datum.stabiliti30c.Stabiliti30CDatumDataSource">
-									<property name="eventAdmin" ref="eventAdmin"/>
 									<property name="messageSource" ref="datumDataSourceJobMessageSource"/>
 									<property name="modbusNetwork">
 										<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">

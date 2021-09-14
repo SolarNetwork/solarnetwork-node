@@ -28,16 +28,17 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.Date;
-import java.util.UUID;
 import org.easymock.EasyMock;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.control.sma.pcm.ModbusPCMController;
@@ -45,17 +46,17 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.StaticDataMapReadonlyModbusConnection;
+import net.solarnetwork.node.reactor.BasicInstruction;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.support.BasicInstruction;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Unit tests for the {@link ModbusPCMController} class.
  * 
  * @author matt
- * @version 2.1
+ * @version 3.0
  */
 public class ModbusPCMControllerTest {
 
@@ -80,7 +81,7 @@ public class ModbusPCMControllerTest {
 
 		modbus = EasyMock.createMock(ModbusNetwork.class);
 		conn = EasyMock.createMock(ModbusConnection.class);
-		service.setModbusNetwork(new StaticOptionalService<ModbusNetwork>(modbus));
+		service.setModbusNetwork(new StaticOptionalService<>(modbus));
 	}
 
 	@SuppressWarnings("unchecked")
@@ -91,7 +92,7 @@ public class ModbusPCMControllerTest {
 	@Test
 	public void handleDemandBalance50Percent() throws IOException {
 		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_DEMAND_BALANCE,
-				new Date(), Instruction.LOCAL_INSTRUCTION_ID, Instruction.LOCAL_INSTRUCTION_ID, null);
+				Instant.now(), Instruction.LOCAL_INSTRUCTION_ID, null);
 		instr.addParameter(TEST_CONTROL_ID, "50");
 
 		expect(modbus.performAction(EasyMock.eq(UNIT_ID), anyAction(Boolean.class)))
@@ -110,12 +111,12 @@ public class ModbusPCMControllerTest {
 
 		replay(modbus, conn);
 
-		InstructionStatus.InstructionState state = service.processInstruction(instr);
+		InstructionStatus status = service.processInstruction(instr);
 
 		verify(modbus, conn);
 
-		Assert.assertEquals("Instruction should be processed",
-				InstructionStatus.InstructionState.Completed, state);
+		assertThat("Instruction should be processed", status.getInstructionState(),
+				is(InstructionState.Completed));
 	}
 
 	@Test
@@ -239,13 +240,13 @@ public class ModbusPCMControllerTest {
 		replay(modbus, conn);
 
 		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_DEMAND_BALANCE,
-				new Date(), UUID.randomUUID().toString(), null, null);
+				Instant.now(), null, null);
 		instr.addParameter(TEST_CONTROL_ID, "50"); // request 50%
 
-		InstructionStatus.InstructionState result = service.processInstruction(instr);
+		InstructionStatus result = service.processInstruction(instr);
 
 		verify(modbus, conn);
 
-		assertThat("Result", result, equalTo(InstructionStatus.InstructionState.Completed));
+		assertThat("Result", result.getInstructionState(), is(InstructionState.Completed));
 	}
 }
