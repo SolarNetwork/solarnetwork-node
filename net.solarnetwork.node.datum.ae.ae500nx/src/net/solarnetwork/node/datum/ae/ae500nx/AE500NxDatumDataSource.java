@@ -22,10 +22,8 @@
 
 package net.solarnetwork.node.datum.ae.ae500nx;
 
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -184,9 +182,7 @@ public class AE500NxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE5
 			buf.append("; faults = ").append(StringUtils.commaDelimitedStringFromCollection(faults));
 		}
 
-		buf.append("; sampled at ")
-				.append(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT)
-						.format(data.getDataTimestamp().atZone(ZoneId.systemDefault())));
+		buf.append("; sampled at ").append(formatForLocalDisplay(data.getDataTimestamp()));
 		return buf.toString();
 	}
 

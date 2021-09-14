@@ -24,11 +24,9 @@ package net.solarnetwork.node.datum.gss.cozir;
 
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
@@ -254,9 +252,7 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport<Atm
 		buf.append(", T = ").append(datum.getTemperature());
 		buf.append(", H = ")
 				.append(ops.getSampleBigDecimal(Instantaneous, AtmosphericDatum.HUMIDITY_KEY));
-		buf.append("; sampled at ")
-				.append(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT)
-						.format(datum.getTimestamp().atZone(ZoneId.systemDefault())));
+		buf.append("; sampled at ").append(formatForLocalDisplay(datum.getTimestamp()));
 		return buf.toString();
 	}
 

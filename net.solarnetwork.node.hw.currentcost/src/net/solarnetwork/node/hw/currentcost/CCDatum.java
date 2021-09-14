@@ -22,11 +22,10 @@
 
 package net.solarnetwork.node.hw.currentcost;
 
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.time.Instant;
 import java.time.LocalTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 
 /**
  * A CurrentCost datum.
@@ -90,8 +89,7 @@ public class CCDatum implements Comparable<CCDatum> {
 		return (deviceAddress + ": 1 = " + (channel1Watts == null ? "N/A" : channel1Watts) + ", 2 = "
 				+ (channel2Watts == null ? "N/A" : channel2Watts) + ", 3 = "
 				+ (channel3Watts == null ? "N/A" : channel3Watts) + (time == null ? "" : "; " + time)
-				+ "; " + DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT)
-						.format(created.atZone(ZoneId.systemDefault())));
+				+ "; " + formatForLocalDisplay(created));
 	}
 
 	@Override

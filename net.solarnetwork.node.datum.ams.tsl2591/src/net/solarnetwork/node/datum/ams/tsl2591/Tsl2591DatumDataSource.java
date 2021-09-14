@@ -22,13 +22,11 @@
 
 package net.solarnetwork.node.datum.ams.tsl2591;
 
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
@@ -250,9 +248,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements Da
 		}
 		StringBuilder buf = new StringBuilder();
 		buf.append("lux = ").append(data.getLux());
-		buf.append("; sampled at ")
-				.append(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT)
-						.format(data.getTimestamp().atZone(ZoneId.systemDefault())));
+		buf.append("; sampled at ").append(formatForLocalDisplay(data.getTimestamp()));
 		return buf.toString();
 	}
 

@@ -22,12 +22,11 @@
 
 package net.solarnetwork.node.power.enasolar.ws;
 
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -406,8 +405,7 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 			}
 			buf.append(snap.getWatts()).append(" W; ");
 			buf.append(snap.getWattHourReading()).append(" Wh; sample created ");
-			buf.append(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT)
-					.format(snap.getTimestamp().atZone(ZoneId.systemDefault())));
+			buf.append(formatForLocalDisplay(snap.getTimestamp()));
 		}
 		return (buf.length() < 1 ? "N/A" : buf.toString());
 	}

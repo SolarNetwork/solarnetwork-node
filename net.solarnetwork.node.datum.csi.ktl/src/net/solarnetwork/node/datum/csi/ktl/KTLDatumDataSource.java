@@ -22,10 +22,8 @@
 
 package net.solarnetwork.node.datum.csi.ktl;
 
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -237,9 +235,7 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 		buf.append(", W = ").append(data.getActivePower());
 		buf.append(", Wh today = ").append(data.getActiveEnergyDeliveredToday());
 		buf.append(", Wh total = ").append(data.getActiveEnergyDelivered());
-		buf.append("; sampled at ")
-				.append(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT)
-						.format(data.getDataTimestamp().atZone(ZoneId.systemDefault())));
+		buf.append("; sampled at ").append(formatForLocalDisplay(data.getDataTimestamp()));
 		return buf.toString();
 	}
 

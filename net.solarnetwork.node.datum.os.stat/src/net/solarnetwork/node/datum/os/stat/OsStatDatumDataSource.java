@@ -26,15 +26,12 @@ import static java.util.stream.Collectors.toCollection;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -492,10 +489,8 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		if ( s.hasSampleValue(Accumulating, "sys_up") ) {
 			BigDecimal upSecs = s.getSampleBigDecimal(Accumulating, "sys_up");
 			Duration dur = Duration.ofSeconds(upSecs.longValue());
-			ZonedDateTime bootDate = Instant.now().minusSeconds(upSecs.longValue())
-					.atZone(ZoneId.systemDefault());
-			String bootDateStr = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
-					.format(bootDate);
+			Instant bootDate = Instant.now().minusSeconds(upSecs.longValue());
+			String bootDateStr = formatForLocalDisplay(bootDate);
 			data.put("Up since", String.format("%s (%d days ago)", bootDateStr, dur.toDays()));
 		}
 		return StringUtils.delimitedStringFromMap(data, " = ", ", ");

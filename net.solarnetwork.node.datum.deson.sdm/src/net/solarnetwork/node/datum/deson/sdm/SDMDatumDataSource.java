@@ -22,10 +22,8 @@
 
 package net.solarnetwork.node.datum.deson.sdm;
 
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -211,9 +209,7 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 		buf.append(", VAR = ").append(data.getReactivePower());
 		buf.append(", Wh rec = ").append(data.getActiveEnergyReceived());
 		buf.append(", Wh del = ").append(data.getActiveEnergyDelivered());
-		buf.append("; sampled at ")
-				.append(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT)
-						.format(data.getDataTimestamp().atZone(ZoneId.systemDefault())));
+		buf.append("; sampled at ").append(formatForLocalDisplay(data.getDataTimestamp()));
 		return buf.toString();
 	}
 

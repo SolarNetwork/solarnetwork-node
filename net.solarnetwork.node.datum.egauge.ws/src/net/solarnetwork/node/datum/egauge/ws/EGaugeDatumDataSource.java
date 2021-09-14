@@ -22,9 +22,7 @@
 
 package net.solarnetwork.node.datum.egauge.ws;
 
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -195,8 +193,7 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 				if ( buf.length() > 0 ) {
 					buf.append("; ");
 				}
-				buf.append(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT)
-						.format(snap.getTimestamp().atZone(ZoneId.systemDefault())));
+				buf.append(formatForLocalDisplay(snap.getTimestamp()));
 			}
 		}
 		return (buf.length() < 1 ? "N/A" : buf.toString());

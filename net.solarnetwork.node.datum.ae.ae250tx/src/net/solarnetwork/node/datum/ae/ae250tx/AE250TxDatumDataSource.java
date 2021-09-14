@@ -22,10 +22,8 @@
 
 package net.solarnetwork.node.datum.ae.ae250tx;
 
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -170,9 +168,7 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 		StringBuilder buf = new StringBuilder();
 		buf.append("W = ").append(data.getActivePower());
 		buf.append(", Wh = ").append(data.getActiveEnergyDelivered());
-		buf.append("; sampled at ")
-				.append(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT)
-						.format(data.getDataTimestamp().atZone(ZoneId.systemDefault())));
+		buf.append("; sampled at ").append(formatForLocalDisplay(data.getDataTimestamp()));
 		return buf.toString();
 	}
 
