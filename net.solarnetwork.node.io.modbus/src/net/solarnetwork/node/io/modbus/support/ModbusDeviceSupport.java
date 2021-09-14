@@ -33,7 +33,7 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
-import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
@@ -82,7 +82,7 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 
 	private Map<String, Object> deviceInfo;
 	private int unitId = DEFAULT_UNIT_ID;
-	private OptionalService<ModbusNetwork> modbusNetwork;
+	private OptionalFilterableService<ModbusNetwork> modbusNetwork;
 
 	/**
 	 * Get setting specifiers for the {@literal unitId} and
@@ -134,8 +134,8 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	/**
 	 * Return an informational message composed of general device info. This
 	 * method will call {@link #getDeviceInfo()} and return a {@code /} (forward
-	 * slash) delimited string of the resulting values, or {@literal null} if that
-	 * method returns {@literal null}.
+	 * slash) delimited string of the resulting values, or {@literal null} if
+	 * that method returns {@literal null}.
 	 * 
 	 * @return info message
 	 */
@@ -211,11 +211,11 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	}
 
 	/**
-	 * Set the device info data. Setting the {@code deviceInfo} to {@literal null}
-	 * will force the next call to {@link #getDeviceInfo()} to read from the
-	 * device to populate this data, and setting this to anything else will
-	 * force all subsequent calls to {@link #getDeviceInfo()} to simply return
-	 * that map.
+	 * Set the device info data. Setting the {@code deviceInfo} to
+	 * {@literal null} will force the next call to {@link #getDeviceInfo()} to
+	 * read from the device to populate this data, and setting this to anything
+	 * else will force all subsequent calls to {@link #getDeviceInfo()} to
+	 * simply return that map.
 	 * 
 	 * @param deviceInfo
 	 *        the device info map to set
@@ -239,7 +239,7 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	 * 
 	 * @return the network
 	 */
-	public OptionalService<ModbusNetwork> getModbusNetwork() {
+	public OptionalFilterableService<ModbusNetwork> getModbusNetwork() {
 		return modbusNetwork;
 	}
 
@@ -249,7 +249,7 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	 * @param modbusDevice
 	 *        the network
 	 */
-	public void setModbusNetwork(OptionalService<ModbusNetwork> modbusDevice) {
+	public void setModbusNetwork(OptionalFilterableService<ModbusNetwork> modbusDevice) {
 		this.modbusNetwork = modbusDevice;
 	}
 
