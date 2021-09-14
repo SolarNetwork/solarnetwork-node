@@ -22,23 +22,23 @@
 
 package net.solarnetwork.node.control.stabiliti30c;
 
+import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
+import net.solarnetwork.domain.BasicNodeControlInfo;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.domain.NodeControlInfoDatum;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cAcControlMethod;
 import net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cControlAccessor;
 import net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cData;
@@ -52,12 +52,15 @@ import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.ModbusDataDeviceSupport;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -66,13 +69,10 @@ import net.solarnetwork.util.StringUtils;
  * managing AC power export.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 		implements InstructionHandler, NodeControlProvider, SettingSpecifierProvider {
-
-	private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter
-			.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.FULL).withZone(ZoneId.systemDefault());
 
 	private OptionalService<EventAdmin> eventAdmin;
 	private String controlId;
@@ -154,24 +154,15 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 		sample.readPowerControlData(connection);
 	}
 
-	private static final class ControlDatum extends NodeControlInfoDatum {
-
-		private final Stabiliti30cData sample;
-
-		private ControlDatum(Stabiliti30cData sample, String controlId) {
-			super();
-			this.sample = sample;
-			setCreated(new Date(sample.getDataTimestamp()));
-			setReadonly(false);
-			setSourceId(getControlId());
-			setType(NodeControlPropertyType.Integer);
-			setValue(String.valueOf(getP1ActivePowerSetpoint()));
-		}
-
-		private int getP1ActivePowerSetpoint() {
-			final Integer value = sample.getP1ActivePowerSetpoint();
-			return (value != null ? value.intValue() : 0);
-		}
+	private static SimpleNodeControlInfoDatum datumForSample(Stabiliti30cDataAccessor sample,
+			String controlId) {
+		final Integer value = (sample.getP1ActivePowerSetpoint() != null
+				? sample.getP1ActivePowerSetpoint()
+				: 0);
+		NodeControlInfo info = BasicNodeControlInfo.builder().withControlId(controlId)
+				.withReadonly(false).withType(NodeControlPropertyType.Integer)
+				.withValue(value.toString()).build();
+		return new SimpleNodeControlInfoDatum(info, sample.getDataTimestamp());
 	}
 
 	/* === NodeControlProvider === */
@@ -191,19 +182,18 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 		return readCurrentDatum();
 	}
 
-	private ControlDatum readCurrentDatum() {
-		final long start = System.currentTimeMillis();
+	private SimpleNodeControlInfoDatum readCurrentDatum() {
+		final Instant start = Instant.now();
 		final String controlId = getControlId();
 		try {
 			final Stabiliti30cData currSample = getCurrentSample();
 			if ( currSample == null ) {
 				return null;
 			}
-			ControlDatum d = new ControlDatum(currSample, controlId);
-			d.setSourceId(controlId);
-			if ( currSample.getDataTimestamp() >= start ) {
+			SimpleNodeControlInfoDatum d = datumForSample(currSample, resolvePlaceholders(controlId));
+			if ( !currSample.getDataTimestamp().isBefore(start) ) {
 				// we read from the device
-				postDatumCapturedEvent(d);
+				postControlInfoCapturedEvent(d);
 			}
 			return d;
 		} catch ( IOException e ) {
@@ -213,18 +203,17 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 		}
 	}
 
-	private void postDatumCapturedEvent(NodeControlInfoDatum info) {
+	private void postControlInfoCapturedEvent(SimpleNodeControlInfoDatum info) {
 		postControlEvent(info, EVENT_TOPIC_CONTROL_INFO_CAPTURED);
 	}
 
-	private void postControlEvent(NodeControlInfoDatum info, String topic) {
-		final EventAdmin admin = (eventAdmin != null ? eventAdmin.service() : null);
+	private void postControlEvent(SimpleNodeControlInfoDatum info, String topic) {
+		final EventAdmin admin = service(eventAdmin);
 		if ( admin == null ) {
 			return;
 		}
-		Map<String, ?> props = info.asSimpleMap();
-		log.debug("Posting [{}] event with {}", topic, props);
-		admin.postEvent(new Event(topic, props));
+		Event event = DatumEvents.datumEvent(topic, info);
+		admin.postEvent(event);
 	}
 
 	/* === InstructionHandler === */
@@ -235,7 +224,7 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		String controlId = getControlId();
 		if ( instruction == null || controlId == null ) {
 			return null;
@@ -257,7 +246,7 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 		} else {
 			adjustAcExportPower(targetPower);
 		}
-		return InstructionState.Completed;
+		return InstructionUtils.createStatus(instruction, InstructionState.Completed);
 	}
 
 	private synchronized void adjustAcExportPower(final Integer targetPower) {
@@ -268,8 +257,13 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 					unitId);
 			return;
 		}
-		final ControlDatum datum = readCurrentDatum();
-		final int currSetpointValue = datum.getP1ActivePowerSetpoint();
+		final SimpleNodeControlInfoDatum datum = readCurrentDatum();
+		final Integer currSetpointValueInteger = datum.asSampleOperations().getSampleInteger(
+				DatumSamplesType.Instantaneous,
+				SimpleNodeControlInfoDatum.DEFAULT_INSTANT_PROPERTY_NAME);
+		final int currSetpointValue = (currSetpointValueInteger != null
+				? currSetpointValueInteger.intValue()
+				: 0);
 		final int desiredSetpointValue = (targetPower != null ? targetPower.intValue() : 0);
 		if ( currSetpointValue == desiredSetpointValue ) {
 			log.info("Stabiliti {} AC export power setpoint already configured as {}, nothing to do",
@@ -356,7 +350,7 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 	/* === SettingSpecifierProvider === */
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.control.stabiliti30c.AcExportManager";
 	}
 
@@ -391,7 +385,7 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 	}
 
 	private String getSampleMessage(Stabiliti30cDataAccessor sample) {
-		if ( sample.getDataTimestamp() < 1 || controlId == null ) {
+		if ( sample.getDataTimestamp() == null || controlId == null ) {
 			return "N/A";
 		}
 
@@ -403,11 +397,9 @@ public class AcExportManager extends ModbusDataDeviceSupport<Stabiliti30cData>
 			return "N/A";
 		}
 
-		final String ts = DATE_FORMAT.format(Instant.ofEpochMilli(sample.getDataTimestamp()));
-
 		StringBuilder buf = new StringBuilder();
 		buf.append(StringUtils.delimitedStringFromMap(data));
-		buf.append("; sampled at ").append(ts);
+		buf.append("; sampled at ").append(formatForLocalDisplay(sample.getDataTimestamp()));
 		return buf.toString();
 	}
 

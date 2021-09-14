@@ -24,28 +24,25 @@ package net.solarnetwork.node.datum.stabiliti30c;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
-import static net.solarnetwork.node.domain.ACEnergyDatum.CURRENT_KEY;
-import static net.solarnetwork.node.domain.PVEnergyDatum.VOLTAGE_KEY;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
-import net.solarnetwork.node.domain.GeneralNodeEnergyDatum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
 import net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cData;
 import net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * Datum data source for Stabiliti 30C devices.
@@ -56,13 +53,10 @@ import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class Stabiliti30CDatumDataSource extends ModbusDataDatumDataSourceSupport<Stabiliti30cData>
-		implements MultiDatumDataSource<GeneralNodeEnergyDatum>, SettingSpecifierProvider {
-
-	private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter
-			.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.FULL).withZone(ZoneId.systemDefault());
+		implements MultiDatumDataSource, SettingSpecifierProvider {
 
 	private String p1SourceId;
 	private String p2SourceId;
@@ -98,18 +92,18 @@ public class Stabiliti30CDatumDataSource extends ModbusDataDatumDataSourceSuppor
 	}
 
 	@Override
-	public Class<? extends GeneralNodeEnergyDatum> getMultiDatumType() {
-		return GeneralNodeEnergyDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return AcDcEnergyDatum.class;
 	}
 
 	@Override
-	public Collection<GeneralNodeEnergyDatum> readMultipleDatum() {
+	public Collection<NodeDatum> readMultipleDatum() {
 		try {
 			final Stabiliti30cDataAccessor sample = getCurrentSample();
 			if ( sample == null ) {
 				return null;
 			}
-			List<GeneralNodeEnergyDatum> results = new ArrayList<>(3);
+			List<NodeDatum> results = new ArrayList<>(3);
 			final String s1 = getP1SourceId();
 			if ( s1 != null && !s1.isEmpty() ) {
 				results.add(createP1Datum(sample, s1));
@@ -132,69 +126,82 @@ public class Stabiliti30CDatumDataSource extends ModbusDataDatumDataSourceSuppor
 		}
 	}
 
-	private GeneralNodeACEnergyDatum createP1Datum(Stabiliti30cDataAccessor sample, String sourceId) {
-		GeneralNodeACEnergyDatum d = new GeneralNodeACEnergyDatum();
-		d.setSourceId(sourceId);
-		d.setCreated(new Date(sample.getDataTimestamp()));
-
+	private AcDcEnergyDatum createP1Datum(Stabiliti30cDataAccessor sample, String sourceId) {
+		SimpleAcDcEnergyDatum d = new SimpleAcDcEnergyDatum(resolvePlaceholders(sourceId),
+				sample.getDataTimestamp(), new DatumSamples());
 		d.setWatts(sample.getP1ActivePower());
 
 		if ( sample.getP1ControlMethod() != null ) {
-			d.putStatusSampleValue("controlMethod", sample.getP1ControlMethod().toString());
+			d.asMutableSampleOperations().putSampleValue(Status, "controlMethod",
+					sample.getP1ControlMethod().toString());
 		}
-		d.putStatusSampleValue("powerSetpoint", sample.getP1ActivePowerSetpoint());
-		d.putStatusSampleValue("currentLimit", sample.getP1CurrentLimit());
-		d.putStatusSampleValue("frequencySetpoint", sample.getP1FrequencySetpoint());
+		d.asMutableSampleOperations().putSampleValue(Status, "powerSetpoint",
+				sample.getP1ActivePowerSetpoint());
+		d.asMutableSampleOperations().putSampleValue(Status, "currentLimit", sample.getP1CurrentLimit());
+		d.asMutableSampleOperations().putSampleValue(Status, "frequencySetpoint",
+				sample.getP1FrequencySetpoint());
 		if ( sample.getP1PortType() != null ) {
-			d.putStatusSampleValue("portType", sample.getP1PortType().toString());
+			d.asMutableSampleOperations().putSampleValue(Status, "portType",
+					sample.getP1PortType().toString());
 		}
-		d.putStatusSampleValue("voltageSetpoint", sample.getP1VoltageSetpoint());
+		d.asMutableSampleOperations().putSampleValue(Status, "voltageSetpoint",
+				sample.getP1VoltageSetpoint());
 		return d;
 	}
 
-	private GeneralNodeEnergyDatum createP2Datum(Stabiliti30cDataAccessor sample, String sourceId) {
-		GeneralNodeEnergyDatum d = new GeneralNodeEnergyDatum();
-		d.setSourceId(sourceId);
-		d.setCreated(new Date(sample.getDataTimestamp()));
-
-		d.putInstantaneousSampleValue(CURRENT_KEY, sample.getP2Current());
+	private AcDcEnergyDatum createP2Datum(Stabiliti30cDataAccessor sample, String sourceId) {
+		SimpleAcDcEnergyDatum d = new SimpleAcDcEnergyDatum(resolvePlaceholders(sourceId),
+				sample.getDataTimestamp(), new DatumSamples());
+		d.setCurrent(sample.getP2Current());
 		d.setWatts(sample.getP2Power());
-		d.putInstantaneousSampleValue(VOLTAGE_KEY, sample.getP2Voltage());
+		d.setVoltage(sample.getP2Voltage());
 
 		if ( sample.getP2ControlMethod() != null ) {
-			d.putStatusSampleValue("controlMethod", sample.getP2ControlMethod().toString());
+			d.asMutableSampleOperations().putSampleValue(Status, "controlMethod",
+					sample.getP2ControlMethod().toString());
 		}
-		d.putStatusSampleValue("currentLimit", sample.getP2CurrentLimit());
-		d.putStatusSampleValue("currentSetpoint", sample.getP2CurrentSetpoint());
-		d.putStatusSampleValue("exportPowerLimit", sample.getP2ExportPowerLimit());
-		d.putStatusSampleValue("importPowerLimit", sample.getP2ImportPowerLimit());
-		d.putStatusSampleValue("powerSetpoint", sample.getP2PowerSetpoint());
-		d.putStatusSampleValue("voltageMinimumLimit", sample.getP2VoltageMinimumLimit());
-		d.putStatusSampleValue("voltageMaximumLimit", sample.getP2VoltageMaximumLimit());
+		d.asMutableSampleOperations().putSampleValue(Status, "currentLimit", sample.getP2CurrentLimit());
+		d.asMutableSampleOperations().putSampleValue(Status, "currentSetpoint",
+				sample.getP2CurrentSetpoint());
+		d.asMutableSampleOperations().putSampleValue(Status, "exportPowerLimit",
+				sample.getP2ExportPowerLimit());
+		d.asMutableSampleOperations().putSampleValue(Status, "importPowerLimit",
+				sample.getP2ImportPowerLimit());
+		d.asMutableSampleOperations().putSampleValue(Status, "powerSetpoint",
+				sample.getP2PowerSetpoint());
+		d.asMutableSampleOperations().putSampleValue(Status, "voltageMinimumLimit",
+				sample.getP2VoltageMinimumLimit());
+		d.asMutableSampleOperations().putSampleValue(Status, "voltageMaximumLimit",
+				sample.getP2VoltageMaximumLimit());
 
 		return d;
 	}
 
-	private GeneralNodeEnergyDatum createP3Datum(Stabiliti30cDataAccessor sample, String sourceId) {
-		GeneralNodeEnergyDatum d = new GeneralNodeEnergyDatum();
-		d.setSourceId(sourceId);
-		d.setCreated(new Date(sample.getDataTimestamp()));
-
-		d.putInstantaneousSampleValue(CURRENT_KEY, sample.getP3Current());
+	private AcDcEnergyDatum createP3Datum(Stabiliti30cDataAccessor sample, String sourceId) {
+		SimpleAcDcEnergyDatum d = new SimpleAcDcEnergyDatum(resolvePlaceholders(sourceId),
+				sample.getDataTimestamp(), new DatumSamples());
+		d.setCurrent(sample.getP3Current());
 		d.setWatts(sample.getP3Power());
-		d.putInstantaneousSampleValue(VOLTAGE_KEY, sample.getP3Voltage());
+		d.setVoltage(sample.getP3Voltage());
 
 		if ( sample.getP3ControlMethod() != null ) {
-			d.putStatusSampleValue("controlMethod", sample.getP3ControlMethod().toString());
+			d.asMutableSampleOperations().putSampleValue(Status, "controlMethod",
+					sample.getP3ControlMethod().toString());
 		}
-		d.putStatusSampleValue("currentLimit", sample.getP3CurrentLimit());
-		d.putStatusSampleValue("currentLimit", sample.getP3CurrentLimit());
-		d.putStatusSampleValue("importPowerLimit", sample.getP3ImportPowerLimit());
-		d.putStatusSampleValue("mpptStartTimeOffsetSetpoint", sample.getP3MpptStartTimeOffsetSetpoint());
-		d.putStatusSampleValue("mpptStopTimeOffsetSetpoint", sample.getP3MpptStopTimeOffsetSetpoint());
-		d.putStatusSampleValue("mpptVoltageMinimumSetpoint", sample.getP3MpptVoltageMinimumSetpoint());
-		d.putStatusSampleValue("voltageMinimum", sample.getP3VoltageMinimum());
-		d.putStatusSampleValue("voltageMaximum", sample.getP3VoltageMaximum());
+		d.asMutableSampleOperations().putSampleValue(Status, "currentLimit", sample.getP3CurrentLimit());
+		d.asMutableSampleOperations().putSampleValue(Status, "currentLimit", sample.getP3CurrentLimit());
+		d.asMutableSampleOperations().putSampleValue(Status, "importPowerLimit",
+				sample.getP3ImportPowerLimit());
+		d.asMutableSampleOperations().putSampleValue(Status, "mpptStartTimeOffsetSetpoint",
+				sample.getP3MpptStartTimeOffsetSetpoint());
+		d.asMutableSampleOperations().putSampleValue(Status, "mpptStopTimeOffsetSetpoint",
+				sample.getP3MpptStopTimeOffsetSetpoint());
+		d.asMutableSampleOperations().putSampleValue(Status, "mpptVoltageMinimumSetpoint",
+				sample.getP3MpptVoltageMinimumSetpoint());
+		d.asMutableSampleOperations().putSampleValue(Status, "voltageMinimum",
+				sample.getP3VoltageMinimum());
+		d.asMutableSampleOperations().putSampleValue(Status, "voltageMaximum",
+				sample.getP3VoltageMaximum());
 
 		return d;
 	}
@@ -202,7 +209,7 @@ public class Stabiliti30CDatumDataSource extends ModbusDataDatumDataSourceSuppor
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.control.stabiliti30c.DatumDataSource";
 	}
 
@@ -241,7 +248,7 @@ public class Stabiliti30CDatumDataSource extends ModbusDataDatumDataSourceSuppor
 	}
 
 	private String getSampleMessage(Stabiliti30cDataAccessor data) {
-		if ( data.getDataTimestamp() < 1 ) {
+		if ( data.getDataTimestamp() == null ) {
 			return "N/A";
 		}
 		StringBuilder buf = new StringBuilder();
@@ -254,9 +261,7 @@ public class Stabiliti30CDatumDataSource extends ModbusDataDatumDataSourceSuppor
 		buf.append(", P3 = ").append(
 				data.getP3ControlMethod() != null ? data.getP3ControlMethod().getDescription() : "N/A");
 		buf.append(", P3 DC W = ").append(data.getP3Power());
-
-		final String ts = DATE_FORMAT.format(Instant.ofEpochMilli(data.getDataTimestamp()));
-		buf.append("; sampled at ").append(ts);
+		buf.append("; sampled at ").append(formatForLocalDisplay(data.getDataTimestamp()));
 		return buf.toString();
 	}
 

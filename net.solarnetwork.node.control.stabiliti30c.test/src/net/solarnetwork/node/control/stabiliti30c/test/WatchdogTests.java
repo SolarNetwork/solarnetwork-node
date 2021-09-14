@@ -47,13 +47,13 @@ import net.solarnetwork.node.control.stabiliti30c.Watchdog;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link Watchdog} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class WatchdogTests {
 

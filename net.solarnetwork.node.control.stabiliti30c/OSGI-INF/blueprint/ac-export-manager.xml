@@ -16,17 +16,17 @@
 			<list>
 				<value>net.solarnetwork.node.control.stabiliti30c.AcExportManager</value>
 				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
 	
 	<!-- Published Services -->
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Stabiliti 30C AC Load Manager"/>
-			<property name="factoryUID" value="net.solarnetwork.node.control.stabiliti30c.AcExportManager"/>
+			<property name="factoryUid" value="net.solarnetwork.node.control.stabiliti30c.AcExportManager"/>
 			<property name="messageSource" ref="acExportManagerMessageSource"/>
 		</bean>
 	</service>
@@ -34,9 +34,9 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.stabiliti30c.AcExportManager" 
 			autowire-on-update="true">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.NodeControlProvider</beans:value>
+			<beans:value>net.solarnetwork.node.service.NodeControlProvider</beans:value>
 			<beans:value>net.solarnetwork.node.reactor.InstructionHandler</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.control.stabiliti30c.AcExportManager"/>
@@ -52,12 +52,12 @@
 			<property name="messageSource" ref="acExportManagerMessageSource"/>
 			<property name="eventAdmin" ref="eventAdmin"/>
 			<property name="modbusNetwork">
-				<bean class="net.solarnetwork.util.DynamicServiceTracker">
-					<property name="bundleContext" ref="bundleContext"/>
+				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+					<argument ref="bundleContext"/>
 					<property name="serviceClassName" value="net.solarnetwork.node.io.modbus.ModbusNetwork"/>
 					<property name="propertyFilters">
 						<map>
-							<entry key="UID" value="Modbus Port"/>
+							<entry key="uid" value="Modbus Port"/>
 						</map>
 					</property>
 				</bean>	

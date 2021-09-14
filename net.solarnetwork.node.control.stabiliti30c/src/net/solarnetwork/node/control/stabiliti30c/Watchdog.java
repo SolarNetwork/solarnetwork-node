@@ -24,9 +24,6 @@ package net.solarnetwork.node.control.stabiliti30c;
 
 import java.io.IOException;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -41,17 +38,18 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.util.DateUtils;
 
 /**
  * Component to integrate with the watchdog timer of the Stabiliti 30C series
  * power control system.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierProvider {
 
@@ -65,9 +63,6 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 
 	/** The default value for the {@code updateFrequency} property. */
 	public static final int DEFAULT_UPDATE_FREQUENCY = 60;
-
-	private final DateTimeFormatter DATE_FORMAT = DateTimeFormatter
-			.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.FULL).withZone(ZoneId.systemDefault());
 
 	private TaskScheduler taskScheduler;
 	private int startupDelaySeconds = DEFAULT_STARTUP_DELAY_SECONDS;
@@ -168,7 +163,7 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.control.stabiliti30c.Watchdog";
 	}
 
@@ -185,8 +180,8 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 		results.add(new BasicTitleSettingSpecifier("status", statusInfo(), true));
 
 		results.add(new BasicTextFieldSettingSpecifier("uid", ""));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", ""));
-		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
+		results.add(new BasicTextFieldSettingSpecifier("groupUid", ""));
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['uid']",
 				"Modbus Port"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(1)));
 
@@ -213,7 +208,7 @@ public class Watchdog extends ModbusDeviceSupport implements SettingSpecifierPro
 			return "N/A";
 		}
 
-		final String ts = DATE_FORMAT.format(luTime);
+		final String ts = DateUtils.formatForLocalDisplay(luTime);
 		if ( luError != null ) {
 			return getMessageSource().getMessage("status.msg.err",
 					new Object[] { ts, luError.getLocalizedMessage() }, Locale.getDefault());
