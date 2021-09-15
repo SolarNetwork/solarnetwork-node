@@ -24,38 +24,41 @@ package net.solarnetwork.node.control.lctech.relay;
 
 import static net.solarnetwork.node.hw.lctech.relay.UsbRelayUtils.DEFAULT_IDENTITY;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.osgi.service.event.Event;
+import net.solarnetwork.domain.BasicNodeControlInfo;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.domain.NodeControlInfoDatum;
+import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.hw.lctech.relay.UsbRelayUtils;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.node.io.serial.support.SerialDeviceSupport;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.DatumEvents;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * Control a relay state: open or closed.
  * 
  * @author matt
- * @version 2.1
+ * @version 3.0
  */
 public class UsbRelayToggler extends SerialDeviceSupport
-		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler, DatumEvents {
+		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
 
 	/** The default value for the {@code address} property. */
 	public static final int DEFAULT_ADDRESS = 0x01;
@@ -77,7 +80,7 @@ public class UsbRelayToggler extends SerialDeviceSupport
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		if ( !InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(instruction.getTopic()) ) {
 			return null;
 		}
@@ -98,7 +101,7 @@ public class UsbRelayToggler extends SerialDeviceSupport
 							controlId, e.getMessage());
 				}
 				if ( success ) {
-					postControlEvent(newNodeControlInfoDatum(controlId, desiredValue),
+					postControlEvent(newSimpleNodeControlInfoDatum(controlId, desiredValue),
 							NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED);
 					result = InstructionState.Completed;
 				} else {
@@ -106,7 +109,7 @@ public class UsbRelayToggler extends SerialDeviceSupport
 				}
 			}
 		}
-		return result;
+		return (result != null ? InstructionUtils.createStatus(instruction, result) : null);
 	}
 
 	@Override
@@ -116,17 +119,19 @@ public class UsbRelayToggler extends SerialDeviceSupport
 
 	@Override
 	public NodeControlInfo getCurrentControlInfo(String controlId) {
-		return newNodeControlInfoDatum(controlId, state.get());
+		return newSimpleNodeControlInfoDatum(controlId, state.get());
 	}
 
-	private NodeControlInfoDatum newNodeControlInfoDatum(String controlId, boolean status) {
-		NodeControlInfoDatum info = new NodeControlInfoDatum();
-		info.setCreated(new Date());
-		info.setSourceId(controlId);
-		info.setType(NodeControlPropertyType.Boolean);
-		info.setReadonly(false);
-		info.setValue(Boolean.toString(status));
-		return info;
+	private SimpleNodeControlInfoDatum newSimpleNodeControlInfoDatum(String controlId, boolean status) {
+		// @formatter:off
+		NodeControlInfo info = BasicNodeControlInfo.builder()
+				.withControlId(resolvePlaceholders(controlId))
+				.withType(NodeControlPropertyType.Boolean)
+				.withReadonly(false)
+				.withValue(String.valueOf(status))
+				.build();
+		// @formatter:on
+		return new SimpleNodeControlInfoDatum(info, Instant.now());
 	}
 
 	@Override
@@ -163,7 +168,7 @@ public class UsbRelayToggler extends SerialDeviceSupport
 		return result;
 	}
 
-	private void postControlEvent(NodeControlInfoDatum info, String topic) {
+	private void postControlEvent(SimpleNodeControlInfoDatum info, String topic) {
 		Event event = DatumEvents.datumEvent(topic, info);
 		postEvent(event);
 	}
@@ -176,7 +181,7 @@ public class UsbRelayToggler extends SerialDeviceSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.control.lctech.relay.usb.toggle";
 	}
 
@@ -190,8 +195,8 @@ public class UsbRelayToggler extends SerialDeviceSupport
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(8);
 
 		results.add(new BasicTextFieldSettingSpecifier("controlId", DEFAULT_CONTROL_ID));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", ""));
-		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['UID']",
+		results.add(new BasicTextFieldSettingSpecifier("groupUid", ""));
+		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['uid']",
 				"Serial Port"));
 		results.add(new BasicTextFieldSettingSpecifier("identity", String.valueOf(DEFAULT_IDENTITY)));
 		results.add(new BasicTextFieldSettingSpecifier("address", String.valueOf(DEFAULT_ADDRESS)));
