@@ -83,6 +83,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.util.LinkedCaseInsensitiveMap;
 import org.supercsv.cellprocessor.ConvertNullTo;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.io.CsvBeanReader;
@@ -557,7 +558,10 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			String k = e.nextElement();
 			originalProps.put(k, props.get(k));
 		}
-		Map<String, Object> propUpdates = new HashMap<>(originalProps);
+
+		// Configuration Dictionary is case-preserving case-insensitive
+		Map<String, Object> propUpdates = new LinkedCaseInsensitiveMap<>(originalProps.size());
+		propUpdates.putAll(originalProps);
 		if ( updates != null ) {
 			if ( updates.getSettingKeyPatternsToClean() != null ) {
 				Set<String> keysToRemove = new HashSet<>();
@@ -594,7 +598,9 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		if ( instanceKey != null && !instanceKey.isEmpty() ) {
 			propUpdates.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceKey);
 		}
-		if ( !originalProps.equals(propUpdates) ) {
+
+		// note must call LinkedCaseInsensitiveMap.equals() here to pick up case changes
+		if ( !propUpdates.equals(originalProps) ) {
 			conf.update(new Hashtable<>(propUpdates));
 		} else {
 			log.debug("Configuration for service {} unchanged: {}", settingKey, originalProps);
