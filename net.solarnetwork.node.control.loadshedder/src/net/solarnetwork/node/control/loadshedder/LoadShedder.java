@@ -22,6 +22,9 @@
 
 package net.solarnetwork.node.control.loadshedder;
 
+import static java.util.Collections.singletonMap;
+import static net.solarnetwork.node.reactor.InstructionUtils.createLocalInstruction;
+import static net.solarnetwork.service.OptionalService.service;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,27 +35,30 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.domain.EnergyDatum;
-import net.solarnetwork.node.job.JobService;
-import net.solarnetwork.node.reactor.Instruction;
-import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.support.BasicInstruction;
-import net.solarnetwork.node.reactor.support.InstructionUtils;
-import net.solarnetwork.node.settings.MappableSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
-import net.solarnetwork.node.util.PrefixedMessageSource;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.StaticOptionalService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.EnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleEnergyDatum;
+import net.solarnetwork.node.job.JobService;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionExecutionService;
+import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.StaticOptionalService;
+import net.solarnetwork.settings.MappableSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
+import net.solarnetwork.support.PrefixedMessageSource;
 
 /**
  * Service to monitor demand (consumption) from a
@@ -60,14 +66,14 @@ import org.springframework.context.MessageSource;
  * to limit power draw to below a maximum threshold.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class LoadShedder implements SettingSpecifierProvider, JobService {
 
+	private final OptionalService<InstructionExecutionService> instructionExecutionService;
 	private OptionalService<LoadShedderStrategy> shedStrategy = new StaticOptionalService<LoadShedderStrategy>(
 			new DefaultLoadShedderStrategy());
-	private OptionalService<DatumDataSource<EnergyDatum>> consumptionDataSource;
-	private Collection<InstructionHandler> instructionHandlers = Collections.emptyList();
+	private OptionalService<DatumDataSource> consumptionDataSource;
 	private List<LoadShedControlConfig> configs = new ArrayList<LoadShedControlConfig>(4);
 
 	private int consumptionSampleLimit = 10;
@@ -80,10 +86,27 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
+	 * Constructor.
+	 * 
+	 * @param instructionExecutionService
+	 *        the execution service
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
+	public LoadShedder(OptionalService<InstructionExecutionService> instructionExecutionService) {
+		super();
+		if ( instructionExecutionService == null ) {
+			throw new IllegalArgumentException(
+					"The instructionExecutionService argument must not be null.");
+		}
+		this.instructionExecutionService = instructionExecutionService;
+	}
+
+	/**
 	 * Evaluate current demand (consumption) and attempt to shed load as
 	 * necessary.
 	 */
-	public synchronized InstructionStatus.InstructionState evaluatePowerLoad() {
+	public synchronized InstructionState evaluatePowerLoad() {
 		final long now = System.currentTimeMillis();
 		LoadShedderStrategy strategy = getStrategy();
 		if ( strategy == null ) {
@@ -98,20 +121,23 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 		if ( actions == null || actions.size() < 1 ) {
 			return null;
 		}
-		InstructionStatus.InstructionState result = null;
+		InstructionExecutionService service = service(instructionExecutionService);
+		if ( service == null ) {
+			return InstructionState.Declined;
+		}
+		InstructionStatus result = null;
 		for ( LoadShedAction action : actions ) {
-			final BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_SHED_LOAD,
-					new Date(now), Instruction.LOCAL_INSTRUCTION_ID, Instruction.LOCAL_INSTRUCTION_ID,
-					null);
-			instr.addParameter(action.getControlId(), action.getShedWatts().toString());
-			result = InstructionUtils.handleInstruction(instructionHandlers, instr);
-			if ( result == InstructionStatus.InstructionState.Completed ) {
+			final Instruction instr = createLocalInstruction(InstructionHandler.TOPIC_SHED_LOAD,
+					singletonMap(action.getControlId(), action.getShedWatts().toString()));
+			result = service.executeInstruction(instr);
+			if ( result != null && result.getInstructionState() == InstructionState.Completed ) {
 				log.info("Switch {} limit released for {}W", action.getControlId(),
 						action.getShedWatts());
 				updateSwitchInfo(action.getControlId(), action, samples.peek());
 			}
 		}
-		return (result == null ? InstructionStatus.InstructionState.Declined : result);
+		return (result != null ? result.getInstructionState()
+				: InstructionStatus.InstructionState.Declined);
 	}
 
 	private LoadShedControlInfo updateSwitchInfo(String controlId, LoadShedAction action,
@@ -144,25 +170,30 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 
 	// Datum support
 
-	private EnergyDatum addPowerSample(OptionalService<DatumDataSource<EnergyDatum>> service,
+	private EnergyDatum addPowerSample(OptionalService<DatumDataSource> service,
 			Deque<EnergyDatum> samples) {
-		if ( service == null ) {
-			return null;
-		}
-		DatumDataSource<EnergyDatum> dataSource = service.service();
+		DatumDataSource dataSource = service(service);
 		if ( dataSource == null ) {
 			return null;
 		}
-		EnergyDatum datum = dataSource.readCurrentDatum();
-		if ( datum == null ) {
+		NodeDatum nodeDatum = dataSource.readCurrentDatum();
+		if ( nodeDatum == null ) {
 			return null;
+		}
+		EnergyDatum datum;
+		if ( nodeDatum instanceof EnergyDatum ) {
+			datum = (EnergyDatum) nodeDatum;
+		} else {
+			// convert to EnergyDatum instance
+			DatumSamples s = new DatumSamples(nodeDatum.asSampleOperations());
+			datum = new SimpleEnergyDatum(nodeDatum.getSourceId(), nodeDatum.getTimestamp(), s);
 		}
 
 		// maintain a buffer of samples so we can monitor the effect of limit operations
 		// buffer ordered from most recent to oldest
 
 		EnergyDatum previous = samples.peek();
-		if ( previous != null && previous.getCreated().equals(datum.getCreated()) ) {
+		if ( previous != null && previous.getTimestamp().equals(datum.getTimestamp()) ) {
 			// sample unchanged
 			return previous;
 		}
@@ -178,7 +209,7 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 	// Settings support
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.control.loadshedder";
 	}
 
@@ -222,8 +253,9 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 			results.add(new BasicTitleSettingSpecifier("info.control", infoMessage, true));
 		}
 
-		results.add(new BasicTextFieldSettingSpecifier("shedStrategy.propertyFilters['UID']", "Default"));
-		results.add(new BasicTextFieldSettingSpecifier("consumptionDataSource.propertyFilters['UID']",
+		results.add(
+				new BasicTextFieldSettingSpecifier("shedStrategy.propertyFilters['uid']", "Default"));
+		results.add(new BasicTextFieldSettingSpecifier("consumptionDataSource.propertyFilters['uid']",
 				"Main"));
 
 		LoadShedderStrategy strategy = getStrategy();
@@ -243,14 +275,14 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 
 		// dynamic list of configs
 		Collection<LoadShedControlConfig> configList = getConfigs();
-		BasicGroupSettingSpecifier listComplexGroup = SettingsUtil.dynamicListSettingSpecifier(
-				"configs", configList, new SettingsUtil.KeyedListCallback<LoadShedControlConfig>() {
+		BasicGroupSettingSpecifier listComplexGroup = SettingUtils.dynamicListSettingSpecifier("configs",
+				configList, new SettingUtils.KeyedListCallback<LoadShedControlConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(LoadShedControlConfig value,
 							int index, String key) {
-						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(value
-								.settings(key + "."));
+						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
+								value.settings(key + "."));
 						return Collections.<SettingSpecifier> singletonList(configGroup);
 					}
 				});
@@ -267,26 +299,25 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 		buf.append(messageSource.getMessage("info.basic", new Object[] { lastEvaluationDate }, locale));
 		EnergyDatum latest = consumptionSamples.peek();
 		if ( latest != null ) {
-			buf.append(" ").append(
-					messageSource.getMessage("info.reading",
-							new Object[] { latest.getWatts(), latest.getCreated() }, locale));
+			buf.append(" ").append(messageSource.getMessage("info.reading",
+					new Object[] { latest.getWatts(), latest.getTimestamp() }, locale));
 		}
 		return buf.toString();
 	}
 
 	private String getInfoMessage(final LoadShedControlInfo info, final Locale locale) {
 		assert info != null;
-		final String mode = messageSource.getMessage(
-				(info.getAction() != null && info.getAction().getShedWatts() != null
+		final String mode = messageSource
+				.getMessage((info.getAction() != null && info.getAction().getShedWatts() != null
 						&& info.getAction().getShedWatts() > 0 ? "info.control.shedding"
-						: "info.control.notshedding"), null, locale);
+								: "info.control.notshedding"),
+						null, locale);
 		StringBuilder buf = new StringBuilder();
-		buf.append(messageSource.getMessage("info.control.basic", new Object[] { info.getControlId(),
-				mode }, locale));
+		buf.append(messageSource.getMessage("info.control.basic",
+				new Object[] { info.getControlId(), mode }, locale));
 		if ( info.getActionDate() != null ) {
-			buf.append(" ").append(
-					messageSource.getMessage("info.control.action", new Object[] { info.getActionDate(),
-							info.getWattsBeforeAction() }, locale));
+			buf.append(" ").append(messageSource.getMessage("info.control.action",
+					new Object[] { info.getActionDate(), info.getWattsBeforeAction() }, locale));
 			LoadShedControlConfig rule = configForControlId(info.getControlId());
 			if ( info.getAction() != null && info.getAction().getShedWatts() != null
 					&& info.getAction().getShedWatts() > 0 && rule != null
@@ -294,10 +325,9 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 				long nextActionAllowed = info.getActionDate().getTime()
 						+ rule.getMinimumLimitMinutes().longValue() * 60000L;
 				if ( nextActionAllowed > System.currentTimeMillis() ) {
-					buf.append(" ").append(
-							messageSource.getMessage("info.control.action.lock",
-									new Object[] { rule.getMinimumLimitMinutes(),
-											new Date(nextActionAllowed) }, locale));
+					buf.append(" ").append(messageSource.getMessage("info.control.action.lock",
+							new Object[] { rule.getMinimumLimitMinutes(), new Date(nextActionAllowed) },
+							locale));
 				}
 			}
 		}
@@ -319,17 +349,12 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 
 	// Accessors
 
-	public OptionalService<DatumDataSource<EnergyDatum>> getConsumptionDataSource() {
+	public OptionalService<DatumDataSource> getConsumptionDataSource() {
 		return consumptionDataSource;
 	}
 
-	public void setConsumptionDataSource(
-			OptionalService<DatumDataSource<EnergyDatum>> consumptionDataSource) {
+	public void setConsumptionDataSource(OptionalService<DatumDataSource> consumptionDataSource) {
 		this.consumptionDataSource = consumptionDataSource;
-	}
-
-	public void setInstructionHandlers(Collection<InstructionHandler> instructionHandlers) {
-		this.instructionHandlers = instructionHandlers;
 	}
 
 	public void setMessageSource(MessageSource messageSource) {

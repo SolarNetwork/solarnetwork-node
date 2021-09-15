@@ -26,14 +26,14 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import net.solarnetwork.node.Identifiable;
-import net.solarnetwork.node.domain.EnergyDatum;
+import net.solarnetwork.node.domain.datum.EnergyDatum;
+import net.solarnetwork.service.Identifiable;
 
 /**
  * API for a load shedding strategy.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public interface LoadShedderStrategy extends Identifiable {
 
@@ -49,7 +49,7 @@ public interface LoadShedderStrategy extends Identifiable {
 	 *        be the current date.
 	 * @param powerSamples
 	 *        A set of power samples, ordered from most recent to oldest.
-	 * @return The action to execute, or <em>null</em> if no action is needed.
+	 * @return The action to execute, or {@literal null} if no action is needed.
 	 */
 	Collection<LoadShedAction> evaulateRules(List<LoadShedControlConfig> rules,
 			Map<String, LoadShedControlInfo> limitStatuses, long date,
@@ -62,7 +62,7 @@ public interface LoadShedderStrategy extends Identifiable {
 	 *        The control info to get a status message for.
 	 * @param locale
 	 *        The locale of the message.
-	 * @return The message, or <em>null</em> if nothing to report.
+	 * @return The message, or {@literal null} if nothing to report.
 	 */
 	String getStatusMessage(LoadShedControlInfo info, Locale locale);
 

@@ -25,19 +25,18 @@ package net.solarnetwork.node.control.loadshedder.test;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import net.solarnetwork.node.control.loadshedder.LoadShedControlConfig;
-import net.solarnetwork.node.control.loadshedder.LoadShedControlConfigPriorityComparator;
-import net.solarnetwork.node.test.AbstractNodeTest;
 import org.junit.Assert;
 import org.junit.Test;
+import net.solarnetwork.node.control.loadshedder.LoadShedControlConfig;
+import net.solarnetwork.node.control.loadshedder.LoadShedControlConfigPriorityComparator;
 
 /**
  * Test cases for the {@link LoadShedControlConfigPriorityComparator} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class SwitchConfigPrioritycomparatorTests extends AbstractNodeTest {
+public class SwitchConfigPrioritycomparatorTests {
 
 	@Test
 	public void orderNoPriority() {
