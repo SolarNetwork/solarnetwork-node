@@ -24,12 +24,12 @@ package net.solarnetwork.node.control.demandbalancer;
 
 import java.util.Collections;
 import java.util.List;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
+import net.solarnetwork.service.support.BasicIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Very basic implementation of {@link DemandBalanceStrategy} that simply
@@ -47,21 +47,22 @@ import org.springframework.context.MessageSource;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
-public class SimpleDemandBalanceStrategy implements DemandBalanceStrategy, SettingSpecifierProvider {
+public class SimpleDemandBalanceStrategy extends BasicIdentifiable
+		implements DemandBalanceStrategy, SettingSpecifierProvider {
 
 	/** The UID for this strategy: {@code Simple}. */
 	public static final String UID = "Simple";
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	private MessageSource messageSource;
 	private int unknownDemandLimit = -1;
 
-	@Override
-	public String getUID() {
-		return UID;
+	public SimpleDemandBalanceStrategy() {
+		super();
+		setUid(UID);
+		setDisplayName("Simple Demand Balance Strategy");
 	}
 
 	@Override
@@ -84,18 +85,8 @@ public class SimpleDemandBalanceStrategy implements DemandBalanceStrategy, Setti
 	}
 
 	@Override
-	public String getSettingUID() {
-		return getClass().getName();
-	}
-
-	@Override
-	public String getDisplayName() {
-		return "Simple Demand Balance Strategy";
-	}
-
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
+	public String getSettingUid() {
+		return "net.solarnetwork.node.control.demandbalancer.SimpleDemandBalanceStrategy";
 	}
 
 	@Override
@@ -111,10 +102,6 @@ public class SimpleDemandBalanceStrategy implements DemandBalanceStrategy, Setti
 
 	public void setUnknownDemandLimit(int unknownDemandLimit) {
 		this.unknownDemandLimit = unknownDemandLimit;
-	}
-
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
 	}
 
 }

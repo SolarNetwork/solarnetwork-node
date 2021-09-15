@@ -21,12 +21,21 @@
 	<reference-list id="balanceStrategies" availability="optional"
 		interface="net.solarnetwork.node.control.demandbalancer.DemandBalanceStrategy"/>
 		
-	<reference-list id="instructionHandlers" availability="optional"
-		interface="net.solarnetwork.node.reactor.InstructionHandler"/>
+	<bean id="eventAdmin" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
+	<bean id="instructionExecutionService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionExecutionService"/>
+		<property name="sticky" value="true"/>
+	</bean>
 		
 	<!-- Supporting Services -->
 	
-	<bean id="messageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+	<bean id="messageSource" class="net.solarnetwork.support.PrefixedMessageSource">
 		<property name="prefix" value="strategy."/>
 		<property name="delegate">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
@@ -40,32 +49,25 @@
 		</property>
 	</bean>
 	
-	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+	<bean id="jobMessageSource" class="net.solarnetwork.support.PrefixedMessageSource">
 		<property name="delegate" ref="messageSource"/>
 		<property name="prefix" value="demandBalancer."/>
 	</bean>
 	
-	<bean id="settingsFactory" 
-		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-		<property name="displayName" value="Demand Balancer"/>
-		<property name="factoryUID" value="net.solarnetwork.node.control.demandbalancer"/>
-		<property name="messageSource" ref="messageSource"/>
-	</bean>
-
-	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
-	</bean>
-	
 	<!-- Published Services -->
 	
-	<service ref="settingsFactory" 
-		interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Demand Balancer"/>
+			<property name="factoryUid" value="net.solarnetwork.node.control.demandbalancer"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.demandbalancer" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.control.demandbalancer"/>
@@ -88,16 +90,16 @@
 							<entry key="messageSource" value-ref="messageSource"/>
 							<entry key="demandBalancer">
 								<bean class="net.solarnetwork.node.control.demandbalancer.DemandBalancer">
+									<argument ref="instructionExecutionService"/>
 									<property name="messageSource" ref="messageSource"/>
-									<property name="instructionHandlers" ref="instructionHandlers"/>
 									<property name="balanceStrategy">
-										<bean class="net.solarnetwork.util.DynamicServiceTracker">
-											<property name="bundleContext" ref="bundleContext"/>
+										<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+											<argument ref="bundleContext"/>
 											<property name="serviceClassName" 
 												value="net.solarnetwork.node.control.demandbalancer.DemandBalanceStrategy"/>
 											<property name="propertyFilters">
 												<map>
-													<entry key="UID" value="Default"/>
+													<entry key="uid" value="Default"/>
 												</map>
 											</property>
 											<property name="fallbackService">
@@ -106,31 +108,31 @@
 										</bean>	
 									</property>
 									<property name="consumptionDataSource">
-										<bean class="net.solarnetwork.util.DynamicServiceTracker">
-											<property name="bundleContext" ref="bundleContext"/>
-											<property name="serviceClassName" value="net.solarnetwork.node.DatumDataSource"/>
+										<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+											<argument ref="bundleContext"/>
+											<property name="serviceClassName" value="net.solarnetwork.node.service.DatumDataSource"/>
 											<property name="propertyFilters">
 												<map>
-													<entry key="UID" value="Main"/>
+													<entry key="uid" value="Main"/>
 												</map>
 											</property>
 										</bean>	
 									</property>
 									<property name="powerDataSource">
-										<bean class="net.solarnetwork.util.DynamicServiceTracker">
-											<property name="bundleContext" ref="bundleContext"/>
-											<property name="serviceClassName" value="net.solarnetwork.node.DatumDataSource"/>
+										<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+											<argument ref="bundleContext"/>
+											<property name="serviceClassName" value="net.solarnetwork.node.service.DatumDataSource"/>
 											<property name="propertyFilters">
 												<map>
-													<entry key="UID" value="Main"/>
+													<entry key="uid" value="Main"/>
 												</map>
 											</property>
 										</bean>	
 									</property>
 									<property name="powerControl">
-										<bean class="net.solarnetwork.util.DynamicServiceTracker">
-											<property name="bundleContext" ref="bundleContext"/>
-											<property name="serviceClassName" value="net.solarnetwork.node.NodeControlProvider"/>
+										<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+											<argument ref="bundleContext"/>
+											<property name="serviceClassName" value="net.solarnetwork.node.service.NodeControlProvider"/>
 										</bean>	
 									</property>
 									<property name="eventAdmin" ref="eventAdmin"/>
@@ -144,6 +146,7 @@
 				<bean class="net.solarnetwork.node.control.demandbalancer.DemandBalancerJob">
 					<property name="demandBalancer">
 						<bean class="net.solarnetwork.node.control.demandbalancer.DemandBalancer">
+							<argument ref="instructionExecutionService"/>
 							<property name="messageSource" ref="jobMessageSource"/>
 						</bean>
 					</property>

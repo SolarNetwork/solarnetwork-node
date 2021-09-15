@@ -29,9 +29,9 @@ import org.quartz.JobExecutionContext;
 import org.quartz.PersistJobDataAfterExecution;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.job.AbstractJob;
-import net.solarnetwork.node.settings.KeyedSettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.KeyedSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * Job to execute the {@link DemandBalancer} on a schedule.
@@ -40,8 +40,8 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
  * Note that {@link #getSettingSpecifiers()} will map all
  * {@link KeyedSettingSpecifier} instances to the {@code demandBalancer.}
  * prefix. The corresponding {@link DemandBalancer#getMessageSource()} should be
- * configured as a {@link net.solarnetwork.node.util.PrefixedMessageSource}
- * using the same prefix in order for the mapping to work correctly.
+ * configured as a {@link net.solarnetwork.support.PrefixedMessageSource} using
+ * the same prefix in order for the mapping to work correctly.
  * </p>
  * 
  * <p>
@@ -54,7 +54,7 @@ import net.solarnetwork.node.settings.SettingSpecifierProvider;
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 @PersistJobDataAfterExecution
 @DisallowConcurrentExecution
@@ -69,8 +69,8 @@ public class DemandBalancerJob extends AbstractJob implements SettingSpecifierPr
 	}
 
 	@Override
-	public String getSettingUID() {
-		return demandBalancer.getSettingUID();
+	public String getSettingUid() {
+		return demandBalancer.getSettingUid();
 	}
 
 	@Override
@@ -85,7 +85,7 @@ public class DemandBalancerJob extends AbstractJob implements SettingSpecifierPr
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>();
+		List<SettingSpecifier> result = new ArrayList<>();
 		for ( SettingSpecifier spec : demandBalancer.getSettingSpecifiers() ) {
 			if ( spec instanceof KeyedSettingSpecifier<?> ) {
 				KeyedSettingSpecifier<?> keyedSpec = (KeyedSettingSpecifier<?>) spec;
