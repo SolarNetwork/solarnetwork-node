@@ -37,7 +37,7 @@ public interface CommandInterface {
 	String getData();
 	
 	/**
-	 * Return <em>true</em> if this command returns 
+	 * Return {@literal true} if this command returns 
 	 * a response.
 	 * 
 	 * @return boolean
