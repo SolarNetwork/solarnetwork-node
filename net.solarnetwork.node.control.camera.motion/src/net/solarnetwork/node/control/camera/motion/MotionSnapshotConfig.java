@@ -24,15 +24,15 @@ package net.solarnetwork.node.control.camera.motion;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicCronExpressionSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicCronExpressionSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Configuration for a scheduled snapshot.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.1
  */
 public class MotionSnapshotConfig {

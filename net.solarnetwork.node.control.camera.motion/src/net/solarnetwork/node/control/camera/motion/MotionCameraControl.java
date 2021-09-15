@@ -58,36 +58,38 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.DigestUtils;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.io.ResultStatusException;
-import net.solarnetwork.node.NodeControlProvider;
+import net.solarnetwork.io.UrlUtils;
 import net.solarnetwork.node.job.JobUtils;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.node.settings.support.BasicSetupResourceSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.node.setup.ResourceSetupResource;
 import net.solarnetwork.node.setup.SetupResource;
 import net.solarnetwork.node.setup.SetupResourceProvider;
-import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.service.CloseableService;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
-import net.solarnetwork.util.CloseableService;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.UrlUtils;
 
 /**
  * Integrate with the <a href="https://motion-project.github.io/">motion</a>
  * image change detection program.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class MotionCameraControl extends BaseIdentifiable
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler,
@@ -266,7 +268,7 @@ public class MotionCameraControl extends BaseIdentifiable
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		final String topic = (instruction != null ? instruction.getTopic() : null);
 		if ( !InstructionHandler.TOPIC_SIGNAL.equals(topic) ) {
 			return null;
@@ -284,17 +286,16 @@ public class MotionCameraControl extends BaseIdentifiable
 			try {
 				cameraId = Integer.parseInt(instruction.getParameterValue(CAMERA_ID_PARAM));
 			} catch ( NumberFormatException e ) {
-				log.error("Instruction {} cameraId parameter invalid: {}",
-						instruction.getRemoteInstructionId(),
+				log.error("Instruction {} cameraId parameter invalid: {}", instruction.getId(),
 						instruction.getParameterValue(CAMERA_ID_PARAM));
-				return InstructionState.Declined;
+				return InstructionUtils.createStatus(instruction, InstructionState.Declined);
 			}
 		}
 		if ( cameraId > 0 ) {
 			try {
 				if ( SIGNAL_SNAPSHOT.equalsIgnoreCase(signal) ) {
 					if ( takeSnapshot(cameraId) ) {
-						return InstructionState.Completed;
+						return InstructionUtils.createStatus(instruction, InstructionState.Completed);
 					}
 				}
 			} catch ( IOException e ) {
@@ -305,10 +306,9 @@ public class MotionCameraControl extends BaseIdentifiable
 						e.getUrl(), e.getStatusCode());
 			}
 		} else {
-			log.error("Instruction {} cameraId parameter invalid: {}",
-					instruction.getRemoteInstructionId(), cameraId);
+			log.error("Instruction {} cameraId parameter invalid: {}", instruction.getId(), cameraId);
 		}
-		return InstructionState.Declined;
+		return InstructionUtils.createStatus(instruction, InstructionState.Declined);
 	}
 
 	@Override
@@ -472,7 +472,7 @@ public class MotionCameraControl extends BaseIdentifiable
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.control.camera.motion";
 	}
 
@@ -564,8 +564,8 @@ public class MotionCameraControl extends BaseIdentifiable
 
 		MotionSnapshotConfig[] confs = getSnapshotConfigurations();
 		List<MotionSnapshotConfig> confsList = (confs != null ? asList(confs) : emptyList());
-		results.add(SettingsUtil.dynamicListSettingSpecifier("snapshotConfigurations", confsList,
-				new SettingsUtil.KeyedListCallback<MotionSnapshotConfig>() {
+		results.add(SettingUtils.dynamicListSettingSpecifier("snapshotConfigurations", confsList,
+				new SettingUtils.KeyedListCallback<MotionSnapshotConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(MotionSnapshotConfig value,

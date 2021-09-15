@@ -33,7 +33,9 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -48,13 +50,15 @@ import org.quartz.Scheduler;
 import org.quartz.SimpleTrigger;
 import org.quartz.Trigger;
 import org.quartz.TriggerKey;
+import net.solarnetwork.domain.InstructionStatus;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.control.camera.motion.MotionCameraControl;
 import net.solarnetwork.node.control.camera.motion.MotionSnapshotConfig;
 import net.solarnetwork.node.control.camera.motion.MotionSnapshotJob;
+import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.reactor.support.BasicInstruction;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link MotionCameraControl} class.
@@ -127,14 +131,14 @@ public class MotionCameraControlTests extends AbstractHttpClientTests {
 		getHttpServer().addHandler(handler);
 
 		// WHEN
-		BasicInstruction signal = new BasicInstruction(InstructionHandler.TOPIC_SIGNAL, new Date(),
-				UUID.randomUUID().toString(), null, null);
-		signal.addParameter(controlId, MotionCameraControl.SIGNAL_SNAPSHOT);
-		InstructionState result = control.processInstruction(signal);
+		Instruction signal = InstructionUtils.createLocalInstruction(InstructionHandler.TOPIC_SIGNAL,
+				controlId, MotionCameraControl.SIGNAL_SNAPSHOT);
+		InstructionStatus result = control.processInstruction(signal);
 
 		// THEN
 		assertThat("HTTP method called", handler.isHandled(), equalTo(true));
-		assertThat("Snapshot instruction completed", result, equalTo(InstructionState.Completed));
+		assertThat("Snapshot instruction completed", result.getInstructionState(),
+				equalTo(InstructionState.Completed));
 	}
 
 	@Test
@@ -157,15 +161,17 @@ public class MotionCameraControlTests extends AbstractHttpClientTests {
 		getHttpServer().addHandler(handler);
 
 		// WHEN
-		BasicInstruction signal = new BasicInstruction(InstructionHandler.TOPIC_SIGNAL, new Date(),
-				UUID.randomUUID().toString(), null, null);
-		signal.addParameter(controlId, MotionCameraControl.SIGNAL_SNAPSHOT);
-		signal.addParameter(MotionCameraControl.CAMERA_ID_PARAM, "2");
-		InstructionState result = control.processInstruction(signal);
+		Map<String, String> signalParams = new HashMap<>(2);
+		signalParams.put(controlId, MotionCameraControl.SIGNAL_SNAPSHOT);
+		signalParams.put(MotionCameraControl.CAMERA_ID_PARAM, "2");
+		Instruction signal = InstructionUtils.createLocalInstruction(InstructionHandler.TOPIC_SIGNAL,
+				signalParams);
+		InstructionStatus result = control.processInstruction(signal);
 
 		// THEN
 		assertThat("HTTP method called", handler.isHandled(), equalTo(true));
-		assertThat("Snapshot instruction completed", result, equalTo(InstructionState.Completed));
+		assertThat("Snapshot instruction completed", result.getInstructionState(),
+				equalTo(InstructionState.Completed));
 	}
 
 	@Test
@@ -188,15 +194,16 @@ public class MotionCameraControlTests extends AbstractHttpClientTests {
 		getHttpServer().addHandler(handler);
 
 		// WHEN
-		BasicInstruction signal = new BasicInstruction(InstructionHandler.TOPIC_SIGNAL, new Date(),
-				UUID.randomUUID().toString(), null, null);
-		signal.addParameter(controlId, MotionCameraControl.SIGNAL_SNAPSHOT);
-		signal.addParameter(MotionCameraControl.CAMERA_ID_PARAM, "2");
-		InstructionState result = control.processInstruction(signal);
+		Map<String, String> signalParams = new HashMap<>(2);
+		signalParams.put(controlId, MotionCameraControl.SIGNAL_SNAPSHOT);
+		signalParams.put(MotionCameraControl.CAMERA_ID_PARAM, "2");
+		Instruction signal = InstructionUtils.createLocalInstruction(InstructionHandler.TOPIC_SIGNAL,
+				signalParams);
+		InstructionStatus result = control.processInstruction(signal);
 
 		// THEN
 		assertThat("HTTP method called", handler.isHandled(), equalTo(true));
-		assertThat("Snapshot instruction for unknown camaera declined", result,
+		assertThat("Snapshot instruction for unknown camaera declined", result.getInstructionState(),
 				equalTo(InstructionState.Declined));
 	}
 
