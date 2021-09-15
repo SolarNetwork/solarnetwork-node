@@ -27,16 +27,17 @@
 	
 	<!-- Services -->
 
-	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
+	<bean id="eventAdmin" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+		<property name="sticky" value="true"/>
 	</bean>
 	
 	<!-- Published Services -->
 
 	<service ref="mockProvider" ranking="-1">
 		<interfaces>
-			<value>net.solarnetwork.node.NodeControlProvider</value>
+			<value>net.solarnetwork.node.service.NodeControlProvider</value>
 			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
 		</interfaces>
 		<service-properties>

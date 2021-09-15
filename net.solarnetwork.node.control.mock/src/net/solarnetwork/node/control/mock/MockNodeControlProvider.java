@@ -22,54 +22,66 @@
 
 package net.solarnetwork.node.control.mock;
 
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
+import net.solarnetwork.domain.BasicNodeControlInfo;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.domain.NodeControlInfoDatum;
+import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.support.DatumEvents;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.OptionalService;
 
 /**
  * Mock implementation of {@link NodeControlProvider} combined with
  * {@link InstructionHandler}.
  * 
+ * <p>
  * This mock service implements both {@link NodeControlProvider} and
  * {@link InstructionHandler} to demonstrate a common pattern of control
  * providers implementing mutable controls. The control values can be changed
  * via a {@link InstructionHandler#TOPIC_SET_CONTROL_PARAMETER} instruction sent
  * to the node.
+ * </p>
  * 
+ * <p>
  * The {@link InstructionHandler#TOPIC_SHED_LOAD} instruction is also handled:
  * if the parameter value (representing watts of power to shed) is greater than
- * <code>0</code> then the control value is set to <b>TRUE</b> and otherwise
- * <b>FALSE</b>.
+ * {@literal 0} then the control value is set to {@literal true} and otherwise
+ * {@literal false}.
+ * </p>
  * 
  * @author matt
- * @version 1.4
+ * @version 2.0
  */
-public class MockNodeControlProvider implements NodeControlProvider, InstructionHandler, DatumEvents {
+public class MockNodeControlProvider extends BaseIdentifiable
+		implements NodeControlProvider, InstructionHandler {
 
 	private String[] booleanControlIds = new String[] { "/mock/switch/1", "/mock/switch/2", };
 
 	private OptionalService<EventAdmin> eventAdmin;
 	private List<String> controlIds = null;
-	private final Map<String, NodeControlInfoDatum> controlValues = new LinkedHashMap<String, NodeControlInfoDatum>();
+	private final Map<String, SimpleNodeControlInfoDatum> controlValues = new LinkedHashMap<>();
 
 	/**
 	 * Default constructor.
 	 */
 	public MockNodeControlProvider() {
 		super();
+		setDisplayName("Mock Switch");
+		setUid("Mock Switch");
+		setGroupUid("Mock");
 		configureControlIds();
 	}
 
@@ -85,29 +97,19 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 	}
 
 	@Override
-	public String getUID() {
-		return "Mock Switch";
-	}
-
-	@Override
-	public String getGroupUID() {
-		return "Mock";
-	}
-
-	@Override
 	public List<String> getAvailableControlIds() {
 		return controlIds;
 	}
 
 	@Override
 	public NodeControlInfo getCurrentControlInfo(String controlId) {
-		NodeControlInfoDatum info = getNodeControlInfoDatum(controlId);
+		SimpleNodeControlInfoDatum info = getSimpleNodeControlInfoDatum(controlId);
 		postControlEvent(info, null, NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED);
 		return info;
 	}
 
-	private NodeControlInfoDatum getNodeControlInfoDatum(String controlId) {
-		NodeControlInfoDatum info = null;
+	private SimpleNodeControlInfoDatum getSimpleNodeControlInfoDatum(String controlId) {
+		SimpleNodeControlInfoDatum info = null;
 		synchronized ( controlValues ) {
 			info = controlValues.get(controlId);
 			if ( info == null ) {
@@ -116,7 +118,7 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 					for ( int i = 0; i < booleanControlIds.length; i++ ) {
 						String id = booleanControlIds[i];
 						if ( id.equals(controlId) ) {
-							info = newNodeControlInfoDatum(controlId,
+							info = newSimpleNodeControlInfoDatum(controlId,
 									(i == 0 ? null : "Boolean Mock " + i),
 									NodeControlPropertyType.Boolean, false, null);
 							controlValues.put(controlId, info);
@@ -136,12 +138,12 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		// look for a parameter name that matches a control ID
 		InstructionState result = null;
 		for ( String controlId : instruction.getParameterNames() ) {
 			synchronized ( controlValues ) {
-				NodeControlInfoDatum info = getNodeControlInfoDatum(controlId);
+				SimpleNodeControlInfoDatum info = getSimpleNodeControlInfoDatum(controlId);
 				if ( info != null ) {
 					String newValue = instruction.getParameterValue(controlId);
 					if ( TOPIC_SHED_LOAD.equals(instruction.getTopic()) ) {
@@ -154,10 +156,10 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 								newValue = Boolean.TRUE.toString();
 							}
 						} catch ( NumberFormatException e ) {
-							return InstructionState.Declined;
+							return InstructionUtils.createStatus(instruction, InstructionState.Declined);
 						}
 					}
-					if ( updateNodeControlInfoDatumValue(info, newValue) ) {
+					if ( updateSimpleNodeControlInfoDatumValue(info, newValue) ) {
 						result = InstructionState.Completed;
 					} else {
 						result = InstructionState.Declined;
@@ -165,10 +167,11 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 				}
 			}
 		}
-		return result;
+		return (result != null ? InstructionUtils.createStatus(instruction, result) : null);
 	}
 
-	private boolean updateNodeControlInfoDatumValue(NodeControlInfoDatum datum, String value) {
+	private boolean updateSimpleNodeControlInfoDatumValue(SimpleNodeControlInfoDatum datum,
+			String value) {
 		if ( datum.getType() == NodeControlPropertyType.Boolean ) {
 			if ( value != null ) {
 				value = value.toLowerCase();
@@ -178,16 +181,20 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 					|| "no".equalsIgnoreCase(value) ? Boolean.FALSE.toString()
 							: Boolean.TRUE.toString());
 			if ( !newValue.equals(oldValue) ) {
-				datum.setValue(newValue);
-				postControlEvent(datum, oldValue, NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED);
+				SimpleNodeControlInfoDatum newDatum = newSimpleNodeControlInfoDatum(datum.getControlId(),
+						datum.getPropertyName(), datum.getType(), datum.getReadonly(), datum.getUnit(),
+						newValue);
+				controlValues.put(newDatum.getControlId(), newDatum);
+				postControlEvent(newDatum, oldValue,
+						NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED);
 			}
 			return true;
 		}
 		return false;
 	}
 
-	private void postControlEvent(NodeControlInfoDatum info, String oldValue, String topic) {
-		final EventAdmin admin = (eventAdmin != null ? eventAdmin.service() : null);
+	private void postControlEvent(SimpleNodeControlInfoDatum info, String oldValue, String topic) {
+		final EventAdmin admin = OptionalService.service(eventAdmin);
 		if ( admin == null ) {
 			return;
 		}
@@ -195,16 +202,8 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 		admin.postEvent(event);
 	}
 
-	private NodeControlInfoDatum newNodeControlInfoDatum(String controlId, String propertyName,
-			NodeControlPropertyType type, boolean readonly, String unit) {
-		NodeControlInfoDatum info = new NodeControlInfoDatum();
-		info.setCreated(new Date());
-		info.setSourceId(controlId);
-		info.setPropertyName(propertyName);
-		info.setType(type);
-		info.setReadonly(readonly);
-		info.setUnit(unit);
-
+	private SimpleNodeControlInfoDatum newSimpleNodeControlInfoDatum(String controlId,
+			String propertyName, NodeControlPropertyType type, boolean readonly, String unit) {
 		// generate initial value
 		String value = null;
 		switch (type) {
@@ -219,9 +218,23 @@ public class MockNodeControlProvider implements NodeControlProvider, Instruction
 			default:
 				value = "?";
 		}
+		return newSimpleNodeControlInfoDatum(controlId, propertyName, type, readonly, unit, value);
+	}
 
-		info.setValue(value);
-		return info;
+	private SimpleNodeControlInfoDatum newSimpleNodeControlInfoDatum(String controlId,
+			String propertyName, NodeControlPropertyType type, boolean readonly, String unit,
+			String value) {
+		// @formatter:off
+		NodeControlInfo info = BasicNodeControlInfo.builder()
+				.withControlId(resolvePlaceholders(controlId))
+				.withType(type)
+				.withPropertyName(propertyName)
+				.withReadonly(readonly)
+				.withUnit(unit)
+				.withValue(value)
+				.build();
+		// @formatter:on
+		return new SimpleNodeControlInfoDatum(info, Instant.now());
 	}
 
 	public String[] getBooleanControlIds() {
