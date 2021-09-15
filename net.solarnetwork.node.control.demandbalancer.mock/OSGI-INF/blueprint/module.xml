@@ -7,9 +7,10 @@
 
 	<!-- Services -->
 	
-	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
+	<bean id="eventAdmin" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+		<property name="sticky" value="true"/>
 	</bean>
 	
 	<bean id="control" class="net.solarnetwork.node.control.demandbalancer.mock.MockGenerationLimitControl">
@@ -20,7 +21,7 @@
 	
 	<service ref="control">
 		<interfaces>
-			<value>net.solarnetwork.node.NodeControlProvider</value>
+			<value>net.solarnetwork.node.service.NodeControlProvider</value>
 			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
 		</interfaces>
 	</service>

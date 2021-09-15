@@ -22,25 +22,28 @@
 
 package net.solarnetwork.node.control.demandbalancer.mock;
 
+import static net.solarnetwork.service.OptionalService.service;
+import java.time.Instant;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.solarnetwork.domain.BasicNodeControlInfo;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.NodeControlInfoDatum;
+import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.OptionalService;
 
 /**
  * Mock implementation of {@link NodeControlProvider} that acts like a
@@ -64,9 +67,10 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
-public class MockGenerationLimitControl implements NodeControlProvider, InstructionHandler {
+public class MockGenerationLimitControl extends BaseIdentifiable
+		implements NodeControlProvider, InstructionHandler {
 
 	private final AtomicInteger limit = new AtomicInteger(100);
 
@@ -75,14 +79,15 @@ public class MockGenerationLimitControl implements NodeControlProvider, Instruct
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	@Override
-	public String getUID() {
-		return controlId;
+	public MockGenerationLimitControl() {
+		super();
+		setDisplayName("Mock Generation Limit Control");
+		setGroupUid("Mock");
 	}
 
 	@Override
-	public String getGroupUID() {
-		return "Mock";
+	public String getUid() {
+		return controlId;
 	}
 
 	@Override
@@ -92,14 +97,17 @@ public class MockGenerationLimitControl implements NodeControlProvider, Instruct
 
 	@Override
 	public NodeControlInfo getCurrentControlInfo(String controlId) {
-		NodeControlInfoDatum info = new NodeControlInfoDatum();
-		info.setCreated(new Date());
-		info.setSourceId(controlId);
-		info.setType(NodeControlPropertyType.Integer);
-		info.setReadonly(false);
-		info.setValue(limit.toString());
-		postControlCapturedEvent(info);
-		return info;
+		// @formatter:off
+		NodeControlInfo info = BasicNodeControlInfo.builder()
+				.withControlId(resolvePlaceholders(controlId))
+				.withType(NodeControlPropertyType.Integer)
+				.withReadonly(false)
+				.withValue(limit.toString())
+				.build();
+		// @formatter:on
+		SimpleNodeControlInfoDatum d = new SimpleNodeControlInfoDatum(info, Instant.now());
+		postControlCapturedEvent(d);
+		return d;
 	}
 
 	private InstructionState setLimitValue(final int value) {
@@ -119,7 +127,7 @@ public class MockGenerationLimitControl implements NodeControlProvider, Instruct
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		// look for a parameter name that matches a control ID
 		InstructionState result = null;
 		log.debug("Inspecting instruction {} against control {}", instruction.getId(), controlId);
@@ -133,7 +141,7 @@ public class MockGenerationLimitControl implements NodeControlProvider, Instruct
 				break;
 			}
 		}
-		return result;
+		return (result != null ? InstructionUtils.createStatus(instruction, result) : null);
 	}
 
 	/**
@@ -149,35 +157,14 @@ public class MockGenerationLimitControl implements NodeControlProvider, Instruct
 	 *        the {@link NodeControlInfo} to post the event for
 	 * @since 1.1
 	 */
-	protected final void postControlCapturedEvent(final NodeControlInfoDatum info) {
-		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
+	protected final void postControlCapturedEvent(final SimpleNodeControlInfoDatum info) {
+		EventAdmin ea = service(eventAdmin);
 		if ( ea == null || info == null ) {
 			return;
 		}
-		Event event = createControlCapturedEvent(info);
+		Event event = DatumEvents.datumEvent(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED,
+				info);
 		ea.postEvent(event);
-	}
-
-	/**
-	 * Create a new
-	 * {@link NodeControlProvider#EVENT_TOPIC_CONTROL_INFO_CAPTURED}
-	 * {@link Event} object out of a {@link Datum}.
-	 * 
-	 * <p>
-	 * This method will populate all simple properties of the given
-	 * {@link Datum} into the event properties, along with the
-	 * {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE}.
-	 * 
-	 * @param info
-	 *        the info to create the event for
-	 * @return the new Event instance
-	 * @since 1.1
-	 */
-	protected Event createControlCapturedEvent(final NodeControlInfoDatum info) {
-		Map<String, ?> props = info.asSimpleMap();
-		log.debug("Created {} event with props {}",
-				NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED, props);
-		return new Event(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED, props);
 	}
 
 	// Accessors
