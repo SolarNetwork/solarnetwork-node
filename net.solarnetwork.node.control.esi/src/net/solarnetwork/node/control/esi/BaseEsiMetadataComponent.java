@@ -26,28 +26,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import net.solarnetwork.domain.GeneralDatumMetadata;
-import net.solarnetwork.node.NodeMetadataService;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
+import net.solarnetwork.node.service.NodeMetadataService;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * An abstract implementation of an ESI component that publishes information as
  * node metadata.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public abstract class BaseEsiMetadataComponent extends BaseIdentifiable
 		implements SettingSpecifierProvider {
-
-	/** A class-level logger. */
-	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final String rootMetadataKey;
 

@@ -23,13 +23,13 @@
 package net.solarnetwork.node.control.esi.domain;
 
 import java.util.Locale;
-import net.solarnetwork.domain.Identifiable;
+import net.solarnetwork.service.Identifiable;
 
 /**
  * API for accessing Resource information.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public interface ResourceAccessor extends Identifiable {
 
