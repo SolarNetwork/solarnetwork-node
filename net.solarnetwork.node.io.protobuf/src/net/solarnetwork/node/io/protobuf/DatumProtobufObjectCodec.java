@@ -78,7 +78,7 @@ import net.solarnetwork.util.ArrayUtils;
  * 
  * <p>
  * The {@link #decodeFromBytes(byte[], Map)} method always returns a
- * {@link net.solarnetwork.node.domain.GeneralDatum} instance.
+ * {@link net.solarnetwork.node.domain.datum.SimpleDatum} instance.
  * </p>
  * 
  * @author matt

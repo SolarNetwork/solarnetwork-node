@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.yaskawa.mb.inverter.PVITLData;
 import net.solarnetwork.node.hw.yaskawa.mb.inverter.PVITLDataAccessor;
@@ -40,8 +41,8 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
- * {@link DatumDataSource} implementation for {@link GeneralNodePVEnergyDatum}
- * with the PVI-XXTL series inverter.
+ * {@link DatumDataSource} implementation for {@link AcDcEnergyDatum} with the
+ * PVI-XXTL series inverter.
  * 
  * @author matt
  * @version 2.0
@@ -100,7 +101,7 @@ public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITL
 
 	@Override
 	public Class<? extends NodeDatum> getMultiDatumType() {
-		return PVITLDatum.class;
+		return AcDcEnergyDatum.class;
 	}
 
 	@Override

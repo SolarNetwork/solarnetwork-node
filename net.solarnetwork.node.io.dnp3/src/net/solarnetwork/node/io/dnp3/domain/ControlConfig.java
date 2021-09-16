@@ -62,7 +62,7 @@ public class ControlConfig {
 	 * 
 	 * @param controlProviderUid
 	 *        the
-	 *        {@link net.solarnetwork.node.service.NodeControlProvider#getUID()}
+	 *        {@link net.solarnetwork.node.service.NodeControlProvider#getUid()}
 	 *        to collect from
 	 * @param controlId
 	 *        the control ID a

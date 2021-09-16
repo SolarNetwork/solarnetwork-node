@@ -34,7 +34,7 @@ import java.util.Map;
  * SMA channel object.
  *
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.0 $Date$
  */
 public final class SmaChannel {
 	

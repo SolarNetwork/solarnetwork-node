@@ -51,8 +51,10 @@ public class YasdiMasterDevice implements YasdiMaster {
 	/**
 	 * Constructor.
 	 * 
-	 * @param device
-	 *        the device
+	 * @param devices
+	 *        the devices
+	 * @param commDevice
+	 *        the device name
 	 */
 	public YasdiMasterDevice(Collection<YasdiDevice> devices, String commDevice) {
 		super();

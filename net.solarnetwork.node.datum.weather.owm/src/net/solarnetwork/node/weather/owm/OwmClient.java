@@ -52,7 +52,7 @@ public interface OwmClient {
 	 *        does not return the local time zone the weather data is in, so
 	 *        this value is used to interpret things like sunrise/sunset into
 	 *        local times.
-	 * @return The day information, or {@code null} if not available
+	 * @return The day information, or {@literal null} if not available
 	 */
 	DayDatum getCurrentDay(String identifier, String timeZoneId);
 
@@ -61,7 +61,7 @@ public interface OwmClient {
 	 * 
 	 * @param identifier
 	 *        The location identifier value to lookup conditions for.
-	 * @return The conditions, or {@code null} if not available
+	 * @return The conditions, or {@literal null} if not available
 	 */
 	AtmosphericDatum getCurrentConditions(String identifier);
 
@@ -71,7 +71,7 @@ public interface OwmClient {
 	 * 
 	 * @param identifier
 	 *        The location identifier value to lookup day information for.
-	 * @return The weather information, never {@code null}
+	 * @return The weather information, never {@literal null}
 	 */
 	public Collection<AtmosphericDatum> getHourlyForecast(String identifier);
 

@@ -200,6 +200,8 @@ public class GpsdClientService extends BasicIdentifiable implements GpsdClientCo
 
 	/**
 	 * Call once after properties configured to initialize at a future date.
+	 * 
+	 * @return a future that completes when connected
 	 */
 	public Future<?> startupLater() {
 		synchronized ( this ) {

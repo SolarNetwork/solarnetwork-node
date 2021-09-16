@@ -35,7 +35,7 @@ import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
- * MetService implementation of a {@link GeneralAtmosphericDatum}
+ * MetService implementation of a {@link AtmosphericDatum}
  * {@link DatumDataSource}.
  * 
  * <p>

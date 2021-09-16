@@ -29,7 +29,7 @@ import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.SimpleDayDatum;
 
 /**
- * Extension of {@link GeneralDayDatum} to support Yr data.
+ * Extension of {@link SimpleDayDatum} to support Yr data.
  * 
  * @author matt
  * @version 2.0

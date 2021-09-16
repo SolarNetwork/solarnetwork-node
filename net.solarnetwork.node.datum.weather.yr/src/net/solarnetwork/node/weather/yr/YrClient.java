@@ -45,7 +45,7 @@ public interface YrClient {
 	 * 
 	 * @param identifier
 	 *        The location identifier value to lookup the hourly forecast for.
-	 * @return The forecast data, never {@code null}
+	 * @return The forecast data, never {@literal null}
 	 */
 	List<AtmosphericDatum> getHourlyForecast(String identifier);
 
@@ -55,7 +55,7 @@ public interface YrClient {
 	 * 
 	 * @param identifier
 	 *        The location identifier value to lookup the forecast for.
-	 * @return The forecast data, never {@code null}
+	 * @return The forecast data, never {@literal null}
 	 */
 	List<DayDatum> getTenDayForecast(String identifier);
 

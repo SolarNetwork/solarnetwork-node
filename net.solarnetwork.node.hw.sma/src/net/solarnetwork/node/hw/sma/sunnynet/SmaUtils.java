@@ -34,7 +34,7 @@ import java.util.regex.Pattern;
  * Constants for SMA.
  *
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.0 $Date$
  */
 public final class SmaUtils {
 

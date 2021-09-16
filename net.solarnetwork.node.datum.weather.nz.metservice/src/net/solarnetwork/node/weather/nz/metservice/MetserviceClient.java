@@ -50,8 +50,7 @@ public interface MetserviceClient {
 	 * 
 	 * @param locationIdentifier
 	 *        The location identifier.
-	 * @return A collection of {@link GeneralDayDatum} and
-	 *         {@link GeneralAtmosphericDatum}.
+	 * @return A collection of {@link DayDatum} and {@link AtmosphericDatum}.
 	 */
 	Collection<NodeDatum> readCurrentLocalObservations(String locationIdentifier);
 
@@ -60,8 +59,8 @@ public interface MetserviceClient {
 	 * 
 	 * @param locationIdentifier
 	 *        The location identifier.
-	 * @return A collection of {@link GeneralDayDatum}, which can be for dates
-	 *         in the future.
+	 * @return A collection of {@link DayDatum}, which can be for dates in the
+	 *         future.
 	 */
 	Collection<DayDatum> readLocalForecast(String locationIdentifier);
 
@@ -71,8 +70,8 @@ public interface MetserviceClient {
 	 * 
 	 * @param locationIdentifier
 	 *        The location identifier.
-	 * @return A collection of {@link GeneralAtmosphericDatum}, which can be for
-	 *         dates in the future.
+	 * @return A collection of {@link AtmosphericDatum}, which can be for dates
+	 *         in the future.
 	 */
 	Collection<AtmosphericDatum> readHourlyForecast(String locationIdentifier);
 

@@ -46,8 +46,8 @@ public interface GpsdClientConnection extends GpsdMessageBroker, Identifiable {
 	 * </p>
 	 * 
 	 * <ul>
-	 * <li>{@link net.solarnetwork.domain.Identifiable#UID_PROPERTY}</li>
-	 * <li>{@link net.solarnetwork.domain.Identifiable#GROUP_UID_PROPERTY} - if
+	 * <li>{@link net.solarnetwork.service.Identifiable#UID_PROPERTY}</li>
+	 * <li>{@link net.solarnetwork.service.Identifiable#GROUP_UID_PROPERTY} - if
 	 * available</li>
 	 * <li>{@link #STATUS_PROPERTY}</li>
 	 * </ul>
@@ -62,8 +62,8 @@ public interface GpsdClientConnection extends GpsdMessageBroker, Identifiable {
 	 * </p>
 	 * 
 	 * <ul>
-	 * <li>{@link net.solarnetwork.domain.Identifiable#UID_PROPERTY}</li>
-	 * <li>{@link net.solarnetwork.domain.Identifiable#GROUP_UID_PROPERTY} - if
+	 * <li>{@link net.solarnetwork.service.Identifiable#UID_PROPERTY}</li>
+	 * <li>{@link net.solarnetwork.service.Identifiable#GROUP_UID_PROPERTY} - if
 	 * available</li>
 	 * <li>{@link #MESSAGE_PROPERTY}</li>
 	 * </ul>
@@ -94,7 +94,6 @@ public interface GpsdClientConnection extends GpsdMessageBroker, Identifiable {
 	 * Configure and enable/disable "watch" mode to receive future
 	 * {@literal SKY} and {@literal TPV} messages on any configured message
 	 * listeners.
-	 * </p>
 	 * 
 	 * @param config
 	 *        the watch mode configuration to set

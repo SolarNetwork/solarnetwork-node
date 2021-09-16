@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.rfxcom.test;
@@ -45,7 +43,7 @@ import org.slf4j.LoggerFactory;
  * Unit test for the {@link SetModeMessage} class.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
 public class SetModeMessageTest {
 	

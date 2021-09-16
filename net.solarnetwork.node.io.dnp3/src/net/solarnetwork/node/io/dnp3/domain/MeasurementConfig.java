@@ -74,12 +74,10 @@ public class MeasurementConfig {
 	 * Constructor.
 	 * 
 	 * @param dataSourceUid
-	 *        the {@link net.solarnetwork.node.service.DatumDataSource#getUID()}
+	 *        the {@link net.solarnetwork.node.service.DatumDataSource#getUid()}
 	 *        to collect from
 	 * @param sourceId
-	 *        the source ID a
-	 *        {@link net.solarnetwork.domain.Datum#getSourceId()} to collect
-	 *        from
+	 *        the source ID to collect from
 	 * @param propertyName
 	 *        the datum property name to collect
 	 * @param type

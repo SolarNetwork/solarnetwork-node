@@ -26,11 +26,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * FIXME
- * 
- * <p>
- * TODO
- * </p>
+ * Abstract base class for GPSd report messages.
  * 
  * @author matt
  * @version 1.0
@@ -55,8 +51,6 @@ public abstract class AbstractGpsdReportMessage extends AbstractGpsdMessage
 	 * 
 	 * @param type
 	 *        the GPSd message type, or {@literal null} if not known
-	 * @param name
-	 *        the GPSd message name
 	 * @param timestamp
 	 *        the timestamp
 	 */

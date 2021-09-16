@@ -34,8 +34,7 @@ import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
- * MetService implementation of a {@link GeneralDayDatum}
- * {@link DatumDataSource}.
+ * MetService implementation of a {@link DayDatum} {@link DatumDataSource}.
  * 
  * <p>
  * This implementation reads public data available on the MetService website to

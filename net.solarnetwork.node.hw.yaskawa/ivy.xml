@@ -17,7 +17,7 @@
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[2.0,)"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.modbus" rev="[4.0,)"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.serial" rev="[3.0,)"/>
-		<dependency org="commons-codec" name="commons-codec" rev="1.7" />
-		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>
+		<dependency org="commons-codec" name="commons-codec" rev="1.11"/>
+		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.32"/>
 	</dependencies>
 </ivy-module>

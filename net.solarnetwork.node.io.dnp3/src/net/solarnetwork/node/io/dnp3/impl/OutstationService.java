@@ -131,9 +131,8 @@ public class OutstationService extends AbstractApplicationService
 	 * 
 	 * @param dnp3Channel
 	 *        the channel to use
-	 * @param instructionHandlers
-	 *        the collection of instruction handlers to handle control
-	 *        operations
+	 * @param instructionExecutionService
+	 *        the execution service to handle control operations
 	 */
 	public OutstationService(OptionalService<ChannelService> dnp3Channel,
 			OptionalService<InstructionExecutionService> instructionExecutionService) {

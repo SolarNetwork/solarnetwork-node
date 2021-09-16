@@ -31,7 +31,7 @@ import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.SimpleAtmosphericDatum;
 
 /**
- * Extension of {@link GeneralAtmosphericDatum} to support Yr data.
+ * Extension of {@link SimpleAtmosphericDatum} to support Yr data.
  * 
  * @author matt
  * @version 2.0
