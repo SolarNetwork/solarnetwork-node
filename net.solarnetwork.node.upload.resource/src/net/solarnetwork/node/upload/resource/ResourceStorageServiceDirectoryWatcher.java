@@ -534,7 +534,7 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 	 * Only file names that match this pattern will be saved.
 	 * </p>
 	 * 
-	 * @param filterm
+	 * @param filter
 	 *        the file name filter pattern to use, or {@literal null} for all
 	 *        files
 	 */
@@ -563,7 +563,7 @@ public class ResourceStorageServiceDirectoryWatcher extends BaseIdentifiable
 	 * Only file names that match this pattern will be saved.
 	 * </p>
 	 * 
-	 * @param filterm
+	 * @param filterValue
 	 *        the file name filter pattern to use, or {@literal null} for all
 	 *        files
 	 */

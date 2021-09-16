@@ -28,15 +28,14 @@ import org.mortbay.jetty.Connector;
 import org.mortbay.jetty.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.test.AbstractNodeTest;
 
 /**
  * Support for HTTP server based tests.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public abstract class AbstractHttpTests extends AbstractNodeTest {
+public abstract class AbstractHttpTests {
 
 	private Server httpServer;
 	private int httpServerPort;

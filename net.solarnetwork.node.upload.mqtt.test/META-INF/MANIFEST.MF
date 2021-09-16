@@ -29,10 +29,4 @@ Import-Package:
  org.skyscreamer.jsonassert;version="[1.5,2.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.dao;version="[4.3,5.0)",
- org.springframework.scheduling.concurrent;version="[4.3,5.0)",
- org.springframework.test.annotation;version="[4.3,5.0)",
- org.springframework.test.context;version="[4.3,5.0)",
- org.springframework.test.context.junit4;version="[4.3,5.0)",
- org.springframework.test.context.support;version="[4.3,5.0)",
- org.springframework.test.context.transaction;version="[4.3,5.0)",
- org.springframework.util;version="[4.3,5.0)"
+ org.springframework.scheduling.concurrent;version="[4.3,5.0)"

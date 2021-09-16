@@ -389,7 +389,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 
 	/**
 	 * Adjust the number of configured {@code excludes} elements. Any newly
-	 * added element values will be {@code null}.
+	 * added element values will be {@literal null}.
 	 * 
 	 * @param count
 	 *        The desired number of {@code excludes} elements.
@@ -434,7 +434,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 
 	/**
 	 * Adjust the number of configured {@code excludes} elements. Any newly
-	 * added element values will be {@code null}.
+	 * added element values will be {@literal null}.
 	 * 
 	 * @param count
 	 *        The desired number of {@code excludes} elements.

@@ -19,7 +19,6 @@
 		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[2.0,)"/>
 		<dependency org="net.solarnetwork.common" name="net.solarnetwork.common.mqtt" rev="[3.0,)"/>
 		<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[2.0,)"/>
-		<dependency org="joda-time" name="joda-time" rev="2.4"/>
-		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>
+		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.32"/>
 	</dependencies>
 </ivy-module>

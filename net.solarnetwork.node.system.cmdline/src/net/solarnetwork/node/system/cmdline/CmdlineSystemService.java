@@ -355,7 +355,7 @@ public class CmdlineSystemService
 	 * on. The command will be split on whitespace to turn into command-line
 	 * arguments.
 	 * 
-	 * @param exitCommand
+	 * @param rebootCommand
 	 *        The command and arguments to use when {@link #reboot()} is called.
 	 */
 	public void setRebootCommand(String rebootCommand) {
