@@ -6,10 +6,14 @@
 	xmlns:jee="http://www.springframework.org/schema/jee"
 	xmlns:tx="http://www.springframework.org/schema/tx"
 	xsi:schemaLocation="
-			http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
-			http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.2.xsd
-			http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-4.2.xsd
-			http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.2.xsd">
+			http://www.springframework.org/schema/beans
+			http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+			http://www.springframework.org/schema/context
+			http://www.springframework.org/schema/context/spring-context-4.2.xsd
+			http://www.springframework.org/schema/jee
+			http://www.springframework.org/schema/jee/spring-jee-4.2.xsd
+			http://www.springframework.org/schema/tx
+			http://www.springframework.org/schema/tx/spring-tx-4.2.xsd">
 
 	<bean id="propertyConfigurer"
 		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
@@ -20,29 +24,21 @@
 		</property>
 	</bean>
 
-	<bean id="dataSource"
-		class="org.apache.tomcat.jdbc.pool.DataSource">
-		<property name="poolProperties">
-			<bean class="org.apache.tomcat.jdbc.pool.PoolProperties"
-				p:url="${jdbc.url}"
-				p:driverClassName="${jdbc.driver}"
-				p:username="${jdbc.user}"
-				p:password="${jdbc.pass}"
-				p:jmxEnabled="false"
-				p:testWhileIdle="false"
-				p:testOnBorrow="true"
-				p:validationQuery="VALUES CURRENT_DATE"
-				p:testOnReturn="false"
-				p:validationInterval="30000"
-				p:initialSize="0"
-				p:logAbandoned="true"
-				p:jdbcInterceptors="org.apache.tomcat.jdbc.pool.interceptor.ConnectionState;org.apache.tomcat.jdbc.pool.interceptor.StatementFinalizer"
-				/>
-		</property>
+	<bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig">
+	    <property name="poolName" value="SolarNode-Test"/>
+	    <property name="connectionTestQuery" value="VALUES CURRENT_DATE"/>
+	    <property name="driverClassName" value="${jdbc.driver}"/>
+	    <property name="jdbcUrl" value="${jdbc.url}"/>
+	    <property name="username" value="${jdbc.user}"/>
+	    <property name="password" value="${jdbc.pass}"/>
+	</bean>
+	
+	<!-- HikariCP configuration -->
+	<bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
+	    <constructor-arg ref="hikariConfig" />
 	</bean>
 
-	<bean id="txManager"
-		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
 		<property name="dataSource" ref="dataSource"/>
 	</bean>
 
