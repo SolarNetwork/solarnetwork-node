@@ -62,7 +62,7 @@ public class NodeS3ResourceStorageService extends BaseIdentifiable
 	/**
 	 * Constructor.
 	 * 
-	 * @param identity
+	 * @param identityService
 	 *        service the identity service
 	 * @param executor
 	 *        the executor
