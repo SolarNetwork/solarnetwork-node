@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.control.jf2.lata.command;
@@ -28,7 +26,7 @@ package net.solarnetwork.node.control.jf2.lata.command;
  * Implementation of {@link CommandInterface} that works with addresses.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
 public class AddressableCommand implements CommandInterface {
 

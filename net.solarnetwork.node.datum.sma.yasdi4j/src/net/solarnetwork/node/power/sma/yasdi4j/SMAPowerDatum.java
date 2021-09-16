@@ -28,7 +28,7 @@ import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
 
 /**
- * Extension of {@link GeneralNodeACEnergyDatum} with SMA-specific details.
+ * Extension of {@link SimpleAcDcEnergyDatum} with SMA-specific details.
  * 
  * @author matt
  * @version 3.0

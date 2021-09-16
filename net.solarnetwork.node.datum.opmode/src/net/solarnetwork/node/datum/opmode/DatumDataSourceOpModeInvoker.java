@@ -52,7 +52,6 @@ import org.quartz.TriggerKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.task.TaskExecutor;
-import net.solarnetwork.domain.datum.GeneralDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumQueue;
@@ -79,7 +78,7 @@ import net.solarnetwork.util.ArrayUtils;
  * of configurations that each define a source ID filter and associated
  * schedule. When the target mode becomes active, it will schedule jobs for each
  * configuration to poll from all matching {@link DatumDataSource} service,
- * passing all returned datum to {@link DatumQueue#offer(GeneralDatum, boolean)}
+ * passing all returned datum to {@link DatumQueue#offer(NodeDatum, boolean)}
  * with {@code persisted} set to {@literal false}.
  * </p>
  * 

@@ -41,8 +41,8 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
- * {@link DatumDataSource} implementation for {@link GeneralNodePVEnergyDatum}
- * with the PowerGate Plus series inverter.
+ * {@link DatumDataSource} implementation for {@link AcDcEnergyDatum} with the
+ * PowerGate Plus series inverter.
  * 
  * @author matt
  * @version 2.0

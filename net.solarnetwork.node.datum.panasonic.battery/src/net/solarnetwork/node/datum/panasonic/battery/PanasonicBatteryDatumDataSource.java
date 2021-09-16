@@ -37,22 +37,8 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
- * {@link DatumDataSource} implementation for
- * {@link GeneralNodeEnergyStorageDatum} with the Panasonic Battery API.
- * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>messageSource</dt>
- * <dd>The {@link MessageSource} to use with
- * {@link SettingSpecifierProvider}.</dd>
- * 
- * <dt>sampleCacheMs</dt>
- * <dd>The maximum number of milliseconds to cache data read from the battery
- * API, until the data will be read from the API again.</dd>
- * </dl>
+ * {@link DatumDataSource} implementation for {@link EnergyStorageDatum} with
+ * the Panasonic Battery API.
  * 
  * @author matt
  * @version 2.0

@@ -130,6 +130,7 @@ import net.solarnetwork.util.StringUtils;
  * a new day, the value of that channel is persisted so subsequent readings on
  * the same day can be calculated as an offset from that initial value. Requires
  * the {@code settingDao} property to also be configured.</dd>
+ * </dl>
  * 
  * <p>
  * Based on code from Gray Watson's sma.pl script, copyright included here:

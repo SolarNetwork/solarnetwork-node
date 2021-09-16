@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.datum.rfxcom.test;
@@ -31,7 +29,7 @@ import org.apache.commons.codec.binary.Hex;
  * Helper methods for unit tests.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
 public final class TestUtils {
 

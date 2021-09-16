@@ -409,6 +409,7 @@ public class RFXCOMDatumDataSource extends DatumDataSourceSupport
 	 * </p>
 	 * 
 	 * @param mapping
+	 *        the address mapping
 	 */
 	public void setAddressSourceMappingValue(String mapping) {
 		setAddressSourceMapping(StringUtils.commaDelimitedStringToMap(mapping));

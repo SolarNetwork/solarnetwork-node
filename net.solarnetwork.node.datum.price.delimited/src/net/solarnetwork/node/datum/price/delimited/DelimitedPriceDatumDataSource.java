@@ -421,6 +421,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 	 * stamp value for datum.
 	 * 
 	 * @param dateTimeColumns
+	 *        the column indexes to use for time stamps
 	 */
 	public void setDateTimeColumns(int[] dateTimeColumns) {
 		this.dateTimeColumns = dateTimeColumns;
@@ -504,8 +505,8 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Get the time zone to use for dates.
 	 * 
-	 * @param timeZone
-	 *        the timeZone to set
+	 * @param timeZoneId
+	 *        the time zone to set
 	 * @since 1.3
 	 */
 	public void setTimeZoneId(String timeZoneId) {

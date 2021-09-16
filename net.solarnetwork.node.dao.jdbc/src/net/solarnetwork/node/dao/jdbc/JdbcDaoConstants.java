@@ -30,7 +30,7 @@ package net.solarnetwork.node.dao.jdbc;
  * Constant definitions for JDBC DAO implementations to use.
  *
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.0 $Date$
  */
 public final class JdbcDaoConstants {
 

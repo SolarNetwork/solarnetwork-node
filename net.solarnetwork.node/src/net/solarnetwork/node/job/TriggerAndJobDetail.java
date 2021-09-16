@@ -39,7 +39,7 @@ import org.springframework.context.MessageSource;
  * bundles within a single "core" {@code Scheduler}.</p>
  *
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.0 $Date$
  */
 public interface TriggerAndJobDetail {
 

@@ -53,16 +53,16 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  *
  * <dl>
  * <dt>bufferSize</dt>
- * <dd>64</dt>
+ * <dd>64</dd>
  *
  * <dt>magic</dt>
  * <dd>The address of the MX60, e.g. <em>A</em>.</dd>
  *
  * <dt>readSize</dt>
- * <dd>47</dt>
+ * <dd>47</dd>
  *
  * <dt>maxWait</dt>
- * <dd>60000</dt>
+ * <dd>60000</dd>
  * </dl>
  *
  * @author matt
@@ -72,14 +72,12 @@ public class OutbackMX60PowerDatumDataSource extends SerialDeviceDatumDataSource
 		implements DatumDataSource, SettingSpecifierProvider, SerialConnectionAction<DcEnergyDatum> {
 
 	/**
-	 * The {@link net.solarnetwork.domain.GeneralNodeDatumSamples} instantaneous
-	 * sample key for DC output amp values.
+	 * The instantaneous sample key for DC output amp values.
 	 */
 	public static final String DC_OUTPUT_AMPS_KEY = "dcOutputAmps";
 
 	/**
-	 * The {@link net.solarnetwork.domain.GeneralNodeDatumSamples} instantaneous
-	 * sample key for battery voltage values.
+	 * The instantaneous sample key for battery voltage values.
 	 */
 	public static final String BATTERY_VOLTAGE_KEY = "batteryVoltage";
 
