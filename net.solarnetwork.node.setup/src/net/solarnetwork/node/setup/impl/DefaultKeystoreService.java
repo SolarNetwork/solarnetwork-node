@@ -75,7 +75,7 @@ import net.solarnetwork.service.support.ConfigurableSSLService;
  * password is generated and assigned to the key store. The password is saved
  * via {@link SetupIdentityDao#saveSetupIdentityInfo(SetupIdentityInfo)}. This
  * key store is then used to implement
- * {@link net.solarnetwork.support.SSLService} and is used as both the key and
+ * {@link net.solarnetwork.service.SSLService} and is used as both the key and
  * trust store for SSL connections returned by that API.
  * </p>
  * 

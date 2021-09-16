@@ -109,8 +109,8 @@ import net.solarnetwork.security.SnsAuthorizationInfo;
  * 
  * <p>
  * This service does not implement explicit support for the {@literal SEND}
- * destinations. Instead, it uses the {@link FeedbackInstructionHandler} API to
- * post local instructions to any registered handlers that support the
+ * destinations. Instead, it uses the {@link InstructionHandler} API to post
+ * local instructions to any registered handlers that support the
  * {@link InstructionHandler#TOPIC_SYSTEM_CONFIGURE} topic. Each instruction
  * will have a {@link InstructionHandler#PARAM_SERVICE} parameter set to the
  * {@literal destination} STOMP header, and any other non-standard STOMP header

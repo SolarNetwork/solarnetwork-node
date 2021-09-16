@@ -13,14 +13,13 @@
 		<artifact type="sources" ext="jar" conf="sources" m:classifier="sources"/>
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
-    	<dependency org="commons-codec" name="commons-codec" rev="1.7" />
-		<dependency org="joda-time" name="joda-time" rev="2.1"/>
+    	<dependency org="commons-codec" name="commons-codec" rev="1.11"/>
 		<dependency org="net.sf.supercsv" name="super-csv" rev="2.1.0"/>
     	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[2.0,)"/>
 		<dependency org="org.osgi" name="org.osgi.core" rev="5.0.0"/>
 		<dependency org="org.osgi" name="org.osgi.compendium" rev="5.0.0"/>
 		<dependency org="org.quartz-scheduler" name="quartz" rev="2.2.3" />
-    	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>
+    	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.32"/>
 		<dependency org="org.springframework" name="spring-beans" rev="4.3.23.RELEASE"/>
 		<dependency org="org.springframework" name="spring-context" rev="4.3.23.RELEASE"/>
 		<dependency org="org.springframework" name="spring-tx" rev="4.3.23.RELEASE"/>

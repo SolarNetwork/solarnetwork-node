@@ -59,8 +59,8 @@ public class WebProxyController {
 	/**
 	 * Constructor.
 	 * 
-	 * @param the
-	 *        configurations
+	 * @param configurations
+	 *        the configurations
 	 */
 	@Autowired
 	public WebProxyController(

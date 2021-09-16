@@ -42,7 +42,7 @@ public class BackupOptions {
 	 * Get a property map suitable for passing into various
 	 * {@link BackupManager} methods.
 	 * 
-	 * @return A property map, or {@code null}.
+	 * @return A property map, or {@literal null}.
 	 */
 	public Map<String, String> asBackupManagerProperties() {
 		if ( providers == null || providers.length < 1 ) {
@@ -78,7 +78,7 @@ public class BackupOptions {
 	 * {@link net.solarnetwork.node.backup.BackupResourceProvider} keys to limit
 	 * the backup to.
 	 * 
-	 * @return The list of provider keys to limit the backup to, or {@code null}
+	 * @return The list of provider keys to limit the backup to, or {@literal null}
 	 *         for all providers.
 	 */
 	public String[] getProviders() {
@@ -91,7 +91,7 @@ public class BackupOptions {
 	 * the backup to.
 	 * 
 	 * @param providers
-	 *        The list of provider keys to limit the backup to, or {@code null}
+	 *        The list of provider keys to limit the backup to, or {@literal null}
 	 *        for all providers.
 	 */
 	public void setProviders(String[] providers) {
