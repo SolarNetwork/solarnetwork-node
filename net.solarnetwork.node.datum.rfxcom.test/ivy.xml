@@ -15,7 +15,7 @@
 		<!-- Testing -->
 		<dependency org="junit" name="junit" rev="4.12"/>
 		<dependency org="org.easymock" name="easymock" rev="3.1"/>
-		<dependency org="net.solarnetwork.common.test" name="net.solarnetwork.common.test" rev="[1.16,)"/>
+		<dependency org="net.solarnetwork.common.test" name="net.solarnetwork.common.test" rev="[1.17,)"/>
 		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[1.11,)"/>
 		
 		<!-- Testing support -->
