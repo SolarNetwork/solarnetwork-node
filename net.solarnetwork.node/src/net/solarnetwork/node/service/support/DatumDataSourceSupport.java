@@ -32,7 +32,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import org.springframework.scheduling.TaskScheduler;
-import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.domain.ExpressionRoot;
@@ -268,19 +267,17 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	/**
 	 * Apply the configured datum filter service to a given datum.
 	 *
-	 * @param <T>
-	 *        the type of datum
 	 * @param datum
 	 *        the datum to possibly filter
 	 * @param props
 	 *        optional transform properties to pass to
-	 *        {@link DatumFilterService#filter(NodeDatum, DatumSamples, Map)}
+	 *        {@link DatumFilterService#filter(net.solarnetwork.domain.datum.Datum, DatumSamplesOperations, Map)}
 	 * @return the same datum, possibly transformed, or {@literal null} if the
 	 *         datum has been filtered out completely
 	 * @since 2.0
 	 */
 	protected NodeDatum applyDatumFilter(NodeDatum datum, Map<String, Object> props) {
-		DatumFilterService xformService = OptionalService.service(getDatumFilterService());
+		DatumFilterService xformService = service(getDatumFilterService());
 		if ( xformService != null ) {
 			DatumSamplesOperations out = xformService.filter(datum, datum.asSampleOperations(), props);
 			if ( out == null ) {
@@ -299,14 +296,14 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * <p>
 	 * This method will create a new {@link ExpressionRoot} instance for the
 	 * expression root object and pass that to
-	 * {@link #populateExpressionDatumProperties(GeneralNodeDatum, ExpressionConfig[], Object)}.
+	 * {@link #populateExpressionDatumProperties(MutableNodeDatum, ExpressionConfig[], Object)}.
 	 * </p>
 	 *
 	 * @param d
 	 *        the datum to store the results of expression evaluations on
 	 * @param expressionConfs
 	 *        the expression configurations
-	 * @see #populateExpressionDatumProperties(GeneralNodeDatum,
+	 * @see #populateExpressionDatumProperties(MutableNodeDatum,
 	 *      ExpressionConfig[], Object)
 	 * @since 1.3
 	 */
@@ -388,8 +385,8 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * <p>
 	 * This is designed to work with a
-	 * {@link #setDatumFilterService(OptionalService)} transformer that performs
-	 * down-sampling of higher frequency data.
+	 * {@link #setDatumFilterService(OptionalFilterableService)} transformer
+	 * that performs down-sampling of higher frequency data.
 	 *
 	 * @param subSampleFrequency
 	 *        the frequency, to set, in milliseconds

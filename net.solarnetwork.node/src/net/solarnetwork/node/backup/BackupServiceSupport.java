@@ -113,7 +113,7 @@ public abstract class BackupServiceSupport implements BackupService {
 	 * @param props
 	 *        a mapping of properties, which may include a
 	 *        {@link BackupManager#BACKUP_KEY} value
-	 * @return the date, never {@code null}
+	 * @return the date, never {@literal null}
 	 * @see #backupDateFromProps(Date, Map, Pattern, String)
 	 */
 	protected Date backupDateFromProps(Date date, Map<String, String> props) {
@@ -139,7 +139,7 @@ public abstract class BackupServiceSupport implements BackupService {
 	 * @param dateFormat
 	 *        the format of the date extracted from the
 	 *        {@code nodeIdAndDatePattern}
-	 * @return the date, never {@code null}
+	 * @return the date, never {@literal null}
 	 */
 	protected Date backupDateFromProps(Date date, Map<String, String> props,
 			Pattern nodeIdAndDatePattern, String dateFormat) {

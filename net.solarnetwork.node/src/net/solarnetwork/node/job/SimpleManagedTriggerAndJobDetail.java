@@ -36,13 +36,13 @@ import org.quartz.Trigger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
-import net.solarnetwork.node.settings.support.KeyedSmartQuotedTemplateMapper;
 import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.MappableSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.settings.support.BasicCronExpressionSettingSpecifier;
+import net.solarnetwork.settings.support.KeyedSmartQuotedTemplateMapper;
 import net.solarnetwork.support.PrefixedMessageSource;
 import net.solarnetwork.support.TemplatedMessageSource;
 

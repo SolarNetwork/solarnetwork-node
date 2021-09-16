@@ -30,7 +30,8 @@ import org.springframework.core.io.Resource;
  * external files.
  * 
  * <p>
- * This API can be used with {@link TextAreaSettingSpecifier} or
+ * This API can be used with
+ * {@link net.solarnetwork.settings.TextAreaSettingSpecifier} or
  * {@link FileSettingSpecifier} to provide support for configuration from
  * external resources.
  * </p>
@@ -47,7 +48,8 @@ public interface SettingResourceHandler {
 	 * <p>
 	 * This ID must be unique across all setting resource handlers registered
 	 * within the system. Generally the implementation will also be a
-	 * {@link SettingSpecifierProvider} for the same ID.
+	 * {@link net.solarnetwork.settings.SettingSpecifierProvider} for the same
+	 * ID.
 	 * </p>
 	 * 
 	 * @return unique ID
@@ -59,7 +61,8 @@ public interface SettingResourceHandler {
 	 * 
 	 * @param settingKey
 	 *        the setting key, generally a
-	 *        {@link KeyedSettingSpecifier#getKey()} value
+	 *        {@link net.solarnetwork.settings.KeyedSettingSpecifier#getKey()}
+	 *        value
 	 * @return the resources, never {@literal null}
 	 */
 	Iterable<Resource> currentSettingResources(String settingKey);
@@ -76,7 +79,8 @@ public interface SettingResourceHandler {
 	 * 
 	 * @param settingKey
 	 *        the setting key, generally a
-	 *        {@link KeyedSettingSpecifier#getKey()} value
+	 *        {@link net.solarnetwork.settings.KeyedSettingSpecifier#getKey()}
+	 *        value
 	 * @param resources
 	 *        the resources with the settings to apply
 	 * @return any setting values that should be persisted as a result of

@@ -42,7 +42,6 @@ import java.util.function.Consumer;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
-import net.solarnetwork.domain.datum.GeneralDatum;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.DatumDataSource;
@@ -62,9 +61,9 @@ import net.solarnetwork.util.StatCounter;
  * Default implementation of {@link DatumQueue}.
  * 
  * <p>
- * Datum passed to {@link #offer(GeneralDatum)} will be persisted via one of the
+ * Datum passed to {@link #offer(NodeDatum)} will be persisted via one of the
  * configured {@link DatumDao} services, while Datum received via
- * {@link #offer(GeneralDatum, boolean)} with {@code persist} set to
+ * {@link #offer(NodeDatum, boolean)} with {@code persist} set to
  * {@literal false} will not be persisted. All datum will then be passed to all
  * registered consumers.
  * </p>

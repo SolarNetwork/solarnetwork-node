@@ -328,7 +328,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	 * that lists the configured filters.
 	 * </p>
 	 * 
-	 * @param sampleTransformers
+	 * @param alternateDatumFilterServices
 	 *        the transformers to use
 	 */
 	public void setAlternateDatumFilterServices(List<DatumFilterService> alternateDatumFilterServices) {

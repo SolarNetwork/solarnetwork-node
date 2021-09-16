@@ -29,7 +29,7 @@ import net.solarnetwork.domain.datum.DatumSamplesExpressionRoot;
 
 /**
  * An object to use as the "root" for
- * {@link net.solarnetwork.support.ExpressionService} evaluation.
+ * {@link net.solarnetwork.service.ExpressionService} evaluation.
  * 
  * <p>
  * This object extends {@link DatumSamplesExpressionRoot} to allow all datum

@@ -31,14 +31,12 @@ package net.solarnetwork.node.domain.datum;
 public interface PricedDatum {
 
 	/**
-	 * A {@link net.solarnetwork.domain.GeneralNodeDatumSamples} status sample
-	 * key for {@link #getPriceLocationId()} values.
+	 * A status sample key for {@link #getPriceLocationId()} values.
 	 */
 	public static final String PRICE_LOCATION_KEY = "priceLocationId";
 
 	/**
-	 * A {@link net.solarnetwork.domain.GeneralNodeDatumSamples} status sample
-	 * key for {@link #getPriceSourceId()} values.
+	 * A status sample key for {@link #getPriceSourceId()} values.
 	 * 
 	 * @since 1.1
 	 */

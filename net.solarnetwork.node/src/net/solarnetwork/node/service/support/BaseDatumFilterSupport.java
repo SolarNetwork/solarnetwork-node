@@ -29,7 +29,6 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.datum.Datum;
-import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.service.DatumFilterStats;
@@ -192,7 +191,8 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * 
 	 * @return the current time, for passing to
 	 *         {@link #incrementIgnoredStats(long)} or
-	 *         {@link #incrementStats(long, DatumSamples, DatumSamples)} later
+	 *         {@link #incrementStats(long, DatumSamplesOperations, DatumSamplesOperations)}
+	 *         later
 	 * @since 1.2
 	 */
 	protected long incrementInputStats() {
@@ -371,7 +371,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 * 
 	 * @param sourceIdPattern
 	 *        The source ID regex to match. Syntax errors in the pattern will be
-	 *        ignored and a {@code null} value will be set instead.
+	 *        ignored and a {@literal null} value will be set instead.
 	 */
 	public void setSourceId(String sourceIdPattern) {
 		try {

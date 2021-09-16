@@ -40,7 +40,7 @@ public interface SetupResourceService {
 	 *        The ID of the resource to get.
 	 * @param locale
 	 *        The desired locale.
-	 * @return The resource, or {@code null} if not available.
+	 * @return The resource, or {@literal null} if not available.
 	 */
 	SetupResource getSetupResource(String resourceUID, Locale locale);
 

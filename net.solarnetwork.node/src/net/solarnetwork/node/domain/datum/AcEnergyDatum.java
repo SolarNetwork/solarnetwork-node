@@ -50,11 +50,11 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	 * </p>
 	 * 
 	 * <ul>
-	 * <li>{@link #setCurrent(Float, AcPhase)} with
+	 * <li>{@link #setCurrent(AcPhase, Float)} with
 	 * {@link AcEnergyDataAccessor#getCurrent()}</li>
-	 * <li>{@link #setVoltage(Float, AcPhase)} with
+	 * <li>{@link #setVoltage(AcPhase, Float)} with
 	 * {@link AcEnergyDataAccessor#getVoltage()}</li>
-	 * <li>{@link #setLineVoltage(Float, AcPhase)} with
+	 * <li>{@link #setLineVoltage(AcPhase, Float)} with
 	 * {@link AcEnergyDataAccessor#getLineVoltage()}</li>
 	 * </ul>
 	 * 

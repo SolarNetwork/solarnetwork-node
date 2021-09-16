@@ -31,13 +31,13 @@ import net.solarnetwork.settings.KeyedSettingSpecifier;
  * 
  * <p>
  * This API is designed to work with the {@link SettingResourceHandler} API. A
- * {@link SettingSpecifierProvider} would expose a {@link FileSettingSpecifier}
- * while also implementing {@link SettingResourceHandler} to accept external
- * configuration resources.
+ * {@link net.solarnetwork.settings.SettingSpecifierProvider} would expose a
+ * {@link FileSettingSpecifier} while also implementing
+ * {@link SettingResourceHandler} to accept external configuration resources.
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  * @since 1.70
  */
 public interface FileSettingSpecifier extends KeyedSettingSpecifier<Resource> {

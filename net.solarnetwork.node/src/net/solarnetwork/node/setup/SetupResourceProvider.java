@@ -44,7 +44,7 @@ public interface SetupResourceProvider {
 	 *        the ID of the resource to get
 	 * @param locale
 	 *        the desired locale
-	 * @return the resource, or {@code null} if not available
+	 * @return the resource, or {@literal null} if not available
 	 */
 	SetupResource getSetupResource(String resourceUID, Locale locale);
 
@@ -60,7 +60,7 @@ public interface SetupResourceProvider {
 	 *        the consumer type to get all appropriate resources for.
 	 * @param locale
 	 *        the desired locale.
-	 * @return all matching resources, never {@literal null
+	 * @return all matching resources, never {@literal null}
 	 */
 	Collection<SetupResource> getSetupResourcesForConsumer(String consumerType, Locale locale);
 

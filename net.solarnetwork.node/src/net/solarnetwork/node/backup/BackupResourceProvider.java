@@ -70,7 +70,7 @@ public interface BackupResourceProvider {
 	 * Get info about the provider.
 	 * 
 	 * @param locale
-	 *        The desired locale of the information, or {@code null} for the
+	 *        The desired locale of the information, or {@literal null} for the
 	 *        system locale.
 	 * @return The info.
 	 * @since 1.1
@@ -83,9 +83,9 @@ public interface BackupResourceProvider {
 	 * @param resource
 	 *        The resource to get the information for.
 	 * @param locale
-	 *        The desired locale of the information, or {@code null} for the
+	 *        The desired locale of the information, or {@literal null} for the
 	 *        system locale.
-	 * @return The info, or {@code null} if none available.
+	 * @return The info, or {@literal null} if none available.
 	 * @since 1.1
 	 */
 	BackupResourceInfo resourceInfo(BackupResource resource, Locale locale);

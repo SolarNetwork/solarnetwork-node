@@ -159,7 +159,8 @@ public interface AtmosphericDatum
 	/**
 	 * Set the instantaneous luminosity level, in lux.
 	 * 
-	 * @return the luminosity, in lux
+	 * @param value
+	 *        the luminosity, in lux
 	 */
 	default void setLux(BigDecimal value) {
 		asMutableSampleOperations().putSampleValue(Instantaneous, LUX_KEY, value);

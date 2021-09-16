@@ -38,7 +38,8 @@ public interface DatumDataSource extends Identifiable, DeviceInfoProvider {
 	/**
 	 * An {@link org.osgi.service.event.Event} topic for when a
 	 * {@link NodeDatum} has been read, sampled, or in some way captured by a
-	 * {@link DatumDataSource}. The {@link NodeDatum#DATUM_PROPERTY} property
+	 * {@link DatumDataSource}. The
+	 * {@link net.solarnetwork.node.service.DatumEvents#DATUM_PROPERTY} property
 	 * will be set to the datum instance that was captured. In addition, the
 	 * {@link NodeDatum#DATUM_TYPE_PROPERTY} property shall be populated with
 	 * the name of the <em>core</em> class name of the datum type.

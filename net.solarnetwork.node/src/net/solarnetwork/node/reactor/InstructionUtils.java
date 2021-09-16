@@ -95,11 +95,8 @@ public final class InstructionUtils {
 	 * 
 	 * @param topic
 	 *        the instruction topic
-	 * @param paramName
-	 *        an optional parameter name
-	 * @param paramValue
-	 *        if {@code paramName} provided then the corresponding parameter
-	 *        value
+	 * @param params
+	 *        an optional map of parameters
 	 * @return the new instruction, never {@literal null}
 	 */
 	public static Instruction createLocalInstruction(String topic, Map<String, String> params) {

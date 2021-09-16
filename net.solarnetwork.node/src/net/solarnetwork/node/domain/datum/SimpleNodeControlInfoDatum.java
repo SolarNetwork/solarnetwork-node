@@ -64,12 +64,10 @@ public class SimpleNodeControlInfoDatum extends SimpleDatum implements NodeContr
 	 * This constructs a node datum.
 	 * </p>
 	 * 
-	 * @param sourceId
-	 *        the source ID
+	 * @param info
+	 *        the control info
 	 * @param timestamp
 	 *        the timestamp
-	 * @param samples
-	 *        the samples
 	 */
 	public SimpleNodeControlInfoDatum(NodeControlInfo info, Instant timestamp) {
 		super(DatumId.nodeId(null, info.getControlId(), timestamp), new DatumSamples());

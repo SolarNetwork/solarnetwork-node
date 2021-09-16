@@ -44,8 +44,7 @@ public interface ReactorService {
 	 * 
 	 * @param instruction
 	 *        the instruction to store
-	 * @return the local primary key
-	 * @since 1.1
+	 * @since 2.0
 	 */
 	void storeInstruction(Instruction instruction);
 }

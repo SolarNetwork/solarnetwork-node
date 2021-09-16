@@ -52,7 +52,8 @@ public interface EnergyDatum extends net.solarnetwork.domain.datum.EnergyDatum, 
 	/**
 	 * Set a reverse watt-hour reading.
 	 * 
-	 * @return the reverse watt hour reading
+	 * @param value
+	 *        the reverse watt hour reading
 	 */
 	default void setReverseWattHourReading(Long value) {
 		asMutableSampleOperations().putSampleValue(Accumulating,

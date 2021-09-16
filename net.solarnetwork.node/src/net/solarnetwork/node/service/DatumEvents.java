@@ -105,8 +105,7 @@ public final class DatumEvents {
 	 * @param topic
 	 *        the event topic
 	 * @param datum
-	 *        the datum to add as the {@link NodeDatum#DATUM_PROPERTY} event
-	 *        property
+	 *        the datum to add as the {@link #DATUM_PROPERTY} event property
 	 * @return the new event instance
 	 */
 	public static Event datumEvent(String topic, NodeDatum datum) {
@@ -133,9 +132,9 @@ public final class DatumEvents {
 	 * Create a map out of event properties, unwrapping datum properties.
 	 * 
 	 * <p>
-	 * If a {@link NodeDatum} is found on the {@link NodeDatum#DATUM_PROPERTY}
-	 * event property, then the result of {@link NodeDatum#asSimpleMap()} will
-	 * be added to the returned map rather than the datum itself.
+	 * If a {@link NodeDatum} is found on the {@link #DATUM_PROPERTY} event
+	 * property, then the result of {@link NodeDatum#asSimpleMap()} will be
+	 * added to the returned map rather than the datum itself.
 	 * </p>
 	 * 
 	 * @param event

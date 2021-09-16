@@ -198,9 +198,9 @@ public interface BackupManager extends SettingSpecifierProvider {
 	 * @param key
 	 *        The key of the backup to get the information for.
 	 * @param locale
-	 *        The desired locale of the information, or {@code null} for the
+	 *        The desired locale of the information, or {@literal null} for the
 	 *        system locale.
-	 * @return The backup info, or {@code null} if no backup is available for
+	 * @return The backup info, or {@literal null} if no backup is available for
 	 *         the given key.
 	 * @since 1.2
 	 */

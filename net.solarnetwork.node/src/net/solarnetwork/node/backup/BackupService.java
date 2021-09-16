@@ -134,7 +134,7 @@ public interface BackupService {
 	 * Import a set of backup resources as a new {@code Backup}.
 	 * 
 	 * @param date
-	 *        The backup date, or {@code null} if not known.
+	 *        The backup date, or {@literal null} if not known.
 	 * @param resources
 	 *        The resources to include in the backup.
 	 * @param props

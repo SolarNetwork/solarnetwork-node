@@ -28,7 +28,7 @@ import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 
 /**
- * Extension of {@link GeneralLocationDatum} that implements {@link PriceDatum}.
+ * Extension of {@link SimpleDatum} that implements {@link PriceDatum}.
  * 
  * @author matt
  * @version 1.0

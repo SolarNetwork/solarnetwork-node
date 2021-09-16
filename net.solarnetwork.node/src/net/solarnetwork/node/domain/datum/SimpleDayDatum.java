@@ -28,7 +28,7 @@ import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 
 /**
- * Extension of {@link GeneralLocationDatum} with {@link DayDatum} support.
+ * Extension of {@link SimpleDatum} with {@link DayDatum} support.
  * 
  * @author matt
  * @version 1.0
