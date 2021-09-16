@@ -23,19 +23,18 @@
 			</list>
 		</property>
 	</bean>
-
-	<bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig">
-	    <property name="poolName" value="SolarNode-Test"/>
-	    <property name="connectionTestQuery" value="VALUES CURRENT_DATE"/>
-	    <property name="driverClassName" value="${jdbc.driver}"/>
-	    <property name="jdbcUrl" value="${jdbc.url}"/>
-	    <property name="username" value="${jdbc.user}"/>
-	    <property name="password" value="${jdbc.pass}"/>
-	</bean>
 	
-	<!-- HikariCP configuration -->
 	<bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
-	    <constructor-arg ref="hikariConfig" />
+	    <constructor-arg>
+			<bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig">
+			    <property name="poolName" value="SolarNode-Test"/>
+			    <property name="connectionTestQuery" value="VALUES CURRENT_DATE"/>
+			    <property name="driverClassName" value="${jdbc.driver}"/>
+			    <property name="jdbcUrl" value="${jdbc.url}"/>
+			    <property name="username" value="${jdbc.user}"/>
+			    <property name="password" value="${jdbc.pass}"/>
+			</bean>
+	    </constructor-arg>
 	</bean>
 
 	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
