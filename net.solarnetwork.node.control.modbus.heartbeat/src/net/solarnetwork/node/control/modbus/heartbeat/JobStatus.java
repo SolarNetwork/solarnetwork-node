@@ -39,11 +39,11 @@ public class JobStatus {
 	/**
 	 * Construct with values.
 	 * 
-	 * @param date
+	 * @param heartbeatDate
 	 *        the date the heartbeat was executed
 	 * @param successful
 	 *        {@literal true} if the heartbeat was executed successfully
-	 * @param message
+	 * @param heartbeatMessage
 	 *        a message
 	 */
 	public JobStatus(Instant heartbeatDate, boolean successful, String heartbeatMessage) {

@@ -11,25 +11,17 @@
 			http://www.springframework.org/schema/jee http://www.springframework.org/schema/jee/spring-jee-4.2.xsd
 			http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.2.xsd">
 
-	<bean id="timeBasedDataSource"
-		class="org.apache.tomcat.jdbc.pool.DataSource">
-		<property name="poolProperties">
-			<bean class="org.apache.tomcat.jdbc.pool.PoolProperties"
-				p:url="jdbc:derby:solarnode;create=true"
-				p:driverClassName="org.apache.derby.jdbc.EmbeddedDriver"
-				p:username="solarnode"
-				p:password="solarnode"
-				p:jmxEnabled="false"
-				p:testWhileIdle="false"
-				p:testOnBorrow="true"
-				p:validationQuery="VALUES CURRENT_DATE"
-				p:testOnReturn="false"
-				p:validationInterval="30000"
-				p:initialSize="0"
-				p:logAbandoned="true"
-				p:jdbcInterceptors="org.apache.tomcat.jdbc.pool.interceptor.ConnectionState;org.apache.tomcat.jdbc.pool.interceptor.StatementFinalizer"
-				/>
-		</property>
+	<bean id="timeBasedDataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
+	    <constructor-arg>
+			<bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig">
+			    <property name="poolName" value="SolarNode-Test"/>
+			    <property name="connectionTestQuery" value="VALUES CURRENT_DATE"/>
+			    <property name="driverClassName" value="org.apache.derby.jdbc.EmbeddedDriver"/>
+			    <property name="jdbcUrl" value="jdbc:derby:solarnode;create=true"/>
+			    <property name="username" value="solarnode"/>
+			    <property name="password" value="solarnode"/>
+			</bean>
+	    </constructor-arg>
 	</bean>
 
 	<bean id="timeBasedTxManager"

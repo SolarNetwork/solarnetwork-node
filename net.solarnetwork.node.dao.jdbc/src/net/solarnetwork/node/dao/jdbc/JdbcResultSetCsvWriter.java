@@ -61,7 +61,7 @@ public interface JdbcResultSetCsvWriter extends ICsvWriter {
 	 * @param cellProcessors
 	 *        An array of cell processors to handle each exported column. The
 	 *        length of the array should match the number and order of columns
-	 *        in the {@code ResultSet}. {@code null} values are permitted and
+	 *        in the {@code ResultSet}. {@literal null} values are permitted and
 	 *        indicate no processing should be performed on that column.
 	 * @throws SQLException
 	 *         If any SQL error occurs.

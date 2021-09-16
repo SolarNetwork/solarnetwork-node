@@ -65,6 +65,8 @@ public interface PriceMapAccessor extends Identifiable {
 	 * Get a brief informational string out of the main aspects of this price
 	 * map.
 	 * 
+	 * @param locale
+	 *        the locale
 	 * @return the string
 	 */
 	String toInfoString(Locale locale);

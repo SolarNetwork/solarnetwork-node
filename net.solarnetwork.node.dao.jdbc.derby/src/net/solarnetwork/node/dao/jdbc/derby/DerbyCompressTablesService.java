@@ -73,9 +73,9 @@ public class DerbyCompressTablesService implements TablesMaintenanceService {
 	 * 
 	 * @param startAfterKey
 	 *        A {@code key} returned from a previous execution of this method,
-	 *        to start compressing tables from, or {@code null} to start at the
+	 *        to start compressing tables from, or {@literal null} to start at the
 	 *        first available table.
-	 * @return A {@code key} for the last table processed, or {@code null} if
+	 * @return A {@code key} for the last table processed, or {@literal null} if
 	 *         all tables were processed.
 	 */
 	@Override

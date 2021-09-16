@@ -41,7 +41,7 @@ import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.node.dao.jdbc.DatabaseSystemService;
 
 /**
- * Embedded Derby implementation of {@link DatababseSystemService}.
+ * Embedded Derby implementation of {@link DatabaseSystemService}.
  * 
  * @author matt
  * @version 1.0

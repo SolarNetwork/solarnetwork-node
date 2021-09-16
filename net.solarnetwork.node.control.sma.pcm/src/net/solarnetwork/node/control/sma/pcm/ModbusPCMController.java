@@ -45,7 +45,6 @@ import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
-import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.NodeControlProvider;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
@@ -425,8 +424,8 @@ public class ModbusPCMController extends ModbusDeviceSupport
 	 * 
 	 * <p>
 	 * This method will populate all simple properties of the given
-	 * {@link Datum} into the event properties, along with the
-	 * {@link DatumDataSource#EVENT_DATUM_CAPTURED_DATUM_TYPE}.
+	 * {@link Datum} into the event properties.
+	 * </p>
 	 * 
 	 * @param info
 	 *        the info to create the event for

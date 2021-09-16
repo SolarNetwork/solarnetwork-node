@@ -34,8 +34,8 @@ import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
- * {@link GeneralDatumSamplesTransformer} that can filter out samples based on a
- * basic frequency constraint.
+ * {@link DatumFilterService} that can filter out samples based on a basic
+ * frequency constraint.
  * 
  * @author matt
  * @version 1.0

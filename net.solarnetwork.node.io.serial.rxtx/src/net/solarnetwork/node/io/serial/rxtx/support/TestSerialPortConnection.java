@@ -41,7 +41,14 @@ public class TestSerialPortConnection extends SerialPortConnection {
 	private boolean open = false;
 
 	/**
+	 * Constructor.
+	 * 
+	 * @param serialPort
+	 *        the serial port
 	 * @param params
+	 *        the parameters
+	 * @param executor
+	 *        the executor
 	 */
 	public TestSerialPortConnection(SerialPort serialPort, SerialPortBeanParameters params,
 			ExecutorService executor) {

@@ -25,9 +25,9 @@ package net.solarnetwork.node.control.loadshedder;
 import java.util.Comparator;
 
 /**
- * Comparator for {@link LoadShedControlConfig} to order by priority from lowest to
- * highest, with <em>null<em> sorted last.
- * A secondary sort on <b>controlId</b> is used if both priority values are null.
+ * Comparator for {@link LoadShedControlConfig} to order by priority from lowest
+ * to highest, with {@literal null} sorted last. A secondary sort on
+ * <b>controlId</b> is used if both priority values are null.
  * 
  * @author matt
  * @version 1.0

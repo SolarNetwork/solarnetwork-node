@@ -52,6 +52,7 @@ public class EnaSolarPowerDatum extends SimpleAcDcEnergyDatum {
 	 * @param sourceId
 	 *        the source ID
 	 * @param timestamp
+	 *        the time stamp
 	 */
 	public EnaSolarPowerDatum(String sourceId, Instant timestamp) {
 		super(sourceId, timestamp, new DatumSamples());
@@ -198,7 +199,7 @@ public class EnaSolarPowerDatum extends SimpleAcDcEnergyDatum {
 
 	/**
 	 * Get the DC input voltage, in volts. This is an alias for
-	 * {@link #getDCVoltage()}.
+	 * {@link #getDcVoltage()}.
 	 * 
 	 * @return the DC input voltage, in volts
 	 */

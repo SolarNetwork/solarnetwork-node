@@ -206,6 +206,8 @@ public class PriceMap {
 	 * Get a brief informational string out of the main aspects of this price
 	 * map.
 	 * 
+	 * @param locale
+	 *        the locale
 	 * @return the string
 	 */
 	public String toInfoString(Locale locale) {
@@ -357,6 +359,8 @@ public class PriceMap {
 
 	/**
 	 * Get the duration, never {@literal null}.
+	 * 
+	 * @return the duration
 	 */
 	public Duration duration() {
 		Duration d = getDuration();

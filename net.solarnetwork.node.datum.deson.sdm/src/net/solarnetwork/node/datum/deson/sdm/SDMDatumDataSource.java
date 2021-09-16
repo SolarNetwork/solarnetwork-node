@@ -55,8 +55,8 @@ import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.StringUtils;
 
 /**
- * {@link DatumDataSource} implementation for {@link GeneralNodeACEnergyDatum}
- * with the SDM series watt meter.
+ * {@link DatumDataSource} implementation for {@link AcEnergyDatum} with the SDM
+ * series watt meter.
  * 
  * @author matt
  * @version 3.0

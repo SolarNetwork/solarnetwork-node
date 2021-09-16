@@ -104,8 +104,8 @@ import net.solarnetwork.node.job.TriggerAndJobDetail;
  * <dt>maintenanceProperties</dt>
  * <dd>Configuration properties to use when creating the maintenance jobs for
  * each registered table. In general properties will be in the form
- * <code>derby.maintenacne.schema.table.<em>task</em>. See the documentation for
- * each task for more information.</dd>
+ * <code>derby.maintenacne.schema.table.<em>task</em></code>. See the
+ * documentation for each task for more information.</dd>
  * </dl>
  * 
  * @author matt

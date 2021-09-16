@@ -153,6 +153,8 @@ public class DurationRange {
 
 	/**
 	 * Get the minimum duration, never {@literal null}.
+	 * 
+	 * @return the minimum duration
 	 */
 	public Duration min() {
 		Duration d = getMin();
@@ -203,6 +205,8 @@ public class DurationRange {
 
 	/**
 	 * Get the maximum duration, never {@literal null}.
+	 * 
+	 * @return the maximum duration
 	 */
 	public Duration max() {
 		Duration d = getMax();

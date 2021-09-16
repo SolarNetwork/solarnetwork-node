@@ -76,10 +76,10 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
  * 
  * <dt>multiAmpSensorIndexFlags</dt>
  * <dd>A bitmask flag for which amp sensor index readings to return from
- * {@link net.solarnetwork.node.MultiDatumDataSource#readMultipleDatum()}. The
- * amp sensors number 1 - 3. Enable reading each index by adding together each
- * index as 2 ^ (index - 1). Thus to enable reading from all 3 indexes set this
- * value to <em>7</em> (2^0 + 2^1 + 2^2) = 7). Defaults to 7.</dd>
+ * {@code MultiDatumDataSource#readMultipleDatum()}. The amp sensors number 1 -
+ * 3. Enable reading each index by adding together each index as 2 ^ (index -
+ * 1). Thus to enable reading from all 3 indexes set this value to <em>7</em>
+ * (2^0 + 2^1 + 2^2) = 7). Defaults to 7.</dd>
  * 
  * <dt>addressSourceMapping</dt>
  * <dd>If configured, a mapping of device address ID values to Datum sourceId
@@ -97,10 +97,9 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
  * occurred.</dd>
  * 
  * <dt>collectAllSourceIds</dt>
- * <dd>If {@literal true} and the
- * {@link net.solarnetwork.node.MultiDatumDataSource} API is used, then attempt
- * to read values for all sources configured in the {@code sourceIdFilter}
- * property and return all the data collected. The
+ * <dd>If {@literal true} and the {@code MultiDatumDataSource} API is used, then
+ * attempt to read values for all sources configured in the
+ * {@code sourceIdFilter} property and return all the data collected. The
  * {@code collectAllSourceIdsTimeout} property is used to limit the amount of
  * time spent collecting data, as there is no guarantee the application can read
  * from all sources: the device data is captured somewhat randomly. Defaults to
@@ -115,8 +114,6 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
  * {@link #DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT}.</dd>
  * </dl>
  * 
- * @param <S>
- *        the sample type
  * @author matt
  * @version 3.0
  */

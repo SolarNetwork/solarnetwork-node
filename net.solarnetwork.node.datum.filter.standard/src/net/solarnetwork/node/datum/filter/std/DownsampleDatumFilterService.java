@@ -52,10 +52,10 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * <p>
  * When {@code sampleCount} is <b>not</b> configured, then sub-samples are
  * signaled by passing the {@link #SUB_SAMPLE_PROP} key in the {@code parameter}
- * map passed to {@link #transformSamples(Datum, DatumSamples, Map)}. When
+ * map passed to {@link #filter(Datum, DatumSamplesOperations, Map)}. When
  * invoked in this way the method will always return {@literal null}. Then when
  * a down-sampled output value is needed call
- * {@link #transformSamples(Datum, DatumSamples, Map)} again but without the
+ * {@link #filter(Datum, DatumSamplesOperations, Map)} again but without the
  * {@link #SUB_SAMPLE_PROP} key. Then a computed value derived from the
  * collected sub-samples will be returned:
  * </p>

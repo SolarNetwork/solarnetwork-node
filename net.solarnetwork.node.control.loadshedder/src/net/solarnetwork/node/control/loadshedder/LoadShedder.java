@@ -105,6 +105,8 @@ public class LoadShedder implements SettingSpecifierProvider, JobService {
 	/**
 	 * Evaluate current demand (consumption) and attempt to shed load as
 	 * necessary.
+	 * 
+	 * @return the resulting state
 	 */
 	public synchronized InstructionState evaluatePowerLoad() {
 		final long now = System.currentTimeMillis();

@@ -251,8 +251,8 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 	 * 
 	 * <p>
 	 * When {@literal true} then tag the configured source with
-	 * {@link EnergyDatum#TAG_CONSUMPTION}. When {@literal false} then tag the
-	 * configured source with {@link EnergyDatum#TAG_GENERATION}. Requires the
+	 * {@link AcEnergyDatum#TAG_CONSUMPTION}. When {@literal false} then tag the
+	 * configured source with {@link AcEnergyDatum#TAG_GENERATION}. Requires the
 	 * {@link #getDatumMetadataService()} to be available.
 	 * </p>
 	 * 

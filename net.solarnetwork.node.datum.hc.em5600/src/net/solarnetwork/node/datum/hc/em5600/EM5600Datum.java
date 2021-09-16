@@ -29,8 +29,8 @@ import net.solarnetwork.node.domain.datum.SimpleAcEnergyDatum;
 import net.solarnetwork.node.hw.hc.EM5600DataAccessor;
 
 /**
- * Extension of {@link GeneralNodeACEnergyDatum} with additional properties
- * supported by the EM5600 series meters.
+ * Extension of {@link SimpleAcEnergyDatum} with additional properties supported
+ * by the EM5600 series meters.
  * 
  * @author matt
  * @version 2.0

@@ -354,9 +354,9 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implemen
 	 * Store a new domain object using the {@link #SQL_RESOURCE_INSERT} SQL.
 	 * 
 	 * <p>
-	 * If {@link #isIgnoreMockData()} returns {@literal true} and {@code datum} is
-	 * an instance of {@link Mock} then this method will not persist the object
-	 * and will simply return {@code -1}.
+	 * If {@link #isIgnoreMockData()} returns {@literal true} and {@code datum}
+	 * is an instance of {@link Mock} then this method will not persist the
+	 * object and will simply return {@code -1}.
 	 * </p>
 	 * 
 	 * @param datum
@@ -395,7 +395,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implemen
 	 * 
 	 * <p>
 	 * This method will call {@link #updateDatumUpload(long, Object, long)}
-	 * passing in {@link NodeDatum#getCreated()},
+	 * passing in {@link NodeDatum#getTimestamp()},
 	 * {@link NodeDatum#getSourceId()}, and {@code timestamp}.
 	 * </p>
 	 * 

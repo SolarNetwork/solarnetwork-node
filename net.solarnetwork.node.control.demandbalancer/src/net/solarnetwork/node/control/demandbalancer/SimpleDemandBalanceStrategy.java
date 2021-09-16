@@ -35,17 +35,6 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * Very basic implementation of {@link DemandBalanceStrategy} that simply
  * enforces a generation limit on the current demand.
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>unknownDemandLimit</dt>
- * <dd>If {@bold -1} is passed as the {@code demandWatts} to
- * {@link #evaluateBalance(String, int, int, int, int)} then this value will be
- * returned. Set to {@bold -1} to do nothing.</dd>
- * </dl>
- * 
  * @author matt
  * @version 2.0
  */
@@ -100,6 +89,18 @@ public class SimpleDemandBalanceStrategy extends BasicIdentifiable
 		return unknownDemandLimit;
 	}
 
+	/**
+	 * Set the unknown demand limit.
+	 * 
+	 * <p>
+	 * If {@literal -1} is passed as the {@code demandWatts} to
+	 * {@link #evaluateBalance(String, int, int, int, int)} then this value will
+	 * be returned. Set to {@literal -1} to do nothing.
+	 * </p>
+	 * 
+	 * @param unknownDemandLimit
+	 *        the unknown demand limit
+	 */
 	public void setUnknownDemandLimit(int unknownDemandLimit) {
 		this.unknownDemandLimit = unknownDemandLimit;
 	}

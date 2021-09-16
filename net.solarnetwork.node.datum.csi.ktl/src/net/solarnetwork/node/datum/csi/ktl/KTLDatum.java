@@ -53,8 +53,10 @@ public class KTLDatum extends SimpleAcDcEnergyDatum {
 	/**
 	 * Construct with a sample.
 	 * 
-	 * @param sample
+	 * @param data
 	 *        the sample
+	 * @param sourceId
+	 *        the source ID
 	 */
 	public KTLDatum(KTLCTDataAccessor data, String sourceId) {
 		super(sourceId, data.getDataTimestamp(), new DatumSamples());

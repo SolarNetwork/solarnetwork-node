@@ -62,8 +62,7 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	public static final String INFO_KEY_DEVICE_MANUFACTURER = ModbusDeviceSupport.INFO_KEY_DEVICE_MANUFACTURER;
 
 	/**
-	 * Key for the device manufacture date, as a
-	 * {@link org.joda.time.ReadablePartial}.
+	 * Key for the device manufacture date, as a {@link java.time.LocalDate}.
 	 */
 	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = ModbusDeviceSupport.INFO_KEY_DEVICE_MANUFACTURE_DATE;
 

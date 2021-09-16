@@ -51,6 +51,8 @@ public class AE250TxDatum extends SimpleAcDcEnergyDatum {
 	 * 
 	 * @param data
 	 *        the sample data
+	 * @param sourceId
+	 *        the source ID
 	 */
 	public AE250TxDatum(AE250TxDataAccessor data, String sourceId) {
 		super(sourceId, data.getDataTimestamp(), new DatumSamples());

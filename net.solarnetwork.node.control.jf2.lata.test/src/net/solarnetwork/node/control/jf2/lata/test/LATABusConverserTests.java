@@ -22,12 +22,14 @@
 
 package net.solarnetwork.node.control.jf2.lata.test;
 
-import gnu.io.SerialPort;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import org.junit.Assert;
+import org.junit.Test;
+import gnu.io.SerialPort;
 import net.solarnetwork.node.control.jf2.lata.LATABusConverser;
 import net.solarnetwork.node.control.jf2.lata.command.AddressableCommand;
 import net.solarnetwork.node.control.jf2.lata.command.Command;
@@ -35,9 +37,6 @@ import net.solarnetwork.node.control.jf2.lata.command.CommandInterface;
 import net.solarnetwork.node.io.serial.rxtx.support.TestSerialPort;
 import net.solarnetwork.node.io.serial.rxtx.support.TestSerialPortConnection;
 import net.solarnetwork.node.service.support.SerialPortBeanParameters;
-import net.solarnetwork.node.test.AbstractNodeTest;
-import org.junit.Assert;
-import org.junit.Test;
 
 /**
  * Unit tests for the {@link LATABusConverser} class.
@@ -45,7 +44,7 @@ import org.junit.Test;
  * @author matt
  * @version 1.0
  */
-public class LATABusConverserTests extends AbstractNodeTest {
+public class LATABusConverserTests {
 
 	private static final String SWITCH_1_IDENTIFIER = "100000BD";
 
@@ -77,8 +76,8 @@ public class LATABusConverserTests extends AbstractNodeTest {
 		};
 		TestSerialPortConnection conn = new TestSerialPortConnection(serialPort,
 				new SerialPortBeanParameters(), null);
-		LATABusConverser action = new LATABusConverser(new AddressableCommand(SWITCH_1_IDENTIFIER,
-				Command.SwitchOff));
+		LATABusConverser action = new LATABusConverser(
+				new AddressableCommand(SWITCH_1_IDENTIFIER, Command.SwitchOff));
 		String result = action.doWithConnection(conn);
 		Assert.assertNull(result);
 

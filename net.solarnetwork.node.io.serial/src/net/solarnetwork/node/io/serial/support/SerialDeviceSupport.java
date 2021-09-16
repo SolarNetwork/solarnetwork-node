@@ -62,8 +62,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	public static final String INFO_KEY_DEVICE_MANUFACTURER = "Manufacturer";
 
 	/**
-	 * Key for the device manufacture date, as a
-	 * {@link org.joda.time.ReadablePartial}.
+	 * Key for the device manufacture date, as a {@link java.time.LocalDate}.
 	 */
 	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = "Manufacture Date";
 

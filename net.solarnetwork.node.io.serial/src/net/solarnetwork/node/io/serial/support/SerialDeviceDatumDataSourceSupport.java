@@ -63,8 +63,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 	public static final String INFO_KEY_DEVICE_MANUFACTURER = SerialDeviceSupport.INFO_KEY_DEVICE_MANUFACTURER;
 
 	/**
-	 * Key for the device manufacture date, as a
-	 * {@link org.joda.time.ReadablePartial}.
+	 * Key for the device manufacture date, as a {@link java.time.LocalDate}.
 	 */
 	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = SerialDeviceSupport.INFO_KEY_DEVICE_MANUFACTURE_DATE;
 
@@ -79,10 +78,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 	private OptionalService<SerialNetwork> serialNetwork;
 
 	/**
-	 * Construct with a specific sample data instance.
-	 * 
-	 * @param sample
-	 *        the sample data to use
+	 * Constructor
 	 */
 	public SerialDeviceDatumDataSourceSupport() {
 		this(new AtomicReference<>());
@@ -111,6 +107,8 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 	/**
 	 * Test if the sample data has expired.
 	 * 
+	 * @param sample
+	 *        the sample to test
 	 * @return {@literal true} if the sample data has expired
 	 */
 	protected boolean isCachedSampleExpired(S sample) {

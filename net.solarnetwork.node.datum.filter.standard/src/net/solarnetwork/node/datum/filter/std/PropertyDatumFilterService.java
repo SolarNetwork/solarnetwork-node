@@ -47,12 +47,13 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
 
 /**
- * {@link GeneralDatumSamplesTransformer} that can filter out sample properties
- * based on simple matching rules.
+ * {@link DatumFilterService} that can filter out sample properties based on
+ * simple matching rules.
  * 
  * <p>
  * If all properties of a datum are filtered out of a datum then
- * {@link #transformSamples(Datum, DatumSamples)} will return {@literal null}.
+ * {@link #filter(Datum, DatumSamplesOperations, Map)} will return
+ * {@literal null}.
  * </p>
  * 
  * @author matt
@@ -349,7 +350,7 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * Adjust the number of configured {@code excludes} elements. Any newly
-	 * added element values will be {@code null}.
+	 * added element values will be {@literal null}.
 	 * 
 	 * @param count
 	 *        The desired number of {@code excludes} elements.

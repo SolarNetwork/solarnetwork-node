@@ -22,7 +22,7 @@
 		<dependency org="org.apache.servicemix.bundles" name="org.apache.servicemix.bundles.derby" rev="10.12.1.1_1" conf="runtime"/>
 		<dependency org="org.osgi" name="org.osgi.core" rev="5.0.0"/>
 		<dependency org="org.osgi" name="org.osgi.enterprise" rev="5.0.0"/>
-    	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.21"/>
+    	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.32"/>
 		<dependency org="org.springframework" name="spring-context-support" rev="4.3.23.RELEASE"/>
 		<dependency org="org.springframework" name="spring-jdbc" rev="4.3.23.RELEASE"/>
 	</dependencies>

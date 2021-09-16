@@ -29,8 +29,8 @@ import net.solarnetwork.node.domain.datum.SimpleAcEnergyDatum;
 import net.solarnetwork.node.hw.deson.meter.SDMDataAccessor;
 
 /**
- * Extension of {@link GeneralNodeACEnergyDatum} with additional properties
- * supported by the SDM-XXX series meters.
+ * Extension of {@link SimpleAcEnergyDatum} with additional properties supported
+ * by the SDM-XXX series meters.
  * 
  * @author matt
  * @version 2.0

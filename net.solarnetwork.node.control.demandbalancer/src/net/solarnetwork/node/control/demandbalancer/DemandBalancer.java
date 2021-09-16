@@ -73,64 +73,6 @@ import net.solarnetwork.util.StringUtils;
  * instructions to a specific control to limit generation to an amount that
  * keeps generation at or below current consumption levels.
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>powerControlId</dt>
- * <dd>The ID of the control that should respond to the
- * {@link InstructionHandler#TOPIC_DEMAND_BALANCE} instruction to match
- * generation levels to consumption levels.</dd>
- * 
- * <dt>powerControl</dt>
- * <dd>The {@link NodeControlProvider} that manages the configured
- * {@code powerControlId}, and can report back its current status, whose value
- * must be provided as an integer percentage of the maximum allowable generation
- * level. <b>Note</b> that this object must also implement
- * {@link FilterableService} and will automatically have a filter property set
- * for the {@code availableControlIds} property to match the
- * {@code powerControlId} value.</dd>
- * 
- * <dt>powerDataSource</dt>
- * <dd>The collection of {@link DatumDataSource} that provide real-time power
- * generation data. If more than one {@code DatumDataSource} is configured the
- * effective generation will be aggregated as a sum total of all of them.</dd>
- * <dt>powerMaximumWatts</dt>
- * 
- * <dd>The maximum watts the configured {@code powerDataSource} is capable of
- * producing. This value is used to calculate the output percentage level passed
- * on {@link InstructionHandler#TOPIC_DEMAND_BALANCE} instructions. For example,
- * if the {@code powerMaximumWatts} is {@bold 1000} and the current consumption
- * is {@bold 800} then the demand balance will be requested as {@bold 80%}.</dd>
- * 
- * <dt>consumptionDataSource</dt>
- * <dd>The collection of {@link DatumDataSource} that provide real-time
- * consumption generation data. If more than one {@code DatumDataSource} is
- * configured the effective demand will be aggregated as a sum total of all of
- * them.</dd>
- * 
- * <dt>balanceStrategy</dt>
- * <dd>The strategy implementation to use to decide how to balance the demand
- * and generation. Defaults to {@link SimpleDemandBalanceStrategy}.</dd>
- * 
- * <dt>instructionHandlers</dt>
- * <dd>A collection of {@link InstructionHandler} instances. When
- * {@link #evaluateBalance()} is called, if a balancing adjustment is necessary
- * then the instruction will be passed to each of these handlers, with the first
- * to process it being assumed the only handler that need respond.</dd>
- * </dl>
- * 
- * <dt>collectPower</dt>
- * <dd>If {@literal true} then collect {@link PowerDatum} from all configured
- * data sources for passing to the {@link DemandBalanceStrategy}. Not all
- * strategies need power information, and it may take too long to collect this
- * information, however, so this can be turned off by setting to
- * {@literal false}. When disabled, <b>-1</b> is passed for the
- * {@code generationWatts} parameter on
- * {@link DemandBalanceStrategy#evaluateBalance(String, int, int, int, int)}.
- * Defaults to {@literal false}.</dd>
- * 
  * @author matt
  * @version 2.0
  */
@@ -553,6 +495,18 @@ public class DemandBalancer implements SettingSpecifierProvider {
 
 	// Accessors
 
+	public String getPowerControlId() {
+		return powerControlId;
+	}
+
+	/**
+	 * Set the ID of the control that should respond to the
+	 * {@link InstructionHandler#TOPIC_DEMAND_BALANCE} instruction to match
+	 * generation levels to consumption levels.
+	 * 
+	 * @param powerControlId
+	 *        the power control ID
+	 */
 	public void setPowerControlId(String powerControlId) {
 		this.powerControlId = powerControlId;
 		if ( this.powerControl != null ) {
@@ -561,26 +515,120 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		}
 	}
 
+	public OptionalFilterableService<NodeControlProvider> getPowerControl() {
+		return powerControl;
+	}
+
+	/**
+	 * Set the {@link NodeControlProvider} that manages the configured
+	 * {@code powerControlId}, and can report back its current status, whose
+	 * value must be provided as an integer percentage of the maximum allowable
+	 * generation level.
+	 * 
+	 * <p>
+	 * <b>Note</b> that this object must also implement
+	 * {@link FilterableService} and will automatically have a filter property
+	 * set for the {@code availableControlIds} property to match the
+	 * {@code powerControlId} value.
+	 * </p>
+	 * 
+	 * @param powerControl
+	 *        the power control
+	 */
 	public void setPowerControl(OptionalFilterableService<NodeControlProvider> powerControl) {
 		powerControl.setPropertyFilter("availableControlIds", this.powerControlId);
 		this.powerControl = powerControl;
 
 	}
 
+	public OptionalFilterableServiceCollection<DatumDataSource> getPowerDataSource() {
+		return powerDataSource;
+	}
+
+	/**
+	 * Set the collection of {@link DatumDataSource} that provide real-time
+	 * power generation data.
+	 * 
+	 * <p>
+	 * If more than one {@code DatumDataSource} is configured the effective
+	 * generation will be aggregated as a sum total of all of them.
+	 * </p>
+	 * 
+	 * @param powerDataSource
+	 *        the power data sources
+	 */
 	public void setPowerDataSource(
 			OptionalFilterableServiceCollection<DatumDataSource> powerDataSource) {
 		this.powerDataSource = powerDataSource;
 	}
 
+	public int getPowerMaximumWatts() {
+		return powerMaximumWatts;
+	}
+
+	/**
+	 * Set the maximum watts the configured {@code powerDataSource} is capable
+	 * of producing.
+	 * 
+	 * <p>
+	 * This value is used to calculate the output percentage level passed on
+	 * {@link InstructionHandler#TOPIC_DEMAND_BALANCE} instructions. For
+	 * example, if the {@code powerMaximumWatts} is {@literal 1000} and the
+	 * current consumption is {@literal 800} then the demand balance will be
+	 * requested as <b>80%</b>.
+	 * </p>
+	 * 
+	 * @param powerMaximumWatts
+	 *        the maximum watts
+	 */
 	public void setPowerMaximumWatts(int powerMaximumWatts) {
 		this.powerMaximumWatts = powerMaximumWatts;
 	}
 
+	/**
+	 * Get the collection of {@link DatumDataSource} that provide real-time
+	 * consumption generation data.
+	 * 
+	 * @return the consumption data sources
+	 */
+	public OptionalFilterableServiceCollection<DatumDataSource> getConsumptionDataSource() {
+		return consumptionDataSource;
+	}
+
+	/**
+	 * Set the collection of {@link DatumDataSource} that provide real-time
+	 * consumption generation data.
+	 * 
+	 * <p>
+	 * If more than one {@code DatumDataSource} is configured the effective
+	 * demand will be aggregated as a sum total of all of them.
+	 * </p>
+	 * 
+	 * @param consumptionDataSource
+	 *        the consumption data sources
+	 */
 	public void setConsumptionDataSource(
 			OptionalFilterableServiceCollection<DatumDataSource> consumptionDataSource) {
 		this.consumptionDataSource = consumptionDataSource;
 	}
 
+	/**
+	 * Get the strategy implementation to use to decide how to balance the
+	 * demand and generation.
+	 * 
+	 * @return the strategy; defaults to {@link SimpleDemandBalanceStrategy}.
+	 */
+	public OptionalFilterableService<DemandBalanceStrategy> getBalanceStrategy() {
+		return balanceStrategy;
+	}
+
+	/**
+	 * Set the strategy implementation to use to decide how to balance the
+	 * demand and generation.
+	 * 
+	 * @param balanceStrategy
+	 *        the strategy to use
+	 */
 	public void setBalanceStrategy(OptionalFilterableService<DemandBalanceStrategy> balanceStrategy) {
 		this.balanceStrategy = balanceStrategy;
 	}
@@ -589,34 +637,25 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		this.messageSource = messageSource;
 	}
 
-	public String getPowerControlId() {
-		return powerControlId;
-	}
-
-	public OptionalFilterableService<NodeControlProvider> getPowerControl() {
-		return powerControl;
-	}
-
-	public OptionalFilterableServiceCollection<DatumDataSource> getPowerDataSource() {
-		return powerDataSource;
-	}
-
-	public int getPowerMaximumWatts() {
-		return powerMaximumWatts;
-	}
-
-	public OptionalFilterableServiceCollection<DatumDataSource> getConsumptionDataSource() {
-		return consumptionDataSource;
-	}
-
-	public OptionalFilterableService<DemandBalanceStrategy> getBalanceStrategy() {
-		return balanceStrategy;
-	}
-
 	public Collection<InstructionHandler> getInstructionHandlers() {
 		return instructionHandlers;
 	}
 
+	/**
+	 * If {@literal true} then collect datum from all configured power data
+	 * sources for passing to the {@link DemandBalanceStrategy}.
+	 * 
+	 * <p>
+	 * Not all strategies need power information, and it may take too long to
+	 * collect this information, however, so this can be turned off by setting
+	 * to {@literal false}. When disabled, <b>-1</b> is passed for the
+	 * {@code generationWatts} parameter on
+	 * {@link DemandBalanceStrategy#evaluateBalance(String, int, int, int, int)}.
+	 * Defaults to {@literal false}.
+	 * </p>
+	 * 
+	 * @return {@literal true} to collect power datum
+	 */
 	public boolean isCollectPower() {
 		return collectPower;
 	}
@@ -657,7 +696,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	 * 
 	 * @param value
 	 *        the comma delimited string
-	 * @see #getAcEnergyTotalPhaseOnlyPropertiesValue()
+	 * @see #getAcEnergyPhaseFilterValue()
 	 */
 	public void getAcEnergyPhaseFilterValue(String value) {
 		Set<String> set = StringUtils.commaDelimitedStringToSet(value);

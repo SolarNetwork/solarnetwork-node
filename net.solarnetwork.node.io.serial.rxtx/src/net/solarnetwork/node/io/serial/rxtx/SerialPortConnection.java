@@ -76,13 +76,10 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 	/**
 	 * Constructor.
 	 * 
-	 * @param serialParams
+	 * @param params
 	 *        the parameters to use with the SerialPort
 	 * @param executor
 	 *        A thread pool to use for I/O tasks with timeouts.
-	 * @param maxWait
-	 *        the maximum number of milliseconds to wait when waiting to read
-	 *        data
 	 */
 	public SerialPortConnection(SerialPortBeanParameters params, ExecutorService executor) {
 		this.serialParams = params;

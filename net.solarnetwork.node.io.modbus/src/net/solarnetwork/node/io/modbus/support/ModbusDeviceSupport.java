@@ -67,7 +67,7 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	public static final int DEFAULT_UNIT_ID = 1;
 
 	/**
-	 * The default value for the {@link ModbusNetwork#getUID()} property filter
+	 * The default value for the {@link ModbusNetwork#getUid()} property filter
 	 * value.
 	 * 
 	 * @since 1.2
@@ -75,8 +75,7 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	public static final String DEFAULT_NETWORK_UID = "Modbus Port";
 
 	/**
-	 * Key for the device manufacture date, as a
-	 * {@link org.joda.time.ReadablePartial}.
+	 * Key for the device manufacture date, as a {@link java.time.LocalDate}.
 	 */
 	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = "Manufacture Date";
 
