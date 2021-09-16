@@ -373,7 +373,7 @@ public class RfidSocketReaderService implements SettingSpecifierProvider, Runnab
 	/**
 	 * The host name of the RFID server to connect to.
 	 * 
-	 * @return The configured host. Defaults to {@link localhost}.
+	 * @return The configured host. Defaults to {@literal localhost}.
 	 */
 	public String getHost() {
 		return host;
