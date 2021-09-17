@@ -34,4 +34,4 @@ CREATE TABLE solarnode.sn_instruction_status (
 );
 
 INSERT INTO solarnode.sn_settings (skey, svalue) 
-VALUES ('solarnode.sn_instruction.version', '2');
+VALUES ('solarnode.sn_instruction.version', '3');
