@@ -195,59 +195,6 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 	}
 
 	/**
-	 * Get the instantaneous difference property name to use.
-	 * 
-	 * <p>
-	 * This will return {@link #getInstantaneousDiffPropertyName()} if not
-	 * empty. Otherwise a name dervied from {@link #readingPropertyName} with
-	 * {@literal Diff} appended will be used.
-	 * </p>
-	 * 
-	 * @return the instantaneous difference property name to use
-	 * @since 1.4 /** Get the "include instantaneous difference" flag.
-	 * 
-	 * @return {@literal true} if an instantaneous difference property should be
-	 *         created
-	 * @since 2.0
-	 */
-	public boolean isIncludeInstantaneousDiffProperty() {
-		return includeInstantaneousDiffProperty;
-	}
-
-	/**
-	 * Set the "include instantaneous difference" flag.
-	 * 
-	 * @param includeInstantaneousDiffProperty
-	 *        {@literal true} if an instantaneous difference property should be
-	 *        created
-	 * @since 2.0
-	 */
-	public void setIncludeInstantaneousDiffProperty(boolean includeInstantaneousDiffProperty) {
-		this.includeInstantaneousDiffProperty = includeInstantaneousDiffProperty;
-	}
-
-	/**
-	 * Get the instantaneous difference property name to use.
-	 * 
-	 * @return the name, or {@literal null} to use a standard name
-	 * @since 2.0
-	 */
-	public String getInstantaneousDiffPropertyName() {
-		return instantaneousDiffPropertyName;
-	}
-
-	/**
-	 * Set the instantaneous difference property name to use.
-	 * 
-	 * @param instantaneousDiffPropertyName
-	 *        the name, or {@literal null} to use a standard name
-	 * @since 2.0
-	 */
-	public void setInstantaneousDiffPropertyName(String instantaneousDiffPropertyName) {
-		this.instantaneousDiffPropertyName = instantaneousDiffPropertyName;
-	}
-
-	/**
 	 * Get the datum property name used for this configuration.
 	 * 
 	 * <p>
@@ -501,6 +448,50 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 	 */
 	public void setTrackOnlyWhenReadingChanges(boolean trackOnlyWhenReadingChanges) {
 		this.trackOnlyWhenReadingChanges = trackOnlyWhenReadingChanges;
+	}
+
+	/**
+	 * Get the "include instantaneous difference" flag.
+	 * 
+	 * @return {@literal true} if an instantaneous difference property should be
+	 *         created
+	 * @since 1.4
+	 */
+	public boolean isIncludeInstantaneousDiffProperty() {
+		return includeInstantaneousDiffProperty;
+	}
+
+	/**
+	 * Set the "include instantaneous difference" flag.
+	 * 
+	 * @param includeInstantaneousDiffProperty
+	 *        {@literal true} if an instantaneous difference property should be
+	 *        created
+	 * @since 1.4
+	 */
+	public void setIncludeInstantaneousDiffProperty(boolean includeInstantaneousDiffProperty) {
+		this.includeInstantaneousDiffProperty = includeInstantaneousDiffProperty;
+	}
+
+	/**
+	 * Get the instantaneous difference property name to use.
+	 * 
+	 * @return the name, or {@literal null} to use a standard name
+	 * @since 1.4
+	 */
+	public String getInstantaneousDiffPropertyName() {
+		return instantaneousDiffPropertyName;
+	}
+
+	/**
+	 * Set the instantaneous difference property name to use.
+	 * 
+	 * @param instantaneousDiffPropertyName
+	 *        the name, or {@literal null} to use a standard name
+	 * @since 1.4
+	 */
+	public void setInstantaneousDiffPropertyName(String instantaneousDiffPropertyName) {
+		this.instantaneousDiffPropertyName = instantaneousDiffPropertyName;
 	}
 
 }
