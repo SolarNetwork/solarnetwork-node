@@ -20,10 +20,9 @@
 		<property name="sticky" value="true"/>
 	</bean>
 	
-	<bean id="generalNodeDatumDao" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
-		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
 		<property name="sticky" value="true"/>
 	</bean>
 
@@ -92,7 +91,7 @@
 					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourcePollJob"/>
 					<property name="jobDataAsMap">
 						<map>
-							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
+							<entry key="datumQueue" value-ref="datumQueue"/>
 							<entry key="datumDataSource">
 								<bean class="net.solarnetwork.node.datum.os.stat.OsStatDatumDataSource">
 									<property name="nodeMetadataService" ref="nodeMetadataService"/>
