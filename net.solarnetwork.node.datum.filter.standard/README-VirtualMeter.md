@@ -48,6 +48,8 @@ Each meter configuration contains the following settings:
 | Decimal Scale         | A maximum number of digits after the decimal point to round to. Set to`0` to round to whole numbers. |
 | Track Only On Change  | When enabled, then only update the previous reading date if the new reading value differs from the previous one. |
 | Rolling Average Count | A count of samples to average the property value from. |
+| Add Instantaneous Difference | When enabled, then include an **output** instantaneous property of the difference between the current and previous reading values. |
+| Instantaneous Difference Property | The derived **output** instantaneous datum property name to use when **Add Instantaneous Difference** is enabled. By default this property will be derived from the **Reading Property** value with `Diff` appended. |
 
 Expressions can be configured to calculate the **output** meter datum property, instead of using the
 default averaging algorithm. See [below](#expressions) for more information. Each expression

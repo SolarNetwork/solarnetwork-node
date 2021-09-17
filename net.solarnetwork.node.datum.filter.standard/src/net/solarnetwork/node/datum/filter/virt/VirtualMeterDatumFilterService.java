@@ -365,6 +365,12 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 								propSamples.averageValue(scale));
 					}
 
+					if ( config.isIncludeInstantaneousDiffProperty() ) {
+						String instDiffPropName = config.instantaneousDiffPropertyName();
+						samples.putInstantaneousSampleValue(instDiffPropName,
+								meterDiff.stripTrailingZeros());
+					}
+
 					if ( config.isTrackOnlyWhenReadingChanges() && newReading.equals(prevReading) ) {
 						log.debug(
 								"Source [{}] virtual meter [{}] has not changed from {}; configured to ignore",
@@ -384,7 +390,7 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 									String.format(DIFF_PARAMETER_TEMPLATE, config.getPropertyKey()),
 									currVal.subtract(prevVal));
 							parameters.put(String.format(DIFF_PARAMETER_TEMPLATE, meterPropName),
-									newReading.subtract(prevReading));
+									meterDiff);
 						} catch ( UnsupportedOperationException e ) {
 							log.debug("Cannot populate input diff parameters because map is read-only");
 						}

@@ -579,7 +579,99 @@ public class VirtualMeterDatumFilterServiceTests {
 					- System.currentTimeMillis();
 			return unit.convert(ms, TimeUnit.MILLISECONDS);
 		}
+	}
 
+	@Test
+	public void filter_instDiff_defaultPropName() {
+		// GIVEN
+		final SimpleDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATTS);
+		vmConfig.setIncludeInstantaneousDiffProperty(true);
+		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
+
+		// no metadata available yet
+		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(null);
+
+		// add metadata
+		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>(CaptureType.ALL);
+		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
+		expectLastCall().times(3);
+
+		// WHEN
+		replayAll();
+		List<DatumSamplesOperations> outputs = new ArrayList<>();
+		List<Instant> dates = new ArrayList<>();
+		final Instant start = LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC);
+		for ( int i = 0; i < 3; i++ ) {
+			Instant ts = start.plusMillis(TimeUnit.SECONDS.toMillis(i));
+			SimpleDatum d = datum.copyWithId(DatumId.nodeId(null, datum.getSourceId(), ts));
+			d.getSamples().putInstantaneousSampleValue(PROP_WATTS, 5 * (i + 1));
+			dates.add(ts);
+			outputs.add(xform.filter(d, d.getSamples(), null));
+		}
+
+		// THEN
+		BigDecimal[] expectedValues = new BigDecimal[] { new BigDecimal("5"), new BigDecimal("10"),
+				new BigDecimal("15") };
+		BigDecimal[] expectedReadings = new BigDecimal[] { null, new BigDecimal("7.5"),
+				new BigDecimal("20") };
+		BigDecimal[] expectedDiffs = new BigDecimal[] { null, new BigDecimal("7.5"),
+				new BigDecimal("12.5") };
+
+		for ( int i = 0; i < 3; i++ ) {
+			DatumSamplesOperations result = outputs.get(i);
+			assertOutputValue("at sample " + i, result, expectedValues[i], expectedReadings[i]);
+			assertThat("Instantaneous diff " + i,
+					result.getSampleBigDecimal(DatumSamplesType.Instantaneous, "wattsSecondsDiff"),
+					is(expectedDiffs[i]));
+		}
+	}
+
+	@Test
+	public void filter_instDiff_custPropName() {
+		// GIVEN
+		final SimpleDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATTS);
+		vmConfig.setIncludeInstantaneousDiffProperty(true);
+		vmConfig.setInstantaneousDiffPropertyName("wattSecondsDelta");
+		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
+
+		// no metadata available yet
+		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(null);
+
+		// add metadata
+		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>(CaptureType.ALL);
+		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
+		expectLastCall().times(3);
+
+		// WHEN
+		replayAll();
+		List<DatumSamplesOperations> outputs = new ArrayList<>();
+		List<Instant> dates = new ArrayList<>();
+		final Instant start = LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC);
+		for ( int i = 0; i < 3; i++ ) {
+			Instant ts = start.plusMillis(TimeUnit.SECONDS.toMillis(i));
+			SimpleDatum d = datum.copyWithId(DatumId.nodeId(null, datum.getSourceId(), ts));
+			d.getSamples().putInstantaneousSampleValue(PROP_WATTS, 5 * (i + 1));
+			dates.add(ts);
+			outputs.add(xform.filter(d, d.getSamples(), null));
+		}
+
+		// THEN
+		BigDecimal[] expectedValues = new BigDecimal[] { new BigDecimal("5"), new BigDecimal("10"),
+				new BigDecimal("15") };
+		BigDecimal[] expectedReadings = new BigDecimal[] { null, new BigDecimal("7.5"),
+				new BigDecimal("20") };
+		BigDecimal[] expectedDiffs = new BigDecimal[] { null, new BigDecimal("7.5"),
+				new BigDecimal("12.5") };
+
+		for ( int i = 0; i < 3; i++ ) {
+			DatumSamplesOperations result = outputs.get(i);
+			assertOutputValue("at sample " + i, result, expectedValues[i], expectedReadings[i]);
+			assertThat("Instantaneous diff " + i,
+					result.getSampleBigDecimal(DatumSamplesType.Instantaneous, "wattSecondsDelta"),
+					is(expectedDiffs[i]));
+		}
 	}
 
 	/**
