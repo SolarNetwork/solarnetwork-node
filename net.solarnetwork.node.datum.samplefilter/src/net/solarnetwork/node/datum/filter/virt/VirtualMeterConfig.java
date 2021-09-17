@@ -47,7 +47,7 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * </p>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  * @since 1.6
  */
 public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInteger> {
@@ -82,6 +82,8 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 	private String readingPropertyName = null;
 	private int virtualMeterScale = DEFAULT_VIRTUAL_METER_SCALE;
 	private boolean trackOnlyWhenReadingChanges;
+	private boolean includeInstantaneousDiffProperty;
+	private String instantaneousDiffPropertyName = null;
 
 	/**
 	 * Constructor.
@@ -142,6 +144,9 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 		results.add(
 				new BasicTextFieldSettingSpecifier(prefix + "rollingAverageCount", String.valueOf(0)));
 
+		results.add(new BasicToggleSettingSpecifier(prefix + "includeInstantaneousDiffProperty", false));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "instantaneousDiffPropertyName", null));
+
 		return results;
 	}
 
@@ -167,6 +172,79 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 			name = getPropertyKey() + tuName;
 		}
 		return name;
+	}
+
+	/**
+	 * Get the instantaneous difference property name to use.
+	 * 
+	 * <p>
+	 * This will return {@link #getInstantaneousDiffPropertyName()} if not
+	 * empty. Otherwise a name dervied from {@link #readingPropertyName} with
+	 * {@literal Diff} appended will be used.
+	 * </p>
+	 * 
+	 * @return the instantaneous difference property name to use
+	 * @since 1.4
+	 */
+	public String instantaneousDiffPropertyName() {
+		String name = getInstantaneousDiffPropertyName();
+		if ( name == null || name.isEmpty() ) {
+			name = readingPropertyName() + "Diff";
+		}
+		return name;
+	}
+
+	/**
+	 * Get the instantaneous difference property name to use.
+	 * 
+	 * <p>
+	 * This will return {@link #getInstantaneousDiffPropertyName()} if not
+	 * empty. Otherwise a name dervied from {@link #readingPropertyName} with
+	 * {@literal Diff} appended will be used.
+	 * </p>
+	 * 
+	 * @return the instantaneous difference property name to use
+	 * @since 1.4 /** Get the "include instantaneous difference" flag.
+	 * 
+	 * @return {@literal true} if an instantaneous difference property should be
+	 *         created
+	 * @since 2.0
+	 */
+	public boolean isIncludeInstantaneousDiffProperty() {
+		return includeInstantaneousDiffProperty;
+	}
+
+	/**
+	 * Set the "include instantaneous difference" flag.
+	 * 
+	 * @param includeInstantaneousDiffProperty
+	 *        {@literal true} if an instantaneous difference property should be
+	 *        created
+	 * @since 2.0
+	 */
+	public void setIncludeInstantaneousDiffProperty(boolean includeInstantaneousDiffProperty) {
+		this.includeInstantaneousDiffProperty = includeInstantaneousDiffProperty;
+	}
+
+	/**
+	 * Get the instantaneous difference property name to use.
+	 * 
+	 * @return the name, or {@literal null} to use a standard name
+	 * @since 2.0
+	 */
+	public String getInstantaneousDiffPropertyName() {
+		return instantaneousDiffPropertyName;
+	}
+
+	/**
+	 * Set the instantaneous difference property name to use.
+	 * 
+	 * @param instantaneousDiffPropertyName
+	 *        the name, or {@literal null} to use a standard name
+	 * @since 2.0
+	 */
+	public void setInstantaneousDiffPropertyName(String instantaneousDiffPropertyName) {
+		this.instantaneousDiffPropertyName = instantaneousDiffPropertyName;
 	}
 
 	/**
@@ -385,7 +463,7 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 	 * 
 	 * @return the scale to round to, or {@literal -1} for no rounding; defaults
 	 *         to {@link #DEFAULT_VIRTUAL_METER_SCALE}
-	 * @since 1.2
+	 * @since 1.4
 	 */
 	public int getVirtualMeterScale() {
 		return virtualMeterScale;
@@ -396,7 +474,7 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 	 * 
 	 * @param virtualMeterScale
 	 *        the scale to set; if less than 0 then no rounding will occur
-	 * @since 1.2
+	 * @since 1.4
 	 */
 	public void setVirtualMeterScale(int virtualMeterScale) {
 		this.virtualMeterScale = virtualMeterScale;
@@ -407,7 +485,7 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 	 * 
 	 * @return {@literal true} to only update the "previously seen" data if the
 	 *         new reading changes from the previous reading
-	 * @since 1.2
+	 * @since 1.4
 	 */
 	public boolean isTrackOnlyWhenReadingChanges() {
 		return trackOnlyWhenReadingChanges;
@@ -419,7 +497,7 @@ public class VirtualMeterConfig extends GeneralDatumSamplePropertyConfig<BigInte
 	 * @param trackOnlyWhenReadingChanges
 	 *        {@literal true} to only update the "previously seen" data if the
 	 *        new reading changes from the previous reading
-	 * @since 1.2
+	 * @since 1.4
 	 */
 	public void setTrackOnlyWhenReadingChanges(boolean trackOnlyWhenReadingChanges) {
 		this.trackOnlyWhenReadingChanges = trackOnlyWhenReadingChanges;

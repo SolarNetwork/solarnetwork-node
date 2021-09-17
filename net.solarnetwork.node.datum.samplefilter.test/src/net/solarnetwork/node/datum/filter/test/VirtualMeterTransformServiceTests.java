@@ -581,6 +581,97 @@ public class VirtualMeterTransformServiceTests {
 
 	}
 
+	@Test
+	public void filter_instDiff_defaultPropName() {
+		// GIVEN
+		final GeneralNodeDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATTS);
+		vmConfig.setIncludeInstantaneousDiffProperty(true);
+		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
+
+		// no metadata available yet
+		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(null);
+
+		// add metadata
+		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>(CaptureType.ALL);
+		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
+		expectLastCall().times(3);
+
+		// WHEN
+		replayAll();
+		List<GeneralDatumSamples> outputs = new ArrayList<>();
+		List<Date> dates = new ArrayList<>();
+		final Date start = new Date(
+				LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC).toEpochMilli());
+		for ( int i = 0; i < 3; i++ ) {
+			datum.setCreated(new Date(start.getTime() + TimeUnit.SECONDS.toMillis(i)));
+			datum.putInstantaneousSampleValue(PROP_WATTS, 5 * (i + 1));
+			dates.add(datum.getCreated());
+			outputs.add(xform.transformSamples(datum, datum.getSamples(), null));
+		}
+
+		// THEN
+		BigDecimal[] expectedValues = new BigDecimal[] { new BigDecimal("5"), new BigDecimal("10"),
+				new BigDecimal("15") };
+		BigDecimal[] expectedReadings = new BigDecimal[] { null, new BigDecimal("7.5"),
+				new BigDecimal("20") };
+		BigDecimal[] expectedDiffs = new BigDecimal[] { null, new BigDecimal("7.5"),
+				new BigDecimal("12.5") };
+
+		for ( int i = 0; i < 3; i++ ) {
+			GeneralDatumSamples result = outputs.get(i);
+			assertOutputValue("at sample " + i, result, expectedValues[i], expectedReadings[i]);
+			assertThat("Instantaneous diff " + i, result.getSampleBigDecimal(
+					GeneralDatumSamplesType.Instantaneous, "wattsSecondsDiff"), is(expectedDiffs[i]));
+		}
+	}
+
+	@Test
+	public void filter_instDiff_custPropName() {
+		// GIVEN
+		final GeneralNodeDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATTS);
+		vmConfig.setIncludeInstantaneousDiffProperty(true);
+		vmConfig.setInstantaneousDiffPropertyName("wattSecondsDelta");
+		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
+
+		// no metadata available yet
+		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(null);
+
+		// add metadata
+		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>(CaptureType.ALL);
+		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
+		expectLastCall().times(3);
+
+		// WHEN
+		replayAll();
+		List<GeneralDatumSamples> outputs = new ArrayList<>();
+		List<Date> dates = new ArrayList<>();
+		final Date start = new Date(
+				LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC).toEpochMilli());
+		for ( int i = 0; i < 3; i++ ) {
+			datum.setCreated(new Date(start.getTime() + TimeUnit.SECONDS.toMillis(i)));
+			datum.putInstantaneousSampleValue(PROP_WATTS, 5 * (i + 1));
+			dates.add(datum.getCreated());
+			outputs.add(xform.transformSamples(datum, datum.getSamples(), null));
+		}
+
+		// THEN
+		BigDecimal[] expectedValues = new BigDecimal[] { new BigDecimal("5"), new BigDecimal("10"),
+				new BigDecimal("15") };
+		BigDecimal[] expectedReadings = new BigDecimal[] { null, new BigDecimal("7.5"),
+				new BigDecimal("20") };
+		BigDecimal[] expectedDiffs = new BigDecimal[] { null, new BigDecimal("7.5"),
+				new BigDecimal("12.5") };
+
+		for ( int i = 0; i < 3; i++ ) {
+			GeneralDatumSamples result = outputs.get(i);
+			assertOutputValue("at sample " + i, result, expectedValues[i], expectedReadings[i]);
+			assertThat("Instantaneous diff " + i, result.getSampleBigDecimal(
+					GeneralDatumSamplesType.Instantaneous, "wattSecondsDelta"), is(expectedDiffs[i]));
+		}
+	}
+
 	/**
 	 * This test explores using a DelayQueue to order processing of concurrent
 	 * datum by time.

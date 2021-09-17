@@ -363,6 +363,12 @@ public class VirtualMeterTransformService extends SamplesTransformerSupport
 								propSamples.averageValue(scale));
 					}
 
+					if ( config.isIncludeInstantaneousDiffProperty() ) {
+						String instDiffPropName = config.instantaneousDiffPropertyName();
+						samples.putInstantaneousSampleValue(instDiffPropName,
+								meterDiff.stripTrailingZeros());
+					}
+
 					if ( config.isTrackOnlyWhenReadingChanges() && newReading.equals(prevReading) ) {
 						log.debug(
 								"Source [{}] virtual meter [{}] has not changed from {}; configured to ignore",
