@@ -42,11 +42,7 @@ import net.solarnetwork.node.hw.sunspec.inverter.InverterMpptExtensionModelAcces
 import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
 
 /**
- * FIXME
- * 
- * <p>
- * TODO
- * </p>
+ * Test cases for {@link InverterMpptExtensionModelAccessor}.
  * 
  * @author matt
  * @version 1.0

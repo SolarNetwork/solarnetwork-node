@@ -26,11 +26,7 @@ import net.wimpi.modbus.msg.ModbusRequest;
 import net.wimpi.modbus.msg.ModbusResponse;
 
 /**
- * FIXME
- * 
- * <p>
- * TODO
- * </p>
+ * Utilities for the Modbus server.
  * 
  * @author matt
  * @version 1.0
