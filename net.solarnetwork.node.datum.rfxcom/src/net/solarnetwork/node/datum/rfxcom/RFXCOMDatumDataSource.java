@@ -164,7 +164,6 @@ public class RFXCOMDatumDataSource extends DatumDataSourceSupport
 			return;
 		}
 		final String sourceId = (datum.getSourceId() == null ? "" : datum.getSourceId());
-		// FIXME: if ( sourceIdFilter != null && !sourceIdFilter.contains(sourceId) ) {
 		if ( sourceId.isEmpty() ) {
 			return;
 		}
