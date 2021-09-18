@@ -115,20 +115,20 @@ public class WattsOnDatumDataSource extends ModbusDataDatumDataSourceSupport<Wat
 
 	@Override
 	public AcEnergyDatum readCurrentDatum() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
 		try {
 			final WattsOnData currSample = getCurrentSample();
 			if ( currSample == null ) {
 				return null;
 			}
-			WattsOnDatum d = new WattsOnDatum(currSample, resolvePlaceholders(sourceId), AcPhase.Total,
-					this.backwards);
+			WattsOnDatum d = new WattsOnDatum(currSample, sourceId, AcPhase.Total, this.backwards);
 			if ( this.includePhaseMeasurements ) {
 				d.populatePhaseMeasurementProperties(currSample);
 			}
 			return d;
 		} catch ( IOException e ) {
-			log.error("Communication problem reading source {} from WattsOn device {}: {}",
-					this.sourceId, modbusDeviceName(), e.getMessage());
+			log.error("Communication problem reading source {} from WattsOn device {}: {}", sourceId,
+					modbusDeviceName(), e.getMessage());
 			return null;
 		}
 	}

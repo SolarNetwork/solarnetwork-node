@@ -98,14 +98,15 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 
 	@Override
 	public AcDcEnergyDatum readCurrentDatum() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
 		try {
 			final KTLCTData currSample = getCurrentSample();
 			if ( currSample == null ) {
 				return null;
 			}
-			return new KTLDatum(currSample, resolvePlaceholders(sourceId));
+			return new KTLDatum(currSample, sourceId);
 		} catch ( IOException e ) {
-			log.error("Communication problem reading source {} from KTL device {}: {}", this.sourceId,
+			log.error("Communication problem reading source {} from KTL device {}: {}", sourceId,
 					modbusDeviceName(), e.getMessage());
 			return null;
 		}

@@ -89,15 +89,16 @@ public class PowerGatePlusDatumDataSource extends ModbusDataDatumDataSourceSuppo
 
 	@Override
 	public AcDcEnergyDatum readCurrentDatum() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
 		try {
 			final PowerGatePlusData currSample = getCurrentSample();
 			if ( currSample == null ) {
 				return null;
 			}
-			return new PowerGateDatum(currSample, resolvePlaceholders(sourceId));
+			return new PowerGateDatum(currSample, sourceId);
 		} catch ( IOException e ) {
 			log.error("Communication problem reading source {} from PowerGate Plus device {}: {}",
-					this.sourceId, modbusDeviceName(), e.getMessage());
+					sourceId, modbusDeviceName(), e.getMessage());
 			return null;
 		}
 	}

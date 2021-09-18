@@ -106,7 +106,7 @@ public class DTSConsumptionDatumDataSource extends ModbusDeviceDatumDataSourceSu
 			});
 			return datum;
 		} catch ( IOException e ) {
-			log.error("Error communicating with meter: {}", e.getMessage());
+			log.error("Error communicating with DTS meter {}: {}", modbusDeviceName(), e.getMessage());
 			throw new RuntimeException(e);
 		}
 	}

@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.sunspec.inverter;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -95,7 +96,15 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 
 	@Override
 	public AcDcEnergyDatum readCurrentDatum() {
-		final ModelData currSample = getCurrentSample();
+		final String sourceId = resolvePlaceholders(getSourceId());
+		final ModelData currSample;
+		try {
+			currSample = getCurrentSample();
+		} catch ( IOException e ) {
+			log.error("Communication problem reading source {} from SunSpec inverter {}: {}", sourceId,
+					modbusDeviceName(), e.getMessage());
+			return null;
+		}
 		if ( currSample == null ) {
 			return null;
 		}
@@ -115,9 +124,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 				// ignore this
 			}
 		}
-		SunSpecInverterDatum d = new SunSpecInverterDatum(data, resolvePlaceholders(getSourceId()),
-				AcPhase.Total);
-
+		SunSpecInverterDatum d = new SunSpecInverterDatum(data, sourceId, AcPhase.Total);
 		Set<Integer> secondaryModelIds = getSecondaryModelIds();
 		if ( secondaryModelIds != null
 				&& secondaryModelIds.contains(InverterModelId.MultipleMpptInverterExtension.getId()) ) {
@@ -126,7 +133,6 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 					.findTypedModel(InverterMpptExtensionModelAccessor.class);
 			d.populateDcModulesProperties(mppt);
 		}
-
 		return d;
 	}
 

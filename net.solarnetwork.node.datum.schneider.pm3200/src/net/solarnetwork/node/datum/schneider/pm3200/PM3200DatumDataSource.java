@@ -154,7 +154,8 @@ public class PM3200DatumDataSource extends ModbusDataDatumDataSourceSupport<PM32
 		try {
 			currSample = getCurrentSample();
 		} catch ( IOException e ) {
-			log.error("Communication problem reading from PM3200 device: {}", e.getMessage());
+			log.error("Communication problem reading from PM3200 device {}: {}", modbusDeviceName(),
+					e.getMessage());
 			return results;
 		}
 		if ( currSample == null ) {

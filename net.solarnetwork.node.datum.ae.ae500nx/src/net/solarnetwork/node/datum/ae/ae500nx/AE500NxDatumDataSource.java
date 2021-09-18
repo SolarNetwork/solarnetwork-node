@@ -101,15 +101,16 @@ public class AE500NxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE5
 
 	@Override
 	public AcDcEnergyDatum readCurrentDatum() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
 		try {
 			final AE500NxData currSample = getCurrentSample();
 			if ( currSample == null ) {
 				return null;
 			}
-			return new AE500NxDatum(currSample, resolvePlaceholders(sourceId));
+			return new AE500NxDatum(currSample, sourceId);
 		} catch ( IOException e ) {
-			log.error("Communication problem reading source {} from AE 500NX device {}: {}",
-					this.sourceId, modbusDeviceName(), e.getMessage());
+			log.error("Communication problem reading source {} from AE 500NX device {}: {}", sourceId,
+					modbusDeviceName(), e.getMessage());
 			return null;
 		}
 	}

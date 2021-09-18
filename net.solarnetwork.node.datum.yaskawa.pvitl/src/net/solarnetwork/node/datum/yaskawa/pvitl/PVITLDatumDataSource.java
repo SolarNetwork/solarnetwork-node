@@ -86,14 +86,15 @@ public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITL
 
 	@Override
 	public PVITLDatum readCurrentDatum() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
 		try {
 			final PVITLData currSample = getCurrentSample();
 			if ( currSample == null ) {
 				return null;
 			}
-			return new PVITLDatum(currSample, resolvePlaceholders(sourceId));
+			return new PVITLDatum(currSample, sourceId);
 		} catch ( IOException e ) {
-			log.error("Communication problem reading source {} from PVI-TL device {}: {}", this.sourceId,
+			log.error("Communication problem reading source {} from PVI-TL device {}: {}", sourceId,
 					modbusDeviceName(), e.getMessage());
 			return null;
 		}

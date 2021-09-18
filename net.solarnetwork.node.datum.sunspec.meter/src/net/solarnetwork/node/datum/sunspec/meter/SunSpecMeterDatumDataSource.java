@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.sunspec.meter;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -86,13 +87,20 @@ public class SunSpecMeterDatumDataSource extends SunSpecDeviceDatumDataSourceSup
 
 	@Override
 	public AcDcEnergyDatum readCurrentDatum() {
-		final ModelData currSample = getCurrentSample();
+		final String sourceId = resolvePlaceholders(getSourceId());
+		final ModelData currSample;
+		try {
+			currSample = getCurrentSample();
+		} catch ( IOException e ) {
+			log.error("Communication problem reading source {} from SunSpec meter {}: {}", sourceId,
+					modbusDeviceName(), e.getMessage());
+			return null;
+		}
 		if ( currSample == null ) {
 			return null;
 		}
 		MeterModelAccessor data = currSample.findTypedModel(MeterModelAccessor.class);
-		SunSpecMeterDatum d = new SunSpecMeterDatum(data, resolvePlaceholders(getSourceId()),
-				AcPhase.Total, this.backwards);
+		SunSpecMeterDatum d = new SunSpecMeterDatum(data, sourceId, AcPhase.Total, this.backwards);
 		if ( this.includePhaseMeasurements ) {
 			d.populatePhaseMeasurementProperties(data);
 		}

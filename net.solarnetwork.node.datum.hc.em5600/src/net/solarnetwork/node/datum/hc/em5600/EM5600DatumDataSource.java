@@ -130,13 +130,13 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 
 	@Override
 	public AcEnergyDatum readCurrentDatum() {
-		final String sourceId = getSourceMapping().get(AcPhase.Total);
+		final String sourceId = resolvePlaceholders(getSourceMapping().get(AcPhase.Total));
 		try {
 			final EM5600Data currSample = getCurrentSample();
 			if ( currSample == null ) {
 				return null;
 			}
-			return new EM5600Datum(currSample, resolvePlaceholders(sourceId), AcPhase.Total, backwards);
+			return new EM5600Datum(currSample, sourceId, AcPhase.Total, backwards);
 		} catch ( IOException e ) {
 			log.error("Communication problem reading source {} from EM5600 device {}: {}", sourceId,
 					modbusDeviceName(), e.getMessage());
@@ -156,7 +156,8 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 		try {
 			currSample = getCurrentSample();
 		} catch ( IOException e ) {
-			log.error("Communication problem reading from PM3200 device: {}", e.getMessage());
+			log.error("Communication problem reading from EM5600 device {}: {}", modbusDeviceName(),
+					e.getMessage());
 			return results;
 		}
 		if ( currSample == null ) {

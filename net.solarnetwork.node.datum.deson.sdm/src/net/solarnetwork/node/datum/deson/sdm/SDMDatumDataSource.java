@@ -127,7 +127,7 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 			}
 			return new SDMDatum(currSample, resolvePlaceholders(sourceId), AcPhase.Total, backwards);
 		} catch ( IOException e ) {
-			log.error("Communication problem reading source {} from PM3200 device {}: {}", sourceId,
+			log.error("Communication problem reading source {} from SDM device {}: {}", sourceId,
 					modbusDeviceName(), e.getMessage());
 			return null;
 		}
@@ -145,7 +145,8 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 		try {
 			currSample = getCurrentSample();
 		} catch ( IOException e ) {
-			log.error("Communication problem reading from SDM device: {}", e.getMessage());
+			log.error("Communication problem reading from SDM device {}: {}", modbusDeviceName(),
+					e.getMessage());
 			return results;
 		}
 		if ( currSample == null ) {

@@ -97,15 +97,16 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 
 	@Override
 	public AcDcEnergyDatum readCurrentDatum() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
 		try {
 			final AE250TxData currSample = getCurrentSample();
 			if ( currSample == null ) {
 				return null;
 			}
-			return new AE250TxDatum(currSample, resolvePlaceholders(sourceId));
+			return new AE250TxDatum(currSample, sourceId);
 		} catch ( IOException e ) {
-			log.error("Communication problem reading source {} from AE 250TX device {}: {}",
-					this.sourceId, modbusDeviceName(), e.getMessage());
+			log.error("Communication problem reading source {} from AE 250TX device {}: {}", sourceId,
+					modbusDeviceName(), e.getMessage());
 			return null;
 		}
 	}

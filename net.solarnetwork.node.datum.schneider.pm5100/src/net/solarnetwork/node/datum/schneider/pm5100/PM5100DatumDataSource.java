@@ -101,8 +101,8 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 				}
 				log.debug("Read PM5100 data: {}", currSample);
 			} catch ( IOException e ) {
-				throw new RuntimeException(
-						"Communication problem reading from PM5100 device " + modbusDeviceName(), e);
+				log.error("Communication problem reading from PM5100 device {}: {}", modbusDeviceName(),
+						e.getMessage());
 			}
 		} else {
 			currSample = getSample().getSnapshot();

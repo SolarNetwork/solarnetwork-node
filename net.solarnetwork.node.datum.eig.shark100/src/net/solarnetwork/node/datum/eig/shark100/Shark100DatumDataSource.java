@@ -93,20 +93,20 @@ public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Sh
 
 	@Override
 	public AcEnergyDatum readCurrentDatum() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
 		try {
 			final Shark100Data currSample = getCurrentSample();
 			if ( currSample == null ) {
 				return null;
 			}
-			Shark100Datum d = new Shark100Datum(currSample, resolvePlaceholders(sourceId), AcPhase.Total,
-					backwards);
+			Shark100Datum d = new Shark100Datum(currSample, sourceId, AcPhase.Total, backwards);
 			if ( this.includePhaseMeasurements ) {
 				d.populatePhaseMeasurementProperties(currSample);
 			}
 			return d;
 		} catch ( IOException e ) {
-			log.error("Communication problem reading source {} from Shark 100 device {}: {}",
-					this.sourceId, modbusDeviceName(), e.getMessage());
+			log.error("Communication problem reading source {} from Shark 100 device {}: {}", sourceId,
+					modbusDeviceName(), e.getMessage());
 			return null;
 		}
 	}

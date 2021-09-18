@@ -105,51 +105,47 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 * </p>
 	 * 
 	 * @return the model data
+	 * @throws IOException
+	 *         if a communication error occurs
 	 */
-	protected ModelData getCurrentSample() {
+	protected ModelData getCurrentSample() throws IOException {
 		ModelData currSample = getSample();
 		if ( isCachedSampleExpired(currSample) ) {
-			try {
-				final ModelData data = currSample;
-				currSample = performAction(new ModbusConnectionAction<ModelData>() {
+			final ModelData data = currSample;
+			currSample = performAction(new ModbusConnectionAction<ModelData>() {
 
-					@Override
-					public ModelData doWithConnection(ModbusConnection connection) throws IOException {
-						if ( data == null ) {
-							ModelData result = modelData(connection);
-							if ( result != null ) {
-								sample.set(result);
-							}
-							return result;
+				@Override
+				public ModelData doWithConnection(ModbusConnection connection) throws IOException {
+					if ( data == null ) {
+						ModelData result = modelData(connection);
+						if ( result != null ) {
+							sample.set(result);
 						}
-						final ModelAccessor accessor = data
-								.findTypedModel(getPrimaryModelAccessorType());
-						final List<ModelAccessor> secondaryAccessors = getSecondaryModelAccessors(data);
-						List<ModelAccessor> accessors = null;
-						if ( secondaryAccessors == null || secondaryAccessors.isEmpty() ) {
-							accessors = (accessor != null ? Collections.singletonList(accessor) : null);
-						} else {
-							accessors = new ArrayList<>(secondaryAccessors.size() + 1);
-							if ( accessor != null ) {
-								accessors.add(accessor);
-							}
-							accessors.addAll(secondaryAccessors);
-						}
-						if ( accessors != null && !accessors.isEmpty() ) {
-							data.readModelData(connection, accessors);
-						}
-						return data;
+						return result;
 					}
-
-				});
-				if ( log.isTraceEnabled() && currSample != null ) {
-					log.trace(currSample.dataDebugString());
+					final ModelAccessor accessor = data.findTypedModel(getPrimaryModelAccessorType());
+					final List<ModelAccessor> secondaryAccessors = getSecondaryModelAccessors(data);
+					List<ModelAccessor> accessors = null;
+					if ( secondaryAccessors == null || secondaryAccessors.isEmpty() ) {
+						accessors = (accessor != null ? Collections.singletonList(accessor) : null);
+					} else {
+						accessors = new ArrayList<>(secondaryAccessors.size() + 1);
+						if ( accessor != null ) {
+							accessors.add(accessor);
+						}
+						accessors.addAll(secondaryAccessors);
+					}
+					if ( accessors != null && !accessors.isEmpty() ) {
+						data.readModelData(connection, accessors);
+					}
+					return data;
 				}
-				log.debug("Read SunSpec inverter data: {}", currSample);
-			} catch ( IOException e ) {
-				throw new RuntimeException("Communication problem reading source " + this.sourceId
-						+ " from SunSpec inverter device " + modbusDeviceName(), e);
+
+			});
+			if ( log.isTraceEnabled() && currSample != null ) {
+				log.trace(currSample.dataDebugString());
 			}
+			log.debug("Read SunSpec inverter data: {}", currSample);
 		}
 		return (currSample != null ? currSample.getSnapshot() : null);
 	}
