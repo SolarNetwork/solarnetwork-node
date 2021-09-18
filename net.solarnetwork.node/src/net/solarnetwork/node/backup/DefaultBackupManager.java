@@ -53,7 +53,6 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.service.DynamicServiceUnavailableException;
-import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicRadioGroupSettingSpecifier;
 import net.solarnetwork.support.PrefixedMessageSource;
@@ -490,18 +489,6 @@ public class DefaultBackupManager implements BackupManager {
 			}
 		}
 		return null;
-	}
-
-	/**
-	 * Set the tracker for the desired backup service to use.
-	 * 
-	 * @param backupServiceTracker
-	 *        the tracker to use
-	 * @deprecated use {@link #setBackupServices(Collection)}
-	 */
-	@Deprecated
-	public void setBackupServiceTracker(OptionalService<BackupService> backupServiceTracker) {
-		// ignore this
 	}
 
 	/**

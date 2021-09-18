@@ -409,7 +409,7 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 	 * loaded and executed. The resources are assumed to have a file name patter
 	 * like <code><em>[tablesUpdatePrefix]</em>-update-<em>[#]</em>.sql</code>
 	 * where <em>[tablesUpdatePrefix]</em> is the
-	 * {@link #getTablesUpdatePrefix()} value and <em>[#]</em> is the version
+	 * {@link #getSqlResourcePrefix()} value and <em>[#]</em> is the version
 	 * number, starting at the currently found table version + 1 up through and
 	 * including {@link #getTablesVersion()}. If no version value is found when
 	 * querying, the current version is assumed to be {@code 0}.
@@ -595,25 +595,6 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 
 	public void setSqlGetTablesVersion(String sqlGetTablesVersion) {
 		this.sqlGetTablesVersion = sqlGetTablesVersion;
-	}
-
-	/**
-	 * @return the tablesUpdatePrefix
-	 * @deprecated use {@link #getSqlResourcePrefix()}
-	 */
-	@Deprecated
-	public String getTablesUpdatePrefix() {
-		return getSqlResourcePrefix();
-	}
-
-	/**
-	 * @param tablesUpdatePrefix
-	 *        the tablesUpdatePrefix to set
-	 * @deprecated use {@link #setSqlResourcePrefix(String)}
-	 */
-	@Deprecated
-	public void setTablesUpdatePrefix(String tablesUpdatePrefix) {
-		setSqlResourcePrefix(tablesUpdatePrefix);
 	}
 
 	public String getSqlResourcePrefix() {

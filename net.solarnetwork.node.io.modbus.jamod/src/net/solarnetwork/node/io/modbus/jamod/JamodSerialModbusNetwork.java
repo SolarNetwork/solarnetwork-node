@@ -24,7 +24,6 @@ package net.solarnetwork.node.io.modbus.jamod;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork;
@@ -137,29 +136,6 @@ public class JamodSerialModbusNetwork extends AbstractModbusNetwork implements S
 
 	public void setSerialParams(SerialParametersBean serialParams) {
 		this.serialParams = serialParams;
-	}
-
-	/**
-	 * Get the timeout unit.
-	 * 
-	 * @return the unit
-	 * @deprecated use {@link #getTimeoutUnit()}
-	 */
-	@Deprecated
-	public TimeUnit getUnit() {
-		return getTimeoutUnit();
-	}
-
-	/**
-	 * SEt the timeout unit.
-	 * 
-	 * @param unit
-	 *        the unit to set
-	 * @deprecated use {@link #setTimeoutUnit(TimeUnit)}
-	 */
-	@Deprecated
-	public void setUnit(TimeUnit unit) {
-		setTimeoutUnit(unit);
 	}
 
 }

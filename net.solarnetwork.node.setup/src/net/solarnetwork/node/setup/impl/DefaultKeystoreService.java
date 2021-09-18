@@ -620,18 +620,6 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 		this.keySize = keySize;
 	}
 
-	/**
-	 * Set the manual keystore password to use.
-	 * 
-	 * @param manualKeyStorePassword
-	 *        the password to use
-	 * @deprecated use {@link #setKeyStorePassword(String)}
-	 */
-	@Deprecated
-	public void setManualKeyStorePassword(String manualKeyStorePassword) {
-		setKeyStorePassword(manualKeyStorePassword);
-	}
-
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}

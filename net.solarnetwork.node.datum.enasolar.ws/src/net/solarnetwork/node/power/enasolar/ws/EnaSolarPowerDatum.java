@@ -106,9 +106,8 @@ public class EnaSolarPowerDatum extends SimpleAcDcEnergyDatum {
 	 * 
 	 * @param kWattHoursToday
 	 *        the kWh reading to set
-	 * @deprecated use {@link #setDecaWattHoursTotal(String)}
+	 * @see #setDecaWattHoursTotal(String)
 	 */
-	@Deprecated
 	public void setKWattHoursToday(Double kWattHoursToday) {
 		usingDailyResettingTotal = true;
 		if ( kWattHoursToday != null ) {
@@ -125,9 +124,8 @@ public class EnaSolarPowerDatum extends SimpleAcDcEnergyDatum {
 	 * 
 	 * @param power
 	 *        the kW power reading
-	 * @deprecated use {@link #setOutputPower(Float)}
+	 * @see #setOutputPower(Float)
 	 */
-	@Deprecated
 	public void setPvPower(Float power) {
 		Integer watts = (power == null ? null : (int) Math.round(power.floatValue() * 1000F));
 		setWatts(watts);

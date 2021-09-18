@@ -79,13 +79,13 @@ import net.solarnetwork.node.service.PlatformService;
 import net.solarnetwork.node.service.PlatformService.PlatformState;
 import net.solarnetwork.node.service.PlatformService.PlatformTask;
 import net.solarnetwork.node.service.PlatformService.PlatformTaskStatusHandler;
-import net.solarnetwork.service.RemoteServiceException;
 import net.solarnetwork.node.service.SystemService;
 import net.solarnetwork.node.setup.SetupException;
 import net.solarnetwork.node.setup.SetupSettings;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.OptionalServiceCollection;
 import net.solarnetwork.service.ProgressListener;
+import net.solarnetwork.service.RemoteServiceException;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -1038,18 +1038,6 @@ public class S3SetupManager implements InstructionHandler {
 	 */
 	public void setDestinationPath(String destinationPath) {
 		this.destinationPath = destinationPath;
-	}
-
-	/**
-	 * No-op method, for backwards compatibility.
-	 * 
-	 * @param tarCommand
-	 *        the tar command to use
-	 * @deprecated since 1.2
-	 */
-	@Deprecated
-	public void setTarCommand(List<String> tarCommand) {
-		// ignored
 	}
 
 	/**
