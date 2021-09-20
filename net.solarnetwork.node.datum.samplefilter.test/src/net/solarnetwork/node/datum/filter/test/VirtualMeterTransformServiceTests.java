@@ -24,6 +24,7 @@ package net.solarnetwork.node.datum.filter.test;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
+import static net.solarnetwork.util.NumberUtils.decimalArray;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
@@ -94,6 +95,7 @@ public class VirtualMeterTransformServiceTests {
 	private static final String PROP_WATTS = "watts";
 	private static final String PROP_WATT_HOURS = "wattHours";
 	private static final String PROP_WATT_HOURS_SECONDS = "wattHoursSeconds";
+	private static final String PROP_WATT_HOURS_SECONDS_DIFF = "wattHoursSecondsDiff";
 	private static final String PROP_COST = "cost";
 	private static final String PROP_WATTS_SECONDS = "wattsSeconds";
 	private static final String TEST_UID = "test";
@@ -153,7 +155,7 @@ public class VirtualMeterTransformServiceTests {
 					result.getAccumulatingSampleDouble(readingPropName), nullValue());
 		} else {
 			assertThat("Meter value approx " + msg, result.getAccumulatingSampleDouble(readingPropName),
-					closeTo(expectedDerived.doubleValue(), 1.0));
+					closeTo(expectedDerived.doubleValue(), 0.1));
 		}
 
 	}
@@ -768,6 +770,63 @@ public class VirtualMeterTransformServiceTests {
 			BigDecimal expectedReading = (i == 0 ? null : new BigDecimal(i - 1));
 			assertOutputValue("at sample " + i, result, PROP_WATT_HOURS, PROP_WATT_HOURS_SECONDS,
 					expectedValue, expectedReading);
+		}
+	}
+
+	@Test
+	public void inputAccumulating_ignoreNegative_withDelta() {
+		// GIVEN
+		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATT_HOURS);
+		vmConfig.setPropertyType(GeneralDatumSamplesType.Accumulating);
+		vmConfig.setIncludeInstantaneousDiffProperty(true);
+		vmConfig.setInstantaneousDiffPropertyName(PROP_WATT_HOURS_SECONDS_DIFF);
+		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
+
+		ExpressionService exprService = new SpelExpressionService();
+		VirtualMeterExpressionConfig exprConfig = new VirtualMeterExpressionConfig(
+				PROP_WATT_HOURS_SECONDS, GeneralDatumSamplesType.Accumulating,
+				"inputDiff > 0 ? prevReading + inputDiff : prevReading", exprService.getUid());
+		xform.setExpressionConfigs(new VirtualMeterExpressionConfig[] { exprConfig });
+		xform.setExpressionServices(new StaticOptionalServiceCollection<>(singleton(exprService)));
+
+		// start with given metadata
+		GeneralDatumMetadata meta = new GeneralDatumMetadata();
+		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(meta).anyTimes();
+
+		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>(CaptureType.ALL);
+		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
+		expectLastCall().times(5);
+
+		// WHEN
+		replayAll();
+		final GeneralNodeDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		datum.getSamples().putInstantaneousSampleValue(PROP_WATTS, null);
+		List<GeneralDatumSamples> outputs = new ArrayList<>();
+		final Date start = new Date(
+				LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC).toEpochMilli());
+		for ( int i = 0; i < 3; i++ ) {
+			datum.setCreated(new Date(start.getTime() + TimeUnit.SECONDS.toMillis(i)));
+			datum.getSamples().putAccumulatingSampleValue(PROP_WATT_HOURS, i);
+			outputs.add(xform.transformSamples(datum, datum.getSamples(), null));
+		}
+		// now "reset" input accumulating data back to 0
+		for ( int i = 0; i < 2; i++ ) {
+			datum.setCreated(new Date(start.getTime() + TimeUnit.SECONDS.toMillis(i + 3)));
+			datum.getSamples().putAccumulatingSampleValue(PROP_WATT_HOURS, i * 5);
+			outputs.add(xform.transformSamples(datum, datum.getSamples(), null));
+		}
+
+		// THEN
+		BigDecimal[] expectedValues = decimalArray("0", "1", "2", "0", "5");
+		BigDecimal[] expectedReadings = decimalArray(null, "1", "2", "2", "7");
+		Integer[] expectedDeltas = new Integer[] { null, 1, 1, 0, 5 };
+		for ( int i = 0; i < 3; i++ ) {
+			GeneralDatumSamples result = outputs.get(i);
+			assertOutputValue("at sample " + i, result, PROP_WATT_HOURS, PROP_WATT_HOURS_SECONDS,
+					expectedValues[i], expectedReadings[i]);
+			assertThat("Delta prop " + PROP_WATT_HOURS_SECONDS_DIFF + " " + i,
+					result.getInstantaneousSampleInteger(PROP_WATT_HOURS_SECONDS_DIFF),
+					is(expectedDeltas[i]));
 		}
 	}
 
