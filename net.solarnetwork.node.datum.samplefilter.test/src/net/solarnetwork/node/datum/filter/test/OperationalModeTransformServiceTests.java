@@ -408,4 +408,30 @@ public class OperationalModeTransformServiceTests {
 		// THEN
 	}
 
+	@Test
+	public void notOrElse_rhsFalse2() {
+		// GIVEN
+		OperationalModeTransformConfig config = new OperationalModeTransformConfig();
+		config.setExpressionServiceId(exprService.getUid());
+		config.setOperationalMode(OP_MODE);
+		config.setExpression(
+				"!has('vehStat_s') || (has('vchgDcPow_i') && vehStat_s == 1 && vchgDcPow_i <= 100)");
+		xform.setExpressionConfigs(new OperationalModeTransformConfig[] { config });
+
+		expect(opModesService.disableOperationalModes(singleton(OP_MODE))).andReturn(emptySet());
+
+		// WHEN
+		replayAll();
+		GeneralNodeDatum d = createTestGeneralNodeDatum(SOURCE_ID);
+		GeneralDatumSamples s = d.getSamples();
+
+		// vehStat_s == 1, vchgDcPow_i == 101, so LHS is false and RHS is false
+		s.putStatusSampleValue("vehStat_s", 1);
+		s.putInstantaneousSampleValue("vchgDcPow_i", 101);
+
+		xform.transformSamples(d, s, null);
+
+		// THEN
+	}
+
 }
