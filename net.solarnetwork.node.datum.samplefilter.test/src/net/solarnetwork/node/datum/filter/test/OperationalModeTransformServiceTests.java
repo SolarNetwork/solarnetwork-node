@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.filter.test;
 
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
@@ -326,6 +327,85 @@ public class OperationalModeTransformServiceTests {
 		assertThat("Result changed to set tag", result, is(not(sameInstance(d.getSamples()))));
 		assertThat("Result instantaneous set", result.getInstantaneousSampleInteger("FooMode"),
 				is(equalTo(0)));
+	}
+
+	@Test
+	public void notOrElse_lhsTrue() {
+		// GIVEN
+		OperationalModeTransformConfig config = new OperationalModeTransformConfig();
+		config.setExpressionServiceId(exprService.getUid());
+		config.setOperationalMode(OP_MODE);
+		config.setExpression(
+				"!has('vehStat_s') || (has('vchgDcPow_i') && vehStat_s == 1 && vchgDcPow_i <= 100)");
+		xform.setExpressionConfigs(new OperationalModeTransformConfig[] { config });
+
+		expect(opModesService.enableOperationalModes(singleton(OP_MODE), null))
+				.andReturn(singleton(OP_MODE));
+
+		// WHEN
+		replayAll();
+		GeneralNodeDatum d = createTestGeneralNodeDatum(SOURCE_ID);
+		GeneralDatumSamples s = d.getSamples();
+
+		// no vehStat_s property, so LHS is true
+		s.putInstantaneousSampleValue("vchgDcPow_i", 1000);
+
+		xform.transformSamples(d, s, null);
+
+		// THEN
+	}
+
+	@Test
+	public void notOrElse_rhsTrue() {
+		// GIVEN
+		OperationalModeTransformConfig config = new OperationalModeTransformConfig();
+		config.setExpressionServiceId(exprService.getUid());
+		config.setOperationalMode(OP_MODE);
+		config.setExpression(
+				"!has('vehStat_s') || (has('vchgDcPow_i') && vehStat_s == 1 && vchgDcPow_i <= 100)");
+		xform.setExpressionConfigs(new OperationalModeTransformConfig[] { config });
+
+		expect(opModesService.enableOperationalModes(singleton(OP_MODE), null))
+				.andReturn(singleton(OP_MODE));
+
+		// WHEN
+		replayAll();
+		GeneralNodeDatum d = createTestGeneralNodeDatum(SOURCE_ID);
+		GeneralDatumSamples s = d.getSamples();
+
+		// vehStat_s == 1.0, vchgDcPow_i == 0, so RHS is true
+		s.putStatusSampleValue("vehStat_s", 1);
+		s.putInstantaneousSampleValue("vchgDcPow_i", 0);
+
+		xform.transformSamples(d, s, null);
+
+		// THEN
+	}
+
+	@Test
+	public void notOrElse_rhsFalse() {
+		// GIVEN
+		OperationalModeTransformConfig config = new OperationalModeTransformConfig();
+		config.setExpressionServiceId(exprService.getUid());
+		config.setOperationalMode(OP_MODE);
+		config.setExpression(
+				"!has('vehStat_s') || (has('vchgDcPow_i') && vehStat_s == 1 && vchgDcPow_i <= 100)");
+		xform.setExpressionConfigs(new OperationalModeTransformConfig[] { config });
+
+		expect(opModesService.disableOperationalModes(singleton(OP_MODE))).andReturn(emptySet());
+
+		// WHEN
+		replayAll();
+		GeneralNodeDatum d = createTestGeneralNodeDatum(SOURCE_ID);
+		GeneralDatumSamples s = d.getSamples();
+
+		// vehStat_s == 0, vchgDcPow_i == 0, so LHS is false and RHS is false
+		s.putStatusSampleValue("vehStat_s", 0);
+		s.putInstantaneousSampleValue("vchgDcPow_i", 0);
+
+		xform.transformSamples(d, s, null);
+
+		// THEN
 	}
 
 }
