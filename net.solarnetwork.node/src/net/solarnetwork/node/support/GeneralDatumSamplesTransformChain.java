@@ -54,7 +54,7 @@ import net.solarnetwork.util.WeakValueConcurrentHashMap;
  * </p>
  * 
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSupport
 		implements GeneralDatumSamplesTransformService, SettingSpecifierProvider {
@@ -219,14 +219,18 @@ public class GeneralDatumSamplesTransformChain extends BaseSamplesTransformSuppo
 	private GeneralDatumSamplesTransformService findService(String uid) {
 		return serviceCache.compute(uid, (k, v) -> {
 			// have to re-check UID, as these can change
-			if ( v != null && uid.equals(v.getUid()) ) {
-				return v;
-			}
-			for ( GeneralDatumSamplesTransformService s : transformServices ) {
-				String serviceUid = s.getUid();
-				if ( uid.equals(serviceUid) ) {
-					return s;
+			try {
+				if ( v != null && uid.equals(v.getUid()) ) {
+					return v;
 				}
+				for ( GeneralDatumSamplesTransformService s : transformServices ) {
+					String serviceUid = s.getUid();
+					if ( uid.equals(serviceUid) ) {
+						return s;
+					}
+				}
+			} catch ( Exception e ) {
+				log.warn("Discarding cached service [{}] because of exception: {}", uid, e.toString());
 			}
 			return null;
 		});
