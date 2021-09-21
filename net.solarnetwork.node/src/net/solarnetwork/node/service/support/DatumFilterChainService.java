@@ -217,14 +217,18 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	private DatumFilterService findService(String uid) {
 		return serviceCache.compute(uid, (k, v) -> {
 			// have to re-check UID, as these can change
-			if ( v != null && uid.equals(v.getUid()) ) {
-				return v;
-			}
-			for ( DatumFilterService s : transformServices ) {
-				String serviceUid = s.getUid();
-				if ( uid.equals(serviceUid) ) {
-					return s;
+			try {
+				if ( v != null && uid.equals(v.getUid()) ) {
+					return v;
 				}
+				for ( DatumFilterService s : transformServices ) {
+					String serviceUid = s.getUid();
+					if ( uid.equals(serviceUid) ) {
+						return s;
+					}
+				}
+			} catch ( Exception e ) {
+				log.warn("Discarding cached service [{}] because of exception: {}", uid, e.toString());
 			}
 			return null;
 		});

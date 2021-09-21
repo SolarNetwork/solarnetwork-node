@@ -108,7 +108,7 @@ public class DatumFilterChainServiceTests {
 	private static class InvocationCountingTransform extends BaseDatumFilterSupport
 			implements DatumFilterService {
 
-		private int count = 0;
+		protected int count = 0;
 		private final List<DatumSamplesOperations> input = new ArrayList<>();
 		private final List<DatumSamplesOperations> output = new ArrayList<>();
 		private final List<Map<String, Object>> params = new ArrayList<>();
@@ -210,6 +210,45 @@ public class DatumFilterChainServiceTests {
 				is(sameInstance(xform.params.get(0))));
 
 		assertThat("Transformed instance 2 returned", result, is(sameInstance(xform2.output.get(0))));
+	}
+
+	@Test
+	public void invoke_uidExceptionAfterCache() {
+		// GIVEN
+		InvocationCountingTransform xform = new InvocationCountingTransform(TEST_UID) {
+
+			@Override
+			public String getUid() {
+				if ( count > 0 ) {
+					throw new RuntimeException("Ouch!");
+				}
+				return super.getUid();
+			}
+
+		};
+		xforms.add(xform);
+		chain.setTransformUids(new String[] { TEST_UID });
+
+		SimpleDatum d = createTestDatum();
+
+		// WHEN
+		replayAll();
+		DatumSamples s = new DatumSamples(d.getSamples());
+		DatumSamplesOperations result = chain.filter(d, s, null);
+
+		DatumSamples s2 = new DatumSamples(d.getSamples());
+		DatumSamplesOperations result2 = chain.filter(d, s2, null);
+
+		// THEN
+		assertThat("Different instance returned because op mode enabled", result,
+				is(not(sameInstance(s))));
+		assertThat("Transform invoked", xform.count, is(equalTo(1)));
+		assertThat("Input instance provided to xform", s, is(sameInstance(xform.input.get(0))));
+		assertThat("Transformed instance returned", result, is(sameInstance(xform.output.get(0))));
+		assertThat("Parameter map provided", xform.params.get(0), is(notNullValue()));
+
+		assertThat("2nd transform not invoked because of thrown exception", result2,
+				is(sameInstance(s2)));
 	}
 
 }
