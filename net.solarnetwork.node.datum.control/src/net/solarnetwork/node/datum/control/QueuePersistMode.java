@@ -1,5 +1,5 @@
 /* ==================================================================
- * ControlEventMode.java - 9/04/2021 11:30:25 AM
+ * QueuePersistMode.java - 25/09/2021 7:20:05 AM
  * 
  * Copyright 2021 SolarNetwork.net Dev Team
  * 
@@ -23,23 +23,17 @@
 package net.solarnetwork.node.datum.control;
 
 /**
- * An enumeration of control event modes.
+ * An enumeration of datum queue persist modes.
  * 
  * @author matt
  * @version 1.0
  */
-public enum ControlEventMode {
+public enum QueuePersistMode {
 
-	/** Only generate datum via polling, not in response to control events. */
-	None,
+	/** Enable persist mode on polled datum. */
+	Poll,
 
-	/** Generate datum only when control info is captured. */
-	Capture,
-
-	/** Generate datum only when control info changes. */
-	Change,
-
-	/** Generate datum when both control info is captured and changes. */
-	CaptureAndChange,
+	/** Enable persist mode on poll and event-based datum. */
+	PollAndEvent,
 
 }
