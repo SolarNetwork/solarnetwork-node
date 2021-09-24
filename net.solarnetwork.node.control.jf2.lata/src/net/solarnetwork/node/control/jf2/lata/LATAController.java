@@ -44,6 +44,7 @@ import net.solarnetwork.node.control.jf2.lata.command.CommandValidationException
 import net.solarnetwork.node.control.jf2.lata.command.ToggleMode;
 import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.io.serial.SerialConnection;
+import net.solarnetwork.node.io.serial.SerialNetwork;
 import net.solarnetwork.node.io.serial.support.SerialDeviceSupport;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
@@ -51,6 +52,7 @@ import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
@@ -74,6 +76,9 @@ public class LATAController extends SerialDeviceSupport
 	/** The default value for the {@code controlIdMappingValue} property. */
 	public static final String DEFAULT_CONTROL_ID_MAPPING = "/power/switch/1 = 100000BD, /power/switch/2 = 100000FD";
 
+	/** The {@code serialNetworkUid} property default value. */
+	public static final String DEFAULT_SERIAL_NETWORK_UID = "Serial Port";
+
 	private Map<String, String> controlIdMapping = new HashMap<String, String>();
 
 	private static final Pattern SWITCH_STATUS_RESULT_PATTERN = Pattern
@@ -82,9 +87,11 @@ public class LATAController extends SerialDeviceSupport
 	/**
 	 * Default constructor.
 	 */
-	public LATAController() {
+	public LATAController(OptionalFilterableService<SerialNetwork> serialNetwork) {
 		super();
+		setDisplayName("LATA Controller");
 		setControlIdMappingValue(DEFAULT_CONTROL_ID_MAPPING);
+		setSerialNetworkUid(DEFAULT_SERIAL_NETWORK_UID);
 	}
 
 	@Override
@@ -295,11 +302,10 @@ public class LATAController extends SerialDeviceSupport
 	public List<SettingSpecifier> getDefaultSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
 		results.add(new BasicTitleSettingSpecifier("info", getDeviceInfoMessage(), true));
-		results.addAll(getIdentifiableSettingSpecifiers());
+		results.addAll(baseIdentifiableSettings(""));
+		results.addAll(serialNetworkSettings("", DEFAULT_SERIAL_NETWORK_UID));
 		results.add(
 				new BasicTextFieldSettingSpecifier("controlIdMappingValue", DEFAULT_CONTROL_ID_MAPPING));
-		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['uid']",
-				"Serial Port"));
 		return results;
 	}
 

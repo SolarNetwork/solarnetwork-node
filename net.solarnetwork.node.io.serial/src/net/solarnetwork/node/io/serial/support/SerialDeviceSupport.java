@@ -22,8 +22,10 @@
 
 package net.solarnetwork.node.io.serial.support;
 
+import static java.util.Collections.singletonList;
+import static net.solarnetwork.service.FilterableService.filterPropValue;
+import static net.solarnetwork.service.FilterableService.setFilterProp;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -31,12 +33,13 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.node.io.serial.SerialNetwork;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.FilterableService;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
@@ -66,22 +69,28 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	 */
 	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = "Manufacture Date";
 
+	/**
+	 * Get setting specifiers for the serial network UID filter.
+	 * 
+	 * @param prefix
+	 *        an optional prefix to add to each setting key
+	 * @param defaultUid
+	 *        the default UID setting value
+	 * @return list of setting specifiers
+	 * @since 2.0
+	 */
+	public static List<SettingSpecifier> serialNetworkSettings(String prefix, String defaultUid) {
+		prefix = (prefix != null ? prefix : "");
+		return singletonList(
+				new BasicTextFieldSettingSpecifier(prefix + "serialNetworkUid", defaultUid));
+	}
+
 	private Map<String, Object> deviceInfo;
-	private OptionalService<SerialNetwork> serialNetwork;
+	private OptionalFilterableService<SerialNetwork> serialNetwork;
 	private OptionalService<EventAdmin> eventAdmin;
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
-
-	/**
-	 * Get the {@link SerialNetwork} from the configured {@code serialNetwork}
-	 * service, or {@literal null} if not available or not configured.
-	 * 
-	 * @return SerialNetwork
-	 */
-	protected final SerialNetwork serialNetwork() {
-		return (serialNetwork == null ? null : serialNetwork.service());
-	}
 
 	/**
 	 * Read general device info and return a map of the results. See the various
@@ -190,19 +199,6 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	}
 
 	/**
-	 * Get setting specifiers for the {@code uid} and {@code groupUid}
-	 * properties.
-	 * 
-	 * @return list of setting specifiers
-	 */
-	protected List<SettingSpecifier> getIdentifiableSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
-		results.add(new BasicTextFieldSettingSpecifier("uid", null));
-		results.add(new BasicTextFieldSettingSpecifier("groupUid", null));
-		return results;
-	}
-
-	/**
 	 * Post an {@link Event}.
 	 * 
 	 * <p>
@@ -222,12 +218,42 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 		ea.postEvent(event);
 	}
 
-	public OptionalService<SerialNetwork> getSerialNetwork() {
+	/**
+	 * Get the serial network.
+	 * 
+	 * @return the network
+	 */
+	public OptionalFilterableService<SerialNetwork> getSerialNetwork() {
 		return serialNetwork;
 	}
 
-	public void setSerialNetwork(OptionalService<SerialNetwork> serialDevice) {
+	/**
+	 * Set the serial network.
+	 * 
+	 * @param serialDevice
+	 *        the network
+	 */
+	public void setSerialNetwork(OptionalFilterableService<SerialNetwork> serialDevice) {
 		this.serialNetwork = serialDevice;
+	}
+
+	/**
+	 * Get the serial network UID.
+	 * 
+	 * @return the serial network UID
+	 */
+	public String getSerialNetworkUid() {
+		return filterPropValue((FilterableService) serialNetwork, BaseIdentifiable.UID_PROPERTY);
+	}
+
+	/**
+	 * Set the serial network UID.
+	 * 
+	 * @param uid
+	 *        the serial network UID
+	 */
+	public void setSerialNetworkUid(String uid) {
+		setFilterProp((FilterableService) serialNetwork, BaseIdentifiable.UID_PROPERTY, uid);
 	}
 
 	/**
@@ -247,27 +273,6 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	 */
 	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
-	}
-
-	/**
-	 * Get the configured {@link MessageSource}.
-	 * 
-	 * @return the message source, or {@literal null}
-	 */
-	@Override
-	public MessageSource getMessageSource() {
-		return super.getMessageSource();
-	}
-
-	/**
-	 * Set a {@link MessageSource} to use for resolving localized messages.
-	 * 
-	 * @param messageSource
-	 *        the message source to use
-	 */
-	@Override
-	public void setMessageSource(MessageSource messageSource) {
-		super.setMessageSource(messageSource);
 	}
 
 }

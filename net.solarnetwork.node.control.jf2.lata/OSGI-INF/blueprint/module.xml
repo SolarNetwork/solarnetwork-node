@@ -51,19 +51,14 @@
 			<beans:entry key="instruction" value="SetControlParameter"/>
 		</osgix:service-properties>
 		<bean id="controller" class="net.solarnetwork.node.control.jf2.lata.LATAController">
-			<property name="messageSource" ref="messageSource"/>
-			<property name="eventAdmin" ref="eventAdmin"/>
-			<property name="serialNetwork">
+			<argument>
 				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 					<argument ref="bundleContext"/>
 					<property name="serviceClassName" value="net.solarnetwork.node.io.serial.SerialNetwork"/>
-					<property name="propertyFilters">
-						<map>
-							<entry key="uid" value="Serial Port"/>
-						</map>
-					</property>
 				</bean>	
-			</property>
+			</argument>
+			<property name="messageSource" ref="messageSource"/>
+			<property name="eventAdmin" ref="eventAdmin"/>
 		</bean>
 	</osgix:managed-service-factory>
 	

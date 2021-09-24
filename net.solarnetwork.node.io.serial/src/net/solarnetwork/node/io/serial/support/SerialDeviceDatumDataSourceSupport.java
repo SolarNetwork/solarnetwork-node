@@ -22,10 +22,14 @@
 
 package net.solarnetwork.node.io.serial.support;
 
+import static java.util.Collections.singletonList;
+import static net.solarnetwork.service.FilterableService.filterPropValue;
+import static net.solarnetwork.service.FilterableService.setFilterProp;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import net.solarnetwork.domain.datum.Datum;
@@ -33,8 +37,12 @@ import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.node.io.serial.SerialNetwork;
 import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.node.service.support.DatumDataSourceSupport;
-import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.FilterableService;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -70,12 +78,28 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 	/** The {@code sampleCacheMs} property default value. */
 	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000L;
 
+	/**
+	 * Get setting specifiers for the serial network UID filter.
+	 * 
+	 * @param prefix
+	 *        an optional prefix to add to each setting key
+	 * @param defaultUid
+	 *        the default UID setting value
+	 * @return list of setting specifiers
+	 * @since 2.0
+	 */
+	public static List<SettingSpecifier> serialNetworkSettings(String prefix, String defaultUid) {
+		prefix = (prefix != null ? prefix : "");
+		return singletonList(
+				new BasicTextFieldSettingSpecifier(prefix + "serialNetworkUid", defaultUid));
+	}
+
 	private final AtomicReference<S> sample;
 
 	private String sourceId;
 	private long sampleCacheMs = DEFAULT_SAMPLE_CACHE_MS;
 	private Map<String, Object> deviceInfo;
-	private OptionalService<SerialNetwork> serialNetwork;
+	private OptionalFilterableService<SerialNetwork> serialNetwork;
 
 	/**
 	 * Constructor
@@ -276,7 +300,7 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 	 * 
 	 * @return the serial network
 	 */
-	public OptionalService<SerialNetwork> getSerialNetwork() {
+	public OptionalFilterableService<SerialNetwork> getSerialNetwork() {
 		return serialNetwork;
 	}
 
@@ -286,8 +310,27 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 	 * @param serialNetwork
 	 *        the serial network to use
 	 */
-	public void setSerialNetwork(OptionalService<SerialNetwork> serialNetwork) {
+	public void setSerialNetwork(OptionalFilterableService<SerialNetwork> serialNetwork) {
 		this.serialNetwork = serialNetwork;
+	}
+
+	/**
+	 * Get the serial network UID.
+	 * 
+	 * @return the serial network UID
+	 */
+	public String getSerialNetworkUid() {
+		return filterPropValue((FilterableService) serialNetwork, BaseIdentifiable.UID_PROPERTY);
+	}
+
+	/**
+	 * Set the serial network UID.
+	 * 
+	 * @param uid
+	 *        the serial network UID
+	 */
+	public void setSerialNetworkUid(String uid) {
+		setFilterProp((FilterableService) serialNetwork, BaseIdentifiable.UID_PROPERTY, uid);
 	}
 
 	/**
