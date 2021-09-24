@@ -115,7 +115,7 @@
 		<argument ref="setupIdentityDao"/>
 		<argument ref="certificateService"/>
 		<property name="keyStorePath" value="${PKIService.keyStorePath}"/>
-		<property name="manualKeyStorePassword" value="${PKIService.manualKeyStorePassword}"/>
+		<property name="keyStorePassword" value="${PKIService.manualKeyStorePassword}"/>
 		<property name="trustStorePath" value="${PKIService.trustStorePath}"/>
 		<property name="trustStorePassword" value="${PKIService.trustStorePassword}"/>
 		<property name="jreTrustStorePassword" value="${PKIService.jreTrustStorePassword}"/>
