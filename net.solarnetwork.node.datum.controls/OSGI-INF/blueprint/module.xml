@@ -64,7 +64,6 @@
 					<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
 						<property name="interfaces">
 							<list>
-								<value>net.solarnetwork.node.service.DatumDataSource</value>
 								<value>net.solarnetwork.node.service.MultiDatumDataSource</value>
 							</list>
 						</property>
