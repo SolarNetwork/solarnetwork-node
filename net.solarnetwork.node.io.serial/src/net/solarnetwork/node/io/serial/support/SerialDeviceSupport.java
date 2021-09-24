@@ -168,7 +168,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	 */
 	protected final <T> T performAction(final SerialConnectionAction<T> action) throws IOException {
 		T result = null;
-		SerialNetwork device = (serialNetwork == null ? null : serialNetwork.service());
+		SerialNetwork device = OptionalService.service(serialNetwork);
 		if ( device != null ) {
 			result = device.performAction(action);
 		}
