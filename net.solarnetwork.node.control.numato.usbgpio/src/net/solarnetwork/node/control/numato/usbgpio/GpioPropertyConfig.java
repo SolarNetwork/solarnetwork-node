@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import net.solarnetwork.domain.CodedValue;
 import net.solarnetwork.domain.datum.DatumSamplePropertyConfig;
+import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.datum.NumberDatumSamplePropertyConfig;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
@@ -57,28 +58,38 @@ public class GpioPropertyConfig extends NumberDatumSamplePropertyConfig<Integer>
 	 * @return the settings, never {@literal null}
 	 */
 	public static List<SettingSpecifier> settings(String prefix) {
-		List<SettingSpecifier> results = new ArrayList<>(8);
+		List<SettingSpecifier> result = new ArrayList<>(8);
 
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "controlId", null));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "propertyKey", null));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "address", null));
+		result.add(new BasicTextFieldSettingSpecifier(prefix + "controlId", null));
+		result.add(new BasicTextFieldSettingSpecifier(prefix + "propertyKey", null));
 
-		// drop-down menu for gpioType
+		// drop-down menu for datumPropertyType
 		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
-				prefix + "gpioTypeCode", String.valueOf(DEFAULT_GPIO_TYPE.getCode()));
-		Map<String, String> propTypeTitles = new LinkedHashMap<>(2);
-		for ( GpioType e : GpioType.values() ) {
-			propTypeTitles.put(String.valueOf(e.getCode()), e.toString());
+				prefix + "propertyTypeKey", String.valueOf(DEFAULT_PROPERTY_TYPE.toKey()));
+		Map<String, String> propTypeTitles = new LinkedHashMap<>(3);
+		for ( DatumSamplesType e : DatumSamplesType.values() ) {
+			propTypeTitles.put(Character.toString(e.toKey()), e.toString());
 		}
 		propTypeSpec.setValueTitles(propTypeTitles);
-		results.add(propTypeSpec);
+		result.add(propTypeSpec);
 
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "slope", DEFAULT_SLOPE.toString()));
-		results.add(
-				new BasicTextFieldSettingSpecifier(prefix + "intercept", DEFAULT_INTERCEPT.toString()));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "decimalScale",
+		result.add(new BasicTextFieldSettingSpecifier(prefix + "address", null));
+
+		// drop-down menu for gpioType
+		BasicMultiValueSettingSpecifier gpioTypeSpec = new BasicMultiValueSettingSpecifier(
+				prefix + "gpioTypeCode", String.valueOf(DEFAULT_GPIO_TYPE.getCode()));
+		Map<String, String> gpioTypeTitles = new LinkedHashMap<>(2);
+		for ( GpioType e : GpioType.values() ) {
+			gpioTypeTitles.put(String.valueOf(e.getCode()), e.toString());
+		}
+		gpioTypeSpec.setValueTitles(gpioTypeTitles);
+		result.add(gpioTypeSpec);
+
+		result.addAll(numberTransformSettings(prefix));
+
+		result.add(new BasicTextFieldSettingSpecifier(prefix + "decimalScale",
 				String.valueOf(DEFAULT_DECIMAL_SCALE)));
-		return results;
+		return result;
 	}
 
 	private String controlId;

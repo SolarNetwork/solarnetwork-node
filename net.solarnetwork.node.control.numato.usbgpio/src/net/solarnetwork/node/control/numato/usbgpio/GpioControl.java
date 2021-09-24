@@ -32,10 +32,12 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import org.osgi.service.event.Event;
 import net.solarnetwork.domain.BasicNodeControlInfo;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
+import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
@@ -67,6 +69,7 @@ public class GpioControl extends SerialDeviceSupport
 	public static final String DEFAULT_SERIAL_NETWORK_UID = "Serial Port";
 
 	private GpioPropertyConfig[] propConfigs;
+	private Function<SerialConnection, GpioService> serviceProvider = UsbGpioService::new;
 
 	/**
 	 * Constructor.
@@ -97,13 +100,13 @@ public class GpioControl extends SerialDeviceSupport
 
 	@Override
 	protected Map<String, Object> readDeviceInfo(SerialConnection conn) throws IOException {
-		UsbGpioService s = new UsbGpioService(conn);
+		GpioService gpio = serviceProvider.apply(conn);
 		Map<String, Object> result = new LinkedHashMap<>(2);
-		String id = s.getId();
+		String id = gpio.getId();
 		if ( id != null ) {
 			result.put(INFO_KEY_DEVICE_NAME, id);
 		}
-		String v = s.getDeviceVersion();
+		String v = gpio.getDeviceVersion();
 		if ( v != null ) {
 			result.put(INFO_KEY_DEVICE_MODEL, v);
 		}
@@ -135,7 +138,7 @@ public class GpioControl extends SerialDeviceSupport
 				@Override
 				public SimpleNodeControlInfoDatum doWithConnection(SerialConnection conn)
 						throws IOException {
-					final GpioService gpio = new UsbGpioService(conn);
+					GpioService gpio = serviceProvider.apply(conn);
 					return currentValue(config, gpio);
 				}
 			});
@@ -183,11 +186,23 @@ public class GpioControl extends SerialDeviceSupport
 				.withType(config.getGpioType() == GpioType.Analog 
 						? NodeControlPropertyType.Float
 						: NodeControlPropertyType.Boolean)
+				.withPropertyName(config.getPropertyKey())
 				.withReadonly(true) // FIXME: add "writable" boolean to config
 				.withValue(value != null ? value.toString() : null)
 				.build();
 		// @formatter:on
-		return new SimpleNodeControlInfoDatum(info, Instant.now());
+		SimpleNodeControlInfoDatum d = new SimpleNodeControlInfoDatum(info, Instant.now());
+		if ( config.getPropertyType() != null && config.getPropertyType() != DatumSamplesType.Status ) {
+			// move the property from Status to whatever the config says, as long as the value is a number
+			String propName = config.getPropertyKey() != null ? config.getPropertyKey()
+					: SimpleNodeControlInfoDatum.DEFAULT_PROPERTY_NAME;
+			Object o = d.getSampleValue(DatumSamplesType.Status, propName);
+			if ( o instanceof Number ) {
+				d.putSampleValue(config.getPropertyType(), propName, o);
+				d.putSampleValue(DatumSamplesType.Status, propName, null);
+			}
+		}
+		return d;
 	}
 
 	private GpioPropertyConfig configForControlId(String controlId) {
@@ -276,6 +291,29 @@ public class GpioControl extends SerialDeviceSupport
 	public void setPropConfigsCount(int count) {
 		this.propConfigs = ArrayUtils.arrayWithLength(this.propConfigs, count, GpioPropertyConfig.class,
 				null);
+	}
+
+	/**
+	 * Get the {@link GpioService} provider.
+	 * 
+	 * @return the provider; defaults to {@code UsbGpioService::new}
+	 */
+	public Function<SerialConnection, GpioService> getServiceProvider() {
+		return serviceProvider;
+	}
+
+	/**
+	 * Set a {@link GpioService} provider.
+	 * 
+	 * @param serviceProvider
+	 *        the provider to set; if {@literal null} then
+	 *        {@code UsbGpioService::new} will be used
+	 */
+	public void setServiceProvider(Function<SerialConnection, GpioService> serviceProvider) {
+		if ( serviceProvider == null ) {
+			serviceProvider = UsbGpioService::new;
+		}
+		this.serviceProvider = serviceProvider;
 	}
 
 }
