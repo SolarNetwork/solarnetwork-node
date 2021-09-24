@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.control.numato.usbgpio;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,6 +59,8 @@ public class GpioPropertyConfig extends NumberDatumSamplePropertyConfig<Integer>
 	public static List<SettingSpecifier> settings(String prefix) {
 		List<SettingSpecifier> results = new ArrayList<>(8);
 
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "controlId", null));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "propertyKey", null));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "address", null));
 
 		// drop-down menu for gpioType
@@ -72,9 +73,6 @@ public class GpioPropertyConfig extends NumberDatumSamplePropertyConfig<Integer>
 		propTypeSpec.setValueTitles(propTypeTitles);
 		results.add(propTypeSpec);
 
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "propertyKey", null));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "pollFrequencyMs", null));
-
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "slope", DEFAULT_SLOPE.toString()));
 		results.add(
 				new BasicTextFieldSettingSpecifier(prefix + "intercept", DEFAULT_INTERCEPT.toString()));
@@ -83,8 +81,8 @@ public class GpioPropertyConfig extends NumberDatumSamplePropertyConfig<Integer>
 		return results;
 	}
 
+	private String controlId;
 	private GpioType gpioType;
-	private Duration pollFrequency;
 
 	/**
 	 * Constructor.
@@ -92,6 +90,41 @@ public class GpioPropertyConfig extends NumberDatumSamplePropertyConfig<Integer>
 	public GpioPropertyConfig() {
 		super();
 		setGpioType(DEFAULT_GPIO_TYPE);
+	}
+
+	/**
+	 * Test if this instance has a valid configuration.
+	 * 
+	 * <p>
+	 * This method simply verifies the minimum level of configuration is
+	 * available for the control to be used.
+	 * </p>
+	 * 
+	 * @return {@literal true} if this configuration is valid for use
+	 */
+	public boolean isValid() {
+		Integer addr = getAddress();
+		return this.controlId != null && controlId.trim().length() > 0 && addr != null
+				&& addr.intValue() >= 0;
+	}
+
+	/**
+	 * Get the control ID.
+	 * 
+	 * @return the control ID
+	 */
+	public String getControlId() {
+		return controlId;
+	}
+
+	/**
+	 * Set the control ID.
+	 * 
+	 * @param controlId
+	 *        the control ID to set
+	 */
+	public void setControlId(String controlId) {
+		this.controlId = controlId;
 	}
 
 	/**
@@ -162,48 +195,6 @@ public class GpioPropertyConfig extends NumberDatumSamplePropertyConfig<Integer>
 	 */
 	public void setGpioTypeCode(int code) {
 		setGpioType(CodedValue.forCodeValue(code, GpioType.class, null));
-	}
-
-	/**
-	 * Get the frequency at which the GPIO value should be polled.
-	 * 
-	 * @return the frequency, or {@literal null} to not poll
-	 */
-	public Duration getPollFrequency() {
-		return pollFrequency;
-	}
-
-	/**
-	 * Set the frequency at which the GPIO value should be polled.
-	 * 
-	 * @param pollFrequency
-	 *        the frequency to set, or {@literal null} to not poll
-	 */
-	public void setPollFrequency(Duration pollFrequency) {
-		this.pollFrequency = pollFrequency;
-	}
-
-	/**
-	 * Get the frequency at which the GPIO value should be polled, in
-	 * milliseconds.
-	 * 
-	 * @return the frequency in milliseconds, or {@literal 0} to not poll
-	 */
-	public long getPollFrequencyMs() {
-		Duration d = getPollFrequency();
-		return (d != null ? d.toMillis() : 0L);
-	}
-
-	/**
-	 * Set the frequency at which the GPIO value should be polled, in
-	 * milliseconds.
-	 * 
-	 * @param ms
-	 *        the frequency in milliseconds, or {@literal 0} to not poll
-	 */
-	public void setPollFrequencyMs(long ms) {
-		setPollFrequency(ms > 0 ? Duration.ofMillis(ms) : null);
-
 	}
 
 }

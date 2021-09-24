@@ -22,25 +22,19 @@
 
 package net.solarnetwork.node.control.numato.usbgpio.test;
 
-import static net.solarnetwork.test.EasyMockUtils.assertWith;
 import static org.easymock.EasyMock.aryEq;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.BitSet;
 import org.easymock.EasyMock;
-import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.node.control.numato.usbgpio.UsbGpioService;
 import net.solarnetwork.node.io.serial.SerialConnection;
-import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.node.io.serial.SerialNetwork;
-import net.solarnetwork.service.StaticOptionalService;
-import net.solarnetwork.test.Assertion;
 
 /**
  * Test cases for the {@link UsbGpioService} class.
@@ -60,7 +54,7 @@ public class UsbGpioServiceTests {
 	public void setup() {
 		network = EasyMock.createMock(SerialNetwork.class);
 		conn = EasyMock.createMock(SerialConnection.class);
-		service = new UsbGpioService(new StaticOptionalService<>(network));
+		service = new UsbGpioService(conn);
 	}
 
 	@After
@@ -72,30 +66,10 @@ public class UsbGpioServiceTests {
 		EasyMock.replay(network, conn);
 	}
 
-	private <T> void doConnAction() throws IOException {
-		Object[] actionResult = new Object[1];
-		expect(network.performAction(assertWith(new Assertion<SerialConnectionAction<T>>() {
-
-			@Override
-			public void check(SerialConnectionAction<T> argument) throws Throwable {
-				actionResult[0] = argument.doWithConnection(conn);
-			}
-
-		}))).andAnswer(new IAnswer<T>() {
-
-			@SuppressWarnings("unchecked")
-			@Override
-			public T answer() throws Throwable {
-				return (T) actionResult[0];
-			}
-		});
-	}
-
 	@Test
 	public void readVersion() throws Exception {
 		// GIVEN
 		final String version = "1.2.3";
-		doConnAction();
 		conn.writeMessage(aryEq("ver".getBytes(US_ASCII)));
 		expect(conn.drainInputBuffer()).andReturn(version.getBytes(US_ASCII));
 
@@ -111,7 +85,6 @@ public class UsbGpioServiceTests {
 	public void readId() throws Exception {
 		// GIVEN
 		final String id = "12345678";
-		doConnAction();
 		conn.writeMessage(aryEq("id get".getBytes(US_ASCII)));
 		expect(conn.drainInputBuffer()).andReturn(id.getBytes(US_ASCII));
 
@@ -127,7 +100,6 @@ public class UsbGpioServiceTests {
 	public void setId() throws Exception {
 		// GIVEN
 		final String id = "12345678";
-		doConnAction();
 		conn.writeMessage(aryEq(String.format("id set %s", id).getBytes(US_ASCII)));
 
 		// WHEN
@@ -154,7 +126,6 @@ public class UsbGpioServiceTests {
 		// GIVEN
 		final int addr = 3;
 		final String status = "on";
-		doConnAction();
 		conn.writeMessage(aryEq(String.format("gpio read %d", addr).getBytes(US_ASCII)));
 		expect(conn.drainInputBuffer()).andReturn(status.getBytes(US_ASCII));
 
@@ -171,7 +142,6 @@ public class UsbGpioServiceTests {
 		// GIVEN
 		final int addr = 3;
 		final String status = "off";
-		doConnAction();
 		conn.writeMessage(aryEq(String.format("gpio read %d", addr).getBytes(US_ASCII)));
 		expect(conn.drainInputBuffer()).andReturn(status.getBytes(US_ASCII));
 
@@ -188,7 +158,6 @@ public class UsbGpioServiceTests {
 		// GIVEN
 		final int addr = 5;
 		final String status = "123";
-		doConnAction();
 		conn.writeMessage(aryEq(String.format("adc read %d", addr).getBytes(US_ASCII)));
 		expect(conn.drainInputBuffer()).andReturn(status.getBytes(US_ASCII));
 
@@ -204,7 +173,6 @@ public class UsbGpioServiceTests {
 	public void setOne_on() throws Exception {
 		// GIVEN
 		final int addr = 3;
-		doConnAction();
 		conn.writeMessage(aryEq(String.format("gpio set %s", addr).getBytes(US_ASCII)));
 
 		// WHEN
@@ -218,7 +186,6 @@ public class UsbGpioServiceTests {
 	public void setOne_off() throws Exception {
 		// GIVEN
 		final int addr = 3;
-		doConnAction();
 		conn.writeMessage(aryEq(String.format("gpio clear %s", addr).getBytes(US_ASCII)));
 
 		// WHEN
@@ -231,7 +198,6 @@ public class UsbGpioServiceTests {
 	@Test
 	public void configureMask() throws Exception {
 		// GIVEN
-		doConnAction();
 		conn.writeMessage(aryEq("gpio iomask 92".getBytes(US_ASCII)));
 
 		// WHEN
@@ -248,7 +214,6 @@ public class UsbGpioServiceTests {
 	@Test
 	public void configureMask_onlyLowerBits() throws Exception {
 		// GIVEN
-		doConnAction();
 		conn.writeMessage(aryEq("gpio iomask 02".getBytes(US_ASCII)));
 
 		// WHEN
@@ -263,7 +228,6 @@ public class UsbGpioServiceTests {
 	@Test
 	public void configureIoDirection() throws Exception {
 		// GIVEN
-		doConnAction();
 		conn.writeMessage(aryEq("gpio iodir 45".getBytes(US_ASCII)));
 
 		// WHEN
@@ -280,7 +244,6 @@ public class UsbGpioServiceTests {
 	@Test
 	public void writeAll() throws Exception {
 		// GIVEN
-		doConnAction();
 		conn.writeMessage(aryEq("gpio writeall 23".getBytes(US_ASCII)));
 
 		// WHEN
@@ -297,7 +260,6 @@ public class UsbGpioServiceTests {
 	@Test
 	public void writeAll_onlyLowerBits() throws Exception {
 		// GIVEN
-		doConnAction();
 		conn.writeMessage(aryEq("gpio writeall 01".getBytes(US_ASCII)));
 
 		// WHEN
@@ -313,7 +275,6 @@ public class UsbGpioServiceTests {
 	public void readAll() throws Exception {
 		// GIVEN
 		final String status = "DA";
-		doConnAction();
 		conn.writeMessage(aryEq("gpio readall".getBytes(US_ASCII)));
 		expect(conn.drainInputBuffer()).andReturn(status.getBytes(US_ASCII));
 

@@ -22,14 +22,11 @@
 
 package net.solarnetwork.node.control.numato.usbgpio;
 
-import static net.solarnetwork.service.OptionalService.requiredService;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.BitSet;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
-import net.solarnetwork.node.io.serial.SerialNetwork;
-import net.solarnetwork.service.OptionalService;
 
 /**
  * Implementation of the {@link GpioService}.
@@ -47,29 +44,28 @@ public class UsbGpioService implements GpioService {
 
 	private static final Charset US_ASCII = Charset.forName("US-ASCII");
 
-	private final OptionalService<SerialNetwork> serialNetwork;
+	private final SerialConnection conn;
 	private long listenWaitMs = DEFAULT_LISTEN_WAIT_MS;
 	private int gpioCount = DEFAULT_GPIO_COUNT;
 
 	/**
 	 * Constructor.
 	 * 
-	 * @param serialNetwork
-	 *        the serial network to use
+	 * @param conn
+	 *        the serial connection to use
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public UsbGpioService(OptionalService<SerialNetwork> serialNetwork) {
+	public UsbGpioService(SerialConnection conn) {
 		super();
-		if ( serialNetwork == null ) {
-			throw new IllegalArgumentException("The serialNetwork argument must not be null.");
+		if ( conn == null ) {
+			throw new IllegalArgumentException("The conn argument must not be null.");
 		}
-		this.serialNetwork = serialNetwork;
+		this.conn = conn;
 	}
 
 	private <T> T perform(SerialConnectionAction<T> action) throws IOException {
-		SerialNetwork n = requiredService(serialNetwork, "SerialNetwork");
-		return n.performAction(action);
+		return action.doWithConnection(conn);
 	}
 
 	private void sleep() {
