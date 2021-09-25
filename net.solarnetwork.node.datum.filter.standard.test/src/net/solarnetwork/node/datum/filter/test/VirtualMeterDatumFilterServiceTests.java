@@ -1039,7 +1039,7 @@ public class VirtualMeterDatumFilterServiceTests {
 				new BigDecimal("1"), new BigDecimal("1"));
 		assertVirtualMeterMetadata("4th", savedMetas.get(3), "pulses", dates.get(7).toEpochMilli(),
 				new BigDecimal("0"), new BigDecimal("1.1"));
-		assertVirtualMeterMetadata("7th", savedMetas.get(4), "pulses", dates.get(11).toEpochMilli(),
+		assertVirtualMeterMetadata("5th", savedMetas.get(4), "pulses", dates.get(11).toEpochMilli(),
 				new BigDecimal("1"), new BigDecimal("2"));
 	}
 
