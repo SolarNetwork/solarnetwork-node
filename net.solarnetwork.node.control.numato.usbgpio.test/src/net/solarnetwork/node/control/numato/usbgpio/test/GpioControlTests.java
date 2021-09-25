@@ -27,8 +27,8 @@ import static net.solarnetwork.domain.NodeControlPropertyType.Boolean;
 import static net.solarnetwork.domain.NodeControlPropertyType.Float;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
-import static net.solarnetwork.test.EasyMockUtils.assertWith;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -38,10 +38,10 @@ import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 import org.easymock.EasyMock;
-import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,10 +53,8 @@ import net.solarnetwork.node.control.numato.usbgpio.GpioService;
 import net.solarnetwork.node.control.numato.usbgpio.GpioType;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.io.serial.SerialConnection;
-import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.node.io.serial.SerialNetwork;
 import net.solarnetwork.service.StaticOptionalService;
-import net.solarnetwork.test.Assertion;
 
 /**
  * Test cases for the {@link GpioControl} class.
@@ -85,27 +83,16 @@ public class GpioControlTests {
 		EasyMock.verify(network, conn, gpio);
 	}
 
-	private void replayAll() {
+	private void replayAll(Object... other) {
 		EasyMock.replay(network, conn, gpio);
+		if ( other != null ) {
+			EasyMock.replay(other);
+		}
 	}
 
-	private <T> void doConnAction() throws IOException {
-		Object[] actionResult = new Object[1];
-		expect(network.performAction(assertWith(new Assertion<SerialConnectionAction<T>>() {
-
-			@Override
-			public void check(SerialConnectionAction<T> argument) throws Throwable {
-				actionResult[0] = argument.doWithConnection(conn);
-			}
-
-		}))).andAnswer(new IAnswer<T>() {
-
-			@SuppressWarnings("unchecked")
-			@Override
-			public T answer() throws Throwable {
-				return (T) actionResult[0];
-			}
-		});
+	private void doCreateConnection() throws IOException {
+		expect(network.createConnection()).andReturn(conn);
+		conn.open();
 	}
 
 	@Test
@@ -154,7 +141,7 @@ public class GpioControlTests {
 	}
 
 	@Test
-	public void init_basic() throws Exception {
+	public void startup_basic() throws Exception {
 		// GIVEN
 		GpioPropertyConfig cfg1 = new GpioPropertyConfig();
 		cfg1.setGpioType(GpioType.Digital);
@@ -168,7 +155,7 @@ public class GpioControlTests {
 		dirs.set(cfg1.getAddress());
 		gpio.configureIoDirection(dirs);
 
-		doConnAction();
+		doCreateConnection();
 
 		// WHEN
 		replayAll();
@@ -178,7 +165,104 @@ public class GpioControlTests {
 	}
 
 	@Test
-	public void init_multiInputs() throws Exception {
+	public void startup_exception() throws Exception {
+		// GIVEN
+		GpioPropertyConfig cfg1 = new GpioPropertyConfig();
+		cfg1.setGpioType(GpioType.Digital);
+		cfg1.setAddress(0);
+		cfg1.setControlId("/foo/bar/1");
+		cfg1.setPropertyKey("p1");
+		cfg1.setPropertyType(Instantaneous);
+		control.setPropConfigs(new GpioPropertyConfig[] { cfg1 });
+
+		expect(network.createConnection()).andReturn(conn);
+		conn.open();
+		expectLastCall().andThrow(new IOException("Ouch"));
+
+		// WHEN
+		replayAll();
+		control.startup();
+
+		// THEN
+	}
+
+	@Test
+	public void startup_exception_thenRead() throws Exception {
+		// GIVEN
+		GpioPropertyConfig cfg1 = new GpioPropertyConfig();
+		cfg1.setGpioType(GpioType.Digital);
+		cfg1.setAddress(0);
+		cfg1.setControlId("/foo/bar/1");
+		cfg1.setPropertyKey("p1");
+		cfg1.setPropertyType(Instantaneous);
+		control.setPropConfigs(new GpioPropertyConfig[] { cfg1 });
+
+		// open connection at startup
+		expect(network.createConnection()).andReturn(conn);
+		conn.open();
+		expectLastCall().andThrow(new IOException("Ouch"));
+
+		// re-try open connection in read
+		expect(network.createConnection()).andReturn(conn);
+		conn.open();
+
+		// set direction first time
+		final BitSet dirs = new BitSet();
+		dirs.set(cfg1.getAddress());
+		gpio.configureIoDirection(dirs);
+		expect(gpio.read(cfg1.getAddress())).andReturn(true);
+
+		// WHEN
+		replayAll();
+		control.startup();
+
+		NodeControlInfo info = control.getCurrentControlInfo(cfg1.getControlId());
+
+		// THEN
+		assertThat("Control info returned", info, is(notNullValue()));
+		assertThat("Info is a datum", info, is(instanceOf(NodeDatum.class)));
+		assertThat("Info control ID set", info.getControlId(), is(cfg1.getControlId()));
+		assertThat("Info control type is boolean for digital", info.getType(), is(Boolean));
+		assertThat("Info control value is boolean", info.getValue(), is(TRUE.toString()));
+		assertThat("Control property provided", info.getPropertyName(), is(cfg1.getPropertyKey()));
+		DatumSamplesOperations d = ((NodeDatum) info).asSampleOperations();
+		assertThat("Datum prop set", d.getSampleInteger(Instantaneous, cfg1.getPropertyKey()), is(1));
+		assertThat("Datum status prop not set", d.getSampleInteger(Status, cfg1.getPropertyKey()),
+				is(nullValue()));
+	}
+
+	@Test
+	public void shutdown_after_init() throws Exception {
+		// GIVEN
+		GpioPropertyConfig cfg1 = new GpioPropertyConfig();
+		cfg1.setGpioType(GpioType.Digital);
+		cfg1.setAddress(0);
+		cfg1.setControlId("/foo/bar/1");
+		cfg1.setPropertyKey("p1");
+		cfg1.setPropertyType(Instantaneous);
+		control.setPropConfigs(new GpioPropertyConfig[] { cfg1 });
+
+		// open connection in startup()
+		doCreateConnection();
+
+		// set direction in startup()
+		final BitSet dirs = new BitSet();
+		dirs.set(cfg1.getAddress());
+		gpio.configureIoDirection(dirs);
+
+		// close connection in shutdown()
+		conn.close();
+
+		// WHEN
+		replayAll();
+		control.startup();
+		control.shutdown();
+
+		// THEN
+	}
+
+	@Test
+	public void startup_multiInputs() throws Exception {
 		// GIVEN
 		GpioPropertyConfig cfg1 = GpioPropertyConfig.of("1", 0);
 		GpioPropertyConfig cfg2 = GpioPropertyConfig.of("2", 4);
@@ -191,7 +275,7 @@ public class GpioControlTests {
 		dirs.set(cfg3.getAddress());
 		gpio.configureIoDirection(dirs);
 
-		doConnAction();
+		doCreateConnection();
 
 		// WHEN
 		replayAll();
@@ -215,7 +299,7 @@ public class GpioControlTests {
 		gpio.configureIoDirection(dirs);
 		expect(gpio.read(cfg1.getAddress())).andReturn(true);
 
-		doConnAction();
+		doCreateConnection();
 		control.setPropConfigs(new GpioPropertyConfig[] { cfg1 });
 
 		// WHEN
@@ -236,6 +320,113 @@ public class GpioControlTests {
 	}
 
 	@Test
+	public void readControl_digital_2ndTime() throws Exception {
+		// GIVEN
+		GpioPropertyConfig cfg1 = new GpioPropertyConfig();
+		cfg1.setGpioType(GpioType.Digital);
+		cfg1.setAddress(0);
+		cfg1.setControlId("/foo/bar/1");
+		cfg1.setPropertyKey("p1");
+		cfg1.setPropertyType(Instantaneous);
+		control.setPropConfigs(new GpioPropertyConfig[] { cfg1 });
+
+		// open connection first time
+		doCreateConnection();
+
+		// set direction first time
+		final BitSet dirs = new BitSet();
+		dirs.set(cfg1.getAddress());
+		gpio.configureIoDirection(dirs);
+
+		// read first time
+		expect(gpio.read(cfg1.getAddress())).andReturn(true);
+
+		// read second time, without re-setting direction
+		expect(gpio.read(cfg1.getAddress())).andReturn(true);
+
+		// WHEN
+		replayAll();
+		NodeControlInfo info1 = control.getCurrentControlInfo(cfg1.getControlId());
+		NodeControlInfo info2 = control.getCurrentControlInfo(cfg1.getControlId());
+
+		// THEN
+		for ( NodeControlInfo info : Arrays.asList(info1, info2) ) {
+			assertThat("Control info returned", info, is(notNullValue()));
+			assertThat("Info is a datum", info, is(instanceOf(NodeDatum.class)));
+			assertThat("Info control ID set", info.getControlId(), is(cfg1.getControlId()));
+			assertThat("Info control type is boolean for digital", info.getType(), is(Boolean));
+			assertThat("Info control value is boolean", info.getValue(), is(TRUE.toString()));
+			assertThat("Control property provided", info.getPropertyName(), is(cfg1.getPropertyKey()));
+			DatumSamplesOperations d = ((NodeDatum) info).asSampleOperations();
+			assertThat("Datum prop set", d.getSampleInteger(Instantaneous, cfg1.getPropertyKey()),
+					is(1));
+			assertThat("Datum status prop not set", d.getSampleInteger(Status, cfg1.getPropertyKey()),
+					is(nullValue()));
+		}
+	}
+
+	@Test
+	public void readControl_digital_2ndTimeException_3rdTimeCharm() throws Exception {
+		// GIVEN
+		GpioPropertyConfig cfg1 = new GpioPropertyConfig();
+		cfg1.setGpioType(GpioType.Digital);
+		cfg1.setAddress(0);
+		cfg1.setControlId("/foo/bar/1");
+		cfg1.setPropertyKey("p1");
+		cfg1.setPropertyType(Instantaneous);
+		control.setPropConfigs(new GpioPropertyConfig[] { cfg1 });
+
+		// open connection first time
+		doCreateConnection();
+
+		// set direction first time
+		final BitSet dirs = new BitSet();
+		dirs.set(cfg1.getAddress());
+		gpio.configureIoDirection(dirs);
+
+		// read first time
+		expect(gpio.read(cfg1.getAddress())).andReturn(true);
+
+		// read second time, without re-setting direction
+		expect(gpio.read(cfg1.getAddress())).andThrow(new IOException("Ouch"));
+
+		// close connection after exception
+		conn.close();
+
+		// re-open connection for 3rd read
+		doCreateConnection();
+
+		// re-set direction after open
+		gpio.configureIoDirection(dirs);
+
+		// read 3rd time OK
+		expect(gpio.read(cfg1.getAddress())).andReturn(true);
+
+		// WHEN
+		replayAll();
+		NodeControlInfo info1 = control.getCurrentControlInfo(cfg1.getControlId());
+		NodeControlInfo info2 = control.getCurrentControlInfo(cfg1.getControlId());
+		NodeControlInfo info3 = control.getCurrentControlInfo(cfg1.getControlId());
+
+		assertThat("2nd read returned null from IOException", info2, is(nullValue()));
+
+		// THEN
+		for ( NodeControlInfo info : Arrays.asList(info1, info3) ) {
+			assertThat("Control info returned", info, is(notNullValue()));
+			assertThat("Info is a datum", info, is(instanceOf(NodeDatum.class)));
+			assertThat("Info control ID set", info.getControlId(), is(cfg1.getControlId()));
+			assertThat("Info control type is boolean for digital", info.getType(), is(Boolean));
+			assertThat("Info control value is boolean", info.getValue(), is(TRUE.toString()));
+			assertThat("Control property provided", info.getPropertyName(), is(cfg1.getPropertyKey()));
+			DatumSamplesOperations d = ((NodeDatum) info).asSampleOperations();
+			assertThat("Datum prop set", d.getSampleInteger(Instantaneous, cfg1.getPropertyKey()),
+					is(1));
+			assertThat("Datum status prop not set", d.getSampleInteger(Status, cfg1.getPropertyKey()),
+					is(nullValue()));
+		}
+	}
+
+	@Test
 	public void readControl_digital_customPropertyClassification() throws Exception {
 		// GIVEN
 		GpioPropertyConfig cfg1 = new GpioPropertyConfig();
@@ -251,7 +442,7 @@ public class GpioControlTests {
 
 		expect(gpio.read(cfg1.getAddress())).andReturn(true);
 
-		doConnAction();
+		doCreateConnection();
 		control.setPropConfigs(new GpioPropertyConfig[] { cfg1 });
 
 		// WHEN
@@ -285,7 +476,7 @@ public class GpioControlTests {
 		final Integer gpioOut = 123;
 		expect(gpio.readAnalog(cfg1.getAddress())).andReturn(gpioOut);
 
-		doConnAction();
+		doCreateConnection();
 		control.setPropConfigs(new GpioPropertyConfig[] { cfg1 });
 
 		// WHEN
@@ -322,7 +513,7 @@ public class GpioControlTests {
 		final Integer gpioOut = 532;
 		expect(gpio.readAnalog(cfg1.getAddress())).andReturn(gpioOut);
 
-		doConnAction();
+		doCreateConnection();
 		control.setPropConfigs(new GpioPropertyConfig[] { cfg1 });
 
 		// WHEN
@@ -341,4 +532,123 @@ public class GpioControlTests {
 				is(expected));
 	}
 
+	@Test
+	public void changeSerialNetwork_betweenReads() throws Exception {
+		// GIVEN
+		GpioPropertyConfig cfg1 = new GpioPropertyConfig();
+		cfg1.setGpioType(GpioType.Digital);
+		cfg1.setAddress(0);
+		cfg1.setControlId("/foo/bar/1");
+		cfg1.setPropertyKey("p1");
+		cfg1.setPropertyType(Instantaneous);
+		control.setPropConfigs(new GpioPropertyConfig[] { cfg1 });
+
+		// open connection first time
+		doCreateConnection();
+
+		// set direction first time
+		final BitSet dirs = new BitSet();
+		dirs.set(cfg1.getAddress());
+		gpio.configureIoDirection(dirs);
+
+		// read first time
+		expect(gpio.read(cfg1.getAddress())).andReturn(true);
+
+		// close first connection
+		conn.close();
+
+		// re-create connection
+		SerialConnection conn2 = EasyMock.createMock(SerialConnection.class);
+		expect(network.createConnection()).andReturn(conn2);
+		conn2.open();
+
+		// set direction second time
+		gpio.configureIoDirection(dirs);
+
+		// read second time
+		expect(gpio.read(cfg1.getAddress())).andReturn(true);
+
+		// WHEN
+		replayAll(conn2);
+		NodeControlInfo info1 = control.getCurrentControlInfo(cfg1.getControlId());
+
+		// change serial network
+		control.setSerialNetworkUid("Other Serial");
+		control.configurationChanged(null);
+
+		NodeControlInfo info2 = control.getCurrentControlInfo(cfg1.getControlId());
+
+		// THEN
+		for ( NodeControlInfo info : Arrays.asList(info1, info2) ) {
+			assertThat("Control info returned", info, is(notNullValue()));
+			assertThat("Info is a datum", info, is(instanceOf(NodeDatum.class)));
+			assertThat("Info control ID set", info.getControlId(), is(cfg1.getControlId()));
+			assertThat("Info control type is boolean for digital", info.getType(), is(Boolean));
+			assertThat("Info control value is boolean", info.getValue(), is(TRUE.toString()));
+			assertThat("Control property provided", info.getPropertyName(), is(cfg1.getPropertyKey()));
+			DatumSamplesOperations d = ((NodeDatum) info).asSampleOperations();
+			assertThat("Datum prop set", d.getSampleInteger(Instantaneous, cfg1.getPropertyKey()),
+					is(1));
+			assertThat("Datum status prop not set", d.getSampleInteger(Status, cfg1.getPropertyKey()),
+					is(nullValue()));
+		}
+
+		EasyMock.verify(conn2);
+	}
+
+	@Test
+	public void changeIoDirections_betweenReads() throws Exception {
+		// GIVEN
+		GpioPropertyConfig cfg1 = new GpioPropertyConfig();
+		cfg1.setGpioType(GpioType.Digital);
+		cfg1.setAddress(0);
+		cfg1.setControlId("/foo/bar/1");
+		cfg1.setPropertyKey("p1");
+		cfg1.setPropertyType(Instantaneous);
+		control.setPropConfigs(new GpioPropertyConfig[] { cfg1 });
+
+		// open connection first time
+		doCreateConnection();
+
+		// set direction first time
+		final BitSet dirs = new BitSet();
+		dirs.set(0);
+		gpio.configureIoDirection(dirs);
+
+		// read first time
+		expect(gpio.read(cfg1.getAddress())).andReturn(true);
+
+		// set direction second time
+		final BitSet dirs2 = new BitSet();
+		dirs2.set(1);
+		gpio.configureIoDirection(dirs2);
+
+		// read second time
+		expect(gpio.read(cfg1.getAddress())).andReturn(true);
+
+		// WHEN
+		replayAll();
+		NodeControlInfo info1 = control.getCurrentControlInfo(cfg1.getControlId());
+
+		// change address of config, which changes direction bitset
+		cfg1.setAddress(1);
+		control.configurationChanged(null);
+
+		NodeControlInfo info2 = control.getCurrentControlInfo(cfg1.getControlId());
+
+		// THEN
+		for ( NodeControlInfo info : Arrays.asList(info1, info2) ) {
+			assertThat("Control info returned", info, is(notNullValue()));
+			assertThat("Info is a datum", info, is(instanceOf(NodeDatum.class)));
+			assertThat("Info control ID set", info.getControlId(), is(cfg1.getControlId()));
+			assertThat("Info control type is boolean for digital", info.getType(), is(Boolean));
+			assertThat("Info control value is boolean", info.getValue(), is(TRUE.toString()));
+			assertThat("Control property provided", info.getPropertyName(), is(cfg1.getPropertyKey()));
+			DatumSamplesOperations d = ((NodeDatum) info).asSampleOperations();
+			assertThat("Datum prop set", d.getSampleInteger(Instantaneous, cfg1.getPropertyKey()),
+					is(1));
+			assertThat("Datum status prop not set", d.getSampleInteger(Status, cfg1.getPropertyKey()),
+					is(nullValue()));
+		}
+	}
 }

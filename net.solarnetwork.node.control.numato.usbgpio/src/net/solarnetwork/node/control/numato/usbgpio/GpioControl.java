@@ -24,7 +24,9 @@ package net.solarnetwork.node.control.numato.usbgpio;
 
 import static java.util.stream.Collectors.toList;
 import static net.solarnetwork.node.control.numato.usbgpio.GpioPropertyConfig.ioDirectionBitSet;
+import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,7 +44,6 @@ import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.io.serial.SerialConnection;
-import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.node.io.serial.SerialNetwork;
 import net.solarnetwork.node.io.serial.support.SerialDeviceSupport;
 import net.solarnetwork.node.reactor.Instruction;
@@ -73,7 +74,7 @@ public class GpioControl extends SerialDeviceSupport implements SettingSpecifier
 
 	private GpioPropertyConfig[] propConfigs;
 	private Function<SerialConnection, GpioService> serviceProvider = UsbGpioService::new;
-	private BitSet configuredDirection;
+	private CachedGpioService gpioService;
 
 	/**
 	 * Constructor.
@@ -92,47 +93,115 @@ public class GpioControl extends SerialDeviceSupport implements SettingSpecifier
 		configurationChanged(null);
 	}
 
-	@Override
-	public synchronized void configurationChanged(Map<String, Object> properties) {
-		setupIoDirection(getPropConfigs());
+	/**
+	 * Call when no longer needed.
+	 */
+	public void shutdown() {
+		clearGpioService();
 	}
 
-	private synchronized void setupIoDirection(final GpioPropertyConfig[] configs) {
-		BitSet dirs = ioDirectionBitSet(configs);
+	@Override
+	public synchronized void configurationChanged(Map<String, Object> properties) {
+		try {
+			gpioService();
+		} catch ( IOException e ) {
+			clearGpioService();
+			log.error("Communication error opening GPIO serial port [{}]: {}", getSerialNetworkUid(),
+					e.getMessage());
+		} catch ( Exception e ) {
+			clearGpioService();
+			Throwable root = e;
+			while ( root.getCause() != null ) {
+				root = root.getCause();
+			}
+			log.error("Error opening GPIO serial port [{}]: {}", getSerialNetworkUid(), root.toString(),
+					root);
+		}
+	}
+
+	private static final class CachedGpioService {
+
+		private final String serialNetworkUid;
+		private final WeakReference<GpioService> gpioService;
+		private final SerialConnection conn;
+		private BitSet configuredDirection;
+
+		private CachedGpioService(String serialNetworkUid, WeakReference<GpioService> gpioService,
+				SerialConnection conn) {
+			super();
+			if ( serialNetworkUid == null || gpioService == null || conn == null ) {
+				throw new IllegalArgumentException("No argumnet may be null.");
+			}
+			this.serialNetworkUid = serialNetworkUid;
+			this.gpioService = gpioService;
+			this.conn = conn;
+		}
+	}
+
+	private synchronized GpioService gpioService() throws IOException {
+		String serialNetworkUid = getSerialNetworkUid();
+		if ( serialNetworkUid == null ) {
+			clearGpioService();
+			return null;
+		}
+		final CachedGpioService cached = this.gpioService;
+		if ( cached != null && !serialNetworkUid.equals(cached.serialNetworkUid) ) {
+			// serial network UID changed, must clear existing connection
+			clearGpioService();
+		}
+		GpioService result = (cached != null ? cached.gpioService.get() : null);
+		if ( result == null ) {
+			SerialNetwork serial = service(getSerialNetwork());
+			if ( serial != null ) {
+				SerialConnection conn = serial.createConnection();
+				conn.open();
+				result = serviceProvider.apply(conn);
+				gpioService = new CachedGpioService(serialNetworkUid, new WeakReference<>(result), conn);
+			}
+		}
+		// check if direction has been set or needs to change
+		setupIoDirection(ioDirectionBitSet(propConfigs), gpioService);
+		return result;
+	}
+
+	private synchronized void clearGpioService() {
+		if ( gpioService != null && gpioService.conn != null ) {
+			try {
+				gpioService.conn.close();
+			} catch ( Exception e ) {
+				// ignore
+			}
+		}
+		gpioService = null;
+	}
+
+	private synchronized void setupIoDirection(final BitSet dirs, final CachedGpioService cached) {
+		if ( cached == null ) {
+			return;
+		}
+		BitSet configuredDirection = cached.configuredDirection;
 		if ( dirs == null ) {
-			configuredDirection = null;
+			cached.configuredDirection = null;
 			return;
 		}
 		if ( dirs.equals(configuredDirection) ) {
 			// unchanged, nothing to do
 			return;
 		}
+		GpioService gpio = cached.gpioService.get();
+		if ( gpio == null ) {
+			return;
+		}
+		if ( log.isInfoEnabled() ) {
+			log.info("Configuring GPIO direction on [{}] as inputs: {}", getSerialNetworkUid(), dirs);
+		}
 		try {
-			performAction(new SerialConnectionAction<Void>() {
-
-				@Override
-				public Void doWithConnection(SerialConnection conn) throws IOException {
-					setupIoDirection(dirs, conn);
-					return null;
-				}
-			});
+			gpio.configureIoDirection(dirs);
+			cached.configuredDirection = dirs;
 		} catch ( IOException e ) {
 			log.error("Communication error setting GPIO direction on [{}]: {}", getSerialNetworkUid(),
 					e.getMessage());
 		}
-	}
-
-	private synchronized void setupIoDirection(final BitSet dirs, final SerialConnection conn)
-			throws IOException {
-		if ( dirs.equals(configuredDirection) ) {
-			// unchanged, nothing to do
-			return;
-		}
-		GpioService gpio = serviceProvider.apply(conn);
-		if ( log.isInfoEnabled() ) {
-			log.info("Configuring GPIO direction on [{}] as inputs: {}", getSerialNetworkUid(), dirs);
-		}
-		gpio.configureIoDirection(dirs);
 	}
 
 	@Override
@@ -187,26 +256,16 @@ public class GpioControl extends SerialDeviceSupport implements SettingSpecifier
 		log.debug("Reading control [{}] status", controlId);
 		SimpleNodeControlInfoDatum result = null;
 		try {
-			result = performAction(new SerialConnectionAction<SimpleNodeControlInfoDatum>() {
-
-				@Override
-				public SimpleNodeControlInfoDatum doWithConnection(SerialConnection conn)
-						throws IOException {
-					GpioService gpio = serviceProvider.apply(conn);
-
-					// check if direction has been set; might have failed during initialization
-					if ( configuredDirection == null ) {
-						setupIoDirection(ioDirectionBitSet(propConfigs), conn);
-					}
-
-					return currentValue(config, gpio);
-				}
-			});
+			GpioService gpio = gpioService();
+			if ( gpio != null ) {
+				result = currentValue(config, gpio);
+			}
 		} catch ( IOException e ) {
+			clearGpioService();
 			log.error("Communication error reading control [{}] status on [{}]: {}", controlId,
 					getSerialNetworkUid(), e.getMessage());
-
 		} catch ( Exception e ) {
+			clearGpioService();
 			Throwable root = e;
 			while ( root.getCause() != null ) {
 				root = root.getCause();
