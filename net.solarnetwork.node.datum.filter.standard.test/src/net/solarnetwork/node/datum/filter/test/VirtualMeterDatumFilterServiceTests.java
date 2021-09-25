@@ -832,4 +832,215 @@ public class VirtualMeterDatumFilterServiceTests {
 		}
 	}
 
+	@Test
+	public void filter_pulse_skipFromTimeConstraint() {
+		// GIVEN
+		final SimpleDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		datum.asMutableSampleOperations().setSampleData(DatumSamplesType.Instantaneous, null);
+		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig("switch");
+		vmConfig.setPropertyType(DatumSamplesType.Status);
+		vmConfig.setReadingPropertyName("pulses");
+		vmConfig.setTrackOnlyWhenReadingChanges(true);
+		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
+
+		ExpressionService exprService = new SpelExpressionService();
+		// @formatter:off
+		VirtualMeterExpressionConfig exprConfig = new VirtualMeterExpressionConfig("pulses",
+				DatumSamplesType.Accumulating,
+				"currInput == prevInput ? prevReading : prevReading + ("
+					+ "inputDiff < 1 ? 0.1 : ("
+						+ "timeUnits < 1 ? -0.1 : 0.9"
+				+ "))",
+				exprService.getUid());
+		// @formatter:on
+		xform.setExpressionConfigs(new VirtualMeterExpressionConfig[] { exprConfig });
+		xform.setExpressionServices(new StaticOptionalServiceCollection<>(singleton(exprService)));
+
+		// no metadata available yet
+		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(null);
+
+		// add metadata
+		// @formatter:off
+		final List<Integer> inputs = Arrays.asList(
+				// The goal of this simulation is to count the number of input toggles but
+				// ignore toggles that happen too quickly (faster than 1s). To accomplish
+				// this "track only changes" is enabled and an expression is used that:
+				//
+				// 1. does nothing if the input has not changed
+				// 2. adds 0.1 when the input changes from 1 to 0 (via `inputDiff < 1`)
+				// 3. adds -0.1 if input changes from 1 to 0 in under 1s (via `timeUnits < 1`)
+				// 4. adds 0.9 if when input changes from 1 to 0 in 1s or more
+				//
+				// The addition of 0.1 means the meter still rounds down to the previous reading
+				// when cast to an integer, so a full toggle is only achieved after the input
+				// reverts back to the starting value (1).
+				
+				// start high for 1s
+				1, 1, 
+				
+				// jump low for 1.5s; meter advances to 0.1
+				0, 0, 0,
+				
+				// back to high for 1s; meter advances to 1
+				1, 1, 
+				
+				// jump low, but only 0.5s; meter advances to 1.1
+				0,
+				
+				// back to high; meter reverts to 1
+				1, 1,
+				
+				// jump low for 1s; meter advances to 1.1
+				0, 0,
+				
+				// back to high; meter advances to 2
+				1, 1);
+		// @formatter:on
+		final int iterations = inputs.size();
+		final int changeCount = 7;
+		Capture<GeneralDatumMetadata> metaCaptor = new CloningCapture(CaptureType.ALL);
+		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
+		expectLastCall().times(changeCount); // only for changes
+
+		// WHEN
+		replayAll();
+		List<DatumSamplesOperations> outputs = new ArrayList<>();
+		List<Instant> dates = new ArrayList<>();
+		final Instant start = LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC);
+		for ( int i = 0; i < iterations; i++ ) {
+			Instant ts = start.plusMillis(TimeUnit.SECONDS.toMillis(i) / 2);
+			SimpleDatum d = datum.copyWithId(DatumId.nodeId(null, datum.getSourceId(), ts));
+			d.getSamples().putStatusSampleValue("switch", inputs.get(i));
+			dates.add(ts);
+			outputs.add(xform.filter(d, d.getSamples(), emptyMap()));
+		}
+
+		// THEN
+		// expected pulse count
+		// @formatter:off
+		BigDecimal[] expectedValues = decimalArray(
+				 "1", "1",   "0",   "0",   "0", "1", "1",   "0", "1", "1",   "0",   "0", "1", "1");
+		BigDecimal[] expectedReadings = decimalArray(
+				null, "0", "0.1", "0.1", "0.1", "1", "1", "1.1", "1", "1", "1.1", "1.1", "2", "2");
+		// @formatter:on
+
+		for ( int i = 0; i < iterations; i++ ) {
+			DatumSamplesOperations result = outputs.get(i);
+			assertOutputValue("at sample " + i, result, "switch", "pulses", expectedValues[i],
+					expectedReadings[i]);
+		}
+
+		List<GeneralDatumMetadata> savedMetas = metaCaptor.getValues();
+		assertThat("Saved meter metdata only for changes", savedMetas, hasSize(changeCount));
+
+		assertVirtualMeterMetadata("1st", savedMetas.get(0), "pulses", dates.get(0).toEpochMilli(),
+				new BigDecimal("1"), BigDecimal.ZERO);
+		assertVirtualMeterMetadata("2nd", savedMetas.get(1), "pulses", dates.get(2).toEpochMilli(),
+				new BigDecimal("0"), new BigDecimal("0.1"));
+		assertVirtualMeterMetadata("3rd", savedMetas.get(2), "pulses", dates.get(5).toEpochMilli(),
+				new BigDecimal("1"), new BigDecimal("1"));
+		assertVirtualMeterMetadata("4th", savedMetas.get(3), "pulses", dates.get(7).toEpochMilli(),
+				new BigDecimal("0"), new BigDecimal("1.1"));
+		assertVirtualMeterMetadata("5th", savedMetas.get(4), "pulses", dates.get(8).toEpochMilli(),
+				new BigDecimal("1"), new BigDecimal("1"));
+		assertVirtualMeterMetadata("6th", savedMetas.get(5), "pulses", dates.get(10).toEpochMilli(),
+				new BigDecimal("0"), new BigDecimal("1.1"));
+		assertVirtualMeterMetadata("7th", savedMetas.get(6), "pulses", dates.get(12).toEpochMilli(),
+				new BigDecimal("1"), new BigDecimal("2"));
+	}
+
+	@Test
+	public void filter_pulse_multi() {
+		// GIVEN
+		final SimpleDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		datum.asMutableSampleOperations().setSampleData(DatumSamplesType.Instantaneous, null);
+		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig("switch");
+		vmConfig.setPropertyType(DatumSamplesType.Status);
+		vmConfig.setReadingPropertyName("pulses");
+		vmConfig.setTrackOnlyWhenReadingChanges(true);
+		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
+
+		ExpressionService exprService = new SpelExpressionService();
+		// @formatter:off
+		VirtualMeterExpressionConfig exprConfig = new VirtualMeterExpressionConfig("pulses",
+				DatumSamplesType.Accumulating,
+				"currInput == prevInput ? prevReading : prevReading + ("
+					+ "inputDiff < 1 ? 0.1 : ("
+						+ "timeUnits < 1 ? -0.1 : 0.9"
+				+ "))",
+				exprService.getUid());
+		// @formatter:on
+		xform.setExpressionConfigs(new VirtualMeterExpressionConfig[] { exprConfig });
+		xform.setExpressionServices(new StaticOptionalServiceCollection<>(singleton(exprService)));
+
+		// no metadata available yet
+		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(null);
+
+		// add metadata
+		// @formatter:off
+		final List<Integer> inputs = Arrays.asList(
+				// start high for 1s
+				1, 1, 
+				
+				// jump low for 1.5s; meter advances 0.1
+				0, 0, 0,
+				
+				// back to high for 1s; meter advances to 1
+				1, 1, 
+				
+				// jump low for 2s; meter advances 1.1
+				0, 0, 0, 0,
+				
+				// back to high 1s; meter advances to 2
+				1, 1);
+		// @formatter:on
+		final int iterations = inputs.size();
+		final int changeCount = 5;
+		Capture<GeneralDatumMetadata> metaCaptor = new CloningCapture(CaptureType.ALL);
+		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
+		expectLastCall().times(changeCount);
+
+		// WHEN
+		replayAll();
+		List<DatumSamplesOperations> outputs = new ArrayList<>();
+		List<Instant> dates = new ArrayList<>();
+		final Instant start = LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC);
+		for ( int i = 0; i < iterations; i++ ) {
+			Instant ts = start.plusMillis(TimeUnit.SECONDS.toMillis(i) / 2);
+			SimpleDatum d = datum.copyWithId(DatumId.nodeId(null, datum.getSourceId(), ts));
+			d.getSamples().putStatusSampleValue("switch", inputs.get(i));
+			dates.add(ts);
+			outputs.add(xform.filter(d, d.getSamples(), emptyMap()));
+		}
+
+		// THEN
+		// expected pulse count
+		// @formatter:off
+		BigDecimal[] expectedValues = decimalArray(
+				 "1", "1",   "0",   "0",   "0", "1", "1",   "0",   "0",   "0",   "0", "1", "1");
+		BigDecimal[] expectedReadings = decimalArray(
+				null, "0", "0.1", "0.1", "0.1", "1", "1", "1.1", "1.1", "1.1", "1.1", "2", "2");
+		// @formatter:on
+
+		for ( int i = 0; i < iterations; i++ ) {
+			DatumSamplesOperations result = outputs.get(i);
+			assertOutputValue("at sample " + i, result, "switch", "pulses", expectedValues[i],
+					expectedReadings[i]);
+		}
+
+		List<GeneralDatumMetadata> savedMetas = metaCaptor.getValues();
+		assertThat("Saved meter metdata only for changes", savedMetas, hasSize(changeCount));
+
+		assertVirtualMeterMetadata("1st", savedMetas.get(0), "pulses", dates.get(0).toEpochMilli(),
+				new BigDecimal("1"), BigDecimal.ZERO);
+		assertVirtualMeterMetadata("2nd", savedMetas.get(1), "pulses", dates.get(2).toEpochMilli(),
+				new BigDecimal("0"), new BigDecimal("0.1"));
+		assertVirtualMeterMetadata("3rd", savedMetas.get(2), "pulses", dates.get(5).toEpochMilli(),
+				new BigDecimal("1"), new BigDecimal("1"));
+		assertVirtualMeterMetadata("4th", savedMetas.get(3), "pulses", dates.get(7).toEpochMilli(),
+				new BigDecimal("0"), new BigDecimal("1.1"));
+		assertVirtualMeterMetadata("7th", savedMetas.get(4), "pulses", dates.get(11).toEpochMilli(),
+				new BigDecimal("1"), new BigDecimal("2"));
+	}
+
 }
