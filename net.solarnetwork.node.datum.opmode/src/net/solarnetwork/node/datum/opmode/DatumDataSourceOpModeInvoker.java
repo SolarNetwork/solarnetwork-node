@@ -233,6 +233,7 @@ public class DatumDataSourceOpModeInvoker extends BasicIdentifiable
 			return;
 		}
 		final DatumQueue queue = OptionalService.service(datumQueue);
+		final boolean persist = config.isPersist();
 		Set<Object> handled = new HashSet<>();
 		if ( dataSources != null ) {
 			for ( DatumDataSource dataSource : dataSources.services() ) {
@@ -245,7 +246,7 @@ public class DatumDataSourceOpModeInvoker extends BasicIdentifiable
 				if ( config.matches(dataSource) ) {
 					NodeDatum datum = dataSource.readCurrentDatum();
 					log.debug("Invoked DatumDataSource {} and got {}", dsName, datum);
-					queue.offer(datum, false);
+					queue.offer(datum, persist);
 				}
 			}
 		}
@@ -262,7 +263,7 @@ public class DatumDataSourceOpModeInvoker extends BasicIdentifiable
 					log.debug("Invoked MultiDatumDataSource {} and got {}", dsName, datums);
 					if ( datums != null ) {
 						for ( NodeDatum datum : datums ) {
-							queue.offer(datum, false);
+							queue.offer(datum, persist);
 						}
 					}
 				}

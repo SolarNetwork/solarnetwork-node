@@ -30,6 +30,7 @@ import net.solarnetwork.service.Identifiable;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicCronExpressionSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * Configuration for a {@link DatumDataSource} schedule filter.
@@ -46,6 +47,7 @@ public class DatumDataSourceScheduleConfig {
 	private String groupUid;
 	private String datumType;
 	private String schedule = DEFAULT_SCHEDULE;
+	private boolean persist;
 
 	/**
 	 * Get a list of setting specifiers suitable for configuring instances of
@@ -62,6 +64,7 @@ public class DatumDataSourceScheduleConfig {
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "groupUid", ""));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "datumType", ""));
 		results.add(new BasicCronExpressionSettingSpecifier(prefix + "schedule", DEFAULT_SCHEDULE));
+		results.add(new BasicToggleSettingSpecifier(prefix + "persist", Boolean.FALSE));
 
 		return results;
 	}
@@ -164,6 +167,27 @@ public class DatumDataSourceScheduleConfig {
 
 	public void setSchedule(String schedule) {
 		this.schedule = schedule;
+	}
+
+	/**
+	 * Get the persist mode.
+	 * 
+	 * @return {@literal true} if polled datum should be persisted
+	 * @since 2.0
+	 */
+	public boolean isPersist() {
+		return persist;
+	}
+
+	/**
+	 * Set the persist mode.
+	 * 
+	 * @param persist
+	 *        {@literal true} if polled datum should be persisted
+	 * @since 2.0
+	 */
+	public void setPersist(boolean persist) {
+		this.persist = persist;
 	}
 
 }
