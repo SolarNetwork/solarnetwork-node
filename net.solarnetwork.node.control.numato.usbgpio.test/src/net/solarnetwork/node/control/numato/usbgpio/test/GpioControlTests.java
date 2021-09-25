@@ -38,6 +38,7 @@ import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.BitSet;
 import java.util.List;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
@@ -153,6 +154,53 @@ public class GpioControlTests {
 	}
 
 	@Test
+	public void init_basic() throws Exception {
+		// GIVEN
+		GpioPropertyConfig cfg1 = new GpioPropertyConfig();
+		cfg1.setGpioType(GpioType.Digital);
+		cfg1.setAddress(0);
+		cfg1.setControlId("/foo/bar/1");
+		cfg1.setPropertyKey("p1");
+		cfg1.setPropertyType(Instantaneous);
+		control.setPropConfigs(new GpioPropertyConfig[] { cfg1 });
+
+		final BitSet dirs = new BitSet();
+		dirs.set(cfg1.getAddress());
+		gpio.configureIoDirection(dirs);
+
+		doConnAction();
+
+		// WHEN
+		replayAll();
+		control.startup();
+
+		// THEN
+	}
+
+	@Test
+	public void init_multiInputs() throws Exception {
+		// GIVEN
+		GpioPropertyConfig cfg1 = GpioPropertyConfig.of("1", 0);
+		GpioPropertyConfig cfg2 = GpioPropertyConfig.of("2", 4);
+		GpioPropertyConfig cfg3 = GpioPropertyConfig.of("3", 7);
+		control.setPropConfigs(new GpioPropertyConfig[] { cfg1, cfg2, cfg3 });
+
+		final BitSet dirs = new BitSet();
+		dirs.set(cfg1.getAddress());
+		dirs.set(cfg2.getAddress());
+		dirs.set(cfg3.getAddress());
+		gpio.configureIoDirection(dirs);
+
+		doConnAction();
+
+		// WHEN
+		replayAll();
+		control.startup();
+
+		// THEN
+	}
+
+	@Test
 	public void readControl_digital_basic() throws Exception {
 		// GIVEN
 		GpioPropertyConfig cfg1 = new GpioPropertyConfig();
@@ -162,7 +210,10 @@ public class GpioControlTests {
 		cfg1.setPropertyKey("p1");
 		cfg1.setPropertyType(Instantaneous);
 
-		expect(gpio.read(0)).andReturn(true);
+		final BitSet dirs = new BitSet();
+		dirs.set(cfg1.getAddress());
+		gpio.configureIoDirection(dirs);
+		expect(gpio.read(cfg1.getAddress())).andReturn(true);
 
 		doConnAction();
 		control.setPropConfigs(new GpioPropertyConfig[] { cfg1 });
@@ -194,7 +245,11 @@ public class GpioControlTests {
 		cfg1.setPropertyKey("i1");
 		cfg1.setPropertyType(Instantaneous);
 
-		expect(gpio.read(0)).andReturn(true);
+		final BitSet dirs = new BitSet();
+		dirs.set(cfg1.getAddress());
+		gpio.configureIoDirection(dirs);
+
+		expect(gpio.read(cfg1.getAddress())).andReturn(true);
 
 		doConnAction();
 		control.setPropConfigs(new GpioPropertyConfig[] { cfg1 });
@@ -223,8 +278,12 @@ public class GpioControlTests {
 		cfg1.setPropertyKey("i1");
 		cfg1.setPropertyType(Instantaneous);
 
+		final BitSet dirs = new BitSet();
+		dirs.set(cfg1.getAddress());
+		gpio.configureIoDirection(dirs);
+
 		final Integer gpioOut = 123;
-		expect(gpio.readAnalog(1)).andReturn(gpioOut);
+		expect(gpio.readAnalog(cfg1.getAddress())).andReturn(gpioOut);
 
 		doConnAction();
 		control.setPropConfigs(new GpioPropertyConfig[] { cfg1 });
@@ -256,8 +315,12 @@ public class GpioControlTests {
 		cfg1.setUnitIntercept(new BigDecimal("-61"));
 		cfg1.setUnitSlope(new BigDecimal("12").divide(new BigDecimal("471"), 9, RoundingMode.HALF_UP));
 
+		final BitSet dirs = new BitSet();
+		dirs.set(cfg1.getAddress());
+		gpio.configureIoDirection(dirs);
+
 		final Integer gpioOut = 532;
-		expect(gpio.readAnalog(1)).andReturn(gpioOut);
+		expect(gpio.readAnalog(cfg1.getAddress())).andReturn(gpioOut);
 
 		doConnAction();
 		control.setPropConfigs(new GpioPropertyConfig[] { cfg1 });

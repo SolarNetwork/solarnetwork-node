@@ -55,7 +55,8 @@
 		</bean>
 	</service>
 	
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.numato.usbgpio" autowire-on-update="true">
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.numato.usbgpio" 
+			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.service.NodeControlProvider</beans:value>
 			<beans:value>net.solarnetwork.node.reactor.InstructionHandler</beans:value>
@@ -69,7 +70,7 @@
 				</beans:list>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.control.numato.usbgpio.GpioControl">
+		<bean class="net.solarnetwork.node.control.numato.usbgpio.GpioControl" init-method="startup">
 			<argument>
 				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 					<argument ref="bundleContext"/>

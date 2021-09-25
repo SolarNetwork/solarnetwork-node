@@ -23,6 +23,7 @@
 package net.solarnetwork.node.control.numato.usbgpio;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,9 @@ public class GpioPropertyConfig extends NumberDatumSamplePropertyConfig<Integer>
 
 	/** The {@code gpioType} property default value. */
 	public static final GpioType DEFAULT_GPIO_TYPE = GpioType.Digital;
+
+	/** The {@code gpioDirection} property default value. */
+	public static final GpioDirection DEFAULT_GPIO_DIRECTION = GpioDirection.Input;
 
 	/**
 	 * Get settings suitable for configuring an instance of this class.
@@ -85,6 +89,16 @@ public class GpioPropertyConfig extends NumberDatumSamplePropertyConfig<Integer>
 		gpioTypeSpec.setValueTitles(gpioTypeTitles);
 		result.add(gpioTypeSpec);
 
+		// drop-down menu for gpioDirection
+		BasicMultiValueSettingSpecifier gpioDirSpec = new BasicMultiValueSettingSpecifier(
+				prefix + "gpioDirectionCode", String.valueOf(DEFAULT_GPIO_TYPE.getCode()));
+		Map<String, String> gpioDirTitles = new LinkedHashMap<>(2);
+		for ( GpioDirection e : GpioDirection.values() ) {
+			gpioDirTitles.put(String.valueOf(e.getCode()), e.toString());
+		}
+		gpioDirSpec.setValueTitles(gpioDirTitles);
+		result.add(gpioDirSpec);
+
 		result.addAll(numberTransformSettings(prefix));
 
 		result.add(new BasicTextFieldSettingSpecifier(prefix + "decimalScale",
@@ -92,8 +106,52 @@ public class GpioPropertyConfig extends NumberDatumSamplePropertyConfig<Integer>
 		return result;
 	}
 
+	/**
+	 * Create a new bit set suitable for using to configure the IO direction of
+	 * all GPIO addresses based on a set of configurations.
+	 * 
+	 * <p>
+	 * Only valid configurations are considered (those that return
+	 * {@literal true} from {@link #isValid()}.
+	 * </p>
+	 * 
+	 * @param configs
+	 *        the configurations to generate the bit set from
+	 * @return a bit set where
+	 */
+	public static BitSet ioDirectionBitSet(GpioPropertyConfig[] configs) {
+		final int len = (configs != null ? configs.length : 0);
+		if ( len < 1 ) {
+			return null;
+		}
+		BitSet result = new BitSet();
+		for ( int i = 0; i < len; i++ ) {
+			if ( configs[i].gpioDirection == GpioDirection.Input && configs[i].isValid() ) {
+				result.set(configs[i].getAddress());
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Create a new configuration instance.
+	 * 
+	 * @param controlId
+	 *        the control ID
+	 * @param address
+	 *        the GPIO address
+	 * @return the configuration, never {@literal null}
+	 */
+	public static GpioPropertyConfig of(String controlId, Integer address) {
+		GpioPropertyConfig cfg = new GpioPropertyConfig();
+		cfg.setControlId(controlId);
+		cfg.setAddress(address);
+		return cfg;
+	}
+
 	private String controlId;
 	private GpioType gpioType;
+	private GpioDirection gpioDirection;
 
 	/**
 	 * Constructor.
@@ -101,6 +159,7 @@ public class GpioPropertyConfig extends NumberDatumSamplePropertyConfig<Integer>
 	public GpioPropertyConfig() {
 		super();
 		setGpioType(DEFAULT_GPIO_TYPE);
+		setGpioDirection(DEFAULT_GPIO_DIRECTION);
 	}
 
 	/**
@@ -182,16 +241,13 @@ public class GpioPropertyConfig extends NumberDatumSamplePropertyConfig<Integer>
 	 *        be set
 	 */
 	public void setGpioType(GpioType gpioType) {
-		if ( gpioType == null ) {
-			gpioType = DEFAULT_GPIO_TYPE;
-		}
-		this.gpioType = gpioType;
+		this.gpioType = (gpioType != null ? gpioType : DEFAULT_GPIO_TYPE);
 	}
 
 	/**
 	 * Get the GPIO type code value.
 	 * 
-	 * @return the
+	 * @return the GPIO type code value
 	 */
 	public int getGpioTypeCode() {
 		return gpioType.getCode();
@@ -206,6 +262,46 @@ public class GpioPropertyConfig extends NumberDatumSamplePropertyConfig<Integer>
 	 */
 	public void setGpioTypeCode(int code) {
 		setGpioType(CodedValue.forCodeValue(code, GpioType.class, null));
+	}
+
+	/**
+	 * Get the GPIO direction.
+	 * 
+	 * @return the direction, never {@literal null}
+	 */
+	public GpioDirection getGpioDirection() {
+		return gpioDirection;
+	}
+
+	/**
+	 * Set the GPIO direction.
+	 * 
+	 * @param gpioDirection
+	 *        the direction to set; if {@literal null} then
+	 *        {@link #DEFAULT_GPIO_DIRECTION} will be set
+	 */
+	public void setGpioDirection(GpioDirection gpioDirection) {
+		this.gpioDirection = (gpioDirection != null ? gpioDirection : DEFAULT_GPIO_DIRECTION);
+	}
+
+	/**
+	 * Get the GPIO direction code value.
+	 * 
+	 * @return the GPIO direction code value
+	 */
+	public int getGpioDirectionCode() {
+		return gpioDirection.getCode();
+	}
+
+	/**
+	 * Set the GPIO direction as a code value.
+	 * 
+	 * @param code
+	 *        the code value to set; if not a valid {@link GpioDirection} code
+	 *        value the {@link #DEFAULT_GPIO_DIRECTION} will be set
+	 */
+	public void setGpioDirectionCode(int code) {
+		setGpioDirection(CodedValue.forCodeValue(code, GpioDirection.class, null));
 	}
 
 }

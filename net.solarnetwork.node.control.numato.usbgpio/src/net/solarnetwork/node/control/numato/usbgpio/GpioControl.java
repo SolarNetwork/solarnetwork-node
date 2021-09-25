@@ -23,10 +23,12 @@
 package net.solarnetwork.node.control.numato.usbgpio;
 
 import static java.util.stream.Collectors.toList;
+import static net.solarnetwork.node.control.numato.usbgpio.GpioPropertyConfig.ioDirectionBitSet;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -51,6 +53,7 @@ import net.solarnetwork.node.service.NodeControlProvider;
 import net.solarnetwork.service.OptionalService.OptionalFilterableService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
@@ -62,14 +65,15 @@ import net.solarnetwork.util.ArrayUtils;
  * @author matt
  * @version 1.0
  */
-public class GpioControl extends SerialDeviceSupport
-		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
+public class GpioControl extends SerialDeviceSupport implements SettingSpecifierProvider,
+		NodeControlProvider, InstructionHandler, SettingsChangeObserver {
 
 	/** The {@code serialNetworkUid} property default value. */
 	public static final String DEFAULT_SERIAL_NETWORK_UID = "Serial Port";
 
 	private GpioPropertyConfig[] propConfigs;
 	private Function<SerialConnection, GpioService> serviceProvider = UsbGpioService::new;
+	private BitSet configuredDirection;
 
 	/**
 	 * Constructor.
@@ -79,6 +83,56 @@ public class GpioControl extends SerialDeviceSupport
 		super.setSerialNetwork(serialNetwork);
 		setDisplayName("Numato USB GPIO Control");
 		setSerialNetworkUid(DEFAULT_SERIAL_NETWORK_UID);
+	}
+
+	/**
+	 * Call once after properties configured.
+	 */
+	public void startup() {
+		configurationChanged(null);
+	}
+
+	@Override
+	public synchronized void configurationChanged(Map<String, Object> properties) {
+		setupIoDirection(getPropConfigs());
+	}
+
+	private synchronized void setupIoDirection(final GpioPropertyConfig[] configs) {
+		BitSet dirs = ioDirectionBitSet(configs);
+		if ( dirs == null ) {
+			configuredDirection = null;
+			return;
+		}
+		if ( dirs.equals(configuredDirection) ) {
+			// unchanged, nothing to do
+			return;
+		}
+		try {
+			performAction(new SerialConnectionAction<Void>() {
+
+				@Override
+				public Void doWithConnection(SerialConnection conn) throws IOException {
+					setupIoDirection(dirs, conn);
+					return null;
+				}
+			});
+		} catch ( IOException e ) {
+			log.error("Communication error setting GPIO direction on [{}]: {}", getSerialNetworkUid(),
+					e.getMessage());
+		}
+	}
+
+	private synchronized void setupIoDirection(final BitSet dirs, final SerialConnection conn)
+			throws IOException {
+		if ( dirs.equals(configuredDirection) ) {
+			// unchanged, nothing to do
+			return;
+		}
+		GpioService gpio = serviceProvider.apply(conn);
+		if ( log.isInfoEnabled() ) {
+			log.info("Configuring GPIO direction on [{}] as inputs: {}", getSerialNetworkUid(), dirs);
+		}
+		gpio.configureIoDirection(dirs);
 	}
 
 	@Override
@@ -139,18 +193,26 @@ public class GpioControl extends SerialDeviceSupport
 				public SimpleNodeControlInfoDatum doWithConnection(SerialConnection conn)
 						throws IOException {
 					GpioService gpio = serviceProvider.apply(conn);
+
+					// check if direction has been set; might have failed during initialization
+					if ( configuredDirection == null ) {
+						setupIoDirection(ioDirectionBitSet(propConfigs), conn);
+					}
+
 					return currentValue(config, gpio);
 				}
 			});
 		} catch ( IOException e ) {
-			log.error("Communication error reading control [{}] status: {}", controlId, e.getMessage());
+			log.error("Communication error reading control [{}] status on [{}]: {}", controlId,
+					getSerialNetworkUid(), e.getMessage());
 
 		} catch ( Exception e ) {
 			Throwable root = e;
 			while ( root.getCause() != null ) {
 				root = root.getCause();
 			}
-			log.error("Error reading control [{}] status: {}", controlId, root.toString(), root);
+			log.error("Error reading control [{}] status on [{}]: {}", controlId, getSerialNetworkUid(),
+					root.toString(), root);
 		}
 		if ( result != null ) {
 			postControlEvent(NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED, result);

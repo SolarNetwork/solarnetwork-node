@@ -120,6 +120,8 @@ public interface GpioService {
 	 * {@link #configureIoDirection(BitSet)} or {@link #writeAll(BitSet)} calls.
 	 * 
 	 * @param set
+	 *        the GPIO addresses to enable for future operations, using bit
+	 *        positions
 	 * @throws IOException
 	 */
 	void configureWriteMask(BitSet set) throws IOException;
@@ -127,8 +129,13 @@ public interface GpioService {
 	/**
 	 * Configure the GPIO direction of all GPIO addresses.
 	 * 
+	 * <p>
+	 * If a bit is enabled that means the coreponsing GPIO address should be
+	 * configured as the <em>input</em> direction, otherwise as <em>output</em>.
+	 * </p>
+	 * 
 	 * @param set
-	 *        the GPIO addresses to enable, using bit positions
+	 *        the GPIO addresses to configure as input, using bit positions
 	 * @throws IOException
 	 *         if a communication error occurs
 	 */
