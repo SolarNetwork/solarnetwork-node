@@ -836,30 +836,48 @@ public class VirtualMeterDatumFilterServiceTests {
 	}
 
 	private static String pulseExpression() {
-		// The following expression is designed to deal with input readings of 0 or 1, where the desire
-		// is to count the number of toggles from 1 -> 0 -> 1 that take more than 1s to complete. The
-		// expression assumes the "track only when reading changes" setting is active. That means the
-		// `prevInput` value is always the last CHANGED input value, not necessarily the previously 
-		// SEEN input value!
-		// 
-		// The expression follows these rules:
-		//
-		// 1. If the input is the same as the last CHANGE, do nothing.
-		// 2. If the input has changed to 0, add 0.1.
-		// 3. If the input has changed and the last CHANGE is a whole number, add 0.1.
-		// 4. If the time since the last CHANGE is less than 1s, round the reading DOWN to a whole number.
-		// 5. Otherwise round the reading UP.
-		// 
-		// These rules have these general effects:
-		//
-		// * The meter "partially" advances whenever the input changes to 0; need change back to 1 to 
-		//   "fully" advance.
-		// * The meter "fully" advances when the input changes to 1, as long as duration of time at 
-		//   0 was 1s or more.
-		return "currInput == prevInput ? prevReading : (currInput < 1 || prevReading.stripTrailingZeros().scale() <= 0 ? "
-				+ "prevReading + 0.1 : "
-				+ "prevReading.setScale(0, (timeUnits < 1 ? T(java.math.RoundingMode).DOWN : T(java.math.RoundingMode).UP))"
+		/*-
+		 The following expression is designed to deal with input readings of 0 or 1, where the desire
+		 is to count the number of toggles from 1 -> 0 -> 1 that take more than 1s to complete. The
+		 expression assumes the "track only when reading changes" setting is active. That means the
+		 `prevInput` value is always the last CHANGED input value, not necessarily the previously 
+		 SEEN input value!
+		 
+		 The expression follows these rules:
+		
+		 1. If the input is the same as the last CHANGE, do nothing.
+		 2. If the input has changed to 0, add 0.1.
+		 3. If the input has changed and the last CHANGE is a whole number, add 0.1.
+		 4. If the time since the last CHANGE is less than 1s, round the reading DOWN to a whole number.
+		 5. Otherwise round the reading UP.
+		 
+		 These rules have these general effects:
+		
+		 * The meter "partially" advances whenever the input changes to 0; need change back to 1 to 
+		   "fully" advance.
+		 * The meter "fully" advances when the input changes to 1, as long as duration of time at 
+		   0 was 1s or more.
+		
+		 The expression can be translated into the following pseudo code:
+		 
+		 IF ( input has not changed ) THEN
+		 	reading does not change
+		 ELSE IF ( input is 0 OR reading is a whole number ) THEN
+		 	add 0.1 to reading
+		 ELSE IF ( time since last change is less than 1s ) THEN
+		 	round reading down
+		 ELSE
+		 	round meter up
+		 END IF		 
+		 */
+
+		// @formatter:off
+		return "currInput == prevInput ? prevReading : "
+				+ "currInput < 1 || prevReading.stripTrailingZeros().scale() <= 0 ? prevReading + 0.1 : "
+				+ "prevReading.setScale(0, "
+					+ "timeUnits < 1 ? T(java.math.RoundingMode).DOWN : T(java.math.RoundingMode).UP"
 				+ ")";
+		// @formatter:on
 	}
 
 	@Test
