@@ -616,7 +616,7 @@ public class GpioControlTests {
 		gpio.configureIoDirection(dirs);
 
 		// read first time
-		expect(gpio.read(cfg1.getAddress())).andReturn(true);
+		expect(gpio.read(0)).andReturn(true);
 
 		// set direction second time
 		final BitSet dirs2 = new BitSet();
@@ -624,7 +624,7 @@ public class GpioControlTests {
 		gpio.configureIoDirection(dirs2);
 
 		// read second time
-		expect(gpio.read(cfg1.getAddress())).andReturn(true);
+		expect(gpio.read(1)).andReturn(true);
 
 		// WHEN
 		replayAll();
