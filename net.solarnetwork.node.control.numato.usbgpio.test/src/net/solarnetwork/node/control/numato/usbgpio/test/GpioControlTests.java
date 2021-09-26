@@ -178,6 +178,7 @@ public class GpioControlTests {
 		expect(network.createConnection()).andReturn(conn);
 		conn.open();
 		expectLastCall().andThrow(new IOException("Ouch"));
+		conn.close();
 
 		// WHEN
 		replayAll();
@@ -201,6 +202,7 @@ public class GpioControlTests {
 		expect(network.createConnection()).andReturn(conn);
 		conn.open();
 		expectLastCall().andThrow(new IOException("Ouch"));
+		conn.close();
 
 		// re-try open connection in read
 		expect(network.createConnection()).andReturn(conn);

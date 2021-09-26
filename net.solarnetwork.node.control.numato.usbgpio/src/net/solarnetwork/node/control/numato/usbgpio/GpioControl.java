@@ -44,6 +44,7 @@ import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.io.serial.SerialConnection;
+import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.node.io.serial.SerialNetwork;
 import net.solarnetwork.node.io.serial.support.SerialDeviceSupport;
 import net.solarnetwork.node.reactor.Instruction;
@@ -156,9 +157,18 @@ public class GpioControl extends SerialDeviceSupport implements SettingSpecifier
 		if ( result == null ) {
 			SerialNetwork serial = service(getSerialNetwork());
 			if ( serial != null ) {
-				SerialConnection conn = serial.createConnection();
-				conn.open();
-				result = serviceProvider.apply(conn);
+				SerialConnection conn = null;
+				try {
+					conn = serial.createConnection();
+					conn.open();
+					result = serviceProvider.apply(conn);
+				} catch ( IOException e ) {
+					// close connection in case opened
+					if ( conn != null ) {
+						conn.close();
+					}
+					throw e;
+				}
 				gpioService = new CachedGpioService(serialNetworkUid, new WeakReference<>(result), conn);
 			}
 		}
@@ -222,6 +232,22 @@ public class GpioControl extends SerialDeviceSupport implements SettingSpecifier
 	public InstructionStatus processInstruction(Instruction instruction) {
 		// TODO
 		return null;
+	}
+
+	// override this because of cached serial connection
+	@Override
+	protected synchronized <T> T performAction(final SerialConnectionAction<T> action)
+			throws IOException {
+		final CachedGpioService cached = this.gpioService;
+		if ( cached == null ) {
+			return super.performAction(action);
+		}
+		try {
+			return action.doWithConnection(cached.conn);
+		} catch ( IOException e ) {
+			clearGpioService();
+			throw e;
+		}
 	}
 
 	@Override
