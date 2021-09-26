@@ -123,6 +123,7 @@ public interface GpioService {
 	 *        the GPIO addresses to enable for future operations, using bit
 	 *        positions
 	 * @throws IOException
+	 *         if a communication error occurs
 	 */
 	void configureWriteMask(BitSet set) throws IOException;
 

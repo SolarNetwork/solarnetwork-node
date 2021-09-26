@@ -78,6 +78,9 @@ public class GpioControl extends SerialDeviceSupport implements SettingSpecifier
 
 	/**
 	 * Constructor.
+	 * 
+	 * @param serialNetwork
+	 *        the network to use
 	 */
 	public GpioControl(OptionalFilterableService<SerialNetwork> serialNetwork) {
 		super();
