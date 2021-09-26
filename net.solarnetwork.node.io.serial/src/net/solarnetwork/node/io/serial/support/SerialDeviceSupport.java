@@ -144,7 +144,12 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 				});
 				deviceInfo = info;
 			} catch ( Exception e ) {
-				log.warn("Communcation problem with {}: {}", getUid(), e.getMessage());
+				String desc = getUid();
+				if ( desc == null || desc.isEmpty() ) {
+					desc = this.toString();
+				}
+				log.warn("Communcation problem getting [{}] info on [{}]: {}", desc,
+						getSerialNetworkUid(), e.getMessage());
 			}
 		}
 		return (info == null ? null : Collections.unmodifiableMap(info));
@@ -166,7 +171,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
-	protected final <T> T performAction(final SerialConnectionAction<T> action) throws IOException {
+	protected <T> T performAction(final SerialConnectionAction<T> action) throws IOException {
 		T result = null;
 		SerialNetwork device = OptionalService.service(serialNetwork);
 		if ( device != null ) {
