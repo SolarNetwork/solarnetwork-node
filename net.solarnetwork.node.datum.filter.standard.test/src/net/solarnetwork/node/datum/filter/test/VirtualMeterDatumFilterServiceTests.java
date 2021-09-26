@@ -24,6 +24,9 @@ package net.solarnetwork.node.datum.filter.test;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
+import static net.solarnetwork.node.datum.filter.virt.VirtualMeterDatumFilterService.VIRTUAL_METER_DATE_KEY;
+import static net.solarnetwork.node.datum.filter.virt.VirtualMeterDatumFilterService.VIRTUAL_METER_READING_KEY;
+import static net.solarnetwork.node.datum.filter.virt.VirtualMeterDatumFilterService.VIRTUAL_METER_VALUE_KEY;
 import static net.solarnetwork.util.NumberUtils.decimalArray;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
@@ -833,6 +836,26 @@ public class VirtualMeterDatumFilterServiceTests {
 	}
 
 	private static String pulseExpression() {
+		// The following expression is designed to deal with input readings of 0 or 1, where the desire
+		// is to count the number of toggles from 1 -> 0 -> 1 that take more than 1s to complete. The
+		// expression assumes the "track only when reading changes" setting is active. That means the
+		// `prevInput` value is always the last CHANGED input value, not necessarily the previously 
+		// SEEN input value!
+		// 
+		// The expression follows these rules:
+		//
+		// 1. If the input is the same as the last CHANGE, do nothing.
+		// 2. If the input has changed to 0, add 0.1.
+		// 3. If the input has changed and the last CHANGE is a whole number, add 0.1.
+		// 4. If the time since the last CHANGE is less than 1s, round the reading DOWN to a whole number.
+		// 5. Otherwise round the reading UP.
+		// 
+		// These rules have these general effects:
+		//
+		// * The meter "partially" advances whenever the input changes to 0; need change back to 1 to 
+		//   "fully" advance.
+		// * The meter "fully" advances when the input changes to 1, as long as duration of time at 
+		//   0 was 1s or more.
 		return "currInput == prevInput ? prevReading : (currInput < 1 || prevReading.stripTrailingZeros().scale() <= 0 ? "
 				+ "prevReading + 0.1 : "
 				+ "prevReading.setScale(0, (timeUnits < 1 ? T(java.math.RoundingMode).DOWN : T(java.math.RoundingMode).UP))"
@@ -1116,6 +1139,93 @@ public class VirtualMeterDatumFilterServiceTests {
 				new BigDecimal("0"), new BigDecimal("0.2"));
 		assertVirtualMeterMetadata("4th", savedMetas.get(3), "pulses", dates.get(11).toEpochMilli(),
 				new BigDecimal("1"), new BigDecimal("1"));
+	}
+
+	@Test
+	public void filter_pulse_continueFromPartialAdvance() {
+		// GIVEN
+		final SimpleDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		datum.asMutableSampleOperations().setSampleData(DatumSamplesType.Instantaneous, null);
+		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig("switch");
+		vmConfig.setPropertyType(DatumSamplesType.Status);
+		vmConfig.setReadingPropertyName("pulses");
+		vmConfig.setTrackOnlyWhenReadingChanges(true);
+		vmConfig.setMaxAgeSeconds(2);
+		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
+
+		ExpressionService exprService = new SpelExpressionService();
+		VirtualMeterExpressionConfig exprConfig = new VirtualMeterExpressionConfig("pulses",
+				DatumSamplesType.Accumulating, pulseExpression(), exprService.getUid());
+		xform.setExpressionConfigs(new VirtualMeterExpressionConfig[] { exprConfig });
+		xform.setExpressionServices(new StaticOptionalServiceCollection<>(singleton(exprService)));
+
+		// meter starting at 3.1, partially advanced but more than maxAgeSeconds ago, i.e. after reboot
+		final Instant start = LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC);
+		GeneralDatumMetadata meta = new GeneralDatumMetadata();
+		meta.putInfoValue("pulses", VIRTUAL_METER_DATE_KEY, start.minusSeconds(10).toEpochMilli());
+		meta.putInfoValue("pulses", VIRTUAL_METER_VALUE_KEY, BigDecimal.ZERO);
+		meta.putInfoValue("pulses", VIRTUAL_METER_READING_KEY, new BigDecimal("3.1"));
+		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(meta);
+
+		// add metadata
+		// @formatter:off
+		final List<Integer> inputs = Arrays.asList(
+				// start high for 1s
+				1, 1,
+				
+				// jump low for 1s; meter advances 0.2
+				0, 0,
+				
+				// back to high 1s; meter advances to 1
+				1, 1);
+		// @formatter:on
+		final int iterations = inputs.size();
+		final int changeCount = 3; // 2 changes + "reset" from maxAgeSeconds trip
+		Capture<GeneralDatumMetadata> metaCaptor = new CloningCapture(CaptureType.ALL);
+		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
+		expectLastCall().times(changeCount);
+
+		// WHEN
+		replayAll();
+		List<DatumSamplesOperations> outputs = new ArrayList<>();
+		List<Instant> dates = new ArrayList<>();
+		for ( int i = 0; i < iterations; i++ ) {
+			Instant ts = start.plusMillis(TimeUnit.SECONDS.toMillis(i) / 2);
+			SimpleDatum d = datum.copyWithId(DatumId.nodeId(null, datum.getSourceId(), ts));
+			d.getSamples().putStatusSampleValue("switch", inputs.get(i));
+			dates.add(ts);
+			outputs.add(xform.filter(d, d.getSamples(), emptyMap()));
+		}
+
+		// THEN
+
+		// This test demonstrates what might happen if a node reboots in the middle of a pulse.
+		// In this example, the node has started and the VM gets its first input 1, but the
+		// VM has a value already of 3.1 which means it has stopped after a partial advance.
+		// When the input changes to 0, the meter advances by 0.1 to reach 3.2 (another partial
+		// advance). When the input changes back to 1, the meter rounds up to reach 4. Thus
+		// the initial partial advance is discarded, as if the earlier pulse did not happen.
+
+		// @formatter:off
+		BigDecimal[] expectedInputs = decimalArray(   "1",   "1",   "0",   "0",  "1", "1");
+		BigDecimal[] expectedReadings = decimalArray(null, "3.1", "3.2", "3.2",  "4", "4");
+		// @formatter:on
+
+		for ( int i = 0; i < iterations; i++ ) {
+			DatumSamplesOperations result = outputs.get(i);
+			assertOutputValue("at sample " + i, result, "switch", "pulses", expectedInputs[i],
+					expectedReadings[i]);
+		}
+
+		List<GeneralDatumMetadata> savedMetas = metaCaptor.getValues();
+		assertThat("Saved meter metdata only for changes", savedMetas, hasSize(changeCount));
+
+		assertVirtualMeterMetadata("1st", savedMetas.get(0), "pulses", dates.get(0).toEpochMilli(),
+				new BigDecimal("1"), null);
+		assertVirtualMeterMetadata("2ns", savedMetas.get(1), "pulses", dates.get(2).toEpochMilli(),
+				new BigDecimal("0"), new BigDecimal("3.2"));
+		assertVirtualMeterMetadata("3rd", savedMetas.get(2), "pulses", dates.get(4).toEpochMilli(),
+				new BigDecimal("1"), new BigDecimal("4"));
 	}
 
 }
