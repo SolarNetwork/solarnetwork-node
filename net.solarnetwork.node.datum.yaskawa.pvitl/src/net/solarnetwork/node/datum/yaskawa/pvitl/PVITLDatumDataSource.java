@@ -140,6 +140,8 @@ public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITL
 				String.valueOf(defaults.getSampleCacheMs())));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
 
+		results.addAll(getDeviceInfoMetadataSettingSpecifiers());
+
 		return results;
 	}
 

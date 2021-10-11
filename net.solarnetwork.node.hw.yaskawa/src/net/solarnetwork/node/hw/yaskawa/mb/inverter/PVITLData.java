@@ -123,12 +123,13 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 		Map<String, Object> result = new LinkedHashMap<>(4);
 		String model = data.getModelName();
 		if ( model != null ) {
-			String firmwareVersion = getDspFirmwareVersion();
-			if ( firmwareVersion != null ) {
-				result.put(INFO_KEY_DEVICE_MODEL, String.format("%s (v%s)", model, firmwareVersion));
-			} else {
-				result.put(INFO_KEY_DEVICE_MODEL, model);
-			}
+			result.put(INFO_KEY_DEVICE_MODEL, model);
+		}
+		String dspFirmwareVersion = getDspFirmwareVersion();
+		String lcdFirmwareVersion = getLcdFirmwareVersion();
+		if ( dspFirmwareVersion != null && lcdFirmwareVersion != null ) {
+			result.put(INFO_KEY_DEVICE_VERSION,
+					String.format("DSP = %s, LCD = %s", dspFirmwareVersion, lcdFirmwareVersion));
 		}
 		String s = data.getSerialNumber();
 		if ( s != null ) {

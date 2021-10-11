@@ -26,12 +26,20 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+		
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.yaskawa.pvitl.PVITLDatumDataSource</value>
 				<value>net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport</value>
 				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.node.service.support.DatumDataSourceSupport</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
@@ -99,6 +107,7 @@
 								<bean class="net.solarnetwork.node.datum.yaskawa.pvitl.PVITLDatumDataSource">
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="placeholderService" ref="placeholderService"/>
+									<property name="datumMetadataService" ref="datumMetadataService"/>
 									<property name="modbusNetwork">
 										<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 											<argument ref="bundleContext"/>
