@@ -58,6 +58,13 @@ public interface DataAccessor {
 	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = "Manufacture Date";
 
 	/**
+	 * Key for the device version (e.g. firmware), as a String.
+	 * 
+	 * @since 2.0
+	 */
+	public static final String INFO_KEY_DEVICE_VERSION = "Version";
+
+	/**
 	 * Gets the time stamp of the data.
 	 * 
 	 * @return the data time stamp, or {@literal null} if no data has been
@@ -128,7 +135,11 @@ public interface DataAccessor {
 			}
 			o = info.get(INFO_KEY_DEVICE_SERIAL_NUMBER);
 			if ( o != null ) {
-				b.withVersion(o.toString());
+				b.withSerialNumber(o.toString());
+			}
+			o = info.get(INFO_KEY_DEVICE_VERSION);
+			if ( o != null ) {
+				b.withVersion(INFO_KEY_DEVICE_VERSION);
 			}
 			o = info.get(INFO_KEY_DEVICE_MANUFACTURE_DATE);
 			if ( o instanceof TemporalAccessor ) {
