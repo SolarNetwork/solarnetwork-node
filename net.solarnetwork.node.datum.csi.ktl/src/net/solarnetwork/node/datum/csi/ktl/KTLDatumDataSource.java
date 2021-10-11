@@ -210,6 +210,8 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 				String.valueOf(defaults.getSampleCacheMs())));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
 
+		results.addAll(getDeviceInfoMetadataSettingSpecifiers());
+
 		return results;
 	}
 

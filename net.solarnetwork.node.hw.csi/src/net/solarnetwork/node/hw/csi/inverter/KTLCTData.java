@@ -148,8 +148,8 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 		}
 		KTLCTFirmwareVersion version = data.getFirmwareVersion();
 		if ( version != null ) {
-			result.put("Firmware Version", String.format("DSP = %d, MCU = %d", version.getDspVersion(),
-					version.getMcuVersion()));
+			result.put(INFO_KEY_DEVICE_VERSION, String.format("DSP = %d, MCU = %d",
+					version.getDspVersion(), version.getMcuVersion()));
 		}
 		String s = data.getSerialNumber();
 		if ( s != null ) {
