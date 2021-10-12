@@ -102,6 +102,7 @@
 					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourcePollJob"/>
 					<property name="jobDataAsMap">
 						<map>
+							<entry key="datumMetadataService" value-ref="datumMetadataService"/>
 							<entry key="datumQueue" value-ref="datumQueue"/>
 							<entry key="multiDatumDataSource">
 								<bean class="net.solarnetwork.node.datum.yaskawa.pvitl.PVITLDatumDataSource">
