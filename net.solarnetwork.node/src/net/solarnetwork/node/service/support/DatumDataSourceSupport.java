@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.service.support;
 
+import static java.util.Collections.singletonMap;
 import static net.solarnetwork.service.OptionalService.service;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -61,19 +62,20 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	/**
 	 * A transform properties instance that can be used to signal "sub-sampling"
-	 * mode to the transform service.2
+	 * mode to the transform service.
 	 *
 	 * @since 1.1
 	 */
-	public static final Map<String, Object> SUB_SAMPLE_PROPS = Collections.singletonMap("subsample",
-			Boolean.TRUE);
+	public static final Map<String, Object> SUB_SAMPLE_PROPS = singletonMap("subsample", true);
 
 	/**
 	 * A global cache of source-based metadata, so only changes to metadata need
 	 * be posted.
 	 */
-	private static final ConcurrentMap<String, GeneralDatumMetadata> SOURCE_METADATA_CACHE = new ConcurrentHashMap<String, GeneralDatumMetadata>(
-			4);
+	private static final ConcurrentMap<String, GeneralDatumMetadata> SOURCE_METADATA_CACHE;
+	static {
+		SOURCE_METADATA_CACHE = new ConcurrentHashMap<>(8, 0.9f, 2);
+	}
 
 	/** The {@code subSampleStartDelay} property default value. */
 	public static final long DEFAULT_SUBSAMPLE_START_DELAY = 15000L;
