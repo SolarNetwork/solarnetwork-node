@@ -139,7 +139,7 @@ public interface DataAccessor {
 			}
 			o = info.get(INFO_KEY_DEVICE_VERSION);
 			if ( o != null ) {
-				b.withVersion(INFO_KEY_DEVICE_VERSION);
+				b.withVersion(o.toString());
 			}
 			o = info.get(INFO_KEY_DEVICE_MANUFACTURE_DATE);
 			if ( o instanceof TemporalAccessor ) {
