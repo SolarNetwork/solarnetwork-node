@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -392,35 +391,28 @@ public class MqttUploadService extends BaseMqttConnectionService
 		return false;
 	}
 
-	private void postInstructionAcks(List<Instruction> instructions) {
-		if ( instructions == null || instructions.isEmpty() ) {
+	private void postInstructionAck(ReactorService reactor, MqttConnection conn, Long nodeId,
+			Instruction instr) {
+		if ( instr == null ) {
 			return;
 		}
-		MqttConnection conn = connection();
-		Long nodeId = identityService.getNodeId();
-		ReactorService reactor = OptionalService.service(reactorServiceOpt);
 		if ( conn == null || nodeId == null ) {
 			// save locally for batch upload
 			if ( reactor != null ) {
-				for ( Instruction instr : instructions ) {
-					reactor.storeInstruction(instr);
-				}
+				reactor.storeInstruction(instr);
 			}
 		} else {
-			for ( Instruction instr : instructions ) {
-				if ( publishInstructionAck(conn, nodeId, instr) ) {
-					if ( reactor != null ) {
-						// if instructions have a local ID, store ack
-						if ( instr.getId() != null && instr.getStatus() != null ) {
-							BasicInstruction ackInstr = new BasicInstruction(instr,
-									instr.getStatus().newCopyWithAcknowledgedState(
-											instr.getStatus().getInstructionState()));
-							reactor.storeInstruction(ackInstr);
-						}
+			if ( publishInstructionAck(conn, nodeId, instr) ) {
+				if ( reactor != null ) {
+					// if instructions have a local ID, store ack
+					if ( instr.getId() != null && instr.getStatus() != null ) {
+						BasicInstruction ackInstr = new BasicInstruction(instr, instr.getStatus()
+								.newCopyWithAcknowledgedState(instr.getStatus().getInstructionState()));
+						reactor.storeInstruction(ackInstr);
 					}
-				} else if ( reactor != null ) {
-					reactor.storeInstruction(instr);
 				}
+			} else if ( reactor != null ) {
+				reactor.storeInstruction(instr);
 			}
 		}
 	}
@@ -454,7 +446,6 @@ public class MqttUploadService extends BaseMqttConnectionService
 
 			final MqttConnection conn = connection();
 			final Long nodeId = identityService.getNodeId();
-			final List<Instruction> resultInstructions = new ArrayList<>();
 			for ( JsonNode instrNode : instrArray ) {
 				try {
 					net.solarnetwork.domain.Instruction commonInstr = objectMapper.treeToValue(instrNode,
@@ -500,13 +491,11 @@ public class MqttUploadService extends BaseMqttConnectionService
 					}
 					instr = new BasicInstruction(instr, status);
 					reactor.storeInstruction(instr);
-					postInstructionAcks(null);
-					resultInstructions.add(instr);
+					postInstructionAck(reactor, conn, nodeId, instr);
 				} catch ( Exception e ) {
 					log.warn("Unable to accept instruction JSON [{}]: {}", instrNode, e.toString());
 				}
 			}
-			postInstructionAcks(resultInstructions);
 		} catch ( RuntimeException | IOException e ) {
 			log.error("Error handling MQTT message on topic {}", topic, e);
 		}
