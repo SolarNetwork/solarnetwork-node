@@ -71,8 +71,9 @@ public class SimpleReactorService implements ReactorService {
 		if ( instruction.getStatus() != null ) {
 			instructionDao.storeInstructionStatus(instruction.getId(), instruction.getInstructorId(),
 					instruction.getStatus());
+		} else {
+			instructionDao.storeInstruction(instruction);
 		}
-		instructionDao.storeInstruction(instruction);
 	}
 
 }
