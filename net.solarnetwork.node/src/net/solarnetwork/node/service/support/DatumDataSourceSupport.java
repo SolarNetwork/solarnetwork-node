@@ -185,8 +185,8 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * @since 1.7
 	 */
 	protected List<SettingSpecifier> getDeviceInfoMetadataSettingSpecifiers() {
-		return Collections.singletonList(
-				new BasicToggleSettingSpecifier("publishDeviceInfoMetadata", Boolean.FALSE));
+		return Collections.singletonList(new BasicToggleSettingSpecifier("publishDeviceInfoMetadata",
+				DEFAULT_PUBLISH_DEVICE_INFO_METADATA));
 	}
 
 	/**
