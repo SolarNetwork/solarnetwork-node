@@ -78,6 +78,9 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	/** The {@code subSampleStartDelay} property default value. */
 	public static final long DEFAULT_SUBSAMPLE_START_DELAY = 15000L;
 
+	/** The {@code publishDeviceInfoMetadata} property default value. */
+	public static final boolean DEFAULT_PUBLISH_DEVICE_INFO_METADATA = true;
+
 	private OptionalService<DatumMetadataService> datumMetadataService;
 	private OptionalService<DatumQueue> datumQueue;
 	private TaskScheduler taskScheduler = null;
@@ -85,7 +88,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	private long subSampleStartDelay = DEFAULT_SUBSAMPLE_START_DELAY;
 	private OptionalFilterableService<DatumFilterService> datumFilterService;
 	private ExpressionConfig[] expressionConfigs;
-	private boolean publishDeviceInfoMetadata = false;
+	private boolean publishDeviceInfoMetadata = DEFAULT_PUBLISH_DEVICE_INFO_METADATA;
 
 	private ScheduledFuture<?> subSampleFuture;
 
@@ -184,6 +187,15 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	protected List<SettingSpecifier> getDeviceInfoMetadataSettingSpecifiers() {
 		return Collections.singletonList(
 				new BasicToggleSettingSpecifier("publishDeviceInfoMetadata", Boolean.FALSE));
+	}
+
+	/**
+	 * Support the {@code DeviceInfoProvider} publish setting.
+	 * 
+	 * @return the {@link #isPublishDeviceInfoMetadata()} value
+	 */
+	public boolean canPublishDeviceInfo() {
+		return isPublishDeviceInfoMetadata();
 	}
 
 	/**
@@ -489,8 +501,8 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	/**
 	 * Get the desired device info metadata publish mode.
 	 *
-	 * @return {@literal true} to publish device metadata
-	 * @since 1.7
+	 * @return {@literal true} to publish device metadata; defaults to
+	 *         {@link DEFAULT_PUBLISH_DEVICE_INFO_METADATA}
 	 */
 	public boolean isPublishDeviceInfoMetadata() {
 		return publishDeviceInfoMetadata;
@@ -502,7 +514,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * @param publishDeviceInfoMetadata
 	 *        {@literal true} to publish device metadata once, after the first
 	 *        datum has been captured
-	 * @since 1.7
 	 */
 	public void setPublishDeviceInfoMetadata(boolean publishDeviceInfoMetadata) {
 		this.publishDeviceInfoMetadata = publishDeviceInfoMetadata;

@@ -61,4 +61,14 @@ public interface DeviceInfoProvider {
 		return null;
 	}
 
+	/**
+	 * Get the publish setting for the device info.
+	 * 
+	 * @return {@literal true} if the device info can be published, typically as
+	 *         metadata; defaults to {@literal true}
+	 */
+	default boolean canPublishDeviceInfo() {
+		return true;
+	}
+
 }

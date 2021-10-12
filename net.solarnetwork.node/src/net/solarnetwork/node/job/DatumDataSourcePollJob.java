@@ -155,7 +155,9 @@ public class DatumDataSourcePollJob extends AbstractJob implements SettingSpecif
 			queue.offer(datum, true);
 			log.debug("Offered datum {} to queue", datum);
 		}
-		publishDeviceInfoMetadata(infoProvider);
+		if ( infoProvider.canPublishDeviceInfo() ) {
+			publishDeviceInfoMetadata(infoProvider);
+		}
 	}
 
 	private void publishDeviceInfoMetadata(DeviceInfoProvider infoProvider) {
@@ -223,7 +225,7 @@ public class DatumDataSourcePollJob extends AbstractJob implements SettingSpecif
 		if ( delegate == null ) {
 			return Collections.emptyList();
 		}
-		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>();
+		List<SettingSpecifier> result = new ArrayList<>();
 		final String prefix = (multiDatumDataSource != null ? "multiDatumDataSource."
 				: "datumDataSource.");
 		for ( SettingSpecifier spec : delegate.getSettingSpecifiers() ) {
@@ -298,7 +300,6 @@ public class DatumDataSourcePollJob extends AbstractJob implements SettingSpecif
 	 * Get the configured {@link DatumMetadataService}.
 	 * 
 	 * @return the service to use
-	 * @since 2.2
 	 */
 	public OptionalService<DatumMetadataService> getDatumMetadataService() {
 		return datumMetadataService;
@@ -309,7 +310,6 @@ public class DatumDataSourcePollJob extends AbstractJob implements SettingSpecif
 	 * 
 	 * @param datumMetadataService
 	 *        the service to use
-	 * @since 2.2
 	 */
 	public void setDatumMetadataService(OptionalService<DatumMetadataService> datumMetadataService) {
 		this.datumMetadataService = datumMetadataService;
