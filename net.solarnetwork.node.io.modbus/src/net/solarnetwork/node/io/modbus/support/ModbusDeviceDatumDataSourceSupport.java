@@ -227,9 +227,6 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 * @since 2.2
 	 */
 	public DeviceInfo deviceInfo() {
-		if ( !isPublishDeviceInfoMetadata() ) {
-			return null;
-		}
 		Map<String, ?> info = getDeviceInfo();
 		BasicDeviceInfo.Builder b = DataAccessor.deviceInfoBuilderForInfo(info);
 		return (b.isEmpty() ? null : b.build());
