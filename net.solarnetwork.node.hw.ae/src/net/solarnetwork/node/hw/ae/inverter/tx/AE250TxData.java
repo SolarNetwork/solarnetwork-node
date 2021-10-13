@@ -34,6 +34,7 @@ import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.Bitmaskable;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -90,10 +91,10 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 		if ( type != null ) {
 			String firmwareVersion = data.getFirmwareRevision();
 			if ( firmwareVersion != null ) {
-				result.put(INFO_KEY_DEVICE_MODEL,
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL,
 						String.format("%s (firmware %s)", type.getDescription(), firmwareVersion));
 			} else {
-				result.put(INFO_KEY_DEVICE_MODEL, type.getDescription());
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, type.getDescription());
 			}
 		}
 		AEInverterConfiguration config = data.getInverterConfiguration();
@@ -104,7 +105,7 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 		}
 		String s = data.getSerialNumber();
 		if ( s != null && !s.isEmpty() ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, s);
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, s);
 		}
 		s = data.getIdNumber();
 		if ( s != null && !s.isEmpty() ) {

@@ -31,6 +31,7 @@ import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.Bitmaskable;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -140,20 +141,20 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 		if ( model != null ) {
 			KTLCTInverterType type = data.getInverterType();
 			if ( type != null ) {
-				result.put(INFO_KEY_DEVICE_MODEL,
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL,
 						String.format("%s (%s)", model, type.getDescription()));
 			} else {
-				result.put(INFO_KEY_DEVICE_MODEL, model);
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, model);
 			}
 		}
 		KTLCTFirmwareVersion version = data.getFirmwareVersion();
 		if ( version != null ) {
-			result.put(INFO_KEY_DEVICE_VERSION, String.format("DSP = %d, MCU = %d",
+			result.put(DataAccessor.INFO_KEY_DEVICE_VERSION, String.format("DSP = %d, MCU = %d",
 					version.getDspVersion(), version.getMcuVersion()));
 		}
 		String s = data.getSerialNumber();
 		if ( s != null ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, s);
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, s);
 		}
 		Set<KTLCTWarn> warns = data.getWarnings();
 		if ( warns != null && !warns.isEmpty() ) {

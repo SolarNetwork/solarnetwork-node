@@ -32,6 +32,7 @@ import java.util.SortedSet;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -89,11 +90,11 @@ public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
 		Map<String, Object> result = new LinkedHashMap<>(4);
 		String firmwareVersion = data.getFirmwareVersion();
 		if ( firmwareVersion != null ) {
-			result.put(INFO_KEY_DEVICE_MODEL, firmwareVersion);
+			result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, firmwareVersion);
 		}
 		String s = data.getSerialNumber();
 		if ( s != null ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, s);
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, s);
 		}
 		return result;
 	}

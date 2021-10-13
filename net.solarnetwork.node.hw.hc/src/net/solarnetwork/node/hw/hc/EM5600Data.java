@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -85,18 +86,18 @@ public class EM5600Data extends ModbusData implements EM5600DataAccessor {
 			}
 			String version = data.getHardwareRevision();
 			if ( version != null ) {
-				result.put(INFO_KEY_DEVICE_MODEL, String.format("%s (version %s)", modelName, version));
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, String.format("%s (version %s)", modelName, version));
 			} else {
-				result.put(INFO_KEY_DEVICE_MODEL, modelName);
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, modelName);
 			}
 		}
 		String sn = data.getSerialNumber();
 		if ( sn != null ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, sn);
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, sn);
 		}
 		LocalDateTime date = data.getManufactureDate();
 		if ( date != null ) {
-			result.put(INFO_KEY_DEVICE_MANUFACTURE_DATE, date.toLocalDate());
+			result.put(DataAccessor.INFO_KEY_DEVICE_MANUFACTURE_DATE, date.toLocalDate());
 		}
 		return result;
 	}

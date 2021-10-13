@@ -29,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import net.solarnetwork.domain.CodedValue;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.hw.sma.domain.SmaCodedValue;
 import net.solarnetwork.node.hw.sma.domain.SmaCommonStatusCode;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceDataAccessor;
@@ -115,11 +116,11 @@ public abstract class SmaDeviceData extends ModbusData implements SmaDeviceDataA
 		SmaDeviceKind type = data.getDeviceKind();
 		if ( type != null ) {
 			result.put("Device ID", type.getCode());
-			result.put(INFO_KEY_DEVICE_MODEL, type.getDescription());
+			result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, type.getDescription());
 		}
 		Long n = data.getSerialNumber();
 		if ( n != null ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, n.toString());
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, n.toString());
 		}
 		return result;
 	}

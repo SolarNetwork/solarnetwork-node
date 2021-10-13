@@ -43,6 +43,7 @@ import org.quartz.TriggerKey;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.domain.datum.AtmosphericDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleAtmosphericDatum;
@@ -148,12 +149,12 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport<Atm
 		String serialNum = helper.getSerialNumber();
 		Map<String, Object> info = new LinkedHashMap<>(3);
 		if ( serialNum != null ) {
-			info.put(INFO_KEY_DEVICE_SERIAL_NUMBER, serialNum);
+			info.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, serialNum);
 		}
 		FirmwareVersion fwVers = helper.getFirmwareVersion();
 		if ( fwVers != null ) {
-			info.put(INFO_KEY_DEVICE_MANUFACTURE_DATE, fwVers.getDate());
-			info.put(INFO_KEY_DEVICE_MODEL, fwVers.getVersion());
+			info.put(DataAccessor.INFO_KEY_DEVICE_MANUFACTURE_DATE, fwVers.getDate());
+			info.put(DataAccessor.INFO_KEY_DEVICE_MODEL, fwVers.getVersion());
 		}
 		return info.isEmpty() ? null : info;
 	}

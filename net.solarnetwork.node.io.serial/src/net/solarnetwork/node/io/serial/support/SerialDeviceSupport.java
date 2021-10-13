@@ -52,23 +52,6 @@ import net.solarnetwork.util.StringUtils;
  */
 public abstract class SerialDeviceSupport extends BaseIdentifiable {
 
-	/** Key for the device name, as a String. */
-	public static final String INFO_KEY_DEVICE_NAME = "Name";
-
-	/** Key for the device model, as a String. */
-	public static final String INFO_KEY_DEVICE_MODEL = "Model";
-
-	/** Key for the device serial number, as a Long. */
-	public static final String INFO_KEY_DEVICE_SERIAL_NUMBER = "Serial Number";
-
-	/** Key for the device manufacturer, as a String. */
-	public static final String INFO_KEY_DEVICE_MANUFACTURER = "Manufacturer";
-
-	/**
-	 * Key for the device manufacture date, as a {@link java.time.LocalDate}.
-	 */
-	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = "Manufacture Date";
-
 	/**
 	 * Get setting specifiers for the serial network UID filter.
 	 * 

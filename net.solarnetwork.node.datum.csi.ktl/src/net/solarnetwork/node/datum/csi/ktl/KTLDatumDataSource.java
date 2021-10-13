@@ -81,6 +81,11 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 	}
 
 	@Override
+	public String deviceInfoSourceId() {
+		return resolvePlaceholders(sourceId);
+	}
+
+	@Override
 	protected void refreshDeviceInfo(ModbusConnection connection, KTLCTData sample) throws IOException {
 		sample.readConfigurationData(connection);
 	}

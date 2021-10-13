@@ -33,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -137,7 +138,7 @@ public class WattsOnData extends ModbusData implements WattsOnDataAccessor {
 		Map<String, Object> result = new LinkedHashMap<>(4);
 		Number firmwareVersion = data.getFirmwareRevision();
 		if ( firmwareVersion != null ) {
-			result.put(INFO_KEY_DEVICE_MODEL, firmwareVersion);
+			result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, firmwareVersion);
 		}
 		Ratio ptRatio = data.getPowerTransformerRatio();
 		if ( ptRatio != null ) {
@@ -149,7 +150,7 @@ public class WattsOnData extends ModbusData implements WattsOnDataAccessor {
 		}
 		Number n = data.getSerialNumber();
 		if ( n != null ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, n);
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, n);
 		}
 		return result;
 	}

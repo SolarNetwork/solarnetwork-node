@@ -32,6 +32,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.domain.datum.AcEnergyDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.schneider.meter.ION6200Data;
@@ -156,10 +157,10 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		if ( type != null ) {
 			Integer firmwareVersion = data.getFirmwareRevision();
 			if ( firmwareVersion != null ) {
-				result.put(INFO_KEY_DEVICE_MODEL,
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL,
 						String.format("%d (firmware %d)", type, firmwareVersion));
 			} else {
-				result.put(INFO_KEY_DEVICE_MODEL, type);
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, type);
 			}
 		}
 		ION6200VoltsMode wiringMode = data.getVoltsMode();
@@ -168,7 +169,7 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		}
 		Long l = data.getSerialNumber();
 		if ( l != null ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, l);
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, l);
 		}
 		return result;
 	}

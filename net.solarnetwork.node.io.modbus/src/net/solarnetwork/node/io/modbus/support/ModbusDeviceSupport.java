@@ -47,18 +47,6 @@ import net.solarnetwork.util.StringUtils;
  */
 public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 
-	/** Key for the device name, as a String. */
-	public static final String INFO_KEY_DEVICE_NAME = "Name";
-
-	/** Key for the device model, as a String. */
-	public static final String INFO_KEY_DEVICE_MODEL = "Model";
-
-	/** Key for the device serial number, as a Long. */
-	public static final String INFO_KEY_DEVICE_SERIAL_NUMBER = "Serial Number";
-
-	/** Key for the device manufacturer, as a String. */
-	public static final String INFO_KEY_DEVICE_MANUFACTURER = "Manufacturer";
-
 	/**
 	 * The default value for the {@code unitId} property.
 	 * 

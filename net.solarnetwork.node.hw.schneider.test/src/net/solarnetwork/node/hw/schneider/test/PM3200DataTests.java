@@ -50,12 +50,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Data;
 import net.solarnetwork.node.hw.schneider.meter.PM3200DataAccessor;
 import net.solarnetwork.node.hw.schneider.meter.PM3200Register;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
-import net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport;
 import net.solarnetwork.node.test.DataUtils;
 
 /**
@@ -196,13 +196,13 @@ public class PM3200DataTests {
 		Map<String, Object> info = data.getDeviceInfo();
 		assertThat("Info size", info.keySet(), hasSize(4));
 		assertThat("Model", info,
-				hasEntry(ModbusDeviceSupport.INFO_KEY_DEVICE_MODEL, "iEM3255 (version 1.3.007)"));
+				hasEntry(DataAccessor.INFO_KEY_DEVICE_MODEL, "iEM3255 (version 1.3.007)"));
 		assertThat("Manufacturer", info,
-				hasEntry(ModbusDeviceSupport.INFO_KEY_DEVICE_MANUFACTURER, "Schneider Electric"));
+				hasEntry(DataAccessor.INFO_KEY_DEVICE_MANUFACTURER, "Schneider Electric"));
 		assertThat("Serial number", info,
-				hasEntry(ModbusDeviceSupport.INFO_KEY_DEVICE_SERIAL_NUMBER, 16233039L));
-		assertThat("Manufacture date", info, hasEntry(
-				ModbusDeviceSupport.INFO_KEY_DEVICE_MANUFACTURE_DATE, LocalDate.of(2016, 6, 1)));
+				hasEntry(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, 16233039L));
+		assertThat("Manufacture date", info,
+				hasEntry(DataAccessor.INFO_KEY_DEVICE_MANUFACTURE_DATE, LocalDate.of(2016, 6, 1)));
 	}
 
 	@Test

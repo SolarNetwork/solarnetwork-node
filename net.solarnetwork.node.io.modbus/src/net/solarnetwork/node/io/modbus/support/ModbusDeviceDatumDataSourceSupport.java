@@ -49,23 +49,6 @@ import net.solarnetwork.util.StringUtils;
  */
 public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSourceSupport {
 
-	/** Key for the device name, as a String. */
-	public static final String INFO_KEY_DEVICE_NAME = ModbusDeviceSupport.INFO_KEY_DEVICE_NAME;
-
-	/** Key for the device model, as a String. */
-	public static final String INFO_KEY_DEVICE_MODEL = ModbusDeviceSupport.INFO_KEY_DEVICE_MODEL;
-
-	/** Key for the device serial number, as a Long. */
-	public static final String INFO_KEY_DEVICE_SERIAL_NUMBER = ModbusDeviceSupport.INFO_KEY_DEVICE_SERIAL_NUMBER;
-
-	/** Key for the device manufacturer, as a String. */
-	public static final String INFO_KEY_DEVICE_MANUFACTURER = ModbusDeviceSupport.INFO_KEY_DEVICE_MANUFACTURER;
-
-	/**
-	 * Key for the device manufacture date, as a {@link java.time.LocalDate}.
-	 */
-	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = ModbusDeviceSupport.INFO_KEY_DEVICE_MANUFACTURE_DATE;
-
 	/** The {@code unitId} property default value. */
 	public static final int DEFAULT_UNIT_ID = 1;
 

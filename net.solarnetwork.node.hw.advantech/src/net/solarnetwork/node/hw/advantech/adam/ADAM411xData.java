@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -73,10 +74,10 @@ public class ADAM411xData extends ModbusData implements ADAM411xDataAccessor {
 		if ( modelName != null ) {
 			String version = data.getFirmwareRevision();
 			if ( version != null ) {
-				result.put(INFO_KEY_DEVICE_MODEL,
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL,
 						String.format("%s (firmware revision %s)", modelName, version));
 			} else {
-				result.put(INFO_KEY_DEVICE_MODEL, modelName);
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, modelName);
 			}
 		}
 		Set<Integer> enabledChannels = data.getEnabledChannelNumbers();

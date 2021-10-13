@@ -40,29 +40,23 @@ import net.solarnetwork.domain.DeviceInfo;
  */
 public interface DataAccessor {
 
-	/** Key for the device name, as a String. */
-	public static final String INFO_KEY_DEVICE_NAME = "Name";
+	/** Key for the name, as a String. */
+	String INFO_KEY_DEVICE_NAME = "Name";
 
-	/** Key for the device model, as a String. */
-	public static final String INFO_KEY_DEVICE_MODEL = "Model";
+	/** Key for the model, as a String. */
+	String INFO_KEY_DEVICE_MODEL = "Model";
 
-	/** Key for the device serial number, as a Long. */
-	public static final String INFO_KEY_DEVICE_SERIAL_NUMBER = "Serial Number";
+	/** Key for the serial number, as a Long. */
+	String INFO_KEY_DEVICE_SERIAL_NUMBER = "Serial Number";
 
-	/** Key for the device manufacturer, as a String. */
-	public static final String INFO_KEY_DEVICE_MANUFACTURER = "Manufacturer";
+	/** Key for the manufacturer, as a String. */
+	String INFO_KEY_DEVICE_MANUFACTURER = "Manufacturer";
 
-	/**
-	 * Key for the device manufacture date, as a {@link java.time.LocalDate}.
-	 */
-	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = "Manufacture Date";
+	/** Key for the manufacture date, as a {@link java.time.LocalDate}. */
+	String INFO_KEY_DEVICE_MANUFACTURE_DATE = "Manufacture Date";
 
-	/**
-	 * Key for the device version (e.g. firmware), as a String.
-	 * 
-	 * @since 2.0
-	 */
-	public static final String INFO_KEY_DEVICE_VERSION = "Version";
+	/** Key for the version (e.g. firmware), as a String. */
+	String INFO_KEY_DEVICE_VERSION = "Version";
 
 	/**
 	 * Gets the time stamp of the data.
@@ -106,17 +100,16 @@ public interface DataAccessor {
 	 */
 	default BasicDeviceInfo.Builder deviceInfoBuilder() {
 		Map<String, Object> info = getDeviceInfo();
-		return deviceInfoBuilderForInfo(info);
+		return DataAccessor.deviceInfoBuilderForInfo(info);
 	}
 
 	/**
-	 * Get a {@link BasicDeviceInfo} builder, populated from an info map, like
-	 * those returned from {@link DataAccessor#getDeviceInfo()}.
+	 * Get a {@link BasicDeviceInfo} builder, populated from an info map, using
+	 * the {@code INFO_*} keys defined on this interface.
 	 * 
 	 * @param info
 	 *        the info to extract device properties from
 	 * @return the builder, never {@literal null}
-	 * @since 1.1
 	 */
 	static BasicDeviceInfo.Builder deviceInfoBuilderForInfo(Map<String, ?> info) {
 		BasicDeviceInfo.Builder b = BasicDeviceInfo.builder();

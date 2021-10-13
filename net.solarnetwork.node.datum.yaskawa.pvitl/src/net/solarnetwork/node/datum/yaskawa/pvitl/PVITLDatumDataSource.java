@@ -70,6 +70,11 @@ public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITL
 	}
 
 	@Override
+	public String deviceInfoSourceId() {
+		return resolvePlaceholders(sourceId);
+	}
+
+	@Override
 	protected void refreshDeviceInfo(ModbusConnection connection, PVITLData sample) throws IOException {
 		sample.readConfigurationData(connection);
 	}

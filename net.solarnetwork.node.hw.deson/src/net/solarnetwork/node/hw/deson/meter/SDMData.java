@@ -30,12 +30,12 @@ import java.util.List;
 import java.util.Map;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusDataUtils;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
-import net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport;
 import net.solarnetwork.util.IntRange;
 import net.solarnetwork.util.IntRangeSet;
 import net.solarnetwork.util.IntShortMap;
@@ -239,11 +239,11 @@ public class SDMData extends ModbusData implements SDMDataAccessor {
 	@Override
 	public Map<String, Object> getDeviceInfo() {
 		Map<String, Object> result = new LinkedHashMap<String, Object>(4);
-		result.put(ModbusDeviceSupport.INFO_KEY_DEVICE_MODEL, deviceType.getDescription());
+		result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, deviceType.getDescription());
 		result.put(INFO_KEY_DEVICE_WIRING_TYPE, getWiringType());
 		String sn = getSerialNumber();
 		if ( sn != null ) {
-			result.put(ModbusDeviceSupport.INFO_KEY_DEVICE_SERIAL_NUMBER, getSerialNumber());
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, getSerialNumber());
 		}
 		return result;
 	}

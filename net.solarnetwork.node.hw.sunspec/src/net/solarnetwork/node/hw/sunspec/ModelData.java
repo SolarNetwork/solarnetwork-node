@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.domain.BasicDeviceInfo;
 import net.solarnetwork.domain.DeviceInfo;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -170,20 +171,20 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 		Map<String, Object> result = new LinkedHashMap<>(4);
 		String manufacturer = data.getManufacturer();
 		if ( manufacturer != null ) {
-			result.put(INFO_KEY_DEVICE_MANUFACTURER, manufacturer);
+			result.put(DataAccessor.INFO_KEY_DEVICE_MANUFACTURER, manufacturer);
 		}
 		String model = data.getModelName();
 		if ( model != null ) {
 			String version = data.getVersion();
 			if ( version != null ) {
-				result.put(INFO_KEY_DEVICE_MODEL, String.format("%s (version %s)", model, version));
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, String.format("%s (version %s)", model, version));
 			} else {
-				result.put(INFO_KEY_DEVICE_MODEL, model.toString());
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, model.toString());
 			}
 		}
 		String sn = data.getSerialNumber();
 		if ( sn != null ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, sn);
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, sn);
 		}
 		return result;
 	}

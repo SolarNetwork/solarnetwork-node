@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.yaskawa.ecb.BasicDatumPopulatorAction;
@@ -136,7 +137,7 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport<A
 			try {
 				PVI3800Identification ident = new PVI3800Identification(PacketUtils.sendPacket(conn,
 						PVI3800Command.InfoReadIdentification.request(unitId)));
-				result.put(INFO_KEY_DEVICE_MODEL, ident.getDescription());
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, ident.getDescription());
 			} catch ( IllegalArgumentException e ) {
 				log.warn("Error reading system information from unit {}: {}", unitId, e.getMessage());
 			}
@@ -145,7 +146,7 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport<A
 					PVI3800Command.InfoReadSerialNumber.request(unitId));
 			if ( serialNumber != null ) {
 				try {
-					result.put(INFO_KEY_DEVICE_SERIAL_NUMBER,
+					result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER,
 							new String(serialNumber.getBody(), "US-ASCII"));
 				} catch ( UnsupportedEncodingException e ) {
 					// ignore this

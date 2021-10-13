@@ -32,7 +32,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import net.solarnetwork.domain.BasicDeviceInfo;
+import net.solarnetwork.domain.DeviceInfo;
 import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.node.io.serial.SerialNetwork;
@@ -57,23 +60,6 @@ import net.solarnetwork.util.StringUtils;
  */
 public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 		extends DatumDataSourceSupport {
-
-	/** Key for the device name, as a String. */
-	public static final String INFO_KEY_DEVICE_NAME = SerialDeviceSupport.INFO_KEY_DEVICE_NAME;
-
-	/** Key for the device model, as a String. */
-	public static final String INFO_KEY_DEVICE_MODEL = SerialDeviceSupport.INFO_KEY_DEVICE_MODEL;
-
-	/** Key for the device serial number, as a Long. */
-	public static final String INFO_KEY_DEVICE_SERIAL_NUMBER = SerialDeviceSupport.INFO_KEY_DEVICE_SERIAL_NUMBER;
-
-	/** Key for the device manufacturer, as a String. */
-	public static final String INFO_KEY_DEVICE_MANUFACTURER = SerialDeviceSupport.INFO_KEY_DEVICE_MANUFACTURER;
-
-	/**
-	 * Key for the device manufacture date, as a {@link java.time.LocalDate}.
-	 */
-	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = SerialDeviceSupport.INFO_KEY_DEVICE_MANUFACTURE_DATE;
 
 	/** The {@code sampleCacheMs} property default value. */
 	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000L;
@@ -168,6 +154,29 @@ public abstract class SerialDeviceDatumDataSourceSupport<S extends Datum>
 	 *         if any IO error occurrs
 	 */
 	protected abstract Map<String, Object> readDeviceInfo(SerialConnection conn) throws IOException;
+
+	/**
+	 * Get device info.
+	 * 
+	 * @return the device info based on calling the {@link #getDeviceInfo()}
+	 *         method
+	 * @since 2.0
+	 */
+	public DeviceInfo deviceInfo() {
+		Map<String, ?> info = getDeviceInfo();
+		BasicDeviceInfo.Builder b = DataAccessor.deviceInfoBuilderForInfo(info);
+		return (b.isEmpty() ? null : b.build());
+	}
+
+	/**
+	 * Support for {@code DeviceInfoProvider}.
+	 *
+	 * @return the configured source ID
+	 * @since 2.0
+	 */
+	public String deviceInfoSourceId() {
+		return resolvePlaceholders(sourceId);
+	}
 
 	/**
 	 * Return an informational message composed of general device info. This

@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -82,10 +83,10 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		if ( name != null ) {
 			String firmwareVersion = data.getFirmwareRevision();
 			if ( firmwareVersion != null ) {
-				result.put(INFO_KEY_DEVICE_MODEL,
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL,
 						String.format("%s (firmware %s)", name, firmwareVersion));
 			} else {
-				result.put(INFO_KEY_DEVICE_MODEL, name);
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, name);
 			}
 		}
 		SharkPowerSystem wiringMode = data.getPowerSystem();
@@ -94,7 +95,7 @@ public class Shark100Data extends ModbusData implements Shark100DataAccessor {
 		}
 		String s = data.getSerialNumber();
 		if ( s != null ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, s);
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, s);
 		}
 		return result;
 	}
