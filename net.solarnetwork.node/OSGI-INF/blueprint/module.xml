@@ -55,13 +55,22 @@
 		</reference-listener>
 	</reference-list>
 
-	<reference-list id="managedJobs" interface="net.solarnetwork.node.job.ManagedTriggerAndJobDetail" availability="optional">
-		<reference-listener bind-method="onBind" unbind-method="onUnbind" ref="managedJobsListener"/>
+	<reference-list id="quartzManagedJobs" interface="net.solarnetwork.node.job.ManagedTriggerAndJobDetail" availability="optional">
+		<reference-listener bind-method="onBind" unbind-method="onUnbind" ref="quartzManagedJobsListener"/>
 	</reference-list>
-	<bean id="managedJobsListener" class="net.solarnetwork.node.runtime.ManagedJobServiceRegistrationListener"
+	<bean id="quartzManagedJobsListener" class="net.solarnetwork.node.runtime.ManagedJobServiceRegistrationListener"
 		destroy-method="finish">
 		<argument ref="bundleContext"/>
 		<argument ref="scheduler"/>
+	</bean>
+
+	<reference-list id="managedJobs" interface="net.solarnetwork.node.job.ManagedJob" availability="optional">
+		<reference-listener bind-method="registerJob" unbind-method="unregisterJob" ref="managedJobsListener"/>
+	</reference-list>
+	<bean id="managedJobsListener" class="net.solarnetwork.node.runtime.ManagedJobScheduler"
+			init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+		<argument ref="bundleContext"/>
+		<argument ref="taskScheduler"/>
 	</bean>
 
 	<reference-list id="backupServices" availability="optional"

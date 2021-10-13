@@ -24,15 +24,15 @@ package net.solarnetwork.node.job;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
-import org.quartz.DisallowConcurrentExecution;
-import org.quartz.JobExecutionContext;
-import org.quartz.PersistJobDataAfterExecution;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.BulkUploadResult;
 import net.solarnetwork.node.service.BulkUploadService;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.node.setup.SetupException;
+import net.solarnetwork.settings.SettingSpecifier;
 
 /**
  * Job to query a {@link DatumDao} for datum to upload via a
@@ -49,17 +49,26 @@ import net.solarnetwork.node.setup.SetupException;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 3.0
  */
-@PersistJobDataAfterExecution
-@DisallowConcurrentExecution
-public class DatumDaoBulkUploadJob extends AbstractJob {
+public class DatumDaoBulkUploadJob extends BaseIdentifiable implements JobService {
 
 	private DatumDao dao;
 	private BulkUploadService uploadService;
 
 	@Override
-	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
+	public String getSettingUid() {
+		String uid = getUid();
+		return (uid != null && !uid.isEmpty() ? uid : "net.solarnetwork.node.job.DatumDaoBulkUploadJob");
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		return Collections.emptyList();
+	}
+
+	@Override
+	public void executeJobService() throws Exception {
 		if ( log.isDebugEnabled() ) {
 			log.debug("Collecting datum to bulk upload to [{}]", uploadService.getKey());
 		}

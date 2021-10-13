@@ -34,16 +34,14 @@ import org.springframework.beans.PropertyAccessor;
 import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.scheduling.Trigger;
+import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.scheduling.support.PeriodicTrigger;
 import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.MappableSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
-import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.settings.support.BasicCronExpressionSettingSpecifier;
-import net.solarnetwork.settings.support.KeyedSmartQuotedTemplateMapper;
 import net.solarnetwork.support.PrefixedMessageSource;
-import net.solarnetwork.support.TemplatedMessageSource;
 import net.solarnetwork.util.ObjectUtils;
 
 /**
@@ -54,28 +52,27 @@ import net.solarnetwork.util.ObjectUtils;
  */
 public class SimpleManagedJob implements ManagedJob, SettingsChangeObserver, ServiceLifecycleObserver {
 
-	private static final Logger LOG = LoggerFactory.getLogger(SimpleManagedTriggerAndJobDetail.class);
-
 	/**
 	 * The regular expression used to delegate properties to the delegate
-	 * {@code settingSpecifierProvider}.
+	 * {@link JobService}.
 	 */
 	public static final String JOB_DETAIL_PROPERTY_MAPPING_REGEX = "jobDetail\\.jobDataMap\\['([a-zA-Z0-9_]*)'\\](.*)";
 
-	private static final KeyedSmartQuotedTemplateMapper MAPPER;
-	static {
-		MAPPER = new KeyedSmartQuotedTemplateMapper();
-		MAPPER.setTemplate("jobDetail.jobDataMap['%s']");
-	}
+	/** The {@code scheduleSettingKey} property default value. */
+	public static final String DEFAULT_SCHEDULE_SETTING_KEY = "schedule";
+
+	/** The setting key prefix for the job settings. */
+	private static final String JOB_SERVICE_SETTING_PREFIX = "jobService.";
+
+	private static final Logger log = LoggerFactory.getLogger(SimpleManagedJob.class);
 
 	private final JobService jobService;
-	private SettingSpecifierProvider settingSpecifierProvider;
 	private String name;
-	private String triggerScheduleExpression;
+	private String scheduleSettingKey = DEFAULT_SCHEDULE_SETTING_KEY;
+	private String schedule;
+
 	private MessageSource messageSource;
 	private Map<String, SimpleServiceProviderConfiguration> serviceProviderConfigurations;
-
-	private String simplePrefix;
 
 	/**
 	 * Constructor.
@@ -97,11 +94,11 @@ public class SimpleManagedJob implements ManagedJob, SettingsChangeObserver, Ser
 
 	@Override
 	public String toString() {
-		return String.format("SimpleManagedJob{%s @ %s}", jobName(), getTriggerScheduleExpression());
+		return String.format("SimpleManagedJob{%s @ %s}", jobName(), getSchedule());
 	}
 
 	public Trigger getTrigger() {
-		final String expression = getTriggerScheduleExpression();
+		final String expression = getSchedule();
 		if ( expression != null ) {
 			try {
 				try {
@@ -110,9 +107,9 @@ public class SimpleManagedJob implements ManagedJob, SettingsChangeObserver, Ser
 				} catch ( NumberFormatException e ) {
 					// ignore
 				}
-				return new org.springframework.scheduling.support.CronTrigger(expression);
+				return new CronTrigger(expression);
 			} catch ( IllegalArgumentException e ) {
-				LOG.warn("Error parsing cron expression [{}]: {}", expression, e.getMessage());
+				log.warn("Error parsing cron expression [{}]: {}", expression, e.getMessage());
 			}
 		}
 		return null;
@@ -131,16 +128,11 @@ public class SimpleManagedJob implements ManagedJob, SettingsChangeObserver, Ser
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = new ArrayList<>();
-		result.add(new BasicCronExpressionSettingSpecifier("triggerScheduleExpression",
-				triggerScheduleExpression));
-		for ( SettingSpecifier spec : getSettingSpecifierProvider().getSettingSpecifiers() ) {
+		result.add(new BasicCronExpressionSettingSpecifier(getScheduleSettingKey(), getSchedule()));
+		for ( SettingSpecifier spec : jobService.getSettingSpecifiers() ) {
 			if ( spec instanceof MappableSpecifier ) {
 				MappableSpecifier keyedSpec = (MappableSpecifier) spec;
-				if ( simplePrefix != null ) {
-					result.add(keyedSpec.mappedTo(simplePrefix));
-				} else {
-					result.add(keyedSpec.mappedWithMapper(MAPPER));
-				}
+				result.add(keyedSpec.mappedTo(JOB_SERVICE_SETTING_PREFIX));
 			} else {
 				result.add(spec);
 			}
@@ -151,19 +143,23 @@ public class SimpleManagedJob implements ManagedJob, SettingsChangeObserver, Ser
 	@Override
 	public MessageSource getMessageSource() {
 		if ( messageSource == null ) {
-			TemplatedMessageSource tSource = new TemplatedMessageSource();
-			tSource.setDelegate(getSettingSpecifierProvider().getMessageSource());
-			tSource.setRegex(JOB_DETAIL_PROPERTY_MAPPING_REGEX);
-			messageSource = tSource;
+			PrefixedMessageSource pSource = new PrefixedMessageSource();
+			pSource.setPrefix(JOB_SERVICE_SETTING_PREFIX);
+			pSource.setDelegate(jobService.getMessageSource());
+			messageSource = pSource;
 		}
 		return messageSource;
 	}
 
 	@Override
 	public void configurationChanged(Map<String, Object> properties) {
-		SettingSpecifierProvider ssp = getSettingSpecifierProvider();
-		if ( ssp instanceof SettingsChangeObserver ) {
-			((SettingsChangeObserver) ssp).configurationChanged(properties);
+		Object scheduleVal = (properties != null ? properties.get(getScheduleSettingKey()) : null);
+		if ( scheduleVal != null ) {
+			String newSchedule = scheduleVal.toString();
+			setSchedule(newSchedule);
+		}
+		if ( jobService instanceof SettingsChangeObserver ) {
+			((SettingsChangeObserver) jobService).configurationChanged(properties);
 		}
 	}
 
@@ -174,7 +170,7 @@ public class SimpleManagedJob implements ManagedJob, SettingsChangeObserver, Ser
 			try {
 				observer.serviceDidStartup();
 			} catch ( Exception e ) {
-				LOG.error("Error delegating job {} lifecycle startup: {}", jobName(), e.toString(), e);
+				log.error("Error delegating job {} lifecycle startup: {}", jobName(), e.toString(), e);
 			}
 		}
 	}
@@ -186,27 +182,9 @@ public class SimpleManagedJob implements ManagedJob, SettingsChangeObserver, Ser
 			try {
 				observer.serviceDidShutdown();
 			} catch ( Exception e ) {
-				LOG.error("Error delegating job {} lifecycle shutdown: {}", jobName(), e.toString(), e);
+				log.error("Error delegating job {} lifecycle shutdown: {}", jobName(), e.toString(), e);
 			}
 		}
-	}
-
-	public SettingSpecifierProvider getSettingSpecifierProvider() {
-		if ( settingSpecifierProvider != null ) {
-			return settingSpecifierProvider;
-		}
-
-		// FIXME: this is not needed in this way anymore
-		SettingSpecifierProvider ssp = jobService;
-		PrefixedMessageSource pSource = new PrefixedMessageSource();
-		String prefix = "jobService.";
-		pSource.setPrefix(prefix);
-		pSource.setDelegate(ssp.getMessageSource());
-		messageSource = pSource;
-		settingSpecifierProvider = ssp;
-		simplePrefix = prefix;
-
-		return settingSpecifierProvider;
 	}
 
 	@Override
@@ -230,7 +208,7 @@ public class SimpleManagedJob implements ManagedJob, SettingsChangeObserver, Ser
 						result.add(ser);
 					}
 				} catch ( InvalidPropertyException | PropertyAccessException e ) {
-					LOG.error("Error configuring job {} service provider {}: {}", jobName(), me.getKey(),
+					log.error("Error configuring job {} service provider {}: {}", jobName(), me.getKey(),
 							e.toString());
 				}
 			}
@@ -238,10 +216,17 @@ public class SimpleManagedJob implements ManagedJob, SettingsChangeObserver, Ser
 		return result;
 	}
 
-	public void setSettingSpecifierProvider(SettingSpecifierProvider settingSpecifierProvider) {
-		this.settingSpecifierProvider = settingSpecifierProvider;
-	}
-
+	/**
+	 * Set a mapping of service provider configurations.
+	 * 
+	 * <p>
+	 * When this job is registered at runtime, these services will also be
+	 * registered.
+	 * </p>
+	 * 
+	 * @param serviceProviderConfigurations
+	 *        the configurations to set
+	 */
 	public void setServiceProviderConfigurations(
 			Map<String, SimpleServiceProviderConfiguration> serviceProviderConfigurations) {
 		this.serviceProviderConfigurations = serviceProviderConfigurations;
@@ -255,6 +240,11 @@ public class SimpleManagedJob implements ManagedJob, SettingsChangeObserver, Ser
 		return name;
 	}
 
+	@Override
+	public String getTriggerScheduleExpression() {
+		return getSchedule();
+	}
+
 	/**
 	 * Set the trigger schedule expression.
 	 * 
@@ -265,26 +255,48 @@ public class SimpleManagedJob implements ManagedJob, SettingsChangeObserver, Ser
 	 * 
 	 * @return the trigger schedule expression
 	 */
-	@Override
-	public String getTriggerScheduleExpression() {
-		return triggerScheduleExpression;
+	public String getSchedule() {
+		return schedule;
 	}
 
 	/**
 	 * SEt the trigger schedule expression.
 	 * 
-	 * @param triggerScheduleExpression
+	 * @param schedule
 	 *        the trigger schedule expression to set
 	 */
-	public void setTriggerScheduleExpression(String triggerScheduleExpression) {
-		this.triggerScheduleExpression = triggerScheduleExpression;
+	public void setSchedule(String schedule) {
+		this.schedule = schedule;
 	}
 
 	/**
-	 * Get the job name.
+	 * Get the schedule setting key.
 	 * 
-	 * @return the name
+	 * @return the setting key; defaults to
+	 *         {@link #DEFAULT_SCHEDULE_SETTING_KEY}
 	 */
+	public String getScheduleSettingKey() {
+		return scheduleSettingKey;
+	}
+
+	/**
+	 * Set the schedule setting key.
+	 * 
+	 * <p>
+	 * This defaults to {@literal schedule} to match the
+	 * {@link #setSchedule(String)} property. However this can be changed to any
+	 * setting, so that the schedule setting key can be different. This can be
+	 * used to bundle mutliple job schedules into the same setting UID, using
+	 * different schedule setting keys for different jobs.
+	 * </p>
+	 * 
+	 * @param scheduleSettingKey
+	 *        the setting key to set
+	 */
+	public void setScheduleSettingKey(String scheduleSettingKey) {
+		this.scheduleSettingKey = scheduleSettingKey;
+	}
+
 	@Override
 	public String getName() {
 		return name;
