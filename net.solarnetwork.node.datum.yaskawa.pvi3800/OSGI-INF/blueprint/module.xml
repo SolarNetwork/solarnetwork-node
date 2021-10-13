@@ -26,12 +26,19 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+		
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<array>
 				<value>net.solarnetwork.node.datum.yaskawa.pvi3800.PVI3800DatumDataSource</value>
 				<value>net.solarnetwork.node.io.serial.support.SerialDeviceDatumDataSourceSupport</value>
 				<value>net.solarnetwork.node.io.serial.support.SerialDeviceSupport</value>
+				<value>net.solarnetwork.node.service.support.DatumDataSourceSupport</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</array>
 		</property>
@@ -95,11 +102,13 @@
 					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourcePollJob"/>
 					<property name="jobDataAsMap">
 						<map>
+							<entry key="datumMetadataService" value-ref="datumMetadataService"/>
 							<entry key="datumQueue" value-ref="datumQueue"/>
 							<entry key="multiDatumDataSource">
 								<bean class="net.solarnetwork.node.datum.yaskawa.pvi3800.PVI3800DatumDataSource">
 									<property name="messageSource" ref="jobMessageSource"/>
 									<property name="placeholderService" ref="placeholderService"/>
+									<property name="datumMetadataService" ref="datumMetadataService"/>
 									<property name="serialNetwork">
 										<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 											<argument ref="bundleContext"/>

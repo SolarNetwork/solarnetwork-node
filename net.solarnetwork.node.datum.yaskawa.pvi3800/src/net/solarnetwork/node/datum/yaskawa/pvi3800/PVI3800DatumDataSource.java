@@ -181,6 +181,9 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport<A
 
 		result.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
+
+		result.addAll(getDeviceInfoMetadataSettingSpecifiers());
+
 		return result;
 	}
 
