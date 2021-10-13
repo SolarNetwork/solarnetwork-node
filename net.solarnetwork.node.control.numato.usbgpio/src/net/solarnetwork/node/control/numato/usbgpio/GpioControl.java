@@ -42,6 +42,7 @@ import net.solarnetwork.domain.BasicNodeControlInfo;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
@@ -256,11 +257,11 @@ public class GpioControl extends SerialDeviceSupport implements SettingSpecifier
 		Map<String, Object> result = new LinkedHashMap<>(2);
 		String id = gpio.getId();
 		if ( id != null ) {
-			result.put(INFO_KEY_DEVICE_NAME, id);
+			result.put(DataAccessor.INFO_KEY_DEVICE_NAME, id);
 		}
 		String v = gpio.getDeviceVersion();
 		if ( v != null ) {
-			result.put(INFO_KEY_DEVICE_MODEL, v);
+			result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, v);
 		}
 		return result;
 	}

@@ -42,6 +42,7 @@ import net.solarnetwork.node.control.jf2.lata.command.Command;
 import net.solarnetwork.node.control.jf2.lata.command.CommandInterface;
 import net.solarnetwork.node.control.jf2.lata.command.CommandValidationException;
 import net.solarnetwork.node.control.jf2.lata.command.ToggleMode;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialNetwork;
@@ -166,7 +167,7 @@ public class LATAController extends SerialDeviceSupport
 	protected Map<String, Object> readDeviceInfo(SerialConnection conn) throws IOException {
 		String version = new GetVersionAction(false).doWithConnection(conn);
 		if ( version != null ) {
-			return Collections.singletonMap(INFO_KEY_DEVICE_MODEL, (Object) version);
+			return Collections.singletonMap(DataAccessor.INFO_KEY_DEVICE_MODEL, (Object) version);
 		}
 		return Collections.emptyMap();
 	}
