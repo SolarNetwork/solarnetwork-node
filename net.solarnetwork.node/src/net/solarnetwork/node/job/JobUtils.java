@@ -39,12 +39,13 @@ import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.support.PeriodicTrigger;
 
 /**
  * Utility methods for working with scheduled jobs.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.71
  */
 public class JobUtils {
@@ -322,7 +323,37 @@ public class JobUtils {
 			log.error("Error unscheduling job", triggerKey, e);
 		}
 		return false;
+	}
 
+	/**
+	 * Create a trigger from a schedule expression.
+	 * 
+	 * <p>
+	 * The {@code expression} can be either an integer number representing a
+	 * millisecond frequency or else a cron expression.
+	 * </p>
+	 * 
+	 * @param expression
+	 *        the schedule expression
+	 * @return the trigger, or {@literal null} if the expression cannot be
+	 *         parsed into one
+	 * @since 2.0
+	 */
+	public static org.springframework.scheduling.Trigger triggerForExpression(final String expression) {
+		if ( expression != null ) {
+			try {
+				try {
+					long ms = Long.parseLong(expression);
+					return new PeriodicTrigger(ms);
+				} catch ( NumberFormatException e ) {
+					// ignore
+				}
+				return new org.springframework.scheduling.support.CronTrigger(expression);
+			} catch ( IllegalArgumentException e ) {
+				log.warn("Error parsing cron expression [{}]: {}", expression, e.getMessage());
+			}
+		}
+		return null;
 	}
 
 }
