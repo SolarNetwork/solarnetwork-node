@@ -87,6 +87,9 @@ public class LATAController extends SerialDeviceSupport
 
 	/**
 	 * Default constructor.
+	 * 
+	 * @param serialNetwork
+	 *        the serial network
 	 */
 	public LATAController(OptionalFilterableService<SerialNetwork> serialNetwork) {
 		super();
