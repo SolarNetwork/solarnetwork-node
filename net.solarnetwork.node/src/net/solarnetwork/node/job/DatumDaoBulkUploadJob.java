@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.job;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Collections;
@@ -53,8 +54,24 @@ import net.solarnetwork.settings.SettingSpecifier;
  */
 public class DatumDaoBulkUploadJob extends BaseIdentifiable implements JobService {
 
-	private DatumDao dao;
-	private BulkUploadService uploadService;
+	private final DatumDao dao;
+	private final BulkUploadService uploadService;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param dao
+	 *        the DAO to use
+	 * @param uploadService
+	 *        the upload service to use
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
+	public DatumDaoBulkUploadJob(DatumDao dao, BulkUploadService uploadService) {
+		super();
+		this.dao = requireNonNullArgument(dao, "dao");
+		this.uploadService = requireNonNullArgument(uploadService, "uploadService");
+	}
 
 	@Override
 	public String getSettingUid() {
@@ -121,26 +138,6 @@ public class DatumDaoBulkUploadJob extends BaseIdentifiable implements JobServic
 				}
 			}
 		}
-	}
-
-	/**
-	 * Set the DAO to get datum to upload from.
-	 * 
-	 * @param dao
-	 *        the DAO
-	 */
-	public void setDatumDao(DatumDao dao) {
-		this.dao = dao;
-	}
-
-	/**
-	 * Set the upload service to upload to.
-	 * 
-	 * @param uploadService
-	 *        the service
-	 */
-	public void setUploadService(BulkUploadService uploadService) {
-		this.uploadService = uploadService;
 	}
 
 }

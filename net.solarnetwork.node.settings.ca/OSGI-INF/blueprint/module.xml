@@ -19,13 +19,10 @@
 	<ctx:property-placeholder properties-ref="settings.ca.cfg"/>
 
 	<osgix:cm-properties id="settings.ca.cfg" persistent-id="net.solarnetwork.node.settings.ca">
-		<beans:prop key="job.settingsBackup.cron">0 0/15 * * * ?</beans:prop>
 		<beans:prop key="settingsBackup.destinationPath">var/settings-bak</beans:prop>
 		<beans:prop key="settingsBackup.backupMaxCount">5</beans:prop>
 	</osgix:cm-properties>
 	
-	<reference id="scheduler" interface="org.quartz.Scheduler" filter="(function=node)"/>
-
 	<reference id="taskExecutor" interface="org.springframework.core.task.TaskExecutor" filter="(function=node)"/>
 	
 	<reference id="ca" interface="org.osgi.service.cm.ConfigurationAdmin"/>
@@ -33,8 +30,6 @@
 	<reference id="txManager" interface="org.springframework.transaction.PlatformTransactionManager" filter="(db=node)"/>
 
 	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
-	
-	<service ref="settingsBackup" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
 	
 	<service ref="settingsService">
 		<interfaces>
@@ -83,32 +78,28 @@
 	
 	<!-- Settings backup job -->
 
-	<bean id="settingsBackup" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
-		<property name="trigger">
-			<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-				<property name="name" value="settingsBackupTrigger"/>
-				<property name="cronExpression" value="${job.settingsBackup.cron}"/>
-				<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
-				<property name="randomSecond" value="true"/>
-			</bean>
-		</property>
-		<property name="jobDetail">
-			<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-				<property name="name" value="settingsBackupJob"/>
-				<property name="jobClass" value="net.solarnetwork.node.settings.ca.SettingsBackupJob"/>
-				<property name="jobDataAsMap">
-					<map>
-						<entry key="settingDao" value-ref="settingDao"/>
-						<entry key="settingsService" value-ref="settingsService"/>
-					</map>
-				</property>
-			</bean>
-		</property>
-		<property name="messageSource">
-			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basenames" value="net.solarnetwork.node.settings.ca.JOBS"/>
-			</bean>
-		</property>
-	</bean>
+	<service>
+		<interfaces>
+			<value>net.solarnetwork.node.job.ManagedJob</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
+		</interfaces>
+		<service-properties>
+			<entry key="service.pid" value="net.solarnetwork.node.settings.ca.backup"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob">
+			<osgix:managed-properties persistent-id="net.solarnetwork.node.settings.ca.backup" autowire-on-update="true"/>
+			<argument>
+				<bean class="net.solarnetwork.node.settings.ca.SettingsBackupJob">
+					<argument ref="settingsService"/>
+					<property name="messageSource">
+						<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+							<property name="basenames" value="net.solarnetwork.node.settings.ca.SettingsBackupJob"/>
+						</bean>
+					</property>
+				</bean>
+			</argument>
+			<property name="schedule" value="0 0/15 * * * ?"/>
+		</bean>
+	</service>
 	
 </blueprint>

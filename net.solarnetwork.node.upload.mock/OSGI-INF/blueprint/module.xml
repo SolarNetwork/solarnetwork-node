@@ -36,11 +36,12 @@
 			<osgix:managed-properties persistent-id="net.solarnetwork.node.upload.mock.job" autowire-on-update="true"/>
 			<argument>
 				<bean class="net.solarnetwork.node.job.DatumDaoBulkUploadJob">
-					<property name="datumDao" ref="datumDao"/>
-					<property name="uploadService" ref="mockUploadService"/>
+					<argument ref="datumDao"/>
+					<argument ref="mockUploadService"/>
+					<property name="uid" value="net.solarnetwork.node.upload.mock.job"/>
 					<property name="messageSource">
 						<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-							<property name="basenames" value="net.solarnetwork.node.upload.mock.JOBS"/>
+							<property name="basenames" value="net.solarnetwork.node.upload.mock.MockUploadService"/>
 						</bean>
 					</property>
 				</bean>
