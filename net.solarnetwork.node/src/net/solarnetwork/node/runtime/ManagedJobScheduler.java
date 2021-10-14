@@ -105,9 +105,35 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 
 		private final Map<String, ScheduledJob> jobMap = new HashMap<>(2);
 		private ServiceRegistration<SettingSpecifierProvider> settingProviderReg;
+		private String settingUid;
+
+		@Override
+		public String toString() {
+			return String.format("ScheduledJobs{%s}", settingUid);
+		}
+
+		private boolean isEmpty() {
+			return jobMap.isEmpty();
+		}
 
 		private void addJob(ScheduledJob sj) {
+			settingUid = sj.job.getSettingUid();
 			jobMap.put(sj.job.getUid(), sj);
+		}
+
+		private ScheduledJob removeJob(String uid) {
+			ScheduledJob sj = jobMap.remove(uid);
+			if ( jobMap.isEmpty() ) {
+				if ( settingProviderReg != null ) {
+					try {
+						settingProviderReg.unregister();
+					} catch ( Exception e ) {
+						log.warn("Error unregistering settings provider for job [{}]: {}", sj.identifier,
+								e.toString());
+					}
+				}
+			}
+			return sj;
 		}
 
 		private ScheduledJob anyScheduledJob() {
@@ -127,8 +153,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 
 		@Override
 		public String getSettingUid() {
-			ScheduledJob sj = anyScheduledJob();
-			return (sj != null ? sj.job.getSettingUid() : null);
+			return settingUid;
 		}
 
 		@Override
@@ -145,7 +170,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 
 		@Override
 		public List<SettingSpecifier> getSettingSpecifiers() {
-			List<SettingSpecifier> result = new ArrayList<>(1);
+			List<SettingSpecifier> result = new ArrayList<>(8);
 			for ( ScheduledJob sj : jobMap.values() ) {
 				result.addAll(sj.job.getSettingSpecifiers());
 			}
@@ -353,17 +378,9 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		synchronized ( pidMap ) {
 			ScheduledJobs sjs = pidMap.get(pid);
 			if ( sjs != null ) {
-				sj = sjs.jobMap.remove(job.getUid());
-				if ( sjs.jobMap.isEmpty() ) {
+				sj = sjs.removeJob(job.getUid());
+				if ( sjs.isEmpty() ) {
 					pidMap.remove(pid);
-					if ( sjs.settingProviderReg != null ) {
-						try {
-							sjs.settingProviderReg.unregister();
-						} catch ( Exception e ) {
-							log.warn("Error unregistering settings provider for job [{}]: {}",
-									sj.identifier, e.toString());
-						}
-					}
 				}
 			}
 		}
