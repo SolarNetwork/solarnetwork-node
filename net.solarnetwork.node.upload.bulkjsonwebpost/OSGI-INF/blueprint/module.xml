@@ -58,8 +58,6 @@
 
 	<!-- Published Services -->
 
-	<service ref="bulkDatumUploader" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
-
 	<service ref="bulkJsonWebPostUploadService">
 		<interfaces>
 			<value>net.solarnetwork.node.reactor.InstructionAcknowledgementService</value>
@@ -92,31 +90,27 @@
 
 	<!-- Upload job -->
 
-	<bean id="bulkDatumUploader" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
-		<property name="trigger" ref="bulkDatumUploadTrigger"/>
-		<property name="jobDetail" ref="bulkDatumUploadJob"/>
-		<property name="messageSource">
-			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basenames" value="net.solarnetwork.node.upload.bulkjsonwebpost.JOBS"/>
-			</bean>
-		</property>
-	</bean>
-
-	<bean id="bulkDatumUploadTrigger" class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-		<property name="jobDetail" ref="bulkDatumUploadJob"/>
-		<property name="cronExpression" value="${job.bulkDatumUploader.cron}"/>
-		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
-		<property name="randomSecond" value="true"/>
-	</bean>
-
-	<bean id="bulkDatumUploadJob" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-		<property name="jobClass" value="net.solarnetwork.node.job.DatumDaoBulkUploadJob"/>
-		<property name="jobDataAsMap">
-			<map>
-				<entry key="datumDao" value-ref="datumDao"/>
-				<entry key="uploadService" value-ref="bulkJsonWebPostUploadService"/>
-			</map>
-		</property>
-	</bean>
+	<service interface="net.solarnetwork.node.job.ManagedJob">
+		<service-properties>
+			<entry key="service.pid" value="net.solarnetwork.node.upload.bulkjsonwebpost"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob">
+			<osgix:managed-properties persistent-id="net.solarnetwork.node.upload.bulkjsonwebpost"/>
+			<argument>
+				<bean class="net.solarnetwork.node.job.DatumDaoBulkUploadJob">
+					<argument ref="datumDao"/>
+					<argument ref="bulkJsonWebPostUploadService"/>
+					<property name="uid" value="net.solarnetwork.node.upload.bulkjsonwebpost"/>
+					<property name="messageSource">
+						<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+							<property name="basenames" value="net.solarnetwork.node.upload.bulkjsonwebpost.JOBS"/>
+						</bean>
+					</property>
+				</bean>
+			</argument>
+			<property name="scheduleSettingKey" value="job.bulkDatumUploader.cron"/>
+			<property name="schedule" value="${job.bulkDatumUploader.cron}"/>
+		</bean>
+	</service>
 
 </blueprint>
