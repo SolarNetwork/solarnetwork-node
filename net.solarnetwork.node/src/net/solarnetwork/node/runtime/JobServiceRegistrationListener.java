@@ -103,7 +103,9 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
  * @version 3.0
  * @see ManagedJobServiceRegistrationListener for alternative using
  *      settings-based job factories
+ * @deprecated
  */
+@Deprecated
 public class JobServiceRegistrationListener
 		extends BaseServiceListener<TriggerAndJobDetail, RegisteredService<TriggerAndJobDetail>>
 		implements ConfigurationListener {

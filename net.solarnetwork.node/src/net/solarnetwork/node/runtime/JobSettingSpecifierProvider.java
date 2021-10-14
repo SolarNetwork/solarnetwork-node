@@ -62,7 +62,9 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * 
  * @author matt
  * @version 3.0
+ * @deprecated
  */
+@Deprecated
 public class JobSettingSpecifierProvider implements SettingSpecifierProvider {
 
 	/** The suffix added to display titles. */

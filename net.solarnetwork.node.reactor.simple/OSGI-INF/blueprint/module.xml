@@ -20,7 +20,10 @@
 	<!-- Configuration -->
 	
 	<osgix:cm-properties id="cfg" persistent-id="net.solarnetwork.node.reactor.simple">
+		<beans:prop key="job.instructionAcknowledgementUploader.cron">35 * * * * ?</beans:prop>
+		<beans:prop key="job.instructionExecution.cron">0/10 * * * * ?</beans:prop>
 		<beans:prop key="job.instructionExecution.executionReceivedHourLimit">24</beans:prop>
+		<beans:prop key="job.instructionCleaner.cron">20 43 0 ? * TUE,THU,SUN</beans:prop>
 		<beans:prop key="job.instructionCleaner.hours">72</beans:prop>
 	</osgix:cm-properties>
 
@@ -79,12 +82,13 @@
 				<bean class="net.solarnetwork.node.reactor.simple.InstructionAcknowledgeJob">
 					<argument ref="instructionDao"/>
 					<argument ref="instructionAcknowledgementService"/>
-					<property name="uid" value="net.solarnetwork.node.reactor.simple"/>
+					<property name="uid" value="net.solarnetwork.node.reactor.simple.ack"/>
 					<property name="messageSource" ref="jobsMessageSource"/>
 				</bean>
 			</argument>
-			<property name="scheduleSettingKey" value="ack.schedule"/>
-			<property name="schedule" value="35 * * * * ?"/>
+			<property name="displayName" value="InstructionAcknowledgeJob"/>
+			<property name="scheduleSettingKey" value="job.instructionAcknowledgementUploader.cron"/>
+			<property name="schedule" value="${job.instructionAcknowledgementUploader.cron}"/>
 		</bean>
 	</service>
 	
@@ -99,12 +103,13 @@
 				<bean class="net.solarnetwork.node.reactor.simple.InstructionExecutionJob">
 					<argument ref="instructionDao"/>
 					<argument ref="instructionExecutionService"/>
-					<property name="uid" value="net.solarnetwork.node.reactor.simple"/>
+					<property name="uid" value="net.solarnetwork.node.reactor.simple.exec"/>
 					<property name="messageSource" ref="jobsMessageSource"/>
 				</bean>
 			</argument>
-			<property name="scheduleSettingKey" value="exec.schedule"/>
-			<property name="schedule" value="0/10 * * * * ?"/>
+			<property name="displayName" value="InstructionExecutionJob"/>
+			<property name="scheduleSettingKey" value="job.instructionExecution.cron"/>
+			<property name="schedule" value="${job.instructionExecution.cron}"/>
 		</bean>
 	</service>
 	
@@ -119,12 +124,13 @@
 				<bean class="net.solarnetwork.node.reactor.simple.InstructionCleanerJob">
 					<argument ref="instructionDao"/>
 					<property name="hours" value="${job.instructionCleaner.hours}"/>
-					<property name="uid" value="net.solarnetwork.node.reactor.simple"/>
+					<property name="uid" value="net.solarnetwork.node.reactor.simple.clean"/>
 					<property name="messageSource" ref="jobsMessageSource"/>
 				</bean>
 			</argument>
-			<property name="scheduleSettingKey" value="clean.schedule"/>
-			<property name="schedule" value="20 43 0 ? * TUE,THU,SUN"/>
+			<property name="displayName" value="InstructionCleanerJob"/>
+			<property name="scheduleSettingKey" value="job.instructionCleaner.cron"/>
+			<property name="schedule" value="${job.instructionCleaner.cron}"/>
 		</bean>
 	</service>
 	

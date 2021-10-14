@@ -125,7 +125,8 @@ public class SimpleManagedJob extends BaseIdentifiable
 
 	@Override
 	public String getDisplayName() {
-		return jobService.getDisplayName();
+		String name = jobService.getDisplayName();
+		return (name != null && !name.isEmpty() ? name : super.getDisplayName());
 	}
 
 	@Override

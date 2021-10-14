@@ -51,7 +51,7 @@ public class InstructionCleanerJob extends BaseIdentifiable implements JobServic
 
 	@Override
 	public String getSettingUid() {
-		return "net.solarnetwork.node.reactor.simple.clean";
+		return "net.solarnetwork.node.reactor.simple";
 	}
 
 	@Override

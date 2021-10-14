@@ -28,11 +28,31 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
 /**
  * API for a managed job.
  * 
+ * <p>
+ * A managed job is {@link JobService} that needs to be performed on a schedule,
+ * such as a repeating frequency or a cron schedule. The actual execution of the
+ * task is handled externally; this API represents only the information needed
+ * for some external service to execute the task. At runtime it is expected for
+ * managed job instances to be detected and scheduled for execution.
+ * </p>
+ * 
+ * <p>
+ * Managed jobs must provide a unique ID for each job, via the inherited
+ * {@link Identifiable#getUid()} method. Additionally the job must provide a
+ * settings UID via {@link SettingSpecifierProvider#getSettingUid()}.
+ * </p>
+ * 
+ * <p>
+ * Additional services related to the job can be defined via the
+ * {@link ServiceProvider} API. Those services are expected to registered with
+ * the system runtime by the external service the job is scheduled by.
+ * </p>
+ * 
  * @author matt
  * @version 1.0
  * @since 2.0
  */
-public interface ManagedJob extends Identifiable, SettingSpecifierProvider, ServiceProvider {
+public interface ManagedJob extends Identifiable, ServiceProvider, SettingSpecifierProvider {
 
 	/**
 	 * Get the JobDetail.

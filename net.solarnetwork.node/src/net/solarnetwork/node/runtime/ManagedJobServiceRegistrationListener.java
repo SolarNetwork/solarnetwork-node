@@ -119,7 +119,9 @@ import net.solarnetwork.node.job.ServiceProvider;
  * 
  * @author matt
  * @version 3.0
+ * @deprecated
  */
+@Deprecated
 public class ManagedJobServiceRegistrationListener implements ConfigurationListener {
 
 	private final BundleContext bundleContext;

@@ -86,7 +86,7 @@ public class InstructionExecutionJob extends BaseIdentifiable implements JobServ
 
 	@Override
 	public String getSettingUid() {
-		return "net.solarnetwork.node.reactor.simple.exec";
+		return "net.solarnetwork.node.reactor.simple";
 	}
 
 	@Override

@@ -45,7 +45,9 @@ import net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean;
  * 
  * @author matt
  * @version 2.1
+ * @deprecated
  */
+@Deprecated
 public class JobUtils {
 
 	private static final Logger log = LoggerFactory.getLogger(JobUtils.class);

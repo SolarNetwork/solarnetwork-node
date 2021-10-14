@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.runtime;
 
+import static net.solarnetwork.node.job.JobUtils.triggerForExpression;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,6 +57,27 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * Service to dynamically register and schedule {@link ManagedJob} instances.
+ * 
+ * <p>
+ * This service schedules jobs that are passed to
+ * {@link #registerJob(ManagedJob, Map)} with the configured
+ * {@link TaskScheduler}. Each job is expected to be backed by a
+ * {@link ConfigurationAdmin} configuration, identified by a unique {@code pid}.
+ * The {@code pid} can be provided via the job properties, using the key
+ * {@literal service.pid}. This is useful for jobs created via a managed
+ * configuration factory. If no {@literal service.pid} job property is provided,
+ * the {@link SettingSpecifierProvider#getSettingUid()} value provided by the
+ * job will be used as a fallback. This can be useful for directly created jobs.
+ * </p>
+ * 
+ * <p>
+ * A {@link SettingSpecifierProvider} service will be registered for each
+ * {@code pid}. Multiple jobs sharing the same {@code pid} are allowed. In that
+ * case, all jobs will share the same configuration but can rely on different
+ * setting keys to define different schedules. The
+ * {@link ManagedJob#getScheduleSettingKey()} defines the setting key to use,
+ * which defaults to {@literal schedule}.
+ * </p>
  * 
  * @author matt
  * @version 1.0
@@ -136,6 +158,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		private final String pid;
 		private final ManagedJob job;
 		private final List<ServiceRegistration<?>> registeredServices;
+		private final String identifier;
 		private ScheduledFuture<?> future;
 		private String schedule;
 
@@ -145,14 +168,15 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 			this.pid = requireNonNullArgument(pid, "pid");
 			this.job = requireNonNullArgument(job, "job");
 			this.registeredServices = registeredServices;
+			this.identifier = jobIdentifier(job, this.pid);
 		}
 
 		private synchronized void scheduled(ScheduledFuture<?> future, String schedule) {
 			this.future = future;
 			if ( this.schedule == null ) {
-				log.info("Scheduled job [{}] at [{}]", pid, schedule);
+				log.info("Scheduled job [{}] at [{}]", identifier, schedule);
 			} else {
-				log.info("Rescheduled job [{}] from [{}] to [{}]", pid, this.schedule, schedule);
+				log.info("Rescheduled job [{}] from [{}] to [{}]", identifier, this.schedule, schedule);
 			}
 			this.schedule = schedule;
 		}
@@ -160,7 +184,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		private synchronized void stop() {
 			if ( future != null && !future.isDone() ) {
 				future.cancel(true);
-				log.debug("Unscheduled job [{}]", pid);
+				log.debug("Unscheduled job [{}]", identifier);
 			}
 			future = null;
 		}
@@ -172,12 +196,34 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 				try {
 					job.getJobService().executeJobService();
 				} catch ( Throwable t ) {
-					log.error("Error executing job {}: {}", job.getDisplayName(), t.getMessage());
+					log.error("Error executing job {}: {}", identifier, t.getMessage());
 				}
 			}
 
 		}
 
+		@Override
+		public String toString() {
+			return String.format("ScheduledJob{%s @ %s}", identifier, schedule);
+		}
+
+	}
+
+	private static String jobIdentifier(ManagedJob job, String pid) {
+		StringBuilder buf = new StringBuilder();
+		if ( job.getDisplayName() != null && !job.getDisplayName().isEmpty() ) {
+			buf.append(job.getDisplayName());
+		} else {
+			buf.append(job.getSettingUid());
+		}
+		if ( !pid.equals(job.getSettingUid()) ) {
+			if ( pid.startsWith(job.getSettingUid()) ) {
+				buf.append(pid.substring(job.getSettingUid().length()));
+			} else {
+				buf.append(pid);
+			}
+		}
+		return buf.toString();
 	}
 
 	/**
@@ -218,11 +264,18 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 	 *        optional service properties
 	 */
 	public void registerJob(ManagedJob job, Map<String, ?> properties) {
+		if ( job == null ) {
+			return;
+		}
+		if ( job.getSettingUid() == null ) {
+			throw new RuntimeException("Managed job must provide a settingUid value.");
+		}
 		if ( job.getUid() == null ) {
 			throw new RuntimeException("Managed job must provide a uid value.");
 		}
-		final String pid = servicePid(properties);
-		log.debug("Register job [{}] with props {}", pid, properties);
+		final String pid = servicePid(properties, job.getSettingUid());
+		final String identifier = jobIdentifier(job, pid);
+		log.debug("Register job [{}] with props {}", identifier, properties);
 
 		List<ServiceRegistration<?>> refs = null;
 		Collection<ServiceProvider.ServiceConfiguration> services = job.getServiceConfigurations();
@@ -235,15 +288,16 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 					try {
 						ServiceRegistration<?> ref = bundleContext.registerService(interfaces, service,
 								props);
-						log.debug("Registering managed service {} as {} with props {}", service,
-								Arrays.toString(interfaces), props);
+						log.debug("Job [{}] registered managed service {} as {} with props {}",
+								identifier, service, Arrays.toString(interfaces), props);
 						if ( refs == null ) {
 							refs = new ArrayList<>(services.size());
 						}
 						refs.add(ref);
 					} catch ( Exception e ) {
-						log.error("Error registering managed service {} as {} with props {}: {}",
-								service, Arrays.toString(interfaces), props, e.toString());
+						log.error(
+								"Error registering job [{}] managed service {} as {} with props {}: {}",
+								identifier, service, Arrays.toString(interfaces), props, e.toString());
 					}
 				}
 			}
@@ -266,7 +320,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		}
 
 		String expr = job.getSchedule();
-		Trigger trigger = net.solarnetwork.node.job.JobUtils.triggerForExpression(expr);
+		Trigger trigger = triggerForExpression(expr, TimeUnit.MILLISECONDS, true);
 		if ( trigger != null ) {
 			ScheduledFuture<?> f = taskScheduler.schedule(sj, trigger);
 			sj.scheduled(f, expr);
@@ -285,7 +339,10 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		if ( job == null ) {
 			return;
 		}
-		final String pid = servicePid(properties);
+		final String pid = servicePid(properties, job.getSettingUid());
+		if ( pid == null ) {
+			return;
+		}
 		log.debug("Unregister job [{}] with props {}", pid, properties);
 		ScheduledJob sj = null;
 		synchronized ( pidMap ) {
@@ -298,8 +355,8 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 						try {
 							sjs.settingProviderReg.unregister();
 						} catch ( Exception e ) {
-							log.warn("Error unregistering settings provider for job [{}]: {}", pid,
-									e.toString());
+							log.warn("Error unregistering settings provider for job [{}]: {}",
+									sj.identifier, e.toString());
 						}
 					}
 				}
@@ -316,10 +373,10 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 				for ( ServiceRegistration<?> reg : refs ) {
 					try {
 						reg.unregister();
-						log.info("Unregistered job [{}] managed service {}", pid, reg);
+						log.info("Unregistered job [{}] managed service {}", sj.identifier, reg);
 					} catch ( Exception e ) {
-						log.warn("Error unregistering job [{}] managed service {}: {}", pid, reg,
-								e.toString());
+						log.warn("Error unregistering job [{}] managed service {}: {}", sj.identifier,
+								reg, e.toString());
 					}
 				}
 			}
@@ -366,24 +423,23 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 				}
 
 				if ( !oldSchedule.equalsIgnoreCase(newSchedule) ) {
-					Trigger trigger = net.solarnetwork.node.job.JobUtils
-							.triggerForExpression(newSchedule);
+					Trigger trigger = triggerForExpression(newSchedule, TimeUnit.MILLISECONDS, true);
 					if ( trigger != null ) {
 						sj.stop();
 						ScheduledFuture<?> f = taskScheduler.schedule(sj, trigger);
 						sj.scheduled(f, newSchedule);
 					} else if ( sj.future != null ) {
 						sj.stop();
-						log.info("Stopped job [{}]", pid, oldSchedule, newSchedule);
+						log.info("Stopped job [{}]", sj.identifier, oldSchedule, newSchedule);
 					}
 				}
 			}
 		}
 	}
 
-	private static String servicePid(Map<String, ?> properties) {
+	private static String servicePid(Map<String, ?> properties, String defaultPid) {
 		Object o = properties.get(Constants.SERVICE_PID);
-		return (o != null ? o.toString() : null);
+		return (o != null ? o.toString() : defaultPid);
 	}
 
 	private static Dictionary<String, ?> dictionaryForMap(Map<String, ?> map) {

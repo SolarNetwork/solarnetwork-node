@@ -65,7 +65,7 @@ public class InstructionAcknowledgeJob extends BaseIdentifiable implements JobSe
 
 	@Override
 	public String getSettingUid() {
-		return "net.solarnetwork.node.reactor.simple.ack";
+		return "net.solarnetwork.node.reactor.simple";
 	}
 
 	@Override
