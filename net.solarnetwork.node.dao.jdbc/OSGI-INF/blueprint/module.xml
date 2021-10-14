@@ -90,11 +90,6 @@
 		</service-properties>
 	</service>
 
-	<service ref="generalNodeDatumCleaner" interface="net.solarnetwork.node.job.TriggerAndJobDetail" />
-
-	<service ref="generalNodeDatumTrimmer" interface="net.solarnetwork.node.job.TriggerAndJobDetail" />
-
-
 	<!-- Supporting Services -->
 
 	<ctx:property-placeholder properties-ref="dao.jdbc.cfg" />
@@ -153,7 +148,7 @@
 	<!-- Use Java @Transactional annotations to declare transactions. -->
 	<tx:annotation-driven transaction-manager="txManager" />
 
-	<bean id="jobMessageSource"
+	<bean id="jobsMessageSource"
 		class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames" value="net.solarnetwork.node.dao.jdbc.general.JOBS" />
 	</bean>
@@ -171,57 +166,46 @@
 		<property name="maxFetchForUpload" value="${JdbcDatumDao.maxFetchForUpload}" />
 	</bean>
 	
-	<bean id="generalNodeDatumCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
-		<property name="trigger" ref="generalNodeDatumCleanerTrigger"/>
-		<property name="jobDetail" ref="generalNodeDatumCleanerJob"/>
-		<property name="messageSource" ref="jobMessageSource"/>
-	</bean>
-
-	<bean id="generalNodeDatumCleanerTrigger"
-		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
-		<property name="jobDetail" ref="generalNodeDatumCleanerJob" />
-		<property name="cronExpression" value="${job.generalNodeDatumCleaner.cron}" />
-		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING" />
-	</bean>
-
-	<bean id="generalNodeDatumCleanerJob"
-		class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-		<property name="jobClass" value="net.solarnetwork.node.job.DatumDaoCleanerJob" />
-		<property name="jobDataAsMap">
-			<map>
-				<entry key="datumDao" value-ref="generalNodeDatumDao" />
-				<entry key="hours" value="${job.generalNodeDatumCleaner.uploadedTrimHours}"/>
-			</map>
-		</property>
-	</bean>
+	<service interface="net.solarnetwork.node.job.ManagedJob">
+		<service-properties>
+			<entry key="service.pid" value="net.solarnetwork.node.dao.jdbc"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob">
+			<argument>
+				<bean class="net.solarnetwork.node.job.DatumDaoCleanerJob">
+					<argument ref="generalNodeDatumDao"/>
+					<property name="uid" value="net.solarnetwork.node.dao.jdbc.clean"/>
+					<property name="messageSource" ref="jobsMessageSource"/>
+					<property name="hours" value="${job.generalNodeDatumCleaner.uploadedTrimHours}"/>
+				</bean>
+			</argument>
+			<property name="displayName" value="NodeDatumTableCleaner"/>
+			<property name="scheduleSettingKey" value="job.generalNodeDatumCleaner.cron"/>
+			<property name="schedule" value="${job.generalNodeDatumCleaner.cron}"/>
+		</bean>
+	</service>
 	
-	<bean id="generalNodeDatumTrimManager" class="net.solarnetwork.node.dao.jdbc.TimeBasedTableDiskSizeManager">
-		<property name="jdbcOperations" ref="jdbcTemplate"/>
-		<property name="dbSystemService" ref="databaseSystemService"/>
-		<property name="tableName" value="SN_GENERAL_NODE_DATUM"/>
-		<property name="trimMinutes" value="${job.generalNodeDatumTrimmer.trimMinutes}"/>
-		<property name="maxFileSystemUseThreshold" value="${job.generalNodeDatumTrimmer.fileSystemUseThreshold}"/>
-		<property name="minTableSizeThreshold" value="${job.generalNodeDatumTrimmer.tableSizeThreshold}"/>
-	</bean>
+	<service interface="net.solarnetwork.node.job.ManagedJob">
+		<service-properties>
+			<entry key="service.pid" value="net.solarnetwork.node.dao.jdbc"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob">
+			<argument>
+				<bean class="net.solarnetwork.node.dao.jdbc.TimeBasedTableDiskSizeManager">
+					<argument ref="jdbcTemplate"/>
+					<property name="uid" value="net.solarnetwork.node.dao.jdbc.trim"/>
+					<property name="messageSource" ref="jobsMessageSource"/>
+					<property name="dbSystemService" ref="databaseSystemService"/>
+					<property name="tableName" value="SN_GENERAL_NODE_DATUM"/>
+					<property name="trimMinutes" value="${job.generalNodeDatumTrimmer.trimMinutes}"/>
+					<property name="maxFileSystemUseThreshold" value="${job.generalNodeDatumTrimmer.fileSystemUseThreshold}"/>
+					<property name="minTableSizeThreshold" value="${job.generalNodeDatumTrimmer.tableSizeThreshold}"/>
+				</bean>
+			</argument>
+			<property name="displayName" value="NodeDatumTableTrimmer"/>
+			<property name="scheduleSettingKey" value="job.generalNodeDatumTrimmer.cron"/>
+			<property name="schedule" value="${job.generalNodeDatumTrimmer.cron}"/>
+		</bean>
+	</service>
 
-	<bean id="generalNodeDatumTrimmer" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
-		<property name="trigger" ref="generalNodeDatumTrimmerTrigger"/>
-		<property name="jobDetail" ref="generalNodeDatumTrimmerJob"/>
-		<property name="messageSource" ref="jobMessageSource"/>
-	</bean>
-
-	<bean id="generalNodeDatumTrimmerTrigger"
-		class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
-		<property name="jobDetail" ref="generalNodeDatumTrimmerJob" />
-		<property name="cronExpression" value="${job.generalNodeDatumTrimmer.cron}" />
-		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING" />
-	</bean>
-
-	<bean id="generalNodeDatumTrimmerJob"
-		class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">
-		<property name="concurrent" value="false"/>
-		<property name="targetObject" ref="generalNodeDatumTrimManager"/>
-		<property name="targetMethod" value="performMaintenance"/>
-	</bean>
-	
 </blueprint>

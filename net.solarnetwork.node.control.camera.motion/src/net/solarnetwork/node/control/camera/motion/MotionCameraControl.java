@@ -190,10 +190,12 @@ public class MotionCameraControl extends BaseIdentifiable
 			}
 			final String schedule = config.getSchedule();
 			final Trigger trigger = JobUtils.triggerForExpression(schedule, TimeUnit.SECONDS, false);
-			final ScheduledFuture<?> future = s
-					.schedule(new MotionSnapshotJob(this, config.getCameraId()), trigger);
-			activeSnapshotConfigurations
-					.add(new ScheduledMotionSnapshot(config.getCameraId(), trigger, future));
+			if ( trigger != null ) {
+				final ScheduledFuture<?> future = s
+						.schedule(new MotionSnapshotJob(this, config.getCameraId()), trigger);
+				activeSnapshotConfigurations
+						.add(new ScheduledMotionSnapshot(config.getCameraId(), trigger, future));
+			}
 		}
 	}
 

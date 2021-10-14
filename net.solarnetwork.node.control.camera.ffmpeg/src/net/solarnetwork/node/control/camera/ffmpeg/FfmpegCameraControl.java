@@ -184,7 +184,9 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 		final String schedule = getSchedule();
 		final Trigger trigger = JobUtils.triggerForExpression(schedule, TimeUnit.SECONDS, false);
-		snapshotTrigger = s.schedule(this, trigger);
+		if ( trigger != null ) {
+			snapshotTrigger = s.schedule(this, trigger);
+		}
 	}
 
 	private boolean isSnapshotConfigurationValid() {

@@ -37,14 +37,18 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcOperations;
+import net.solarnetwork.node.job.JobService;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.util.ObjectUtils;
 
 /**
  * Service that deletes rows from a database table when disk space is running
@@ -71,9 +75,9 @@ import net.solarnetwork.service.OptionalService;
  * @version 2.0
  * @since 1.19
  */
-public class TimeBasedTableDiskSizeManager {
+public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements JobService {
 
-	private JdbcOperations jdbcOperations;
+	private final JdbcOperations jdbcOperations;
 	private OptionalService<DatabaseSystemService> dbSystemService;
 	private String schemaName = "SOLARNODE";
 	private String tableName = "SN_GENERAL_NODE_DATUM";
@@ -85,14 +89,31 @@ public class TimeBasedTableDiskSizeManager {
 	private static final String OLDEST_DATE_QUERY_TEMPLATE = "SELECT MIN(%s) FROM %s";
 	private static final String DELETE_BY_DATE_QUERY_TEMPLATE = "DELETE FROM %s WHERE %s < ?";
 
-	private final Logger log = LoggerFactory.getLogger(getClass());
-
 	/**
-	 * Examine the configured database to see if disk space is low and if so
-	 * delete a set of "oldest" rows based on a date column in the configured
-	 * table.
+	 * Constructor.
+	 * 
+	 * @param jdbcOperations
+	 *        the JDBC operations
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
 	 */
-	public void performMaintenance() {
+	public TimeBasedTableDiskSizeManager(JdbcOperations jdbcOperations) {
+		super();
+		this.jdbcOperations = ObjectUtils.requireNonNullArgument(jdbcOperations, "jdbcOperations");
+	}
+
+	@Override
+	public String getSettingUid() {
+		return "net.solarnetwork.node.dao.jdbc.derby";
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		return Collections.emptyList();
+	}
+
+	@Override
+	public void executeJobService() throws Exception {
 		final DatabaseSystemService dbService = (dbSystemService != null ? dbSystemService.service()
 				: null);
 		if ( dbService == null ) {
@@ -272,21 +293,6 @@ public class TimeBasedTableDiskSizeManager {
 				deleteStmt.close();
 			}
 		}
-	}
-
-	/**
-	 * Set the operations to use for connecting to the database.
-	 * 
-	 * <p>
-	 * The operations is assumed to be configured with a
-	 * {@link javax.sql.DataSource} configured for the database to manage.
-	 * </p>
-	 * 
-	 * @param jdbcOperations
-	 *        the operations
-	 */
-	public void setJdbcOperations(JdbcOperations jdbcOperations) {
-		this.jdbcOperations = jdbcOperations;
 	}
 
 	/**

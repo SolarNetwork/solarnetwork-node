@@ -26,10 +26,12 @@
 
 package net.solarnetwork.node.job;
 
-import org.quartz.DisallowConcurrentExecution;
-import org.quartz.JobExecutionContext;
-import org.quartz.PersistJobDataAfterExecution;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.util.Collections;
+import java.util.List;
 import net.solarnetwork.node.dao.DatumDao;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
 
 /**
  * Job to delete locally persisted datum that have been uploaded already and are
@@ -43,18 +45,40 @@ import net.solarnetwork.node.dao.DatumDao;
  * @author matt
  * @version 2.0
  */
-@PersistJobDataAfterExecution
-@DisallowConcurrentExecution
-public class DatumDaoCleanerJob extends AbstractJob {
+public class DatumDaoCleanerJob extends BaseIdentifiable implements JobService {
 
 	/** The default value for the {@code hours} property. */
 	public static final int DEFAULT_HOURS = 4;
 
+	private final DatumDao datumDao;
 	private int hours = DEFAULT_HOURS;
-	private DatumDao datumDao = null;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param datumDao
+	 *        the datum DAO to use
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
+	public DatumDaoCleanerJob(DatumDao datumDao) {
+		super();
+		this.datumDao = requireNonNullArgument(datumDao, "datumDao");
+	}
 
 	@Override
-	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
+	public String getSettingUid() {
+		String uid = getUid();
+		return (uid != null && !uid.isEmpty() ? uid : "net.solarnetwork.node.job.DatumDaoCleanerJob");
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		return Collections.emptyList();
+	}
+
+	@Override
+	public void executeJobService() throws Exception {
 		if ( log.isDebugEnabled() ) {
 			log.debug("Deleting datum data older than [{}] hours", hours);
 		}
@@ -81,25 +105,6 @@ public class DatumDaoCleanerJob extends AbstractJob {
 	 */
 	public void setHours(int hours) {
 		this.hours = hours;
-	}
-
-	/**
-	 * Get the datum DAO.
-	 * 
-	 * @return the datumDao
-	 */
-	public DatumDao getDatumDao() {
-		return datumDao;
-	}
-
-	/**
-	 * Set the datum DAO.
-	 * 
-	 * @param datumDao
-	 *        the datumDao to set
-	 */
-	public void setDatumDao(DatumDao datumDao) {
-		this.datumDao = datumDao;
 	}
 
 }
