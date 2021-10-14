@@ -24,6 +24,7 @@ package net.solarnetwork.node.runtime;
 
 import static net.solarnetwork.node.Constants.SETTING_PID;
 import static net.solarnetwork.node.job.JobUtils.triggerForExpression;
+import static net.solarnetwork.util.CollectionUtils.dictionaryForMap;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import static org.osgi.framework.Constants.SERVICE_PID;
 import java.util.ArrayList;
@@ -31,10 +32,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Dictionary;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.osgi.framework.BundleContext;
@@ -85,19 +88,18 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
  */
 public class ManagedJobScheduler implements ServiceLifecycleObserver, ConfigurationListener {
 
-	/** The {@code jobStartDelayMs} property default value. */
-	public static final long DEFAULT_JOB_START_DELAY_MS = TimeUnit.SECONDS.toMillis(30);
+	/** The {@code randomizedCron} property default value. */
+	public static final boolean DEFAULT_RANDOMIZED_CRON = true;
 
 	private static final Logger log = LoggerFactory.getLogger(ManagedJobScheduler.class);
 
 	private final BundleContext bundleContext;
 	private final TaskScheduler taskScheduler;
+	private boolean randomizedCron = DEFAULT_RANDOMIZED_CRON;
 
 	// our runtime registration database; with nested map so jobs can be bundled into 
 	// a single pid value, for example when a plugin registers several related jobs
 	private final Map<String, ScheduledJobs> pidMap = new HashMap<>();
-
-	private long jobStartDelayMs = DEFAULT_JOB_START_DELAY_MS;
 
 	private ServiceRegistration<ConfigurationListener> configurationListenerRef;
 
@@ -213,6 +215,18 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 				log.debug("Unscheduled job [{}]", identifier);
 			}
 			future = null;
+			if ( registeredServices != null && !registeredServices.isEmpty() ) {
+				for ( ServiceRegistration<?> reg : registeredServices ) {
+					try {
+						reg.unregister();
+						log.info("Unregistered job [{}] managed service {}", identifier, reg);
+					} catch ( Exception e ) {
+						log.warn("Error unregistering job [{}] managed service {}: {}", identifier, reg,
+								e.toString());
+					}
+				}
+				registeredServices.clear();
+			}
 		}
 
 		@Override
@@ -274,6 +288,18 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 
 	@Override
 	public synchronized void serviceDidShutdown() {
+		synchronized ( pidMap ) {
+			for ( Entry<String, ScheduledJobs> e : pidMap.entrySet() ) {
+				ScheduledJobs sjs = e.getValue();
+				for ( String uid : new HashSet<>(sjs.jobMap.keySet()) ) {
+					ScheduledJob sj = sjs.removeJob(uid);
+					synchronized ( sj ) {
+						sj.stop();
+					}
+				}
+			}
+			pidMap.clear();
+		}
 		if ( configurationListenerRef != null ) {
 			configurationListenerRef.unregister();
 			configurationListenerRef = null;
@@ -350,7 +376,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		}
 
 		String expr = job.getSchedule();
-		Trigger trigger = triggerForExpression(expr, TimeUnit.MILLISECONDS, true);
+		Trigger trigger = triggerForSchedule(expr);
 		if ( trigger != null ) {
 			ScheduledFuture<?> f = taskScheduler.schedule(sj, trigger);
 			sj.scheduled(f, expr);
@@ -390,18 +416,6 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		}
 		synchronized ( sj ) {
 			sj.stop();
-			List<ServiceRegistration<?>> refs = sj.registeredServices;
-			if ( refs != null ) {
-				for ( ServiceRegistration<?> reg : refs ) {
-					try {
-						reg.unregister();
-						log.info("Unregistered job [{}] managed service {}", sj.identifier, reg);
-					} catch ( Exception e ) {
-						log.warn("Error unregistering job [{}] managed service {}: {}", sj.identifier,
-								reg, e.toString());
-					}
-				}
-			}
 		}
 	}
 
@@ -445,7 +459,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 				}
 
 				if ( !oldSchedule.equalsIgnoreCase(newSchedule) ) {
-					Trigger trigger = triggerForExpression(newSchedule, TimeUnit.MILLISECONDS, true);
+					Trigger trigger = triggerForSchedule(newSchedule);
 					if ( trigger != null ) {
 						sj.stop();
 						ScheduledFuture<?> f = taskScheduler.schedule(sj, trigger);
@@ -459,36 +473,34 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		}
 	}
 
+	private Trigger triggerForSchedule(String schedule) {
+		return triggerForExpression(schedule, TimeUnit.MILLISECONDS, randomizedCron);
+	}
+
 	private static String servicePid(Map<String, ?> properties, String defaultPid) {
 		Object o = properties.get(SERVICE_PID);
 		return (o != null ? o.toString() : defaultPid);
 	}
 
-	private static Dictionary<String, ?> dictionaryForMap(Map<String, ?> map) {
-		if ( map == null ) {
-			return null;
-		}
-		return new Hashtable<>(map);
+	/**
+	 * Get the randomized cron flag.
+	 * 
+	 * @return {@literal true} to randomize the second property of jobs using
+	 *         cron schedules; defaults to {@link #DEFAULT_RANDOMIZED_CRON}
+	 */
+	public boolean isRandomizedCron() {
+		return randomizedCron;
 	}
 
 	/**
-	 * Get the job start delay milliseconds.
+	 * Set the randomized cron flag.
 	 * 
-	 * @return the job start delay, in milliseconds; defaults to
-	 *         {@link #DEFAULT_JOB_START_DELAY_MS}
+	 * @param randomizedCron
+	 *        {@literal true} to randomize the second property of jobs using
+	 *        cron schedules
 	 */
-	public long getJobStartDelayMs() {
-		return jobStartDelayMs;
-	}
-
-	/**
-	 * Set the job start delay milliseconds.
-	 * 
-	 * @param jobStartDelayMs
-	 *        the job start delay, in milliseconds
-	 */
-	public void setJobStartDelayMs(long jobStartDelayMs) {
-		this.jobStartDelayMs = jobStartDelayMs;
+	public void setRandomizedCron(boolean randomizedCron) {
+		this.randomizedCron = randomizedCron;
 	}
 
 }
