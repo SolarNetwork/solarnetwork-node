@@ -23,14 +23,13 @@
 package net.solarnetwork.node.runtime;
 
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Dictionary;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
@@ -45,12 +44,15 @@ import org.osgi.service.cm.ConfigurationEvent;
 import org.osgi.service.cm.ConfigurationListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.Trigger;
 import net.solarnetwork.node.job.JobService;
 import net.solarnetwork.node.job.ManagedJob;
 import net.solarnetwork.node.job.ServiceProvider;
 import net.solarnetwork.service.ServiceLifecycleObserver;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * Service to dynamically register and schedule {@link ManagedJob} instances.
@@ -67,11 +69,67 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 
 	private final BundleContext bundleContext;
 	private final TaskScheduler taskScheduler;
-	private final Map<String, ScheduledJob> pidMap = new HashMap<>();
+
+	// our runtime registration database; with nested map so jobs can be bundled into 
+	// a single pid value, for example when a plugin registers several related jobs
+	private final Map<String, ScheduledJobs> pidMap = new HashMap<>();
 
 	private long jobStartDelayMs = DEFAULT_JOB_START_DELAY_MS;
 
 	private ServiceRegistration<ConfigurationListener> configurationListenerRef;
+
+	private static class ScheduledJobs implements SettingSpecifierProvider {
+
+		private final Map<String, ScheduledJob> jobMap = new HashMap<>(2);
+		private ServiceRegistration<SettingSpecifierProvider> settingProviderReg;
+
+		private void addJob(ScheduledJob sj) {
+			jobMap.put(sj.job.getUid(), sj);
+		}
+
+		private ScheduledJob anyScheduledJob() {
+			if ( jobMap.isEmpty() ) {
+				return null;
+			}
+			// return first job; assume if mulitple jobs they share the same settings
+			Iterator<ScheduledJob> itr = jobMap.values().iterator();
+			if ( itr.hasNext() ) {
+				ScheduledJob sj = itr.next();
+				if ( sj != null ) {
+					return sj;
+				}
+			}
+			return null;
+		}
+
+		@Override
+		public String getSettingUid() {
+			ScheduledJob sj = anyScheduledJob();
+			return (sj != null ? sj.job.getSettingUid() : null);
+		}
+
+		@Override
+		public String getDisplayName() {
+			ScheduledJob sj = anyScheduledJob();
+			return (sj != null ? sj.job.getDisplayName() : null);
+		}
+
+		@Override
+		public MessageSource getMessageSource() {
+			ScheduledJob sj = anyScheduledJob();
+			return (sj != null ? sj.job.getMessageSource() : null);
+		}
+
+		@Override
+		public List<SettingSpecifier> getSettingSpecifiers() {
+			List<SettingSpecifier> result = new ArrayList<>(1);
+			for ( ScheduledJob sj : jobMap.values() ) {
+				result.addAll(sj.job.getSettingSpecifiers());
+			}
+			return result;
+		}
+
+	}
 
 	private static class ScheduledJob implements Runnable {
 
@@ -79,7 +137,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		private final ManagedJob job;
 		private final List<ServiceRegistration<?>> registeredServices;
 		private ScheduledFuture<?> future;
-		private String triggerScheduleExpression;
+		private String schedule;
 
 		private ScheduledJob(String pid, ManagedJob job,
 				List<ServiceRegistration<?>> registeredServices) {
@@ -89,16 +147,20 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 			this.registeredServices = registeredServices;
 		}
 
-		private synchronized void scheduled(ScheduledFuture<?> future,
-				String triggerScheduleExpression) {
+		private synchronized void scheduled(ScheduledFuture<?> future, String schedule) {
 			this.future = future;
-			this.triggerScheduleExpression = triggerScheduleExpression;
+			if ( this.schedule == null ) {
+				log.info("Scheduled job [{}] at [{}]", pid, schedule);
+			} else {
+				log.info("Rescheduled job [{}] from [{}] to [{}]", pid, this.schedule, schedule);
+			}
+			this.schedule = schedule;
 		}
 
 		private synchronized void stop() {
 			if ( future != null && !future.isDone() ) {
 				future.cancel(true);
-				log.debug("Unregistered job [{}]", pid);
+				log.debug("Unscheduled job [{}]", pid);
 			}
 			future = null;
 		}
@@ -110,7 +172,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 				try {
 					job.getJobService().executeJobService();
 				} catch ( Throwable t ) {
-					log.error("Error executing job {}: {}", job.getName(), t.getMessage());
+					log.error("Error executing job {}: {}", job.getDisplayName(), t.getMessage());
 				}
 			}
 
@@ -156,8 +218,11 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 	 *        optional service properties
 	 */
 	public void registerJob(ManagedJob job, Map<String, ?> properties) {
-		log.debug("Register job [{}] with props {}", job.getSettingUid(), properties);
+		if ( job.getUid() == null ) {
+			throw new RuntimeException("Managed job must provide a uid value.");
+		}
 		final String pid = servicePid(properties);
+		log.debug("Register job [{}] with props {}", pid, properties);
 
 		List<ServiceRegistration<?>> refs = null;
 		Collection<ServiceProvider.ServiceConfiguration> services = job.getServiceConfigurations();
@@ -192,10 +257,15 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 						this, null);
 			}
 
-			pidMap.put(pid, sj);
+			ScheduledJobs sjs = pidMap.computeIfAbsent(pid, k -> new ScheduledJobs());
+			sjs.addJob(sj);
+			if ( sjs.settingProviderReg == null ) {
+				sjs.settingProviderReg = bundleContext.registerService(SettingSpecifierProvider.class,
+						sjs, null);
+			}
 		}
 
-		String expr = job.getTriggerScheduleExpression();
+		String expr = job.getSchedule();
 		Trigger trigger = net.solarnetwork.node.job.JobUtils.triggerForExpression(expr);
 		if ( trigger != null ) {
 			ScheduledFuture<?> f = taskScheduler.schedule(sj, trigger);
@@ -219,7 +289,21 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		log.debug("Unregister job [{}] with props {}", pid, properties);
 		ScheduledJob sj = null;
 		synchronized ( pidMap ) {
-			sj = pidMap.remove(pid);
+			ScheduledJobs sjs = pidMap.get(pid);
+			if ( sjs != null ) {
+				sj = sjs.jobMap.remove(job.getUid());
+				if ( sjs.jobMap.isEmpty() ) {
+					pidMap.remove(pid);
+					if ( sjs.settingProviderReg != null ) {
+						try {
+							sjs.settingProviderReg.unregister();
+						} catch ( Exception e ) {
+							log.warn("Error unregistering settings provider for job [{}]: {}", pid,
+									e.toString());
+						}
+					}
+				}
+			}
 		}
 		if ( sj == null ) {
 			log.warn("Attempted to unregister job [{}] that wasn't registered", pid);
@@ -248,55 +332,50 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 			return;
 		}
 		final String pid = event.getPid();
-		ScheduledJob sj = null;
+		List<ScheduledJob> sjList = new ArrayList<>(1);
 		synchronized ( pidMap ) {
-			sj = pidMap.get(pid);
+			ScheduledJobs sjs = pidMap.get(pid);
+			if ( sjs != null ) {
+				sjList.addAll(sjs.jobMap.values());
+			}
 		}
-		if ( sj == null ) {
+		if ( sjList.isEmpty() ) {
 			return;
 		}
 
-		synchronized ( sj ) {
-			final String oldSchedule = sj.triggerScheduleExpression;
-			String newSchedule = null;
-
-			// even though the cron expression is also updated by ConfigurationAdmin, it can happen in a different thread
-			// so it might not be updated yet so we must extract the current value from ConfigurationAdmin
+		// even though the cron expression is also updated by ConfigurationAdmin, 
+		// it can happen in a different thread so it might not be updated yet so
+		// we must extract the current value from ConfigurationAdmin
+		Dictionary<String, ?> props = null;
+		try {
 			ServiceReference<ConfigurationAdmin> caRef = event.getReference();
 			ConfigurationAdmin ca = bundleContext.getService(caRef);
-			try {
-				Configuration config = ca.getConfiguration(pid, null);
-				Dictionary<String, ?> props = config.getProperties();
+			Configuration config = ca.getConfiguration(pid, null);
+			props = config.getProperties();
+		} catch ( Exception e ) {
+			log.warn("Exception processing job [{}] configuration update event", pid, e);
+		}
 
-				// first look for expression on common attribute names
-				String configScheduleExpression = (String) props.get("triggerScheduleExpression");
-
-				if ( configScheduleExpression == null ) {
-					// if cron expression not already found, search for any key containing "cronexpression"
-					Enumeration<String> keyEnum = props.keys();
-					while ( keyEnum.hasMoreElements() ) {
-						String key = keyEnum.nextElement();
-
-						if ( key.toLowerCase().contains("cronexpression") ) {
-							configScheduleExpression = (String) props.get(key);
-							break;
-						}
-					}
-				}
-
+		for ( ScheduledJob sj : sjList ) {
+			synchronized ( sj ) {
+				final String oldSchedule = sj.schedule;
+				String newSchedule = null;
+				Object configScheduleExpression = props.get(sj.job.getScheduleSettingKey());
 				if ( configScheduleExpression != null ) {
-					newSchedule = configScheduleExpression;
+					newSchedule = configScheduleExpression.toString();
 				}
-			} catch ( IOException e ) {
-				log.warn("Exception processing job [{}] configuration update event", pid, e);
-			}
-			if ( !oldSchedule.equalsIgnoreCase(newSchedule) ) {
-				Trigger trigger = net.solarnetwork.node.job.JobUtils.triggerForExpression(newSchedule);
-				if ( trigger != null ) {
-					ScheduledFuture<?> f = taskScheduler.schedule(sj, trigger);
-					sj.scheduled(f, newSchedule);
-				} else if ( sj.future != null ) {
-					sj.stop();
+
+				if ( !oldSchedule.equalsIgnoreCase(newSchedule) ) {
+					Trigger trigger = net.solarnetwork.node.job.JobUtils
+							.triggerForExpression(newSchedule);
+					if ( trigger != null ) {
+						sj.stop();
+						ScheduledFuture<?> f = taskScheduler.schedule(sj, trigger);
+						sj.scheduled(f, newSchedule);
+					} else if ( sj.future != null ) {
+						sj.stop();
+						log.info("Stopped job [{}]", pid, oldSchedule, newSchedule);
+					}
 				}
 			}
 		}

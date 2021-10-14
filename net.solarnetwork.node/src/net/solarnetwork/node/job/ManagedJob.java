@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.job;
 
+import net.solarnetwork.service.Identifiable;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
@@ -31,14 +32,7 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
  * @version 1.0
  * @since 2.0
  */
-public interface ManagedJob extends SettingSpecifierProvider, ServiceProvider {
-
-	/**
-	 * Get a name for this job.
-	 * 
-	 * @return the job name
-	 */
-	String getName();
+public interface ManagedJob extends Identifiable, SettingSpecifierProvider, ServiceProvider {
 
 	/**
 	 * Get the JobDetail.
@@ -57,6 +51,23 @@ public interface ManagedJob extends SettingSpecifierProvider, ServiceProvider {
 	 * 
 	 * @return the schedule expression, never {@literal null}
 	 */
-	String getTriggerScheduleExpression();
+	String getSchedule();
+
+	/**
+	 * Get the schedule setting key.
+	 * 
+	 * <p>
+	 * This defaults to {@literal schedule} to match the {@link #getSchedule()}
+	 * property. However this can be changed to any setting, so that the
+	 * schedule setting key can be different. This can be used to bundle
+	 * multiple job schedules into the same setting UID, using different
+	 * schedule setting keys for different jobs.
+	 * </p>
+	 * 
+	 * @return the schedule setting key, defaults to {@literal schedule}
+	 */
+	default String getScheduleSettingKey() {
+		return "schedule";
+	}
 
 }

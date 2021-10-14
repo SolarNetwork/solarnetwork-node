@@ -24,11 +24,7 @@
 	<bean id="mockUploadService"
 		class="net.solarnetwork.node.upload.mock.MockUploadService"/>
 
-	<service>
-		<interfaces>
-			<value>net.solarnetwork.node.job.ManagedJob</value>
-			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
-		</interfaces>
+	<service interface="net.solarnetwork.node.job.ManagedJob">
 		<service-properties>
 			<entry key="service.pid" value="net.solarnetwork.node.upload.mock.job"/>
 		</service-properties>

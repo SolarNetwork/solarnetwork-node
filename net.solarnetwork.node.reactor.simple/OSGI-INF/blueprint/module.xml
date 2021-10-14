@@ -20,10 +20,7 @@
 	<!-- Configuration -->
 	
 	<osgix:cm-properties id="cfg" persistent-id="net.solarnetwork.node.reactor.simple">
-		<beans:prop key="job.instructionAcknowledgementUploader.cron">35 * * * * ?</beans:prop>
-		<beans:prop key="job.instructionExecution.cron">0/10 * * * * ?</beans:prop>
 		<beans:prop key="job.instructionExecution.executionReceivedHourLimit">24</beans:prop>
-		<beans:prop key="job.instructionCleaner.cron">20 43 0 ? * TUE,THU,SUN</beans:prop>
 		<beans:prop key="job.instructionCleaner.hours">72</beans:prop>
 	</osgix:cm-properties>
 
@@ -44,12 +41,6 @@
 	<!-- Published Services -->
 
 	<service interface="net.solarnetwork.node.reactor.ReactorService" ranking="1" ref="simpleReactorService"/>
-
-	<service interface="net.solarnetwork.node.job.TriggerAndJobDetail" ref="instructionAck"/>
-
-	<service interface="net.solarnetwork.node.job.TriggerAndJobDetail" ref="instructionExecution"/>
-
-	<service interface="net.solarnetwork.node.job.TriggerAndJobDetail"  ref="instructionCleaner"/>
 
 	<service interface="net.solarnetwork.node.reactor.InstructionExecutionService" ref="instructionExecutionService"/>
 
@@ -73,82 +64,68 @@
 		<property name="executionReceivedHourLimit" value="${job.instructionExecution.executionReceivedHourLimit}"/>
 	</bean>
 	
+	<bean id="jobsMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames" value="net.solarnetwork.node.reactor.simple.JOBS"/>
+	</bean>
+	
 	<!-- Instruction Acknowledgement job -->
 	
-	<bean id="instructionAck" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
-		<property name="trigger" ref="instructionAckTrigger"/>
-		<property name="jobDetail" ref="instructionAckJob"/>
-		<property name="messageSource" ref="jobMessageSource"/>
-	</bean>
-	
-	<bean id="instructionAckTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
-		<property name="jobDetail" ref="instructionAckJob"/>
-		<property name="name" value="Instruction Acknowledgement Uploader"/>
-		<property name="description" value="Post instruction acknowlegements back to the instructor"/>
-		<property name="cronExpression" value="${job.instructionAcknowledgementUploader.cron}"/>
-		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
-	</bean>
-	
-	<bean id="instructionAckJob" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-		<property name="jobClass" value="net.solarnetwork.node.reactor.simple.InstructionAcknowledgeJob"/>
-		<property name="jobDataAsMap">
-			<map>
-				<entry key="instructionDao" value-ref="instructionDao"/>
-				<entry key="instructionAcknowledgementService" value-ref="instructionAcknowledgementService"/>
-			</map>
-		</property>
-	</bean>
+	<service interface="net.solarnetwork.node.job.ManagedJob">
+		<service-properties>
+			<entry key="service.pid" value="net.solarnetwork.node.reactor.simple"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob">
+			<argument>
+				<bean class="net.solarnetwork.node.reactor.simple.InstructionAcknowledgeJob">
+					<argument ref="instructionDao"/>
+					<argument ref="instructionAcknowledgementService"/>
+					<property name="uid" value="net.solarnetwork.node.reactor.simple"/>
+					<property name="messageSource" ref="jobsMessageSource"/>
+				</bean>
+			</argument>
+			<property name="scheduleSettingKey" value="ack.schedule"/>
+			<property name="schedule" value="35 * * * * ?"/>
+		</bean>
+	</service>
 	
 	<!-- Instruction Execution job -->
 	
-	<bean id="instructionExecution" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
-		<property name="trigger" ref="instructionExecutionTrigger"/>
-		<property name="jobDetail" ref="instructionExecutionJob"/>
-		<property name="messageSource" ref="jobMessageSource"/>
-	</bean>
-	
-	<bean id="instructionExecutionTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
-		<property name="jobDetail" ref="instructionExecutionJob"/>
-		<property name="name" value="Instruction Execution Job"/>
-		<property name="description" value="Look for pending instructions to execute"/>
-		<property name="cronExpression" value="${job.instructionExecution.cron}"/>
-		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
-	</bean>
-	
-	<bean id="instructionExecutionJob" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-		<property name="jobClass" value="net.solarnetwork.node.reactor.simple.InstructionExecutionJob"/>
-		<property name="jobDataAsMap">
-			<map>
-				<entry key="instructionDao" value-ref="instructionDao"/>
-				<entry key="instructionExecutionService" value-ref="instructionExecutionService"/>
-			</map>
-		</property>
-	</bean>
+	<service interface="net.solarnetwork.node.job.ManagedJob">
+		<service-properties>
+			<entry key="service.pid" value="net.solarnetwork.node.reactor.simple"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob">
+			<argument>
+				<bean class="net.solarnetwork.node.reactor.simple.InstructionExecutionJob">
+					<argument ref="instructionDao"/>
+					<argument ref="instructionExecutionService"/>
+					<property name="uid" value="net.solarnetwork.node.reactor.simple"/>
+					<property name="messageSource" ref="jobsMessageSource"/>
+				</bean>
+			</argument>
+			<property name="scheduleSettingKey" value="exec.schedule"/>
+			<property name="schedule" value="0/10 * * * * ?"/>
+		</bean>
+	</service>
 	
 	<!-- Instruction Cleaner job -->
 	
-	<bean id="instructionCleaner" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
-		<property name="trigger" ref="instructionCleanerTrigger"/>
-		<property name="jobDetail" ref="instructionCleanerJob"/>
-		<property name="messageSource" ref="jobMessageSource"/>
-	</bean>
-	
-	<bean id="instructionCleanerTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
-		<property name="jobDetail" ref="instructionCleanerJob"/>
-		<property name="name" value="Instruction Cleaner Job"/>
-		<property name="description" value="Remove old instructions from the local cache"/>
-		<property name="cronExpression" value="${job.instructionCleaner.cron}"/>
-		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
-	</bean>
-	
-	<bean id="instructionCleanerJob" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-		<property name="jobClass" value="net.solarnetwork.node.reactor.simple.InstructionCleanerJob"/>
-		<property name="jobDataAsMap">
-			<map>
-				<entry key="instructionDao" value-ref="instructionDao"/>
-				<entry key="hours" value="${job.instructionCleaner.hours}"/>
-			</map>
-		</property>
-	</bean>
+	<service interface="net.solarnetwork.node.job.ManagedJob">
+		<service-properties>
+			<entry key="service.pid" value="net.solarnetwork.node.reactor.simple"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob">
+			<argument>
+				<bean class="net.solarnetwork.node.reactor.simple.InstructionCleanerJob">
+					<argument ref="instructionDao"/>
+					<property name="hours" value="${job.instructionCleaner.hours}"/>
+					<property name="uid" value="net.solarnetwork.node.reactor.simple"/>
+					<property name="messageSource" ref="jobsMessageSource"/>
+				</bean>
+			</argument>
+			<property name="scheduleSettingKey" value="clean.schedule"/>
+			<property name="schedule" value="20 43 0 ? * TUE,THU,SUN"/>
+		</bean>
+	</service>
 	
 </blueprint>

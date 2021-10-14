@@ -22,10 +22,12 @@
 
 package net.solarnetwork.node.job;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.InvalidPropertyException;
@@ -36,13 +38,13 @@ import org.springframework.context.MessageSource;
 import org.springframework.scheduling.Trigger;
 import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.scheduling.support.PeriodicTrigger;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.MappableSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.settings.support.BasicCronExpressionSettingSpecifier;
 import net.solarnetwork.support.PrefixedMessageSource;
-import net.solarnetwork.util.ObjectUtils;
 
 /**
  * Simple implementation of {@link ManagedJob}.
@@ -50,7 +52,8 @@ import net.solarnetwork.util.ObjectUtils;
  * @author matt
  * @version 1.0
  */
-public class SimpleManagedJob implements ManagedJob, SettingsChangeObserver, ServiceLifecycleObserver {
+public class SimpleManagedJob extends BaseIdentifiable
+		implements ManagedJob, SettingsChangeObserver, ServiceLifecycleObserver {
 
 	/**
 	 * The regular expression used to delegate properties to the delegate
@@ -67,7 +70,6 @@ public class SimpleManagedJob implements ManagedJob, SettingsChangeObserver, Ser
 	private static final Logger log = LoggerFactory.getLogger(SimpleManagedJob.class);
 
 	private final JobService jobService;
-	private String name;
 	private String scheduleSettingKey = DEFAULT_SCHEDULE_SETTING_KEY;
 	private String schedule;
 
@@ -84,7 +86,8 @@ public class SimpleManagedJob implements ManagedJob, SettingsChangeObserver, Ser
 	 */
 	public SimpleManagedJob(JobService jobService) {
 		super();
-		this.jobService = ObjectUtils.requireNonNullArgument(jobService, "jobService");
+		this.jobService = requireNonNullArgument(jobService, "jobService");
+		setUid(UUID.randomUUID().toString());
 	}
 
 	@Override
@@ -233,16 +236,11 @@ public class SimpleManagedJob implements ManagedJob, SettingsChangeObserver, Ser
 	}
 
 	private String jobName() {
-		String name = getName();
+		String name = getDisplayName();
 		if ( name == null || name.isEmpty() ) {
 			name = String.format("%s job", jobService.getClass().getSimpleName());
 		}
 		return name;
-	}
-
-	@Override
-	public String getTriggerScheduleExpression() {
-		return getSchedule();
 	}
 
 	/**
@@ -255,6 +253,7 @@ public class SimpleManagedJob implements ManagedJob, SettingsChangeObserver, Ser
 	 * 
 	 * @return the trigger schedule expression
 	 */
+	@Override
 	public String getSchedule() {
 		return schedule;
 	}
@@ -275,6 +274,7 @@ public class SimpleManagedJob implements ManagedJob, SettingsChangeObserver, Ser
 	 * @return the setting key; defaults to
 	 *         {@link #DEFAULT_SCHEDULE_SETTING_KEY}
 	 */
+	@Override
 	public String getScheduleSettingKey() {
 		return scheduleSettingKey;
 	}
@@ -295,21 +295,6 @@ public class SimpleManagedJob implements ManagedJob, SettingsChangeObserver, Ser
 	 */
 	public void setScheduleSettingKey(String scheduleSettingKey) {
 		this.scheduleSettingKey = scheduleSettingKey;
-	}
-
-	@Override
-	public String getName() {
-		return name;
-	}
-
-	/**
-	 * Set the job name.
-	 * 
-	 * @param name
-	 *        the name to set
-	 */
-	public void setName(String name) {
-		this.name = name;
 	}
 
 }

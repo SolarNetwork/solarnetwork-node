@@ -22,17 +22,18 @@
 
 package net.solarnetwork.node.reactor.simple;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.util.Collections;
 import java.util.List;
-import org.quartz.DisallowConcurrentExecution;
-import org.quartz.JobExecutionContext;
-import org.quartz.PersistJobDataAfterExecution;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
-import net.solarnetwork.node.job.AbstractJob;
+import net.solarnetwork.node.job.JobService;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionDao;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
 
 /**
  * Job to look for received instructions and pass to handlers for execution.
@@ -64,15 +65,37 @@ import net.solarnetwork.node.reactor.InstructionStatus;
  * @version 1.0
  * @since 2.0
  */
-@PersistJobDataAfterExecution
-@DisallowConcurrentExecution
-public class InstructionExecutionJob extends AbstractJob {
+public class InstructionExecutionJob extends BaseIdentifiable implements JobService {
 
-	private InstructionDao instructionDao;
-	private InstructionExecutionService service;
+	private final InstructionDao instructionDao;
+	private final InstructionExecutionService service;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param instructionDao
+	 *        the instruction DAO
+	 * @param service
+	 *        the service
+	 */
+	public InstructionExecutionJob(InstructionDao instructionDao, InstructionExecutionService service) {
+		super();
+		this.instructionDao = requireNonNullArgument(instructionDao, "instructionDao");
+		this.service = requireNonNullArgument(service, "service");
+	}
 
 	@Override
-	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
+	public String getSettingUid() {
+		return "net.solarnetwork.node.reactor.simple.exec";
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		return Collections.emptyList();
+	}
+
+	@Override
+	public void executeJobService() throws Exception {
 		List<Instruction> instructions = instructionDao
 				.findInstructionsForState(InstructionState.Received);
 		log.debug("Found {} instructions in Received state", instructions.size());
@@ -108,40 +131,6 @@ public class InstructionExecutionJob extends AbstractJob {
 				}
 			}
 		}
-	}
-
-	/**
-	 * Get the instruction DAO.
-	 * 
-	 * @return the instruction DAO
-	 */
-	public InstructionDao getInstructionDao() {
-		return instructionDao;
-	}
-
-	/**
-	 * Set the {@link InstructionDao} to manage {@link Instruction} entities
-	 * with.
-	 * 
-	 * @param instructionDao
-	 *        the DAO to use
-	 */
-	public void setInstructionDao(InstructionDao instructionDao) {
-		this.instructionDao = instructionDao;
-	}
-
-	/**
-	 * Set the instruction execution service to use.
-	 * 
-	 * @param service
-	 *        the service
-	 * @since 2.3
-	 */
-	public void setInstructionExecutionService(InstructionExecutionService service) {
-		if ( service == null ) {
-			throw new IllegalArgumentException("InstructionExecutionService may not be null");
-		}
-		this.service = service;
 	}
 
 }

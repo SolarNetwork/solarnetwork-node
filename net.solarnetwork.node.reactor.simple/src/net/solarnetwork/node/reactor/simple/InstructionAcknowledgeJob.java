@@ -22,18 +22,19 @@
 
 package net.solarnetwork.node.reactor.simple;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.quartz.DisallowConcurrentExecution;
-import org.quartz.JobExecutionContext;
-import org.quartz.PersistJobDataAfterExecution;
-import net.solarnetwork.node.job.AbstractJob;
+import net.solarnetwork.node.job.JobService;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionAcknowledgementService;
 import net.solarnetwork.node.reactor.InstructionDao;
 import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.node.setup.SetupException;
+import net.solarnetwork.settings.SettingSpecifier;
 
 /**
  * Job to look for instructions to update the acknowledgment status for.
@@ -41,15 +42,39 @@ import net.solarnetwork.node.setup.SetupException;
  * @author matt
  * @version 3.0
  */
-@PersistJobDataAfterExecution
-@DisallowConcurrentExecution
-public class InstructionAcknowledgeJob extends AbstractJob {
+public class InstructionAcknowledgeJob extends BaseIdentifiable implements JobService {
 
-	private InstructionDao instructionDao;
-	private InstructionAcknowledgementService instructionAcknowledgementService;
+	private final InstructionDao instructionDao;
+	private final InstructionAcknowledgementService instructionAcknowledgementService;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param instructionDao
+	 *        the instruction DAO
+	 * @param instructionAcknowledgementService
+	 *        the acknowledgement service
+	 */
+	public InstructionAcknowledgeJob(InstructionDao instructionDao,
+			InstructionAcknowledgementService instructionAcknowledgementService) {
+		super();
+		this.instructionDao = requireNonNullArgument(instructionDao, "instructionDao");
+		this.instructionAcknowledgementService = requireNonNullArgument(
+				instructionAcknowledgementService, "instructionAcknowledgementService");
+	}
 
 	@Override
-	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
+	public String getSettingUid() {
+		return "net.solarnetwork.node.reactor.simple.ack";
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		return Collections.emptyList();
+	}
+
+	@Override
+	public void executeJobService() throws Exception {
 		try {
 			List<Instruction> instructions = instructionDao.findInstructionsForAcknowledgement();
 			if ( instructions.size() > 0 ) {
@@ -81,23 +106,6 @@ public class InstructionAcknowledgeJob extends AbstractJob {
 				}
 			}
 		}
-	}
-
-	public InstructionDao getInstructionDao() {
-		return instructionDao;
-	}
-
-	public void setInstructionDao(InstructionDao instructionDao) {
-		this.instructionDao = instructionDao;
-	}
-
-	public InstructionAcknowledgementService getInstructionAcknowledgementService() {
-		return instructionAcknowledgementService;
-	}
-
-	public void setInstructionAcknowledgementService(
-			InstructionAcknowledgementService instructionAcknowledgementService) {
-		this.instructionAcknowledgementService = instructionAcknowledgementService;
 	}
 
 }

@@ -78,11 +78,7 @@
 	
 	<!-- Settings backup job -->
 
-	<service>
-		<interfaces>
-			<value>net.solarnetwork.node.job.ManagedJob</value>
-			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
-		</interfaces>
+	<service interface="net.solarnetwork.node.job.ManagedJob">
 		<service-properties>
 			<entry key="service.pid" value="net.solarnetwork.node.settings.ca.backup"/>
 		</service-properties>
