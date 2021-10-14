@@ -34,13 +34,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import org.quartz.JobDataMap;
-import org.quartz.JobKey;
-import org.quartz.Scheduler;
-import org.quartz.Trigger;
-import org.quartz.TriggerKey;
 import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.Trigger;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.node.domain.DataAccessor;
@@ -75,7 +72,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  */
 public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport<AtmosphericDatum>
 		implements DatumDataSource, SettingSpecifierProvider, SettingsChangeObserver,
-		ServiceLifecycleObserver, CozIrService, SerialConnectionAction<AtmosphericDatum> {
+		ServiceLifecycleObserver, SerialConnectionAction<AtmosphericDatum>, Runnable {
 
 	public static final String DEFAULT_SERIAL_PORT = "Serial Port";
 	public static final String DEFAULT_SOURCE_ID = "CozIR";
@@ -92,17 +89,12 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport<Atm
 	 */
 	public static final String COZIR_JOB_GROUP = "CozIR";
 
-	/**
-	 * The key used for the calibration job.
-	 */
-	public static final JobKey CALIBRATION_JOB_KEY = new JobKey(CALIBRATION_JOB_NAME, COZIR_JOB_GROUP);
-
 	private String co2CalibrationSchedule = DEFAULT_CO2_CALIBRATION_SCHEDULE;
 	private String altitude = DEFAULT_ALTITUDE;
-	private OptionalService<Scheduler> scheduler;
+	private OptionalService<TaskScheduler> scheduler;
 
 	private ScheduledFuture<?> altitudeCalibrationFuture;
-	private Trigger scheduledCalibrationTrigger;
+	private ScheduledFuture<?> scheduledCalibrationTrigger;
 	private final int resolvedAltitude = -1;
 
 	/**
@@ -131,7 +123,7 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport<Atm
 
 	@Override
 	public void serviceDidShutdown() {
-		unscheduleCalibrationJob(scheduledCalibrationTrigger);
+		unscheduleCalibrationJob();
 	}
 
 	@Override
@@ -258,46 +250,32 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport<Atm
 	}
 
 	private synchronized void rescheduleCalibrationJob() {
-		unscheduleCalibrationJob(scheduledCalibrationTrigger);
-		scheduledCalibrationTrigger = null;
+		unscheduleCalibrationJob();
 
-		final Scheduler s = service(scheduler);
+		final TaskScheduler s = service(scheduler);
 		if ( s == null ) {
 			return;
 		}
 
 		final String schedule = getCo2CalibrationSchedule();
-		final String jobDesc = calibrationJobDescription(getSourceId());
-		final TriggerKey triggerKey = triggerKey(getSourceId());
-		final JobDataMap props = new JobDataMap();
-		props.put("service", this);
-		Trigger trigger = JobUtils.scheduleJob(s, CozIrCo2CalibrationJob.class, CALIBRATION_JOB_KEY,
-				jobDesc, schedule, triggerKey, props);
-		this.scheduledCalibrationTrigger = trigger;
+		final Trigger trigger = JobUtils.triggerForExpression(schedule, TimeUnit.SECONDS, true);
+		if ( trigger != null ) {
+			this.scheduledCalibrationTrigger = s.schedule(this, trigger);
+		}
 	}
 
-	private void unscheduleCalibrationJob(Trigger trigger) {
-		if ( trigger == null ) {
+	private synchronized void unscheduleCalibrationJob() {
+		if ( scheduledCalibrationTrigger == null ) {
 			return;
 		}
 
-		Scheduler s = service(scheduler);
-		if ( s == null ) {
-			return;
-		}
 		try {
-			JobUtils.unscheduleJob(s, trigger.getDescription(), trigger.getKey());
+			scheduledCalibrationTrigger.cancel(true);
 		} catch ( Exception e ) {
 			// ignore
 		}
-	}
+		scheduledCalibrationTrigger = null;
 
-	private String calibrationJobDescription(String sourceId) {
-		return String.format("CozIR calibration [%s]", sourceId);
-	}
-
-	private TriggerKey triggerKey(String sourceId) {
-		return new TriggerKey(sourceId, COZIR_JOB_GROUP);
 	}
 
 	private int resolveAltitude() {
@@ -355,6 +333,24 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport<Atm
 	}
 
 	@Override
+	public void run() {
+		try {
+			calibrateAsCo2FreshAirLevel();
+		} catch ( Exception e ) {
+			Throwable root = e;
+			while ( root.getCause() != null ) {
+				root = root.getCause();
+			}
+			log.error("Error calibrating {} Co2 fresh air level: {}", getSourceId(), root.toString());
+		}
+	}
+
+	/**
+	 * Calibrate the CO2 level to "fresh air" level.
+	 * 
+	 * @throws IOException
+	 *         if any communication error occurs
+	 */
 	public void calibrateAsCo2FreshAirLevel() throws IOException {
 		log.info("Calibrating CozIR {} CO2 sensor to fresh-air level", getSourceId());
 		performAction(new SerialConnectionAction<Void>() {
@@ -411,7 +407,7 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport<Atm
 	 * 
 	 * @return the scheduler
 	 */
-	public OptionalService<Scheduler> getScheduler() {
+	public OptionalService<TaskScheduler> getScheduler() {
 		return scheduler;
 	}
 
@@ -421,7 +417,7 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport<Atm
 	 * @param scheduler
 	 *        the scheduler
 	 */
-	public void setScheduler(OptionalService<Scheduler> scheduler) {
+	public void setScheduler(OptionalService<TaskScheduler> scheduler) {
 		this.scheduler = scheduler;
 	}
 
