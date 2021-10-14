@@ -10,6 +10,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
  net.solarnetwork.domain;version="[2.0,3.0)",
  net.solarnetwork.io;version="[2.0,3.0)",
+ net.solarnetwork.node;version="[2.0,3.0)",
  net.solarnetwork.node.backup;version="[2.0,3.0)",
  net.solarnetwork.node.dao;version="[2.0,3.0)",
  net.solarnetwork.node.domain;version="[2.0,3.0)",

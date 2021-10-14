@@ -138,7 +138,7 @@ import net.solarnetwork.util.SearchFilter;
 public class CASettingsService implements SettingsService, BackupResourceProvider, InstructionHandler {
 
 	/** The OSGi service property key for the setting PID. */
-	public static final String OSGI_PROPERTY_KEY_SETTING_PID = "settingPid";
+	public static final String OSGI_PROPERTY_KEY_SETTING_PID = net.solarnetwork.node.Constants.SETTING_PID;
 
 	private static final String OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY = CASettingsService.class
 			.getName() + ".FACTORY_INSTANCE_KEY";
@@ -283,7 +283,10 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				// Note: SERVICE_PID not normally provided by Spring: requires
 				// custom SN implementation bundle
 				String instancePid = (String) properties.get(Constants.SERVICE_PID);
-
+				if ( instancePid == null ) {
+					throw new IllegalArgumentException(
+							"The service.pid property must be provided for factory instances.");
+				}
 				Configuration conf;
 				try {
 					conf = configurationAdmin.getConfiguration(instancePid, null);
