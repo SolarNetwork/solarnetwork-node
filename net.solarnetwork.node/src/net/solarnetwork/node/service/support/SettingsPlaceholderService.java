@@ -114,11 +114,7 @@ public class SettingsPlaceholderService implements PlaceholderService {
 
 		String resolved = s;
 		Map<String, ?> placeholders = allPlaceholders(parameters);
-		if ( placeholders != null ) {
-			resolved = StringUtils.expandTemplateString(resolved, placeholders);
-		}
-
-		return resolved;
+		return StringUtils.expandTemplateString(resolved, placeholders);
 	}
 
 	private Map<String, ?> allPlaceholders(Map<String, ?> parameters) {
