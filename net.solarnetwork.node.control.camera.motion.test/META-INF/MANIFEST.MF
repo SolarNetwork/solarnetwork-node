@@ -18,4 +18,5 @@ Import-Package:
  org.mortbay.jetty;version="[6.1,7.0)",
  org.mortbay.jetty.handler;version="[6.1,7.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.util;version="[4.2,5.0)"
+ org.springframework.scheduling.support;version="[4.3,5.0)",
+ org.springframework.util;version="[4.3,5.0)"

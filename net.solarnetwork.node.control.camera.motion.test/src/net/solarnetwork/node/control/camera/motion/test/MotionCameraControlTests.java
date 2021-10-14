@@ -22,34 +22,32 @@
 
 package net.solarnetwork.node.control.camera.motion.test;
 
-import static net.solarnetwork.node.control.camera.motion.MotionCameraControl.SNAPSHOT_JOB_KEY;
 import static org.easymock.EasyMock.capture;
-import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
-import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.quartz.JobDetail;
-import org.quartz.Scheduler;
-import org.quartz.SimpleTrigger;
-import org.quartz.Trigger;
-import org.quartz.TriggerKey;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.Trigger;
+import org.springframework.scheduling.support.PeriodicTrigger;
 import net.solarnetwork.domain.InstructionStatus;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.control.camera.motion.MotionCameraControl;
@@ -68,7 +66,7 @@ import net.solarnetwork.service.StaticOptionalService;
  */
 public class MotionCameraControlTests extends AbstractHttpClientTests {
 
-	private Scheduler scheduler;
+	private TaskScheduler scheduler;
 
 	private String controlId;
 	private MotionCameraControl control;
@@ -80,13 +78,13 @@ public class MotionCameraControlTests extends AbstractHttpClientTests {
 	public void setup() throws Exception {
 		super.setup();
 
-		scheduler = EasyMock.createMock(Scheduler.class);
+		scheduler = EasyMock.createMock(TaskScheduler.class);
 
 		controlId = UUID.randomUUID().toString();
 		control = new MotionCameraControl();
 		control.setControlId(controlId);
 		control.setMotionBaseUrl(getHttpServerBaseUrl());
-		control.setScheduler(new StaticOptionalService<Scheduler>(scheduler));
+		control.setScheduler(new StaticOptionalService<TaskScheduler>(scheduler));
 	}
 
 	@Override
@@ -207,6 +205,22 @@ public class MotionCameraControlTests extends AbstractHttpClientTests {
 				equalTo(InstructionState.Declined));
 	}
 
+	private static class TestScheduledFuture extends CompletableFuture<Object>
+			implements ScheduledFuture<Object> {
+
+		@Override
+		public long getDelay(TimeUnit unit) {
+			return 0;
+		}
+
+		@Override
+		public int compareTo(Delayed o) {
+			return 0;
+		}
+
+	}
+
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void scheduleSnapshotJob_interval() throws Exception {
 		// GIVEN
@@ -216,46 +230,33 @@ public class MotionCameraControlTests extends AbstractHttpClientTests {
 		snapConfig.setSchedule("123");
 		control.setSnapshotConfigurations(new MotionSnapshotConfig[] { snapConfig });
 
-		TriggerKey tk = TriggerKey.triggerKey(String.format("%s-%d", controlId, 1),
-				MotionCameraControl.SNAPSHOT_JOB_GROUP);
-
-		// look for existing trigger; not found
-		expect(scheduler.getTrigger(tk)).andReturn(null);
-
-		// look for existing job; not found
-		expect(scheduler.getJobDetail(SNAPSHOT_JOB_KEY)).andReturn(null);
-
-		// create job
-		Capture<JobDetail> jobCaptor = new Capture<>();
-		scheduler.addJob(capture(jobCaptor), eq(true));
-
 		// schedule job
+		Capture<Runnable> jobCaptor = new Capture<>();
 		Capture<Trigger> trigCaptor = new Capture<>();
-		expect(scheduler.scheduleJob(capture(trigCaptor))).andReturn(new Date());
+		TestScheduledFuture taskFuture = new TestScheduledFuture();
+		expect(scheduler.schedule(capture(jobCaptor), capture(trigCaptor)))
+				.andReturn((ScheduledFuture) taskFuture);
 
 		// WHEN
 		replayAll();
 		control.configurationChanged(null);
 
 		// THEN
-		JobDetail jobDetail = jobCaptor.getValue();
-		assertThat("Snapshot job detail available", jobDetail, notNullValue());
-		assertThat("Snapshot job is expected class", jobDetail.getJobClass(),
-				equalTo(MotionSnapshotJob.class));
-		assertThat("Snapshot job data has no props", jobDetail.getJobDataMap().keySet(), hasSize(0));
+		Runnable job = jobCaptor.getValue();
+		assertThat("Snapshot job available", job, notNullValue());
+		assertThat("Snapshot job is expected class", job, instanceOf(MotionSnapshotJob.class));
+		MotionSnapshotJob snapJob = (MotionSnapshotJob) job;
+		assertThat("Snapshot job camera ID", snapJob.getCameraId(), equalTo(1));
+		assertThat("Snapshot job service", snapJob.getService(), sameInstance(control));
 
 		Trigger jobTrigger = trigCaptor.getValue();
 		assertThat("Snapshot job trigger is simple", jobTrigger,
-				Matchers.instanceOf(SimpleTrigger.class));
-		assertThat("Snapshot job trigger interval milliseconds",
-				((SimpleTrigger) jobTrigger).getRepeatInterval(), equalTo(123000L));
-		assertThat("Snapshot job trigger has 2 props", jobTrigger.getJobDataMap().keySet(), hasSize(2));
-		assertThat("Snapshot job trigger data camera ID", jobTrigger.getJobDataMap(),
-				hasEntry("cameraId", 1));
-		assertThat("Snapshot job trigger data service", jobTrigger.getJobDataMap(),
-				hasEntry("service", control));
+				equalTo(new PeriodicTrigger(123, TimeUnit.SECONDS)));
+
+		assertThat("Future not done", taskFuture.isDone(), equalTo(false));
 	}
 
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	@Test
 	public void unscheduleSnapshotJob_interval() throws Exception {
 		// GIVEN
@@ -265,25 +266,12 @@ public class MotionCameraControlTests extends AbstractHttpClientTests {
 		snapConfig.setSchedule("123");
 		control.setSnapshotConfigurations(new MotionSnapshotConfig[] { snapConfig });
 
-		TriggerKey tk = TriggerKey.triggerKey(String.format("%s-%d", controlId, 1),
-				MotionCameraControl.SNAPSHOT_JOB_GROUP);
-
-		// look for existing trigger; not found
-		expect(scheduler.getTrigger(tk)).andReturn(null);
-
-		// look for existing job; not found
-		expect(scheduler.getJobDetail(SNAPSHOT_JOB_KEY)).andReturn(null);
-
-		// create job
-		Capture<JobDetail> jobCaptor = new Capture<>();
-		scheduler.addJob(capture(jobCaptor), eq(true));
-
 		// schedule job
+		Capture<Runnable> jobCaptor = new Capture<>();
 		Capture<Trigger> trigCaptor = new Capture<>();
-		expect(scheduler.scheduleJob(capture(trigCaptor))).andReturn(new Date());
-
-		// unschedule job
-		expect(scheduler.unscheduleJob(tk)).andReturn(true);
+		TestScheduledFuture taskFuture = new TestScheduledFuture();
+		expect(scheduler.schedule(capture(jobCaptor), capture(trigCaptor)))
+				.andReturn((ScheduledFuture) taskFuture);
 
 		// WHEN
 		replayAll();
@@ -291,22 +279,7 @@ public class MotionCameraControlTests extends AbstractHttpClientTests {
 		control.shutdown();
 
 		// THEN
-		JobDetail jobDetail = jobCaptor.getValue();
-		assertThat("Snapshot job detail available", jobDetail, notNullValue());
-		assertThat("Snapshot job is expected class", jobDetail.getJobClass(),
-				equalTo(MotionSnapshotJob.class));
-		assertThat("Snapshot job data has no props", jobDetail.getJobDataMap().keySet(), hasSize(0));
-
-		Trigger jobTrigger = trigCaptor.getValue();
-		assertThat("Snapshot job trigger is simple", jobTrigger,
-				Matchers.instanceOf(SimpleTrigger.class));
-		assertThat("Snapshot job trigger interval milliseconds",
-				((SimpleTrigger) jobTrigger).getRepeatInterval(), equalTo(123000L));
-		assertThat("Snapshot job trigger has 2 props", jobTrigger.getJobDataMap().keySet(), hasSize(2));
-		assertThat("Snapshot job trigger data camera ID", jobTrigger.getJobDataMap(),
-				hasEntry("cameraId", 1));
-		assertThat("Snapshot job trigger data service", jobTrigger.getJobDataMap(),
-				hasEntry("service", control));
+		assertThat("Future is cancelled", taskFuture.isCancelled(), equalTo(true));
 	}
 
 }
