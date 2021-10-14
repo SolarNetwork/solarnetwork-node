@@ -55,4 +55,22 @@ public class MotionSnapshotJob implements Runnable {
 		}
 	}
 
+	/**
+	 * Get the motion service.
+	 * 
+	 * @return the service
+	 */
+	public MotionService getService() {
+		return service;
+	}
+
+	/**
+	 * Get the camera ID.
+	 * 
+	 * @return the cameraId
+	 */
+	public int getCameraId() {
+		return cameraId;
+	}
+
 }
