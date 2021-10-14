@@ -16,7 +16,7 @@
 
 	<bean id="scheduler" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
-		<property name="serviceClassName" value="org.quartz.Scheduler"/>
+		<property name="serviceClassName" value="org.springframework.scheduling.TaskScheduler"/>
 		<property name="serviceFilter" value="(function=node)"/>
 		<property name="sticky" value="true"/>
 	</bean>

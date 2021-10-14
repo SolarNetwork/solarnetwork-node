@@ -26,6 +26,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static net.solarnetwork.node.setup.SetupResource.WEB_CONSUMER_TYPES;
+import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -46,17 +47,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import org.quartz.JobDataMap;
-import org.quartz.JobKey;
-import org.quartz.Scheduler;
-import org.quartz.Trigger;
-import org.quartz.TriggerKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.Trigger;
 import org.springframework.util.DigestUtils;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
@@ -133,18 +133,11 @@ public class MotionCameraControl extends BaseIdentifiable
 	 */
 	public static final String SNAPSHOT_JOB_GROUP = "MotionCameraControl";
 
-	/**
-	 * The key used for the snapshot job.
-	 * 
-	 * @since 1.1
-	 */
-	public static final JobKey SNAPSHOT_JOB_KEY = new JobKey(SNAPSHOT_JOB_NAME, SNAPSHOT_JOB_GROUP);
-
 	private static final String MEDIA_RESOURCE_LAST_MODIFIED = "media-resource-last-modified";
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	private OptionalService<Scheduler> scheduler;
+	private OptionalService<TaskScheduler> scheduler;
 	private String controlId;
 	private String path = DEFAULT_PATH;
 	private Pattern pathFilter = DEFAULT_PATH_FILTER;
@@ -184,7 +177,7 @@ public class MotionCameraControl extends BaseIdentifiable
 	private synchronized void rescheduleSnapshotJobs() {
 		unscheduleSnapshotJobs(activeSnapshotConfigurations);
 
-		final Scheduler s = scheduler();
+		final TaskScheduler s = service(scheduler);
 		if ( s == null ) {
 			return;
 		}
@@ -196,14 +189,11 @@ public class MotionCameraControl extends BaseIdentifiable
 				continue;
 			}
 			final String schedule = config.getSchedule();
-			final String jobDesc = snapshotJobDescription(config.getCameraId());
-			final TriggerKey triggerKey = triggerKey(config.getCameraId());
-			final JobDataMap props = new JobDataMap();
-			props.put("cameraId", config.getCameraId());
-			props.put("service", this);
-			Trigger trigger = JobUtils.scheduleJob(s, MotionSnapshotJob.class, SNAPSHOT_JOB_KEY, jobDesc,
-					schedule, triggerKey, props);
-			activeSnapshotConfigurations.add(new ScheduledMotionSnapshot(config.getCameraId(), trigger));
+			final Trigger trigger = JobUtils.triggerForExpression(schedule, TimeUnit.SECONDS, false);
+			final ScheduledFuture<?> future = s
+					.schedule(new MotionSnapshotJob(this, config.getCameraId()), trigger);
+			activeSnapshotConfigurations
+					.add(new ScheduledMotionSnapshot(config.getCameraId(), trigger, future));
 		}
 	}
 
@@ -212,37 +202,18 @@ public class MotionCameraControl extends BaseIdentifiable
 			return;
 		}
 
-		Scheduler s = scheduler();
+		final TaskScheduler s = service(scheduler);
 		if ( s == null ) {
 			return;
 		}
-		for ( ScheduledMotionSnapshot config : configurations ) {
+		for ( ScheduledMotionSnapshot job : configurations ) {
 			try {
-				JobUtils.unscheduleJob(s, snapshotJobDescription(config.getCameraId()),
-						triggerKey(config.getCameraId()));
+				job.getFuture().cancel(true);
 			} catch ( Exception e ) {
 				// ignore
 			}
 		}
 		configurations.clear();
-	}
-
-	private String snapshotJobDescription(int cameraId) {
-		return String.format("Motion auto-snapshot [%s-%d]", controlId, cameraId);
-	}
-
-	private TriggerKey triggerKey(int cameraId) {
-		String controlId = getControlId();
-		if ( controlId == null ) {
-
-		}
-		String triggerKey = String.format("%s-%d", controlId, cameraId);
-		return new TriggerKey(triggerKey, SNAPSHOT_JOB_GROUP);
-	}
-
-	private Scheduler scheduler() {
-		OptionalService<Scheduler> optional = getScheduler();
-		return (optional != null ? optional.service() : null);
 	}
 
 	// NodeControlProvider
@@ -806,7 +777,7 @@ public class MotionCameraControl extends BaseIdentifiable
 	 * 
 	 * @return the scheduler
 	 */
-	public OptionalService<Scheduler> getScheduler() {
+	public OptionalService<TaskScheduler> getScheduler() {
 		return scheduler;
 	}
 
@@ -817,7 +788,7 @@ public class MotionCameraControl extends BaseIdentifiable
 	 *        the scheduler
 	 * @since 1.1
 	 */
-	public void setScheduler(OptionalService<Scheduler> scheduler) {
+	public void setScheduler(OptionalService<TaskScheduler> scheduler) {
 		this.scheduler = scheduler;
 	}
 

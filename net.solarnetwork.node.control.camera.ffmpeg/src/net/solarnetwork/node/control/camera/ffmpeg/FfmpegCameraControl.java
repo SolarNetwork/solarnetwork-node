@@ -47,15 +47,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import org.quartz.JobDataMap;
-import org.quartz.JobKey;
-import org.quartz.Scheduler;
-import org.quartz.Trigger;
-import org.quartz.TriggerKey;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.Trigger;
 import org.springframework.util.DigestUtils;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
@@ -88,7 +87,7 @@ import net.solarnetwork.util.StringUtils;
  */
 public class FfmpegCameraControl extends BaseIdentifiable
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler,
-		SetupResourceProvider, SettingsChangeObserver, FfmpegService {
+		SetupResourceProvider, SettingsChangeObserver, FfmpegService, Runnable {
 
 	/** The instruction signal name for initiating a snapshot. */
 	public static final String SIGNAL_SNAPSHOT = "snapshot";
@@ -120,13 +119,10 @@ public class FfmpegCameraControl extends BaseIdentifiable
 	/** The group name used to schedule the invoker jobs as. */
 	public static final String SNAPSHOT_JOB_GROUP = "FFmpegCameraControl";
 
-	/** The key used for the snapshot job. */
-	public static final JobKey SNAPSHOT_JOB_KEY = new JobKey(SNAPSHOT_JOB_NAME, SNAPSHOT_JOB_GROUP);
-
 	private static final DateTimeFormatter OUTPUT_FILE_DATE_FORMAT = DateTimeFormatter
 			.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC);
 
-	private final OptionalService<Scheduler> scheduler;
+	private final OptionalService<TaskScheduler> scheduler;
 	private String controlId;
 	private String path = DEFAULT_PATH;
 	private String outputFileTemplate = DEFAULT_OUTPUT_FILE_TEMPLATE;
@@ -137,7 +133,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 	private String ffmpegPath = DEFAULT_FFMPEG_PATH;
 	private String ffmpegSnapshotOptions;
 
-	private Trigger snapshotTrigger;
+	private ScheduledFuture<?> snapshotTrigger;
 
 	/**
 	 * Constructor.
@@ -147,7 +143,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public FfmpegCameraControl(OptionalService<Scheduler> scheduler) {
+	public FfmpegCameraControl(OptionalService<TaskScheduler> scheduler) {
 		super();
 		if ( scheduler == null ) {
 			throw new IllegalArgumentException("The scheduler argument must not be null.");
@@ -181,19 +177,14 @@ public class FfmpegCameraControl extends BaseIdentifiable
 			return;
 		}
 
-		final Scheduler s = service(scheduler);
+		final TaskScheduler s = service(scheduler);
 		if ( s == null ) {
 			return;
 		}
 
 		final String schedule = getSchedule();
-		final String jobDesc = snapshotJobDescription();
-		final TriggerKey triggerKey = triggerKey();
-		final JobDataMap props = new JobDataMap();
-		props.put("service", this);
-		Trigger trigger = JobUtils.scheduleJob(s, FfmpegSnapshotJob.class, SNAPSHOT_JOB_KEY, jobDesc,
-				schedule, triggerKey, props);
-		snapshotTrigger = trigger;
+		final Trigger trigger = JobUtils.triggerForExpression(schedule, TimeUnit.SECONDS, false);
+		snapshotTrigger = s.schedule(this, trigger);
 	}
 
 	private boolean isSnapshotConfigurationValid() {
@@ -206,28 +197,21 @@ public class FfmpegCameraControl extends BaseIdentifiable
 		if ( snapshotTrigger == null ) {
 			return;
 		}
-		Scheduler s = service(scheduler);
-		if ( s == null ) {
-			return;
-		}
-		try {
-			JobUtils.unscheduleJob(s, snapshotJobDescription(), snapshotTrigger.getKey());
-		} catch ( Exception e ) {
-			// ignore
-		}
+		snapshotTrigger.cancel(true);
 		snapshotTrigger = null;
 	}
 
-	private String snapshotJobDescription() {
-		return String.format("FFmpeg auto-snapshot [%s]", controlId);
-	}
-
-	private TriggerKey triggerKey() {
-		String controlId = getControlId();
-		if ( controlId == null ) {
-			controlId = "";
+	@Override
+	public void run() {
+		try {
+			takeSnapshot();
+		} catch ( Exception e ) {
+			Throwable root = e;
+			while ( root.getCause() != null ) {
+				root = root.getCause();
+			}
+			log.error("Error taking {} snapshot: {}", controlId, root.toString());
 		}
-		return new TriggerKey(String.format("Snapshot-%s", controlId), SNAPSHOT_JOB_GROUP);
 	}
 
 	@Override
