@@ -57,7 +57,6 @@
 		</bean>
 	</service>
 	
-	
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="FFmpeg Camera Control"/>
