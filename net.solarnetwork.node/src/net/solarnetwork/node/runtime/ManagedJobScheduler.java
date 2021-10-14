@@ -22,8 +22,10 @@
 
 package net.solarnetwork.node.runtime;
 
+import static net.solarnetwork.node.Constants.SETTING_PID;
 import static net.solarnetwork.node.job.JobUtils.triggerForExpression;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import static org.osgi.framework.Constants.SERVICE_PID;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -36,7 +38,6 @@ import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 import org.osgi.service.cm.Configuration;
@@ -313,8 +314,13 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 			ScheduledJobs sjs = pidMap.computeIfAbsent(pid, k -> new ScheduledJobs());
 			sjs.addJob(sj);
 			if ( sjs.settingProviderReg == null ) {
+				Dictionary<String, Object> settingProps = new Hashtable<>();
+				if ( properties.containsKey(SERVICE_PID) ) {
+					settingProps.put(SERVICE_PID, properties.get(SERVICE_PID));
+				}
+				settingProps.put(SETTING_PID, job.getSettingUid());
 				sjs.settingProviderReg = bundleContext.registerService(SettingSpecifierProvider.class,
-						sjs, null);
+						sjs, settingProps);
 			}
 		}
 
@@ -437,7 +443,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 	}
 
 	private static String servicePid(Map<String, ?> properties, String defaultPid) {
-		Object o = properties.get(Constants.SERVICE_PID);
+		Object o = properties.get(SERVICE_PID);
 		return (o != null ? o.toString() : defaultPid);
 	}
 

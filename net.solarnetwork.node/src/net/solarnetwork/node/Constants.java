@@ -26,7 +26,7 @@ package net.solarnetwork.node;
  * SolarNode constants.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public final class Constants {
 
@@ -41,6 +41,13 @@ public final class Constants {
 	 * @since 1.1
 	 */
 	public static final String EVENT_TOPIC_CONFIGURATION_CHANGED = "net/solarnetwork/node/CONFIGURATION_CHANGED";
+
+	/**
+	 * A service property key for a setting PID.
+	 * 
+	 * @since 1.3
+	 */
+	public static final String SETTING_PID = "settingPid";
 
 	/**
 	 * Get the configured SolarNode home directory.
