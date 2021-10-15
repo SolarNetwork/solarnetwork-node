@@ -43,6 +43,7 @@ import net.solarnetwork.node.service.DeviceInfoProvider;
 import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.KeyedSettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -64,7 +65,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * @since 2.0
  */
 public class DatumDataSourcePollManagedJob extends BaseIdentifiable
-		implements JobService, SettingsChangeObserver {
+		implements JobService, SettingsChangeObserver, ServiceLifecycleObserver {
 
 	// a static concurrent set to tack the publication of device infos
 	private static final Set<String> PUBLISHED_DEVICE_INFO_SOURCE_IDS = new ConcurrentSkipListSet<>();
@@ -84,6 +85,50 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 			}
 		} catch ( Throwable e ) {
 			logThrowable(e);
+		}
+	}
+
+	@Override
+	public String toString() {
+		Object delegate = multiDatumDataSource != null ? multiDatumDataSource : datumDataSource;
+		return String.format("DatumDataSourcePollManagedJob{%s}", delegate);
+	}
+
+	/**
+	 * Handle service startup.
+	 * 
+	 * <p>
+	 * This method will delegate to the configured {@code datumDataSource} or
+	 * {@code multiDatumDataSource} properties if they also implement
+	 * {@link ServiceLifecycleObserver}.
+	 * </p>
+	 * 
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void serviceDidStartup() {
+		ServiceLifecycleObserver delegate = serviceLifecycleObserver();
+		if ( delegate != null ) {
+			delegate.serviceDidStartup();
+		}
+	}
+
+	/**
+	 * Handle service shutdown.
+	 * 
+	 * <p>
+	 * This method will delegate to the configured {@code datumDataSource} or
+	 * {@code multiDatumDataSource} properties if they also implement
+	 * {@link ServiceLifecycleObserver}.
+	 * </p>
+	 * 
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void serviceDidShutdown() {
+		ServiceLifecycleObserver delegate = serviceLifecycleObserver();
+		if ( delegate != null ) {
+			delegate.serviceDidShutdown();
 		}
 	}
 
@@ -202,7 +247,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 		PUBLISHED_DEVICE_INFO_SOURCE_IDS.add(metaSourceId);
 	}
 
-	private SettingSpecifierProvider getSettingSpecifierProvider() {
+	private SettingSpecifierProvider settingSpecifierProvider() {
 		if ( multiDatumDataSource instanceof SettingSpecifierProvider ) {
 			return (SettingSpecifierProvider) multiDatumDataSource;
 		}
@@ -212,9 +257,19 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 		return null;
 	}
 
+	private ServiceLifecycleObserver serviceLifecycleObserver() {
+		if ( multiDatumDataSource instanceof ServiceLifecycleObserver ) {
+			return (ServiceLifecycleObserver) multiDatumDataSource;
+		}
+		if ( datumDataSource instanceof ServiceLifecycleObserver ) {
+			return (ServiceLifecycleObserver) datumDataSource;
+		}
+		return null;
+	}
+
 	@Override
 	public String getSettingUid() {
-		SettingSpecifierProvider delegate = getSettingSpecifierProvider();
+		SettingSpecifierProvider delegate = settingSpecifierProvider();
 		if ( delegate != null ) {
 			return delegate.getSettingUid();
 		}
@@ -223,7 +278,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 
 	@Override
 	public String getDisplayName() {
-		SettingSpecifierProvider delegate = getSettingSpecifierProvider();
+		SettingSpecifierProvider delegate = settingSpecifierProvider();
 		if ( delegate != null ) {
 			return delegate.getDisplayName();
 		}
@@ -232,7 +287,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 
 	@Override
 	public MessageSource getMessageSource() {
-		SettingSpecifierProvider delegate = getSettingSpecifierProvider();
+		SettingSpecifierProvider delegate = settingSpecifierProvider();
 		if ( delegate != null ) {
 			return delegate.getMessageSource();
 		}
@@ -241,7 +296,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		SettingSpecifierProvider delegate = getSettingSpecifierProvider();
+		SettingSpecifierProvider delegate = settingSpecifierProvider();
 		if ( delegate == null ) {
 			return Collections.emptyList();
 		}

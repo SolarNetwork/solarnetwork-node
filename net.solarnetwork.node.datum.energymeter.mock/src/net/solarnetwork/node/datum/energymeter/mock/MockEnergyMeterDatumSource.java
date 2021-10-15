@@ -222,6 +222,10 @@ public class MockEnergyMeterDatumSource extends DatumDataSourceSupport
 		}
 	}
 
+	public String getSourceId() {
+		return sourceId;
+	}
+
 	// Method get used by the settings page
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;

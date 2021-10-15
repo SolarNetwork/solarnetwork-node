@@ -122,22 +122,40 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.canbus"
 			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
-			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.node.job.ManagedJob</beans:value>
 		</osgix:interfaces>
-		<osgix:service-properties>
-			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.canbus"/>
-		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail"
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob" 
 				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
-			<property name="trigger">
-				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-					<property name="name" value="canbusDatumPollTrigger"/>
-					<property name="cronExpression" value="0 * * * * ?"/>
-					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
-					<property name="randomSecond" value="true"/>
+			<argument>
+				<bean class="net.solarnetwork.node.job.DatumDataSourcePollManagedJob">
+					<property name="datumMetadataService" ref="datumMetadataService"/>
+					<property name="datumQueue" ref="datumQueue"/>
+					<property name="datumDataSource">
+						<bean class="net.solarnetwork.node.datum.canbus.CanbusDatumDataSource">
+							<property name="taskScheduler" ref="taskScheduler"/>
+							<property name="datumMetadataService" ref="datumMetadataService"/>
+							<property name="datumQueue" ref="datumQueue"/>
+							<property name="measurementHelper" ref="measurementHelper"/>
+							<property name="messageSource" ref="jobMessageSource"/>
+							<property name="placeholderService" ref="placeholderService"/>
+							<property name="expressionServices" ref="expressionServices"/>
+							<property name="canbusNetwork">
+								<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+									<argument ref="bundleContext"/>
+									<property name="serviceClassName" value="net.solarnetwork.node.io.canbus.CanbusNetwork"/>
+									<property name="ignoreEmptyPropertyFilterValues" value="false"/>
+									<property name="propertyFilters">
+										<map>
+											<entry key="uid" value="Canbus Port"/>
+										</map>
+									</property>
+								</bean>
+							</property>
+						</bean>
+					</property>
 				</bean>
-			</property>
+			</argument>
+			<argument value="0 * * * * ?"/>
 			<property name="serviceProviderConfigurations">
 				<map>
 					<entry key="datumDataSource">
@@ -155,40 +173,6 @@
 						</bean>
 					</entry>
 				</map>
-			</property>
-			<property name="jobDetail">
-				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-					<property name="name" value="canbusDatumPollJob"/>
-					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourcePollJob"/>
-					<property name="jobDataAsMap">
-						<map>
-							<entry key="datumQueue" value-ref="datumQueue"/>
-							<entry key="datumDataSource">
-								<bean class="net.solarnetwork.node.datum.canbus.CanbusDatumDataSource" init-method="serviceDidStartup">
-									<property name="taskScheduler" ref="taskScheduler"/>
-									<property name="datumMetadataService" ref="datumMetadataService"/>
-									<property name="datumQueue" ref="datumQueue"/>
-									<property name="measurementHelper" ref="measurementHelper"/>
-									<property name="messageSource" ref="jobMessageSource"/>
-									<property name="placeholderService" ref="placeholderService"/>
-									<property name="expressionServices" ref="expressionServices"/>
-									<property name="canbusNetwork">
-										<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
-											<argument ref="bundleContext"/>
-											<property name="serviceClassName" value="net.solarnetwork.node.io.canbus.CanbusNetwork"/>
-											<property name="ignoreEmptyPropertyFilterValues" value="false"/>
-											<property name="propertyFilters">
-												<map>
-													<entry key="uid" value="Canbus Port"/>
-												</map>
-											</property>
-										</bean>
-									</property>
-								</bean>
-							</entry>
-						</map>
-					</property>
-				</bean>
 			</property>
 		</bean>
 	</osgix:managed-service-factory>

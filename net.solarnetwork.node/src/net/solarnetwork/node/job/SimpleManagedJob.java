@@ -43,6 +43,7 @@ import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.scheduling.support.PeriodicTrigger;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.ServiceLifecycleObserver;
+import net.solarnetwork.settings.KeyedSettingSpecifier;
 import net.solarnetwork.settings.MappableSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingsChangeObserver;
@@ -163,7 +164,28 @@ public class SimpleManagedJob extends BaseIdentifiable
 		for ( SettingSpecifier spec : jobService.getSettingSpecifiers() ) {
 			if ( spec instanceof MappableSpecifier ) {
 				MappableSpecifier keyedSpec = (MappableSpecifier) spec;
-				result.add(keyedSpec.mappedTo(JOB_SERVICE_SETTING_PREFIX));
+				SettingSpecifier mappedSpec = keyedSpec.mappedTo(JOB_SERVICE_SETTING_PREFIX);
+				if ( jobServiceAccessor != null && keyedSpec instanceof KeyedSettingSpecifier<?> ) {
+					// if legacy settings are active, then map default values to active values for UI
+					PropertyAccessor specAccessor = PropertyAccessorFactory
+							.forBeanPropertyAccess(mappedSpec);
+					if ( specAccessor.isWritableProperty("defaultValue") ) {
+						String propKey = ((KeyedSettingSpecifier<?>) keyedSpec).getKey();
+						if ( jobServiceAccessor.isReadableProperty(propKey) ) {
+							try {
+								Object newDefaultValue = jobServiceAccessor.getPropertyValue(propKey);
+								specAccessor.setPropertyValue("defaultValue", newDefaultValue);
+							} catch ( Exception e ) {
+								// ignore
+							}
+						} else {
+							log.warn(
+									"Unable to map [{}] legacy setting property [{}] default value: property not readable",
+									getSettingUid(), propKey);
+						}
+					}
+				}
+				result.add(mappedSpec);
 			} else {
 				result.add(spec);
 			}
@@ -197,9 +219,9 @@ public class SimpleManagedJob extends BaseIdentifiable
 	@Override
 	public void serviceDidStartup() {
 		if ( jobService instanceof ServiceLifecycleObserver ) {
-			ServiceLifecycleObserver observer = (ServiceLifecycleObserver) jobService;
+			ServiceLifecycleObserver delegate = (ServiceLifecycleObserver) jobService;
 			try {
-				observer.serviceDidStartup();
+				delegate.serviceDidStartup();
 			} catch ( Exception e ) {
 				log.error("Error delegating job {} lifecycle startup: {}", jobName(), e.toString(), e);
 			}
@@ -209,9 +231,9 @@ public class SimpleManagedJob extends BaseIdentifiable
 	@Override
 	public void serviceDidShutdown() {
 		if ( jobService instanceof ServiceLifecycleObserver ) {
-			ServiceLifecycleObserver observer = (ServiceLifecycleObserver) jobService;
+			ServiceLifecycleObserver delegate = (ServiceLifecycleObserver) jobService;
 			try {
-				observer.serviceDidShutdown();
+				delegate.serviceDidShutdown();
 			} catch ( Exception e ) {
 				log.error("Error delegating job {} lifecycle shutdown: {}", jobName(), e.toString(), e);
 			}
