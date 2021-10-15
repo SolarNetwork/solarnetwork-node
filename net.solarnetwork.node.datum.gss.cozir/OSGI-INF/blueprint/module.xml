@@ -64,6 +64,7 @@
 				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 			<argument>
 				<bean class="net.solarnetwork.node.job.DatumDataSourcePollManagedJob">
+					<property name="datumMetadataService" ref="datumMetadataService"/>
 					<property name="datumQueue" ref="datumQueue"/>
 					<property name="datumDataSource">
 						<bean class="net.solarnetwork.node.datum.gss.cozir.CozIrDatumDataSource">
@@ -83,10 +84,9 @@
 							</property>
 						</bean>
 					</property>
-					<property name="messageSource" ref="jobMessageSource"/>
 				</bean>
 			</argument>
-			<property name="schedule" value="5 * * * * ?"/>
+			<property name="schedule" value="0 * * * * ?"/>
 			<property name="serviceProviderConfigurations">
 				<map>
 					<entry key="datumDataSource">
