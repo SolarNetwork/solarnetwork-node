@@ -236,7 +236,7 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 		if ( delegate != null ) {
 			return delegate.getMessageSource();
 		}
-		return null;
+		return super.getMessageSource();
 	}
 
 	@Override
