@@ -80,9 +80,9 @@
 					<property name="messageSource" ref="jobsMessageSource"/>
 				</bean>
 			</argument>
+			<argument value="${derby.maintenance.compress.cron}"/>
 			<property name="displayName" value="DerbyCompressTablesJob"/>
 			<property name="scheduleSettingKey" value="derby.maintenance.compress.cron"/>
-			<property name="schedule" value="${derby.maintenance.compress.cron}"/>
 		</bean>
 	</service>
 
@@ -118,9 +118,9 @@
 					<property name="messageSource" ref="jobsMessageSource"/>
 				</bean>
 			</argument>
+			<argument value="${job.syncBackup.cron}"/>
 			<property name="displayName" value="DerbyOnlineSyncJob"/>
 			<property name="scheduleSettingKey" value="job.syncBackup.cron"/>
-			<property name="schedule" value="${job.syncBackup.cron}"/>
 		</bean>
 	</service>
 

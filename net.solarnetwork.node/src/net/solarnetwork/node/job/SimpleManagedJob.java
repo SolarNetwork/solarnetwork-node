@@ -75,9 +75,11 @@ public class SimpleManagedJob extends BaseIdentifiable
 	private final JobService jobService;
 	private String scheduleSettingKey = DEFAULT_SCHEDULE_SETTING_KEY;
 	private String schedule;
+	private Map<String, SimpleServiceProviderConfiguration> serviceProviderConfigurations;
 
 	private MessageSource messageSource;
-	private Map<String, SimpleServiceProviderConfiguration> serviceProviderConfigurations;
+	private PropertyAccessor jobServiceAccessor;
+	private boolean ignoreLegacySchedule = false;
 
 	/**
 	 * Constructor.
@@ -88,8 +90,30 @@ public class SimpleManagedJob extends BaseIdentifiable
 	 *         if any argument is {@literal null}
 	 */
 	public SimpleManagedJob(JobService jobService) {
+		this(jobService, null);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * <p>
+	 * This constructor can be used to configure a default schedule that can be
+	 * overwritten by either the legacy support method
+	 * {@link #setTriggerCronExpression(String)} or the modern replacement
+	 * {@link #setSchedule(String)}.
+	 * </p>
+	 * 
+	 * @param jobService
+	 *        the job service
+	 * @param schedule
+	 *        the default schedule to set
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
+	public SimpleManagedJob(JobService jobService, String schedule) {
 		super();
 		this.jobService = requireNonNullArgument(jobService, "jobService");
+		this.schedule = schedule;
 		setUid(UUID.randomUUID().toString());
 	}
 
@@ -273,19 +297,19 @@ public class SimpleManagedJob extends BaseIdentifiable
 	 * @return a Map instance that exposes JavaBean properties on the configured
 	 *         {@link JobService}
 	 */
-	public Map<String, Object> getJobDataMap() {
+	public synchronized Map<String, Object> getJobDataMap() {
+		if ( jobServiceAccessor == null ) {
+			jobServiceAccessor = PropertyAccessorFactory.forBeanPropertyAccess(jobService);
+		}
 		return new AbstractMap<String, Object>() {
-
-			private final PropertyAccessor jobAccessor = PropertyAccessorFactory
-					.forBeanPropertyAccess(jobService);
 
 			@Override
 			public Object get(Object key) {
 				if ( key == null ) {
 					return null;
 				}
-				if ( jobAccessor.isReadableProperty(key.toString()) ) {
-					return jobAccessor.getPropertyValue(key.toString());
+				if ( jobServiceAccessor.isReadableProperty(key.toString()) ) {
+					return jobServiceAccessor.getPropertyValue(key.toString());
 				}
 				return null;
 			}
@@ -297,16 +321,6 @@ public class SimpleManagedJob extends BaseIdentifiable
 		};
 	}
 
-	/**
-	 * Set the trigger schedule expression.
-	 * 
-	 * <p>
-	 * This can be either an integer number representing a millisecond frequency
-	 * or else a cron expression.
-	 * </p>
-	 * 
-	 * @return the trigger schedule expression
-	 */
 	@Override
 	public String getSchedule() {
 		return schedule;
@@ -315,10 +329,16 @@ public class SimpleManagedJob extends BaseIdentifiable
 	/**
 	 * Set the trigger schedule expression.
 	 * 
+	 * <p>
+	 * Once this method has been called all calls to the legacy schedule setter
+	 * method {@link #setTriggerCronExpression(String)} will be ignored.
+	 * </p>
+	 * 
 	 * @param schedule
 	 *        the trigger schedule expression to set
 	 */
 	public void setSchedule(String schedule) {
+		this.ignoreLegacySchedule = true;
 		this.schedule = schedule;
 	}
 
@@ -328,15 +348,16 @@ public class SimpleManagedJob extends BaseIdentifiable
 	 * 
 	 * <p>
 	 * This method is to maintain backwards-compatibility with the SolarNode 1.x
-	 * settings.
+	 * settings. <b>Note</b> that once {@link #setSchedule(String)} is called
+	 * this method will have no effect.
 	 * </p>
 	 * 
 	 * @param schedule
 	 *        the schedule to set
 	 */
 	public void setTriggerCronExpression(String schedule) {
-		if ( this.schedule == null ) {
-			setSchedule(schedule);
+		if ( !ignoreLegacySchedule ) {
+			this.schedule = schedule;
 		}
 	}
 

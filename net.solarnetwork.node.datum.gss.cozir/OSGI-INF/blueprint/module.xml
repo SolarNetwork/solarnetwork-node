@@ -86,7 +86,7 @@
 					</property>
 				</bean>
 			</argument>
-			<property name="schedule" value="0 * * * * ?"/>
+			<argument value="0 * * * * ?"/>
 			<property name="serviceProviderConfigurations">
 				<map>
 					<entry key="datumDataSource">

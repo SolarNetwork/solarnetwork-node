@@ -92,4 +92,83 @@ public class SimpleManagedJobTests {
 				ds.getSomeProperty(), is(someProperty));
 	}
 
+	@Test
+	public void legacySchedulePopulation_set() {
+		// GIVEN
+		TestDatumDataSource ds = new TestDatumDataSource();
+		DatumDataSourcePollManagedJob job = new DatumDataSourcePollManagedJob();
+		job.setDatumDataSource(ds);
+		final String defaultSchedule = "1 * * * * ?";
+		SimpleManagedJob managedJob = new SimpleManagedJob(job, defaultSchedule);
+
+		// WHEN
+		final String legacySchedule = "3 * * * * ?";
+		managedJob.setTriggerCronExpression(legacySchedule);
+
+		// THEN
+		assertThat("Set schedule based on legacy property name", managedJob.getSchedule(),
+				is(legacySchedule));
+	}
+
+	@Test
+	public void legacySchedulePopulation_set_multiple() {
+		// GIVEN
+		TestDatumDataSource ds = new TestDatumDataSource();
+		DatumDataSourcePollManagedJob job = new DatumDataSourcePollManagedJob();
+		job.setDatumDataSource(ds);
+		final String defaultSchedule = "1 * * * * ?";
+		SimpleManagedJob managedJob = new SimpleManagedJob(job, defaultSchedule);
+
+		// WHEN
+		final String legacySchedule = "3 * * * * ?";
+		final String legacySchedule2 = "4 * * * * ?";
+		managedJob.setTriggerCronExpression(legacySchedule);
+		managedJob.setTriggerCronExpression(legacySchedule2);
+
+		// THEN
+		assertThat("Set schedule based on legacy property name works any number of times",
+				managedJob.getSchedule(), is(legacySchedule2));
+	}
+
+	@Test
+	public void legacySchedulePopulation_ignored() {
+		// GIVEN
+		TestDatumDataSource ds = new TestDatumDataSource();
+		DatumDataSourcePollManagedJob job = new DatumDataSourcePollManagedJob();
+		job.setDatumDataSource(ds);
+		final String defaultSchedule = "1 * * * * ?";
+		SimpleManagedJob managedJob = new SimpleManagedJob(job, defaultSchedule);
+
+		// WHEN
+		final String schedule = "2 * * * * ?";
+		final String legacySchedule = "3 * * * * ?";
+		managedJob.setSchedule(schedule);
+		managedJob.setTriggerCronExpression(legacySchedule);
+
+		// THEN
+		assertThat("Setting schedule via legacy property ignored after already set via modern property",
+				managedJob.getSchedule(), is(schedule));
+	}
+
+	@Test
+	public void legacySchedulePopulation_overwritte() {
+		// GIVEN
+		TestDatumDataSource ds = new TestDatumDataSource();
+		DatumDataSourcePollManagedJob job = new DatumDataSourcePollManagedJob();
+		job.setDatumDataSource(ds);
+		final String defaultSchedule = "1 * * * * ?";
+		SimpleManagedJob managedJob = new SimpleManagedJob(job, defaultSchedule);
+
+		// WHEN
+		final String schedule = "2 * * * * ?";
+		final String legacySchedule = "3 * * * * ?";
+		managedJob.setTriggerCronExpression(legacySchedule);
+		managedJob.setSchedule(schedule);
+
+		// THEN
+		assertThat(
+				"Setting schedule via modern schedule property name overwrites that set via legacy property",
+				managedJob.getSchedule(), is(schedule));
+	}
+
 }

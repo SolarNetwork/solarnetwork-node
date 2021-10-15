@@ -97,7 +97,7 @@
 
 			<!-- the schedule defines when the periodic job runs; in this case
 			     we define a cron style trigger, that by default runs once/minute -->
-			<property name="schedule" value="0 * * * * ?"/>
+			<argument value="0 * * * * ?"/>
 
 			<!-- we can also publish the MockEnergyMeterDatumDataSource instance itself as a service
 			     by configuring serviceProviderConfigurations here... this is optional but

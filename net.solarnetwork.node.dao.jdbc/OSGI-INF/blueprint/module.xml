@@ -179,9 +179,9 @@
 					<property name="hours" value="${job.generalNodeDatumCleaner.uploadedTrimHours}"/>
 				</bean>
 			</argument>
+			<argument value="${job.generalNodeDatumCleaner.cron}"/>
 			<property name="displayName" value="NodeDatumTableCleaner"/>
 			<property name="scheduleSettingKey" value="job.generalNodeDatumCleaner.cron"/>
-			<property name="schedule" value="${job.generalNodeDatumCleaner.cron}"/>
 		</bean>
 	</service>
 	
@@ -202,9 +202,9 @@
 					<property name="minTableSizeThreshold" value="${job.generalNodeDatumTrimmer.tableSizeThreshold}"/>
 				</bean>
 			</argument>
+			<argument value="${job.generalNodeDatumTrimmer.cron}"/>
 			<property name="displayName" value="NodeDatumTableTrimmer"/>
 			<property name="scheduleSettingKey" value="job.generalNodeDatumTrimmer.cron"/>
-			<property name="schedule" value="${job.generalNodeDatumTrimmer.cron}"/>
 		</bean>
 	</service>
 

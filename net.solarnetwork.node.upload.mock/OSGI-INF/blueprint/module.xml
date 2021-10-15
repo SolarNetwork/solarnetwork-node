@@ -42,7 +42,7 @@
 					</property>
 				</bean>
 			</argument>
-			<property name="schedule" value="20 * * * * ?"/>
+			<argument value="20 * * * * ?"/>
 		</bean>
 	</service>
 	

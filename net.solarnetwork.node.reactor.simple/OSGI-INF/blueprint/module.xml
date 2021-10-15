@@ -86,9 +86,9 @@
 					<property name="messageSource" ref="jobsMessageSource"/>
 				</bean>
 			</argument>
+			<argument value="${job.instructionAcknowledgementUploader.cron}"/>
 			<property name="displayName" value="InstructionAcknowledgeJob"/>
 			<property name="scheduleSettingKey" value="job.instructionAcknowledgementUploader.cron"/>
-			<property name="schedule" value="${job.instructionAcknowledgementUploader.cron}"/>
 		</bean>
 	</service>
 	
@@ -107,9 +107,9 @@
 					<property name="messageSource" ref="jobsMessageSource"/>
 				</bean>
 			</argument>
+			<argument value="${job.instructionExecution.cron}"/>
 			<property name="displayName" value="InstructionExecutionJob"/>
 			<property name="scheduleSettingKey" value="job.instructionExecution.cron"/>
-			<property name="schedule" value="${job.instructionExecution.cron}"/>
 		</bean>
 	</service>
 	
@@ -128,9 +128,9 @@
 					<property name="messageSource" ref="jobsMessageSource"/>
 				</bean>
 			</argument>
+			<argument value="${job.instructionCleaner.cron}"/>
 			<property name="displayName" value="InstructionCleanerJob"/>
 			<property name="scheduleSettingKey" value="job.instructionCleaner.cron"/>
-			<property name="schedule" value="${job.instructionCleaner.cron}"/>
 		</bean>
 	</service>
 	

@@ -94,7 +94,7 @@
 					</property>
 				</bean>
 			</argument>
-			<property name="schedule" value="0 0/15 * * * ?"/>
+			<argument value="0 0/15 * * * ?"/>
 		</bean>
 	</service>
 	
