@@ -23,10 +23,13 @@
 package net.solarnetwork.node.job;
 
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -245,6 +248,56 @@ public class SimpleManagedJob extends BaseIdentifiable
 	}
 
 	/**
+	 * A getter property to maintain backwards-compatibility with legacy
+	 * SolarNode 1.x settings.
+	 * 
+	 * <p>
+	 * This method exists to support SolarNode 1.x settings like
+	 * {@literal jobDetail.x}.
+	 * </p>
+	 * 
+	 * @return this instance
+	 */
+	public SimpleManagedJob getJobDetail() {
+		return this;
+	}
+
+	/**
+	 * A getter property to maintain backwards-compatibility with legacy
+	 * SolarNode 1.x settings.
+	 * <p>
+	 * This method exists to support SolarNode 1.x settings like
+	 * {@literal jobDetail.jobDataMap['datumDataSource'].x}.
+	 * </p>
+	 * 
+	 * @return a Map instance that exposes JavaBean properties on the configured
+	 *         {@link JobService}
+	 */
+	public Map<String, Object> getJobDataMap() {
+		return new AbstractMap<String, Object>() {
+
+			private final PropertyAccessor jobAccessor = PropertyAccessorFactory
+					.forBeanPropertyAccess(jobService);
+
+			@Override
+			public Object get(Object key) {
+				if ( key == null ) {
+					return null;
+				}
+				if ( jobAccessor.isReadableProperty(key.toString()) ) {
+					return jobAccessor.getPropertyValue(key.toString());
+				}
+				return null;
+			}
+
+			@Override
+			public Set<Entry<String, Object>> entrySet() {
+				return Collections.emptySet();
+			}
+		};
+	}
+
+	/**
 	 * Set the trigger schedule expression.
 	 * 
 	 * <p>
@@ -260,13 +313,31 @@ public class SimpleManagedJob extends BaseIdentifiable
 	}
 
 	/**
-	 * SEt the trigger schedule expression.
+	 * Set the trigger schedule expression.
 	 * 
 	 * @param schedule
 	 *        the trigger schedule expression to set
 	 */
 	public void setSchedule(String schedule) {
 		this.schedule = schedule;
+	}
+
+	/**
+	 * Set the trigger schedule expression, using the legacy setting property
+	 * name.
+	 * 
+	 * <p>
+	 * This method is to maintain backwards-compatibility with the SolarNode 1.x
+	 * settings.
+	 * </p>
+	 * 
+	 * @param schedule
+	 *        the schedule to set
+	 */
+	public void setTriggerCronExpression(String schedule) {
+		if ( this.schedule == null ) {
+			setSchedule(schedule);
+		}
 	}
 
 	/**
