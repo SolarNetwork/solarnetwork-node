@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.job;
 
+import java.util.Collection;
+import java.util.Collections;
 import net.solarnetwork.service.Identifiable;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 
@@ -88,6 +90,16 @@ public interface ManagedJob extends Identifiable, ServiceProvider, SettingSpecif
 	 */
 	default String getScheduleSettingKey() {
 		return "schedule";
+	}
+
+	/**
+	 * Get a collection of service configurations.
+	 * 
+	 * @return A collection of configuration objects.
+	 */
+	@Override
+	default Collection<ServiceConfiguration> getServiceConfigurations() {
+		return Collections.emptyList();
 	}
 
 }
