@@ -29,5 +29,4 @@ Import-Package:
  org.springframework.beans;version="[4.3,5.0)",
  org.springframework.context;version="[4.3,5.0)",
  org.springframework.context.support;version="[4.3,5.0)",
- org.springframework.core;version="[4.3,5.0)",
- org.springframework.scheduling.quartz;version="[4.3,5.0)"
+ org.springframework.core;version="[4.3,5.0)"

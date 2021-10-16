@@ -14,21 +14,21 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
-	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
 		<property name="sticky" value="true"/>
 	</bean>
-	
+		
 	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
 		<property name="sticky" value="true"/>
 	</bean>
 
-	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
 		<property name="sticky" value="true"/>
 	</bean>
 		
@@ -38,6 +38,7 @@
 				<value>net.solarnetwork.node.datum.hc.em5600.EM5600DatumDataSource</value>
 				<value>net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport</value>
 				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.node.service.support.DatumDataSourceSupport</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
@@ -48,35 +49,45 @@
 		<property name="delegate" ref="messageSource"/>
 	</bean>	
 
-	<bean id="settingsFactory" 
-		class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
-		<property name="displayName" value="EM5600 series watt meter"/>
-		<property name="factoryUid" value="net.solarnetwork.node.datum.hc.em5600"/>
-		<property name="messageSource" ref="messageSource"/>
-	</bean>
-
-	<!-- Published Services -->
-	
-	<service ref="settingsFactory" interface="net.solarnetwork.settings.SettingSpecifierProviderFactory"/>
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="EM5600 series watt meter"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.hc.em5600"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.hc.em5600" autowire-on-update="true">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
-			<beans:value>net.solarnetwork.node.job.ServiceProvider</beans:value>
-			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.node.job.ManagedJob</beans:value>
 		</osgix:interfaces>
-		<osgix:service-properties>
-			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.hc.em5600"/>
-		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
-			<property name="trigger">
-				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-					<property name="name" value="em5600DatumPollTrigger"/>
-					<property name="cronExpression" value="5 * * * * ?"/>
-					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
-					<property name="randomSecond" value="true"/>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob" 
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<argument>
+				<bean class="net.solarnetwork.node.job.DatumDataSourcePollManagedJob">
+					<property name="datumMetadataService" ref="datumMetadataService"/>
+					<property name="datumQueue" ref="datumQueue"/>
+					<property name="multiDatumDataSource">
+						<bean class="net.solarnetwork.node.datum.hc.em5600.EM5600DatumDataSource">
+							<property name="datumMetadataService" ref="datumMetadataService"/>
+							<property name="messageSource" ref="jobMessageSource"/>
+							<property name="placeholderService" ref="placeholderService"/>
+							<property name="modbusNetwork">
+								<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+									<argument ref="bundleContext"/>
+									<property name="serviceClassName" value="net.solarnetwork.node.io.modbus.ModbusNetwork"/>
+									<property name="propertyFilters">
+										<map>
+											<entry key="uid" value="Serial Port"/>
+										</map>
+									</property>
+								</bean>	
+							</property>
+						</bean>
+					</property>
 				</bean>
-			</property>
+			</argument>
+			<argument value="0 * * * * ?"/>
 			<property name="serviceProviderConfigurations">
 				<map>
 					<entry key="multiDatumDataSource">
@@ -95,35 +106,6 @@
 						</bean>
 					</entry>
 				</map>
-			</property>
-			<property name="jobDetail">
-				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-					<property name="name" value="em5600DatumPollJob"/>
-					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourcePollJob"/>
-					<property name="jobDataAsMap">
-						<map>
-							<entry key="datumQueue" value-ref="datumQueue"/>
-							<entry key="multiDatumDataSource">
-								<bean class="net.solarnetwork.node.datum.hc.em5600.EM5600DatumDataSource">
-									<property name="datumMetadataService" ref="datumMetadataService"/>
-									<property name="messageSource" ref="jobMessageSource"/>
-									<property name="placeholderService" ref="placeholderService"/>
-									<property name="modbusNetwork">
-										<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
-											<argument ref="bundleContext"/>
-											<property name="serviceClassName" value="net.solarnetwork.node.io.modbus.ModbusNetwork"/>
-											<property name="propertyFilters">
-												<map>
-													<entry key="uid" value="Serial Port"/>
-												</map>
-											</property>
-										</bean>	
-									</property>
-								</bean>
-							</entry>
-						</map>
-					</property>
-				</bean>
 			</property>
 		</bean>
 	</osgix:managed-service-factory>
