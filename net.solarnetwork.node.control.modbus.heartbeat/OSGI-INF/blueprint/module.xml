@@ -40,48 +40,27 @@
 		
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.modbus.heartbeat" autowire-on-update="true">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
-			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.node.job.ManagedJob</beans:value>
 		</osgix:interfaces>
-		<osgix:service-properties>
-			<beans:entry key="settingPid" value="net.solarnetwork.node.control.modbus.heartbeat"/>
-		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
-			<property name="trigger">
-				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-					<property name="name" value="modbusHeartbeatTrigger"/>
-					<property name="cronExpression" value="0 * * * * ?"/>
-					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
-					<property name="randomSecond" value="true"/>
-				</bean>
-			</property>
-			<property name="jobDetail">
-				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-					<property name="name" value="modbusHeartbeatJob"/>
-					<property name="jobClass" value="net.solarnetwork.node.control.modbus.heartbeat.ModbusHeartbeatJob"/>
-					<property name="jobDataAsMap">
-						<map>
-							<entry key="messageSource" value-ref="messageSource"/>
-							<entry key="modbusNetwork">
-								<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
-									<argument ref="bundleContext"/>
-									<property name="serviceClassName" value="net.solarnetwork.node.io.modbus.ModbusNetwork"/>
-									<property name="propertyFilters">
-										<map>
-											<entry key="uid" value="Modbus Port"/>
-										</map>
-									</property>
-								</bean>	
-							</entry>
-						</map>
-					</property>
-				</bean>
-			</property>
-			<property name="settingSpecifierProvider">
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob" 
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<argument>
 				<bean class="net.solarnetwork.node.control.modbus.heartbeat.ModbusHeartbeatJob">
+					<argument>
+						<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+							<argument ref="bundleContext"/>
+							<property name="serviceClassName" value="net.solarnetwork.node.io.modbus.ModbusNetwork"/>
+							<property name="propertyFilters">
+								<map>
+									<entry key="uid" value="Modbus Port"/>
+								</map>
+							</property>
+						</bean>	
+					</argument>
 					<property name="messageSource" ref="messageSource"/>
 				</bean>
-			</property>
+			</argument>
+			<argument value="0 * * * * ?"/>
 		</bean>
 	</osgix:managed-service-factory>
 

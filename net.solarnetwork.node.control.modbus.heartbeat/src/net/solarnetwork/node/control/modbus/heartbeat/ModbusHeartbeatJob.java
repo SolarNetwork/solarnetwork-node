@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.control.modbus.heartbeat;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -29,14 +30,12 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.quartz.DisallowConcurrentExecution;
-import org.quartz.JobExecutionContext;
-import org.quartz.PersistJobDataAfterExecution;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
-import net.solarnetwork.node.job.AbstractJob;
+import net.solarnetwork.node.job.JobService;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.OptionalService.OptionalFilterableService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -69,22 +68,43 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
  * @author matt
  * @version 4.0
  */
-@PersistJobDataAfterExecution
-@DisallowConcurrentExecution
-public class ModbusHeartbeatJob extends AbstractJob implements SettingSpecifierProvider {
+public class ModbusHeartbeatJob extends BaseIdentifiable implements JobService {
 
-	private Integer address = 0x4008;
-	private Integer unitId = 1;
-	private Boolean registerValue = Boolean.TRUE;
-	private OptionalFilterableService<ModbusNetwork> modbusNetwork;
-	private MessageSource messageSource;
+	/** The {@code address} property default value. */
+	public static final Integer DEFAULT_ADDRESS = 0x4008;
+
+	/** The {@code unitId} property default value. */
+	public static final int DEFAULT_UNIT_ID = 1;
+
+	/** The {@code registerValue} property default value. */
+	public static final Boolean DEFAULT_REGISTER_VALUE = true;
+
+	/** The {@link ModbusNetwork} {@code uid} property default value. */
+	public static final String DEFAULT_MODBUS_NETWORK_UID = "Serial  Port";
+
+	private final OptionalFilterableService<ModbusNetwork> modbusNetwork;
+	private Integer address = DEFAULT_ADDRESS;
+	private Integer unitId = DEFAULT_UNIT_ID;
+	private Boolean registerValue = DEFAULT_REGISTER_VALUE;
 
 	// static map to keep track of job execution status info
-	private static final ConcurrentMap<Long, JobStatus> STATUS_MAP = new ConcurrentHashMap<Long, JobStatus>(
-			8);
+	private static final ConcurrentMap<Long, JobStatus> STATUS_MAP = new ConcurrentHashMap<>(8);
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param modbusNetwork
+	 *        the network to use
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
+	public ModbusHeartbeatJob(OptionalFilterableService<ModbusNetwork> modbusNetwork) {
+		super();
+		this.modbusNetwork = requireNonNullArgument(modbusNetwork, "modbusNetwork");
+	}
 
 	@Override
-	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
+	public void executeJobService() throws Exception {
 		final Instant heartbeatDate = Instant.now();
 		String heartbeatMessage = null;
 		boolean heartbeatSuccess = false;
@@ -148,14 +168,8 @@ public class ModbusHeartbeatJob extends AbstractJob implements SettingSpecifierP
 	}
 
 	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		ModbusHeartbeatJob defaults = new ModbusHeartbeatJob();
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(6);
+		List<SettingSpecifier> results = new ArrayList<>(6);
 
 		// add info on last execution state
 		BasicTitleSettingSpecifier lhDate = new BasicTitleSettingSpecifier("lastHeartbeatDate", "N/A",
@@ -172,33 +186,79 @@ public class ModbusHeartbeatJob extends AbstractJob implements SettingSpecifierP
 		}
 
 		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['uid']",
-				"Serial Port"));
-		results.add(new BasicTextFieldSettingSpecifier("unitId", defaults.unitId.toString()));
-		results.add(new BasicTextFieldSettingSpecifier("address", defaults.address.toString()));
-		results.add(new BasicToggleSettingSpecifier("registerValue", defaults.registerValue.toString()));
+				DEFAULT_MODBUS_NETWORK_UID));
+		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(DEFAULT_UNIT_ID)));
+		results.add(new BasicTextFieldSettingSpecifier("address", DEFAULT_ADDRESS.toString()));
+		results.add(new BasicToggleSettingSpecifier("registerValue", DEFAULT_REGISTER_VALUE.toString()));
 		return results;
 	}
 
 	// Accessors
 
+	/**
+	 * Get the modbus network.
+	 * 
+	 * @return the modbusNetwork
+	 */
+	public OptionalFilterableService<ModbusNetwork> getModbusNetwork() {
+		return modbusNetwork;
+	}
+
+	/**
+	 * Set the address.
+	 * 
+	 * @param address
+	 *        the address
+	 */
 	public void setAddress(Integer address) {
 		this.address = address;
 	}
 
+	/**
+	 * Get the address.
+	 * 
+	 * @return the address
+	 */
+	public Integer getAddress() {
+		return address;
+	}
+
+	/**
+	 * Get the unit ID.
+	 * 
+	 * @return the unit ID
+	 */
+	public Integer getUnitId() {
+		return unitId;
+	}
+
+	/**
+	 * Set the unit ID.
+	 * 
+	 * @param unitId
+	 *        the unit ID
+	 */
 	public void setUnitId(Integer unitId) {
 		this.unitId = unitId;
 	}
 
+	/**
+	 * Get the register value.
+	 * 
+	 * @return the register value
+	 */
+	public Boolean getRegisterValue() {
+		return registerValue;
+	}
+
+	/**
+	 * Set the register value.
+	 * 
+	 * @param register
+	 *        value
+	 */
 	public void setRegisterValue(Boolean registerValue) {
 		this.registerValue = registerValue;
-	}
-
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
-
-	public void setModbusNetwork(OptionalFilterableService<ModbusNetwork> modbusNetwork) {
-		this.modbusNetwork = modbusNetwork;
 	}
 
 }
