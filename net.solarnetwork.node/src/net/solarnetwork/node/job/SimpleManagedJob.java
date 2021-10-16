@@ -59,17 +59,11 @@ import net.solarnetwork.support.PrefixedMessageSource;
 public class SimpleManagedJob extends BaseIdentifiable
 		implements ManagedJob, SettingsChangeObserver, ServiceLifecycleObserver {
 
-	/**
-	 * The regular expression used to delegate properties to the delegate
-	 * {@link JobService}.
-	 */
-	public static final String JOB_DETAIL_PROPERTY_MAPPING_REGEX = "jobDetail\\.jobDataMap\\['([a-zA-Z0-9_]*)'\\](.*)";
-
 	/** The {@code scheduleSettingKey} property default value. */
 	public static final String DEFAULT_SCHEDULE_SETTING_KEY = "schedule";
 
-	/** The setting key prefix for the job settings. */
 	private static final String JOB_SERVICE_SETTING_PREFIX = "jobService.";
+	private static final String DEFAULT_VALUE_PROPERTY = "defaultValue";
 
 	private static final Logger log = LoggerFactory.getLogger(SimpleManagedJob.class);
 
@@ -169,12 +163,12 @@ public class SimpleManagedJob extends BaseIdentifiable
 					// if legacy settings are active, then map default values to active values for UI
 					PropertyAccessor specAccessor = PropertyAccessorFactory
 							.forBeanPropertyAccess(mappedSpec);
-					if ( specAccessor.isWritableProperty("defaultValue") ) {
+					if ( specAccessor.isWritableProperty(DEFAULT_VALUE_PROPERTY) ) {
 						String propKey = ((KeyedSettingSpecifier<?>) keyedSpec).getKey();
 						if ( jobServiceAccessor.isReadableProperty(propKey) ) {
 							try {
 								Object newDefaultValue = jobServiceAccessor.getPropertyValue(propKey);
-								specAccessor.setPropertyValue("defaultValue", newDefaultValue);
+								specAccessor.setPropertyValue(DEFAULT_VALUE_PROPERTY, newDefaultValue);
 							} catch ( Exception e ) {
 								// ignore
 							}
