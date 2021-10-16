@@ -16,6 +16,12 @@
 
 	<reference-list id="providers" interface="net.solarnetwork.node.service.NodeControlProvider" availability="optional"/>
 
+	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+		
 	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
@@ -26,6 +32,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.controls.ControlsDatumDataSource</value>
+				<value>net.solarnetwork.node.service.support.DatumDataSourceSupport</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
@@ -36,28 +43,26 @@
 		<property name="delegate" ref="messageSource"/>
 	</bean>	
 
-	<service ref="dataSourceJob">
-		<interfaces>
-			<value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</value>
-			<value>net.solarnetwork.node.job.ServiceProvider</value>
-			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
-		</interfaces>
+	<service ref="dataSourceJob" interface="net.solarnetwork.node.job.ManagedJob">
 		<service-properties>
-			<entry key="settingPid" value="net.solarnetwork.node.datum.controls"/>
-			<!-- As this is not a managed service factory, we must manually set service.pid here -->
 			<entry key="service.pid" value="net.solarnetwork.node.datum.controls"/>
 		</service-properties>
 	</service>
-	<bean id="dataSourceJob" class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
+	<bean id="dataSourceJob" class="net.solarnetwork.node.job.SimpleManagedJob">
 		<osgix:managed-properties persistent-id="net.solarnetwork.node.datum.controls" autowire-on-update="true"/>
-		<property name="trigger">
-			<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-				<property name="name" value="controlsDatumPollTrigger"/>
-				<property name="cronExpression" value="5 * * * * ?"/>
-				<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
-				<property name="randomSecond" value="true"/>
+		<argument>
+			<bean class="net.solarnetwork.node.job.DatumDataSourcePollManagedJob">
+				<property name="datumMetadataService" ref="datumMetadataService"/>
+				<property name="datumQueue" ref="datumQueue"/>
+				<property name="multiDatumDataSource">
+					<bean class="net.solarnetwork.node.datum.controls.ControlsDatumDataSource">
+						<property name="messageSource" ref="jobMessageSource"/>
+						<property name="providers" ref="providers"/>
+					</bean>
+				</property>
 			</bean>
-		</property>
+		</argument>
+		<argument value="5 * * * * ?"/>
 		<property name="serviceProviderConfigurations">
 			<map>
 				<entry key="multiDatumDataSource">
@@ -70,23 +75,6 @@
 					</bean>
 				</entry>
 			</map>
-		</property>
-		<property name="jobDetail">
-			<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-				<property name="name" value="controlsDatumPollJob"/>
-				<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourcePollJob"/>
-				<property name="jobDataAsMap">
-					<map>
-						<entry key="datumQueue" value-ref="datumQueue"/>
-						<entry key="multiDatumDataSource">
-							<bean class="net.solarnetwork.node.datum.controls.ControlsDatumDataSource">
-								<property name="messageSource" ref="jobMessageSource"/>
-								<property name="providers" ref="providers"/>
-							</bean>
-						</entry>
-					</map>
-				</property>
-			</bean>
 		</property>
 	</bean>
 

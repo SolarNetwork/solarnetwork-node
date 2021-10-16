@@ -116,9 +116,6 @@
 		</interfaces>
 	</service>
 
-	<service ref="backupJob"
-		interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
-
 	<service interface="net.solarnetwork.node.backup.BackupResourceProvider">
 		<bean class="net.solarnetwork.node.backup.FileBackupResourceProvider">
 			<osgix:managed-properties
@@ -304,28 +301,23 @@
 		<property name="basenames" value="net.solarnetwork.node.job.JOBS"/>
 	</bean>
 
-	<bean id="backupJob" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
-		<property name="trigger">
-			<bean class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">
-				<property name="name" value="backupTrigger"/>
-				<property name="description" value="Backup node configuration data."/>
-				<property name="cronExpression" value="${job.backup.cron}"/>
-				<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
-			</bean>
-		</property>
-		<property name="jobDetail">
-			<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-				<property name="name" value="backupJob"/>
-				<property name="jobClass" value="net.solarnetwork.node.job.BackupJob"/>
-				<property name="jobDataAsMap">
-					<map>
-						<entry key="backupManager" value-ref="backupManager"/>
-					</map>
-				</property>
-			</bean>
-		</property>
-		<property name="messageSource" ref="jobMessageSource"/>
-	</bean>
+	<service interface="net.solarnetwork.node.job.ManagedJob">
+		<service-properties>
+			<entry key="service.pid" value="net.solarnetwork.node.core"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob">
+			<argument>
+				<bean class="net.solarnetwork.node.job.BackupJob">
+					<argument ref="backupManager"/>
+					<property name="uid" value="net.solarnetwork.node.job.BackupJob"/>
+					<property name="messageSource" ref="jobMessageSource"/>
+				</bean>
+			</argument>
+			<argument value="${job.backup.cron}"/>
+			<property name="displayName" value="BackupJob"/>
+			<property name="scheduleSettingKey" value="job.backup.cron"/>
+		</bean>
+	</service>
 
 	<!-- Messaging -->
 
@@ -367,7 +359,8 @@
 			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 		</interfaces>
 	</service>
-	<bean id="opModesService" class="net.solarnetwork.node.runtime.DefaultOperationalModesService" init-method="init" destroy-method="close">
+	<bean id="opModesService" class="net.solarnetwork.node.runtime.DefaultOperationalModesService" 
+			init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 		<argument ref="settingDao"/>
 		<argument ref="eventAdmin"/>
 		<property name="taskScheduler" ref="taskScheduler"/>

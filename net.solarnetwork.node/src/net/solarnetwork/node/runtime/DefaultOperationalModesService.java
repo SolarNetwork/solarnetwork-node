@@ -64,6 +64,7 @@ import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
@@ -72,10 +73,10 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * Default implementation of {@link OperationalModesService}.
  * 
  * @author matt
- * @version 1.5
+ * @version 2.0
  */
-public class DefaultOperationalModesService extends BaseIdentifiable
-		implements OperationalModesService, InstructionHandler, SettingSpecifierProvider {
+public class DefaultOperationalModesService extends BaseIdentifiable implements OperationalModesService,
+		InstructionHandler, SettingSpecifierProvider, ServiceLifecycleObserver {
 
 	/** The setting key for operational modes. */
 	public static final String SETTING_OP_MODE = "solarnode.opmode";
@@ -115,6 +116,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable
 	private OptionalService<PlatformTransactionManager> transactionManager;
 	private int autoExpireModesFrequency = DEFAULT_AUTO_EXPIRE_MODES_FREQUENCY;
 
+	private ScheduledFuture<?> startupScheduledFuture;
 	private ScheduledFuture<?> autoExpireScheduledFuture;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -161,28 +163,29 @@ public class DefaultOperationalModesService extends BaseIdentifiable
 		this.eventAdmin = eventAdmin;
 	}
 
-	/**
-	 * Call to initialize the service after properties configured.
-	 */
-	public synchronized void init() {
-		// post current modes, i.e. shift from "default" to whatever is active
-		final Set<String> modes = initActiveModes();
-
+	@Override
+	public synchronized void serviceDidStartup() {
 		Runnable task = new Runnable() {
 
 			@Override
 			public void run() {
-				if ( !modes.isEmpty() ) {
-					if ( log.isInfoEnabled() ) {
-						log.info("Initial active operational modes [{}]",
-								commaDelimitedStringFromCollection(modes));
+				// post current modes, i.e. shift from "default" to whatever is active
+				final Set<String> modes = initActiveModes();
+				synchronized ( DefaultOperationalModesService.this ) {
+					if ( !modes.isEmpty() ) {
+						if ( log.isInfoEnabled() ) {
+							log.info("Initial active operational modes [{}]",
+									commaDelimitedStringFromCollection(modes));
+						}
+						postOperationalModesChangedEvent(modes);
 					}
-					postOperationalModesChangedEvent(modes);
+					startupScheduledFuture = null;
 				}
 			}
 		};
-		if ( taskScheduler != null && startupDelay > 0 ) {
-			taskScheduler.schedule(task, new Date(System.currentTimeMillis() + startupDelay));
+		if ( taskScheduler != null && startupDelay > 0 && startupScheduledFuture == null ) {
+			startupScheduledFuture = taskScheduler.schedule(task,
+					new Date(System.currentTimeMillis() + startupDelay));
 		} else {
 			task.run();
 		}
@@ -286,13 +289,15 @@ public class DefaultOperationalModesService extends BaseIdentifiable
 		new AutoExpireModesTask().run();
 	}
 
-	/**
-	 * Call to close internal resources.
-	 */
-	public synchronized void close() {
+	@Override
+	public synchronized void serviceDidShutdown() {
 		if ( autoExpireScheduledFuture != null ) {
 			autoExpireScheduledFuture.cancel(true);
 			autoExpireScheduledFuture = null;
+		}
+		if ( startupScheduledFuture != null ) {
+			startupScheduledFuture.cancel(true);
+			startupScheduledFuture = null;
 		}
 	}
 

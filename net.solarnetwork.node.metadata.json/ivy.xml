@@ -14,7 +14,6 @@
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
 		<dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.10.1" />
-		<dependency org="org.quartz-scheduler" name="quartz" rev="2.2.3" conf="runtime"/>
 		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.32"/>
 		<dependency org="org.springframework" name="spring-beans" rev="4.3.23.RELEASE"/>
 		<dependency org="org.springframework" name="spring-context-support" rev="4.3.23.RELEASE"/>

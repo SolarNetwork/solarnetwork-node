@@ -146,7 +146,7 @@ public class DefaultOperationalModesServiceTests {
 
 		// WHEN
 		replayAll();
-		service.init();
+		service.serviceDidStartup();
 
 		// THEN
 	}
@@ -162,7 +162,7 @@ public class DefaultOperationalModesServiceTests {
 
 		// WHEN
 		replayAll();
-		service.init();
+		service.serviceDidStartup();
 
 		// THEN
 		assertModesChangedEvent("Init active", eventCaptor.getValue(), "test");
@@ -186,7 +186,7 @@ public class DefaultOperationalModesServiceTests {
 
 		// WHEN
 		replayAll();
-		service.init();
+		service.serviceDidStartup();
 
 		// THEN
 		assertModesChangedEvent("Init TX active", eventCaptor.getValue(), "test");
@@ -207,7 +207,7 @@ public class DefaultOperationalModesServiceTests {
 
 		// WHEN
 		replayAll();
-		service.init();
+		service.serviceDidStartup();
 
 		// THEN
 		assertModesChangedEvent("Init multi w/expired active", eventCaptor.getValue(), "test", "bar");

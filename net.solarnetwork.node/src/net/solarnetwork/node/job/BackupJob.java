@@ -22,11 +22,12 @@
 
 package net.solarnetwork.node.job;
 
-import org.quartz.DisallowConcurrentExecution;
-import org.quartz.JobExecutionContext;
-import org.quartz.PersistJobDataAfterExecution;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.util.Collections;
+import java.util.List;
 import net.solarnetwork.node.backup.BackupManager;
-import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
 
 /**
  * Scheduled backup job using {@link BackupManager}.
@@ -34,20 +35,35 @@ import net.solarnetwork.service.OptionalService;
  * @author matt
  * @version 2.0
  */
-@PersistJobDataAfterExecution
-@DisallowConcurrentExecution
-public class BackupJob extends AbstractJob {
+public class BackupJob extends BaseIdentifiable implements JobService {
 
-	private OptionalService<BackupManager> backupManagerTracker;
+	private BackupManager backupManager;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param backupManager
+	 *        the backup manager
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
+	public BackupJob(BackupManager backupManager) {
+		super();
+		this.backupManager = requireNonNullArgument(backupManager, "backupManager");
+	}
 
 	@Override
-	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
-		BackupManager manager = OptionalService.service(backupManagerTracker);
-		if ( manager == null ) {
-			log.debug("No backup manager available, cannot perform backup");
-			return;
-		}
+	public String getSettingUid() {
+		return "net.solarnetwork.node.job.BackupJob";
+	}
 
-		manager.createBackup();
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		return Collections.emptyList();
+	}
+
+	@Override
+	public void executeJobService() throws Exception {
+		backupManager.createBackup();
 	}
 }
