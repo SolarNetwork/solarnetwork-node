@@ -25,34 +25,25 @@ package net.solarnetwork.node.datum.opmode;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
-import org.quartz.CronTrigger;
-import org.quartz.JobBuilder;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobKey;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.SimpleScheduleBuilder;
-import org.quartz.SimpleTrigger;
-import org.quartz.Trigger;
-import org.quartz.TriggerBuilder;
-import org.quartz.TriggerKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.task.TaskExecutor;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.Trigger;
 import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.job.JobUtils;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.MultiDatumDataSource;
@@ -60,6 +51,7 @@ import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.service.Identifiable;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.OptionalServiceCollection;
+import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.service.support.BasicIdentifiable;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -85,8 +77,8 @@ import net.solarnetwork.util.ArrayUtils;
  * @author matt
  * @version 2.0
  */
-public class DatumDataSourceOpModeInvoker extends BasicIdentifiable
-		implements SettingSpecifierProvider, DatumDataSourceScheduleService, EventHandler {
+public class DatumDataSourceOpModeInvoker extends BasicIdentifiable implements SettingSpecifierProvider,
+		DatumDataSourceScheduleService, EventHandler, ServiceLifecycleObserver {
 
 	/**
 	 * The group name used to schedule the invoker jobs as.
@@ -98,17 +90,15 @@ public class DatumDataSourceOpModeInvoker extends BasicIdentifiable
 	 */
 	public static final String DATUM_DATA_SOURCE_INVOKER_JOB_GROUP = "DatumDataSourceInvoker";
 
-	private static final JobKey JOB_KEY = new JobKey(DATUM_DATA_SOURCE_INVOKER_JOB_NAME,
-			DATUM_DATA_SOURCE_INVOKER_JOB_GROUP);
-
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
+	private final OperationalModesService opModesService;
 	private final OptionalService<DatumQueue> datumQueue;
 	private final OptionalServiceCollection<DatumDataSource> dataSources;
 	private final OptionalServiceCollection<MultiDatumDataSource> multiDataSources;
 
 	private String operationalMode;
-	private Scheduler scheduler;
+	private TaskScheduler scheduler;
 	private DatumDataSourceScheduleConfig[] configurations;
 	private TaskExecutor taskExecutor;
 
@@ -118,33 +108,50 @@ public class DatumDataSourceOpModeInvoker extends BasicIdentifiable
 	/**
 	 * Constructor.
 	 * 
+	 * @param taskScheduler
+	 *        the task scheduler
+	 * @param opModesService
+	 *        the op modes service
 	 * @param datumQueue
 	 *        the queue
 	 * @param dataSources
 	 *        the data sources
 	 * @param multiDataSources
 	 *        the multi data sources
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
 	 */
-	public DatumDataSourceOpModeInvoker(OptionalService<DatumQueue> datumQueue,
+	public DatumDataSourceOpModeInvoker(TaskScheduler scheduler, OperationalModesService opModesService,
+			OptionalService<DatumQueue> datumQueue,
 			OptionalServiceCollection<DatumDataSource> dataSources,
 			OptionalServiceCollection<MultiDatumDataSource> multiDataSources) {
 		super();
-		this.datumQueue = datumQueue;
-		this.dataSources = dataSources;
-		this.multiDataSources = multiDataSources;
+		this.opModesService = requireNonNullArgument(opModesService, "opModesService");
+		this.scheduler = requireNonNullArgument(scheduler, "scheduler");
+		this.datumQueue = requireNonNullArgument(datumQueue, "datumQueue");
+		this.dataSources = requireNonNullArgument(dataSources, "dataSources");
+		this.multiDataSources = requireNonNullArgument(multiDataSources, "multiDataSources");
 	}
 
-	/**
-	 * Call when this service is no longer needed to clean up resources.
-	 */
-	public void shutdown() {
+	@Override
+	public synchronized void serviceDidStartup() {
+		String myOpMode = (this.operationalMode != null ? this.operationalMode.toLowerCase() : null);
+		if ( myOpMode == null || myOpMode.isEmpty() ) {
+			return;
+		}
+		Set<String> active = opModesService.activeOperationalModes();
+		handleActivation(active, myOpMode);
+	}
+
+	@Override
+	public synchronized void serviceDidShutdown() {
 		deactivate();
 	}
 
 	@Override
 	public void handleEvent(Event event) {
 		String myOpMode = (this.operationalMode != null ? this.operationalMode.toLowerCase() : null);
-		if ( myOpMode == null ) {
+		if ( myOpMode == null || myOpMode.isEmpty() ) {
 			return;
 		}
 		String topic = event.getTopic();
@@ -157,6 +164,10 @@ public class DatumDataSourceOpModeInvoker extends BasicIdentifiable
 		}
 		@SuppressWarnings({ "unchecked", "rawtypes" })
 		Set<String> activeOpModes = (Set) opModes;
+		handleActivation(activeOpModes, myOpMode);
+	}
+
+	private void handleActivation(final Set<String> activeOpModes, final String myOpMode) {
 		boolean active = activeOpModes.contains(myOpMode);
 		log.info("DatumDataSource scheduler config [{}] operational mode [{}] {}",
 				getUid() != null ? getUid() : this.toString(), myOpMode, active ? "active" : "inactive");
@@ -176,47 +187,36 @@ public class DatumDataSourceOpModeInvoker extends BasicIdentifiable
 		} else {
 			task.run();
 		}
+
 	}
 
 	private synchronized void activate(DatumDataSourceScheduleConfig[] configs) {
 		if ( configs == null || configs.length < 1 ) {
 			return;
 		}
-		String jobDesc = "DatumDataSource samples for operational mode " + operationalMode;
 		int i = 0;
 		for ( DatumDataSourceScheduleConfig config : configs ) {
-			if ( config.getSchedule() == null || config.getSchedule().isEmpty() ) {
+			final String schedule = config.getSchedule();
+			if ( schedule == null || schedule.isEmpty() ) {
 				log.debug("Config {} has no schedule: cannot activate", i);
 				continue;
 			}
-			JobDataMap props = new JobDataMap();
-			props.put("config", config);
-			props.put("service", this);
-			final TriggerKey triggerKey = new TriggerKey(UUID.randomUUID().toString(),
-					DATUM_DATA_SOURCE_INVOKER_JOB_GROUP);
-			Trigger trigger = null;
-			try {
-				int freq = Integer.parseInt(config.getSchedule());
-				log.info("Scheduling config {} data source collection for every {}s as {}", i, freq,
-						triggerKey);
-				trigger = scheduleIntervalJob(scheduler, freq, triggerKey, props, jobDesc);
-			} catch ( NumberFormatException e ) {
-				// assume cron
-				log.info("Scheduling config {} data source collection for cron [{}] as {}", i,
-						config.getSchedule(), triggerKey);
-				trigger = scheduleCronJob(scheduler, config.getSchedule(), triggerKey, props, jobDesc);
+
+			final Trigger trigger = JobUtils.triggerForExpression(schedule, TimeUnit.SECONDS, false);
+			if ( trigger != null ) {
+				ScheduledFuture<?> future = scheduler
+						.schedule(new DatumDataSourceInvokerJob(this, config), trigger);
+				activeConfigurations.put(++i, new ScheduledDatumDataSourceConfig(config, future));
+				log.info(
+						"Scheduled operational mode [{}] config {} data source collection using schedule [{}]",
+						operationalMode, i, schedule);
 			}
-			activeConfigurations.put(++i, new ScheduledDatumDataSourceConfig(config, trigger));
 		}
 	}
 
 	private synchronized void deactivate() {
 		for ( ScheduledDatumDataSourceConfig config : activeConfigurations.values() ) {
-			try {
-				scheduler.unscheduleJob(config.getTrigger().getKey());
-			} catch ( SchedulerException e ) {
-				log.error("Error unscheduling {} job", config.getTrigger().getKey(), e);
-			}
+			config.getTask().cancel(true);
 		}
 		activeConfigurations.clear();
 	}
@@ -267,117 +267,6 @@ public class DatumDataSourceOpModeInvoker extends BasicIdentifiable
 						}
 					}
 				}
-			}
-		}
-	}
-
-	private JobDetail getJobDetail(final Scheduler scheduler) throws SchedulerException {
-		JobDetail jobDetail = scheduler.getJobDetail(JOB_KEY);
-		if ( jobDetail == null ) {
-			jobDetail = JobBuilder.newJob(DatumDataSourceInvokerJob.class).withIdentity(JOB_KEY)
-					.storeDurably().build();
-			scheduler.addJob(jobDetail, true);
-		}
-		return jobDetail;
-	}
-
-	private SimpleTrigger scheduleIntervalJob(final Scheduler scheduler, final int interval,
-			final TriggerKey triggerKey, final JobDataMap jobData, final String jobDescription) {
-		if ( scheduler == null ) {
-			log.warn("No scheduler avaialable, cannot schedule {} job", jobDescription);
-			return null;
-		}
-		synchronized ( scheduler ) {
-			Trigger currTrigger;
-			try {
-				currTrigger = scheduler.getTrigger(triggerKey);
-			} catch ( SchedulerException e1 ) {
-				currTrigger = null;
-			}
-			SimpleTrigger trigger = currTrigger instanceof SimpleTrigger ? (SimpleTrigger) currTrigger
-					: null;
-			if ( trigger != null ) {
-				// check if interval actually changed
-				if ( trigger.getRepeatInterval() == interval ) {
-					log.debug("{} job interval unchanged at {}s", jobDescription, interval);
-					return trigger;
-				}
-				// trigger has changed!
-				trigger = TriggerBuilder.newTrigger().withIdentity(trigger.getKey()).forJob(JOB_KEY)
-						.startAt(new Date(System.currentTimeMillis() + interval)).usingJobData(jobData)
-						.withSchedule(SimpleScheduleBuilder.repeatSecondlyForever(interval)).build();
-				try {
-					scheduler.rescheduleJob(trigger.getKey(), trigger);
-				} catch ( SchedulerException e ) {
-					log.error("Error rescheduling {} job", jobDescription, e);
-				}
-				return trigger;
-			}
-
-			try {
-				JobDetail jobDetail = getJobDetail(scheduler);
-				trigger = TriggerBuilder.newTrigger().withIdentity(triggerKey).forJob(jobDetail.getKey())
-						.startAt(new Date(
-								System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(interval)))
-						.usingJobData(jobData)
-						.withSchedule(SimpleScheduleBuilder.repeatSecondlyForever(interval)
-								.withMisfireHandlingInstructionNextWithExistingCount())
-						.build();
-				scheduler.scheduleJob(trigger);
-				return trigger;
-			} catch ( Exception e ) {
-				log.error("Error scheduling {} job", jobDescription, e);
-				return null;
-			}
-		}
-	}
-
-	private CronTrigger scheduleCronJob(final Scheduler scheduler, final String cronExpression,
-			final TriggerKey triggerKey, final JobDataMap jobData, final String jobDescription) {
-		if ( scheduler == null ) {
-			log.warn("No scheduler avaialable, cannot schedule {} job", jobDescription);
-			return null;
-		}
-		synchronized ( scheduler ) {
-			Trigger currTrigger;
-			try {
-				currTrigger = scheduler.getTrigger(triggerKey);
-			} catch ( SchedulerException e1 ) {
-				currTrigger = null;
-			}
-			CronTrigger trigger = currTrigger instanceof CronTrigger ? (CronTrigger) currTrigger : null;
-			if ( trigger != null ) {
-				// check if interval actually changed
-				if ( cronExpression.equals(trigger.getCronExpression()) ) {
-					log.debug("{} job cron unchanged at {}", jobDescription, cronExpression);
-					return trigger;
-				}
-				// trigger has changed!
-				trigger = TriggerBuilder.newTrigger().withIdentity(triggerKey).forJob(JOB_KEY)
-						.startAt(new Date(System.currentTimeMillis())).usingJobData(jobData)
-						.withSchedule(org.quartz.CronScheduleBuilder.cronSchedule(cronExpression)
-								.withMisfireHandlingInstructionDoNothing())
-						.build();
-				try {
-					scheduler.rescheduleJob(trigger.getKey(), trigger);
-				} catch ( SchedulerException e ) {
-					log.error("Error rescheduling {} job", jobDescription, e);
-				}
-				return trigger;
-			}
-
-			try {
-				JobDetail jobDetail = getJobDetail(scheduler);
-				trigger = TriggerBuilder.newTrigger().withIdentity(triggerKey).forJob(jobDetail.getKey())
-						.startAt(new Date(System.currentTimeMillis())).usingJobData(jobData)
-						.withSchedule(org.quartz.CronScheduleBuilder.cronSchedule(cronExpression)
-								.withMisfireHandlingInstructionDoNothing())
-						.build();
-				scheduler.scheduleJob(trigger);
-				return trigger;
-			} catch ( Exception e ) {
-				log.error("Error scheduling {} job", jobDescription, e);
-				return null;
 			}
 		}
 	}
@@ -493,7 +382,7 @@ public class DatumDataSourceOpModeInvoker extends BasicIdentifiable
 	 * @param scheduler
 	 *        The scheduler to use.
 	 */
-	public void setScheduler(Scheduler scheduler) {
+	public void setScheduler(TaskScheduler scheduler) {
 		this.scheduler = scheduler;
 	}
 

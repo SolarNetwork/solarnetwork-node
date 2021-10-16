@@ -73,6 +73,15 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider, ModbusConnectionAction<ModbusData>,
 		SettingsChangeObserver, ServiceLifecycleObserver {
 
+	/** The {@code sampleCacheMs} property default value. */
+	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000L;
+
+	/** The {@code maxReadWordCount} property default value. */
+	public static final int DEFAULT_MAX_READ_WORD_COUNT = 64;
+
+	/** The {@code wordOrder} property default value. */
+	public static final ModbusWordOrder DEFAULT_WORD_ORDER = ModbusWordOrder.MostToLeastSignificant;
+
 	private String sourceId;
 	private long sampleCacheMs;
 	private int maxReadWordCount;
@@ -83,10 +92,9 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	public ModbusDatumDataSource() {
 		super();
 		sample = new ModbusData();
-		sourceId = "modbus";
-		sampleCacheMs = 5000;
-		maxReadWordCount = 64;
-		setWordOrder(ModbusWordOrder.MostToLeastSignificant);
+		sampleCacheMs = DEFAULT_SAMPLE_CACHE_MS;
+		maxReadWordCount = DEFAULT_MAX_READ_WORD_COUNT;
+		setWordOrder(DEFAULT_WORD_ORDER);
 	}
 
 	@Override
@@ -300,16 +308,15 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 		results.addAll(getModbusNetworkSettingSpecifiers());
 
-		ModbusDatumDataSource defaults = new ModbusDatumDataSource();
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
-				String.valueOf(defaults.sampleCacheMs)));
+				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
 		results.add(new BasicTextFieldSettingSpecifier("maxReadWordCount",
-				String.valueOf(defaults.maxReadWordCount)));
+				String.valueOf(DEFAULT_MAX_READ_WORD_COUNT)));
 
 		// drop-down menu for word order
 		BasicMultiValueSettingSpecifier wordOrderSpec = new BasicMultiValueSettingSpecifier(
-				"wordOrderKey", String.valueOf(defaults.getWordOrder().getKey()));
+				"wordOrderKey", String.valueOf(DEFAULT_WORD_ORDER.getKey()));
 		Map<String, String> wordOrderTitles = new LinkedHashMap<String, String>(2);
 		for ( ModbusWordOrder e : ModbusWordOrder.values() ) {
 			wordOrderTitles.put(String.valueOf(e.getKey()), e.toDisplayString());

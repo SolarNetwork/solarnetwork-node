@@ -365,7 +365,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	}
 
 	private void updateNodeMetadata() {
-		NodeMetadataService service = nodeMetadataService();
+		NodeMetadataService service = OptionalService.service(nodeMetadataService);
 		if ( service == null ) {
 			return;
 		}
@@ -374,11 +374,15 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		for ( Map.Entry<String, String> me : props.entrySet() ) {
 			meta.putInfoValue("os", me.getKey(), me.getValue());
 		}
-		service.addNodeMetadata(meta);
-	}
-
-	private NodeMetadataService nodeMetadataService() {
-		return (this.nodeMetadataService != null ? this.nodeMetadataService.service() : null);
+		try {
+			service.addNodeMetadata(meta);
+		} catch ( Exception e ) {
+			Throwable root = e;
+			while ( root.getCause() != null ) {
+				root = root.getCause();
+			}
+			log.warn("Error publishing OS stats node metadata: {}", root.toString());
+		}
 	}
 
 	private Map<String, String> getJavaOsSystemProperties() {

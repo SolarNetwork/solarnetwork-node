@@ -39,8 +39,10 @@
 		</property>
 	</bean>
 
-	<reference id="scheduler" interface="org.quartz.Scheduler" filter="(function=node)"/>
-	
+	<reference id="opModesService" interface="net.solarnetwork.node.service.OperationalModesService"/>
+
+	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler" filter="(function=node)"/>
+
 	<reference id="taskExecutor" interface="org.springframework.core.task.TaskExecutor" filter="(function=node)"/>
 	
 	<!-- Published Services -->
@@ -66,12 +68,14 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.datum.opmode.DatumDataSourceOpModeInvoker">
+		<bean class="net.solarnetwork.node.datum.opmode.DatumDataSourceOpModeInvoker" 
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<argument ref="opModesService"/>
+			<argument ref="taskScheduler"/>
 			<argument ref="datumQueue"/>
 			<argument ref="datumDataSources"/>
 			<argument ref="multiDatumDataSources"/>
 			<property name="messageSource" ref="messageSource"/>
-			<property name="scheduler" ref="scheduler"/>
 			<property name="taskExecutor" ref="taskExecutor"/>
 		</bean>
 	</osgix:managed-service-factory>
