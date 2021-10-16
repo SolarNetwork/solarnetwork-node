@@ -44,7 +44,6 @@ import org.junit.Test;
 import org.mortbay.jetty.Request;
 import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.AbstractHandler;
-import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
@@ -121,12 +120,12 @@ public class HttpRequesterJobTest {
 	}
 
 	@Test
-	public void pingSuccessful() throws JobExecutionException {
+	public void pingSuccessful() throws Exception {
 		final TestHandler httpHandler = new TestHandler();
 		server.setHandler(httpHandler);
 		replay(handler);
 		HttpRequesterJob job = newJobInstance();
-		job.execute(null);
+		job.executeJobService();
 		verify(handler);
 		assertThat("Request count", httpHandler.getCount(), is(1));
 	}
@@ -162,7 +161,7 @@ public class HttpRequesterJobTest {
 				});
 		replay(handler);
 		HttpRequesterJob job = newJobInstance();
-		job.execute(null);
+		job.executeJobService();
 		verify(handler);
 		assertThat("No requests", httpHandler.getCount(), is(0));
 		assertThat("Instructions executed", instructions.getValues(), hasSize(2));

@@ -32,20 +32,17 @@ import java.util.List;
 import java.util.Scanner;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
-import org.quartz.DisallowConcurrentExecution;
-import org.quartz.JobExecutionContext;
-import org.quartz.PersistJobDataAfterExecution;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
-import net.solarnetwork.node.job.AbstractJob;
+import net.solarnetwork.node.job.JobService;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.SSLService;
 import net.solarnetwork.settings.SettingSpecifier;
-import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
@@ -113,24 +110,32 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
  * @author matt
  * @version 3.0
  */
-@PersistJobDataAfterExecution
-@DisallowConcurrentExecution
-public class HttpRequesterJob extends AbstractJob implements SettingSpecifierProvider {
+public class HttpRequesterJob extends BaseIdentifiable implements JobService {
+
+	public static final int DEFAULT_OS_COMMAND_SLEEP_SECONDS = 5;
+
+	public static final boolean DEFAULT_FAILED_TOGGLE_VALUE = true;
+
+	public static final int DEFAULT_SLEEP_SECONDS = 5;
+
+	public static final int DEFAULT_CONNECTION_TIMEOUT_SECONDS = 15;
+
+	public static final String DEFAULT_URL = "http://www.google.com";
 
 	private String controlId;
 	private String osCommandToggleOff;
 	private String osCommandToggleOn;
-	private int osCommandSleepSeconds = 5;
-	private boolean failedToggleValue = true;
-	private int sleepSeconds = 5;
-	private int connectionTimeoutSeconds = 15;
-	private String url = "http://www.google.com/";
+	private int osCommandSleepSeconds = DEFAULT_OS_COMMAND_SLEEP_SECONDS;
+	private boolean failedToggleValue = DEFAULT_FAILED_TOGGLE_VALUE;
+	private int sleepSeconds = DEFAULT_SLEEP_SECONDS;
+	private int connectionTimeoutSeconds = DEFAULT_CONNECTION_TIMEOUT_SECONDS;
+	private String url = DEFAULT_URL;
 	private MessageSource messageSource;
 	private OptionalService<InstructionExecutionService> instructionExecutionService;
 	private OptionalService<SSLService> sslService;
 
 	@Override
-	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
+	public void executeJobService() throws Exception {
 		InstructionExecutionService instructionService = service(instructionExecutionService);
 		if ( instructionService == null ) {
 			log.warn("InstructionExecutionService not available, cannot execute ping.");
@@ -285,24 +290,24 @@ public class HttpRequesterJob extends AbstractJob implements SettingSpecifierPro
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		HttpRequesterJob defaults = new HttpRequesterJob();
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(4);
-		results.add(new BasicTextFieldSettingSpecifier("url", defaults.url));
-		results.add(new BasicTextFieldSettingSpecifier("controlId", defaults.controlId));
-		results.add(new BasicToggleSettingSpecifier("failedToggleValue", defaults.failedToggleValue));
+		List<SettingSpecifier> results = new ArrayList<>(8);
+		results.add(new BasicTextFieldSettingSpecifier("url", DEFAULT_URL));
+		results.add(new BasicTextFieldSettingSpecifier("controlId", null));
+		results.add(new BasicToggleSettingSpecifier("failedToggleValue",
+				String.valueOf(DEFAULT_FAILED_TOGGLE_VALUE)));
 		results.add(new BasicTextFieldSettingSpecifier("connectionTimeoutSeconds",
-				String.valueOf(defaults.connectionTimeoutSeconds)));
+				String.valueOf(DEFAULT_CONNECTION_TIMEOUT_SECONDS)));
 		results.add(new BasicTextFieldSettingSpecifier("sleepSeconds",
-				String.valueOf(defaults.sleepSeconds)));
-		results.add(
-				new BasicTextFieldSettingSpecifier("osCommandToggleOff", defaults.osCommandToggleOff));
-		results.add(new BasicTextFieldSettingSpecifier("osCommandToggleOn", defaults.osCommandToggleOn));
+				String.valueOf(DEFAULT_SLEEP_SECONDS)));
+		results.add(new BasicTextFieldSettingSpecifier("osCommandToggleOff", null));
+		results.add(new BasicTextFieldSettingSpecifier("osCommandToggleOn", null));
 		results.add(new BasicTextFieldSettingSpecifier("osCommandSleepSeconds",
-				String.valueOf(defaults.osCommandSleepSeconds)));
+				String.valueOf(DEFAULT_OS_COMMAND_SLEEP_SECONDS)));
 
 		return results;
 	}
 
+	@Override
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
@@ -360,6 +365,46 @@ public class HttpRequesterJob extends AbstractJob implements SettingSpecifierPro
 	public void setInstructionExecutionService(
 			OptionalService<InstructionExecutionService> instructionExecutionService) {
 		this.instructionExecutionService = instructionExecutionService;
+	}
+
+	public String getControlId() {
+		return controlId;
+	}
+
+	public String getOsCommandToggleOff() {
+		return osCommandToggleOff;
+	}
+
+	public String getOsCommandToggleOn() {
+		return osCommandToggleOn;
+	}
+
+	public int getOsCommandSleepSeconds() {
+		return osCommandSleepSeconds;
+	}
+
+	public boolean isFailedToggleValue() {
+		return failedToggleValue;
+	}
+
+	public int getSleepSeconds() {
+		return sleepSeconds;
+	}
+
+	public int getConnectionTimeoutSeconds() {
+		return connectionTimeoutSeconds;
+	}
+
+	public String getUrl() {
+		return url;
+	}
+
+	public OptionalService<InstructionExecutionService> getInstructionExecutionService() {
+		return instructionExecutionService;
+	}
+
+	public OptionalService<SSLService> getSslService() {
+		return sslService;
 	}
 
 }
