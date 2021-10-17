@@ -58,6 +58,10 @@ public class JobUtils {
 	 * 
 	 * @param expression
 	 *        the schedule expression
+	 * @param timeUnit
+	 *        the time unit to use for periodic triggers
+	 * @param randomized
+	 *        {@literal true} to randomize the second field of cron triggers
 	 * @return the trigger, or {@literal null} if the expression cannot be
 	 *         parsed into one
 	 * @since 2.0

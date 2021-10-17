@@ -560,8 +560,10 @@ public class ManagedJobSchedulerTests {
 		assertThat("Scheduled trigger is cron", trigCaptor.getValue(),
 				is(new CronTrigger(managedJob.getSchedule())));
 		assertThat("Scheduled task cancelled from reschedule", future.isCancelled(), is(true));
+		PeriodicTrigger expectedTrigger = new PeriodicTrigger(1000, TimeUnit.MILLISECONDS);
+		expectedTrigger.setFixedRate(true);
 		assertThat("Rescheduled trigger is periodic from settings update", trigCaptor2.getValue(),
-				is(new PeriodicTrigger(1000, TimeUnit.MILLISECONDS)));
+				is(expectedTrigger));
 		assertThat("Rescheduled task active", future2.isDone(), is(false));
 	}
 
