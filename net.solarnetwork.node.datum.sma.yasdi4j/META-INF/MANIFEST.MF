@@ -2,30 +2,33 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: SMA Power Datum DataSource (yasdi4j)
 Bundle-SymbolicName: net.solarnetwork.node.datum.sma.yasdi4j
+Automatic-Module-Name: net.solarnetwork.node.datum.sma.yasdi4j
 Bundle-Description: Collect generation data from SMA inverts using the SMANet protocol via yasdi4j.
-Bundle-Version: 1.2.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
  de.michaeldenk.yasdi4j;version="[0.1.5,2.0)",
- net.solarnetwork.domain;version="[1.7,2.0)",
- net.solarnetwork.node;version="[1.35,2.0)",
- net.solarnetwork.node.dao;version="[1.6,2.0)",
- net.solarnetwork.node.domain;version="[1.10,2.0)",
- net.solarnetwork.node.hw.sma;version="[1.5,2.0)",
- net.solarnetwork.node.io.yasdi4j;version="[1.2,2.0)",
- net.solarnetwork.node.job;version="[1.11,2.0)",
- net.solarnetwork.node.settings;version="[1.8,2.0)",
- net.solarnetwork.node.settings.support;version="[1.6,2.0)",
- net.solarnetwork.node.support;version="[1.29,2.0)",
- net.solarnetwork.node.util;version="[1.7,2.0)",
- net.solarnetwork.util;version="[1.26,2.0)",
- org.quartz;version="[2.2,3.0)",
- org.quartz.simpl;version="[2.2,3.0)",
+ net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
+ net.solarnetwork.domain;version="[2.0,3.0)",
+ net.solarnetwork.domain.datum;version="[2.0,3.0)",
+ net.solarnetwork.node.dao;version="[2.0,3.0)",
+ net.solarnetwork.node.domain;version="[2.0,3.0)",
+ net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
+ net.solarnetwork.node.hw.sma;version="[2.0,3.0)",
+ net.solarnetwork.node.io.yasdi4j;version="[2.0,3.0)",
+ net.solarnetwork.node.job;version="[2.0,3.0)",
+ net.solarnetwork.node.service;version="[1.0,2.0)",
+ net.solarnetwork.node.service.support;version="[1.0,2.0)",
+ net.solarnetwork.service;version="[1.0,2.0)",
+ net.solarnetwork.service.support;version="[1.0,2.0)",
+ net.solarnetwork.settings;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.support;version="[2.0,3.0)",
+ net.solarnetwork.util;version="[2.0,3.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.beans;version="[4.3,5.0)",
  org.springframework.beans.factory;version="[4.3,5.0)",
  org.springframework.context;version="[4.3,5.0)",
  org.springframework.context.support;version="[4.3,5.0)",
- org.springframework.core;version="[4.3,5.0)",
- org.springframework.scheduling.quartz;version="[4.3,5.0)"
+ org.springframework.core;version="[4.3,5.0)"

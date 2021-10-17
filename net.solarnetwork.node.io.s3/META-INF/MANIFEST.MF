@@ -3,24 +3,20 @@ Bundle-ManifestVersion: 2
 Bundle-Name: S3 Storage Support
 Bundle-Description: Support for S3 storage.
 Bundle-SymbolicName: net.solarnetwork.node.io.s3
-Bundle-Version: 1.0.1
+Bundle-Version: 2.0.0
 Automatic-Module-Name: net.solarnetwork.node.io.s3
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
- net.solarnetwork.common.s3;version="1.0.0",
- net.solarnetwork.common.s3.sdk;version="1.0.0",
- net.solarnetwork.domain;version="1.18.0",
- net.solarnetwork.io;version="1.5.0",
- net.solarnetwork.node;version="1.29.0",
- net.solarnetwork.node.domain;version="1.18.0",
- net.solarnetwork.node.settings;version="1.12.0",
- net.solarnetwork.node.settings.support;version="1.10.0",
- net.solarnetwork.node.support;version="1.18.1",
- net.solarnetwork.node.util;version="1.7.2",
- net.solarnetwork.settings;version="1.2.0",
- net.solarnetwork.settings.support;version="1.2.0",
- net.solarnetwork.support;version="1.9.0",
- net.solarnetwork.util;version="1.38.0",
+ net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
+ net.solarnetwork.common.s3;version="[2.0,3.0)",
+ net.solarnetwork.common.s3.sdk;version="[2.0,3.0)",
+ net.solarnetwork.node.service;version="[1.0,2.0)",
+ net.solarnetwork.node.service.support;version="[1.0,2.0)",
+ net.solarnetwork.service;version="[1.0,2.0)",
+ net.solarnetwork.service.support;version="[1.0,2.0)",
+ net.solarnetwork.settings;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.support;version="[2.0,3.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.beans;version="[4.3,5.0)",
  org.springframework.context;version="[4.3,5.0)",

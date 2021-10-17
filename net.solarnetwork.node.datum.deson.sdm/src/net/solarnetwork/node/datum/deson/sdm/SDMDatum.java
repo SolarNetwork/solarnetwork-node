@@ -22,49 +22,49 @@
 
 package net.solarnetwork.node.datum.deson.sdm;
 
-import java.util.Date;
-import java.util.Map;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.datum.SimpleAcEnergyDatum;
 import net.solarnetwork.node.hw.deson.meter.SDMDataAccessor;
 
 /**
- * Extension of {@link GeneralNodeACEnergyDatum} with additional properties
- * supported by the SDM-XXX series meters.
+ * Extension of {@link SimpleAcEnergyDatum} with additional properties supported
+ * by the SDM-XXX series meters.
  * 
  * @author matt
  * @version 2.0
  */
-public class SDMDatum extends GeneralNodeACEnergyDatum implements ACEnergyDataAccessor {
+public class SDMDatum extends SimpleAcEnergyDatum {
+
+	private static final long serialVersionUID = 2098597753729925604L;
 
 	private final SDMDataAccessor data;
-	private final boolean backwards;
 
 	/**
 	 * Construct with a sample.
 	 * 
 	 * @param data
 	 *        the data
+	 * @param sourceId
+	 *        the source ID
 	 * @param phase
 	 *        the phase
 	 * @param backwards
 	 *        the backwards setting
 	 */
-	public SDMDatum(SDMDataAccessor data, ACPhase phase, boolean backwards) {
-		super();
+	public SDMDatum(SDMDataAccessor data, String sourceId, AcPhase phase, boolean backwards) {
+		super(sourceId, data.getDataTimestamp(), new DatumSamples());
 		this.data = data;
-		this.backwards = backwards;
-		if ( data.getDataTimestamp() > 0 ) {
-			setCreated(new Date(data.getDataTimestamp()));
+		AcEnergyDataAccessor accessor = data.accessorForPhase(phase);
+		if ( backwards ) {
+			accessor = accessor.reversed();
 		}
-		setPhase(phase);
-		ACEnergyDataAccessor phaseData = accessorForPhase(phase);
-		populateMeasurements(phaseData, phase);
+		populateMeasurements(accessor, phase);
 	}
 
-	private void populateMeasurements(ACEnergyDataAccessor data, ACPhase phase) {
-		setPhase(phase);
+	private void populateMeasurements(AcEnergyDataAccessor data, AcPhase phase) {
+		setAcPhase(phase);
 		setFrequency(data.getFrequency());
 		setVoltage(data.getVoltage());
 		setLineVoltage(data.getLineVoltage());
@@ -81,69 +81,19 @@ public class SDMDatum extends GeneralNodeACEnergyDatum implements ACEnergyDataAc
 	/**
 	 * Test if the data appears valid in this datum.
 	 * 
-	 * @return <em>true</em> if the data appears to be valid
+	 * @return {@literal true} if the data appears to be valid
 	 */
 	public boolean isValid() {
 		return (getWatts() != null || getWattHourReading() != null);
 	}
 
-	@Override
-	public long getDataTimestamp() {
-		return data.getDataTimestamp();
-	}
-
-	@Override
-	public Map<String, Object> getDeviceInfo() {
-		return data.getDeviceInfo();
-	}
-
-	@Override
-	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
-		ACEnergyDataAccessor phaseData = data.accessorForPhase(phase);
-		if ( backwards ) {
-			phaseData = phaseData.reversed();
-		}
-		return phaseData;
-	}
-
-	@Override
-	public ACEnergyDataAccessor reversed() {
-		return data.reversed();
-	}
-
-	@Override
-	public Integer getActivePower() {
-		return data.getActivePower();
-	}
-
-	@Override
-	public Long getActiveEnergyDelivered() {
-		return data.getActiveEnergyDelivered();
-	}
-
-	@Override
-	public Long getActiveEnergyReceived() {
-		return data.getActiveEnergyReceived();
-	}
-
-	@Override
-	public Long getApparentEnergyDelivered() {
-		return data.getApparentEnergyDelivered();
-	}
-
-	@Override
-	public Long getApparentEnergyReceived() {
-		return data.getApparentEnergyReceived();
-	}
-
-	@Override
-	public Long getReactiveEnergyDelivered() {
-		return data.getReactiveEnergyDelivered();
-	}
-
-	@Override
-	public Long getReactiveEnergyReceived() {
-		return data.getReactiveEnergyReceived();
+	/**
+	 * Get the data.
+	 * 
+	 * @return the data
+	 */
+	public SDMDataAccessor getData() {
+		return data;
 	}
 
 }

@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.rfxcom;
@@ -27,39 +25,39 @@ package net.solarnetwork.node.rfxcom;
 /**
  * A RFXCOM message packet.
  * 
- * <p>RFXCOM messages follow the following format (all fields 
- * represent a single byte, unless otherwise noted):</p>
+ * <p>
+ * RFXCOM messages follow the following format (all fields represent a single
+ * byte, unless otherwise noted):
+ * </p>
  * 
  * <ol>
  * <li>packet length - number of bytes in the message</li>
  * <li>type - a {@link MessageType}</li>
  * <li>sub-type - a sub categorization, depends on type</li>
  * <li>sequence number - a counter used to correlate messages</li>
- * <li>message data - specific to the message type, number of bytes
- * equal to (<em>packet length</em> - 4)</li>
- * </ol>
- * 
+ * <li>message data - specific to the message type, number of bytes equal to
+ * (<em>packet length</em> - 4)</li>
  * </ol>
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
 public interface Message {
-	
+
 	/**
 	 * Get the number of bytes in the packet, without the size header byte.
 	 * 
 	 * @return the number of bytes in the message
 	 */
 	short getPacketSize();
-	
+
 	/**
 	 * Get the message type.
 	 * 
 	 * @return the type
 	 */
 	MessageType getType();
-	
+
 	/**
 	 * Get the message sub-type.
 	 * 
@@ -80,12 +78,12 @@ public interface Message {
 	 * @return the message data
 	 */
 	byte[] getData();
-	
+
 	/**
 	 * Get the entire message as a packet, including the 4-byte message header.
 	 * 
 	 * @return the message packet
 	 */
 	byte[] getMessagePacket();
-	
+
 }

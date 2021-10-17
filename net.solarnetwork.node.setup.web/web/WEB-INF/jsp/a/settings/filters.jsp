@@ -17,11 +17,11 @@
 			<table class="table setting-components">
 				<tbody>
 				<c:forEach items="${globalFactories}" var="factory" varStatus="factoryStatus">
-					<!--  ${factory.factoryUID} -->
+					<!--  ${factory.factoryUid} -->
 					<tr>
 						<td><strong><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></strong></td>
 						<td>
-							<a class="btn" href="<setup:url value='/a/settings/filters/manage?uid=${factory.factoryUID}'/>">
+							<a class="btn" href="<setup:url value='/a/settings/filters/manage?uid=${factory.factoryUid}'/>">
 								<i class="icon-edit icon-large"></i> 
 								<fmt:message key="settings.factory.manage.label"/>
 							</a>
@@ -35,13 +35,13 @@
 		<c:if test="${fn:length(providers) > 0}">	
 			<form class="form-horizontal" action="<setup:url value='/a/settings/save'/>" method="post">
 				<c:forEach items="${providers}" var="provider" varStatus="providerStatus">
-					<!--  ${provider.settingUID} -->
+					<!--  ${provider.settingUid} -->
 					<c:set var="provider" value="${provider}" scope="request"/>
 					<fieldset>
 						<legend>
-							<a id="${provider.settingUID}" 
+							<a id="${provider.settingUid}" 
 								class="anchor" 
-								href="#${provider.settingUID}"
+								href="#${provider.settingUid}"
 								aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>
 							<setup:message key="title" messageSource="${provider.messageSource}" text="${provider.displayName}"/>
 						</legend>
@@ -100,11 +100,11 @@
 		<table class="table setting-components">
 			<tbody>
 			<c:forEach items="${userFactories}" var="factory" varStatus="factoryStatus">
-				<!--  ${factory.factoryUID} -->
+				<!--  ${factory.factoryUid} -->
 				<tr>
 					<td><strong><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></strong></td>
 					<td>
-						<a class="btn" href="<setup:url value='/a/settings/filters/manage?uid=${factory.factoryUID}'/>">
+						<a class="btn" href="<setup:url value='/a/settings/filters/manage?uid=${factory.factoryUid}'/>">
 							<i class="icon-edit icon-large"></i> 
 							<fmt:message key="settings.factory.manage.label"/>
 						</a>

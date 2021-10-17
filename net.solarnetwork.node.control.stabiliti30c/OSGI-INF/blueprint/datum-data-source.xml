@@ -20,90 +20,73 @@
 				<value>net.solarnetwork.node.datum.stabiliti30c.Stabiliti30CDatumDataSource</value>
 				<value>net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport</value>
 				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
 	
-	<bean id="datumDataSourceJobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+	<bean id="datumDataSourceJobMessageSource" class="net.solarnetwork.support.PrefixedMessageSource">
 		<property name="prefix" value="multiDatumDataSource."/>
 		<property name="delegate" ref="datumDataSourceMessageSource"/>
 	</bean>	
 
-
 	<!-- Published Services -->
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Stabiliti 30C Power Control Data Source"/>
-			<property name="factoryUID" value="net.solarnetwork.node.control.stabiliti30c.DatumDataSource"/>
+			<property name="factoryUid" value="net.solarnetwork.node.control.stabiliti30c.DatumDataSource"/>
 			<property name="messageSource" ref="datumDataSourceMessageSource"/>
 		</bean>
 	</service>
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.stabiliti30c.DatumDataSource" autowire-on-update="true">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
-			<beans:value>net.solarnetwork.node.job.ServiceProvider</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.node.job.ManagedJob</beans:value>
 		</osgix:interfaces>
-		<osgix:service-properties>
-			<beans:entry key="settingPid" value="net.solarnetwork.node.control.stabiliti30c.DatumDataSource"/>
-		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
-			<property name="trigger">
-				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-					<property name="name" value="stabiliti30cDatumLoggerTrigger"/>
-					<property name="cronExpression" value="5 * * * * ?"/>
-					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
-					<property name="randomSecond" value="true"/>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob" 
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<argument>
+				<bean class="net.solarnetwork.node.job.DatumDataSourcePollManagedJob">
+					<property name="datumMetadataService" ref="datumMetadataService"/>
+					<property name="datumQueue" ref="datumQueue"/>
+					<property name="multiDatumDataSource">
+						<bean class="net.solarnetwork.node.datum.stabiliti30c.Stabiliti30CDatumDataSource">
+							<property name="messageSource" ref="datumDataSourceJobMessageSource"/>
+							<property name="modbusNetwork">
+								<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+									<argument ref="bundleContext"/>
+									<property name="serviceClassName" 
+										value="net.solarnetwork.node.io.modbus.ModbusNetwork"/>
+									<property name="propertyFilters">
+										<map>
+											<entry key="uid" value="Modbus Port"/>
+										</map>
+									</property>
+								</bean>	
+							</property>
+						</bean>
+					</property>
 				</bean>
-			</property>
+			</argument>
+			<argument value="5 * * * * ?"/>
 			<property name="serviceProviderConfigurations">
 				<map>
 					<entry key="multiDatumDataSource">
 						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
 							<property name="interfaces">
 								<list>
-									<value>net.solarnetwork.node.MultiDatumDataSource</value>
+									<value>net.solarnetwork.node.service.MultiDatumDataSource</value>
 								</list>
 							</property>
 							<property name="properties">
 								<map>
-									<entry key="datumClassName" value="net.solarnetwork.node.domain.Datum"/>
+									<entry key="datumClassName" value="net.solarnetwork.node.domain.datum.NodeDatum"/>
 								</map>
 							</property>
 						</bean>
 					</entry>
 				</map>
-			</property>
-			<property name="jobDetail">
-				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-					<property name="name" value="stabiliti30cDatumLoggerJob"/>
-					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
-					<property name="jobDataAsMap">
-						<map>
-							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
-							<entry key="multiDatumDataSource">
-								<bean class="net.solarnetwork.node.datum.stabiliti30c.Stabiliti30CDatumDataSource">
-									<property name="eventAdmin" ref="eventAdmin"/>
-									<property name="messageSource" ref="datumDataSourceJobMessageSource"/>
-									<property name="modbusNetwork">
-										<bean class="net.solarnetwork.util.DynamicServiceTracker">
-											<property name="bundleContext" ref="bundleContext"/>
-											<property name="serviceClassName" 
-												value="net.solarnetwork.node.io.modbus.ModbusNetwork"/>
-											<property name="propertyFilters">
-												<map>
-													<entry key="UID" value="Modbus Port"/>
-												</map>
-											</property>
-										</bean>	
-									</property>
-								</bean>
-							</entry>
-						</map>
-					</property>
-				</bean>
 			</property>
 		</bean>
 	</osgix:managed-service-factory>

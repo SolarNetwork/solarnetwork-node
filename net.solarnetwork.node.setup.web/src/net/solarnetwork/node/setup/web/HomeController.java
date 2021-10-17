@@ -28,16 +28,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import net.solarnetwork.node.SystemService;
+import net.solarnetwork.node.service.SystemService;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.web.domain.Response;
 
 /**
  * Controller to manage the initial home screen.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  * @since 1.23
  */
 @ServiceAwareController

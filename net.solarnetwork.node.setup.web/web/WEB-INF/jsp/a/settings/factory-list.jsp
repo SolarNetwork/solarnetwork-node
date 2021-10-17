@@ -49,7 +49,7 @@
 				<c:set var="instance" value="${instance}" scope="request"/>
 				<c:set var="provider" value="${instance.value}" scope="request"/>
 				<c:set var="instanceId" value="${provider.factoryInstanceUID}" scope="request"/>
-				<!--  ${provider.settingUID} -->
+				<!--  ${provider.settingUid} -->
 		
 				<fieldset class="item ${instanceStatus.index == 0 ? 'active' : ''}">
 					<legend>
@@ -89,8 +89,8 @@
 								SolarNode.Settings.deleteFactoryConfiguration({
 									button: this,
 									url: '<setup:url value="/a/settings/manage/delete"/>',
-											factoryUID: '${factory.factoryUID}',
-											instanceUID: '${instance.key}'
+											factoryUid: '${factory.factoryUid}',
+											instanceUid: '${instance.key}'
 										});
 									});
 							</script>
@@ -105,8 +105,8 @@
 								SolarNode.Settings.resetFactoryConfiguration({
 									button: this,
 									url: '<setup:url value="/a/settings/manage/reset"/>',
-									factoryUID: '${factory.factoryUID}',
-									instanceUID: '${instance.key}'
+									factoryUid: '${factory.factoryUid}',
+									instanceUid: '${instance.key}'
 								});
 							});
 							</script>
@@ -132,7 +132,7 @@ $(function() {
 		SolarNode.Settings.addFactoryConfiguration({
 			button: this,
 			url: '<setup:url value="/a/settings/manage/add"/>',
-			factoryUID: '${factory.factoryUID}'
+			factoryUid: '${factory.factoryUid}'
 		});
 	});
 	SolarNode.Settings.reset();

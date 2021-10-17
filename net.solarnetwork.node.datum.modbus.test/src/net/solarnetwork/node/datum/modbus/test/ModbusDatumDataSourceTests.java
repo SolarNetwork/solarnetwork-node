@@ -22,9 +22,9 @@
 
 package net.solarnetwork.node.datum.modbus.test;
 
-import static net.solarnetwork.domain.GeneralDatumSamplesType.Accumulating;
-import static net.solarnetwork.domain.GeneralDatumSamplesType.Instantaneous;
-import static net.solarnetwork.domain.GeneralDatumSamplesType.Status;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Float32;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Float64;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
@@ -38,44 +38,36 @@ import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.concurrent.TimeUnit;
 import org.easymock.Capture;
-import org.easymock.CaptureType;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.common.expr.spel.SpelExpressionService;
-import net.solarnetwork.domain.GeneralDatumMetadata;
-import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.datum.modbus.ExpressionConfig;
 import net.solarnetwork.node.datum.modbus.ModbusDatumDataSource;
 import net.solarnetwork.node.datum.modbus.ModbusPropertyConfig;
-import net.solarnetwork.node.datum.modbus.VirtualMeterConfig;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWordOrder;
-import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.node.service.DatumMetadataService;
+import net.solarnetwork.service.ExpressionService;
+import net.solarnetwork.service.OptionalServiceCollection;
+import net.solarnetwork.service.StaticOptionalService;
+import net.solarnetwork.service.StaticOptionalServiceCollection;
 import net.solarnetwork.util.ByteUtils;
-import net.solarnetwork.util.OptionalServiceCollection;
-import net.solarnetwork.util.StaticOptionalService;
-import net.solarnetwork.util.StaticOptionalServiceCollection;
 
 /**
  * Test cases for the {@link ModbusDatumDataSource} class.
@@ -180,24 +172,30 @@ public class ModbusDatumDataSourceTests {
 		replayAll();
 
 		// WHEN
-		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+		NodeDatum datum = dataSource.readCurrentDatum();
 
 		// THEN
 		assertThat("Datum returned", datum, notNullValue());
-		assertThat("Created", datum.getCreated(), notNullValue());
+		assertThat("Created", datum.getTimestamp(), notNullValue());
 		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
-		assertThat("Int16 value", datum.getInstantaneousSampleInteger(TEST_INT16_PROP_NAME),
+		assertThat("Int16 value",
+				datum.asSampleOperations().getSampleInteger(Instantaneous, TEST_INT16_PROP_NAME),
 				equalTo(64542));
-		assertThat("SInt16 value", datum.getInstantaneousSampleInteger(TEST_SINT16_PROP_NAME),
+		assertThat("SInt16 value",
+				datum.asSampleOperations().getSampleInteger(Instantaneous, TEST_SINT16_PROP_NAME),
 				equalTo(-3901));
-		assertThat("Int32 value", datum.getInstantaneousSampleInteger(TEST_INT32_PROP_NAME),
+		assertThat("Int32 value",
+				datum.asSampleOperations().getSampleInteger(Instantaneous, TEST_INT32_PROP_NAME),
 				equalTo(48457959));
-		assertThat("Int64 value", datum.getInstantaneousSampleLong(TEST_INT64_PROP_NAME),
+		assertThat("Int64 value",
+				datum.asSampleOperations().getSampleLong(Instantaneous, TEST_INT64_PROP_NAME),
 				equalTo(584347834048494L));
-		assertThat("Float32 value",
-				Float.floatToIntBits(datum.getInstantaneousSampleFloat(TEST_FLOAT32_PROP_NAME)),
+		assertThat(
+				"Float32 value", Float.floatToIntBits(datum.asSampleOperations()
+						.getSampleFloat(Instantaneous, TEST_FLOAT32_PROP_NAME)),
 				equalTo(Integer.parseInt("44f6c651", 16))); // Hamcrest missing closeTo() for floats
-		assertThat("Float64 value", datum.getInstantaneousSampleDouble(TEST_FLOAT64_PROP_NAME),
+		assertThat("Float64 value",
+				datum.asSampleOperations().getSampleDouble(Instantaneous, TEST_FLOAT64_PROP_NAME),
 				closeTo(19741974.1974, 0.00001));
 	}
 
@@ -232,13 +230,15 @@ public class ModbusDatumDataSourceTests {
 		replayAll();
 
 		// WHEN
-		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+		NodeDatum datum = dataSource.readCurrentDatum();
 
 		// THEN
 		assertThat("Datum returned", datum, notNullValue());
-		assertThat("Created", datum.getCreated(), notNullValue());
+		assertThat("Created", datum.getTimestamp(), notNullValue());
 		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
-		assertThat("Prop value", datum.getStatusSampleString(TEST_STATUS_PROP_NAME), equalTo(message));
+		assertThat("Prop value",
+				datum.asSampleOperations().getSampleString(Status, TEST_STATUS_PROP_NAME),
+				equalTo(message));
 	}
 
 	@Test
@@ -275,19 +275,23 @@ public class ModbusDatumDataSourceTests {
 		replayAll();
 
 		// WHEN
-		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+		NodeDatum datum = dataSource.readCurrentDatum();
 
 		// THEN
 		assertThat("Datum returned", datum, notNullValue());
-		assertThat("Created", datum.getCreated(), notNullValue());
+		assertThat("Created", datum.getTimestamp(), notNullValue());
 		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
-		assertThat("Int32 value", datum.getInstantaneousSampleBigDecimal(TEST_INT32_PROP_NAME),
+		assertThat("Int32 value",
+				datum.asSampleOperations().getSampleBigDecimal(Instantaneous, TEST_INT32_PROP_NAME),
 				equalTo(new BigDecimal("4845795.9")));
-		assertThat("Int64 value", datum.getInstantaneousSampleBigDecimal(TEST_INT64_PROP_NAME),
+		assertThat("Int64 value",
+				datum.asSampleOperations().getSampleBigDecimal(Instantaneous, TEST_INT64_PROP_NAME),
 				equalTo(new BigDecimal("5843478340484.94")));
-		assertThat("Float32 value", datum.getAccumulatingSampleBigDecimal(TEST_FLOAT32_PROP_NAME),
+		assertThat("Float32 value",
+				datum.asSampleOperations().getSampleBigDecimal(Accumulating, TEST_FLOAT32_PROP_NAME),
 				equalTo(new BigDecimal("1.9741974")));
-		assertThat("Float64 value", datum.getAccumulatingSampleBigDecimal(TEST_FLOAT64_PROP_NAME),
+		assertThat("Float64 value",
+				datum.asSampleOperations().getSampleBigDecimal(Accumulating, TEST_FLOAT64_PROP_NAME),
 				equalTo(new BigDecimal("1974.19741974")));
 	}
 
@@ -325,19 +329,23 @@ public class ModbusDatumDataSourceTests {
 		replayAll();
 
 		// WHEN
-		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+		NodeDatum datum = dataSource.readCurrentDatum();
 
 		// THEN
 		assertThat("Datum returned", datum, notNullValue());
-		assertThat("Created", datum.getCreated(), notNullValue());
+		assertThat("Created", datum.getTimestamp(), notNullValue());
 		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
-		assertThat("Int32 value", datum.getInstantaneousSampleBigDecimal(TEST_INT32_PROP_NAME),
+		assertThat("Int32 value",
+				datum.asSampleOperations().getSampleBigDecimal(Instantaneous, TEST_INT32_PROP_NAME),
 				equalTo(new BigDecimal("4845796")));
-		assertThat("Int64 value", datum.getInstantaneousSampleBigDecimal(TEST_INT64_PROP_NAME),
+		assertThat("Int64 value",
+				datum.asSampleOperations().getSampleBigDecimal(Instantaneous, TEST_INT64_PROP_NAME),
 				equalTo(new BigDecimal("5843478340484.9")));
-		assertThat("Float32 value", datum.getAccumulatingSampleBigDecimal(TEST_FLOAT32_PROP_NAME),
+		assertThat("Float32 value",
+				datum.asSampleOperations().getSampleBigDecimal(Accumulating, TEST_FLOAT32_PROP_NAME),
 				equalTo(new BigDecimal("1.9742")));
-		assertThat("Float64 value", datum.getAccumulatingSampleBigDecimal(TEST_FLOAT64_PROP_NAME),
+		assertThat("Float64 value",
+				datum.asSampleOperations().getSampleBigDecimal(Accumulating, TEST_FLOAT64_PROP_NAME),
 				equalTo(new BigDecimal("1974.19741974")));
 	}
 
@@ -376,19 +384,23 @@ public class ModbusDatumDataSourceTests {
 		replayAll();
 
 		// WHEN
-		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+		NodeDatum datum = dataSource.readCurrentDatum();
 
 		// THEN
 		assertThat("Datum returned", datum, notNullValue());
-		assertThat("Created", datum.getCreated(), notNullValue());
+		assertThat("Created", datum.getTimestamp(), notNullValue());
 		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
-		assertThat("Int32 value", datum.getInstantaneousSampleBigDecimal(TEST_INT32_PROP_NAME),
+		assertThat("Int32 value",
+				datum.asSampleOperations().getSampleBigDecimal(Instantaneous, TEST_INT32_PROP_NAME),
 				equalTo(new BigDecimal("4845796")));
-		assertThat("Int64 value", datum.getInstantaneousSampleBigDecimal(TEST_INT64_PROP_NAME),
+		assertThat("Int64 value",
+				datum.asSampleOperations().getSampleBigDecimal(Instantaneous, TEST_INT64_PROP_NAME),
 				equalTo(new BigDecimal("5843478340484.9")));
-		assertThat("Float32 value", datum.getAccumulatingSampleBigDecimal(TEST_FLOAT32_PROP_NAME),
+		assertThat("Float32 value",
+				datum.asSampleOperations().getSampleBigDecimal(Accumulating, TEST_FLOAT32_PROP_NAME),
 				equalTo(new BigDecimal("1.9742")));
-		assertThat("Float64 value", datum.getAccumulatingSampleBigDecimal(TEST_FLOAT64_PROP_NAME),
+		assertThat("Float64 value",
+				datum.asSampleOperations().getSampleBigDecimal(Accumulating, TEST_FLOAT64_PROP_NAME),
 				equalTo(new BigDecimal("1974.19741974")));
 	}
 
@@ -421,336 +433,15 @@ public class ModbusDatumDataSourceTests {
 		replayAll();
 
 		// WHEN
-		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+		NodeDatum datum = dataSource.readCurrentDatum();
 
 		// THEN
 		assertThat("Datum returned", datum, notNullValue());
-		assertThat("Created", datum.getCreated(), notNullValue());
+		assertThat("Created", datum.getTimestamp(), notNullValue());
 		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
-		assertThat("Float32 value", datum.getInstantaneousSampleBigDecimal(TEST_FLOAT32_PROP_NAME),
+		assertThat("Float32 value",
+				datum.asSampleOperations().getSampleBigDecimal(Instantaneous, TEST_FLOAT32_PROP_NAME),
 				equalTo(new BigDecimal("1974.1974")));
-	}
-
-	@Test
-	public void readDatumWithVirtualMeterFirstTime() throws IOException {
-		// GIVEN
-		ModbusPropertyConfig propConfig = new ModbusPropertyConfig();
-		propConfig.setPropertyKey(TEST_FLOAT32_PROP_NAME);
-		propConfig.setAddress(0);
-		propConfig.setDataType(Float32);
-		propConfig.setPropertyType(Instantaneous);
-		propConfig.setDecimalScale(-1);
-		dataSource.setPropConfigs(new ModbusPropertyConfig[] { propConfig });
-
-		VirtualMeterConfig meterConfig = new VirtualMeterConfig();
-		meterConfig.setPropertyKey(TEST_FLOAT32_PROP_NAME);
-		meterConfig.setTimeUnit(TimeUnit.SECONDS);
-		dataSource.setVirtualMeterConfigs(new VirtualMeterConfig[] { meterConfig });
-
-		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
-		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
-				.andAnswer(new IAnswer<ModbusData>() {
-
-					@Override
-					public ModbusData answer() throws Throwable {
-						ModbusConnectionAction<ModbusData> action = connActionCapture.getValue();
-						return action.doWithConnection(modbusConnection);
-					}
-				});
-
-		final short[] range1 = shortArray(new int[] { 0x44f6, 0xc651 });
-		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 0, 2))
-				.andReturn(range1);
-
-		// no metadata returned
-		expect(datumMetadataService.getSourceMetadata(TEST_SOURCE_ID)).andReturn(null);
-
-		// but we will save initial metadata
-		Capture<GeneralDatumMetadata> metadataCaptor = new Capture<>();
-		datumMetadataService.addSourceMetadata(eq(TEST_SOURCE_ID), capture(metadataCaptor));
-
-		final String meterPropName = TEST_FLOAT32_PROP_NAME + "Seconds";
-
-		replayAll();
-
-		// WHEN
-		GeneralNodeDatum datum = dataSource.readCurrentDatum();
-
-		// THEN
-		BigDecimal expectedPropValue = new BigDecimal("1974.1974");
-		assertThat("Datum returned", datum, notNullValue());
-		assertThat("Created", datum.getCreated(), notNullValue());
-		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
-		assertThat("Float32 value", datum.getInstantaneousSampleBigDecimal(TEST_FLOAT32_PROP_NAME),
-				equalTo(expectedPropValue));
-		assertThat("No virtual meter value", datum.getAccumulatingSampleBigDecimal(meterPropName),
-				nullValue());
-
-		assertThat("Metadata saved", metadataCaptor.hasCaptured(), equalTo(true));
-		GeneralDatumMetadata savedMetadata = metadataCaptor.getValue();
-		assertThat("Virtual meter metadata date",
-				savedMetadata.getInfoLong(meterPropName, ModbusDatumDataSource.VIRTUAL_METER_DATE_KEY),
-				notNullValue());
-		assertThat("Virtual meter metadata value",
-				savedMetadata.getInfoString(meterPropName,
-						ModbusDatumDataSource.VIRTUAL_METER_VALUE_KEY),
-				equalTo(expectedPropValue.toString()));
-		assertThat("Virtual meter metadata reading", savedMetadata.getInfoString(meterPropName,
-				ModbusDatumDataSource.VIRTUAL_METER_READING_KEY), equalTo("0"));
-	}
-
-	@Test
-	public void readDatumWithVirtualMeterSecondTime() throws IOException {
-		// GIVEN
-		ModbusPropertyConfig propConfig = new ModbusPropertyConfig();
-		propConfig.setPropertyKey(TEST_FLOAT32_PROP_NAME);
-		propConfig.setAddress(0);
-		propConfig.setDataType(Float32);
-		propConfig.setPropertyType(Instantaneous);
-		propConfig.setDecimalScale(-1);
-		dataSource.setPropConfigs(new ModbusPropertyConfig[] { propConfig });
-
-		VirtualMeterConfig meterConfig = new VirtualMeterConfig();
-		meterConfig.setPropertyKey(TEST_FLOAT32_PROP_NAME);
-		meterConfig.setTimeUnit(TimeUnit.SECONDS);
-		dataSource.setVirtualMeterConfigs(new VirtualMeterConfig[] { meterConfig });
-
-		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
-		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
-				.andAnswer(new IAnswer<ModbusData>() {
-
-					@Override
-					public ModbusData answer() throws Throwable {
-						ModbusConnectionAction<ModbusData> action = connActionCapture.getValue();
-						return action.doWithConnection(modbusConnection);
-					}
-				});
-
-		final short[] range1 = shortArray(new int[] { 0x44f6, 0xc614 }); // 1974.1900
-		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 0, 2))
-				.andReturn(range1);
-
-		final long now = System.currentTimeMillis();
-
-		// prev metadata to start with
-		final String meterPropName = TEST_FLOAT32_PROP_NAME + "Seconds";
-		GeneralDatumMetadata metadata = new GeneralDatumMetadata();
-		metadata.putInfoValue(meterPropName, ModbusDatumDataSource.VIRTUAL_METER_DATE_KEY, now - 500); // 0.5 seconds ago
-		metadata.putInfoValue(meterPropName, ModbusDatumDataSource.VIRTUAL_METER_VALUE_KEY, "1974.1974");
-		metadata.putInfoValue(meterPropName, ModbusDatumDataSource.VIRTUAL_METER_READING_KEY, "1000");
-		expect(datumMetadataService.getSourceMetadata(TEST_SOURCE_ID)).andReturn(metadata);
-
-		// but we will save initial metadata
-		Capture<GeneralDatumMetadata> metadataCaptor = new Capture<>();
-		datumMetadataService.addSourceMetadata(eq(TEST_SOURCE_ID), capture(metadataCaptor));
-
-		replayAll();
-
-		// WHEN
-		GeneralNodeDatum datum = dataSource.readCurrentDatum();
-
-		// THEN
-		BigDecimal expectedPropValue = new BigDecimal("1974.19");
-		BigDecimal expectedMeterValue = new BigDecimal("1996.9678185");
-		assertThat("Datum returned", datum, notNullValue());
-		assertThat("Created", datum.getCreated(), notNullValue());
-		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
-		assertThat("Float32 value", datum.getInstantaneousSampleBigDecimal(TEST_FLOAT32_PROP_NAME),
-				equalTo(expectedPropValue));
-		assertThat("Virtual meter value", datum.getAccumulatingSampleBigDecimal(meterPropName),
-				closeTo(expectedMeterValue, new BigDecimal("50")));
-
-		assertThat("Metadata saved", metadataCaptor.hasCaptured(), equalTo(true));
-		GeneralDatumMetadata savedMetadata = metadataCaptor.getValue();
-		assertThat("Virtual meter metadata date",
-				savedMetadata.getInfoLong(meterPropName, ModbusDatumDataSource.VIRTUAL_METER_DATE_KEY),
-				greaterThanOrEqualTo(now));
-		assertThat("Virtual meter metadata value",
-				savedMetadata.getInfoString(meterPropName,
-						ModbusDatumDataSource.VIRTUAL_METER_VALUE_KEY),
-				equalTo(expectedPropValue.toString()));
-		assertThat("Virtual meter metadata reading",
-				savedMetadata.getInfoString(meterPropName,
-						ModbusDatumDataSource.VIRTUAL_METER_READING_KEY),
-				equalTo(datum.getAccumulatingSampleBigDecimal(meterPropName).toString()));
-	}
-
-	@Test
-	public void readDatumWithVirtualMeterSecondTimeViaCachedMetadata()
-			throws IOException, InterruptedException {
-		// GIVEN
-		ModbusPropertyConfig propConfig = new ModbusPropertyConfig();
-		propConfig.setPropertyKey(TEST_FLOAT32_PROP_NAME);
-		propConfig.setAddress(0);
-		propConfig.setDataType(Float32);
-		propConfig.setPropertyType(Instantaneous);
-		propConfig.setDecimalScale(-1);
-		dataSource.setPropConfigs(new ModbusPropertyConfig[] { propConfig });
-
-		VirtualMeterConfig meterConfig = new VirtualMeterConfig();
-		meterConfig.setPropertyKey(TEST_FLOAT32_PROP_NAME);
-		meterConfig.setTimeUnit(TimeUnit.SECONDS);
-		dataSource.setVirtualMeterConfigs(new VirtualMeterConfig[] { meterConfig });
-
-		// disable sample cache
-		dataSource.setSampleCacheMs(0);
-
-		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
-		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
-				.andAnswer(new IAnswer<ModbusData>() {
-
-					@Override
-					public ModbusData answer() throws Throwable {
-						ModbusConnectionAction<ModbusData> action = connActionCapture.getValue();
-						return action.doWithConnection(modbusConnection);
-					}
-				}).times(2);
-
-		final short[] range1 = shortArray(new int[] { 0x44f6, 0xc651 }); // 1974.1974
-		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 0, 2))
-				.andReturn(range1);
-
-		final short[] range2 = shortArray(new int[] { 0x44f6, 0xc614 }); // 1974.1900
-		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 0, 2))
-				.andReturn(range2);
-
-		final long now = System.currentTimeMillis();
-
-		// metadata starts as null
-		expect(datumMetadataService.getSourceMetadata(TEST_SOURCE_ID)).andReturn(null);
-
-		// save initial metadata
-		Capture<GeneralDatumMetadata> metadataCaptor = new Capture<>(CaptureType.ALL);
-		datumMetadataService.addSourceMetadata(eq(TEST_SOURCE_ID), capture(metadataCaptor));
-
-		// 2nd time will use cached metadata; save again
-		EasyMock.expectLastCall().times(2);
-
-		final String meterPropName = TEST_FLOAT32_PROP_NAME + "Seconds";
-
-		replayAll();
-
-		// WHEN
-		GeneralNodeDatum datum = dataSource.readCurrentDatum();
-
-		Thread.sleep(500);
-
-		final long now2 = System.currentTimeMillis();
-
-		GeneralNodeDatum datum2 = dataSource.readCurrentDatum();
-
-		// THEN
-		BigDecimal expectedPropValue = new BigDecimal("1974.1974");
-		assertThat("Datum returned", datum, notNullValue());
-		assertThat("Created", datum.getCreated(), notNullValue());
-		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
-		assertThat("Float32 value", datum.getInstantaneousSampleBigDecimal(TEST_FLOAT32_PROP_NAME),
-				equalTo(expectedPropValue));
-		assertThat("No virtual meter value", datum.getAccumulatingSampleBigDecimal(meterPropName),
-				nullValue());
-
-		BigDecimal expectedPropValue2 = new BigDecimal("1974.19");
-		BigDecimal expectedMeterValue = new BigDecimal((1974.1974 + 1974.19) / 2 * (now2 - now) / 1000);
-		assertThat("Datum 2 returned", datum2, notNullValue());
-		assertThat("Created 2", datum2.getCreated(), notNullValue());
-		assertThat("Source ID 2", datum2.getSourceId(), equalTo(TEST_SOURCE_ID));
-		assertThat("Float32 value 2", datum2.getInstantaneousSampleBigDecimal(TEST_FLOAT32_PROP_NAME),
-				equalTo(expectedPropValue2));
-		assertThat("Virtual meter value", datum2.getAccumulatingSampleBigDecimal(meterPropName),
-				closeTo(expectedMeterValue, new BigDecimal("50")));
-
-		assertThat("Metadata saved twice", metadataCaptor.getValues(), hasSize(2));
-		assertThat("Same metadata saved", metadataCaptor.getValues().get(1),
-				sameInstance(metadataCaptor.getValues().get(0)));
-		GeneralDatumMetadata savedMetadata = metadataCaptor.getValues().get(1);
-		assertThat("Virtual meter metadata date",
-				savedMetadata.getInfoLong(meterPropName, ModbusDatumDataSource.VIRTUAL_METER_DATE_KEY),
-				greaterThanOrEqualTo(now));
-		assertThat("Virtual meter metadata value",
-				savedMetadata.getInfoString(meterPropName,
-						ModbusDatumDataSource.VIRTUAL_METER_VALUE_KEY),
-				equalTo(expectedPropValue2.toString()));
-		assertThat("Virtual meter metadata reading",
-				savedMetadata.getInfoString(meterPropName,
-						ModbusDatumDataSource.VIRTUAL_METER_READING_KEY),
-				equalTo(datum2.getAccumulatingSampleBigDecimal(meterPropName).toString()));
-	}
-
-	@Test
-	public void readDatumWithVirtualMeterExpiredPreviousReading() throws IOException {
-		// GIVEN
-		ModbusPropertyConfig propConfig = new ModbusPropertyConfig();
-		propConfig.setPropertyKey(TEST_FLOAT32_PROP_NAME);
-		propConfig.setAddress(0);
-		propConfig.setDataType(Float32);
-		propConfig.setPropertyType(Instantaneous);
-		propConfig.setDecimalScale(-1);
-		dataSource.setPropConfigs(new ModbusPropertyConfig[] { propConfig });
-
-		VirtualMeterConfig meterConfig = new VirtualMeterConfig();
-		meterConfig.setPropertyKey(TEST_FLOAT32_PROP_NAME);
-		meterConfig.setTimeUnit(TimeUnit.SECONDS);
-		dataSource.setVirtualMeterConfigs(new VirtualMeterConfig[] { meterConfig });
-
-		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
-		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
-				.andAnswer(new IAnswer<ModbusData>() {
-
-					@Override
-					public ModbusData answer() throws Throwable {
-						ModbusConnectionAction<ModbusData> action = connActionCapture.getValue();
-						return action.doWithConnection(modbusConnection);
-					}
-				});
-
-		final short[] range1 = shortArray(new int[] { 0x44f6, 0xc614 }); // 1974.1900
-		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 0, 2))
-				.andReturn(range1);
-
-		final long now = System.currentTimeMillis();
-
-		// prev metadata to start with; 2 hours old
-		final String meterPropName = TEST_FLOAT32_PROP_NAME + "Seconds";
-		GeneralDatumMetadata metadata = new GeneralDatumMetadata();
-		metadata.putInfoValue(meterPropName, ModbusDatumDataSource.VIRTUAL_METER_DATE_KEY,
-				now - TimeUnit.HOURS.toMillis(2));
-		metadata.putInfoValue(meterPropName, ModbusDatumDataSource.VIRTUAL_METER_VALUE_KEY, "1974.1974");
-		metadata.putInfoValue(meterPropName, ModbusDatumDataSource.VIRTUAL_METER_READING_KEY, "100");
-		expect(datumMetadataService.getSourceMetadata(TEST_SOURCE_ID)).andReturn(metadata);
-
-		// but we will save initial metadata
-		Capture<GeneralDatumMetadata> metadataCaptor = new Capture<>();
-		datumMetadataService.addSourceMetadata(eq(TEST_SOURCE_ID), capture(metadataCaptor));
-
-		replayAll();
-
-		// WHEN
-		GeneralNodeDatum datum = dataSource.readCurrentDatum();
-
-		// THEN
-		BigDecimal expectedPropValue = new BigDecimal("1974.19");
-		BigDecimal expectedMeterValue = new BigDecimal("100");
-		assertThat("Datum returned", datum, notNullValue());
-		assertThat("Created", datum.getCreated(), notNullValue());
-		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
-		assertThat("Float32 value", datum.getInstantaneousSampleBigDecimal(TEST_FLOAT32_PROP_NAME),
-				equalTo(expectedPropValue));
-		assertThat("Virtual meter value not populated",
-				datum.getAccumulatingSampleBigDecimal(meterPropName), nullValue());
-
-		assertThat("Metadata saved", metadataCaptor.hasCaptured(), equalTo(true));
-		GeneralDatumMetadata savedMetadata = metadataCaptor.getValue();
-		assertThat("Virtual meter metadata date",
-				savedMetadata.getInfoLong(meterPropName, ModbusDatumDataSource.VIRTUAL_METER_DATE_KEY),
-				greaterThanOrEqualTo(now));
-		assertThat("Virtual meter metadata value",
-				savedMetadata.getInfoString(meterPropName,
-						ModbusDatumDataSource.VIRTUAL_METER_VALUE_KEY),
-				equalTo(expectedPropValue.toString()));
-		assertThat("Virtual meter metadata reading",
-				savedMetadata.getInfoString(meterPropName,
-						ModbusDatumDataSource.VIRTUAL_METER_READING_KEY),
-				equalTo(expectedMeterValue.toString()));
 	}
 
 	@Test
@@ -800,17 +491,18 @@ public class ModbusDatumDataSourceTests {
 		replayAll();
 
 		// WHEN
-		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+		NodeDatum datum = dataSource.readCurrentDatum();
 
 		// THEN
 		assertThat("Datum returned", datum, notNullValue());
-		assertThat("Created", datum.getCreated(), notNullValue());
+		assertThat("Created", datum.getTimestamp(), notNullValue());
 		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
-		assertThat("int-add value", datum.getInstantaneousSampleLong("int-add"),
+		assertThat("int-add value", datum.asSampleOperations().getSampleLong(Instantaneous, "int-add"),
 				equalTo(584347834048494L + 48457959));
-		assertThat("float-add value", datum.getInstantaneousSampleDouble("float-add"),
+		assertThat("float-add value",
+				datum.asSampleOperations().getSampleDouble(Instantaneous, "float-add"),
 				closeTo(19741974.1974 + 1974.1974f, 0.001));
-		assertThat("raw-add value", datum.getInstantaneousSampleLong("raw-add"),
+		assertThat("raw-add value", datum.asSampleOperations().getSampleLong(Instantaneous, "raw-add"),
 				equalTo(0xfc1eL + ((0x02e3L << 16) | 0x68e7L)));
 	}
 
@@ -841,11 +533,11 @@ public class ModbusDatumDataSourceTests {
 					}
 				});
 
-		final short[] range1 = shortArray(new int[] { 0xfc1e }); // [0..0]
-		final short[] range2 = shortArray(new int[] { 0x02e3, 0x68e7 }); // [2..3]
-		final short[] range3 = shortArray(new int[] { 0x3330 }); // [8..8]
-		final short[] range4 = shortArray(new int[] { 0x3340, 0x3341 }); // [10..11]
-		final short[] range5 = shortArray(new int[] { 0x42F6, 0xE979 }); // [200..201]
+		final short[] range1 = shortArray(new int[] { 0xfc1e }); // [0.0]
+		final short[] range2 = shortArray(new int[] { 0x02e3, 0x68e7 }); // [2.3]
+		final short[] range3 = shortArray(new int[] { 0x3330 }); // [8.8]
+		final short[] range4 = shortArray(new int[] { 0x3340, 0x3341 }); // [10.11]
+		final short[] range5 = shortArray(new int[] { 0x42F6, 0xE979 }); // [200.201]
 
 		// first read normal property registers
 		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 0, 1))
@@ -862,19 +554,22 @@ public class ModbusDatumDataSourceTests {
 		replayAll();
 
 		// WHEN
-		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+		NodeDatum datum = dataSource.readCurrentDatum();
 
 		// THEN
 		assertThat("Datum returned", datum, notNullValue());
-		assertThat("Created", datum.getCreated(), notNullValue());
+		assertThat("Created", datum.getTimestamp(), notNullValue());
 		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
-		assertThat("Int16 value", datum.getInstantaneousSampleInteger(TEST_INT16_PROP_NAME),
+		assertThat("Int16 value",
+				datum.asSampleOperations().getSampleInteger(Instantaneous, TEST_INT16_PROP_NAME),
 				equalTo(0xfc1e));
-		assertThat("Int32 value", datum.getInstantaneousSampleInteger(TEST_INT32_PROP_NAME),
+		assertThat("Int32 value",
+				datum.asSampleOperations().getSampleInteger(Instantaneous, TEST_INT32_PROP_NAME),
 				equalTo(0x02e368e7));
-		assertThat("Float32 value", datum.getInstantaneousSampleFloat(TEST_FLOAT32_PROP_NAME),
+		assertThat("Float32 value",
+				datum.asSampleOperations().getSampleFloat(Instantaneous, TEST_FLOAT32_PROP_NAME),
 				equalTo(123.456f));
-		assertThat("raw-add value", datum.getInstantaneousSampleLong("raw-add"),
+		assertThat("raw-add value", datum.asSampleOperations().getSampleLong(Instantaneous, "raw-add"),
 				equalTo(0x3330L + ((0x3340 << 16) | 0x3341)));
 	}
 
@@ -905,8 +600,8 @@ public class ModbusDatumDataSourceTests {
 					}
 				});
 
-		final short[] range1 = shortArray(new int[] { 0xfc1e, 0x02e3, 0x68e7, 0x3330 }); // [1..4]
-		final short[] range2 = shortArray(new int[] { 0x3340, 0x3341, 0x42F6, 0xE979 }); // [198..201]
+		final short[] range1 = shortArray(new int[] { 0xfc1e, 0x02e3, 0x68e7, 0x3330 }); // [1.4]
+		final short[] range2 = shortArray(new int[] { 0x3340, 0x3341, 0x42F6, 0xE979 }); // [198.201]
 
 		// first read normal property registers
 		expect(modbusConnection.readWords(ModbusReadFunction.ReadHoldingRegister, 1, 4))
@@ -917,19 +612,22 @@ public class ModbusDatumDataSourceTests {
 		replayAll();
 
 		// WHEN
-		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+		NodeDatum datum = dataSource.readCurrentDatum();
 
 		// THEN
 		assertThat("Datum returned", datum, notNullValue());
-		assertThat("Created", datum.getCreated(), notNullValue());
+		assertThat("Created", datum.getTimestamp(), notNullValue());
 		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
-		assertThat("Int16 value", datum.getInstantaneousSampleInteger(TEST_INT16_PROP_NAME),
+		assertThat("Int16 value",
+				datum.asSampleOperations().getSampleInteger(Instantaneous, TEST_INT16_PROP_NAME),
 				equalTo(0xfc1e));
-		assertThat("Int32 value", datum.getInstantaneousSampleInteger(TEST_INT32_PROP_NAME),
+		assertThat("Int32 value",
+				datum.asSampleOperations().getSampleInteger(Instantaneous, TEST_INT32_PROP_NAME),
 				equalTo(0x02e368e7));
-		assertThat("Float32 value", datum.getInstantaneousSampleFloat(TEST_FLOAT32_PROP_NAME),
+		assertThat("Float32 value",
+				datum.asSampleOperations().getSampleFloat(Instantaneous, TEST_FLOAT32_PROP_NAME),
 				equalTo(123.456f));
-		assertThat("raw-add value", datum.getInstantaneousSampleLong("raw-add"),
+		assertThat("raw-add value", datum.asSampleOperations().getSampleLong(Instantaneous, "raw-add"),
 				equalTo(0x3330L + ((0x3340 << 16) | 0x3341)));
 	}
 }

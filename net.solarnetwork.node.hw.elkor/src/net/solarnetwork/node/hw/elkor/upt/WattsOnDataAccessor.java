@@ -22,15 +22,15 @@
 
 package net.solarnetwork.node.hw.elkor.upt;
 
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 
 /**
  * API for accessing WattsOn data elements.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public interface WattsOnDataAccessor extends ACEnergyDataAccessor {
+public interface WattsOnDataAccessor extends AcEnergyDataAccessor {
 
 	/**
 	 * Get the device serial number.

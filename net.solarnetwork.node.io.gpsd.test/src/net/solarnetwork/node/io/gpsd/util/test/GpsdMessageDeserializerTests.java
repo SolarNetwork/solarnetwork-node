@@ -32,12 +32,12 @@ import org.junit.Before;
 import org.junit.Test;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.codec.ObjectMapperFactoryBean;
 import net.solarnetwork.node.io.gpsd.domain.GpsdMessage;
 import net.solarnetwork.node.io.gpsd.domain.NmeaMode;
 import net.solarnetwork.node.io.gpsd.domain.TpvReportMessage;
 import net.solarnetwork.node.io.gpsd.domain.test.TpvReportMessageTests;
 import net.solarnetwork.node.io.gpsd.util.GpsdMessageDeserializer;
-import net.solarnetwork.util.ObjectMapperFactoryBean;
 
 /**
  * Test cases for the {@link GpsdMessageDeserializer} class.
@@ -57,7 +57,7 @@ public class GpsdMessageDeserializerTests {
 	}
 
 	private ObjectMapper createObjectMapper() {
-		net.solarnetwork.util.ObjectMapperFactoryBean factory = new ObjectMapperFactoryBean();
+		ObjectMapperFactoryBean factory = new ObjectMapperFactoryBean();
 		factory.setFeaturesToDisable(asList(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES));
 		factory.setFeaturesToEnable(asList(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS));
 		factory.setDeserializers(asList(new GpsdMessageDeserializer()));

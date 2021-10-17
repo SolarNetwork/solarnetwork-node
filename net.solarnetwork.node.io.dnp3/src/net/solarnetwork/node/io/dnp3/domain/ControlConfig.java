@@ -26,22 +26,20 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.domain.NodeControlInfo;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * A configuration for a DNP3 control integration with a
- * {@link net.solarnetwork.node.NodeControlProvider} control value.
+ * {@link net.solarnetwork.node.service.NodeControlProvider} control value.
  * 
  * <p>
  * This configuration maps a control value to a DNP3 measurement.
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ControlConfig {
 
@@ -63,10 +61,13 @@ public class ControlConfig {
 	 * Constructor.
 	 * 
 	 * @param controlProviderUid
-	 *        the {@link NodeControlProvider#getUID()} to collect from
+	 *        the
+	 *        {@link net.solarnetwork.node.service.NodeControlProvider#getUid()}
+	 *        to collect from
 	 * @param controlId
-	 *        the control ID a {@link NodeControlInfo#getControlId()} to collect
-	 *        from
+	 *        the control ID a
+	 *        {@link net.solarnetwork.domain.NodeControlInfo#getControlId()} to
+	 *        collect from
 	 * @param type
 	 *        the DNP3 control type
 	 */

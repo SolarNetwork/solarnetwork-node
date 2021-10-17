@@ -59,6 +59,7 @@ public class UsbRelayUtils {
 	 * @param open
 	 *        {@literal true} to open the relay, {@literal false} to close it
 	 * @throws IOException
+	 *         if a communication error occurs
 	 */
 	public static void setRelayState(SerialConnection conn, int identity, int address, boolean open)
 			throws IOException {

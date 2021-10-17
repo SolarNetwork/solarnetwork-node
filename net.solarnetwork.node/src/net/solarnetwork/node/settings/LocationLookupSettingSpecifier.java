@@ -22,22 +22,23 @@
 
 package net.solarnetwork.node.settings;
 
-import net.solarnetwork.node.domain.Location;
+import net.solarnetwork.node.domain.datum.DatumLocation;
+import net.solarnetwork.settings.KeyedSettingSpecifier;
 
 /**
  * A setting for a location ID.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
-public interface LocationLookupSettingSpecifier extends KeyedSettingSpecifier<Long>, Location {
+public interface LocationLookupSettingSpecifier extends KeyedSettingSpecifier<Long>, DatumLocation {
 
 	/**
 	 * Get the location this setting is for.
 	 * 
-	 * @return a Location, or <em>null</em> if none available
+	 * @return a Location, or {@literal null} if none available
 	 */
-	Location getLocation();
+	DatumLocation getLocation();
 
 	/**
 	 * Get the location type or tag, e.g. "weather", "price", etc.

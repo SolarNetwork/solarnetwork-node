@@ -45,7 +45,7 @@ import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.Date;
+import java.time.Instant;
 import javax.security.auth.x500.X500Principal;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -67,15 +67,16 @@ import org.mortbay.jetty.Server;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.reactor.support.BasicInstruction;
-import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.BasicInstruction;
+import net.solarnetwork.node.reactor.BasicInstructionStatus;
+import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.setup.impl.DefaultKeystoreService;
 import net.solarnetwork.node.setup.impl.DefaultSetupService;
 import net.solarnetwork.node.setup.impl.SetupIdentityDao;
 import net.solarnetwork.node.setup.impl.SetupIdentityInfo;
 import net.solarnetwork.pki.bc.BCCertificateService;
-import net.solarnetwork.support.CertificateException;
+import net.solarnetwork.service.CertificateException;
 
 /**
  * Test cases for the {@link DefaultSetupService} class.
@@ -218,17 +219,18 @@ public class DefaultSetupServiceTest {
 				CA_KEY_PAIR.getPrivate());
 		String renewedSignedPem = PKITestUtils.getPKCS7Encoding(new X509Certificate[] { renewedCert });
 
-		BasicInstruction instr = new BasicInstruction(
-				DefaultSetupService.INSTRUCTION_TOPIC_RENEW_CERTIFICATE, new Date(), "123", "456",
-				new BasicInstructionStatus(456L, InstructionState.Received, new Date()));
+		BasicInstruction instr = new BasicInstruction(123L,
+				DefaultSetupService.INSTRUCTION_TOPIC_RENEW_CERTIFICATE, Instant.now(), "456",
+				new BasicInstructionStatus(123L, InstructionState.Received, Instant.now()));
 		for ( int i = 0; i < renewedSignedPem.length(); i += 256 ) {
 			int end = i + (i + 256 < renewedSignedPem.length() ? 256 : renewedSignedPem.length() - i);
 			instr.addParameter(DefaultSetupService.INSTRUCTION_PARAM_CERTIFICATE,
 					renewedSignedPem.substring(i, end));
 		}
 
-		InstructionState state = service.processInstruction(instr);
-		assertThat("Instruction state", state, equalTo(InstructionState.Completed));
+		InstructionStatus status = service.processInstruction(instr);
+		assertThat("Instruction state", status.getInstructionState(),
+				equalTo(InstructionState.Completed));
 
 		X509Certificate nodeCert = keystoreService.getNodeCertificate();
 		assertThat("Node cert is now renewed cert", nodeCert, equalTo(renewedCert));

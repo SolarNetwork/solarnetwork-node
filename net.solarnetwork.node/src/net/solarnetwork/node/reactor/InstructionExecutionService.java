@@ -26,7 +26,7 @@ package net.solarnetwork.node.reactor;
  * API for executing instructions.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.58
  */
 public interface InstructionExecutionService {
@@ -36,7 +36,7 @@ public interface InstructionExecutionService {
 	 * 
 	 * @param instruction
 	 *        the instruction to execute
-	 * @return the resulting status for the instruction, or {@code null} if not
+	 * @return the resulting status for the instruction, or {@literal null} if not
 	 *         handled
 	 */
 	InstructionStatus executeInstruction(Instruction instruction);

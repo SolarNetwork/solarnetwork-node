@@ -1,21 +1,21 @@
 /* ==================================================================
  * MotionSnapshotConfig.java - 29/10/2019 12:11:26 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -24,15 +24,15 @@ package net.solarnetwork.node.control.camera.motion;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicCronExpressionSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicCronExpressionSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Configuration for a scheduled snapshot.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.1
  */
 public class MotionSnapshotConfig {
@@ -43,7 +43,7 @@ public class MotionSnapshotConfig {
 	/**
 	 * Get a list of setting specifiers suitable for configuring instances of
 	 * this class.
-	 * 
+	 *
 	 * @param prefix
 	 *        a prefix to use for all setting keys
 	 * @return the list of settings, never {@literal null}
@@ -70,7 +70,7 @@ public class MotionSnapshotConfig {
 
 	/**
 	 * Test if this configuration is valid.
-	 * 
+	 *
 	 * @return {@literal true} if the configuration appears valid
 	 */
 	public boolean isValid() {
@@ -79,7 +79,7 @@ public class MotionSnapshotConfig {
 
 	/**
 	 * Get the auto-snapshot schedule.
-	 * 
+	 *
 	 * @return the schedule
 	 */
 	public String getSchedule() {
@@ -88,14 +88,14 @@ public class MotionSnapshotConfig {
 
 	/**
 	 * Set the auto-snapshot schedule.
-	 * 
+	 *
 	 * <p>
 	 * This schedule defines when to manually request snapshot images from
 	 * motion. If just a number, then the frequency in seconds at which to
-	 * create snapshots. Otherwise a Quartz-compatible cron expression
-	 * representing the schedule at which to create snapshots.
+	 * create snapshots. Otherwise a cron expression representing the schedule
+	 * at which to create snapshots.
 	 * </p>
-	 * 
+	 *
 	 * @param schedule
 	 *        the schedule
 	 */
@@ -105,7 +105,7 @@ public class MotionSnapshotConfig {
 
 	/**
 	 * Get the motion camera ID to snapshot.
-	 * 
+	 *
 	 * @return the motion camera ID
 	 */
 	public Integer getCameraId() {
@@ -114,7 +114,7 @@ public class MotionSnapshotConfig {
 
 	/**
 	 * Set the motion camera ID.
-	 * 
+	 *
 	 * @param cameraId
 	 *        the motion camera ID
 	 */

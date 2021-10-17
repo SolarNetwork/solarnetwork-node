@@ -27,6 +27,8 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 import static net.solarnetwork.common.mqtt.MqttConnectReturnCode.Accepted;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
@@ -45,7 +47,6 @@ import java.nio.charset.Charset;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -62,6 +63,7 @@ import org.junit.Before;
 import org.junit.Test;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.codec.JsonUtils;
+import net.solarnetwork.codec.ObjectEncoder;
 import net.solarnetwork.common.mqtt.MqttConnection;
 import net.solarnetwork.common.mqtt.MqttConnectionFactory;
 import net.solarnetwork.common.mqtt.MqttMessage;
@@ -71,27 +73,29 @@ import net.solarnetwork.common.mqtt.dao.MqttMessageDao;
 import net.solarnetwork.common.mqtt.dao.MqttMessageEntity;
 import net.solarnetwork.dao.BasicBatchResult;
 import net.solarnetwork.dao.BatchableDao;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.io.ObjectEncoder;
-import net.solarnetwork.node.DatumQueue;
-import net.solarnetwork.node.GeneralDatumSamplesTransformService;
-import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.OperationalModesService;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
-import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumId;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
+import net.solarnetwork.node.service.DatumQueue;
+import net.solarnetwork.node.service.IdentityService;
+import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.node.upload.flux.FluxFilterConfig;
 import net.solarnetwork.node.upload.flux.FluxUploadService;
+import net.solarnetwork.service.DatumFilterService;
+import net.solarnetwork.service.StaticOptionalService;
+import net.solarnetwork.service.StaticOptionalServiceCollection;
 import net.solarnetwork.util.Half;
 import net.solarnetwork.util.NumberUtils;
-import net.solarnetwork.util.StaticOptionalService;
-import net.solarnetwork.util.StaticOptionalServiceCollection;
 
 /**
  * Test cases for the {@link FluxUploadService} class.
  * 
  * @author matt
- * @version 1.4
+ * @version 2.0
  */
 public class FluxUploadServiceTests {
 
@@ -104,7 +108,7 @@ public class FluxUploadServiceTests {
 	private MqttMessageDao messageDao;
 	private ObjectEncoder encoder;
 	private OperationalModesService operationalModeService;
-	private GeneralDatumSamplesTransformService xformService;
+	private DatumFilterService xformService;
 	private DatumQueue datumQueue;
 	private Long nodeId;
 	private FluxUploadService service;
@@ -118,7 +122,7 @@ public class FluxUploadServiceTests {
 		encoder = EasyMock.createMock(ObjectEncoder.class);
 		operationalModeService = EasyMock.createMock(OperationalModesService.class);
 		objectMapper = new ObjectMapper();
-		xformService = EasyMock.createMock(GeneralDatumSamplesTransformService.class);
+		xformService = EasyMock.createMock(DatumFilterService.class);
 		datumQueue = EasyMock.createMock(DatumQueue.class);
 
 		nodeId = Math.abs(UUID.randomUUID().getMostSignificantBits());
@@ -183,12 +187,12 @@ public class FluxUploadServiceTests {
 		assertMessagePayloadJson(publishedMsg, datum);
 	}
 
-	private GeneralNodeDatum publishLoop(long length, GeneralNodeDatum datum) throws Exception {
+	private NodeDatum publishLoop(long length, NodeDatum datum) throws Exception {
 		final long end = System.currentTimeMillis() + length;
-		GeneralNodeDatum result = null;
+		NodeDatum result = null;
 		while ( System.currentTimeMillis() < end ) {
-			datum = datum.clone();
-			datum.setCreated(new Date());
+			datum = datum.copyWithId(new DatumId(datum.getKind(), datum.getObjectId(),
+					datum.getSourceId(), Instant.now()));
 			service.accept(datum);
 			if ( result == null ) {
 				result = datum;
@@ -330,11 +334,11 @@ public class FluxUploadServiceTests {
 		}
 	}
 
-	private static Map<String, Object> datumMap(GeneralNodeDatum datum) {
+	private static Map<String, Object> datumMap(NodeDatum datum) {
 		return datumMap(datum, "_.*");
 	}
 
-	private static Map<String, Object> datumMap(GeneralNodeDatum datum, String exPattern) {
+	private static Map<String, Object> datumMap(NodeDatum datum, String exPattern) {
 		Pattern ex = (exPattern != null ? Pattern.compile(exPattern) : null);
 		@SuppressWarnings({ "rawtypes", "unchecked" })
 		Map<String, Object> m = (Map) datum.asSimpleMap();
@@ -359,9 +363,8 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID);
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 		service.accept(datum);
 
 		// THEN
@@ -382,9 +385,8 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID);
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 		service.accept(datum);
 
 		// THEN
@@ -405,9 +407,8 @@ public class FluxUploadServiceTests {
 		service.init();
 
 		Half h = new Half(1.23f);
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", h);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID);
+		datum.getSamples().putInstantaneousSampleValue("watts", h);
 		service.accept(datum);
 
 		// THEN
@@ -430,9 +431,8 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID);
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 		service.accept(datum);
 
 		// THEN
@@ -457,11 +457,10 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
-		datum.putAccumulatingSampleValue("wattHours", 2345);
-		datum.putInstantaneousSampleValue("foo", 3456);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID);
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
+		datum.getSamples().putAccumulatingSampleValue("wattHours", 2345);
+		datum.getSamples().putInstantaneousSampleValue("foo", 3456);
 		service.accept(datum);
 
 		// THEN
@@ -488,10 +487,9 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
-		datum.putAccumulatingSampleValue("wattHours", 2345);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID);
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
+		datum.getSamples().putAccumulatingSampleValue("wattHours", 2345);
 		service.accept(datum);
 
 		// THEN
@@ -517,9 +515,8 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID);
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 		service.accept(datum);
 
 		// THEN
@@ -545,14 +542,12 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID);
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 		service.accept(datum);
 
-		GeneralNodeDatum datum2 = new GeneralNodeDatum();
-		datum2.setSourceId("not.filtered");
-		datum2.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum2 = SimpleDatum.nodeDatum("not.filtered");
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 		service.accept(datum2);
 
 		// THEN
@@ -579,11 +574,10 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
-		datum.putAccumulatingSampleValue("wattHours", 2345);
-		datum.putInstantaneousSampleValue("foo", 3456);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID);
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
+		datum.getSamples().putAccumulatingSampleValue("wattHours", 2345);
+		datum.getSamples().putInstantaneousSampleValue("foo", 3456);
 		service.accept(datum);
 
 		// THEN
@@ -606,13 +600,12 @@ public class FluxUploadServiceTests {
 		expectMqttConnectionSetup();
 
 		expect(xformService.getUid()).andReturn("test.filter").anyTimes();
-		Capture<GeneralDatumSamples> samplesCaptor = new Capture<>();
-		GeneralDatumSamples xformed = new GeneralDatumSamples();
+		Capture<DatumSamplesOperations> samplesCaptor = new Capture<>();
+		DatumSamples xformed = new DatumSamples();
 		xformed.putInstantaneousSampleValue("wattsX", 12345);
 		xformed.putInstantaneousSampleValue("wattHoursX", 23456);
 		xformed.putStatusSampleValue("wattFoo", "bar");
-		expect(xformService.transformSamples(anyObject(), capture(samplesCaptor), anyObject()))
-				.andReturn(xformed);
+		expect(xformService.filter(anyObject(), capture(samplesCaptor), anyObject())).andReturn(xformed);
 
 		Capture<MqttMessage> msgCaptor = new Capture<>();
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
@@ -621,11 +614,10 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
-		datum.putAccumulatingSampleValue("wattHours", 2345);
-		datum.putInstantaneousSampleValue("foo", 3456);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID);
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
+		datum.getSamples().putAccumulatingSampleValue("wattHours", 2345);
+		datum.getSamples().putInstantaneousSampleValue("foo", 3456);
 		service.accept(datum);
 
 		// THEN
@@ -635,11 +627,12 @@ public class FluxUploadServiceTests {
 		filteredDatum.put("wattFoo", "bar");
 		assertMessage(publishedMsg, TEST_SOURCE_ID, filteredDatum);
 
-		GeneralDatumSamples filterInput = samplesCaptor.getValue();
-		assertThat("Input watts", filterInput.getInstantaneousSampleInteger("watts"), is(equalTo(1234)));
-		assertThat("Input wattHours", filterInput.getAccumulatingSampleInteger("wattHours"),
+		DatumSamplesOperations filterInput = samplesCaptor.getValue();
+		assertThat("Input watts", filterInput.getSampleInteger(Instantaneous, "watts"),
+				is(equalTo(1234)));
+		assertThat("Input wattHours", filterInput.getSampleInteger(Accumulating, "wattHours"),
 				is(equalTo(2345)));
-		assertThat("Input foo", filterInput.getInstantaneousSampleInteger("foo"), is(equalTo(3456)));
+		assertThat("Input foo", filterInput.getSampleInteger(Instantaneous, "foo"), is(equalTo(3456)));
 	}
 
 	@Test
@@ -659,11 +652,10 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
-		datum.putAccumulatingSampleValue("wattHours", 2345);
-		datum.putInstantaneousSampleValue("foo", 3456);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID);
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
+		datum.getSamples().putAccumulatingSampleValue("wattHours", 2345);
+		datum.getSamples().putInstantaneousSampleValue("foo", 3456);
 		service.accept(datum);
 
 		// THEN
@@ -691,11 +683,10 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
-		datum.putAccumulatingSampleValue("wattHours", 2345);
-		datum.putInstantaneousSampleValue("foo", 3456);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID);
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
+		datum.getSamples().putAccumulatingSampleValue("wattHours", 2345);
+		datum.getSamples().putInstantaneousSampleValue("foo", 3456);
 		service.accept(datum);
 
 		// THEN
@@ -722,10 +713,9 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		List<GeneralNodeDatum> publishedDatum = new ArrayList<GeneralNodeDatum>(2);
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId("s1");
-		datum.putInstantaneousSampleValue("watts", 1234);
+		List<NodeDatum> publishedDatum = new ArrayList<NodeDatum>(2);
+		SimpleDatum datum = SimpleDatum.nodeDatum("s1");
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
 		// post a bunch of events within the throttle window; only one should be captured
 		publishedDatum.add(publishLoop(1000, datum));
@@ -760,10 +750,9 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		List<GeneralNodeDatum> publishedDatum = new ArrayList<GeneralNodeDatum>(2);
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
+		List<NodeDatum> publishedDatum = new ArrayList<NodeDatum>(2);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID);
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
 		// post a bunch of events within the throttle window; only one should be captured
 		publishedDatum.add(publishLoop(1000, datum));
@@ -773,8 +762,9 @@ public class FluxUploadServiceTests {
 		publishedDatum.add(publishLoop(1000, datum));
 
 		// switch source ID to non-matching
-		datum.setSourceId("not.throttled.source");
-		publishLoop(1000, datum);
+		SimpleDatum datum2 = datum
+				.copyWithId(DatumId.nodeId(null, "not.throttled.source", datum.getTimestamp()));
+		publishLoop(1000, datum2);
 
 		// THEN
 		List<MqttMessage> publishedMsgs = msgCaptor.getValues();
@@ -815,10 +805,9 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		List<GeneralNodeDatum> publishedDatum = new ArrayList<GeneralNodeDatum>(2);
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId("s1");
-		datum.putInstantaneousSampleValue("watts", 1234);
+		List<NodeDatum> publishedDatum = new ArrayList<NodeDatum>(2);
+		SimpleDatum datum = SimpleDatum.nodeDatum("s1");
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
 		// post a bunch of events within the throttle window; only one should be captured
 		publishedDatum.add(publishLoop(1000, datum));
@@ -849,10 +838,9 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		List<GeneralNodeDatum> publishedDatum = new ArrayList<GeneralNodeDatum>(2);
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId("s1");
-		datum.putInstantaneousSampleValue("watts", 1234);
+		List<NodeDatum> publishedDatum = new ArrayList<NodeDatum>(2);
+		SimpleDatum datum = SimpleDatum.nodeDatum("s1");
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
 		// post a bunch of events within the throttle window; only one should be captured
 		publishedDatum.add(publishLoop(1000, datum));
@@ -870,20 +858,20 @@ public class FluxUploadServiceTests {
 	}
 
 	private static final class TestInjectorTransformService extends BaseIdentifiable
-			implements GeneralDatumSamplesTransformService {
+			implements DatumFilterService {
 
-		private final GeneralDatumSamples staticSamples;
+		private final DatumSamples staticSamples;
 
-		public TestInjectorTransformService(String uid, GeneralDatumSamples staticSamples) {
+		public TestInjectorTransformService(String uid, DatumSamples staticSamples) {
 			super();
 			setUid(uid);
 			this.staticSamples = staticSamples;
 		}
 
 		@Override
-		public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
+		public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
 				Map<String, Object> parameters) {
-			GeneralDatumSamples result = new GeneralDatumSamples(samples);
+			DatumSamples result = new DatumSamples(samples);
 			if ( staticSamples.getInstantaneous() != null ) {
 				for ( Map.Entry<String, Number> me : staticSamples.getInstantaneous().entrySet() ) {
 					result.putInstantaneousSampleValue(me.getKey(), me.getValue());
@@ -919,11 +907,11 @@ public class FluxUploadServiceTests {
 		f2.setTransformServiceUid("test2.filter");
 		service.setFilters(new FluxFilterConfig[] { f1, f2 });
 
-		GeneralDatumSamples s1 = new GeneralDatumSamples();
+		DatumSamples s1 = new DatumSamples();
 		s1.putInstantaneousSampleValue("foo", 1);
 		TestInjectorTransformService x1 = new TestInjectorTransformService("test1.filter", s1);
 
-		GeneralDatumSamples s2 = new GeneralDatumSamples();
+		DatumSamples s2 = new DatumSamples();
 		s2.putInstantaneousSampleValue("bar", 1);
 		TestInjectorTransformService x2 = new TestInjectorTransformService("test2.filter", s2);
 
@@ -941,9 +929,8 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId("s1");
-		datum.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum = SimpleDatum.nodeDatum("s1");
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 		service.accept(datum);
 
 		// THEN
@@ -965,11 +952,11 @@ public class FluxUploadServiceTests {
 		f2.setTransformServiceUid("test2.filter");
 		service.setFilters(new FluxFilterConfig[] { f1, f2 });
 
-		GeneralDatumSamples s1 = new GeneralDatumSamples();
+		DatumSamples s1 = new DatumSamples();
 		s1.putInstantaneousSampleValue("foo", 1);
 		TestInjectorTransformService x1 = new TestInjectorTransformService("test1.filter", s1);
 
-		GeneralDatumSamples s2 = new GeneralDatumSamples();
+		DatumSamples s2 = new DatumSamples();
 		s2.putInstantaneousSampleValue("bar", 1);
 		TestInjectorTransformService x2 = new TestInjectorTransformService("test2.filter", s2);
 
@@ -987,9 +974,8 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId("s1");
-		datum.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum = SimpleDatum.nodeDatum("s1");
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 		service.accept(datum);
 
 		// THEN
@@ -1028,9 +1014,8 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID);
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 		service.accept(datum);
 
 		// THEN
@@ -1068,9 +1053,8 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID);
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 		service.accept(datum);
 
 		// THEN
@@ -1113,9 +1097,8 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID);
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 		service.accept(datum);
 
 		// THEN
@@ -1152,17 +1135,17 @@ public class FluxUploadServiceTests {
 		replayAll();
 		service.init();
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
-		datum.putAccumulatingSampleValue("wattHours", 2345);
-		datum.putInstantaneousSampleValue("foo", 3456);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID);
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
+		datum.getSamples().putAccumulatingSampleValue("wattHours", 2345);
+		datum.getSamples().putInstantaneousSampleValue("foo", 3456);
 		service.accept(datum);
 
 		// THEN
 		MqttMessage publishedMsg = msgCaptor.getValue();
 
 		Map<String, Object> expectedMap = datumMap(datum);
+		expectedMap.remove("created");
 		expectedMap.remove("watts");
 		expectedMap.remove("wattHours");
 		assertMessage(publishedMsg, TEST_SOURCE_ID, expectedMap);

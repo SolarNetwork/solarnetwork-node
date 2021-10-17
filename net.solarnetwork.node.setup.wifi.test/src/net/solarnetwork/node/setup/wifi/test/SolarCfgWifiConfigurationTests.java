@@ -34,15 +34,15 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.util.FileCopyUtils;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.TextFieldSettingSpecifier;
 import net.solarnetwork.node.setup.wifi.SolarCfgWifiConfiguration;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.TextFieldSettingSpecifier;
 
 /**
  * Test cases for the {@link SolarCfgWifiConfiguration} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class SolarCfgWifiConfigurationTests {
 

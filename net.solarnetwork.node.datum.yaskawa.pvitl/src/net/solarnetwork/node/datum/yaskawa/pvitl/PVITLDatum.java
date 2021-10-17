@@ -22,20 +22,22 @@
 
 package net.solarnetwork.node.datum.yaskawa.pvitl;
 
-import java.util.Date;
-import net.solarnetwork.node.domain.ACEnergyDatum;
-import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
-import net.solarnetwork.node.domain.PVEnergyDatum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
+import net.solarnetwork.node.domain.datum.DcEnergyDatum;
+import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
 import net.solarnetwork.node.hw.yaskawa.mb.inverter.PVITLDataAccessor;
 
 /**
- * Extension of {@link GeneralNodePVEnergyDatum} for use with PVI-TL inverter
+ * Extension of {@link SimpleAcDcEnergyDatum} for use with PVI-TL inverter
  * samples.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class PVITLDatum extends GeneralNodePVEnergyDatum {
+public class PVITLDatum extends SimpleAcDcEnergyDatum {
+
+	private static final long serialVersionUID = -6059283981724116296L;
 
 	private final PVITLDataAccessor sample;
 
@@ -44,36 +46,37 @@ public class PVITLDatum extends GeneralNodePVEnergyDatum {
 	 * 
 	 * @param sample
 	 *        the sample
+	 * @param sourceId
+	 *        the source ID
 	 */
-	public PVITLDatum(PVITLDataAccessor sample) {
-		super();
+	public PVITLDatum(PVITLDataAccessor sample, String sourceId) {
+		super(sourceId, sample.getDataTimestamp(), new DatumSamples());
 		this.sample = sample;
-		if ( sample.getDataTimestamp() > 0 ) {
-			setCreated(new Date(sample.getDataTimestamp()));
-		}
 		populateMeasurements(sample);
 	}
 
 	private void populateMeasurements(PVITLDataAccessor data) {
-		setDCPower(data.getDCPower());
-		setDCVoltage(data.getDCVoltage());
+		setDcPower(data.getDcPower());
+		setDcVoltage(data.getDcVoltage());
 		setVoltage(data.getVoltage());
 		setWattHourReading(data.getActiveEnergyDelivered());
 		setWatts(data.getActivePower());
 
-		putInstantaneousSampleValue(ACEnergyDatum.FREQUENCY_KEY, data.getFrequency());
-		putInstantaneousSampleValue(ACEnergyDatum.CURRENT_KEY, data.getCurrent());
+		getSamples().putInstantaneousSampleValue(AcEnergyDatum.FREQUENCY_KEY, data.getFrequency());
+		getSamples().putInstantaneousSampleValue(AcEnergyDatum.CURRENT_KEY, data.getCurrent());
 
-		putInstantaneousSampleValue(PVEnergyDatum.DC_VOLTAGE_KEY + "1", data.getPv1Voltage());
-		putInstantaneousSampleValue(PVEnergyDatum.DC_POWER_KEY + "1", data.getPv1Power());
-		putInstantaneousSampleValue(PVEnergyDatum.DC_VOLTAGE_KEY + "2", data.getPv2Voltage());
-		putInstantaneousSampleValue(PVEnergyDatum.DC_POWER_KEY + "2", data.getPv2Power());
+		getSamples().putInstantaneousSampleValue(DcEnergyDatum.DC_VOLTAGE_KEY + "1",
+				data.getPv1Voltage());
+		getSamples().putInstantaneousSampleValue(DcEnergyDatum.DC_POWER_KEY + "1", data.getPv1Power());
+		getSamples().putInstantaneousSampleValue(DcEnergyDatum.DC_VOLTAGE_KEY + "2",
+				data.getPv2Voltage());
+		getSamples().putInstantaneousSampleValue(DcEnergyDatum.DC_POWER_KEY + "2", data.getPv2Power());
 	}
 
 	/**
 	 * Test if the data appears valid in this datum.
 	 * 
-	 * @return <em>true</em> if the data appears to be valid
+	 * @return {@literal true} if the data appears to be valid
 	 */
 	public boolean isValid() {
 		return (getWatts() != null || getWattHourReading() != null);

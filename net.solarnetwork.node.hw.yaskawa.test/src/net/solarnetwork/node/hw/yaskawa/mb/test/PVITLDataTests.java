@@ -48,7 +48,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * Test cases for the {@link PVITLData} class.
  * 
  * @author matt
- * @version 2.0
+ * @version 3.0
  */
 public class PVITLDataTests {
 
@@ -205,13 +205,13 @@ public class PVITLDataTests {
 	}
 
 	@Test
-	public void getDCVoltage() {
-		assertThat("DC voltage", data.getDCVoltage(), equalTo(369.3f));
+	public void getDcVoltage() {
+		assertThat("DC voltage", data.getDcVoltage(), equalTo(369.3f));
 	}
 
 	@Test
-	public void getDCPower() {
-		assertThat("DC power", data.getDCPower(), equalTo(3188));
+	public void getDcPower() {
+		assertThat("DC power", data.getDcPower(), equalTo(3188));
 	}
 
 }

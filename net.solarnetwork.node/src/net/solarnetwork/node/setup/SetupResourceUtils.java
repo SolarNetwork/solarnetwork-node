@@ -74,7 +74,7 @@ public final class SetupResourceUtils {
 	 * 
 	 * @param path
 	 *        The path to derive a locale from.
-	 * @return The Locale, or {@code null} if not appropriate or none found.
+	 * @return The Locale, or {@literal null} if not appropriate or none found.
 	 */
 	public static Locale localeForPath(String path) {
 		if ( path == null ) {
@@ -98,8 +98,8 @@ public final class SetupResourceUtils {
 	 * 
 	 * @param path
 	 *        The path to get the base filename from.
-	 * @return The base filename, or {@code null} if {@code path} is
-	 *         {@code null}.
+	 * @return The base filename, or {@literal null} if {@code path} is
+	 *         {@literal null}.
 	 */
 	public static String baseFilenameForPath(String path) {
 		if ( path == null ) {
@@ -122,7 +122,7 @@ public final class SetupResourceUtils {
 	 * 
 	 * @param lang
 	 *        The language to get the locale for.
-	 * @return The Locale, or {@code null} if {@code lang} is {@code null}.
+	 * @return The Locale, or {@literal null} if {@code lang} is {@literal null}.
 	 */
 	public static Locale localeForLanguage(String lang) {
 		if ( lang == null ) {
@@ -144,7 +144,7 @@ public final class SetupResourceUtils {
 	 *        The desired locale.
 	 * @param defaultLocale
 	 *        The default locale to use for resources where
-	 *        {@link SetupResource#getLocale()} returns {@code null}.
+	 *        {@link SetupResource#getLocale()} returns {@literal null}.
 	 * @return A matching score. Higher values more closely match. If
 	 *         {@link Integer#MAX_VALUE} is returned then the match is exact.
 	 */

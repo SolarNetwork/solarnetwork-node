@@ -39,23 +39,23 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.measure.Quantity;
 import javax.measure.Unit;
 import org.springframework.scheduling.TaskScheduler;
-import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.io.canbus.CanbusConnection;
 import net.solarnetwork.node.io.canbus.CanbusFrameListener;
 import net.solarnetwork.node.io.canbus.CanbusNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.DatumDataSourceSupport;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.ServiceLifecycleObserver;
+import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingsChangeObserver;
-import net.solarnetwork.support.ServiceLifecycleObserver;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * A base helper class to support {@link CanbusNetwork} based
  * {@link DatumDataSource} implementations.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSupport
 		implements SettingsChangeObserver, ServiceLifecycleObserver, CanbusFrameListener {
@@ -78,7 +78,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	/**
 	 * Get setting specifiers for the
-	 * {@literal canbusNetwork.propertyFilters['UID']} and {@literal busName}
+	 * {@literal canbusNetwork.propertyFilters['uid']} and {@literal busName}
 	 * properties.
 	 * 
 	 * @param prefix
@@ -91,7 +91,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 		}
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
 		results.add(
-				new BasicTextFieldSettingSpecifier(prefix + "canbusNetwork.propertyFilters['UID']", ""));
+				new BasicTextFieldSettingSpecifier(prefix + "canbusNetwork.propertyFilters['uid']", ""));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "busName", ""));
 		return results;
 	}

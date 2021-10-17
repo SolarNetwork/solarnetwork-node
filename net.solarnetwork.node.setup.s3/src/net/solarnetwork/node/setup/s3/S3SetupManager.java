@@ -38,7 +38,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -66,36 +65,36 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.common.s3.S3Client;
 import net.solarnetwork.common.s3.S3Object;
 import net.solarnetwork.common.s3.S3ObjectReference;
-import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.Constants;
-import net.solarnetwork.node.NodeMetadataService;
-import net.solarnetwork.node.PlatformPackageService;
-import net.solarnetwork.node.PlatformService;
-import net.solarnetwork.node.PlatformService.PlatformState;
-import net.solarnetwork.node.PlatformService.PlatformTask;
-import net.solarnetwork.node.PlatformService.PlatformTaskStatusHandler;
-import net.solarnetwork.node.RemoteServiceException;
-import net.solarnetwork.node.SetupSettings;
-import net.solarnetwork.node.SystemService;
 import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.NodeMetadataService;
+import net.solarnetwork.node.service.PlatformPackageService;
+import net.solarnetwork.node.service.PlatformService;
+import net.solarnetwork.node.service.PlatformService.PlatformState;
+import net.solarnetwork.node.service.PlatformService.PlatformTask;
+import net.solarnetwork.node.service.PlatformService.PlatformTaskStatusHandler;
+import net.solarnetwork.node.service.SystemService;
 import net.solarnetwork.node.setup.SetupException;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.OptionalServiceCollection;
-import net.solarnetwork.util.ProgressListener;
+import net.solarnetwork.node.setup.SetupSettings;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.OptionalServiceCollection;
+import net.solarnetwork.service.ProgressListener;
+import net.solarnetwork.service.RemoteServiceException;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * Service for provisioning node resources based on versioned resource sets.
  * 
  * @author matt
- * @version 1.7
+ * @version 2.0
  */
-public class S3SetupManager implements FeedbackInstructionHandler {
+public class S3SetupManager implements InstructionHandler {
 
 	private static final String SETTING_KEY_VERSION = "solarnode.s3.version";
 
@@ -198,13 +197,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
-		InstructionStatus status = processInstructionWithFeedback(instruction);
-		return (status != null ? status.getInstructionState() : null);
-	}
-
-	@Override
-	public InstructionStatus processInstructionWithFeedback(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		if ( instruction == null || !TOPIC_UPDATE_PLATFORM.equals(instruction.getTopic()) ) {
 			return null;
 		}
@@ -227,10 +220,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 			}
 			S3SetupConfiguration config = getSetupConfiguration(metaKey);
 			applySetup(config);
-			final InstructionStatus startingStatus = instruction.getStatus();
-			return (startingStatus != null ? startingStatus.newCopyWithState(InstructionState.Completed)
-					: new BasicInstructionStatus(instruction.getId(), InstructionState.Completed,
-							new Date()));
+			return InstructionUtils.createStatus(instruction, InstructionState.Completed);
 		} catch ( RemoteServiceException e ) {
 			log.warn("Error accessing S3: {}", e.getMessage());
 			return statusWithError(instruction, "S3SM001", e.getMessage());
@@ -247,11 +237,7 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 		Map<String, Object> resultParams = new LinkedHashMap<>();
 		resultParams.put(InstructionStatus.ERROR_CODE_RESULT_PARAM, code);
 		resultParams.put(InstructionStatus.MESSAGE_RESULT_PARAM, message);
-		final InstructionStatus startingStatus = instruction.getStatus();
-		return (startingStatus != null
-				? startingStatus.newCopyWithState(InstructionState.Declined, resultParams)
-				: new BasicInstructionStatus(instruction.getId(), InstructionState.Declined, new Date(),
-						null, resultParams));
+		return InstructionUtils.createStatus(instruction, InstructionState.Declined, resultParams);
 	}
 
 	private boolean isConfigured() {
@@ -1052,18 +1038,6 @@ public class S3SetupManager implements FeedbackInstructionHandler {
 	 */
 	public void setDestinationPath(String destinationPath) {
 		this.destinationPath = destinationPath;
-	}
-
-	/**
-	 * No-op method, for backwards compatibility.
-	 * 
-	 * @param tarCommand
-	 *        the tar command to use
-	 * @deprecated since 1.2
-	 */
-	@Deprecated
-	public void setTarCommand(List<String> tarCommand) {
-		// ignored
 	}
 
 	/**

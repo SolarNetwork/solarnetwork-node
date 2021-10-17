@@ -28,20 +28,20 @@ import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URL;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.TimeZone;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 import net.solarnetwork.node.datum.price.delimited.DelimitedPriceDatumDataSource;
-import net.solarnetwork.node.domain.PriceDatum;
+import net.solarnetwork.node.domain.datum.PriceDatum;
 
 /**
  * Test cases for the {@link DelimitedPriceDatumDataSource} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class DelimitedPriceDatumDataSourceTests {
 
@@ -53,19 +53,24 @@ public class DelimitedPriceDatumDataSourceTests {
 	}
 
 	@Test
-	public void parseLastRow() throws IOException, ParseException {
+	public void parseLastRow() throws IOException {
+		// GIVEN
 		URL csvFile = new ClassPathResource("NZE-energy-prices-01.csv", getClass()).getURL();
 		String url = new URL(csvFile, "NZE-{stationId}-01.csv").toString();
 		dataSource.setUrl(url);
 		dataSource.setStationId("energy-prices");
+
+		// WHEN
 		PriceDatum datum = dataSource.readCurrentDatum();
-		assertThat(datum, notNullValue());
-		assertThat(datum.getPrice(), equalTo(new BigDecimal("27.89")));
 
-		SimpleDateFormat sdf = new SimpleDateFormat(dataSource.getDateFormat());
-		sdf.setTimeZone(TimeZone.getTimeZone(dataSource.getTimeZoneId()));
+		// THEN
+		assertThat("Datum provided", datum, notNullValue());
+		assertThat("Price parsed", datum.getPrice(), equalTo(new BigDecimal("27.89")));
 
-		assertThat(datum.getCreated(), equalTo(sdf.parse("26/09/2017 13:40:30")));
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dataSource.getDateFormat())
+				.withZone(ZoneId.of(dataSource.getTimeZoneId()));
+		assertThat("Timestamp", datum.getTimestamp(),
+				equalTo(formatter.parse("26/09/2017 13:40:30", Instant::from)));
 	}
 
 }

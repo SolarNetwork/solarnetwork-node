@@ -42,7 +42,7 @@ public interface BackupServiceInfo {
 	/**
 	 * Get the date of the most recent successful backup.
 	 * 
-	 * @return the backup date, or <em>null</em> if none available
+	 * @return the backup date, or {@literal null} if none available
 	 */
 	Date getMostRecentBackupDate();
 

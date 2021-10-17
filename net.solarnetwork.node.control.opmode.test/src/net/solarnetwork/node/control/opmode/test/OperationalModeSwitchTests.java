@@ -24,10 +24,10 @@ package net.solarnetwork.node.control.opmode.test;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
-import static net.solarnetwork.node.NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED;
-import static net.solarnetwork.node.NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED;
-import static net.solarnetwork.node.OperationalModesService.EVENT_PARAM_ACTIVE_OPERATIONAL_MODES;
-import static net.solarnetwork.node.OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED;
+import static net.solarnetwork.node.service.NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED;
+import static net.solarnetwork.node.service.NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED;
+import static net.solarnetwork.node.service.OperationalModesService.EVENT_PARAM_ACTIVE_OPERATIONAL_MODES;
+import static net.solarnetwork.node.service.OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.allOf;
@@ -40,7 +40,6 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 import org.easymock.Capture;
@@ -50,21 +49,25 @@ import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
-import net.solarnetwork.node.OperationalModesService;
+import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.node.control.opmode.OperationalModeSwitch;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.reactor.support.BasicInstruction;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link OperationalModeSwitch} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class OperationalModeSwitchTests {
 
@@ -140,17 +143,16 @@ public class OperationalModeSwitchTests {
 		assertThat("Control captured event posted", ctlCapturedEvent, notNullValue());
 		assertThat("Event topic", ctlCapturedEvent.getTopic(), equalTo(topic));
 		assertThat("Event params", ctlCapturedEvent.getPropertyNames(),
-				arrayContainingInAnyOrder(Datum.DATUM_PROPERTY, Datum.DATUM_TYPE_PROPERTY,
+				arrayContainingInAnyOrder(DatumEvents.DATUM_PROPERTY, Datum.DATUM_TYPE_PROPERTY,
 						Datum.DATUM_TYPES_PROPERTY, "event.topics"));
 
 		assertThat("Event datum types",
-				(String[]) ctlCapturedEvent.getProperty(Datum.DATUM_TYPES_PROPERTY),
-				arrayContaining(NodeControlInfo.class.getName(), Datum.class.getName(),
-						net.solarnetwork.domain.datum.Datum.class.getName()));
+				(String[]) ctlCapturedEvent.getProperty(Datum.DATUM_TYPES_PROPERTY), arrayContaining(
+						NodeDatum.class.getName(), net.solarnetwork.domain.datum.Datum.class.getName()));
 		assertThat("Event datum type", ctlCapturedEvent.getProperty(Datum.DATUM_TYPE_PROPERTY),
-				equalTo(NodeControlInfo.class.getName()));
+				equalTo(NodeDatum.class.getName()));
 
-		Object o = ctlCapturedEvent.getProperty(Datum.DATUM_PROPERTY);
+		Object o = ctlCapturedEvent.getProperty(DatumEvents.DATUM_PROPERTY);
 		assertThat("Event datum is a NodeControlInfo and Datum", o,
 				allOf(instanceOf(Datum.class), instanceOf(NodeControlInfo.class)));
 		NodeControlInfo info = (NodeControlInfo) o;
@@ -177,13 +179,12 @@ public class OperationalModeSwitchTests {
 
 		// when
 		replayAll();
-		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER,
-				new Date(), "a", "b", null);
-		instr.addParameter(TEST_CONTROL_ID, Boolean.TRUE.toString());
-		InstructionState state = ctl.processInstruction(instr);
+		Instruction instr = InstructionUtils.createSetControlValueLocalInstruction(TEST_CONTROL_ID,
+				Boolean.TRUE.toString());
+		InstructionStatus status = ctl.processInstruction(instr);
 
 		// then
-		assertThat("Completed", state, equalTo(InstructionState.Completed));
+		assertThat("Completed", status.getInstructionState(), equalTo(InstructionState.Completed));
 	}
 
 	@Test
@@ -194,13 +195,12 @@ public class OperationalModeSwitchTests {
 
 		// when
 		replayAll();
-		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER,
-				new Date(), "a", "b", null);
-		instr.addParameter(TEST_CONTROL_ID, Boolean.FALSE.toString());
-		InstructionState state = ctl.processInstruction(instr);
+		Instruction instr = InstructionUtils.createSetControlValueLocalInstruction(TEST_CONTROL_ID,
+				Boolean.FALSE.toString());
+		InstructionStatus status = ctl.processInstruction(instr);
 
 		// then
-		assertThat("Completed", state, equalTo(InstructionState.Completed));
+		assertThat("Completed", status.getInstructionState(), equalTo(InstructionState.Completed));
 	}
 
 	@Test

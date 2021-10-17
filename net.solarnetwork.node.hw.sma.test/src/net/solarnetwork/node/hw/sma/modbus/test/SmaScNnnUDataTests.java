@@ -23,7 +23,7 @@
 package net.solarnetwork.node.hw.sma.modbus.test;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
@@ -57,7 +57,7 @@ public class SmaScNnnUDataTests {
 
 		// THEN
 		SmaScNnnUDataAccessor acc = d;
-		assertThat("Data updated", acc.getDataTimestamp(), greaterThan(0L));
+		assertThat("Data updated", acc.getDataTimestamp(), notNullValue());
 		assertThat("Device kind maintained", acc.getDeviceKind(),
 				equalTo(SmaDeviceType.SunnyCentral250US));
 		assertThat("Serial number", acc.getSerialNumber(), equalTo(0x0ACB5EC7l));
@@ -74,7 +74,7 @@ public class SmaScNnnUDataTests {
 
 		// THEN
 		SmaScNnnUDataAccessor acc = d;
-		assertThat("Data updated", acc.getDataTimestamp(), greaterThan(0L));
+		assertThat("Data updated", acc.getDataTimestamp(), notNullValue());
 		assertThat("Device kind maintained", acc.getDeviceKind(),
 				equalTo(SmaDeviceType.SunnyCentral250US));
 
@@ -99,7 +99,7 @@ public class SmaScNnnUDataTests {
 
 		// THEN
 		SmaDeviceCommonDataAccessor acc = d;
-		assertThat("Data updated", acc.getDataTimestamp(), greaterThan(0L));
+		assertThat("Data updated", acc.getDataTimestamp(), notNullValue());
 		assertThat("Device kind maintained", acc.getDeviceKind(),
 				equalTo(SmaDeviceType.SunnyCentral250US));
 

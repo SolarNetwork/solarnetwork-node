@@ -23,14 +23,14 @@
 package net.solarnetwork.node.setup.deb;
 
 import java.util.regex.Pattern;
-import net.solarnetwork.node.PlatformPackageService;
-import net.solarnetwork.node.support.BaseSolarPkgPlatformPackageService;
+import net.solarnetwork.node.service.PlatformPackageService;
+import net.solarnetwork.node.service.support.BaseSolarPkgPlatformPackageService;
 
 /**
  * Implementation of {@link PlatformPackageService} for Debian packages.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class DebianPlatformPackageService extends BaseSolarPkgPlatformPackageService {
 

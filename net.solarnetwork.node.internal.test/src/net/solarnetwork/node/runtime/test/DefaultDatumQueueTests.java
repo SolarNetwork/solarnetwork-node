@@ -36,8 +36,9 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -53,18 +54,20 @@ import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.DatumQueue;
-import net.solarnetwork.node.GeneralDatumSamplesTransformService;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesContainer;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.GeneralDatum;
-import net.solarnetwork.node.domain.GeneralLocationDatum;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.runtime.DefaultDatumQueue;
-import net.solarnetwork.node.support.BaseSamplesTransformSupport;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.DatumQueue;
+import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
+import net.solarnetwork.service.DatumFilterService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link DefaultDatumQueue}.
@@ -76,10 +79,9 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 
 	private static final String TEST_SOURCE_ID = "test.source";
 
-	private DatumDao<GeneralNodeDatum> datumDao;
-	private DatumDao<GeneralLocationDatum> locationDatumDao;
+	private DatumDao datumDao;
 	private EventAdmin eventAdmin;
-	private Consumer<GeneralDatum> consumer;
+	private Consumer<NodeDatum> consumer;
 	private DefaultDatumQueue queue;
 	private Throwable datumProcessortException;
 
@@ -87,11 +89,9 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 	@Before
 	public void setup() {
 		datumDao = EasyMock.createMock(DatumDao.class);
-		locationDatumDao = EasyMock.createMock(DatumDao.class);
 		eventAdmin = EasyMock.createMock(EventAdmin.class);
 		consumer = EasyMock.createMock(Consumer.class);
-		queue = new DefaultDatumQueue(datumDao, locationDatumDao,
-				new StaticOptionalService<>(eventAdmin));
+		queue = new DefaultDatumQueue(datumDao, new StaticOptionalService<>(eventAdmin));
 		queue.setStartupDelayMs(0);
 		queue.setDatumProcessorExceptionHandler(this);
 		queue.addConsumer(consumer);
@@ -105,11 +105,11 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 			datumProcessortException.printStackTrace();
 			fail("Datum processor threw exception: " + datumProcessortException);
 		}
-		EasyMock.verify(datumDao, locationDatumDao, consumer, eventAdmin);
+		EasyMock.verify(datumDao, consumer, eventAdmin);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(datumDao, locationDatumDao, consumer, eventAdmin);
+		EasyMock.replay(datumDao, consumer, eventAdmin);
 	}
 
 	@Override
@@ -117,30 +117,59 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		datumProcessortException = e;
 	}
 
-	private void assertCapturedAcquiredEvents(List<Event> events, int index, GeneralDatum expected) {
+	private void assertCapturedAcquiredEvents(List<Event> events, int index, NodeDatum expected) {
 		assertCapturedAcquiredEvents(events, index, expected, expected);
 	}
 
-	private void assertCapturedAcquiredEvents(List<Event> events, int index,
-			GeneralDatum expectedCaptured, GeneralDatum expectedAcquired) {
+	private void assertCapturedAcquiredEvents(List<Event> events, int index, NodeDatum expectedCaptured,
+			NodeDatum expectedAcquired) {
 		assertThat("Two events posted for datum", events.size(), greaterThanOrEqualTo(index + 2));
 		assertThat(format("Event %d is DATUM_CAPTURED", index), events.get(index).getTopic(),
 				is(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
-		assertThat(format("Event %d datum", index), events.get(index).getProperty(Datum.DATUM_PROPERTY),
+		assertThat(format("Event %d datum", index),
+				events.get(index).getProperty(DatumEvents.DATUM_PROPERTY),
 				sameInstance(expectedCaptured));
 		assertThat(format("Event %d is DATUM_ACQUIRED", index + 1), events.get(index + 1).getTopic(),
 				is(DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED));
 		assertThat(format("Event %d datum", index + 1),
-				events.get(index + 1).getProperty(Datum.DATUM_PROPERTY), sameInstance(expectedAcquired));
+				events.get(index + 1).getProperty(DatumEvents.DATUM_PROPERTY),
+				sameInstance(expectedAcquired));
 	}
 
 	@Test
 	public void offer_datum() throws InterruptedException {
 		// GIVEN
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setCreated(new Date());
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
+
+		datumDao.storeDatum(datum);
+		consumer.accept(datum);
+
+		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall().times(2);
+
+		// WHEN
+		replayAll();
+		queue.offer(datum);
+
+		sleep(queue.getQueueDelayMs() + 300L);
+
+		// THEN
+		assertThat("One datum recorded as processed",
+				queue.getStats().get(DefaultDatumQueue.QueueStats.Processed), is(1L));
+		assertThat("One datum recorded as persisted",
+				queue.getStats().get(DefaultDatumQueue.QueueStats.Persisted), is(1L));
+
+		assertCapturedAcquiredEvents(eventCaptor.getValues(), 0, datum);
+	}
+
+	@Test
+	public void offer_datum_futureDate() throws InterruptedException {
+		// GIVEN
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID,
+				Instant.now().plus(1, ChronoUnit.HOURS), new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
 		datumDao.storeDatum(datum);
 		consumer.accept(datum);
@@ -167,13 +196,11 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 	@Test
 	public void offer_locationDatum() throws InterruptedException {
 		// GIVEN
-		GeneralLocationDatum datum = new GeneralLocationDatum();
-		datum.setCreated(new Date());
-		datum.setLocationId(1L);
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum = SimpleDatum.locationDatum(1L, TEST_SOURCE_ID, Instant.now(),
+				new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
-		locationDatumDao.storeDatum(datum);
+		datumDao.storeDatum(datum);
 		consumer.accept(datum);
 
 		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
@@ -198,10 +225,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 	@Test
 	public void capture_datum() throws InterruptedException {
 		// GIVEN
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setCreated(new Date());
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
 		consumer.accept(datum);
 
@@ -227,11 +252,9 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 	@Test
 	public void capture_locationDatum() throws InterruptedException {
 		// GIVEN
-		GeneralLocationDatum datum = new GeneralLocationDatum();
-		datum.setCreated(new Date());
-		datum.setLocationId(1L);
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum = SimpleDatum.locationDatum(1L, TEST_SOURCE_ID, Instant.now(),
+				new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
 		consumer.accept(datum);
 
@@ -257,10 +280,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 	@Test
 	public void capture_datum_duplicate() throws InterruptedException {
 		// GIVEN
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setCreated(new Date());
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
 		datumDao.storeDatum(datum);
 		consumer.accept(datum);
@@ -301,10 +322,10 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		final int count = 20;
 		final int sources = 2;
 
-		Capture<GeneralNodeDatum> datumCaptor = new Capture<>(CaptureType.ALL);
+		Capture<NodeDatum> datumCaptor = new Capture<>(CaptureType.ALL);
 		datumDao.storeDatum(capture(datumCaptor));
 		expectLastCall().anyTimes();//.times(count);
-		Capture<GeneralDatum> generalDatumCaptor = new Capture<>(CaptureType.ALL);
+		Capture<NodeDatum> generalDatumCaptor = new Capture<>(CaptureType.ALL);
 		consumer.accept(capture(generalDatumCaptor));
 		expectLastCall().anyTimes();//.times(count);
 
@@ -315,7 +336,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		// WHEN
 		replayAll();
 
-		final List<GeneralNodeDatum> datumList = new ArrayList<>();
+		final List<NodeDatum> datumList = new ArrayList<>();
 
 		// different threads providing the same datum for different sources at close to the same time
 		// this test depends on no more than 'sources' number of datum getting generated with the same
@@ -323,10 +344,9 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		// same date so the queue needs to deal with potentially many datum from same date even for
 		// same source ID
 		for ( int i = 0; i < count; i++ ) {
-			GeneralNodeDatum datum = new GeneralNodeDatum();
-			datum.setCreated(new Date());
-			datum.setSourceId(String.valueOf(i % sources));
-			datum.putInstantaneousSampleValue("watts", 1234);
+			SimpleDatum datum = SimpleDatum.nodeDatum(String.valueOf(i % sources), Instant.now(),
+					new DatumSamples());
+			datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 			datumList.add(datum);
 
 			executor.execute(new Runnable() {
@@ -354,28 +374,26 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Persisted), is((long) count));
 	}
 
-	private static abstract class TestTransformService extends BaseSamplesTransformSupport
-			implements GeneralDatumSamplesTransformService {
+	private static abstract class TestTransformService extends BaseDatumFilterSupport
+			implements DatumFilterService {
 
 	}
 
 	@Test
 	public void offer_datum_filtered() throws InterruptedException {
 		// GIVEN
-		queue.setTransformService(new StaticOptionalService<>(new TestTransformService() {
+		queue.setDatumFilterService(new StaticOptionalService<>(new TestTransformService() {
 
 			@Override
-			public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
+			public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
 					Map<String, Object> parameters) {
 				return null;
 			}
 
 		}));
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setCreated(new Date());
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
 		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
 		eventAdmin.postEvent(capture(eventCaptor));
@@ -397,7 +415,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 
 		assertThat("Event 1 is DATUM_CAPTURED", eventCaptor.getValue().getTopic(),
 				is(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
-		assertThat("Event 1 datum", eventCaptor.getValue().getProperty(Datum.DATUM_PROPERTY),
+		assertThat("Event 1 datum", eventCaptor.getValue().getProperty(DatumEvents.DATUM_PROPERTY),
 				sameInstance(datum));
 		// No ACQUIRED event because datum filtered
 	}
@@ -405,27 +423,25 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 	@Test
 	public void offer_datum_transformed() throws InterruptedException {
 		// GIVEN
-		final GeneralDatumSamples transformed = new GeneralDatumSamples();
+		final DatumSamples transformed = new DatumSamples();
 		transformed.putInstantaneousSampleValue("foo", 1234);
-		queue.setTransformService(new StaticOptionalService<>(new TestTransformService() {
+		queue.setDatumFilterService(new StaticOptionalService<>(new TestTransformService() {
 
 			@Override
-			public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
+			public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
 					Map<String, Object> parameters) {
 				return transformed;
 			}
 
 		}));
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setCreated(new Date());
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
-		Capture<GeneralNodeDatum> datumCaptor = new Capture<>();
+		Capture<NodeDatum> datumCaptor = new Capture<>();
 		datumDao.storeDatum(capture(datumCaptor));
 
-		Capture<GeneralDatum> generalDatumCaptor = new Capture<>();
+		Capture<NodeDatum> generalDatumCaptor = new Capture<>();
 		consumer.accept(capture(generalDatumCaptor));
 
 		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
@@ -445,13 +461,12 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 				queue.getStats().get(DefaultDatumQueue.QueueStats.Persisted), is(1L));
 
 		assertThat("Persisted datum has changed", datumCaptor.getValue(), is(not(sameInstance(datum))));
-		assertThat("Persisted datum samples has been transformed", datumCaptor.getValue().getSamples(),
-				is(sameInstance(transformed)));
+		assertThat("Persisted datum samples has been transformed",
+				((DatumSamplesContainer) datumCaptor.getValue()).getSamples(), is(transformed));
 		assertThat("Consumed datum has changed", generalDatumCaptor.getValue(),
 				is(not(sameInstance(datum))));
 		assertThat("Consumed datum samples has been transformed",
-				((GeneralNodeDatum) generalDatumCaptor.getValue()).getSamples(),
-				is(sameInstance(transformed)));
+				((DatumSamplesContainer) generalDatumCaptor.getValue()).getSamples(), is(transformed));
 
 		assertCapturedAcquiredEvents(eventCaptor.getValues(), 0, datum, datumCaptor.getValue());
 	}
@@ -468,15 +483,12 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 			}
 		});
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setCreated(new Date(System.currentTimeMillis() - 10L));
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now().minusMillis(10),
+				new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
-		GeneralNodeDatum datum2 = new GeneralNodeDatum();
-		datum2.setCreated(new Date());
-		datum2.setSourceId(TEST_SOURCE_ID);
-		datum2.putInstantaneousSampleValue("watts", 2345);
+		SimpleDatum datum2 = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 2345);
 
 		datumDao.storeDatum(datum);
 		expectLastCall().andThrow(new RuntimeException("test"));
@@ -519,12 +531,12 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 				exceptionRef.set(e);
 			}
 		});
-		queue.setTransformService(new StaticOptionalService<>(new TestTransformService() {
+		queue.setDatumFilterService(new StaticOptionalService<>(new TestTransformService() {
 
 			private int count = 0;
 
 			@Override
-			public GeneralDatumSamples transformSamples(Datum datum, GeneralDatumSamples samples,
+			public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
 					Map<String, Object> parameters) {
 				if ( 0 == count++ ) {
 					throw new RuntimeException("test");
@@ -534,15 +546,12 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 
 		}));
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setCreated(new Date(System.currentTimeMillis() - 10L));
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now().minusMillis(10),
+				new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
-		GeneralNodeDatum datum2 = new GeneralNodeDatum();
-		datum2.setCreated(new Date());
-		datum2.setSourceId(TEST_SOURCE_ID);
-		datum2.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum2 = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 2345);
 
 		datumDao.storeDatum(datum2);
 		consumer.accept(datum2);
@@ -569,7 +578,8 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 
 		assertThat("Event 1 is DATUM_CAPTURED", eventCaptor.getValues().get(0).getTopic(),
 				is(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED));
-		assertThat("Event 1 datum", eventCaptor.getValues().get(0).getProperty(Datum.DATUM_PROPERTY),
+		assertThat("Event 1 datum",
+				eventCaptor.getValues().get(0).getProperty(DatumEvents.DATUM_PROPERTY),
 				sameInstance(datum));
 		// No ACQUIRED event because datum filter threw exception
 		assertCapturedAcquiredEvents(eventCaptor.getValues(), 1, datum2);
@@ -587,15 +597,11 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 			}
 		});
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setCreated(new Date());
-		datum.setSourceId(TEST_SOURCE_ID);
-		datum.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
-		GeneralNodeDatum datum2 = new GeneralNodeDatum();
-		datum2.setCreated(new Date());
-		datum2.setSourceId(TEST_SOURCE_ID);
-		datum2.putInstantaneousSampleValue("watts", 1234);
+		SimpleDatum datum2 = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 2345);
 
 		datumDao.storeDatum(datum);
 		consumer.accept(datum);

@@ -25,10 +25,10 @@ package net.solarnetwork.node.io.modbus.support;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.BitSet;
-import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
+import net.solarnetwork.node.service.LockTimeoutException;
 
 /**
  * Supporting class for {@link ModbusConnection} implementations to extend.
@@ -40,7 +40,7 @@ import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 3.0
  */
 public class ModbusConnectionSupport extends AbstractModbusConnection implements ModbusConnection {
 

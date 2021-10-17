@@ -27,11 +27,11 @@
 
 	<!-- Service References -->
 
-	<reference id="dataSource" interface="javax.sql.DataSource" filter="(db=node-data)" />
+	<reference id="dataSource" interface="javax.sql.DataSource" filter="(db=node-data)"/>
 
-	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext" />
-		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin" />
+	<bean id="eventAdmin" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
 		<property name="sticky" value="true"/>
 	</bean>
 	
@@ -40,7 +40,7 @@
 	<service ref="mqttMessageDao">
 		<interfaces>
 			<value>net.solarnetwork.common.mqtt.dao.MqttMessageDao</value>
-			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 		</interfaces>
 	</service>
 

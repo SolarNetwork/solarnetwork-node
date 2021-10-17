@@ -37,7 +37,7 @@ public interface Plugin {
 	 * Get a unique identifier for this service. This should be meaningful to
 	 * the service implementation.
 	 * 
-	 * @return unique identifier (should never be <em>null</em>)
+	 * @return unique identifier (should never be {@literal null})
 	 */
 	String getUID();
 

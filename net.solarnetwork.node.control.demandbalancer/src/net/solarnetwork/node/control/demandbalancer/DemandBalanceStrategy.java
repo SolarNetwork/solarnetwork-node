@@ -22,13 +22,12 @@
 
 package net.solarnetwork.node.control.demandbalancer;
 
-
 /**
  * API for evaluating current demand balance conditions and producing a desired
  * generation limit.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public interface DemandBalanceStrategy {
 
@@ -39,7 +38,7 @@ public interface DemandBalanceStrategy {
 	 * 
 	 * @return unique identifier
 	 */
-	String getUID();
+	String getUid();
 
 	/**
 	 * Evaluate current demand and generation conditions, and apply an

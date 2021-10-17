@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.io.mbus.jmbus;
 
-import java.util.Date;
+import java.time.Instant;
 import org.openmuc.jmbus.Bcd;
 import org.openmuc.jmbus.DataRecord;
 import org.openmuc.jmbus.DataRecord.Description;
@@ -43,7 +43,7 @@ import net.solarnetwork.node.io.mbus.MBusSecondaryAddress;
  * Helper functions for converting objects to and from JMBus.
  * 
  * @author alex
- * @version 1.0
+ * @version 2.0
  */
 public class JMBusConversion {
 
@@ -74,7 +74,7 @@ public class JMBusConversion {
 
 	public static MBusData from(VariableDataStructure vds) {
 		try {
-			final MBusData data = new MBusData(new Date());
+			final MBusData data = new MBusData(Instant.now());
 			data.status = vds.getStatus();
 			vds.decode();
 			for ( DataRecord record : vds.getDataRecords() ) {
@@ -98,7 +98,7 @@ public class JMBusConversion {
 	 * @return A message
 	 */
 	public static MBusMessage from(WMBusMessage message) {
-		final MBusMessage msg = new MBusMessage(new Date());
+		final MBusMessage msg = new MBusMessage(Instant.now());
 		msg.status = message.getVariableDataResponse().getStatus();
 
 		final VariableDataStructure vds = message.getVariableDataResponse();
@@ -129,7 +129,7 @@ public class JMBusConversion {
 						((Bcd) record.getDataValue()).longValue(), record.getMultiplierExponent());
 			case DATE:
 				return new MBusDataRecord(description,
-						new Date(((Date) record.getDataValue()).getTime()));
+						((java.util.Date) record.getDataValue()).toInstant());
 			case DOUBLE:
 				return new MBusDataRecord(description, (Double) record.getDataValue(),
 						record.getMultiplierExponent());

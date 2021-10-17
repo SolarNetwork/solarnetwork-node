@@ -61,10 +61,10 @@ import net.solarnetwork.node.backup.BackupResourceProviderInfo;
 import net.solarnetwork.node.backup.ResourceBackupResource;
 import net.solarnetwork.node.backup.SimpleBackupResourceInfo;
 import net.solarnetwork.node.backup.SimpleBackupResourceProviderInfo;
-import net.solarnetwork.node.setup.PKIService;
-import net.solarnetwork.support.CertificateException;
-import net.solarnetwork.support.CertificateService;
-import net.solarnetwork.support.ConfigurableSSLService;
+import net.solarnetwork.node.service.PKIService;
+import net.solarnetwork.service.CertificateException;
+import net.solarnetwork.service.CertificateService;
+import net.solarnetwork.service.support.ConfigurableSSLService;
 
 /**
  * Service for managing a {@link KeyStore}.
@@ -75,12 +75,12 @@ import net.solarnetwork.support.ConfigurableSSLService;
  * password is generated and assigned to the key store. The password is saved
  * via {@link SetupIdentityDao#saveSetupIdentityInfo(SetupIdentityInfo)}. This
  * key store is then used to implement
- * {@link net.solarnetwork.support.SSLService} and is used as both the key and
+ * {@link net.solarnetwork.service.SSLService} and is used as both the key and
  * trust store for SSL connections returned by that API.
  * </p>
  * 
  * @author matt
- * @version 1.5
+ * @version 2.0
  */
 public class DefaultKeystoreService extends ConfigurableSSLService
 		implements PKIService, BackupResourceProvider {
@@ -618,18 +618,6 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 
 	public void setKeySize(int keySize) {
 		this.keySize = keySize;
-	}
-
-	/**
-	 * Set the manual keystore password to use.
-	 * 
-	 * @param manualKeyStorePassword
-	 *        the password to use
-	 * @deprecated use {@link #setKeyStorePassword(String)}
-	 */
-	@Deprecated
-	public void setManualKeyStorePassword(String manualKeyStorePassword) {
-		setKeyStorePassword(manualKeyStorePassword);
 	}
 
 	public void setMessageSource(MessageSource messageSource) {

@@ -22,19 +22,27 @@
 
 package net.solarnetwork.node.io.mbus.support;
 
-import static net.solarnetwork.util.OptionalService.service;
+import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.mbus.MBusData;
 import net.solarnetwork.node.io.mbus.MBusNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.DatumDataSourceSupport;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
+/**
+ * Abstract base class for MBus based datum data sources.
+ * 
+ * @author alex
+ * @version 2.0
+ */
 public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSupport {
 
 	private static final long DEFAULT_SAMPLE_CACHE_MS = 5000;
@@ -149,8 +157,8 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 		MBusData currSample = null;
 		synchronized ( dataLock ) {
 			// Check latest sample to see if it's current enough to use
-			if ( latestData == null
-					|| ((System.currentTimeMillis() - latestData.getDataTimestamp()) > sampleCacheMs) ) {
+			if ( latestData == null || latestData.getDataTimestamp() == null || ((latestData
+					.getDataTimestamp().until(Instant.now(), ChronoUnit.MILLIS)) > sampleCacheMs) ) {
 				try {
 					latestData = performRead();
 					currSample = new MBusData(latestData);
@@ -191,7 +199,7 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 
 	/**
 	 * Get setting specifiers for the {@literal unitId} and
-	 * {@literal mBusNetwork.propertyFilters['UID']} properties.
+	 * {@literal mBusNetwork.propertyFilters['uid']} properties.
 	 * 
 	 * @return list of setting specifiers
 	 * @since 1.1
@@ -199,7 +207,7 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 	protected List<SettingSpecifier> getMBusNetworkSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
 		results.add(
-				new BasicTextFieldSettingSpecifier("mBusNetwork.propertyFilters['UID']", "M-Bus Port"));
+				new BasicTextFieldSettingSpecifier("mBusNetwork.propertyFilters['uid']", "M-Bus Port"));
 		results.add(new BasicTextFieldSettingSpecifier("address", ""));
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));

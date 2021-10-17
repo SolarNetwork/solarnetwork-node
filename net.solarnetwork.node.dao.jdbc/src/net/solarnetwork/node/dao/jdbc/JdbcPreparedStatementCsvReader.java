@@ -49,7 +49,7 @@ public interface JdbcPreparedStatementCsvReader extends ICsvReader {
 	 * @param cellProcessors
 	 *        An array of cell processors to handle each exported column. The
 	 *        length of the array should match the number and order of columns
-	 *        in the {@code csvColumns}. {@code null} values are permitted and
+	 *        in the {@code csvColumns}. {@literal null} values are permitted and
 	 *        indicate no processing should be performed on that column.
 	 * @param columnMetaData
 	 *        The column names with associated metadata. The names should match

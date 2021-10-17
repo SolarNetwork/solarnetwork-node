@@ -24,27 +24,22 @@ package net.solarnetwork.node.hw.panasonic.battery;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.joda.time.format.DateTimeFormat;
-import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
-import net.solarnetwork.node.support.DatumEvents;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * Supporting class for {@link BatteryAPIClient} use.
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
-public class BatteryAPISupport extends BaseIdentifiable implements DatumEvents {
+public class BatteryAPISupport extends BaseIdentifiable {
 
 	// the client to use
 	private BatteryAPIClient client = new SimpleBatteryAPIClient();
@@ -69,7 +64,7 @@ public class BatteryAPISupport extends BaseIdentifiable implements DatumEvents {
 		}
 		StringBuilder buf = new StringBuilder();
 		buf.append(data.getOperationStatusMessage());
-		buf.append("; sampled at ").append(DateTimeFormat.forStyle("LS").print(data.getDate()));
+		buf.append("; sampled at ").append(data.getDate());
 		return buf.toString();
 	}
 
@@ -85,7 +80,7 @@ public class BatteryAPISupport extends BaseIdentifiable implements DatumEvents {
 		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(sample), true));
 
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
+		results.add(new BasicTextFieldSettingSpecifier("groupUid", defaults.getGroupUid()));
 
 		if ( client instanceof SimpleBatteryAPIClient ) {
 			SimpleBatteryAPIClient c = (SimpleBatteryAPIClient) client;
@@ -93,27 +88,6 @@ public class BatteryAPISupport extends BaseIdentifiable implements DatumEvents {
 		}
 
 		return results;
-	}
-
-	/**
-	 * Post a {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} {@link Event}.
-	 * 
-	 * <p>
-	 * This method calls {@link DatumEvents#datumCapturedEvent(Datum)} to create
-	 * the actual Event, which may be overridden by extending classes.
-	 * </p>
-	 * 
-	 * @param datum
-	 *        the {@link Datum} to post the event for
-	 * @since 1.3
-	 */
-	protected final void postDatumCapturedEvent(final Datum datum) {
-		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
-		if ( ea == null || datum == null ) {
-			return;
-		}
-		Event event = datumCapturedEvent(datum);
-		ea.postEvent(event);
 	}
 
 	/**
@@ -155,50 +129,9 @@ public class BatteryAPISupport extends BaseIdentifiable implements DatumEvents {
 	}
 
 	/**
-	 * Get a unique ID for this service.
-	 * 
-	 * @return The unique ID.
-	 */
-	@Override
-	public String getUid() {
-		return super.getUid();
-	}
-
-	@Override
-	public void setUid(String uid) {
-		super.setUid(uid);
-	}
-
-	/**
-	 * Get a unique ID for this service. This is an alias for
-	 * {@link BatteryAPISupport#getUid()}.
-	 * 
-	 * @return The unique ID.
-	 */
-	@Override
-	public String getUID() {
-		return super.getUID();
-	}
-
-	/**
-	 * Get a group ID to use for this service.
-	 * 
-	 * @return The group ID.
-	 */
-	@Override
-	public String getGroupUID() {
-		return super.getGroupUID();
-	}
-
-	@Override
-	public void setGroupUID(String groupUID) {
-		super.setGroupUID(groupUID);
-	}
-
-	/**
 	 * An error message to use in status messages.
 	 * 
-	 * @return An error message (or <em>null</em>).
+	 * @return An error message (or {@literal null}).
 	 */
 	public String getErrorMessage() {
 		return errorMessage;

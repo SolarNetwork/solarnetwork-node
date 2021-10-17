@@ -30,15 +30,15 @@ import org.openmuc.jmbus.MBusConnection.MBusSerialBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.mbus.WMBusNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Serial jMBus implementation of {@link WMBusNetwork}.
  * 
  * @author alex
- * @version 1.0
+ * @version 2.0
  */
 public class JMBusSerialMBusNetwork extends JMBusMBusNetwork implements SettingSpecifierProvider {
 
@@ -65,7 +65,7 @@ public class JMBusSerialMBusNetwork extends JMBusMBusNetwork implements SettingS
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.mbus.serial";
 	}
 

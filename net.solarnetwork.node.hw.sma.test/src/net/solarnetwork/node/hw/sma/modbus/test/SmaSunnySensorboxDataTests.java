@@ -23,7 +23,7 @@
 package net.solarnetwork.node.hw.sma.modbus.test;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
@@ -54,7 +54,7 @@ public class SmaSunnySensorboxDataTests {
 
 		// THEN
 		SmaSunnySensorboxDataAccessor acc = d;
-		assertThat("Data updated", acc.getDataTimestamp(), greaterThan(0L));
+		assertThat("Data updated", acc.getDataTimestamp(), notNullValue());
 		assertThat("Device kind maintained", acc.getDeviceKind(), equalTo(SmaDeviceType.SunnySensorbox));
 		assertThat("Serial number", acc.getSerialNumber(), equalTo(0xA15CL));
 		assertThat("Device class", acc.getDeviceClass(), equalTo(0x1F80L));
@@ -71,7 +71,7 @@ public class SmaSunnySensorboxDataTests {
 
 		// THEN
 		SmaSunnySensorboxDataAccessor acc = d;
-		assertThat("Data updated", acc.getDataTimestamp(), greaterThan(0L));
+		assertThat("Data updated", acc.getDataTimestamp(), notNullValue());
 		assertThat("Device kind maintained", acc.getDeviceKind(), equalTo(SmaDeviceType.SunnySensorbox));
 
 		assertThat("Device operating state not available", acc.getDeviceOperatingState(), nullValue());

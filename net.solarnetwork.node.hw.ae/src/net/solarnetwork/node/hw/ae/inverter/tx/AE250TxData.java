@@ -30,10 +30,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.Bitmaskable;
 import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -44,7 +45,7 @@ import net.solarnetwork.util.NumberUtils;
  * Data object for the AE 250TX series inverter.
  * 
  * @author matt
- * @version 1.4
+ * @version 2.0
  */
 public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 
@@ -90,10 +91,10 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 		if ( type != null ) {
 			String firmwareVersion = data.getFirmwareRevision();
 			if ( firmwareVersion != null ) {
-				result.put(INFO_KEY_DEVICE_MODEL,
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL,
 						String.format("%s (firmware %s)", type.getDescription(), firmwareVersion));
 			} else {
-				result.put(INFO_KEY_DEVICE_MODEL, type.getDescription());
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, type.getDescription());
 			}
 		}
 		AEInverterConfiguration config = data.getInverterConfiguration();
@@ -104,7 +105,7 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 		}
 		String s = data.getSerialNumber();
 		if ( s != null && !s.isEmpty() ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, s);
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, s);
 		}
 		s = data.getIdNumber();
 		if ( s != null && !s.isEmpty() ) {
@@ -178,12 +179,12 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	}
 
 	@Override
-	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+	public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public ACEnergyDataAccessor reversed() {
+	public AcEnergyDataAccessor reversed() {
 		throw new UnsupportedOperationException();
 	}
 
@@ -349,13 +350,13 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	}
 
 	@Override
-	public Float getDCVoltage() {
+	public Float getDcVoltage() {
 		Number n = getNumber(AE250TxRegister.InverterDcVoltage);
 		return (n != null ? n.floatValue() : null);
 	}
 
 	@Override
-	public Integer getDCPower() {
+	public Integer getDcPower() {
 		return getKiloValueAsInteger(AE250TxRegister.InverterDcPower);
 	}
 

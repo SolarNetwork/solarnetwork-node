@@ -29,15 +29,15 @@ import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.mbus.MBusConnection;
 import net.solarnetwork.node.io.mbus.MBusData;
 import net.solarnetwork.node.io.mbus.MBusNetwork;
-import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.service.support.BasicIdentifiable;
 
 /**
  * Abstract jMBus implementation of {@link MBusNetwork}.
  * 
  * @author alex
- * @version 1.0
+ * @version 2.0
  */
-public abstract class JMBusMBusNetwork extends BaseIdentifiable implements MBusNetwork {
+public abstract class JMBusMBusNetwork extends BasicIdentifiable implements MBusNetwork {
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());

@@ -22,45 +22,45 @@
 
 package net.solarnetwork.node.datum.ams.tsl2591;
 
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.AtmosphericDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleAtmosphericDatum;
 import net.solarnetwork.node.hw.ams.lux.tsl2591.Gain;
 import net.solarnetwork.node.hw.ams.lux.tsl2591.IntegrationTime;
 import net.solarnetwork.node.hw.ams.lux.tsl2591.Tsl2591Factory;
 import net.solarnetwork.node.hw.ams.lux.tsl2591.Tsl2591Operations;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.support.DatumDataSourceSupport;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.service.ServiceLifecycleObserver;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
-import net.solarnetwork.support.ServiceLifecycleObserver;
-import net.solarnetwork.util.CachedResult;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * Datum data source for the TSL2591 light sensor.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
-public class Tsl2591DatumDataSource extends DatumDataSourceSupport
-		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, SettingsChangeObserver,
-		ServiceLifecycleObserver {
+public class Tsl2591DatumDataSource extends DatumDataSourceSupport implements DatumDataSource,
+		SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver {
 
 	public static final String DEFAULT_DEVICE_NAME = "/dev/i2c-0";
 	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000L;
@@ -69,7 +69,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport
 	public static final IntegrationTime DEFAULT_INT_TIME = IntegrationTime.Time200ms;
 	public static final long DEFAULT_CONFIGURE_DELAY = 15000L;
 
-	private final AtomicReference<CachedResult<GeneralNodeDatum>> sample;
+	private final AtomicReference<AtmosphericDatum> sample;
 
 	private String deviceName = DEFAULT_DEVICE_NAME;
 	private long sampleCacheMs = DEFAULT_SAMPLE_CACHE_MS;
@@ -93,9 +93,10 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport
 	 * @param sample
 	 *        the sample data to use
 	 */
-	public Tsl2591DatumDataSource(AtomicReference<CachedResult<GeneralNodeDatum>> sample) {
+	public Tsl2591DatumDataSource(AtomicReference<AtmosphericDatum> sample) {
 		super();
 		this.sample = sample;
+		setDisplayName("TSL2591 Sensor");
 	}
 
 	@Override
@@ -117,7 +118,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.ams.tsl2591";
 	}
 
@@ -157,25 +158,23 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport
 	}
 
 	@Override
-	public Class<? extends GeneralNodeDatum> getDatumType() {
-		return GeneralNodeDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AtmosphericDatum.class;
 	}
 
 	@Override
-	public GeneralNodeDatum readCurrentDatum() {
+	public AtmosphericDatum readCurrentDatum() {
 		return getCurrentSample();
 	}
 
-	private GeneralNodeDatum getCurrentSample() {
-		CachedResult<GeneralNodeDatum> cachedResult = sample.get();
-		GeneralNodeDatum currSample = null;
-		if ( cachedResult == null || !cachedResult.isValid() ) {
+	private AtmosphericDatum getCurrentSample() {
+		AtmosphericDatum currSample = sample.get();
+		if ( currSample == null
+				|| currSample.getTimestamp().until(Instant.now(), ChronoUnit.MILLIS) > sampleCacheMs ) {
 			try {
 				currSample = readCurrentSample();
 				if ( currSample != null ) {
-					currSample.setSourceId(resolvePlaceholders(sourceId));
-					sample.set(new CachedResult<GeneralNodeDatum>(currSample,
-							currSample.getCreated().getTime(), sampleCacheMs, TimeUnit.MILLISECONDS));
+					sample.set(currSample);
 				}
 				if ( log.isTraceEnabled() && currSample != null ) {
 					log.trace("Sample: {}", currSample.asSimpleMap());
@@ -185,8 +184,6 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport
 				throw new RuntimeException(
 						"Communication problem reading from TSL2591 device " + getDeviceName(), e);
 			}
-		} else {
-			currSample = cachedResult.getResult();
 		}
 		return currSample;
 	}
@@ -226,7 +223,7 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport
 		}
 	}
 
-	private synchronized GeneralNodeDatum readCurrentSample() throws IOException {
+	private synchronized AtmosphericDatum readCurrentSample() throws IOException {
 		try (Tsl2591Operations ops = Tsl2591Factory.createOperations(getDeviceName())) {
 			BigDecimal lux = ops.getLux();
 			if ( lux == null ) {
@@ -238,23 +235,20 @@ public class Tsl2591DatumDataSource extends DatumDataSourceSupport
 				lux = lux.setScale(0, RoundingMode.HALF_UP);
 			}
 
-			GeneralNodeDatum d = new GeneralNodeDatum();
-			d.setCreated(new Date());
-			d.putInstantaneousSampleValue("lux", lux);
+			SimpleAtmosphericDatum d = new SimpleAtmosphericDatum(resolvePlaceholders(sourceId),
+					Instant.now(), new DatumSamples());
+			d.setLux(lux);
 			return d;
 		}
 	}
 
-	private String getSampleMessage(CachedResult<GeneralNodeDatum> sample) {
-		if ( sample == null ) {
+	private String getSampleMessage(AtmosphericDatum data) {
+		if ( data == null ) {
 			return "N/A";
 		}
-		GeneralNodeDatum data = sample.getResult();
 		StringBuilder buf = new StringBuilder();
-		buf.append("lux = ").append(data.getInstantaneousSampleBigDecimal("lux"));
-		buf.append("; sampled at ")
-				.append(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT)
-						.format(data.getCreated().toInstant().atZone(ZoneId.systemDefault())));
+		buf.append("lux = ").append(data.getLux());
+		buf.append("; sampled at ").append(formatForLocalDisplay(data.getTimestamp()));
 		return buf.toString();
 	}
 

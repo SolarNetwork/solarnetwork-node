@@ -24,13 +24,13 @@ package net.solarnetwork.node.settings.support;
 
 import java.util.Locale;
 import org.springframework.context.MessageSource;
-import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
+import net.solarnetwork.settings.SettingSpecifierProviderFactory;
 
 /**
  * Sort {@link SettingSpecifierProviderFactory} by their localized titles.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  * @since 1.61
  */
 public class SettingSpecifierProviderFactoryMessageComparator

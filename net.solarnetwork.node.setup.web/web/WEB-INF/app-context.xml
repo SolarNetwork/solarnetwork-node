@@ -13,40 +13,9 @@
 
 	<ctx:property-placeholder properties-ref="setup.web.cfg"/>
 
-	<bean id="settingsService" class="net.solarnetwork.util.OptionalServiceTracker">
-		<property name="service" ref="settingsServiceRef"/>
-	</bean>
-
-	<bean id="sslService" class="net.solarnetwork.util.OptionalServiceTracker">
-		<property name="service" ref="sslServiceRef"/>
-	</bean>
-	
-	<bean id="backupManager" class="net.solarnetwork.util.OptionalServiceTracker">
-		<property name="service" ref="backupManagerRef"/>
-	</bean>
-
-	<bean id="pluginService" class="net.solarnetwork.util.OptionalServiceTracker">
-		<property name="service" ref="pluginServiceRef"/>
-	</bean>
-
-	<bean id="systemService" class="net.solarnetwork.util.OptionalServiceTracker">
-		<property name="service" ref="systemServiceRef"/>
-	</bean>
-
 	<bean id="tzGMT" class="java.util.TimeZone" factory-method="getTimeZone">
 		<constructor-arg value="GMT"/>
 	</bean>
-	
-	<bean id="periodFormatter" class="net.solarnetwork.util.JodaPeriodPropertySerializer"/>
-
-	<!--bean id="mailService" class="net.solarnetwork.central.mail.support.DefaultMailService">
-		<constructor-arg ref="mailSender"/>
-		<property name="templateMessage">
-			<bean class="org.springframework.mail.SimpleMailMessage">
-				<property name="from" value="${mail.sender}"/>
-			</bean>
-		</property>
-	</bean-->
 	
 	<util:map id="networkLinks" key-type="java.lang.String" value-type="java.lang.String">
 		<entry key="solaruser" value="${link.solaruser}"/>

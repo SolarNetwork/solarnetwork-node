@@ -24,15 +24,15 @@ package net.solarnetwork.node.metadata.json;
 
 import java.io.IOException;
 import java.io.InputStream;
-import net.solarnetwork.domain.GeneralDatumMetadata;
-import net.solarnetwork.node.NodeMetadataService;
-import net.solarnetwork.node.support.JsonHttpClientSupport;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
+import net.solarnetwork.node.service.NodeMetadataService;
+import net.solarnetwork.node.service.support.JsonHttpClientSupport;
 
 /**
  * JSON based web service implementation of {@link NodeMetadataService}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.7
  */
 public class JsonNodeMetadataService extends JsonHttpClientSupport implements NodeMetadataService {
@@ -102,6 +102,8 @@ public class JsonNodeMetadataService extends JsonHttpClientSupport implements No
 	}
 
 	/**
+	 * Get the base URL.
+	 * 
 	 * @return the baseUrl
 	 */
 	public String getBaseUrl() {
@@ -109,6 +111,8 @@ public class JsonNodeMetadataService extends JsonHttpClientSupport implements No
 	}
 
 	/**
+	 * Set the base URL.
+	 * 
 	 * @param baseUrl
 	 *        the baseUrl to set
 	 */

@@ -28,13 +28,13 @@ import java.util.Map;
 import net.solarnetwork.node.control.esi.domain.DurationRange;
 import net.solarnetwork.node.control.esi.domain.ResourceAccessor;
 import net.solarnetwork.node.control.esi.domain.ResourceCharacteristics;
-import net.solarnetwork.node.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
 
 /**
  * A configurable ESI resource component.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class EsiResource extends BaseEsiMetadataComponent implements ResourceAccessor {
 
@@ -51,7 +51,7 @@ public class EsiResource extends BaseEsiMetadataComponent implements ResourceAcc
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.control.esi.resource";
 	}
 

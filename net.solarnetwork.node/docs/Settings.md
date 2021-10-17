@@ -30,7 +30,7 @@ service can created and then configured:
 To integrate `ManagedServiceFactory` into the SolarNode Settings API, first a _component factory_
 must be published. The API for this is 
 [`net.solarnetwork.node.settings.SettingSpecifierProviderFactory`][SettingSpecifierProviderFactory].
-This factory must define a unique ID, its `factoryUID` property. The ID can be anything, but it 
+This factory must define a unique ID, its `factoryUid` property. The ID can be anything, but it 
 is common to use a domain-style name like a Java class. The 
 `net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory` class implements this
 API.
@@ -43,7 +43,7 @@ Blueprint:
 	<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 		
 		<!-- Define a unique factory ID for the component -->
-		<property name="factoryUID" value="net.solarnetwork.node.io.serial.pjc"/>
+		<property name="factoryUid" value="net.solarnetwork.node.io.serial.pjc"/>
 
 		<!-- Provide a non-localized display name -->
 		<property name="displayName" value="PJC Serial Port"/>
@@ -66,7 +66,7 @@ title = Serial port
 ```
 
 Next, the actual `<managed-service-factory>` must be configured. There are **two** places where the
-`factoryUID` value configured on the `SettingSpecifierProviderFactory` must also be configured:
+`factoryUid` value configured on the `SettingSpecifierProviderFactory` must also be configured:
 first as the `@factory-pid` attribute on the `<managed-service-factory>` itself, and second as a
 `(settingPid=X)` factory service property. 
 
@@ -74,7 +74,7 @@ Here's an example of a plugin publishing a configurable serial port service fact
 Blueprint:
 
 ```xml
-<!-- The factoryUID value from the SettingSpecifierProviderFactory must be uesd as the factory-pid
+<!-- The factoryUid value from the SettingSpecifierProviderFactory must be uesd as the factory-pid
      attribute here: -->
 <osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.serial.pjc" autowire-on-update="true">
 	<osgix:interfaces>
@@ -82,7 +82,7 @@ Blueprint:
 		<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
 	</osgix:interfaces>
 	<osgix:service-properties>
-		<!-- The factoryUID value from the SettingSpecifierProviderFactory must be added as a 
+		<!-- The factoryUid value from the SettingSpecifierProviderFactory must be added as a 
 		     settingPid service property here: -->
 		<beans:entry key="settingPid" value="net.solarnetwork.node.io.serial.pjc"/>
 	</osgix:service-properties>

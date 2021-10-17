@@ -40,8 +40,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import net.solarnetwork.domain.BitDataType;
 import net.solarnetwork.domain.ByteOrdering;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.domain.KeyValuePair;
+import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.io.canbus.KcdParser;
 import net.solarnetwork.node.io.canbus.kcd.BasicLabelType;
 import net.solarnetwork.node.io.canbus.kcd.BusType;
@@ -57,18 +57,18 @@ import net.solarnetwork.node.io.canbus.kcd.ProducerType;
 import net.solarnetwork.node.io.canbus.kcd.PropertyExpression;
 import net.solarnetwork.node.io.canbus.kcd.SignalType;
 import net.solarnetwork.node.io.canbus.kcd.ValueType;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.node.settings.SettingResourceHandler;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.SettingsUpdates;
 import net.solarnetwork.node.settings.support.BasicFileSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.NumberUtils;
-import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -76,7 +76,7 @@ import net.solarnetwork.util.StringUtils;
  * resource.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class KcdConfigurer extends BaseIdentifiable
 		implements SettingSpecifierProvider, SettingResourceHandler {
@@ -118,7 +118,7 @@ public class KcdConfigurer extends BaseIdentifiable
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.canbus.KcdConfigurer";
 	}
 
@@ -318,11 +318,11 @@ public class KcdConfigurer extends BaseIdentifiable
 											bus.getName(), message.getId(), signal.getName());
 									continue;
 								}
-								GeneralDatumSamplesType datumPropType = GeneralDatumSamplesType.Instantaneous;
+								DatumSamplesType datumPropType = DatumSamplesType.Instantaneous;
 								if ( signal.getDatumPropertyClassification() != null
 										&& !signal.getDatumPropertyClassification().isEmpty() ) {
 									try {
-										datumPropType = GeneralDatumSamplesType.valueOf(
+										datumPropType = DatumSamplesType.valueOf(
 												signal.getDatumPropertyClassification().charAt(0));
 									} catch ( IllegalArgumentException e ) {
 										parseMessages.add(getMessageSource().getMessage(
@@ -470,7 +470,7 @@ public class KcdConfigurer extends BaseIdentifiable
 			}
 			final String instanceId = settingsService.addProviderFactoryInstance(settingProviderId);
 			settings.add(
-					setting(instanceId, "canbusNetwork.propertyFilters['UID']", dsConfig.networkUid));
+					setting(instanceId, "canbusNetwork.propertyFilters['uid']", dsConfig.networkUid));
 			settings.add(setting(instanceId, "busName", dsConfig.busName));
 			settings.add(setting(instanceId, "sourceId", dsConfig.sourceId));
 
@@ -528,11 +528,11 @@ public class KcdConfigurer extends BaseIdentifiable
 				log.warn("Node [{}] Expression [{}] has no content, skipping", node.getName(), i);
 				continue;
 			}
-			GeneralDatumSamplesType datumPropType = GeneralDatumSamplesType.Instantaneous;
+			DatumSamplesType datumPropType = DatumSamplesType.Instantaneous;
 			if ( expr.getDatumPropertyClassification() != null
 					&& !expr.getDatumPropertyClassification().isEmpty() ) {
 				try {
-					datumPropType = GeneralDatumSamplesType
+					datumPropType = DatumSamplesType
 							.valueOf(expr.getDatumPropertyClassification().charAt(0));
 				} catch ( IllegalArgumentException e ) {
 					parseMessages.add(getMessageSource().getMessage("expression.badDatumPropertyClass",

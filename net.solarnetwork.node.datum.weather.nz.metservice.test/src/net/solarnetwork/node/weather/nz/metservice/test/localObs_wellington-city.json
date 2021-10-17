@@ -1,0 +1,29 @@
+{
+	"id": "loc1001978",
+	"location": "Kelburn AWS",
+	"locationId": "93437",
+	"solarHeating": 100,
+	"threeHour": {
+		"clothingLayers": "2",
+		"dateTime": "2pm Sun, 17 Oct",
+		"dateTimeISO": "2021-10-17T14:00:00+13:00",
+		"humidity": "73",
+		"pressure": 1010,
+		"pressureTrend": "falling",
+		"previousPressure": 1011,
+		"previousPressureTime": "1pm Sun, 17 Oct",
+		"rainfall": "0.0",
+		"rawTime": 1634432400000,
+		"temp": "15",
+		"windChill": "15",
+		"windDirection": "N",
+		"windProofLayers": "1",
+		"windSpeed": "35"
+	},
+	"twentyFourHour": {
+		"dateTime": "9am Sun, 17 Oct",
+		"maxTemp": 15,
+		"minTemp": 11,
+		"rainfall": "0.0"
+	}
+}

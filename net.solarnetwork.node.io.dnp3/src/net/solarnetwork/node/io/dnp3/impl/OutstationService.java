@@ -22,13 +22,15 @@
 
 package net.solarnetwork.node.io.dnp3.impl;
 
+import static net.solarnetwork.node.reactor.InstructionUtils.createSetControlValueLocalInstruction;
+import static net.solarnetwork.service.OptionalService.service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -65,9 +67,9 @@ import com.automatak.dnp3.enums.DoubleBit;
 import com.automatak.dnp3.enums.DoubleBitBinaryQuality;
 import com.automatak.dnp3.enums.FrozenCounterQuality;
 import com.automatak.dnp3.enums.OperateType;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.domain.InstructionStatus;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
+import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.node.io.dnp3.ChannelService;
 import net.solarnetwork.node.io.dnp3.domain.ControlConfig;
 import net.solarnetwork.node.io.dnp3.domain.ControlType;
@@ -75,20 +77,21 @@ import net.solarnetwork.node.io.dnp3.domain.LinkLayerConfig;
 import net.solarnetwork.node.io.dnp3.domain.MeasurementConfig;
 import net.solarnetwork.node.io.dnp3.domain.MeasurementType;
 import net.solarnetwork.node.io.dnp3.domain.OutstationConfig;
-import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.reactor.support.InstructionUtils;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionExecutionService;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.NumberUtils;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.OptionalServiceCollection;
-import net.solarnetwork.util.StaticOptionalServiceCollection;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -96,7 +99,7 @@ import net.solarnetwork.util.StringUtils;
  * events to DNP3.
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
 public class OutstationService extends AbstractApplicationService
 		implements EventHandler, SettingSpecifierProvider {
@@ -112,7 +115,7 @@ public class OutstationService extends AbstractApplicationService
 
 	private final Application app;
 	private final CommandHandler commandHandler;
-	private final OptionalServiceCollection<InstructionHandler> instructionHandlers;
+	private final OptionalService<InstructionExecutionService> instructionExecutionService;
 	private final OutstationConfig outstationConfig;
 
 	private MeasurementConfig[] measurementConfigs;
@@ -128,19 +131,17 @@ public class OutstationService extends AbstractApplicationService
 	 * 
 	 * @param dnp3Channel
 	 *        the channel to use
-	 * @param instructionHandlers
-	 *        the collection of instruction handlers to handle control
-	 *        operations
+	 * @param instructionExecutionService
+	 *        the execution service to handle control operations
 	 */
 	public OutstationService(OptionalService<ChannelService> dnp3Channel,
-			OptionalServiceCollection<InstructionHandler> instructionHandlers) {
+			OptionalService<InstructionExecutionService> instructionExecutionService) {
 		super(dnp3Channel);
 		setUid(DEFAULT_UID);
 		this.app = new Application();
 		this.outstationConfig = new OutstationConfig();
 		this.commandHandler = new CommandHandler();
-		this.instructionHandlers = (instructionHandlers != null ? instructionHandlers
-				: new StaticOptionalServiceCollection<>(Collections.emptyList()));
+		this.instructionExecutionService = instructionExecutionService;
 	}
 
 	@Override
@@ -457,7 +458,7 @@ public class OutstationService extends AbstractApplicationService
 	}
 
 	private void handleDatumCapturedEvent(Event event) {
-		final Object datum = event.getProperty(Datum.DATUM_PROPERTY);
+		final Object datum = event.getProperty(DatumEvents.DATUM_PROPERTY);
 		if ( !(datum instanceof Datum && ((Datum) datum).getSourceId() != null) ) {
 			return;
 		}
@@ -477,7 +478,7 @@ public class OutstationService extends AbstractApplicationService
 	}
 
 	private void handleControlInfoCapturedEvent(Event event) {
-		final Object datum = event.getProperty(Datum.DATUM_PROPERTY);
+		final Object datum = event.getProperty(DatumEvents.DATUM_PROPERTY);
 		if ( !(datum instanceof Datum && ((Datum) datum).getSourceId() != null) ) {
 			return;
 		}
@@ -504,7 +505,7 @@ public class OutstationService extends AbstractApplicationService
 		synchronized ( this ) {
 			Outstation station = getOutstation();
 			if ( station != null ) {
-				log.info("Applying changes to DNP3 [{}]", getUID());
+				log.info("Applying changes to DNP3 [{}]", getUid());
 				station.apply(changes);
 			}
 		}
@@ -518,11 +519,11 @@ public class OutstationService extends AbstractApplicationService
 			return null;
 		}
 		final String sourceId = datum.getSourceId();
-		final Date timestamp = datum.getCreated();
+		final Instant timestamp = datum.getTimestamp();
 		if ( timestamp == null ) {
 			return null;
 		}
-		final long ts = timestamp.getTime();
+		final long ts = timestamp.toEpochMilli();
 		final Map<String, ?> datumProps = datum.getSampleData();
 		OutstationChangeSet changes = null;
 		if ( map != null ) {
@@ -822,37 +823,54 @@ public class OutstationService extends AbstractApplicationService
 		return null;
 	}
 
-	private InstructionState operateBinaryControl(ControlRelayOutputBlock command, int index,
+	private InstructionStatus operateBinaryControl(ControlRelayOutputBlock command, int index,
 			OperateType opType, ControlConfig config) {
-		InstructionState result = InstructionState.Declined;
-		try {
-			switch (command.function) {
-				case LATCH_ON:
-					result = InstructionUtils.setControlParameter(instructionHandlers.services(),
-							config.getControlId(), Boolean.TRUE.toString());
-					break;
+		final InstructionExecutionService service = OptionalService.service(instructionExecutionService);
+		Instruction instr = null;
+		switch (command.function) {
+			case LATCH_ON:
+				instr = InstructionUtils.createSetControlValueLocalInstruction(config.getControlId(),
+						Boolean.TRUE);
+				break;
 
-				case LATCH_OFF:
-					result = InstructionUtils.setControlParameter(instructionHandlers.services(),
-							config.getControlId(), Boolean.FALSE.toString());
-					break;
+			case LATCH_OFF:
+				instr = InstructionUtils.createSetControlValueLocalInstruction(config.getControlId(),
+						Boolean.FALSE);
+				break;
 
-				default:
-					// nothing
+			default:
+				// nothing
+		}
+		InstructionStatus result = null;
+		if ( service != null ) {
+			try {
+				if ( instr != null ) {
+					result = service.executeInstruction(instr);
+				} else {
+					result = InstructionUtils.createStatus(instr, InstructionState.Declined);
+				}
+			} finally {
+				log.info(
+						"DNP3 outstation [{}] CROB operation request {} on {}[{}] control [{}] result: {}",
+						getUid(), command.function, config.getType(), index, config.getControlId(),
+						result);
 			}
-		} finally {
-			log.info("DNP3 outstation [{}] CROB operation request {} on {}[{}] control [{}] result: {}",
-					getUid(), command.function, config.getType(), index, config.getControlId(), result);
 		}
 		return result;
 	}
 
-	private InstructionState operateAnalogControl(Object command, int index, String opDescription,
+	private InstructionStatus operateAnalogControl(Object command, int index, String opDescription,
 			ControlConfig config, Number value) {
-		InstructionState result = InstructionState.Declined;
+		final InstructionExecutionService service = service(instructionExecutionService);
+		Instruction instr = createSetControlValueLocalInstruction(config.getControlId(),
+				value.toString());
+		InstructionStatus result = null;
 		try {
-			result = InstructionUtils.setControlParameter(instructionHandlers.services(),
-					config.getControlId(), value.toString());
+			if ( service != null ) {
+				result = service.executeInstruction(instr);
+			} else {
+				result = InstructionUtils.createStatus(instr, InstructionState.Declined);
+			}
 		} finally {
 			log.info(
 					"DNP3 outstation [{}] analog operation request {} on {}[{}] control [{}] result: {}",
@@ -874,10 +892,10 @@ public class OutstationService extends AbstractApplicationService
 		result.add(new BasicTitleSettingSpecifier("status", getStackStatusMessage(), true));
 
 		result.add(new BasicTextFieldSettingSpecifier("uid", DEFAULT_UID));
-		result.add(new BasicTextFieldSettingSpecifier("groupUID", ""));
+		result.add(new BasicTextFieldSettingSpecifier("groupUid", ""));
 		result.add(new BasicTextFieldSettingSpecifier("eventBufferSize",
 				String.valueOf(DEFAULT_EVENT_BUFFER_SIZE)));
-		result.add(new BasicTextFieldSettingSpecifier("dnp3Channel.propertyFilters['UID']",
+		result.add(new BasicTextFieldSettingSpecifier("dnp3Channel.propertyFilters['uid']",
 				TcpServerChannelService.DEFAULT_UID));
 
 		result.addAll(linkLayerSettings("linkLayerConfig.", new LinkLayerConfig(false)));
@@ -887,8 +905,8 @@ public class OutstationService extends AbstractApplicationService
 		MeasurementConfig[] measConfs = getMeasurementConfigs();
 		List<MeasurementConfig> measConfsList = (measConfs != null ? Arrays.asList(measConfs)
 				: Collections.<MeasurementConfig> emptyList());
-		result.add(SettingsUtil.dynamicListSettingSpecifier("measurementConfigs", measConfsList,
-				new SettingsUtil.KeyedListCallback<MeasurementConfig>() {
+		result.add(SettingUtils.dynamicListSettingSpecifier("measurementConfigs", measConfsList,
+				new SettingUtils.KeyedListCallback<MeasurementConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(MeasurementConfig value,
@@ -902,8 +920,8 @@ public class OutstationService extends AbstractApplicationService
 		ControlConfig[] cntrlConfs = getControlConfigs();
 		List<ControlConfig> cntrlConfsList = (cntrlConfs != null ? Arrays.asList(cntrlConfs)
 				: Collections.<ControlConfig> emptyList());
-		result.add(SettingsUtil.dynamicListSettingSpecifier("controlConfigs", cntrlConfsList,
-				new SettingsUtil.KeyedListCallback<ControlConfig>() {
+		result.add(SettingUtils.dynamicListSettingSpecifier("controlConfigs", cntrlConfsList,
+				new SettingUtils.KeyedListCallback<ControlConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(ControlConfig value, int index,
@@ -923,7 +941,7 @@ public class OutstationService extends AbstractApplicationService
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.dnp3.outstation";
 	}
 

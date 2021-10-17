@@ -35,6 +35,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import net.solarnetwork.domain.Bitmaskable;
 import net.solarnetwork.domain.DeviceOperatingState;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -138,7 +139,7 @@ public class Stabiliti30cData extends ModbusData implements Stabiliti30cDataAcce
 		}
 		String s = data.getSerialNumber();
 		if ( s != null ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, s);
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, s);
 		}
 		SortedSet<Stabiliti30cFault> faults = data.getFaults();
 		if ( faults != null && !faults.isEmpty() ) {

@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 import org.osgi.service.event.Event;
@@ -46,7 +47,7 @@ import net.solarnetwork.domain.SortDescriptor;
  * Base implementation of {@link GenericDao} for SolarNode using JDBC.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends AbstractJdbcDao<T>
 		implements GenericDao<T, K> {
@@ -221,8 +222,10 @@ public abstract class BaseJdbcGenericDao<T extends Entity<K>, K> extends Abstrac
 		if ( id == null ) {
 			return;
 		}
-		Event event = GenericDao.createEntityEvent(id, entity, entityEventTopic(eventType));
-		if ( event != null ) {
+		Map<String, Object> props = GenericDao.createEntityEventProperties(id, entity);
+		String topic = entityEventTopic(eventType);
+		if ( topic != null ) {
+			Event event = new Event(topic, props);
 			postEvent(event);
 		}
 	}

@@ -22,8 +22,9 @@
 
 package net.solarnetwork.node.hw.sunspec.inverter;
 
+import java.time.Instant;
 import java.util.Set;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
@@ -36,7 +37,7 @@ import net.solarnetwork.util.IntRange;
  * Data access object for an integer inverter model.
  * 
  * @author matt
- * @version 2.0
+ * @version 3.0
  */
 public class IntegerInverterModelAccessor extends BaseModelAccessor implements InverterModelAccessor {
 
@@ -153,8 +154,8 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 	}
 
 	@Override
-	public InverterModelAccessor accessorForPhase(ACPhase phase) {
-		if ( phase == ACPhase.Total ) {
+	public InverterModelAccessor accessorForPhase(AcPhase phase) {
+		if ( phase == AcPhase.Total ) {
 			return this;
 		}
 		return new PhaseInverterModelAccessor(phase);
@@ -281,9 +282,9 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 
 	private class PhaseInverterModelAccessor implements InverterModelAccessor {
 
-		private final ACPhase phase;
+		private final AcPhase phase;
 
-		private PhaseInverterModelAccessor(ACPhase phase) {
+		private PhaseInverterModelAccessor(AcPhase phase) {
 			super();
 			this.phase = phase;
 		}
@@ -294,7 +295,7 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return IntegerInverterModelAccessor.this.getDataTimestamp();
 		}
 
@@ -329,7 +330,7 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 		}
 
 		@Override
-		public InverterModelAccessor accessorForPhase(ACPhase phase) {
+		public InverterModelAccessor accessorForPhase(AcPhase phase) {
 			return IntegerInverterModelAccessor.this.accessorForPhase(phase);
 		}
 

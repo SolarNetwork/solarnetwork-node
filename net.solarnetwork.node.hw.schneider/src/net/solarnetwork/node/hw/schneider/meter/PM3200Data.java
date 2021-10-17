@@ -24,12 +24,14 @@ package net.solarnetwork.node.hw.schneider.meter;
 
 import static net.solarnetwork.util.CollectionUtils.coveringIntRanges;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.joda.time.LocalDateTime;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -39,7 +41,7 @@ import net.solarnetwork.util.IntRange;
  * Encapsulates raw Modbus register data from the PM3200 meters.
  * 
  * @author matt
- * @version 2.1
+ * @version 3.0
  */
 public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 
@@ -73,24 +75,24 @@ public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 		Map<String, Object> result = new LinkedHashMap<>(4);
 		String manufacturer = data.getManufacturer();
 		if ( manufacturer != null ) {
-			result.put(INFO_KEY_DEVICE_MANUFACTURER, manufacturer);
+			result.put(DataAccessor.INFO_KEY_DEVICE_MANUFACTURER, manufacturer);
 		}
 		String model = data.getModel();
 		if ( model != null ) {
 			String version = data.getFirmwareRevision();
 			if ( version != null ) {
-				result.put(INFO_KEY_DEVICE_MODEL, String.format("%s (version %s)", model, version));
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, String.format("%s (version %s)", model, version));
 			} else {
-				result.put(INFO_KEY_DEVICE_MODEL, model.toString());
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, model.toString());
 			}
 		}
 		Long sn = data.getSerialNumber();
 		if ( sn != null ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, sn);
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, sn);
 		}
 		LocalDateTime date = data.getManufactureDate();
 		if ( date != null ) {
-			result.put(INFO_KEY_DEVICE_MANUFACTURE_DATE, date.toLocalDate());
+			result.put(DataAccessor.INFO_KEY_DEVICE_MANUFACTURE_DATE, date.toLocalDate());
 		}
 		return result;
 	}
@@ -258,20 +260,20 @@ public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 	 *        the phase to get an accessor for
 	 * @return the accessor
 	 */
-	public PM3200DataAccessor dataAccessorForPhase(ACPhase phase) {
-		if ( phase == ACPhase.Total ) {
+	public PM3200DataAccessor dataAccessorForPhase(AcPhase phase) {
+		if ( phase == AcPhase.Total ) {
 			return this;
 		}
 		return new PhaseMeterDataAccessor(phase);
 	}
 
 	@Override
-	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+	public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 		return dataAccessorForPhase(phase);
 	}
 
 	@Override
-	public ACEnergyDataAccessor reversed() {
+	public AcEnergyDataAccessor reversed() {
 		return new ReversedMeterDataAccessor(this);
 	}
 
@@ -440,9 +442,9 @@ public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 
 	private class PhaseMeterDataAccessor implements PM3200DataAccessor {
 
-		private final ACPhase phase;
+		private final AcPhase phase;
 
-		private PhaseMeterDataAccessor(ACPhase phase) {
+		private PhaseMeterDataAccessor(AcPhase phase) {
 			super();
 			this.phase = phase;
 		}
@@ -498,17 +500,17 @@ public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return PM3200Data.this.getDataTimestamp();
 		}
 
 		@Override
-		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 			return PM3200Data.this.accessorForPhase(phase);
 		}
 
 		@Override
-		public ACEnergyDataAccessor reversed() {
+		public AcEnergyDataAccessor reversed() {
 			return new ReversedMeterDataAccessor(this);
 		}
 
@@ -720,7 +722,7 @@ public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 		}
 
 		@Override
-		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 			return new ReversedMeterDataAccessor((PM3200DataAccessor) delegate.accessorForPhase(phase));
 		}
 
@@ -770,12 +772,12 @@ public class PM3200Data extends ModbusData implements PM3200DataAccessor {
 		}
 
 		@Override
-		public ACEnergyDataAccessor reversed() {
+		public AcEnergyDataAccessor reversed() {
 			return delegate;
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return delegate.getDataTimestamp();
 		}
 

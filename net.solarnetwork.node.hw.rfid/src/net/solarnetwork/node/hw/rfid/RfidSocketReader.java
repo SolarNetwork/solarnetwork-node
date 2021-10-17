@@ -49,6 +49,9 @@ public class RfidSocketReader {
 	 * This method will block and continue to read from the socket until the
 	 * program is closed (or the socket closes). All lines read from the program
 	 * are printed to STDOUT.
+	 * 
+	 * @throws UnknownHostException
+	 *         if the host cannot be resolved
 	 */
 	public void startReading() throws UnknownHostException {
 		BufferedReader in = null;

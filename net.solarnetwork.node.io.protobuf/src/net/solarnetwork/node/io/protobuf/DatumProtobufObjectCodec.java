@@ -46,21 +46,21 @@ import org.springframework.core.io.Resource;
 import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.common.protobuf.ProtobufCompilerService;
 import net.solarnetwork.common.protobuf.ProtobufMessagePopulator;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.node.settings.SettingResourceHandler;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsUpdates;
 import net.solarnetwork.node.settings.support.BasicFileSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
-import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
 
 /**
@@ -78,11 +78,11 @@ import net.solarnetwork.util.ArrayUtils;
  * 
  * <p>
  * The {@link #decodeFromBytes(byte[], Map)} method always returns a
- * {@link net.solarnetwork.node.domain.GeneralDatum} instance.
+ * {@link net.solarnetwork.node.domain.datum.SimpleDatum} instance.
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class DatumProtobufObjectCodec extends net.solarnetwork.common.protobuf.ProtobufObjectCodec
 		implements SettingSpecifierProvider, SettingResourceHandler {
@@ -138,10 +138,10 @@ public class DatumProtobufObjectCodec extends net.solarnetwork.common.protobuf.P
 		}
 		Object msg = super.decodeFromBytes(data, parameters);
 		PropertyAccessor accessor = PropertyAccessorFactory.forBeanPropertyAccess(msg);
-		GeneralNodeDatum result = new GeneralNodeDatum();
+		SimpleDatum result = SimpleDatum.nodeDatum(null);
 		for ( DatumFieldConfig conf : confs ) {
 			String key = conf.getDatumProperty();
-			GeneralDatumSamplesType type = conf.getPropertyType();
+			DatumSamplesType type = conf.getPropertyType();
 			String field = conf.getFieldProperty();
 			if ( key == null || key.isEmpty() || field == null || field.isEmpty() ) {
 				continue;
@@ -182,7 +182,7 @@ public class DatumProtobufObjectCodec extends net.solarnetwork.common.protobuf.P
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return SETTING_UID;
 	}
 
@@ -203,8 +203,8 @@ public class DatumProtobufObjectCodec extends net.solarnetwork.common.protobuf.P
 		DatumFieldConfig[] confs = getPropConfigs();
 		List<DatumFieldConfig> confsList = (confs != null ? Arrays.asList(confs)
 				: Collections.<DatumFieldConfig> emptyList());
-		result.add(SettingsUtil.dynamicListSettingSpecifier("propConfigs", confsList,
-				new SettingsUtil.KeyedListCallback<DatumFieldConfig>() {
+		result.add(SettingUtils.dynamicListSettingSpecifier("propConfigs", confsList,
+				new SettingUtils.KeyedListCallback<DatumFieldConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(DatumFieldConfig value,

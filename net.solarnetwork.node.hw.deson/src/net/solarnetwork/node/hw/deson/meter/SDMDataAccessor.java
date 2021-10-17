@@ -22,8 +22,8 @@
 
 package net.solarnetwork.node.hw.deson.meter;
 
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.domain.AcPhase;
 
 /**
  * Common API for SDM meter data.
@@ -31,7 +31,7 @@ import net.solarnetwork.node.domain.ACPhase;
  * @author matt
  * @since 2.0
  */
-public interface SDMDataAccessor extends ACEnergyDataAccessor {
+public interface SDMDataAccessor extends AcEnergyDataAccessor {
 
 	/**
 	 * Test if a particular phase is supported by the device. The SDM-120, for
@@ -40,10 +40,10 @@ public interface SDMDataAccessor extends ACEnergyDataAccessor {
 	 * 
 	 * @param phase
 	 *        The phase to test.
-	 * @return <em>true</em> if the given {@code phase} is supported
+	 * @return {@literal true} if the given {@code phase} is supported
 	 * @since 1.1
 	 */
-	boolean supportsPhase(ACPhase phase);
+	boolean supportsPhase(AcPhase phase);
 
 	/**
 	 * Get the device serial number.

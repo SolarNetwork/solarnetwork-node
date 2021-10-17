@@ -22,43 +22,50 @@
 
 package net.solarnetwork.node.control.demandbalancer;
 
+import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.StringUtils.commaDelimitedStringFromCollection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import net.solarnetwork.domain.NodeControlInfo;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.domain.ACEnergyDatum;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.EnergyDatum;
-import net.solarnetwork.node.reactor.Instruction;
-import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.support.BasicInstruction;
-import net.solarnetwork.node.reactor.support.InstructionUtils;
-import net.solarnetwork.node.settings.KeyedSettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.util.FilterableService;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.OptionalServiceCollection;
-import net.solarnetwork.util.StaticOptionalService;
-import net.solarnetwork.util.StringUtils;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
+import net.solarnetwork.domain.NodeControlInfo;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
+import net.solarnetwork.node.domain.datum.EnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleEnergyDatum;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionExecutionService;
+import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.service.FilterableService;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
+import net.solarnetwork.service.OptionalServiceCollection;
+import net.solarnetwork.service.OptionalServiceCollection.OptionalFilterableServiceCollection;
+import net.solarnetwork.service.StaticOptionalService;
+import net.solarnetwork.settings.KeyedSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * Basic service to monitor demand conditions (consumption) and generation
@@ -66,66 +73,8 @@ import org.springframework.context.MessageSource;
  * instructions to a specific control to limit generation to an amount that
  * keeps generation at or below current consumption levels.
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>powerControlId</dt>
- * <dd>The ID of the control that should respond to the
- * {@link InstructionHandler#TOPIC_DEMAND_BALANCE} instruction to match
- * generation levels to consumption levels.</dd>
- * 
- * <dt>powerControl</dt>
- * <dd>The {@link NodeControlProvider} that manages the configured
- * {@code powerControlId}, and can report back its current status, whose value
- * must be provided as an integer percentage of the maximum allowable generation
- * level. <b>Note</b> that this object must also implement
- * {@link FilterableService} and will automatically have a filter property set
- * for the {@code availableControlIds} property to match the
- * {@code powerControlId} value.</dd>
- * 
- * <dt>powerDataSource</dt>
- * <dd>The collection of {@link DatumDataSource} that provide real-time power
- * generation data. If more than one {@code DatumDataSource} is configured the
- * effective generation will be aggregated as a sum total of all of them.</dd>
- * <dt>powerMaximumWatts</dt>
- * 
- * <dd>The maximum watts the configured {@code powerDataSource} is capable of
- * producing. This value is used to calculate the output percentage level passed
- * on {@link InstructionHandler#TOPIC_DEMAND_BALANCE} instructions. For example,
- * if the {@code powerMaximumWatts} is {@bold 1000} and the current
- * consumption is {@bold 800} then the demand balance will be requested
- * as {@bold 80%}.</dd>
- * 
- * <dt>consumptionDataSource</dt>
- * <dd>The collection of {@link DatumDataSource} that provide real-time
- * consumption generation data. If more than one {@code DatumDataSource} is
- * configured the effective demand will be aggregated as a sum total of all of
- * them.</dd>
- * 
- * <dt>balanceStrategy</dt>
- * <dd>The strategy implementation to use to decide how to balance the demand
- * and generation. Defaults to {@link SimpleDemandBalanceStrategy}.</dd>
- * 
- * <dt>instructionHandlers</dt>
- * <dd>A collection of {@link InstructionHandler} instances. When
- * {@link #evaluateBalance()} is called, if a balancing adjustment is necessary
- * then the instruction will be passed to each of these handlers, with the first
- * to process it being assumed the only handler that need respond.</dd>
- * </dl>
- * 
- * <dt>collectPower</dt> <dd>If <em>true</em> then collect {@link PowerDatum}
- * from all configured data sources for passing to the
- * {@link DemandBalanceStrategy}. Not all strategies need power information, and
- * it may take too long to collect this information, however, so this can be
- * turned off by setting to <em>false</em>. When disabled, <b>-1</b> is passed
- * for the {@code generationWatts} parameter on
- * {@link DemandBalanceStrategy#evaluateBalance(String, int, int, int, int)}.
- * Defaults to <em>false</em>.</dd>
- * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class DemandBalancer implements SettingSpecifierProvider {
 
@@ -146,22 +95,52 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	public static final String STAT_LAST_POWER_CONTROL_MODIFY_DATE = "PowerControlModifyDate";
 	public static final String STAT_LAST_POWER_CONTROL_MODIFY_ERROR = "PowerControlModifyError";
 
-	private String powerControlId = "/power/pcm/1?percent";
+	/** The {@code collectPower} property default value. */
+	public static final boolean DEFAULT_COLLECT_POWER = false;
+
+	/** The {@code powerControlId} property default value. */
+	public static final String DEFAULT_POWER_CONTROL_ID = "/power/pcm/1?percent";
+
+	/** The {@code powerMaximumWatts} property default value. */
+	public static final int DEFAULT_POWER_MAXIMUM_WATTS = 1000;
+
+	/** The {@code acEnergyPhaseFilter} property default value. */
+	public static final Set<AcPhase> DEFAULT_AC_ENERGY_PHASE_FILTER = EnumSet.of(AcPhase.Total);
+
+	private final OptionalService<InstructionExecutionService> instructionExecutionService;
+	private String powerControlId = DEFAULT_POWER_CONTROL_ID;
 	private OptionalService<EventAdmin> eventAdmin;
-	private OptionalService<NodeControlProvider> powerControl;
-	private OptionalServiceCollection<DatumDataSource<? extends EnergyDatum>> powerDataSource;
-	private int powerMaximumWatts = 1000;
-	private OptionalServiceCollection<DatumDataSource<? extends EnergyDatum>> consumptionDataSource;
-	private OptionalService<DemandBalanceStrategy> balanceStrategy = new StaticOptionalService<DemandBalanceStrategy>(
+	private OptionalFilterableService<NodeControlProvider> powerControl;
+	private OptionalFilterableServiceCollection<DatumDataSource> powerDataSource;
+	private int powerMaximumWatts = DEFAULT_POWER_MAXIMUM_WATTS;
+	private OptionalFilterableServiceCollection<DatumDataSource> consumptionDataSource;
+	private OptionalFilterableService<DemandBalanceStrategy> balanceStrategy = new StaticOptionalService<>(
 			new SimpleDemandBalanceStrategy());
 	private Collection<InstructionHandler> instructionHandlers = Collections.emptyList();
 	private MessageSource messageSource;
-	private boolean collectPower = false;
-	private Set<ACPhase> acEnergyPhaseFilter = EnumSet.copyOf(Collections.singleton(ACPhase.Total));
+	private boolean collectPower = DEFAULT_COLLECT_POWER;
+	private Set<AcPhase> acEnergyPhaseFilter = EnumSet.copyOf(Collections.singleton(AcPhase.Total));
 
-	final Map<String, Object> stats = new LinkedHashMap<String, Object>(8);
+	final Map<String, Object> stats = new LinkedHashMap<>(8);
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param instructionExecutionService
+	 *        the service to set
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
+	public DemandBalancer(OptionalService<InstructionExecutionService> instructionExecutionService) {
+		super();
+		if ( instructionExecutionService == null ) {
+			throw new IllegalArgumentException(
+					"The instructionExecutionService argument must not be null.");
+		}
+		this.instructionExecutionService = instructionExecutionService;
+	}
 
 	/**
 	 * Evaluate current demand (consumption) and generation (power) and attempt
@@ -172,8 +151,8 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		final Integer generationWatts = collectGenerationWatts();
 		final Integer generationLimitPercent = readCurrentGenerationLimitPercent();
 		log.debug("Current demand: {}, generation: {}, capacity: {}, limit: {}",
-				(demandWatts == null ? "N/A" : demandWatts.toString()), (generationWatts == null ? "N/A"
-						: generationWatts.toString()), powerMaximumWatts,
+				(demandWatts == null ? "N/A" : demandWatts.toString()),
+				(generationWatts == null ? "N/A" : generationWatts.toString()), powerMaximumWatts,
 				(generationLimitPercent == null ? "N/A" : generationLimitPercent + "%"));
 		executeDemandBalanceStrategy(demandWatts, generationWatts, generationLimitPercent);
 		postStatisticsEvent();
@@ -266,8 +245,8 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	private void executeDemandBalanceStrategy(final Integer demandWatts, final Integer generationWatts,
 			final Integer generationLimitPercent) {
 		try {
-			InstructionStatus.InstructionState result = evaluateBalance((demandWatts == null ? -1
-					: demandWatts.intValue()),
+			InstructionStatus.InstructionState result = evaluateBalance(
+					(demandWatts == null ? -1 : demandWatts.intValue()),
 					(generationWatts == null ? -1 : generationWatts.intValue()),
 					(generationLimitPercent == null ? -1 : generationLimitPercent.intValue()));
 			if ( result != null ) {
@@ -276,8 +255,8 @@ public class DemandBalancer implements SettingSpecifierProvider {
 			if ( result == null || result == InstructionStatus.InstructionState.Completed ) {
 				stats.remove(STAT_LAST_POWER_CONTROL_MODIFY_ERROR);
 			} else {
-				stats.put(STAT_LAST_POWER_CONTROL_MODIFY_ERROR, "Instruction result not Completed: "
-						+ result);
+				stats.put(STAT_LAST_POWER_CONTROL_MODIFY_ERROR,
+						"Instruction result not Completed: " + result);
 			}
 		} catch ( RuntimeException e ) {
 			log.error("Error modifying power control {}: {}", powerControlId, e.getMessage());
@@ -295,8 +274,8 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	 *        the current generation, in watts
 	 * @param currentLimit
 	 *        the current generation limit, as an integer percentage
-	 * @return the result of adjusting the generation limit, or <em>null</em> if
-	 *         no adjustment was made
+	 * @return the result of adjusting the generation limit, or {@literal null}
+	 *         if no adjustment was made
 	 */
 	private InstructionStatus.InstructionState evaluateBalance(final int demandWatts,
 			final int generationWatts, final int currentLimit) {
@@ -324,15 +303,18 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	 * @param desiredLimit
 	 *        the desired limit, as an integer percentage
 	 * @return the result of handling the adjustment instruction, never
-	 *         <em>null</em>
+	 *         {@literal null}
 	 */
-	private InstructionStatus.InstructionState adjustLimit(final int desiredLimit) {
-		final BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_DEMAND_BALANCE,
-				new Date(), Instruction.LOCAL_INSTRUCTION_ID, Instruction.LOCAL_INSTRUCTION_ID, null);
-		instr.addParameter(powerControlId, String.valueOf(desiredLimit));
-		final InstructionStatus.InstructionState result = InstructionUtils.handleInstruction(
-				instructionHandlers, instr);
-		return (result == null ? InstructionStatus.InstructionState.Declined : result);
+	private InstructionState adjustLimit(final int desiredLimit) {
+		final InstructionExecutionService service = service(instructionExecutionService);
+		InstructionStatus result = null;
+		if ( service != null ) {
+			final Instruction instr = InstructionUtils.createLocalInstruction(
+					InstructionHandler.TOPIC_DEMAND_BALANCE, powerControlId,
+					String.valueOf(desiredLimit));
+			result = service.executeInstruction(instr);
+		}
+		return (result != null ? result.getInstructionState() : InstructionState.Declined);
 	}
 
 	private void postStatisticsEvent() {
@@ -374,9 +356,9 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		}
 		int total = -1;
 		for ( EnergyDatum datum : datums ) {
-			if ( datum instanceof ACEnergyDatum && acEnergyPhaseFilter != null
+			if ( datum instanceof AcEnergyDatum && acEnergyPhaseFilter != null
 					&& acEnergyPhaseFilter.size() > 0 ) {
-				ACPhase phase = ((ACEnergyDatum) datum).getPhase();
+				AcPhase phase = ((AcEnergyDatum) datum).getAcPhase();
 				if ( !acEnergyPhaseFilter.contains(phase) ) {
 					continue;
 				}
@@ -405,31 +387,38 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		return provider.getCurrentControlInfo(controlId);
 	}
 
-	private Iterable<EnergyDatum> getCurrentDatum(
-			OptionalServiceCollection<DatumDataSource<? extends EnergyDatum>> service) {
+	private Iterable<EnergyDatum> getCurrentDatum(OptionalServiceCollection<DatumDataSource> service) {
 		if ( service == null ) {
 			return null;
 		}
-		Iterable<DatumDataSource<? extends EnergyDatum>> dataSources = service.services();
-		List<EnergyDatum> results = new ArrayList<EnergyDatum>();
-		for ( DatumDataSource<? extends EnergyDatum> dataSource : dataSources ) {
-			if ( dataSource instanceof MultiDatumDataSource<?> ) {
-				@SuppressWarnings("unchecked")
-				Collection<? extends EnergyDatum> datums = ((MultiDatumDataSource<? extends EnergyDatum>) dataSource)
-						.readMultipleDatum();
+		Iterable<DatumDataSource> dataSources = service.services();
+		List<EnergyDatum> results = new ArrayList<>();
+		for ( DatumDataSource dataSource : dataSources ) {
+			if ( dataSource instanceof MultiDatumDataSource ) {
+				Collection<NodeDatum> datums = ((MultiDatumDataSource) dataSource).readMultipleDatum();
 				if ( datums != null ) {
-					for ( EnergyDatum datum : datums ) {
-						results.add(datum);
+					for ( NodeDatum datum : datums ) {
+						EnergyDatum eDatum = asEnergyDatum(datum);
+						results.add(eDatum);
 					}
 				}
 			} else {
-				EnergyDatum datum = dataSource.readCurrentDatum();
+				NodeDatum datum = dataSource.readCurrentDatum();
 				if ( datum != null ) {
-					results.add(datum);
+					results.add(asEnergyDatum(datum));
 				}
 			}
 		}
 		return results;
+	}
+
+	private static EnergyDatum asEnergyDatum(NodeDatum datum) {
+		if ( datum instanceof EnergyDatum ) {
+			return (EnergyDatum) datum;
+		}
+		DatumSamples s = new DatumSamples(datum.asSampleOperations());
+		return new SimpleEnergyDatum(datum.getSourceId(), datum.getTimestamp(), s);
+
 	}
 
 	private DemandBalanceStrategy getDemandBalanceStrategy() {
@@ -451,7 +440,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.control.demandbalancer";
 	}
 
@@ -467,22 +456,23 @@ public class DemandBalancer implements SettingSpecifierProvider {
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		DemandBalancer defaults = new DemandBalancer();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(6);
-		results.add(new BasicTextFieldSettingSpecifier("balanceStrategy.propertyFilters['UID']",
-				"Default"));
-		results.add(new BasicTextFieldSettingSpecifier("consumptionDataSource.propertyFilters['UID']",
+		results.add(
+				new BasicTextFieldSettingSpecifier("balanceStrategy.propertyFilters['uid']", "Default"));
+		results.add(new BasicTextFieldSettingSpecifier("consumptionDataSource.propertyFilters['uid']",
 				"Main"));
 		results.add(new BasicTextFieldSettingSpecifier(
-				"consumptionDataSource.propertyFilters['groupUID']", ""));
-		results.add(new BasicTextFieldSettingSpecifier("acEnergyPhaseFilter", defaults
-				.getAcEnergyPhaseFilterValue()));
-		results.add(new BasicToggleSettingSpecifier("collectPower", defaults.isCollectPower()));
-		results.add(new BasicTextFieldSettingSpecifier("powerDataSource.propertyFilters['UID']", "Main"));
-		results.add(new BasicTextFieldSettingSpecifier("powerDataSource.propertyFilters['groupUID']", ""));
-		results.add(new BasicTextFieldSettingSpecifier("powerControlId", defaults.powerControlId));
-		results.add(new BasicTextFieldSettingSpecifier("powerMaximumWatts", String
-				.valueOf(defaults.powerMaximumWatts)));
+				"consumptionDataSource.propertyFilters['groupUid']", ""));
+		results.add(new BasicTextFieldSettingSpecifier("acEnergyPhaseFilter",
+				commaDelimitedStringFromCollection(DEFAULT_AC_ENERGY_PHASE_FILTER)));
+		results.add(new BasicToggleSettingSpecifier("collectPower", DEFAULT_COLLECT_POWER));
+		results.add(
+				new BasicTextFieldSettingSpecifier("powerDataSource.propertyFilters['uid']", "Main"));
+		results.add(
+				new BasicTextFieldSettingSpecifier("powerDataSource.propertyFilters['groupUid']", ""));
+		results.add(new BasicTextFieldSettingSpecifier("powerControlId", DEFAULT_POWER_CONTROL_ID));
+		results.add(new BasicTextFieldSettingSpecifier("powerMaximumWatts",
+				String.valueOf(DEFAULT_POWER_MAXIMUM_WATTS)));
 
 		DemandBalanceStrategy strategy = getDemandBalanceStrategy();
 		if ( strategy instanceof SettingSpecifierProvider ) {
@@ -505,79 +495,167 @@ public class DemandBalancer implements SettingSpecifierProvider {
 
 	// Accessors
 
-	public void setPowerControlId(String powerControlId) {
-		this.powerControlId = powerControlId;
-		if ( this.powerControl != null ) {
-			// automatically enforce filter
-			((FilterableService) this.powerControl).setPropertyFilter("availableControlIds",
-					this.powerControlId);
-		}
-	}
-
-	public void setPowerControl(OptionalService<NodeControlProvider> powerControl) {
-		if ( !(powerControl instanceof FilterableService) ) {
-			throw new IllegalArgumentException("OptionalService must also implement "
-					+ FilterableService.class.getName());
-		}
-		((FilterableService) powerControl).setPropertyFilter("availableControlIds", this.powerControlId);
-		this.powerControl = powerControl;
-
-	}
-
-	public void setPowerDataSource(
-			OptionalServiceCollection<DatumDataSource<? extends EnergyDatum>> powerDataSource) {
-		this.powerDataSource = powerDataSource;
-	}
-
-	public void setPowerMaximumWatts(int powerMaximumWatts) {
-		this.powerMaximumWatts = powerMaximumWatts;
-	}
-
-	public void setConsumptionDataSource(
-			OptionalServiceCollection<DatumDataSource<? extends EnergyDatum>> consumptionDataSource) {
-		this.consumptionDataSource = consumptionDataSource;
-	}
-
-	public void setBalanceStrategy(OptionalService<DemandBalanceStrategy> balanceStrategy) {
-		this.balanceStrategy = balanceStrategy;
-	}
-
-	public void setInstructionHandlers(Collection<InstructionHandler> instructionHandlers) {
-		this.instructionHandlers = instructionHandlers;
-	}
-
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
-
 	public String getPowerControlId() {
 		return powerControlId;
 	}
 
-	public OptionalService<NodeControlProvider> getPowerControl() {
+	/**
+	 * Set the ID of the control that should respond to the
+	 * {@link InstructionHandler#TOPIC_DEMAND_BALANCE} instruction to match
+	 * generation levels to consumption levels.
+	 * 
+	 * @param powerControlId
+	 *        the power control ID
+	 */
+	public void setPowerControlId(String powerControlId) {
+		this.powerControlId = powerControlId;
+		if ( this.powerControl != null ) {
+			// automatically enforce filter
+			this.powerControl.setPropertyFilter("availableControlIds", this.powerControlId);
+		}
+	}
+
+	public OptionalFilterableService<NodeControlProvider> getPowerControl() {
 		return powerControl;
 	}
 
-	public OptionalServiceCollection<DatumDataSource<? extends EnergyDatum>> getPowerDataSource() {
+	/**
+	 * Set the {@link NodeControlProvider} that manages the configured
+	 * {@code powerControlId}, and can report back its current status, whose
+	 * value must be provided as an integer percentage of the maximum allowable
+	 * generation level.
+	 * 
+	 * <p>
+	 * <b>Note</b> that this object must also implement
+	 * {@link FilterableService} and will automatically have a filter property
+	 * set for the {@code availableControlIds} property to match the
+	 * {@code powerControlId} value.
+	 * </p>
+	 * 
+	 * @param powerControl
+	 *        the power control
+	 */
+	public void setPowerControl(OptionalFilterableService<NodeControlProvider> powerControl) {
+		powerControl.setPropertyFilter("availableControlIds", this.powerControlId);
+		this.powerControl = powerControl;
+
+	}
+
+	public OptionalFilterableServiceCollection<DatumDataSource> getPowerDataSource() {
 		return powerDataSource;
+	}
+
+	/**
+	 * Set the collection of {@link DatumDataSource} that provide real-time
+	 * power generation data.
+	 * 
+	 * <p>
+	 * If more than one {@code DatumDataSource} is configured the effective
+	 * generation will be aggregated as a sum total of all of them.
+	 * </p>
+	 * 
+	 * @param powerDataSource
+	 *        the power data sources
+	 */
+	public void setPowerDataSource(
+			OptionalFilterableServiceCollection<DatumDataSource> powerDataSource) {
+		this.powerDataSource = powerDataSource;
 	}
 
 	public int getPowerMaximumWatts() {
 		return powerMaximumWatts;
 	}
 
-	public OptionalServiceCollection<DatumDataSource<? extends EnergyDatum>> getConsumptionDataSource() {
+	/**
+	 * Set the maximum watts the configured {@code powerDataSource} is capable
+	 * of producing.
+	 * 
+	 * <p>
+	 * This value is used to calculate the output percentage level passed on
+	 * {@link InstructionHandler#TOPIC_DEMAND_BALANCE} instructions. For
+	 * example, if the {@code powerMaximumWatts} is {@literal 1000} and the
+	 * current consumption is {@literal 800} then the demand balance will be
+	 * requested as <b>80%</b>.
+	 * </p>
+	 * 
+	 * @param powerMaximumWatts
+	 *        the maximum watts
+	 */
+	public void setPowerMaximumWatts(int powerMaximumWatts) {
+		this.powerMaximumWatts = powerMaximumWatts;
+	}
+
+	/**
+	 * Get the collection of {@link DatumDataSource} that provide real-time
+	 * consumption generation data.
+	 * 
+	 * @return the consumption data sources
+	 */
+	public OptionalFilterableServiceCollection<DatumDataSource> getConsumptionDataSource() {
 		return consumptionDataSource;
 	}
 
-	public OptionalService<DemandBalanceStrategy> getBalanceStrategy() {
+	/**
+	 * Set the collection of {@link DatumDataSource} that provide real-time
+	 * consumption generation data.
+	 * 
+	 * <p>
+	 * If more than one {@code DatumDataSource} is configured the effective
+	 * demand will be aggregated as a sum total of all of them.
+	 * </p>
+	 * 
+	 * @param consumptionDataSource
+	 *        the consumption data sources
+	 */
+	public void setConsumptionDataSource(
+			OptionalFilterableServiceCollection<DatumDataSource> consumptionDataSource) {
+		this.consumptionDataSource = consumptionDataSource;
+	}
+
+	/**
+	 * Get the strategy implementation to use to decide how to balance the
+	 * demand and generation.
+	 * 
+	 * @return the strategy; defaults to {@link SimpleDemandBalanceStrategy}.
+	 */
+	public OptionalFilterableService<DemandBalanceStrategy> getBalanceStrategy() {
 		return balanceStrategy;
+	}
+
+	/**
+	 * Set the strategy implementation to use to decide how to balance the
+	 * demand and generation.
+	 * 
+	 * @param balanceStrategy
+	 *        the strategy to use
+	 */
+	public void setBalanceStrategy(OptionalFilterableService<DemandBalanceStrategy> balanceStrategy) {
+		this.balanceStrategy = balanceStrategy;
+	}
+
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 	public Collection<InstructionHandler> getInstructionHandlers() {
 		return instructionHandlers;
 	}
 
+	/**
+	 * If {@literal true} then collect datum from all configured power data
+	 * sources for passing to the {@link DemandBalanceStrategy}.
+	 * 
+	 * <p>
+	 * Not all strategies need power information, and it may take too long to
+	 * collect this information, however, so this can be turned off by setting
+	 * to {@literal false}. When disabled, <b>-1</b> is passed for the
+	 * {@code generationWatts} parameter on
+	 * {@link DemandBalanceStrategy#evaluateBalance(String, int, int, int, int)}.
+	 * Defaults to {@literal false}.
+	 * </p>
+	 * 
+	 * @return {@literal true} to collect power datum
+	 */
 	public boolean isCollectPower() {
 		return collectPower;
 	}
@@ -594,11 +672,11 @@ public class DemandBalancer implements SettingSpecifierProvider {
 		this.eventAdmin = eventAdmin;
 	}
 
-	public Set<ACPhase> getAcEnergyPhaseFilter() {
+	public Set<AcPhase> getAcEnergyPhaseFilter() {
 		return acEnergyPhaseFilter;
 	}
 
-	public void setAcEnergyPhaseFilter(Set<ACPhase> acEnergyPhaseFilter) {
+	public void setAcEnergyPhaseFilter(Set<AcPhase> acEnergyPhaseFilter) {
 		this.acEnergyPhaseFilter = acEnergyPhaseFilter;
 	}
 
@@ -609,8 +687,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	 * @return the AC phase as a delimited string
 	 */
 	public String getAcEnergyPhaseFilterValue() {
-		return (acEnergyPhaseFilter == null ? null : StringUtils
-				.commaDelimitedStringFromCollection(acEnergyPhaseFilter));
+		return commaDelimitedStringFromCollection(acEnergyPhaseFilter);
 	}
 
 	/**
@@ -619,7 +696,7 @@ public class DemandBalancer implements SettingSpecifierProvider {
 	 * 
 	 * @param value
 	 *        the comma delimited string
-	 * @see #getAcEnergyTotalPhaseOnlyPropertiesValue()
+	 * @see #getAcEnergyPhaseFilterValue()
 	 */
 	public void getAcEnergyPhaseFilterValue(String value) {
 		Set<String> set = StringUtils.commaDelimitedStringToSet(value);
@@ -627,13 +704,13 @@ public class DemandBalancer implements SettingSpecifierProvider {
 			acEnergyPhaseFilter = null;
 			return;
 		}
-		Set<ACPhase> result = new LinkedHashSet<ACPhase>(set.size());
+		Set<AcPhase> result = new LinkedHashSet<AcPhase>(set.size());
 		for ( String phase : set ) {
 			try {
-				ACPhase p = ACPhase.valueOf(phase);
+				AcPhase p = AcPhase.valueOf(phase);
 				result.add(p);
 			} catch ( IllegalArgumentException e ) {
-				log.warn("Ignoring unsupported ACPhase value [{}]", phase);
+				log.warn("Ignoring unsupported AcPhase value [{}]", phase);
 			}
 		}
 		acEnergyPhaseFilter = EnumSet.copyOf(result);

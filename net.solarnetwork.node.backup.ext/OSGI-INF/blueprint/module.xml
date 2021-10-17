@@ -18,8 +18,7 @@
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.backup.BackupResourceProvider</beans:value>
 		</osgix:interfaces>
-		<bean class="net.solarnetwork.node.backup.ext.SolarBackupResourceProvider">
-		</bean>
+		<bean class="net.solarnetwork.node.backup.ext.SolarBackupResourceProvider"/>
 	</osgix:managed-service-factory>
 
 </blueprint>

@@ -27,11 +27,13 @@ import static net.solarnetwork.util.NumberUtils.maximumDecimalScale;
 import static net.solarnetwork.util.NumberUtils.scaled;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -42,7 +44,7 @@ import net.solarnetwork.util.IntRange;
  * Data object for the WattsOn series meter.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class WattsOnData extends ModbusData implements WattsOnDataAccessor {
 
@@ -136,7 +138,7 @@ public class WattsOnData extends ModbusData implements WattsOnDataAccessor {
 		Map<String, Object> result = new LinkedHashMap<>(4);
 		Number firmwareVersion = data.getFirmwareRevision();
 		if ( firmwareVersion != null ) {
-			result.put(INFO_KEY_DEVICE_MODEL, firmwareVersion);
+			result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, firmwareVersion);
 		}
 		Ratio ptRatio = data.getPowerTransformerRatio();
 		if ( ptRatio != null ) {
@@ -148,7 +150,7 @@ public class WattsOnData extends ModbusData implements WattsOnDataAccessor {
 		}
 		Number n = data.getSerialNumber();
 		if ( n != null ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, n);
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, n);
 		}
 		return result;
 	}
@@ -165,8 +167,8 @@ public class WattsOnData extends ModbusData implements WattsOnDataAccessor {
 	 *        the phase to get an accessor for
 	 * @return the accessor
 	 */
-	public WattsOnDataAccessor dataAccessorForPhase(ACPhase phase) {
-		if ( phase == ACPhase.Total ) {
+	public WattsOnDataAccessor dataAccessorForPhase(AcPhase phase) {
+		if ( phase == AcPhase.Total ) {
 			return this;
 		}
 		return new PhaseMeterDataAccessor(phase);
@@ -199,12 +201,12 @@ public class WattsOnData extends ModbusData implements WattsOnDataAccessor {
 	}
 
 	@Override
-	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+	public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 		return dataAccessorForPhase(phase);
 	}
 
 	@Override
-	public ACEnergyDataAccessor reversed() {
+	public AcEnergyDataAccessor reversed() {
 		return new ReversedMeterDataAccessor(this);
 	}
 
@@ -308,9 +310,9 @@ public class WattsOnData extends ModbusData implements WattsOnDataAccessor {
 
 	private class PhaseMeterDataAccessor implements WattsOnDataAccessor {
 
-		private final ACPhase phase;
+		private final AcPhase phase;
 
-		private PhaseMeterDataAccessor(ACPhase phase) {
+		private PhaseMeterDataAccessor(AcPhase phase) {
 			super();
 			this.phase = phase;
 		}
@@ -341,17 +343,17 @@ public class WattsOnData extends ModbusData implements WattsOnDataAccessor {
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return WattsOnData.this.getDataTimestamp();
 		}
 
 		@Override
-		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 			return WattsOnData.this.accessorForPhase(phase);
 		}
 
 		@Override
-		public ACEnergyDataAccessor reversed() {
+		public AcEnergyDataAccessor reversed() {
 			return new ReversedMeterDataAccessor(this);
 		}
 
@@ -515,7 +517,7 @@ public class WattsOnData extends ModbusData implements WattsOnDataAccessor {
 		}
 
 		@Override
-		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 			return new ReversedMeterDataAccessor((WattsOnDataAccessor) delegate.accessorForPhase(phase));
 		}
 
@@ -540,12 +542,12 @@ public class WattsOnData extends ModbusData implements WattsOnDataAccessor {
 		}
 
 		@Override
-		public ACEnergyDataAccessor reversed() {
+		public AcEnergyDataAccessor reversed() {
 			return delegate;
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return delegate.getDataTimestamp();
 		}
 

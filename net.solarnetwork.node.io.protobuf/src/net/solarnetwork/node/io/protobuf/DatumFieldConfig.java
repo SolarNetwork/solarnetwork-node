@@ -26,34 +26,34 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.domain.datum.DatumSamplePropertyConfig;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Configuration bean for a mapping of a datum property to a message field
  * property.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class DatumFieldConfig extends GeneralDatumSamplePropertyConfig<String> {
+public class DatumFieldConfig extends DatumSamplePropertyConfig<String> {
 
 	/** The default {@code propertyType} property value. */
-	public static final GeneralDatumSamplesType DEFAULT_PROPERTY_TYPE = GeneralDatumSamplesType.Instantaneous;
+	public static final DatumSamplesType DEFAULT_PROPERTY_TYPE = DatumSamplesType.Instantaneous;
 
 	/**
 	 * Default constructor.
 	 * 
 	 * <p>
 	 * The {@code propertyType} is set to
-	 * {@link GeneralDatumSamplesType#Instantaneous}.
+	 * {@link DatumSamplesType#Instantaneous}.
 	 * </p>
 	 */
 	public DatumFieldConfig() {
-		super(null, GeneralDatumSamplesType.Instantaneous, null);
+		super(null, DatumSamplesType.Instantaneous, null);
 	}
 
 	/**
@@ -66,8 +66,7 @@ public class DatumFieldConfig extends GeneralDatumSamplePropertyConfig<String> {
 	 * @param fieldProperty
 	 *        the message field property
 	 */
-	public DatumFieldConfig(String datumProperty, GeneralDatumSamplesType propertyType,
-			String fieldProperty) {
+	public DatumFieldConfig(String datumProperty, DatumSamplesType propertyType, String fieldProperty) {
 		super(datumProperty, propertyType, fieldProperty);
 	}
 
@@ -87,7 +86,7 @@ public class DatumFieldConfig extends GeneralDatumSamplePropertyConfig<String> {
 		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
 				prefix + "propertyTypeKey", Character.toString(DEFAULT_PROPERTY_TYPE.toKey()));
 		Map<String, String> propTypeTitles = new LinkedHashMap<String, String>(3);
-		for ( GeneralDatumSamplesType e : GeneralDatumSamplesType.values() ) {
+		for ( DatumSamplesType e : DatumSamplesType.values() ) {
 			propTypeTitles.put(Character.toString(e.toKey()), e.toString());
 		}
 		propTypeSpec.setValueTitles(propTypeTitles);

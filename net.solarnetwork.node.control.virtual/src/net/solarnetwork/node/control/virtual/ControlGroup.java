@@ -22,9 +22,9 @@
 
 package net.solarnetwork.node.control.virtual;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -36,25 +36,25 @@ import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
+import net.solarnetwork.domain.BasicNodeControlInfo;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.NodeControlInfoDatum;
+import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
-import net.solarnetwork.node.support.DatumEvents;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.OptionalServiceCollection.OptionalFilterableServiceCollection;
+import net.solarnetwork.service.support.BasicIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.NodeControlUtils;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.OptionalServiceCollection;
 
 /**
  * A virtual control that operates on a set of other controls, making a group of
@@ -66,16 +66,16 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * together as if they were a single switch.
  * </p>
  * 
- * @author Matt Magoffin
- * @version 1.0
+ * @author matt
+ * @version 2.0
  */
-public class ControlGroup extends BaseIdentifiable implements SettingSpecifierProvider,
-		NodeControlProvider, InstructionHandler, EventHandler, DatumEvents {
+public class ControlGroup extends BasicIdentifiable
+		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler, EventHandler {
 
 	/** The default value for the {@code controlPropertyType} property. */
 	public static final NodeControlPropertyType DEFAULT_CONTROL_PROPERTY_TYPE = NodeControlPropertyType.Boolean;
 
-	private final OptionalServiceCollection<NodeControlProvider> controls;
+	private final OptionalFilterableServiceCollection<NodeControlProvider> controls;
 	private final OptionalService<InstructionExecutionService> instructionService;
 	private final OptionalService<EventAdmin> eventAdmin;
 	private String controlId;
@@ -84,13 +84,24 @@ public class ControlGroup extends BaseIdentifiable implements SettingSpecifierPr
 	private final AtomicReference<String> controlValue = new AtomicReference<>();
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	public ControlGroup(OptionalServiceCollection<NodeControlProvider> controls,
+	/**
+	 * Constructor.
+	 * 
+	 * @param controls
+	 *        the controls to group into a single virtual control
+	 * @param instructionService
+	 *        the instruction service
+	 * @param eventAdmin
+	 *        the event admin
+	 */
+	public ControlGroup(OptionalFilterableServiceCollection<NodeControlProvider> controls,
 			OptionalService<InstructionExecutionService> instructionService,
 			OptionalService<EventAdmin> eventAdmin) {
 		super();
 		this.controls = controls;
 		this.instructionService = instructionService;
 		this.eventAdmin = eventAdmin;
+		setDisplayName("Virtual Control Group");
 	}
 
 	@Override
@@ -99,7 +110,7 @@ public class ControlGroup extends BaseIdentifiable implements SettingSpecifierPr
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		String controlId = getControlId();
 		if ( instruction == null || !TOPIC_SET_CONTROL_PARAMETER.equals(instruction.getTopic())
 				|| controlId == null ) {
@@ -128,25 +139,25 @@ public class ControlGroup extends BaseIdentifiable implements SettingSpecifierPr
 		if ( id == null || type == null || value == null || !id.equals(controlId) ) {
 			return null;
 		}
-		NodeControlInfoDatum result = createDatum(id, type, value);
+		SimpleNodeControlInfoDatum result = createDatum(id, type, value);
 		postControlEvent(result, NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED);
 		return result;
 	}
 
-	private static NodeControlInfoDatum createDatum(String controlId, NodeControlPropertyType type,
+	private static SimpleNodeControlInfoDatum createDatum(String controlId, NodeControlPropertyType type,
 			Object value) {
-		NodeControlInfoDatum d = new NodeControlInfoDatum();
-		d.setCreated(new Date());
-		d.setReadonly(false);
-		d.setSourceId(controlId);
-		d.setType(type);
-
-		String controlValue = NodeControlUtils.controlValue(type, value);
-		d.setValue(controlValue);
-		return d;
+		// @formatter:off
+		BasicNodeControlInfo info = BasicNodeControlInfo.builder()
+				.withControlId(controlId)
+				.withReadonly(false)
+				.withType(type)
+				.withValue(NodeControlUtils.controlValue(type, value))
+				.build();
+		// formatter:on
+		return new SimpleNodeControlInfoDatum(info, Instant.now());
 	}
 
-	private void postControlEvent(NodeControlInfoDatum info, String topic) {
+	private void postControlEvent(SimpleNodeControlInfoDatum info, String topic) {
 		final EventAdmin admin = (eventAdmin != null ? eventAdmin.service() : null);
 		if ( admin == null ) {
 			return;
@@ -168,7 +179,7 @@ public class ControlGroup extends BaseIdentifiable implements SettingSpecifierPr
 		if ( controlId == null ) {
 			return;
 		}
-		Object datum = event.getProperty(Datum.DATUM_PROPERTY);
+		Object datum = event.getProperty(DatumEvents.DATUM_PROPERTY);
 		if ( !(datum instanceof NodeControlInfo
 				&& controlId.equals(((NodeControlInfo) datum).getControlId())) ) {
 			return;
@@ -179,13 +190,8 @@ public class ControlGroup extends BaseIdentifiable implements SettingSpecifierPr
 	// Settings
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.control.virtual.ControlGroup";
-	}
-
-	@Override
-	public String getDisplayName() {
-		return "Virtual Control Group";
 	}
 
 	@Override
@@ -195,9 +201,7 @@ public class ControlGroup extends BaseIdentifiable implements SettingSpecifierPr
 		results.add(new BasicTitleSettingSpecifier("groupValue", controlValue.get(), true));
 		results.add(new BasicTitleSettingSpecifier("controlValues", controlValuesDescription(), true));
 
-		results.add(new BasicTextFieldSettingSpecifier("uid", ""));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", ""));
-
+		results.addAll(basicIdentifiableSettings());
 		results.add(new BasicTextFieldSettingSpecifier("controlId", ""));
 
 		// drop-down menu for controlPropertyType
@@ -210,7 +214,7 @@ public class ControlGroup extends BaseIdentifiable implements SettingSpecifierPr
 		propTypeSpec.setValueTitles(propTypeTitles);
 		results.add(propTypeSpec);
 
-		results.add(new BasicTextFieldSettingSpecifier("controls.propertyFilters['groupUID']", ""));
+		results.add(new BasicTextFieldSettingSpecifier("controlsGroupUidFilter", ""));
 
 		return results;
 	}
@@ -339,7 +343,7 @@ public class ControlGroup extends BaseIdentifiable implements SettingSpecifierPr
 	 * 
 	 * @return the controls to manage
 	 */
-	public OptionalServiceCollection<NodeControlProvider> getControls() {
+	public OptionalFilterableServiceCollection<NodeControlProvider> getControls() {
 		return controls;
 	}
 
@@ -350,6 +354,14 @@ public class ControlGroup extends BaseIdentifiable implements SettingSpecifierPr
 	 */
 	public OptionalService<InstructionExecutionService> getInstructionService() {
 		return instructionService;
+	}
+	
+	/**
+	 * Set the controls {@literal groupUid} property filter value.
+	 * @param groupUid the group UID to filter on
+	 */
+	public void setControlsGroupUidFilter(String groupUid) {
+		controls.setPropertyFilter("groupUid", groupUid);
 	}
 
 }

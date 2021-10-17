@@ -23,13 +23,13 @@
 package net.solarnetwork.node.io.dnp3;
 
 import com.automatak.dnp3.Channel;
-import net.solarnetwork.node.Identifiable;
+import net.solarnetwork.service.Identifiable;
 
 /**
  * A managed DNP3 channel.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public interface ChannelService extends Identifiable {
 

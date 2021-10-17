@@ -43,9 +43,9 @@ public interface TablesMaintenanceService {
 	 * 
 	 * @param startAfterKey
 	 *        A {@code key} returned from a previous execution of this method,
-	 *        to start table maintenance from, or {@code null} to start at the
+	 *        to start table maintenance from, or {@literal null} to start at the
 	 *        first available table.
-	 * @return A {@code key} for the last table processed, or {@code null} if
+	 * @return A {@code key} for the last table processed, or {@literal null} if
 	 *         all tables were processed.
 	 */
 	String processTables(String startAfterKey);

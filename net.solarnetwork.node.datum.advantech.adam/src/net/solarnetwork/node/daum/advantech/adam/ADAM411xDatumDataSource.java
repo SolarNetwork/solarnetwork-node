@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.daum.advantech.adam;
 
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -29,34 +30,34 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.domain.datum.MutableDatumSamplesOperations;
+import net.solarnetwork.node.domain.datum.MutableNodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.hw.advantech.adam.ADAM411xData;
 import net.solarnetwork.node.hw.advantech.adam.ADAM411xDataAccessor;
 import net.solarnetwork.node.hw.advantech.adam.InputRangeType;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
 
 /**
  * Datum data source for ADAM 411x series devices.
  * 
  * @author matt
- * @version 1.4
+ * @version 2.0
  */
 public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<ADAM411xData>
-		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, SettingSpecifierProvider {
 
 	private static final int CHANNEL_COUNT = 8;
 
@@ -94,12 +95,12 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 	}
 
 	@Override
-	public Class<? extends GeneralNodeDatum> getDatumType() {
-		return GeneralNodeDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return NodeDatum.class;
 	}
 
 	@Override
-	public GeneralNodeDatum readCurrentDatum() {
+	public NodeDatum readCurrentDatum() {
 		final String sourceId = resolvePlaceholders(this.sourceId);
 		if ( sourceId == null ) {
 			return null;
@@ -109,10 +110,8 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 			if ( currSample == null ) {
 				return null;
 			}
-			GeneralNodeDatum d = new GeneralNodeDatum();
-			d.setSourceId(sourceId);
-			d.setCreated(new Date(currSample.getDataTimestamp()));
-
+			SimpleDatum d = SimpleDatum.nodeDatum(resolvePlaceholders(sourceId),
+					currSample.getDataTimestamp());
 			if ( !populateDatumProperties(currSample, d, getPropConfigs()) ) {
 				return null;
 			}
@@ -125,11 +124,12 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 		}
 	}
 
-	private boolean populateDatumProperties(ADAM411xData sample, GeneralNodeDatum d,
+	private boolean populateDatumProperties(ADAM411xData sample, MutableNodeDatum d,
 			ChannelPropertyConfig[] propConfs) {
 		if ( propConfs == null || propConfs.length < 1 ) {
 			return false;
 		}
+		MutableDatumSamplesOperations ops = d.asMutableSampleOperations();
 		boolean result = false;
 		for ( ChannelPropertyConfig conf : propConfs ) {
 			// skip configurations without a property to set
@@ -140,7 +140,7 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 			propVal = conf.applyTransformations(propVal);
 
 			if ( propVal != null ) {
-				d.putSampleValue(conf.getPropertyType(), conf.getPropertyKey(), propVal);
+				ops.putSampleValue(conf.getPropertyType(), conf.getPropertyKey(), propVal);
 				result = true;
 			}
 		}
@@ -150,7 +150,7 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.daum.advantech.adam411x";
 	}
 
@@ -176,8 +176,8 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 		ChannelPropertyConfig[] confs = getPropConfigs();
 		List<ChannelPropertyConfig> confsList = (confs != null ? Arrays.asList(confs)
 				: Collections.<ChannelPropertyConfig> emptyList());
-		results.add(SettingsUtil.dynamicListSettingSpecifier("propConfigs", confsList,
-				new SettingsUtil.KeyedListCallback<ChannelPropertyConfig>() {
+		results.add(SettingUtils.dynamicListSettingSpecifier("propConfigs", confsList,
+				new SettingUtils.KeyedListCallback<ChannelPropertyConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(ChannelPropertyConfig value,
@@ -201,7 +201,7 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 	}
 
 	private String getSampleMessage(ADAM411xDataAccessor data) {
-		if ( data.getDataTimestamp() < 1 ) {
+		if ( data.getDataTimestamp() == null ) {
 			return "N/A";
 		}
 		StringBuilder buf = new StringBuilder();
@@ -226,8 +226,7 @@ public class ADAM411xDatumDataSource extends ModbusDataDatumDataSourceSupport<AD
 			}
 
 		}
-		buf.append("; sampled at ")
-				.append(DateTimeFormat.forStyle("LS").print(new DateTime(data.getDataTimestamp())));
+		buf.append("; sampled at ").append(formatForLocalDisplay(data.getDataTimestamp()));
 		return buf.toString();
 	}
 

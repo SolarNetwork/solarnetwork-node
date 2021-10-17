@@ -86,6 +86,8 @@ public final class DataUtils {
 	 * @param pat
 	 *        the pattern to match a single integer per line, with the first
 	 *        matching group matching the integer value
+	 * @param radix
+	 *        the radix to parse the number as
 	 * @return the parsed integer values
 	 * @throws IOException
 	 *         if any IO error occurs

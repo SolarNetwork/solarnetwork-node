@@ -25,10 +25,11 @@ package net.solarnetwork.node.hw.schneider.meter;
 import static net.solarnetwork.util.CollectionUtils.coveringIntRanges;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Map;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -182,20 +183,20 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 	 *        the phase to get an accessor for
 	 * @return the accessor
 	 */
-	public ION6200DataAccessor dataAccessorForPhase(ACPhase phase) {
-		if ( phase == ACPhase.Total ) {
+	public ION6200DataAccessor dataAccessorForPhase(AcPhase phase) {
+		if ( phase == AcPhase.Total ) {
 			return this;
 		}
 		return new PhaseMeterDataAccessor(phase);
 	}
 
 	@Override
-	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+	public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 		return dataAccessorForPhase(phase);
 	}
 
 	@Override
-	public ACEnergyDataAccessor reversed() {
+	public AcEnergyDataAccessor reversed() {
 		return new ReversedMeterDataAccessor(this);
 	}
 
@@ -377,9 +378,9 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 
 	private class PhaseMeterDataAccessor implements ION6200DataAccessor {
 
-		private final ACPhase phase;
+		private final AcPhase phase;
 
-		private PhaseMeterDataAccessor(ACPhase phase) {
+		private PhaseMeterDataAccessor(AcPhase phase) {
 			super();
 			this.phase = phase;
 		}
@@ -410,17 +411,17 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return ION6200Data.this.getDataTimestamp();
 		}
 
 		@Override
-		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 			return ION6200Data.this.accessorForPhase(phase);
 		}
 
 		@Override
-		public ACEnergyDataAccessor reversed() {
+		public AcEnergyDataAccessor reversed() {
 			return new ReversedMeterDataAccessor(this);
 		}
 
@@ -584,7 +585,7 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 		}
 
 		@Override
-		public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 			return new ReversedMeterDataAccessor((ION6200DataAccessor) delegate.accessorForPhase(phase));
 		}
 
@@ -609,12 +610,12 @@ public class ION6200Data extends ModbusData implements ION6200DataAccessor {
 		}
 
 		@Override
-		public ACEnergyDataAccessor reversed() {
+		public AcEnergyDataAccessor reversed() {
 			return delegate;
 		}
 
 		@Override
-		public long getDataTimestamp() {
+		public Instant getDataTimestamp() {
 			return delegate.getDataTimestamp();
 		}
 

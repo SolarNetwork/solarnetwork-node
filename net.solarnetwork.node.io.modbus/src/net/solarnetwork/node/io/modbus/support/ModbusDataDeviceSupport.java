@@ -23,6 +23,8 @@
 package net.solarnetwork.node.io.modbus.support;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -31,8 +33,8 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * A base helper class to support {@link ModbusNetwork} based device
@@ -41,7 +43,7 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * @param <T>
  *        the {@link ModbusData} type
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 2.14
  */
 public abstract class ModbusDataDeviceSupport<T extends ModbusData & DataAccessor>
@@ -60,7 +62,7 @@ public abstract class ModbusDataDeviceSupport<T extends ModbusData & DataAccesso
 
 	/**
 	 * Get setting specifiers for the {@literal unitId} and
-	 * {@literal modbusNetwork.propertyFilters['UID']} properties.
+	 * {@literal modbusNetwork.propertyFilters['uid']} properties.
 	 * 
 	 * @param prefix
 	 *        a setting prefix to prepend
@@ -124,7 +126,7 @@ public abstract class ModbusDataDeviceSupport<T extends ModbusData & DataAccesso
 				@Override
 				public T doWithConnection(ModbusConnection conn) throws IOException {
 					T sample = getSample();
-					if ( sample.getDataTimestamp() == 0 ) {
+					if ( sample.getDataTimestamp() == null ) {
 						// first time also load info
 						readDeviceInfoFirstTime(conn, sample);
 					}
@@ -230,7 +232,11 @@ public abstract class ModbusDataDeviceSupport<T extends ModbusData & DataAccesso
 	 */
 	protected boolean isCachedSampleExpired() {
 		final T sample = getSample();
-		final long lastReadDiff = System.currentTimeMillis() - sample.getDataTimestamp();
+		Instant ts = (sample != null ? sample.getDataTimestamp() : null);
+		if ( ts == null ) {
+			ts = Instant.EPOCH;
+		}
+		final long lastReadDiff = ts.until(Instant.now(), ChronoUnit.MILLIS);
 		if ( lastReadDiff > sampleCacheMs ) {
 			return true;
 		}

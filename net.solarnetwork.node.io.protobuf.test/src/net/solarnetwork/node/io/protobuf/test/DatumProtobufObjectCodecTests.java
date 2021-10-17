@@ -34,17 +34,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.io.protobuf.DatumFieldConfig;
 import net.solarnetwork.node.io.protobuf.DatumProtobufObjectCodec;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link DatumProtobufObjectCodec}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class DatumProtobufObjectCodecTests extends BaseProtocProtobufCompilerServiceTestSupport {
 
@@ -61,13 +61,13 @@ public class DatumProtobufObjectCodecTests extends BaseProtocProtobufCompilerSer
 		codec.setCompilerService(new StaticOptionalService<>(protocService));
 		codec.setMessageClassName("sn.PowerDatum");
 
-		DatumFieldConfig energyConfig = new DatumFieldConfig("wattHours",
-				GeneralDatumSamplesType.Accumulating, "energy");
-		DatumFieldConfig powerConfig = new DatumFieldConfig("volts",
-				GeneralDatumSamplesType.Instantaneous, "voltage");
-		DatumFieldConfig latConfig = new DatumFieldConfig("lat", GeneralDatumSamplesType.Instantaneous,
+		DatumFieldConfig energyConfig = new DatumFieldConfig("wattHours", DatumSamplesType.Accumulating,
+				"energy");
+		DatumFieldConfig powerConfig = new DatumFieldConfig("volts", DatumSamplesType.Instantaneous,
+				"voltage");
+		DatumFieldConfig latConfig = new DatumFieldConfig("lat", DatumSamplesType.Instantaneous,
 				"location.lat");
-		DatumFieldConfig lonConfig = new DatumFieldConfig("lon", GeneralDatumSamplesType.Instantaneous,
+		DatumFieldConfig lonConfig = new DatumFieldConfig("lon", DatumSamplesType.Instantaneous,
 				"location.lon");
 		codec.setPropConfigs(new DatumFieldConfig[] { energyConfig, powerConfig, latConfig, lonConfig });
 
@@ -78,11 +78,11 @@ public class DatumProtobufObjectCodecTests extends BaseProtocProtobufCompilerSer
 	@Test
 	public void encode_datum() throws IOException {
 		// GIVEN
-		GeneralNodeDatum d = new GeneralNodeDatum();
-		d.putInstantaneousSampleValue("volts", 1.234);
-		d.putInstantaneousSampleValue("lat", 2.345);
-		d.putInstantaneousSampleValue("lon", 3.456);
-		d.putAccumulatingSampleValue("wattHours", 123456);
+		SimpleDatum d = SimpleDatum.nodeDatum(null);
+		d.getSamples().putInstantaneousSampleValue("volts", 1.234);
+		d.getSamples().putInstantaneousSampleValue("lat", 2.345);
+		d.getSamples().putInstantaneousSampleValue("lon", 3.456);
+		d.getSamples().putAccumulatingSampleValue("wattHours", 123456);
 
 		// WHEN
 		byte[] data = codec.encodeAsBytes(d, null);
@@ -95,11 +95,11 @@ public class DatumProtobufObjectCodecTests extends BaseProtocProtobufCompilerSer
 	@Test
 	public void encode_datum_map() throws IOException {
 		// GIVEN
-		GeneralNodeDatum d = new GeneralNodeDatum();
-		d.putInstantaneousSampleValue("volts", 1.234);
-		d.putInstantaneousSampleValue("lat", 2.345);
-		d.putInstantaneousSampleValue("lon", 3.456);
-		d.putAccumulatingSampleValue("wattHours", 123456);
+		SimpleDatum d = SimpleDatum.nodeDatum(null);
+		d.getSamples().putInstantaneousSampleValue("volts", 1.234);
+		d.getSamples().putInstantaneousSampleValue("lat", 2.345);
+		d.getSamples().putInstantaneousSampleValue("lon", 3.456);
+		d.getSamples().putAccumulatingSampleValue("wattHours", 123456);
 
 		// WHEN
 		byte[] data = codec.encodeAsBytes(d.asSimpleMap(), null);
@@ -117,15 +117,16 @@ public class DatumProtobufObjectCodecTests extends BaseProtocProtobufCompilerSer
 		Object result = codec.decodeFromBytes(Hex.decodeHex(TEST_MSG), null);
 
 		// THEN
-		assertThat("Data decoded", result, instanceOf(GeneralNodeDatum.class));
-		GeneralNodeDatum d = (GeneralNodeDatum) result;
-		assertThat("Volts decoded", d.getInstantaneousSampleBigDecimal("volts"),
+		assertThat("Data decoded", result, instanceOf(SimpleDatum.class));
+		SimpleDatum d = (SimpleDatum) result;
+		assertThat("Volts decoded", d.getSamples().getInstantaneousSampleBigDecimal("volts"),
 				equalTo(new BigDecimal("1.234")));
-		assertThat("Lat decoded", d.getInstantaneousSampleBigDecimal("lat"),
+		assertThat("Lat decoded", d.getSamples().getInstantaneousSampleBigDecimal("lat"),
 				equalTo(new BigDecimal("2.345")));
-		assertThat("Lon decoded", d.getInstantaneousSampleBigDecimal("lon"),
+		assertThat("Lon decoded", d.getSamples().getInstantaneousSampleBigDecimal("lon"),
 				equalTo(new BigDecimal("3.456")));
-		assertThat("wattHours decoded", d.getAccumulatingSampleLong("wattHours"), equalTo(123456L));
+		assertThat("wattHours decoded", d.getSamples().getAccumulatingSampleLong("wattHours"),
+				equalTo(123456L));
 	}
 
 }

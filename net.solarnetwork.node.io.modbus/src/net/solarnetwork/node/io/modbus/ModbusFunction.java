@@ -61,7 +61,7 @@ public interface ModbusFunction {
 	 * and a write function for a given read function.
 	 * </p>
 	 * 
-	 * @return the function, or {@code null} if not applicable
+	 * @return the function, or {@literal null} if not applicable
 	 */
 	ModbusFunction oppositeFunction();
 

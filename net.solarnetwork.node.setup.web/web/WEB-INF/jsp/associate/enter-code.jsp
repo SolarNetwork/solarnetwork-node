@@ -42,13 +42,13 @@
 
 		<form class="form-horizontal" action="<setup:url value='/associate/configure'/>" method="post">
 			<c:forEach items="${providers}" var="provider" varStatus="providerStatus">
-				<!--  ${provider.settingUID} -->
+				<!--  ${provider.settingUid} -->
 				<c:set var="provider" value="${provider}" scope="request"/>
 				<fieldset>
 					<legend>
-						<a id="${provider.settingUID}" 
+						<a id="${provider.settingUid}" 
 							class="anchor" 
-							href="#${provider.settingUID}"
+							href="#${provider.settingUid}"
 							aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>
 						<setup:message key="title" messageSource="${provider.messageSource}" text="${provider.displayName}"/>
 					</legend>

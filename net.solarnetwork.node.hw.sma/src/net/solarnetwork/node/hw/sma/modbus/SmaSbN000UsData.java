@@ -22,21 +22,21 @@
 
 package net.solarnetwork.node.hw.sma.modbus;
 
-import static net.solarnetwork.domain.GeneralDatumSamplesType.Accumulating;
-import static net.solarnetwork.domain.GeneralDatumSamplesType.Instantaneous;
-import static net.solarnetwork.domain.GeneralDatumSamplesType.Status;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.Map;
+import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
-import net.solarnetwork.node.domain.ACEnergyDatum;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.EnergyDatum;
-import net.solarnetwork.node.domain.PVEnergyDatum;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.MutableDatumSamplesOperations;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
+import net.solarnetwork.node.domain.datum.DcEnergyDatum;
+import net.solarnetwork.node.domain.datum.EnergyDatum;
 import net.solarnetwork.node.hw.sma.domain.GenericSmaCodedValue;
 import net.solarnetwork.node.hw.sma.domain.SmaCodedValue;
 import net.solarnetwork.node.hw.sma.domain.SmaCommonStatusCode;
@@ -51,7 +51,7 @@ import net.solarnetwork.util.NumberUtils;
  * {@link SmaDeviceData} for Sunny Boy n000 US devices.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class SmaSbN000UsData extends SmaDeviceData implements SmaSbN000UsDataAccessor {
 
@@ -97,8 +97,7 @@ public class SmaSbN000UsData extends SmaDeviceData implements SmaSbN000UsDataAcc
 	}
 
 	@Override
-	public void populateDatumSamples(MutableGeneralDatumSamplesOperations samples,
-			Map<String, ?> parameters) {
+	public void populateDatumSamples(MutableDatumSamplesOperations samples, Map<String, ?> parameters) {
 		samples.putSampleValue(Status, "powerLimit", getActivePowerMaximum());
 		samples.putSampleValue(Status, "powerMax", getActivePowerPermanentLimit());
 		samples.putSampleValue(Status, "error", codedValueCode(getError()));
@@ -113,15 +112,15 @@ public class SmaSbN000UsData extends SmaDeviceData implements SmaSbN000UsDataAcc
 		samples.putSampleValue(Accumulating, "opTime", getOperatingTime());
 		samples.putSampleValue(Accumulating, "feedInTime", getFeedInTime());
 
-		samples.putSampleValue(Instantaneous, PVEnergyDatum.DC_VOLTAGE_KEY, getDcVoltage());
-		samples.putSampleValue(Instantaneous, PVEnergyDatum.DC_POWER_KEY, getDcPower());
+		samples.putSampleValue(Instantaneous, DcEnergyDatum.DC_VOLTAGE_KEY, getDcVoltage());
+		samples.putSampleValue(Instantaneous, DcEnergyDatum.DC_POWER_KEY, getDcPower());
 		samples.putSampleValue(Instantaneous, EnergyDatum.WATTS_KEY, getActivePower());
-		samples.putSampleValue(Instantaneous, ACPhase.PhaseA.withKey(ACEnergyDatum.VOLTAGE_KEY),
+		samples.putSampleValue(Instantaneous, AcPhase.PhaseA.withKey(AcEnergyDatum.VOLTAGE_KEY),
 				getVoltageLine1Neutral());
-		samples.putSampleValue(Instantaneous, ACPhase.PhaseB.withKey(ACEnergyDatum.VOLTAGE_KEY),
+		samples.putSampleValue(Instantaneous, AcPhase.PhaseB.withKey(AcEnergyDatum.VOLTAGE_KEY),
 				getVoltageLine2Neutral());
-		samples.putSampleValue(Instantaneous, ACEnergyDatum.CURRENT_KEY, getCurrent());
-		samples.putSampleValue(Instantaneous, ACEnergyDatum.FREQUENCY_KEY, getFrequency());
+		samples.putSampleValue(Instantaneous, AcEnergyDatum.CURRENT_KEY, getCurrent());
+		samples.putSampleValue(Instantaneous, AcEnergyDatum.FREQUENCY_KEY, getFrequency());
 	}
 
 	@Override

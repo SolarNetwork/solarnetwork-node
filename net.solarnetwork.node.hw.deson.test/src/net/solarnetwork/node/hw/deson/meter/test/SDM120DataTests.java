@@ -30,11 +30,11 @@ import java.io.IOException;
 import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.hw.deson.meter.SDMData;
 import net.solarnetwork.node.hw.deson.meter.SDMWiringMode;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
-import net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport;
 
 /**
  * Unit tests for the {@link SDMData} class.
@@ -99,7 +99,7 @@ public class SDM120DataTests {
 		Map<String, Object> info = data.getDeviceInfo();
 
 		assertThat("Info size", info.keySet(), hasSize(2));
-		assertThat("Model name", info, hasEntry(ModbusDeviceSupport.INFO_KEY_DEVICE_MODEL, "SDM-120"));
+		assertThat("Model name", info, hasEntry(DataAccessor.INFO_KEY_DEVICE_MODEL, "SDM-120"));
 		assertThat("Wiring type", info, hasEntry(SDMData.INFO_KEY_DEVICE_WIRING_TYPE,
 				SDMWiringMode.OnePhaseTwoWire.getDescription()));
 	}

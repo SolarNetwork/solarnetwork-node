@@ -30,13 +30,11 @@ import static org.junit.Assert.assertThat;
 import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
-import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.datum.opmode.DatumDataSourceOpModeInvoker;
 import net.solarnetwork.node.datum.opmode.DatumDataSourceScheduleConfig;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.EnergyDatum;
-import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
-import net.solarnetwork.node.domain.PVEnergyDatum;
+import net.solarnetwork.node.domain.datum.DcEnergyDatum;
+import net.solarnetwork.node.domain.datum.EnergyDatum;
+import net.solarnetwork.node.service.DatumDataSource;
 
 /**
  * Test cases for the {@link DatumDataSourceOpModeInvoker}.
@@ -47,7 +45,7 @@ import net.solarnetwork.node.domain.PVEnergyDatum;
 @SuppressWarnings({ "rawtypes", "unchecked" })
 public class DatumDataSourceScheduleConfigTests {
 
-	private DatumDataSource<Datum> datumDataSource;
+	private DatumDataSource datumDataSource;
 
 	@Before
 	public void setup() {
@@ -56,7 +54,7 @@ public class DatumDataSourceScheduleConfigTests {
 
 	@Test
 	public void datumTypeInvalidClass() {
-		expect(datumDataSource.getDatumType()).andReturn((Class) GeneralNodePVEnergyDatum.class);
+		expect(datumDataSource.getDatumType()).andReturn((Class) DcEnergyDatum.class);
 
 		DatumDataSourceScheduleConfig config = new DatumDataSourceScheduleConfig();
 		config.setDatumType("nah");
@@ -70,7 +68,7 @@ public class DatumDataSourceScheduleConfigTests {
 
 	@Test
 	public void datumTypeClassMismatch() {
-		expect(datumDataSource.getDatumType()).andReturn((Class) GeneralNodePVEnergyDatum.class);
+		expect(datumDataSource.getDatumType()).andReturn((Class) DcEnergyDatum.class);
 
 		DatumDataSourceScheduleConfig config = new DatumDataSourceScheduleConfig();
 		config.setDatumType(String.class.getName());
@@ -84,10 +82,10 @@ public class DatumDataSourceScheduleConfigTests {
 
 	@Test
 	public void datumTypeMatchExact() {
-		expect(datumDataSource.getDatumType()).andReturn((Class) GeneralNodePVEnergyDatum.class);
+		expect(datumDataSource.getDatumType()).andReturn((Class) DcEnergyDatum.class);
 
 		DatumDataSourceScheduleConfig config = new DatumDataSourceScheduleConfig();
-		config.setDatumType(GeneralNodePVEnergyDatum.class.getName());
+		config.setDatumType(DcEnergyDatum.class.getName());
 
 		replay(datumDataSource);
 
@@ -98,10 +96,10 @@ public class DatumDataSourceScheduleConfigTests {
 
 	@Test
 	public void datumTypeMatchDirectInterface() {
-		expect(datumDataSource.getDatumType()).andReturn((Class) GeneralNodePVEnergyDatum.class);
+		expect(datumDataSource.getDatumType()).andReturn((Class) DcEnergyDatum.class);
 
 		DatumDataSourceScheduleConfig config = new DatumDataSourceScheduleConfig();
-		config.setDatumType(PVEnergyDatum.class.getName());
+		config.setDatumType(DcEnergyDatum.class.getName());
 
 		replay(datumDataSource);
 
@@ -112,7 +110,7 @@ public class DatumDataSourceScheduleConfigTests {
 
 	@Test
 	public void datumTypeMatchInheritedInterface() {
-		expect(datumDataSource.getDatumType()).andReturn((Class) GeneralNodePVEnergyDatum.class);
+		expect(datumDataSource.getDatumType()).andReturn((Class) DcEnergyDatum.class);
 
 		DatumDataSourceScheduleConfig config = new DatumDataSourceScheduleConfig();
 		config.setDatumType(EnergyDatum.class.getName());

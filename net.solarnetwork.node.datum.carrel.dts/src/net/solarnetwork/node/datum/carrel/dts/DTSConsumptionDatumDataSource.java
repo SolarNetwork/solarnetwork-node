@@ -23,23 +23,25 @@
 package net.solarnetwork.node.datum.carrel.dts;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.domain.ACEnergyDatum;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
+import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusDataUtils;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.support.ModbusDeviceDatumDataSourceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
- * {@link DatumDataSource} implementation for {@link ACEnergyDatum} with the DTS
+ * {@link DatumDataSource} implementation for {@link AcEnergyDatum} with the DTS
  * series watt meter.
  * 
  * <p>
@@ -59,11 +61,20 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * @version 2.1
  */
 public class DTSConsumptionDatumDataSource extends ModbusDeviceDatumDataSourceSupport
-		implements DatumDataSource<ACEnergyDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, SettingSpecifierProvider {
 
+	/** The modbus register address for active energy import. */
 	public static final int ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT = 40001;
 
-	private String sourceId = "Main";
+	/** The {@code sourceId} default value. */
+	public static final String DEFAULT_SOURCE_ID = "DTS Meter";
+
+	private String sourceId = DEFAULT_SOURCE_ID;
+
+	public DTSConsumptionDatumDataSource() {
+		super();
+		setDisplayName("DTS Series Meter");
+	}
 
 	@Override
 	protected Map<String, Object> readDeviceInfo(ModbusConnection conn) {
@@ -71,33 +82,31 @@ public class DTSConsumptionDatumDataSource extends ModbusDeviceDatumDataSourceSu
 	}
 
 	@Override
-	public Class<? extends ACEnergyDatum> getDatumType() {
-		return GeneralNodeACEnergyDatum.class;
+	public Class<? extends AcEnergyDatum> getDatumType() {
+		return AcEnergyDatum.class;
 	}
 
 	@Override
-	public ACEnergyDatum readCurrentDatum() {
+	public AcEnergyDatum readCurrentDatum() {
 		try {
-			GeneralNodeACEnergyDatum datum = performAction(
-					new ModbusConnectionAction<GeneralNodeACEnergyDatum>() {
+			AcEnergyDatum datum = performAction(new ModbusConnectionAction<AcEnergyDatum>() {
 
-						@Override
-						public GeneralNodeACEnergyDatum doWithConnection(ModbusConnection conn)
-								throws IOException {
-							GeneralNodeACEnergyDatum d = new GeneralNodeACEnergyDatum();
-							short[] data = conn.readWords(ModbusReadFunction.ReadHoldingRegister,
-									ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT, 2);
-							Integer hectoWh = ModbusDataUtils.parseInt32(data[0], data[1]);
-							if ( hectoWh != null ) {
-								d.setWattHourReading(hectoWh * 100L);
-							}
-							d.setSourceId(resolvePlaceholders(sourceId));
-							return (d.getWattHourReading() != null ? d : null);
-						}
-					});
+				@Override
+				public AcEnergyDatum doWithConnection(ModbusConnection conn) throws IOException {
+					SimpleAcDcEnergyDatum d = new SimpleAcDcEnergyDatum(resolvePlaceholders(sourceId),
+							Instant.now(), new DatumSamples());
+					short[] data = conn.readWords(ModbusReadFunction.ReadHoldingRegister,
+							ADDR_DATA_TOTAL_ACTIVE_ENERGY_IMPORT, 2);
+					Integer hectoWh = ModbusDataUtils.parseInt32(data[0], data[1]);
+					if ( hectoWh != null ) {
+						d.setWattHourReading(hectoWh * 100L);
+					}
+					return (d.getWattHourReading() != null ? d : null);
+				}
+			});
 			return datum;
 		} catch ( IOException e ) {
-			log.error("Error communicating with meter: {}", e.getMessage());
+			log.error("Error communicating with DTS meter {}: {}", modbusDeviceName(), e.getMessage());
 			throw new RuntimeException(e);
 		}
 	}
@@ -105,24 +114,18 @@ public class DTSConsumptionDatumDataSource extends ModbusDeviceDatumDataSourceSu
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.carrel.dts";
 	}
 
 	@Override
-	public String getDisplayName() {
-		return "DTS Series Meter";
-	}
-
-	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		DTSConsumptionDatumDataSource defaults = new DTSConsumptionDatumDataSource();
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(10);
 		results.addAll(getIdentifiableSettingSpecifiers());
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.getSourceId()));
-		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
-				"Serial Port"));
-		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.getUnitId())));
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", DEFAULT_SOURCE_ID));
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['uid']",
+				"Modbus Port"));
+		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(DEFAULT_UNIT_ID)));
 
 		return results;
 	}

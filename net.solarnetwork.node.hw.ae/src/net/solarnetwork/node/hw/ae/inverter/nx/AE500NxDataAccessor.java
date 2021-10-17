@@ -25,8 +25,8 @@ package net.solarnetwork.node.hw.ae.inverter.nx;
 import java.util.Set;
 import java.util.SortedSet;
 import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.PVEnergyDataAccessor;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.DcEnergyDataAccessor;
 
 /**
  * API for reading AE 500NX data.
@@ -35,7 +35,7 @@ import net.solarnetwork.node.domain.PVEnergyDataAccessor;
  * @version 1.0
  * @since 2.1
  */
-public interface AE500NxDataAccessor extends PVEnergyDataAccessor, ACEnergyDataAccessor {
+public interface AE500NxDataAccessor extends DcEnergyDataAccessor, AcEnergyDataAccessor {
 
 	/**
 	 * Get the device serial number.

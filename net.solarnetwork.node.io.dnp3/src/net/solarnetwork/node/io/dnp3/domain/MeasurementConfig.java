@@ -27,21 +27,20 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * A configuration for a DNP3 measurement integration with a
- * {@link net.solarnetwork.node.DatumDataSource} property.
+ * {@link net.solarnetwork.node.service.DatumDataSource} property.
  * 
  * <p>
  * This configuration maps a datum property to a DNP3 measurement.
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class MeasurementConfig {
 
@@ -75,11 +74,10 @@ public class MeasurementConfig {
 	 * Constructor.
 	 * 
 	 * @param dataSourceUid
-	 *        the {@link DatumDataSource#getUID()} to collect from
+	 *        the {@link net.solarnetwork.node.service.DatumDataSource#getUid()}
+	 *        to collect from
 	 * @param sourceId
-	 *        the source ID a
-	 *        {@link net.solarnetwork.node.domain.Datum#getSourceId()} to
-	 *        collect from
+	 *        the source ID to collect from
 	 * @param propertyName
 	 *        the datum property name to collect
 	 * @param type

@@ -22,43 +22,46 @@
 
 package net.solarnetwork.node.dao.jdbc.reactor.test;
 
+import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import java.time.Instant;
 import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.test.context.ContextConfiguration;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.dao.jdbc.reactor.JdbcInstructionDao;
+import net.solarnetwork.node.reactor.BasicInstruction;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.reactor.support.BasicInstruction;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 
 /**
  * Test case for the {@link JdbcInstructionDao} class.
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
 @ContextConfiguration
 public class JdbcInstructionDaoTest extends AbstractNodeTransactionalTest {
 
+	private static final Long TEST_ID = Math.abs(UUID.randomUUID().getMostSignificantBits());
 	private static final String TEST_INSTRUCTOR = "Test Instructor";
-	private static final String TEST_REMOTE_ID = "Test ID";
 	private static final String TEST_TOPIC = "Test Topic";
 	private static final String TEST_PARAM_KEY = "Test Param";
 	private static final String TEST_PARAM_VALUE = "Test Value";
@@ -75,7 +78,7 @@ public class JdbcInstructionDaoTest extends AbstractNodeTransactionalTest {
 
 	@Test
 	public void storeNew() {
-		BasicInstruction instr = new BasicInstruction(TEST_TOPIC, new Date(), TEST_REMOTE_ID,
+		BasicInstruction instr = new BasicInstruction(TEST_ID, TEST_TOPIC, Instant.now(),
 				TEST_INSTRUCTOR, null);
 
 		for ( int i = 0; i < 2; i++ ) {
@@ -83,14 +86,13 @@ public class JdbcInstructionDaoTest extends AbstractNodeTransactionalTest {
 					String.format("%s %d %s", TEST_PARAM_KEY, i, TEST_PARAM_VALUE));
 		}
 
-		Long id = dao.storeInstruction(instr);
-		assertNotNull(id);
-		lastDatum = dao.getInstruction(id);
+		dao.storeInstruction(instr);
+		lastDatum = dao.getInstruction(instr.getId(), instr.getInstructorId());
 	}
 
 	@Test(expected = DuplicateKeyException.class)
 	public void storeDuplicate() {
-		BasicInstruction instr = new BasicInstruction(TEST_TOPIC, new Date(), TEST_REMOTE_ID,
+		BasicInstruction instr = new BasicInstruction(TEST_ID, TEST_TOPIC, Instant.now(),
 				TEST_INSTRUCTOR, null);
 
 		for ( int i = 0; i < 2; i++ ) {
@@ -98,38 +100,29 @@ public class JdbcInstructionDaoTest extends AbstractNodeTransactionalTest {
 					String.format("%s %d %s", TEST_PARAM_KEY, i, TEST_PARAM_VALUE));
 		}
 
-		Long id = dao.storeInstruction(instr);
-		assertNotNull(id);
+		dao.storeInstruction(instr);
 		dao.storeInstruction(instr);
 	}
 
 	@Test
 	public void getByPrimaryKey() {
 		storeNew();
-		assertNotNull(lastDatum);
-		assertEquals(TEST_TOPIC, lastDatum.getTopic());
-		assertEquals(TEST_REMOTE_ID, lastDatum.getRemoteInstructionId());
-		assertEquals(TEST_INSTRUCTOR, lastDatum.getInstructorId());
-		assertNotNull(lastDatum.getInstructionDate());
-
-		Set<String> expectedParameterNames = new HashSet<String>();
+		assertThat("Retrieved by primary key", lastDatum, is(notNullValue()));
+		Set<String> expectedParameterNames = new LinkedHashSet<>();
 		for ( int i = 0; i < 2; i++ ) {
 			expectedParameterNames.add(String.format("%s %d", TEST_PARAM_KEY, i));
 		}
-		assertNotNull(lastDatum.getParameterNames());
+		assertThat("Retrieved param names", lastDatum.getParameterNames(), is(expectedParameterNames));
 		for ( String paramName : lastDatum.getParameterNames() ) {
-			assertTrue(expectedParameterNames.contains(paramName));
-			String[] values = lastDatum.getAllParameterValues(paramName);
-			assertNotNull(values);
-			assertEquals(1, values.length);
-			assertEquals(paramName + " " + TEST_PARAM_VALUE, values[0]);
+			assertThat("Param " + paramName + " value", lastDatum.getAllParameterValues(paramName),
+					arrayContaining(paramName + " Test Value"));
 		}
 
 		InstructionStatus status = lastDatum.getStatus();
-		assertNotNull(status);
-		assertEquals(InstructionState.Received, status.getInstructionState());
-		assertNull(status.getAcknowledgedInstructionState());
-		assertNotNull(status.getStatusDate());
+		assertThat("Status retrieved", status, is(notNullValue()));
+		assertThat("State", status.getInstructionState(), is(InstructionState.Received));
+		assertThat("Status date populated", status.getStatusDate(), is(notNullValue()));
+		assertThat("Ack state", status.getAcknowledgedInstructionState(), is(nullValue()));
 	}
 
 	@Test
@@ -149,13 +142,14 @@ public class JdbcInstructionDaoTest extends AbstractNodeTransactionalTest {
 	public void updateState() {
 		storeNew();
 		InstructionStatus newStatus = lastDatum.getStatus().newCopyWithState(InstructionState.Declined);
-		dao.storeInstructionStatus(lastDatum.getId(), newStatus);
+		dao.storeInstructionStatus(lastDatum.getId(), lastDatum.getInstructorId(), newStatus);
 
-		Instruction newDatum = dao.getInstruction(lastDatum.getId());
+		Instruction newDatum = dao.getInstruction(lastDatum.getId(), lastDatum.getInstructorId());
 		InstructionStatus status = newDatum.getStatus();
-		assertEquals(InstructionState.Declined, status.getInstructionState());
-		assertNull(status.getAcknowledgedInstructionState());
-		assertNull("Result parameters", status.getResultParameters());
+		assertThat("State updated", status.getInstructionState(), is(InstructionState.Declined));
+		assertThat("Status date populated", status.getStatusDate(), is(notNullValue()));
+		assertThat("Ack state", status.getAcknowledgedInstructionState(), is(nullValue()));
+		assertThat("Result pararms", status.getResultParameters(), is(nullValue()));
 	}
 
 	@Test
@@ -166,13 +160,14 @@ public class JdbcInstructionDaoTest extends AbstractNodeTransactionalTest {
 		resultParameters.put(InstructionStatus.ERROR_CODE_RESULT_PARAM, "505");
 		InstructionStatus newStatus = lastDatum.getStatus().newCopyWithState(InstructionState.Declined,
 				resultParameters);
-		dao.storeInstructionStatus(lastDatum.getId(), newStatus);
+		dao.storeInstructionStatus(lastDatum.getId(), lastDatum.getInstructorId(), newStatus);
 
-		Instruction newDatum = dao.getInstruction(lastDatum.getId());
+		Instruction newDatum = dao.getInstruction(lastDatum.getId(), lastDatum.getInstructorId());
 		InstructionStatus status = newDatum.getStatus();
-		assertEquals(InstructionState.Declined, status.getInstructionState());
-		assertNull(status.getAcknowledgedInstructionState());
-		assertEquals("Result parameters", resultParameters, status.getResultParameters());
+		assertThat("State updated", status.getInstructionState(), is(InstructionState.Declined));
+		assertThat("Status date populated", status.getStatusDate(), is(notNullValue()));
+		assertThat("Ack state", status.getAcknowledgedInstructionState(), is(nullValue()));
+		assertThat("Result pararms saved", status.getResultParameters(), is(resultParameters));
 	}
 
 	@Test
@@ -180,13 +175,15 @@ public class JdbcInstructionDaoTest extends AbstractNodeTransactionalTest {
 		storeNew();
 		InstructionStatus newStatus = lastDatum.getStatus()
 				.newCopyWithAcknowledgedState(InstructionState.Received);
-		dao.storeInstructionStatus(lastDatum.getId(), newStatus);
+		dao.storeInstructionStatus(lastDatum.getId(), lastDatum.getInstructorId(), newStatus);
 
-		Instruction newDatum = dao.getInstruction(lastDatum.getId());
+		Instruction newDatum = dao.getInstruction(lastDatum.getId(), lastDatum.getInstructorId());
 		InstructionStatus status = newDatum.getStatus();
-		assertEquals(InstructionState.Received, status.getInstructionState());
-		assertEquals(InstructionState.Received, status.getAcknowledgedInstructionState());
-		assertNull("Result parameters", status.getResultParameters());
+		assertThat("State updated", status.getInstructionState(), is(InstructionState.Received));
+		assertThat("Status date populated", status.getStatusDate(), is(notNullValue()));
+		assertThat("Ack state updated", status.getAcknowledgedInstructionState(),
+				is(InstructionState.Received));
+		assertThat("Result pararms", status.getResultParameters(), is(nullValue()));
 	}
 
 	@Test
@@ -195,37 +192,37 @@ public class JdbcInstructionDaoTest extends AbstractNodeTransactionalTest {
 		Map<String, Object> resultParameters = Collections.singletonMap("foo", (Object) "bar");
 		InstructionStatus newStatus = lastDatum.getStatus().newCopyWithState(InstructionState.Completed,
 				resultParameters);
-		dao.storeInstructionStatus(lastDatum.getId(), newStatus);
+		dao.storeInstructionStatus(lastDatum.getId(), lastDatum.getInstructorId(), newStatus);
 
 		// now "ack"; should preserve existing result parameters
-		Instruction newDatum = dao.getInstruction(lastDatum.getId());
+		Instruction newDatum = dao.getInstruction(lastDatum.getId(), lastDatum.getInstructorId());
 		InstructionStatus status = newDatum.getStatus();
 		newStatus = status.newCopyWithAcknowledgedState(InstructionState.Completed);
-		dao.storeInstructionStatus(lastDatum.getId(), newStatus);
+		dao.storeInstructionStatus(lastDatum.getId(), lastDatum.getInstructorId(), newStatus);
 
-		newDatum = dao.getInstruction(newDatum.getId());
+		newDatum = dao.getInstruction(newDatum.getId(), newDatum.getInstructorId());
 		status = newDatum.getStatus();
-		assertEquals(InstructionState.Completed, status.getInstructionState());
-		assertEquals(InstructionState.Completed, status.getAcknowledgedInstructionState());
-		assertEquals("Result parameters", resultParameters, status.getResultParameters());
+		assertThat("State updated", status.getInstructionState(), is(InstructionState.Completed));
+		assertThat("Status date populated", status.getStatusDate(), is(notNullValue()));
+		assertThat("Ack state updated", status.getAcknowledgedInstructionState(),
+				is(InstructionState.Completed));
+		assertThat("Result pararms", status.getResultParameters(), is(resultParameters));
 	}
 
 	@Test
 	public void findForAck() {
 		storeNew();
 		List<Instruction> results = dao.findInstructionsForAcknowledgement();
-		assertNotNull(results);
-		assertEquals(1, results.size());
+		assertThat("Result provided", results, hasSize(1));
 		assertEquals(lastDatum.getId(), results.get(0).getId());
 
 		// update ack now for second search
 		InstructionStatus newStatus = lastDatum.getStatus()
 				.newCopyWithAcknowledgedState(lastDatum.getStatus().getInstructionState());
-		dao.storeInstructionStatus(lastDatum.getId(), newStatus);
+		dao.storeInstructionStatus(lastDatum.getId(), lastDatum.getInstructorId(), newStatus);
 
 		results = dao.findInstructionsForAcknowledgement();
-		assertNotNull(results);
-		assertEquals(0, results.size());
+		assertThat("Result not found", results, hasSize(0));
 	}
 
 	@Test
@@ -234,13 +231,13 @@ public class JdbcInstructionDaoTest extends AbstractNodeTransactionalTest {
 		InstructionStatus execStatus = lastDatum.getStatus()
 				.newCopyWithState(InstructionState.Executing);
 		boolean updated = dao.compareAndStoreInstructionStatus(lastDatum.getId(),
-				InstructionState.Received, execStatus);
+				lastDatum.getInstructorId(), InstructionState.Received, execStatus);
 		assertThat("Status updated", updated, equalTo(true));
-		Instruction instr = dao.getInstruction(lastDatum.getId());
+		Instruction instr = dao.getInstruction(lastDatum.getId(), lastDatum.getInstructorId());
 		assertThat("State", instr.getStatus().getInstructionState(),
 				equalTo(InstructionState.Executing));
 		assertThat("Acknoledged state", instr.getStatus().getAcknowledgedInstructionState(),
-				nullValue());
+				is(nullValue()));
 	}
 
 	@Test
@@ -249,12 +246,12 @@ public class JdbcInstructionDaoTest extends AbstractNodeTransactionalTest {
 		InstructionStatus doneStatus = lastDatum.getStatus()
 				.newCopyWithState(InstructionState.Completed);
 		boolean updated = dao.compareAndStoreInstructionStatus(lastDatum.getId(),
-				InstructionState.Executing, doneStatus);
+				lastDatum.getInstructorId(), InstructionState.Executing, doneStatus);
 		assertThat("Status updated", updated, equalTo(false));
-		Instruction instr = dao.getInstruction(lastDatum.getId());
+		Instruction instr = dao.getInstruction(lastDatum.getId(), lastDatum.getInstructorId());
 		assertThat("State", instr.getStatus().getInstructionState(), equalTo(InstructionState.Received));
 		assertThat("Acknoledged state", instr.getStatus().getAcknowledgedInstructionState(),
-				nullValue());
+				is(nullValue()));
 	}
 
 }

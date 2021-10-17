@@ -17,7 +17,7 @@
 	<service ref="s3BackupService">
 		<interfaces>
 			<value>net.solarnetwork.node.backup.BackupService</value>
-			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 		</interfaces>
 	</service>
 	
@@ -43,9 +43,10 @@
 			</bean>
 		</property>
 		<property name="identityService">
-			<bean class="net.solarnetwork.util.DynamicServiceTracker">
-				<property name="bundleContext" ref="bundleContext"/>
-				<property name="serviceClassName" value="net.solarnetwork.node.IdentityService"/>
+			<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+				<argument ref="bundleContext"/>
+				<property name="serviceClassName" value="net.solarnetwork.node.service.IdentityService"/>
+				<property name="sticky" value="true"/>
 			</bean>	
 		</property>
 	</bean>

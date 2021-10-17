@@ -23,14 +23,14 @@
 package net.solarnetwork.node.hw.sma.modbus;
 
 import static java.lang.String.format;
-import static net.solarnetwork.domain.GeneralDatumSamplesType.Instantaneous;
-import static net.solarnetwork.domain.GeneralDatumSamplesType.Status;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import java.io.IOException;
 import java.util.Map;
 import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
-import net.solarnetwork.node.domain.ACEnergyDatum;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.MutableDatumSamplesOperations;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
 import net.solarnetwork.node.hw.sma.domain.SmaCodedValue;
 import net.solarnetwork.node.hw.sma.domain.SmaCommonStatusCode;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceType;
@@ -43,7 +43,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * {@link SmaDeviceData} for Sunny Central String Monitor US devices.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStringMonitorUsDataAccessor {
 
@@ -82,9 +82,8 @@ public class SmaScStringMonitorUsData extends SmaDeviceData implements SmaScStri
 	}
 
 	@Override
-	public void populateDatumSamples(MutableGeneralDatumSamplesOperations samples,
-			Map<String, ?> parameters) {
-		final String currentFmt = ACEnergyDatum.CURRENT_KEY + "_%d";
+	public void populateDatumSamples(MutableDatumSamplesOperations samples, Map<String, ?> parameters) {
+		final String currentFmt = AcEnergyDatum.CURRENT_KEY + "_%d";
 		samples.putSampleValue(Instantaneous, format(currentFmt, 1), getCurrentString1());
 		samples.putSampleValue(Instantaneous, format(currentFmt, 2), getCurrentString2());
 		samples.putSampleValue(Instantaneous, format(currentFmt, 3), getCurrentString3());

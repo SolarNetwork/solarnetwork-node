@@ -26,7 +26,7 @@ import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static net.solarnetwork.node.settings.support.SettingsUtil.dynamicListSettingSpecifier;
+import static net.solarnetwork.settings.support.SettingUtils.dynamicListSettingSpecifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,17 +39,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectFactory;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
 
 /**
  * Configuration for filtering options used by SolarFlux.
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  * @since 1.4
  */
 public class FluxFilterConfig implements SettingsChangeObserver {
@@ -95,7 +95,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 		return res;
 	}
 
-	private static class SimpleKeyedListCallback implements SettingsUtil.KeyedListCallback<String> {
+	private static class SimpleKeyedListCallback implements SettingUtils.KeyedListCallback<String> {
 
 		@Override
 		public Collection<SettingSpecifier> mapListSettingKey(String value, int index, String key) {
@@ -389,7 +389,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 
 	/**
 	 * Adjust the number of configured {@code excludes} elements. Any newly
-	 * added element values will be {@code null}.
+	 * added element values will be {@literal null}.
 	 * 
 	 * @param count
 	 *        The desired number of {@code excludes} elements.
@@ -434,7 +434,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 
 	/**
 	 * Adjust the number of configured {@code excludes} elements. Any newly
-	 * added element values will be {@code null}.
+	 * added element values will be {@literal null}.
 	 * 
 	 * @param count
 	 *        The desired number of {@code excludes} elements.

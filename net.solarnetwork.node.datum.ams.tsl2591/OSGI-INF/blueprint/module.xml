@@ -16,16 +16,21 @@
 
 	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler" filter="(function=node)"/>
 
-	<bean id="placeholderService" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
+	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
 		<property name="sticky" value="true"/>
 	</bean>
-	
-	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
-		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
+		
+	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
 		<property name="sticky" value="true"/>
 	</bean>
 
@@ -33,29 +38,23 @@
 		<property name="basenames">
 			<array>
 				<value>net.solarnetwork.node.datum.ams.tsl2591.Tsl2591DatumDataSource</value>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.node.service.support.DatumDataSourceSupport</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</array>
 		</property>
 	</bean>
 	
-	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+	<bean id="jobMessageSource" class="net.solarnetwork.support.PrefixedMessageSource">
 		<property name="prefix" value="datumDataSource."/>
 		<property name="delegate" ref="messageSource"/>
 	</bean>
 
-	<bean id="scheduler" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="org.quartz.Scheduler"/>
-		<property name="serviceFilter" value="(function=node)"/>
-		<property name="sticky" value="true"/>
-	</bean>
-	
 	<!-- Published Services -->
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="GSS CozIR Sensor"/>
-			<property name="factoryUID" value="net.solarnetwork.node.datum.ams.tsl2591"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.ams.tsl2591"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
@@ -63,58 +62,41 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.ams.tsl2591" 
 			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
-			<beans:value>net.solarnetwork.node.job.ServiceProvider</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.node.job.ManagedJob</beans:value>
 		</osgix:interfaces>
-		<osgix:service-properties>
-			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.ams.tsl2591"/>
-		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail"
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob" 
 				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
-			<property name="trigger">
-				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-					<property name="name" value="tsl2591DatumLoggerTrigger"/>
-					<property name="cronExpression" value="5 * * * * ?"/>
-					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
-					<property name="randomSecond" value="true"/>
+			<argument>
+				<bean class="net.solarnetwork.node.job.DatumDataSourcePollManagedJob">
+					<property name="datumMetadataService" ref="datumMetadataService"/>
+					<property name="datumQueue" ref="datumQueue"/>
+					<property name="datumDataSource">
+						<bean class="net.solarnetwork.node.datum.ams.tsl2591.Tsl2591DatumDataSource">
+							<property name="messageSource" ref="jobMessageSource"/>
+							<property name="placeholderService" ref="placeholderService"/>
+							<property name="taskScheduler" ref="taskScheduler"/>
+						</bean>
+					</property>
 				</bean>
-			</property>
+			</argument>
+			<argument value="0 * * * * ?"/>
 			<property name="serviceProviderConfigurations">
 				<map>
 					<entry key="datumDataSource">
 						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
 							<property name="interfaces">
 								<list>
-									<value>net.solarnetwork.node.DatumDataSource</value>
+									<value>net.solarnetwork.node.service.DatumDataSource</value>
 								</list>
 							</property>
 							<property name="properties">
 								<map>
-									<entry key="datumClassName" value="net.solarnetwork.node.domain.AtmosphericDatum"/>
+									<entry key="datumClassName" value="net.solarnetwork.node.domain.datum.AtmosphericDatum"/>
 								</map>
 							</property>
 						</bean>
 					</entry>
 				</map>
-			</property>
-			<property name="jobDetail">
-				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-					<property name="name" value="tsl2591DatumLoggerJob"/>
-					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
-					<property name="jobDataAsMap">
-						<map>
-							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
-							<entry key="datumDataSource">
-								<bean class="net.solarnetwork.node.datum.ams.tsl2591.Tsl2591DatumDataSource">
-									<property name="messageSource" ref="jobMessageSource"/>
-									<property name="placeholderService" ref="placeholderService"/>
-									<property name="taskScheduler" ref="taskScheduler"/>
-								</bean>
-							</entry>
-						</map>
-					</property>
-				</bean>
 			</property>
 		</bean>
 	</osgix:managed-service-factory>

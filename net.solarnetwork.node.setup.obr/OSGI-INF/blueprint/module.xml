@@ -20,33 +20,27 @@
 
 	<reference id="repositoryAdmin" availability="mandatory" interface="org.osgi.service.obr.RepositoryAdmin"/>
 
-	<reference-list id="obrRepos" interface="net.solarnetwork.node.setup.obr.OBRRepository" availability="optional">
-		<reference-listener ref="repoService" bind-method="onBind" unbind-method="onUnbind"/>
-	</reference-list>
+	<reference-list id="obrRepos" interface="net.solarnetwork.node.setup.obr.OBRRepository" availability="optional"/>
 
-	<reference id="backupManagerRef" interface="net.solarnetwork.node.backup.BackupManager" availability="optional">
-		<reference-listener ref="backupManager" bind-method="onBind" unbind-method="onUnbind"/>
-	</reference>
-	
-	<reference id="systemServiceRef" interface="net.solarnetwork.node.SystemService" availability="optional">
-		<reference-listener ref="systemService" bind-method="onBind" unbind-method="onUnbind"/>
-	</reference>
-		
+	<bean id="backupManager" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.backup.BackupManager"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="systemService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.SystemService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<!-- Supporting Services -->
 	
-	<bean id="backupManager" class="net.solarnetwork.util.OptionalServiceTracker">
-		<property name="service" ref="backupManagerRef"/>
-	</bean>
-
-	<bean id="systemService" class="net.solarnetwork.util.OptionalServiceTracker">
-		<property name="service" ref="systemServiceRef"/>
-	</bean>
-
 	<bean id="repoService" class="net.solarnetwork.node.setup.obr.OBRPluginService" 
-			init-method="init" destroy-method="destroy">
+			destroy-method="destroy">
 		<osgix:managed-properties persistent-id="net.solarnetwork.node.setup.obr.OBRPluginService" 
              autowire-on-update="true"/>
-		<property name="bundleContext" ref="bundleContext"/>
+		<argument ref="bundleContext"/>
 		<property name="repositoryAdmin" ref="repositoryAdmin"/>
 		<property name="repositories" ref="obrRepos"/>
 		<property name="backupManager" ref="backupManager"/>
@@ -62,22 +56,27 @@
 		<property name="basenames" value="net.solarnetwork.node.setup.obr.SimpleOBRRepository"/>
 	</bean>
 	
-	<bean id="repoSettingsFactory" 
-		class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
-		<property name="displayName" value="OBR Plugin Repository"/>
-		<property name="factoryUID" value="net.solarnetwork.node.setup.obr.repo"/>
-		<property name="messageSource" ref="repoMessageSource"/>
-	</bean>
-	
 	<!-- Published Services -->
 	
-	<service ref="repoSettingsFactory" 
-		interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory"/>
+	<service ref="repoService">
+		<interfaces>
+			<value>net.solarnetwork.node.setup.PluginService</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
+		</interfaces>
+	</service>
+
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="OBR Plugin Repository"/>
+			<property name="factoryUid" value="net.solarnetwork.node.setup.obr.repo"/>
+			<property name="messageSource" ref="repoMessageSource"/>
+		</bean>
+	</service>
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.setup.obr.repo" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.setup.obr.OBRRepository</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.setup.obr.repo"/>
@@ -87,11 +86,4 @@
 		</bean>
 	</osgix:managed-service-factory>
 	
-	<service ref="repoService">
-		<interfaces>
-			<value>net.solarnetwork.node.setup.PluginService</value>
-			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
-		</interfaces>
-	</service>
-
 </blueprint>

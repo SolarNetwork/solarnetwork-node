@@ -14,75 +14,90 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
-	<!-- provides access to local database storage for our datum -->
-	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
-		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
+	<!-- The DatumQueue provides access to local database storage for our datum. -->
+	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
 		<property name="sticky" value="true"/>
 	</bean>
 
-	<bean id="placeholderService" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.PlaceholderService"/>
+	<!-- The PlaceholderService can resolve placeholder values at runtime, for example 
+	     in the sourceId of our data source. -->
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
 		<property name="sticky" value="true"/>
 	</bean>
 
-	<bean id="datumMetadataService" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.DatumMetadataService"/>
+	<!-- The DatumMetadataService allows our data source to publish metadata, such as the device
+	     manufacturer or serial number, to SolarNetwork. -->
+	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
 		<property name="sticky" value="true"/>
 	</bean>
 		
-	<!-- support localized strings for the settings in the GUI -->
+	<!-- This MessageSource allows the setting GUI labels to be localized. -->
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<array>
 				<value>net.solarnetwork.node.datum.energymeter.mock.MockEnergyMeterDatumSource</value>
-				<value>net.solarnetwork.node.support.DatumDataSourceSupport</value>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.node.service.support.DatumDataSourceSupport</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</array>
 		</property>
 	</bean>
 
 	<!-- support localized strings for the periodic job settings in the GUI -->
-	<bean id="jobMessageSource" class="net.solarnetwork.node.util.PrefixedMessageSource">
+	<bean id="jobMessageSource" class="net.solarnetwork.support.PrefixedMessageSource">
 		<property name="prefix" value="datumDataSource."/>
 		<property name="delegate" ref="messageSource"/>
 	</bean>
 
-	<!-- publish a "component factory" so our EnergyMeter Mock appears in the settings GUI -->
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<!-- Register a SettingSpecifierProviderFactory with the runtime, which is a 
+	     "component factory" so our Mock Energy Meter data source appears in the settings
+	     GUI as a configurable component.  -->
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="EnergyMeter Mock"/>
-			<property name="factoryUID" value="net.solarnetwork.node.datum.energymeter.mock"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.energymeter.mock"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
 
-	<!-- publish a "service factory" that each Mock Energy Meter Inverter component instance can be
-	     configured in the GUI, along with a periodic job to collect datum from it -->
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.energymeter.mock" autowire-on-update="true">
+	<!-- Register a managed- service factory so individual Mock Energy Meter component instances
+	     can be created in the setting GUI and then configured. We register a ManagedJob service
+	     of the DatumDataSourcePollManagedJob job which polls the data source for datum at the
+	     configured schedule. -->
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.energymeter.mock" 
+			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
-			<beans:value>net.solarnetwork.node.job.ServiceProvider</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.node.job.ManagedJob</beans:value>
 		</osgix:interfaces>
-		<osgix:service-properties>
-			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.energymeter.mock"/>
-		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
 
-			<!-- the trigger defines when the periodic job runs; in this case
-			     we define a cron style trigger, that by default runs once/minute -->
-			<property name="trigger">
-				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-					<property name="name" value="mockPowerDatumLoggerTrigger"/>
-					<property name="cronExpression" value="5 * * * * ?"/>
-					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
-					<property name="randomSecond" value="true"/>
+		<!-- SimpleManagedJob is the class that implements ManagedJob for us, and delegates
+			 to the DatumDataSourcePollManagedJob to poll for datum from our data source -->
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob" 
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<argument>
+				<bean class="net.solarnetwork.node.job.DatumDataSourcePollManagedJob">
+					<property name="datumMetadataService" ref="datumMetadataService"/>
+					<property name="datumQueue" ref="datumQueue"/>
+					<property name="datumDataSource">
+					
+						<!-- Here is our DatumDataSource, which will generate datum when polled by 
+						     the DatumDataSourcePollManagedJob job -->
+						<bean class="net.solarnetwork.node.datum.energymeter.mock.MockEnergyMeterDatumSource">
+							<property name="messageSource" ref="jobMessageSource"/>
+							<property name="placeholderService" ref="placeholderService"/>
+						</bean>
+					</property>
 				</bean>
-			</property>
+			</argument>
+
+			<!-- the schedule defines when the periodic job runs; in this case
+			     we define a cron style trigger, that by default runs once/minute -->
+			<argument value="0 * * * * ?"/>
 
 			<!-- we can also publish the MockEnergyMeterDatumDataSource instance itself as a service
 			     by configuring serviceProviderConfigurations here... this is optional but
@@ -93,54 +108,17 @@
 						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
 							<property name="interfaces">
 								<list>
-									<value>net.solarnetwork.node.DatumDataSource</value>
+									<value>net.solarnetwork.node.service.DatumDataSource</value>
 								</list>
 							</property>
 							<property name="properties">
 								<map>
-									<entry key="datumClassName" value="net.solarnetwork.node.domain.EnergyDatum"/>
+									<entry key="datumClassName" value="net.solarnetwork.domain.datum.AcEnergyDatum"/>
 								</map>
 							</property>
 						</bean>
 					</entry>
 				</map>
-			</property>
-
-			<!-- the jobDetail defines what job should be executed periodically by the
-			     trigger; here we define a  net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob
-			     job which will invoke the readCurrentDatum() method on a DatumDataSource, which
-			     is what MockEnergyMeterDatumDataSource is! -->
-			<property name="jobDetail">
-				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-					<property name="name" value="mockPowerDatumLoggerJob"/>
-					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourceManagedLoggerJob"/>
-					<property name="jobDataAsMap">
-						<map>
-							<entry key="datumMetadataService" value-ref="datumMetadataService"/>
-							<entry key="datumDao" value-ref="generalNodeDatumDao"/>
-							<entry key="datumDataSource">
-								<bean class="net.solarnetwork.node.datum.energymeter.mock.MockEnergyMeterDatumSource">
-									<property name="messageSource" ref="jobMessageSource"/>
-									<property name="placeholderService" ref="placeholderService"/>
-									<property name="datumMetadataService" ref="datumMetadataService"/>
-									<property name="samplesTransformService">
-										<bean class="net.solarnetwork.util.DynamicServiceTracker">
-											<property name="bundleContext" ref="bundleContext"/>
-											<property name="serviceClassName" value="net.solarnetwork.node.GeneralDatumSamplesTransformService"/>
-											<property name="serviceFilter" value="(!(role=global))"/>
-											<property name="ignoreEmptyPropertyFilterValues" value="false"/>
-											<property name="propertyFilters">
-												<map>
-													<entry key="UID" value=""/>
-												</map>
-											</property>
-										</bean>
-									</property>
-								</bean>
-							</entry>
-						</map>
-					</property>
-				</bean>
 			</property>
 		</bean>
 	</osgix:managed-service-factory>

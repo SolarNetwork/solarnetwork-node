@@ -28,6 +28,12 @@
 	
 	<reference id="taskExecutor" interface="org.springframework.core.task.TaskExecutor" filter="(function=node)"/>
 	
+	<bean id="instructionExecutionService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionExecutionService"/>
+		<property name="sticky" value="true"/>
+	</bean>	
+	
 	<!-- DNP3Manager -->
 
 	<service interface="com.automatak.dnp3.DNP3Manager" ref="manager"/>
@@ -44,7 +50,7 @@
 	<bean id="serverTcpMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames" value="net.solarnetwork.node.io.dnp3.impl.TcpServerChannelService"/>
 		<property name="parentMessageSource">
-			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+			<bean class="net.solarnetwork.support.PrefixedMessageSource">
 				<property name="prefix" value="config."/>
 				<property name="delegate">
 					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
@@ -52,6 +58,7 @@
 							<list>
 								<value>net.solarnetwork.node.io.dnp3.impl.BaseChannelConfiguration</value>
 								<value>net.solarnetwork.node.io.dnp3.impl.TcpServerChannelConfiguration</value>
+								<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 							</list>
 						</property>
 					</bean>
@@ -60,10 +67,10 @@
 		</property>
 	</bean>
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="DNP3 TCP connection"/>
-			<property name="factoryUID" value="net.solarnetwork.node.io.dnp3.tcp"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.dnp3.tcp"/>
 			<property name="messageSource" ref="serverTcpMessageSource"/>
 		</bean>
 	</service>
@@ -71,7 +78,7 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.dnp3.tcp" autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.io.dnp3.ChannelService</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.dnp3.tcp"/>
@@ -87,7 +94,7 @@
 	<bean id="outstationMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames" value="net.solarnetwork.node.io.dnp3.impl.OutstationService"/>
 		<property name="parentMessageSource">
-			<bean class="net.solarnetwork.node.util.PrefixedMessageSource">
+			<bean class="net.solarnetwork.support.PrefixedMessageSource">
 				<property name="delegates">
 					<map>
 						<entry key="controlConfigsItem.">
@@ -106,10 +113,10 @@
 		</property>
 	</bean>
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="DNP3 outstation"/>
-			<property name="factoryUID" value="net.solarnetwork.node.io.dnp3.outstation"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.dnp3.outstation"/>
 			<property name="messageSource" ref="outstationMessageSource"/>
 		</bean>
 	</service>
@@ -117,37 +124,32 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.dnp3.outstation" autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.io.dnp3.OutstationService</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 			<beans:value>org.osgi.service.event.EventHandler</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.dnp3.outstation"/>
 			<beans:entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
 				<beans:array value-type="java.lang.String">
-					<beans:value>#{T(net.solarnetwork.node.DatumDataSource).EVENT_TOPIC_DATUM_CAPTURED}</beans:value>
-					<beans:value>#{T(net.solarnetwork.node.NodeControlProvider).EVENT_TOPIC_CONTROL_INFO_CAPTURED}</beans:value>
-					<beans:value>#{T(net.solarnetwork.node.NodeControlProvider).EVENT_TOPIC_CONTROL_INFO_CHANGED}</beans:value>
+					<beans:value>#{T(net.solarnetwork.node.service.DatumDataSource).EVENT_TOPIC_DATUM_CAPTURED}</beans:value>
+					<beans:value>#{T(net.solarnetwork.node.service.NodeControlProvider).EVENT_TOPIC_CONTROL_INFO_CAPTURED}</beans:value>
+					<beans:value>#{T(net.solarnetwork.node.service.NodeControlProvider).EVENT_TOPIC_CONTROL_INFO_CHANGED}</beans:value>
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.io.dnp3.impl.OutstationService" init-method="startup" destroy-method="shutdown">
 			<argument>
-				<bean class="net.solarnetwork.util.DynamicServiceTracker">
-					<property name="bundleContext" ref="bundleContext"/>
+				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+					<argument ref="bundleContext"/>
 					<property name="serviceClassName" value="net.solarnetwork.node.io.dnp3.ChannelService"/>
 					<property name="propertyFilters">
 						<map>
-							<entry key="UID" value="#{T(net.solarnetwork.node.io.dnp3.impl.TcpServerChannelService).DEFAULT_UID}"/>
+							<entry key="uid" value="#{T(net.solarnetwork.node.io.dnp3.impl.TcpServerChannelService).DEFAULT_UID}"/>
 						</map>
 					</property>
 				</bean>
 			</argument>
-			<argument>
-				<bean class="net.solarnetwork.util.DynamicServiceTracker">
-					<property name="bundleContext" ref="bundleContext"/>
-					<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionHandler"/>
-				</bean>	
-			</argument>
+			<argument ref="instructionExecutionService"/>
 			<property name="messageSource" ref="outstationMessageSource"/>
 			<property name="taskExecutor" ref="taskExecutor"/>
 			<property name="taskScheduler" ref="taskScheduler"/>

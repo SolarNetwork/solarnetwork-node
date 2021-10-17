@@ -38,21 +38,22 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.domain.DeviceOperatingState;
+import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.datum.sunspec.inverter.SunSpecInverterDatumDataSource;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterOperatingState;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.TitleSettingSpecifier;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.service.StaticOptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.TitleSettingSpecifier;
 
 /**
  * Test cases for the {@link SunSpecInverterDatumDataSource} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class SunSpecInverterDatumDataSourceTests {
 
@@ -123,29 +124,53 @@ public class SunSpecInverterDatumDataSourceTests {
 		// WHEN
 		replayAll();
 		long start = System.currentTimeMillis();
-		GeneralNodeDatum d = dataSource.readCurrentDatum();
+		AcDcEnergyDatum d = dataSource.readCurrentDatum();
 
 		// THEN
 		assertThat("Datum returned", d, notNullValue());
 		assertThat("Datum source ID", d.getSourceId(), equalTo(TEST_SOURCE_ID));
-		assertThat("Datum created now", d.getCreated().getTime(), greaterThanOrEqualTo(start));
-		assertThat("Datum frequency", d.getInstantaneousSampleFloat("frequency"), equalTo(50.05f));
-		assertThat("Datum voltage", d.getInstantaneousSampleFloat("voltage"), equalTo(248.13335f));
-		assertThat("Datum current", d.getInstantaneousSampleFloat("current"), equalTo(0.7f));
-		assertThat("Datum power factor", d.getInstantaneousSampleFloat("powerFactor"), equalTo(1.0f));
-		assertThat("Datum apparent power", d.getInstantaneousSampleInteger("apparentPower"),
+		assertThat("Datum created now", d.getTimestamp().toEpochMilli(), greaterThanOrEqualTo(start));
+		assertThat("Datum frequency",
+				d.asSampleOperations().getSampleFloat(DatumSamplesType.Instantaneous, "frequency"),
+				equalTo(50.05f));
+		assertThat("Datum voltage",
+				d.asSampleOperations().getSampleFloat(DatumSamplesType.Instantaneous, "voltage"),
+				equalTo(248.13335f));
+		assertThat("Datum current",
+				d.asSampleOperations().getSampleFloat(DatumSamplesType.Instantaneous, "current"),
+				equalTo(0.7f));
+		assertThat("Datum power factor",
+				d.asSampleOperations().getSampleFloat(DatumSamplesType.Instantaneous, "powerFactor"),
+				equalTo(1.0f));
+		assertThat("Datum apparent power",
+				d.asSampleOperations().getSampleInteger(DatumSamplesType.Instantaneous, "apparentPower"),
 				equalTo(70));
-		assertThat("Datum reactive power", d.getInstantaneousSampleInteger("reactivePower"), equalTo(0));
-		assertThat("Datum DC voltage", d.getInstantaneousSampleFloat("dcVoltage"), equalTo(406.9f));
-		assertThat("Datum DC power", d.getInstantaneousSampleInteger("dcPower"), equalTo(61));
-		assertThat("Datum power", d.getInstantaneousSampleInteger("watts"), equalTo(70));
-		assertThat("Datum energy", d.getAccumulatingSampleLong("wattHours"), equalTo(11937020L));
-		assertThat("Datum status", d.getStatusSampleString("phase"), equalTo("Total"));
-		assertThat("Datum opState", d.getStatusSampleInteger("opState"),
+		assertThat("Datum reactive power",
+				d.asSampleOperations().getSampleInteger(DatumSamplesType.Instantaneous, "reactivePower"),
+				equalTo(0));
+		assertThat("Datum DC voltage",
+				d.asSampleOperations().getSampleFloat(DatumSamplesType.Instantaneous, "dcVoltage"),
+				equalTo(406.9f));
+		assertThat("Datum DC power",
+				d.asSampleOperations().getSampleInteger(DatumSamplesType.Instantaneous, "dcPower"),
+				equalTo(61));
+		assertThat("Datum power",
+				d.asSampleOperations().getSampleInteger(DatumSamplesType.Instantaneous, "watts"),
+				equalTo(70));
+		assertThat("Datum energy",
+				d.asSampleOperations().getSampleLong(DatumSamplesType.Accumulating, "wattHours"),
+				equalTo(11937020L));
+		assertThat("Datum status",
+				d.asSampleOperations().getSampleString(DatumSamplesType.Status, "phase"),
+				equalTo("Total"));
+		assertThat("Datum opState",
+				d.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "opState"),
 				equalTo(DeviceOperatingState.Normal.getCode()));
-		assertThat("Datum sunsOpState", d.getStatusSampleInteger("sunsOpState"),
+		assertThat("Datum sunsOpState",
+				d.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "sunsOpState"),
 				equalTo(InverterOperatingState.Mppt.getCode()));
-		assertThat("Datum eve ts", d.getStatusSampleInteger("events"), equalTo(0));
+		assertThat("Datum eve ts",
+				d.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "events"), equalTo(0));
 	}
 
 }

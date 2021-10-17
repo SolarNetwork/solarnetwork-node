@@ -48,7 +48,7 @@ import net.solarnetwork.node.io.canbus.support.JaxbSnKcdParser;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.SettingsUpdates;
 import net.solarnetwork.node.settings.SettingsUpdates.Change;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link KcdConfigurer} class.
@@ -111,7 +111,7 @@ public class KcdConfigurerTests {
 			String msg = "Change " + i;
 			switch (i) {
 				case 0:
-					assertChangeEquals(msg, change, instanceId, "canbusNetwork.propertyFilters['UID']",
+					assertChangeEquals(msg, change, instanceId, "canbusNetwork.propertyFilters['uid']",
 							"Canbus Port");
 					break;
 
@@ -279,7 +279,7 @@ public class KcdConfigurerTests {
 			String msg = "Change " + i;
 			switch (i) {
 				case 0:
-					assertChangeEquals(msg, change, instanceId, "canbusNetwork.propertyFilters['UID']",
+					assertChangeEquals(msg, change, instanceId, "canbusNetwork.propertyFilters['uid']",
 							"Canbus Port");
 					break;
 
@@ -420,7 +420,7 @@ public class KcdConfigurerTests {
 			String msg = "Change " + i;
 			switch (i) {
 				case 0:
-					assertChangeEquals(msg, change, instanceId, "canbusNetwork.propertyFilters['UID']",
+					assertChangeEquals(msg, change, instanceId, "canbusNetwork.propertyFilters['uid']",
 							"Canbus Port");
 					break;
 
@@ -608,7 +608,7 @@ public class KcdConfigurerTests {
 			String msg = "Change " + i;
 			switch (i) {
 				case 0:
-					assertChangeEquals(msg, change, instanceId1, "canbusNetwork.propertyFilters['UID']",
+					assertChangeEquals(msg, change, instanceId1, "canbusNetwork.propertyFilters['uid']",
 							"Canbus Port");
 					break;
 
@@ -705,7 +705,7 @@ public class KcdConfigurerTests {
 					break;
 
 				case 21:
-					assertChangeEquals(msg, change, instanceId2, "canbusNetwork.propertyFilters['UID']",
+					assertChangeEquals(msg, change, instanceId2, "canbusNetwork.propertyFilters['uid']",
 							"Canbus Port");
 					break;
 
@@ -841,7 +841,7 @@ public class KcdConfigurerTests {
 			String msg = "Change " + i;
 			switch (i) {
 				case 0:
-					assertChangeEquals(msg, change, instanceId, "canbusNetwork.propertyFilters['UID']",
+					assertChangeEquals(msg, change, instanceId, "canbusNetwork.propertyFilters['uid']",
 							"Canbus Port");
 					break;
 
@@ -997,7 +997,7 @@ public class KcdConfigurerTests {
 			String msg = "Change " + i;
 			switch (i) {
 				case 0:
-					assertChangeEquals(msg, change, instanceId, "canbusNetwork.propertyFilters['UID']",
+					assertChangeEquals(msg, change, instanceId, "canbusNetwork.propertyFilters['uid']",
 							"Canbus Port");
 					break;
 
@@ -1011,7 +1011,7 @@ public class KcdConfigurerTests {
 
 				case 3:
 					assertChangeEquals(msg, change, instanceId,
-							"samplesTransformService.propertyFilters['UID']", "Vehicle Virtual Meter");
+							"samplesTransformService.propertyFilters['uid']", "Vehicle Virtual Meter");
 					break;
 
 				case 4:

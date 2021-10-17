@@ -33,14 +33,14 @@ import net.solarnetwork.node.control.esi.domain.PowerComponents;
 import net.solarnetwork.node.control.esi.domain.PriceComponents;
 import net.solarnetwork.node.control.esi.domain.PriceMap;
 import net.solarnetwork.node.control.esi.domain.PriceMapAccessor;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * A configurable ESI price map component.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class EsiPriceMap extends BaseEsiMetadataComponent implements PriceMapAccessor {
 
@@ -61,7 +61,7 @@ public class EsiPriceMap extends BaseEsiMetadataComponent implements PriceMapAcc
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.control.esi.pricemap";
 	}
 

@@ -26,27 +26,28 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
-import net.solarnetwork.domain.GeneralDatumMetadata;
-import net.solarnetwork.node.DataCollector;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.AtmosphericDatum;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
+import net.solarnetwork.node.domain.datum.AtmosphericDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleAcEnergyDatum;
 import net.solarnetwork.node.hw.currentcost.CCDatum;
 import net.solarnetwork.node.hw.currentcost.CCSupport;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
-import net.solarnetwork.node.settings.KeyedSettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.KeyedSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.ByteUtils;
 
 /**
@@ -60,28 +61,22 @@ import net.solarnetwork.util.ByteUtils;
  * consumption data.
  * </p>
  * 
- * <p>
- * It assumes the {@link DataCollector} implementation blocks until appropriate
- * data is available when the {@link DataCollector#collectData()} method is
- * called.
- * </p>
- * 
  * @author matt
- * @version 3.1
+ * @version 4.0
  */
-public class CCDatumDataSource extends CCSupport implements DatumDataSource<GeneralNodeDatum>,
-		MultiDatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
+public class CCDatumDataSource extends CCSupport
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	private boolean tagConsumption = true;
 	private boolean tagIndoor = true;
 
 	@Override
-	public Class<? extends GeneralNodeDatum> getDatumType() {
-		return GeneralNodeDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AcEnergyDatum.class;
 	}
 
 	@Override
-	public GeneralNodeDatum readCurrentDatum() {
+	public AcEnergyDatum readCurrentDatum() {
 		Set<CCDatum> datumSet = allCachedDataForConfiguredAddresses();
 		if ( !datumSet.isEmpty() ) {
 			return getGeneralNodeACEnergyDatumInstance(datumSet.iterator().next(), getAmpSensorIndex());
@@ -113,15 +108,15 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 	}
 
 	@Override
-	public Class<? extends GeneralNodeDatum> getMultiDatumType() {
-		return GeneralNodeDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return AcEnergyDatum.class;
 	}
 
 	@Override
-	public Collection<GeneralNodeDatum> readMultipleDatum() {
-		final Set<String> sourceIdSet = (new HashSet<String>(
+	public Collection<NodeDatum> readMultipleDatum() {
+		final Set<String> sourceIdSet = (new HashSet<>(
 				getSourceIdFilter() == null ? 0 : getSourceIdFilter().size()));
-		final List<GeneralNodeDatum> result = new ArrayList<GeneralNodeDatum>(4);
+		final List<NodeDatum> result = new ArrayList<>(4);
 		Set<CCDatum> datumSet = allCachedDataForConfiguredAddresses();
 		for ( CCDatum ccDatum : datumSet ) {
 			processSample(result, sourceIdSet, ccDatum);
@@ -174,7 +169,7 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 				|| sourceIdSet.size() < (getSourceIdFilter() == null ? 0 : getSourceIdFilter().size()));
 	}
 
-	private void processSample(List<GeneralNodeDatum> result, Set<String> sourceIdSet, CCDatum ccDatum) {
+	private void processSample(List<NodeDatum> result, Set<String> sourceIdSet, CCDatum ccDatum) {
 		if ( log.isDebugEnabled() ) {
 			log.debug("Got CCDatum: {}", ccDatum.getStatusMessage());
 		}
@@ -183,21 +178,21 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 			if ( (ampIndex & getMultiAmpSensorIndexFlags()) != ampIndex ) {
 				continue;
 			}
-			GeneralNodeDatum datum = getGeneralNodeACEnergyDatumInstance(ccDatum, ampIndex);
+			AcEnergyDatum datum = getGeneralNodeACEnergyDatumInstance(ccDatum, ampIndex);
 			if ( datum != null && !sourceIdSet.contains(datum.getSourceId()) ) {
 				result.add(datum);
 				sourceIdSet.add(datum.getSourceId());
 			}
 		}
 
-		GeneralNodeDatum datum = getGeneralNodeDatumTemperatureInstance(ccDatum);
+		AcEnergyDatum datum = getGeneralNodeDatumTemperatureInstance(ccDatum);
 		if ( datum != null && !sourceIdSet.contains(datum.getSourceId()) ) {
 			result.add(datum);
 			sourceIdSet.add(datum.getSourceId());
 		}
 	}
 
-	private GeneralNodeACEnergyDatum getGeneralNodeACEnergyDatumInstance(CCDatum datum, int ampIndex) {
+	private AcEnergyDatum getGeneralNodeACEnergyDatumInstance(CCDatum datum, int ampIndex) {
 		if ( datum == null ) {
 			return null;
 		}
@@ -215,24 +210,23 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 		Integer wattReading = (ampIndex == 2 ? datum.getChannel2Watts()
 				: ampIndex == 3 ? datum.getChannel3Watts() : datum.getChannel1Watts());
 
-		GeneralNodeACEnergyDatum result = new GeneralNodeACEnergyDatum();
-		result.setCreated(new Date(datum.getCreated()));
-		result.setSourceId(addr);
+		SimpleAcEnergyDatum result = new SimpleAcEnergyDatum(resolvePlaceholders(addr),
+				datum.getCreated(), new DatumSamples());
 		result.setWatts(wattReading);
 
 		// associate consumption/generation tags with this source
 		GeneralDatumMetadata sourceMeta = new GeneralDatumMetadata();
 		if ( isTagConsumption() ) {
-			sourceMeta.addTag(net.solarnetwork.node.domain.EnergyDatum.TAG_CONSUMPTION);
+			sourceMeta.addTag(AcEnergyDatum.TAG_CONSUMPTION);
 		} else {
-			sourceMeta.addTag(net.solarnetwork.node.domain.EnergyDatum.TAG_GENERATION);
+			sourceMeta.addTag(AcEnergyDatum.TAG_GENERATION);
 		}
 		addSourceMetadata(addr, sourceMeta);
 
 		return result;
 	}
 
-	private GeneralNodeDatum getGeneralNodeDatumTemperatureInstance(CCDatum datum) {
+	private AcEnergyDatum getGeneralNodeDatumTemperatureInstance(CCDatum datum) {
 		if ( datum == null ) {
 			return null;
 		}
@@ -247,10 +241,10 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 			return null;
 		}
 
-		GeneralNodeDatum result = new GeneralNodeDatum();
-		result.setCreated(new Date(datum.getCreated()));
-		result.setSourceId(addr);
-		result.putInstantaneousSampleValue(AtmosphericDatum.TEMPERATURE_KEY, datum.getTemperature());
+		SimpleAcEnergyDatum result = new SimpleAcEnergyDatum(resolvePlaceholders(addr),
+				datum.getCreated(), new DatumSamples());
+		result.asMutableSampleOperations().putSampleValue(DatumSamplesType.Instantaneous,
+				AtmosphericDatum.TEMPERATURE_KEY, datum.getTemperature());
 
 		// associate indoor/outdoor tags with this source
 		GeneralDatumMetadata sourceMeta = new GeneralDatumMetadata();
@@ -265,7 +259,7 @@ public class CCDatumDataSource extends CCSupport implements DatumDataSource<Gene
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.currentcost";
 	}
 

@@ -29,15 +29,15 @@ import org.openmuc.jmbus.wireless.WMBusConnection.WMBusManufacturer;
 import org.openmuc.jmbus.wireless.WMBusConnection.WMBusSerialBuilder;
 import org.openmuc.jmbus.wireless.WMBusMode;
 import net.solarnetwork.node.io.mbus.WMBusNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Serial jMBus implementation of {@link WMBusNetwork}.
  * 
  * @author alex
- * @version 1.0
+ * @version 2.0
  */
 public class JMBusSerialWMBusNetwork extends JMBusWMBusNetwork implements SettingSpecifierProvider {
 
@@ -71,7 +71,7 @@ public class JMBusSerialWMBusNetwork extends JMBusWMBusNetwork implements Settin
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.mbus.wireless.serial";
 	}
 

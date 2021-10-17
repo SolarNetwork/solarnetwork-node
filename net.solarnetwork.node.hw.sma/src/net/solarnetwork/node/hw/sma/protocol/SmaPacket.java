@@ -149,7 +149,7 @@ public final class SmaPacket {
 	 * 
 	 * @param key
 	 *        the key of the field to get
-	 * @return the associated value, or <em>null</em> if not available
+	 * @return the associated value, or {@literal null} if not available
 	 */
 	public Object getUserDataField(SmaUserDataField key) {
 		if ( userDataFields == null ) {

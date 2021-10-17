@@ -18,17 +18,17 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.settings.ca;
 
-import org.quartz.DisallowConcurrentExecution;
-import org.quartz.JobExecutionContext;
-import org.quartz.PersistJobDataAfterExecution;
-import net.solarnetwork.node.job.AbstractJob;
+import java.util.Collections;
+import java.util.List;
+import net.solarnetwork.node.job.JobService;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.node.settings.SettingsService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.util.ObjectUtils;
 
 /**
  * Job to backup the settings database table to a CSV text file.
@@ -36,19 +36,36 @@ import net.solarnetwork.node.settings.SettingsService;
  * @author matt
  * @version 2.0
  */
-@PersistJobDataAfterExecution
-@DisallowConcurrentExecution
-public class SettingsBackupJob extends AbstractJob {
+public class SettingsBackupJob extends BaseIdentifiable implements JobService {
 
-	private SettingsService settingsService;
+	private final SettingsService settingsService;
 
-	@Override
-	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
-		settingsService.backupSettings();
+	/**
+	 * Constructor.
+	 * 
+	 * @param settingsService
+	 *        the setting service to ues
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
+	public SettingsBackupJob(SettingsService settingsService) {
+		super();
+		this.settingsService = ObjectUtils.requireNonNullArgument(settingsService, "settingsService");
 	}
 
-	public void setSettingsService(SettingsService settingsService) {
-		this.settingsService = settingsService;
+	@Override
+	public String getSettingUid() {
+		return "net.solarnetwork.node.settings.ca.backup";
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		return Collections.emptyList();
+	}
+
+	@Override
+	public void executeJobService() throws Exception {
+		settingsService.backupSettings();
 	}
 
 }

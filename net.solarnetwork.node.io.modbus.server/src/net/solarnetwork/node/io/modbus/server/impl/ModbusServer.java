@@ -49,11 +49,8 @@ import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.TaskScheduler;
-import net.solarnetwork.domain.GeneralDatumSamplesOperations;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.GeneralDatum;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.server.domain.MeasurementConfig;
@@ -61,14 +58,17 @@ import net.solarnetwork.node.io.modbus.server.domain.ModbusRegisterData;
 import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockConfig;
 import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockType;
 import net.solarnetwork.node.io.modbus.server.domain.UnitConfig;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
-import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.StringUtils;
 import net.wimpi.modbus.io.ModbusTCPTransport;
@@ -77,7 +77,7 @@ import net.wimpi.modbus.io.ModbusTCPTransport;
  * Modbus TCP server service.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class ModbusServer extends BaseIdentifiable
 		implements SettingSpecifierProvider, SettingsChangeObserver, EventHandler {
@@ -315,8 +315,8 @@ public class ModbusServer extends BaseIdentifiable
 	}
 
 	private void handleDatumCapturedEvent(Event eventz) {
-		Object d = eventz.getProperty(Datum.DATUM_PROPERTY);
-		if ( !(d instanceof GeneralDatum && ((GeneralDatum) d).getSourceId() != null) ) {
+		Object d = eventz.getProperty(DatumEvents.DATUM_PROPERTY);
+		if ( !(d instanceof NodeDatum && ((NodeDatum) d).getSourceId() != null) ) {
 			return;
 		}
 		UnitConfig[] unitConfigs = getUnitConfigs();
@@ -324,8 +324,8 @@ public class ModbusServer extends BaseIdentifiable
 			return;
 		}
 
-		GeneralDatum datum = (GeneralDatum) d;
-		final GeneralDatumSamplesOperations ops = datum.asSampleOperations();
+		NodeDatum datum = (NodeDatum) d;
+		final DatumSamplesOperations ops = datum.asSampleOperations();
 		final String sourceId = datum.getSourceId();
 
 		for ( UnitConfig unitConfig : unitConfigs ) {
@@ -360,7 +360,7 @@ public class ModbusServer extends BaseIdentifiable
 	}
 
 	private void applyDatumCapturedUpdates(UnitConfig unitConfig, RegisterBlockConfig blockConfig,
-			MeasurementConfig measConfig, GeneralDatumSamplesOperations ops, int address) {
+			MeasurementConfig measConfig, DatumSamplesOperations ops, int address) {
 		Object propVal = ops.findSampleValue(measConfig.getPropertyName());
 		if ( propVal == null ) {
 			return;
@@ -398,7 +398,7 @@ public class ModbusServer extends BaseIdentifiable
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.modbus.server";
 	}
 
@@ -418,8 +418,8 @@ public class ModbusServer extends BaseIdentifiable
 		UnitConfig[] blockConfs = getUnitConfigs();
 		List<UnitConfig> blockConfsList = (blockConfs != null ? Arrays.asList(blockConfs)
 				: Collections.emptyList());
-		result.add(SettingsUtil.dynamicListSettingSpecifier("unitConfigs", blockConfsList,
-				new SettingsUtil.KeyedListCallback<UnitConfig>() {
+		result.add(SettingUtils.dynamicListSettingSpecifier("unitConfigs", blockConfsList,
+				new SettingUtils.KeyedListCallback<UnitConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(UnitConfig value, int index,

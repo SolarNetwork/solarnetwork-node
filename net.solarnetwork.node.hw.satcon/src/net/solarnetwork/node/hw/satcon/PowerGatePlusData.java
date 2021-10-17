@@ -30,10 +30,11 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.Bitmaskable;
 import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -44,7 +45,7 @@ import net.solarnetwork.util.NumberUtils;
  * Implementation for accessing Power Gate Plus data.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class PowerGatePlusData extends ModbusData implements PowerGateInverterDataAccessor {
 
@@ -128,7 +129,7 @@ public class PowerGatePlusData extends ModbusData implements PowerGateInverterDa
 		}
 		String s = data.getSerialNumber();
 		if ( s != null ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, s);
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, s);
 		}
 		PowerGateOperatingState opState = getOperatingState();
 		if ( opState != null ) {
@@ -259,12 +260,12 @@ public class PowerGatePlusData extends ModbusData implements PowerGateInverterDa
 	}
 
 	@Override
-	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+	public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public ACEnergyDataAccessor reversed() {
+	public AcEnergyDataAccessor reversed() {
 		throw new UnsupportedOperationException();
 	}
 
@@ -368,13 +369,13 @@ public class PowerGatePlusData extends ModbusData implements PowerGateInverterDa
 	}
 
 	@Override
-	public Float getDCVoltage() {
+	public Float getDcVoltage() {
 		Number n = getNumber(PowerGatePlusRegister.InverterDcLinkVoltage);
 		return (n != null ? n.floatValue() : null);
 	}
 
 	@Override
-	public Integer getDCPower() {
+	public Integer getDcPower() {
 		Number v = getNumber(PowerGatePlusRegister.InverterDcLinkVoltage);
 		Number a = getNumber(PowerGatePlusRegister.InverterDcLinkCurrent);
 		return (v != null && a != null

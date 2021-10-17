@@ -23,13 +23,13 @@
 package net.solarnetwork.node.control.camera.motion;
 
 import java.io.IOException;
-import net.solarnetwork.domain.Identifiable;
+import net.solarnetwork.service.Identifiable;
 
 /**
  * API for motion integration.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.1
  */
 public interface MotionService extends Identifiable {

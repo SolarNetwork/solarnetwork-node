@@ -22,24 +22,22 @@
 
 package net.solarnetwork.node.setup.mock;
 
-import java.util.Collections;
-import java.util.Date;
+import java.time.Instant;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.InstructionUtils;
 
 /**
  * Mock implementation of a setup handler for WiFi configuration.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class MockWiFiSetupHandler implements FeedbackInstructionHandler {
+public class MockWiFiSetupHandler implements InstructionHandler {
 
 	/** The country parameter. */
 	public static final String PARAM_COUNTRY = "country";
@@ -56,21 +54,13 @@ public class MockWiFiSetupHandler implements FeedbackInstructionHandler {
 	 */
 	public static final String WIFI_SERVICE_NAME = "wifi";
 
-	private List<FeedbackInstructionHandler> feedbackHandlers = Collections.emptyList();
-
 	@Override
 	public boolean handlesTopic(String topic) {
 		return InstructionHandler.TOPIC_SYSTEM_CONFIGURE.equals(topic);
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
-		InstructionStatus status = processInstructionWithFeedback(instruction);
-		return (status != null ? status.getInstructionState() : null);
-	}
-
-	@Override
-	public InstructionStatus processInstructionWithFeedback(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		if ( instruction == null || !handlesTopic(instruction.getTopic())
 				|| !WIFI_SERVICE_NAME.equals(instruction.getParameterValue(PARAM_SERVICE)) ) {
 			return null;
@@ -81,29 +71,7 @@ public class MockWiFiSetupHandler implements FeedbackInstructionHandler {
 		resultParams.put(PARAM_SSID, instruction.getParameterValue(PARAM_SSID));
 		resultParams.put(PARAM_PASSWORD,
 				instruction.isParameterAvailable(PARAM_PASSWORD) ? "*****" : "N/A");
-		return InstructionStatus.createStatus(instruction, resultState, new Date(), resultParams);
-	}
-
-	/**
-	 * Get the configured handlers.
-	 * 
-	 * @return the handlers, never {@literal null}
-	 */
-	public List<FeedbackInstructionHandler> getFeedbackHandlers() {
-		return feedbackHandlers;
-	}
-
-	/**
-	 * Set the configured handlers.
-	 * 
-	 * @param feedbackHandlers
-	 *        the handlers to set
-	 */
-	public void setFeedbackHandlers(List<FeedbackInstructionHandler> feedbackHandlers) {
-		if ( feedbackHandlers == null ) {
-			feedbackHandlers = Collections.emptyList();
-		}
-		this.feedbackHandlers = feedbackHandlers;
+		return InstructionUtils.createStatus(instruction, resultState, Instant.now(), resultParams);
 	}
 
 }

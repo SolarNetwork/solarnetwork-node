@@ -28,31 +28,26 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import net.solarnetwork.domain.GeneralLocationSourceMetadata;
 import net.solarnetwork.domain.KeyValuePair;
+import net.solarnetwork.domain.Location;
 import net.solarnetwork.domain.SimpleLocation;
-import net.solarnetwork.node.LocationService;
+import net.solarnetwork.domain.datum.GeneralLocationSourceMetadata;
 import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.node.domain.BasicGeneralLocation;
-import net.solarnetwork.node.domain.BasicLocation;
-import net.solarnetwork.node.domain.GeneralLocation;
-import net.solarnetwork.node.domain.Location;
-import net.solarnetwork.node.domain.PriceLocation;
-import net.solarnetwork.node.domain.WeatherLocation;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.JsonHttpClientSupport;
+import net.solarnetwork.node.domain.datum.SimpleDatumLocation;
+import net.solarnetwork.node.service.LocationService;
+import net.solarnetwork.node.service.support.JsonHttpClientSupport;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Web service implementation of {@link WebServiceLocationService}.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class WebServiceLocationService extends JsonHttpClientSupport
 		implements LocationService, SettingSpecifierProvider {
@@ -103,7 +98,7 @@ public class WebServiceLocationService extends JsonHttpClientSupport
 	private Long cacheTtl = DEFAULT_CACHE_TTL;
 	private double minLatLonDeviation = DEFAULT_MIN_LAT_LON_DEVIATION;
 
-	private net.solarnetwork.domain.Location nodeLocation;
+	private Location nodeLocation;
 
 	/**
 	 * Constructor.
@@ -144,92 +139,6 @@ public class WebServiceLocationService extends JsonHttpClientSupport
 			}
 		}
 		nodeLocation = new net.solarnetwork.domain.BasicLocation(loc);
-	}
-
-	@Override
-	public <T extends Location> T getLocation(Class<T> locationType, Long locationId) {
-		Set<String> tags = new HashSet<String>(1);
-		if ( PriceLocation.class.isAssignableFrom(locationType) ) {
-			tags.add(Location.PRICE_TYPE);
-		} else if ( WeatherLocation.class.isAssignableFrom(locationType) ) {
-			tags.add(Location.WEATHER_TYPE);
-		} else {
-			throw new IllegalArgumentException(
-					"The locationType " + locationType.getName() + " is not supported");
-		}
-		final String url = locationSourceMetadataUrl(null, locationId, null, tags);
-		try {
-			final InputStream in = jsonGET(url);
-			Collection<GeneralLocationSourceMetadata> results = extractCollectionResponseData(in,
-					GeneralLocationSourceMetadata.class);
-			if ( results != null && results.size() > 0 ) {
-				GeneralLocationSourceMetadata meta = results.iterator().next();
-				return convertLocationSourceMetadata(locationType, meta);
-			}
-			return null;
-		} catch ( IOException e ) {
-			if ( log.isTraceEnabled() ) {
-				log.trace("IOException querying for location source metadata at " + url, e);
-			} else if ( log.isDebugEnabled() ) {
-				log.debug("Unable to post data: " + e.getMessage());
-			}
-			throw new RuntimeException(e);
-		}
-	}
-
-	private <T extends Location> T convertLocationSourceMetadata(Class<T> locationType,
-			GeneralLocationSourceMetadata meta) {
-		T result;
-		try {
-			result = locationType.newInstance();
-		} catch ( InstantiationException e ) {
-			throw new RuntimeException(e);
-		} catch ( IllegalAccessException e ) {
-			throw new RuntimeException(e);
-		}
-		if ( result instanceof BasicLocation ) {
-			BasicLocation loc = (BasicLocation) result;
-			loc.setLocationId(meta.getLocationId());
-			loc.setSourceId(meta.getSourceId());
-			if ( meta.getMeta() != null ) {
-				loc.setLocationName(meta.getMeta().getInfoString("name"));
-			}
-		}
-		return result;
-	}
-
-	@Override
-	public <T extends Location> Collection<T> findLocations(final Class<T> locationType,
-			final String sourceName, final String locationName) {
-		Set<String> tags = new HashSet<String>(1);
-		if ( PriceLocation.class.isAssignableFrom(locationType) ) {
-			tags.add(Location.PRICE_TYPE);
-		} else if ( WeatherLocation.class.isAssignableFrom(locationType) ) {
-			tags.add(Location.WEATHER_TYPE);
-		} else {
-			throw new IllegalArgumentException(
-					"The locationType " + locationType.getName() + " is not supported");
-		}
-		final String url = locationSourceMetadataUrl(sourceName + ' ' + locationName, null, null, tags);
-		try {
-			final InputStream in = jsonGET(url);
-			Collection<GeneralLocationSourceMetadata> results = extractCollectionResponseData(in,
-					GeneralLocationSourceMetadata.class);
-			Collection<T> col = new ArrayList<T>();
-			if ( results != null ) {
-				for ( GeneralLocationSourceMetadata meta : results ) {
-					col.add(convertLocationSourceMetadata(locationType, meta));
-				}
-			}
-			return col;
-		} catch ( IOException e ) {
-			if ( log.isTraceEnabled() ) {
-				log.trace("IOException querying for location source metadata at " + url, e);
-			} else if ( log.isDebugEnabled() ) {
-				log.debug("Unable to post data: " + e.getMessage());
-			}
-			throw new RuntimeException(e);
-		}
 	}
 
 	private String locationSourceMetadataUrl(String query, Long locationId, String sourceId,
@@ -307,7 +216,7 @@ public class WebServiceLocationService extends JsonHttpClientSupport
 		final String url = locationSourceMetadataUrl(locationId, sourceId);
 		final String cacheKey = url;
 		CachedLocation cached = getCachedLocation(cacheKey);
-		if ( cached != null && cached instanceof GeneralLocation ) {
+		if ( cached != null ) {
 			return cached.asGeneralLocationSourceMetadata();
 		}
 
@@ -315,8 +224,8 @@ public class WebServiceLocationService extends JsonHttpClientSupport
 			final InputStream in = jsonGET(url);
 			GeneralLocationSourceMetadata meta = extractResponseData(in,
 					GeneralLocationSourceMetadata.class);
-			CachedLocation cachedLocation = new CachedLocation(meta);
-			cachedLocation.expires = Long.valueOf(System.currentTimeMillis() + cacheTtl);
+			CachedLocation cachedLocation = new CachedLocation(meta,
+					System.currentTimeMillis() + cacheTtl);
 			cache.put(cacheKey, cachedLocation);
 			return cachedLocation.asGeneralLocationSourceMetadata();
 		} catch ( IOException e ) {
@@ -396,16 +305,17 @@ public class WebServiceLocationService extends JsonHttpClientSupport
 
 	private static class CachedLocation {
 
-		private Long expires;
-		private final BasicGeneralLocation location;
+		private final long expires;
+		private final SimpleDatumLocation location;
 
-		private CachedLocation(GeneralLocationSourceMetadata meta) {
+		private CachedLocation(GeneralLocationSourceMetadata meta, long expires) {
 			super();
-			BasicGeneralLocation loc = new BasicGeneralLocation();
+			SimpleDatumLocation loc = new SimpleDatumLocation();
 			loc.setLocationId(meta.getLocationId());
 			loc.setSourceId(meta.getSourceId());
 			loc.setSourceMetadata(meta);
 			this.location = loc;
+			this.expires = expires;
 		}
 
 		public GeneralLocationSourceMetadata asGeneralLocationSourceMetadata() {
@@ -432,7 +342,7 @@ public class WebServiceLocationService extends JsonHttpClientSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.location.ws";
 	}
 

@@ -37,13 +37,13 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import net.solarnetwork.util.OptionalServiceCollection;
+import net.solarnetwork.service.OptionalServiceCollection;
 
 /**
  * Proxy controller for SolarNode.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 @CrossOrigin
 @Controller
@@ -59,8 +59,8 @@ public class WebProxyController {
 	/**
 	 * Constructor.
 	 * 
-	 * @param the
-	 *        configurations
+	 * @param configurations
+	 *        the configurations
 	 */
 	@Autowired
 	public WebProxyController(
@@ -96,7 +96,7 @@ public class WebProxyController {
 		WebProxyConfiguration config = (configs != null
 				? StreamSupport.stream(configs.spliterator(), false)
 						.filter(c -> configurationUid.equals(c.getProxyPath())
-								|| configurationUid.equals(c.getUID()))
+								|| configurationUid.equals(c.getUid()))
 						.findFirst().orElse(null)
 				: null);
 		if ( config == null ) {
@@ -146,7 +146,7 @@ public class WebProxyController {
 		if ( config == null ) {
 			return null;
 		}
-		return proxyServletMap.computeIfAbsent(config.getUID(), proxyCreator(config, req));
+		return proxyServletMap.computeIfAbsent(config.getUid(), proxyCreator(config, req));
 	}
 
 	private synchronized WebProxyServlet recreateAndGetProxyServlet(WebProxyConfiguration config,
@@ -154,13 +154,13 @@ public class WebProxyController {
 		if ( config == null ) {
 			return null;
 		}
-		WebProxyServlet s = proxyCreator(config, req).apply(config.getUID());
+		WebProxyServlet s = proxyCreator(config, req).apply(config.getUid());
 		if ( s != null ) {
-			proxyServletMap.replace(config.getUID(), old, s);
+			proxyServletMap.replace(config.getUid(), old, s);
 		} else {
-			proxyServletMap.remove(config.getUID(), old);
+			proxyServletMap.remove(config.getUid(), old);
 		}
-		return proxyServletMap.get(config.getUID());
+		return proxyServletMap.get(config.getUid());
 	}
 
 }

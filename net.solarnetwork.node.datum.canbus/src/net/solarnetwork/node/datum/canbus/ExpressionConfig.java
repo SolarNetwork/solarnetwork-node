@@ -23,9 +23,9 @@
 package net.solarnetwork.node.datum.canbus;
 
 import java.util.List;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.service.ExpressionService;
+import net.solarnetwork.settings.SettingSpecifier;
 
 /**
  * Configuration for a single datum property to be set via an expression.
@@ -35,10 +35,10 @@ import net.solarnetwork.support.ExpressionService;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.4
  */
-public class ExpressionConfig extends net.solarnetwork.node.domain.ExpressionConfig {
+public class ExpressionConfig extends net.solarnetwork.node.service.support.ExpressionConfig {
 
 	/**
 	 * Get settings suitable for configuring an instance of this class.
@@ -51,8 +51,8 @@ public class ExpressionConfig extends net.solarnetwork.node.domain.ExpressionCon
 	 */
 	public static List<SettingSpecifier> settings(String prefix,
 			Iterable<ExpressionService> expressionServices) {
-		return net.solarnetwork.node.domain.ExpressionConfig.settings(ExpressionConfig.class, prefix,
-				expressionServices);
+		return net.solarnetwork.node.service.support.ExpressionConfig.settings(ExpressionConfig.class,
+				prefix, expressionServices);
 	}
 
 	/**
@@ -74,7 +74,7 @@ public class ExpressionConfig extends net.solarnetwork.node.domain.ExpressionCon
 	 * @param expressionServiceId
 	 *        the expression service ID
 	 */
-	public ExpressionConfig(String name, GeneralDatumSamplesType propertyType, String expression,
+	public ExpressionConfig(String name, DatumSamplesType propertyType, String expression,
 			String expressionServiceId) {
 		super(name, propertyType, expression, expressionServiceId);
 	}

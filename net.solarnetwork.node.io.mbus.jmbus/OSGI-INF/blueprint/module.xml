@@ -21,10 +21,10 @@
 		</property>
 	</bean>
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="M-Bus Serial Connection"/>
-			<property name="factoryUID" value="net.solarnetwork.node.io.mbus.serial"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.mbus.serial"/>
 			<property name="messageSource" ref="messageSourceSerial"/>
 		</bean>
 	</service>
@@ -32,7 +32,7 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.mbus.serial" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.io.mbus.MBusNetwork</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.mbus.serial"/>
@@ -52,10 +52,10 @@
 		</property>
 	</bean>
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="M-Bus (Wireless) Serial Connection"/>
-			<property name="factoryUID" value="net.solarnetwork.node.io.mbus.wireless.serial"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.mbus.wireless.serial"/>
 			<property name="messageSource" ref="messageSourceWirelessSerial"/>
 		</bean>
 	</service>
@@ -63,7 +63,7 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.mbus.wireless.serial" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.io.mbus.WMBusNetwork</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.mbus.wireless.serial"/>

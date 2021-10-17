@@ -23,13 +23,13 @@
 package net.solarnetwork.node.upload.bulkjsonwebpost.test;
 
 import java.security.Principal;
-import net.solarnetwork.node.IdentityService;
+import net.solarnetwork.node.service.IdentityService;
 
 /**
  * Helper implementation of {@link IdentityService}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class TestIdentityService implements IdentityService {
 

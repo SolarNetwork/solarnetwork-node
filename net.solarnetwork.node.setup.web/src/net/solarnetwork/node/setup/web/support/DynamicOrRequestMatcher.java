@@ -27,7 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.web.util.matcher.RequestMatcher;
-import net.solarnetwork.util.OptionalServiceCollection;
+import net.solarnetwork.service.OptionalServiceCollection;
 
 /**
  * {@link RequestMatcher} similar to
@@ -35,7 +35,7 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * uses an optional service collection.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.38
  */
 public class DynamicOrRequestMatcher implements RequestMatcher {

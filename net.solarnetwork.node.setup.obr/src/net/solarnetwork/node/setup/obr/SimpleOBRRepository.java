@@ -27,14 +27,14 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.context.MessageSource;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Simple implementation of {@link OBRRepository}.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class SimpleOBRRepository implements OBRRepository {
 
@@ -67,7 +67,7 @@ public class SimpleOBRRepository implements OBRRepository {
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.setup.obr.repo";
 	}
 

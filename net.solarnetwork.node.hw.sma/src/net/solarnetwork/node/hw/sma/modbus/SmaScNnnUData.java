@@ -22,18 +22,18 @@
 
 package net.solarnetwork.node.hw.sma.modbus;
 
-import static net.solarnetwork.domain.GeneralDatumSamplesType.Accumulating;
-import static net.solarnetwork.domain.GeneralDatumSamplesType.Instantaneous;
-import static net.solarnetwork.domain.GeneralDatumSamplesType.Status;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Map;
+import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
-import net.solarnetwork.node.domain.ACEnergyDatum;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.Datum;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.MutableDatumSamplesOperations;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
 import net.solarnetwork.node.hw.sma.domain.SmaCodedValue;
 import net.solarnetwork.node.hw.sma.domain.SmaCommonStatusCode;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceKind;
@@ -46,7 +46,7 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * {@link SmaDeviceData} for Sunny Central nnnU devices.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class SmaScNnnUData extends SmaCommonDeviceData implements SmaScNnnUDataAccessor {
 
@@ -92,8 +92,7 @@ public class SmaScNnnUData extends SmaCommonDeviceData implements SmaScNnnUDataA
 	}
 
 	@Override
-	public void populateDatumSamples(MutableGeneralDatumSamplesOperations samples,
-			Map<String, ?> parameters) {
+	public void populateDatumSamples(MutableDatumSamplesOperations samples, Map<String, ?> parameters) {
 		super.populateDatumSamples(samples, parameters);
 
 		samples.putSampleValue(Instantaneous, "gridReconnectTime", getGridReconnectTime());
@@ -121,11 +120,11 @@ public class SmaScNnnUData extends SmaCommonDeviceData implements SmaScNnnUDataA
 		state = getAcSwitchDisconnectorStatus();
 		samples.putSampleValue(Status, "acSwitchDisconnector", codedValueCode(state));
 
-		samples.putSampleValue(Instantaneous, ACPhase.PhaseA.withKey(ACEnergyDatum.CURRENT_KEY),
+		samples.putSampleValue(Instantaneous, AcPhase.PhaseA.withKey(AcEnergyDatum.CURRENT_KEY),
 				getGridCurrentLine1());
-		samples.putSampleValue(Instantaneous, ACPhase.PhaseB.withKey(ACEnergyDatum.CURRENT_KEY),
+		samples.putSampleValue(Instantaneous, AcPhase.PhaseB.withKey(AcEnergyDatum.CURRENT_KEY),
 				getGridCurrentLine2());
-		samples.putSampleValue(Instantaneous, ACPhase.PhaseC.withKey(ACEnergyDatum.CURRENT_KEY),
+		samples.putSampleValue(Instantaneous, AcPhase.PhaseC.withKey(AcEnergyDatum.CURRENT_KEY),
 				getGridCurrentLine3());
 
 		state = getActivePowerLimitStatus();
@@ -133,7 +132,7 @@ public class SmaScNnnUData extends SmaCommonDeviceData implements SmaScNnnUDataA
 
 		samples.putSampleValue(Instantaneous, "activePowerLimit", getActivePowerTarget());
 
-		samples.putSampleValue(Instantaneous, ACEnergyDatum.VOLTAGE_KEY, getVoltage());
+		samples.putSampleValue(Instantaneous, AcEnergyDatum.VOLTAGE_KEY, getVoltage());
 
 		samples.putSampleValue(Accumulating, "fanCabinet2OpTime", getCabinetFan2OperatingTime());
 		samples.putSampleValue(Accumulating, "fanHeatSinkOpTime", getHeatSinkFanOperatingTime());

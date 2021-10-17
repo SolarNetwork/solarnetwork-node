@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -45,21 +44,21 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.FileCopyUtils;
-import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.Constants;
-import net.solarnetwork.node.NodeMetadataService;
-import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
 import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.util.CloseableService;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.NodeMetadataService;
+import net.solarnetwork.service.CloseableService;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -100,10 +99,9 @@ import net.solarnetwork.util.StringUtils;
  * </dl>
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
-public class RemoteSshService
-		implements FeedbackInstructionHandler, SettingSpecifierProvider, CloseableService {
+public class RemoteSshService implements InstructionHandler, SettingSpecifierProvider, CloseableService {
 
 	/**
 	 * The instruction topic for starting a remote SSH connection with a reverse
@@ -253,13 +251,7 @@ public class RemoteSshService
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
-		InstructionStatus result = processInstructionWithFeedback(instruction);
-		return (result != null ? result.getInstructionState() : null);
-	}
-
-	@Override
-	public InstructionStatus processInstructionWithFeedback(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		InstructionStatus result = null;
 		if ( instruction != null ) {
 			if ( TOPIC_START_REMOTE_SSH.equalsIgnoreCase(instruction.getTopic()) ) {
@@ -302,20 +294,9 @@ public class RemoteSshService
 			configs.remove(config);
 		}
 
-		final InstructionStatus startingStatus = instruction.getStatus();
-
 		// TODO: use Executing state when connection hasn't been confirmed as connected!
 		InstructionState newState = (started ? InstructionState.Completed : InstructionState.Declined);
-		InstructionStatus result;
-		if ( resultParams.isEmpty() ) {
-			result = (startingStatus != null ? startingStatus.newCopyWithState(newState)
-					: new BasicInstructionStatus(instruction.getId(), newState, new Date()));
-		} else {
-			result = (startingStatus != null ? startingStatus.newCopyWithState(newState, resultParams)
-					: new BasicInstructionStatus(instruction.getId(), newState, new Date(), null,
-							resultParams));
-		}
-		return result;
+		return InstructionUtils.createStatus(instruction, newState, resultParams);
 	}
 
 	private InstructionStatus handleStopRemoteSsh(Instruction instruction) {
@@ -330,18 +311,8 @@ public class RemoteSshService
 		if ( stopped ) {
 			configs.remove(config);
 		}
-		final InstructionStatus startingStatus = instruction.getStatus();
 		InstructionState newState = (stopped ? InstructionState.Completed : InstructionState.Declined);
-		InstructionStatus result;
-		if ( resultParams.isEmpty() ) {
-			result = (startingStatus != null ? startingStatus.newCopyWithState(newState)
-					: new BasicInstructionStatus(instruction.getId(), newState, new Date()));
-		} else {
-			result = (startingStatus != null ? startingStatus.newCopyWithState(newState, resultParams)
-					: new BasicInstructionStatus(instruction.getId(), newState, new Date(), null,
-							resultParams));
-		}
-		return result;
+		return InstructionUtils.createStatus(instruction, newState, resultParams);
 	}
 
 	private RemoteSshConfig configForInstruction(Instruction instruction) {
@@ -539,7 +510,7 @@ public class RemoteSshService
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.system.ssh.RemoteSshService";
 	}
 

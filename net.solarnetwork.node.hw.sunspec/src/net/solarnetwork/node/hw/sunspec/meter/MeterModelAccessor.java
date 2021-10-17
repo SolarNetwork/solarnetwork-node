@@ -23,8 +23,8 @@
 package net.solarnetwork.node.hw.sunspec.meter;
 
 import java.util.Set;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 
@@ -34,7 +34,7 @@ import net.solarnetwork.node.hw.sunspec.ModelEvent;
  * @author matt
  * @version 1.1
  */
-public interface MeterModelAccessor extends ModelAccessor, ACEnergyDataAccessor {
+public interface MeterModelAccessor extends ModelAccessor, AcEnergyDataAccessor {
 
 	/**
 	 * Get the AC frequency value, in Hz.
@@ -142,7 +142,7 @@ public interface MeterModelAccessor extends ModelAccessor, ACEnergyDataAccessor 
 	 * @return the accessor
 	 */
 	@Override
-	MeterModelAccessor accessorForPhase(ACPhase phase);
+	MeterModelAccessor accessorForPhase(AcPhase phase);
 
 	/**
 	 * Get a "reversed" model accessor, where import/export directions are

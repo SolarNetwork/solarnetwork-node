@@ -29,9 +29,9 @@ import java.util.List;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.wimpi.modbus.net.UDPMasterConnection;
 
 /**
@@ -43,7 +43,7 @@ import net.wimpi.modbus.net.UDPMasterConnection;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class JamodUdpModbusNetwork extends AbstractModbusNetwork implements SettingSpecifierProvider {
 
@@ -81,7 +81,7 @@ public class JamodUdpModbusNetwork extends AbstractModbusNetwork implements Sett
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.modbus.udp";
 	}
 

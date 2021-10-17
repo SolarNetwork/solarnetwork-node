@@ -22,17 +22,20 @@
 
 package net.solarnetwork.node.datum.panasonic.battery;
 
-import net.solarnetwork.node.domain.GeneralNodeEnergyStorageDatum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.SimpleEnergyStorageDatum;
 import net.solarnetwork.node.hw.panasonic.battery.BatteryData;
 
 /**
- * Extension of {@link GeneralNodeEnergyStorageDatum} with specific support for
- * the Panasonic Battery API.
+ * Extension of {@link SimpleEnergyStorageDatum} with specific support for the
+ * Panasonic Battery API.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class PanasonicBatteryDatum extends GeneralNodeEnergyStorageDatum {
+public class PanasonicBatteryDatum extends SimpleEnergyStorageDatum {
+
+	private static final long serialVersionUID = -3893889583456359279L;
 
 	private final BatteryData sample;
 
@@ -41,20 +44,19 @@ public class PanasonicBatteryDatum extends GeneralNodeEnergyStorageDatum {
 	 * 
 	 * @param sample
 	 *        the sample
+	 * @param sourceId
+	 *        the source ID
 	 */
-	public PanasonicBatteryDatum(BatteryData sample) {
-		super();
+	public PanasonicBatteryDatum(BatteryData sample, String sourceId) {
+		super(sourceId, sample.getDate(), new DatumSamples());
 		this.sample = sample;
-		if ( sample.getDate() != null ) {
-			setCreated(sample.getDate().toDate());
-		}
 		sample.populateMeasurements(this);
 	}
 
 	/**
 	 * Test if the data appears valid in this datum.
 	 * 
-	 * @return <em>true</em> if the data appears to be valid
+	 * @return {@literal true} if the data appears to be valid
 	 */
 	public boolean isValid() {
 		return (getAvailableEnergy() != null);

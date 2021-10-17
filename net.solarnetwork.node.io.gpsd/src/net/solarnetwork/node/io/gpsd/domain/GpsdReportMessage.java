@@ -42,8 +42,6 @@ public interface GpsdReportMessage extends GpsdMessage {
 	/**
 	 * Create a copy of this report with a new timestamp.
 	 * 
-	 * @param <T>
-	 *        the message type
 	 * @param timestamp
 	 *        the timestamp
 	 * @return the new report message

@@ -22,40 +22,66 @@
 
 package net.solarnetwork.node.dao.jdbc.derby;
 
-import org.quartz.DisallowConcurrentExecution;
-import org.quartz.JobDataMap;
-import org.quartz.JobExecutionContext;
-import org.quartz.PersistJobDataAfterExecution;
-import net.solarnetwork.node.job.AbstractJob;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.util.Collections;
+import java.util.List;
+import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.job.JobService;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
 
 /**
  * Job to execute the {@link TablesMaintenanceService#processTables(String)}
  * method.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.8
  */
-@PersistJobDataAfterExecution
-@DisallowConcurrentExecution
-public class TablesMaintenanceJob extends AbstractJob {
+public class TablesMaintenanceJob extends BaseIdentifiable implements JobService {
 
+	private SettingDao settingDao;
 	private TablesMaintenanceService maintenanceService;
 
 	public static final String JOB_KEY_LAST_TABLE_KEY = "TablesMaintenanceLastKey";
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param settingDao
+	 *        the setting DAO to use
+	 * @param maintenanceService
+	 *        the service to use
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
+	public TablesMaintenanceJob(SettingDao settingDao, TablesMaintenanceService maintenanceService) {
+		super();
+		this.settingDao = requireNonNullArgument(settingDao, "settingDao");
+		this.maintenanceService = requireNonNullArgument(maintenanceService, "maintenanceService");
+	}
+
 	@Override
-	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
+	public String getSettingUid() {
+		return "net.solarnetwork.node.dao.jdbc.derby";
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		return Collections.emptyList();
+	}
+
+	@Override
+	public void executeJobService() throws Exception {
 		if ( maintenanceService == null ) {
 			return;
 		}
-		JobDataMap jd = jobContext.getJobDetail().getJobDataMap();
-		String startAfterKey = (String) jd.get(JOB_KEY_LAST_TABLE_KEY);
+		String startAfterKey = settingDao.getSetting(JOB_KEY_LAST_TABLE_KEY, getUid());
 		startAfterKey = maintenanceService.processTables(startAfterKey);
 		if ( startAfterKey == null ) {
-			jd.remove(JOB_KEY_LAST_TABLE_KEY);
+			settingDao.deleteSetting(JOB_KEY_LAST_TABLE_KEY, getUid());
 		} else {
-			jd.put(JOB_KEY_LAST_TABLE_KEY, startAfterKey);
+			settingDao.storeSetting(JOB_KEY_LAST_TABLE_KEY, getUid(), startAfterKey);
 		}
 	}
 

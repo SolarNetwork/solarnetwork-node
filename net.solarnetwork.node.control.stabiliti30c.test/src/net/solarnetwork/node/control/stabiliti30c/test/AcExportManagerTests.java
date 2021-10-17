@@ -37,7 +37,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
-import java.util.Date;
+import java.time.Instant;
 import java.util.UUID;
 import org.easymock.EasyMock;
 import org.junit.After;
@@ -45,6 +45,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.EventAdmin;
 import org.springframework.context.MessageSource;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.control.stabiliti30c.AcExportManager;
 import net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cAcControlMethod;
 import net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cDcControlMethod;
@@ -52,17 +53,17 @@ import net.solarnetwork.node.hw.idealpower.pc.Stabiliti30cRegister;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
+import net.solarnetwork.node.reactor.BasicInstruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.reactor.support.BasicInstruction;
+import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.test.DataUtils;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link AcExportManager} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class AcExportManagerTests {
 
@@ -305,14 +306,14 @@ public class AcExportManagerTests {
 		// WHEN
 		replayAll();
 
-		Date now = new Date();
+		Instant now = Instant.now();
 		BasicInstruction shedLoad = new BasicInstruction(InstructionHandler.TOPIC_SHED_LOAD, now,
-				UUID.randomUUID().toString(), UUID.randomUUID().toString(), null);
+				UUID.randomUUID().toString(), null);
 		shedLoad.addParameter(TEST_CONTROL_ID, String.valueOf(shedPowerAmount));
-		InstructionState result = service.processInstruction(shedLoad);
+		InstructionStatus result = service.processInstruction(shedLoad);
 
 		// THEN
-		assertThat("Handled OK", result, equalTo(InstructionState.Completed));
+		assertThat("Handled OK", result.getInstructionState(), equalTo(InstructionState.Completed));
 	}
 
 	@Test
@@ -337,14 +338,14 @@ public class AcExportManagerTests {
 		// WHEN
 		replayAll();
 
-		Date now = new Date();
+		Instant now = Instant.now();
 		BasicInstruction shedLoad = new BasicInstruction(InstructionHandler.TOPIC_SHED_LOAD, now,
-				UUID.randomUUID().toString(), UUID.randomUUID().toString(), null);
+				UUID.randomUUID().toString(), null);
 		shedLoad.addParameter(TEST_CONTROL_ID, String.valueOf(0));
-		InstructionState result = service.processInstruction(shedLoad);
+		InstructionStatus result = service.processInstruction(shedLoad);
 
 		// THEN
-		assertThat("Handled OK", result, equalTo(InstructionState.Completed));
+		assertThat("Handled OK", result.getInstructionState(), equalTo(InstructionState.Completed));
 	}
 
 	@Test
@@ -374,14 +375,14 @@ public class AcExportManagerTests {
 		// WHEN
 		replayAll();
 
-		Date now = new Date();
+		Instant now = Instant.now();
 		BasicInstruction shedLoad = new BasicInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER,
-				now, UUID.randomUUID().toString(), UUID.randomUUID().toString(), null);
+				now, UUID.randomUUID().toString(), null);
 		shedLoad.addParameter(TEST_CONTROL_ID, String.valueOf(shedPowerAmount));
-		InstructionState result = service.processInstruction(shedLoad);
+		InstructionStatus result = service.processInstruction(shedLoad);
 
 		// THEN
-		assertThat("Handled OK", result, equalTo(InstructionState.Completed));
+		assertThat("Handled OK", result.getInstructionState(), equalTo(InstructionState.Completed));
 	}
 
 	@Test
@@ -406,13 +407,14 @@ public class AcExportManagerTests {
 		// WHEN
 		replayAll();
 
-		Date now = new Date();
+		Instant now = Instant.now();
 		BasicInstruction shedLoad = new BasicInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER,
-				now, UUID.randomUUID().toString(), UUID.randomUUID().toString(), null);
+				now, UUID.randomUUID().toString(), null);
 		shedLoad.addParameter(TEST_CONTROL_ID, String.valueOf(0));
-		InstructionState result = service.processInstruction(shedLoad);
+		InstructionStatus result = service.processInstruction(shedLoad);
 
 		// THEN
-		assertThat("Handled OK", result, equalTo(InstructionState.Completed));
+		assertThat("Handled OK", result.getInstructionState(), equalTo(InstructionState.Completed));
 	}
+
 }

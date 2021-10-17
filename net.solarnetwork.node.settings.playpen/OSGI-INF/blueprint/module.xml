@@ -19,20 +19,18 @@
 		</property>
 	</bean>
 	
-	<reference id="locationServiceRef" availability="optional" interface="net.solarnetwork.node.LocationService">
-		<reference-listener ref="locationService" bind-method="onBind" unbind-method="onUnbind"/>
-	</reference>
-
-	<bean id="locationService" class="net.solarnetwork.util.OptionalServiceTracker">
-		<property name="service" ref="locationServiceRef"/>
+	<bean id="locationService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.LocationService"/>
+		<property name="sticky" value="true"/>
 	</bean>
 	
 	<!-- Published services -->
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Settings Playpen"/>
-			<property name="factoryUID" value="net.solarnetwork.node.settings.playpen"/>
+			<property name="factoryUid" value="net.solarnetwork.node.settings.playpen"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
@@ -64,7 +62,7 @@
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.settings.playpen" autowire-on-update="true">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 			<beans:value>net.solarnetwork.node.settings.SettingResourceHandler</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>

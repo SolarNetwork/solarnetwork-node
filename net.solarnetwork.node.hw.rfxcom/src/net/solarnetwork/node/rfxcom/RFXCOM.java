@@ -18,42 +18,29 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.rfxcom;
 
-import net.solarnetwork.node.ConversationalDataCollector;
+import java.io.IOException;
+import net.solarnetwork.service.Identifiable;
 
 /**
  * API for working with RFXCOM transceivers.
  * 
  * @author matt
- * @version $Revision$
+ * @version 2.0
  */
-public interface RFXCOM {
+public interface RFXCOM extends Identifiable {
 
 	/**
-	 * Get the unique ID of this instance.
+	 * Listen for messages.
 	 * 
-	 * <p>The unique ID is related to the serial port this instance is configured
-	 * to use.</p>
-	 * 
-	 * @return unique ID
+	 * @param handler
+	 *        the handler to accept messages
+	 * @throws IOException
+	 *         if an error occurs
 	 */
-	String getUID();
-	
-	/**
-	 * Get a {@link ConversationalDataCollector} configured to work with
-	 * this RFXCOM instance.
-	 * 
-	 * <p>Note this may return <em>null</em>, if the {@link DataCollector}
-	 * is not available. This can happen if the RFXCOM instance has not
-	 * been configured yet, for example assigned a serial port.</p>
-	 * 
-	 * @return a new ConverstaionalDataCollector instance, or <em>null</em>
-	 */
-	ConversationalDataCollector getDataCollectorInstance();
-	
+	void listenForMessages(MessageHandler handler) throws IOException;
+
 }

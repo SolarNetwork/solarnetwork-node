@@ -23,15 +23,15 @@
 package net.solarnetwork.node.settings.ca;
 
 import java.util.Map;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.support.MapPathMatcher;
-import net.solarnetwork.support.SearchFilter;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.util.MapPathMatcher;
+import net.solarnetwork.util.SearchFilter;
 
 /**
  * Helper class for a provider and its associated properties.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.13
  */
 public final class ProviderHelper {

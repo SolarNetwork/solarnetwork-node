@@ -60,17 +60,17 @@ import org.osgi.service.cm.ConfigurationAdmin;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import net.solarnetwork.node.Constants;
-import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.dao.BasicBatchResult;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.settings.SettingResourceHandler;
-import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
 import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.ca.CASettingsService;
+import net.solarnetwork.settings.SettingSpecifierProviderFactory;
 
 /**
  * Test cases for the {@link CASettingsService} class.
@@ -126,7 +126,7 @@ public class CASettingsServiceTests {
 		SettingResourceHandler handler = EasyMock.createMock(SettingResourceHandler.class);
 		mocks.add(handler);
 
-		expect(handler.getSettingUID()).andReturn(handlerKey).anyTimes();
+		expect(handler.getSettingUid()).andReturn(handlerKey).anyTimes();
 
 		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
 		expect(handler.applySettingResources(eq(settingKey), capture(resourceCaptor)))
@@ -165,7 +165,7 @@ public class CASettingsServiceTests {
 		SettingResourceHandler handler = EasyMock.createMock(SettingResourceHandler.class);
 		mocks.add(handler);
 
-		expect(handler.getSettingUID()).andReturn(handlerKey).anyTimes();
+		expect(handler.getSettingUid()).andReturn(handlerKey).anyTimes();
 
 		Configuration config1 = EasyMock.createMock(Configuration.class);
 		mocks.add(config1);
@@ -271,8 +271,8 @@ public class CASettingsServiceTests {
 		Hashtable<String, Object> configProps = new Hashtable<>();
 		configProps.put(CASettingsService.class.getName() + ".FACTORY_INSTANCE_KEY", instanceKey);
 
-		expect(handler.getSettingUID()).andReturn(factoryKey).anyTimes();
-		expect(factory.getFactoryUID()).andReturn(factoryKey).anyTimes();
+		expect(handler.getSettingUid()).andReturn(factoryKey).anyTimes();
+		expect(factory.getFactoryUid()).andReturn(factoryKey).anyTimes();
 		expect(dao.getSettingValues(factoryKey + ".FACTORY")).andReturn(emptyList());
 		expect(ca.getConfiguration(instancePid, null)).andReturn(config);
 		expect(config.getFactoryPid()).andReturn(factoryKey).anyTimes();
@@ -334,8 +334,8 @@ public class CASettingsServiceTests {
 		configProps.put("bazam", "shazam");
 		configProps.put("hi", "there");
 
-		expect(handler.getSettingUID()).andReturn(factoryKey).anyTimes();
-		expect(factory.getFactoryUID()).andReturn(factoryKey).anyTimes();
+		expect(handler.getSettingUid()).andReturn(factoryKey).anyTimes();
+		expect(factory.getFactoryUid()).andReturn(factoryKey).anyTimes();
 		expect(dao.getSettingValues(factoryKey + ".FACTORY")).andReturn(emptyList());
 		expect(ca.getConfiguration(instancePid, null)).andReturn(config);
 		expect(config.getFactoryPid()).andReturn(factoryKey).anyTimes();
@@ -408,7 +408,7 @@ public class CASettingsServiceTests {
 		SettingResourceHandler handler = EasyMock.createMock(SettingResourceHandler.class);
 		mocks.add(handler);
 
-		expect(handler.getSettingUID()).andReturn(handlerKey).anyTimes();
+		expect(handler.getSettingUid()).andReturn(handlerKey).anyTimes();
 
 		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
 		expect(handler.applySettingResources(eq(settingKey), capture(resourceCaptor)))

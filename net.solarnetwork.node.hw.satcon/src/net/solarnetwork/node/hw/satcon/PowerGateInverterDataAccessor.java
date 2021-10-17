@@ -24,16 +24,16 @@ package net.solarnetwork.node.hw.satcon;
 
 import java.util.Set;
 import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.PVEnergyDataAccessor;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.DcEnergyDataAccessor;
 
 /**
  * API for reading Power Gate inverter series data.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public interface PowerGateInverterDataAccessor extends PVEnergyDataAccessor, ACEnergyDataAccessor {
+public interface PowerGateInverterDataAccessor extends DcEnergyDataAccessor, AcEnergyDataAccessor {
 
 	/**
 	 * Get the operating state.

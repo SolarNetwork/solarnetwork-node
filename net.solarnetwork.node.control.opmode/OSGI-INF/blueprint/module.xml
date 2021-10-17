@@ -13,45 +13,47 @@
 	
 	<reference id="taskExecutor" interface="org.springframework.core.task.AsyncTaskExecutor" filter="(function=node)"/>
 	
-	<bean id="operationalModesService" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.OperationalModesService"/>
+	<bean id="operationalModesService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.OperationalModesService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="instructionExecutionService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionExecutionService"/>
+		<property name="sticky" value="true"/>
 	</bean>
 
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 				<value>net.solarnetwork.node.control.opmode.OperationalStateManager</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
 	
-	<bean id="instructionExecutionService" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionExecutionService"/>
-	</bean>
-
 	<!-- Published Services -->
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Operational State Manager"/>
-			<property name="factoryUID" value="net.solarnetwork.node.control.opmode.opstatemgr"/>
+			<property name="factoryUid" value="net.solarnetwork.node.control.opmode.opstatemgr"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.opmode.opstatemgr" autowire-on-update="true">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 			<beans:value>org.osgi.service.event.EventHandler</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.control.opmode.opstatemgr"/>
 			<beans:entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
 				<beans:array value-type="java.lang.String">
-					<beans:value>#{T(net.solarnetwork.node.OperationalModesService).EVENT_TOPIC_OPERATIONAL_MODES_CHANGED}</beans:value>
+					<beans:value>#{T(net.solarnetwork.node.service.OperationalModesService).EVENT_TOPIC_OPERATIONAL_MODES_CHANGED}</beans:value>
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>

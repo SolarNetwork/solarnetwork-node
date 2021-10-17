@@ -36,14 +36,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import org.springframework.context.MessageSource;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * A price map.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class PriceMap {
 
@@ -206,6 +206,8 @@ public class PriceMap {
 	 * Get a brief informational string out of the main aspects of this price
 	 * map.
 	 * 
+	 * @param locale
+	 *        the locale
 	 * @return the string
 	 */
 	public String toInfoString(Locale locale) {
@@ -357,6 +359,8 @@ public class PriceMap {
 
 	/**
 	 * Get the duration, never {@literal null}.
+	 * 
+	 * @return the duration
 	 */
 	public Duration duration() {
 		Duration d = getDuration();

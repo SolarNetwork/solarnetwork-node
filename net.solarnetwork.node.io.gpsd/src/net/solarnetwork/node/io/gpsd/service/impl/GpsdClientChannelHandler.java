@@ -223,8 +223,7 @@ public class GpsdClientChannelHandler extends SimpleChannelInboundHandler<Object
 	/**
 	 * Get the maximum number of seconds to wait for a command response.
 	 * 
-	 * @return the seconds; defaults to
-	 *         {@link #DEFAULT_RESPONSE_TIMEOUT_SECONDS}
+	 * @return the seconds; defaults to 0
 	 */
 	public int getResponseTimeoutSeconds() {
 		return responseTimeoutSeconds;
@@ -244,8 +243,7 @@ public class GpsdClientChannelHandler extends SimpleChannelInboundHandler<Object
 	 * Get the "auto watch" mode flag.
 	 * 
 	 * @return {@literal true} to automatically issue a {@literal ?WATCH}
-	 *         command when connecting to GPSd; default is
-	 *         {@link #DEFAULT_AUTO_WATCH}
+	 *         command when connecting to GPSd; default is false
 	 */
 	public boolean isAutoWatch() {
 		return autoWatch;

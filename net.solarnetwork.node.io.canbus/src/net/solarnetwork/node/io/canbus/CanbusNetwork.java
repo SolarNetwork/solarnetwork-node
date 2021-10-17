@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.io.canbus;
 
-import net.solarnetwork.node.Identifiable;
+import net.solarnetwork.service.Identifiable;
 
 /**
  * High level CAN bus entry point API.
@@ -38,7 +38,7 @@ import net.solarnetwork.node.Identifiable;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public interface CanbusNetwork extends Identifiable {
 

@@ -40,20 +40,20 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.DigestUtils;
-import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.domain.datum.ObjectDatumStreamMetadata;
 import net.solarnetwork.domain.datum.ObjectDatumStreamMetadataId;
-import net.solarnetwork.node.DatumMetadataService;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.service.DatumMetadataService;
+import net.solarnetwork.node.service.support.JsonHttpClientSupport;
 import net.solarnetwork.node.settings.SettingResourceHandler;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.SettingsUpdates;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.JsonHttpClientSupport;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.CachedResult;
 
 /**
@@ -66,7 +66,7 @@ import net.solarnetwork.util.CachedResult;
  * </p>
  * 
  * @author matt
- * @version 1.7
+ * @version 2.0
  */
 public class JsonDatumMetadataService extends JsonHttpClientSupport implements DatumMetadataService,
 		SettingResourceHandler, SettingSpecifierProvider, SettingsChangeObserver, Runnable {
@@ -240,7 +240,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 				final String sourceKey = DigestUtils.md5DigestAsHex(sourceId.getBytes(UTF8));
 				byte[] json = getObjectMapper().writeValueAsBytes(meta);
 				ByteArrayResource r = new ByteArrayResource(json, sourceId + " metadata");
-				settingsService.importSettingResources(getSettingUID(), null, sourceKey, singleton(r));
+				settingsService.importSettingResources(getSettingUid(), null, sourceKey, singleton(r));
 				setPersisted(timestamp);
 			} catch ( IOException e ) {
 				log.error("Error generating cached metadata JSON for source {}: {}", sourceId,
@@ -302,7 +302,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.metadata.json.JsonDatumMetadataService";
 	}
 
@@ -376,7 +376,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	private GeneralDatumMetadata loadPersistedMetadata(String sourceId) {
 		final String sourceKey = DigestUtils.md5DigestAsHex(sourceId.getBytes(UTF8));
 		try {
-			Iterable<Resource> resources = settingsService.getSettingResources(getSettingUID(), null,
+			Iterable<Resource> resources = settingsService.getSettingResources(getSettingUid(), null,
 					sourceKey);
 			if ( resources != null ) {
 				// use only first resource

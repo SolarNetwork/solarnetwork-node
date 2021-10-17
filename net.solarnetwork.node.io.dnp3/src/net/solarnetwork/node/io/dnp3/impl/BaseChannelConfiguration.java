@@ -26,14 +26,14 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import com.automatak.dnp3.LogMasks;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * A basic set of configuration options for a DNP3 channel.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class BaseChannelConfiguration {
 

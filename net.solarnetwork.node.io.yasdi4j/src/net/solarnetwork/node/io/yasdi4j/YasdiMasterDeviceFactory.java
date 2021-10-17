@@ -37,12 +37,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -51,6 +45,12 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import de.michaeldenk.yasdi4j.YasdiDevice;
 import de.michaeldenk.yasdi4j.YasdiDriver;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * Factory for {@link YasdiMaster} instances configured to use a serial port.
@@ -73,11 +73,12 @@ import de.michaeldenk.yasdi4j.YasdiDriver;
  * <dd>The packet format. Defaults to <b>SMANet</b>.</dd>
  * 
  * <dt>expectedDeviceCount</dt>
- * <dd>The number of expected devices for a given device. Defaults to <b>1</b>.</dd>
+ * <dd>The number of expected devices for a given device. Defaults to
+ * <b>1</b>.</dd>
  * </dl>
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, ObjectFactory<YasdiMaster> {
 
@@ -251,7 +252,7 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.yasdi4j";
 	}
 
@@ -276,8 +277,8 @@ public class YasdiMasterDeviceFactory implements SettingSpecifierProvider, Objec
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(4);
 		YasdiMasterDeviceFactory defaults = new YasdiMasterDeviceFactory();
-		results.add(new BasicTextFieldSettingSpecifier("expectedDeviceCount", String
-				.valueOf(defaults.expectedDeviceCount)));
+		results.add(new BasicTextFieldSettingSpecifier("expectedDeviceCount",
+				String.valueOf(defaults.expectedDeviceCount)));
 		results.add(new BasicTextFieldSettingSpecifier("driver", defaults.driver));
 		results.add(new BasicTextFieldSettingSpecifier("device", defaults.device));
 		results.add(new BasicTextFieldSettingSpecifier("baud", String.valueOf(defaults.baud)));

@@ -23,17 +23,17 @@
 package net.solarnetwork.node.io.protobuf;
 
 import java.util.List;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
-import net.solarnetwork.util.JavaCompiler;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.JavaCompiler;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Service for compiling Protobuf definitions.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ProtocProtobufCompilerService
 		extends net.solarnetwork.common.protobuf.protoc.ProtocProtobufCompilerService
@@ -50,7 +50,7 @@ public class ProtocProtobufCompilerService
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.protobuf.protoc";
 	}
 

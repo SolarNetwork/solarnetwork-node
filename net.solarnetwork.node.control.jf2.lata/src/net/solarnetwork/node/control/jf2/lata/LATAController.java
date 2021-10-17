@@ -23,9 +23,9 @@
 package net.solarnetwork.node.control.jf2.lata;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,25 +33,31 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.osgi.service.event.Event;
+import net.solarnetwork.domain.BasicNodeControlInfo;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
-import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.control.jf2.lata.command.AddressableCommand;
 import net.solarnetwork.node.control.jf2.lata.command.Command;
 import net.solarnetwork.node.control.jf2.lata.command.CommandInterface;
 import net.solarnetwork.node.control.jf2.lata.command.CommandValidationException;
 import net.solarnetwork.node.control.jf2.lata.command.ToggleMode;
-import net.solarnetwork.node.domain.NodeControlInfoDatum;
+import net.solarnetwork.node.domain.DataAccessor;
+import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.io.serial.SerialConnection;
+import net.solarnetwork.node.io.serial.SerialNetwork;
 import net.solarnetwork.node.io.serial.support.SerialDeviceSupport;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.support.DatumEvents;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * Implementation of both {@link NodeControlProvider} and
@@ -63,13 +69,16 @@ import net.solarnetwork.node.support.DatumEvents;
  * </p>
  * 
  * @author matt
- * @version 2.3
+ * @version 3.0
  */
 public class LATAController extends SerialDeviceSupport
-		implements NodeControlProvider, InstructionHandler, SettingSpecifierProvider, DatumEvents {
+		implements NodeControlProvider, InstructionHandler, SettingSpecifierProvider {
 
 	/** The default value for the {@code controlIdMappingValue} property. */
 	public static final String DEFAULT_CONTROL_ID_MAPPING = "/power/switch/1 = 100000BD, /power/switch/2 = 100000FD";
+
+	/** The {@code serialNetworkUid} property default value. */
+	public static final String DEFAULT_SERIAL_NETWORK_UID = "Serial Port";
 
 	private Map<String, String> controlIdMapping = new HashMap<String, String>();
 
@@ -78,10 +87,15 @@ public class LATAController extends SerialDeviceSupport
 
 	/**
 	 * Default constructor.
+	 * 
+	 * @param serialNetwork
+	 *        the serial network
 	 */
-	public LATAController() {
+	public LATAController(OptionalFilterableService<SerialNetwork> serialNetwork) {
 		super();
+		setDisplayName("LATA Controller");
 		setControlIdMappingValue(DEFAULT_CONTROL_ID_MAPPING);
+		setSerialNetworkUid(DEFAULT_SERIAL_NETWORK_UID);
 	}
 
 	@Override
@@ -90,7 +104,7 @@ public class LATAController extends SerialDeviceSupport
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		// look for a parameter name that matches a control ID
 		InstructionState result = null;
 		log.debug("Inspecting instruction {} against controls {}", instruction.getId(),
@@ -117,7 +131,7 @@ public class LATAController extends SerialDeviceSupport
 				}
 			}
 		}
-		return result;
+		return (result != null ? InstructionUtils.createStatus(instruction, result) : null);
 	}
 
 	private synchronized boolean setSwitchStatus(String controlId, boolean newStatus)
@@ -139,7 +153,7 @@ public class LATAController extends SerialDeviceSupport
 		performAction(new LATABusConverser(cmd));
 		log.trace("Set status to {} for control {}, address {}",
 				new Object[] { newStatus, controlId, address });
-		postControlEvent(newNodeControlInfoDatum(controlId, newStatus),
+		postControlEvent(newSimpleNodeControlInfoDatum(controlId, newStatus),
 				NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED);
 		return true;
 	}
@@ -156,7 +170,7 @@ public class LATAController extends SerialDeviceSupport
 	protected Map<String, Object> readDeviceInfo(SerialConnection conn) throws IOException {
 		String version = new GetVersionAction(false).doWithConnection(conn);
 		if ( version != null ) {
-			return Collections.singletonMap(INFO_KEY_DEVICE_MODEL, (Object) version);
+			return Collections.singletonMap(DataAccessor.INFO_KEY_DEVICE_MODEL, (Object) version);
 		}
 		return Collections.emptyMap();
 	}
@@ -199,7 +213,7 @@ public class LATAController extends SerialDeviceSupport
 					String status = m.group(2);
 					Boolean switchOn = ToggleMode.ON.hexString().equals(status);
 					log.trace("Address {} status is {}", address, switchOn);
-					NodeControlInfoDatum info = newNodeControlInfoDatum(controlId, switchOn);
+					SimpleNodeControlInfoDatum info = newSimpleNodeControlInfoDatum(controlId, switchOn);
 					postControlEvent(info, NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED);
 					return info;
 
@@ -212,17 +226,19 @@ public class LATAController extends SerialDeviceSupport
 		return null;
 	}
 
-	private NodeControlInfoDatum newNodeControlInfoDatum(String controlId, Boolean status) {
-		NodeControlInfoDatum info = new NodeControlInfoDatum();
-		info.setCreated(new Date());
-		info.setSourceId(controlId);
-		info.setType(NodeControlPropertyType.Boolean);
-		info.setReadonly(false);
-		info.setValue(status.toString());
-		return info;
+	private SimpleNodeControlInfoDatum newSimpleNodeControlInfoDatum(String controlId, boolean status) {
+		// @formatter:off
+		NodeControlInfo info = BasicNodeControlInfo.builder()
+				.withControlId(resolvePlaceholders(controlId))
+				.withType(NodeControlPropertyType.Boolean)
+				.withReadonly(false)
+				.withValue(String.valueOf(status))
+				.build();
+		// @formatter:on
+		return new SimpleNodeControlInfoDatum(info, Instant.now());
 	}
 
-	private void postControlEvent(NodeControlInfoDatum info, String topic) {
+	private void postControlEvent(SimpleNodeControlInfoDatum info, String topic) {
 		Event event = DatumEvents.datumEvent(topic, info);
 		postEvent(event);
 	}
@@ -273,7 +289,7 @@ public class LATAController extends SerialDeviceSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.control.jf2.lata";
 	}
 
@@ -290,11 +306,10 @@ public class LATAController extends SerialDeviceSupport
 	public List<SettingSpecifier> getDefaultSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
 		results.add(new BasicTitleSettingSpecifier("info", getDeviceInfoMessage(), true));
-		results.addAll(getIdentifiableSettingSpecifiers());
+		results.addAll(baseIdentifiableSettings(""));
+		results.addAll(serialNetworkSettings("", DEFAULT_SERIAL_NETWORK_UID));
 		results.add(
 				new BasicTextFieldSettingSpecifier("controlIdMappingValue", DEFAULT_CONTROL_ID_MAPPING));
-		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['UID']",
-				"Serial Port"));
 		return results;
 	}
 

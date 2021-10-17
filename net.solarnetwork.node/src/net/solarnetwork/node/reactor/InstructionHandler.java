@@ -22,13 +22,11 @@
 
 package net.solarnetwork.node.reactor;
 
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-
 /**
  * API to be implemented by a service that can handle instructions.
  * 
  * @author matt
- * @version 1.5
+ * @version 2.0
  */
 public interface InstructionHandler {
 
@@ -184,7 +182,7 @@ public interface InstructionHandler {
 	 * 
 	 * @param topic
 	 *        the topic
-	 * @return <em>true</em> only if this handler can execute the job for the
+	 * @return {@literal true} only if this handler can execute the job for the
 	 *         given topic
 	 */
 	boolean handlesTopic(String topic);
@@ -194,9 +192,9 @@ public interface InstructionHandler {
 	 * 
 	 * @param instruction
 	 *        the instruction to process
-	 * @return the state for the instruction, or <em>null</em> if the
+	 * @return the status for the instruction, or {@literal null} if the
 	 *         instruction was not handled
 	 */
-	InstructionState processInstruction(Instruction instruction);
+	InstructionStatus processInstruction(Instruction instruction);
 
 }

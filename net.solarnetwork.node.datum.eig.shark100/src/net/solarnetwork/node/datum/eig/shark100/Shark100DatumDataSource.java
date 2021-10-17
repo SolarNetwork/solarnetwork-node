@@ -22,36 +22,35 @@
 
 package net.solarnetwork.node.datum.eig.shark100;
 
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.eig.meter.Shark100Data;
 import net.solarnetwork.node.hw.eig.meter.Shark100DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * {@link DatumDataSource} for the Shark 100 series meter.
  * 
  * @author matt
- * @version 1.5
+ * @version 2.0
  */
 public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Shark100Data>
-		implements DatumDataSource<GeneralNodeACEnergyDatum>,
-		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	private String sourceId = "Shark 100";
 	private boolean backwards = false;
@@ -88,39 +87,38 @@ public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Sh
 	}
 
 	@Override
-	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
-		return GeneralNodeACEnergyDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AcEnergyDatum.class;
 	}
 
 	@Override
-	public GeneralNodeACEnergyDatum readCurrentDatum() {
+	public AcEnergyDatum readCurrentDatum() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
 		try {
 			final Shark100Data currSample = getCurrentSample();
 			if ( currSample == null ) {
 				return null;
 			}
-			Shark100Datum d = new Shark100Datum(currSample.reversedDataAccessor(), ACPhase.Total,
-					backwards);
+			Shark100Datum d = new Shark100Datum(currSample, sourceId, AcPhase.Total, backwards);
 			if ( this.includePhaseMeasurements ) {
 				d.populatePhaseMeasurementProperties(currSample);
 			}
-			d.setSourceId(resolvePlaceholders(sourceId));
 			return d;
 		} catch ( IOException e ) {
-			log.error("Communication problem reading source {} from Shark 100 device {}: {}",
-					this.sourceId, modbusDeviceName(), e.getMessage());
+			log.error("Communication problem reading source {} from Shark 100 device {}: {}", sourceId,
+					modbusDeviceName(), e.getMessage());
 			return null;
 		}
 	}
 
 	@Override
-	public Class<? extends GeneralNodeACEnergyDatum> getMultiDatumType() {
-		return GeneralNodeACEnergyDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return AcEnergyDatum.class;
 	}
 
 	@Override
-	public Collection<GeneralNodeACEnergyDatum> readMultipleDatum() {
-		GeneralNodeACEnergyDatum datum = readCurrentDatum();
+	public Collection<NodeDatum> readMultipleDatum() {
+		AcEnergyDatum datum = readCurrentDatum();
 		// TODO: support phases
 		if ( datum != null ) {
 			return Collections.singletonList(datum);
@@ -131,7 +129,7 @@ public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Sh
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.eig.shark100";
 	}
 
@@ -171,7 +169,7 @@ public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Sh
 	}
 
 	private String getSampleMessage(Shark100DataAccessor data) {
-		if ( data.getDataTimestamp() < 1 ) {
+		if ( data.getDataTimestamp() == null ) {
 			return "N/A";
 		}
 		StringBuilder buf = new StringBuilder();
@@ -179,8 +177,7 @@ public class Shark100DatumDataSource extends ModbusDataDatumDataSourceSupport<Sh
 		buf.append(", VAR = ").append(data.getReactivePower());
 		buf.append(", Wh rec = ").append(data.getActiveEnergyReceived());
 		buf.append(", Wh del = ").append(data.getActiveEnergyDelivered());
-		buf.append("; sampled at ")
-				.append(DateTimeFormat.forStyle("LS").print(new DateTime(data.getDataTimestamp())));
+		buf.append("; sampled at ").append(formatForLocalDisplay(data.getDataTimestamp()));
 		return buf.toString();
 	}
 

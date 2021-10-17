@@ -44,16 +44,16 @@ import gnu.io.SerialPort;
 import gnu.io.SerialPortEvent;
 import gnu.io.SerialPortEventListener;
 import gnu.io.UnsupportedCommOperationException;
-import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.io.serial.SerialConnection;
-import net.solarnetwork.node.support.SerialPortBeanParameters;
+import net.solarnetwork.node.service.LockTimeoutException;
+import net.solarnetwork.node.service.support.SerialPortBeanParameters;
 import net.solarnetwork.util.ByteList;
 
 /**
  * RXTX implementation of {@link SerialConnection}.
  * 
  * @author matt
- * @version 2.0
+ * @version 3.0
  */
 public class SerialPortConnection implements SerialConnection, SerialPortEventListener {
 
@@ -76,13 +76,10 @@ public class SerialPortConnection implements SerialConnection, SerialPortEventLi
 	/**
 	 * Constructor.
 	 * 
-	 * @param serialParams
+	 * @param params
 	 *        the parameters to use with the SerialPort
 	 * @param executor
 	 *        A thread pool to use for I/O tasks with timeouts.
-	 * @param maxWait
-	 *        the maximum number of milliseconds to wait when waiting to read
-	 *        data
 	 */
 	public SerialPortConnection(SerialPortBeanParameters params, ExecutorService executor) {
 		this.serialParams = params;

@@ -22,8 +22,8 @@
 
 package net.solarnetwork.node.io.mbus;
 
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 /**
@@ -31,15 +31,15 @@ import java.util.List;
  * A class representing an MBus Message
  * 
  * @author alex
- * @version 1.0
+ * @version 2.0
  */
 public class MBusData {
 
-	public Date receivedTime = new Date();
+	public Instant receivedTime = Instant.now();
 	public int status = 0;
 	public List<MBusDataRecord> dataRecords = new ArrayList<MBusDataRecord>();
 
-	public MBusData(Date receivedTime) {
+	public MBusData(Instant receivedTime) {
 		this.receivedTime = receivedTime;
 	}
 
@@ -61,20 +61,20 @@ public class MBusData {
 	 * 
 	 * @return data timestamp
 	 */
-	public long getDataTimestamp() {
+	public Instant getDataTimestamp() {
 		final MBusDataRecord record = getRecord(MBusDataDescription.DateTime);
 
 		if ( record == null )
-			return receivedTime.getTime();
+			return receivedTime;
 
 		if ( record.getType() != MBusDataType.Date )
-			return receivedTime.getTime();
+			return receivedTime;
 
-		final Date date = record.getDateValue();
+		final Instant date = record.getDateValue();
 		if ( date == null )
-			return receivedTime.getTime();
+			return receivedTime;
 
-		return date.getTime();
+		return date;
 	}
 
 	/**
@@ -130,7 +130,7 @@ public class MBusData {
 	 *        description type to find record for
 	 * @return date value
 	 */
-	public Date getDateValue(MBusDataDescription description) {
+	public Instant getDateValue(MBusDataDescription description) {
 		final MBusDataRecord record = getRecord(description);
 		if ( record == null )
 			return null;

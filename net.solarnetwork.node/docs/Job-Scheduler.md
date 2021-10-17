@@ -156,7 +156,7 @@ OSGi Blueprint and the Eclipse Gemini Blueprint `<managed-service-factory>` exte
 	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="EnergyMeter Mock"/>
-			<property name="factoryUID" value="net.solarnetwork.node.datum.energymeter.mock"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.energymeter.mock"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>

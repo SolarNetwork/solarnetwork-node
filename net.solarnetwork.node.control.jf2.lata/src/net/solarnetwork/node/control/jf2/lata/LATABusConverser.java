@@ -34,8 +34,8 @@ import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.util.ByteUtils;
 
 /**
- * Extension of {@link Converser} that initializes the LATA Bus prior to sending
- * commands.
+ * Extension of {@link SerialConnectionAction} that initializes the LATA Bus
+ * prior to sending commands.
  * 
  * <p>
  * Serial parameters known to work on Linux using <code>/dev/USB</code>:

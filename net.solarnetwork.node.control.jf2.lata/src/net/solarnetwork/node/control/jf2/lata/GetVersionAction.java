@@ -42,7 +42,7 @@ public class GetVersionAction implements SerialConnectionAction<String> {
 	 * Constructor.
 	 * 
 	 * @param longVersion
-	 *        <em>true</em> to get the long version, <em>false</em> for short
+	 *        {@literal true} to get the long version, {@literal false} for short
 	 */
 	public GetVersionAction(boolean longVersion) {
 		super();

@@ -22,13 +22,13 @@
 
 package net.solarnetwork.node.setup.web.proxy;
 
-import net.solarnetwork.node.Identifiable;
+import net.solarnetwork.service.Identifiable;
 
 /**
  * A dynamic web proxy configuration.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public interface WebProxyConfiguration extends Identifiable {
 

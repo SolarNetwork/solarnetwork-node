@@ -27,11 +27,8 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 import javax.xml.xpath.XPathExpression;
-import org.joda.time.LocalTime;
 import org.springframework.beans.BeanWrapper;
-import net.solarnetwork.node.support.XmlServiceSupport;
-import net.solarnetwork.util.JodaDateFormatEditor;
-import net.solarnetwork.util.JodaDateFormatEditor.ParseMode;
+import net.solarnetwork.node.service.support.XmlServiceSupport;
 
 /**
  * Helper class that can parse Current Cost XML messages into {@link CCDatum}
@@ -42,12 +39,9 @@ import net.solarnetwork.util.JodaDateFormatEditor.ParseMode;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class CCMessageParser extends XmlServiceSupport {
-
-	private static JodaDateFormatEditor LOCAL_TIME_EDITOR = new JodaDateFormatEditor("HH:mm:ss",
-			ParseMode.LocalTime);
 
 	private final Map<String, XPathExpression> xpathMapping;
 
@@ -74,7 +68,7 @@ public class CCMessageParser extends XmlServiceSupport {
 	 * 
 	 * @param messageXML
 	 *        the message bytes to parse
-	 * @return the CCDatum instance, or <em>null</em> if any parsing error
+	 * @return the CCDatum instance, or {@literal null} if any parsing error
 	 *         occurs
 	 */
 	public CCDatum parseMessage(byte[] messageXML) {
@@ -103,7 +97,7 @@ public class CCMessageParser extends XmlServiceSupport {
 
 	@Override
 	public void registerCustomEditors(BeanWrapper bean) {
-		bean.registerCustomEditor(LocalTime.class, LOCAL_TIME_EDITOR);
+		// TODO? bean.registerCustomEditor(LocalTime.class, LOCAL_TIME_EDITOR);
 	}
 
 }

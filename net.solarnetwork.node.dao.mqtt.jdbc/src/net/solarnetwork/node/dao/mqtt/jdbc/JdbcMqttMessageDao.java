@@ -39,15 +39,15 @@ import net.solarnetwork.common.mqtt.dao.BasicMqttMessageEntity;
 import net.solarnetwork.common.mqtt.dao.MqttMessageDao;
 import net.solarnetwork.common.mqtt.dao.MqttMessageEntity;
 import net.solarnetwork.node.dao.jdbc.BaseJdbcBatchableDao;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * JDBC implementation of {@link MqttMessageDao}.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, Long>
 		implements MqttMessageDao, SettingSpecifierProvider {
@@ -114,7 +114,7 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.dao.mqtt.jdbc";
 	}
 

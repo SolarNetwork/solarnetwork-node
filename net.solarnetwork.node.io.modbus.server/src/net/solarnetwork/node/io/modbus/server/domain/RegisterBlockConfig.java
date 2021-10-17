@@ -29,12 +29,12 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
 
 /**
@@ -54,7 +54,7 @@ import net.solarnetwork.util.ArrayUtils;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class RegisterBlockConfig {
 
@@ -95,8 +95,8 @@ public class RegisterBlockConfig {
 		MeasurementConfig[] measConfs = getMeasurementConfigs();
 		List<MeasurementConfig> measConfsList = (measConfs != null ? Arrays.asList(measConfs)
 				: Collections.<MeasurementConfig> emptyList());
-		result.add(SettingsUtil.dynamicListSettingSpecifier(prefix + "measurementConfigs", measConfsList,
-				new SettingsUtil.KeyedListCallback<MeasurementConfig>() {
+		result.add(SettingUtils.dynamicListSettingSpecifier(prefix + "measurementConfigs", measConfsList,
+				new SettingUtils.KeyedListCallback<MeasurementConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(MeasurementConfig value,

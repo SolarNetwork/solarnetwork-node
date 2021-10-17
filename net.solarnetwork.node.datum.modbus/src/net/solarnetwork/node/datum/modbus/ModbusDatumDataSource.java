@@ -25,25 +25,19 @@ package net.solarnetwork.node.datum.modbus;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntConsumer;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import net.solarnetwork.domain.GeneralDatumMetadata;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.DatumMetadataService;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.domain.datum.MutableNodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusData;
@@ -52,64 +46,55 @@ import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWordOrder;
 import net.solarnetwork.node.io.modbus.support.ModbusDeviceDatumDataSourceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.service.ExpressionService;
+import net.solarnetwork.service.ServiceLifecycleObserver;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
-import net.solarnetwork.support.ExpressionService;
-import net.solarnetwork.support.ServiceLifecycleObserver;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.IntRange;
 import net.solarnetwork.util.IntRangeSet;
 import net.solarnetwork.util.NumberUtils;
-import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * Generic Modbus device datum data source.
  * 
  * @author matt
- * @version 2.4
+ * @version 3.0
  */
 public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
-		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider,
-		ModbusConnectionAction<ModbusData>, SettingsChangeObserver, ServiceLifecycleObserver {
+		implements DatumDataSource, SettingSpecifierProvider, ModbusConnectionAction<ModbusData>,
+		SettingsChangeObserver, ServiceLifecycleObserver {
 
-	/** The datum metadata key for a virtual meter sample value. */
-	public static final String VIRTUAL_METER_VALUE_KEY = "vm-value";
+	/** The {@code sampleCacheMs} property default value. */
+	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000L;
 
-	/** The datum metadata key for a virtual meter reading date. */
-	public static final String VIRTUAL_METER_DATE_KEY = "vm-date";
+	/** The {@code maxReadWordCount} property default value. */
+	public static final int DEFAULT_MAX_READ_WORD_COUNT = 64;
 
-	/** The datum metadata key for a virtual meter reading value. */
-	public static final String VIRTUAL_METER_READING_KEY = "vm-reading";
-
-	private static final int VIRTUAL_METER_SCALE = 6;
-
-	private static final BigDecimal TWO = new BigDecimal("2");
+	/** The {@code wordOrder} property default value. */
+	public static final ModbusWordOrder DEFAULT_WORD_ORDER = ModbusWordOrder.MostToLeastSignificant;
 
 	private String sourceId;
 	private long sampleCacheMs;
 	private int maxReadWordCount;
 	private ModbusPropertyConfig[] propConfigs;
-	private VirtualMeterConfig[] virtualMeterConfigs;
 
 	private final ModbusData sample;
-
-	private final AtomicReference<GeneralDatumMetadata> sourceMetadata = new AtomicReference<GeneralDatumMetadata>(
-			null);
 
 	public ModbusDatumDataSource() {
 		super();
 		sample = new ModbusData();
-		sourceId = "modbus";
-		sampleCacheMs = 5000;
-		maxReadWordCount = 64;
-		setWordOrder(ModbusWordOrder.MostToLeastSignificant);
+		sampleCacheMs = DEFAULT_SAMPLE_CACHE_MS;
+		maxReadWordCount = DEFAULT_MAX_READ_WORD_COUNT;
+		setWordOrder(DEFAULT_WORD_ORDER);
 	}
 
 	@Override
@@ -133,37 +118,34 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	}
 
 	@Override
-	public Class<? extends GeneralNodeDatum> getDatumType() {
-		return GeneralNodeDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return NodeDatum.class;
 	}
 
 	@Override
-	public GeneralNodeDatum readCurrentDatum() {
+	public NodeDatum readCurrentDatum() {
 		return readCurrentDatum(null);
 	}
 
 	@Override
-	protected void readSubSampleDatum(DatumDataSource<? extends GeneralNodeDatum> dataSource) {
-		GeneralNodeDatum datum = readCurrentDatum(SUB_SAMPLE_PROPS);
+	protected void readSubSampleDatum(DatumDataSource dataSource) {
+		NodeDatum datum = readCurrentDatum(SUB_SAMPLE_PROPS);
 		log.debug("Got sub-sample datum: {}", datum);
 	}
 
-	private GeneralNodeDatum readCurrentDatum(Map<String, Object> xformProps) {
+	private NodeDatum readCurrentDatum(Map<String, Object> xformProps) {
 		final ModbusData currSample = getCurrentSample();
 		if ( currSample == null ) {
 			return null;
 		}
-		GeneralNodeDatum d = new GeneralNodeDatum();
-		d.setCreated(new Date(currSample.getDataTimestamp()));
-		d.setSourceId(resolvePlaceholders(sourceId));
+		SimpleDatum d = SimpleDatum.nodeDatum(resolvePlaceholders(sourceId),
+				currSample.getDataTimestamp());
 		populateDatumProperties(currSample, d, propConfigs);
 		populateDatumProperties(currSample, d, getExpressionConfigs());
-		populateDatumProperties(currSample, d, virtualMeterConfigs);
-		d = applySamplesTransformer(d, xformProps);
 		return d;
 	}
 
-	private void populateDatumProperties(ModbusData sample, GeneralNodeDatum d,
+	private void populateDatumProperties(ModbusData sample, MutableNodeDatum d,
 			ModbusPropertyConfig[] propConfs) {
 		if ( propConfs == null ) {
 			return;
@@ -251,147 +233,15 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 					default:
 						// nothing
 				}
-				d.putSampleValue(conf.getPropertyType(), conf.getPropertyKey(), propVal);
+				d.asMutableSampleOperations().putSampleValue(conf.getPropertyType(),
+						conf.getPropertyKey(), propVal);
 			}
 		}
 	}
 
-	private GeneralDatumMetadata metadata(DatumMetadataService service) {
-		GeneralDatumMetadata metadata = sourceMetadata.get();
-		if ( metadata == null ) {
-			log.info("Requesting datum metadata for source [{}]", this.sourceId);
-			metadata = service.getSourceMetadata(this.sourceId);
-			if ( metadata == null ) {
-				log.info("No existing datum metadata found for source [{}]", this.sourceId);
-				metadata = new GeneralDatumMetadata();
-			} else if ( log.isInfoEnabled() ) {
-				log.info("Existing datum metadata found for source [{}]: {}", this.sourceId,
-						metadata.getPropertyInfo());
-			}
-			if ( !sourceMetadata.compareAndSet(null, metadata) ) {
-				metadata = sourceMetadata.get();
-			}
-		}
-		return metadata;
-	}
-
-	private void populateDatumProperties(ModbusData sample, GeneralNodeDatum d,
-			VirtualMeterConfig[] meterConfs) {
-		if ( meterConfs == null || meterConfs.length < 1 ) {
-			return;
-		}
-		final DatumMetadataService service = datumMetadataService();
-		if ( service == null ) {
-			// the metadata service is required for virtual meters
-			log.warn("DatumMetadataService is required for vitual meters, but not available");
-			return;
-		}
-		final GeneralDatumMetadata metadata = metadata(service);
-		if ( metadata == null ) {
-			// should not happen, more to let the compiler know what we're expecting
-			log.error("Metadata not available for virtual meters");
-			return;
-		}
-
-		final long date = sample.getDataTimestamp();
-
-		for ( VirtualMeterConfig config : meterConfs ) {
-			if ( config.getPropertyKey() == null || config.getPropertyKey().isEmpty()
-					|| config.getTimeUnit() == null ) {
-				continue;
-			}
-			TimeUnit timeUnit = config.getTimeUnit();
-			String tuName = timeUnit.name().substring(0, 1) + timeUnit.name().substring(1).toLowerCase();
-			String meterPropName = config.getPropertyKey() + tuName;
-			if ( d.getSamples().hasSampleValue(GeneralDatumSamplesType.Accumulating, meterPropName) ) {
-				// accumulating value exists for this property already, do not overwrite
-				log.warn(
-						"Accumulating property [{}] already exists, will not populate virtual meter reading for [{}]",
-						meterPropName, config.getPropertyKey());
-				continue;
-			}
-			BigDecimal currVal = d.getInstantaneousSampleBigDecimal(config.getPropertyKey());
-			if ( currVal == null ) {
-				log.debug(
-						"Instantaneous property [{}] not available, cannot populate virtual meter reading",
-						config.getPropertyKey());
-				continue;
-			}
-
-			synchronized ( config ) {
-				Map<String, Map<String, Object>> pm = metadata.getPropertyInfo();
-				if ( pm == null ) {
-					pm = new LinkedHashMap<String, Map<String, Object>>(8);
-					metadata.setPm(pm);
-				}
-				Long prevDate = metadata.getInfoLong(meterPropName, VIRTUAL_METER_DATE_KEY);
-				BigDecimal prevVal = metadata.getInfoBigDecimal(meterPropName, VIRTUAL_METER_VALUE_KEY);
-				BigDecimal prevReading = metadata.getInfoBigDecimal(meterPropName,
-						VIRTUAL_METER_READING_KEY);
-				if ( prevDate == null || prevVal == null || prevReading == null ) {
-					Map<String, Object> meterPropMap = new LinkedHashMap<>(3);
-					meterPropMap.put(VIRTUAL_METER_DATE_KEY, date);
-					meterPropMap.put(VIRTUAL_METER_VALUE_KEY, currVal.toString());
-					meterPropMap.put(VIRTUAL_METER_READING_KEY,
-							prevReading != null ? prevReading.toString() : config.getMeterReading());
-					pm.put(meterPropName, meterPropMap);
-					log.info("Virtual meter {} status: {}", meterPropName, meterPropMap);
-				} else if ( prevDate >= date ) {
-					log.warn(
-							"Virtual meter reading date {} for {} not older than sample time {}, will not populate reading",
-							new Date(prevDate), meterPropName, new Date(date));
-					continue;
-				} else if ( (date - prevDate) > config.getMaxAgeSeconds() * 1000 ) {
-					log.warn(
-							"Virtual meter previous reading date {} for {} greater than allowed age {}s, will not populate reading",
-							new Date(prevDate), meterPropName);
-					metadata.putInfoValue(meterPropName, VIRTUAL_METER_DATE_KEY, date);
-					metadata.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
-				} else {
-					BigDecimal msDiff = new BigDecimal(date - prevDate);
-					msDiff.setScale(VIRTUAL_METER_SCALE);
-					BigDecimal unitMs = new BigDecimal(timeUnit.toMillis(1));
-					unitMs.setScale(VIRTUAL_METER_SCALE);
-					BigDecimal meterValue = prevVal.add(currVal).divide(TWO).multiply(msDiff)
-							.divide(unitMs, VIRTUAL_METER_SCALE, RoundingMode.HALF_UP);
-					BigDecimal currReading = prevReading.add(meterValue);
-					d.putAccumulatingSampleValue(meterPropName, currReading);
-					metadata.putInfoValue(meterPropName, VIRTUAL_METER_DATE_KEY, date);
-					metadata.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
-					metadata.putInfoValue(meterPropName, VIRTUAL_METER_READING_KEY,
-							currReading.toString());
-					log.info(
-							"Virtual meter {} adds {} from instantaneous value {} -> {} over {}ms to reach {}",
-							meterPropName, meterValue, prevVal, currVal, msDiff, currReading);
-				}
-				try {
-					service.addSourceMetadata(this.sourceId, metadata);
-				} catch ( RuntimeException e ) {
-					// catch IO errors and let slide
-					Throwable root = e;
-					while ( root.getCause() != null ) {
-						root = root.getCause();
-					}
-					if ( root instanceof IOException ) {
-						log.warn(
-								"Communication error posting metadata for source {} virutal meter {}: {}",
-								this.sourceId, meterPropName, root.toString());
-					} else {
-						throw e;
-					}
-				}
-			}
-		}
-	}
-
-	private void populateDatumProperties(ModbusData sample, GeneralNodeDatum d,
+	private void populateDatumProperties(ModbusData sample, MutableNodeDatum d,
 			ExpressionConfig[] expressionConfs) {
 		populateExpressionDatumProperties(d, expressionConfs, new ExpressionRoot(d, sample));
-	}
-
-	private DatumMetadataService datumMetadataService() {
-		OptionalService<DatumMetadataService> opt = getDatumMetadataService();
-		return (opt != null ? opt.service() : null);
 	}
 
 	private Number applyDecimalScale(Number value, int decimalScale) {
@@ -414,7 +264,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.modbus";
 	}
 
@@ -458,16 +308,15 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 		results.addAll(getModbusNetworkSettingSpecifiers());
 
-		ModbusDatumDataSource defaults = new ModbusDatumDataSource();
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
-				String.valueOf(defaults.sampleCacheMs)));
+				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
 		results.add(new BasicTextFieldSettingSpecifier("maxReadWordCount",
-				String.valueOf(defaults.maxReadWordCount)));
+				String.valueOf(DEFAULT_MAX_READ_WORD_COUNT)));
 
 		// drop-down menu for word order
 		BasicMultiValueSettingSpecifier wordOrderSpec = new BasicMultiValueSettingSpecifier(
-				"wordOrderKey", String.valueOf(defaults.getWordOrder().getKey()));
+				"wordOrderKey", String.valueOf(DEFAULT_WORD_ORDER.getKey()));
 		Map<String, String> wordOrderTitles = new LinkedHashMap<String, String>(2);
 		for ( ModbusWordOrder e : ModbusWordOrder.values() ) {
 			wordOrderTitles.put(String.valueOf(e.getKey()), e.toDisplayString());
@@ -477,26 +326,11 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 		results.addAll(getSubSampleSettingSpecifiers());
 
-		VirtualMeterConfig[] meterConfs = getVirtualMeterConfigs();
-		List<VirtualMeterConfig> meterConfsList = (meterConfs != null ? Arrays.asList(meterConfs)
-				: Collections.<VirtualMeterConfig> emptyList());
-		results.add(SettingsUtil.dynamicListSettingSpecifier("virtualMeterConfigs", meterConfsList,
-				new SettingsUtil.KeyedListCallback<VirtualMeterConfig>() {
-
-					@Override
-					public Collection<SettingSpecifier> mapListSettingKey(VirtualMeterConfig value,
-							int index, String key) {
-						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
-								VirtualMeterConfig.settings(key + ".", value.getMeterReading()));
-						return Collections.<SettingSpecifier> singletonList(configGroup);
-					}
-				}));
-
 		ModbusPropertyConfig[] confs = getPropConfigs();
 		List<ModbusPropertyConfig> confsList = (confs != null ? Arrays.asList(confs)
 				: Collections.<ModbusPropertyConfig> emptyList());
-		results.add(SettingsUtil.dynamicListSettingSpecifier("propConfigs", confsList,
-				new SettingsUtil.KeyedListCallback<ModbusPropertyConfig>() {
+		results.add(SettingUtils.dynamicListSettingSpecifier("propConfigs", confsList,
+				new SettingUtils.KeyedListCallback<ModbusPropertyConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(ModbusPropertyConfig value,
@@ -514,8 +348,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 			ExpressionConfig[] exprConfs = getExpressionConfigs();
 			List<ExpressionConfig> exprConfsList = (exprConfs != null ? Arrays.asList(exprConfs)
 					: Collections.<ExpressionConfig> emptyList());
-			results.add(SettingsUtil.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
-					new SettingsUtil.KeyedListCallback<ExpressionConfig>() {
+			results.add(SettingUtils.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
+					new SettingUtils.KeyedListCallback<ExpressionConfig>() {
 
 						@Override
 						public Collection<SettingSpecifier> mapListSettingKey(ExpressionConfig value,
@@ -531,11 +365,11 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	}
 
 	private String getSampleMessage(ModbusData sample) {
-		if ( sample.getDataTimestamp() < 1 ) {
+		if ( sample.getDataTimestamp() == null ) {
 			return "N/A";
 		}
 
-		GeneralNodeDatum d = new GeneralNodeDatum();
+		SimpleDatum d = SimpleDatum.nodeDatum(null);
 		populateDatumProperties(sample, d, propConfigs);
 
 		Map<String, ?> data = d.getSampleData();
@@ -545,8 +379,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 		StringBuilder buf = new StringBuilder();
 		buf.append(StringUtils.delimitedStringFromMap(data));
-		buf.append("; sampled at ")
-				.append(DateTimeFormat.forStyle("LS").print(new DateTime(sample.getDataTimestamp())));
+		buf.append("; sampled at ").append(sample.getDataTimestamp());
 		return buf.toString();
 	}
 
@@ -673,8 +506,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 					t = t.getCause();
 				}
 				log.debug("Error reading from Modbus device {}", modbusDeviceName(), t);
-				log.warn("Communication problem reading source {} from Modbus device {}: {}",
-						this.sourceId, modbusDeviceName(), t.getMessage());
+				log.error("Communication problem reading source {} from Modbus device {}: {}",
+						resolvePlaceholders(this.sourceId), modbusDeviceName(), t.getMessage());
 			}
 		} else {
 			currSample = sample.copy();
@@ -683,7 +516,11 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	}
 
 	private boolean isCachedSampleExpired() {
-		final long lastReadDiff = System.currentTimeMillis() - sample.getDataTimestamp();
+		final Instant sampleDate = (sample != null ? sample.getDataTimestamp() : null);
+		if ( sampleDate == null ) {
+			return true;
+		}
+		final long lastReadDiff = System.currentTimeMillis() - sampleDate.toEpochMilli();
 		if ( lastReadDiff > sampleCacheMs ) {
 			return true;
 		}
@@ -839,55 +676,6 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 			order = ModbusWordOrder.MostToLeastSignificant;
 		}
 		setWordOrder(order);
-	}
-
-	/**
-	 * Get the virtual meter configurations.
-	 * 
-	 * @return the virtual meter configurations
-	 * @since 1.4
-	 */
-	public VirtualMeterConfig[] getVirtualMeterConfigs() {
-		return virtualMeterConfigs;
-	}
-
-	/**
-	 * Set the virtual meter configurations to use.
-	 * 
-	 * @param virtualMeterConfigs
-	 *        the configs to use
-	 * @since 1.4
-	 */
-	public void setVirtualMeterConfigs(VirtualMeterConfig[] virtualMeterConfigs) {
-		this.virtualMeterConfigs = virtualMeterConfigs;
-	}
-
-	/**
-	 * Get the number of configured {@code virtualMeterConfigs} elements.
-	 * 
-	 * @return the number of {@code virtualMeterConfigs} elements
-	 * @since 1.4
-	 */
-	public int getVirtualMeterConfigsCount() {
-		VirtualMeterConfig[] confs = this.virtualMeterConfigs;
-		return (confs == null ? 0 : confs.length);
-	}
-
-	/**
-	 * Adjust the number of configured {@code virtualMeterConfigs} elements.
-	 * 
-	 * <p>
-	 * Any newly added element values will be set to new
-	 * {@link VirtualMeterConfig} instances.
-	 * </p>
-	 * 
-	 * @param count
-	 *        The desired number of {@code virtualMeterConfigs} elements.
-	 * @since 1.4
-	 */
-	public void setVirtualMeterConfigsCount(int count) {
-		this.virtualMeterConfigs = ArrayUtils.arrayWithLength(this.virtualMeterConfigs, count,
-				VirtualMeterConfig.class, null);
 	}
 
 	/**

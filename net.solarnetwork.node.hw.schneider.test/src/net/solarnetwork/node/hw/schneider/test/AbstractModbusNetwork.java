@@ -29,17 +29,22 @@ import net.solarnetwork.node.io.modbus.ModbusNetwork;
  * Abstract implementation of {@link ModbusNetwork} to simplify testing.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public abstract class AbstractModbusNetwork implements ModbusNetwork {
 
 	@Override
-	public String getUID() {
+	public String getUid() {
 		return null;
 	}
 
 	@Override
-	public String getGroupUID() {
+	public String getGroupUid() {
+		return null;
+	}
+
+	@Override
+	public String getDisplayName() {
 		return null;
 	}
 

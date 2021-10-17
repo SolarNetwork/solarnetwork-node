@@ -22,28 +22,31 @@
 
 package net.solarnetwork.node.control.camera.motion;
 
-import org.quartz.DisallowConcurrentExecution;
-import org.quartz.JobExecutionContext;
-import org.quartz.PersistJobDataAfterExecution;
-import net.solarnetwork.node.job.AbstractJob;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Job to create snapshots in motion.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-@PersistJobDataAfterExecution
-@DisallowConcurrentExecution
-public class MotionSnapshotJob extends AbstractJob {
+public class MotionSnapshotJob implements Runnable {
 
-	public static final int DEFAULT_CAMERA_ID = 1;
+	private static final Logger log = LoggerFactory.getLogger(MotionSnapshotJob.class);
 
-	private MotionService service;
-	private int cameraId = DEFAULT_CAMERA_ID;
+	private final MotionService service;
+	private final int cameraId;
+
+	public MotionSnapshotJob(MotionService service, int cameraId) {
+		super();
+		this.service = requireNonNullArgument(service, "service");
+		this.cameraId = cameraId;
+	}
 
 	@Override
-	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
+	public void run() {
 		try {
 			service.takeSnapshot(cameraId);
 		} catch ( Exception e ) {
@@ -53,23 +56,21 @@ public class MotionSnapshotJob extends AbstractJob {
 	}
 
 	/**
-	 * Set the motion service.
+	 * Get the motion service.
 	 * 
-	 * @param service
-	 *        the service to use
+	 * @return the service
 	 */
-	public void setService(MotionService service) {
-		this.service = service;
+	public MotionService getService() {
+		return service;
 	}
 
 	/**
-	 * The camera ID.
+	 * Get the camera ID.
 	 * 
-	 * @param cameraId
-	 *        the camera ID
+	 * @return the cameraId
 	 */
-	public void setCameraId(int cameraId) {
-		this.cameraId = cameraId;
+	public int getCameraId() {
+		return cameraId;
 	}
 
 }

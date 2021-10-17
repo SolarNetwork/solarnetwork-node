@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.rfxcom;
@@ -30,32 +28,39 @@ import java.util.Arrays;
  * A message for setting the mode of the RFXCOM transceiver.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
 public class SetModeMessage extends StatusMessage {
 
 	private byte[] mutableData;
-	
+
 	/**
 	 * Constructor.
 	 * 
-	 * @param sequenceNumber the sequence number
+	 * @param sequenceNumber
+	 *        the sequence number
+	 * @param type
+	 *        the type
 	 */
 	public SetModeMessage(short sequenceNumber, TransceiverType type) {
 		super(sequenceNumber, Command.SetMode);
 		mutableData = new byte[10];
-		Arrays.fill(mutableData, (byte)0);
+		Arrays.fill(mutableData, (byte) 0);
 		mutableData[1] = type.getMessageValue();
 	}
-	
+
 	/**
 	 * Create a SetMode message using a StatusMessage as the starting point.
 	 * 
-	 * <p>This is useful for querying the current status, then making changes
-	 * only to specific settings as needed.</p>
+	 * <p>
+	 * This is useful for querying the current status, then making changes only
+	 * to specific settings as needed.
+	 * </p>
 	 * 
-	 * @param sequenceNumber the sequence number
-	 * @param status the status message to copy
+	 * @param sequenceNumber
+	 *        the sequence number
+	 * @param status
+	 *        the status message to copy
 	 */
 	public SetModeMessage(short sequenceNumber, StatusMessage status) {
 		super(sequenceNumber, Command.SetMode);
@@ -70,7 +75,7 @@ public class SetModeMessage extends StatusMessage {
 	public byte[] getData() {
 		return mutableData;
 	}
-	
+
 	private void setBitFlag(int index, byte value, boolean enabled) {
 		if ( enabled ) {
 			mutableData[index] |= value;
@@ -78,65 +83,65 @@ public class SetModeMessage extends StatusMessage {
 			mutableData[index] &= ~value;
 		}
 	}
-	
+
 	public void setUndecodedMode(boolean value) {
-		setBitFlag(3, (byte)0x80, value);
+		setBitFlag(3, (byte) 0x80, value);
 	}
-	
+
 	public void setProGuardEnabled(boolean value) {
-		setBitFlag(4, (byte)0x20, value);
+		setBitFlag(4, (byte) 0x20, value);
 	}
-	
+
 	public void setFS20Enabled(boolean value) {
-		setBitFlag(4, (byte)0x10, value);
+		setBitFlag(4, (byte) 0x10, value);
 	}
-	
+
 	public void setLaCrosseEnabled(boolean value) {
-		setBitFlag(4, (byte)0x8, value);
+		setBitFlag(4, (byte) 0x8, value);
 	}
-	
+
 	public void setHidekiEnabled(boolean value) {
-		setBitFlag(4, (byte)0x4, value);
+		setBitFlag(4, (byte) 0x4, value);
 	}
-	
+
 	public void setADEnabled(boolean value) {
-		setBitFlag(4, (byte)0x2, value);
+		setBitFlag(4, (byte) 0x2, value);
 	}
-	
+
 	public void setMertikEnabled(boolean value) {
-		setBitFlag(4, (byte)0x1, value);
+		setBitFlag(4, (byte) 0x1, value);
 	}
-	
+
 	public void setVisonicEnabled(boolean value) {
-		setBitFlag(5, (byte)0x80, value);
+		setBitFlag(5, (byte) 0x80, value);
 	}
-	
+
 	public void setATIEnabled(boolean value) {
-		setBitFlag(5, (byte)0x40, value);
+		setBitFlag(5, (byte) 0x40, value);
 	}
-	
+
 	public void setOregonEnabled(boolean value) {
-		setBitFlag(5, (byte)0x20, value);
+		setBitFlag(5, (byte) 0x20, value);
 	}
-	
+
 	public void setIkeaKopplaEnabled(boolean value) {
-		setBitFlag(5, (byte)0x10, value);
+		setBitFlag(5, (byte) 0x10, value);
 	}
-	
+
 	public void setHomeEasyEUEnabled(boolean value) {
-		setBitFlag(5, (byte)0x8, value);
+		setBitFlag(5, (byte) 0x8, value);
 	}
-	
+
 	public void setACEnabled(boolean value) {
-		setBitFlag(5, (byte)0x4, value);
+		setBitFlag(5, (byte) 0x4, value);
 	}
-	
+
 	public void setARCEnabled(boolean value) {
-		setBitFlag(5, (byte)0x2, value);
+		setBitFlag(5, (byte) 0x2, value);
 	}
-	
+
 	public void setX10Enabled(boolean value) {
-		setBitFlag(5, (byte)0x1, value);
+		setBitFlag(5, (byte) 0x1, value);
 	}
-	
+
 }

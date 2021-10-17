@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.hw.currentcost;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,15 +35,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.concurrent.ConcurrentSkipListSet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import net.solarnetwork.domain.datum.AcEnergyDatum;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialNetwork;
 import net.solarnetwork.node.io.serial.support.SerialDeviceDatumDataSourceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * Support class for reading CurrentCost watt meter data from a serial
@@ -75,10 +76,10 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * 
  * <dt>multiAmpSensorIndexFlags</dt>
  * <dd>A bitmask flag for which amp sensor index readings to return from
- * {@link net.solarnetwork.node.MultiDatumDataSource#readMultipleDatum()}. The
- * amp sensors number 1 - 3. Enable reading each index by adding together each
- * index as 2 ^ (index - 1). Thus to enable reading from all 3 indexes set this
- * value to <em>7</em> (2^0 + 2^1 + 2^2) = 7). Defaults to 7.</dd>
+ * {@code MultiDatumDataSource#readMultipleDatum()}. The amp sensors number 1 -
+ * 3. Enable reading each index by adding together each index as 2 ^ (index -
+ * 1). Thus to enable reading from all 3 indexes set this value to <em>7</em>
+ * (2^0 + 2^1 + 2^2) = 7). Defaults to 7.</dd>
  * 
  * <dt>addressSourceMapping</dt>
  * <dd>If configured, a mapping of device address ID values to Datum sourceId
@@ -96,28 +97,27 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * occurred.</dd>
  * 
  * <dt>collectAllSourceIds</dt>
- * <dd>If <em>true</em> and the
- * {@link net.solarnetwork.node.MultiDatumDataSource} API is used, then attempt
- * to read values for all sources configured in the {@code sourceIdFilter}
- * property and return all the data collected. The
+ * <dd>If {@literal true} and the {@code MultiDatumDataSource} API is used, then
+ * attempt to read values for all sources configured in the
+ * {@code sourceIdFilter} property and return all the data collected. The
  * {@code collectAllSourceIdsTimeout} property is used to limit the amount of
  * time spent collecting data, as there is no guarantee the application can read
  * from all sources: the device data is captured somewhat randomly. Defaults to
- * <em>true</em>.</dd>
+ * {@literal true}.</dd>
  * 
  * <dt>collectAllSourceIdsTimeout</dt>
- * <dd>When {@code collectAllSourceIds} is configured as <em>true</em> this is a
- * timeout value, in seconds, the application should spend attempting to collect
- * data from all configured sources. If this amount of time is passed before
- * data for all sources has been collected, the application will give up and
- * just return whatever data it has collected at that point. Defaults to
+ * <dd>When {@code collectAllSourceIds} is configured as {@literal true} this is
+ * a timeout value, in seconds, the application should spend attempting to
+ * collect data from all configured sources. If this amount of time is passed
+ * before data for all sources has been collected, the application will give up
+ * and just return whatever data it has collected at that point. Defaults to
  * {@link #DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT}.</dd>
  * </dl>
  * 
  * @author matt
- * @version 2.2
+ * @version 3.0
  */
-public class CCSupport extends SerialDeviceDatumDataSourceSupport {
+public class CCSupport extends SerialDeviceDatumDataSourceSupport<AcEnergyDatum> {
 
 	/** The data byte index for the device's address ID. */
 	public static final int DEVICE_ADDRESS_IDX = 2;
@@ -145,13 +145,10 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	/** The ending message marker, which is the closing XML element. */
 	public static final String MESSAGE_END_MARKER = "</msg>";
 
-	/** A class-level logger. */
-	protected final Logger log = LoggerFactory.getLogger(getClass());
-
 	/** A CCMessageParser instance. */
 	protected final CCMessageParser messageParser = new CCMessageParser();
 
-	private final SortedSet<CCDatum> knownAddresses = new ConcurrentSkipListSet<CCDatum>();
+	private final SortedSet<CCDatum> knownAddresses = new ConcurrentSkipListSet<>();
 
 	private float voltage = DEFAULT_VOLTAGE;
 	private int ampSensorIndex = DEFAULT_AMP_SENSOR_INDEX;
@@ -161,7 +158,6 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	private Set<String> sourceIdFilter = null;
 	private boolean collectAllSourceIds = true;
 	private int collectAllSourceIdsTimeout = DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT;
-	private long sampleCacheMs = 5000;
 
 	/**
 	 * Add a new cached "known" address value.
@@ -170,7 +166,7 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	 * This adds the address to the cached set of <em>known</em> addresses,
 	 * which are shown as a read-only setting property to aid in mapping the
 	 * right device address, as long as the {@link CCDatum#getDeviceAddress()}
-	 * value is not <em>null</em>.
+	 * value is not {@literal null}.
 	 * </p>
 	 * 
 	 * @param datum
@@ -242,12 +238,13 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 			return Collections.emptySet();
 		}
 		Set<CCDatum> result = new HashSet<CCDatum>(4);
-		final long now = System.currentTimeMillis();
+		final Instant now = Instant.now();
 		for ( CCDatum datum : knownAddresses ) {
 			for ( int i = 1; i <= 3; i++ ) {
 				String anAddress = addressValue(datum, i);
 				if ( captureAddresses.contains(anAddress) ) {
-					if ( sampleCacheMs < 1 || (now - datum.getCreated()) <= sampleCacheMs ) {
+					if ( getSampleCacheMs() < 1
+							|| datum.getCreated().until(now, ChronoUnit.MILLIS) <= getSampleCacheMs() ) {
 						result.add(datum);
 						break;
 					}
@@ -330,21 +327,17 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 			}
 			status.append(datum.getStatusMessage());
 		}
-		CCSupport defaults = new CCSupport();
 		results.add(new BasicTitleSettingSpecifier("knownAddresses", status.toString(), true));
 		results.addAll(getIdentifiableSettingSpecifiers());
-		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['UID']",
+		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['uid']",
 				"Serial Port"));
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
-				String.valueOf(defaults.getSampleCacheMs())));
+				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
 		results.add(new BasicTextFieldSettingSpecifier("voltage", String.valueOf(DEFAULT_VOLTAGE)));
 
-		results.add(new BasicToggleSettingSpecifier("multiCollectSensor1",
-				defaults.isMultiCollectSensor1()));
-		results.add(new BasicToggleSettingSpecifier("multiCollectSensor2",
-				defaults.isMultiCollectSensor2()));
-		results.add(new BasicToggleSettingSpecifier("multiCollectSensor3",
-				defaults.isMultiCollectSensor3()));
+		results.add(new BasicToggleSettingSpecifier("multiCollectSensor1", true));
+		results.add(new BasicToggleSettingSpecifier("multiCollectSensor2", true));
+		results.add(new BasicToggleSettingSpecifier("multiCollectSensor3", true));
 
 		results.add(new BasicTextFieldSettingSpecifier("sourceIdFormat", DEFAULT_SOURCE_ID_FORMAT));
 		results.add(new BasicTextFieldSettingSpecifier("addressSourceMappingValue", ""));
@@ -426,7 +419,7 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	 * Test if sensor 1 should be collected when requesting multiple datum
 	 * samples.
 	 * 
-	 * @return <em>true</em> if sensor 1 should be collected
+	 * @return {@literal true} if sensor 1 should be collected
 	 * @see #getMultiAmpSensorIndexFlags()
 	 * @since 2.1
 	 */
@@ -439,7 +432,7 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	 * samples.
 	 * 
 	 * @param value
-	 *        <em>true</em> if sensor 1 should be collected
+	 *        {@literal true} if sensor 1 should be collected
 	 * @since 2.1
 	 */
 	public void setMultiCollectSensor1(boolean value) {
@@ -450,7 +443,7 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	 * Test if sensor 2 should be collected when requesting multiple datum
 	 * samples.
 	 * 
-	 * @return <em>true</em> if sensor 2 should be collected
+	 * @return {@literal true} if sensor 2 should be collected
 	 * @see #getMultiAmpSensorIndexFlags()
 	 * @since 2.1
 	 */
@@ -463,7 +456,7 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	 * samples.
 	 * 
 	 * @param value
-	 *        <em>true</em> if sensor 2 should be collected
+	 *        {@literal true} if sensor 2 should be collected
 	 * @since 2.1
 	 */
 	public void setMultiCollectSensor2(boolean value) {
@@ -474,7 +467,7 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	 * Test if sensor 3 should be collected when requesting multiple datum
 	 * samples.
 	 * 
-	 * @return <em>true</em> if sensor 3 should be collected
+	 * @return {@literal true} if sensor 3 should be collected
 	 * @see #getMultiAmpSensorIndexFlags()
 	 * @since 2.1
 	 */
@@ -487,7 +480,7 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	 * samples.
 	 * 
 	 * @param value
-	 *        <em>true</em> if sensor 3 should be collected
+	 *        {@literal true} if sensor 3 should be collected
 	 * @since 2.1
 	 */
 	public void setMultiCollectSensor3(boolean value) {
@@ -537,14 +530,6 @@ public class CCSupport extends SerialDeviceDatumDataSourceSupport {
 	@Override
 	public String getUID() {
 		return getUid();
-	}
-
-	public long getSampleCacheMs() {
-		return sampleCacheMs;
-	}
-
-	public void setSampleCacheMs(long sampleCacheMs) {
-		this.sampleCacheMs = sampleCacheMs;
 	}
 
 }

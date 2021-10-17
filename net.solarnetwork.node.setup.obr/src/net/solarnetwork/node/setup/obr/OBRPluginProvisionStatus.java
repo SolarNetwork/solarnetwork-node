@@ -57,7 +57,7 @@ public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 	 * @param provisionID
 	 *        the provisionID
 	 * @throws IllegalArgumentException
-	 *         if the provisionID is <em>null</em>
+	 *         if the provisionID is {@literal null}
 	 */
 	public OBRPluginProvisionStatus(String provisionID) {
 		super();

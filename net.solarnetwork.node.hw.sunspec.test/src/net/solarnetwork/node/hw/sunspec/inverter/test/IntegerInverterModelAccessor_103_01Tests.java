@@ -22,9 +22,9 @@
 
 package net.solarnetwork.node.hw.sunspec.inverter.test;
 
-import static net.solarnetwork.node.domain.ACPhase.PhaseA;
-import static net.solarnetwork.node.domain.ACPhase.PhaseB;
-import static net.solarnetwork.node.domain.ACPhase.PhaseC;
+import static net.solarnetwork.domain.AcPhase.PhaseA;
+import static net.solarnetwork.domain.AcPhase.PhaseB;
+import static net.solarnetwork.domain.AcPhase.PhaseC;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;

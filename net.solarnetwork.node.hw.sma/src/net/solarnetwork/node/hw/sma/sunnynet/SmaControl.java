@@ -34,7 +34,7 @@ package net.solarnetwork.node.hw.sma.sunnynet;
  * a device request.</p>
  *
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.0 $Date$
  */
 public enum SmaControl {
 	
