@@ -16,15 +16,27 @@
 
 	<!-- Service References -->
 
-	<bean id="locationService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.service.LocationService"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
 		<property name="sticky" value="true"/>
 	</bean>
-
+		
 	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="locationService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.LocationService"/>
 		<property name="sticky" value="true"/>
 	</bean>
 
@@ -33,6 +45,7 @@
 			<list>
 				<value>net.solarnetwork.node.datum.price.delimited.DelimitedPriceDatumDataSource</value>
 				<value>net.solarnetwork.node.service.support.PriceLocationDatumDataSource</value>
+				<value>net.solarnetwork.node.service.support.DatumDataSourceSupport</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
@@ -54,55 +67,37 @@
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Delimited energy price lookup"/>
 			<property name="factoryUid" value="net.solarnetwork.node.datum.price.delimited"/>
-			<property name="messageSource">
-				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-					<property name="basenames" value="net.solarnetwork.node.datum.price.delimited.DelimitedPriceDatumDataSource"/>
-				</bean>
-			</property>
+			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
 
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.price.delimited" autowire-on-update="true">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.job.ManagedTriggerAndJobDetail</beans:value>
-			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.node.job.ManagedJob</beans:value>
 		</osgix:interfaces>
-		<osgix:service-properties>
-			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.price.delimited"/>
-		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.job.SimpleManagedTriggerAndJobDetail">
-			<property name="trigger">
-				<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-					<property name="name" value="delimitedPriceDatumPollTrigger"/>
-					<property name="cronExpression" value="5 1/5 * * * ?"/>
-					<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
-					<property name="randomSecond" value="true"/>
-				</bean>
-			</property>
-			<property name="jobDetail">
-				<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-					<property name="name" value="delimitedPriceDatumPollJob"/>
-					<property name="jobClass" value="net.solarnetwork.node.job.DatumDataSourcePollJob"/>
-					<property name="jobDataAsMap">
-						<map>
-							<entry key="datumQueue" value-ref="datumQueue"/>
-							<entry key="datumDataSource">
-								<bean class="net.solarnetwork.node.service.support.LocationDatumDataSource">
-									<property name="messageSource" ref="jobMessageSource"/>
-									<property name="delegate">
-										<bean class="net.solarnetwork.node.datum.price.delimited.DelimitedPriceDatumDataSource">
-											<property name="messageSource" ref="messageSource"/>
-										</bean>
-									</property>
-									<property name="locationService" ref="locationService"/>
-									<property name="requireLocationService" value="true"/>
-									<property name="locationType" value="price"/>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob" 
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<argument>
+				<bean class="net.solarnetwork.node.job.DatumDataSourcePollManagedJob">
+					<property name="datumMetadataService" ref="datumMetadataService"/>
+					<property name="datumQueue" ref="datumQueue"/>
+					<property name="datumDataSource">
+						<bean class="net.solarnetwork.node.service.support.LocationDatumDataSource">
+							<property name="messageSource" ref="jobMessageSource"/>
+							<property name="delegate">
+								<bean class="net.solarnetwork.node.datum.price.delimited.DelimitedPriceDatumDataSource">
+									<property name="placeholderService" ref="placeholderService"/>
+									<property name="messageSource" ref="messageSource"/>
 								</bean>
-							</entry>
-						</map>
+							</property>
+							<property name="locationService" ref="locationService"/>
+							<property name="requireLocationService" value="true"/>
+							<property name="locationType" value="price"/>
+						</bean>
 					</property>
 				</bean>
-			</property>
+			</argument>
+			<argument value="0 1/5 * * * ?"/>
 		</bean>
 	</osgix:managed-service-factory>
 
