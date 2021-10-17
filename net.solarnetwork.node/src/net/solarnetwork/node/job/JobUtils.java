@@ -68,7 +68,9 @@ public class JobUtils {
 			try {
 				try {
 					long frequency = Long.parseLong(expression);
-					return new PeriodicTrigger(frequency, timeUnit);
+					PeriodicTrigger trigger = new PeriodicTrigger(frequency, timeUnit);
+					trigger.setFixedRate(true);
+					return trigger;
 				} catch ( NumberFormatException e ) {
 					// ignore
 				}
