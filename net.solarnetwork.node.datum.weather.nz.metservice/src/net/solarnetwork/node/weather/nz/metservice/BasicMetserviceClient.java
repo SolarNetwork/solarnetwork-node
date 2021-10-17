@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.weather.nz.metservice;
 
+import static java.time.format.DateTimeFormatter.ISO_DATE_TIME;
 import static net.solarnetwork.codec.JsonUtils.parseBigDecimalAttribute;
 import static net.solarnetwork.codec.JsonUtils.parseDateAttribute;
 import static net.solarnetwork.codec.JsonUtils.parseIntegerAttribute;
@@ -35,9 +36,12 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -89,13 +93,13 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	public static final String DEFAULT_DAY_DATE_FORMAT = "d MMMM yyyy";
 
 	/** The default value for the {@code timestampHourDateFormat} property. */
-	public static final String DEFAULT_TIMESTAMP_HOUR_DATE_FORMAT = "HH:mm EE d MMMM yyyy";
+	public static final String DEFAULT_TIMESTAMP_HOUR_DATE_FORMAT = "HH:mm EE d MMM yyyy";
 
 	/** The default value for the {@code timeDateFormat} property. */
 	public static final String DEFAULT_TIME_DATE_FORMAT = "h:mma";
 
 	/** The default value for the {@code timestampDateFormat} property. */
-	public static final String DEFAULT_TIMESTAMP_DATE_FORMAT = "h:mma EEEE d MMM yyyy";
+	public static final String DEFAULT_TIMESTAMP_DATE_FORMAT = "ha EE, d MMM";
 
 	/** The default value for the {@code timeZoneId} property. */
 	public static final String DEFAULT_TIME_ZONE_ID = "Pacific/Auckland";
@@ -172,10 +176,12 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	 */
 	public DateTimeFormatter timestampFormatter() {
 		final ZoneId zone = ZoneId.of(getTimeZoneId());
+		final long currYear = ZonedDateTime.now(zone).getLong(ChronoField.YEAR);
 		// @formatter:off
 		return new DateTimeFormatterBuilder()
 				.parseCaseInsensitive()
 				.appendPattern(getTimestampDateFormat())
+				.parseDefaulting(ChronoField.YEAR, currYear)
 				.toFormatter().withZone(zone)
 				.withLocale(Locale.ENGLISH);
 		// @formatter:on
@@ -268,7 +274,10 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		if ( data == null ) {
 			log.warn("Local observation container key 'threeHour' not found in {}", url);
 		} else {
-			Instant infoDate = parseDateAttribute(data, "dateTime", tsFormat, Instant::from);
+			Instant infoDate = parseDateAttribute(data, "dateTimeISO", ISO_DATE_TIME, Instant::from);
+			if ( infoDate == null ) {
+				infoDate = parseDateAttribute(data, "dateTime", tsFormat, Instant::from);
+			}
 			BigDecimal temp = parseBigDecimalAttribute(data, "temp");
 
 			if ( infoDate == null || temp == null ) {
@@ -293,14 +302,15 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		if ( data == null ) {
 			log.warn("Local observation container key 'twentyFourHour' not found in {}", url);
 		} else {
-			Instant infoDate = parseDateAttribute(data, "dateTime", tsFormat, Instant::from);
+			ZonedDateTime infoDate = parseDateAttribute(data, "dateTime", tsFormat, ZonedDateTime::from);
 			BigDecimal maxTemp = parseBigDecimalAttribute(data, "maxTemp");
 			BigDecimal minTemp = parseBigDecimalAttribute(data, "minTemp");
 			if ( infoDate == null || minTemp == null || maxTemp == null ) {
 				log.debug("Date and/or temperature extremes missing from key 'twentyFourHour' in {}",
 						url);
 			} else {
-				SimpleDayDatum day = new SimpleDayDatum(null, infoDate, new DatumSamples());
+				SimpleDayDatum day = new SimpleDayDatum(null,
+						infoDate.truncatedTo(ChronoUnit.DAYS).toInstant(), new DatumSamples());
 				day.setTemperatureMinimum(minTemp);
 				day.setTemperatureMaximum(maxTemp);
 				// TODO: rainfall?
@@ -363,18 +373,20 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 		JsonNode hours = root.get("forecastData");
 		if ( hours.isArray() ) {
 			for ( JsonNode hourNode : hours ) {
-				String time = parseStringAttribute(hourNode, "timeFrom");
-				String date = parseStringAttribute(hourNode, "date");
 				BigDecimal temp = parseBigDecimalAttribute(hourNode, "temperature");
-				Instant infoDate = null;
-				if ( time != null && date != null ) {
-					String dateString = time + " " + date;
-					try {
-						infoDate = hourTimestampFormat.parse(dateString, Instant::from);
-					} catch ( DateTimeParseException e ) {
-						log.debug(
-								"Error parsing date attribute [timeFrom date] value [{}] using pattern {}: {}",
-								dateString, hourTimestampFormat, e.getMessage());
+				Instant infoDate = parseDateAttribute(hourNode, "dateISO", ISO_DATE_TIME, Instant::from);
+				if ( infoDate == null ) {
+					String time = parseStringAttribute(hourNode, "timeFrom");
+					String date = parseStringAttribute(hourNode, "date");
+					if ( time != null && date != null ) {
+						String dateString = time + " " + date;
+						try {
+							infoDate = hourTimestampFormat.parse(dateString, Instant::from);
+						} catch ( DateTimeParseException e ) {
+							log.debug(
+									"Error parsing date attribute [timeFrom date] value [{}] using pattern {}: {}",
+									dateString, hourTimestampFormat, e.getMessage());
+						}
 					}
 				}
 				if ( infoDate == null || temp == null ) {

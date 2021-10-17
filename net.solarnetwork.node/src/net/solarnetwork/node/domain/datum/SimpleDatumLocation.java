@@ -51,7 +51,10 @@ public class SimpleDatumLocation implements DatumLocation {
 	@Override
 	public String getLocationName() {
 		if ( sourceMetadata != null ) {
-			return sourceMetadata.getMeta().getInfoString("name");
+			GeneralDatumMetadata meta = sourceMetadata.getMeta();
+			if ( meta != null ) {
+				return meta.getInfoString("name");
+			}
 		}
 		return locationName;
 	}

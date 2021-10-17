@@ -49,9 +49,6 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider {
 
-	/** The {@code sourceId} property default value. */
-	public static final String DEFAULT_SOURCE_ID = "WebBox Device";
-
 	/** The WebBox service {@literal UID} property filter default value. */
 	public static final String DEFAULT_WEBBOX_UID = "WebBox";
 
@@ -60,7 +57,7 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 
 	private final OptionalFilterableService<WebBoxOperations> webBox;
 
-	private String sourceId = DEFAULT_SOURCE_ID;
+	private String sourceId;
 	private long sampleCacheMs = 5000;
 	private Integer unitId;
 
@@ -107,9 +104,7 @@ public class WebBoxDeviceDataSource extends DatumDataSourceSupport
 		results.add(
 				new BasicTextFieldSettingSpecifier("webBox.propertyFilters['uid']", DEFAULT_WEBBOX_UID));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", null));
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", DEFAULT_SOURCE_ID));
-		results.add(new BasicTextFieldSettingSpecifier("samplesTransformService.propertyFilters['uid']",
-				null));
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));
 
 		return results;
 	}

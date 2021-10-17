@@ -23,11 +23,8 @@ Import-Package:
  net.solarnetwork.settings.support;version="[2.0,3.0)",
  net.solarnetwork.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
- org.quartz;version="[2.2,3.0)",
- org.quartz.simpl;version="[2.2,3.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.beans;version="[4.3,5.0)",
  org.springframework.context;version="[4.3,5.0)",
  org.springframework.context.support;version="[4.3,5.0)",
- org.springframework.core;version="[4.3,5.0)",
- org.springframework.scheduling.quartz;version="[4.3,5.0)"
+ org.springframework.core;version="[4.3,5.0)"

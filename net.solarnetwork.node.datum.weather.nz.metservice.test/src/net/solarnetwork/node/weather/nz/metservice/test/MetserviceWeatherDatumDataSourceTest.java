@@ -79,18 +79,16 @@ public class MetserviceWeatherDatumDataSourceTest {
 		assertNotNull(datum);
 
 		assertNotNull(datum.getTimestamp());
-		assertEquals("2:00pm monday 1 sep 2014", tsFormat.format(datum.getTimestamp()).toLowerCase());
+		assertEquals("2pm sun, 17 oct", tsFormat.format(datum.getTimestamp()).toLowerCase());
 
 		assertNotNull(datum.getTemperature());
-		assertEquals(14.0, datum.getTemperature().doubleValue(), 0.001);
+		assertEquals(15.0, datum.getTemperature().doubleValue(), 0.001);
 
 		assertNotNull(datum.getHumidity());
-		assertEquals(60.0, datum.getHumidity().doubleValue(), 0.001);
+		assertEquals(73.0, datum.getHumidity().doubleValue(), 0.001);
 
 		assertNotNull(datum.getAtmosphericPressure());
-		assertEquals(101700, datum.getAtmosphericPressure().intValue());
-
-		assertEquals("Fine", datum.getSkyConditions());
+		assertEquals(101000, datum.getAtmosphericPressure().intValue());
 	}
 
 	@Test
@@ -107,23 +105,21 @@ public class MetserviceWeatherDatumDataSourceTest {
 
 		AtmosphericDatum datum = (AtmosphericDatum) itr.next();
 		assertNotNull(datum.getTimestamp());
-		assertEquals("2:00pm monday 1 sep 2014", tsFormat.format(datum.getTimestamp()).toLowerCase());
+		assertEquals("2pm sun, 17 oct", tsFormat.format(datum.getTimestamp()).toLowerCase());
 
 		assertNotNull(datum.getTemperature());
-		assertEquals(14.0, datum.getTemperature().doubleValue(), 0.001);
+		assertEquals(15.0, datum.getTemperature().doubleValue(), 0.001);
 
 		assertNotNull(datum.getHumidity());
-		assertEquals(60.0, datum.getHumidity().doubleValue(), 0.001);
+		assertEquals(73.0, datum.getHumidity().doubleValue(), 0.001);
 
 		assertNotNull(datum.getAtmosphericPressure());
-		assertEquals(101700, datum.getAtmosphericPressure().intValue());
-
-		assertEquals("Fine", datum.getSkyConditions());
+		assertEquals(101000, datum.getAtmosphericPressure().intValue());
 
 		datum = (AtmosphericDatum) itr.next();
 		assertNotNull(datum.getTimestamp());
-		assertEquals("10:00am sunday 29 may 2016", tsFormat.format(datum.getTimestamp()).toLowerCase());
-		assertEquals(new BigDecimal("11.0"), datum.getTemperature());
+		assertEquals("4pm sun, 17 oct", tsFormat.format(datum.getTimestamp()).toLowerCase());
+		assertEquals(new BigDecimal("15.0"), datum.getTemperature());
 	}
 
 }
