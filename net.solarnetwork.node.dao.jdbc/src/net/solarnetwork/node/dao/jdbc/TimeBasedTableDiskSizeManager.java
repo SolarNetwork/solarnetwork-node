@@ -55,7 +55,7 @@ import net.solarnetwork.util.ObjectUtils;
  * low.
  * 
  * <p>
- * This service is designed so that {@link #performMaintenance()} can be called
+ * This service is designed so that {@link #executeJobService()} can be called
  * periodically to check if rows need to be deleted, based on the thresholds
  * configured. The main threshold is the file system available capacity. When
  * the file system use exceeds {@code maxFileSystemUseThreshold} then this
@@ -300,7 +300,8 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 	 * 
 	 * <p>
 	 * This service is assumed to be configured to manage the same database as
-	 * provided by {@link #setJdbcOperations(JdbcOperations)}.
+	 * provided by the {@link JdbcOperations} passed to the constructor.
+	 * </p>
 	 * 
 	 * @param dbSystemService
 	 *        the database system service

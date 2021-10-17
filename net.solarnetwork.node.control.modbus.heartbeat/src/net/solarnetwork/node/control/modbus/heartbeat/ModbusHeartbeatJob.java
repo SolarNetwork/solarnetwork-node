@@ -254,7 +254,7 @@ public class ModbusHeartbeatJob extends BaseIdentifiable implements JobService {
 	/**
 	 * Set the register value.
 	 * 
-	 * @param register
+	 * @param registerValue
 	 *        value
 	 */
 	public void setRegisterValue(Boolean registerValue) {

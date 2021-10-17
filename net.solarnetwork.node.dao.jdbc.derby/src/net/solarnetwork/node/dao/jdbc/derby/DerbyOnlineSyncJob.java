@@ -51,7 +51,7 @@ public class DerbyOnlineSyncJob extends BaseIdentifiable implements JobService {
 	 * @param syncService
 	 *        the sync service
 	 * @throws IllegalArgumentException
-	 *         if any argument is {@litearl null}
+	 *         if any argument is {@literal null}
 	 */
 	public DerbyOnlineSyncJob(DerbyOnlineSyncService syncService) {
 		super();
