@@ -408,6 +408,28 @@ public class LocationDatumDataSource
 	}
 
 	/**
+	 * Get the location ID and source ID as a single string value. The format of
+	 * the key is {@code locationId:sourceId}.
+	 * 
+	 * @return the location key, or {@literal null} if both the location ID and
+	 *         source ID values are {@literal null}
+	 */
+	public String getLocationKey() {
+		StringBuilder buf = new StringBuilder();
+		Long locId = getLocationId();
+		String sourceId = getSourceId();
+		if ( locId == null && (sourceId == null || sourceId.isEmpty()) ) {
+			return null;
+		}
+		if ( locId != null ) {
+			buf.append(locId.toString());
+		}
+		buf.append(":");
+		buf.append(sourceId);
+		return buf.toString();
+	}
+
+	/**
 	 * Set the location ID and source ID as a single string value. The format of
 	 * the key is {@code locationId:sourceId}.
 	 * 
