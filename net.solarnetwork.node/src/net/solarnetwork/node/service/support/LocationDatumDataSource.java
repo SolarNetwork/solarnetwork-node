@@ -249,12 +249,22 @@ public class LocationDatumDataSource
 		if ( location == null && locationService != null && locationId != null && sourceId != null ) {
 			LocationService service = locationService.service();
 			if ( service != null ) {
-				GeneralLocationSourceMetadata meta = service.getLocationMetadata(locationId, sourceId);
-				SimpleDatumLocation loc = new SimpleDatumLocation();
-				loc.setLocationId(locationId);
-				loc.setSourceId(sourceId);
-				loc.setSourceMetadata(meta);
-				this.location = loc;
+				try {
+					GeneralLocationSourceMetadata meta = service.getLocationMetadata(locationId,
+							sourceId);
+					SimpleDatumLocation loc = new SimpleDatumLocation();
+					loc.setLocationId(locationId);
+					loc.setSourceId(sourceId);
+					loc.setSourceMetadata(meta);
+					this.location = loc;
+				} catch ( Exception e ) {
+					Throwable root = e;
+					while ( root.getCause() != null ) {
+						root = root.getCause();
+					}
+					log.error("Error looking up location {} for source [{}]: {}", locationId, sourceId,
+							root.toString());
+				}
 			}
 		}
 		return new BasicLocationLookupSettingSpecifier("locationKey", locationType, location);
