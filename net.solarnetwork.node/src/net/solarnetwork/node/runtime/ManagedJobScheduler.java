@@ -52,6 +52,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.Trigger;
+import org.springframework.scheduling.support.CronTrigger;
 import net.solarnetwork.node.job.JobService;
 import net.solarnetwork.node.job.ManagedJob;
 import net.solarnetwork.node.job.ServiceProvider;
@@ -189,6 +190,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		private final String identifier;
 		private ScheduledFuture<?> future;
 		private String schedule;
+		private String triggerSchedule;
 
 		private ScheduledJob(String pid, ManagedJob job,
 				List<ServiceRegistration<?>> registeredServices) {
@@ -199,34 +201,37 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 			this.identifier = jobIdentifier(job, this.pid);
 		}
 
-		private synchronized void scheduled(ScheduledFuture<?> future, String schedule) {
+		private void scheduled(ScheduledFuture<?> future, String schedule, Trigger trigger) {
 			this.future = future;
+			String newTriggerSchedule = triggerSchedule(trigger, schedule);
 			if ( this.schedule == null ) {
-				log.info("Scheduled job [{}] at [{}]", identifier, schedule);
+				log.info("Scheduled job [{}] at [{}]", identifier, newTriggerSchedule);
 			} else {
-				log.info("Rescheduled job [{}] from [{}] to [{}]", identifier, this.schedule, schedule);
+				log.info("Rescheduled job [{}] from [{}] to [{}]", identifier, this.triggerSchedule,
+						newTriggerSchedule);
 			}
 			this.schedule = schedule;
+			this.triggerSchedule = newTriggerSchedule;
 		}
 
-		private synchronized void stop() {
+		private void stop() {
 			if ( future != null && !future.isDone() ) {
 				future.cancel(true);
-				log.debug("Unscheduled job [{}]", identifier);
+				log.info("Unscheduled job [{}]", identifier);
+				if ( registeredServices != null && !registeredServices.isEmpty() ) {
+					for ( ServiceRegistration<?> reg : registeredServices ) {
+						try {
+							reg.unregister();
+							log.info("Unregistered job [{}] managed service {}", identifier, reg);
+						} catch ( Exception e ) {
+							log.warn("Error unregistering job [{}] managed service {}: {}", identifier,
+									reg, e.toString());
+						}
+					}
+					registeredServices.clear();
+				}
 			}
 			future = null;
-			if ( registeredServices != null && !registeredServices.isEmpty() ) {
-				for ( ServiceRegistration<?> reg : registeredServices ) {
-					try {
-						reg.unregister();
-						log.info("Unregistered job [{}] managed service {}", identifier, reg);
-					} catch ( Exception e ) {
-						log.warn("Error unregistering job [{}] managed service {}: {}", identifier, reg,
-								e.toString());
-					}
-				}
-				registeredServices.clear();
-			}
 		}
 
 		@Override
@@ -247,6 +252,13 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 			return String.format("ScheduledJob{%s @ %s}", identifier, schedule);
 		}
 
+	}
+
+	private static String triggerSchedule(Trigger trigger, String schedule) {
+		if ( trigger instanceof CronTrigger ) {
+			return ((CronTrigger) trigger).getExpression();
+		}
+		return schedule;
 	}
 
 	private static String jobIdentifier(ManagedJob job, String pid) {
@@ -288,18 +300,14 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 
 	@Override
 	public synchronized void serviceDidShutdown() {
-		synchronized ( pidMap ) {
-			for ( Entry<String, ScheduledJobs> e : pidMap.entrySet() ) {
-				ScheduledJobs sjs = e.getValue();
-				for ( String uid : new HashSet<>(sjs.jobMap.keySet()) ) {
-					ScheduledJob sj = sjs.removeJob(uid);
-					synchronized ( sj ) {
-						sj.stop();
-					}
-				}
+		for ( Entry<String, ScheduledJobs> e : pidMap.entrySet() ) {
+			ScheduledJobs sjs = e.getValue();
+			for ( String uid : new HashSet<>(sjs.jobMap.keySet()) ) {
+				ScheduledJob sj = sjs.removeJob(uid);
+				sj.stop();
 			}
-			pidMap.clear();
 		}
+		pidMap.clear();
 		if ( configurationListenerRef != null ) {
 			configurationListenerRef.unregister();
 			configurationListenerRef = null;
@@ -314,7 +322,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 	 * @param properties
 	 *        optional service properties
 	 */
-	public void registerJob(ManagedJob job, Map<String, ?> properties) {
+	public synchronized void registerJob(ManagedJob job, Map<String, ?> properties) {
 		if ( job == null ) {
 			return;
 		}
@@ -356,30 +364,28 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 
 		// register configuration listener
 		final ScheduledJob sj = new ScheduledJob(pid, job, refs);
-		synchronized ( pidMap ) {
-			if ( configurationListenerRef == null ) {
-				configurationListenerRef = bundleContext.registerService(ConfigurationListener.class,
-						this, null);
-			}
+		if ( configurationListenerRef == null ) {
+			configurationListenerRef = bundleContext.registerService(ConfigurationListener.class, this,
+					null);
+		}
 
-			ScheduledJobs sjs = pidMap.computeIfAbsent(pid, k -> new ScheduledJobs());
-			sjs.addJob(sj);
-			if ( sjs.settingProviderReg == null ) {
-				Dictionary<String, Object> settingProps = new Hashtable<>();
-				if ( properties.containsKey(SERVICE_PID) ) {
-					settingProps.put(SERVICE_PID, properties.get(SERVICE_PID));
-				}
-				settingProps.put(SETTING_PID, job.getSettingUid());
-				sjs.settingProviderReg = bundleContext.registerService(SettingSpecifierProvider.class,
-						sjs, settingProps);
+		ScheduledJobs sjs = pidMap.computeIfAbsent(pid, k -> new ScheduledJobs());
+		sjs.addJob(sj);
+		if ( sjs.settingProviderReg == null ) {
+			Dictionary<String, Object> settingProps = new Hashtable<>();
+			if ( properties.containsKey(SERVICE_PID) ) {
+				settingProps.put(SERVICE_PID, properties.get(SERVICE_PID));
 			}
+			settingProps.put(SETTING_PID, job.getSettingUid());
+			sjs.settingProviderReg = bundleContext.registerService(SettingSpecifierProvider.class, sjs,
+					settingProps);
 		}
 
 		String expr = job.getSchedule();
 		Trigger trigger = triggerForSchedule(expr);
 		if ( trigger != null ) {
 			ScheduledFuture<?> f = taskScheduler.schedule(sj, trigger);
-			sj.scheduled(f, expr);
+			sj.scheduled(f, expr, trigger);
 		}
 	}
 
@@ -391,7 +397,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 	 * @param properties
 	 *        optional service properties
 	 */
-	public void unregisterJob(ManagedJob job, Map<String, ?> properties) {
+	public synchronized void unregisterJob(ManagedJob job, Map<String, ?> properties) {
 		if ( job == null ) {
 			return;
 		}
@@ -401,36 +407,30 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		}
 		log.debug("Unregister job [{}] with props {}", pid, properties);
 		ScheduledJob sj = null;
-		synchronized ( pidMap ) {
-			ScheduledJobs sjs = pidMap.get(pid);
-			if ( sjs != null ) {
-				sj = sjs.removeJob(job.getUid());
-				if ( sjs.isEmpty() ) {
-					pidMap.remove(pid);
-				}
+		ScheduledJobs sjs = pidMap.get(pid);
+		if ( sjs != null ) {
+			sj = sjs.removeJob(job.getUid());
+			if ( sjs.isEmpty() ) {
+				pidMap.remove(pid);
 			}
 		}
 		if ( sj == null ) {
 			log.warn("Attempted to unregister job [{}] that wasn't registered", pid);
 			return;
 		}
-		synchronized ( sj ) {
-			sj.stop();
-		}
+		sj.stop();
 	}
 
 	@Override
-	public void configurationEvent(ConfigurationEvent event) {
+	public synchronized void configurationEvent(ConfigurationEvent event) {
 		if ( event.getType() != ConfigurationEvent.CM_UPDATED ) {
 			return;
 		}
 		final String pid = event.getPid();
 		List<ScheduledJob> sjList = new ArrayList<>(1);
-		synchronized ( pidMap ) {
-			ScheduledJobs sjs = pidMap.get(pid);
-			if ( sjs != null ) {
-				sjList.addAll(sjs.jobMap.values());
-			}
+		ScheduledJobs sjs = pidMap.get(pid);
+		if ( sjs != null ) {
+			sjList.addAll(sjs.jobMap.values());
 		}
 		if ( sjList.isEmpty() ) {
 			return;
@@ -450,24 +450,22 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		}
 
 		for ( ScheduledJob sj : sjList ) {
-			synchronized ( sj ) {
-				final String oldSchedule = sj.schedule;
-				String newSchedule = null;
-				Object configScheduleExpression = props.get(sj.job.getScheduleSettingKey());
-				if ( configScheduleExpression != null ) {
-					newSchedule = configScheduleExpression.toString();
-				}
+			final String oldSchedule = sj.schedule;
+			String newSchedule = null;
+			Object configScheduleExpression = props.get(sj.job.getScheduleSettingKey());
+			if ( configScheduleExpression != null ) {
+				newSchedule = configScheduleExpression.toString();
+			}
 
-				if ( !oldSchedule.equalsIgnoreCase(newSchedule) ) {
-					Trigger trigger = triggerForSchedule(newSchedule);
-					if ( trigger != null ) {
-						sj.stop();
-						ScheduledFuture<?> f = taskScheduler.schedule(sj, trigger);
-						sj.scheduled(f, newSchedule);
-					} else if ( sj.future != null ) {
-						sj.stop();
-						log.info("Stopped job [{}]", sj.identifier, oldSchedule, newSchedule);
-					}
+			if ( newSchedule != null && !oldSchedule.equalsIgnoreCase(newSchedule) ) {
+				Trigger trigger = triggerForSchedule(newSchedule);
+				if ( trigger != null ) {
+					sj.stop();
+					ScheduledFuture<?> f = taskScheduler.schedule(sj, trigger);
+					sj.scheduled(f, newSchedule, trigger);
+				} else if ( sj.future != null ) {
+					sj.stop();
+					log.info("Stopped job [{}]", sj.identifier, oldSchedule, newSchedule);
 				}
 			}
 		}
