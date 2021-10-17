@@ -37,6 +37,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -139,6 +140,35 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 	public void offer_datum() throws InterruptedException {
 		// GIVEN
 		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
+
+		datumDao.storeDatum(datum);
+		consumer.accept(datum);
+
+		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		eventAdmin.postEvent(capture(eventCaptor));
+		expectLastCall().times(2);
+
+		// WHEN
+		replayAll();
+		queue.offer(datum);
+
+		sleep(queue.getQueueDelayMs() + 300L);
+
+		// THEN
+		assertThat("One datum recorded as processed",
+				queue.getStats().get(DefaultDatumQueue.QueueStats.Processed), is(1L));
+		assertThat("One datum recorded as persisted",
+				queue.getStats().get(DefaultDatumQueue.QueueStats.Persisted), is(1L));
+
+		assertCapturedAcquiredEvents(eventCaptor.getValues(), 0, datum);
+	}
+
+	@Test
+	public void offer_datum_futureDate() throws InterruptedException {
+		// GIVEN
+		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID,
+				Instant.now().plus(1, ChronoUnit.HOURS), new DatumSamples());
 		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
 		datumDao.storeDatum(datum);

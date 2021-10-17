@@ -225,8 +225,10 @@ public class DefaultDatumQueue extends BaseIdentifiable
 			super();
 			this.datum = datum;
 			Instant date = datum.getTimestamp();
-			// we really don't expect date to be null here, but just to be pragmatic we test
-			this.ts = (date != null ? date.toEpochMilli() : System.currentTimeMillis()) + delayMs;
+			// we really don't expect date to be null here, but just to be pragmatic we test;
+			// future dates are forced to the current time, so they are not delayed
+			long now = System.currentTimeMillis();
+			this.ts = (date != null && date.toEpochMilli() <= now ? date.toEpochMilli() : now) + delayMs;
 			this.persist = persist;
 		}
 
