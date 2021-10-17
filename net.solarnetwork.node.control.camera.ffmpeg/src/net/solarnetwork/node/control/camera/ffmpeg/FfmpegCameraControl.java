@@ -1,21 +1,21 @@
 /* ==================================================================
  * FfmpegCameraControl.java - 31/08/2021 3:28:39 PM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -81,7 +81,7 @@ import net.solarnetwork.util.StringUtils;
 /**
  * Integrate with the <a href="https://www.ffmpeg.org/">FFmpeg</a> media tool to
  * capture images from camera video streams.
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -137,7 +137,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param scheduler
 	 *        the scheduler
 	 * @throws IllegalArgumentException
@@ -487,7 +487,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Get the control ID.
-	 * 
+	 *
 	 * @return the control ID
 	 */
 	public String getControlId() {
@@ -496,7 +496,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Set the control ID.
-	 * 
+	 *
 	 * @param controlId
 	 *        the control ID
 	 */
@@ -506,7 +506,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Get the file system path to the output image directory.
-	 * 
+	 *
 	 * @return the path to the output image directory; defaults to
 	 *         {@link #DEFAULT_PATH}
 	 */
@@ -516,7 +516,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Set the file system path to the output image directory.
-	 * 
+	 *
 	 * @param path
 	 *        the path
 	 */
@@ -526,7 +526,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Get the output file template.
-	 * 
+	 *
 	 * @return the output file template; defaults to
 	 *         {@link #DEFAULT_OUTPUT_FILE_TEMPLATE}
 	 */
@@ -536,7 +536,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Set the output file template.
-	 * 
+	 *
 	 * @param outputFileTemplate
 	 *        the template to set
 	 */
@@ -546,7 +546,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Get a setup resource provider to support viewing media images.
-	 * 
+	 *
 	 * @return the setup resource provider
 	 */
 	public SetupResourceProvider getMediaResourceProvider() {
@@ -555,7 +555,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Set a setup resource provider to support viewing media images.
-	 * 
+	 *
 	 * @param mediaResourceProvider
 	 *        the setup resource provider
 	 */
@@ -565,7 +565,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Get the number of seconds to allow for caching media setup resources.
-	 * 
+	 *
 	 * @return the number of seconds to cache; defaults to
 	 *         {@link #DEFAULT_RESOURCE_CACHE_SECS}
 	 */
@@ -575,7 +575,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Set the number of seconds to allow for caching media setup resources.
-	 * 
+	 *
 	 * @param resourceCacheSecs
 	 *        the number of seconds to cache
 	 */
@@ -585,7 +585,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Get the snapshot file name path filter pattern.
-	 * 
+	 *
 	 * @return the file name path filter pattern
 	 */
 	public Pattern getPathSnapshotFilter() {
@@ -594,12 +594,12 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Set the snapshot file name path filter pattern.
-	 * 
+	 *
 	 * <p>
 	 * Only file names that match this pattern will be considered as a snapshot
 	 * media resource.
 	 * </p>
-	 * 
+	 *
 	 * @param filter
 	 *        the file name path filter pattern to use, or {@literal null} for
 	 *        all files
@@ -610,7 +610,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Get the snapshot file name path filter pattern, as a string.
-	 * 
+	 *
 	 * @return the file name path filter pattern
 	 */
 	public String getPathSnapshotFilterValue() {
@@ -620,12 +620,12 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Set the snapshot file name path filter pattern, as a string.
-	 * 
+	 *
 	 * <p>
 	 * Only file names that match this pattern will be considered as a snapshot
 	 * media resource.
 	 * </p>
-	 * 
+	 *
 	 * @param filterValue
 	 *        the file name path filter pattern to use, or {@literal null} for
 	 *        all files
@@ -640,7 +640,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Get the auto-snapshot schedule.
-	 * 
+	 *
 	 * @return the schedule
 	 */
 	public String getSchedule() {
@@ -649,14 +649,14 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Set the auto-snapshot schedule.
-	 * 
+	 *
 	 * <p>
 	 * This schedule defines when to manually request snapshot images from
 	 * ffmpeg. If just a number, then the frequency in seconds at which to
-	 * create snapshots. Otherwise a Quartz-compatible cron expression
-	 * representing the schedule at which to create snapshots.
+	 * create snapshots. Otherwise a cron expression representing the schedule
+	 * at which to create snapshots.
 	 * </p>
-	 * 
+	 *
 	 * @param schedule
 	 *        the schedule
 	 */
@@ -666,7 +666,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Get the system path to the {@literal ffmpeg} program.
-	 * 
+	 *
 	 * @return the path; defaults to {@link #DEFAULT_FFMPEG_PATH}
 	 */
 	public String getFfmpegPath() {
@@ -675,7 +675,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Set the system path to the {@literal ffmpeg} program.
-	 * 
+	 *
 	 * @param ffmpegPath
 	 *        the path to set
 	 */
@@ -685,7 +685,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Get the FFmpeg snapshot options.
-	 * 
+	 *
 	 * @return the options to use
 	 */
 	public String getFfmpegSnapshotOptions() {
@@ -694,7 +694,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Set the FFmpeg snapshot options.
-	 * 
+	 *
 	 * @param ffmpegSnapshotOptions
 	 *        the options to set
 	 */
