@@ -40,6 +40,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.control.NodeControlInfoDatumDataSource</value>
+				<value>net.solarnetwork.node.service.support.DatumDataSourceSupport</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
