@@ -43,6 +43,7 @@ import org.springframework.scheduling.support.CronTrigger;
 import org.springframework.scheduling.support.PeriodicTrigger;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.ServiceLifecycleObserver;
+import net.solarnetwork.settings.GroupSettingSpecifier;
 import net.solarnetwork.settings.KeyedSettingSpecifier;
 import net.solarnetwork.settings.MappableSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
@@ -159,24 +160,14 @@ public class SimpleManagedJob extends BaseIdentifiable
 			if ( spec instanceof MappableSpecifier ) {
 				MappableSpecifier keyedSpec = (MappableSpecifier) spec;
 				SettingSpecifier mappedSpec = keyedSpec.mappedTo(JOB_SERVICE_SETTING_PREFIX);
-				if ( jobServiceAccessor != null && keyedSpec instanceof KeyedSettingSpecifier<?> ) {
-					// if legacy settings are active, then map default values to active values for UI
-					PropertyAccessor specAccessor = PropertyAccessorFactory
-							.forBeanPropertyAccess(mappedSpec);
-					if ( specAccessor.isWritableProperty(DEFAULT_VALUE_PROPERTY) ) {
-						String propKey = ((KeyedSettingSpecifier<?>) keyedSpec).getKey();
-						if ( jobServiceAccessor.isReadableProperty(propKey) ) {
-							try {
-								Object newDefaultValue = jobServiceAccessor.getPropertyValue(propKey);
-								specAccessor.setPropertyValue(DEFAULT_VALUE_PROPERTY, newDefaultValue);
-							} catch ( Exception e ) {
-								// ignore
-							}
-						} else {
-							log.warn(
-									"Unable to map [{}] legacy setting property [{}] default value: property not readable",
-									getSettingUid(), propKey);
-						}
+				// if legacy settings are active, then map default values to active values for UI
+				if ( jobServiceAccessor != null ) {
+					if ( keyedSpec instanceof KeyedSettingSpecifier<?> ) {
+						populateLegacySettingDefaultValue(
+								((KeyedSettingSpecifier<?>) keyedSpec).getKey(),
+								(KeyedSettingSpecifier<?>) mappedSpec);
+					} else if ( mappedSpec instanceof GroupSettingSpecifier ) {
+						handleLegacyGroupSettingSpecifier((GroupSettingSpecifier) mappedSpec);
 					}
 				}
 				result.add(mappedSpec);
@@ -185,6 +176,43 @@ public class SimpleManagedJob extends BaseIdentifiable
 			}
 		}
 		return result;
+
+	}
+
+	private void handleLegacyGroupSettingSpecifier(final GroupSettingSpecifier group) {
+		for ( SettingSpecifier spec : group.getGroupSettings() ) {
+			if ( spec instanceof GroupSettingSpecifier ) {
+				GroupSettingSpecifier child = (GroupSettingSpecifier) spec;
+				handleLegacyGroupSettingSpecifier(child);
+			} else if ( spec instanceof KeyedSettingSpecifier<?> ) {
+				KeyedSettingSpecifier<?> child = (KeyedSettingSpecifier<?>) spec;
+				String propKey = child.getKey();
+				if ( propKey.startsWith(JOB_SERVICE_SETTING_PREFIX) ) {
+					propKey = propKey.substring(JOB_SERVICE_SETTING_PREFIX.length());
+				}
+				populateLegacySettingDefaultValue(propKey, child);
+			}
+		}
+
+	}
+
+	private void populateLegacySettingDefaultValue(final String propKey,
+			final KeyedSettingSpecifier<?> spec) {
+		PropertyAccessor specAccessor = PropertyAccessorFactory.forBeanPropertyAccess(spec);
+		if ( specAccessor.isWritableProperty(DEFAULT_VALUE_PROPERTY) ) {
+			if ( jobServiceAccessor.isReadableProperty(propKey) ) {
+				try {
+					Object newDefaultValue = jobServiceAccessor.getPropertyValue(propKey);
+					specAccessor.setPropertyValue(DEFAULT_VALUE_PROPERTY, newDefaultValue);
+				} catch ( Exception e ) {
+					// ignore
+				}
+			} else {
+				log.warn(
+						"Unable to map [{}] legacy setting property [{}] default value: property not readable",
+						getSettingUid(), propKey);
+			}
+		}
 	}
 
 	@Override
