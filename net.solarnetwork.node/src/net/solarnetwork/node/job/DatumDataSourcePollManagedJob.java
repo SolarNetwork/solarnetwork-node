@@ -44,7 +44,7 @@ import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.ServiceLifecycleObserver;
-import net.solarnetwork.settings.KeyedSettingSpecifier;
+import net.solarnetwork.settings.MappableSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
@@ -304,9 +304,9 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 		final String prefix = (multiDatumDataSource != null ? "multiDatumDataSource."
 				: "datumDataSource.");
 		for ( SettingSpecifier spec : delegate.getSettingSpecifiers() ) {
-			if ( spec instanceof KeyedSettingSpecifier<?> ) {
-				KeyedSettingSpecifier<?> keyedSpec = (KeyedSettingSpecifier<?>) spec;
-				result.add(keyedSpec.mappedTo(prefix));
+			if ( spec instanceof MappableSpecifier ) {
+				MappableSpecifier mappable = (MappableSpecifier) spec;
+				result.add(mappable.mappedTo(prefix));
 			} else {
 				result.add(spec);
 			}
