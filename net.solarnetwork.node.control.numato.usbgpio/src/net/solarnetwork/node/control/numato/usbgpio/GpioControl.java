@@ -351,6 +351,10 @@ public class GpioControl extends SerialDeviceSupport implements SettingSpecifier
 			if ( o instanceof Number ) {
 				d.putSampleValue(config.getPropertyType(), propName, o);
 				d.putSampleValue(DatumSamplesType.Status, propName, null);
+				Map<String, ?> statusMap = d.getSampleData(DatumSamplesType.Status);
+				if ( statusMap != null && statusMap.isEmpty() ) {
+					d.setSampleData(DatumSamplesType.Status, null);
+				}
 			}
 		}
 		return d;
