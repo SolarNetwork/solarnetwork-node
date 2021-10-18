@@ -592,6 +592,17 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	}
 
 	/**
+	 * Get the maximum number of Modbus registers to read in any single read
+	 * operation.
+	 * 
+	 * @return the max read word count; defaults to
+	 *         {@link #DEFAULT_MAX_READ_WORD_COUNT}
+	 */
+	public int getMaxReadWordCount() {
+		return this.maxReadWordCount;
+	}
+
+	/**
 	 * Set the maximum number of Modbus registers to read in any single read
 	 * operation.
 	 * 
@@ -601,7 +612,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 * </p>
 	 * 
 	 * @param maxReadWordCount
-	 *        the maximum word count; defaults to {@literal 64}
+	 *        the maximum word count
 	 */
 	public void setMaxReadWordCount(int maxReadWordCount) {
 		if ( maxReadWordCount < 1 ) {
@@ -611,10 +622,19 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	}
 
 	/**
+	 * Get the source ID to use for returned datum.
+	 * 
+	 * @return the source ID to use
+	 */
+	public String getSourceId() {
+		return sourceId;
+	}
+
+	/**
 	 * Set the source ID to use for returned datum.
 	 * 
 	 * @param sourceId
-	 *        the source ID to use; defaults to {@literal modbus}
+	 *        the source ID to use
 	 */
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
