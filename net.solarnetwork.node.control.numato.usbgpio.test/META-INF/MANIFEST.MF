@@ -8,6 +8,7 @@ Fragment-Host: net.solarnetwork.node.control.numato.usbgpio;bundle-version="[1.0
 Automatic-Module-Name: net.solarnetwork.node.control.numato.usbgpio.test
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
+ net.solarnetwork.node.io.serial.pjc;version="[2.0,3.0)";resolution:=optional,
  net.solarnetwork.node.test;version="[1.7,2.0)",
  net.solarnetwork.test;version="[1.7,2.0)",
  org.easymock;version="[3.1,4.0)",

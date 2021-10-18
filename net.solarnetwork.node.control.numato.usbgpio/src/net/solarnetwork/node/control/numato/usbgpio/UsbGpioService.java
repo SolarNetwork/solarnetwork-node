@@ -22,11 +22,13 @@
 
 package net.solarnetwork.node.control.numato.usbgpio;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.BitSet;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
+import net.solarnetwork.util.ByteList;
 
 /**
  * Implementation of the {@link GpioService}.
@@ -58,10 +60,7 @@ public class UsbGpioService implements GpioService {
 	 */
 	public UsbGpioService(SerialConnection conn) {
 		super();
-		if ( conn == null ) {
-			throw new IllegalArgumentException("The conn argument must not be null.");
-		}
-		this.conn = conn;
+		this.conn = requireNonNullArgument(conn, "conn");
 	}
 
 	private <T> T perform(SerialConnectionAction<T> action) throws IOException {
@@ -83,19 +82,54 @@ public class UsbGpioService implements GpioService {
 		}
 	}
 
+	private static String responseValue(CharSequence cmd, byte[] response) {
+		final int start = cmd.length() + 1; // +1 because response sends \n\r breaks
+		if ( response == null || response.length <= start ) {
+			return null;
+		}
+		int end = response.length;
+		if ( end > 2 ) {
+			if ( response[end - 1] == '>' ) {
+				end--;
+			}
+			if ( response[end - 1] == '\r' ) {
+				end--;
+			}
+			if ( response[end - 1] == '\n' ) {
+				end--;
+			}
+		}
+		if ( end <= start ) {
+			return null;
+		}
+		return new String(response, start, end - start, US_ASCII);
+	}
+
+	private byte[] drainInputBuffer(SerialConnection conn) throws IOException {
+		ByteList buf = new ByteList();
+		while ( true ) {
+			sleep();
+			byte[] data = conn.drainInputBuffer();
+			if ( data == null || data.length < 1 ) {
+				break;
+			}
+			buf.addAll(data);
+		}
+		return buf.toArrayValue();
+	}
+
 	@Override
 	public String getDeviceVersion() throws IOException {
 		return perform(new SerialConnectionAction<String>() {
 
 			@Override
 			public String doWithConnection(SerialConnection conn) throws IOException {
-				conn.writeMessage(UsbGpioCommand.Version.getCommand().getBytes(US_ASCII));
-				sleep();
-				byte[] data = conn.drainInputBuffer();
-				if ( data != null && data.length > 0 ) {
-					return new String(data, US_ASCII);
-				}
-				return null;
+				StringBuilder buf = new StringBuilder();
+				buf.append(UsbGpioCommand.Version.getCommand());
+				buf.append('\r');
+				conn.writeMessage(buf.toString().getBytes(US_ASCII));
+				byte[] data = drainInputBuffer(conn);
+				return responseValue(buf, data);
 			}
 
 		});
@@ -109,13 +143,10 @@ public class UsbGpioService implements GpioService {
 			public String doWithConnection(SerialConnection conn) throws IOException {
 				StringBuilder buf = new StringBuilder();
 				buf.append(UsbGpioCommand.IdGet.getCommand());
+				buf.append('\r');
 				conn.writeMessage(buf.toString().getBytes(US_ASCII));
-				sleep();
-				byte[] data = conn.drainInputBuffer();
-				if ( data != null && data.length > 0 ) {
-					return new String(data, US_ASCII);
-				}
-				return null;
+				byte[] data = drainInputBuffer(conn);
+				return responseValue(buf, data);
 			}
 
 		});
@@ -138,7 +169,9 @@ public class UsbGpioService implements GpioService {
 				buf.append(UsbGpioCommand.IdSet.getCommand());
 				buf.append(" ");
 				buf.append(id);
+				buf.append('\r');
 				conn.writeMessage(buf.toString().getBytes(US_ASCII));
+				drainInputBuffer(conn);
 				return null;
 			}
 
@@ -155,13 +188,14 @@ public class UsbGpioService implements GpioService {
 				buf.append(UsbGpioCommand.GpioRead.getCommand());
 				buf.append(" ");
 				buf.append(address);
+				buf.append('\r');
 				conn.writeMessage(buf.toString().getBytes(US_ASCII));
-				sleep();
-				byte[] data = conn.drainInputBuffer();
-				if ( data != null && data.length > 1 && new String(data, US_ASCII).startsWith("on") ) {
+				byte[] data = drainInputBuffer(conn);
+				String resp = responseValue(buf, data);
+				if ( "1".equals(resp) ) {
 					return true;
 				}
-				return Boolean.FALSE;
+				return false;
 			}
 
 		});
@@ -181,7 +215,9 @@ public class UsbGpioService implements GpioService {
 				}
 				buf.append(" ");
 				buf.append(address);
+				buf.append('\r');
 				conn.writeMessage(buf.toString().getBytes(US_ASCII));
+				drainInputBuffer(conn);
 				return null;
 			}
 
@@ -198,16 +234,16 @@ public class UsbGpioService implements GpioService {
 				buf.append(UsbGpioCommand.AdcRead.getCommand());
 				buf.append(" ");
 				buf.append(address);
+				buf.append('\r');
 				conn.writeMessage(buf.toString().getBytes(US_ASCII));
-				sleep();
-				byte[] data = conn.drainInputBuffer();
-				if ( data != null && data.length > 1 ) {
-					String s = new String(data, US_ASCII);
+				byte[] data = drainInputBuffer(conn);
+				String resp = responseValue(buf, data);
+				if ( resp != null && !resp.isEmpty() ) {
 					try {
-						return Integer.valueOf(s);
+						return Integer.valueOf(resp);
 					} catch ( NumberFormatException e ) {
 						throw new IOException("Error parsing " + UsbGpioCommand.AdcRead.getCommand()
-								+ " response [" + s + "]: " + e.getMessage(), e);
+								+ " response [" + resp + "]: " + e.getMessage(), e);
 					}
 				}
 				return 0;
@@ -224,18 +260,18 @@ public class UsbGpioService implements GpioService {
 			public BitSet doWithConnection(SerialConnection conn) throws IOException {
 				StringBuilder buf = new StringBuilder();
 				buf.append(UsbGpioCommand.GpioReadAll.getCommand());
+				buf.append('\r');
 				conn.writeMessage(buf.toString().getBytes(US_ASCII));
-				sleep();
-				byte[] data = conn.drainInputBuffer();
+				byte[] data = drainInputBuffer(conn);
+				String resp = responseValue(buf, data);
 				final BitSet result;
-				if ( data != null && data.length > 0 ) {
-					String s = new String(data, US_ASCII);
+				if ( resp != null && !resp.isEmpty() ) {
 					try {
-						long l = Long.parseUnsignedLong(s, 16);
+						long l = Long.parseUnsignedLong(resp, 16);
 						result = BitSet.valueOf(new long[] { l });
 					} catch ( NumberFormatException e ) {
 						throw new IOException("Error parsing " + UsbGpioCommand.GpioReadAll.getCommand()
-								+ " response [" + s + "]: " + e.getMessage(), e);
+								+ " response [" + resp + "]: " + e.getMessage(), e);
 					}
 				} else {
 					result = new BitSet();
@@ -266,7 +302,9 @@ public class UsbGpioService implements GpioService {
 				buf.append(UsbGpioCommand.GpioWriteAll.getCommand());
 				buf.append(" ");
 				buf.append(hexCommandValue(values));
+				buf.append('\r');
 				conn.writeMessage(buf.toString().getBytes(US_ASCII));
+				drainInputBuffer(conn);
 				return null;
 			}
 
@@ -283,7 +321,9 @@ public class UsbGpioService implements GpioService {
 				buf.append(UsbGpioCommand.GpioIoMask.getCommand());
 				buf.append(" ");
 				buf.append(hexCommandValue(set));
+				buf.append('\r');
 				conn.writeMessage(buf.toString().getBytes(US_ASCII));
+				drainInputBuffer(conn);
 				return null;
 			}
 
@@ -300,7 +340,9 @@ public class UsbGpioService implements GpioService {
 				buf.append(UsbGpioCommand.GpioIoDirection.getCommand());
 				buf.append(" ");
 				buf.append(hexCommandValue(set));
+				buf.append('\r');
 				conn.writeMessage(buf.toString().getBytes(US_ASCII));
+				drainInputBuffer(conn);
 				return null;
 			}
 

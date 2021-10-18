@@ -26,6 +26,7 @@ import static org.easymock.EasyMock.aryEq;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.BitSet;
 import org.easymock.EasyMock;
@@ -66,12 +67,31 @@ public class UsbGpioServiceTests {
 		EasyMock.replay(network, conn);
 	}
 
+	private byte[] msg(String s) {
+		return (s + '\r').getBytes(US_ASCII);
+	}
+
+	private byte[] rsp(String cmd, String answer) {
+		StringBuilder buf = new StringBuilder();
+		buf.append(cmd).append("\n\r");
+		if ( answer != null ) {
+			buf.append(answer).append("\n\r");
+		}
+		return buf.toString().getBytes(US_ASCII);
+	}
+
+	private void expectReadWrite(String cmd, String ans) throws IOException {
+		conn.writeMessage(aryEq(msg(cmd)));
+		expect(conn.drainInputBuffer()).andReturn(rsp(cmd, ans));
+		expect(conn.drainInputBuffer()).andReturn(null);
+	}
+
 	@Test
 	public void readVersion() throws Exception {
 		// GIVEN
+		final String cmd = "ver";
 		final String version = "1.2.3";
-		conn.writeMessage(aryEq("ver".getBytes(US_ASCII)));
-		expect(conn.drainInputBuffer()).andReturn(version.getBytes(US_ASCII));
+		expectReadWrite(cmd, version);
 
 		// WHEN
 		replayAll();
@@ -84,9 +104,9 @@ public class UsbGpioServiceTests {
 	@Test
 	public void readId() throws Exception {
 		// GIVEN
+		final String cmd = "id get";
 		final String id = "12345678";
-		conn.writeMessage(aryEq("id get".getBytes(US_ASCII)));
-		expect(conn.drainInputBuffer()).andReturn(id.getBytes(US_ASCII));
+		expectReadWrite(cmd, id);
 
 		// WHEN
 		replayAll();
@@ -100,7 +120,8 @@ public class UsbGpioServiceTests {
 	public void setId() throws Exception {
 		// GIVEN
 		final String id = "12345678";
-		conn.writeMessage(aryEq(String.format("id set %s", id).getBytes(US_ASCII)));
+		final String cmd = String.format("id set %s", id);
+		expectReadWrite(cmd, null);
 
 		// WHEN
 		replayAll();
@@ -125,9 +146,9 @@ public class UsbGpioServiceTests {
 	public void readOne_on() throws Exception {
 		// GIVEN
 		final int addr = 3;
-		final String status = "on";
-		conn.writeMessage(aryEq(String.format("gpio read %d", addr).getBytes(US_ASCII)));
-		expect(conn.drainInputBuffer()).andReturn(status.getBytes(US_ASCII));
+		final String cmd = String.format("gpio read %d", addr);
+		final String status = "1";
+		expectReadWrite(cmd, status);
 
 		// WHEN
 		replayAll();
@@ -141,9 +162,9 @@ public class UsbGpioServiceTests {
 	public void readOne_off() throws Exception {
 		// GIVEN
 		final int addr = 3;
-		final String status = "off";
-		conn.writeMessage(aryEq(String.format("gpio read %d", addr).getBytes(US_ASCII)));
-		expect(conn.drainInputBuffer()).andReturn(status.getBytes(US_ASCII));
+		final String cmd = String.format("gpio read %d", addr);
+		final String status = "0";
+		expectReadWrite(cmd, status);
 
 		// WHEN
 		replayAll();
@@ -157,9 +178,9 @@ public class UsbGpioServiceTests {
 	public void readAnalog() throws Exception {
 		// GIVEN
 		final int addr = 5;
+		final String cmd = String.format("adc read %d", addr);
 		final String status = "123";
-		conn.writeMessage(aryEq(String.format("adc read %d", addr).getBytes(US_ASCII)));
-		expect(conn.drainInputBuffer()).andReturn(status.getBytes(US_ASCII));
+		expectReadWrite(cmd, status);
 
 		// WHEN
 		replayAll();
@@ -173,7 +194,8 @@ public class UsbGpioServiceTests {
 	public void setOne_on() throws Exception {
 		// GIVEN
 		final int addr = 3;
-		conn.writeMessage(aryEq(String.format("gpio set %s", addr).getBytes(US_ASCII)));
+		final String cmd = String.format("gpio set %s", addr);
+		expectReadWrite(cmd, null);
 
 		// WHEN
 		replayAll();
@@ -186,7 +208,8 @@ public class UsbGpioServiceTests {
 	public void setOne_off() throws Exception {
 		// GIVEN
 		final int addr = 3;
-		conn.writeMessage(aryEq(String.format("gpio clear %s", addr).getBytes(US_ASCII)));
+		final String cmd = String.format("gpio clear %s", addr);
+		expectReadWrite(cmd, null);
 
 		// WHEN
 		replayAll();
@@ -198,7 +221,8 @@ public class UsbGpioServiceTests {
 	@Test
 	public void configureMask() throws Exception {
 		// GIVEN
-		conn.writeMessage(aryEq("gpio iomask 92".getBytes(US_ASCII)));
+		final String cmd = "gpio iomask 92";
+		expectReadWrite(cmd, null);
 
 		// WHEN
 		replayAll();
@@ -214,7 +238,8 @@ public class UsbGpioServiceTests {
 	@Test
 	public void configureMask_onlyLowerBits() throws Exception {
 		// GIVEN
-		conn.writeMessage(aryEq("gpio iomask 02".getBytes(US_ASCII)));
+		final String cmd = "gpio iomask 02";
+		expectReadWrite(cmd, null);
 
 		// WHEN
 		replayAll();
@@ -228,7 +253,8 @@ public class UsbGpioServiceTests {
 	@Test
 	public void configureIoDirection() throws Exception {
 		// GIVEN
-		conn.writeMessage(aryEq("gpio iodir 45".getBytes(US_ASCII)));
+		final String cmd = "gpio iodir 45";
+		expectReadWrite(cmd, null);
 
 		// WHEN
 		replayAll();
@@ -244,7 +270,8 @@ public class UsbGpioServiceTests {
 	@Test
 	public void writeAll() throws Exception {
 		// GIVEN
-		conn.writeMessage(aryEq("gpio writeall 23".getBytes(US_ASCII)));
+		final String cmd = "gpio writeall 23";
+		expectReadWrite(cmd, null);
 
 		// WHEN
 		replayAll();
@@ -260,7 +287,8 @@ public class UsbGpioServiceTests {
 	@Test
 	public void writeAll_onlyLowerBits() throws Exception {
 		// GIVEN
-		conn.writeMessage(aryEq("gpio writeall 01".getBytes(US_ASCII)));
+		final String cmd = "gpio writeall 01";
+		expectReadWrite(cmd, null);
 
 		// WHEN
 		replayAll();
@@ -274,9 +302,9 @@ public class UsbGpioServiceTests {
 	@Test
 	public void readAll() throws Exception {
 		// GIVEN
+		final String cmd = "gpio readall";
 		final String status = "DA";
-		conn.writeMessage(aryEq("gpio readall".getBytes(US_ASCII)));
-		expect(conn.drainInputBuffer()).andReturn(status.getBytes(US_ASCII));
+		expectReadWrite(cmd, status);
 
 		// WHEN
 		replayAll();
