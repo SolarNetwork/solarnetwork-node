@@ -84,7 +84,7 @@ public class DatumDaoCleanerJob extends BaseIdentifiable implements JobService {
 		}
 		int result = datumDao.deleteUploadedDataOlderThan(hours);
 		if ( log.isInfoEnabled() && result > 0 ) {
-			log.info("Deleted {} datum older than {} hours", hours);
+			log.info("Deleted {} datum older than {} hours", result, hours);
 		}
 	}
 
