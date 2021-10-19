@@ -10,6 +10,10 @@ the control value, if the control defines a specific property name the generated
 status property with the same name. Otherwise the generated datum will have a status property `val`,
 and if the control has a number value an instantaneous property `v` will also be created.
 
+> :warning: **Note** that if a control returns a control value that is _also_ already a datum
+> instance, that datum will be used directly. Thus the actual property names used could be
+> different.
+
 # Install
 
 The plugin can be installed via the **Plugins** page on your SolarNode. It appears under the
@@ -25,14 +29,26 @@ Each service configuration contains the following settings:
 | Service Name          | A unique name to identify this data source with.                                 |
 | Service Group         | A group name to associate this data source with.                                 |
 | Control ID            | A regular expression to filter control ID values by, or left blank to generate datum for all control IDs. |
-| Mode                  | A control event type to filter by. |
+| Event Mode            | The [Event Mode](#event-mode) to use. |
+| Persist Mode          | The [Persist Mode](#persist-mode) to use. |
 
-## Control Mode
+## Event Mode
 
-The **Mode** setting allows you to configure which control events are turned into datum objects:
+The **Event Mode** setting allows you to configure which control events are turned into datum
+objects. This can be useful for controls that publish events outside of being polled explicitly.
 
 | Mode | Description |
 |:-----|:------------|
-| Sampled | Emitted when some plugin reads (samples) a control value. |
-| Changed | Emitted when a plugin writes (changes) a control value.   |
+| Polled Only | Datum are generated only via the **Schedule** setting on this component. |
+| Sampled     | Emitted when some plugin reads (samples) a control value. |
+| Changed     | Emitted when a plugin writes (changes) a control value.   |
 | Sampled and changed | Generate datum from both **Sampled** and **Changed** control events. |
+
+## Persist Mode
+
+The **Persist Mode** settings configures which datum are persisted in SolarNetwork.
+
+| Mode | Description |
+|:-----|:------------|
+| Poll           | Persist only polled control values. Datum generated via events will not be persisted. |
+| Poll and event | Persist polled and event-based datum. |
