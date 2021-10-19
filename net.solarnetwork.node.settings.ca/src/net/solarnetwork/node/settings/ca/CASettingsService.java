@@ -575,10 +575,20 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 						}
 					}
 				}
-				for ( String key : keysToRemove ) {
-					propUpdates.remove(key);
-					if ( !configurationOnly ) {
-						settingDao.deleteSetting(settingKey, key);
+				if ( !keysToRemove.isEmpty() ) {
+					if ( keysToRemove.size() == propUpdates.size() ) {
+						// delete all optimization
+						propUpdates.clear();
+						if ( !configurationOnly ) {
+							settingDao.deleteSetting(settingKey);
+						}
+					} else {
+						for ( String key : keysToRemove ) {
+							propUpdates.remove(key);
+							if ( !configurationOnly ) {
+								settingDao.deleteSetting(settingKey, key);
+							}
+						}
 					}
 				}
 			}
