@@ -261,18 +261,19 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		return schedule;
 	}
 
-	private static String jobIdentifier(ManagedJob job, String pid) {
-		if ( job.getDisplayName() != null && !job.getDisplayName().isEmpty() ) {
-			return job.getDisplayName();
-		}
+	private static String jobIdentifier(final ManagedJob job, final String pid) {
+		final String settingUid = job.getSettingUid();
+		String name = job.getDisplayName();
 		StringBuilder buf = new StringBuilder();
-		buf.append(job.getSettingUid());
-		if ( !pid.equals(job.getSettingUid()) ) {
-			if ( pid.startsWith(job.getSettingUid()) ) {
-				buf.append(pid.substring(job.getSettingUid().length()));
+		buf.append(settingUid);
+		if ( !pid.equals(settingUid) ) {
+			if ( pid.startsWith(settingUid) ) {
+				buf.append(pid.substring(settingUid.length()));
 			} else {
-				buf.append(pid);
+				buf.append('-').append(pid);
 			}
+		} else if ( name != null && !name.isEmpty() ) {
+			buf.append('-').append(name);
 		}
 		return buf.toString();
 	}
