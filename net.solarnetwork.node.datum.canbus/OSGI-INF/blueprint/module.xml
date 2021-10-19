@@ -90,7 +90,7 @@
 	<bean id="kcdConfigurer" class="net.solarnetwork.node.datum.canbus.KcdConfigurer">
 		<argument ref="kcdParser"/>
 		<argument ref="settingsService"/>
-		<property name="settingPrefix" value="jobDetail.jobDataMap['datumDataSource']."/>
+		<property name="settingPrefix" value="jobService.datumDataSource."/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 				<property name="basenames">
