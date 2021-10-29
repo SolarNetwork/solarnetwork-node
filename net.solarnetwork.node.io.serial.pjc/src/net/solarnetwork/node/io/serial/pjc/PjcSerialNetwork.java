@@ -44,6 +44,7 @@ import net.solarnetwork.service.support.BasicIdentifiable;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * PureJavaComm implementation of {@link SerialNetwork}.
@@ -60,9 +61,13 @@ public class PjcSerialNetwork extends BasicIdentifiable
 	/** The {@code timeout} property default value. */
 	public static final long DEFAULT_TIMEOUT_SECS = 10L;
 
+	/** The {@code lockOnOpen} property default value. */
+	public static final boolean DEFAULT_LOCK_ON_OPEN = true;
+
 	private SerialPortBeanParameters serialParams = getDefaultSerialParametersInstance();
 	private long timeout = DEFAULT_TIMEOUT_SECS;
 	private TimeUnit unit = TimeUnit.SECONDS;
+	private boolean lockOnOpen = DEFAULT_LOCK_ON_OPEN;
 
 	private final ExecutorService executor = Executors
 			.newSingleThreadExecutor(new CustomizableThreadFactory("PJC-SerialPort-"));
@@ -124,7 +129,8 @@ public class PjcSerialNetwork extends BasicIdentifiable
 
 	@Override
 	public SerialConnection createConnection() {
-		return new LockingSerialConnection();
+		return (lockOnOpen ? new LockingSerialConnection()
+				: new PjcSerialConnection(serialParams, executor));
 	}
 
 	/**
@@ -235,6 +241,8 @@ public class PjcSerialNetwork extends BasicIdentifiable
 				String.valueOf(defaultSerialParams.getMaxWait())));
 		results.addAll(SerialPortBean.getDefaultSettingSpecifiers(defaultSerialParams, "serialParams."));
 
+		results.add(new BasicToggleSettingSpecifier("lockOnOpen", DEFAULT_LOCK_ON_OPEN));
+
 		return results;
 	}
 
@@ -261,6 +269,28 @@ public class PjcSerialNetwork extends BasicIdentifiable
 
 	public void setUnit(TimeUnit unit) {
 		this.unit = unit;
+	}
+
+	/**
+	 * Get the lock-on-open flag.
+	 * 
+	 * @return {@literal true} to use a thread lock when opening the connection,
+	 *         releasing the lock when closing the connection; defaults to
+	 *         {@link #DEFAULT_LOCK_ON_OPEN}
+	 */
+	public boolean isLockOnOpen() {
+		return lockOnOpen;
+	}
+
+	/**
+	 * Set the lock-on-open flag.
+	 * 
+	 * @param lockOnOpen
+	 *        {@literal true} to use a thread lock when opening the connection,
+	 *        releasing the lock when closing the connection
+	 */
+	public void setLockOnOpen(boolean lockOnOpen) {
+		this.lockOnOpen = lockOnOpen;
 	}
 
 }
