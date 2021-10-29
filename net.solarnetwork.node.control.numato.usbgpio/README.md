@@ -24,7 +24,8 @@ Each service configuration contains the following settings:
 | Property Configurations | A list of control configurations. |
 
 > :warning: **Note** that the serial port should have any receive buffering disabled. To do this
-> the **Receive threshold** property can be set to `-1`.
+> the **Receive threshold** property can be set to `-1`. Additionally the **Port lock** should 
+> be disabled, as this plugin will manage the serial port itself.
 
 Each Property Configuration contains the following settings:
 

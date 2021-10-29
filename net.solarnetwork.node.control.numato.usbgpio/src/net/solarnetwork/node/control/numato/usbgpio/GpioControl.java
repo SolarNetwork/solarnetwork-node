@@ -36,6 +36,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 import org.osgi.service.event.Event;
 import net.solarnetwork.domain.BasicNodeControlInfo;
@@ -52,6 +54,7 @@ import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.LockTimeoutException;
 import net.solarnetwork.node.service.NodeControlProvider;
 import net.solarnetwork.service.OptionalService.OptionalFilterableService;
 import net.solarnetwork.settings.SettingSpecifier;
@@ -74,9 +77,14 @@ public class GpioControl extends SerialDeviceSupport implements SettingSpecifier
 	/** The {@code serialNetworkUid} property default value. */
 	public static final String DEFAULT_SERIAL_NETWORK_UID = "Serial Port";
 
+	/** The {@code gpioLockTimeoutSecs} property default value. */
+	public static final int DEFAULT_GPIO_LOCK_TIMEOUT_SECS = 10;
+
+	private final ReentrantLock gpioLock = new ReentrantLock(true);
 	private GpioPropertyConfig[] propConfigs;
 	private Function<SerialConnection, GpioService> serviceProvider = UsbGpioService::new;
 	private CachedGpioService gpioService;
+	private int gpioLockTimeoutSecs = DEFAULT_GPIO_LOCK_TIMEOUT_SECS;
 
 	/**
 	 * Constructor.
@@ -108,11 +116,11 @@ public class GpioControl extends SerialDeviceSupport implements SettingSpecifier
 	@Override
 	public synchronized void configurationChanged(Map<String, Object> properties) {
 		try {
-			gpioService();
+			performGpioAction(gpio -> {
+				return null;
+			});
 		} catch ( IOException e ) {
 			clearGpioService();
-			log.error("Communication error opening GPIO serial port [{}]: {}", getSerialNetworkUid(),
-					e.getMessage());
 		} catch ( Exception e ) {
 			clearGpioService();
 			Throwable root = e;
@@ -239,16 +247,14 @@ public class GpioControl extends SerialDeviceSupport implements SettingSpecifier
 	@Override
 	protected synchronized <T> T performAction(final SerialConnectionAction<T> action)
 			throws IOException {
-		final CachedGpioService cached = this.gpioService;
-		if ( cached == null ) {
-			return super.performAction(action);
-		}
-		try {
+		return performGpioAction(gpio -> {
+			// assume here that gpioService must exist when we reach here
+			final CachedGpioService cached = this.gpioService;
+			if ( cached == null ) {
+				return null;
+			}
 			return action.doWithConnection(cached.conn);
-		} catch ( IOException e ) {
-			clearGpioService();
-			throw e;
-		}
+		});
 	}
 
 	@Override
@@ -286,10 +292,9 @@ public class GpioControl extends SerialDeviceSupport implements SettingSpecifier
 		log.debug("Reading control [{}] status", controlId);
 		SimpleNodeControlInfoDatum result = null;
 		try {
-			GpioService gpio = gpioService();
-			if ( gpio != null ) {
-				result = currentValue(config, gpio);
-			}
+			result = performGpioAction(gpio -> {
+				return currentValue(config, gpio);
+			});
 		} catch ( IOException e ) {
 			clearGpioService();
 			log.error("Communication error reading control [{}] status on [{}]: {}", controlId,
@@ -328,6 +333,72 @@ public class GpioControl extends SerialDeviceSupport implements SettingSpecifier
 			value = gpio.read(addr);
 		}
 		return createDatum(config, value);
+	}
+
+	/**
+	 * API for interacting with the GpioService.
+	 * 
+	 * @param <T>
+	 *        the action result type
+	 */
+	@FunctionalInterface
+	public static interface GpioServiceAction<T> {
+
+		/**
+		 * Perform the action.
+		 * 
+		 * @param gpio
+		 *        the GPIO service
+		 * @return the result
+		 * @throws IOException
+		 *         if any communication error occurs
+		 */
+		T perform(GpioService gpio) throws IOException;
+	}
+
+	private <T> T performGpioAction(GpioServiceAction<T> action) throws IOException {
+		if ( gpioLock.isHeldByCurrentThread() ) {
+			if ( log.isDebugEnabled() ) {
+				log.debug("GPIO {} lock already acquired", getSerialNetworkUid());
+			}
+		} else {
+			if ( log.isDebugEnabled() ) {
+				log.debug("Acquiring lock on GPIO {}; waiting at most {}s", getSerialNetworkUid(),
+						gpioLockTimeoutSecs);
+			}
+			try {
+				if ( gpioLock.tryLock(gpioLockTimeoutSecs, TimeUnit.SECONDS) ) {
+					if ( log.isDebugEnabled() ) {
+						log.debug("Acquired GPIO {} lock", getSerialNetworkUid());
+					}
+				} else {
+					if ( log.isDebugEnabled() ) {
+						log.debug("Timeout acquiring GPIO {} lock", getSerialNetworkUid());
+					}
+					throw new LockTimeoutException(
+							"Could not acquire GPIO port " + getSerialNetworkUid() + " lock");
+				}
+			} catch ( InterruptedException e ) {
+				log.debug("Interrupted waiting for GPIO {} lock", getSerialNetworkUid());
+				throw new LockTimeoutException(
+						"Could not acquire GPIO port " + getSerialNetworkUid() + " lock");
+			}
+		}
+		try {
+			final GpioService gpio = gpioService();
+			if ( gpio == null ) {
+				return null;
+			}
+			return action.perform(gpio);
+		} catch ( IOException e ) {
+			clearGpioService();
+			log.error("Communication error using GPIO serial port [{}]: {}", getSerialNetworkUid(),
+					e.getMessage());
+			throw e;
+		} finally {
+			gpioLock.unlock();
+		}
+
 	}
 
 	private SimpleNodeControlInfoDatum createDatum(GpioPropertyConfig config, Object value) {
@@ -469,6 +540,26 @@ public class GpioControl extends SerialDeviceSupport implements SettingSpecifier
 			serviceProvider = UsbGpioService::new;
 		}
 		this.serviceProvider = serviceProvider;
+	}
+
+	/**
+	 * Get the maximum number of seconds to wait to acquire the GPIO lock.
+	 * 
+	 * @return the maximum number of seconds; defaults to
+	 *         {@link #DEFAULT_GPIO_LOCK_TIMEOUT_SECS}
+	 */
+	public int getGpioLockTimeoutSecs() {
+		return gpioLockTimeoutSecs;
+	}
+
+	/**
+	 * Set the maximum number of seconds to wait to acquire the GPIO lock.
+	 * 
+	 * @param gpioLockTimeoutSecs
+	 *        the maximum number of seconds
+	 */
+	public void setGpioLockTimeoutSecs(int gpioLockTimeoutSecs) {
+		this.gpioLockTimeoutSecs = gpioLockTimeoutSecs;
 	}
 
 }
