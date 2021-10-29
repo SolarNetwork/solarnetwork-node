@@ -436,8 +436,13 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	@Override
 	public void updateSettings(SettingsCommand command) {
+		updateSettings(command, false);
+	}
+
+	private void updateSettings(final SettingsCommand command, final boolean configurationOnly) {
 		if ( command.getProviderKey() != null ) {
-			applySettingsUpdates(command, command.getProviderKey(), command.getInstanceKey(), false);
+			applySettingsUpdates(command, command.getProviderKey(), command.getInstanceKey(),
+					configurationOnly);
 			return;
 		}
 		// group all updates by provider+instance, to reduce the number of CA updates
@@ -454,7 +459,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 					log.info("Updating component [{}] settings: {}", cmd.getProviderKey(), msg);
 				}
 			}
-			applySettingsUpdates(cmd, cmd.getProviderKey(), cmd.getInstanceKey(), false);
+			applySettingsUpdates(cmd, cmd.getProviderKey(), cmd.getInstanceKey(), configurationOnly);
 		}
 	}
 
@@ -803,8 +808,9 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 						return false;
 					}
 					if ( options.isAddOnly() ) {
-						// check if setting exists already, and if so do not import it
-						if ( settingDao.getSetting(s.getKey(), s.getType()) != null ) {
+						// only allow if value is provided and setting does not already exist
+						if ( s.getValue() == null
+								|| settingDao.getSetting(s.getKey(), s.getType()) != null ) {
 							log.debug("Not updating existing setting {}", s.getKey());
 							return false;
 						}
@@ -848,10 +854,11 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 						}
 						if ( s.getValue() == null ) {
 							settingDao.deleteSetting(s.getKey(), s.getType());
+
 						} else {
 							settingDao.storeSetting(s);
-							importedSettings.add(s);
 						}
+						importedSettings.add(s);
 					}
 				} catch ( IOException e ) {
 					log.error("Unable to import settings: {}", e.getMessage());
@@ -946,10 +953,11 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			bean.setKey(s.getType());
 			bean.setValue(s.getValue());
 			bean.setTransient(s.getFlags() != null && s.getFlags().contains(SettingFlag.Volatile));
+			bean.setRemove(s.getValue() == null);
 			cmd.getValues().add(bean);
 		}
 		if ( cmd.getValues().size() > 0 ) {
-			updateSettings(cmd);
+			updateSettings(cmd, true);
 		}
 	}
 
@@ -1401,7 +1409,11 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 							}
 						}
 						Setting s = new Setting(key, type, value, flagSet);
-						settingDao.storeSetting(s);
+						if ( value == null ) {
+							settingDao.deleteSetting(key, type);
+						} else {
+							settingDao.storeSetting(s);
+						}
 						added.add(s);
 					}
 					applyImportedSettings(added);
