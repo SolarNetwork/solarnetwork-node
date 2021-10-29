@@ -26,7 +26,6 @@ import static java.util.stream.Collectors.toList;
 import static net.solarnetwork.node.control.numato.usbgpio.GpioPropertyConfig.ioDirectionBitSet;
 import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -135,11 +134,11 @@ public class GpioControl extends SerialDeviceSupport implements SettingSpecifier
 	private static final class CachedGpioService {
 
 		private final String serialNetworkUid;
-		private final WeakReference<GpioService> gpioService;
+		private final GpioService gpioService;
 		private final SerialConnection conn;
 		private BitSet configuredDirection;
 
-		private CachedGpioService(String serialNetworkUid, WeakReference<GpioService> gpioService,
+		private CachedGpioService(String serialNetworkUid, GpioService gpioService,
 				SerialConnection conn) {
 			super();
 			if ( serialNetworkUid == null || gpioService == null || conn == null ) {
@@ -162,7 +161,7 @@ public class GpioControl extends SerialDeviceSupport implements SettingSpecifier
 			// serial network UID changed, must clear existing connection
 			clearGpioService();
 		}
-		GpioService result = (cached != null ? cached.gpioService.get() : null);
+		GpioService result = (cached != null ? cached.gpioService : null);
 		if ( result == null ) {
 			SerialNetwork serial = service(getSerialNetwork());
 			if ( serial != null ) {
@@ -178,7 +177,7 @@ public class GpioControl extends SerialDeviceSupport implements SettingSpecifier
 					}
 					throw e;
 				}
-				gpioService = new CachedGpioService(serialNetworkUid, new WeakReference<>(result), conn);
+				gpioService = new CachedGpioService(serialNetworkUid, result, conn);
 			}
 		}
 		// check if direction has been set or needs to change
@@ -210,10 +209,7 @@ public class GpioControl extends SerialDeviceSupport implements SettingSpecifier
 			// unchanged, nothing to do
 			return;
 		}
-		GpioService gpio = cached.gpioService.get();
-		if ( gpio == null ) {
-			return;
-		}
+		GpioService gpio = cached.gpioService;
 		if ( log.isInfoEnabled() ) {
 			log.info("Configuring GPIO direction on [{}] as inputs: {}", getSerialNetworkUid(), dirs);
 		}
