@@ -296,6 +296,15 @@ public class DatumFilterSupport extends BaseDatumFilterSupport implements Settin
 	}
 
 	/**
+	 * Get this filter instance, for backwards setting compatibility.
+	 * 
+	 * @return this instance
+	 */
+	public DatumFilterSupport getSampleTransformer() {
+		return this;
+	}
+
+	/**
 	 * Get the SettingDao to use.
 	 * 
 	 * @return the DAO
