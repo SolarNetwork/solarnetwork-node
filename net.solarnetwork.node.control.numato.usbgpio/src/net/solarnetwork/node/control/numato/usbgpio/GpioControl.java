@@ -273,7 +273,7 @@ public class GpioControl extends SerialDeviceSupport implements SettingSpecifier
 			return Collections.emptyList();
 		}
 		return Arrays.stream(configs).filter(GpioPropertyConfig::isValid)
-				.map(GpioPropertyConfig::getControlId).collect(toList());
+				.map(c -> resolvePlaceholders(c.getControlId())).collect(toList());
 	}
 
 	@Override
@@ -366,7 +366,7 @@ public class GpioControl extends SerialDeviceSupport implements SettingSpecifier
 			return null;
 		}
 		for ( GpioPropertyConfig config : configs ) {
-			if ( controlId.equals(config.getControlId()) ) {
+			if ( controlId.equals(resolvePlaceholders(config.getControlId())) ) {
 				return config;
 			}
 		}

@@ -54,6 +54,7 @@ import net.solarnetwork.node.control.numato.usbgpio.GpioType;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialNetwork;
+import net.solarnetwork.node.service.PlaceholderService;
 import net.solarnetwork.service.StaticOptionalService;
 
 /**
@@ -69,6 +70,8 @@ public class GpioControlTests {
 	private GpioService gpio;
 	private GpioControl control;
 
+	private Object[] otherMocks;
+
 	@Before
 	public void setup() {
 		network = EasyMock.createMock(SerialNetwork.class);
@@ -81,12 +84,16 @@ public class GpioControlTests {
 	@After
 	public void teardown() {
 		EasyMock.verify(network, conn, gpio);
+		if ( otherMocks != null ) {
+			EasyMock.verify(otherMocks);
+		}
 	}
 
 	private void replayAll(Object... other) {
 		EasyMock.replay(network, conn, gpio);
 		if ( other != null ) {
 			EasyMock.replay(other);
+			this.otherMocks = other;
 		}
 	}
 
@@ -138,6 +145,31 @@ public class GpioControlTests {
 
 		// THEN
 		assertThat("Control IDs returned", result, contains(cfg1.getControlId()));
+	}
+
+	@Test
+	public void availableControlIds_placeholders() {
+		// GIVEN
+		final PlaceholderService placeholderService = EasyMock.createMock(PlaceholderService.class);
+		control.setPlaceholderService(new StaticOptionalService<>(placeholderService));
+
+		GpioPropertyConfig cfg1 = new GpioPropertyConfig();
+		cfg1.setAddress(0);
+		cfg1.setControlId("/{name}/1");
+		cfg1.setPropertyKey("p1");
+
+		control.setPropConfigs(new GpioPropertyConfig[] { cfg1 });
+
+		final String resolvedControlId = "/yes/1";
+		expect(placeholderService.resolvePlaceholders(cfg1.getControlId(), null))
+				.andReturn(resolvedControlId);
+
+		// WHEN
+		replayAll(placeholderService);
+		List<String> result = control.getAvailableControlIds();
+
+		// THEN
+		assertThat("Control IDs returned", result, contains(resolvedControlId));
 	}
 
 	@Test
@@ -312,6 +344,48 @@ public class GpioControlTests {
 		assertThat("Control info returned", info, is(notNullValue()));
 		assertThat("Info is a datum", info, is(instanceOf(NodeDatum.class)));
 		assertThat("Info control ID set", info.getControlId(), is(cfg1.getControlId()));
+		assertThat("Info control type is boolean for digital", info.getType(), is(Boolean));
+		assertThat("Info control value is boolean", info.getValue(), is(TRUE.toString()));
+		assertThat("Control property provided", info.getPropertyName(), is(cfg1.getPropertyKey()));
+		DatumSamplesOperations d = ((NodeDatum) info).asSampleOperations();
+		assertThat("Datum prop set", d.getSampleInteger(Instantaneous, cfg1.getPropertyKey()), is(1));
+		assertThat("Datum status prop not set", d.getSampleInteger(Status, cfg1.getPropertyKey()),
+				is(nullValue()));
+	}
+
+	@Test
+	public void readControl_digital_placeholders() throws Exception {
+		// GIVEN
+		final PlaceholderService placeholderService = EasyMock.createMock(PlaceholderService.class);
+		control.setPlaceholderService(new StaticOptionalService<>(placeholderService));
+
+		GpioPropertyConfig cfg1 = new GpioPropertyConfig();
+		cfg1.setGpioType(GpioType.Digital);
+		cfg1.setAddress(0);
+		cfg1.setControlId("/{name}/1");
+		cfg1.setPropertyKey("p1");
+		cfg1.setPropertyType(Instantaneous);
+
+		final BitSet dirs = new BitSet();
+		dirs.set(cfg1.getAddress());
+		gpio.configureIoDirection(dirs);
+		expect(gpio.read(cfg1.getAddress())).andReturn(true);
+
+		doCreateConnection();
+		control.setPropConfigs(new GpioPropertyConfig[] { cfg1 });
+
+		final String resolvedControlId = "/yes/1";
+		expect(placeholderService.resolvePlaceholders(cfg1.getControlId(), null))
+				.andReturn(resolvedControlId).anyTimes();
+
+		// WHEN
+		replayAll(placeholderService);
+		NodeControlInfo info = control.getCurrentControlInfo(resolvedControlId);
+
+		// THEN
+		assertThat("Control info returned", info, is(notNullValue()));
+		assertThat("Info is a datum", info, is(instanceOf(NodeDatum.class)));
+		assertThat("Info control ID set", info.getControlId(), is(resolvedControlId));
 		assertThat("Info control type is boolean for digital", info.getType(), is(Boolean));
 		assertThat("Info control value is boolean", info.getValue(), is(TRUE.toString()));
 		assertThat("Control property provided", info.getPropertyName(), is(cfg1.getPropertyKey()));
