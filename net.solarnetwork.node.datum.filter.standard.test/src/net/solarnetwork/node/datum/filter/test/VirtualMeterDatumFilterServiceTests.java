@@ -880,6 +880,16 @@ public class VirtualMeterDatumFilterServiceTests {
 		// @formatter:on
 	}
 
+	private static String pulseExpressionInverted() {
+		// @formatter:off
+		return "currInput == prevInput ? prevReading : "
+				+ "currInput > 0 || prevReading.stripTrailingZeros().scale() <= 0 ? prevReading + 0.1 : "
+				+ "prevReading.setScale(0, "
+					+ "timeUnits < 1 ? T(java.math.RoundingMode).DOWN : T(java.math.RoundingMode).UP"
+				+ ")";
+		// @formatter:on
+	}
+
 	@Test
 	public void filter_pulse_skipFromTimeConstraint() {
 		// GIVEN
@@ -1075,6 +1085,93 @@ public class VirtualMeterDatumFilterServiceTests {
 				new BigDecimal("0"), new BigDecimal("1.1"));
 		assertVirtualMeterMetadata("5th", savedMetas.get(4), "pulses", dates.get(11).toEpochMilli(),
 				new BigDecimal("1"), new BigDecimal("2"));
+	}
+
+	@Test
+	public void filter_pulse_multi_inverted() {
+		// GIVEN
+		final SimpleDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		datum.asMutableSampleOperations().setSampleData(DatumSamplesType.Instantaneous, null);
+		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig("switch");
+		vmConfig.setPropertyType(DatumSamplesType.Status);
+		vmConfig.setReadingPropertyName("pulses");
+		vmConfig.setTrackOnlyWhenReadingChanges(true);
+		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
+
+		ExpressionService exprService = new SpelExpressionService();
+		VirtualMeterExpressionConfig exprConfig = new VirtualMeterExpressionConfig("pulses",
+				DatumSamplesType.Accumulating, pulseExpressionInverted(), exprService.getUid());
+		xform.setExpressionConfigs(new VirtualMeterExpressionConfig[] { exprConfig });
+		xform.setExpressionServices(new StaticOptionalServiceCollection<>(singleton(exprService)));
+
+		// no metadata available yet
+		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(null);
+
+		// add metadata
+		// @formatter:off
+		final List<Integer> inputs = Arrays.asList(
+				// start low for 0s
+				0, 0, 
+				
+				// jump high for 1.5s; meter advances 0.1
+				1, 1, 1,
+				
+				// back to low for 1s; meter advances to 1
+				0, 0, 
+				
+				// jump high for 1s; meter advances 1.1
+				1, 1, 1, 1,
+				
+				// back to low 1s; meter advances to 2
+				0, 0);
+		// @formatter:on
+		final int iterations = inputs.size();
+		final int changeCount = 5;
+		Capture<GeneralDatumMetadata> metaCaptor = new CloningCapture(CaptureType.ALL);
+		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
+		expectLastCall().times(changeCount);
+
+		// WHEN
+		replayAll();
+		List<DatumSamplesOperations> outputs = new ArrayList<>();
+		List<Instant> dates = new ArrayList<>();
+		final Instant start = LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC);
+		for ( int i = 0; i < iterations; i++ ) {
+			Instant ts = start.plusMillis(TimeUnit.SECONDS.toMillis(i) / 2);
+			SimpleDatum d = datum.copyWithId(DatumId.nodeId(null, datum.getSourceId(), ts));
+			d.getSamples().putStatusSampleValue("switch", inputs.get(i));
+			dates.add(ts);
+			outputs.add(xform.filter(d, d.getSamples(), emptyMap()));
+		}
+
+		// THEN
+		// expected pulse count
+		// @formatter:off
+		BigDecimal[] expectedValues = decimalArray(
+				 "0", "0",   "1",   "1",   "1", "0", "0",   "1",   "1",   "1",   "1", "0", "0");
+		BigDecimal[] expectedReadings = decimalArray(
+				null, "0", "0.1", "0.1", "0.1", "1", "1", "1.1", "1.1", "1.1", "1.1", "2", "2");
+		// @formatter:on
+
+		for ( int i = 0; i < iterations; i++ ) {
+			DatumSamplesOperations result = outputs.get(i);
+			assertOutputValue("at sample " + i, result, "switch", "pulses", expectedValues[i],
+					expectedReadings[i]);
+		}
+
+		List<GeneralDatumMetadata> savedMetas = metaCaptor.getValues();
+		assertThat("Saved meter metdata only for changes", savedMetas, hasSize(changeCount));
+
+		assertVirtualMeterMetadata("1st", savedMetas.get(0), "pulses", dates.get(0).toEpochMilli(),
+				new BigDecimal("0"), BigDecimal.ZERO);
+		assertVirtualMeterMetadata("2nd", savedMetas.get(1), "pulses", dates.get(2).toEpochMilli(),
+				new BigDecimal("1"), new BigDecimal("0.1"));
+		assertVirtualMeterMetadata("3rd", savedMetas.get(2), "pulses", dates.get(5).toEpochMilli(),
+				new BigDecimal("0"), new BigDecimal("1"));
+		assertVirtualMeterMetadata("4th", savedMetas.get(3), "pulses", dates.get(7).toEpochMilli(),
+				new BigDecimal("1"), new BigDecimal("1.1"));
+		assertVirtualMeterMetadata("5th", savedMetas.get(4), "pulses", dates.get(11).toEpochMilli(),
+				new BigDecimal("0"), new BigDecimal("2"));
 	}
 
 	@Test
