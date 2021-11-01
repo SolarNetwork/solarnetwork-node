@@ -16,9 +16,9 @@
 
 	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler" filter="(function=node)"/>
 
-	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
 		<property name="sticky" value="true"/>
 	</bean>
 
@@ -28,9 +28,15 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
-	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+	<bean id="datumService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
 		<property name="sticky" value="true"/>
 	</bean>
 
@@ -137,6 +143,7 @@
 							<property name="datumQueue" ref="datumQueue"/>
 							<property name="measurementHelper" ref="measurementHelper"/>
 							<property name="messageSource" ref="jobMessageSource"/>
+							<property name="datumService" ref="datumService"/>
 							<property name="placeholderService" ref="placeholderService"/>
 							<property name="expressionServices" ref="expressionServices"/>
 							<property name="canbusNetwork">

@@ -27,6 +27,7 @@ import java.util.Map;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.ExpressionRoot;
+import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.service.ExpressionService;
 
 /**
@@ -56,6 +57,8 @@ public class VirtualMeterExpressionRootImpl extends ExpressionRoot
 	 *        the samples
 	 * @param parameters
 	 *        the parameters
+	 * @param datumService
+	 *        the optional datum service
 	 * @param config
 	 *        the virtual meter configuration
 	 * @param prevDate
@@ -70,9 +73,9 @@ public class VirtualMeterExpressionRootImpl extends ExpressionRoot
 	 *        the previous reading
 	 */
 	public VirtualMeterExpressionRootImpl(Datum datum, DatumSamples samples, Map<String, ?> parameters,
-			VirtualMeterConfig config, long prevDate, long currDate, BigDecimal prevInput,
-			BigDecimal currInput, BigDecimal prevReading) {
-		super(datum, samples, parameters);
+			DatumService datumService, VirtualMeterConfig config, long prevDate, long currDate,
+			BigDecimal prevInput, BigDecimal currInput, BigDecimal prevReading) {
+		super(datum, samples, parameters, datumService);
 		this.config = config;
 		this.prevDate = prevDate;
 		this.currDate = currDate;

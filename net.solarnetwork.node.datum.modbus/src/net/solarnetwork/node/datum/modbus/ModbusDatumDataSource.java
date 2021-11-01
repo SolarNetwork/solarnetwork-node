@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.modbus;
 
+import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -241,7 +242,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	private void populateDatumProperties(ModbusData sample, MutableNodeDatum d,
 			ExpressionConfig[] expressionConfs) {
-		populateExpressionDatumProperties(d, expressionConfs, new ExpressionRoot(d, sample));
+		populateExpressionDatumProperties(d, expressionConfs,
+				new ExpressionRoot(d, sample, service(getDatumService())));
 	}
 
 	private Number applyDecimalScale(Number value, int decimalScale) {

@@ -24,6 +24,7 @@ package net.solarnetwork.node.datum.filter.expr;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
 import java.util.Collection;
 import java.util.Collections;
@@ -31,8 +32,8 @@ import java.util.List;
 import java.util.Map;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamples;
-import net.solarnetwork.domain.datum.DatumSamplesExpressionRoot;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.node.domain.ExpressionRoot;
 import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
 import net.solarnetwork.node.service.support.ExpressionConfig;
 import net.solarnetwork.service.DatumFilterService;
@@ -64,7 +65,7 @@ public class ExpressionDatumFilterService extends BaseDatumFilterSupport
 			incrementIgnoredStats(start);
 			return samples;
 		}
-		DatumSamplesExpressionRoot root = new DatumSamplesExpressionRoot(datum, samples, parameters);
+		ExpressionRoot root = new ExpressionRoot(datum, samples, parameters, service(getDatumService()));
 		DatumSamples s = new DatumSamples(samples);
 		populateExpressionDatumProperties(s, getExpressionConfigs(), root);
 		incrementStats(start, samples, s);

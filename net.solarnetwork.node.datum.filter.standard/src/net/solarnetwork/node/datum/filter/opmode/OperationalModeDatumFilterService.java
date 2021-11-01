@@ -25,6 +25,7 @@ package net.solarnetwork.node.datum.filter.opmode;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
+import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
 import java.time.Instant;
 import java.util.Collection;
@@ -35,10 +36,10 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.expression.ExpressionException;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamples;
-import net.solarnetwork.domain.datum.DatumSamplesExpressionRoot;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.datum.MutableDatumSamplesOperations;
+import net.solarnetwork.node.domain.ExpressionRoot;
 import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
 import net.solarnetwork.service.DatumFilterService;
@@ -78,7 +79,7 @@ public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
 			incrementIgnoredStats(start);
 			return samples;
 		}
-		DatumSamplesExpressionRoot root = new DatumSamplesExpressionRoot(datum, samples, parameters);
+		ExpressionRoot root = new ExpressionRoot(datum, samples, parameters, service(getDatumService()));
 		DatumSamplesOperations s = samplesForEvaluation(samples, configs);
 		if ( s instanceof MutableDatumSamplesOperations ) {
 			evaluateExpressions((MutableDatumSamplesOperations) s, configs, root, services,

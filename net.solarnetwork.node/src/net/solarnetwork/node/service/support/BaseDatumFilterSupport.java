@@ -30,8 +30,10 @@ import java.util.regex.PatternSyntaxException;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.service.DatumFilterStats;
+import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
@@ -74,6 +76,8 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	private Pattern sourceId;
 	private OperationalModesService opModesService;
 	private String requiredOperationalMode;
+
+	private OptionalService<DatumService> datumService;
 
 	/**
 	 * Constructor.
@@ -427,6 +431,25 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 			requiredOperationalMode = null;
 		}
 		this.requiredOperationalMode = requiredOperationalMode;
+	}
+
+	/**
+	 * Get the datum service.
+	 * 
+	 * @return the datum service
+	 */
+	public OptionalService<DatumService> getDatumService() {
+		return datumService;
+	}
+
+	/**
+	 * Set the datum service.
+	 * 
+	 * @param datumService
+	 *        the datum service
+	 */
+	public void setDatumService(OptionalService<DatumService> datumService) {
+		this.datumService = datumService;
 	}
 
 }

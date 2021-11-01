@@ -25,6 +25,7 @@ package net.solarnetwork.node.datum.canbus;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
+import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
@@ -212,7 +213,8 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 
 	private void populateDatumProperties(CanbusData sample, MutableNodeDatum d,
 			ExpressionConfig[] expressionConfs) {
-		populateExpressionDatumProperties(d, expressionConfs, new ExpressionRoot(d, sample));
+		populateExpressionDatumProperties(d, expressionConfs,
+				new ExpressionRoot(d, sample, service(getDatumService())));
 	}
 
 	@Override

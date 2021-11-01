@@ -25,6 +25,7 @@ package net.solarnetwork.node.datum.filter.virt;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
+import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -319,7 +320,8 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 					VirtualMeterExpressionConfig exprConfig = expressionForConfig(meterPropName);
 					if ( exprConfig != null ) {
 						VirtualMeterExpressionRoot root = new VirtualMeterExpressionRootImpl(d, samples,
-								parameters, config, prevDate, date, prevVal, currVal, prevReading);
+								parameters, service(getDatumService()), config, prevDate, date, prevVal,
+								currVal, prevReading);
 						populateExpressionDatumProperties(samples,
 								new VirtualMeterExpressionConfig[] { exprConfig }, root);
 						newReading = samples.getAccumulatingSampleBigDecimal(meterPropName);

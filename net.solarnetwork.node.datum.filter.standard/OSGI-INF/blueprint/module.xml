@@ -29,6 +29,12 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="datumService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<!--
 	 !!! SimpleFilterSamplesTransformer (property filter) - global filter
 	 -->
@@ -77,6 +83,7 @@
 		<bean class="net.solarnetwork.node.datum.filter.std.PropertyDatumFilterService" init-method="init">
 			<property name="settingDao" ref="settingDao"/>
 			<property name="messageSource" ref="simpleFilterMessageSource"/>
+			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
 			<property name="settingUid" value="net.solarnetwork.node.datum.samplefilter.simple"/>
 		</bean>
@@ -135,6 +142,7 @@
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.datum.filter.std.PropertyDatumFilterService" init-method="init">
 			<property name="settingDao" ref="settingDao"/>
+			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
 			<property name="messageSource" ref="propFilterMessageSource"/>
 			<property name="settingUid" value="net.solarnetwork.node.datum.samplefilter.prop"/>
@@ -189,6 +197,7 @@
 		<bean class="net.solarnetwork.node.datum.filter.std.ThrottlingDatumFilterService" init-method="init">
 			<property name="settingDao" ref="settingDao"/>
 			<property name="messageSource" ref="sourceThrottleMessageSource"/>
+			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
 			<property name="settingUid" value="net.solarnetwork.node.datum.samplefilter.throttle"/>
 		</bean>
@@ -247,6 +256,7 @@
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.datum.filter.std.ThrottlingDatumFilterService" init-method="init">
 			<property name="settingDao" ref="settingDao"/>
+			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
 			<property name="messageSource" ref="throttleFilterMessageSource"/>
 			<property name="settingUid" value="net.solarnetwork.node.datum.samplefilter.limiter"/>
@@ -300,6 +310,7 @@
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.datum.filter.std.DownsampleDatumFilterService">
 			<property name="messageSource" ref="downsamplerMessageSource"/>
+			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
 		</bean>
 	</osgix:managed-service-factory>
@@ -354,6 +365,7 @@
 			<argument ref="datumMetadataService"/>
 			<property name="messageSource" ref="virtualMeterMessageSource"/>
 			<property name="expressionServices" ref="expressionServices"/>
+			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
 		</bean>
 	</osgix:managed-service-factory>
@@ -407,6 +419,7 @@
 		<bean class="net.solarnetwork.node.datum.filter.expr.ExpressionDatumFilterService">
 			<property name="expressionServices" ref="expressionServices"/>
 			<property name="messageSource" ref="expressionMessageSource"/>
+			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
 		</bean>
 	</osgix:managed-service-factory>
@@ -460,6 +473,7 @@
 		<bean class="net.solarnetwork.node.datum.filter.opmode.OperationalModeDatumFilterService">
 			<property name="expressionServices" ref="expressionServices"/>
 			<property name="messageSource" ref="opModeMessageSource"/>
+			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
 		</bean>
 	</osgix:managed-service-factory>

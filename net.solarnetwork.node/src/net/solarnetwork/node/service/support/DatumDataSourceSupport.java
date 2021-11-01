@@ -41,6 +41,7 @@ import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumMetadataService;
 import net.solarnetwork.node.service.DatumQueue;
+import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.service.DatumFilterService;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.OptionalService.OptionalFilterableService;
@@ -63,8 +64,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	/**
 	 * A transform properties instance that can be used to signal "sub-sampling"
 	 * mode to the transform service.
-	 *
-	 * @since 1.1
 	 */
 	public static final Map<String, Object> SUB_SAMPLE_PROPS = singletonMap("subsample", true);
 
@@ -85,6 +84,7 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 
 	private OptionalService<DatumMetadataService> datumMetadataService;
 	private OptionalService<DatumQueue> datumQueue;
+	private OptionalService<DatumService> datumService;
 	private TaskScheduler taskScheduler = null;
 	private Long subSampleFrequency = null;
 	private long subSampleStartDelay = DEFAULT_SUBSAMPLE_START_DELAY;
@@ -100,7 +100,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @param datum
 	 *        the datum that was captured
-	 * @since 1.8
 	 */
 	protected final void offerDatumCapturedEvent(NodeDatum datum) {
 		if ( datum != null ) {
@@ -168,7 +167,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * Get setting specifiers for the sub-sample supporting properties.
 	 *
 	 * @return list of setting specifiers
-	 * @since 1.1
 	 */
 	protected List<SettingSpecifier> getSubSampleSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
@@ -184,7 +182,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * Get setting specifiers for device info metadata publishing support.
 	 *
 	 * @return list of settings
-	 * @since 1.7
 	 */
 	protected List<SettingSpecifier> getDeviceInfoMetadataSettingSpecifiers() {
 		return Collections.singletonList(new BasicToggleSettingSpecifier("publishDeviceInfoMetadata",
@@ -208,7 +205,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * @return the scheduled future or {@literal null} if sub-sampling support
 	 *         is not configured; canceling this will stop the sub-sampling task
 	 * @see #stopSubSampling()
-	 * @since 1.1
 	 */
 	protected synchronized ScheduledFuture<?> startSubSampling(DatumDataSource dataSource) {
 		stopSubSampling();
@@ -246,7 +242,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * @param dataSource
 	 *        the data source previously passed to
 	 *        {@link #startSubSampling(DatumDataSource)}
-	 * @since 1.1
 	 */
 	protected void readSubSampleDatum(DatumDataSource dataSource) {
 		NodeDatum datum = dataSource.readCurrentDatum();
@@ -257,7 +252,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * Stop any running sub-sampling task.
 	 *
 	 * @see DatumDataSourceSupport#startSubSampling(DatumDataSource)
-	 * @since 1.1
 	 */
 	protected synchronized void stopSubSampling() {
 		if ( subSampleFuture != null ) {
@@ -271,7 +265,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * Test if sub-sampling is currently active.
 	 *
 	 * @return {@literal true} if sub-sampling is active
-	 * @since 1.1
 	 */
 	protected boolean isSubSampling() {
 		ScheduledFuture<?> f = this.subSampleFuture;
@@ -288,7 +281,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *        {@link DatumFilterService#filter(net.solarnetwork.domain.datum.Datum, DatumSamplesOperations, Map)}
 	 * @return the same datum, possibly transformed, or {@literal null} if the
 	 *         datum has been filtered out completely
-	 * @since 2.0
 	 */
 	protected NodeDatum applyDatumFilter(NodeDatum datum, Map<String, Object> props) {
 		DatumFilterService xformService = service(getDatumFilterService());
@@ -319,11 +311,11 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *        the expression configurations
 	 * @see #populateExpressionDatumProperties(MutableNodeDatum,
 	 *      ExpressionConfig[], Object)
-	 * @since 1.3
 	 */
 	protected void populateExpressionDatumProperties(final MutableNodeDatum d,
 			final ExpressionConfig[] expressionConfs) {
-		populateExpressionDatumProperties(d, expressionConfs, new ExpressionRoot(d));
+		populateExpressionDatumProperties(d, expressionConfs,
+				new ExpressionRoot(d, null, null, service(datumService)));
 	}
 
 	/**
@@ -336,7 +328,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *        the expression configurations
 	 * @param root
 	 *        the expression root object
-	 * @since 1.3
 	 */
 	protected void populateExpressionDatumProperties(final MutableNodeDatum d,
 			final ExpressionConfig[] expressionConfs, final Object root) {
@@ -366,7 +357,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * Get the task scheduler.
 	 *
 	 * @return the task scheduler
-	 * @since 1.1
 	 */
 	public TaskScheduler getTaskScheduler() {
 		return taskScheduler;
@@ -377,7 +367,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @param taskScheduler
 	 *        the task scheduler to set
-	 * @since 1.1
 	 */
 	public void setTaskScheduler(TaskScheduler taskScheduler) {
 		this.taskScheduler = taskScheduler;
@@ -388,7 +377,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @return the sub-sample frequency, in milliseconds, or {@literal null} or
 	 *         anything less than {@literal 1} to disable sub-sampling
-	 * @since 1.1
 	 */
 	public Long getSubSampleFrequency() {
 		return subSampleFrequency;
@@ -404,7 +392,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @param subSampleFrequency
 	 *        the frequency, to set, in milliseconds
-	 * @since 1.1
 	 */
 	public void setSubSampleFrequency(Long subSampleFrequency) {
 		this.subSampleFrequency = subSampleFrequency;
@@ -424,7 +411,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @param subSampleStartDelay
 	 *        the sub-sample start delay to set, in milliseconds
-	 * @since 1.1
 	 */
 	public void setSubSampleStartDelay(long subSampleStartDelay) {
 		this.subSampleStartDelay = subSampleStartDelay;
@@ -434,7 +420,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * Get a datum filter service to use.
 	 *
 	 * @return the service
-	 * @since 2.0
 	 */
 	public OptionalFilterableService<DatumFilterService> getDatumFilterService() {
 		return datumFilterService;
@@ -445,7 +430,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @param datumFilterService
 	 *        the service to set
-	 * @since 2.0
 	 */
 	public void setDatumFilterService(OptionalFilterableService<DatumFilterService> datumFilterService) {
 		this.datumFilterService = datumFilterService;
@@ -455,7 +439,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * Get the expression configurations.
 	 *
 	 * @return the expression configurations
-	 * @since 1.3
 	 */
 	public ExpressionConfig[] getExpressionConfigs() {
 		return expressionConfigs;
@@ -466,7 +449,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @param expressionConfigs
 	 *        the configs to use
-	 * @since 1.3
 	 */
 	public void setExpressionConfigs(ExpressionConfig[] expressionConfigs) {
 		this.expressionConfigs = expressionConfigs;
@@ -476,7 +458,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * Get the number of configured {@code expressionConfigs} elements.
 	 *
 	 * @return the number of {@code expressionConfigs} elements
-	 * @since 1.3
 	 */
 	public int getExpressionConfigsCount() {
 		ExpressionConfig[] confs = this.expressionConfigs;
@@ -493,7 +474,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @param count
 	 *        The desired number of {@code expressionConfigs} elements.
-	 * @since 1.5
 	 */
 	public void setExpressionConfigsCount(int count) {
 		this.expressionConfigs = ArrayUtils.arrayWithLength(this.expressionConfigs, count,
@@ -525,7 +505,6 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 * Get the datum queue.
 	 *
 	 * @return the queue
-	 * @since 1.8
 	 */
 	public OptionalService<DatumQueue> getDatumQueue() {
 		return datumQueue;
@@ -536,10 +515,28 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	 *
 	 * @param datumQueue
 	 *        the queue to set
-	 * @since 1.8
 	 */
 	public void setDatumQueue(OptionalService<DatumQueue> datumQueue) {
 		this.datumQueue = datumQueue;
+	}
+
+	/**
+	 * Get the datum service.
+	 * 
+	 * @return the datum service
+	 */
+	public OptionalService<DatumService> getDatumService() {
+		return datumService;
+	}
+
+	/**
+	 * Set the datum service.
+	 * 
+	 * @param datumService
+	 *        the datum service
+	 */
+	public void setDatumService(OptionalService<DatumService> datumService) {
+		this.datumService = datumService;
 	}
 
 }

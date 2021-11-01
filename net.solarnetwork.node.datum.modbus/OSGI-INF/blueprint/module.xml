@@ -26,6 +26,12 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="datumService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
@@ -81,6 +87,7 @@
 						<bean class="net.solarnetwork.node.datum.modbus.ModbusDatumDataSource">
 							<property name="datumMetadataService" ref="datumMetadataService"/>
 							<property name="messageSource" ref="jobMessageSource"/>
+							<property name="datumService" ref="datumService"/>
 							<property name="placeholderService" ref="placeholderService"/>
 							<property name="taskScheduler" ref="taskScheduler"/>
 							<property name="expressionServices" ref="expressionServices"/>

@@ -28,6 +28,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.io.modbus.ModbusData;
+import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.service.ExpressionService;
 import net.solarnetwork.util.IntRangeSet;
 
@@ -81,8 +82,8 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	 * @param sample
 	 *        the current Modbus sample data
 	 */
-	public ExpressionRoot(NodeDatum datum, ModbusData sample) {
-		super(datum);
+	public ExpressionRoot(NodeDatum datum, ModbusData sample, DatumService datumService) {
+		super(datum, null, null, datumService);
 		this.sample = sample;
 		this.sampleUnsignedData = (sample != null ? sample.getUnsignedDataMap()
 				: Collections.emptyMap());

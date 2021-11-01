@@ -23,6 +23,10 @@
 package net.solarnetwork.node.datum.filter.test;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.singleton;
+import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.replay;
+import static org.easymock.EasyMock.verify;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -30,6 +34,8 @@ import static org.junit.Assert.assertThat;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
+import java.util.Collections;
+import org.easymock.EasyMock;
 import org.junit.Test;
 import net.solarnetwork.common.expr.spel.SpelExpressionService;
 import net.solarnetwork.domain.datum.DatumSamples;
@@ -38,7 +44,9 @@ import net.solarnetwork.domain.datum.GeneralDatum;
 import net.solarnetwork.node.datum.filter.virt.VirtualMeterConfig;
 import net.solarnetwork.node.datum.filter.virt.VirtualMeterExpressionRoot;
 import net.solarnetwork.node.datum.filter.virt.VirtualMeterExpressionRootImpl;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
+import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.service.ExpressionService;
 
 /**
@@ -74,7 +82,7 @@ public class VirtualMeterExpressionRootImplTests {
 
 		// WHEN
 		VirtualMeterExpressionRoot root = new VirtualMeterExpressionRootImpl(d, d.getSamples(),
-				emptyMap(), c, prevDate, currDate, prevInput, currInput, prevReading);
+				emptyMap(), null, c, prevDate, currDate, prevInput, currInput, prevReading);
 		BigDecimal dt = root.getTimeUnits();
 
 		// THEN
@@ -97,7 +105,7 @@ public class VirtualMeterExpressionRootImplTests {
 
 		// WHEN
 		VirtualMeterExpressionRoot root = new VirtualMeterExpressionRootImpl(d, d.getSamples(),
-				emptyMap(), c, prevDate, currDate, prevInput, currInput, prevReading);
+				emptyMap(), null, c, prevDate, currDate, prevInput, currInput, prevReading);
 		BigDecimal result = exprService.evaluateExpression(
 				"prevReading + (timeUnits * (inputDiff / 1000) * tou)", null, root, null,
 				BigDecimal.class);
@@ -123,7 +131,7 @@ public class VirtualMeterExpressionRootImplTests {
 
 		// WHEN
 		VirtualMeterExpressionRoot root = new VirtualMeterExpressionRootImpl(d, d.getSamples(),
-				emptyMap(), c, prevDate, currDate, prevInput, currInput, prevReading);
+				emptyMap(), null, c, prevDate, currDate, prevInput, currInput, prevReading);
 		BigDecimal result = exprService.evaluateExpression(
 				"prevReading + (timeUnits * (inputDiff / 1000) * my_rate)", null, root, null,
 				BigDecimal.class);
@@ -150,7 +158,7 @@ public class VirtualMeterExpressionRootImplTests {
 
 		// WHEN
 		VirtualMeterExpressionRoot root = new VirtualMeterExpressionRootImpl(d, d.getSamples(),
-				emptyMap(), c, prevDate, currDate, prevInput, currInput, prevReading);
+				emptyMap(), null, c, prevDate, currDate, prevInput, currInput, prevReading);
 
 		BigDecimal result1 = exprService.evaluateExpression(
 				"prevReading + (timeUnits * (inputDiff / 1000) * (watts > 50000 ? tou * 10 : tou))",
@@ -184,7 +192,7 @@ public class VirtualMeterExpressionRootImplTests {
 
 		// WHEN
 		VirtualMeterExpressionRoot root = new VirtualMeterExpressionRootImpl(d, d.getSamples(),
-				emptyMap(), c, prevDate, currDate, prevInput, currInput, prevReading);
+				emptyMap(), null, c, prevDate, currDate, prevInput, currInput, prevReading);
 
 		BigDecimal result = exprService.evaluateExpression(
 				"containsKey('tou') ? prevReading + (timeUnits * (inputDiff / 1000) * tou) : null", null,
@@ -210,7 +218,7 @@ public class VirtualMeterExpressionRootImplTests {
 
 		// WHEN
 		VirtualMeterExpressionRoot root = new VirtualMeterExpressionRootImpl(d, d.getSamples(),
-				emptyMap(), c, prevDate, currDate, prevInput, currInput, prevReading);
+				emptyMap(), null, c, prevDate, currDate, prevInput, currInput, prevReading);
 
 		Integer result = exprService.evaluateExpression(
 				"has('tou') ? prevReading + (timeUnits * (inputDiff / 1000) * tou) : -1", null, root,
@@ -218,6 +226,42 @@ public class VirtualMeterExpressionRootImplTests {
 
 		// THEN
 		assertThat("Calculated result 1", result, is(equalTo(-1)));
+	}
+
+	@Test
+	public void eval_withLatestDatum() {
+		// GIVEN
+		GeneralDatum d = testDatum();
+		d.putSampleValue(DatumSamplesType.Instantaneous, "tou", new BigDecimal("11.50"));
+		VirtualMeterConfig c = testConfig();
+		long currDate = d.getTimestamp().toEpochMilli();
+		long prevDate = currDate - 60_000L;
+		BigDecimal prevInput = BigDecimal.ZERO;
+		BigDecimal currInput = new BigDecimal("3000");
+		BigDecimal prevReading = BigDecimal.ONE;
+
+		ExpressionService exprService = new SpelExpressionService();
+
+		SimpleDatum d2 = SimpleDatum.nodeDatum("bar");
+		d2.putSampleValue(DatumSamplesType.Instantaneous, "f", 123);
+
+		DatumService datumService = EasyMock.createMock(DatumService.class);
+
+		expect(datumService.latest(singleton("bar"), NodeDatum.class))
+				.andReturn(Collections.singleton((NodeDatum) d2));
+
+		// WHEN
+		replay(datumService);
+		VirtualMeterExpressionRoot root = new VirtualMeterExpressionRootImpl(d, d.getSamples(),
+				emptyMap(), datumService, c, prevDate, currDate, prevInput, currInput, prevReading);
+		BigDecimal result = exprService.evaluateExpression(
+				"prevReading + (timeUnits * (inputDiff / 1000) * tou) + latest('bar')['f']", null, root,
+				null, BigDecimal.class);
+
+		// THEN
+		assertThat("Calculated result", result.setScale(4, RoundingMode.HALF_UP),
+				is(equalTo(new BigDecimal("124.5750"))));
+		verify(datumService);
 	}
 
 }
