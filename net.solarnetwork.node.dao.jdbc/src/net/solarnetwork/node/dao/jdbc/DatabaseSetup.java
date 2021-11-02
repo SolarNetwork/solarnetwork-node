@@ -75,7 +75,7 @@ public class DatabaseSetup {
 			+ JdbcDaoConstants.SCHEMA_NAME + "." + JdbcDaoConstants.TABLE_SETTINGS + " WHERE skey = "
 			+ "'solarnode.sn_settings.version'";
 
-	private static final int TABLES_VERSION = 5;
+	private static final int TABLES_VERSION = 6;
 
 	private DataSource dataSource = null;
 	private Resource initSqlResource = new ClassPathResource(DEFAULT_INIT_SQL_RESOURCE,
