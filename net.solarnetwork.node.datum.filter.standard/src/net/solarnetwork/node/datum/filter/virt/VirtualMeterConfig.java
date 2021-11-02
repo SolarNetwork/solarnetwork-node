@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.datum.filter.virt;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -147,6 +146,11 @@ public class VirtualMeterConfig extends DatumSamplePropertyConfig<BigInteger> {
 		results.add(new BasicToggleSettingSpecifier(prefix + "includeInstantaneousDiffProperty", false));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "instantaneousDiffPropertyName", null));
 
+		BasicTextFieldSettingSpecifier configSpec = new BasicTextFieldSettingSpecifier(prefix + "config",
+				null);
+		configSpec.setTransient(true);
+		results.add(configSpec);
+
 		return results;
 	}
 
@@ -225,7 +229,7 @@ public class VirtualMeterConfig extends DatumSamplePropertyConfig<BigInteger> {
 	 * Get the meter reading as a string.
 	 * 
 	 * <p>
-	 * Because the meter reading is a {@link BigDecimal}, this method can be
+	 * Because the meter reading is a {@link BigInteger}, this method can be
 	 * used to get the number as a string. If the meter reading value is
 	 * {@literal null} this method will return {@literal "0"}.
 	 * </p>

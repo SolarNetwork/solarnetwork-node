@@ -66,7 +66,7 @@
 	</service>
 
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.simple"
-		autowire-on-update="true" update-method="configurationChanged">
+			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
@@ -126,7 +126,7 @@
 	</service>
 
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.prop"
-		autowire-on-update="true" update-method="configurationChanged">
+			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
@@ -180,7 +180,7 @@
 	</service>
 
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.throttle"
-		autowire-on-update="true" update-method="configurationChanged">
+			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
@@ -240,7 +240,7 @@
 	</service>
 
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.limiter"
-		autowire-on-update="true" update-method="configurationChanged">
+			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
@@ -294,7 +294,7 @@
 	</service>
 
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.downsample"
-			autowire-on-update="true">
+			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
@@ -347,7 +347,7 @@
 	</service>
 
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.virtmeter"
-			autowire-on-update="true">
+			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
@@ -402,7 +402,7 @@
 	</service>
 
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.expression"
-			autowire-on-update="true">
+			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
@@ -456,7 +456,7 @@
 	</service>
 
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.samplefilter.opmode"
-			autowire-on-update="true">
+			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>

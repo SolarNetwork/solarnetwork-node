@@ -42,6 +42,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -360,6 +361,54 @@ public class VirtualMeterDatumFilterServiceTests {
 				new BigDecimal("15") };
 		BigDecimal[] expectedReadings = new BigDecimal[] { null, new BigDecimal("5"),
 				new BigDecimal("10") };
+
+		for ( int i = 0; i < iterations; i++ ) {
+			DatumSamplesOperations result = outputs.get(i);
+			assertOutputValue("at sample " + i, result, PROP_WATT_HOURS, PROP_WATT_HOURS_SECONDS,
+					expectedValues[i], expectedReadings[i]);
+		}
+	}
+
+	@Test
+	public void filter_readingValueReset() {
+		// GIVEN
+		final SimpleDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATT_HOURS);
+		vmConfig.setPropertyType(DatumSamplesType.Accumulating);
+		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
+
+		// no metadata available yet
+		GeneralDatumMetadata meta = new GeneralDatumMetadata();
+		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(meta).anyTimes();
+
+		// add metadata
+		final int iterations = 3;
+		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>(CaptureType.ALL);
+		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
+		expectLastCall().times(iterations);
+
+		// WHEN
+		replayAll();
+		List<DatumSamplesOperations> outputs = new ArrayList<>();
+		List<Instant> dates = new ArrayList<>();
+		final Instant start = LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC);
+		for ( int i = 0; i < iterations; i++ ) {
+			if ( i == 1 ) {
+				vmConfig.setConfig(new BigInteger("1000"));
+			} else {
+				assertThat("VM reading setting should be clear", vmConfig.getConfig(), is(nullValue()));
+			}
+			Instant ts = start.plusMillis(TimeUnit.SECONDS.toMillis(i));
+			SimpleDatum d = datum.copyWithId(DatumId.nodeId(null, datum.getSourceId(), ts));
+			d.getSamples().putAccumulatingSampleValue(PROP_WATT_HOURS, 5 * (i + 1));
+			dates.add(ts);
+			outputs.add(xform.filter(d, d.getSamples(), emptyMap()));
+		}
+
+		// THEN
+		BigDecimal[] expectedValues = new BigDecimal[] { new BigDecimal("5"), new BigDecimal("10"),
+				new BigDecimal("15") };
+		BigDecimal[] expectedReadings = new BigDecimal[] { null, null, new BigDecimal("1005") };
 
 		for ( int i = 0; i < iterations; i++ ) {
 			DatumSamplesOperations result = outputs.get(i);

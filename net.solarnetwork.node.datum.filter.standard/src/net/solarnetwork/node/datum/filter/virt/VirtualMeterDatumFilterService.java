@@ -27,6 +27,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -106,10 +107,12 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 	 */
 	public VirtualMeterDatumFilterService(OptionalService<DatumMetadataService> datumMetadataService) {
 		super();
-		if ( datumMetadataService == null ) {
-			throw new IllegalArgumentException("The datumMetadataService must not be null.");
-		}
-		this.datumMetadataService = datumMetadataService;
+		this.datumMetadataService = requireNonNullArgument(datumMetadataService, "datumMetadataService");
+	}
+
+	@Override
+	public void configurationChanged(Map<String, Object> props) {
+		super.configurationChanged(props);
 	}
 
 	@Override
@@ -280,10 +283,16 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 
 			synchronized ( config ) {
 				GeneralDatumMetadata metadataOut = new GeneralDatumMetadata();
-				Long prevDate = metadata.getInfoLong(meterPropName, VIRTUAL_METER_DATE_KEY);
 				BigDecimal prevVal = metadata.getInfoBigDecimal(meterPropName, VIRTUAL_METER_VALUE_KEY);
-				BigDecimal prevReading = metadata.getInfoBigDecimal(meterPropName,
-						VIRTUAL_METER_READING_KEY);
+				Long prevDate = null;
+				BigDecimal prevReading = null;
+				if ( config.getConfig() != null ) {
+					// reset meter reading to this value
+					prevReading = new BigDecimal(config.getConfig());
+				} else {
+					prevDate = metadata.getInfoLong(meterPropName, VIRTUAL_METER_DATE_KEY);
+					prevReading = metadata.getInfoBigDecimal(meterPropName, VIRTUAL_METER_READING_KEY);
+				}
 				if ( prevDate == null || prevVal == null || prevReading == null ) {
 					metadataOut.putInfoValue(meterPropName, VIRTUAL_METER_DATE_KEY, date);
 					metadataOut.putInfoValue(meterPropName, VIRTUAL_METER_VALUE_KEY, currVal.toString());
@@ -406,6 +415,7 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 				metadata.merge(metadataOut, true);
 				try {
 					service.addSourceMetadata(d.getSourceId(), metadataOut);
+					config.setConfig(null); // remove any manual reset
 				} catch ( RuntimeException e ) {
 					// catch IO errors and let slide
 					Throwable root = e;
