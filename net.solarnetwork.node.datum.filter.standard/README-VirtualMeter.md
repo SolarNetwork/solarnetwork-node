@@ -50,6 +50,7 @@ Each meter configuration contains the following settings:
 | Rolling Average Count | A count of samples to average the property value from. |
 | Add Instantaneous Difference | When enabled, then include an **output** instantaneous property of the difference between the current and previous reading values. |
 | Instantaneous Difference Property | The derived **output** instantaneous datum property name to use when **Add Instantaneous Difference** is enabled. By default this property will be derived from the **Reading Property** value with `Diff` appended. |
+| Reading Value         | You can reset the virtual meter reading value with this setting. :warning: **Note** this is an advanced operation. |
 
 Expressions can be configured to calculate the **output** meter datum property, instead of using the
 default averaging algorithm. See [below](#expressions) for more information. Each expression
@@ -89,6 +90,15 @@ configuration contains the following settings:
 	apply a rolling average of this many property samples and output that value as the <em>instantaneous</em> 
 	source property value. This has the effect of smoothing the instantaneous values to an average over the 
 	time period leading into each output sample. Defaults to <code>0</code> so no average is applied.</dd>
+	<dt>Reading Value</dt>
+	<dd>If you submit a value for this setting, the virtual meter reading will be reset to this 
+	value such that the next datum the reading is calculated for will use this as the current meter
+	reading. This will impact the datum stream's reported aggregate values, so you should be very
+	sure this is something you want to do. For example if the virtual meter was at <code>1000</code>
+	and you reset it <code>0</code> then that will appear as a <code>-1000</code> drop in whatever
+	the reading is measuring. You might want to create a <code>Reset</code> 
+	<a href="https://github.com/SolarNetwork/solarnetwork/wiki/SolarNet-API-global-objects#datum-auxiliary">Datum
+	auxiliary record</a> to accomodate the reset value.</dd>
 </dl>
 
 # Filter parameters
@@ -144,7 +154,7 @@ the following properties:
 | Property | Type | Description |
 |:---------|:-----|:------------|
 | `config` | `VirtualMeterConfig` | A [`VirtualMeterConfig`][VirtualMeterConfig] object for the virtual meter configuration the expression is evaluating for. |
-| `datum` | `GeneralNodeDatum` | A [`GeneralNodeDatum`][GeneralNodeDatum] object, populated with data from all property and virtual meter configurations. |
+| `datum` | `GeneralNodeDatum` | A [`Datum`][Datum] object, populated with data from all property and virtual meter configurations. |
 | `props` | `Map<String,Object>` | Simple Map based access to the properties in `datum`, and transform parameters, to simplify expressions. |
 | `currDate` | `long` | The current datum timestamp, as a millisecond epoch number. |
 | `prevDate` | `long` | The previous datum timestamp, as a millisecond epoch number. |
@@ -205,8 +215,8 @@ example, continuing the `irradianceHours` example, an example set of datum metad
 
 
 [expr]: https://github.com/SolarNetwork/solarnetwork/wiki/Expression-Languages
-[GeneralNodeDatum]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node/src/net/solarnetwork/node/domain/GeneralNodeDatum.java
+[Datum]: https://github.com/SolarNetwork/solarnetwork-common/blob/develop/net.solarnetwork.common/src/net/solarnetwork/domain/datum/Datum.java
 [meta-api]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarIn-API#node-datum-metadata-add
 [tariff-filter]: ../net.solarnetwork.node.datum.filter.tariff
-[VirtualMeterConfig]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node.datum.samplefilter/src/net/solarnetwork/node/datum/filter/virt/VirtualMeterConfig.java
-[VirtualMeterExpressionRoot]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node.datum.samplefilter/src/net/solarnetwork/node/datum/filter/virt/VirtualMeterExpressionRoot.java
+[VirtualMeterConfig]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node.datum.filter.standard/src/net/solarnetwork/node/datum/filter/virt/VirtualMeterConfig.java
+[VirtualMeterExpressionRoot]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node.datum.filter.standard/src/net/solarnetwork/node/datum/filter/virt/VirtualMeterExpressionRoot.java
