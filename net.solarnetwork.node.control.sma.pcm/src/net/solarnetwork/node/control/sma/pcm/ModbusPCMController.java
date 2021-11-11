@@ -400,8 +400,9 @@ public class ModbusPCMController extends ModbusDeviceSupport
 	 * {@link Event}.
 	 * 
 	 * <p>
-	 * This method calls {@link #createControlCapturedEvent(NodeControlInfo)} to
-	 * create the actual Event, which may be overridden by extending classes.
+	 * This method calls
+	 * {@link #createControlCapturedEvent(SimpleNodeControlInfoDatum)} to create
+	 * the actual Event, which may be overridden by extending classes.
 	 * </p>
 	 * 
 	 * @param info
