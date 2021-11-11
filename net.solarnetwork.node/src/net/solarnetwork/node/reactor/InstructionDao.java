@@ -23,54 +23,47 @@
 package net.solarnetwork.node.reactor;
 
 import java.util.List;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 
 /**
  * DAO API for Instructor entities.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public interface InstructionDao {
 
 	/**
-	 * Store an Instruction instance and return its primary key.
+	 * Store an Instruction instance.
 	 * 
 	 * @param instruction
 	 *        the instruction to store
-	 * @return the local primary key
 	 */
-	Long storeInstruction(Instruction instruction);
-
-	/**
-	 * Get an Instruction instance by ID.
-	 * 
-	 * @param instructionId
-	 *        the instruction ID
-	 * @return the Instruction, or <em>null</em> if not found
-	 */
-	Instruction getInstruction(Long instructionId);
+	void storeInstruction(Instruction instruction);
 
 	/**
 	 * Get an Instruction instance by the remote ID.
 	 * 
-	 * @param remoteInstructionId
-	 *        the remote instruction ID
+	 * @param id
+	 *        the instruction ID
 	 * @param instructorId
 	 *        the instructor ID
-	 * @return the Instruction, or <em>null</em> if not found
+	 * @return the Instruction, or {@literal null} if not found
 	 */
-	Instruction getInstruction(String remoteInstructionId, String instructorId);
+	Instruction getInstruction(Long id, String instructorId);
 
 	/**
 	 * Update an instruction status.
 	 * 
 	 * @param instructionId
 	 *        the ID of the instruction to update the status for
+	 * @param instructorId
+	 *        the instructor ID
 	 * @param status
 	 *        the status
+	 * @since 2.0
 	 */
-	void storeInstructionStatus(Long instructionId, InstructionStatus status);
+	void storeInstructionStatus(Long instructionId, String instructorId, InstructionStatus status);
 
 	/**
 	 * Update an instruction status only if it currently has an expected state.
@@ -84,15 +77,17 @@ public interface InstructionDao {
 	 * 
 	 * @param instructionId
 	 *        the ID of the instruction to update the status for
+	 * @param instructorId
+	 *        the instructor ID
 	 * @param expectedState
 	 *        the expected state of the instruction
 	 * @param status
 	 *        the desired status
 	 * @return {@literal true} if the instruction status was updated
-	 * @since 1.1
+	 * @since 2.0
 	 */
-	boolean compareAndStoreInstructionStatus(Long instructionId, InstructionState expectedState,
-			InstructionStatus status);
+	boolean compareAndStoreInstructionStatus(Long instructionId, String instructorId,
+			InstructionState expectedState, InstructionStatus status);
 
 	/**
 	 * Find all instructions in a given state.

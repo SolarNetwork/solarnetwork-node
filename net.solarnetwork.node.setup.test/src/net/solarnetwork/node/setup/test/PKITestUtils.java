@@ -60,7 +60,7 @@ import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.support.CertificateException;
+import net.solarnetwork.service.CertificateException;
 
 /**
  * Helper class for PKI related tasks within tests.

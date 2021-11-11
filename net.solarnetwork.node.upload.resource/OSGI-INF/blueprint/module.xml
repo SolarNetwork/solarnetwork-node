@@ -15,30 +15,25 @@
 
 	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler" filter="(function=node)"/>
 
-	<bean id="generalNodeDatumDao" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.dao.DatumDao"/>
-		<property name="serviceFilter" value="(datumClassName=net.solarnetwork.node.domain.GeneralNodeDatum)"/>
+	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
+		<property name="sticky" value="yes"/>
 	</bean>
 
-	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
-	</bean>
-	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.upload.resource.ResourceStorageServiceDirectoryWatcher</value>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Storage Service Directory Watcher"/>
-			<property name="factoryUID" value="net.solarnetwork.node.upload.resource.dirwatcher"/>
+			<property name="factoryUid" value="net.solarnetwork.node.upload.resource.dirwatcher"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
@@ -46,7 +41,7 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.upload.resource.dirwatcher" 
 			autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.upload.resource.dirwatcher"/>
@@ -54,15 +49,14 @@
 		<bean class="net.solarnetwork.node.upload.resource.ResourceStorageServiceDirectoryWatcher"
 				init-method="startup" destroy-method="shutdown">
 			<argument>
-				<bean class="net.solarnetwork.util.DynamicServiceTracker">
-					<property name="bundleContext" ref="bundleContext"/>
-					<property name="serviceClassName" value="net.solarnetwork.io.ResourceStorageService"/>
+				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+					<argument ref="bundleContext"/>
+					<property name="serviceClassName" value="net.solarnetwork.service.ResourceStorageService"/>
 				</bean>	
 			</argument>
 			<argument ref="executor"/>
 			<property name="messageSource" ref="messageSource"/>
-			<property name="datumDao" ref="generalNodeDatumDao"/>
-			<property name="eventAdmin" ref="eventAdmin"/>
+			<property name="datumQueue" ref="datumQueue"/>
 			<property name="taskScheduler" ref="taskScheduler"/>
 		</bean>
 	</osgix:managed-service-factory>

@@ -23,7 +23,7 @@
 package net.solarnetwork.node.control.camera.motion;
 
 import java.util.Map;
-import net.solarnetwork.util.UrlUtils;
+import net.solarnetwork.io.UrlUtils;
 
 /**
  * Methods for the motion web control API.
@@ -31,9 +31,10 @@ import net.solarnetwork.util.UrlUtils;
  * <p>
  * All methods are relative to the motion base URL and leading camera ID path
  * segment.
+ * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public enum MotionWebApi {
 

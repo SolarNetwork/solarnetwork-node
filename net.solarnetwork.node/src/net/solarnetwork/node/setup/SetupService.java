@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.setup;
@@ -100,7 +98,7 @@ public interface SetupService {
 	 * the SolarUser and SolarQuery applications.
 	 * </p>
 	 * 
-	 * @return the app configuration, never {@code null}
+	 * @return the app configuration, never {@literal null}
 	 * @since 1.3
 	 */
 	NodeAppConfiguration getAppConfiguration();

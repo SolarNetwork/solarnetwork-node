@@ -22,10 +22,12 @@
 
 package net.solarnetwork.node.dao.jdbc.derby;
 
-import org.quartz.DisallowConcurrentExecution;
-import org.quartz.JobExecutionContext;
-import org.quartz.PersistJobDataAfterExecution;
-import net.solarnetwork.node.job.AbstractJob;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.util.Collections;
+import java.util.List;
+import net.solarnetwork.node.job.JobService;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
 
 /**
  * Job to backup the Derby database using the SYSCS_UTIL.SYSCS_FREEZE_DATABASE
@@ -39,31 +41,36 @@ import net.solarnetwork.node.job.AbstractJob;
  * @author matt
  * @version 2.0
  */
-@PersistJobDataAfterExecution
-@DisallowConcurrentExecution
-public class DerbyOnlineSyncJob extends AbstractJob {
+public class DerbyOnlineSyncJob extends BaseIdentifiable implements JobService {
 
-	private DerbyOnlineSyncService syncService;
-
-	@Override
-	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
-		if ( syncService != null ) {
-			syncService.sync();
-		}
-	}
-
-	public DerbyOnlineSyncService getSyncService() {
-		return syncService;
-	}
+	private final DerbyOnlineSyncService syncService;
 
 	/**
-	 * Set the {@link DerbyOnlineSyncService} to use.
+	 * Constructor.
 	 * 
 	 * @param syncService
-	 *        The service to use.
+	 *        the sync service
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
 	 */
-	public void setSyncService(DerbyOnlineSyncService syncService) {
-		this.syncService = syncService;
+	public DerbyOnlineSyncJob(DerbyOnlineSyncService syncService) {
+		super();
+		this.syncService = requireNonNullArgument(syncService, "syncService");
+	}
+
+	@Override
+	public String getSettingUid() {
+		return "net.solarnetwork.node.dao.jdbc.derby";
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		return Collections.emptyList();
+	}
+
+	@Override
+	public void executeJobService() throws Exception {
+		syncService.sync();
 	}
 
 }

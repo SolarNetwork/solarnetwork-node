@@ -34,7 +34,7 @@ import java.util.Map;
  * SMA channel object.
  *
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.0 $Date$
  */
 public final class SmaChannel {
 	
@@ -77,7 +77,7 @@ public final class SmaChannel {
 	 * Get an individual parameter value.
 	 * 
 	 * @param paramType the channel parameter to get
-	 * @return the value, or <em>null</em> if not available
+	 * @return the value, or {@literal null} if not available
 	 */
 	public Object getParameterValue(SmaChannelParam paramType) {
 		if ( parameters != null ) {

@@ -22,24 +22,23 @@
 
 package net.solarnetwork.node.setup.stomp.server;
 
-import java.util.List;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.util.PathMatcher;
-import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
+import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.setup.UserService;
 
 /**
  * Main service implementation for STOMP setup.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class StompSetupServerService {
 
 	private final UserService userService;
 	private final UserDetailsService userDetailsService;
 	private final PathMatcher pathMatcher;
-	private final List<FeedbackInstructionHandler> instructionHandlers;
+	private final InstructionExecutionService instructionService;
 
 	/**
 	 * Constructor.
@@ -50,13 +49,13 @@ public class StompSetupServerService {
 	 *        the user details service
 	 * @param pathMatcher
 	 *        the path matcher
-	 * @param instructionHandlers
-	 *        the handlers
+	 * @param instructionService
+	 *        the instruction service
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
 	public StompSetupServerService(UserService userService, UserDetailsService userDetailsService,
-			PathMatcher pathMatcher, List<FeedbackInstructionHandler> instructionHandlers) {
+			PathMatcher pathMatcher, InstructionExecutionService instructionService) {
 		super();
 		if ( userService == null ) {
 			throw new IllegalArgumentException("The userService argument must not be null.");
@@ -70,10 +69,10 @@ public class StompSetupServerService {
 			throw new IllegalArgumentException("The pathMatcher argument must not be null.");
 		}
 		this.pathMatcher = pathMatcher;
-		if ( instructionHandlers == null ) {
-			throw new IllegalArgumentException("The instructionHandlers argument must not be null.");
+		if ( instructionService == null ) {
+			throw new IllegalArgumentException("The instructionService argument must not be null.");
 		}
-		this.instructionHandlers = instructionHandlers;
+		this.instructionService = instructionService;
 	}
 
 	/**
@@ -108,8 +107,8 @@ public class StompSetupServerService {
 	 * 
 	 * @return the instruction handlers, never {@literal null}
 	 */
-	public List<FeedbackInstructionHandler> getInstructionHandlers() {
-		return instructionHandlers;
+	public InstructionExecutionService getInstructionService() {
+		return instructionService;
 	}
 
 }

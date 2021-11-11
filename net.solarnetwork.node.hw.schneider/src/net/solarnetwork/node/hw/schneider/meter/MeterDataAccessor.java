@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.hw.schneider.meter;
 
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 
 /**
  * Common API for accessing meter data.
@@ -30,6 +30,6 @@ import net.solarnetwork.node.domain.ACEnergyDataAccessor;
  * @author matt
  * @version 1.1
  */
-public interface MeterDataAccessor extends ACEnergyDataAccessor {
+public interface MeterDataAccessor extends AcEnergyDataAccessor {
 
 }

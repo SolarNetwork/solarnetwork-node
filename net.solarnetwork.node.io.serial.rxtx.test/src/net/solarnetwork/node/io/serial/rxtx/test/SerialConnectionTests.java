@@ -36,20 +36,20 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.util.FileCopyUtils;
 import gnu.io.SerialPort;
-import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.io.serial.rxtx.SerialPortConnection;
 import net.solarnetwork.node.io.serial.rxtx.support.TestSerialPort;
 import net.solarnetwork.node.io.serial.rxtx.support.TestSerialPortConnection;
 import net.solarnetwork.node.io.serial.rxtx.support.TestSerialPortInputStream;
 import net.solarnetwork.node.io.serial.rxtx.support.TestSerialPortOutputStream;
-import net.solarnetwork.node.support.SerialPortBeanParameters;
+import net.solarnetwork.node.service.LockTimeoutException;
+import net.solarnetwork.node.service.support.SerialPortBeanParameters;
 import net.solarnetwork.util.ByteUtils;
 
 /**
  * Test cases for the {@link SerialPortConnection} class.
  * 
  * @author matt
- * @version 2.1
+ * @version 3.0
  */
 public class SerialConnectionTests {
 

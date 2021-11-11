@@ -22,9 +22,12 @@
 
 package net.solarnetwork.node.datum.rfxcom;
 
+import static java.util.Collections.singletonMap;
+import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -34,39 +37,38 @@ import java.util.SortedSet;
 import java.util.concurrent.ConcurrentSkipListSet;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
-import net.solarnetwork.node.ConversationalDataCollector;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.ACEnergyDatum;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleAcEnergyDatum;
 import net.solarnetwork.node.rfxcom.AddressSource;
 import net.solarnetwork.node.rfxcom.CurrentMessage;
 import net.solarnetwork.node.rfxcom.EnergyMessage;
 import net.solarnetwork.node.rfxcom.Message;
-import net.solarnetwork.node.rfxcom.MessageFactory;
-import net.solarnetwork.node.rfxcom.MessageListener;
+import net.solarnetwork.node.rfxcom.MessageHandler;
 import net.solarnetwork.node.rfxcom.RFXCOM;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.node.support.DatumDataSourceSupport;
-import net.solarnetwork.node.support.SerialPortBeanParameters;
-import net.solarnetwork.node.util.PrefixedMessageSource;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.node.service.support.SerialPortBeanParameters;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.support.PrefixedMessageSource;
 import net.solarnetwork.util.StringUtils;
 
 /**
- * {@link MultiDatumDataSource} for {@link ACEnergyDatum} entities read from the
+ * {@link MultiDatumDataSource} for {@link AcEnergyDatum} entities read from the
  * supported energy formats of the RFXCOM transceiver.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class RFXCOMDatumDataSource extends DatumDataSourceSupport
-		implements DatumDataSource<ACEnergyDatum>, MultiDatumDataSource<ACEnergyDatum>,
-		ConversationalDataCollector.Moderator<List<Message>>, SettingSpecifierProvider {
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	/**
 	 * The default value for the {@code maxWattHourSpikeVerificationDiff}
@@ -90,9 +92,11 @@ public class RFXCOMDatumDataSource extends DatumDataSourceSupport
 	/** The default value for the {@code currentSensorIndexFlags} property. */
 	public static final int DEFAULT_CURRENT_SENSOR_INDEX_FLAGS = 1;
 
+	/** The source ID template parameter for the RFXCOM device address. */
+	public static final String ADDRESS_TEMPLATE_PARAM = "address";
+
 	private OptionalService<RFXCOM> rfxcomTracker;
 	private Map<String, String> addressSourceMapping = null;
-	private Set<String> sourceIdFilter = null;
 	private boolean collectAllSourceIds = true;
 	private int collectAllSourceIdsTimeout = DEFAULT_COLLECT_ALL_SOURCE_IDS_TIMEOUT;
 	private float voltage = DEFAULT_VOLTAGE;
@@ -101,11 +105,11 @@ public class RFXCOMDatumDataSource extends DatumDataSourceSupport
 	// some in-memory error correction support, map keys are source IDs
 	private long maxWattHourWarmupVerificationDiff = DEFAULT_MAX_WATT_HOUR_WARMUP_VERIFICATION_DIFF;
 	private long maxWattHourSpikeVerificationDiff = DEFAULT_MAX_WATT_HOUR_SPIKE_VERIFICATION_DIFF;
-	private final Map<String, Long> previousWattHours = new HashMap<String, Long>();
-	private final Map<String, List<ACEnergyDatum>> datumBuffer = new HashMap<String, List<ACEnergyDatum>>();
+	private final Map<String, Long> previousWattHours = new HashMap<>();
+	private final Map<String, List<AcEnergyDatum>> datumBuffer = new HashMap<>();
 
 	// in-memory listing of "seen" addresses, to support device discovery
-	private final SortedSet<AddressSource> knownAddresses = new ConcurrentSkipListSet<AddressSource>();
+	private final SortedSet<AddressSource> knownAddresses = new ConcurrentSkipListSet<>();
 
 	/**
 	 * Default constructor.
@@ -132,13 +136,13 @@ public class RFXCOMDatumDataSource extends DatumDataSourceSupport
 	}
 
 	@Override
-	public Class<? extends ACEnergyDatum> getMultiDatumType() {
-		return GeneralNodeACEnergyDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return AcEnergyDatum.class;
 	}
 
 	@Override
-	public Class<? extends ACEnergyDatum> getDatumType() {
-		return GeneralNodeACEnergyDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AcEnergyDatum.class;
 	}
 
 	private String getSourceIdForMessageAddress(String addr) {
@@ -148,43 +152,26 @@ public class RFXCOMDatumDataSource extends DatumDataSourceSupport
 		return addr;
 	}
 
-	private GeneralNodeACEnergyDatum filterConsumptionDatumInstance(GeneralNodeACEnergyDatum d) {
-		String addr = getSourceIdForMessageAddress(d.getSourceId());
-		if ( getSourceIdFilter() != null && !getSourceIdFilter().contains(addr) ) {
-			if ( log.isInfoEnabled() ) {
-				log.info("Rejecting source [" + addr + "] not in source ID filter set");
-			}
-			return null;
-		}
-
-		// create a copy, because CurrentMessage might still be using input object for 
-		// other sensors...
-		GeneralNodeACEnergyDatum copy = (GeneralNodeACEnergyDatum) d.clone();
-		copy.setSourceId(addr);
-		copy.setCreated(new Date());
-		return copy;
-	}
-
-	private List<ACEnergyDatum> getDatumBufferForSource(String source) {
+	private List<AcEnergyDatum> getDatumBufferForSource(String source) {
 		if ( !datumBuffer.containsKey(source) ) {
-			datumBuffer.put(source, new ArrayList<ACEnergyDatum>(5));
+			datumBuffer.put(source, new ArrayList<AcEnergyDatum>(5));
 		}
 		return datumBuffer.get(source);
 	}
 
-	private void addToResultsCheckingData(GeneralNodeACEnergyDatum datum, List<ACEnergyDatum> results) {
+	private void addToResultsCheckingData(AcEnergyDatum datum, List<NodeDatum> results) {
 		if ( datum == null ) {
 			return;
 		}
 		final String sourceId = (datum.getSourceId() == null ? "" : datum.getSourceId());
-		if ( sourceIdFilter != null && !sourceIdFilter.contains(sourceId) ) {
+		if ( sourceId.isEmpty() ) {
 			return;
 		}
 
 		if ( datum.getWattHourReading() != null ) {
 			// calculate what would be the Wh diff
 			Long prevGoodWh = previousWattHours.get(sourceId);
-			List<ACEnergyDatum> buffer = getDatumBufferForSource(sourceId);
+			List<AcEnergyDatum> buffer = getDatumBufferForSource(sourceId);
 			if ( (prevGoodWh == null && buffer.size() < 2)
 					|| (buffer.size() > 0 && buffer.size() < 2) ) {
 				// don't know the Wh diff, or we've buffered one item, so buffer this value so we have
@@ -232,24 +219,27 @@ public class RFXCOMDatumDataSource extends DatumDataSourceSupport
 		results.add(datum);
 	}
 
-	private void addConsumptionDatumFromMessage(Message msg, List<ACEnergyDatum> results) {
+	private void addConsumptionDatumFromMessage(Message msg, List<NodeDatum> results) {
 		final String address = ((AddressSource) msg).getAddress();
+		if ( addressSourceMapping != null && !addressSourceMapping.containsKey(address) ) {
+			return;
+		}
 		if ( msg instanceof EnergyMessage ) {
 			EnergyMessage emsg = (EnergyMessage) msg;
-			GeneralNodeACEnergyDatum d = new GeneralNodeACEnergyDatum();
-			d.setSourceId(address);
+			AcEnergyDatum d = new SimpleAcEnergyDatum(
+					resolvePlaceholders(getSourceIdForMessageAddress(address),
+							singletonMap(ADDRESS_TEMPLATE_PARAM, address)),
+					Instant.now(), new DatumSamples());
 			final double wh = emsg.getUsageWattHours();
 			final double w = emsg.getInstantWatts();
 			if ( wh > 0 ) {
 				d.setWattHourReading(Math.round(wh));
 			}
 			d.setWatts((int) Math.ceil(w));
-			d = filterConsumptionDatumInstance(d);
 			addToResultsCheckingData(d, results);
 		} else {
 			// assume CurrentMessage
 			CurrentMessage cmsg = (CurrentMessage) msg;
-			GeneralNodeACEnergyDatum d = new GeneralNodeACEnergyDatum();
 
 			// we turn each sensor into its own ConsumptionDatum, the sensors we collect
 			// from are specified by the currentSensorIndexFlags property
@@ -257,7 +247,10 @@ public class RFXCOMDatumDataSource extends DatumDataSourceSupport
 				if ( (i & currentSensorIndexFlags) != i ) {
 					continue;
 				}
-				d.setSourceId(address + "." + i);
+				AcEnergyDatum d = new SimpleAcEnergyDatum(
+						resolvePlaceholders(getSourceIdForMessageAddress(address) + "." + i,
+								singletonMap(ADDRESS_TEMPLATE_PARAM, address)),
+						Instant.now(), new DatumSamples());
 				switch (i) {
 					case 1:
 						d.setWatts((int) Math.ceil(voltage * cmsg.getAmpReading1()));
@@ -269,15 +262,14 @@ public class RFXCOMDatumDataSource extends DatumDataSourceSupport
 						d.setWatts((int) Math.ceil(voltage * cmsg.getAmpReading3()));
 						break;
 				}
-				GeneralNodeACEnergyDatum filtered = filterConsumptionDatumInstance(d);
-				addToResultsCheckingData(filtered, results);
+				addToResultsCheckingData(d, results);
 			}
 		}
 	}
 
 	@Override
-	public ACEnergyDatum readCurrentDatum() {
-		final Collection<ACEnergyDatum> results = readMultipleDatum();
+	public NodeDatum readCurrentDatum() {
+		final Collection<NodeDatum> results = readMultipleDatum();
 		if ( results != null && results.size() > 0 ) {
 			return results.iterator().next();
 		}
@@ -285,76 +277,63 @@ public class RFXCOMDatumDataSource extends DatumDataSourceSupport
 	}
 
 	@Override
-	public Collection<ACEnergyDatum> readMultipleDatum() {
+	public Collection<NodeDatum> readMultipleDatum() {
 		final RFXCOM r = getRfxcomTracker().service();
 		if ( r == null ) {
 			return null;
 		}
-
-		final List<Message> messages;
-		final ConversationalDataCollector dc = r.getDataCollectorInstance();
-		if ( dc == null ) {
-			return null;
-		}
 		try {
-			messages = dc.collectData(this);
-		} finally {
-			if ( dc != null ) {
-				dc.stopCollecting();
+			List<Message> messages = readMessages();
+			List<NodeDatum> results = new ArrayList<>(messages.size());
+			for ( Message msg : messages ) {
+				addConsumptionDatumFromMessage(msg, results);
 			}
-		}
-
-		if ( messages == null ) {
+			return results;
+		} catch ( IOException e ) {
+			log.warn("Communication error collecting datum from RFXCOM: {}", e.getMessage());
 			return null;
 		}
-
-		final List<ACEnergyDatum> results = new ArrayList<ACEnergyDatum>(messages.size());
-		for ( Message msg : messages ) {
-			addConsumptionDatumFromMessage(msg, results);
-		}
-		return results;
 	}
 
-	@Override
-	public List<Message> conductConversation(ConversationalDataCollector dc) {
-		final List<Message> result = new ArrayList<Message>(3);
-		final long endTime = (isCollectAllSourceIds() && getSourceIdFilter() != null
-				&& getSourceIdFilter().size() > 1
-						? System.currentTimeMillis() + (getCollectAllSourceIdsTimeout() * 1000)
-						: 0);
-		final Set<String> sourceIdSet = new HashSet<String>(
-				getSourceIdFilter() == null ? 0 : getSourceIdFilter().size());
+	private List<Message> readMessages() throws IOException {
+		final List<Message> result = new ArrayList<>(3);
+		RFXCOM rfxcom = OptionalService.service(rfxcomTracker);
+		if ( rfxcom == null ) {
+			return result;
+		}
+		final Set<String> desiredAddresses = (addressSourceMapping != null
+				? addressSourceMapping.keySet()
+				: Collections.emptySet());
+		final int desiredAddressCount = (desiredAddresses.isEmpty() ? 1 : desiredAddresses.size());
+		final long endTime = (collectAllSourceIds && !desiredAddresses.isEmpty()
+				? System.currentTimeMillis() + (collectAllSourceIdsTimeout * 1000)
+				: 0);
+		final Set<String> seenAddresses = new HashSet<>(desiredAddressCount);
+		rfxcom.listenForMessages(new MessageHandler() {
 
-		final MessageFactory mf = new MessageFactory();
-		final MessageListener listener = new MessageListener();
-
-		do {
-			listener.reset();
-			dc.listen(listener);
-			byte[] data = dc.getCollectedData();
-			if ( data == null ) {
-				log.warn("Null serial data received, serial communications problem");
-				return null;
-			}
-			Message msg = mf.parseMessage(data, 0);
-			if ( msg instanceof AddressSource ) {
-				// add a known address for this reading
-				addKnownAddress((AddressSource) msg);
-			}
-			if ( msg instanceof EnergyMessage || msg instanceof CurrentMessage ) {
-				final String sourceId = getSourceIdForMessageAddress(((AddressSource) msg).getAddress());
-				if ( !sourceIdSet.contains(sourceId) ) {
-					result.add(msg);
-					sourceIdSet.add(sourceId);
+			@Override
+			public boolean handleMessage(Message message) {
+				if ( message instanceof AddressSource ) {
+					// add a known address for this reading
+					addKnownAddress((AddressSource) message);
 				}
+				if ( message instanceof EnergyMessage || message instanceof CurrentMessage ) {
+					final String messageAddress = ((AddressSource) message).getAddress();
+					if ( !seenAddresses.contains(messageAddress) && (desiredAddresses.isEmpty()
+							|| desiredAddresses.contains(messageAddress)) ) {
+						result.add(message);
+						seenAddresses.add(messageAddress);
+					}
+				}
+				return System.currentTimeMillis() < endTime
+						&& seenAddresses.size() < desiredAddressCount;
 			}
-		} while ( System.currentTimeMillis() < endTime
-				&& sourceIdSet.size() < (getSourceIdFilter() == null ? 0 : getSourceIdFilter().size()) );
+		});
 		return result;
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.rfxcom";
 	}
 
@@ -383,9 +362,9 @@ public class RFXCOMDatumDataSource extends DatumDataSourceSupport
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		RFXCOMDatumDataSource defaults = new RFXCOMDatumDataSource();
 
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(21);
+		List<SettingSpecifier> results = new ArrayList<>(21);
 		results.addAll(getIdentifiableSettingSpecifiers());
-		results.add(new BasicTextFieldSettingSpecifier("rfxcomTracker.propertyFilters['UID']",
+		results.add(new BasicTextFieldSettingSpecifier("rfxcomTracker.propertyFilters['uid']",
 				"/dev/ttyUSB0"));
 
 		StringBuilder status = new StringBuilder();
@@ -398,7 +377,6 @@ public class RFXCOMDatumDataSource extends DatumDataSourceSupport
 		results.add(new BasicTitleSettingSpecifier("knownAddresses", status.toString(), true));
 
 		results.add(new BasicTextFieldSettingSpecifier("addressSourceMappingValue", ""));
-		results.add(new BasicTextFieldSettingSpecifier("sourceIdFilterValue", ""));
 		results.add(
 				new BasicToggleSettingSpecifier("collectAllSourceIds", defaults.collectAllSourceIds));
 		results.add(new BasicTextFieldSettingSpecifier("collectAllSourceIdsTimeout",
@@ -430,24 +408,10 @@ public class RFXCOMDatumDataSource extends DatumDataSourceSupport
 	 * </p>
 	 * 
 	 * @param mapping
+	 *        the address mapping
 	 */
 	public void setAddressSourceMappingValue(String mapping) {
 		setAddressSourceMapping(StringUtils.commaDelimitedStringToMap(mapping));
-	}
-
-	/**
-	 * Set a {@link sourceIdFilter} List via an encoded String value.
-	 * 
-	 * <p>
-	 * The format of the {@code filters} String should be a comma-delimited list
-	 * of values. Whitespace is permitted around the commas, and will be
-	 * stripped from the values.
-	 * </p>
-	 * 
-	 * @param filters
-	 */
-	public void setSourceIdFilterValue(String filters) {
-		setSourceIdFilter(StringUtils.commaDelimitedStringToSet(filters));
 	}
 
 	public OptionalService<RFXCOM> getRfxcomTracker() {
@@ -464,14 +428,6 @@ public class RFXCOMDatumDataSource extends DatumDataSourceSupport
 
 	public void setAddressSourceMapping(Map<String, String> addressSourceMapping) {
 		this.addressSourceMapping = addressSourceMapping;
-	}
-
-	public Set<String> getSourceIdFilter() {
-		return sourceIdFilter;
-	}
-
-	public void setSourceIdFilter(Set<String> sourceIdFilter) {
-		this.sourceIdFilter = sourceIdFilter;
 	}
 
 	public boolean isCollectAllSourceIds() {

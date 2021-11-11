@@ -23,29 +23,31 @@
 package net.solarnetwork.node.datum.schneider.ion6200;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.DataAccessor;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.schneider.meter.ION6200Data;
 import net.solarnetwork.node.hw.schneider.meter.ION6200DataAccessor;
 import net.solarnetwork.node.hw.schneider.meter.ION6200VoltsMode;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.support.ModbusDeviceDatumDataSourceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * {@link DatumDataSource} for the ION6200 series meter.
@@ -54,8 +56,7 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * @version 1.5
  */
 public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
-		implements DatumDataSource<GeneralNodeACEnergyDatum>,
-		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	private final ION6200Data sample;
 
@@ -110,32 +111,32 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	}
 
 	@Override
-	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
-		return GeneralNodeACEnergyDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AcEnergyDatum.class;
 	}
 
 	@Override
-	public GeneralNodeACEnergyDatum readCurrentDatum() {
+	public AcEnergyDatum readCurrentDatum() {
 		final ION6200Data currSample = getCurrentSample();
 		if ( currSample == null ) {
 			return null;
 		}
-		ION6200Datum d = new ION6200Datum(currSample, ACPhase.Total, this.backwards);
+		ION6200Datum d = new ION6200Datum(currSample, resolvePlaceholders(sourceId), AcPhase.Total,
+				this.backwards);
 		if ( this.includePhaseMeasurements ) {
 			d.populatePhaseMeasurementProperties(currSample);
 		}
-		d.setSourceId(resolvePlaceholders(sourceId));
 		return d;
 	}
 
 	@Override
-	public Class<? extends GeneralNodeACEnergyDatum> getMultiDatumType() {
-		return GeneralNodeACEnergyDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return AcEnergyDatum.class;
 	}
 
 	@Override
-	public Collection<GeneralNodeACEnergyDatum> readMultipleDatum() {
-		GeneralNodeACEnergyDatum datum = readCurrentDatum();
+	public Collection<NodeDatum> readMultipleDatum() {
+		AcEnergyDatum datum = readCurrentDatum();
 		// TODO: support phases
 		if ( datum != null ) {
 			return Collections.singletonList(datum);
@@ -156,10 +157,10 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		if ( type != null ) {
 			Integer firmwareVersion = data.getFirmwareRevision();
 			if ( firmwareVersion != null ) {
-				result.put(INFO_KEY_DEVICE_MODEL,
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL,
 						String.format("%d (firmware %d)", type, firmwareVersion));
 			} else {
-				result.put(INFO_KEY_DEVICE_MODEL, type);
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, type);
 			}
 		}
 		ION6200VoltsMode wiringMode = data.getVoltsMode();
@@ -168,7 +169,7 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		}
 		Long l = data.getSerialNumber();
 		if ( l != null ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, l);
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, l);
 		}
 		return result;
 	}
@@ -179,7 +180,11 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 * @return {@literal true} if the sample data has expired
 	 */
 	protected boolean isCachedSampleExpired() {
-		final long lastReadDiff = System.currentTimeMillis() - sample.getDataTimestamp();
+		final Instant ts = sample.getDataTimestamp();
+		if ( ts == null ) {
+			return true;
+		}
+		final long lastReadDiff = sample.getDataTimestamp().until(Instant.now(), ChronoUnit.MILLIS);
 		if ( lastReadDiff > sampleCacheMs ) {
 			return true;
 		}
@@ -189,7 +194,7 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.schneider.ion6200";
 	}
 
@@ -230,7 +235,7 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	}
 
 	private String getSampleMessage(ION6200Data data) {
-		if ( data.getDataTimestamp() < 1 ) {
+		if ( data.getDataTimestamp() == null ) {
 			return "N/A";
 		}
 		StringBuilder buf = new StringBuilder();
@@ -238,8 +243,7 @@ public class ION6200DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		buf.append(", VAR = ").append(sample.getReactivePower());
 		buf.append(", Wh rec = ").append(sample.getActiveEnergyReceived());
 		buf.append(", Wh del = ").append(sample.getActiveEnergyDelivered());
-		buf.append("; sampled at ")
-				.append(DateTimeFormat.forStyle("LS").print(new DateTime(sample.getDataTimestamp())));
+		buf.append("; sampled at ").append(sample.getDataTimestamp());
 		return buf.toString();
 	}
 

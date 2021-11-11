@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.rfxcom;
@@ -29,7 +27,7 @@ package net.solarnetwork.node.rfxcom;
  * RFXCOM transceiver.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
 public class CommandMessage extends BaseDataMessage {
 
@@ -66,7 +64,7 @@ public class CommandMessage extends BaseDataMessage {
 	 * 
 	 * @param command the command
 	 * @param sequenceNumber the sequence number
-	 * @param data the command data (may be <em>null</em>)
+	 * @param data the command data (may be {@literal null})
 	 */
 	public CommandMessage(Command command, short sequenceNumber, byte[] data) {
 		super(PACKET_SIZE, MessageType.Command, (short)0, sequenceNumber, data);
@@ -77,7 +75,7 @@ public class CommandMessage extends BaseDataMessage {
 	 * Construct a response command message.
 	 * 
 	 * @param sequenceNumber the sequence number
-	 * @param data the response message data (may <b>not</b> be <em>null</em>)
+	 * @param data the response message data (may <b>not</b> be {@literal null})
 	 */
 	public CommandMessage(short sequenceNumber, byte[] data) {
 		super(PACKET_SIZE, MessageType.CommandResponse, (short)0, sequenceNumber, data);

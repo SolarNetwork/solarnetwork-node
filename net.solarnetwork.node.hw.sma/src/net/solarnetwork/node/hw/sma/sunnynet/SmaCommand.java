@@ -30,7 +30,7 @@ package net.solarnetwork.node.hw.sma.sunnynet;
  * An SMA command.
  * 
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.0 $Date$
  */
 public enum SmaCommand {
 	

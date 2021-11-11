@@ -51,18 +51,18 @@ import io.netty.channel.socket.nio.NioDatagramChannel;
 import net.solarnetwork.node.io.canbus.CanbusConnection;
 import net.solarnetwork.node.io.canbus.CanbusFrame;
 import net.solarnetwork.node.io.canbus.CanbusFrameListener;
-import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.support.BasicIdentifiable;
 import net.solarnetwork.settings.SettingsChangeObserver;
-import net.solarnetwork.util.OptionalService;
 
 /**
  * {@link CanbusConnection} that listens for UDP packets from a Cannalloni
  * server.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class CannelloniCanbusConnection extends BaseIdentifiable
+public class CannelloniCanbusConnection extends BasicIdentifiable
 		implements CanbusConnection, SettingsChangeObserver {
 
 	/** The default {@code host} property value. */

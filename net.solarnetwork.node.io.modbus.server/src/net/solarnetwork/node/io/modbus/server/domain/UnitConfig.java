@@ -27,17 +27,17 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
 
 /**
  * Configuration for a single Modbus unit.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class UnitConfig {
 
@@ -59,8 +59,8 @@ public class UnitConfig {
 		RegisterBlockConfig[] blockConfs = getRegisterBlockConfigs();
 		List<RegisterBlockConfig> blockConfsList = (blockConfs != null ? Arrays.asList(blockConfs)
 				: Collections.emptyList());
-		result.add(SettingsUtil.dynamicListSettingSpecifier(prefix + "registerBlockConfigs",
-				blockConfsList, new SettingsUtil.KeyedListCallback<RegisterBlockConfig>() {
+		result.add(SettingUtils.dynamicListSettingSpecifier(prefix + "registerBlockConfigs",
+				blockConfsList, new SettingUtils.KeyedListCallback<RegisterBlockConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(RegisterBlockConfig value,

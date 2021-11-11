@@ -23,18 +23,17 @@
 package net.solarnetwork.node.control.loadshedder.test;
 
 import java.util.Calendar;
-import net.solarnetwork.node.control.loadshedder.LoadShedControlConfig;
-import net.solarnetwork.node.test.AbstractNodeTest;
 import org.junit.Assert;
 import org.junit.Test;
+import net.solarnetwork.node.control.loadshedder.LoadShedControlConfig;
 
 /**
- * Test cases for the {@link LoadShedControlConfig} calss.
+ * Test cases for the {@link LoadShedControlConfig} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class SwitchConfigTests extends AbstractNodeTest {
+public class SwitchConfigTests {
 
 	@Test
 	public void timeWindowBetweenNone() {

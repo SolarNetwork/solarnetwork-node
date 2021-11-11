@@ -26,7 +26,8 @@ package net.solarnetwork.node.dao;
 
 import java.util.Date;
 import java.util.List;
-import net.solarnetwork.node.Setting;
+import net.solarnetwork.domain.KeyValuePair;
+import net.solarnetwork.node.domain.Setting;
 
 /**
  * Data access object API for setting key/value pairs.
@@ -104,7 +105,7 @@ public interface SettingDao extends BatchableDao<Setting> {
 	 *        the key
 	 * @param type
 	 *        the type
-	 * @return the setting, or <em>null</em> if not found
+	 * @return the setting, or {@literal null} if not found
 	 */
 	Setting readSetting(String key, String type);
 
@@ -113,23 +114,9 @@ public interface SettingDao extends BatchableDao<Setting> {
 	 * 
 	 * @param key
 	 *        the key to get the first value for
-	 * @return the first associated value, or <em>null</em> if key not found
+	 * @return the first associated value, or {@literal null} if key not found
 	 */
 	String getSetting(String key);
-
-	/**
-	 * Get all settings for a specific key.
-	 * 
-	 * @param key
-	 *        the key to get the settings for
-	 * @return list of {@link net.solarnetwork.node.support.KeyValuePair}
-	 *         objects, where the {@code key} will be set to the {@code type}
-	 *         value
-	 * @deprecated since 1.3
-	 * @see #getSettingValues(String)
-	 */
-	@Deprecated
-	List<net.solarnetwork.node.support.KeyValuePair> getSettings(String key);
 
 	/**
 	 * Get all settings for a specific key.
@@ -140,7 +127,7 @@ public interface SettingDao extends BatchableDao<Setting> {
 	 *         where the {@code key} will be set to the {@code type} value
 	 * @since 1.3
 	 */
-	List<net.solarnetwork.domain.KeyValuePair> getSettingValues(String key);
+	List<KeyValuePair> getSettingValues(String key);
 
 	/**
 	 * Get the value for a key+type.
@@ -149,7 +136,7 @@ public interface SettingDao extends BatchableDao<Setting> {
 	 *        the key to get the value for
 	 * @param type
 	 *        the type to get the value for
-	 * @return the associated value, or <em>null</em> if key not found
+	 * @return the associated value, or {@literal null} if key not found
 	 */
 	String getSetting(String key, String type);
 

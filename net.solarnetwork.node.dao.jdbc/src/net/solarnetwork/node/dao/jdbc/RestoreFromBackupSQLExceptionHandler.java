@@ -42,17 +42,17 @@ import org.slf4j.LoggerFactory;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.util.StringUtils;
 import net.solarnetwork.dao.jdbc.SQLExceptionHandler;
-import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.service.IdentityService;
+import net.solarnetwork.service.OptionalService;
 
 /**
  * Recover from connection exceptions by restoring from backup.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class RestoreFromBackupSQLExceptionHandler implements SQLExceptionHandler {
 

@@ -23,17 +23,17 @@
 package net.solarnetwork.node.hw.hc;
 
 import java.math.BigDecimal;
-import org.joda.time.LocalDateTime;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
+import java.time.LocalDateTime;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 
 /**
  * API for reading EM5600 series power meter data.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 2.0
  */
-public interface EM5600DataAccessor extends ACEnergyDataAccessor {
+public interface EM5600DataAccessor extends AcEnergyDataAccessor {
 
 	/**
 	 * Get the device serial number.

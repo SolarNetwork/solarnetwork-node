@@ -22,8 +22,10 @@
 
 package net.solarnetwork.node.io.serial.support;
 
+import static java.util.Collections.singletonList;
+import static net.solarnetwork.service.FilterableService.filterPropValue;
+import static net.solarnetwork.service.FilterableService.setFilterProp;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -31,73 +33,47 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.node.io.serial.SerialNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.FilterableService;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * A base helper class to support {@link SerialNetwork} based services.
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>serialNetwork</dt>
- * <dd>The {@link SerialNetwork} to use.</dd>
- * 
- * <dt>uid</dt>
- * <dd>A service name to use.</dd>
- * 
- * <dt>groupUID</dt>
- * <dd>A service group to use.</dd>
- * </dl>
- * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public abstract class SerialDeviceSupport extends BaseIdentifiable {
 
-	/** Key for the device name, as a String. */
-	public static final String INFO_KEY_DEVICE_NAME = "Name";
-
-	/** Key for the device model, as a String. */
-	public static final String INFO_KEY_DEVICE_MODEL = "Model";
-
-	/** Key for the device serial number, as a Long. */
-	public static final String INFO_KEY_DEVICE_SERIAL_NUMBER = "Serial Number";
-
-	/** Key for the device manufacturer, as a String. */
-	public static final String INFO_KEY_DEVICE_MANUFACTURER = "Manufacturer";
-
 	/**
-	 * Key for the device manufacture date, as a
-	 * {@link org.joda.time.ReadablePartial}.
+	 * Get setting specifiers for the serial network UID filter.
+	 * 
+	 * @param prefix
+	 *        an optional prefix to add to each setting key
+	 * @param defaultUid
+	 *        the default UID setting value
+	 * @return list of setting specifiers
+	 * @since 2.0
 	 */
-	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = "Manufacture Date";
+	public static List<SettingSpecifier> serialNetworkSettings(String prefix, String defaultUid) {
+		prefix = (prefix != null ? prefix : "");
+		return singletonList(
+				new BasicTextFieldSettingSpecifier(prefix + "serialNetworkUid", defaultUid));
+	}
 
 	private Map<String, Object> deviceInfo;
-	private OptionalService<SerialNetwork> serialNetwork;
+	private OptionalFilterableService<SerialNetwork> serialNetwork;
 	private OptionalService<EventAdmin> eventAdmin;
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
-
-	/**
-	 * Get the {@link SerialNetwork} from the configured {@code serialNetwork}
-	 * service, or <em>null</em> if not available or not configured.
-	 * 
-	 * @return SerialNetwork
-	 */
-	protected final SerialNetwork serialNetwork() {
-		return (serialNetwork == null ? null : serialNetwork.service());
-	}
 
 	/**
 	 * Read general device info and return a map of the results. See the various
@@ -115,8 +91,8 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	/**
 	 * Return an informational message composed of general device info. This
 	 * method will call {@link #getDeviceInfo()} and return a {@code /} (forward
-	 * slash) delimited string of the resulting values, or <em>null</em> if that
-	 * method returns <em>null</em>.
+	 * slash) delimited string of the resulting values, or {@literal null} if
+	 * that method returns {@literal null}.
 	 * 
 	 * @return info message
 	 */
@@ -134,7 +110,7 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	 * subsequent calls will not attempt to read from the device. Note the
 	 * returned map cannot be modified.
 	 * 
-	 * @return the device info, or <em>null</em>
+	 * @return the device info, or {@literal null}
 	 * @see #readDeviceInfo(SerialConnection)
 	 */
 	public Map<String, ?> getDeviceInfo() {
@@ -151,7 +127,12 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 				});
 				deviceInfo = info;
 			} catch ( Exception e ) {
-				log.warn("Communcation problem with {}: {}", getUid(), e.getMessage());
+				String desc = getUid();
+				if ( desc == null || desc.isEmpty() ) {
+					desc = this.toString();
+				}
+				log.warn("Communcation problem getting [{}] info on [{}]: {}", desc,
+						getSerialNetworkUid(), e.getMessage());
 			}
 		}
 		return (info == null ? null : Collections.unmodifiableMap(info));
@@ -168,14 +149,14 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	 *        the action result type
 	 * @param action
 	 *        the connection action
-	 * @return the result of the callback, or <em>null</em> if the action is
+	 * @return the result of the callback, or {@literal null} if the action is
 	 *         never invoked
 	 * @throws IOException
 	 *         if any IO error occurs
 	 */
-	protected final <T> T performAction(final SerialConnectionAction<T> action) throws IOException {
+	protected <T> T performAction(final SerialConnectionAction<T> action) throws IOException {
 		T result = null;
-		SerialNetwork device = (serialNetwork == null ? null : serialNetwork.service());
+		SerialNetwork device = OptionalService.service(serialNetwork);
 		if ( device != null ) {
 			result = device.performAction(action);
 		}
@@ -185,37 +166,24 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	/**
 	 * Get direct access to the device info data.
 	 * 
-	 * @return the device info, or <em>null</em>
+	 * @return the device info, or {@literal null}
 	 */
 	protected Map<String, Object> getDeviceInfoMap() {
 		return deviceInfo;
 	}
 
 	/**
-	 * Set the device info data. Setting the {@code deviceInfo} to <em>null</em>
-	 * will force the next call to {@link #getDeviceInfo()} to read from the
-	 * device to populate this data, and setting this to anything else will
-	 * force all subsequent calls to {@link #getDeviceInfo()} to simply return
-	 * that map.
+	 * Set the device info data. Setting the {@code deviceInfo} to
+	 * {@literal null} will force the next call to {@link #getDeviceInfo()} to
+	 * read from the device to populate this data, and setting this to anything
+	 * else will force all subsequent calls to {@link #getDeviceInfo()} to
+	 * simply return that map.
 	 * 
 	 * @param deviceInfo
 	 *        the device info map to set
 	 */
 	protected void setDeviceInfoMap(Map<String, Object> deviceInfo) {
 		this.deviceInfo = deviceInfo;
-	}
-
-	/**
-	 * Get setting specifiers for the {@code uid} and {@code groupUID}
-	 * properties.
-	 * 
-	 * @return list of setting specifiers
-	 */
-	protected List<SettingSpecifier> getIdentifiableSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
-		results.add(new BasicTextFieldSettingSpecifier("uid", null));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", null));
-		return results;
 	}
 
 	/**
@@ -238,37 +206,42 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 		ea.postEvent(event);
 	}
 
-	@Override
-	public String getUID() {
-		return super.getUID();
-	}
-
-	@Override
-	public String getUid() {
-		return super.getUid();
-	}
-
-	@Override
-	public void setUid(String uid) {
-		super.setUid(uid);
-	}
-
-	@Override
-	public String getGroupUID() {
-		return super.getGroupUID();
-	}
-
-	@Override
-	public void setGroupUID(String groupUID) {
-		super.setGroupUID(groupUID);
-	}
-
-	public OptionalService<SerialNetwork> getSerialNetwork() {
+	/**
+	 * Get the serial network.
+	 * 
+	 * @return the network
+	 */
+	public OptionalFilterableService<SerialNetwork> getSerialNetwork() {
 		return serialNetwork;
 	}
 
-	public void setSerialNetwork(OptionalService<SerialNetwork> serialDevice) {
+	/**
+	 * Set the serial network.
+	 * 
+	 * @param serialDevice
+	 *        the network
+	 */
+	public void setSerialNetwork(OptionalFilterableService<SerialNetwork> serialDevice) {
 		this.serialNetwork = serialDevice;
+	}
+
+	/**
+	 * Get the serial network UID.
+	 * 
+	 * @return the serial network UID
+	 */
+	public String getSerialNetworkUid() {
+		return filterPropValue((FilterableService) serialNetwork, BaseIdentifiable.UID_PROPERTY);
+	}
+
+	/**
+	 * Set the serial network UID.
+	 * 
+	 * @param uid
+	 *        the serial network UID
+	 */
+	public void setSerialNetworkUid(String uid) {
+		setFilterProp((FilterableService) serialNetwork, BaseIdentifiable.UID_PROPERTY, uid);
 	}
 
 	/**
@@ -288,27 +261,6 @@ public abstract class SerialDeviceSupport extends BaseIdentifiable {
 	 */
 	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
-	}
-
-	/**
-	 * Get the configured {@link MessageSource}.
-	 * 
-	 * @return the message source, or {@literal null}
-	 */
-	@Override
-	public MessageSource getMessageSource() {
-		return super.getMessageSource();
-	}
-
-	/**
-	 * Set a {@link MessageSource} to use for resolving localized messages.
-	 * 
-	 * @param messageSource
-	 *        the message source to use
-	 */
-	@Override
-	public void setMessageSource(MessageSource messageSource) {
-		super.setMessageSource(messageSource);
 	}
 
 }

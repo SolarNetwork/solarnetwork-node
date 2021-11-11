@@ -32,6 +32,7 @@ import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
@@ -41,7 +42,7 @@ import net.solarnetwork.node.system.cmdline.CmdlineSystemService;
  * Test cases for the {@link CmdlineSystemService} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class CmdlineSystemServiceTests {
 
@@ -54,8 +55,8 @@ public class CmdlineSystemServiceTests {
 		private final List<String> stdout;
 		private final List<String> stderr;
 
-		private TestCmdlineSystemService() {
-			super();
+		private TestCmdlineSystemService(BundleContext bundleContext) {
+			super(bundleContext);
 			this.stdout = new ArrayList<>(8);
 			this.stderr = new ArrayList<>(8);
 		}
@@ -76,7 +77,7 @@ public class CmdlineSystemServiceTests {
 
 	@Before
 	public void setup() throws IOException {
-		service = new TestCmdlineSystemService();
+		service = new TestCmdlineSystemService(null);
 		// could make script name configurable... i.e. support other OSes?
 		// copy script to file so test can run via JAR (i.e. Ant)
 		resetScript = File.createTempFile("reset-", ".sh");

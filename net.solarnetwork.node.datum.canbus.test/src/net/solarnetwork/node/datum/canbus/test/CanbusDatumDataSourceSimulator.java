@@ -44,36 +44,36 @@ import java.util.regex.Pattern;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import net.solarnetwork.codec.JsonUtils;
-import net.solarnetwork.domain.GeneralDatumMetadata;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.domain.datum.ObjectDatumStreamMetadata;
 import net.solarnetwork.external.indriya.IndriyaMeasurementServiceProvider;
-import net.solarnetwork.node.DatumMetadataService;
-import net.solarnetwork.node.DatumQueue;
 import net.solarnetwork.node.datum.canbus.CanbusDatumDataSource;
 import net.solarnetwork.node.datum.canbus.KcdConfigurer;
-import net.solarnetwork.node.domain.GeneralDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.io.canbus.CanbusFrame;
 import net.solarnetwork.node.io.canbus.CanbusFrameFlag;
 import net.solarnetwork.node.io.canbus.KcdParser;
 import net.solarnetwork.node.io.canbus.support.JaxbSnKcdParser;
 import net.solarnetwork.node.io.canbus.support.MeasurementHelper;
-import net.solarnetwork.node.settings.FactorySettingSpecifierProvider;
+import net.solarnetwork.node.service.DatumMetadataService;
+import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.settings.SettingResourceHandler;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
 import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsImportOptions;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.SettingsUpdates;
-import net.solarnetwork.support.SearchFilter;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.StaticOptionalService;
+import net.solarnetwork.service.StaticOptionalServiceCollection;
+import net.solarnetwork.settings.FactorySettingSpecifierProvider;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingSpecifierProviderFactory;
 import net.solarnetwork.util.ByteUtils;
 import net.solarnetwork.util.ClassUtils;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.StaticOptionalService;
-import net.solarnetwork.util.StaticOptionalServiceCollection;
+import net.solarnetwork.util.SearchFilter;
 import systems.uom.ucum.spi.UCUMServiceProvider;
 import tech.units.indriya.spi.DefaultServiceProvider;
 
@@ -171,25 +171,25 @@ public class CanbusDatumDataSourceSimulator {
 		}
 
 		@Override
-		public SettingSpecifierProviderFactory getProviderFactory(String factoryUID) {
+		public SettingSpecifierProviderFactory getProviderFactory(String factoryUid) {
 			return null;
 		}
 
 		@Override
-		public String addProviderFactoryInstance(String factoryUID) {
+		public String addProviderFactoryInstance(String factoryUid) {
 			return String.valueOf(++instanceId);
 		}
 
 		@Override
-		public void deleteProviderFactoryInstance(String factoryUID, String instanceUID) {
+		public void deleteProviderFactoryInstance(String factoryUid, String instanceUid) {
 		}
 
 		@Override
-		public void resetProviderFactoryInstance(String factoryUID, String instanceUID) {
+		public void resetProviderFactoryInstance(String factoryUid, String instanceUid) {
 		}
 
 		@Override
-		public Map<String, FactorySettingSpecifierProvider> getProvidersForFactory(String factoryUID) {
+		public Map<String, FactorySettingSpecifierProvider> getProvidersForFactory(String factoryUid) {
 			return Collections.emptyMap();
 		}
 
@@ -328,7 +328,7 @@ public class CanbusDatumDataSourceSimulator {
 		}
 
 		@Override
-		public boolean offer(GeneralDatum datum, boolean persist) {
+		public boolean offer(NodeDatum datum, boolean persist) {
 			Map<String, ?> data = datum.asSimpleMap();
 			if ( data.size() > 1 ) {
 				String json = JsonUtils.getJSONString(data, "{}");
@@ -338,12 +338,12 @@ public class CanbusDatumDataSourceSimulator {
 		}
 
 		@Override
-		public void addConsumer(Consumer<GeneralDatum> consumer) {
+		public void addConsumer(Consumer<NodeDatum> consumer) {
 			// nothing
 		}
 
 		@Override
-		public void removeConsumer(Consumer<GeneralDatum> consumer) {
+		public void removeConsumer(Consumer<NodeDatum> consumer) {
 			// nothing
 		}
 

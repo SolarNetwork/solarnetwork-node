@@ -29,9 +29,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
+import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -43,7 +44,7 @@ import net.solarnetwork.util.NumberUtils;
  * Data object for the AE 500NX series inverter.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  * @since 2.1
  */
 public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
@@ -89,11 +90,11 @@ public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
 		Map<String, Object> result = new LinkedHashMap<>(4);
 		String firmwareVersion = data.getFirmwareVersion();
 		if ( firmwareVersion != null ) {
-			result.put(INFO_KEY_DEVICE_MODEL, firmwareVersion);
+			result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, firmwareVersion);
 		}
 		String s = data.getSerialNumber();
 		if ( s != null ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, s);
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, s);
 		}
 		return result;
 	}
@@ -159,12 +160,12 @@ public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
 	}
 
 	@Override
-	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+	public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public ACEnergyDataAccessor reversed() {
+	public AcEnergyDataAccessor reversed() {
 		throw new UnsupportedOperationException();
 	}
 
@@ -248,15 +249,15 @@ public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
 	}
 
 	@Override
-	public Float getDCVoltage() {
+	public Float getDcVoltage() {
 		Number n = getNumber(AE500NxRegister.InverterPvVoltage);
 		return (n != null ? n.floatValue() : null);
 	}
 
 	@Override
-	public Integer getDCPower() {
+	public Integer getDcPower() {
 		Number n = getNumber(AE500NxRegister.InverterPvCurrent);
-		Float v = getDCVoltage();
+		Float v = getDcVoltage();
 		if ( n != null && v != null ) {
 			return (int) (n.floatValue() * v.floatValue());
 		}

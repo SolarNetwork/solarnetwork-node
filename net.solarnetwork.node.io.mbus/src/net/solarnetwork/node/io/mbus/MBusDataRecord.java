@@ -22,13 +22,14 @@
 
 package net.solarnetwork.node.io.mbus;
 
-import java.util.Date;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 /**
  * Object to hold data record information extracted from an M-Bus device.
  * 
  * @author alex
- * @version 1.0
+ * @version 2.0
  */
 public class MBusDataRecord {
 
@@ -55,10 +56,10 @@ public class MBusDataRecord {
 		this.multiplierExponent = multiplierExponent;
 	}
 
-	public MBusDataRecord(MBusDataDescription description, Date date) {
+	public MBusDataRecord(MBusDataDescription description, Instant date) {
 		this.description = description;
 		this.type = MBusDataType.Date;
-		this.value = new Date(date.getTime());
+		this.value = date;
 	}
 
 	public MBusDataRecord(MBusDataDescription description, String value) {
@@ -72,7 +73,7 @@ public class MBusDataRecord {
 		this.type = record.type;
 		switch (type) {
 			case Date:
-				this.value = new Date((record.getDateValue().getTime() / 1000) * 1000);
+				this.value = record.getDateValue().truncatedTo(ChronoUnit.SECONDS);
 				break;
 			case Double:
 				this.value = record.getDoubleValue();
@@ -104,8 +105,8 @@ public class MBusDataRecord {
 		return (Double) value;
 	}
 
-	public Date getDateValue() {
-		return new Date(((Date) value).getTime());
+	public Instant getDateValue() {
+		return (Instant) value;
 	}
 
 	public Long getLongValue() {

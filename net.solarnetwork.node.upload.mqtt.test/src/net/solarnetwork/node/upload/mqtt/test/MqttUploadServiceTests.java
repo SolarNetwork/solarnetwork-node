@@ -22,11 +22,8 @@
 
 package net.solarnetwork.node.upload.mqtt.test;
 
-import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.capture;
-import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
-import static org.easymock.EasyMock.isNull;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -36,10 +33,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.security.Principal;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -52,17 +48,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
+import org.skyscreamer.jsonassert.JSONAssert;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.util.FileCopyUtils;
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.moquette.interception.messages.InterceptConnectMessage;
 import io.moquette.interception.messages.InterceptPublishMessage;
 import io.moquette.interception.messages.InterceptSubscribeMessage;
 import io.netty.handler.codec.mqtt.MqttQoS;
-import net.solarnetwork.codec.BasicStreamDatumArraySerializer;
+import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.common.mqtt.BasicMqttConnectionConfig;
 import net.solarnetwork.common.mqtt.BasicMqttMessage;
 import net.solarnetwork.common.mqtt.MqttConnection;
@@ -72,39 +68,34 @@ import net.solarnetwork.common.mqtt.MqttMessageHandler;
 import net.solarnetwork.common.mqtt.MqttQos;
 import net.solarnetwork.common.mqtt.MqttVersion;
 import net.solarnetwork.common.mqtt.netty.NettyMqttConnectionFactory;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.datum.BasicObjectDatumStreamMetadata;
 import net.solarnetwork.domain.datum.BasicStreamDatum;
 import net.solarnetwork.domain.datum.DatumProperties;
+import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
-import net.solarnetwork.node.DatumMetadataService;
-import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.UploadService;
-import net.solarnetwork.node.domain.GeneralLocationDatum;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
+import net.solarnetwork.node.reactor.BasicInstruction;
+import net.solarnetwork.node.reactor.BasicInstructionStatus;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.ReactorService;
-import net.solarnetwork.node.reactor.io.json.JsonReactorSerializationService;
-import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
-import net.solarnetwork.node.support.DatumSerializer;
-import net.solarnetwork.node.support.GeneralNodeDatumSerializer;
-import net.solarnetwork.node.support.InstructionSerializer;
-import net.solarnetwork.node.support.NodeControlInfoSerializer;
+import net.solarnetwork.node.service.DatumMetadataService;
+import net.solarnetwork.node.service.IdentityService;
+import net.solarnetwork.node.service.UploadService;
 import net.solarnetwork.node.upload.mqtt.MqttUploadService;
+import net.solarnetwork.service.StaticOptionalService;
 import net.solarnetwork.test.mqtt.MqttServerSupport;
 import net.solarnetwork.test.mqtt.TestingInterceptHandler;
 import net.solarnetwork.util.Half;
 import net.solarnetwork.util.NumberUtils;
-import net.solarnetwork.util.ObjectMapperFactoryBean;
-import net.solarnetwork.util.StaticOptionalService;
 
 /**
  * Test cases for the {@link MqttUploadService} class.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class MqttUploadServiceTests extends MqttServerSupport {
 
@@ -161,21 +152,6 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 
 	}
 
-	private ObjectMapper createObjectMapper(JsonFactory jsonFactory) {
-		ObjectMapperFactoryBean factory = new ObjectMapperFactoryBean();
-		if ( jsonFactory != null ) {
-			factory.setJsonFactory(jsonFactory);
-		}
-		factory.setSerializers(Arrays.asList(new GeneralNodeDatumSerializer(), new DatumSerializer(),
-				new InstructionSerializer(), new NodeControlInfoSerializer(),
-				BasicStreamDatumArraySerializer.INSTANCE));
-		try {
-			return factory.getObject();
-		} catch ( Exception e ) {
-			throw new RuntimeException(e);
-		}
-	}
-
 	@Before
 	public void setup() throws Exception {
 		setupMqttServer();
@@ -186,7 +162,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		eventAdminService = EasyMock.createMock(EventAdmin.class);
 		datumMetadataService = EasyMock.createMock(DatumMetadataService.class);
 
-		objectMapper = createObjectMapper(null);
+		objectMapper = JsonUtils.newDatumObjectMapper();
 
 		ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
 		scheduler.initialize();
@@ -276,9 +252,8 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 	@Test
 	public void uploadWithConnectionToMqttServer() throws IOException {
 		// given
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId("test.source");
-		datum.putInstantaneousSampleValue("foo", 123);
+		SimpleDatum datum = SimpleDatum.nodeDatum("test.source");
+		datum.getSamples().putInstantaneousSampleValue("foo", 123);
 
 		// no stream metadata available
 		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Node, nodeId,
@@ -322,10 +297,8 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 	@Test
 	public void uploadWithConnectionToMqttServer_stream() throws IOException {
 		// GIVEN
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setCreated(new Date());
-		datum.setSourceId("test.source");
-		datum.putInstantaneousSampleValue("foo", 123);
+		SimpleDatum datum = SimpleDatum.nodeDatum("test.source");
+		datum.getSamples().putInstantaneousSampleValue("foo", 123);
 
 		// stream metadata available
 		BasicObjectDatumStreamMetadata meta = new BasicObjectDatumStreamMetadata(UUID.randomUUID(),
@@ -376,10 +349,8 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 	public void uploadWithConnectionToMqttServer_stream_withHalf() throws IOException {
 		// GIVEN
 		Half h = new Half("1.23");
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setCreated(new Date());
-		datum.setSourceId("test.source");
-		datum.putInstantaneousSampleValue("foo", h);
+		SimpleDatum datum = SimpleDatum.nodeDatum("test.source");
+		datum.getSamples().putInstantaneousSampleValue("foo", h);
 
 		// stream metadata available
 		BasicObjectDatumStreamMetadata meta = new BasicObjectDatumStreamMetadata(UUID.randomUUID(),
@@ -430,10 +401,8 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 	@Test
 	public void uploadWithConnectionToMqttServer_streamMismatch() throws IOException {
 		// GIVEN
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setCreated(new Date());
-		datum.setSourceId("test.source");
-		datum.putInstantaneousSampleValue("foo", 123);
+		SimpleDatum datum = SimpleDatum.nodeDatum("test.source");
+		datum.getSamples().putInstantaneousSampleValue("foo", 123);
 
 		// stream metadata available
 		BasicObjectDatumStreamMetadata meta = new BasicObjectDatumStreamMetadata(UUID.randomUUID(),
@@ -481,10 +450,8 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 	@Test
 	public void uploadWithConnectionToMqttServer_streamMismatch_empty() throws IOException {
 		// GIVEN
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setCreated(new Date());
-		datum.setSourceId("test.source");
-		datum.putInstantaneousSampleValue("foo", 123);
+		SimpleDatum datum = SimpleDatum.nodeDatum("test.source");
+		datum.getSamples().putInstantaneousSampleValue("foo", 123);
 
 		// stream metadata available
 		BasicObjectDatumStreamMetadata meta = new BasicObjectDatumStreamMetadata(UUID.randomUUID(),
@@ -532,10 +499,9 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 	public void uploadLocationDatumWithConnectionToMqttServer() throws IOException {
 		// given
 		Long locationId = Math.abs(UUID.randomUUID().getMostSignificantBits());
-		GeneralLocationDatum datum = new GeneralLocationDatum();
-		datum.setLocationId(locationId);
-		datum.setSourceId("test.source");
-		datum.putInstantaneousSampleValue("foo", 123);
+		SimpleDatum datum = SimpleDatum.locationDatum(locationId, "test.source", Instant.now(),
+				new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("foo", 123);
 
 		// no stream metadata available
 		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Location, locationId,
@@ -582,11 +548,9 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 	public void uploadLocationDatumWithConnectionToMqttServer_stream() throws IOException {
 		// GIVEN
 		Long locationId = Math.abs(UUID.randomUUID().getMostSignificantBits());
-		GeneralLocationDatum datum = new GeneralLocationDatum();
-		datum.setCreated(new Date());
-		datum.setLocationId(locationId);
-		datum.setSourceId("test.source");
-		datum.putInstantaneousSampleValue("foo", 123);
+		SimpleDatum datum = SimpleDatum.locationDatum(locationId, "test.source", Instant.now(),
+				new DatumSamples());
+		datum.getSamples().putInstantaneousSampleValue("foo", 123);
 
 		// stream metadata available
 		BasicObjectDatumStreamMetadata meta = new BasicObjectDatumStreamMetadata(UUID.randomUUID(),
@@ -638,9 +602,8 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 	@Test
 	public void uploadWithoutConnectionToMqttServer() throws IOException {
 		// given
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId("test.source");
-		datum.putInstantaneousSampleValue("foo", 123);
+		SimpleDatum datum = SimpleDatum.nodeDatum("test.source");
+		datum.getSamples().putInstantaneousSampleValue("foo", 123);
 
 		// no stream metadata available
 		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Node, nodeId,
@@ -673,8 +636,17 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		try {
 			JsonNode node = objectMapper.readTree(serverInstructions);
 			JsonNode instructions = node.path("instructions");
-			return new JsonReactorSerializationService().decodeInstructions(TEST_SOLARIN_BASE_URL,
-					instructions, MqttUploadService.JSON_MIME_TYPE, null);
+			List<Instruction> result = new ArrayList<>();
+			if ( instructions != null && instructions.isArray() ) {
+				for ( JsonNode n : instructions ) {
+					net.solarnetwork.domain.Instruction commonInstr = objectMapper.treeToValue(n,
+							net.solarnetwork.domain.Instruction.class);
+					if ( commonInstr != null ) {
+						result.add(BasicInstruction.from(commonInstr, TEST_SOLARIN_BASE_URL));
+					}
+				}
+			}
+			return result;
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		}
@@ -701,32 +673,26 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		String testInstructions = getStringResource("instructions-01.json");
 		List<Instruction> instructions = parseInstructions(testInstructions);
 		assert instructions.size() == 1;
-		final String remoteInstructionId = instructions.get(0).getRemoteInstructionId();
-		expect(reactorService.parseInstructions(anyObject(), anyObject(JsonNode.class),
-				eq(MqttUploadService.JSON_MIME_TYPE), isNull())).andReturn(instructions);
+		final Instruction inputInstruction = instructions.get(0);
 
 		// persist Executing state
 		Capture<Instruction> storeInstructionCaptor = new Capture<>();
-		final Long localInstructionId = 98765L;
-		expect(reactorService.storeInstruction(capture(storeInstructionCaptor)))
-				.andReturn(localInstructionId);
+		reactorService.storeInstruction(capture(storeInstructionCaptor));
 
 		// execute single instruction
 		Capture<Instruction> execInstructionCaptor = new Capture<>();
-		InstructionStatus execResultStatus = new BasicInstructionStatus(null,
-				InstructionStatus.InstructionState.Completed, new Date());
+		InstructionStatus execResultStatus = new BasicInstructionStatus(inputInstruction.getId(),
+				InstructionStatus.InstructionState.Completed, Instant.now());
 		expect(instructionExecutionService.executeInstruction(capture(execInstructionCaptor)))
 				.andReturn(execResultStatus);
 
 		// save result back to DB
 		Capture<Instruction> storeCompletedInstructionCaptor = new Capture<>();
-		expect(reactorService.storeInstruction(capture(storeCompletedInstructionCaptor)))
-				.andReturn(localInstructionId);
+		reactorService.storeInstruction(capture(storeCompletedInstructionCaptor));
 
 		// save result back to DB
 		Capture<Instruction> storeCompletedInstructionAckCaptor = new Capture<>();
-		expect(reactorService.storeInstruction(capture(storeCompletedInstructionAckCaptor)))
-				.andReturn(localInstructionId);
+		reactorService.storeInstruction(capture(storeCompletedInstructionAckCaptor));
 
 		replayAll();
 
@@ -745,23 +711,25 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 
 		// should have stored Executing status
 		Instruction storeInstruction = storeInstructionCaptor.getValue();
-		assertThat("Store instruction remote ID", storeInstruction.getRemoteInstructionId(),
-				equalTo(remoteInstructionId));
-		assertThat("Store instruction has no local ID", storeInstruction.getId(), nullValue());
-		assertThat("Store instruction state", storeInstruction.getInstructionState(),
-				equalTo(InstructionState.Executing));
+		assertThat("Store instruction ID", storeInstruction.getId(), equalTo(inputInstruction.getId()));
 		assertThat("Store instruction instructorId", storeInstruction.getInstructorId(),
 				equalTo(TEST_SOLARIN_BASE_URL));
+		assertThat("Store instruction state", storeInstruction.getInstructionState(),
+				equalTo(InstructionState.Executing));
 
-		// should have executed Instruction with persisted local ID
+		// should have executed Instruction 
 		Instruction execInstruction = execInstructionCaptor.getValue();
-		assertThat("Exec instruction has persisted local ID", execInstruction.getId(),
-				equalTo(localInstructionId));
+		assertThat("Exec instruction has ID", execInstruction.getId(),
+				equalTo(inputInstruction.getId()));
+		assertThat("Exec instruction instructorId", execInstruction.getInstructorId(),
+				equalTo(TEST_SOLARIN_BASE_URL));
 
 		// should have stored Completed status
 		Instruction completedInstruction = storeCompletedInstructionCaptor.getValue();
-		assertThat("Completed instruction has persisted local ID", completedInstruction.getId(),
-				equalTo(localInstructionId));
+		assertThat("Completed instruction has ID", completedInstruction.getId(),
+				equalTo(inputInstruction.getId()));
+		assertThat("Completed instruction instructorId", completedInstruction.getInstructorId(),
+				equalTo(TEST_SOLARIN_BASE_URL));
 		assertThat("Completed instruction state", completedInstruction.getInstructionState(),
 				equalTo(InstructionState.Completed));
 		assertThat("Completed instruction no ack state",
@@ -769,8 +737,10 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 
 		// should have stored Completed ack status
 		Instruction completedInstructionAck = storeCompletedInstructionAckCaptor.getValue();
-		assertThat("Completed instruction has persisted local ID", completedInstructionAck.getId(),
-				equalTo(localInstructionId));
+		assertThat("Completed instruction has ID", completedInstructionAck.getId(),
+				equalTo(inputInstruction.getId()));
+		assertThat("Completed instruction instructorId", completedInstructionAck.getInstructorId(),
+				equalTo(TEST_SOLARIN_BASE_URL));
 		assertThat("Completed instruction state", completedInstructionAck.getInstructionState(),
 				equalTo(InstructionState.Completed));
 		assertThat("Completed instruction ack state",
@@ -788,18 +758,18 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		pubMsg = session.publishMessages.get(1);
 		assertThat("Instruction ack client ID", pubMsg.getClientID(), equalTo(nodeId.toString()));
 		assertThat("Instruction topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
-		assertThat("Instruction ack payload", session.getPublishPayloadStringAtIndex(1),
-				equalTo("{\"__type__\":\"InstructionStatus\",\"id\":\"" + localInstructionId + "\""
-						+ ",\"instructionId\":\"" + remoteInstructionId + "\""
-						+ ",\"topic\":\"SetControlParameter\",\"status\":\"Executing\"}"));
+		JSONAssert.assertEquals("Instruction Executing ack payload",
+				"{\"instructionId\":" + inputInstruction.getId() + ",\"state\":\"Executing\"}",
+				session.getPublishPayloadStringAtIndex(1), false);
 
 		pubMsg = session.publishMessages.get(2);
-		assertThat("Instruction ack client ID", pubMsg.getClientID(), equalTo(nodeId.toString()));
-		assertThat("Instruction topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
-		assertThat("Instruction ack payload", session.getPublishPayloadStringAtIndex(2),
-				equalTo("{\"__type__\":\"InstructionStatus\",\"id\":\"" + localInstructionId + "\""
-						+ ",\"instructionId\":\"" + remoteInstructionId + "\""
-						+ ",\"topic\":\"SetControlParameter\",\"status\":\"Completed\"}"));
+		assertThat("Instruction Completed ack client ID", pubMsg.getClientID(),
+				equalTo(nodeId.toString()));
+		assertThat("Instruction Completed ack topic", pubMsg.getTopicName(),
+				equalTo(datumTopic(nodeId)));
+		JSONAssert.assertEquals("Instruction Completed ack payload",
+				"{\"instructionId\":" + inputInstruction.getId() + ",\"state\":\"Completed\"}",
+				session.getPublishPayloadStringAtIndex(2), false);
 	}
 
 	/*- Following test not working after switch to Netty client; haven't found a way
@@ -898,14 +868,12 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		String testInstructions = getStringResource("instructions-01.json");
 		List<Instruction> instructions = parseInstructions(testInstructions);
 		assert instructions.size() == 1;
-		final String remoteInstructionId = instructions.get(0).getRemoteInstructionId();
-		expect(reactorService.parseInstructions(anyObject(), anyObject(JsonNode.class),
-				eq(MqttUploadService.JSON_MIME_TYPE), isNull())).andReturn(instructions);
+		final Instruction inputInstruction = instructions.get(0);
 
 		// persist Executing state
 		Capture<Instruction> storeInstructionCaptor = new Capture<>();
-		expect(reactorService.storeInstruction(capture(storeInstructionCaptor)))
-				.andThrow(new DuplicateKeyException("Duplicate key"));
+		reactorService.storeInstruction(capture(storeInstructionCaptor));
+		EasyMock.expectLastCall().andThrow(new DuplicateKeyException("Duplicate key"));
 
 		replayAll();
 
@@ -924,13 +892,11 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 
 		// should have stored Executing status
 		Instruction storeInstruction = storeInstructionCaptor.getValue();
-		assertThat("Store instruction remote ID", storeInstruction.getRemoteInstructionId(),
-				equalTo(remoteInstructionId));
-		assertThat("Store instruction has no local ID", storeInstruction.getId(), nullValue());
-		assertThat("Store instruction state", storeInstruction.getInstructionState(),
-				equalTo(InstructionState.Executing));
+		assertThat("Store instruction ID", storeInstruction.getId(), equalTo(inputInstruction.getId()));
 		assertThat("Store instruction instructorId", storeInstruction.getInstructorId(),
 				equalTo(TEST_SOLARIN_BASE_URL));
+		assertThat("Store instruction state", storeInstruction.getInstructionState(),
+				equalTo(InstructionState.Executing));
 
 		// should have published acknowledgement on datum topic
 		TestingInterceptHandler session = getTestingInterceptHandler();
@@ -951,15 +917,11 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		String testInstructions = getStringResource("instructions-01.json");
 		List<Instruction> instructions = parseInstructions(testInstructions);
 		assert instructions.size() == 1;
-		final String remoteInstructionId = instructions.get(0).getRemoteInstructionId();
-		expect(reactorService.parseInstructions(anyObject(), anyObject(JsonNode.class),
-				eq(MqttUploadService.JSON_MIME_TYPE), isNull())).andReturn(instructions);
+		final Instruction inputInstruction = instructions.get(0);
 
 		// persist Executing state
 		Capture<Instruction> storeInstructionCaptor = new Capture<>();
-		final Long localInstructionId = 98765L;
-		expect(reactorService.storeInstruction(capture(storeInstructionCaptor)))
-				.andReturn(localInstructionId);
+		reactorService.storeInstruction(capture(storeInstructionCaptor));
 
 		// execute single instruction
 		Capture<Instruction> execInstructionCaptor = new Capture<>();
@@ -968,13 +930,11 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 
 		// save result back to DB
 		Capture<Instruction> storeReceivedInstructionCaptor = new Capture<>();
-		expect(reactorService.storeInstruction(capture(storeReceivedInstructionCaptor)))
-				.andReturn(localInstructionId);
+		reactorService.storeInstruction(capture(storeReceivedInstructionCaptor));
 
 		// save ack result back to DB
 		Capture<Instruction> storeReceivedAckInstructionCaptor = new Capture<>();
-		expect(reactorService.storeInstruction(capture(storeReceivedAckInstructionCaptor)))
-				.andReturn(localInstructionId);
+		reactorService.storeInstruction(capture(storeReceivedAckInstructionCaptor));
 
 		replayAll();
 
@@ -993,25 +953,27 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 
 		// should have stored Executing status
 		Instruction storeInstruction = storeInstructionCaptor.getValue();
-		assertThat("Store instruction remote ID", storeInstruction.getRemoteInstructionId(),
-				equalTo(remoteInstructionId));
-		assertThat("Store instruction has no local ID", storeInstruction.getId(), nullValue());
-		assertThat("Store instruction state", storeInstruction.getInstructionState(),
-				equalTo(InstructionState.Executing));
+		assertThat("Store instruction ID", storeInstruction.getId(), equalTo(inputInstruction.getId()));
 		assertThat("Store instruction instructorId", storeInstruction.getInstructorId(),
 				equalTo(TEST_SOLARIN_BASE_URL));
+		assertThat("Store instruction state", storeInstruction.getInstructionState(),
+				equalTo(InstructionState.Executing));
 		assertThat("Store instruction no ack",
 				storeInstruction.getStatus().getAcknowledgedInstructionState(), nullValue());
 
 		// should have executed Instruction with persisted local ID
 		Instruction execInstruction = execInstructionCaptor.getValue();
-		assertThat("Exec instruction has persisted local ID", execInstruction.getId(),
-				equalTo(localInstructionId));
+		assertThat("Exec instruction has ID", execInstruction.getId(),
+				equalTo(inputInstruction.getId()));
+		assertThat("Exec instruction instructorId", execInstruction.getInstructorId(),
+				equalTo(TEST_SOLARIN_BASE_URL));
 
 		// should have stored Received status
 		Instruction receivedInstruction = storeReceivedInstructionCaptor.getValue();
-		assertThat("Received instruction has persisted local ID", receivedInstruction.getId(),
-				equalTo(localInstructionId));
+		assertThat("Received instruction ID", receivedInstruction.getId(),
+				equalTo(inputInstruction.getId()));
+		assertThat("Received instruction instructorId", receivedInstruction.getInstructorId(),
+				equalTo(TEST_SOLARIN_BASE_URL));
 		assertThat("Received instruction state", receivedInstruction.getInstructionState(),
 				equalTo(InstructionState.Received));
 		assertThat("Received instruction no ack",
@@ -1020,7 +982,9 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		// should have stored Received status
 		Instruction receivedAckInstruction = storeReceivedAckInstructionCaptor.getValue();
 		assertThat("Received ack instruction has persisted local ID", receivedAckInstruction.getId(),
-				equalTo(localInstructionId));
+				equalTo(inputInstruction.getId()));
+		assertThat("Received ack instruction instructorId", receivedAckInstruction.getInstructorId(),
+				equalTo(TEST_SOLARIN_BASE_URL));
 		assertThat("Received ack instruction state", receivedAckInstruction.getInstructionState(),
 				equalTo(InstructionState.Received));
 		assertThat("Received ack instruction ack state",
@@ -1036,20 +1000,20 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		assertThat("Instruction topic", pubMsg.getTopicName(), equalTo(instructionTopic(nodeId)));
 
 		pubMsg = session.publishMessages.get(1);
-		assertThat("Instruction ack client ID", pubMsg.getClientID(), equalTo(nodeId.toString()));
-		assertThat("Instruction topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
-		assertThat("Instruction ack payload", session.getPublishPayloadStringAtIndex(1),
-				equalTo("{\"__type__\":\"InstructionStatus\",\"id\":\"" + localInstructionId + "\""
-						+ ",\"instructionId\":\"" + remoteInstructionId + "\""
-						+ ",\"topic\":\"SetControlParameter\",\"status\":\"Executing\"}"));
+		assertThat("Instruction Executing ack client ID", pubMsg.getClientID(),
+				equalTo(nodeId.toString()));
+		assertThat("Instruction Executing topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
+		JSONAssert.assertEquals("Instruction Executing ack payload",
+				"{\"instructionId\":" + inputInstruction.getId() + ",\"state\":\"Executing\"}",
+				session.getPublishPayloadStringAtIndex(1), false);
 
 		pubMsg = session.publishMessages.get(2);
-		assertThat("Instruction ack client ID", pubMsg.getClientID(), equalTo(nodeId.toString()));
-		assertThat("Instruction topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
-		assertThat("Instruction ack payload", session.getPublishPayloadStringAtIndex(2),
-				equalTo("{\"__type__\":\"InstructionStatus\",\"id\":\"" + localInstructionId + "\""
-						+ ",\"instructionId\":\"" + remoteInstructionId + "\""
-						+ ",\"topic\":\"SetControlParameter\",\"status\":\"Received\"}"));
+		assertThat("Instruction Received ack client ID", pubMsg.getClientID(),
+				equalTo(nodeId.toString()));
+		assertThat("Instruction Received ack topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
+		JSONAssert.assertEquals("Instruction Completed ack payload",
+				"{\"instructionId\":" + inputInstruction.getId() + ",\"state\":\"Received\"}",
+				session.getPublishPayloadStringAtIndex(2), false);
 	}
 
 }

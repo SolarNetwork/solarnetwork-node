@@ -23,18 +23,18 @@
 package net.solarnetwork.node.datum.schneider.pm5100;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.DataAccessor;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.schneider.meter.PM5100Data;
 import net.solarnetwork.node.hw.schneider.meter.PM5100DataAccessor;
 import net.solarnetwork.node.hw.schneider.meter.PM5100Model;
@@ -42,21 +42,22 @@ import net.solarnetwork.node.hw.schneider.meter.PowerSystem;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.support.ModbusDeviceDatumDataSourceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * {@link DatumDataSource} for the PM5100 series meter.
  * 
  * @author matt
- * @version 1.6
+ * @version 2.0
  */
 public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
-		implements DatumDataSource<GeneralNodeACEnergyDatum>,
-		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	private final PM5100Data sample;
 
@@ -101,8 +102,8 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 				}
 				log.debug("Read PM5100 data: {}", currSample);
 			} catch ( IOException e ) {
-				throw new RuntimeException(
-						"Communication problem reading from PM5100 device " + modbusDeviceName(), e);
+				log.error("Communication problem reading from PM5100 device {}: {}", modbusDeviceName(),
+						e.getMessage());
 			}
 		} else {
 			currSample = getSample().getSnapshot();
@@ -111,33 +112,32 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	}
 
 	@Override
-	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
-		return GeneralNodeACEnergyDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AcEnergyDatum.class;
 	}
 
 	@Override
-	public GeneralNodeACEnergyDatum readCurrentDatum() {
+	public AcEnergyDatum readCurrentDatum() {
 		final PM5100Data currSample = getCurrentSample();
 		if ( currSample == null ) {
 			return null;
 		}
-		PM5100Datum d = new PM5100Datum(currSample, ACPhase.Total, this.backwards);
+		PM5100Datum d = new PM5100Datum(currSample, resolvePlaceholders(sourceId), AcPhase.Total,
+				this.backwards);
 		if ( this.includePhaseMeasurements ) {
 			d.populatePhaseMeasurementProperties(currSample);
 		}
-		d.setSourceId(resolvePlaceholders(sourceId));
 		return d;
 	}
 
 	@Override
-	public Class<? extends GeneralNodeACEnergyDatum> getMultiDatumType() {
-		return GeneralNodeACEnergyDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return AcEnergyDatum.class;
 	}
 
 	@Override
-	public Collection<GeneralNodeACEnergyDatum> readMultipleDatum() {
-		GeneralNodeACEnergyDatum datum = readCurrentDatum();
-		// TODO: support phases
+	public Collection<NodeDatum> readMultipleDatum() {
+		AcEnergyDatum datum = readCurrentDatum();
 		if ( datum != null ) {
 			return Collections.singletonList(datum);
 		}
@@ -157,10 +157,10 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		if ( model != null ) {
 			String firmwareVersion = data.getFirmwareRevision();
 			if ( firmwareVersion != null ) {
-				result.put(INFO_KEY_DEVICE_MODEL,
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL,
 						String.format("%s (firmware %s)", model, firmwareVersion));
 			} else {
-				result.put(INFO_KEY_DEVICE_MODEL, model.toString());
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, model.toString());
 			}
 		}
 		PowerSystem wiringMode = data.getPowerSystem();
@@ -169,7 +169,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		}
 		Long l = data.getSerialNumber();
 		if ( l != null ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, l);
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, l);
 		}
 		return result;
 	}
@@ -180,7 +180,11 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 * @return {@literal true} if the sample data has expired
 	 */
 	protected boolean isCachedSampleExpired() {
-		final long lastReadDiff = System.currentTimeMillis() - sample.getDataTimestamp();
+		final Instant ts = sample.getDataTimestamp();
+		if ( ts == null ) {
+			return true;
+		}
+		final long lastReadDiff = sample.getDataTimestamp().until(Instant.now(), ChronoUnit.MILLIS);
 		if ( lastReadDiff > sampleCacheMs ) {
 			return true;
 		}
@@ -190,7 +194,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.schneider.pm5100";
 	}
 
@@ -230,7 +234,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	}
 
 	private String getSampleMessage(PM5100Data data) {
-		if ( data.getDataTimestamp() < 1 ) {
+		if ( data.getDataTimestamp() == null ) {
 			return "N/A";
 		}
 		StringBuilder buf = new StringBuilder();
@@ -238,8 +242,7 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		buf.append(", VAR = ").append(sample.getReactivePower());
 		buf.append(", Wh rec = ").append(sample.getActiveEnergyReceived());
 		buf.append(", Wh del = ").append(sample.getActiveEnergyDelivered());
-		buf.append("; sampled at ")
-				.append(DateTimeFormat.forStyle("LS").print(new DateTime(sample.getDataTimestamp())));
+		buf.append("; sampled at ").append(sample.getDataTimestamp());
 		return buf.toString();
 	}
 

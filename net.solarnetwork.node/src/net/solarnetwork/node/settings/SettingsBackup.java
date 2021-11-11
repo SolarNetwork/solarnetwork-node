@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.settings;
@@ -31,7 +29,7 @@ import java.util.Date;
  * A backup domain object.
  * 
  * @author matt
- * @version $Revision$
+ * @version 1.0
  */
 public class SettingsBackup {
 

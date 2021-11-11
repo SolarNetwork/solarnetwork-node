@@ -22,18 +22,18 @@
 
 package net.solarnetwork.node.datum.opmode;
 
-import org.quartz.Trigger;
+import java.util.concurrent.ScheduledFuture;
 
 /**
  * Runtime configuration for active data source configuration.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ScheduledDatumDataSourceConfig {
 
 	private final DatumDataSourceScheduleConfig config;
-	private final Trigger trigger;
+	private final ScheduledFuture<?> task;
 
 	/**
 	 * Constructor.
@@ -43,18 +43,19 @@ public class ScheduledDatumDataSourceConfig {
 	 * @param trigger
 	 *        the trigger
 	 */
-	public ScheduledDatumDataSourceConfig(DatumDataSourceScheduleConfig config, Trigger trigger) {
+	public ScheduledDatumDataSourceConfig(DatumDataSourceScheduleConfig config,
+			ScheduledFuture<?> trigger) {
 		super();
 		this.config = config;
-		this.trigger = trigger;
+		this.task = trigger;
 	}
 
 	public DatumDataSourceScheduleConfig getConfig() {
 		return config;
 	}
 
-	public Trigger getTrigger() {
-		return trigger;
+	public ScheduledFuture<?> getTask() {
+		return task;
 	}
 
 }

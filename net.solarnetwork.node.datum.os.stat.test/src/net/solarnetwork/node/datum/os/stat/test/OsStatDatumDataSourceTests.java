@@ -23,6 +23,9 @@
 package net.solarnetwork.node.datum.os.stat.test;
 
 import static java.util.Collections.singleton;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
@@ -41,18 +44,18 @@ import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import net.solarnetwork.node.NodeMetadataService;
 import net.solarnetwork.node.datum.os.stat.ActionCommandRunner;
 import net.solarnetwork.node.datum.os.stat.OsStatDatumDataSource;
 import net.solarnetwork.node.datum.os.stat.ProcessActionCommandRunner;
 import net.solarnetwork.node.datum.os.stat.StatAction;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.NodeMetadataService;
 
 /**
  * Test cases for the {@link OsStatDatumDataSource} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class OsStatDatumDataSourceTests {
 
@@ -98,11 +101,11 @@ public class OsStatDatumDataSourceTests {
 		// when
 		replayAll();
 		OsStatDatumDataSource ds = dataSourceInstance(EnumSet.of(StatAction.FilesystemUse));
-		GeneralNodeDatum result = ds.readCurrentDatum();
+		NodeDatum result = ds.readCurrentDatum();
 
 		// then
 		assertThat("Result returned", result, notNullValue());
-		Map<String, Number> iData = result.getSamples().getInstantaneous();
+		Map<String, ?> iData = result.asSampleOperations().getSampleData(Instantaneous);
 		assertThat("/run size", iData, hasEntry("fs_size_/run", new BigDecimal(412901376)));
 		assertThat("/run used", iData, hasEntry("fs_used_/run", new BigDecimal(12562432)));
 		assertThat("/run used percent", iData, hasEntry("fs_used_percent_/run", new BigDecimal(4)));
@@ -121,11 +124,11 @@ public class OsStatDatumDataSourceTests {
 		// when
 		replayAll();
 		OsStatDatumDataSource ds = dataSourceInstance(EnumSet.of(StatAction.CpuUse));
-		GeneralNodeDatum result = ds.readCurrentDatum();
+		NodeDatum result = ds.readCurrentDatum();
 
 		// then
 		assertThat("Result returned", result, notNullValue());
-		Map<String, Number> iData = result.getSamples().getInstantaneous();
+		Map<String, ?> iData = result.asSampleOperations().getSampleData(Instantaneous);
 		assertThat("User", iData, hasEntry("cpu_user", new BigDecimal("0.03")));
 		assertThat("User", iData, hasEntry("cpu_system", new BigDecimal("0.03")));
 		assertThat("User", iData, hasEntry("cpu_idle", new BigDecimal("99.93")));
@@ -141,11 +144,11 @@ public class OsStatDatumDataSourceTests {
 		// when
 		replayAll();
 		OsStatDatumDataSource ds = dataSourceInstance(EnumSet.of(StatAction.CpuUse));
-		GeneralNodeDatum result = ds.readCurrentDatum();
+		NodeDatum result = ds.readCurrentDatum();
 
 		// then
 		assertThat("Result returned", result, notNullValue());
-		Map<String, Number> iData = result.getSamples().getInstantaneous();
+		Map<String, ?> iData = result.asSampleOperations().getSampleData(Instantaneous);
 		assertThat("User", iData, hasEntry("cpu_user", new BigDecimal("20.8")));
 	}
 
@@ -159,11 +162,11 @@ public class OsStatDatumDataSourceTests {
 		// when
 		replayAll();
 		OsStatDatumDataSource ds = dataSourceInstance(EnumSet.of(StatAction.CpuUse));
-		GeneralNodeDatum result = ds.readCurrentDatum();
+		NodeDatum result = ds.readCurrentDatum();
 
 		// then
 		assertThat("Result returned", result, notNullValue());
-		Map<String, Number> iData = result.getSamples().getInstantaneous();
+		Map<String, ?> iData = result.asSampleOperations().getSampleData(Instantaneous);
 		assertThat("User", iData, hasEntry("cpu_user", new BigDecimal("0.03")));
 		assertThat("User", iData, hasEntry("cpu_system", new BigDecimal("0.03")));
 		assertThat("User", iData, hasEntry("cpu_idle", new BigDecimal("99.93")));
@@ -180,11 +183,11 @@ public class OsStatDatumDataSourceTests {
 		replayAll();
 		OsStatDatumDataSource ds = dataSourceInstance(EnumSet.of(StatAction.NetworkTraffic));
 		ds.setNetDevices(new HashSet<>(Arrays.asList("eth0", "wlan0")));
-		GeneralNodeDatum result = ds.readCurrentDatum();
+		NodeDatum result = ds.readCurrentDatum();
 
 		// then
 		assertThat("Result returned", result, notNullValue());
-		Map<String, Number> aData = result.getSamples().getAccumulating();
+		Map<String, ?> aData = result.asSampleOperations().getSampleData(Accumulating);
 		assertThat("eth0 bytes-in", aData, hasEntry("net_bytes_in_eth0", new BigDecimal(9348)));
 		assertThat("eth0 bytes-out", aData, hasEntry("net_bytes_out_eth0", new BigDecimal(10031)));
 		assertThat("eth0 packets-in", aData, hasEntry("net_packets_in_eth0", new BigDecimal(80)));
@@ -205,11 +208,11 @@ public class OsStatDatumDataSourceTests {
 		// when
 		replayAll();
 		OsStatDatumDataSource ds = dataSourceInstance(EnumSet.of(StatAction.MemoryUse));
-		GeneralNodeDatum result = ds.readCurrentDatum();
+		NodeDatum result = ds.readCurrentDatum();
 
 		// then
 		assertThat("Result returned", result, notNullValue());
-		Map<String, Number> iData = result.getSamples().getInstantaneous();
+		Map<String, ?> iData = result.asSampleOperations().getSampleData(Instantaneous);
 		assertThat("Total", iData, hasEntry("ram_total", new BigDecimal("34359738368")));
 		assertThat("Avail", iData, hasEntry("ram_avail", new BigDecimal("9733586944")));
 		assertThat("Used percent", iData, hasEntry("ram_used_percent", new BigDecimal("71.7")));
@@ -225,11 +228,11 @@ public class OsStatDatumDataSourceTests {
 		// when
 		replayAll();
 		OsStatDatumDataSource ds = dataSourceInstance(EnumSet.of(StatAction.SystemLoad));
-		GeneralNodeDatum result = ds.readCurrentDatum();
+		NodeDatum result = ds.readCurrentDatum();
 
 		// then
 		assertThat("Result returned", result, notNullValue());
-		Map<String, Number> iData = result.getSamples().getInstantaneous();
+		Map<String, ?> iData = result.asSampleOperations().getSampleData(Instantaneous);
 		assertThat("1min load", iData, hasEntry("sys_load_1min", new BigDecimal("0.09")));
 		assertThat("5min load", iData, hasEntry("sys_load_5min", new BigDecimal("0.10")));
 		assertThat("15min load", iData, hasEntry("sys_load_15min", new BigDecimal("0.07")));
@@ -245,11 +248,11 @@ public class OsStatDatumDataSourceTests {
 		// when
 		replayAll();
 		OsStatDatumDataSource ds = dataSourceInstance(EnumSet.of(StatAction.SystemUptime));
-		GeneralNodeDatum result = ds.readCurrentDatum();
+		NodeDatum result = ds.readCurrentDatum();
 
 		// then
 		assertThat("Result returned", result, notNullValue());
-		Map<String, Number> aData = result.getSamples().getAccumulating();
+		Map<String, ?> aData = result.asSampleOperations().getSampleData(Accumulating);
 		assertThat("Uptime", aData, hasEntry("sys_up", new BigDecimal("26483.63")));
 	}
 
@@ -264,15 +267,15 @@ public class OsStatDatumDataSourceTests {
 		replayAll();
 		OsStatDatumDataSource ds = dataSourceInstance(EnumSet.of(StatAction.SystemUptime));
 		ds.setSampleCacheMs(TimeUnit.DAYS.toMillis(7));
-		GeneralNodeDatum result = ds.readCurrentDatum();
+		NodeDatum result = ds.readCurrentDatum();
 
 		Thread.sleep(20);
 
-		GeneralNodeDatum cachedResult = ds.readCurrentDatum();
+		NodeDatum cachedResult = ds.readCurrentDatum();
 
 		// then
 		assertThat("Result returned", result, notNullValue());
-		Map<String, Number> aData = result.getSamples().getAccumulating();
+		Map<String, ?> aData = result.asSampleOperations().getSampleData(Accumulating);
 		assertThat("Uptime", aData, hasEntry("sys_up", new BigDecimal("26483.63")));
 
 		assertThat("Cached result returned", cachedResult, sameInstance(result));
@@ -288,15 +291,15 @@ public class OsStatDatumDataSourceTests {
 		// when
 		replayAll();
 		OsStatDatumDataSource ds = dataSourceInstanceCustom(singleton("custom"));
-		GeneralNodeDatum result = ds.readCurrentDatum();
+		NodeDatum result = ds.readCurrentDatum();
 
 		// then
 		assertThat("Result returned", result, notNullValue());
-		Map<String, Number> iData = result.getSamples().getInstantaneous();
+		Map<String, ?> iData = result.asSampleOperations().getSampleData(Instantaneous);
 		assertThat("Instantaneous cpu_temp", iData, hasEntry("cpu_temp", new BigDecimal("30.1")));
-		Map<String, Number> aData = result.getSamples().getAccumulating();
+		Map<String, ?> aData = result.asSampleOperations().getSampleData(Accumulating);
 		assertThat("Accumulating cpu_energy", aData, hasEntry("cpu_energy", new BigDecimal("12345678")));
-		Map<String, Object> sData = result.getSamples().getStatus();
+		Map<String, ?> sData = result.asSampleOperations().getSampleData(Status);
 		assertThat("Status cpu_state", sData, hasEntry("cpu_state", "ok"));
 	}
 }

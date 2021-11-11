@@ -23,13 +23,13 @@
 package net.solarnetwork.node.io.mbus;
 
 import java.io.IOException;
-import net.solarnetwork.node.Identifiable;
+import net.solarnetwork.service.Identifiable;
 
 /**
  * High level M-Bus network API.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public interface MBusNetwork extends Identifiable {
 

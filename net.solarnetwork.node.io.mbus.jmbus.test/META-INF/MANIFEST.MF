@@ -2,20 +2,16 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: M-Bus Communication Support (jMBus) Tests
 Bundle-SymbolicName: net.solarnetwork.node.io.mbus.jmbus.test
-Bundle-Version: 0.1.0
-Fragment-Host: net.solarnetwork.node.io.mbus.jmbus;bundle-version="[0.2,1.0)"
+Bundle-Version: 1.0.0
+Fragment-Host: net.solarnetwork.node.io.mbus.jmbus;bundle-version="[1.0,2.0)"
 Automatic-Module-Name: net.solarnetwork.node.io.mbus.jmbus.test
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
- net.solarnetwork.node.test;version="[1.6,2.0)",
+ net.solarnetwork.node.test;version="[1.7,2.0)",
  org.easymock;version="[3.1,4.0)",
  org.hamcrest;version="[1.1,2.0)",
  org.junit;version="[4.5,5.0)",
  org.junit.runner;version="[4.5,5.0)",
  org.openmuc.jmbus.wireless;version="3.2.1",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.test.annotation;version="[4.2,5.0)",
- org.springframework.test.context;version="[4.2,5.0)",
- org.springframework.test.context.junit4;version="[4.2,5.0)",
- org.springframework.test.context.support;version="[4.2,5.0)",
  org.springframework.util;version="[4.2,5.0)"

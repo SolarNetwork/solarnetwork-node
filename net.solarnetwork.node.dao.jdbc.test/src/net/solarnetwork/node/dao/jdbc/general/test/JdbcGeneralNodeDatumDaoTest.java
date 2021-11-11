@@ -22,52 +22,50 @@
 
 package net.solarnetwork.node.dao.jdbc.general.test;
 
+import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expectLastCall;
-import static org.hamcrest.Matchers.arrayContaining;
-import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import javax.annotation.Resource;
 import javax.sql.DataSource;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.solarnetwork.domain.Differentiable;
-import net.solarnetwork.domain.GeneralNodeDatumSamples;
-import net.solarnetwork.domain.datum.GeneralDatumSamplesContainer;
+import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.dao.jdbc.general.JdbcGeneralNodeDatumDao;
-import net.solarnetwork.node.domain.ACEnergyDatum;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.EnergyDatum;
-import net.solarnetwork.node.domain.GeneralDatum;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.domain.datum.MutableNodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleAcEnergyDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
+import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link JdbcGeneralNodeDatumDao} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
@@ -104,8 +102,8 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		EasyMock.replay(eventAdmin);
 	}
 
-	private GeneralNodeDatumSamples samplesInstance() {
-		GeneralNodeDatumSamples samples = new GeneralNodeDatumSamples();
+	private DatumSamples samplesInstance() {
+		DatumSamples samples = new DatumSamples();
 
 		// some sample data
 		Map<String, Number> instants = new HashMap<String, Number>(2);
@@ -126,10 +124,22 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
 		replayAll();
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setCreated(new Date());
-		datum.setSourceId("Test");
-		datum.setSamples(samplesInstance());
+		SimpleDatum datum = SimpleDatum.nodeDatum("Test", Instant.now(), samplesInstance());
+		dao.storeDatum(datum);
+
+		assertThat("Event captured", captor.hasCaptured(), equalTo(true));
+		Event event = captor.getValue();
+		assertDatumStoredEventEqualsDatum(event, datum);
+	}
+
+	@Test
+	public void insert_location() {
+		Capture<Event> captor = new Capture<Event>();
+		eventAdmin.postEvent(EasyMock.capture(captor));
+
+		replayAll();
+
+		SimpleDatum datum = SimpleDatum.locationDatum(1L, "Test", Instant.now(), samplesInstance());
 		dao.storeDatum(datum);
 
 		assertThat("Event captured", captor.hasCaptured(), equalTo(true));
@@ -144,81 +154,100 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
 		replayAll();
 
-		GeneralNodeACEnergyDatum datum = new GeneralNodeACEnergyDatum();
-		datum.setCreated(new Date());
-		datum.setSourceId("Test");
+		SimpleAcEnergyDatum datum = new SimpleAcEnergyDatum("Test", Instant.now(), new DatumSamples());
 		datum.setWatts(123);
 		datum.setWattHourReading(12345L);
 		dao.storeDatum(datum);
 
 		assertThat("Event captured", captor.hasCaptured(), equalTo(true));
 		Event event = captor.getValue();
-		assertDatumEventEqualsDatum(event, DatumDao.EVENT_TOPIC_DATUM_STORED, datum,
-				new String[] { ACEnergyDatum.class.getName(), EnergyDatum.class.getName(),
-						Datum.class.getName(), net.solarnetwork.domain.datum.Datum.class.getName(),
-						GeneralDatum.class.getName(), Differentiable.class.getName(),
-						net.solarnetwork.domain.datum.GeneralDatum.class.getName(),
-						GeneralDatumSamplesContainer.class.getName() });
+		assertDatumEventEqualsDatum(event, DatumDao.EVENT_TOPIC_DATUM_STORED, datum);
 	}
 
-	private void assertDatumStoredEventEqualsDatum(Event event, GeneralNodeDatum datum) {
-		assertDatumEventEqualsDatum(event, DatumDao.EVENT_TOPIC_DATUM_STORED, datum, new String[] {
-				Datum.class.getName(), net.solarnetwork.domain.datum.Datum.class.getName(),
-				GeneralDatum.class.getName(), net.solarnetwork.domain.datum.GeneralDatum.class.getName(),
-				Differentiable.class.getName(), GeneralDatumSamplesContainer.class.getName() });
+	private void assertDatumStoredEventEqualsDatum(Event event, NodeDatum datum) {
+		assertDatumEventEqualsDatum(event, DatumDao.EVENT_TOPIC_DATUM_STORED, datum);
 	}
 
-	private void assertDatumEventEqualsDatum(Event event, String topic, GeneralNodeDatum datum,
-			String[] datumTypes) {
+	private void assertDatumEventEqualsDatum(Event event, String topic, NodeDatum datum) {
 		assertThat("Topic", event.getTopic(), equalTo(topic));
-		assertThat("Datum type", (String) event.getProperty(Datum.DATUM_TYPE_PROPERTY),
-				equalTo(datumTypes[0]));
-		assertThat("Datum types", (String[]) event.getProperty(Datum.DATUM_TYPES_PROPERTY),
-				arrayContainingInAnyOrder(datumTypes));
-		assertThat("Source ID", (String) event.getProperty("sourceId"), equalTo(datum.getSourceId()));
-		assertThat("Created", (Long) event.getProperty("created"),
-				equalTo(datum.getCreated().getTime()));
-		for ( Map.Entry<String, ?> me : datum.getSamples().getSampleData().entrySet() ) {
-			assertThat(me.getKey(), event.getProperty(me.getKey()), equalTo((Object) me.getValue()));
-		}
-		Set<String> tags = datum.getSamples().getTags();
-		if ( tags != null && !tags.isEmpty() ) {
-			String[] expectedTags = tags.toArray(new String[tags.size()]);
-			assertThat("Tags", (String[]) event.getProperty("tags"), arrayContaining(expectedTags));
-		}
+		assertThat("Datum", event.getProperty(DatumEvents.DATUM_PROPERTY), is(sameInstance(datum)));
 	}
 
 	@Test
 	public void findForUpload() {
 		final int numDatum = 5;
 		final long now = System.currentTimeMillis();
-		final GeneralNodeDatumSamples samples = samplesInstance();
+		final DatumSamples samples = samplesInstance();
 
-		Capture<Event> captor = new Capture<Event>(CaptureType.ALL);
+		Capture<Event> captor = new Capture<>(CaptureType.ALL);
+		eventAdmin.postEvent(capture(captor));
+		EasyMock.expectLastCall().times(numDatum);
+
+		replayAll();
+
+		List<NodeDatum> stored = new ArrayList<>();
+		for ( int i = 0; i < numDatum; i++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(String.valueOf(i), Instant.ofEpochMilli(now),
+					samples);
+			dao.storeDatum(datum);
+			stored.add(datum);
+		}
+		List<NodeDatum> results = dao.getDatumNotUploaded("test");
+		assertThat(results, hasSize(numDatum));
+		assertThat(captor.getValues(), hasSize(numDatum));
+
+		for ( int i = 0; i < numDatum; i++ ) {
+			NodeDatum datum = results.get(i);
+			assertThat("Timestamp", datum.getTimestamp().toEpochMilli(), is(now));
+			assertThat("Source ID", datum.getSourceId(), is(String.valueOf(i)));
+			assertThat("Samples", datum.asSampleOperations(), is(samples));
+			assertThat("Not uploaded", datum.getUploaded(), is(nullValue()));
+
+			assertDatumStoredEventEqualsDatum(captor.getValues().get(i), stored.get(i));
+		}
+	}
+
+	@Test
+	public void findForUpload_withLocationDatum() {
+		final int numDatum = 10;
+		final long now = System.currentTimeMillis();
+		final DatumSamples samples = samplesInstance();
+
+		Capture<Event> captor = new Capture<>(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(captor));
 		EasyMock.expectLastCall().times(numDatum);
 
 		replayAll();
 
+		List<NodeDatum> stored = new ArrayList<>();
 		for ( int i = 0; i < numDatum; i++ ) {
-			GeneralNodeDatum datum = new GeneralNodeDatum();
-			datum.setCreated(new Date(now));
-			datum.setSourceId(String.valueOf(i));
-			datum.setSamples(samples);
+			SimpleDatum datum;
+			if ( i % 2 == 0 ) {
+				datum = SimpleDatum.nodeDatum(String.valueOf(i), Instant.ofEpochMilli(now), samples);
+			} else {
+				datum = SimpleDatum.locationDatum((long) i, String.valueOf(i), Instant.ofEpochMilli(now),
+						samples);
+			}
 			dao.storeDatum(datum);
+			stored.add(datum);
 		}
-		List<GeneralNodeDatum> results = dao.getDatumNotUploaded("test");
+		List<NodeDatum> results = dao.getDatumNotUploaded("test");
 		assertThat(results, hasSize(numDatum));
 		assertThat(captor.getValues(), hasSize(numDatum));
 
 		for ( int i = 0; i < numDatum; i++ ) {
-			GeneralNodeDatum datum = results.get(i);
-			Assert.assertEquals(now, datum.getCreated().getTime());
-			Assert.assertEquals(String.valueOf(i), datum.getSourceId());
-			Assert.assertEquals(samples, datum.getSamples());
-			Assert.assertNull(datum.getUploaded());
+			NodeDatum datum = results.get(i);
+			assertThat("Timestamp", datum.getTimestamp().toEpochMilli(), is(now));
+			assertThat("Source ID", datum.getSourceId(), is(String.valueOf(i)));
+			if ( i % 2 == 0 ) {
+				assertThat("Object ID missing for node datum", datum.getObjectId(), is(nullValue()));
+			} else {
+				assertThat("Object ID present for location datum", datum.getObjectId(), is((long) i));
+			}
+			assertThat("Samples", datum.asSampleOperations(), is(samples));
+			assertThat("Not uploaded", datum.getUploaded(), is(nullValue()));
 
-			assertDatumStoredEventEqualsDatum(captor.getValues().get(i), datum);
+			assertDatumStoredEventEqualsDatum(captor.getValues().get(i), stored.get(i));
 		}
 	}
 
@@ -227,42 +256,41 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		final int numDatum = 5;
 		final int numUploaded = 3;
 		final long now = System.currentTimeMillis();
-		final GeneralNodeDatumSamples samples = samplesInstance();
+		final DatumSamples samples = samplesInstance();
 
-		Capture<Event> captor = new Capture<Event>(CaptureType.ALL);
+		Capture<Event> captor = new Capture<>(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(captor));
 		EasyMock.expectLastCall().times(numDatum);
 
 		replayAll();
 
-		List<GeneralNodeDatum> stored = new ArrayList<GeneralNodeDatum>();
+		List<NodeDatum> stored = new ArrayList<>();
 		for ( int i = 0; i < numDatum; i++ ) {
-			GeneralNodeDatum datum = new GeneralNodeDatum();
-			datum.setCreated(new Date(now));
-			datum.setSourceId(String.valueOf(i));
-			datum.setSamples(samples);
+			SimpleDatum datum = SimpleDatum.nodeDatum(String.valueOf(i), Instant.ofEpochMilli(now),
+					samples);
 			dao.storeDatum(datum);
 			stored.add(datum);
 		}
-		List<GeneralNodeDatum> results = dao.getDatumNotUploaded("test");
-		Assert.assertNotNull(results);
-		Assert.assertEquals(numDatum, results.size());
-		final Date uploadDate = new Date(System.currentTimeMillis() + 1000L);
+		List<NodeDatum> results = dao.getDatumNotUploaded("test");
+		assertThat("Results returned", results, is(notNullValue()));
+		assertThat("Result count", results.size(), is(numDatum));
+		final Instant uploadDate = Instant.now().plusMillis(1000L);
 		for ( int i = 0; i < numUploaded; i++ ) {
-			GeneralNodeDatum datum = results.get(i);
+			NodeDatum datum = results.get(i);
 			dao.setDatumUploaded(datum, uploadDate, "test", String.valueOf(i + 10));
 		}
 
 		// now find not uploaded again, should be just 2
 		results = dao.getDatumNotUploaded("test");
-		Assert.assertNotNull(results);
-		Assert.assertEquals(numDatum - numUploaded, results.size());
+		assertThat("Results returned", results, is(notNullValue()));
+		assertThat("Result count decreased by number uploaded", results.size(),
+				is(numDatum - numUploaded));
 		for ( int i = 0; i < (numDatum - numUploaded); i++ ) {
-			GeneralNodeDatum datum = results.get(i);
-			Assert.assertEquals(now, datum.getCreated().getTime());
-			Assert.assertEquals(String.valueOf(i + numUploaded), datum.getSourceId());
-			Assert.assertEquals(samples, datum.getSamples());
-			Assert.assertNull(datum.getUploaded());
+			NodeDatum datum = results.get(i);
+			assertThat("Timestamp", datum.getTimestamp().toEpochMilli(), is(now));
+			assertThat("Source ID", datum.getSourceId(), is(String.valueOf(i + numUploaded)));
+			assertThat("Samples", datum.asSampleOperations(), is(samples));
+			assertThat("Not uploaded", datum.getUploaded(), is(nullValue()));
 		}
 
 		assertThat(captor.getValues(), hasSize(numDatum));
@@ -276,46 +304,45 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		final int numDatum = 5;
 		final int numUploaded = 3;
 		final long start = System.currentTimeMillis() - (1000 * 60 * 60 * numDatum);
-		final GeneralNodeDatumSamples samples = samplesInstance();
+		final DatumSamples samples = samplesInstance();
 
-		Capture<Event> captor = new Capture<Event>(CaptureType.ALL);
+		Capture<Event> captor = new Capture<>(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(captor));
 		EasyMock.expectLastCall().times(numDatum);
 
 		replayAll();
 
-		List<GeneralNodeDatum> stored = new ArrayList<GeneralNodeDatum>();
+		List<NodeDatum> stored = new ArrayList<>();
 		for ( int i = 0; i < numDatum; i++ ) {
-			GeneralNodeDatum datum = new GeneralNodeDatum();
-			datum.setCreated(new Date(start + (1000 * 60 * 60 * i)));
-			datum.setSourceId(String.valueOf(i));
-			datum.setSamples(samples);
+			SimpleDatum datum = SimpleDatum.nodeDatum(String.valueOf(i),
+					Instant.ofEpochMilli(start + (1000 * 60 * 60 * i)), samples);
 			dao.storeDatum(datum);
 			stored.add(datum);
 		}
 
 		// mark 3 uploaded
-		List<GeneralNodeDatum> results = dao.getDatumNotUploaded("test");
-		Assert.assertNotNull(results);
-		Assert.assertEquals(numDatum, results.size());
+		List<NodeDatum> results = dao.getDatumNotUploaded("test");
+		assertThat("Results returned", results, is(notNullValue()));
+		assertThat("Result count", results.size(), is(numDatum));
 		for ( int i = 0; i < numUploaded; i++ ) {
-			GeneralNodeDatum datum = results.get(i);
-			Date uploadDate = new Date(datum.getCreated().getTime() + 1000L);
+			NodeDatum datum = results.get(i);
+			Instant uploadDate = datum.getTimestamp().plusMillis(1000L);
 			dao.setDatumUploaded(datum, uploadDate, "test", String.valueOf(i + 10));
 		}
 
 		// now delete any older than 1 hour; should only delete the 3 uploaded ones
 		int deleted = dao.deleteUploadedDataOlderThan(1);
-		Assert.assertEquals(3, deleted);
+		assertThat("Uploaded old delete count", deleted, is(3));
 
 		results = dao.getDatumNotUploaded("test");
-		Assert.assertNotNull(results);
-		Assert.assertEquals(numDatum - numUploaded, results.size());
+		assertThat("Results returned", results, is(notNullValue()));
+		assertThat("Result count decreased by uploaded count", results.size(),
+				is(numDatum - numUploaded));
 		for ( int i = 0; i < (numDatum - numUploaded); i++ ) {
-			GeneralNodeDatum datum = results.get(i);
-			Assert.assertEquals(String.valueOf(i + numUploaded), datum.getSourceId());
-			Assert.assertEquals(samples, datum.getSamples());
-			Assert.assertNull(datum.getUploaded());
+			NodeDatum datum = results.get(i);
+			assertThat("Source ID", datum.getSourceId(), is(String.valueOf(i + numUploaded)));
+			assertThat("Samples", datum.asSampleOperations(), is(samples));
+			assertThat("Not uploaded", datum.getUploaded(), is(nullValue()));
 		}
 
 		assertThat(captor.getValues(), hasSize(numDatum));
@@ -332,33 +359,27 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
 		replayAll();
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setCreated(new Date());
-		datum.setSourceId("Test");
-		datum.setSamples(samplesInstance());
+		SimpleDatum datum = SimpleDatum.nodeDatum("Test", Instant.now(), samplesInstance());
 
 		// insert
 		dao.storeDatum(datum);
 
 		// mark as uploaded
-		dao.setDatumUploaded(datum, new Date(), "test", "test_id");
+		dao.setDatumUploaded(datum, Instant.now(), "test", "test_id");
 
 		// now change data and update
-		GeneralNodeDatum update = new GeneralNodeDatum();
-		update.setCreated(datum.getCreated());
-		update.setSourceId(datum.getSourceId());
-		update.setSamples(samplesInstance());
-		update.getSamples().addTag("foo");
+		MutableNodeDatum update = datum.clone();
+		update.asMutableSampleOperations().addTag("foo");
 		dao.storeDatum(update);
 
 		String jdata = jdbcTemplate.queryForObject(
 				"select jdata from solarnode.sn_general_node_datum where created = ? and source_id = ?",
-				new Object[] { new Timestamp(datum.getCreated().getTime()), datum.getSourceId() },
+				new Object[] { Timestamp.from(datum.getTimestamp()), datum.getSourceId() },
 				String.class);
 		assertThat("jdata", jdata,
 				equalTo("{\"i\":{\"watts\":231},\"a\":{\"watt_hours\":4123},\"t\":[\"foo\"]}"));
 
-		List<GeneralNodeDatum> local = dao.getDatumNotUploaded("test");
+		List<NodeDatum> local = dao.getDatumNotUploaded("test");
 		assertThat(local, hasSize(1));
 		assertThat(local.get(0), equalTo(update));
 
@@ -374,27 +395,24 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
 		replayAll();
 
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setCreated(new Date());
-		datum.setSourceId("Test");
-		datum.setSamples(samplesInstance());
+		SimpleDatum datum = SimpleDatum.nodeDatum("Test", Instant.now(), samplesInstance());
 
 		// insert
 		dao.storeDatum(datum);
 
 		// mark as uploaded
-		dao.setDatumUploaded(datum, new Date(), "test", "test_id");
+		dao.setDatumUploaded(datum, Instant.now(), "test", "test_id");
 
 		// now update
 		dao.storeDatum(datum);
 
 		String jdata = jdbcTemplate.queryForObject(
 				"select jdata from solarnode.sn_general_node_datum where created = ? and source_id = ?",
-				new Object[] { new Timestamp(datum.getCreated().getTime()), datum.getSourceId() },
+				new Object[] { Timestamp.from(datum.getTimestamp()), datum.getSourceId() },
 				String.class);
 		assertThat("jdata", jdata, equalTo("{\"i\":{\"watts\":231},\"a\":{\"watt_hours\":4123}}"));
 
-		List<GeneralNodeDatum> local = dao.getDatumNotUploaded("test");
+		List<NodeDatum> local = dao.getDatumNotUploaded("test");
 		assertThat(local, hasSize(0));
 
 		assertThat("Event captured", captor.getValues(), hasSize(1));

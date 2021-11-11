@@ -22,21 +22,20 @@
 
 package net.solarnetwork.node.hw.currentcost;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import org.joda.time.LocalTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
+import java.time.Instant;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 /**
  * A CurrentCost datum.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class CCDatum implements Comparable<CCDatum> {
 
-	private final long created;
+	private final Instant created;
 	private String deviceAddress;
 	private String deviceName;
 	private String deviceType;
@@ -53,7 +52,7 @@ public class CCDatum implements Comparable<CCDatum> {
 	 */
 	public CCDatum() {
 		super();
-		created = System.currentTimeMillis();
+		created = Instant.now();
 	}
 
 	@Override
@@ -75,8 +74,7 @@ public class CCDatum implements Comparable<CCDatum> {
 			if ( timeString.startsWith(":") ) {
 				timeString = timeString.replaceAll("^:+", "");
 			}
-			DateTimeFormatter dtf = DateTimeFormat.forPattern("HH:mm:ss");
-			t = dtf.parseLocalTime(timeString);
+			t = DateTimeFormatter.ISO_LOCAL_TIME.parse(timeString, LocalTime::from);
 		}
 		this.time = t;
 	}
@@ -91,7 +89,7 @@ public class CCDatum implements Comparable<CCDatum> {
 		return (deviceAddress + ": 1 = " + (channel1Watts == null ? "N/A" : channel1Watts) + ", 2 = "
 				+ (channel2Watts == null ? "N/A" : channel2Watts) + ", 3 = "
 				+ (channel3Watts == null ? "N/A" : channel3Watts) + (time == null ? "" : "; " + time)
-				+ "; " + new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(created)));
+				+ "; " + formatForLocalDisplay(created));
 	}
 
 	@Override
@@ -213,7 +211,7 @@ public class CCDatum implements Comparable<CCDatum> {
 		this.temperature = temperature;
 	}
 
-	public long getCreated() {
+	public Instant getCreated() {
 		return created;
 	}
 

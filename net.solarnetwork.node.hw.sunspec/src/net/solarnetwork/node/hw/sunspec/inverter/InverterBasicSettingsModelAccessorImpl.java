@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.hw.sunspec.inverter;
 
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.hw.sunspec.ApparentPowerCalculationMethod;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
@@ -33,7 +33,7 @@ import net.solarnetwork.node.hw.sunspec.ReactivePowerAction;
  * Data access object for an inverter basic settings model.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.2
  */
 public class InverterBasicSettingsModelAccessorImpl extends BaseModelAccessor
@@ -220,22 +220,22 @@ public class InverterBasicSettingsModelAccessorImpl extends BaseModelAccessor
 	}
 
 	@Override
-	public ACPhase getConnectedPhase() {
+	public AcPhase getConnectedPhase() {
 		Number n = getData().getNumber(InverterBasicSettingsRegister.ConnectedPhase);
-		ACPhase phase = null;
+		AcPhase phase = null;
 		if ( n != null ) {
 			int v = n.intValue();
 			switch (v) {
 				case 1:
-					phase = ACPhase.PhaseA;
+					phase = AcPhase.PhaseA;
 					break;
 
 				case 2:
-					phase = ACPhase.PhaseB;
+					phase = AcPhase.PhaseB;
 					break;
 
 				case 3:
-					phase = ACPhase.PhaseC;
+					phase = AcPhase.PhaseC;
 					break;
 
 				default:

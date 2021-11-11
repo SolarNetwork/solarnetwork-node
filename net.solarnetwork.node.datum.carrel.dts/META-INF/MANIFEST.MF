@@ -1,20 +1,30 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Carrel-Electrade Meter Consumption Datum DataSource
-Bundle-SymbolicName: net.solarnetwork.node.datum.carrel.dts.dts
+Bundle-SymbolicName: net.solarnetwork.node.datum.carrel.dts
+Automatic-Module-Name: net.solarnetwork.node.datum.carrel.dts
 Bundle-Description: Collect consumption data from Carrel-Electrade watt meters.
-Bundle-Version: 2.2.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
- net.solarnetwork.node;version="[1.35,2.0)",
- net.solarnetwork.node.domain;version="[1.16,2.0)",
- net.solarnetwork.node.io.modbus;version="[3.0,4.0)",
- net.solarnetwork.node.io.modbus.support;version="[3.4,4.0)",
- net.solarnetwork.node.settings;version="1.3.0",
- net.solarnetwork.node.settings.support;version="1.2.0",
- net.solarnetwork.node.support;version="[1.29,2.0)",
- net.solarnetwork.util;version="[1.40,2.0)",
+ net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
+ net.solarnetwork.domain;version="[2.0,3.0)",
+ net.solarnetwork.domain.datum;version="[2.0,3.0)",
+ net.solarnetwork.node.domain;version="[2.0,3.0)",
+ net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
+ net.solarnetwork.node.io.modbus;version="[4.0,5.0)",
+ net.solarnetwork.node.io.modbus.support;version="[4.0,5.0)",
+ net.solarnetwork.node.job;version="[2.0,3.0)",
+ net.solarnetwork.node.reactor;version="[2.0,3.0)",
+ net.solarnetwork.node.service;version="[1.0,2.0)",
+ net.solarnetwork.node.service.support;version="[1.0,2.0)",
+ net.solarnetwork.service;version="[1.0,2.0)",
+ net.solarnetwork.service.support;version="[1.0,2.0)",
+ net.solarnetwork.settings;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.support;version="[2.0,3.0)",
+ net.solarnetwork.util;version="[2.0,3.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.beans;version="[4.3,5.0)",
  org.springframework.context;version="[4.3,5.0)",

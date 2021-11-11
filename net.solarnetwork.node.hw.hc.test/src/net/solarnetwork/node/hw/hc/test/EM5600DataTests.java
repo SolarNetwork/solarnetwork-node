@@ -25,7 +25,7 @@ package net.solarnetwork.node.hw.hc.test;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
-import org.joda.time.LocalDateTime;
+import java.time.LocalDateTime;
 import org.junit.Test;
 import net.solarnetwork.node.hw.hc.EM5600Data;
 import net.solarnetwork.node.hw.hc.EM5600Register;
@@ -55,7 +55,7 @@ public class EM5600DataTests {
 		});
 
 		assertThat("Manufacture date", data.getManufactureDate(),
-				equalTo(new LocalDateTime(2013, 3, 18, 0, 0, 0)));
+				equalTo(LocalDateTime.of(2013, 3, 18, 0, 0, 0)));
 	}
 
 	@Test

@@ -18,8 +18,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ==================================================================
- * $Id$
- * ==================================================================
  */
 
 package net.solarnetwork.node.setup.web;
@@ -60,19 +58,19 @@ import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupInfo;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.service.PKIService;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.setup.InvalidVerificationCodeException;
-import net.solarnetwork.node.setup.PKIService;
 import net.solarnetwork.node.setup.SetupException;
 import net.solarnetwork.node.setup.UserProfile;
 import net.solarnetwork.node.setup.UserService;
 import net.solarnetwork.node.setup.web.support.AssociateNodeCommand;
 import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
-import net.solarnetwork.support.RemoteServiceException;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.OptionalServiceCollection;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.OptionalServiceCollection;
+import net.solarnetwork.service.RemoteServiceException;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.web.domain.Response;
 
 /**
@@ -80,7 +78,7 @@ import net.solarnetwork.web.domain.Response;
  * 
  * @author maxieduncan
  * @author matt
- * @version 1.7
+ * @version 2.0
  */
 @Controller
 @SessionAttributes({ NodeAssociationController.KEY_DETAILS, NodeAssociationController.KEY_IDENTITY })
@@ -229,7 +227,7 @@ public class NodeAssociationController extends BaseSetupController {
 	public String verifyCode(@ModelAttribute("command") AssociateNodeCommand command, Errors errors,
 			@ModelAttribute(KEY_DETAILS) NetworkAssociationDetails details, Model model) {
 		// Check expiration date
-		if ( details.getExpiration().getTime() < System.currentTimeMillis() ) {
+		if ( details.getExpiration().toEpochMilli() < System.currentTimeMillis() ) {
 			errors.rejectValue("verificationCode", "verificationCode.expired", null, null);
 			return PAGE_ENTER_CODE;
 		}

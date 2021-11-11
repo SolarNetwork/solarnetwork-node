@@ -23,13 +23,13 @@
 package net.solarnetwork.node.setup.obr;
 
 import java.net.URL;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
  * API for an OBR repository.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public interface OBRRepository extends SettingSpecifierProvider {
 

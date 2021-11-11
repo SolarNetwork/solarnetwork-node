@@ -1,7 +1,5 @@
 <project basedir=".">
 
-	<property name="compile.source" value="1.8"/>
-	<property name="compile.target" value="1.8"/>
 	
 	<property name="unittest" value="true"/>
 	<property name="bundle.deps" value="true"/>

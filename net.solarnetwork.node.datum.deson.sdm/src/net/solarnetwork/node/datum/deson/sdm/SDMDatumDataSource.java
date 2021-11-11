@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.deson.sdm;
 
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,45 +32,43 @@ import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.ExpressionConfig;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.deson.meter.SDMData;
 import net.solarnetwork.node.hw.deson.meter.SDMDeviceType;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
-import net.solarnetwork.node.support.DatumDataSourceSupport;
-import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.node.service.support.ExpressionConfig;
+import net.solarnetwork.service.ExpressionService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicRadioGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.StringUtils;
 
 /**
- * {@link DatumDataSource} implementation for {@link GeneralNodeACEnergyDatum}
- * with the SDM series watt meter.
+ * {@link DatumDataSource} implementation for {@link AcEnergyDatum} with the SDM
+ * series watt meter.
  * 
  * @author matt
- * @version 2.5
+ * @version 3.0
  */
 public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData>
-		implements DatumDataSource<GeneralNodeACEnergyDatum>,
-		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	/** The default source ID applied for the total reading values. */
 	public static final String MAIN_SOURCE_ID = "Main";
 
 	// a mapping of AC phase to source ID
-	private Map<ACPhase, String> sourceMapping = getDefaulSourceMapping();
+	private Map<AcPhase, String> sourceMapping = getDefaulSourceMapping();
 
 	// the "installed backwards" setting
 	private boolean backwards = false;
@@ -80,9 +79,9 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 	 * 
 	 * @return mapping
 	 */
-	public static Map<ACPhase, String> getDefaulSourceMapping() {
-		Map<ACPhase, String> result = new EnumMap<ACPhase, String>(ACPhase.class);
-		result.put(ACPhase.Total, MAIN_SOURCE_ID);
+	public static Map<AcPhase, String> getDefaulSourceMapping() {
+		Map<AcPhase, String> result = new EnumMap<AcPhase, String>(AcPhase.class);
+		result.put(AcPhase.Total, MAIN_SOURCE_ID);
 		return result;
 	}
 
@@ -114,73 +113,76 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 	}
 
 	@Override
-	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
-		return SDMDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AcEnergyDatum.class;
 	}
 
 	@Override
-	public GeneralNodeACEnergyDatum readCurrentDatum() {
-		final String sourceId = resolvePlaceholders(getSourceMapping().get(ACPhase.Total));
+	public AcEnergyDatum readCurrentDatum() {
+		final String sourceId = resolvePlaceholders(getSourceMapping().get(AcPhase.Total));
 		try {
 			final SDMData currSample = getCurrentSample();
 			if ( currSample == null ) {
 				return null;
 			}
-			SDMDatum d = new SDMDatum(currSample, ACPhase.Total, backwards);
-			d.setSourceId(sourceId);
-			return d;
+			return new SDMDatum(currSample, resolvePlaceholders(sourceId), AcPhase.Total, backwards);
 		} catch ( IOException e ) {
-			log.error("Communication problem reading source {} from PM3200 device {}: {}", sourceId,
+			log.error("Communication problem reading source {} from SDM device {}: {}", sourceId,
 					modbusDeviceName(), e.getMessage());
 			return null;
 		}
 	}
 
 	@Override
-	public Class<? extends GeneralNodeACEnergyDatum> getMultiDatumType() {
-		return SDMDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return AcEnergyDatum.class;
 	}
 
 	@Override
-	public Collection<GeneralNodeACEnergyDatum> readMultipleDatum() {
-		final List<GeneralNodeACEnergyDatum> results = new ArrayList<GeneralNodeACEnergyDatum>(4);
+	public Collection<NodeDatum> readMultipleDatum() {
+		final List<NodeDatum> results = new ArrayList<NodeDatum>(4);
 		final SDMData currSample;
 		try {
 			currSample = getCurrentSample();
 		} catch ( IOException e ) {
-			log.error("Communication problem reading from SDM device: {}", e.getMessage());
+			log.error("Communication problem reading from SDM device {}: {}", modbusDeviceName(),
+					e.getMessage());
 			return results;
 		}
 		if ( currSample == null ) {
 			return results;
 		}
 		if ( isCaptureTotal() ) {
-			SDMDatum d = new SDMDatum(currSample, ACPhase.Total, backwards);
-			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.Total)));
+			SDMDatum d = new SDMDatum(currSample,
+					resolvePlaceholders(getSourceMapping().get(AcPhase.Total)), AcPhase.Total,
+					backwards);
 			populateExpressionDatumProperties(d, getExpressionConfigs());
 			if ( isCaptureTotal() ) {
 				results.add(d);
 			}
 		}
-		if ( currSample.supportsPhase(ACPhase.PhaseA) && (isCapturePhaseA()) ) {
-			SDMDatum d = new SDMDatum(currSample, ACPhase.PhaseA, backwards);
-			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseA)));
+		if ( currSample.supportsPhase(AcPhase.PhaseA) && (isCapturePhaseA()) ) {
+			SDMDatum d = new SDMDatum(currSample,
+					resolvePlaceholders(getSourceMapping().get(AcPhase.PhaseA)), AcPhase.PhaseA,
+					backwards);
 			populateExpressionDatumProperties(d, getExpressionConfigs());
 			if ( isCapturePhaseA() ) {
 				results.add(d);
 			}
 		}
-		if ( currSample.supportsPhase(ACPhase.PhaseB) && (isCapturePhaseB()) ) {
-			SDMDatum d = new SDMDatum(currSample, ACPhase.PhaseB, backwards);
-			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseB)));
+		if ( currSample.supportsPhase(AcPhase.PhaseB) && (isCapturePhaseB()) ) {
+			SDMDatum d = new SDMDatum(currSample,
+					resolvePlaceholders(getSourceMapping().get(AcPhase.PhaseB)), AcPhase.PhaseB,
+					backwards);
 			populateExpressionDatumProperties(d, getExpressionConfigs());
 			if ( isCapturePhaseB() ) {
 				results.add(d);
 			}
 		}
-		if ( currSample.supportsPhase(ACPhase.PhaseC) && (isCapturePhaseC()) ) {
-			SDMDatum d = new SDMDatum(currSample, ACPhase.PhaseC, backwards);
-			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseC)));
+		if ( currSample.supportsPhase(AcPhase.PhaseC) && (isCapturePhaseC()) ) {
+			SDMDatum d = new SDMDatum(currSample,
+					resolvePlaceholders(getSourceMapping().get(AcPhase.PhaseC)), AcPhase.PhaseC,
+					backwards);
 			populateExpressionDatumProperties(d, getExpressionConfigs());
 			if ( isCapturePhaseC() ) {
 				results.add(d);
@@ -200,7 +202,7 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 	}
 
 	private String getSampleMessage(SDMData data) {
-		if ( data.getDataTimestamp() < 1 ) {
+		if ( data.getDataTimestamp() == null ) {
 			return "N/A";
 		}
 		StringBuilder buf = new StringBuilder();
@@ -208,15 +210,14 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 		buf.append(", VAR = ").append(data.getReactivePower());
 		buf.append(", Wh rec = ").append(data.getActiveEnergyReceived());
 		buf.append(", Wh del = ").append(data.getActiveEnergyDelivered());
-		buf.append("; sampled at ")
-				.append(DateTimeFormat.forStyle("LS").print(new DateTime(data.getDataTimestamp())));
+		buf.append("; sampled at ").append(formatForLocalDisplay(data.getDataTimestamp()));
 		return buf.toString();
 	}
 
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.deson.sdm";
 	}
 
@@ -259,8 +260,8 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 			ExpressionConfig[] exprConfs = getExpressionConfigs();
 			List<ExpressionConfig> exprConfsList = (exprConfs != null ? Arrays.asList(exprConfs)
 					: Collections.<ExpressionConfig> emptyList());
-			results.add(SettingsUtil.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
-					new SettingsUtil.KeyedListCallback<ExpressionConfig>() {
+			results.add(SettingUtils.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
+					new SettingUtils.KeyedListCallback<ExpressionConfig>() {
 
 						@Override
 						public Collection<SettingSpecifier> mapListSettingKey(ExpressionConfig value,
@@ -279,41 +280,41 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 	/**
 	 * Test if the {@code Total} phase should be captured.
 	 * 
-	 * @return <em>true</em> if the {@code sourceMapping} contains a
+	 * @return {@literal true} if the {@code sourceMapping} contains a
 	 *         {@code Total} key
 	 */
 	public boolean isCaptureTotal() {
-		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.Total));
+		return (sourceMapping != null && sourceMapping.containsKey(AcPhase.Total));
 	}
 
 	/**
 	 * Test if the {@code PhaseA} phase should be captured.
 	 * 
-	 * @return <em>true</em> if the {@code sourceMapping} contains a
+	 * @return {@literal true} if the {@code sourceMapping} contains a
 	 *         {@code PhaseA} key
 	 */
 	public boolean isCapturePhaseA() {
-		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.PhaseA));
+		return (sourceMapping != null && sourceMapping.containsKey(AcPhase.PhaseA));
 	}
 
 	/**
 	 * Test if the {@code PhaseB} phase should be captured.
 	 * 
-	 * @return <em>true</em> if the {@code sourceMapping} contains a
+	 * @return {@literal true} if the {@code sourceMapping} contains a
 	 *         {@code PhaseB} key
 	 */
 	public boolean isCapturePhaseB() {
-		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.PhaseB));
+		return (sourceMapping != null && sourceMapping.containsKey(AcPhase.PhaseB));
 	}
 
 	/**
 	 * Test if the {@code PhaseC} phase should be captured.
 	 * 
-	 * @return <em>true</em> if the {@code sourceMapping} contains a
+	 * @return {@literal true} if the {@code sourceMapping} contains a
 	 *         {@code PhaseC} key
 	 */
 	public boolean isCapturePhaseC() {
-		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.PhaseC));
+		return (sourceMapping != null && sourceMapping.containsKey(AcPhase.PhaseC));
 	}
 
 	/**
@@ -321,7 +322,7 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 	 * 
 	 * @return The source mapping.
 	 */
-	public Map<ACPhase, String> getSourceMapping() {
+	public Map<AcPhase, String> getSourceMapping() {
 		return sourceMapping;
 	}
 
@@ -331,7 +332,7 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 	 * @param sourceMapping
 	 *        The source mappinng to set.
 	 */
-	public void setSourceMapping(Map<ACPhase, String> sourceMapping) {
+	public void setSourceMapping(Map<AcPhase, String> sourceMapping) {
 		this.sourceMapping = sourceMapping;
 	}
 
@@ -357,15 +358,15 @@ public class SDMDatumDataSource extends ModbusDataDatumDataSourceSupport<SDMData
 	 */
 	public void setSourceMappingValue(String mapping) {
 		Map<String, String> m = StringUtils.commaDelimitedStringToMap(mapping);
-		Map<ACPhase, String> kindMap = new EnumMap<ACPhase, String>(ACPhase.class);
+		Map<AcPhase, String> kindMap = new EnumMap<AcPhase, String>(AcPhase.class);
 		if ( m != null )
 			for ( Map.Entry<String, String> me : m.entrySet() ) {
 				String k = me.getKey();
-				ACPhase mk;
+				AcPhase mk;
 				try {
-					mk = ACPhase.valueOf(k);
+					mk = AcPhase.valueOf(k);
 				} catch ( RuntimeException e ) {
-					log.info("'{}' is not a valid ACPhase value, ignoring.", k);
+					log.info("'{}' is not a valid AcPhase value, ignoring.", k);
 					continue;
 				}
 				kindMap.put(mk, me.getValue());

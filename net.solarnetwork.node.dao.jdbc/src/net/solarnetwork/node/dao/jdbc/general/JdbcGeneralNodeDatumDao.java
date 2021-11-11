@@ -23,34 +23,48 @@
 package net.solarnetwork.node.dao.jdbc.general;
 
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.Date;
+import java.sql.Types;
+import java.time.Instant;
+import java.util.Calendar;
 import java.util.List;
+import org.osgi.service.event.Event;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.jdbc.core.PreparedStatementCreator;
+import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.domain.GeneralNodeDatumSamples;
-import net.solarnetwork.node.dao.jdbc.AbstractJdbcDatumDao;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumId;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesContainer;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.ObjectDatumKind;
+import net.solarnetwork.node.dao.DatumDao;
+import net.solarnetwork.node.dao.jdbc.AbstractJdbcDao;
+import net.solarnetwork.node.domain.Mock;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
+import net.solarnetwork.node.service.DatumEvents;
 
 /**
  * JDBC-based implementation of {@link net.solarnetwork.node.dao.DatumDao} for
- * {@link GeneralNodeDatum} domain objects.
+ * {@link NodeDatum} domain objects.
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
-public class JdbcGeneralNodeDatumDao extends AbstractJdbcDatumDao<GeneralNodeDatum> {
+public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implements DatumDao {
 
 	/** The default tables version. */
-	public static final int DEFAULT_TABLES_VERSION = 3;
+	public static final int DEFAULT_TABLES_VERSION = 4;
 
 	/** The table name for datum. */
 	public static final String TABLE_GENERAL_NODE_DATUM = "sn_general_node_datum";
@@ -62,7 +76,19 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDatumDao<GeneralNodeDat
 	public static final String DEFAULT_SQL_GET_TABLES_VERSION = "SELECT svalue FROM solarnode.sn_settings WHERE skey = "
 			+ "'solarnode.sn_general_node_datum.version'";
 
+	/** The default value for the {@code maxFetchForUpload} property. */
+	public static final int DEFAULT_MAX_FETCH_FOR_UPLOAD = 60;
+
+	public static final String SQL_RESOURCE_INSERT = "insert";
+	public static final String SQL_RESOURCE_DELETE_OLD = "delete-old";
+	public static final String SQL_RESOURCE_FIND_FOR_UPLOAD = "find-upload";
+	public static final String SQL_RESOURCE_FIND_FOR_PRIMARY_KEY = "find-pk";
+	public static final String SQL_RESOURCE_UPDATE_UPLOADED = "update-upload";
+	public static final String SQL_RESOURCE_UPDATE_DATA = "update-data";
+
 	private ObjectMapper objectMapper;
+	private int maxFetchForUpload = DEFAULT_MAX_FETCH_FOR_UPLOAD;
+	private boolean ignoreMockData = true;
 
 	/**
 	 * Default constructor.
@@ -77,24 +103,19 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDatumDao<GeneralNodeDat
 	}
 
 	@Override
-	public Class<? extends GeneralNodeDatum> getDatumType() {
-		return GeneralNodeDatum.class;
-	}
-
-	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED, noRollbackFor = DuplicateKeyException.class)
-	public void storeDatum(GeneralNodeDatum datum) {
+	public void storeDatum(NodeDatum datum) {
 		try {
 			storeDomainObject(datum);
 		} catch ( DuplicateKeyException e ) {
-			List<GeneralNodeDatum> existing = findDatum(SQL_RESOURCE_FIND_FOR_PRIMARY_KEY,
-					preparedStatementSetterForPrimaryKey(datum.getCreated(), datum.getSourceId()),
+			List<NodeDatum> existing = findDatum(SQL_RESOURCE_FIND_FOR_PRIMARY_KEY,
+					preparedStatementSetterForPrimaryKey(datum.getTimestamp(), datum.getSourceId()),
 					rowMapper());
 			if ( existing.size() > 0 ) {
 				// only update if the samples have changed
-				GeneralDatumSamples existingSamples = existing.get(0).getSamples();
-				GeneralDatumSamples newSamples = datum.getSamples();
-				if ( !newSamples.equals(existingSamples) ) {
+				DatumSamplesOperations existingSamples = existing.get(0).asSampleOperations();
+				DatumSamplesOperations newSamples = datum.asSampleOperations();
+				if ( newSamples.differsFrom(existingSamples) ) {
 					updateDomainObject(datum, getSqlResource(SQL_RESOURCE_UPDATE_DATA));
 				}
 			}
@@ -102,19 +123,17 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDatumDao<GeneralNodeDat
 	}
 
 	@Override
-	protected void setUpdateStatementValues(GeneralNodeDatum datum, PreparedStatement ps)
-			throws SQLException {
+	protected void setUpdateStatementValues(NodeDatum datum, PreparedStatement ps) throws SQLException {
 		int col = 1;
 		ps.setString(col++, jsonForSamples(datum));
-		ps.setTimestamp(col++, new Timestamp(datum.getCreated().getTime()));
+		ps.setTimestamp(col++, Timestamp.from(datum.getTimestamp()));
 		ps.setString(col++, datum.getSourceId());
 	}
 
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
-	public void setDatumUploaded(GeneralNodeDatum datum, Date date, String destination,
-			String trackingId) {
-		updateDatumUpload(datum, date == null ? System.currentTimeMillis() : date.getTime());
+	public void setDatumUploaded(NodeDatum datum, Instant date, String destination, String trackingId) {
+		updateDatumUpload(datum, date == null ? System.currentTimeMillis() : date.toEpochMilli());
 	}
 
 	@Override
@@ -123,59 +142,64 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDatumDao<GeneralNodeDat
 		return deleteUploadedDataOlderThanHours(hours);
 	}
 
-	private RowMapper<GeneralNodeDatum> rowMapper() {
-		return new RowMapper<GeneralNodeDatum>() {
+	private RowMapper<NodeDatum> rowMapper() {
+		return new RowMapper<NodeDatum>() {
 
 			@Override
-			public GeneralNodeDatum mapRow(ResultSet rs, int rowNum) throws SQLException {
+			public NodeDatum mapRow(ResultSet rs, int rowNum) throws SQLException {
 				if ( log.isTraceEnabled() ) {
 					log.trace("Handling result row " + rowNum);
 				}
-				GeneralNodeDatum datum = new GeneralNodeDatum();
 				int col = 0;
-				datum.setCreated(rs.getTimestamp(++col));
-				datum.setSourceId(rs.getString(++col));
+				Instant ts = rs.getTimestamp(++col).toInstant();
+				String sourceId = rs.getString(++col);
+				Long locationId = (Long) rs.getObject(++col);
 
+				DatumId id = (locationId != null ? DatumId.locationId(locationId, sourceId, ts)
+						: DatumId.nodeId(null, sourceId, ts));
+				DatumSamples s = null;
 				String jdata = rs.getString(++col);
 				if ( jdata != null ) {
-					GeneralNodeDatumSamples s;
 					try {
-						s = objectMapper.readValue(jdata, GeneralNodeDatumSamples.class);
-						datum.setSamples(s);
+						s = objectMapper.readValue(jdata, DatumSamples.class);
 					} catch ( IOException e ) {
 						log.error("Error deserializing JSON into GeneralNodeDatumSamples: {}",
 								e.getMessage());
 					}
 				}
-				return datum;
+				return new SimpleDatum(id, s);
 			}
 		};
 	}
 
 	@Override
 	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
-	public List<GeneralNodeDatum> getDatumNotUploaded(String destination) {
+	public List<NodeDatum> getDatumNotUploaded(String destination) {
 		return findDatumNotUploaded(rowMapper());
 	}
 
-	private String jsonForSamples(GeneralNodeDatum datum) {
+	private String jsonForSamples(NodeDatum datum) {
 		String json;
 		try {
-			json = objectMapper.writeValueAsString(datum.getSamples());
+			json = objectMapper.writeValueAsString(((DatumSamplesContainer) datum).getSamples());
 		} catch ( IOException e ) {
-			log.error("Error serializing GeneralDatumSamples into JSON: {}", e.getMessage());
+			log.error("Error serializing DatumSamples into JSON: {}", e.getMessage());
 			json = "{}";
 		}
 		return json;
 	}
 
 	@Override
-	protected void setStoreStatementValues(GeneralNodeDatum datum, PreparedStatement ps)
-			throws SQLException {
+	protected void setStoreStatementValues(NodeDatum datum, PreparedStatement ps) throws SQLException {
 		int col = 0;
-		ps.setTimestamp(++col, new java.sql.Timestamp(
-				datum.getCreated() == null ? System.currentTimeMillis() : datum.getCreated().getTime()));
+		ps.setTimestamp(++col,
+				Timestamp.from(datum.getTimestamp() == null ? Instant.now() : datum.getTimestamp()));
 		ps.setString(++col, datum.getSourceId() == null ? "" : datum.getSourceId());
+		if ( datum.getKind() == ObjectDatumKind.Location ) {
+			ps.setObject(++col, datum.getObjectId());
+		} else {
+			ps.setNull(++col, Types.CHAR);
+		}
 
 		String json = jsonForSamples(datum);
 		ps.setString(++col, json);
@@ -187,6 +211,319 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDatumDao<GeneralNodeDat
 
 	public void setObjectMapper(ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
+	}
+
+	/**
+	 * Execute a SQL update to delete data that has already been "uploaded" and
+	 * is older than a specified number of hours.
+	 * 
+	 * <p>
+	 * This executes SQL from the {@code sqlDeleteOld} property, setting a
+	 * single timestamp parameter as the current time minus {@code hours} hours.
+	 * The general idea is for the SQL to join to some "upload" table to find
+	 * the rows in the "datum" table that have been uploaded and are older than
+	 * the specified number of hours. For example:
+	 * </p>
+	 * 
+	 * <pre>
+	 * DELETE FROM solarnode.sn_some_datum p WHERE p.id IN 
+	 * (SELECT pd.id FROM solarnode.sn_some_datum pd 
+	 * INNER JOIN solarnode.sn_some_datum_upload u 
+	 * ON u.power_datum_id = pd.id WHERE pd.created &lt; ?)
+	 * </pre>
+	 * 
+	 * @param hours
+	 *        the number of hours hold to delete
+	 * @return the number of rows deleted
+	 */
+	protected int deleteUploadedDataOlderThanHours(final int hours) {
+		return getJdbcTemplate().update(new PreparedStatementCreator() {
+
+			@Override
+			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+				String sql = getSqlResource(SQL_RESOURCE_DELETE_OLD);
+				log.debug("Preparing SQL to delete old datum [{}] with hours [{}]", sql, hours);
+				PreparedStatement ps = con.prepareStatement(sql);
+				Calendar c = Calendar.getInstance();
+				c.add(Calendar.HOUR, -hours);
+				ps.setTimestamp(1, new Timestamp(c.getTimeInMillis()), c);
+				return ps;
+			}
+		});
+	}
+
+	/**
+	 * Find datum entities that have not been uploaded to a specific
+	 * destination.
+	 * 
+	 * <p>
+	 * This executes SQL from the {@code findForUploadSql} property. It uses the
+	 * {@code maxFetchForUpload} property to limit the number of rows returned,
+	 * so the call may not return all rows available from the database (this is
+	 * to conserve memory and process the data in small batches).
+	 * </p>
+	 * 
+	 * @param rowMapper
+	 *        a {@link RowMapper} implementation to instantiate entities from
+	 *        found rows
+	 * @return the matching rows, never {@literal null}
+	 */
+	protected List<NodeDatum> findDatumNotUploaded(final RowMapper<NodeDatum> rowMapper) {
+		List<NodeDatum> result = getJdbcTemplate().query(new PreparedStatementCreator() {
+
+			@Override
+			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+				String sql = getSqlResource(SQL_RESOURCE_FIND_FOR_UPLOAD);
+				if ( log.isTraceEnabled() ) {
+					log.trace("Preparing SQL to find datum not uploaded [" + sql
+							+ "] with maxFetchForUpload [" + maxFetchForUpload + ']');
+				}
+				PreparedStatement ps = con.prepareStatement(sql);
+				ps.setFetchDirection(ResultSet.FETCH_FORWARD);
+				ps.setFetchSize(maxFetchForUpload);
+				ps.setMaxRows(maxFetchForUpload);
+				return ps;
+			}
+		}, rowMapper);
+		if ( log.isDebugEnabled() ) {
+			log.debug("Found " + result.size() + " datum entities not uploaded");
+		}
+		return result;
+	}
+
+	/**
+	 * Find datum entities.
+	 * 
+	 * @param sqlResource
+	 *        The name of the SQL resource to use. See
+	 *        {@link #getSqlResource(String)}
+	 * @param setter
+	 *        A prepared statement setter
+	 * @param rowMapper
+	 *        a {@link RowMapper} implementation to instantiate entities from
+	 *        found rows
+	 * @return the matching rows, never {@literal null}
+	 * @since 1.2
+	 */
+	protected List<NodeDatum> findDatum(final String sqlResource, final PreparedStatementSetter setter,
+			final RowMapper<NodeDatum> rowMapper) {
+		List<NodeDatum> result = getJdbcTemplate().query(new PreparedStatementCreator() {
+
+			@Override
+			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+				String sql = getSqlResource(sqlResource);
+				if ( log.isTraceEnabled() ) {
+					log.trace("Preparing SQL [{}] to find datum", sql);
+				}
+				PreparedStatement ps = con.prepareStatement(sql);
+				ps.setFetchDirection(ResultSet.FETCH_FORWARD);
+				ps.setFetchSize(1);
+				ps.setMaxRows(1);
+				setter.setValues(ps);
+				return ps;
+			}
+		}, rowMapper);
+		return result;
+	}
+
+	/**
+	 * Create a {@link PreparedStatementSetter} that sets the primary key values
+	 * on a statement.
+	 * 
+	 * @param created
+	 *        The created date of the datum.
+	 * @param sourceId
+	 *        The source ID of the datum.
+	 * @return The setter instance.
+	 * @see #findDatum(String, PreparedStatementSetter, RowMapper)
+	 * @since 1.2
+	 */
+	protected PreparedStatementSetter preparedStatementSetterForPrimaryKey(final Instant created,
+			final String sourceId) {
+		return new PreparedStatementSetter() {
+
+			@Override
+			public void setValues(PreparedStatement ps) throws SQLException {
+				ps.setTimestamp(1, Timestamp.from(created));
+				ps.setString(2, sourceId);
+			}
+		};
+	}
+
+	/**
+	 * Store a new domain object using the {@link #SQL_RESOURCE_INSERT} SQL.
+	 * 
+	 * <p>
+	 * If {@link #isIgnoreMockData()} returns {@literal true} and {@code datum}
+	 * is an instance of {@link Mock} then this method will not persist the
+	 * object and will simply return {@code -1}.
+	 * </p>
+	 * 
+	 * @param datum
+	 *        the datum to persist
+	 */
+	protected void storeDomainObject(final NodeDatum datum) {
+		if ( ignoreMockData && datum instanceof Mock ) {
+			if ( log.isDebugEnabled() ) {
+				log.debug("Not persisting Mock datum: " + datum);
+			}
+			return;
+		}
+		insertDomainObject(datum, getSqlResource(SQL_RESOURCE_INSERT));
+		if ( log.isInfoEnabled() ) {
+			log.info("Persisting datum locally: {}", datum);
+		}
+		postDatumStoredEvent(datum);
+	}
+
+	/**
+	 * {@inheritDoc}
+	 * 
+	 * @since 1.3
+	 */
+	@Override
+	protected int updateDomainObject(NodeDatum datum, String sqlUpdate) {
+		int result = super.updateDomainObject(datum, sqlUpdate);
+		if ( result > 0 ) {
+			postDatumStoredEvent(datum);
+		}
+		return result;
+	}
+
+	/**
+	 * Mark a Datum as uploaded.
+	 * 
+	 * <p>
+	 * This method will call {@link #updateDatumUpload(long, Object, long)}
+	 * passing in {@link NodeDatum#getTimestamp()},
+	 * {@link NodeDatum#getSourceId()}, and {@code timestamp}.
+	 * </p>
+	 * 
+	 * @param datum
+	 *        the datum that was uploaded
+	 * @param timestamp
+	 *        the date the upload happened
+	 */
+	protected void updateDatumUpload(final NodeDatum datum, final long timestamp) {
+		updateDatumUpload(datum.getTimestamp().toEpochMilli(), datum.getSourceId(), timestamp);
+	}
+
+	/**
+	 * Mark a Datum as uploaded.
+	 * 
+	 * <p>
+	 * This method will execute the {@link #SQL_RESOURCE_UPDATE_UPLOADED} SQL
+	 * setting the following parameters:
+	 * </p>
+	 * 
+	 * <ol>
+	 * <li>Timestamp parameter based on {@code timestamp}</li>
+	 * <li>Timestamp parameter based on {@code created}</li>
+	 * <li>Object parameter based on {@code id}</li>
+	 * </ol>
+	 * 
+	 * @param created
+	 *        the date the object was created
+	 * @param id
+	 *        the object's source or location ID
+	 * @param timestamp
+	 *        the date the upload happened
+	 * @return the number of updated rows
+	 */
+	protected int updateDatumUpload(final long created, final Object id, final long timestamp) {
+		return getJdbcTemplate().update(new PreparedStatementCreator() {
+
+			@Override
+			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
+				PreparedStatement ps = con
+						.prepareStatement(getSqlResource(SQL_RESOURCE_UPDATE_UPLOADED));
+				int col = 1;
+				ps.setTimestamp(col++, new java.sql.Timestamp(timestamp));
+				ps.setTimestamp(col++, new java.sql.Timestamp(created));
+				ps.setObject(col++, id);
+				return ps;
+			}
+		});
+	}
+
+	/**
+	 * Post an {@link Event} for the {@link DatumDao#EVENT_TOPIC_DATUM_STORED}
+	 * topic.
+	 * 
+	 * @param datum
+	 *        the datum that was stored
+	 * @since 1.3
+	 */
+	protected final void postDatumStoredEvent(NodeDatum datum) {
+		Event event = createDatumStoredEvent(datum);
+		postEvent(event);
+	}
+
+	/**
+	 * Create a new {@link DatumDao#EVENT_TOPIC_DATUM_STORED} {@link Event}
+	 * object out of a {@link Datum}.
+	 * 
+	 * <p>
+	 * This method uses the result of {@link Datum#asSimpleMap()} as the event
+	 * properties.
+	 * </p>
+	 * 
+	 * @param datum
+	 *        the datum to create the event for
+	 * @return the new Event instance
+	 * @since 1.3
+	 */
+	protected Event createDatumStoredEvent(final NodeDatum datum) {
+		return DatumEvents.datumEvent(EVENT_TOPIC_DATUM_STORED, datum);
+	}
+
+	/**
+	 * Get the maximum number of datum to fetch for upload at one time.
+	 * 
+	 * @return the maximum number of datum rows to fetch
+	 */
+	public int getMaxFetchForUpload() {
+		return maxFetchForUpload;
+	}
+
+	/**
+	 * The maximum number of rows to return in the
+	 * {@link #findDatumNotUploaded(RowMapper)} method.
+	 * 
+	 * <p>
+	 * Defaults to {@link #DEFAULT_MAX_FETCH_FOR_UPLOAD}.
+	 * </p>
+	 * 
+	 * @param maxFetchForUpload
+	 *        the maximum upload value
+	 */
+	public void setMaxFetchForUpload(int maxFetchForUpload) {
+		this.maxFetchForUpload = maxFetchForUpload;
+	}
+
+	/**
+	 * Get the flag to ignore mock data.
+	 * 
+	 * @return {@literal true} to not store any mock data
+	 */
+	public boolean isIgnoreMockData() {
+		return ignoreMockData;
+	}
+
+	/**
+	 * Set a flag to not actually store any domain object that implements the
+	 * {@link Mock} interface.
+	 * 
+	 * <p>
+	 * This defaults to {@literal true}, but during development it can be useful
+	 * to configure this as {@literal false} for testing.
+	 * </p>
+	 * 
+	 * @param ignoreMockData
+	 *        the ignore mock data value
+	 */
+	public void setIgnoreMockData(boolean ignoreMockData) {
+		this.ignoreMockData = ignoreMockData;
 	}
 
 }

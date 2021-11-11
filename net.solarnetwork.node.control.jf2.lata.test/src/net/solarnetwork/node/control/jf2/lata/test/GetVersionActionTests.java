@@ -31,7 +31,7 @@ import java.io.OutputStream;
 import net.solarnetwork.node.control.jf2.lata.GetVersionAction;
 import net.solarnetwork.node.io.serial.rxtx.support.TestSerialPort;
 import net.solarnetwork.node.io.serial.rxtx.support.TestSerialPortConnection;
-import net.solarnetwork.node.support.SerialPortBeanParameters;
+import net.solarnetwork.node.service.support.SerialPortBeanParameters;
 import org.junit.Assert;
 import org.junit.Test;
 

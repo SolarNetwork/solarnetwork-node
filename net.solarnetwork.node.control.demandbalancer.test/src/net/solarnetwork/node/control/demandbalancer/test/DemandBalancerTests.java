@@ -22,45 +22,48 @@
 
 package net.solarnetwork.node.control.demandbalancer.test;
 
+import static java.util.Collections.singletonList;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.control.demandbalancer.DemandBalanceStrategy;
-import net.solarnetwork.node.control.demandbalancer.DemandBalancer;
-import net.solarnetwork.node.control.demandbalancer.SimpleDemandBalanceStrategy;
-import net.solarnetwork.node.domain.EnergyDatum;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
-import net.solarnetwork.node.domain.NodeControlInfoDatum;
-import net.solarnetwork.node.reactor.Instruction;
-import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.test.AbstractNodeTest;
-import net.solarnetwork.util.OptionalServiceCollection;
-import net.solarnetwork.util.StaticOptionalService;
-import net.solarnetwork.util.StaticOptionalServiceCollection;
+import static org.hamcrest.Matchers.is;
+import static org.junit.Assert.assertThat;
+import java.time.Instant;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
-import org.junit.Assert;
+import org.easymock.IAnswer;
 import org.junit.Before;
 import org.junit.Test;
+import net.solarnetwork.domain.BasicNodeControlInfo;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
+import net.solarnetwork.domain.NodeControlInfo;
+import net.solarnetwork.domain.NodeControlPropertyType;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.control.demandbalancer.DemandBalancer;
+import net.solarnetwork.node.control.demandbalancer.SimpleDemandBalanceStrategy;
+import net.solarnetwork.node.domain.datum.SimpleAcEnergyDatum;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.reactor.SimpleInstructionExecutionService;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.service.StaticOptionalService;
+import net.solarnetwork.service.StaticOptionalServiceCollection;
 
 /**
  * Test cases for the {@link DemandBalancer} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class DemandBalancerTests extends AbstractNodeTest {
+public class DemandBalancerTests {
 
 	private DemandBalancer demandBalancer;
 
 	private SimpleDemandBalanceStrategy strategy;
-	private DatumDataSource<GeneralNodeACEnergyDatum> consumptionDataSource;
+	private DatumDataSource consumptionDataSource;
 	private NodeControlProvider pcmControl;
 	private InstructionHandler pcmHandler;
 
@@ -72,61 +75,67 @@ public class DemandBalancerTests extends AbstractNodeTest {
 		verify(consumptionDataSource, pcmControl, pcmHandler);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Before
 	public void setup() {
-		demandBalancer = new DemandBalancer();
+		pcmHandler = EasyMock.createMock(InstructionHandler.class);
+		demandBalancer = new DemandBalancer(new StaticOptionalService<>(
+				new SimpleInstructionExecutionService(singletonList(pcmHandler))));
 
 		consumptionDataSource = EasyMock.createMock(DatumDataSource.class);
-		Collection<DatumDataSource<? extends EnergyDatum>> consumptions = Collections
-				.<DatumDataSource<? extends EnergyDatum>> singleton(consumptionDataSource);
-		OptionalServiceCollection<DatumDataSource<? extends EnergyDatum>> consumptionsService = new StaticOptionalServiceCollection<DatumDataSource<? extends EnergyDatum>>(
-				consumptions);
-		demandBalancer.setConsumptionDataSource(consumptionsService);
+		demandBalancer.setConsumptionDataSource(
+				new StaticOptionalServiceCollection<>(singletonList(consumptionDataSource)));
 
 		pcmControl = EasyMock.createMock(NodeControlProvider.class);
-		demandBalancer.setPowerControl(new StaticOptionalService<NodeControlProvider>(pcmControl));
+		demandBalancer.setPowerControl(new StaticOptionalService<>(pcmControl));
 
 		strategy = new SimpleDemandBalanceStrategy();
 		strategy.setUnknownDemandLimit(3);
-		demandBalancer.setBalanceStrategy(new StaticOptionalService<DemandBalanceStrategy>(strategy));
+		demandBalancer.setBalanceStrategy(new StaticOptionalService<>(strategy));
 
-		pcmHandler = EasyMock.createMock(InstructionHandler.class);
-		demandBalancer.setInstructionHandlers(Collections.singleton(pcmHandler));
 	}
 
 	@Test
 	public void negativePowerWithUnknownLimit() {
+		// GIVEN
 		final Integer originalLimit = 100;
-		final NodeControlInfoDatum originalPcmInfo = new NodeControlInfoDatum();
-		originalPcmInfo.setCreated(new Date());
-		originalPcmInfo.setSourceId(demandBalancer.getPowerControlId());
-		originalPcmInfo.setValue(originalLimit.toString());
+		final NodeControlInfo originalPcmInfo = BasicNodeControlInfo.builder()
+				.withControlId(demandBalancer.getPowerControlId())
+				.withType(NodeControlPropertyType.Integer).withReadonly(false)
+				.withValue(originalLimit.toString()).build();
 
-		final GeneralNodeACEnergyDatum consumption = new GeneralNodeACEnergyDatum();
+		final SimpleAcEnergyDatum consumption = new SimpleAcEnergyDatum("foo", Instant.now(),
+				new DatumSamples());
 		consumption.setWatts(-123);
 
-		expect(pcmControl.getCurrentControlInfo(demandBalancer.getPowerControlId())).andReturn(
-				originalPcmInfo);
+		expect(pcmControl.getCurrentControlInfo(demandBalancer.getPowerControlId()))
+				.andReturn(originalPcmInfo);
 
 		expect(consumptionDataSource.readCurrentDatum()).andReturn(consumption);
 
 		expect(pcmHandler.handlesTopic(InstructionHandler.TOPIC_DEMAND_BALANCE)).andReturn(true);
 
-		Capture<Instruction> instructionCapture = new Capture<Instruction>();
-		expect(pcmHandler.processInstruction(EasyMock.capture(instructionCapture))).andReturn(
-				InstructionState.Completed);
+		Capture<Instruction> instructionCapture = new Capture<>();
+		expect(pcmHandler.processInstruction(EasyMock.capture(instructionCapture)))
+				.andAnswer(new IAnswer<InstructionStatus>() {
 
+					@Override
+					public InstructionStatus answer() throws Throwable {
+						// TODO Auto-generated method stub
+						return InstructionUtils.createStatus(instructionCapture.getValue(),
+								InstructionState.Completed);
+					}
+				});
+
+		// WHEN
 		replayAll();
-
 		demandBalancer.evaluateBalance();
 
 		verifyAll();
 
 		Instruction instr = instructionCapture.getValue();
-		Assert.assertEquals(InstructionHandler.TOPIC_DEMAND_BALANCE, instr.getTopic());
-		Assert.assertEquals(String.valueOf(strategy.getUnknownDemandLimit()),
-				instr.getParameterValue(demandBalancer.getPowerControlId()));
+		assertThat("Instruction topic", instr.getTopic(), is(InstructionHandler.TOPIC_DEMAND_BALANCE));
+		assertThat("Instruction control ID", instr.getParameterValue(demandBalancer.getPowerControlId()),
+				is(String.valueOf(strategy.getUnknownDemandLimit())));
 	}
 
 }

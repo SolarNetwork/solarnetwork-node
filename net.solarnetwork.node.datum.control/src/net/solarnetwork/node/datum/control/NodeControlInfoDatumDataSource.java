@@ -1,5 +1,5 @@
 /* ==================================================================
- * NodeControlInfoDatumDataSource.java - 9/04/2021 9:00:59 AM
+ * SimpleNodeControlInfoDatumDataSource.java - 9/04/2021 9:00:59 AM
  * 
  * Copyright 2021 SolarNetwork.net Dev Team
  * 
@@ -22,9 +22,10 @@
 
 package net.solarnetwork.node.datum.control;
 
-import static java.util.Collections.singleton;
-import static net.solarnetwork.util.OptionalService.service;
+import static net.solarnetwork.service.OptionalService.service;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -34,44 +35,77 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.NodeControlInfo;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.GeneralNodeControlInfoDatum;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.DatumQueue;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Data source for controls, supporting both scheduling polling and real-time
  * persisting of changes.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class NodeControlInfoDatumDataSource extends BaseIdentifiable
-		implements SettingSpecifierProvider, EventHandler {
+public class NodeControlInfoDatumDataSource extends DatumDataSourceSupport
+		implements SettingSpecifierProvider, EventHandler, MultiDatumDataSource {
 
-	/** The default {@code eventMode} property value: {@literal Change}. */
+	/** The {@code eventMode} property default value: {@literal Change}. */
 	public static final ControlEventMode DEFAULT_EVENT_MODE = ControlEventMode.Change;
 
-	private static final Logger log = LoggerFactory.getLogger(NodeControlInfoDatumDataSource.class);
+	/** The {@code persistMode} property default value: {@literal Poll}. */
+	public static final QueuePersistMode DEFAULT_PERSIST_MODE = QueuePersistMode.Poll;
 
-	private OptionalService<DatumDao<GeneralNodeDatum>> datumDao;
+	private final List<NodeControlProvider> providers;
 	private Executor executor;
 	private Pattern controlIdRegex;
 	private ControlEventMode eventMode = DEFAULT_EVENT_MODE;
+	private QueuePersistMode persistMode = DEFAULT_PERSIST_MODE;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param datumQueue
+	 *        the queue
+	 * @param providers
+	 *        the list of available control providers
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
+	public NodeControlInfoDatumDataSource(OptionalService<DatumQueue> datumQueue,
+			List<NodeControlProvider> providers) {
+		super();
+		if ( datumQueue == null ) {
+			throw new IllegalArgumentException("The datumQueue argument must not be null.");
+		}
+		super.setDatumQueue(datumQueue);
+		if ( providers == null ) {
+			throw new IllegalArgumentException("The providers argument must not be null.");
+		}
+		this.providers = providers;
+	}
+
+	@Override
+	public void setDatumQueue(OptionalService<DatumQueue> datumQueue) {
+		throw new UnsupportedOperationException(
+				"Not allowed to change datumQueue property after construction.");
+	}
 
 	@Override
 	public void handleEvent(Event event) {
+		if ( eventMode == ControlEventMode.None ) {
+			return;
+		}
 		final String topic = event.getTopic();
 		if ( NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED.equals(topic) ) {
 			if ( eventMode == ControlEventMode.Change ) {
@@ -84,7 +118,7 @@ public class NodeControlInfoDatumDataSource extends BaseIdentifiable
 		} else {
 			return;
 		}
-		final Object val = event.getProperty(Datum.DATUM_PROPERTY);
+		final Object val = event.getProperty(DatumEvents.DATUM_PROPERTY);
 		if ( val == null || !(val instanceof NodeControlInfo) ) {
 			return;
 		}
@@ -100,7 +134,7 @@ public class NodeControlInfoDatumDataSource extends BaseIdentifiable
 
 			@Override
 			public void run() {
-				persistDatum(info);
+				offerDatum(info, persistMode == QueuePersistMode.PollAndEvent);
 			}
 
 		};
@@ -112,24 +146,26 @@ public class NodeControlInfoDatumDataSource extends BaseIdentifiable
 		}
 	}
 
-	private void persistDatum(NodeControlInfo info) {
-		final DatumDao<GeneralNodeDatum> dao = service(datumDao);
-		if ( dao == null ) {
-			log.warn("DAO not available to persist control info {}; discarding", info);
+	private void offerDatum(final NodeControlInfo info, final boolean persist) {
+		final DatumQueue queue = service(getDatumQueue());
+		if ( queue == null ) {
+			log.warn("DatumQueue not available to offer control info {}; discarding", info);
 			return;
 		}
-		GeneralNodeDatum datum;
-		if ( info instanceof GeneralNodeDatum ) {
-			datum = (GeneralNodeDatum) info;
-		} else {
-			datum = new GeneralNodeControlInfoDatum(singleton(info));
+		NodeDatum datum = datumForInfo(info);
+		log.debug("Offering control datum {} with persist {}", datum, persist);
+		queue.offer(datum, persist);
+	}
+
+	private NodeDatum datumForInfo(NodeControlInfo info) {
+		if ( info instanceof NodeDatum ) {
+			return (NodeDatum) info; // already a datum, so use that directly
 		}
-		log.debug("Persisting control datum {}", datum);
-		dao.storeDatum(datum);
+		return new SimpleNodeControlInfoDatum(info, Instant.now());
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.control";
 	}
 
@@ -144,32 +180,80 @@ public class NodeControlInfoDatumDataSource extends BaseIdentifiable
 		results.addAll(baseIdentifiableSettings(""));
 		results.add(new BasicTextFieldSettingSpecifier("controlIdRegexValue", ""));
 
+		final MessageSource ms = getMessageSource();
+
 		// drop-down menu for event mode
-		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
+		BasicMultiValueSettingSpecifier eventModeSpec = new BasicMultiValueSettingSpecifier(
 				"eventModeValue", DEFAULT_EVENT_MODE.name());
-		Map<String, String> propTypeTitles = new LinkedHashMap<>(3);
-		MessageSource ms = getMessageSource();
+		Map<String, String> eventModeTitles = new LinkedHashMap<>(4);
 		for ( ControlEventMode e : ControlEventMode.values() ) {
 			String desc = e.toString();
 			if ( ms != null ) {
 				desc = ms.getMessage("eventMode." + e.name(), null, e.name(), Locale.getDefault());
 			}
-			propTypeTitles.put(e.name(), desc);
+			eventModeTitles.put(e.name(), desc);
 		}
-		propTypeSpec.setValueTitles(propTypeTitles);
-		results.add(propTypeSpec);
+		eventModeSpec.setValueTitles(eventModeTitles);
+		results.add(eventModeSpec);
+
+		// drop-down menu for persist mode
+		BasicMultiValueSettingSpecifier persistModeSpec = new BasicMultiValueSettingSpecifier(
+				"persistModeValue", DEFAULT_PERSIST_MODE.name());
+		Map<String, String> persistModeTitles = new LinkedHashMap<>(4);
+		for ( QueuePersistMode e : QueuePersistMode.values() ) {
+			String desc = e.toString();
+			if ( ms != null ) {
+				desc = ms.getMessage("persistMode." + e.name(), null, e.name(), Locale.getDefault());
+			}
+			persistModeTitles.put(e.name(), desc);
+		}
+		persistModeSpec.setValueTitles(persistModeTitles);
+		results.add(persistModeSpec);
 
 		return results;
 	}
 
-	/**
-	 * Set the datum DAO to use for real-time persisting of changes.
-	 * 
-	 * @param datumDao
-	 *        the DAO to set
-	 */
-	public void setDatumDao(OptionalService<DatumDao<GeneralNodeDatum>> datumDao) {
-		this.datumDao = datumDao;
+	@Override
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return NodeDatum.class;
+	}
+
+	@Override
+	public Collection<NodeDatum> readMultipleDatum() {
+		List<NodeDatum> result = new ArrayList<>();
+		final Pattern controlIdRegex = getControlIdRegex();
+		for ( NodeControlProvider p : providers ) {
+			List<String> controlIds = p.getAvailableControlIds();
+			if ( controlIds == null || controlIds.isEmpty() ) {
+				continue;
+			}
+			for ( String controlId : controlIds ) {
+				if ( controlIdRegex != null
+						&& (controlId == null || !controlIdRegex.matcher(controlId).find()) ) {
+					log.debug("Ignoring control [{}] - does not match pattern [{}]", controlId,
+							controlIdRegex);
+					continue;
+				}
+				NodeControlInfo info = null;
+				try {
+					info = p.getCurrentControlInfo(controlId);
+				} catch ( Exception e ) {
+					Throwable root = e;
+					while ( root.getCause() != null ) {
+						root = root.getCause();
+					}
+					log.error("Error reading control [{}]: {}", controlId, root.toString(), root);
+				}
+				if ( info == null ) {
+					continue;
+				}
+				NodeDatum datum = datumForInfo(info);
+				if ( datum != null ) {
+					result.add(datum);
+				}
+			}
+		}
+		return result;
 	}
 
 	/**
@@ -288,6 +372,55 @@ public class NodeControlInfoDatumDataSource extends BaseIdentifiable
 			mode = DEFAULT_EVENT_MODE;
 		}
 		setEventMode(mode);
+	}
+
+	/**
+	 * Get the "persist datum" queue mode.
+	 * 
+	 * @return the mode, never {@literal null}
+	 */
+	public QueuePersistMode getPersistMode() {
+		return persistMode;
+	}
+
+	/**
+	 * Set the "persist datum" queue mode.
+	 * 
+	 * @param persistMode
+	 *        the mode to set; if {@literal null} then
+	 *        {@link #DEFAULT_PERSIST_MODE} will be set
+	 */
+	public void setPersistMode(QueuePersistMode persistMode) {
+		if ( persistMode == null ) {
+			persistMode = DEFAULT_PERSIST_MODE;
+		}
+		this.persistMode = persistMode;
+	}
+
+	/**
+	 * Get the datum persist mode string value.
+	 * 
+	 * @return the mode as a string, never {@literal null}
+	 */
+	public String getPersistModeValue() {
+		return getPersistMode().name();
+	}
+
+	/**
+	 * Set the datum persist mode as a string value.
+	 * 
+	 * @param value
+	 *        the mode to set; if {@literal null} then
+	 *        {@link #DEFAULT_EVENT_MODE} will be set instead
+	 */
+	public void setPersistModeValue(String value) {
+		QueuePersistMode mode;
+		try {
+			mode = QueuePersistMode.valueOf(value);
+		} catch ( IllegalArgumentException | NullPointerException e ) {
+			mode = DEFAULT_PERSIST_MODE;
+		}
+		setPersistMode(mode);
 	}
 
 }

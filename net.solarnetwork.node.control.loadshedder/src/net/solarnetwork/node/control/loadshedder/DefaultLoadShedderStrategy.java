@@ -28,23 +28,24 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import net.solarnetwork.domain.NodeControlInfo;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.domain.EnergyDatum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
+import net.solarnetwork.domain.NodeControlInfo;
+import net.solarnetwork.node.domain.datum.EnergyDatum;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.service.support.BasicIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Default implementation of {@link LoadShedderStrategy}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class DefaultLoadShedderStrategy implements LoadShedderStrategy, SettingSpecifierProvider {
+public class DefaultLoadShedderStrategy extends BasicIdentifiable
+		implements LoadShedderStrategy, SettingSpecifierProvider {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -53,7 +54,10 @@ public class DefaultLoadShedderStrategy implements LoadShedderStrategy, SettingS
 	private int powerAverageSampleSeconds = 10;
 	private Collection<NodeControlProvider> controls = Collections.emptyList();
 
-	private MessageSource messageSource;
+	public DefaultLoadShedderStrategy() {
+		super();
+		setUid("Default");
+	}
 
 	@Override
 	public Collection<LoadShedAction> evaulateRules(List<LoadShedControlConfig> rules,
@@ -170,8 +174,8 @@ public class DefaultLoadShedderStrategy implements LoadShedderStrategy, SettingS
 
 			LoadShedControlInfo info = (limitStatuses != null ? limitStatuses.get(controlId) : null);
 			if ( switchWithinLimitHoldPeriod(date, info, rule) ) {
-				log.debug("Switch {} within limit hold period, cannot  release limit now: {}",
-						controlId, info.getActionDate());
+				log.debug("Switch {} within limit hold period, cannot  release limit now: {}", controlId,
+						info.getActionDate());
 				continue;
 			}
 
@@ -220,9 +224,8 @@ public class DefaultLoadShedderStrategy implements LoadShedderStrategy, SettingS
 		switch (controlInfo.getType()) {
 			case Boolean:
 				// TRUE means actively limiting, FALSE means NOT limiting
-				if ( value != null
-						&& (value.equals("1") || value.equalsIgnoreCase("yes") || value
-								.equalsIgnoreCase("true")) ) {
+				if ( value != null && (value.equals("1") || value.equalsIgnoreCase("yes")
+						|| value.equalsIgnoreCase("true")) ) {
 					return true;
 				}
 				break;
@@ -292,20 +295,22 @@ public class DefaultLoadShedderStrategy implements LoadShedderStrategy, SettingS
 		return applicable;
 	}
 
-	private Integer effectivePowerValue(final long date, final Collection<EnergyDatum> consumptionSamples) {
+	private Integer effectivePowerValue(final long date,
+			final Collection<EnergyDatum> consumptionSamples) {
 		final long oldestDate = date - (powerAverageSampleSeconds * 1000L);
 		double totalPower = 0;
 		double totalSeconds = 0;
 		EnergyDatum prevDatum = null;
 		for ( EnergyDatum d : consumptionSamples ) {
-			if ( d.getCreated().getTime() < oldestDate ) {
+			if ( d.getTimestamp().toEpochMilli() < oldestDate ) {
 				break;
 			}
 			if ( prevDatum != null ) {
 				Integer power = getPowerValue(d);
 				Integer prevPower = getPowerValue(prevDatum);
 				if ( power != null && prevPower != null ) {
-					double ds = (prevDatum.getCreated().getTime() - d.getCreated().getTime()) / 1000.0;
+					double ds = (prevDatum.getTimestamp().toEpochMilli()
+							- d.getTimestamp().toEpochMilli()) / 1000.0;
 					totalPower += (power.doubleValue() + prevPower.doubleValue()) * 0.5 * ds;
 					totalSeconds += ds;
 				}
@@ -326,23 +331,11 @@ public class DefaultLoadShedderStrategy implements LoadShedderStrategy, SettingS
 		return datum.getWatts();
 	}
 
-	// Identifiable
-
-	@Override
-	public String getUID() {
-		return "Default";
-	}
-
-	@Override
-	public String getGroupUID() {
-		return null;
-	}
-
 	// Settings support
 
 	@Override
-	public String getSettingUID() {
-		return getClass().getName();
+	public String getSettingUid() {
+		return "net.solarnetwork.node.control.loadshedder.DefaultLoadShedderStrategy";
 	}
 
 	@Override
@@ -351,20 +344,15 @@ public class DefaultLoadShedderStrategy implements LoadShedderStrategy, SettingS
 	}
 
 	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(3);
 		DefaultLoadShedderStrategy defaults = new DefaultLoadShedderStrategy();
-		results.add(new BasicTextFieldSettingSpecifier("shedThresholdWatts", String
-				.valueOf(defaults.shedThresholdWatts)));
-		results.add(new BasicTextFieldSettingSpecifier("powerAverageSampleSeconds", String
-				.valueOf(defaults.powerAverageSampleSeconds)));
-		results.add(new BasicTextFieldSettingSpecifier("limitExecutionMonitorSeconds", String
-				.valueOf(defaults.limitExecutionMonitorSeconds)));
+		results.add(new BasicTextFieldSettingSpecifier("shedThresholdWatts",
+				String.valueOf(defaults.shedThresholdWatts)));
+		results.add(new BasicTextFieldSettingSpecifier("powerAverageSampleSeconds",
+				String.valueOf(defaults.powerAverageSampleSeconds)));
+		results.add(new BasicTextFieldSettingSpecifier("limitExecutionMonitorSeconds",
+				String.valueOf(defaults.limitExecutionMonitorSeconds)));
 		return results;
 	}
 
@@ -400,10 +388,6 @@ public class DefaultLoadShedderStrategy implements LoadShedderStrategy, SettingS
 
 	public void setPowerAverageSampleSeconds(int powerAverageSampleSeconds) {
 		this.powerAverageSampleSeconds = powerAverageSampleSeconds;
-	}
-
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
 	}
 
 }

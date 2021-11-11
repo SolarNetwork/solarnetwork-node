@@ -32,33 +32,42 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 import org.springframework.scheduling.concurrent.CustomizableThreadFactory;
-import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.io.serial.ConfigurableSerialNetwork;
 import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.node.io.serial.SerialNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.SerialPortBean;
-import net.solarnetwork.node.support.SerialPortBeanParameters;
+import net.solarnetwork.node.service.LockTimeoutException;
+import net.solarnetwork.node.service.support.SerialPortBean;
+import net.solarnetwork.node.service.support.SerialPortBeanParameters;
+import net.solarnetwork.service.support.BasicIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * RXTX implementation of {@link SerialNetwork}.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
-public class SerialPortNetwork implements ConfigurableSerialNetwork, SettingSpecifierProvider {
+public class SerialPortNetwork extends BasicIdentifiable
+		implements ConfigurableSerialNetwork, SettingSpecifierProvider {
+
+	/** The {@code uid} property default value. */
+	public static final String DEFAULT_UID = "Serial Port";
+
+	/** The {@code timeout} property default value. */
+	public static final long DEFAULT_TIMEOUT_SECS = 10L;
+
+	/** The {@code lockOnOpen} property default value. */
+	public static final boolean DEFAULT_LOCK_ON_OPEN = true;
 
 	private SerialPortBeanParameters serialParams = getDefaultSerialParametersInstance();
-	private String uid = "Serial Port";
-	private String groupUID;
-	private long timeout = 10L;
+	private long timeout = DEFAULT_TIMEOUT_SECS;
 	private TimeUnit unit = TimeUnit.SECONDS;
-	private MessageSource messageSource;
+	private boolean lockOnOpen = DEFAULT_LOCK_ON_OPEN;
 
 	private final ExecutorService executor = Executors
 			.newSingleThreadExecutor(new CustomizableThreadFactory("RXTX-SerialPort-"));
@@ -76,6 +85,11 @@ public class SerialPortNetwork implements ConfigurableSerialNetwork, SettingSpec
 		return params;
 	}
 
+	public SerialPortNetwork() {
+		super();
+		setUid(DEFAULT_UID);
+	}
+
 	/**
 	 * Call to shut down internal resources. Once called, this network may not
 	 * be used again.
@@ -90,16 +104,6 @@ public class SerialPortNetwork implements ConfigurableSerialNetwork, SettingSpec
 	public String getPortName() {
 		SerialPortBeanParameters params = getSerialParams();
 		return (params != null ? params.getSerialPort() : null);
-	}
-
-	@Override
-	public String getUID() {
-		return uid;
-	}
-
-	@Override
-	public String getGroupUID() {
-		return groupUID;
 	}
 
 	@Override
@@ -122,7 +126,8 @@ public class SerialPortNetwork implements ConfigurableSerialNetwork, SettingSpec
 
 	@Override
 	public SerialConnection createConnection() {
-		return new LockingSerialConnection();
+		return (lockOnOpen ? new LockingSerialConnection()
+				: new SerialPortConnection(serialParams, executor));
 	}
 
 	/**
@@ -207,7 +212,7 @@ public class SerialPortNetwork implements ConfigurableSerialNetwork, SettingSpec
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.serial";
 	}
 
@@ -221,24 +226,19 @@ public class SerialPortNetwork implements ConfigurableSerialNetwork, SettingSpec
 		return getDefaultSettingSpecifiers();
 	}
 
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers() {
-		SerialPortNetwork defaults = new SerialPortNetwork();
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
-		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.uid));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.groupUID));
+		List<SettingSpecifier> results = new ArrayList<>(20);
+		results.addAll(basicIdentifiableSettings("", DEFAULT_UID, null));
 
 		SerialPortBeanParameters defaultSerialParams = getDefaultSerialParametersInstance();
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.serialPort",
 				defaultSerialParams.getSerialPort()));
-		results.add(new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.timeout)));
+		results.add(new BasicTextFieldSettingSpecifier("timeout", String.valueOf(DEFAULT_TIMEOUT_SECS)));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.maxWait",
 				String.valueOf(defaultSerialParams.getMaxWait())));
 		results.addAll(SerialPortBean.getDefaultSettingSpecifiers(defaultSerialParams, "serialParams."));
+
+		results.add(new BasicToggleSettingSpecifier("lockOnOpen", DEFAULT_LOCK_ON_OPEN));
 
 		return results;
 	}
@@ -252,24 +252,12 @@ public class SerialPortNetwork implements ConfigurableSerialNetwork, SettingSpec
 		return serialParams;
 	}
 
-	public String getUid() {
-		return uid;
-	}
-
 	public long getTimeout() {
 		return timeout;
 	}
 
 	public TimeUnit getUnit() {
 		return unit;
-	}
-
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
 	}
 
 	public void setTimeout(long timeout) {
@@ -280,8 +268,26 @@ public class SerialPortNetwork implements ConfigurableSerialNetwork, SettingSpec
 		this.unit = unit;
 	}
 
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
+	/**
+	 * Get the lock-on-open flag.
+	 * 
+	 * @return {@literal true} to use a thread lock when opening the connection,
+	 *         releasing the lock when closing the connection; defaults to
+	 *         {@link #DEFAULT_LOCK_ON_OPEN}
+	 */
+	public boolean isLockOnOpen() {
+		return lockOnOpen;
+	}
+
+	/**
+	 * Set the lock-on-open flag.
+	 * 
+	 * @param lockOnOpen
+	 *        {@literal true} to use a thread lock when opening the connection,
+	 *        releasing the lock when closing the connection
+	 */
+	public void setLockOnOpen(boolean lockOnOpen) {
+		this.lockOnOpen = lockOnOpen;
 	}
 
 }

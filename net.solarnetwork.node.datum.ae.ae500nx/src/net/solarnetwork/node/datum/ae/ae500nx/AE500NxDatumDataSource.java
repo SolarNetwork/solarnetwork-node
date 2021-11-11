@@ -22,42 +22,42 @@
 
 package net.solarnetwork.node.datum.ae.ae500nx;
 
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
+import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxData;
 import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxDataAccessor;
 import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxFault;
 import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxSystemStatus;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * {@link DatumDataSource} for the AE 500NX series inverter.
  * 
  * @author matt
- * @version 1.4
+ * @version 2.0
  */
 public class AE500NxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE500NxData>
-		implements DatumDataSource<GeneralNodePVEnergyDatum>,
-		MultiDatumDataSource<GeneralNodePVEnergyDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
-	private String sourceId = "AE 500NX";
+	/** The {@code sourceId} property default value. */
+	public static final String DEFAULT_SOURCE_ID = "AE 500NX";
+
+	private String sourceId = DEFAULT_SOURCE_ID;
 
 	/**
 	 * Default constructor.
@@ -74,6 +74,7 @@ public class AE500NxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE5
 	 */
 	public AE500NxDatumDataSource(AE500NxData sample) {
 		super(sample);
+		setDisplayName("Advanced Energy 500NX Meter");
 	}
 
 	@Override
@@ -94,35 +95,34 @@ public class AE500NxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE5
 	}
 
 	@Override
-	public Class<? extends GeneralNodePVEnergyDatum> getDatumType() {
-		return GeneralNodePVEnergyDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AcDcEnergyDatum.class;
 	}
 
 	@Override
-	public GeneralNodePVEnergyDatum readCurrentDatum() {
+	public AcDcEnergyDatum readCurrentDatum() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
 		try {
 			final AE500NxData currSample = getCurrentSample();
 			if ( currSample == null ) {
 				return null;
 			}
-			AE500NxDatum d = new AE500NxDatum(currSample);
-			d.setSourceId(resolvePlaceholders(sourceId));
-			return d;
+			return new AE500NxDatum(currSample, sourceId);
 		} catch ( IOException e ) {
-			log.error("Communication problem reading source {} from AE 500NX device {}: {}",
-					this.sourceId, modbusDeviceName(), e.getMessage());
+			log.error("Communication problem reading source {} from AE 500NX device {}: {}", sourceId,
+					modbusDeviceName(), e.getMessage());
 			return null;
 		}
 	}
 
 	@Override
-	public Class<? extends GeneralNodePVEnergyDatum> getMultiDatumType() {
-		return GeneralNodePVEnergyDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return AcDcEnergyDatum.class;
 	}
 
 	@Override
-	public Collection<GeneralNodePVEnergyDatum> readMultipleDatum() {
-		GeneralNodePVEnergyDatum datum = readCurrentDatum();
+	public Collection<NodeDatum> readMultipleDatum() {
+		AcDcEnergyDatum datum = readCurrentDatum();
 		if ( datum != null ) {
 			return Collections.singletonList(datum);
 		}
@@ -132,13 +132,8 @@ public class AE500NxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE5
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.ae.ae500nx";
-	}
-
-	@Override
-	public String getDisplayName() {
-		return "Advanced Energy 500NX Meter";
 	}
 
 	@Override
@@ -148,12 +143,12 @@ public class AE500NxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE5
 		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(getSample()), true));
 
 		results.addAll(getIdentifiableSettingSpecifiers());
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", DEFAULT_SOURCE_ID));
 		results.addAll(getModbusNetworkSettingSpecifiers());
 
 		AE500NxDatumDataSource defaults = new AE500NxDatumDataSource();
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(defaults.getSampleCacheMs())));
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
 
 		results.addAll(getDeviceInfoMetadataSettingSpecifiers());
 
@@ -171,7 +166,7 @@ public class AE500NxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE5
 	}
 
 	private String getSampleMessage(AE500NxDataAccessor data) {
-		if ( data.getDataTimestamp() < 1 ) {
+		if ( data.getDataTimestamp() == null ) {
 			return "N/A";
 		}
 		StringBuilder buf = new StringBuilder();
@@ -188,9 +183,7 @@ public class AE500NxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE5
 			buf.append("; faults = ").append(StringUtils.commaDelimitedStringFromCollection(faults));
 		}
 
-		buf.append("; sampled at ").append(
-				DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT).format(
-						Instant.ofEpochMilli(data.getDataTimestamp()).atZone(ZoneId.systemDefault())));
+		buf.append("; sampled at ").append(formatForLocalDisplay(data.getDataTimestamp()));
 		return buf.toString();
 	}
 

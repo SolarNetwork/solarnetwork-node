@@ -68,22 +68,22 @@ import net.solarnetwork.node.io.gpsd.service.GpsdClientConnection;
 import net.solarnetwork.node.io.gpsd.service.GpsdClientStatus;
 import net.solarnetwork.node.io.gpsd.service.GpsdMessageHandler;
 import net.solarnetwork.node.io.gpsd.service.GpsdMessageListener;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.support.BasicIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * GPSd client component.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class GpsdClientService extends BaseIdentifiable implements GpsdClientConnection,
+public class GpsdClientService extends BasicIdentifiable implements GpsdClientConnection,
 		SettingsChangeObserver, SettingSpecifierProvider, GpsdMessageHandler {
 
 	/** The default {@code host} property value. */
@@ -200,6 +200,8 @@ public class GpsdClientService extends BaseIdentifiable implements GpsdClientCon
 
 	/**
 	 * Call once after properties configured to initialize at a future date.
+	 * 
+	 * @return a future that completes when connected
 	 */
 	public Future<?> startupLater() {
 		synchronized ( this ) {
@@ -523,14 +525,14 @@ public class GpsdClientService extends BaseIdentifiable implements GpsdClientCon
 	// SettingsSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.gpsd.client";
 	}
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(8);
-		results.addAll(baseIdentifiableSettings(""));
+		results.addAll(basicIdentifiableSettings());
 		results.add(new BasicTitleSettingSpecifier("status", getClientStatus().toString(), true));
 		results.add(new BasicTextFieldSettingSpecifier("host", DEFAULT_HOST));
 		results.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(DEFAULT_PORT)));

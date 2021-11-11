@@ -54,8 +54,6 @@ import net.solarnetwork.common.s3.S3ObjectMetadata;
 import net.solarnetwork.common.s3.S3ObjectRef;
 import net.solarnetwork.common.s3.S3ObjectReference;
 import net.solarnetwork.common.s3.sdk.SdkS3Client;
-import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.RemoteServiceException;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.backup.BackupResourceIterable;
@@ -66,13 +64,15 @@ import net.solarnetwork.node.backup.BackupStatus;
 import net.solarnetwork.node.backup.CollectionBackupResourceIterable;
 import net.solarnetwork.node.backup.SimpleBackup;
 import net.solarnetwork.node.backup.SimpleBackupServiceInfo;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicSliderSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.service.IdentityService;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.RemoteServiceException;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.settings.support.BasicSliderSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.CachedResult;
-import net.solarnetwork.util.OptionalService;
 
 /**
  * {@link BackupService} implementation using Amazon S3 for storage in the
@@ -97,7 +97,7 @@ import net.solarnetwork.util.OptionalService;
  * </p>
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
 public class S3BackupService extends BackupServiceSupport
 		implements SettingSpecifierProvider, SettingsChangeObserver {
@@ -511,7 +511,7 @@ public class S3BackupService extends BackupServiceSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return getClass().getName();
 	}
 

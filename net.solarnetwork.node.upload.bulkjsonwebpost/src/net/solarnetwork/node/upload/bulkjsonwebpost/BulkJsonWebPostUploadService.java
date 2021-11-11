@@ -22,54 +22,67 @@
 
 package net.solarnetwork.node.upload.bulkjsonwebpost;
 
+import static net.solarnetwork.node.service.DatumEvents.datumEvent;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
-import org.springframework.context.MessageSource;
 import org.springframework.util.DigestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import net.solarnetwork.codec.JsonUtils;
-import net.solarnetwork.node.BulkUploadResult;
-import net.solarnetwork.node.BulkUploadService;
-import net.solarnetwork.node.UploadService;
-import net.solarnetwork.node.domain.BaseDatum;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.domain.datum.BasicStreamDatum;
+import net.solarnetwork.domain.datum.DatumProperties;
+import net.solarnetwork.domain.datum.ObjectDatumKind;
+import net.solarnetwork.domain.datum.ObjectDatumStreamMetadata;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.reactor.BasicInstruction;
 import net.solarnetwork.node.reactor.InstructionAcknowledgementService;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.ReactorService;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.node.support.JsonHttpClientSupport;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.service.BulkUploadResult;
+import net.solarnetwork.node.service.BulkUploadService;
+import net.solarnetwork.node.service.DatumMetadataService;
+import net.solarnetwork.node.service.UploadService;
+import net.solarnetwork.node.service.support.JsonHttpClientSupport;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.util.DateUtils;
 
 /**
  * {@link BulkUploadService} that uses an HTTP POST with body content formed as
  * a JSON document containing all data to upload.
  * 
+ * <p>
+ * The request will be a JSON array of possibly mixed nested array and object
+ * values. {@link NodeDatum} objects will be posted as stream datum (JSON array)
+ * objects if stream metadata is available for the given datum. Otherwise a
+ * traditional datum (JSON object) will be used. Instruction status will be
+ * posted as a status JSON object.
+ * </p>
+ * 
  * @author matt
- * @version 1.6
+ * @version 2.0
  */
 public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 		implements BulkUploadService, InstructionAcknowledgementService, SettingSpecifierProvider {
 
-	private static final DateTimeFormatter ISO_DATE_TIME_FORMATTER = ISODateTimeFormat.dateTime();
-
 	private String url = "/bulkUpload.do";
-	private OptionalService<ReactorService> reactorService;
+	private final OptionalService<ReactorService> reactorServiceOpt;
+	private final OptionalService<EventAdmin> eventAdminOpt;
+	private final OptionalService<DatumMetadataService> datumMetadataServiceOpt;
 	private boolean uploadEmptyDataset = false;
-	private MessageSource messageSource;
-	private OptionalService<EventAdmin> eventAdmin;
 
 	/**
 	 * Default constructor.
@@ -77,9 +90,21 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	 * <p>
 	 * This sets the {@code compress} flag to {@literal true}.
 	 * </p>
+	 * 
+	 * @param reactorService
+	 *        the optional reactor service
+	 * @param eventAdmin
+	 *        the event admin service
+	 * @param datumMetadataService
+	 *        the datum metadata service
 	 */
-	public BulkJsonWebPostUploadService() {
+	public BulkJsonWebPostUploadService(OptionalService<ReactorService> reactorService,
+			OptionalService<EventAdmin> eventAdmin,
+			OptionalService<DatumMetadataService> datumMetadataService) {
 		super();
+		this.reactorServiceOpt = reactorService;
+		this.eventAdminOpt = eventAdmin;
+		this.datumMetadataServiceOpt = datumMetadataService;
 		setCompress(true);
 	}
 
@@ -89,7 +114,7 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	}
 
 	@Override
-	public String uploadDatum(Datum data) {
+	public String uploadDatum(NodeDatum data) {
 		List<BulkUploadResult> results = uploadBulkDatum(Collections.singleton(data));
 		if ( results != null && !results.isEmpty() ) {
 			return results.get(0).getId();
@@ -98,7 +123,7 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	}
 
 	@Override
-	public List<BulkUploadResult> uploadBulkDatum(Collection<Datum> data) {
+	public List<BulkUploadResult> uploadBulkDatum(Collection<NodeDatum> data) {
 		if ( (data == null || data.size() < 1) && uploadEmptyDataset == false ) {
 			return Collections.emptyList();
 		}
@@ -112,7 +137,7 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	}
 
 	@Override
-	public void acknowledgeInstructions(Collection<Instruction> instructions) {
+	public void acknowledgeInstructions(Collection<InstructionStatus> instructions) {
 		try {
 			upload(instructions);
 		} catch ( IOException e ) {
@@ -125,7 +150,8 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	 * {@link UploadResult} objects.
 	 * 
 	 * <p>
-	 * The response is expected to be structured like this:
+	 * The response is expected to be structured like this, where both
+	 * traditional datum and stream datum results are supported:
 	 * </p>
 	 * 
 	 * <pre>
@@ -135,6 +161,7 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	 * 	"data" : {
 	 * 		"datum" : [
 	 * 			{ "id": "123abc", "created": 123, sourceId: "abc" ... },
+	 *          { "streamId": "123abc", "timestamp": "2021-09-10 20:43:21.123Z" },
 	 * 			...
 	 * 		],
 	 * 		"instructions" : [
@@ -152,11 +179,47 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	 *         if any processing error occurs
 	 */
 	private List<BulkUploadResult> upload(Collection<?> data) throws IOException {
+		final DatumMetadataService datumMetadataService = OptionalService
+				.service(datumMetadataServiceOpt);
+		final ObjectMapper objectMapper = getObjectMapper();
+		final Long nodeId = getIdentityService().getNodeId();
 		// NOTE: serializing JSON into intermediate tree, because of possibility of
 		// datum filtering during serialization, to prevent logging of tree from
 		// inadvertently triggering serialization changes. This also allows us
 		// to verify how many datum we actually upload (i.e. after filtering).
-		JsonNode jsonData = getObjectMapper().valueToTree(data);
+		JsonNode jsonData;
+		if ( datumMetadataService != null ) {
+			ArrayNode rootArray = objectMapper.createArrayNode();
+			jsonData = rootArray;
+			// try to post as stream datum, if metadata available
+			for ( Object d : data ) {
+				if ( d instanceof NodeDatum ) {
+					NodeDatum datum = (NodeDatum) d;
+					ObjectDatumKind kind = datum.getKind();
+					Long objectId = (kind == ObjectDatumKind.Node ? nodeId : datum.getObjectId());
+					ObjectDatumStreamMetadata meta = datumMetadataService.getDatumStreamMetadata(kind,
+							objectId, datum.getSourceId());
+					if ( meta != null ) {
+						// we've got stream metadata: post as this if all properties accounted for
+						try {
+							DatumProperties datumProps = DatumProperties.propertiesFrom(datum, meta);
+							if ( datumProps != null ) {
+								d = new BasicStreamDatum(meta.getStreamId(), datum.getTimestamp(),
+										datumProps);
+							}
+						} catch ( IllegalArgumentException e ) {
+							log.debug(
+									"Unable to post datum as stream datum, falling back to general datum: "
+											+ e.getMessage());
+						}
+					}
+				}
+				rootArray.add(objectMapper.valueToTree(d));
+			}
+		} else {
+			jsonData = objectMapper.valueToTree(data);
+		}
+
 		InputStream response = handlePost(jsonData);
 
 		List<BulkUploadResult> result = null;
@@ -187,41 +250,57 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 
 						for ( Object obj : data ) {
 							String id = null;
-							Datum datum = null;
-							if ( obj instanceof Instruction ) {
-								Instruction instr = (Instruction) obj;
+							NodeDatum datum = null;
+							if ( obj instanceof InstructionStatus ) {
+								InstructionStatus status = (InstructionStatus) obj;
 								if ( currJsonNode != null ) {
 									id = currJsonNode.path("id").textValue();
-									if ( instr.getRemoteInstructionId().equals(id) ) {
+									if ( id != null
+											&& id.equals(status.getInstructionId().toString()) ) {
 										currReqJsonNode = reqJsonItr.hasNext() ? reqJsonItr.next()
 												: null;
 										currJsonNode = jsonItr.hasNext() ? jsonItr.next() : null;
 									}
 								}
 								if ( id == null ) {
-									id = instr.getRemoteInstructionId();
+									id = status.getInstructionId().toString();
 								}
 							} else {
 								// assume Datum here
-								datum = (Datum) obj;
+								datum = (NodeDatum) obj;
 								if ( currJsonNode != null ) {
 									JsonNode createdObj = currJsonNode.path("created");
-									long created = 0;
+									if ( createdObj.isMissingNode() ) {
+										createdObj = currJsonNode.path("timestamp");
+									}
+									Instant created = null;
 									if ( createdObj.isNumber() ) {
-										created = createdObj.longValue();
+										created = Instant.ofEpochMilli(createdObj.longValue());
 									} else if ( createdObj.isTextual() ) {
 										try {
 											// parse as strict ISO8601 (SN returns space date/time delimiter)
-											created = ISO_DATE_TIME_FORMATTER
-													.parseDateTime(
-															createdObj.textValue().replace(' ', 'T'))
-													.getMillis();
-										} catch ( IllegalArgumentException e ) {
+											created = DateUtils.ISO_DATE_TIME_ALT_UTC
+													.parse(createdObj.textValue(), Instant::from);
+										} catch ( DateTimeParseException e ) {
 											log.debug("Unexpected created date format: {}", createdObj);
 										}
 									}
 									String sourceId = currJsonNode.path("sourceId").textValue();
-									if ( datum.getCreated().getTime() == created
+									if ( sourceId == null ) {
+										String streamId = currJsonNode.path("streamId").textValue();
+										if ( streamId != null ) {
+											ObjectDatumKind kind = datum.getKind();
+											Long objectId = (kind == ObjectDatumKind.Node ? nodeId
+													: datum.getObjectId());
+											ObjectDatumStreamMetadata meta = datumMetadataService
+													.getDatumStreamMetadata(kind, objectId,
+															datum.getSourceId());
+											if ( meta.getStreamId().toString().equals(streamId) ) {
+												sourceId = datum.getSourceId();
+											}
+										}
+									}
+									if ( created != null && created.equals(datum.getTimestamp())
 											&& datum.getSourceId().equals(sourceId) ) {
 										id = currJsonNode.path("id").textValue();
 										postDatumUploadedEvent(datum, currReqJsonNode);
@@ -233,7 +312,7 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 								if ( id == null ) {
 									// generate a synthetic ID string
 									id = DigestUtils.md5DigestAsHex(String
-											.format("%tQ;%s", datum.getCreated(), datum.getSourceId())
+											.format("%tQ;%s", datum.getTimestamp(), datum.getSourceId())
 											.getBytes());
 								}
 							}
@@ -242,13 +321,8 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 
 						// look for instructions to process
 						JsonNode instrArray = child.path("instructions");
-						ReactorService reactor = (reactorService == null ? null
-								: reactorService.service());
-						if ( reactor != null && instrArray.isArray() ) {
-							List<InstructionStatus> status = reactor.processInstruction(
-									getIdentityService().getSolarInBaseUrl(), instrArray, JSON_MIME_TYPE,
-									null);
-							log.debug("Instructions processed: {}", status);
+						if ( instrArray.isArray() ) {
+							processResponseInstructions(instrArray);
 						}
 					} else {
 						log.debug("Upload returned no data.");
@@ -267,43 +341,46 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 		return result;
 	}
 
-	// post DATUM_UPLOADED events; but with the (possibly transformed) uploaded data so we show just
-	// what was actually uploaded
-	private void postDatumUploadedEvent(Datum datum, JsonNode node) {
-		Map<String, Object> props = JsonUtils.getStringMapFromTree(node);
-		if ( props != null && !props.isEmpty() ) {
-			if ( !(props.get("samples") instanceof Map<?, ?>) ) {
-				// no sample data; this must have been filtered out via transform
-				return;
-			}
-
-			// convert samples, which can contain nested maps for a/i/s 
-			@SuppressWarnings("unchecked")
-			Map<String, ?> samples = (Map<String, ?>) props.get("samples");
-			props.remove("samples");
-			for ( Map.Entry<String, ?> me : samples.entrySet() ) {
-				Object val = me.getValue();
-				if ( val instanceof Map<?, ?> ) {
-					@SuppressWarnings("unchecked")
-					Map<String, ?> subMap = (Map<String, ?>) val;
-					props.putAll(subMap);
-				} else {
-					props.put(me.getKey(), val);
+	private void processResponseInstructions(JsonNode instrArray) {
+		ReactorService reactor = OptionalService.service(reactorServiceOpt);
+		if ( reactor == null ) {
+			return;
+		}
+		final String instructorId = getIdentityService().getSolarInBaseUrl();
+		for ( JsonNode instrNode : instrArray ) {
+			try {
+				net.solarnetwork.domain.Instruction instr = getObjectMapper().treeToValue(instrNode,
+						net.solarnetwork.domain.Instruction.class);
+				if ( instr != null ) {
+					InstructionStatus status = reactor
+							.processInstruction(BasicInstruction.from(instr, instructorId));
+					log.debug("Instruction {} processed: {}", instr, status);
 				}
+			} catch ( Exception e ) {
+				log.warn("Unable to accept instruction JSON [{}]: {}", instrNode, e.toString());
 			}
-
-			String[] types = BaseDatum.getDatumTypes(datum.getClass());
-			if ( types != null && types.length > 0 ) {
-				props.put(Datum.DATUM_TYPE_PROPERTY, types[0]);
-				props.put(Datum.DATUM_TYPES_PROPERTY, types);
-			}
-			log.debug("Created {} event with props {}", UploadService.EVENT_TOPIC_DATUM_UPLOADED, props);
-			postEvent(new Event(UploadService.EVENT_TOPIC_DATUM_UPLOADED, props));
 		}
 	}
 
+	// post DATUM_UPLOADED events; but with the (possibly transformed) uploaded data so we show just
+	// what was actually uploaded
+	@SuppressWarnings("unchecked")
+	private void postDatumUploadedEvent(NodeDatum datum, JsonNode node) {
+		Map<String, Object> props;
+		if ( node.isArray() ) {
+			// posted as Stream, so just convert original datum to event data
+			props = (Map<String, Object>) datum.asSimpleMap();
+			// for compatibility with serialized node format, convert time stamp to string
+			props.put("created", DateUtils.ISO_DATE_TIME_ALT_UTC.format(datum.getTimestamp()));
+		} else {
+			props = JsonUtils.getStringMapFromTree(node);
+		}
+		Event event = datumEvent(UploadService.EVENT_TOPIC_DATUM_UPLOADED, datum.getClass(), props);
+		postEvent(event);
+	}
+
 	private void postEvent(Event event) {
-		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
+		EventAdmin ea = OptionalService.service(eventAdminOpt);
 		if ( ea == null || event == null ) {
 			return;
 		}
@@ -327,8 +404,8 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	// Settings
 
 	@Override
-	public String getSettingUID() {
-		return getClass().getName();
+	public String getSettingUid() {
+		return "net.solarnetwork.node.upload.bulkjsonwebpost.BulkJsonWebPostUploadService";
 	}
 
 	@Override
@@ -337,16 +414,9 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	}
 
 	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		BulkJsonWebPostUploadService defaults = new BulkJsonWebPostUploadService();
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>();
-		result.add(
-				new BasicToggleSettingSpecifier("uploadEmptyDataset", defaults.isUploadEmptyDataset()));
+		result.add(new BasicToggleSettingSpecifier("uploadEmptyDataset", true));
 		return result;
 	}
 
@@ -370,21 +440,21 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 		this.url = url;
 	}
 
+	/**
+	 * Get the reactor service.
+	 * 
+	 * @return the reactor service
+	 */
 	public OptionalService<ReactorService> getReactorService() {
-		return reactorService;
+		return reactorServiceOpt;
 	}
 
 	/**
-	 * Set the optional {@link ReactorService} to use for processing
-	 * instructions.
+	 * Get the "upload empty dataset" flag.
 	 * 
-	 * @param reactorService
-	 *        the service to use
+	 * @return {@literal true} to make connections to SolarIn even when there is
+	 *         no data to post
 	 */
-	public void setReactorService(OptionalService<ReactorService> reactorService) {
-		this.reactorService = reactorService;
-	}
-
 	public boolean isUploadEmptyDataset() {
 		return uploadEmptyDataset;
 	}
@@ -403,11 +473,6 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 		this.uploadEmptyDataset = uploadEmptyDataset;
 	}
 
-	@Override
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
-	}
-
 	/**
 	 * Get the {@link EventAdmin} service.
 	 * 
@@ -415,17 +480,7 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 	 * @since 1.5
 	 */
 	public OptionalService<EventAdmin> getEventAdmin() {
-		return eventAdmin;
+		return eventAdminOpt;
 	}
 
-	/**
-	 * Set an {@link EventAdmin} service to use.
-	 * 
-	 * @param eventAdmin
-	 *        the EventAdmin to use
-	 * @since 1.5
-	 */
-	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
-		this.eventAdmin = eventAdmin;
-	}
 }

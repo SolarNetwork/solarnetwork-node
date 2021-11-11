@@ -22,15 +22,15 @@
 
 package net.solarnetwork.node.datum.ae.ae500nx;
 
+import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import java.math.BigInteger;
 import java.util.BitSet;
-import java.util.Date;
 import net.solarnetwork.domain.Bitmaskable;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.domain.GroupedBitmaskable;
-import net.solarnetwork.node.domain.ACEnergyDatum;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.GeneralNodePVEnergyDatum;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
 import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxDataAccessor;
 import net.solarnetwork.util.NumberUtils;
 
@@ -38,9 +38,11 @@ import net.solarnetwork.util.NumberUtils;
  * Datum for the AE 500NX inverter.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class AE500NxDatum extends GeneralNodePVEnergyDatum {
+public class AE500NxDatum extends SimpleAcDcEnergyDatum {
+
+	private static final long serialVersionUID = -3525924176266298024L;
 
 	private final AE500NxDataAccessor data;
 
@@ -49,42 +51,41 @@ public class AE500NxDatum extends GeneralNodePVEnergyDatum {
 	 * 
 	 * @param data
 	 *        the sample data
+	 * @param sourceId
+	 *        the source ID
 	 */
-	public AE500NxDatum(AE500NxDataAccessor data) {
-		super();
+	public AE500NxDatum(AE500NxDataAccessor data, String sourceId) {
+		super(sourceId, data.getDataTimestamp(), new DatumSamples());
 		this.data = data;
-		if ( data.getDataTimestamp() > 0 ) {
-			setCreated(new Date(data.getDataTimestamp()));
-		}
 		populateMeasurements(data);
 	}
 
 	private void populateMeasurements(AE500NxDataAccessor data) {
-		putInstantaneousSampleValue(ACEnergyDatum.FREQUENCY_KEY, data.getFrequency());
+		setFrequency(data.getFrequency());
 		setVoltage(data.getVoltage());
-		putInstantaneousSampleValue(ACEnergyDatum.CURRENT_KEY, data.getCurrent());
-		putInstantaneousSampleValue(ACEnergyDatum.NEUTRAL_CURRENT_KEY, data.getNeutralCurrent());
-		setDCVoltage(data.getDCVoltage());
-		setDCPower(data.getDCPower());
+		setCurrent(data.getCurrent());
+		setNeutralCurrent(data.getNeutralCurrent());
+		setDcVoltage(data.getDcVoltage());
+		setDcPower(data.getDcPower());
 		setWatts(data.getActivePower());
 		setWattHourReading(data.getActiveEnergyDelivered());
-		putInstantaneousSampleValue(ACEnergyDatum.REACTIVE_POWER_KEY, data.getReactivePower());
+		setReactivePower(data.getReactivePower());
 
 		DeviceOperatingState opState = data.getDeviceOperatingState();
 		if ( opState != null ) {
-			putStatusSampleValue(Datum.OP_STATE, opState.getCode());
+			asMutableSampleOperations().putSampleValue(Status, Datum.OP_STATE, opState.getCode());
 		}
 
 		int status = Bitmaskable.bitmaskValue(data.getSystemStatus());
 		if ( status > 0 ) {
-			putStatusSampleValue(Datum.OP_STATES, status);
+			asMutableSampleOperations().putSampleValue(Status, Datum.OP_STATES, status);
 		}
 
 		BitSet faults = GroupedBitmaskable.overallBitmaskValue(data.getFaults());
 		if ( faults != null && faults.cardinality() > 0 ) {
 			BigInteger v = NumberUtils.bigIntegerForBitSet(faults);
 			if ( v != null ) {
-				putStatusSampleValue("faults", "0x" + v.toString(16));
+				asMutableSampleOperations().putSampleValue(Status, "faults", "0x" + v.toString(16));
 			}
 		}
 
@@ -92,13 +93,13 @@ public class AE500NxDatum extends GeneralNodePVEnergyDatum {
 		if ( warnings != null && warnings.cardinality() > 0 ) {
 			BigInteger v = NumberUtils.bigIntegerForBitSet(warnings);
 			if ( v != null ) {
-				putStatusSampleValue("warnings", "0x" + v.toString(16));
+				asMutableSampleOperations().putSampleValue(Status, "warnings", "0x" + v.toString(16));
 			}
 		}
 
 		int limits = Bitmaskable.bitmaskValue(data.getSystemLimits());
 		if ( limits > 0 ) {
-			putStatusSampleValue("limits", limits);
+			asMutableSampleOperations().putSampleValue(Status, "limits", limits);
 		}
 	}
 

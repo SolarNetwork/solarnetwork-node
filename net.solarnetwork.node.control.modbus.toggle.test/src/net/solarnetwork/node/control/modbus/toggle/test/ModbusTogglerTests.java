@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.control.modbus.toggle.test;
 
-import static net.solarnetwork.node.reactor.Instruction.LOCAL_INSTRUCTION_ID;
 import static net.solarnetwork.node.reactor.InstructionHandler.TOPIC_SET_CONTROL_PARAMETER;
 import static org.easymock.EasyMock.aryEq;
 import static org.easymock.EasyMock.eq;
@@ -36,7 +35,6 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.util.BitSet;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.easymock.EasyMock;
@@ -44,6 +42,7 @@ import org.easymock.IExpectationSetters;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.control.modbus.toggle.ModbusToggler;
@@ -53,9 +52,10 @@ import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
 import net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork;
+import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.support.BasicInstruction;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link ModbusToggler} class.
@@ -159,13 +159,12 @@ public class ModbusTogglerTests {
 
 		// when
 		replayAll();
-		BasicInstruction instr = new BasicInstruction(TOPIC_SET_CONTROL_PARAMETER, new Date(),
-				LOCAL_INSTRUCTION_ID, LOCAL_INSTRUCTION_ID, null);
-		instr.addParameter(TEST_CONTROL_ID, "true");
-		InstructionStatus.InstructionState result = toggler.processInstruction(instr);
+		Instruction instr = InstructionUtils.createSetControlValueLocalInstruction(TEST_CONTROL_ID,
+				Boolean.TRUE.toString());
+		InstructionStatus result = toggler.processInstruction(instr);
 
 		// then
-		assertThat("Handled result", result, equalTo(InstructionStatus.InstructionState.Completed));
+		assertThat("Handled result", result.getInstructionState(), equalTo(InstructionState.Completed));
 	}
 
 	@Test
@@ -179,13 +178,12 @@ public class ModbusTogglerTests {
 
 		// when
 		replayAll();
-		BasicInstruction instr = new BasicInstruction(TOPIC_SET_CONTROL_PARAMETER, new Date(),
-				LOCAL_INSTRUCTION_ID, LOCAL_INSTRUCTION_ID, null);
-		instr.addParameter(TEST_CONTROL_ID, "true");
-		InstructionStatus.InstructionState result = toggler.processInstruction(instr);
+		Instruction instr = InstructionUtils.createSetControlValueLocalInstruction(TEST_CONTROL_ID,
+				Boolean.TRUE.toString());
+		InstructionStatus result = toggler.processInstruction(instr);
 
 		// then
-		assertThat("Handled result", result, equalTo(InstructionStatus.InstructionState.Completed));
+		assertThat("Handled result", result.getInstructionState(), equalTo(InstructionState.Completed));
 	}
 
 	@Test
@@ -199,13 +197,13 @@ public class ModbusTogglerTests {
 
 		// when
 		replayAll();
-		BasicInstruction instr = new BasicInstruction(TOPIC_SET_CONTROL_PARAMETER, new Date(),
-				LOCAL_INSTRUCTION_ID, LOCAL_INSTRUCTION_ID, null);
-		instr.addParameter(TEST_CONTROL_ID, "false");
-		InstructionStatus.InstructionState result = toggler.processInstruction(instr);
+		Instruction instr = InstructionUtils.createSetControlValueLocalInstruction(TEST_CONTROL_ID,
+				Boolean.FALSE.toString());
+		InstructionStatus result = toggler.processInstruction(instr);
 
 		// then
-		assertThat("Handled result", result, equalTo(InstructionStatus.InstructionState.Completed));
+		assertThat("Handled result", result.getInstructionState(),
+				equalTo(InstructionStatus.InstructionState.Completed));
 	}
 
 	@Test
@@ -219,13 +217,13 @@ public class ModbusTogglerTests {
 
 		// when
 		replayAll();
-		BasicInstruction instr = new BasicInstruction(TOPIC_SET_CONTROL_PARAMETER, new Date(),
-				LOCAL_INSTRUCTION_ID, LOCAL_INSTRUCTION_ID, null);
-		instr.addParameter(TEST_CONTROL_ID, "false");
-		InstructionStatus.InstructionState result = toggler.processInstruction(instr);
+		Instruction instr = InstructionUtils.createSetControlValueLocalInstruction(TEST_CONTROL_ID,
+				Boolean.FALSE.toString());
+		InstructionStatus result = toggler.processInstruction(instr);
 
 		// then
-		assertThat("Handled result", result, equalTo(InstructionStatus.InstructionState.Completed));
+		assertThat("Handled result", result.getInstructionState(),
+				equalTo(InstructionStatus.InstructionState.Completed));
 	}
 
 	@Test

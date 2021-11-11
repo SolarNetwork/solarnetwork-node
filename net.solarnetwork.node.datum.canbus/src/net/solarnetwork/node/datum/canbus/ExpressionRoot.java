@@ -24,17 +24,18 @@ package net.solarnetwork.node.datum.canbus;
 
 import net.solarnetwork.domain.BitDataType;
 import net.solarnetwork.domain.ByteOrdering;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.io.canbus.CanbusData;
 import net.solarnetwork.node.io.canbus.CanbusSignalReference;
 import net.solarnetwork.node.io.canbus.support.SimpleCanbusSignalReference;
-import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.node.service.DatumService;
+import net.solarnetwork.service.ExpressionService;
 
 /**
  * An object to use as the "root" for {@link ExpressionService} evaluation.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  * @since 1.5
  */
 public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot {
@@ -48,9 +49,11 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	 *        the datum currently being populated
 	 * @param sample
 	 *        the current Canbus sample data
+	 * @param datumService
+	 *        the optional datum service
 	 */
-	public ExpressionRoot(GeneralNodeDatum datum, CanbusData sample) {
-		super(datum);
+	public ExpressionRoot(NodeDatum datum, CanbusData sample, DatumService datumService) {
+		super(datum, null, null, datumService);
 		this.sample = sample;
 	}
 

@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.io.mbus.support;
 
-import static net.solarnetwork.util.OptionalService.service;
+import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,10 +34,10 @@ import net.solarnetwork.node.io.mbus.MBusMessageHandler;
 import net.solarnetwork.node.io.mbus.MBusSecondaryAddress;
 import net.solarnetwork.node.io.mbus.WMBusConnection;
 import net.solarnetwork.node.io.mbus.WMBusNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.DatumDataSourceSupport;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceSupport
 		implements MBusMessageHandler {
@@ -184,14 +184,14 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 
 	/**
 	 * Get setting specifiers for the {@literal unitId} and
-	 * {@literal wMBusNetwork.propertyFilters['UID']} properties.
+	 * {@literal wMBusNetwork.propertyFilters['uid']} properties.
 	 * 
 	 * @return list of setting specifiers
 	 * @since 1.1
 	 */
 	protected List<SettingSpecifier> getWMBusNetworkSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
-		results.add(new BasicTextFieldSettingSpecifier("wMBusNetwork.propertyFilters['UID']",
+		results.add(new BasicTextFieldSettingSpecifier("wMBusNetwork.propertyFilters['uid']",
 				"M-Bus (Wireless) Port"));
 		results.add(new BasicTextFieldSettingSpecifier("secondaryAddress", ""));
 		results.add(new BasicTextFieldSettingSpecifier("key", "", true));

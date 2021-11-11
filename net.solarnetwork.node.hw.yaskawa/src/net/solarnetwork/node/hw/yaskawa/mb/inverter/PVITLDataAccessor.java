@@ -22,8 +22,8 @@
 
 package net.solarnetwork.node.hw.yaskawa.mb.inverter;
 
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.PVEnergyDataAccessor;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.DcEnergyDataAccessor;
 
 /**
  * API for reading CSI 50KTL-CT inverter series data.
@@ -31,7 +31,7 @@ import net.solarnetwork.node.domain.PVEnergyDataAccessor;
  * @author matt
  * @version 1.0
  */
-public interface PVITLDataAccessor extends PVEnergyDataAccessor, ACEnergyDataAccessor {
+public interface PVITLDataAccessor extends DcEnergyDataAccessor, AcEnergyDataAccessor {
 
 	/**
 	 * Get the inverter operating state.

@@ -22,17 +22,17 @@
 
 package net.solarnetwork.node.hw.schneider.test;
 
-import static net.solarnetwork.node.domain.ACPhase.PhaseA;
-import static net.solarnetwork.node.domain.ACPhase.PhaseB;
-import static net.solarnetwork.node.domain.ACPhase.PhaseC;
+import static net.solarnetwork.domain.AcPhase.PhaseA;
+import static net.solarnetwork.domain.AcPhase.PhaseB;
+import static net.solarnetwork.domain.AcPhase.PhaseC;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.hw.schneider.meter.PM5100Data;
 import net.solarnetwork.node.hw.schneider.meter.PM5100DataAccessor;
 import net.solarnetwork.node.hw.schneider.meter.PM5100Model;
@@ -239,13 +239,13 @@ public class PM5100DataTests {
 		PM5100DataAccessor data = getTestDataInstance();
 		assertThat("Power", data.getActivePower(), equalTo(93797));
 
-		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		AcEnergyDataAccessor phaseData = data.accessorForPhase(AcPhase.PhaseA);
 		assertThat("Phase power a", phaseData.getActivePower(), equalTo(30689));
 
 		phaseData = data.accessorForPhase(PhaseB);
 		assertThat("Phase power b", phaseData.getActivePower(), equalTo(31398));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		phaseData = data.accessorForPhase(AcPhase.PhaseC);
 		assertThat("Phase power c", phaseData.getActivePower(), equalTo(31710));
 	}
 
@@ -293,13 +293,13 @@ public class PM5100DataTests {
 		PM5100DataAccessor data = getTestDataInstance();
 		assertThat("Current", data.getCurrent(), equalTo(109.707275f));
 
-		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		AcEnergyDataAccessor phaseData = data.accessorForPhase(AcPhase.PhaseA);
 		assertThat("Phase current a", phaseData.getCurrent(), equalTo(109.71f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseB);
+		phaseData = data.accessorForPhase(AcPhase.PhaseB);
 		assertThat("Phase current b", phaseData.getCurrent(), equalTo(108.17f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		phaseData = data.accessorForPhase(AcPhase.PhaseC);
 		assertThat("Phase current c", phaseData.getCurrent(), equalTo(110.21f));
 	}
 
@@ -308,13 +308,13 @@ public class PM5100DataTests {
 		PM5100DataAccessor data = getTestDataInstance();
 		assertThat("Voltage", data.getVoltage(), equalTo(285.52228f));
 
-		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		AcEnergyDataAccessor phaseData = data.accessorForPhase(AcPhase.PhaseA);
 		assertThat("Phase voltage a", phaseData.getVoltage(), equalTo(285.05222f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseB);
+		phaseData = data.accessorForPhase(AcPhase.PhaseB);
 		assertThat("Phase voltage b", phaseData.getVoltage(), equalTo(285.8989f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		phaseData = data.accessorForPhase(AcPhase.PhaseC);
 		assertThat("Phase voltage c", phaseData.getVoltage(), equalTo(285.61572f));
 	}
 
@@ -323,13 +323,13 @@ public class PM5100DataTests {
 		PM5100DataAccessor data = getTestDataInstance();
 		assertThat("Line voltage", data.getLineVoltage(), equalTo(494.4849f));
 
-		ACEnergyDataAccessor phaseData = data.accessorForPhase(ACPhase.PhaseA);
+		AcEnergyDataAccessor phaseData = data.accessorForPhase(AcPhase.PhaseA);
 		assertThat("Line voltage ab", phaseData.getLineVoltage(), equalTo(496.08163f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseB);
+		phaseData = data.accessorForPhase(AcPhase.PhaseB);
 		assertThat("Line voltage bc", phaseData.getLineVoltage(), equalTo(493.54446f));
 
-		phaseData = data.accessorForPhase(ACPhase.PhaseC);
+		phaseData = data.accessorForPhase(AcPhase.PhaseC);
 		assertThat("Line voltage ca", phaseData.getLineVoltage(), equalTo(493.82858f));
 	}
 

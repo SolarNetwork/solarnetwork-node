@@ -22,10 +22,11 @@
 
 package net.solarnetwork.node.datum.rfxcom.test;
 
-import static org.easymock.EasyMock.expect;
+import static net.solarnetwork.test.EasyMockUtils.assertWith;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 import static org.junit.Assert.assertEquals;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -35,91 +36,102 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.ConversationalDataCollector;
 import net.solarnetwork.node.datum.rfxcom.RFXCOMDatumDataSource;
-import net.solarnetwork.node.domain.ACEnergyDatum;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.rfxcom.Message;
 import net.solarnetwork.node.rfxcom.MessageFactory;
+import net.solarnetwork.node.rfxcom.MessageHandler;
 import net.solarnetwork.node.rfxcom.RFXCOM;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.service.StaticOptionalService;
+import net.solarnetwork.test.Assertion;
 
 /**
  * Test cases for the @{link RFXCOMDatumDataSource} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class RFXCOMDatumDataSourceTests {
 
 	private RFXCOMDatumDataSource dataSource;
-	private OptionalService<RFXCOM> rfxcomTracker;
 	private RFXCOM rfxcom;
-	private ConversationalDataCollector dc;
 	private MessageFactory messageFactory;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	@SuppressWarnings("unchecked")
 	@Before
 	public void setup() {
-		rfxcomTracker = EasyMock.createMock(OptionalService.class);
-
 		rfxcom = EasyMock.createMock(RFXCOM.class);
 
-		dc = EasyMock.createMock(ConversationalDataCollector.class);
-
 		dataSource = new RFXCOMDatumDataSource();
-		dataSource.setRfxcomTracker(rfxcomTracker);
+		dataSource.setRfxcomTracker(new StaticOptionalService<>(rfxcom));
 
 		messageFactory = new MessageFactory();
 	}
 
-	private Collection<ACEnergyDatum> doReadDatum(String messageString) {
-		final List<Message> messages = new ArrayList<Message>();
+	private Collection<NodeDatum> doReadDatum(String messageString) {
+		// GIVEN
+		final List<Message> messages = new ArrayList<>();
 		messages.add(messageFactory.parseMessage(TestUtils.bytesFromHexString(messageString), 0));
-		expect(rfxcomTracker.service()).andReturn(rfxcom);
-		expect(rfxcom.getDataCollectorInstance()).andReturn(dc);
-		expect(dc.collectData(dataSource)).andReturn(messages);
-		dc.stopCollecting();
 
-		replay(rfxcomTracker, rfxcom, dc);
+		try {
+			rfxcom.listenForMessages(assertWith(new Assertion<MessageHandler>() {
 
-		Collection<ACEnergyDatum> datum = dataSource.readMultipleDatum();
+				@Override
+				public void check(MessageHandler handler) throws Throwable {
+					int i = 0;
+					while ( i < messages.size() ) {
+						if ( !handler.handleMessage(messages.get(i++)) ) {
+							break;
+						}
+					}
+				}
 
-		verify(rfxcomTracker, rfxcom, dc);
+			}));
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
+
+		// WHEN
+		replay(rfxcom);
+		Collection<NodeDatum> datum = dataSource.readMultipleDatum();
+
+		// THEN
+		verify(rfxcom);
 
 		return datum;
 	}
 
-	private List<ACEnergyDatum>[] doReadMultipleDatum(String[] messages) {
+	private List<NodeDatum>[] doReadMultipleDatum(String[] messages) {
 		@SuppressWarnings("unchecked")
-		List<ACEnergyDatum>[] results = new List[messages.length];
+		List<NodeDatum>[] results = new List[messages.length];
 		int i = 0;
 		for ( String messageString : messages ) {
-			results[i++] = new ArrayList<ACEnergyDatum>(doReadDatum(messageString));
-			EasyMock.reset(rfxcomTracker, rfxcom, dc);
+			results[i++] = new ArrayList<>(doReadDatum(messageString));
+			EasyMock.reset(rfxcom);
 		}
 		return results;
 	}
 
 	@Test
 	public void getValidACEnergyDatumNoChange() {
-		Collection<ACEnergyDatum>[] results = doReadMultipleDatum(new String[] {
+		Collection<NodeDatum>[] results = doReadMultipleDatum(new String[] {
 				"115A010188F200000000000000000036B079", "115A010188F200000000000000000036B079",
 				"115A010188F200000000000000000036B079" });
 		log.debug("Got results: {}", Arrays.asList(results));
 		assertEquals(0, results[0].size());
 		assertEquals(0, results[1].size());
 		assertEquals(3, results[2].size());
-		for ( ACEnergyDatum datum : results[2] ) {
+		for ( NodeDatum datum : results[2] ) {
 			assertEquals("88F2", datum.getSourceId());
-			assertEquals("Use", Long.valueOf(63L), datum.getWattHourReading());
+			assertEquals("Use", Long.valueOf(63L), ((AcEnergyDatum) datum).getWattHourReading());
 		}
 	}
 
 	@Test
 	public void getBadACEnergyDatum() {
-		List<ACEnergyDatum>[] results = doReadMultipleDatum(
+		List<NodeDatum>[] results = doReadMultipleDatum(
 				new String[] { "115a011b6b120000000162000000d0666559",
 						"115a011c6b120000000172000000d06bc159", "115a011d6b120000000172000000d0716159",
 						"115a011f6b120000000182000000d0769359", "115a01206b120200000152006b00115a0121", // this should return null
@@ -136,14 +148,14 @@ public class RFXCOMDatumDataSourceTests {
 		assertEquals(0, results[5].size());
 		assertEquals(0, results[6].size());
 		assertEquals(3, results[7].size());
-		assertEquals(61093L, results[7].get(0).getWattHourReading().longValue());
-		assertEquals(61099L, results[7].get(1).getWattHourReading().longValue());
-		assertEquals(61104L, results[7].get(2).getWattHourReading().longValue());
+		assertEquals(61093L, ((AcEnergyDatum) results[7].get(0)).getWattHourReading().longValue());
+		assertEquals(61099L, ((AcEnergyDatum) results[7].get(1)).getWattHourReading().longValue());
+		assertEquals(61104L, ((AcEnergyDatum) results[7].get(2)).getWattHourReading().longValue());
 	}
 
 	@Test
 	public void getBadACEnergyDatumWhileWarmingUp() {
-		List<ACEnergyDatum>[] results = doReadMultipleDatum(new String[] {
+		List<NodeDatum>[] results = doReadMultipleDatum(new String[] {
 				"115a011f6b120000000182000000d0769359", "115a01206b120200000152006b00115a0121", // this should return null
 				"115a01236b120000000152000000d080fc59", "115a01246b120000000152000000d0862059",
 				"115a01256b120100000172000000d08a4459" });
@@ -156,14 +168,14 @@ public class RFXCOMDatumDataSourceTests {
 		assertEquals(0, results[2].size());
 		assertEquals(0, results[3].size());
 		assertEquals(3, results[4].size());
-		assertEquals(61093L, results[4].get(0).getWattHourReading().longValue());
-		assertEquals(61099L, results[4].get(1).getWattHourReading().longValue());
-		assertEquals(61104L, results[4].get(2).getWattHourReading().longValue());
+		assertEquals(61093L, ((AcEnergyDatum) results[4].get(0)).getWattHourReading().longValue());
+		assertEquals(61099L, ((AcEnergyDatum) results[4].get(1)).getWattHourReading().longValue());
+		assertEquals(61104L, ((AcEnergyDatum) results[4].get(2)).getWattHourReading().longValue());
 	}
 
 	@Test
 	public void getBadACEnergyDatumTurnsOutToBeGood() {
-		List<ACEnergyDatum>[] results = doReadMultipleDatum(new String[] {
+		List<NodeDatum>[] results = doReadMultipleDatum(new String[] {
 				"115a011f6b120000000182000000d0769359", "115a01206b120200000152006b00115a0121", // this is the "bad" data
 				"115a01206b120200000152006b00115a0121", // this is the "bad" data
 				"115a01206b120200000152006b00115a0121", // this is the "bad" data
@@ -176,9 +188,9 @@ public class RFXCOMDatumDataSourceTests {
 		assertEquals(0, results[1].size());
 		assertEquals(0, results[2].size());
 		assertEquals(3, results[3].size());
-		assertEquals(2054682597L, results[3].get(0).getWattHourReading().longValue());
-		assertEquals(2054682597L, results[3].get(1).getWattHourReading().longValue());
-		assertEquals(2054682597L, results[3].get(2).getWattHourReading().longValue());
+		assertEquals(2054682597L, ((AcEnergyDatum) results[3].get(0)).getWattHourReading().longValue());
+		assertEquals(2054682597L, ((AcEnergyDatum) results[3].get(1)).getWattHourReading().longValue());
+		assertEquals(2054682597L, ((AcEnergyDatum) results[3].get(2)).getWattHourReading().longValue());
 	}
 
 }

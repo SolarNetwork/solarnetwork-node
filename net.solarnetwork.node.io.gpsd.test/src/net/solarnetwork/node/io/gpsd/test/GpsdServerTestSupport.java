@@ -35,16 +35,16 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
+import net.solarnetwork.codec.ObjectMapperFactoryBean;
 import net.solarnetwork.node.io.gpsd.domain.VersionMessage;
 import net.solarnetwork.node.io.gpsd.service.GpsdMessageHandler;
 import net.solarnetwork.node.io.gpsd.util.GpsdMessageDeserializer;
-import net.solarnetwork.util.ObjectMapperFactoryBean;
 
 /**
  * Test support using a mock GpsdServer.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class GpsdServerTestSupport {
 
@@ -81,7 +81,7 @@ public class GpsdServerTestSupport {
 	}
 
 	private ObjectMapper createObjectMapper() {
-		net.solarnetwork.util.ObjectMapperFactoryBean factory = new ObjectMapperFactoryBean();
+		ObjectMapperFactoryBean factory = new ObjectMapperFactoryBean();
 		factory.setFeaturesToDisable(asList(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES));
 		factory.setFeaturesToEnable(asList(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS));
 		factory.setDeserializers(asList(new GpsdMessageDeserializer()));

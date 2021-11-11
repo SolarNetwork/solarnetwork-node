@@ -46,15 +46,15 @@ import javax.measure.spi.UnitFormatService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.javax.measure.MeasurementServiceProvider;
+import net.solarnetwork.service.OptionalServiceCollection;
 import net.solarnetwork.util.NumberUtils;
-import net.solarnetwork.util.OptionalServiceCollection;
 
 /**
  * Helper for dealing with KCD units of measurement, using the
  * {@code javax.measure} API.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class MeasurementHelper {
 

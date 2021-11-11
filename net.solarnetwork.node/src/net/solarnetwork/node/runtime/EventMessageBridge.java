@@ -34,20 +34,20 @@ import org.springframework.messaging.core.MessageSendingOperations;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import org.springframework.messaging.support.GenericMessage;
 import net.solarnetwork.domain.Result;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.PlatformService;
-import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.support.DatumEvents;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.node.service.PlatformService;
+import net.solarnetwork.node.service.UploadService;
+import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * Bridge between OSGi EventAdmin events and a Spring Messaging.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class EventMessageBridge implements EventHandler {
 

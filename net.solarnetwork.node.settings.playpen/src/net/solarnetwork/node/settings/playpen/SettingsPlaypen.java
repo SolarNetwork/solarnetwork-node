@@ -41,37 +41,37 @@ import org.springframework.context.MessageSource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.FileCopyUtils;
-import net.solarnetwork.domain.GeneralLocationSourceMetadata;
-import net.solarnetwork.node.LocationService;
-import net.solarnetwork.node.domain.BasicGeneralLocation;
-import net.solarnetwork.node.domain.Location;
+import net.solarnetwork.domain.datum.GeneralLocationSourceMetadata;
+import net.solarnetwork.node.domain.datum.DatumLocation;
+import net.solarnetwork.node.domain.datum.SimpleDatumLocation;
+import net.solarnetwork.node.service.LocationService;
 import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
 import net.solarnetwork.node.settings.SettingResourceHandler;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
 import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsUpdates;
 import net.solarnetwork.node.settings.support.BasicFileSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicLocationLookupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicSetupResourceSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicSliderSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextAreaSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
 import net.solarnetwork.node.setup.SetupResourceProvider;
-import net.solarnetwork.util.OptionalServiceTracker;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicRadioGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicSliderSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextAreaSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 
 /**
  * A test bed experiment for the settings framework.
  * 
  * @author matt
- * @version 1.4
+ * @version 2.0
  */
 public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourceHandler {
 
@@ -101,14 +101,14 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 	private List<ComplexListItem> listComplex = new ArrayList<ComplexListItem>(4);
 	private List<String> textFilesContent = new ArrayList<>(2);
 
-	private OptionalServiceTracker<LocationService> locationService;
+	private OptionalService<LocationService> locationService;
 	private Long locationId;
 	private String sourceId;
-	private Location location;
+	private DatumLocation location;
 
 	private Long weatherLocationId;
 	private String weatherSourceId;
-	private Location weatherLocation;
+	private DatumLocation weatherLocation;
 
 	private MessageSource messageSource;
 
@@ -117,7 +117,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 	private SetupResourceProvider customSettingResourceProvider;
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.settings.playpen";
 	}
 
@@ -191,8 +191,8 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 
 		// basic dynamic list of strings
 		Collection<String> listStrings = getListString();
-		BasicGroupSettingSpecifier listStringGroup = SettingsUtil.dynamicListSettingSpecifier(
-				"listString", listStrings, new SettingsUtil.KeyedListCallback<String>() {
+		BasicGroupSettingSpecifier listStringGroup = SettingUtils.dynamicListSettingSpecifier(
+				"listString", listStrings, new SettingUtils.KeyedListCallback<String>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(String value, int index,
@@ -205,8 +205,8 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 
 		// dynamic list of objects
 		Collection<ComplexListItem> listComplexes = getListComplex();
-		BasicGroupSettingSpecifier listComplexGroup = SettingsUtil.dynamicListSettingSpecifier(
-				"listComplex", listComplexes, new SettingsUtil.KeyedListCallback<ComplexListItem>() {
+		BasicGroupSettingSpecifier listComplexGroup = SettingUtils.dynamicListSettingSpecifier(
+				"listComplex", listComplexes, new SettingUtils.KeyedListCallback<ComplexListItem>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(ComplexListItem value,
@@ -228,7 +228,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 				try {
 					GeneralLocationSourceMetadata meta = service.getLocationMetadata(locationId,
 							sourceId);
-					BasicGeneralLocation loc = new BasicGeneralLocation();
+					SimpleDatumLocation loc = new SimpleDatumLocation();
 					loc.setLocationId(locationId);
 					loc.setSourceId(sourceId);
 					loc.setSourceMetadata(meta);
@@ -239,7 +239,8 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 				}
 			}
 		}
-		return new BasicLocationLookupSettingSpecifier("locationKey", Location.PRICE_TYPE, location);
+		return new BasicLocationLookupSettingSpecifier("locationKey", DatumLocation.PRICE_TYPE,
+				location);
 	}
 
 	private LocationLookupSettingSpecifier getWeatherLocationSettingSpecifier() {
@@ -250,9 +251,9 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 				try {
 					GeneralLocationSourceMetadata meta = service.getLocationMetadata(weatherLocationId,
 							weatherSourceId);
-					BasicGeneralLocation loc = new BasicGeneralLocation();
-					loc.setLocationId(weatherLocationId);
-					loc.setSourceId(weatherSourceId);
+					SimpleDatumLocation loc = new SimpleDatumLocation();
+					loc.setLocationId(locationId);
+					loc.setSourceId(sourceId);
 					loc.setSourceMetadata(meta);
 					weatherLocation = loc;
 				} catch ( RuntimeException e ) {
@@ -261,7 +262,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 				}
 			}
 		}
-		return new BasicLocationLookupSettingSpecifier("weatherLocationKey", Location.WEATHER_TYPE,
+		return new BasicLocationLookupSettingSpecifier("weatherLocationKey", DatumLocation.WEATHER_TYPE,
 				weatherLocation);
 	}
 
@@ -425,11 +426,11 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 		this.radio = radio;
 	}
 
-	public OptionalServiceTracker<LocationService> getLocationService() {
+	public OptionalService<LocationService> getLocationService() {
 		return locationService;
 	}
 
-	public void setLocationService(OptionalServiceTracker<LocationService> locationService) {
+	public void setLocationService(OptionalService<LocationService> locationService) {
 		this.locationService = locationService;
 	}
 

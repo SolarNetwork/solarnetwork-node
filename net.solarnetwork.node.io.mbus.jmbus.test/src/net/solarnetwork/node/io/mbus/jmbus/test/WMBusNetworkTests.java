@@ -27,7 +27,7 @@ import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 import static org.springframework.util.FileCopyUtils.copyToByteArray;
 import java.io.IOException;
-import java.util.Date;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import org.easymock.EasyMock;
@@ -120,11 +120,11 @@ public class WMBusNetworkTests {
 				WMBusNetworkTests.class.getResourceAsStream("wmbus-message.bin"));
 		final WMBusMessage msg = WMBusMessageDecoder.decode(bytes, 0, keyMap);
 
-		final MBusData expected = new MBusData(new Date());
+		final MBusData expected = new MBusData(Instant.now());
 		expected.dataRecords
 				.add(new MBusDataRecord(MBusDataDescription.Volume, MBusDataType.BCD, 27L, -3));
-		expected.dataRecords
-				.add(new MBusDataRecord(MBusDataDescription.DateTime, new Date(1593064440000L)));
+		expected.dataRecords.add(
+				new MBusDataRecord(MBusDataDescription.DateTime, Instant.ofEpochMilli(1593064440000L)));
 
 		MBusMessageHandler messageHandler = EasyMock.createMock(MBusMessageHandler.class);
 		messageHandler.handleMessage(new MBusMessage(expected));

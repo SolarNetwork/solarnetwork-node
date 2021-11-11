@@ -32,32 +32,20 @@ import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * A base helper class to support {@link ModbusNetwork} based services.
  * 
  * @author matt
- * @version 2.0
+ * @version 3.0
  * @since 2.0
  */
 public abstract class ModbusDeviceSupport extends BaseIdentifiable {
-
-	/** Key for the device name, as a String. */
-	public static final String INFO_KEY_DEVICE_NAME = "Name";
-
-	/** Key for the device model, as a String. */
-	public static final String INFO_KEY_DEVICE_MODEL = "Model";
-
-	/** Key for the device serial number, as a Long. */
-	public static final String INFO_KEY_DEVICE_SERIAL_NUMBER = "Serial Number";
-
-	/** Key for the device manufacturer, as a String. */
-	public static final String INFO_KEY_DEVICE_MANUFACTURER = "Manufacturer";
 
 	/**
 	 * The default value for the {@code unitId} property.
@@ -67,7 +55,7 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	public static final int DEFAULT_UNIT_ID = 1;
 
 	/**
-	 * The default value for the {@link ModbusNetwork#getUID()} property filter
+	 * The default value for the {@link ModbusNetwork#getUid()} property filter
 	 * value.
 	 * 
 	 * @since 1.2
@@ -75,18 +63,17 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	public static final String DEFAULT_NETWORK_UID = "Modbus Port";
 
 	/**
-	 * Key for the device manufacture date, as a
-	 * {@link org.joda.time.ReadablePartial}.
+	 * Key for the device manufacture date, as a {@link java.time.LocalDate}.
 	 */
 	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = "Manufacture Date";
 
 	private Map<String, Object> deviceInfo;
 	private int unitId = DEFAULT_UNIT_ID;
-	private OptionalService<ModbusNetwork> modbusNetwork;
+	private OptionalFilterableService<ModbusNetwork> modbusNetwork;
 
 	/**
 	 * Get setting specifiers for the {@literal unitId} and
-	 * {@literal modbusNetwork.propertyFilters['UID']} properties.
+	 * {@literal modbusNetwork.propertyFilters['uid']} properties.
 	 * 
 	 * @param prefix
 	 *        the setting prefix to prepend
@@ -98,7 +85,7 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 			prefix = "";
 		}
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(2);
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "modbusNetwork.propertyFilters['UID']",
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "modbusNetwork.propertyFilters['uid']",
 				DEFAULT_NETWORK_UID));
 		results.add(
 				new BasicTextFieldSettingSpecifier(prefix + "unitId", String.valueOf(DEFAULT_UNIT_ID)));
@@ -110,7 +97,7 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 
 	/**
 	 * Get the {@link ModbusNetwork} from the configured {@code modbusNetwork}
-	 * service, or <em>null</em> if not available or not configured.
+	 * service, or {@literal null} if not available or not configured.
 	 * 
 	 * @return ModbusNetwork
 	 */
@@ -134,8 +121,8 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	/**
 	 * Return an informational message composed of general device info. This
 	 * method will call {@link #getDeviceInfo()} and return a {@code /} (forward
-	 * slash) delimited string of the resulting values, or <em>null</em> if that
-	 * method returns <em>null</em>.
+	 * slash) delimited string of the resulting values, or {@literal null} if
+	 * that method returns {@literal null}.
 	 * 
 	 * @return info message
 	 */
@@ -153,7 +140,7 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	 * subsequent calls will not attempt to read from the device. Note the
 	 * returned map cannot be modified.
 	 * 
-	 * @return the device info, or <em>null</em>
+	 * @return the device info, or {@literal null}
 	 * @see #readDeviceInfo(ModbusConnection)
 	 */
 	public Map<String, ?> getDeviceInfo() {
@@ -187,7 +174,7 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	 *        the result type
 	 * @param action
 	 *        the connection action
-	 * @return the result of the callback, or <em>null</em> if the action is
+	 * @return the result of the callback, or {@literal null} if the action is
 	 *         never invoked
 	 * @throws IOException
 	 *         if any IO error occurs
@@ -204,18 +191,18 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	/**
 	 * Get direct access to the device info data.
 	 * 
-	 * @return the device info, or <em>null</em>
+	 * @return the device info, or {@literal null}
 	 */
 	protected Map<String, Object> getDeviceInfoMap() {
 		return deviceInfo;
 	}
 
 	/**
-	 * Set the device info data. Setting the {@code deviceInfo} to <em>null</em>
-	 * will force the next call to {@link #getDeviceInfo()} to read from the
-	 * device to populate this data, and setting this to anything else will
-	 * force all subsequent calls to {@link #getDeviceInfo()} to simply return
-	 * that map.
+	 * Set the device info data. Setting the {@code deviceInfo} to
+	 * {@literal null} will force the next call to {@link #getDeviceInfo()} to
+	 * read from the device to populate this data, and setting this to anything
+	 * else will force all subsequent calls to {@link #getDeviceInfo()} to
+	 * simply return that map.
 	 * 
 	 * @param deviceInfo
 	 *        the device info map to set
@@ -239,7 +226,7 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	 * 
 	 * @return the network
 	 */
-	public OptionalService<ModbusNetwork> getModbusNetwork() {
+	public OptionalFilterableService<ModbusNetwork> getModbusNetwork() {
 		return modbusNetwork;
 	}
 
@@ -249,7 +236,7 @@ public abstract class ModbusDeviceSupport extends BaseIdentifiable {
 	 * @param modbusDevice
 	 *        the network
 	 */
-	public void setModbusNetwork(OptionalService<ModbusNetwork> modbusDevice) {
+	public void setModbusNetwork(OptionalFilterableService<ModbusNetwork> modbusDevice) {
 		this.modbusNetwork = modbusDevice;
 	}
 

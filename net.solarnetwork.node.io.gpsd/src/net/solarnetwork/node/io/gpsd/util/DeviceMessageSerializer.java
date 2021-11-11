@@ -22,9 +22,9 @@
 
 package net.solarnetwork.node.io.gpsd.util;
 
-import static net.solarnetwork.node.io.gpsd.util.JsonUtils.writeBitmaskValue;
-import static net.solarnetwork.node.io.gpsd.util.JsonUtils.writeIso8601Timestamp;
-import static net.solarnetwork.node.io.gpsd.util.JsonUtils.writeNumberField;
+import static net.solarnetwork.codec.JsonUtils.writeBitmaskValue;
+import static net.solarnetwork.codec.JsonUtils.writeIso8601Timestamp;
+import static net.solarnetwork.codec.JsonUtils.writeNumberField;
 import java.io.IOException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -34,7 +34,7 @@ import net.solarnetwork.node.io.gpsd.domain.DeviceMessage;
  * Serializer for {@link DeviceMessage} objects.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class DeviceMessageSerializer extends AbstractGpsdMessageSerializer<DeviceMessage> {
 

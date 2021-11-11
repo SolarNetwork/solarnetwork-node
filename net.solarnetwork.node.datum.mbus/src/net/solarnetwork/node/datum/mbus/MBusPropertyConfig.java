@@ -27,13 +27,13 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
+import net.solarnetwork.domain.datum.DatumSamplePropertyConfig;
+import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.io.mbus.MBusDataDescription;
 import net.solarnetwork.node.io.mbus.MBusDataType;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Configuration for a single datum property to be set via M-Bus.
@@ -43,9 +43,9 @@ import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
  * </p>
  * 
  * @author alex
- * @version 1.0
+ * @version 2.0
  */
-public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDataDescription> {
+public class MBusPropertyConfig extends DatumSamplePropertyConfig<MBusDataDescription> {
 
 	private MBusDataType dataType;
 	private BigDecimal unitMultiplier;
@@ -55,7 +55,7 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 	 * Default constructor.
 	 */
 	public MBusPropertyConfig() {
-		super(null, GeneralDatumSamplesType.Instantaneous, MBusDataDescription.NotSupported);
+		super(null, DatumSamplesType.Instantaneous, MBusDataDescription.NotSupported);
 		dataType = MBusDataType.None;
 		unitMultiplier = BigDecimal.ONE;
 		decimalScale = 0;
@@ -73,8 +73,8 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 	 * @param dataDescription
 	 *        the mbus data description
 	 */
-	public MBusPropertyConfig(String name, GeneralDatumSamplesType datumPropertyType,
-			MBusDataType dataType, MBusDataDescription dataDescription) {
+	public MBusPropertyConfig(String name, DatumSamplesType datumPropertyType, MBusDataType dataType,
+			MBusDataDescription dataDescription) {
 		this(name, datumPropertyType, dataType, dataDescription, BigDecimal.ONE, 0);
 	}
 
@@ -95,9 +95,8 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 	 *        for numbers, the maximum decimal scale to support, or
 	 *        {@literal -1} for no limit
 	 */
-	public MBusPropertyConfig(String name, GeneralDatumSamplesType datumPropertyType,
-			MBusDataType dataType, MBusDataDescription dataDescription, BigDecimal unitMultiplier,
-			int decimalScale) {
+	public MBusPropertyConfig(String name, DatumSamplesType datumPropertyType, MBusDataType dataType,
+			MBusDataDescription dataDescription, BigDecimal unitMultiplier, int decimalScale) {
 		super(name, datumPropertyType, dataDescription);
 		this.dataType = dataType;
 		this.unitMultiplier = unitMultiplier;
@@ -112,7 +111,7 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 	 * @param datumPropertyType
 	 *        the datum property type
 	 */
-	public MBusPropertyConfig(String name, GeneralDatumSamplesType datumPropertyType) {
+	public MBusPropertyConfig(String name, DatumSamplesType datumPropertyType) {
 		super(name, datumPropertyType, null);
 	}
 
@@ -133,7 +132,7 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
 				prefix + "datumPropertyTypeKey", defaults.getDatumPropertyTypeValue());
 		Map<String, String> propTypeTitles = new LinkedHashMap<String, String>(3);
-		for ( GeneralDatumSamplesType e : GeneralDatumSamplesType.values() ) {
+		for ( DatumSamplesType e : DatumSamplesType.values() ) {
 			propTypeTitles.put(Character.toString(e.toKey()), e.toString());
 		}
 		propTypeSpec.setValueTitles(propTypeTitles);
@@ -227,7 +226,7 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 	 * 
 	 * @return the type
 	 */
-	public GeneralDatumSamplesType getDatumPropertyType() {
+	public DatumSamplesType getDatumPropertyType() {
 		return getPropertyType();
 	}
 
@@ -235,14 +234,14 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 	 * Set the datum property type.
 	 * 
 	 * <p>
-	 * This is an alias for {@link #setPropertyType(GeneralDatumSamplesType)},
-	 * and ignores a {@literal null} argument.
+	 * This is an alias for {@link #setPropertyType(DatumSamplesType)}, and
+	 * ignores a {@literal null} argument.
 	 * </p>
 	 * 
 	 * @param datumPropertyType
 	 *        the datum property type to set
 	 */
-	public void setDatumPropertyType(GeneralDatumSamplesType datumPropertyType) {
+	public void setDatumPropertyType(DatumSamplesType datumPropertyType) {
 		if ( datumPropertyType == null ) {
 			return;
 		}
@@ -254,17 +253,16 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 	 * 
 	 * <p>
 	 * This returns the configured {@link #getPropertyType()}
-	 * {@link GeneralDatumSamplesType#toKey()} value as a string. If the type is
-	 * not available, {@link GeneralDatumSamplesType#Instantaneous} will be
-	 * returned.
+	 * {@link DatumSamplesType#toKey()} value as a string. If the type is not
+	 * available, {@link DatumSamplesType#Instantaneous} will be returned.
 	 * </p>
 	 * 
 	 * @return the property type key
 	 */
 	public String getDatumPropertyTypeKey() {
-		GeneralDatumSamplesType type = getDatumPropertyType();
+		DatumSamplesType type = getDatumPropertyType();
 		if ( type == null ) {
-			type = GeneralDatumSamplesType.Instantaneous;
+			type = DatumSamplesType.Instantaneous;
 		}
 		return Character.toString(type.toKey());
 	}
@@ -274,26 +272,25 @@ public class MBusPropertyConfig extends GeneralDatumSamplePropertyConfig<MBusDat
 	 * 
 	 * <p>
 	 * This uses the first character of {@code key} as a
-	 * {@link GeneralDatumSamplesType} key value to call
-	 * {@link #setPropertyType(GeneralDatumSamplesType)}. If there is any
-	 * problem parsing the type, {@link GeneralDatumSamplesType#Instantaneous}
-	 * is set.
+	 * {@link DatumSamplesType} key value to call
+	 * {@link #setPropertyType(DatumSamplesType)}. If there is any problem
+	 * parsing the type, {@link DatumSamplesType#Instantaneous} is set.
 	 * </p>
 	 * 
 	 * @param key
 	 *        the datum property type key to set
 	 */
 	public void setDatumPropertyTypeKey(String key) {
-		GeneralDatumSamplesType type = null;
+		DatumSamplesType type = null;
 		if ( key != null && key.length() > 0 ) {
 			try {
-				type = GeneralDatumSamplesType.valueOf(key.charAt(0));
+				type = DatumSamplesType.valueOf(key.charAt(0));
 			} catch ( IllegalArgumentException e ) {
 				// ignore
 			}
 		}
 		if ( type == null ) {
-			type = GeneralDatumSamplesType.Instantaneous;
+			type = DatumSamplesType.Instantaneous;
 		}
 		setDatumPropertyType(type);
 	}

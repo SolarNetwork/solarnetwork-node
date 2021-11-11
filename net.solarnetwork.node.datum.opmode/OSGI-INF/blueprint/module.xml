@@ -14,63 +14,68 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
-	<bean id="datumQueue" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.DatumQueue"/>
+	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
 		<property name="sticky" value="true"/>
 	</bean>
 
-	<bean id="datumDataSources" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.DatumDataSource"/>
+	<bean id="datumDataSources" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumDataSource"/>
 	</bean>
 
-	<bean id="multiDatumDataSources" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.MultiDatumDataSource"/>
+	<bean id="multiDatumDataSources" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.MultiDatumDataSource"/>
 	</bean>
 
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.datum.opmode.DatumDataSourceOpModeInvoker</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
 
-	<reference id="scheduler" interface="org.quartz.Scheduler" filter="(function=node)"/>
-	
+	<reference id="opModesService" interface="net.solarnetwork.node.service.OperationalModesService"/>
+
+	<reference id="taskScheduler" interface="org.springframework.scheduling.TaskScheduler" filter="(function=node)"/>
+
 	<reference id="taskExecutor" interface="org.springframework.core.task.TaskExecutor" filter="(function=node)"/>
 	
 	<!-- Published Services -->
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Datum Data Source Operational Mode Invoker"/>
-			<property name="factoryUID" value="net.solarnetwork.node.datum.opmode.invoker"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.opmode.invoker"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.opmode.invoker" autowire-on-update="true">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 			<beans:value>org.osgi.service.event.EventHandler</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.opmode.invoker"/>
 			<beans:entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
 				<beans:array value-type="java.lang.String">
-					<beans:value>#{T(net.solarnetwork.node.OperationalModesService).EVENT_TOPIC_OPERATIONAL_MODES_CHANGED}</beans:value>
+					<beans:value>#{T(net.solarnetwork.node.service.OperationalModesService).EVENT_TOPIC_OPERATIONAL_MODES_CHANGED}</beans:value>
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.datum.opmode.DatumDataSourceOpModeInvoker">
+		<bean class="net.solarnetwork.node.datum.opmode.DatumDataSourceOpModeInvoker" 
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<argument ref="opModesService"/>
+			<argument ref="taskScheduler"/>
 			<argument ref="datumQueue"/>
 			<argument ref="datumDataSources"/>
 			<argument ref="multiDatumDataSources"/>
 			<property name="messageSource" ref="messageSource"/>
-			<property name="scheduler" ref="scheduler"/>
 			<property name="taskExecutor" ref="taskExecutor"/>
 		</bean>
 	</osgix:managed-service-factory>

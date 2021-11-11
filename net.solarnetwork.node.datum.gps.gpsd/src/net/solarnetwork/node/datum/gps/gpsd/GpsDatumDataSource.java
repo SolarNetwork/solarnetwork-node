@@ -33,10 +33,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import net.solarnetwork.domain.SimpleLocation;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.LocationService;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.io.gpsd.domain.GpsdMessageType;
 import net.solarnetwork.node.io.gpsd.domain.GpsdReportMessage;
 import net.solarnetwork.node.io.gpsd.domain.NmeaMode;
@@ -44,25 +41,29 @@ import net.solarnetwork.node.io.gpsd.domain.TpvReportMessage;
 import net.solarnetwork.node.io.gpsd.service.GpsdClientConnection;
 import net.solarnetwork.node.io.gpsd.service.GpsdClientStatus;
 import net.solarnetwork.node.io.gpsd.service.GpsdMessageListener;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.node.support.DatumDataSourceSupport;
-import net.solarnetwork.util.FilterableService;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.LocationService;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.service.FilterableService;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.NumberUtils;
-import net.solarnetwork.util.OptionalService;
 
 /**
  * Datum data source for GPS data collected from a {@link GpsdClientConnection}.
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class GpsDatumDataSource extends DatumDataSourceSupport
-		implements DatumDataSource<GeneralNodeDatum>, MultiDatumDataSource<GeneralNodeDatum>,
-		SettingSpecifierProvider, GpsdMessageListener<GpsdReportMessage>, EventHandler {
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider,
+		GpsdMessageListener<GpsdReportMessage>, EventHandler {
 
 	private final ConcurrentMap<GpsdMessageType, GpsdReportMessage> messageSamples = new ConcurrentHashMap<>(
 			4, 0.9f, 1);
@@ -75,7 +76,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 	 */
 	public static final double DEFAULT_MAX_LAT_LON_ERROR_METERS = 10.0;
 
-	private final OptionalService<GpsdClientConnection> client;
+	private final OptionalFilterableService<GpsdClientConnection> client;
 	private OptionalService<LocationService> locationService;
 	private String sourceId;
 	private boolean updateNodeLocation = false;
@@ -87,7 +88,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 	 * @param client
 	 *        the client
 	 */
-	public GpsDatumDataSource(OptionalService<GpsdClientConnection> client) {
+	public GpsDatumDataSource(OptionalFilterableService<GpsdClientConnection> client) {
 		super();
 		this.client = client;
 	}
@@ -104,12 +105,12 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 	}
 
 	@Override
-	public Class<? extends GeneralNodeDatum> getDatumType() {
-		return GeneralNodeDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return NodeDatum.class;
 	}
 
 	@Override
-	public GeneralNodeDatum readCurrentDatum() {
+	public NodeDatum readCurrentDatum() {
 		GpsdReportMessage msg = messageSamples.get(GpsdMessageType.TpvReport);
 		if ( msg instanceof TpvReportMessage ) {
 			return createTpvDatum((TpvReportMessage) msg);
@@ -118,15 +119,15 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 	}
 
 	@Override
-	public Class<? extends GeneralNodeDatum> getMultiDatumType() {
-		return GeneralNodeDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return NodeDatum.class;
 	}
 
 	@Override
-	public Collection<GeneralNodeDatum> readMultipleDatum() {
-		List<GeneralNodeDatum> results = new ArrayList<>();
+	public Collection<NodeDatum> readMultipleDatum() {
+		List<NodeDatum> results = new ArrayList<>();
 		for ( GpsdReportMessage msg : messageSamples.values() ) {
-			GeneralNodeDatum d = createDatum(msg);
+			NodeDatum d = createDatum(msg);
 			if ( d != null ) {
 				results.add(d);
 			}
@@ -151,7 +152,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 		}
 		messageSamples.put(type, message);
 
-		GeneralNodeDatum d = createDatum(message);
+		NodeDatum d = createDatum(message);
 		if ( d != null ) {
 			offerDatumCapturedEvent(d);
 		}
@@ -194,8 +195,8 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 				: null);
 	}
 
-	private GeneralNodeDatum createDatum(GpsdReportMessage message) {
-		GeneralNodeDatum d = null;
+	private NodeDatum createDatum(GpsdReportMessage message) {
+		NodeDatum d = null;
 		if ( message instanceof TpvReportMessage ) {
 			d = createTpvDatum((TpvReportMessage) message);
 		}
@@ -210,9 +211,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 		if ( sourceId == null ) {
 			return null;
 		}
-		TpvGpsDatum d = new TpvGpsDatum(tpv);
-		d.setSourceId(resolvePlaceholders(sourceId));
-		return d;
+		return new TpvGpsDatum(tpv, resolvePlaceholders(sourceId));
 	}
 
 	// EventHandler
@@ -266,7 +265,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 	// SettingsSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.gps.gpsd";
 	}
 
@@ -282,7 +281,7 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(), true));
 
 		results.addAll(getIdentifiableSettingSpecifiers());
-		results.add(new BasicTextFieldSettingSpecifier("client.propertyFilters['UID']", "GPSD"));
+		results.add(new BasicTextFieldSettingSpecifier("client.propertyFilters['uid']", "GPSD"));
 
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
 

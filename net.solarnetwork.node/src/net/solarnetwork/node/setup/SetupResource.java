@@ -84,27 +84,27 @@ public interface SetupResource {
 	String getContentType();
 
 	/**
-	 * Get a set of required security roles, or {@code null} if none required.
+	 * Get a set of required security roles, or {@literal null} if none required.
 	 * The set is treated such that <em>any</em> matching role is allowed
 	 * access, that is the roles are logically {@code OR}'ed together.
 	 * 
-	 * @return A set of required roles, or {@code null} if no role required.
+	 * @return A set of required roles, or {@literal null} if no role required.
 	 */
 	Set<String> getRequiredRoles();
 
 	/**
-	 * Get a set of supported consumer types, or {@code null} if <b>all</b>
+	 * Get a set of supported consumer types, or {@literal null} if <b>all</b>
 	 * types are supported.
 	 * 
-	 * @return A set of supported consumer types, or {@code null} if all types
+	 * @return A set of supported consumer types, or {@literal null} if all types
 	 *         are supported.
 	 */
 	Set<String> getSupportedConsumerTypes();
 
 	/**
-	 * The locale of the resource, or {@code null} for non-localizable content.
+	 * The locale of the resource, or {@literal null} for non-localizable content.
 	 * 
-	 * @return The locale, or {@code null}.
+	 * @return The locale, or {@literal null}.
 	 */
 	Locale getLocale();
 
@@ -142,14 +142,14 @@ public interface SetupResource {
 	 * This method should return a new stream each time it is called.
 	 * 
 	 * @return the input stream for the underlying resource (must not be
-	 *         {@code null})
+	 *         {@literal null})
 	 * @throws IOException
 	 *         if the stream could not be opened
 	 */
 	InputStream getInputStream() throws IOException;
 
 	/**
-	 * Get the scope of the resource, or {@code null} if undefined.
+	 * Get the scope of the resource, or {@literal null} if undefined.
 	 * 
 	 * @return the resource scope
 	 * @since 1.1

@@ -23,27 +23,26 @@
 package net.solarnetwork.node.datum.egauge.ws.client;
 
 import org.springframework.expression.Expression;
-import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
-import net.solarnetwork.support.ExpressionService;
-import net.solarnetwork.support.ExpressionServiceExpression;;
+import net.solarnetwork.domain.datum.DatumSamplePropertyConfig;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.service.ExpressionService;
+import net.solarnetwork.service.support.ExpressionServiceExpression;
 
 /**
- * eGauge typed extension to GeneralDatumSamplePropertyConfig
+ * eGauge typed extension to DatumSamplePropertyConfig
  * 
  * @author maxieduncan
- * @version 1.1
+ * @version 2.0
  */
-public class EGaugeDatumSamplePropertyConfig
-		extends GeneralDatumSamplePropertyConfig<EGaugePropertyConfig> {
+public class EGaugeDatumSamplePropertyConfig extends DatumSamplePropertyConfig<EGaugePropertyConfig> {
 
 	public EGaugeDatumSamplePropertyConfig() {
 		super();
-		setPropertyType(GeneralDatumSamplesType.Instantaneous);
+		setPropertyType(DatumSamplesType.Instantaneous);
 		setConfig(new EGaugePropertyConfig());
 	}
 
-	public EGaugeDatumSamplePropertyConfig(String propertyKey, GeneralDatumSamplesType propertyType,
+	public EGaugeDatumSamplePropertyConfig(String propertyKey, DatumSamplesType propertyType,
 			EGaugePropertyConfig propertyConfig) {
 		super(propertyKey, propertyType, propertyConfig);
 	}

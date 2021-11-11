@@ -26,13 +26,13 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.service.ExpressionService;
 
 /**
  * An object to use as the "root" for {@link ExpressionService} evaluation.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ExpressionRoot {
 

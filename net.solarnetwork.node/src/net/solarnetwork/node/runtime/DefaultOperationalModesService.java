@@ -44,7 +44,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import org.joda.time.DateTime;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
@@ -55,26 +54,29 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.KeyValuePair;
-import net.solarnetwork.node.OperationalModesService;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.ServiceLifecycleObserver;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * Default implementation of {@link OperationalModesService}.
  * 
  * @author matt
- * @version 1.5
+ * @version 2.0
  */
-public class DefaultOperationalModesService extends BaseIdentifiable
-		implements OperationalModesService, InstructionHandler, SettingSpecifierProvider {
+public class DefaultOperationalModesService extends BaseIdentifiable implements OperationalModesService,
+		InstructionHandler, SettingSpecifierProvider, ServiceLifecycleObserver {
 
 	/** The setting key for operational modes. */
 	public static final String SETTING_OP_MODE = "solarnode.opmode";
@@ -114,6 +116,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable
 	private OptionalService<PlatformTransactionManager> transactionManager;
 	private int autoExpireModesFrequency = DEFAULT_AUTO_EXPIRE_MODES_FREQUENCY;
 
+	private ScheduledFuture<?> startupScheduledFuture;
 	private ScheduledFuture<?> autoExpireScheduledFuture;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -160,28 +163,29 @@ public class DefaultOperationalModesService extends BaseIdentifiable
 		this.eventAdmin = eventAdmin;
 	}
 
-	/**
-	 * Call to initialize the service after properties configured.
-	 */
-	public synchronized void init() {
-		// post current modes, i.e. shift from "default" to whatever is active
-		final Set<String> modes = initActiveModes();
-
+	@Override
+	public synchronized void serviceDidStartup() {
 		Runnable task = new Runnable() {
 
 			@Override
 			public void run() {
-				if ( !modes.isEmpty() ) {
-					if ( log.isInfoEnabled() ) {
-						log.info("Initial active operational modes [{}]",
-								commaDelimitedStringFromCollection(modes));
+				// post current modes, i.e. shift from "default" to whatever is active
+				final Set<String> modes = initActiveModes();
+				synchronized ( DefaultOperationalModesService.this ) {
+					if ( !modes.isEmpty() ) {
+						if ( log.isInfoEnabled() ) {
+							log.info("Initial active operational modes [{}]",
+									commaDelimitedStringFromCollection(modes));
+						}
+						postOperationalModesChangedEvent(modes);
 					}
-					postOperationalModesChangedEvent(modes);
+					startupScheduledFuture = null;
 				}
 			}
 		};
-		if ( taskScheduler != null && startupDelay > 0 ) {
-			taskScheduler.schedule(task, new Date(System.currentTimeMillis() + startupDelay));
+		if ( taskScheduler != null && startupDelay > 0 && startupScheduledFuture == null ) {
+			startupScheduledFuture = taskScheduler.schedule(task,
+					new Date(System.currentTimeMillis() + startupDelay));
 		} else {
 			task.run();
 		}
@@ -285,18 +289,20 @@ public class DefaultOperationalModesService extends BaseIdentifiable
 		new AutoExpireModesTask().run();
 	}
 
-	/**
-	 * Call to close internal resources.
-	 */
-	public synchronized void close() {
+	@Override
+	public synchronized void serviceDidShutdown() {
 		if ( autoExpireScheduledFuture != null ) {
 			autoExpireScheduledFuture.cancel(true);
 			autoExpireScheduledFuture = null;
 		}
+		if ( startupScheduledFuture != null ) {
+			startupScheduledFuture.cancel(true);
+			startupScheduledFuture = null;
+		}
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return DefaultOperationalModesService.class.getName();
 	}
 
@@ -334,7 +340,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		if ( instruction == null ) {
 			return null;
 		}
@@ -344,9 +350,9 @@ public class DefaultOperationalModesService extends BaseIdentifiable
 		}
 		String[] modes = instruction.getAllParameterValues(INSTRUCTION_PARAM_OPERATIONAL_MODE);
 		if ( modes == null || modes.length < 1 ) {
-			return InstructionState.Declined;
+			return InstructionUtils.createStatus(instruction, InstructionState.Declined);
 		}
-		DateTime expire = OperationalModesService.expirationDate(instruction);
+		Instant expire = OperationalModesService.expirationDate(instruction);
 		Set<String> opModes = new LinkedHashSet<>(Arrays.asList(modes));
 		switch (topic) {
 			case TOPIC_ENABLE_OPERATIONAL_MODES:
@@ -358,7 +364,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable
 				break;
 
 		}
-		return InstructionState.Completed;
+		return InstructionUtils.createStatus(instruction, InstructionState.Completed);
 	}
 
 	@Override
@@ -412,12 +418,12 @@ public class DefaultOperationalModesService extends BaseIdentifiable
 	}
 
 	@Override
-	public synchronized Set<String> enableOperationalModes(Set<String> modes, DateTime expire) {
+	public synchronized Set<String> enableOperationalModes(Set<String> modes, Instant expire) {
 		if ( modes == null || modes.isEmpty() ) {
 			return activeOperationalModes();
 		}
 		Set<String> toActivate = null;
-		Long expireMs = (expire != null ? expire.getMillis() : null);
+		Long expireMs = (expire != null ? expire.toEpochMilli() : null);
 		for ( String mode : modes ) {
 			if ( mode == null ) {
 				continue;

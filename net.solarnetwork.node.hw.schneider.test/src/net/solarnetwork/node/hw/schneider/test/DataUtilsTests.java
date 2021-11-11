@@ -24,7 +24,8 @@ package net.solarnetwork.node.hw.schneider.test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
-import org.joda.time.LocalDateTime;
+import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 import net.solarnetwork.node.hw.schneider.meter.DataUtils;
 
@@ -32,7 +33,7 @@ import net.solarnetwork.node.hw.schneider.meter.DataUtils;
  * Test cases for the {@link DataUtils} class.
  * 
  * @author matt
- * @version 2.0
+ * @version 3.0
  */
 public class DataUtilsTests {
 
@@ -40,7 +41,8 @@ public class DataUtilsTests {
 	public void testReadMeterManufactureDate() {
 		LocalDateTime result = DataUtils
 				.parseDateTime(new short[] { 14, ((7 << 8) | (5 << 4) | 31), ((12 << 8) | 27), 30599 });
-		assertThat("Date", result, equalTo(new LocalDateTime(2014, 7, 31, 12, 27, 30, 599)));
+		assertThat("Date", result, equalTo(
+				LocalDateTime.of(2014, 7, 31, 12, 27, 30, (int) TimeUnit.MILLISECONDS.toNanos(599))));
 	}
 
 }

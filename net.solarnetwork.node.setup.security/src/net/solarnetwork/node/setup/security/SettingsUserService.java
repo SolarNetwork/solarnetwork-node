@@ -41,12 +41,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.dao.BasicBatchOptions;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.setup.UserAuthenticationInfo;
 import net.solarnetwork.node.setup.UserProfile;
 import net.solarnetwork.node.setup.UserService;
@@ -55,7 +55,7 @@ import net.solarnetwork.node.setup.UserService;
  * {@link UserDetailsService} that uses {@link SettingDao} for users and roles.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class SettingsUserService implements UserService, UserDetailsService {
 
@@ -150,7 +150,7 @@ public class SettingsUserService implements UserService, UserDetailsService {
 	 *         settings.
 	 * @throws IllegalArgumentException
 	 *         if the {@code newPassword} and {@code newPasswordAgain} values do
-	 *         not match, or are <em>null</em>
+	 *         not match, or are {@literal null}
 	 */
 	@Override
 	public void changePassword(final String existingPassword, final String newPassword,

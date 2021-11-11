@@ -22,16 +22,18 @@
 
 package net.solarnetwork.node.datum.egauge.ws.client;
 
+import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.net.URLConnection;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,20 +48,22 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-import net.solarnetwork.domain.GeneralDatumSamplesOperations;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
-import net.solarnetwork.node.datum.egauge.ws.EGaugePowerDatum;
-import net.solarnetwork.node.domain.GeneralDatum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
-import net.solarnetwork.node.support.XmlServiceSupport;
-import net.solarnetwork.support.ExpressionService;
-import net.solarnetwork.support.ExpressionServiceExpression;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
+import net.solarnetwork.node.service.support.XmlServiceSupport;
+import net.solarnetwork.service.ExpressionService;
+import net.solarnetwork.service.OptionalServiceCollection;
+import net.solarnetwork.service.support.ExpressionServiceExpression;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
-import net.solarnetwork.util.OptionalServiceCollection;
 
 /**
  * XML implementation of the EGaugeClient. Instances of this can be shared
@@ -69,7 +73,7 @@ import net.solarnetwork.util.OptionalServiceCollection;
  * to be returned by the {@code url}.
  * 
  * @author maxieduncan
- * @version 1.3
+ * @version 2.0
  */
 public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
@@ -104,8 +108,8 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		EGaugeDatumSamplePropertyConfig[] confs = getPropertyConfigs();
 		List<EGaugeDatumSamplePropertyConfig> confsList = (confs != null ? Arrays.asList(confs)
 				: Collections.<EGaugeDatumSamplePropertyConfig> emptyList());
-		results.add(SettingsUtil.dynamicListSettingSpecifier("propertyConfigs", confsList,
-				new SettingsUtil.KeyedListCallback<EGaugeDatumSamplePropertyConfig>() {
+		results.add(SettingUtils.dynamicListSettingSpecifier("propertyConfigs", confsList,
+				new SettingUtils.KeyedListCallback<EGaugeDatumSamplePropertyConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(
@@ -118,15 +122,13 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 								.add(new BasicTextFieldSettingSpecifier(key + ".propertyKey", ""));
 
 						BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
-								key + ".propertyTypeKey", GeneralDatumSamplesType.Instantaneous.name());
+								key + ".propertyTypeKey", Instantaneous.name());
 						// We only support two reading types currently
 						Map<String, String> propTypeTitles = new LinkedHashMap<>();
-						propTypeTitles.put(
-								Character.toString(GeneralDatumSamplesType.Instantaneous.toKey()),
-								GeneralDatumSamplesType.Instantaneous.toString());
-						propTypeTitles.put(
-								Character.toString(GeneralDatumSamplesType.Accumulating.toKey()),
-								GeneralDatumSamplesType.Accumulating.toString());
+						propTypeTitles.put(Character.toString(Instantaneous.toKey()),
+								Instantaneous.toString());
+						propTypeTitles.put(Character.toString(Accumulating.toKey()),
+								Accumulating.toString());
 						propTypeSpec.setValueTitles(propTypeTitles);
 						settingSpecifiers.add(propTypeSpec);
 
@@ -146,15 +148,14 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	}
 
 	@Override
-	public EGaugePowerDatum getCurrent() {
+	public AcDcEnergyDatum getCurrent() {
 		if ( getBaseUrl() == null ) {
 			// not configured yet
 			return null;
 		}
 
-		EGaugePowerDatum datum = new EGaugePowerDatum();
-		datum.setCreated(new Date());
-		datum.setSourceId(resolvePlaceholders(getSourceId()));
+		SimpleAcDcEnergyDatum datum = new SimpleAcDcEnergyDatum(resolvePlaceholders(getSourceId()),
+				Instant.now(), new DatumSamples());
 
 		try {
 			populateDatum(datum);
@@ -170,7 +171,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		return datum;
 	}
 
-	protected void populateDatum(EGaugePowerDatum datum) throws XmlEGaugeClientException {
+	protected void populateDatum(AcDcEnergyDatum datum) throws XmlEGaugeClientException {
 		EGaugeDatumSamplePropertyConfig[] configs = getPropertyConfigs();
 		if ( configs != null ) {
 			Element xml = getXml(getUrl());
@@ -217,7 +218,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		return regs;
 	}
 
-	protected void populateDatumProperty(EGaugePowerDatum datum,
+	protected void populateDatumProperty(AcDcEnergyDatum datum,
 			EGaugeDatumSamplePropertyConfig propertyConfig, List<DataRegister> registers) {
 
 		if ( !propertyConfig.isValid() ) {
@@ -225,7 +226,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 			return;
 		}
 
-		final GeneralDatumSamplesType propertyType = propertyConfig.getPropertyType();
+		final DatumSamplesType propertyType = propertyConfig.getPropertyType();
 		final ExpressionServiceExpression expr;
 		try {
 			expr = propertyConfig
@@ -276,11 +277,13 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		if ( propValue != null ) {
 			switch (propertyType) {
 				case Instantaneous:
-					datum.putInstantaneousSampleValue(propertyConfig.getPropertyKey(), propValue);
+					datum.asMutableSampleOperations().putSampleValue(Instantaneous,
+							propertyConfig.getPropertyKey(), propValue);
 					break;
 
 				case Accumulating:
-					datum.putAccumulatingSampleValue(propertyConfig.getPropertyKey(), propValue);
+					datum.asMutableSampleOperations().putSampleValue(Accumulating,
+							propertyConfig.getPropertyKey(), propValue);
 					break;
 
 				default:
@@ -367,7 +370,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.egauge.ws.client.xml";
 	}
 
@@ -470,9 +473,9 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 	}
 
 	@Override
-	public String getSampleInfo(GeneralDatum snap) {
+	public String getSampleInfo(NodeDatum snap) {
 		StringBuilder buf = new StringBuilder();
-		GeneralDatumSamplesOperations ops = snap.asSampleOperations();
+		DatumSamplesOperations ops = snap.asSampleOperations();
 		for ( EGaugeDatumSamplePropertyConfig propertyConfig : getPropertyConfigs() ) {
 			if ( !propertyConfig.isValid() ) {
 				continue;

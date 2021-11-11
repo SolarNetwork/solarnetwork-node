@@ -19,13 +19,10 @@
 	<ctx:property-placeholder properties-ref="settings.ca.cfg"/>
 
 	<osgix:cm-properties id="settings.ca.cfg" persistent-id="net.solarnetwork.node.settings.ca">
-		<beans:prop key="job.settingsBackup.cron">0 0/15 * * * ?</beans:prop>
 		<beans:prop key="settingsBackup.destinationPath">var/settings-bak</beans:prop>
 		<beans:prop key="settingsBackup.backupMaxCount">5</beans:prop>
 	</osgix:cm-properties>
 	
-	<reference id="scheduler" interface="org.quartz.Scheduler" filter="(function=node)"/>
-
 	<reference id="taskExecutor" interface="org.springframework.core.task.TaskExecutor" filter="(function=node)"/>
 	
 	<reference id="ca" interface="org.osgi.service.cm.ConfigurationAdmin"/>
@@ -34,13 +31,11 @@
 
 	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
 	
-	<service ref="settingsBackup" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
-	
 	<service ref="settingsService">
 		<interfaces>
 			<value>net.solarnetwork.node.settings.SettingsService</value>
 			<value>net.solarnetwork.node.backup.BackupResourceProvider</value>
-			<value>net.solarnetwork.node.reactor.FeedbackInstructionHandler</value>
+			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
 		</interfaces>
 		<service-properties>
 			<entry key="instruction">
@@ -69,11 +64,11 @@
 		</property>
 	</bean>
 	
-	<reference-list id="factoryList" interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory" availability="optional">
+	<reference-list id="factoryList" interface="net.solarnetwork.settings.SettingSpecifierProviderFactory" availability="optional">
 		<reference-listener ref="settingsService" bind-method="onBindFactory" unbind-method="onUnbindFactory"/>
 	</reference-list>
 	
-	<reference-list id="providerList" interface="net.solarnetwork.node.settings.SettingSpecifierProvider" availability="optional">
+	<reference-list id="providerList" interface="net.solarnetwork.settings.SettingSpecifierProvider" availability="optional">
 		<reference-listener ref="settingsService" bind-method="onBind" unbind-method="onUnbind"/>
 	</reference-list>
 	
@@ -83,32 +78,24 @@
 	
 	<!-- Settings backup job -->
 
-	<bean id="settingsBackup" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
-		<property name="trigger">
-			<bean class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-				<property name="name" value="settingsBackupTrigger"/>
-				<property name="cronExpression" value="${job.settingsBackup.cron}"/>
-				<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
-				<property name="randomSecond" value="true"/>
-			</bean>
-		</property>
-		<property name="jobDetail">
-			<bean class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-				<property name="name" value="settingsBackupJob"/>
-				<property name="jobClass" value="net.solarnetwork.node.settings.ca.SettingsBackupJob"/>
-				<property name="jobDataAsMap">
-					<map>
-						<entry key="settingDao" value-ref="settingDao"/>
-						<entry key="settingsService" value-ref="settingsService"/>
-					</map>
-				</property>
-			</bean>
-		</property>
-		<property name="messageSource">
-			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basenames" value="net.solarnetwork.node.settings.ca.JOBS"/>
-			</bean>
-		</property>
-	</bean>
+	<service interface="net.solarnetwork.node.job.ManagedJob">
+		<service-properties>
+			<entry key="service.pid" value="net.solarnetwork.node.settings.ca.backup"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob">
+			<osgix:managed-properties persistent-id="net.solarnetwork.node.settings.ca.backup" autowire-on-update="true"/>
+			<argument>
+				<bean class="net.solarnetwork.node.settings.ca.SettingsBackupJob">
+					<argument ref="settingsService"/>
+					<property name="messageSource">
+						<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+							<property name="basenames" value="net.solarnetwork.node.settings.ca.SettingsBackupJob"/>
+						</bean>
+					</property>
+				</bean>
+			</argument>
+			<argument value="0 0/15 * * * ?"/>
+		</bean>
+	</service>
 	
 </blueprint>

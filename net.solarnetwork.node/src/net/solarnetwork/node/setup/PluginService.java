@@ -46,7 +46,7 @@ public interface PluginService {
 	 * 
 	 * @param query
 	 *        an optional query to apply to limit the returned results by. Pass
-	 *        <em>null</em> to request all available Plugin instances
+	 *        {@literal null} to request all available Plugin instances
 	 * @param locale
 	 *        an optional locale to apply to PluginInfo
 	 * @return list of available plugins, or an empty list if none available
@@ -109,13 +109,13 @@ public interface PluginService {
 	 * one that would have been returned via a previous call to other methods
 	 * like {@link #installedPlugins(Locale)}. The service will only maintain
 	 * status information for a limited amount of time, and thus might return
-	 * <em>null</em> even for an ID previously returned.
+	 * {@literal null} even for an ID previously returned.
 	 * 
 	 * @param provisionID
 	 *        the provisioning operation ID to find the status for
 	 * @param locale
 	 *        an optional locale to apply to the returned PluginProvisionStatus
-	 * @return the status, or <em>null</em> if the status is not available
+	 * @return the status, or {@literal null} if the status is not available
 	 */
 	PluginProvisionStatus statusForProvisioningOperation(String provisionID, Locale locale);
 

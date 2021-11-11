@@ -30,13 +30,13 @@ import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.util.Map;
 import org.junit.Test;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.hw.deson.meter.SDM630Register;
 import net.solarnetwork.node.hw.deson.meter.SDMData;
 import net.solarnetwork.node.hw.deson.meter.SDMDeviceType;
 import net.solarnetwork.node.hw.deson.meter.SDMWiringMode;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
-import net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport;
 
 /**
  * Test cases for the {@link SDM630Data} class.
@@ -105,9 +105,9 @@ public class SDM630DataTests {
 		Map<String, Object> info = data.getDeviceInfo();
 		assertThat("Info size", info.keySet(), hasSize(3));
 		assertThat("Info", info,
-				allOf(hasEntry(ModbusDeviceSupport.INFO_KEY_DEVICE_MODEL, "SDM-630"),
+				allOf(hasEntry(DataAccessor.INFO_KEY_DEVICE_MODEL, "SDM-630"),
 						hasEntry(SDMData.INFO_KEY_DEVICE_WIRING_TYPE, "3 phase, 4 wire"),
-						hasEntry(ModbusDeviceSupport.INFO_KEY_DEVICE_SERIAL_NUMBER, "123456")));
+						hasEntry(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, "123456")));
 	}
 
 	@Test

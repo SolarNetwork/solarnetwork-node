@@ -29,15 +29,15 @@ import java.util.List;
 import java.util.Map;
 import net.solarnetwork.domain.BasicDeviceInfo;
 import net.solarnetwork.domain.DeviceInfo;
-import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.support.DatumDataSourceSupport;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -45,42 +45,27 @@ import net.solarnetwork.util.StringUtils;
  * {@link DatumDataSource} implementations.
  * 
  * @author matt
- * @version 2.2
+ * @version 3.0
  */
 public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSourceSupport {
 
-	/** Key for the device name, as a String. */
-	public static final String INFO_KEY_DEVICE_NAME = ModbusDeviceSupport.INFO_KEY_DEVICE_NAME;
-
-	/** Key for the device model, as a String. */
-	public static final String INFO_KEY_DEVICE_MODEL = ModbusDeviceSupport.INFO_KEY_DEVICE_MODEL;
-
-	/** Key for the device serial number, as a Long. */
-	public static final String INFO_KEY_DEVICE_SERIAL_NUMBER = ModbusDeviceSupport.INFO_KEY_DEVICE_SERIAL_NUMBER;
-
-	/** Key for the device manufacturer, as a String. */
-	public static final String INFO_KEY_DEVICE_MANUFACTURER = ModbusDeviceSupport.INFO_KEY_DEVICE_MANUFACTURER;
-
-	/**
-	 * Key for the device manufacture date, as a
-	 * {@link org.joda.time.ReadablePartial}.
-	 */
-	public static final String INFO_KEY_DEVICE_MANUFACTURE_DATE = ModbusDeviceSupport.INFO_KEY_DEVICE_MANUFACTURE_DATE;
+	/** The {@code unitId} property default value. */
+	public static final int DEFAULT_UNIT_ID = 1;
 
 	private Map<String, Object> deviceInfo;
-	private int unitId = 1;
+	private int unitId = DEFAULT_UNIT_ID;
 	private OptionalService<ModbusNetwork> modbusNetwork;
 
 	/**
 	 * Get setting specifiers for the {@literal unitId} and
-	 * {@literal modbusNetwork.propertyFilters['UID']} properties.
+	 * {@literal modbusNetwork.propertyFilters['uid']} properties.
 	 * 
 	 * @return list of setting specifiers
 	 * @since 1.1
 	 */
 	protected List<SettingSpecifier> getModbusNetworkSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
-		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['uid']",
 				"Modbus Port"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", "1"));
 		return results;
@@ -225,9 +210,6 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 * @since 2.2
 	 */
 	public DeviceInfo deviceInfo() {
-		if ( !isPublishDeviceInfoMetadata() ) {
-			return null;
-		}
 		Map<String, ?> info = getDeviceInfo();
 		BasicDeviceInfo.Builder b = DataAccessor.deviceInfoBuilderForInfo(info);
 		return (b.isEmpty() ? null : b.build());
@@ -262,10 +244,21 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 		this.modbusNetwork = modbusDevice;
 	}
 
+	/**
+	 * Get the Modbus unit ID.
+	 * 
+	 * @return the unit ID; defauts to {@link #DEFAULT_UNIT_ID}
+	 */
 	public int getUnitId() {
 		return unitId;
 	}
 
+	/**
+	 * Set the Modbus unit ID.
+	 * 
+	 * @param unitId
+	 *        the unit ID
+	 */
 	public void setUnitId(int unitId) {
 		this.unitId = unitId;
 	}

@@ -30,15 +30,15 @@ import java.util.Map;
 import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Configuration for a single control property to be set via Modbus.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class ModbusWritePropertyConfig {
 

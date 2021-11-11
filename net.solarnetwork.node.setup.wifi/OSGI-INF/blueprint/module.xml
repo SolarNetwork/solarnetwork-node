@@ -17,7 +17,7 @@
 	
 	<service>
 		<interfaces>
-			<value>net.solarnetwork.node.settings.SettingSpecifierProvider</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 		</interfaces>
 		<service-properties>
 			<entry key="on-association" value="true"/>

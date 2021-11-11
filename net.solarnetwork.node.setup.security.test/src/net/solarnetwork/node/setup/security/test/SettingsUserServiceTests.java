@@ -34,8 +34,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.setup.UserAuthenticationInfo;
 import net.solarnetwork.node.setup.security.SettingsUserService;
 

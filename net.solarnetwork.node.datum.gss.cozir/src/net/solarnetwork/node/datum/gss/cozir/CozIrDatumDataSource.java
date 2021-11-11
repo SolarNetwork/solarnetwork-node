@@ -22,11 +22,11 @@
 
 package net.solarnetwork.node.datum.gss.cozir;
 
-import static net.solarnetwork.util.OptionalService.service;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.EnumSet;
@@ -36,16 +36,14 @@ import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import org.quartz.JobDataMap;
-import org.quartz.JobKey;
-import org.quartz.Scheduler;
-import org.quartz.Trigger;
-import org.quartz.TriggerKey;
 import org.springframework.scheduling.TaskScheduler;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.PlaceholderService;
-import net.solarnetwork.node.domain.AtmosphericDatum;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import org.springframework.scheduling.Trigger;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.node.domain.DataAccessor;
+import net.solarnetwork.node.domain.datum.AtmosphericDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleAtmosphericDatum;
 import net.solarnetwork.node.hw.gss.co2.CozIrData;
 import net.solarnetwork.node.hw.gss.co2.CozIrHelper;
 import net.solarnetwork.node.hw.gss.co2.CozIrUtils;
@@ -55,28 +53,28 @@ import net.solarnetwork.node.io.serial.SerialConnection;
 import net.solarnetwork.node.io.serial.SerialConnectionAction;
 import net.solarnetwork.node.io.serial.support.SerialDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.job.JobUtils;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicCronExpressionSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.PlaceholderService;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.ServiceLifecycleObserver;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
-import net.solarnetwork.support.ServiceLifecycleObserver;
-import net.solarnetwork.util.CachedResult;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.settings.support.BasicCronExpressionSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * Data source for CozIR series CO2 sensors.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
-public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
-		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, SettingsChangeObserver,
-		ServiceLifecycleObserver, CozIrService {
+public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport<AtmosphericDatum>
+		implements DatumDataSource, SettingSpecifierProvider, SettingsChangeObserver,
+		ServiceLifecycleObserver, SerialConnectionAction<AtmosphericDatum>, Runnable {
 
 	public static final String DEFAULT_SERIAL_PORT = "Serial Port";
-	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000L;
 	public static final String DEFAULT_SOURCE_ID = "CozIR";
 	public static final String DEFAULT_CO2_CALIBRATION_SCHEDULE = "0 0 5 ? * MON";
 	public static final String DEFAULT_ALTITUDE = "{altitude:10}";
@@ -91,21 +89,12 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
 	 */
 	public static final String COZIR_JOB_GROUP = "CozIR";
 
-	/**
-	 * The key used for the calibration job.
-	 */
-	public static final JobKey CALIBRATION_JOB_KEY = new JobKey(CALIBRATION_JOB_NAME, COZIR_JOB_GROUP);
-
-	private final AtomicReference<CachedResult<GeneralNodeDatum>> sample;
-
-	private long sampleCacheMs = DEFAULT_SAMPLE_CACHE_MS;
-	private String sourceId = DEFAULT_SOURCE_ID;
 	private String co2CalibrationSchedule = DEFAULT_CO2_CALIBRATION_SCHEDULE;
 	private String altitude = DEFAULT_ALTITUDE;
-	private OptionalService<Scheduler> scheduler;
+	private OptionalService<TaskScheduler> scheduler;
 
 	private ScheduledFuture<?> altitudeCalibrationFuture;
-	private Trigger scheduledCalibrationTrigger;
+	private ScheduledFuture<?> scheduledCalibrationTrigger;
 	private final int resolvedAltitude = -1;
 
 	/**
@@ -121,9 +110,9 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
 	 * @param sample
 	 *        the sample data to use
 	 */
-	public CozIrDatumDataSource(AtomicReference<CachedResult<GeneralNodeDatum>> sample) {
-		super();
-		this.sample = sample;
+	public CozIrDatumDataSource(AtomicReference<AtmosphericDatum> sample) {
+		super(sample);
+		setSourceId(DEFAULT_SOURCE_ID);
 	}
 
 	@Override
@@ -134,7 +123,7 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
 
 	@Override
 	public void serviceDidShutdown() {
-		unscheduleCalibrationJob(scheduledCalibrationTrigger);
+		unscheduleCalibrationJob();
 	}
 
 	@Override
@@ -152,18 +141,18 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
 		String serialNum = helper.getSerialNumber();
 		Map<String, Object> info = new LinkedHashMap<>(3);
 		if ( serialNum != null ) {
-			info.put(INFO_KEY_DEVICE_SERIAL_NUMBER, serialNum);
+			info.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, serialNum);
 		}
 		FirmwareVersion fwVers = helper.getFirmwareVersion();
 		if ( fwVers != null ) {
-			info.put(INFO_KEY_DEVICE_MANUFACTURE_DATE, fwVers.getDate());
-			info.put(INFO_KEY_DEVICE_MODEL, fwVers.getVersion());
+			info.put(DataAccessor.INFO_KEY_DEVICE_MANUFACTURE_DATE, fwVers.getDate());
+			info.put(DataAccessor.INFO_KEY_DEVICE_MODEL, fwVers.getVersion());
 		}
 		return info.isEmpty() ? null : info;
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.gss.cozir";
 	}
 
@@ -174,13 +163,13 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
 		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(getSample()), true));
 
 		results.addAll(getIdentifiableSettingSpecifiers());
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", DEFAULT_SOURCE_ID));
 
-		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['UID']",
+		results.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['uid']",
 				DEFAULT_SERIAL_PORT));
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
 
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", DEFAULT_SOURCE_ID));
 		results.add(new BasicTextFieldSettingSpecifier("altitude", DEFAULT_ALTITUDE));
 		results.add(new BasicCronExpressionSettingSpecifier("co2CalibrationSchedule",
 				DEFAULT_CO2_CALIBRATION_SCHEDULE));
@@ -189,62 +178,51 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
 	}
 
 	@Override
-	public Class<? extends GeneralNodeDatum> getDatumType() {
-		return GeneralNodeDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AtmosphericDatum.class;
 	}
 
 	@Override
-	public GeneralNodeDatum readCurrentDatum() {
+	public AtmosphericDatum readCurrentDatum() {
 		return getCurrentSample();
 	}
 
-	public CachedResult<GeneralNodeDatum> getSample() {
-		return sample.get();
-	}
-
-	private GeneralNodeDatum getCurrentSample() {
-		CachedResult<GeneralNodeDatum> cachedResult = sample.get();
-		GeneralNodeDatum currSample = null;
-		if ( cachedResult == null || !cachedResult.isValid() ) {
+	private AtmosphericDatum getCurrentSample() {
+		AtmosphericDatum sample = getSample();
+		if ( sample == null ) {
 			try {
-				currSample = performAction(new SerialConnectionAction<GeneralNodeDatum>() {
-
-					@Override
-					public GeneralNodeDatum doWithConnection(SerialConnection conn) throws IOException {
-						CozIrHelper helper = new CozIrHelper(conn);
-						helper.setMeasurementOutput(EnumSet.of(MeasurementType.Co2Filtered,
-								MeasurementType.Humidity, MeasurementType.Temperature));
-						CozIrData data = helper.getMeasurements();
-						GeneralNodeDatum datum = null;
-						if ( data != null ) {
-							datum = new GeneralNodeDatum();
-							datum.setCreated(new Date());
-							datum.putInstantaneousSampleValue("co2", data.getCo2());
-							datum.putInstantaneousSampleValue(AtmosphericDatum.HUMIDITY_KEY,
-									data.getHumidity());
-							datum.putInstantaneousSampleValue(AtmosphericDatum.TEMPERATURE_KEY,
-									data.getTemperature());
-						}
-						return datum;
-					}
-				});
-				if ( currSample != null ) {
-					currSample.setSourceId(resolvePlaceholders(sourceId));
-					sample.set(new CachedResult<GeneralNodeDatum>(currSample,
-							currSample.getCreated().getTime(), sampleCacheMs, TimeUnit.MILLISECONDS));
+				sample = performAction(this);
+				if ( sample != null ) {
+					setCachedSample(sample);
 				}
-				if ( log.isTraceEnabled() && currSample != null ) {
-					log.trace("Sample: {}", currSample.asSimpleMap());
+				if ( log.isTraceEnabled() && sample != null ) {
+					log.trace("Sample: {}", sample.asSimpleMap());
 				}
-				log.debug("Read CozIR data: {}", currSample);
+				log.debug("Read CozIR data: {}", sample);
 			} catch ( IOException e ) {
 				throw new RuntimeException(
 						"Communication problem reading from CozIR device " + serialNetwork(), e);
 			}
-		} else {
-			currSample = cachedResult.getResult();
 		}
-		return currSample;
+		return sample;
+	}
+
+	@Override
+	public AtmosphericDatum doWithConnection(SerialConnection conn) throws IOException {
+		CozIrHelper helper = new CozIrHelper(conn);
+		helper.setMeasurementOutput(EnumSet.of(MeasurementType.Co2Filtered, MeasurementType.Humidity,
+				MeasurementType.Temperature));
+		CozIrData data = helper.getMeasurements();
+		SimpleAtmosphericDatum datum = null;
+		if ( data != null ) {
+			datum = new SimpleAtmosphericDatum(resolvePlaceholders(getSourceId()), Instant.now(),
+					new DatumSamples());
+			datum.getSamples().putInstantaneousSampleValue("co2", data.getCo2());
+			datum.getSamples().putInstantaneousSampleValue(AtmosphericDatum.HUMIDITY_KEY,
+					data.getHumidity());
+			datum.setTemperature(data.getTemperature());
+		}
+		return datum;
 	}
 
 	private String getInfoMessage() {
@@ -257,64 +235,47 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
 		return (msg == null ? "N/A" : msg);
 	}
 
-	private String getSampleMessage(CachedResult<GeneralNodeDatum> sample) {
-		if ( sample == null ) {
+	private String getSampleMessage(AtmosphericDatum datum) {
+		if ( datum == null ) {
 			return "N/A";
 		}
-		GeneralNodeDatum data = sample.getResult();
+		DatumSamplesOperations ops = datum.asSampleOperations();
 		StringBuilder buf = new StringBuilder();
-		buf.append("CO2 = ").append(data.getInstantaneousSampleBigDecimal("co2"));
-		buf.append(", T = ")
-				.append(data.getInstantaneousSampleBigDecimal(AtmosphericDatum.TEMPERATURE_KEY));
+		buf.append("CO2 = ").append(ops.getSampleBigDecimal(Instantaneous, "co2"));
+		buf.append(", T = ").append(datum.getTemperature());
 		buf.append(", H = ")
-				.append(data.getInstantaneousSampleBigDecimal(AtmosphericDatum.HUMIDITY_KEY));
-		buf.append("; sampled at ")
-				.append(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT)
-						.format(data.getCreated().toInstant().atZone(ZoneId.systemDefault())));
+				.append(ops.getSampleBigDecimal(Instantaneous, AtmosphericDatum.HUMIDITY_KEY));
+		buf.append("; sampled at ").append(formatForLocalDisplay(datum.getTimestamp()));
 		return buf.toString();
 	}
 
 	private synchronized void rescheduleCalibrationJob() {
-		unscheduleCalibrationJob(scheduledCalibrationTrigger);
-		scheduledCalibrationTrigger = null;
+		unscheduleCalibrationJob();
 
-		final Scheduler s = service(scheduler);
+		final TaskScheduler s = service(scheduler);
 		if ( s == null ) {
 			return;
 		}
 
 		final String schedule = getCo2CalibrationSchedule();
-		final String jobDesc = calibrationJobDescription(sourceId);
-		final TriggerKey triggerKey = triggerKey(sourceId);
-		final JobDataMap props = new JobDataMap();
-		props.put("service", this);
-		Trigger trigger = JobUtils.scheduleJob(s, CozIrCo2CalibrationJob.class, CALIBRATION_JOB_KEY,
-				jobDesc, schedule, triggerKey, props);
-		this.scheduledCalibrationTrigger = trigger;
+		final Trigger trigger = JobUtils.triggerForExpression(schedule, TimeUnit.SECONDS, true);
+		if ( trigger != null ) {
+			this.scheduledCalibrationTrigger = s.schedule(this, trigger);
+		}
 	}
 
-	private void unscheduleCalibrationJob(Trigger trigger) {
-		if ( trigger == null ) {
+	private synchronized void unscheduleCalibrationJob() {
+		if ( scheduledCalibrationTrigger == null ) {
 			return;
 		}
 
-		Scheduler s = service(scheduler);
-		if ( s == null ) {
-			return;
-		}
 		try {
-			JobUtils.unscheduleJob(s, trigger.getDescription(), trigger.getKey());
+			scheduledCalibrationTrigger.cancel(true);
 		} catch ( Exception e ) {
 			// ignore
 		}
-	}
+		scheduledCalibrationTrigger = null;
 
-	private String calibrationJobDescription(String sourceId) {
-		return String.format("CozIR calibration [%s]", sourceId);
-	}
-
-	private TriggerKey triggerKey(String sourceId) {
-		return new TriggerKey(sourceId, COZIR_JOB_GROUP);
 	}
 
 	private int resolveAltitude() {
@@ -337,7 +298,7 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
 			try {
 				performAction(this);
 			} catch ( IOException e ) {
-				log.error("Communication error calibrating altitude on CozIR {}: {}", sourceId,
+				log.error("Communication error calibrating altitude on CozIR {}: {}", getSourceId(),
 						e.toString());
 			}
 		}
@@ -372,8 +333,26 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
 	}
 
 	@Override
+	public void run() {
+		try {
+			calibrateAsCo2FreshAirLevel();
+		} catch ( Exception e ) {
+			Throwable root = e;
+			while ( root.getCause() != null ) {
+				root = root.getCause();
+			}
+			log.error("Error calibrating {} Co2 fresh air level: {}", getSourceId(), root.toString());
+		}
+	}
+
+	/**
+	 * Calibrate the CO2 level to "fresh air" level.
+	 * 
+	 * @throws IOException
+	 *         if any communication error occurs
+	 */
 	public void calibrateAsCo2FreshAirLevel() throws IOException {
-		log.info("Calibrating CozIR {} CO2 sensor to fresh-air level", sourceId);
+		log.info("Calibrating CozIR {} CO2 sensor to fresh-air level", getSourceId());
 		performAction(new SerialConnectionAction<Void>() {
 
 			@Override
@@ -383,35 +362,6 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
 				return null;
 			}
 		});
-	}
-
-	/**
-	 * Get the sample cache maximum age, in milliseconds.
-	 * 
-	 * @return the cache milliseconds
-	 */
-	public long getSampleCacheMs() {
-		return sampleCacheMs;
-	}
-
-	/**
-	 * Set the sample cache maximum age, in milliseconds.
-	 * 
-	 * @param sampleCacheMs
-	 *        the cache milliseconds
-	 */
-	public void setSampleCacheMs(long sampleCacheMs) {
-		this.sampleCacheMs = sampleCacheMs;
-	}
-
-	/**
-	 * Set the source ID to use for returned datum.
-	 * 
-	 * @param sourceId
-	 *        the source ID to use; defaults to {@literal CozIR}
-	 */
-	public void setSourceId(String sourceId) {
-		this.sourceId = sourceId;
 	}
 
 	/**
@@ -457,7 +407,7 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
 	 * 
 	 * @return the scheduler
 	 */
-	public OptionalService<Scheduler> getScheduler() {
+	public OptionalService<TaskScheduler> getScheduler() {
 		return scheduler;
 	}
 
@@ -467,7 +417,7 @@ public class CozIrDatumDataSource extends SerialDeviceDatumDataSourceSupport
 	 * @param scheduler
 	 *        the scheduler
 	 */
-	public void setScheduler(OptionalService<Scheduler> scheduler) {
+	public void setScheduler(OptionalService<TaskScheduler> scheduler) {
 		this.scheduler = scheduler;
 	}
 

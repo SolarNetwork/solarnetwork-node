@@ -47,14 +47,14 @@ import net.solarnetwork.node.setup.PluginProvisionStatus;
 import net.solarnetwork.node.setup.PluginService;
 import net.solarnetwork.node.setup.SimplePluginQuery;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.web.domain.Response;
 
 /**
  * Controller to manage the installed bundles via an OBR.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 @ServiceAwareController
 @RequestMapping("/a/plugins")

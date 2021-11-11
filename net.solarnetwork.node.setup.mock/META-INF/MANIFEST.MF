@@ -2,15 +2,14 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Mock Setup Support
 Bundle-SymbolicName: net.solarnetwork.node.setup.mock
-Bundle-Version: 1.0.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.setup.mock
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
- net.solarnetwork.node.reactor;version="[1.8,2.0)",
- net.solarnetwork.node.reactor.support;version="[1.5,2.0)",
- net.solarnetwork.node.support;version="[1.27,2.0)",
- net.solarnetwork.settings;version="[1.2,2.0)",
+ net.solarnetwork.domain;version="[2.0,3.0)",
+ net.solarnetwork.node.reactor;version="[2.0,3.0)",
+ net.solarnetwork.settings;version="[2.0,3.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.asm;version="[4.3,5.0)",
  org.springframework.beans;version="[4.3,5.0)",

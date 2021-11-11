@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.sunspec.inverter;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -29,12 +30,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
@@ -44,20 +42,21 @@ import net.solarnetwork.node.hw.sunspec.inverter.InverterModelId;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterMpptExtensionModelAccessor;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterOperatingState;
 import net.solarnetwork.node.hw.sunspec.support.SunSpecDeviceDatumDataSourceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * {@link DatumDataSource} for a SunSpec compatible inverter.
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
 public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSourceSupport
-		implements DatumDataSource<GeneralNodeACEnergyDatum>,
-		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	private Set<InverterOperatingState> ignoreStates = EnumSet.of(InverterOperatingState.Off,
 			InverterOperatingState.Sleeping, InverterOperatingState.Standby);
@@ -91,13 +90,21 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 	}
 
 	@Override
-	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
-		return GeneralNodeACEnergyDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AcDcEnergyDatum.class;
 	}
 
 	@Override
-	public GeneralNodeACEnergyDatum readCurrentDatum() {
-		final ModelData currSample = getCurrentSample();
+	public AcDcEnergyDatum readCurrentDatum() {
+		final String sourceId = resolvePlaceholders(getSourceId());
+		final ModelData currSample;
+		try {
+			currSample = getCurrentSample();
+		} catch ( IOException e ) {
+			log.error("Communication problem reading source {} from SunSpec inverter {}: {}", sourceId,
+					modbusDeviceName(), e.getMessage());
+			return null;
+		}
 		if ( currSample == null ) {
 			return null;
 		}
@@ -117,8 +124,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 				// ignore this
 			}
 		}
-		SunSpecInverterDatum d = new SunSpecInverterDatum(data, ACPhase.Total);
-
+		SunSpecInverterDatum d = new SunSpecInverterDatum(data, sourceId, AcPhase.Total);
 		Set<Integer> secondaryModelIds = getSecondaryModelIds();
 		if ( secondaryModelIds != null
 				&& secondaryModelIds.contains(InverterModelId.MultipleMpptInverterExtension.getId()) ) {
@@ -127,19 +133,17 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 					.findTypedModel(InverterMpptExtensionModelAccessor.class);
 			d.populateDcModulesProperties(mppt);
 		}
-
-		d.setSourceId(resolvePlaceholders(getSourceId()));
 		return d;
 	}
 
 	@Override
-	public Class<? extends GeneralNodeACEnergyDatum> getMultiDatumType() {
-		return GeneralNodeACEnergyDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return AcDcEnergyDatum.class;
 	}
 
 	@Override
-	public Collection<GeneralNodeACEnergyDatum> readMultipleDatum() {
-		GeneralNodeACEnergyDatum datum = readCurrentDatum();
+	public Collection<NodeDatum> readMultipleDatum() {
+		AcDcEnergyDatum datum = readCurrentDatum();
 		if ( datum != null ) {
 			return Collections.singletonList(datum);
 		}
@@ -149,7 +153,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.sunspec.inverter";
 	}
 
@@ -202,7 +206,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 
 	@Override
 	protected String getSampleMessage(ModelData sample) {
-		if ( sample == null || sample.getDataTimestamp() < 1 ) {
+		if ( sample == null || sample.getDataTimestamp() == null ) {
 			return "N/A";
 		}
 		InverterModelAccessor data;
@@ -240,8 +244,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 			}
 		}
 
-		buf.append("; sampled at ")
-				.append(DateTimeFormat.forStyle("LS").print(new DateTime(data.getDataTimestamp())));
+		buf.append("; sampled at ").append(data.getDataTimestamp());
 		return buf.toString();
 	}
 

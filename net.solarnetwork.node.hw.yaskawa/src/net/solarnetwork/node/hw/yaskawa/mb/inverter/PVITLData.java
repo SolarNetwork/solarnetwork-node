@@ -25,8 +25,9 @@ package net.solarnetwork.node.hw.yaskawa.mb.inverter;
 import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.ACPhase;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -36,7 +37,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Implementation for accessing PVI-14TL series data.
  * 
  * @author matt
- * @version 1.3
+ * @version 2.0
  */
 public class PVITLData extends ModbusData implements PVITLDataAccessor {
 
@@ -123,16 +124,17 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 		Map<String, Object> result = new LinkedHashMap<>(4);
 		String model = data.getModelName();
 		if ( model != null ) {
-			String firmwareVersion = getDspFirmwareVersion();
-			if ( firmwareVersion != null ) {
-				result.put(INFO_KEY_DEVICE_MODEL, String.format("%s (v%s)", model, firmwareVersion));
-			} else {
-				result.put(INFO_KEY_DEVICE_MODEL, model);
-			}
+			result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, model);
+		}
+		String dspFirmwareVersion = getDspFirmwareVersion();
+		String lcdFirmwareVersion = getLcdFirmwareVersion();
+		if ( dspFirmwareVersion != null && lcdFirmwareVersion != null ) {
+			result.put(DataAccessor.INFO_KEY_DEVICE_VERSION,
+					String.format("DSP = %s, LCD = %s", dspFirmwareVersion, lcdFirmwareVersion));
 		}
 		String s = data.getSerialNumber();
 		if ( s != null ) {
-			result.put(INFO_KEY_DEVICE_SERIAL_NUMBER, s);
+			result.put(DataAccessor.INFO_KEY_DEVICE_SERIAL_NUMBER, s);
 		}
 		return result;
 	}
@@ -202,12 +204,12 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 	}
 
 	@Override
-	public ACEnergyDataAccessor accessorForPhase(ACPhase phase) {
+	public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public ACEnergyDataAccessor reversed() {
+	public AcEnergyDataAccessor reversed() {
 		throw new UnsupportedOperationException();
 	}
 
@@ -289,7 +291,7 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 	}
 
 	@Override
-	public Float getDCVoltage() {
+	public Float getDcVoltage() {
 		Float v1 = getPv1Voltage();
 		Float v2 = getPv2Voltage();
 		if ( v1 == null ) {
@@ -303,7 +305,7 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 	}
 
 	@Override
-	public Integer getDCPower() {
+	public Integer getDcPower() {
 		Integer w1 = getPv1Power();
 		Integer w2 = getPv2Power();
 		if ( w1 == null ) {

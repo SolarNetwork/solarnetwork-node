@@ -82,7 +82,7 @@ propIncludes[0].name
 or _the `UID` property filter of the connection factory of the delegate setting_:
 
 ```
-delegate.connectionFactory.propertyFilters['UID']
+delegate.connectionFactory.propertyFilters['uid']
 ```
 
 ## Settings flags

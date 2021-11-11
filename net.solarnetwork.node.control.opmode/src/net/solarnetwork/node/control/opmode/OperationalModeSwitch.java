@@ -23,11 +23,11 @@
 package net.solarnetwork.node.control.opmode;
 
 import static java.util.Collections.singleton;
-import static net.solarnetwork.node.OperationalModesService.EVENT_PARAM_ACTIVE_OPERATIONAL_MODES;
-import static net.solarnetwork.node.OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED;
+import static net.solarnetwork.node.service.OperationalModesService.EVENT_PARAM_ACTIVE_OPERATIONAL_MODES;
+import static net.solarnetwork.node.service.OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -36,21 +36,24 @@ import org.osgi.service.event.EventAdmin;
 import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.solarnetwork.domain.BasicNodeControlInfo;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.OperationalModesService;
-import net.solarnetwork.node.domain.NodeControlInfoDatum;
+import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
-import net.solarnetwork.node.support.DatumEvents;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -73,10 +76,10 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
-public class OperationalModeSwitch extends BaseIdentifiable implements EventHandler, InstructionHandler,
-		NodeControlProvider, SettingSpecifierProvider, DatumEvents {
+public class OperationalModeSwitch extends BaseIdentifiable
+		implements EventHandler, InstructionHandler, NodeControlProvider, SettingSpecifierProvider {
 
 	private String mode;
 	private String controlId;
@@ -104,7 +107,7 @@ public class OperationalModeSwitch extends BaseIdentifiable implements EventHand
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		String mode = getMode();
 		String controlId = getControlId();
 		if ( instruction == null || !TOPIC_SET_CONTROL_PARAMETER.equals(instruction.getTopic())
@@ -121,7 +124,7 @@ public class OperationalModeSwitch extends BaseIdentifiable implements EventHand
 			log.warn(
 					"OperationalModesService not available; cannot manage [{}] mode enabled for control [{}] to [{}]",
 					mode, controlId, active);
-			return InstructionState.Declined;
+			return InstructionUtils.createStatus(instruction, InstructionState.Declined);
 		}
 		if ( active ) {
 			service.enableOperationalModes(singleton(mode));
@@ -130,7 +133,7 @@ public class OperationalModeSwitch extends BaseIdentifiable implements EventHand
 		}
 		log.info("Operational mode [{}] {} for control [{}]", mode, active ? "enabled" : "disabled",
 				controlId);
-		return InstructionState.Completed;
+		return InstructionUtils.createStatus(instruction, InstructionState.Completed);
 	}
 
 	// NodeControlProvider
@@ -145,22 +148,24 @@ public class OperationalModeSwitch extends BaseIdentifiable implements EventHand
 		if ( this.controlId == null || !this.controlId.equals(controlId) ) {
 			return null;
 		}
-		NodeControlInfoDatum d = createDatum(isModeActive());
+		SimpleNodeControlInfoDatum d = createDatum(isModeActive());
 		postControlEvent(d, EVENT_TOPIC_CONTROL_INFO_CAPTURED);
 		return d;
 	}
 
-	private NodeControlInfoDatum createDatum(boolean active) {
-		NodeControlInfoDatum d = new NodeControlInfoDatum();
-		d.setCreated(new Date());
-		d.setReadonly(false);
-		d.setSourceId(getControlId());
-		d.setType(NodeControlPropertyType.Boolean);
-		d.setValue(String.valueOf(active));
-		return d;
+	private SimpleNodeControlInfoDatum createDatum(boolean active) {
+		// @formatter:off
+		NodeControlInfo info = BasicNodeControlInfo.builder()
+				.withReadonly(false)
+				.withControlId(resolvePlaceholders(getControlId()))
+				.withType(NodeControlPropertyType.Boolean)
+				.withValue(String.valueOf(active))
+				.build();
+		// @formatter:on
+		return new SimpleNodeControlInfoDatum(info, Instant.now());
 	}
 
-	private void postControlEvent(NodeControlInfoDatum info, String topic) {
+	private void postControlEvent(SimpleNodeControlInfoDatum info, String topic) {
 		final EventAdmin admin = (eventAdmin != null ? eventAdmin.service() : null);
 		if ( admin == null ) {
 			return;
@@ -184,7 +189,7 @@ public class OperationalModeSwitch extends BaseIdentifiable implements EventHand
 		boolean enabled = enabledModes != null && enabledModes.contains(mode);
 		if ( enabled != active.getAndSet(enabled) ) {
 			// notify of changed control value
-			NodeControlInfoDatum d = createDatum(enabled);
+			SimpleNodeControlInfoDatum d = createDatum(enabled);
 			postControlEvent(d, EVENT_TOPIC_CONTROL_INFO_CHANGED);
 		}
 	}
@@ -192,7 +197,7 @@ public class OperationalModeSwitch extends BaseIdentifiable implements EventHand
 	// Settings
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.control.opmode.switch";
 	}
 

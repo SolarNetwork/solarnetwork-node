@@ -17,24 +17,100 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
-	<!-- Service References -->
-	
-	<reference id="powerDataCollectorFactory" interface="org.springframework.beans.factory.ObjectFactory"
-		filter="(&amp;(datumClassName=net.solarnetwork.node.power.PowerDatum)(factoryObjectClassName=net.solarnetwork.node.DataCollector))"/>
-	
+	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+		
+	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.power.impl.OutbackMX60PowerDatumDataSource</value>
+				<value>net.solarnetwork.node.io.serial.support.SerialDeviceDatumDataSourceSupport</value>
+				<value>net.solarnetwork.node.io.serial.support.SerialDeviceSupport</value>
+				<value>net.solarnetwork.node.service.support.DatumDataSourceSupport</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</list>
+		</property>
+	</bean>
+
+	<bean id="jobMessageSource" class="net.solarnetwork.support.PrefixedMessageSource">
+		<property name="prefix" value="datumDataSource."/>
+		<property name="delegate" ref="messageSource"/>
+	</bean>
+
 	<!-- Published Services -->
-	
-	<service ref="mx60PowerDatumDataSource" interface="net.solarnetwork.node.DatumDataSource" ranking="1">
-		<service-properties>
-			<entry key="datumClassName" value="net.solarnetwork.node.power.PowerDatum"/>
-		</service-properties>
+
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Outback MX60 Charge Controller"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.outback.mx60"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
 	</service>
 	
-	<!-- Supporting Services -->
-	
-	<bean id="mx60PowerDatumDataSource"
-		class="net.solarnetwork.node.power.impl.OutbackMX60PowerDatumDataSource">
-		<property name="dataCollectorFactory" ref="powerDataCollectorFactory"/>
-	</bean>
-	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.outback.mx60" autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.job.ManagedJob</beans:value>
+		</osgix:interfaces>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob" 
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<argument>
+				<bean class="net.solarnetwork.node.job.DatumDataSourcePollManagedJob">
+					<property name="datumMetadataService" ref="datumMetadataService"/>
+					<property name="datumQueue" ref="datumQueue"/>
+					<property name="datumDataSource">
+						<bean class="net.solarnetwork.node.power.impl.OutbackMX60PowerDatumDataSource">
+							<property name="messageSource" ref="jobMessageSource"/>
+							<property name="placeholderService" ref="placeholderService"/>
+							<property name="serialNetwork">
+								<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+									<argument ref="bundleContext"/>
+									<property name="serviceClassName" value="net.solarnetwork.node.io.serial.SerialNetwork"/>
+									<property name="propertyFilters">
+										<map>
+											<entry key="uid" value="Serial Port"/>
+										</map>
+									</property>
+								</bean>	
+							</property>
+						</bean>
+					</property>
+				</bean>
+			</argument>
+			<argument value="0 * * * * ?"/>
+			<property name="serviceProviderConfigurations">
+				<map>
+					<entry key="datumDataSource">
+						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
+							<property name="interfaces">
+								<list>
+									<value>net.solarnetwork.node.service.DatumDataSource</value>
+								</list>
+							</property>
+							<property name="properties">
+								<map>
+									<entry key="datumClassName" value="net.solarnetwork.node.domain.datum.DcEnergyDatum"/>
+								</map>
+							</property>
+						</bean>
+					</entry>
+				</map>
+			</property>
+		</bean>
+	</osgix:managed-service-factory>
+
 </blueprint>

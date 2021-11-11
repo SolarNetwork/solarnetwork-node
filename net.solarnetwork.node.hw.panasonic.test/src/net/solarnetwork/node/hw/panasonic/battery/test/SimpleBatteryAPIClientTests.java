@@ -25,19 +25,19 @@ package net.solarnetwork.node.hw.panasonic.battery.test;
 import java.io.IOException;
 import java.net.URLConnection;
 import java.net.URLEncoder;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.function.Consumer;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.junit.Assert;
 import org.junit.Test;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.codec.ObjectMapperFactoryBean;
 import net.solarnetwork.node.hw.panasonic.battery.BatteryAPIException;
 import net.solarnetwork.node.hw.panasonic.battery.BatteryData;
 import net.solarnetwork.node.hw.panasonic.battery.BatteryDataDeserializer;
 import net.solarnetwork.node.hw.panasonic.battery.SimpleBatteryAPIClient;
-import net.solarnetwork.util.ObjectMapperFactoryBean;
 
 /**
  * Test cases for the {@link SimpleBatteryAPIClient} class.
@@ -82,7 +82,8 @@ public class SimpleBatteryAPIClientTests {
 		BatteryData bd = client.getCurrentBatteryDataForEmail(email);
 		Assert.assertNotNull(bd);
 		Assert.assertEquals("1666729", bd.getDeviceID());
-		Assert.assertEquals(new DateTime(2016, 2, 9, 14, 16, 41, DateTimeZone.UTC), bd.getDate());
+		Assert.assertEquals(LocalDateTime.of(2016, 2, 9, 14, 16, 41).toInstant(ZoneOffset.UTC),
+				bd.getDate());
 		Assert.assertEquals("A", bd.getStatus());
 		Assert.assertEquals(Integer.valueOf(7000), bd.getAvailableCapacity());
 		Assert.assertEquals(Integer.valueOf(8400), bd.getTotalCapacity());
@@ -136,7 +137,8 @@ public class SimpleBatteryAPIClientTests {
 		BatteryData bd = client.getCurrentBatteryDataForDevice(deviceID);
 		Assert.assertNotNull(bd);
 		Assert.assertEquals("1666729", bd.getDeviceID());
-		Assert.assertEquals(new DateTime(2016, 2, 9, 14, 16, 41, DateTimeZone.UTC), bd.getDate());
+		Assert.assertEquals(LocalDateTime.of(2016, 2, 9, 14, 16, 41).toInstant(ZoneOffset.UTC),
+				bd.getDate());
 		Assert.assertEquals("A", bd.getStatus());
 		Assert.assertEquals(Integer.valueOf(7000), bd.getAvailableCapacity());
 		Assert.assertEquals(Integer.valueOf(8400), bd.getTotalCapacity());

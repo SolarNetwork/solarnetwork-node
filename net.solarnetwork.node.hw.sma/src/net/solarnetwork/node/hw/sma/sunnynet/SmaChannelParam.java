@@ -30,7 +30,7 @@ package net.solarnetwork.node.hw.sma.sunnynet;
  * An SMA channel parameter enumeration.
  *
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.0 $Date$
  */
 public enum SmaChannelParam {
 	

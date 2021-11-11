@@ -54,13 +54,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.util.FileCopyUtils;
-import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicSliderSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.service.IdentityService;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicSliderSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * {@link BackupService} implementation that copies files to another location in
@@ -80,7 +80,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
 public class FileSystemBackupService extends BackupServiceSupport implements SettingSpecifierProvider {
 
@@ -104,7 +104,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	private BackupStatus status = Configured;
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return getClass().getName();
 	}
 
@@ -348,7 +348,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	 * Get all available backup files, ordered in desending backup order (newest
 	 * to oldest).
 	 * 
-	 * @return ordered array of backup files, or <em>null</em> if directory does
+	 * @return ordered array of backup files, or {@literal null} if directory does
 	 *         not exist
 	 */
 	private File[] getAvailableBackupFiles() {
@@ -412,8 +412,8 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 		return new SettingSpecifierProvider() {
 
 			@Override
-			public String getSettingUID() {
-				return FileSystemBackupService.this.getSettingUID();
+			public String getSettingUid() {
+				return FileSystemBackupService.this.getSettingUid();
 			}
 
 			@Override

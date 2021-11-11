@@ -27,21 +27,21 @@ import java.util.Collection;
 import java.util.List;
 import net.solarnetwork.node.hw.sma.modbus.webbox.WebBoxDevice;
 import net.solarnetwork.node.hw.sma.modbus.webbox.WebBoxService;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * A configurable {@link WebBoxService}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class WebBoxServiceDevice extends WebBoxService implements SettingSpecifierProvider {
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.sma.webbox";
 	}
 
@@ -64,7 +64,7 @@ public class WebBoxServiceDevice extends WebBoxService implements SettingSpecifi
 		}
 
 		results.addAll(getIdentifiableSettingSpecifiers());
-		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['uid']",
 				"Modbus Port"));
 
 		return results;

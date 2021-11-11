@@ -11,50 +11,39 @@
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
 
-	<reference-list id="datumDaoCollection" availability="optional" filter="(!(upload=false))"
+	<reference id="datumDao" availability="optional" filter="(!(upload=false))"
 		interface="net.solarnetwork.node.dao.DatumDao"/>
 	
-	<service ref="bulkDatumUploader" interface="net.solarnetwork.node.job.TriggerAndJobDetail"/>
-
 	<service ref="mockUploadService" ranking="-1">
 		<interfaces>
-			<value>net.solarnetwork.node.UploadService</value>
-			<value>net.solarnetwork.node.BulkUploadService</value>
+			<value>net.solarnetwork.node.service.UploadService</value>
+			<value>net.solarnetwork.node.service.BulkUploadService</value>
 		</interfaces>
 	</service>
 
 	<bean id="mockUploadService"
-		class="net.solarnetwork.node.upload.MockUploadService"/>
+		class="net.solarnetwork.node.upload.mock.MockUploadService"/>
 
-	<!-- Upload job -->
-	
-	<bean id="bulkDatumUploader" class="net.solarnetwork.node.job.SimpleTriggerAndJobDetail">
-		<property name="trigger" ref="bulkDatumUploadTrigger"/>
-		<property name="jobDetail" ref="bulkDatumUploadJob"/>
-		<property name="messageSource">
-			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
-				<property name="basenames" value="net.solarnetwork.node.upload.mock.JOBS"/>
-			</bean>
-		</property>
-	</bean>
-	
-	<bean id="bulkDatumUploadTrigger" class="net.solarnetwork.node.job.RandomizedCronTriggerFactoryBean">
-		<property name="jobDetail" ref="bulkDatumUploadJob"/>
-		<property name="name" value="Mock Bulk Datum Uploader"/>
-		<property name="description" value="Mock MockUploadService for testing uploading of data."/>
-		<property name="cronExpression" value="20 * * * * ?"/>
-		<property name="misfireInstructionName" value="MISFIRE_INSTRUCTION_DO_NOTHING"/>
-		<property name="randomSecond" value="true"/>
-	</bean>
-	
-	<bean id="bulkDatumUploadJob" class="org.springframework.scheduling.quartz.JobDetailFactoryBean">
-		<property name="jobClass" value="net.solarnetwork.node.job.DatumDaoBulkUploadJob"/>
-		<property name="jobDataAsMap">
-			<map>
-				<entry key="daos" value-ref="datumDaoCollection"/>
-				<entry key="uploadService" value-ref="mockUploadService"/>
-			</map>
-		</property>
-	</bean>
+	<service interface="net.solarnetwork.node.job.ManagedJob">
+		<service-properties>
+			<entry key="service.pid" value="net.solarnetwork.node.upload.mock.job"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob">
+			<osgix:managed-properties persistent-id="net.solarnetwork.node.upload.mock.job" autowire-on-update="true"/>
+			<argument>
+				<bean class="net.solarnetwork.node.job.DatumDaoBulkUploadJob">
+					<argument ref="datumDao"/>
+					<argument ref="mockUploadService"/>
+					<property name="uid" value="net.solarnetwork.node.upload.mock.job"/>
+					<property name="messageSource">
+						<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+							<property name="basenames" value="net.solarnetwork.node.upload.mock.MockUploadService"/>
+						</bean>
+					</property>
+				</bean>
+			</argument>
+			<argument value="20 * * * * ?"/>
+		</bean>
+	</service>
 	
 </blueprint>

@@ -24,16 +24,16 @@ package net.solarnetwork.node.hw.ae.inverter.tx;
 
 import java.util.SortedSet;
 import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.node.domain.ACEnergyDataAccessor;
-import net.solarnetwork.node.domain.PVEnergyDataAccessor;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
+import net.solarnetwork.node.domain.DcEnergyDataAccessor;
 
 /**
  * API for reading AE 250TX data.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
-public interface AE250TxDataAccessor extends PVEnergyDataAccessor, ACEnergyDataAccessor {
+public interface AE250TxDataAccessor extends DcEnergyDataAccessor, AcEnergyDataAccessor {
 
 	/**
 	 * Get the inverter type.

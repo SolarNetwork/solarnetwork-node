@@ -14,47 +14,54 @@
 		http://www.springframework.org/schema/context
 		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
 
-	<bean id="eventAdmin" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
+	<bean id="instructionExecutionService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionExecutionService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="eventAdmin" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="org.osgi.service.event.EventAdmin"/>
+		<property name="sticky" value="true"/>
 	</bean>
 
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.support.BaseIdentifiable</value>
 				<value>net.solarnetwork.node.control.virtual.ControlGroup</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
 
-	<bean id="providers" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
-		<property name="serviceClassName" value="net.solarnetwork.node.NodeControlProvider"/>
+	<bean id="providers" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.NodeControlProvider"/>
 	</bean>
 
 	<!-- Published Services -->
 	
-	<service interface="net.solarnetwork.node.settings.SettingSpecifierProviderFactory">
-		<bean class="net.solarnetwork.node.settings.support.BasicSettingSpecifierProviderFactory">
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Control Group"/>
-			<property name="factoryUID" value="net.solarnetwork.node.control.virtual.ControlGroup"/>
+			<property name="factoryUid" value="net.solarnetwork.node.control.virtual.ControlGroup"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
 	
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.virtual.ControlGroup" autowire-on-update="true">
 		<osgix:interfaces>
-			<beans:value>net.solarnetwork.node.NodeControlProvider</beans:value>
+			<beans:value>net.solarnetwork.node.service.NodeControlProvider</beans:value>
 			<beans:value>net.solarnetwork.node.reactor.InstructionHandler</beans:value>
-			<beans:value>net.solarnetwork.node.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 			<beans:value>org.osgi.service.event.EventHandler</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.control.virtual.ControlGroup"/>
 			<beans:entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
 				<beans:array value-type="java.lang.String">
-					<beans:value>#{T(net.solarnetwork.node.NodeControlProvider).EVENT_TOPIC_CONTROL_INFO_CHANGED}</beans:value>
+					<beans:value>#{T(net.solarnetwork.node.service.NodeControlProvider).EVENT_TOPIC_CONTROL_INFO_CHANGED}</beans:value>
 				</beans:array>
 			</beans:entry>
 			<beans:entry key="instruction">
@@ -64,19 +71,21 @@
 			</beans:entry>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.control.virtual.ControlGroup">
-			<property name="messageSource" ref="messageSource"/>
-			<property name="eventAdmin" ref="eventAdmin"/>
-			<property name="controls">
-				<bean class="net.solarnetwork.util.DynamicServiceTracker">
-					<property name="bundleContext" ref="bundleContext"/>
-					<property name="serviceClassName" value="net.solarnetwork.node.NodeControlProvider"/>
+			<argument>
+				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+					<argument ref="bundleContext"/>
+					<property name="serviceClassName" value="net.solarnetwork.node.service.NodeControlProvider"/>
+					<property name="ignoreEmptyPropertyFilterValues" value="false"/>
 					<property name="propertyFilters">
 						<map>
-							<entry key="groupUID" value=""/>
+							<entry key="groupUid" value=""/>
 						</map>
 					</property>
 				</bean>	
-			</property>
+			</argument>
+			<argument ref="instructionExecutionService"/>
+			<argument ref="eventAdmin"/>
+			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</osgix:managed-service-factory>
 	

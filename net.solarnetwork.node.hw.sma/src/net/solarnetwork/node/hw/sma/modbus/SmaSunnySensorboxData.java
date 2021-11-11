@@ -22,15 +22,15 @@
 
 package net.solarnetwork.node.hw.sma.modbus;
 
-import static net.solarnetwork.domain.GeneralDatumSamplesType.Accumulating;
-import static net.solarnetwork.domain.GeneralDatumSamplesType.Instantaneous;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Map;
 import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.domain.MutableGeneralDatumSamplesOperations;
-import net.solarnetwork.node.domain.AtmosphericDatum;
+import net.solarnetwork.domain.datum.MutableDatumSamplesOperations;
+import net.solarnetwork.node.domain.datum.AtmosphericDatum;
 import net.solarnetwork.node.hw.sma.domain.SmaDeviceType;
 import net.solarnetwork.node.hw.sma.domain.SmaSunnySensorboxDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
@@ -42,7 +42,7 @@ import net.solarnetwork.util.NumberUtils;
  * {@link SmaDeviceData} for Sunny Sensorbox devices.
  * 
  * @author matt
- * @version 1.0
+ * @version 120
  */
 public class SmaSunnySensorboxData extends SmaDeviceData implements SmaSunnySensorboxDataAccessor {
 
@@ -81,8 +81,7 @@ public class SmaSunnySensorboxData extends SmaDeviceData implements SmaSunnySens
 	}
 
 	@Override
-	public void populateDatumSamples(MutableGeneralDatumSamplesOperations samples,
-			Map<String, ?> parameters) {
+	public void populateDatumSamples(MutableDatumSamplesOperations samples, Map<String, ?> parameters) {
 		samples.putSampleValue(Instantaneous, AtmosphericDatum.IRRADIANCE_KEY, getIrradiance());
 		samples.putSampleValue(Instantaneous, AtmosphericDatum.IRRADIANCE_KEY + "_ex",
 				getExternalIrradiance());

@@ -25,12 +25,13 @@ package net.solarnetwork.node.settings;
 import java.util.Map;
 import net.solarnetwork.node.setup.SetupResource;
 import net.solarnetwork.node.setup.SetupResourceProvider;
+import net.solarnetwork.settings.SettingSpecifier;
 
 /**
  * Setting that renders a custom UI via {@link SetupResource} instances.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public interface SetupResourceSettingSpecifier extends SettingSpecifier {
 

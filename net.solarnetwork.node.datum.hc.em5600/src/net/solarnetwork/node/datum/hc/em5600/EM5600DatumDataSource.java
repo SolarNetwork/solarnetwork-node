@@ -28,39 +28,36 @@ import java.util.Collection;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import net.solarnetwork.domain.GeneralDatumMetadata;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.ACEnergyDatum;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.EnergyDatum;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.hc.EM5600Data;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
- * {@link DatumDataSource} implementation for {@link ACEnergyDatum} with the
+ * {@link DatumDataSource} implementation for {@link AcEnergyDatum} with the
  * EM5600 series watt meter.
  * 
  * @author matt
- * @version 2.4
+ * @version 3.0
  */
-public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM5600Data> implements
-		DatumDataSource<ACEnergyDatum>, MultiDatumDataSource<ACEnergyDatum>, SettingSpecifierProvider {
+public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM5600Data>
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	/** The default source ID. */
 	public static final String MAIN_SOURCE_ID = "Main";
 
-	private Map<ACPhase, String> sourceMapping = getDefaulSourceMapping();
+	private Map<AcPhase, String> sourceMapping = getDefaulSourceMapping();
 	private boolean backwards = false;
 	private boolean tagConsumption = true;
 
@@ -70,9 +67,9 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 	 * 
 	 * @return mapping
 	 */
-	public static Map<ACPhase, String> getDefaulSourceMapping() {
-		Map<ACPhase, String> result = new EnumMap<ACPhase, String>(ACPhase.class);
-		result.put(ACPhase.Total, MAIN_SOURCE_ID);
+	public static Map<AcPhase, String> getDefaulSourceMapping() {
+		Map<AcPhase, String> result = new EnumMap<AcPhase, String>(AcPhase.class);
+		result.put(AcPhase.Total, MAIN_SOURCE_ID);
 		return result;
 	}
 
@@ -114,7 +111,7 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 	}
 
 	private String getSampleMessage(EM5600Data data) {
-		if ( data.getDataTimestamp() < 1 ) {
+		if ( data.getDataTimestamp() == null ) {
 			return "N/A";
 		}
 		StringBuilder buf = new StringBuilder();
@@ -122,27 +119,24 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 		buf.append(", VAR = ").append(data.getReactivePower());
 		buf.append(", Wh rec = ").append(data.getActiveEnergyReceived());
 		buf.append(", Wh del = ").append(data.getActiveEnergyDelivered());
-		buf.append("; sampled at ")
-				.append(DateTimeFormat.forStyle("LS").print(new DateTime(data.getDataTimestamp())));
+		buf.append("; sampled at ").append(data.getDataTimestamp());
 		return buf.toString();
 	}
 
 	@Override
-	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
-		return EM5600Datum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AcEnergyDatum.class;
 	}
 
 	@Override
-	public GeneralNodeACEnergyDatum readCurrentDatum() {
-		final String sourceId = getSourceMapping().get(ACPhase.Total);
+	public AcEnergyDatum readCurrentDatum() {
+		final String sourceId = resolvePlaceholders(getSourceMapping().get(AcPhase.Total));
 		try {
 			final EM5600Data currSample = getCurrentSample();
 			if ( currSample == null ) {
 				return null;
 			}
-			EM5600Datum d = new EM5600Datum(currSample, ACPhase.Total, backwards);
-			d.setSourceId(resolvePlaceholders(sourceId));
-			return d;
+			return new EM5600Datum(currSample, sourceId, AcPhase.Total, backwards);
 		} catch ( IOException e ) {
 			log.error("Communication problem reading source {} from EM5600 device {}: {}", sourceId,
 					modbusDeviceName(), e.getMessage());
@@ -151,66 +145,63 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 	}
 
 	@Override
-	public Class<? extends GeneralNodeACEnergyDatum> getMultiDatumType() {
-		return EM5600Datum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return AcEnergyDatum.class;
 	}
 
 	@Override
-	public Collection<ACEnergyDatum> readMultipleDatum() {
-		final List<ACEnergyDatum> results = new ArrayList<ACEnergyDatum>(4);
+	public Collection<NodeDatum> readMultipleDatum() {
+		final List<NodeDatum> results = new ArrayList<>(4);
 		final EM5600Data currSample;
 		try {
 			currSample = getCurrentSample();
 		} catch ( IOException e ) {
-			log.error("Communication problem reading from PM3200 device: {}", e.getMessage());
+			log.error("Communication problem reading from EM5600 device {}: {}", modbusDeviceName(),
+					e.getMessage());
 			return results;
 		}
 		if ( currSample == null ) {
 			return results;
 		}
 		if ( isCaptureTotal() ) {
-			EM5600Datum d = new EM5600Datum(currSample, ACPhase.Total, backwards);
-			d.setSourceId(getSourceMapping().get(ACPhase.Total));
-			if ( isCaptureTotal() ) {
-				results.add(d);
-			}
+			EM5600Datum d = new EM5600Datum(currSample,
+					resolvePlaceholders(getSourceMapping().get(AcPhase.Total)), AcPhase.Total,
+					backwards);
+			results.add(d);
 		}
 		if ( isCapturePhaseA() ) {
-			EM5600Datum d = new EM5600Datum(currSample, ACPhase.PhaseA, backwards);
-			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseA)));
-			if ( isCapturePhaseA() ) {
-				results.add(d);
-			}
+			EM5600Datum d = new EM5600Datum(currSample,
+					resolvePlaceholders(getSourceMapping().get(AcPhase.PhaseA)), AcPhase.PhaseA,
+					backwards);
+			results.add(d);
 		}
 		if ( isCapturePhaseB() ) {
-			EM5600Datum d = new EM5600Datum(currSample, ACPhase.PhaseB, backwards);
-			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseB)));
-			if ( isCapturePhaseB() ) {
-				results.add(d);
-			}
+			EM5600Datum d = new EM5600Datum(currSample,
+					resolvePlaceholders(getSourceMapping().get(AcPhase.PhaseB)), AcPhase.PhaseB,
+					backwards);
+			results.add(d);
 		}
 		if ( isCapturePhaseC() ) {
-			EM5600Datum d = new EM5600Datum(currSample, ACPhase.PhaseC, backwards);
-			d.setSourceId(resolvePlaceholders(getSourceMapping().get(ACPhase.PhaseC)));
-			if ( isCapturePhaseC() ) {
-				results.add(d);
-			}
+			EM5600Datum d = new EM5600Datum(currSample,
+					resolvePlaceholders(getSourceMapping().get(AcPhase.PhaseC)), AcPhase.PhaseC,
+					backwards);
+			results.add(d);
 		}
 
-		for ( ACEnergyDatum d : results ) {
-			addEnergyDatumSourceMetadata((EM5600Datum) d);
+		for ( NodeDatum d : results ) {
+			addEnergyDatumSourceMetadata(d);
 		}
 
 		return results;
 	}
 
-	private void addEnergyDatumSourceMetadata(EM5600Datum d) {
+	private void addEnergyDatumSourceMetadata(NodeDatum d) {
 		// associate consumption/generation tags with this source
 		GeneralDatumMetadata sourceMeta = new GeneralDatumMetadata();
 		if ( isTagConsumption() ) {
-			sourceMeta.addTag(EnergyDatum.TAG_CONSUMPTION);
+			sourceMeta.addTag(AcEnergyDatum.TAG_CONSUMPTION);
 		} else {
-			sourceMeta.addTag(EnergyDatum.TAG_GENERATION);
+			sourceMeta.addTag(AcEnergyDatum.TAG_GENERATION);
 		}
 		addSourceMetadata(d.getSourceId(), sourceMeta);
 	}
@@ -218,7 +209,7 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.hc.em5600";
 	}
 
@@ -261,8 +252,8 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 	 * 
 	 * <p>
 	 * When {@literal true} then tag the configured source with
-	 * {@link EnergyDatum#TAG_CONSUMPTION}. When {@literal false} then tag the
-	 * configured source with {@link EnergyDatum#TAG_GENERATION}. Requires the
+	 * {@link AcEnergyDatum#TAG_CONSUMPTION}. When {@literal false} then tag the
+	 * configured source with {@link AcEnergyDatum#TAG_GENERATION}. Requires the
 	 * {@link #getDatumMetadataService()} to be available.
 	 * </p>
 	 * 
@@ -274,11 +265,11 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 		this.tagConsumption = tagConsumption;
 	}
 
-	public Map<ACPhase, String> getSourceMapping() {
+	public Map<AcPhase, String> getSourceMapping() {
 		return sourceMapping;
 	}
 
-	public void setSourceMapping(Map<ACPhase, String> sourceMapping) {
+	public void setSourceMapping(Map<AcPhase, String> sourceMapping) {
 		this.sourceMapping = sourceMapping;
 	}
 
@@ -304,15 +295,15 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 	 */
 	public void setSourceMappingValue(String mapping) {
 		Map<String, String> m = StringUtils.commaDelimitedStringToMap(mapping);
-		Map<ACPhase, String> kindMap = new EnumMap<>(ACPhase.class);
+		Map<AcPhase, String> kindMap = new EnumMap<>(AcPhase.class);
 		if ( m != null )
 			for ( Map.Entry<String, String> me : m.entrySet() ) {
 				String k = me.getKey();
-				ACPhase mk;
+				AcPhase mk;
 				try {
-					mk = ACPhase.valueOf(k);
+					mk = AcPhase.valueOf(k);
 				} catch ( RuntimeException e ) {
-					log.info("'{}' is not a valid ACPhase value, ignoring.", k);
+					log.info("'{}' is not a valid AcPhase value, ignoring.", k);
 					continue;
 				}
 				kindMap.put(mk, me.getValue());
@@ -344,26 +335,26 @@ public class EM5600DatumDataSource extends ModbusDataDatumDataSourceSupport<EM56
 	 * 
 	 * @param kind
 	 *        the measurement kind
-	 * @return the source ID value, or <em>null</em> if not available
+	 * @return the source ID value, or {@literal null} if not available
 	 */
-	public String getSourceIdForACPhase(ACPhase kind) {
+	public String getSourceIdForACPhase(AcPhase kind) {
 		return (sourceMapping == null ? null : sourceMapping.get(kind));
 	}
 
 	public boolean isCaptureTotal() {
-		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.Total));
+		return (sourceMapping != null && sourceMapping.containsKey(AcPhase.Total));
 	}
 
 	public boolean isCapturePhaseA() {
-		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.PhaseA));
+		return (sourceMapping != null && sourceMapping.containsKey(AcPhase.PhaseA));
 	}
 
 	public boolean isCapturePhaseB() {
-		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.PhaseB));
+		return (sourceMapping != null && sourceMapping.containsKey(AcPhase.PhaseB));
 	}
 
 	public boolean isCapturePhaseC() {
-		return (sourceMapping != null && sourceMapping.containsKey(ACPhase.PhaseC));
+		return (sourceMapping != null && sourceMapping.containsKey(AcPhase.PhaseC));
 	}
 
 	/**

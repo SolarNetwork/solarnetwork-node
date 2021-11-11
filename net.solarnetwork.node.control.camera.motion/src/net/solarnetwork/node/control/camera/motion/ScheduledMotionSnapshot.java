@@ -22,19 +22,22 @@
 
 package net.solarnetwork.node.control.camera.motion;
 
-import org.quartz.Trigger;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.util.concurrent.ScheduledFuture;
+import org.springframework.scheduling.Trigger;
 
 /**
  * A scheduled motion snapshot.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 1.1
  */
 public class ScheduledMotionSnapshot {
 
 	private final int cameraId;
 	private final Trigger trigger;
+	private final ScheduledFuture<?> future;
 
 	/**
 	 * Constructor.
@@ -43,11 +46,16 @@ public class ScheduledMotionSnapshot {
 	 *        the camera ID
 	 * @param trigger
 	 *        the job trigger
+	 * @param future
+	 *        the future
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
 	 */
-	public ScheduledMotionSnapshot(int cameraId, Trigger trigger) {
+	public ScheduledMotionSnapshot(int cameraId, Trigger trigger, ScheduledFuture<?> future) {
 		super();
 		this.cameraId = cameraId;
-		this.trigger = trigger;
+		this.trigger = requireNonNullArgument(trigger, "trigger");
+		this.future = requireNonNullArgument(future, "future");
 	}
 
 	/**
@@ -66,6 +74,15 @@ public class ScheduledMotionSnapshot {
 	 */
 	public Trigger getTrigger() {
 		return trigger;
+	}
+
+	/**
+	 * Get the future.
+	 * 
+	 * @return the future
+	 */
+	public ScheduledFuture<?> getFuture() {
+		return future;
 	}
 
 }

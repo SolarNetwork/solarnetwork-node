@@ -28,15 +28,21 @@ import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
+import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -50,6 +56,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.easymock.Capture;
+import org.easymock.CaptureType;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
@@ -59,18 +66,21 @@ import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionTemplate;
 import net.solarnetwork.node.Constants;
-import net.solarnetwork.node.Setting;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.dao.BasicBatchResult;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.settings.SettingResourceHandler;
-import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
 import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.ca.CASettingsService;
+import net.solarnetwork.settings.SettingSpecifierProviderFactory;
 
 /**
  * Test cases for the {@link CASettingsService} class.
@@ -83,6 +93,7 @@ public class CASettingsServiceTests {
 	private Path tmpDir;
 	private ConfigurationAdmin ca;
 	private SettingDao dao;
+	private PlatformTransactionManager txManager;
 	private CASettingsService service;
 
 	private List<Object> mocks;
@@ -91,10 +102,12 @@ public class CASettingsServiceTests {
 	public void setup() {
 		ca = EasyMock.createMock(ConfigurationAdmin.class);
 		dao = EasyMock.createMock(SettingDao.class);
+		txManager = EasyMock.createMock(PlatformTransactionManager.class);
 		service = new CASettingsService();
-		mocks = new ArrayList<Object>(8);
+		mocks = new ArrayList<>(8);
 		mocks.add(ca);
 		mocks.add(dao);
+		mocks.add(txManager);
 
 		tmpDir = Paths.get(System.getProperty("java.io.tmpdir"), UUID.randomUUID().toString());
 		System.setProperty(Constants.SYSTEM_PROP_NODE_HOME, tmpDir.toString());
@@ -102,6 +115,7 @@ public class CASettingsServiceTests {
 		service.setBackupDestinationPath(tmpDir.resolve("backups").toString());
 		service.setConfigurationAdmin(ca);
 		service.setSettingDao(dao);
+		service.setTransactionTemplate(new TransactionTemplate(txManager));
 	}
 
 	@After
@@ -126,7 +140,7 @@ public class CASettingsServiceTests {
 		SettingResourceHandler handler = EasyMock.createMock(SettingResourceHandler.class);
 		mocks.add(handler);
 
-		expect(handler.getSettingUID()).andReturn(handlerKey).anyTimes();
+		expect(handler.getSettingUid()).andReturn(handlerKey).anyTimes();
 
 		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
 		expect(handler.applySettingResources(eq(settingKey), capture(resourceCaptor)))
@@ -165,7 +179,7 @@ public class CASettingsServiceTests {
 		SettingResourceHandler handler = EasyMock.createMock(SettingResourceHandler.class);
 		mocks.add(handler);
 
-		expect(handler.getSettingUID()).andReturn(handlerKey).anyTimes();
+		expect(handler.getSettingUid()).andReturn(handlerKey).anyTimes();
 
 		Configuration config1 = EasyMock.createMock(Configuration.class);
 		mocks.add(config1);
@@ -180,8 +194,7 @@ public class CASettingsServiceTests {
 		expect(config1.getProperties()).andReturn(configProps1).anyTimes();
 
 		// delete .* pattern matches first
-		expect(dao.deleteSetting(daoSettingKey1, "hi")).andReturn(true);
-		expect(dao.deleteSetting(daoSettingKey1, "foo")).andReturn(true);
+		expect(dao.deleteSetting(daoSettingKey1)).andReturn(true);
 
 		// then apply SettingValueBean updates
 		dao.storeSetting(daoSettingKey1, "foo", "bar");
@@ -203,8 +216,7 @@ public class CASettingsServiceTests {
 		expect(config2.getProperties()).andReturn(configProps2).anyTimes();
 
 		// delete .* pattern matches first
-		expect(dao.deleteSetting(daoSettingKey2, "hi")).andReturn(true);
-		expect(dao.deleteSetting(daoSettingKey2, "bim")).andReturn(true);
+		expect(dao.deleteSetting(daoSettingKey2)).andReturn(true);
 
 		// then apply SettingValueBean updates
 		dao.storeSetting(daoSettingKey2, "bim", "bam");
@@ -271,8 +283,8 @@ public class CASettingsServiceTests {
 		Hashtable<String, Object> configProps = new Hashtable<>();
 		configProps.put(CASettingsService.class.getName() + ".FACTORY_INSTANCE_KEY", instanceKey);
 
-		expect(handler.getSettingUID()).andReturn(factoryKey).anyTimes();
-		expect(factory.getFactoryUID()).andReturn(factoryKey).anyTimes();
+		expect(handler.getSettingUid()).andReturn(factoryKey).anyTimes();
+		expect(factory.getFactoryUid()).andReturn(factoryKey).anyTimes();
 		expect(dao.getSettingValues(factoryKey + ".FACTORY")).andReturn(emptyList());
 		expect(ca.getConfiguration(instancePid, null)).andReturn(config);
 		expect(config.getFactoryPid()).andReturn(factoryKey).anyTimes();
@@ -334,8 +346,8 @@ public class CASettingsServiceTests {
 		configProps.put("bazam", "shazam");
 		configProps.put("hi", "there");
 
-		expect(handler.getSettingUID()).andReturn(factoryKey).anyTimes();
-		expect(factory.getFactoryUID()).andReturn(factoryKey).anyTimes();
+		expect(handler.getSettingUid()).andReturn(factoryKey).anyTimes();
+		expect(factory.getFactoryUid()).andReturn(factoryKey).anyTimes();
 		expect(dao.getSettingValues(factoryKey + ".FACTORY")).andReturn(emptyList());
 		expect(ca.getConfiguration(instancePid, null)).andReturn(config);
 		expect(config.getFactoryPid()).andReturn(factoryKey).anyTimes();
@@ -408,7 +420,7 @@ public class CASettingsServiceTests {
 		SettingResourceHandler handler = EasyMock.createMock(SettingResourceHandler.class);
 		mocks.add(handler);
 
-		expect(handler.getSettingUID()).andReturn(handlerKey).anyTimes();
+		expect(handler.getSettingUid()).andReturn(handlerKey).anyTimes();
 
 		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
 		expect(handler.applySettingResources(eq(settingKey), capture(resourceCaptor)))
@@ -446,6 +458,68 @@ public class CASettingsServiceTests {
 		backupResource = backupResourceList.get(1);
 		assertThat("Second backup resource is setting resource", backupResource.getBackupPath(),
 				equalTo(handlerKey + "/foobar/test-resource-01.txt"));
+	}
+
+	@Test
+	public void importCsv() throws IOException {
+
+		// wrap import in transaction
+		TransactionStatus tx = EasyMock.createMock(TransactionStatus.class);
+		mocks.add(tx);
+		expect(txManager.getTransaction(anyObject())).andReturn(tx);
+
+		expect(tx.isRollbackOnly()).andReturn(false);
+
+		// import 2 settings
+		Capture<Setting> settingCaptor = new Capture<>(CaptureType.ALL);
+		dao.storeSetting(EasyMock.capture(settingCaptor));
+		expectLastCall().times(2);
+
+		// delete 1
+		expect(dao.deleteSetting("del", "crash")).andReturn(true);
+
+		txManager.commit(tx);
+
+		// handle "bim" CA configurations update ("foo" is skipped)
+		Configuration config = EasyMock.createMock(Configuration.class);
+		mocks.add(config);
+
+		Hashtable<String, Object> configProps = new Hashtable<>();
+		expect(ca.getConfiguration("bim", null)).andReturn(config);
+		expect(config.getProperties()).andReturn(configProps);
+		Capture<Dictionary<String, ?>> configPropsUpdatesCaptor = new Capture<>();
+		config.update(capture(configPropsUpdatesCaptor));
+
+		// handle "del" CA configuration update
+		Configuration config2 = EasyMock.createMock(Configuration.class);
+		mocks.add(config2);
+
+		Hashtable<String, Object> configProps2 = new Hashtable<>();
+		configProps2.put("crash", "true");
+		expect(ca.getConfiguration("del", null)).andReturn(config2);
+		expect(config2.getProperties()).andReturn(configProps2);
+		Capture<Dictionary<String, ?>> configPropsUpdatesCaptor2 = new Capture<>();
+		config2.update(capture(configPropsUpdatesCaptor2));
+
+		// WHEN
+		replayAll();
+		try (BufferedReader r = new BufferedReader(
+				new InputStreamReader(getClass().getResourceAsStream("test-settings.csv"), "UTF-8"))) {
+			service.importSettingsCSV(r);
+		}
+
+		// THEN
+		assertThat("Persisted 'foo' and 'bim' setting values", settingCaptor.getValues(), hasSize(2));
+		// @formatter:off
+		assertThat("Persisted 'foo' setting", settingCaptor.getValues().get(0), allOf(
+				hasProperty("key", equalTo("foo")),
+				hasProperty("type", equalTo("")),
+				hasProperty("value", equalTo("bar"))));
+		assertThat("Persisted 'bim' setting", settingCaptor.getValues().get(1), allOf(
+				hasProperty("key", equalTo("bim")),
+				hasProperty("type", equalTo("bam")),
+				hasProperty("value", equalTo("pow"))));
+		// @formatter:on
 	}
 
 }

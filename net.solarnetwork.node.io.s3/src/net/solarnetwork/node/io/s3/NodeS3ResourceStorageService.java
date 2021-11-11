@@ -24,7 +24,6 @@ package net.solarnetwork.node.io.s3;
 
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
-import static net.solarnetwork.node.settings.support.SettingsUtil.adapt;
 import static net.solarnetwork.settings.support.SettingUtils.mappedWithPrefix;
 import java.net.URL;
 import java.util.ArrayList;
@@ -37,21 +36,21 @@ import java.util.function.Function;
 import org.springframework.context.MessageSource;
 import org.springframework.core.io.Resource;
 import net.solarnetwork.common.s3.S3ResourceStorageService;
-import net.solarnetwork.io.ResourceStorageService;
-import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.node.service.IdentityService;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.ProgressListener;
+import net.solarnetwork.service.ResourceStorageService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.ProgressListener;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * Adaptation of {@link S3ResourceStorageService} to work with node settings.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class NodeS3ResourceStorageService extends BaseIdentifiable
 		implements ResourceStorageService, SettingsChangeObserver, SettingSpecifierProvider {
@@ -63,7 +62,7 @@ public class NodeS3ResourceStorageService extends BaseIdentifiable
 	/**
 	 * Constructor.
 	 * 
-	 * @param identity
+	 * @param identityService
 	 *        service the identity service
 	 * @param executor
 	 *        the executor
@@ -171,7 +170,7 @@ public class NodeS3ResourceStorageService extends BaseIdentifiable
 	// SettingsSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.io.s3";
 	}
 
@@ -184,7 +183,7 @@ public class NodeS3ResourceStorageService extends BaseIdentifiable
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(12);
 		results.addAll(baseIdentifiableSettings("", "", ""));
-		results.addAll(adapt(mappedWithPrefix(delegate.getSettingSpecifiers(), "delegate.")));
+		results.addAll(mappedWithPrefix(delegate.getSettingSpecifiers(), "delegate."));
 		results.add(new BasicToggleSettingSpecifier("nodeIdPrefix", Boolean.TRUE));
 		return results;
 	}

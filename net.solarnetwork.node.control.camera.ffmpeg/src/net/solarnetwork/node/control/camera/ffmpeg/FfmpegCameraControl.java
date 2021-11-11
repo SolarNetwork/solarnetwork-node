@@ -1,21 +1,21 @@
 /* ==================================================================
  * FfmpegCameraControl.java - 31/08/2021 3:28:39 PM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -24,7 +24,7 @@ package net.solarnetwork.node.control.camera.ffmpeg;
 
 import static java.util.Collections.singletonMap;
 import static net.solarnetwork.node.setup.SetupResource.WEB_CONSUMER_TYPES;
-import static net.solarnetwork.util.OptionalService.service;
+import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -47,46 +47,47 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import org.quartz.JobDataMap;
-import org.quartz.JobKey;
-import org.quartz.Scheduler;
-import org.quartz.Trigger;
-import org.quartz.TriggerKey;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.Trigger;
 import org.springframework.util.DigestUtils;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.io.ResultStatusException;
-import net.solarnetwork.node.NodeControlProvider;
 import net.solarnetwork.node.job.JobUtils;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.node.settings.support.BasicSetupResourceSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.node.setup.ResourceSetupResource;
 import net.solarnetwork.node.setup.SetupResource;
 import net.solarnetwork.node.setup.SetupResourceProvider;
-import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * Integrate with the <a href="https://www.ffmpeg.org/">FFmpeg</a> media tool to
  * capture images from camera video streams.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class FfmpegCameraControl extends BaseIdentifiable
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler,
-		SetupResourceProvider, SettingsChangeObserver, FfmpegService {
+		SetupResourceProvider, SettingsChangeObserver, FfmpegService, Runnable {
 
 	/** The instruction signal name for initiating a snapshot. */
 	public static final String SIGNAL_SNAPSHOT = "snapshot";
@@ -118,13 +119,10 @@ public class FfmpegCameraControl extends BaseIdentifiable
 	/** The group name used to schedule the invoker jobs as. */
 	public static final String SNAPSHOT_JOB_GROUP = "FFmpegCameraControl";
 
-	/** The key used for the snapshot job. */
-	public static final JobKey SNAPSHOT_JOB_KEY = new JobKey(SNAPSHOT_JOB_NAME, SNAPSHOT_JOB_GROUP);
-
 	private static final DateTimeFormatter OUTPUT_FILE_DATE_FORMAT = DateTimeFormatter
 			.ofPattern("yyyyMMdd'T'HHmmss'Z'").withZone(ZoneOffset.UTC);
 
-	private final OptionalService<Scheduler> scheduler;
+	private final OptionalService<TaskScheduler> scheduler;
 	private String controlId;
 	private String path = DEFAULT_PATH;
 	private String outputFileTemplate = DEFAULT_OUTPUT_FILE_TEMPLATE;
@@ -135,17 +133,17 @@ public class FfmpegCameraControl extends BaseIdentifiable
 	private String ffmpegPath = DEFAULT_FFMPEG_PATH;
 	private String ffmpegSnapshotOptions;
 
-	private Trigger snapshotTrigger;
+	private ScheduledFuture<?> snapshotTrigger;
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param scheduler
 	 *        the scheduler
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public FfmpegCameraControl(OptionalService<Scheduler> scheduler) {
+	public FfmpegCameraControl(OptionalService<TaskScheduler> scheduler) {
 		super();
 		if ( scheduler == null ) {
 			throw new IllegalArgumentException("The scheduler argument must not be null.");
@@ -179,19 +177,16 @@ public class FfmpegCameraControl extends BaseIdentifiable
 			return;
 		}
 
-		final Scheduler s = service(scheduler);
+		final TaskScheduler s = service(scheduler);
 		if ( s == null ) {
 			return;
 		}
 
 		final String schedule = getSchedule();
-		final String jobDesc = snapshotJobDescription();
-		final TriggerKey triggerKey = triggerKey();
-		final JobDataMap props = new JobDataMap();
-		props.put("service", this);
-		Trigger trigger = JobUtils.scheduleJob(s, FfmpegSnapshotJob.class, SNAPSHOT_JOB_KEY, jobDesc,
-				schedule, triggerKey, props);
-		snapshotTrigger = trigger;
+		final Trigger trigger = JobUtils.triggerForExpression(schedule, TimeUnit.SECONDS, false);
+		if ( trigger != null ) {
+			snapshotTrigger = s.schedule(this, trigger);
+		}
 	}
 
 	private boolean isSnapshotConfigurationValid() {
@@ -204,28 +199,21 @@ public class FfmpegCameraControl extends BaseIdentifiable
 		if ( snapshotTrigger == null ) {
 			return;
 		}
-		Scheduler s = service(scheduler);
-		if ( s == null ) {
-			return;
-		}
-		try {
-			JobUtils.unscheduleJob(s, snapshotJobDescription(), snapshotTrigger.getKey());
-		} catch ( Exception e ) {
-			// ignore
-		}
+		snapshotTrigger.cancel(true);
 		snapshotTrigger = null;
 	}
 
-	private String snapshotJobDescription() {
-		return String.format("FFmpeg auto-snapshot [%s]", controlId);
-	}
-
-	private TriggerKey triggerKey() {
-		String controlId = getControlId();
-		if ( controlId == null ) {
-			controlId = "";
+	@Override
+	public void run() {
+		try {
+			takeSnapshot();
+		} catch ( Exception e ) {
+			Throwable root = e;
+			while ( root.getCause() != null ) {
+				root = root.getCause();
+			}
+			log.error("Error taking {} snapshot: {}", controlId, root.toString());
 		}
-		return new TriggerKey(String.format("Snapshot-%s", controlId), SNAPSHOT_JOB_GROUP);
 	}
 
 	@Override
@@ -306,7 +294,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		final String topic = (instruction != null ? instruction.getTopic() : null);
 		if ( !InstructionHandler.TOPIC_SIGNAL.equals(topic) ) {
 			return null;
@@ -322,7 +310,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 		try {
 			if ( SIGNAL_SNAPSHOT.equalsIgnoreCase(signal) ) {
 				if ( takeSnapshot() ) {
-					return InstructionState.Completed;
+					return InstructionUtils.createStatus(instruction, InstructionState.Completed);
 				}
 			}
 		} catch ( IOException e ) {
@@ -331,7 +319,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 			log.error("Error response code received from ffmpeg {} request {}: {}", ffmpegPath,
 					e.getUrl(), e.getStatusCode());
 		}
-		return InstructionState.Declined;
+		return InstructionUtils.createStatus(instruction, InstructionState.Declined);
 	}
 
 	// SetupResourceProvider
@@ -418,7 +406,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.control.camera.ffmpeg";
 	}
 
@@ -499,7 +487,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Get the control ID.
-	 * 
+	 *
 	 * @return the control ID
 	 */
 	public String getControlId() {
@@ -508,7 +496,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Set the control ID.
-	 * 
+	 *
 	 * @param controlId
 	 *        the control ID
 	 */
@@ -518,7 +506,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Get the file system path to the output image directory.
-	 * 
+	 *
 	 * @return the path to the output image directory; defaults to
 	 *         {@link #DEFAULT_PATH}
 	 */
@@ -528,7 +516,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Set the file system path to the output image directory.
-	 * 
+	 *
 	 * @param path
 	 *        the path
 	 */
@@ -538,7 +526,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Get the output file template.
-	 * 
+	 *
 	 * @return the output file template; defaults to
 	 *         {@link #DEFAULT_OUTPUT_FILE_TEMPLATE}
 	 */
@@ -548,7 +536,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Set the output file template.
-	 * 
+	 *
 	 * @param outputFileTemplate
 	 *        the template to set
 	 */
@@ -558,7 +546,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Get a setup resource provider to support viewing media images.
-	 * 
+	 *
 	 * @return the setup resource provider
 	 */
 	public SetupResourceProvider getMediaResourceProvider() {
@@ -567,7 +555,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Set a setup resource provider to support viewing media images.
-	 * 
+	 *
 	 * @param mediaResourceProvider
 	 *        the setup resource provider
 	 */
@@ -577,7 +565,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Get the number of seconds to allow for caching media setup resources.
-	 * 
+	 *
 	 * @return the number of seconds to cache; defaults to
 	 *         {@link #DEFAULT_RESOURCE_CACHE_SECS}
 	 */
@@ -587,7 +575,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Set the number of seconds to allow for caching media setup resources.
-	 * 
+	 *
 	 * @param resourceCacheSecs
 	 *        the number of seconds to cache
 	 */
@@ -597,7 +585,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Get the snapshot file name path filter pattern.
-	 * 
+	 *
 	 * @return the file name path filter pattern
 	 */
 	public Pattern getPathSnapshotFilter() {
@@ -606,12 +594,12 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Set the snapshot file name path filter pattern.
-	 * 
+	 *
 	 * <p>
 	 * Only file names that match this pattern will be considered as a snapshot
 	 * media resource.
 	 * </p>
-	 * 
+	 *
 	 * @param filter
 	 *        the file name path filter pattern to use, or {@literal null} for
 	 *        all files
@@ -622,7 +610,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Get the snapshot file name path filter pattern, as a string.
-	 * 
+	 *
 	 * @return the file name path filter pattern
 	 */
 	public String getPathSnapshotFilterValue() {
@@ -632,12 +620,12 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Set the snapshot file name path filter pattern, as a string.
-	 * 
+	 *
 	 * <p>
 	 * Only file names that match this pattern will be considered as a snapshot
 	 * media resource.
 	 * </p>
-	 * 
+	 *
 	 * @param filterValue
 	 *        the file name path filter pattern to use, or {@literal null} for
 	 *        all files
@@ -652,7 +640,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Get the auto-snapshot schedule.
-	 * 
+	 *
 	 * @return the schedule
 	 */
 	public String getSchedule() {
@@ -661,14 +649,14 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Set the auto-snapshot schedule.
-	 * 
+	 *
 	 * <p>
 	 * This schedule defines when to manually request snapshot images from
 	 * ffmpeg. If just a number, then the frequency in seconds at which to
-	 * create snapshots. Otherwise a Quartz-compatible cron expression
-	 * representing the schedule at which to create snapshots.
+	 * create snapshots. Otherwise a cron expression representing the schedule
+	 * at which to create snapshots.
 	 * </p>
-	 * 
+	 *
 	 * @param schedule
 	 *        the schedule
 	 */
@@ -678,7 +666,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Get the system path to the {@literal ffmpeg} program.
-	 * 
+	 *
 	 * @return the path; defaults to {@link #DEFAULT_FFMPEG_PATH}
 	 */
 	public String getFfmpegPath() {
@@ -687,7 +675,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Set the system path to the {@literal ffmpeg} program.
-	 * 
+	 *
 	 * @param ffmpegPath
 	 *        the path to set
 	 */
@@ -697,7 +685,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Get the FFmpeg snapshot options.
-	 * 
+	 *
 	 * @return the options to use
 	 */
 	public String getFfmpegSnapshotOptions() {
@@ -706,7 +694,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 
 	/**
 	 * Set the FFmpeg snapshot options.
-	 * 
+	 *
 	 * @param ffmpegSnapshotOptions
 	 *        the options to set
 	 */

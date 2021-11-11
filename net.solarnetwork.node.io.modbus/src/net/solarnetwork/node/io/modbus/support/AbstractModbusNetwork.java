@@ -33,37 +33,69 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
-import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.node.service.LockTimeoutException;
+import net.solarnetwork.service.support.BasicIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * Abstract implementation of {@link ModbusNetwork}.
  * 
  * @author matt
- * @version 2.1
+ * @version 3.0
  * @since 2.4
  */
-public abstract class AbstractModbusNetwork implements ModbusNetwork {
+public abstract class AbstractModbusNetwork extends BasicIdentifiable implements ModbusNetwork {
 
 	/** A default value for the {@code retryDelay} property. */
 	public static final long DEFAULT_RETRY_DELAY_MILLIS = 60;
 
-	private String uid = "Modbus Port";
-	private String groupUID;
-	private long timeout = 10L;
+	/**
+	 * A default value for the {@code uid} property.
+	 * 
+	 * @since 3.0
+	 */
+	public static final String DEFAULT_UID = "Modbus Port";
+
+	/**
+	 * A default value for the {@code timeout} property.
+	 * 
+	 * @since 3.0
+	 */
+	public static final long DEFAULT_TIMEOUT_SECS = 10L;
+
+	/**
+	 * A default value for the {@code retries} property.
+	 * 
+	 * @since 3.0
+	 */
+	public static int DEFAULT_RETRIES = 3;
+
+	/**
+	 * A default value for the {@code retries} property.
+	 * 
+	 * @since 3.0
+	 */
+	public static boolean DEFAULT_HEADLESS = true;
+
+	/**
+	 * A default value for the {@code retryReconnect} property.
+	 * 
+	 * @since 3.0
+	 */
+	public static boolean DEFAULT_RETRY_RECONNECT = false;
+
+	private long timeout = DEFAULT_TIMEOUT_SECS;
 	private TimeUnit timeoutUnit = TimeUnit.SECONDS;
-	private MessageSource messageSource;
-	private boolean headless = true;
-	private int retries = 3;
+	private boolean headless = DEFAULT_HEADLESS;
+	private int retries = DEFAULT_RETRIES;
 	private long retryDelay = DEFAULT_RETRY_DELAY_MILLIS;
 	private TimeUnit retryDelayUnit = TimeUnit.MILLISECONDS;
-	private boolean retryReconnect = false;
+	private boolean retryReconnect = DEFAULT_RETRY_RECONNECT;
 
 	private Set<String> classNamesToTreatAsIoException = defaultClassNamesToTreatAsIoException();
 
@@ -75,6 +107,14 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
+
+	/**
+	 * Constructor.
+	 */
+	public AbstractModbusNetwork() {
+		super();
+		setUid(DEFAULT_UID);
+	}
 
 	/**
 	 * Get the set of class names to convert to {@link IOException} instances if
@@ -295,46 +335,6 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 	}
 
 	/**
-	 * Alias for the {@link #getUID()} method.
-	 * 
-	 * @return the unique ID
-	 * @see #getUID()
-	 */
-	public String getUid() {
-		return uid;
-	}
-
-	/**
-	 * Set the unique ID to identify this service with.
-	 * 
-	 * @param uid
-	 *        the unique ID; defaults to {@literal Modbus Port}
-	 */
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	@Override
-	public String getUID() {
-		return uid;
-	}
-
-	@Override
-	public String getGroupUID() {
-		return groupUID;
-	}
-
-	/**
-	 * Set the group unique ID to identify this service with.
-	 * 
-	 * @param groupUID
-	 *        the group unique ID
-	 */
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
-	}
-
-	/**
 	 * Get the timeout value.
 	 * 
 	 * @return the timeout value, defaults to {@literal 10}
@@ -370,25 +370,6 @@ public abstract class AbstractModbusNetwork implements ModbusNetwork {
 	 */
 	public void setTimeoutUnit(TimeUnit unit) {
 		this.timeoutUnit = unit;
-	}
-
-	/**
-	 * Get a message source to resolve localized strings with.
-	 * 
-	 * @return a message source, or {@literal null}
-	 */
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	/**
-	 * Set a message source to resolve localized strings with.
-	 * 
-	 * @param messageSource
-	 *        the message source
-	 */
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
 	}
 
 	/**

@@ -31,6 +31,7 @@ import java.util.concurrent.Callable;
  * @author matt
  * @version 1.0
  * @param <T>
+ *        the callable type
  */
 public interface AbortableCallable<T> extends Callable<T> {
 

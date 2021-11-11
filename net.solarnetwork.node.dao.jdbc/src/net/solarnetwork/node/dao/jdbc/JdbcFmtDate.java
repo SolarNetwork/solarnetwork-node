@@ -22,11 +22,9 @@
 
 package net.solarnetwork.node.dao.jdbc;
 
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAccessor;
 import java.util.Calendar;
-import org.joda.time.ReadableInstant;
-import org.joda.time.ReadablePartial;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.supercsv.cellprocessor.CellProcessorAdaptor;
 import org.supercsv.cellprocessor.ift.DateCellProcessor;
 import org.supercsv.cellprocessor.ift.StringCellProcessor;
@@ -37,13 +35,9 @@ import org.supercsv.util.CsvContext;
  * Format dates using a Joda {@link DateTimeFormatter}.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class JdbcFmtDate extends CellProcessorAdaptor implements DateCellProcessor {
-
-	private static final String DATE_PATTERN = "yyyy-MM-dd";
-	private static final String TIME_PATTERN = "HH:mm:ss.SSS";
-	private static final String TIMESTAMP_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 
 	private final DateTimeFormatter dateFormatter;
 
@@ -60,33 +54,33 @@ public class JdbcFmtDate extends CellProcessorAdaptor implements DateCellProcess
 	public static final class Timestamp extends JdbcFmtDate {
 
 		public Timestamp() {
-			super(DateTimeFormat.forPattern(TIMESTAMP_PATTERN).withZoneUTC());
+			super(DateTimeFormatter.ISO_INSTANT);
 		}
 
 		public Timestamp(StringCellProcessor next) {
-			super(DateTimeFormat.forPattern(TIMESTAMP_PATTERN).withZoneUTC(), next);
+			super(DateTimeFormatter.ISO_INSTANT, next);
 		}
 	}
 
 	public static final class Date extends JdbcFmtDate {
 
 		public Date() {
-			super(DateTimeFormat.forPattern(DATE_PATTERN));
+			super(DateTimeFormatter.ISO_LOCAL_DATE);
 		}
 
 		public Date(StringCellProcessor next) {
-			super(DateTimeFormat.forPattern(DATE_PATTERN), next);
+			super(DateTimeFormatter.ISO_LOCAL_DATE, next);
 		}
 	}
 
 	public static final class Time extends JdbcFmtDate {
 
 		public Time() {
-			super(DateTimeFormat.forPattern(TIME_PATTERN));
+			super(DateTimeFormatter.ISO_LOCAL_TIME);
 		}
 
 		public Time(StringCellProcessor next) {
-			super(DateTimeFormat.forPattern(TIME_PATTERN), next);
+			super(DateTimeFormatter.ISO_LOCAL_TIME, next);
 		}
 	}
 
@@ -97,13 +91,11 @@ public class JdbcFmtDate extends CellProcessorAdaptor implements DateCellProcess
 		String result;
 
 		if ( value instanceof java.util.Date ) {
-			result = dateFormatter.print(((java.util.Date) value).getTime());
+			result = dateFormatter.format(((java.util.Date) value).toInstant());
 		} else if ( value instanceof Calendar ) {
-			result = dateFormatter.print(((Calendar) value).getTimeInMillis());
-		} else if ( value instanceof ReadableInstant ) {
-			result = dateFormatter.print((ReadableInstant) value);
-		} else if ( value instanceof ReadablePartial ) {
-			result = dateFormatter.print((ReadablePartial) value);
+			result = dateFormatter.format(((Calendar) value).getTime().toInstant());
+		} else if ( value instanceof TemporalAccessor ) {
+			result = dateFormatter.format((TemporalAccessor) value);
 		} else {
 			throw new SuperCsvCellProcessorException(java.util.Date.class, value, context, this);
 		}

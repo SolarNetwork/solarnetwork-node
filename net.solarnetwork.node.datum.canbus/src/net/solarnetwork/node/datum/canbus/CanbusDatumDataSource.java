@@ -24,6 +24,8 @@ package net.solarnetwork.node.datum.canbus;
 
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
+import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
@@ -41,11 +43,12 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.measure.Unit;
 import net.solarnetwork.domain.BitDataType;
-import net.solarnetwork.domain.GeneralDatumMetadata;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.domain.KeyValuePair;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
+import net.solarnetwork.node.domain.datum.MutableNodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.io.canbus.CanbusData;
 import net.solarnetwork.node.io.canbus.CanbusData.CanbusDataUpdateAction;
 import net.solarnetwork.node.io.canbus.CanbusData.MutableCanbusData;
@@ -54,23 +57,24 @@ import net.solarnetwork.node.io.canbus.CanbusFrameListener;
 import net.solarnetwork.node.io.canbus.support.CanbusDatumDataSourceSupport;
 import net.solarnetwork.node.io.canbus.support.CanbusSubscription;
 import net.solarnetwork.node.io.canbus.util.CanbusUtils;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
-import net.solarnetwork.support.ExpressionService;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.service.ExpressionService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
 
 /**
  * Generic CAN bus datum data source.
  * 
  * @author matt
- * @version 1.6
+ * @version 2.0
  */
 public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
-		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider, CanbusFrameListener {
+		implements DatumDataSource, SettingSpecifierProvider, CanbusFrameListener {
 
 	/** The setting UID value. */
 	public static final String SETTING_UID = "net.solarnetwork.node.datum.canbus";
@@ -115,40 +119,37 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 	}
 
 	@Override
-	public Class<? extends GeneralNodeDatum> getDatumType() {
-		return GeneralNodeDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return NodeDatum.class;
 	}
 
 	@Override
-	public GeneralNodeDatum readCurrentDatum() {
+	public NodeDatum readCurrentDatum() {
 		if ( debug ) {
 			return null;
 		}
 		final CanbusData currSample = sample.copy();
-		if ( sample.getDataTimestamp() < 1 ) {
+		if ( sample.getDataTimestamp() == null ) {
 			return null;
 		}
-		GeneralNodeDatum d = createDatum(currSample);
+		NodeDatum d = createDatum(currSample);
 		if ( d == null ) {
 			return null;
 		}
 		return d;
 	}
 
-	private GeneralNodeDatum createDatum(CanbusData data) {
-		GeneralNodeDatum d = new GeneralNodeDatum();
-		d.setCreated(new Date(data.getDataTimestamp()));
-		d.setSourceId(resolvePlaceholders(sourceId));
+	private NodeDatum createDatum(CanbusData data) {
+		SimpleDatum d = SimpleDatum.nodeDatum(resolvePlaceholders(sourceId), data.getDataTimestamp());
 		populateDatumProperties(data, d, getMsgConfigs());
 		populateDatumProperties(data, d, getExpressionConfigs());
-		d = applySamplesTransformer(d, null);
 		if ( d == null || d.getSamples() == null || d.getSamples().isEmpty() ) {
 			return null;
 		}
 		return d;
 	}
 
-	private void populateDatumProperties(CanbusData data, GeneralNodeDatum d,
+	private void populateDatumProperties(CanbusData data, MutableNodeDatum d,
 			CanbusMessageConfig[] messages) {
 		if ( messages == null || messages.length < 1 ) {
 			return;
@@ -158,7 +159,7 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 			if ( propConfigs != null && propConfigs.length > 0 ) {
 				for ( CanbusPropertyConfig prop : propConfigs ) {
 					final BitDataType dataType = prop.getDataType();
-					final GeneralDatumSamplesType propType = prop.getPropertyType();
+					final DatumSamplesType propType = prop.getPropertyType();
 					final String propName = prop.getPropertyKey();
 					if ( dataType == null || propType == null || propName == null
 							|| propName.isEmpty() ) {
@@ -187,7 +188,8 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 							for ( int i = 0; i < valueLabels.length; i++ ) {
 								KeyValuePair valueLabel = valueLabels[i];
 								if ( propValString.equals(valueLabel.getKey()) ) {
-									d.putStatusSampleValue(propName + "Label", valueLabel.getValue());
+									d.asMutableSampleOperations().putSampleValue(Status,
+											propName + "Label", valueLabel.getValue());
 									break;
 								}
 							}
@@ -196,22 +198,23 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 							propVal = prop.applyTransformations((Number) propVal);
 							propVal = normalizedAmountValue((Number) propVal, prop.getUnit(),
 									prop.getNormalizedUnit(), null, null);
-						} else if ( !(propType == GeneralDatumSamplesType.Status
-								|| propType == GeneralDatumSamplesType.Tag) ) {
+						} else if ( !(propType == DatumSamplesType.Status
+								|| propType == DatumSamplesType.Tag) ) {
 							log.warn("Cannot set datum {} property {} to non-number value [{}]",
 									propType, propName, propVal);
 							continue;
 						}
-						d.putSampleValue(propType, propName, propVal);
+						d.asMutableSampleOperations().putSampleValue(propType, propName, propVal);
 					}
 				}
 			}
 		}
 	}
 
-	private void populateDatumProperties(CanbusData sample, GeneralNodeDatum d,
+	private void populateDatumProperties(CanbusData sample, MutableNodeDatum d,
 			ExpressionConfig[] expressionConfs) {
-		populateExpressionDatumProperties(d, expressionConfs, new ExpressionRoot(d, sample));
+		populateExpressionDatumProperties(d, expressionConfs,
+				new ExpressionRoot(d, sample, service(getDatumService())));
 	}
 
 	@Override
@@ -384,7 +387,7 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return SETTING_UID;
 	}
 
@@ -398,16 +401,14 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 		List<SettingSpecifier> results = getIdentifiableSettingSpecifiers();
 		results.addAll(canbusDatumDataSourceSettingSpecifiers(""));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", ""));
-		results.add(new BasicTextFieldSettingSpecifier("samplesTransformService.propertyFilters['UID']",
-				null));
 		results.add(new BasicToggleSettingSpecifier("debug", false));
 		results.add(new BasicTextFieldSettingSpecifier("debugLogPath", DEFAULT_DEBUG_LOG));
 
 		CanbusMessageConfig[] confs = getMsgConfigs();
 		List<CanbusMessageConfig> confsList = (confs != null ? Arrays.asList(confs)
 				: Collections.<CanbusMessageConfig> emptyList());
-		results.add(SettingsUtil.dynamicListSettingSpecifier("msgConfigs", confsList,
-				new SettingsUtil.KeyedListCallback<CanbusMessageConfig>() {
+		results.add(SettingUtils.dynamicListSettingSpecifier("msgConfigs", confsList,
+				new SettingUtils.KeyedListCallback<CanbusMessageConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(CanbusMessageConfig value,
@@ -425,8 +426,8 @@ public class CanbusDatumDataSource extends CanbusDatumDataSourceSupport
 			ExpressionConfig[] exprConfs = getExpressionConfigs();
 			List<ExpressionConfig> exprConfsList = (exprConfs != null ? Arrays.asList(exprConfs)
 					: Collections.<ExpressionConfig> emptyList());
-			results.add(SettingsUtil.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
-					new SettingsUtil.KeyedListCallback<ExpressionConfig>() {
+			results.add(SettingUtils.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
+					new SettingUtils.KeyedListCallback<ExpressionConfig>() {
 
 						@Override
 						public Collection<SettingSpecifier> mapListSettingKey(ExpressionConfig value,

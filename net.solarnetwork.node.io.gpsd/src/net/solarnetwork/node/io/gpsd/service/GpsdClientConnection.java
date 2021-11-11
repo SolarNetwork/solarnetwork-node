@@ -23,20 +23,19 @@
 package net.solarnetwork.node.io.gpsd.service;
 
 import java.util.concurrent.Future;
-import net.solarnetwork.node.Identifiable;
 import net.solarnetwork.node.io.gpsd.domain.GpsdMessage;
 import net.solarnetwork.node.io.gpsd.domain.GpsdReportMessage;
 import net.solarnetwork.node.io.gpsd.domain.VersionMessage;
 import net.solarnetwork.node.io.gpsd.domain.WatchMessage;
+import net.solarnetwork.service.Identifiable;
 
 /**
  * API for a GPSd client.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public interface GpsdClientConnection
-		extends GpsdMessageBroker, Identifiable, net.solarnetwork.domain.Identifiable {
+public interface GpsdClientConnection extends GpsdMessageBroker, Identifiable {
 
 	/**
 	 * An {@link org.osgi.service.event.Event} topic for when a
@@ -47,8 +46,8 @@ public interface GpsdClientConnection
 	 * </p>
 	 * 
 	 * <ul>
-	 * <li>{@link net.solarnetwork.domain.Identifiable#UID_PROPERTY}</li>
-	 * <li>{@link net.solarnetwork.domain.Identifiable#GROUP_UID_PROPERTY} - if
+	 * <li>{@link net.solarnetwork.service.Identifiable#UID_PROPERTY}</li>
+	 * <li>{@link net.solarnetwork.service.Identifiable#GROUP_UID_PROPERTY} - if
 	 * available</li>
 	 * <li>{@link #STATUS_PROPERTY}</li>
 	 * </ul>
@@ -63,8 +62,8 @@ public interface GpsdClientConnection
 	 * </p>
 	 * 
 	 * <ul>
-	 * <li>{@link net.solarnetwork.domain.Identifiable#UID_PROPERTY}</li>
-	 * <li>{@link net.solarnetwork.domain.Identifiable#GROUP_UID_PROPERTY} - if
+	 * <li>{@link net.solarnetwork.service.Identifiable#UID_PROPERTY}</li>
+	 * <li>{@link net.solarnetwork.service.Identifiable#GROUP_UID_PROPERTY} - if
 	 * available</li>
 	 * <li>{@link #MESSAGE_PROPERTY}</li>
 	 * </ul>
@@ -95,7 +94,6 @@ public interface GpsdClientConnection
 	 * Configure and enable/disable "watch" mode to receive future
 	 * {@literal SKY} and {@literal TPV} messages on any configured message
 	 * listeners.
-	 * </p>
 	 * 
 	 * @param config
 	 *        the watch mode configuration to set

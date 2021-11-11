@@ -24,7 +24,7 @@ package net.solarnetwork.node.io.serial;
 
 import java.io.Closeable;
 import java.io.IOException;
-import net.solarnetwork.node.LockTimeoutException;
+import net.solarnetwork.node.service.LockTimeoutException;
 
 /**
  * @author matt
@@ -100,7 +100,7 @@ public interface SerialConnection extends Closeable {
 	 * 
 	 * @throws IOException
 	 *         if the connection fails
-	 * @return the drained bytes (never <em>null</em>)
+	 * @return the drained bytes (never {@literal null})
 	 */
 	byte[] drainInputBuffer() throws IOException;
 

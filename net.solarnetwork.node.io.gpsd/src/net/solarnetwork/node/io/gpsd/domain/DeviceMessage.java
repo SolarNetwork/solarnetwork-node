@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.gpsd.domain;
 
+import static net.solarnetwork.codec.JsonUtils.iso8610Timestamp;
 import static net.solarnetwork.domain.Bitmaskable.setForBitmask;
 import static net.solarnetwork.node.io.gpsd.util.DeviceMessageSerializer.ACTIVATED_FIELD;
 import static net.solarnetwork.node.io.gpsd.util.DeviceMessageSerializer.BPS_FIELD;
@@ -40,13 +41,12 @@ import com.fasterxml.jackson.core.TreeNode;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import net.solarnetwork.node.io.gpsd.util.JsonUtils;
 
 /**
  * Message for the {@literal DEVICE} command.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 @JsonDeserialize(builder = DeviceMessage.Builder.class)
 @JsonSerialize(using = net.solarnetwork.node.io.gpsd.util.DeviceMessageSerializer.class)
@@ -114,7 +114,7 @@ public class DeviceMessage extends AbstractGpsdMessage {
 		}
 
 		public Builder withActivated(String timestamp) {
-			return withActivated(JsonUtils.iso8610Timestamp(timestamp));
+			return withActivated(iso8610Timestamp(timestamp));
 		}
 
 		public Builder withActivated(Instant activated) {

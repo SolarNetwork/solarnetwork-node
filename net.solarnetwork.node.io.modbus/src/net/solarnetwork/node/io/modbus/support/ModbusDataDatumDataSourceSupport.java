@@ -23,14 +23,16 @@
 package net.solarnetwork.node.io.modbus.support;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
 import net.solarnetwork.domain.DeviceInfo;
-import net.solarnetwork.node.DatumDataSource;
 import net.solarnetwork.node.domain.DataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
+import net.solarnetwork.node.service.DatumDataSource;
 
 /**
  * A base helper class to support {@link ModbusNetwork} based
@@ -38,7 +40,7 @@ import net.solarnetwork.node.io.modbus.ModbusNetwork;
  * object.
  * 
  * @author matt
- * @version 1.5
+ * @version 2.0
  * @since 2.9
  */
 public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & DataAccessor>
@@ -99,7 +101,7 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 				@Override
 				public T doWithConnection(ModbusConnection conn) throws IOException {
 					T sample = getSample();
-					if ( sample.getDataTimestamp() == 0 ) {
+					if ( sample.getDataTimestamp() == null ) {
 						// first time also load info
 						readDeviceInfoFirstTime(conn, sample);
 					}
@@ -217,7 +219,10 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	 */
 	protected boolean isCachedSampleExpired() {
 		final T sample = getSample();
-		final long lastReadDiff = System.currentTimeMillis() - sample.getDataTimestamp();
+		if ( sample.getDataTimestamp() == null ) {
+			return true;
+		}
+		final long lastReadDiff = sample.getDataTimestamp().until(Instant.now(), ChronoUnit.MILLIS);
 		if ( lastReadDiff > sampleCacheMs ) {
 			return true;
 		}

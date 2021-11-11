@@ -28,17 +28,17 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * Settings for a single configurable load shed switch.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class LoadShedControlConfig {
 
@@ -106,7 +106,8 @@ public class LoadShedControlConfig {
 		results.add(new BasicToggleSettingSpecifier(prefix + "active", defaults.active));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "timeWindowStart",
 				defaults.timeWindowStart));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "timeWindowEnd", defaults.timeWindowEnd));
+		results.add(
+				new BasicTextFieldSettingSpecifier(prefix + "timeWindowEnd", defaults.timeWindowEnd));
 		return results;
 	}
 
@@ -146,7 +147,7 @@ public class LoadShedControlConfig {
 	 * 
 	 * @param window
 	 *        A time window in the pattern {@link #TIME_WINDOW_PATTERN}.
-	 * @return A Calendar, or <em>null</em> if the window cannot be parsed.
+	 * @return A Calendar, or {@literal null} if the window cannot be parsed.
 	 */
 	private Calendar timeWindowCalendar(final long date, final String window) {
 		if ( window == null ) {
@@ -172,11 +173,11 @@ public class LoadShedControlConfig {
 	/**
 	 * Test if a specific date falls within the configured time window. If both
 	 * the start and end time windows are <b>not</b> configured then this method
-	 * will return <em>true</em>.
+	 * will return {@literal true}.
 	 * 
 	 * @param date
 	 *        The date to test.
-	 * @return <em>true</em> if the date's time component falls within the
+	 * @return {@literal true} if the date's time component falls within the
 	 *         configured time window.
 	 */
 	public boolean fallsWithinTimeWindow(final long date) {

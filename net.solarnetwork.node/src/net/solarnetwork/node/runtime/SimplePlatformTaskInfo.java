@@ -23,8 +23,8 @@
 package net.solarnetwork.node.runtime;
 
 import java.util.Locale;
-import net.solarnetwork.node.PlatformService;
-import net.solarnetwork.node.PlatformService.PlatformTaskInfo;
+import net.solarnetwork.node.service.PlatformService;
+import net.solarnetwork.node.service.PlatformService.PlatformTaskInfo;
 
 /**
  * Simple implementation of {@link PlatformTaskInfo}.

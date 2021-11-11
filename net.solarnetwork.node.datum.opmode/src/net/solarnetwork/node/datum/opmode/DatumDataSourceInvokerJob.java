@@ -22,35 +22,29 @@
 
 package net.solarnetwork.node.datum.opmode;
 
-import org.quartz.DisallowConcurrentExecution;
-import org.quartz.JobExecutionContext;
-import org.quartz.PersistJobDataAfterExecution;
-import net.solarnetwork.node.job.AbstractJob;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 
 /**
  * Job to execute a single datum data source schedule configuration.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-@PersistJobDataAfterExecution
-@DisallowConcurrentExecution
-public class DatumDataSourceInvokerJob extends AbstractJob {
+public class DatumDataSourceInvokerJob implements Runnable {
 
-	private DatumDataSourceScheduleService service;
-	private DatumDataSourceScheduleConfig config;
+	private final DatumDataSourceScheduleService service;
+	private final DatumDataSourceScheduleConfig config;
+
+	public DatumDataSourceInvokerJob(DatumDataSourceScheduleService service,
+			DatumDataSourceScheduleConfig config) {
+		super();
+		this.service = requireNonNullArgument(service, "service");
+		this.config = requireNonNullArgument(config, "config");
+	}
 
 	@Override
-	protected void executeInternal(JobExecutionContext jobContext) throws Exception {
+	public void run() {
 		service.invokeScheduleConfig(config);
-	}
-
-	public void setService(DatumDataSourceScheduleService service) {
-		this.service = service;
-	}
-
-	public void setConfig(DatumDataSourceScheduleConfig config) {
-		this.config = config;
 	}
 
 }

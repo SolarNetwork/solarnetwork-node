@@ -8,15 +8,15 @@
 
 	<!-- Service references -->
 
-	<bean id="taskExecutor" class="net.solarnetwork.util.DynamicServiceTracker">
-		<property name="bundleContext" ref="bundleContext"/>
+	<bean id="taskExecutor" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="org.springframework.core.task.AsyncTaskExecutor"/>
 		<property name="serviceFilter" value="(function=node)"/>
 	</bean>	
 		
 	<!-- Published Services -->
 	
-	<service interface="net.solarnetwork.node.PlatformPackageService" ranking="10">
+	<service interface="net.solarnetwork.node.service.PlatformPackageService" ranking="10">
 		<bean class="net.solarnetwork.node.setup.deb.DebianPlatformPackageService">
 			<property name="taskExecutor" ref="taskExecutor"/>
 		</bean>

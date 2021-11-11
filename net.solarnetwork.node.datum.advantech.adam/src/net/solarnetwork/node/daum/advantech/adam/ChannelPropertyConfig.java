@@ -23,17 +23,15 @@
 package net.solarnetwork.node.daum.advantech.adam;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.domain.GeneralDatumSamplePropertyConfig;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.util.NumberUtils;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.domain.datum.NumberDatumSamplePropertyConfig;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Configuration for a single datum property to be set via an ADAM channel.
@@ -43,29 +41,14 @@ import net.solarnetwork.util.NumberUtils;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
-public class ChannelPropertyConfig extends GeneralDatumSamplePropertyConfig<Integer> {
+public class ChannelPropertyConfig extends NumberDatumSamplePropertyConfig<Integer> {
 
 	/** The default value for the {@code channel} property. */
 	public static final int DEFAULT_CHANNEL = 0;
 
-	/** The default value for the {@code propertyType} property. */
-	public static final GeneralDatumSamplesType DEFAULT_PROPERTY_TYPE = GeneralDatumSamplesType.Instantaneous;
-
-	/** The default value for the {@code offset} property. */
-	public static final BigDecimal DEFAULT_OFFSET = BigDecimal.ZERO;
-
-	/** The default value for the {@code unitMultiplier} property. */
-	public static final BigDecimal DEFAULT_UNIT_MULTIPLIER = BigDecimal.ONE;
-
-	/** The default value for the {@code decimalScale} property. */
-	public static final int DEFAULT_DECIMAL_SCALE = 5;
-
 	private String name;
-	private BigDecimal offset;
-	private BigDecimal unitMultiplier;
-	private int decimalScale;
 
 	/**
 	 * Default constructor.
@@ -84,12 +67,9 @@ public class ChannelPropertyConfig extends GeneralDatumSamplePropertyConfig<Inte
 	 * @param channelNumber
 	 *        the channel number
 	 */
-	public ChannelPropertyConfig(String propertyKey, GeneralDatumSamplesType propertyType,
+	public ChannelPropertyConfig(String propertyKey, DatumSamplesType propertyType,
 			Integer channelNumber) {
 		super(propertyKey, propertyType, channelNumber);
-		offset = DEFAULT_OFFSET;
-		unitMultiplier = DEFAULT_UNIT_MULTIPLIER;
-		decimalScale = DEFAULT_DECIMAL_SCALE;
 	}
 
 	/**
@@ -112,7 +92,7 @@ public class ChannelPropertyConfig extends GeneralDatumSamplePropertyConfig<Inte
 		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
 				prefix + "propertyTypeKey", Character.toString(DEFAULT_PROPERTY_TYPE.toKey()));
 		Map<String, String> propTypeTitles = new LinkedHashMap<String, String>(3);
-		for ( GeneralDatumSamplesType e : GeneralDatumSamplesType.values() ) {
+		for ( DatumSamplesType e : DatumSamplesType.values() ) {
 			propTypeTitles.put(Character.toString(e.toKey()), e.toString());
 		}
 		propTypeSpec.setValueTitles(propTypeTitles);
@@ -128,100 +108,13 @@ public class ChannelPropertyConfig extends GeneralDatumSamplePropertyConfig<Inte
 		channelSpec.setValueTitles(channelTitles);
 		results.add(channelSpec);
 
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "offset", DEFAULT_OFFSET.toString()));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "unitMultiplier",
-				DEFAULT_UNIT_MULTIPLIER.toString()));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "offset", DEFAULT_INTERCEPT.toString()));
+		results.add(
+				new BasicTextFieldSettingSpecifier(prefix + "unitMultiplier", DEFAULT_SLOPE.toString()));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "decimalScale",
 				String.valueOf(DEFAULT_DECIMAL_SCALE)));
 
 		return results;
-	}
-
-	/**
-	 * Apply the decimal scale to a number value.
-	 * 
-	 * @param value
-	 *        the number to apply the settings to
-	 * @return the value
-	 * @throws NullPointerException
-	 *         if {@code value} is {@literal null}
-	 */
-	public Number applyDecimalScale(Number value) {
-		if ( decimalScale < 0 ) {
-			return value;
-		}
-		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
-		if ( v.scale() > decimalScale ) {
-			v = v.setScale(decimalScale, RoundingMode.HALF_UP);
-		}
-		return v;
-	}
-
-	/**
-	 * Apply the offset to a number value.
-	 * 
-	 * @param value
-	 *        the number to apply the offset to
-	 * @return the value
-	 * @throws NullPointerException
-	 *         if {@code value} is {@literal null}
-	 * @since 1.1
-	 */
-	public Number applyOffset(Number value) {
-		if ( BigDecimal.ZERO.compareTo(offset) == 0 ) {
-			return value;
-		}
-		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
-		return v.add(offset);
-	}
-
-	/**
-	 * Apply the unit multiplier to a number value.
-	 * 
-	 * @param value
-	 *        the number to apply the settings to
-	 * @return the value
-	 * @throws NullPointerException
-	 *         if {@code value} is {@literal null}
-	 */
-	public Number applyUnitMultiplier(Number value) {
-		if ( BigDecimal.ONE.compareTo(unitMultiplier) == 0 ) {
-			return value;
-		}
-		BigDecimal v = NumberUtils.bigDecimalForNumber(value);
-		return v.multiply(unitMultiplier);
-	}
-
-	/**
-	 * Apply the configured unit multiplier and decimal scale to a number value.
-	 * 
-	 * @param value
-	 *        the number to apply the settings to
-	 * @return the result, or {@literal null} if {@code value} is
-	 *         {@literal null}
-	 */
-	public Number applyScaleAndMultipler(Number value) {
-		if ( value == null ) {
-			return null;
-		}
-		return applyDecimalScale(applyUnitMultiplier(value));
-	}
-
-	/**
-	 * Apply the configured offset, unit multiplier, and decimal scale to a
-	 * number value.
-	 * 
-	 * @param value
-	 *        the number to apply the settings to
-	 * @return the result, or {@literal null} if {@code value} is
-	 *         {@literal null}
-	 * @since 1.1
-	 */
-	public Number applyTransformations(Number value) {
-		if ( value == null ) {
-			return null;
-		}
-		return applyDecimalScale(applyUnitMultiplier(applyOffset(value)));
 	}
 
 	/**
@@ -275,11 +168,19 @@ public class ChannelPropertyConfig extends GeneralDatumSamplePropertyConfig<Inte
 	/**
 	 * Get the offset.
 	 * 
-	 * @return the offset; defaults to {@link #DEFAULT_OFFSET}
+	 * <p>
+	 * This is an alias for {@link #getIntercept()}, maintained for backwards
+	 * compatibility.
+	 * </p>
+	 * 
+	 * @return the offset; defaults to
+	 *         {@link NumberDatumSamplePropertyConfig#DEFAULT_INTERCEPT}
 	 * @since 1.1
+	 * @deprecated since 2.0 use {@link #getIntercept()}
 	 */
+	@Deprecated
 	public BigDecimal getOffset() {
-		return offset;
+		return getIntercept();
 	}
 
 	/**
@@ -292,25 +193,45 @@ public class ChannelPropertyConfig extends GeneralDatumSamplePropertyConfig<Inte
 	 * {@literal 15} as the offset would shift the values into that range.
 	 * </p>
 	 * 
+	 * <p>
+	 * This is an alias for {@link #setIntercept(BigDecimal)}, maintained for
+	 * backwards compatibility.
+	 * </p>
+	 * 
 	 * @param offset
 	 *        the offset to set
 	 * @since 1.1
+	 * @deprecated since 2.0 use {@link #setIntercept(BigDecimal)}
 	 */
+	@Deprecated
 	public void setOffset(BigDecimal offset) {
-		this.offset = offset;
+		setIntercept(offset);
 	}
 
 	/**
 	 * Get the unit multiplier.
 	 * 
-	 * @return the multiplier; defaults to {@link #DEFAULT_UNIT_MULTIPLIER}
+	 * <p>
+	 * This is an alias for {@link #getSlope()}, maintained for backwards
+	 * compatibility.
+	 * </p>
+	 * 
+	 * @return the multiplier; defaults to
+	 *         {@link NumberDatumSamplePropertyConfig#DEFAULT_SLOPE}
+	 * @deprecated since 2.0 use {@link #getSlope()}
 	 */
+	@Deprecated
 	public BigDecimal getUnitMultiplier() {
-		return unitMultiplier;
+		return getSlope();
 	}
 
 	/**
 	 * Set the unit multiplier.
+	 * 
+	 * <p>
+	 * This is an alias for {@link #setSlope(BigDecimal)}, maintained for
+	 * backwards compatibility.
+	 * </p>
 	 * 
 	 * <p>
 	 * This value represents a multiplication factor to apply to values
@@ -322,34 +243,11 @@ public class ChannelPropertyConfig extends GeneralDatumSamplePropertyConfig<Inte
 	 * 
 	 * @param unitMultiplier
 	 *        the mutliplier to set
+	 * @deprecated since 2.0 use {@link #setSlope(BigDecimal)}
 	 */
+	@Deprecated
 	public void setUnitMultiplier(BigDecimal unitMultiplier) {
-		this.unitMultiplier = unitMultiplier;
+		setSlope(unitMultiplier);
 	}
 
-	/**
-	 * Get the decimal scale to round decimal numbers to.
-	 * 
-	 * @return the decimal scale; defaults to {@link #DEFAULT_DECIMAL_SCALE}
-	 */
-	public int getDecimalScale() {
-		return decimalScale;
-	}
-
-	/**
-	 * Set the decimal scale to round decimal numbers to.
-	 * 
-	 * <p>
-	 * This is a <i>maximum</i> scale value that decimal values should be
-	 * rounded to. This is applied <i>after</i> any {@code unitMultiplier} is
-	 * applied. A scale of {@literal 0} would round all decimals to integer
-	 * values.
-	 * </p>
-	 * 
-	 * @param decimalScale
-	 *        the scale to set, or {@literal -1} to disable rounding completely
-	 */
-	public void setDecimalScale(int decimalScale) {
-		this.decimalScale = decimalScale;
-	}
 }

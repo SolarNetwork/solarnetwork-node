@@ -25,13 +25,13 @@ package net.solarnetwork.node.io.dnp3.impl;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.MessageSource;
 import com.automatak.dnp3.Channel;
 import com.automatak.dnp3.ChannelListener;
 import com.automatak.dnp3.DNP3Exception;
 import com.automatak.dnp3.DNP3Manager;
 import com.automatak.dnp3.enums.ChannelState;
 import net.solarnetwork.node.io.dnp3.ChannelService;
+import net.solarnetwork.service.support.BasicIdentifiable;
 
 /**
  * Abstract implementation of {@link ChannelService}.
@@ -42,16 +42,15 @@ import net.solarnetwork.node.io.dnp3.ChannelService;
  * @version 1.1
  */
 public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
-		implements ChannelService, ChannelListener {
+		extends BasicIdentifiable implements ChannelService, ChannelListener {
+
+	public static final String DEFAULT_UID = "DNP3 Channel";
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final DNP3Manager manager;
 	private final C config;
-	private String uid = "DNP3 Channel";
-	private String groupUID;
-	private MessageSource messageSource;
 
 	private Channel channel;
 	private ChannelState channelState = ChannelState.CLOSED;
@@ -68,6 +67,7 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 		super();
 		this.manager = manager;
 		this.config = config;
+		setUid(DEFAULT_UID);
 	}
 
 	/**
@@ -88,7 +88,7 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 		try {
 			channel = createChannel(config);
 		} catch ( DNP3Exception e ) {
-			log.error("Error creating DNP3 channel [{}]: {}", uid, e.getMessage(), e);
+			log.error("Error creating DNP3 channel [{}]: {}", getUid(), e.getMessage(), e);
 		}
 	}
 
@@ -126,7 +126,7 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 			try {
 				channel = createChannel(config);
 			} catch ( DNP3Exception e ) {
-				log.error("Error creating DNP3 channel [{}]: {}", uid, e.getMessage(), e);
+				log.error("Error creating DNP3 channel [{}]: {}", getUid(), e.getMessage(), e);
 			}
 		}
 		return channel;
@@ -174,54 +174,6 @@ public abstract class AbstractChannelService<C extends BaseChannelConfiguration>
 			*/
 		}
 		return buf.toString();
-	}
-
-	/**
-	 * Alias for the {@link #getUID()} method.
-	 * 
-	 * @return the unique ID
-	 * @see #getUID()
-	 */
-	public String getUid() {
-		return uid;
-	}
-
-	/**
-	 * Set the unique ID to identify this service with.
-	 * 
-	 * @param uid
-	 *        the unique ID; defaults to {@literal Modbus Port}
-	 */
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	@Override
-	public String getUID() {
-		return uid;
-	}
-
-	@Override
-	public String getGroupUID() {
-		return groupUID;
-	}
-
-	/**
-	 * Set the group unique ID to identify this service with.
-	 * 
-	 * @param groupUID
-	 *        the group unique ID
-	 */
-	public void setGroupUID(String groupUID) {
-		this.groupUID = groupUID;
-	}
-
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
 	}
 
 }

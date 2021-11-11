@@ -26,16 +26,16 @@ import javax.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.SystemService;
+import net.solarnetwork.node.service.IdentityService;
+import net.solarnetwork.node.service.SystemService;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.service.OptionalService;
 
 /**
  * Add global services to all MVC controllers.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  * @since 1.23
  */
 @ControllerAdvice(annotations = { ServiceAwareController.class })

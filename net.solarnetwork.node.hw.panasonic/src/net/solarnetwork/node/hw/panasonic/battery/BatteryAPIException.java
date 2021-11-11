@@ -22,13 +22,13 @@
 
 package net.solarnetwork.node.hw.panasonic.battery;
 
-import net.solarnetwork.node.RemoteServiceException;
+import net.solarnetwork.service.RemoteServiceException;
 
 /**
  * Exception for Battery API client errors.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class BatteryAPIException extends RemoteServiceException {
 

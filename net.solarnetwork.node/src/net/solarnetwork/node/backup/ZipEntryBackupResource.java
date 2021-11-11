@@ -42,7 +42,7 @@ public class ZipEntryBackupResource implements BackupResource {
 	/**
 	 * Constructor.
 	 * 
-	 * The {@code providerKey} will be set to {@code null}.
+	 * The {@code providerKey} will be set to {@literal null}.
 	 * 
 	 * @param archiveFile
 	 *        the archive file

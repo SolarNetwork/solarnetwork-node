@@ -46,7 +46,7 @@ public final class SerialUtils {
 	 *        the data array
 	 * @param offset
 	 *        the offset within the array to parse the value from
-	 * @return the float, or <em>null</em> if not available
+	 * @return the float, or {@literal null} if not available
 	 */
 	public static Float parseBigEndianFloat32(Integer[] data, int offset) {
 		Float result = null;
@@ -65,7 +65,7 @@ public final class SerialUtils {
 	 *        the data array
 	 * @param offset
 	 *        the offset within {@code data} to read from
-	 * @return the parsed float, or <em>null</em> if not available or parsed
+	 * @return the parsed float, or {@literal null} if not available or parsed
 	 *         float is {@code NaN}
 	 */
 	public static Float parseBigEndianFloat32(final int[] data, int offset) {
@@ -83,7 +83,7 @@ public final class SerialUtils {
 	 *        the high 16 bits
 	 * @param low
 	 *        the low 16 bits
-	 * @return the parsed float, or <em>null</em> if not available or parsed
+	 * @return the parsed float, or {@literal null} if not available or parsed
 	 *         float is {@code NaN}
 	 */
 	public static Float parseFloat32(final int high, final int low) {
@@ -102,7 +102,7 @@ public final class SerialUtils {
 	 * 
 	 * @param data
 	 *        the data array
-	 * @return the parsed float, or <em>null</em> if not available or parsed
+	 * @return the parsed float, or {@literal null} if not available or parsed
 	 *         float is {@code NaN}
 	 */
 	public static Float parseBigEndianFloat32(final Integer[] data) {
@@ -125,7 +125,7 @@ public final class SerialUtils {
 	 *        the data array
 	 * @param offset
 	 *        the offset within the array to parse the value from
-	 * @return the long, or <em>null</em> if not available
+	 * @return the long, or {@literal null} if not available
 	 */
 	public static Long parseBigEndianInt64(Integer[] data, int offset) {
 		Long result = null;

@@ -26,37 +26,37 @@ import static org.easymock.EasyMock.expect;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+import java.time.Instant;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import net.solarnetwork.node.UploadService;
 import net.solarnetwork.node.dao.DatumDao;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
+import net.solarnetwork.node.service.UploadService;
 import net.solarnetwork.node.upload.mqtt.UploadServiceDatumDao;
 
 /**
  * Test cases for the {@link UploadServiceDatumDao} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class UploadServiceDatumDaoTests {
 
 	private UploadService uploadService;
-	private DatumDao<GeneralNodeDatum> delegate;
-	private UploadServiceDatumDao<GeneralNodeDatum> dao;
+	private DatumDao delegate;
+	private UploadServiceDatumDao dao;
 
-	@SuppressWarnings("unchecked")
 	@Before
 	public void setup() {
 		uploadService = EasyMock.createMock(UploadService.class);
 		delegate = EasyMock.createMock(DatumDao.class);
-		dao = new UploadServiceDatumDao<>(uploadService, delegate);
+		dao = new UploadServiceDatumDao(uploadService, delegate);
 	}
 
 	@After
@@ -66,21 +66,6 @@ public class UploadServiceDatumDaoTests {
 
 	private void replayAll() {
 		EasyMock.replay(uploadService, delegate);
-	}
-
-	@SuppressWarnings("rawtypes")
-	@Test
-	public void delegateGetDatumType() {
-		// given
-		expect((Class) delegate.getDatumType()).andReturn(GeneralNodeDatum.class);
-
-		replayAll();
-
-		// when
-		Class<? extends GeneralNodeDatum> clazz = dao.getDatumType();
-
-		// then
-		assertThat("Datum class", clazz, equalTo(GeneralNodeDatum.class));
 	}
 
 	@Test
@@ -101,13 +86,13 @@ public class UploadServiceDatumDaoTests {
 	public void delegateGetDatumNotUploaded() {
 		// given
 		String dest = "foobar";
-		List<GeneralNodeDatum> list = Collections.emptyList();
+		List<NodeDatum> list = Collections.emptyList();
 		expect(delegate.getDatumNotUploaded(dest)).andReturn(list);
 
 		replayAll();
 
 		// when
-		List<GeneralNodeDatum> results = dao.getDatumNotUploaded(dest);
+		List<NodeDatum> results = dao.getDatumNotUploaded(dest);
 
 		// then
 		assertThat("Not uploaded", results, sameInstance(list));
@@ -117,9 +102,9 @@ public class UploadServiceDatumDaoTests {
 	public void delegateSetDatumUploaded() {
 		// given
 		String dest = "foobar";
-		Date date = new Date();
+		Instant date = Instant.now();
 		String txId = "test.id";
-		GeneralNodeDatum datum = new GeneralNodeDatum();
+		SimpleDatum datum = SimpleDatum.nodeDatum("test");
 		delegate.setDatumUploaded(datum, date, dest, txId);
 
 		replayAll();
@@ -131,8 +116,8 @@ public class UploadServiceDatumDaoTests {
 	@Test
 	public void storeDatumWithUploadSuccess() {
 		// given
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.putInstantaneousSampleValue("foo", 1);
+		SimpleDatum datum = SimpleDatum.nodeDatum("test");
+		datum.getSamples().putInstantaneousSampleValue("foo", 1);
 		String id = UUID.randomUUID().toString();
 		expect(uploadService.uploadDatum(datum)).andReturn(id);
 
@@ -145,8 +130,8 @@ public class UploadServiceDatumDaoTests {
 	@Test
 	public void storeDatumWithUploadNoId() {
 		// given
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.putInstantaneousSampleValue("foo", 1);
+		SimpleDatum datum = SimpleDatum.nodeDatum("test");
+		datum.getSamples().putInstantaneousSampleValue("foo", 1);
 		expect(uploadService.uploadDatum(datum)).andReturn(null);
 
 		// because no ID returned from UploadService, we fall back to persisting datum for later upload
@@ -161,8 +146,8 @@ public class UploadServiceDatumDaoTests {
 	@Test
 	public void storeDatumWithUploadThrowsException() {
 		// given
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.putInstantaneousSampleValue("foo", 1);
+		SimpleDatum datum = SimpleDatum.nodeDatum("test");
+		datum.getSamples().putInstantaneousSampleValue("foo", 1);
 		RuntimeException e = new RuntimeException("boo");
 		expect(uploadService.uploadDatum(datum)).andThrow(e);
 		delegate.storeDatum(datum);

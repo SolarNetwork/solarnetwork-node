@@ -23,18 +23,17 @@
 package net.solarnetwork.node.io.dnp3.impl.test;
 
 import static java.util.concurrent.Executors.newSingleThreadExecutor;
-import static net.solarnetwork.node.reactor.InstructionHandler.TOPIC_SET_CONTROL_PARAMETER;
-import static net.solarnetwork.node.reactor.InstructionStatus.InstructionState.Completed;
+import static net.solarnetwork.domain.InstructionStatus.InstructionState.Completed;
+import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
+import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -49,28 +48,28 @@ import net.solarnetwork.node.io.dnp3.domain.ControlConfig;
 import net.solarnetwork.node.io.dnp3.domain.ControlType;
 import net.solarnetwork.node.io.dnp3.impl.OutstationService;
 import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.test.CapturingExecutorService;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.OptionalServiceCollection;
-import net.solarnetwork.util.StaticOptionalService;
-import net.solarnetwork.util.StaticOptionalServiceCollection;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link OutstationService} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class OutstationServceTests {
 
 	private ChannelService channelService;
-	private InstructionHandler instructionHandler;
+	private InstructionExecutionService instructionService;
 
 	@Before
 	public void setup() {
 		channelService = EasyMock.createMock(ChannelService.class);
-		instructionHandler = EasyMock.createMock(InstructionHandler.class);
+		instructionService = EasyMock.createMock(InstructionExecutionService.class);
 	}
 
 	@After
@@ -79,21 +78,17 @@ public class OutstationServceTests {
 	}
 
 	private void replayAll() {
-		EasyMock.replay(channelService, instructionHandler);
+		EasyMock.replay(channelService, instructionService);
 	}
 
 	private void verifyAll() {
-		EasyMock.verify(channelService, instructionHandler);
+		EasyMock.verify(channelService, instructionService);
 	}
 
 	private TestOutstationService createOutstationService() {
-		return createOutstationService(Collections.singleton(instructionHandler));
-	}
-
-	private TestOutstationService createOutstationService(Collection<InstructionHandler> handlers) {
 		TestOutstationService service = new TestOutstationService(
-				new StaticOptionalService<ChannelService>(channelService),
-				new StaticOptionalServiceCollection<>(handlers));
+				new StaticOptionalService<>(channelService),
+				new StaticOptionalService<>(instructionService));
 
 		return service;
 	}
@@ -101,8 +96,8 @@ public class OutstationServceTests {
 	private static class TestOutstationService extends OutstationService {
 
 		public TestOutstationService(OptionalService<ChannelService> dnp3Channel,
-				OptionalServiceCollection<InstructionHandler> instructionHandlers) {
-			super(dnp3Channel, instructionHandlers);
+				OptionalService<InstructionExecutionService> instructionService) {
+			super(dnp3Channel, instructionService);
 		}
 
 		@Override
@@ -134,26 +129,31 @@ public class OutstationServceTests {
 
 	@Test
 	public void handleCROBLatchOn() {
-		// given
+		// GIVEN
 		TestOutstationService service = createOutstationService();
 
 		final String controlId = "/foo/switch";
 		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Binary);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
-		expect(instructionHandler.handlesTopic(TOPIC_SET_CONTROL_PARAMETER)).andReturn(true);
-
 		Capture<Instruction> instrCaptor = new Capture<>();
-		expect(instructionHandler.processInstruction(capture(instrCaptor))).andReturn(Completed);
+		expect(instructionService.executeInstruction(capture(instrCaptor)))
+				.andAnswer(new IAnswer<InstructionStatus>() {
 
-		// when
+					@Override
+					public InstructionStatus answer() throws Throwable {
+						return createStatus(instrCaptor.getValue(), Completed);
+					}
+				});
+
+		// WHEN
 		replayAll();
 		ControlRelayOutputBlock crob = new ControlRelayOutputBlock(ControlCode.LATCH_ON, (short) 1, 0, 0,
 				CommandStatus.SUCCESS);
 		CommandStatus status = service.getCommandHandler().operateCROB(crob, 0,
 				OperateType.DirectOperate);
 
-		// then
+		// THEN
 		assertThat("Command OK", status, equalTo(CommandStatus.SUCCESS));
 
 		Instruction instr = instrCaptor.getValue();
@@ -172,10 +172,15 @@ public class OutstationServceTests {
 		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Binary);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
-		expect(instructionHandler.handlesTopic(TOPIC_SET_CONTROL_PARAMETER)).andReturn(true);
-
 		Capture<Instruction> instrCaptor = new Capture<>();
-		expect(instructionHandler.processInstruction(capture(instrCaptor))).andReturn(Completed);
+		expect(instructionService.executeInstruction(capture(instrCaptor)))
+				.andAnswer(new IAnswer<InstructionStatus>() {
+
+					@Override
+					public InstructionStatus answer() throws Throwable {
+						return createStatus(instrCaptor.getValue(), Completed);
+					}
+				});
 
 		// when
 		replayAll();
@@ -205,10 +210,15 @@ public class OutstationServceTests {
 		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Binary);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
-		expect(instructionHandler.handlesTopic(TOPIC_SET_CONTROL_PARAMETER)).andReturn(true);
-
 		Capture<Instruction> instrCaptor = new Capture<>();
-		expect(instructionHandler.processInstruction(capture(instrCaptor))).andReturn(Completed);
+		expect(instructionService.executeInstruction(capture(instrCaptor)))
+				.andAnswer(new IAnswer<InstructionStatus>() {
+
+					@Override
+					public InstructionStatus answer() throws Throwable {
+						return createStatus(instrCaptor.getValue(), Completed);
+					}
+				});
 
 		// when
 		replayAll();
@@ -242,10 +252,15 @@ public class OutstationServceTests {
 		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Analog);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
-		expect(instructionHandler.handlesTopic(TOPIC_SET_CONTROL_PARAMETER)).andReturn(true);
-
 		Capture<Instruction> instrCaptor = new Capture<>();
-		expect(instructionHandler.processInstruction(capture(instrCaptor))).andReturn(Completed);
+		expect(instructionService.executeInstruction(capture(instrCaptor)))
+				.andAnswer(new IAnswer<InstructionStatus>() {
+
+					@Override
+					public InstructionStatus answer() throws Throwable {
+						return createStatus(instrCaptor.getValue(), Completed);
+					}
+				});
 
 		// when
 		replayAll();
@@ -274,10 +289,15 @@ public class OutstationServceTests {
 		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Analog);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
-		expect(instructionHandler.handlesTopic(TOPIC_SET_CONTROL_PARAMETER)).andReturn(true);
-
 		Capture<Instruction> instrCaptor = new Capture<>();
-		expect(instructionHandler.processInstruction(capture(instrCaptor))).andReturn(Completed);
+		expect(instructionService.executeInstruction(capture(instrCaptor)))
+				.andAnswer(new IAnswer<InstructionStatus>() {
+
+					@Override
+					public InstructionStatus answer() throws Throwable {
+						return createStatus(instrCaptor.getValue(), Completed);
+					}
+				});
 
 		// when
 		replayAll();

@@ -48,18 +48,18 @@ import io.netty.handler.codec.stomp.StompSubframeEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 import io.netty.util.concurrent.DefaultThreadFactory;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.support.BaseIdentifiable;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * A STOMP protocol server for SolarNode Setup, using Netty.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class StompSetupServer extends BaseIdentifiable
 		implements SettingsChangeObserver, SettingSpecifierProvider {
@@ -221,7 +221,7 @@ public class StompSetupServer extends BaseIdentifiable
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.setup.stomp";
 	}
 

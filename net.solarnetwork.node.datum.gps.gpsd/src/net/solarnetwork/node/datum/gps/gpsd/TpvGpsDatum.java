@@ -22,45 +22,48 @@
 
 package net.solarnetwork.node.datum.gps.gpsd;
 
-import java.util.Date;
-import net.solarnetwork.domain.GeneralNodeDatumSamples;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import java.time.Instant;
+import net.solarnetwork.domain.datum.DatumId;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.MutableDatumSamplesOperations;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.io.gpsd.domain.TpvReportMessage;
 
 /**
  * Datum for a {@link TpvReportMessage}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class TpvGpsDatum extends GeneralNodeDatum {
+public class TpvGpsDatum extends SimpleDatum {
+
+	private static final long serialVersionUID = 5942243017470296625L;
 
 	/**
 	 * Constructor.
 	 * 
 	 * @param tpv
 	 *        the report data
+	 * @param sourceId
+	 *        the source ID
 	 */
-	public TpvGpsDatum(TpvReportMessage tpv) {
-		super();
-		setCreated(new Date(tpv.getTimestamp() != null ? tpv.getTimestamp().toEpochMilli()
-				: System.currentTimeMillis()));
-
-		GeneralNodeDatumSamples s = new GeneralNodeDatumSamples();
-		setSamples(s);
-
-		putInstantaneousSampleValue("lat", tpv.getLatitude());
-		putInstantaneousSampleValue("lat_ep", tpv.getLatitudeError());
-		putInstantaneousSampleValue("lon", tpv.getLongitude());
-		putInstantaneousSampleValue("lon_ep", tpv.getLongitudeError());
-		putInstantaneousSampleValue("alt", tpv.getAltitude());
-		putInstantaneousSampleValue("alt_ep", tpv.getAltitudeError());
-		putInstantaneousSampleValue("course", tpv.getCourse());
-		putInstantaneousSampleValue("course_ep", tpv.getCourseError());
-		putInstantaneousSampleValue("speed", tpv.getSpeed());
-		putInstantaneousSampleValue("speed_ep", tpv.getSpeedError());
-		putInstantaneousSampleValue("climbRate", tpv.getClimbRate());
-		putInstantaneousSampleValue("climbRate_ep", tpv.getClimbRateError());
+	public TpvGpsDatum(TpvReportMessage tpv, String sourceId) {
+		super(DatumId.nodeId(null, sourceId,
+				tpv.getTimestamp() != null ? tpv.getTimestamp() : Instant.now()), new DatumSamples());
+		MutableDatumSamplesOperations ops = asMutableSampleOperations();
+		ops.putSampleValue(Instantaneous, "lat", tpv.getLatitude());
+		ops.putSampleValue(Instantaneous, "lat_ep", tpv.getLatitudeError());
+		ops.putSampleValue(Instantaneous, "lon", tpv.getLongitude());
+		ops.putSampleValue(Instantaneous, "lon_ep", tpv.getLongitudeError());
+		ops.putSampleValue(Instantaneous, "alt", tpv.getAltitude());
+		ops.putSampleValue(Instantaneous, "alt_ep", tpv.getAltitudeError());
+		ops.putSampleValue(Instantaneous, "course", tpv.getCourse());
+		ops.putSampleValue(Instantaneous, "course_ep", tpv.getCourseError());
+		ops.putSampleValue(Instantaneous, "speed", tpv.getSpeed());
+		ops.putSampleValue(Instantaneous, "speed_ep", tpv.getSpeedError());
+		ops.putSampleValue(Instantaneous, "climbRate", tpv.getClimbRate());
+		ops.putSampleValue(Instantaneous, "climbRate_ep", tpv.getClimbRateError());
 	}
 
 }

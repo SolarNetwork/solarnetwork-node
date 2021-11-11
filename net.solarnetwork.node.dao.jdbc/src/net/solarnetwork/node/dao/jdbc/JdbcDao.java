@@ -20,8 +20,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
  * 02111-1307 USA
  * ===================================================================
- * $Revision$
- * ===================================================================
  */
 
 package net.solarnetwork.node.dao.jdbc;
@@ -32,7 +30,7 @@ import org.springframework.context.MessageSource;
  * API for JDBC-based DAO implemtnations.
  * 
  * @author matt
- * @version $Revision$ $Date$
+ * @version 1.0
  */
 public interface JdbcDao {
 

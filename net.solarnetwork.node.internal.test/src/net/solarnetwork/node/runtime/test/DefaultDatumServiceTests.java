@@ -23,12 +23,12 @@
 package net.solarnetwork.node.runtime.test;
 
 import static java.util.Collections.singleton;
-import static net.solarnetwork.node.DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED;
-import static net.solarnetwork.node.support.DatumEvents.datumEvent;
+import static net.solarnetwork.node.service.DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED;
+import static net.solarnetwork.node.service.DatumEvents.datumEvent;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
+import java.time.Instant;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -41,8 +41,10 @@ import org.junit.Test;
 import org.osgi.service.event.Event;
 import org.springframework.util.AntPathMatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.runtime.DefaultDatumService;
 
 /**
@@ -60,13 +62,12 @@ public class DefaultDatumServiceTests {
 		service = new DefaultDatumService(new AntPathMatcher(), new ObjectMapper());
 	}
 
-	private Map<String, Datum> populateDatum() {
-		Map<String, Datum> all = new LinkedHashMap<>();
-		for ( int i = 0; i < 4; i++ ) {
+	private Map<String, NodeDatum> populateDatum() {
+		Map<String, NodeDatum> all = new LinkedHashMap<>();
+		for ( int i = 0; i < 5; i++ ) {
 			for ( int j = 0; j < 11; j++ ) {
-				GeneralNodeDatum datum = new GeneralNodeDatum();
-				datum.setSourceId(String.format("test.%d", j));
-				datum.setCreated(new Date());
+				SimpleDatum datum = SimpleDatum.nodeDatum(String.format("test.%d", j),
+						Instant.now(), new DatumSamples());
 				all.put(datum.getSourceId(), datum);
 
 				Event evt = datumEvent(EVENT_TOPIC_DATUM_CAPTURED, datum);
@@ -79,10 +80,11 @@ public class DefaultDatumServiceTests {
 	@Test
 	public void latest_all() {
 		// GIVEN
-		Map<String, Datum> all = populateDatum();
+		Map<String, NodeDatum> all = populateDatum();
 
 		// WHEN
-		List<Datum> latest = StreamSupport.stream(service.latest(null, Datum.class).spliterator(), false)
+		List<NodeDatum> latest = StreamSupport
+				.stream(service.latest(null, NodeDatum.class).spliterator(), false)
 				.collect(Collectors.toList());
 
 		// THEN
@@ -93,12 +95,12 @@ public class DefaultDatumServiceTests {
 	@Test
 	public void latest_filter_oneSource() {
 		// GIVEN
-		Map<String, Datum> all = populateDatum();
+		Map<String, NodeDatum> all = populateDatum();
 
 		// WHEN
 		String sourceId = "test.2";
-		List<Datum> latest = StreamSupport
-				.stream(service.latest(singleton(sourceId), Datum.class).spliterator(), false)
+		List<NodeDatum> latest = StreamSupport
+				.stream(service.latest(singleton(sourceId), NodeDatum.class).spliterator(), false)
 				.collect(Collectors.toList());
 
 		// THEN
@@ -109,12 +111,12 @@ public class DefaultDatumServiceTests {
 	@Test
 	public void latest_filter_multiSource() {
 		// GIVEN
-		Map<String, Datum> all = populateDatum();
+		Map<String, NodeDatum> all = populateDatum();
 
 		// WHEN
 		Set<String> sourceIds = new LinkedHashSet<>(Arrays.asList("test.1", "test.3", "test.5"));
-		List<Datum> latest = StreamSupport
-				.stream(service.latest(sourceIds, Datum.class).spliterator(), false)
+		List<NodeDatum> latest = StreamSupport
+				.stream(service.latest(sourceIds, NodeDatum.class).spliterator(), false)
 				.collect(Collectors.toList());
 
 		// THEN
@@ -125,11 +127,11 @@ public class DefaultDatumServiceTests {
 	@Test
 	public void latest_filter_pattern() {
 		// GIVEN
-		Map<String, Datum> all = populateDatum();
+		Map<String, NodeDatum> all = populateDatum();
 
 		// WHEN
-		List<Datum> latest = StreamSupport
-				.stream(service.latest(singleton("test.1*"), Datum.class).spliterator(), false)
+		List<NodeDatum> latest = StreamSupport
+				.stream(service.latest(singleton("test.1*"), NodeDatum.class).spliterator(), false)
 				.collect(Collectors.toList());
 
 		// THEN

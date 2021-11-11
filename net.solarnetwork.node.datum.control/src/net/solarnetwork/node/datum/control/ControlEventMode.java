@@ -30,6 +30,9 @@ package net.solarnetwork.node.datum.control;
  */
 public enum ControlEventMode {
 
+	/** Only generate datum via polling, not in response to control events. */
+	None,
+
 	/** Generate datum only when control info is captured. */
 	Capture,
 

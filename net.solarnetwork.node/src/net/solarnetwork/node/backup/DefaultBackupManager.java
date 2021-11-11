@@ -52,11 +52,10 @@ import org.springframework.context.HierarchicalMessageSource;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.util.FileCopyUtils;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicRadioGroupSettingSpecifier;
-import net.solarnetwork.node.util.PrefixedMessageSource;
-import net.solarnetwork.util.DynamicServiceUnavailableException;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.service.DynamicServiceUnavailableException;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicRadioGroupSettingSpecifier;
+import net.solarnetwork.support.PrefixedMessageSource;
 import net.solarnetwork.util.StringUtils;
 import net.solarnetwork.util.UnionIterator;
 
@@ -64,7 +63,7 @@ import net.solarnetwork.util.UnionIterator;
  * Default implementation of {@link BackupManager}.
  * 
  * @author matt
- * @version 1.6
+ * @version 2.0
  */
 public class DefaultBackupManager implements BackupManager {
 
@@ -144,7 +143,7 @@ public class DefaultBackupManager implements BackupManager {
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return getClass().getName();
 	}
 
@@ -490,18 +489,6 @@ public class DefaultBackupManager implements BackupManager {
 			}
 		}
 		return null;
-	}
-
-	/**
-	 * Set the tracker for the desired backup service to use.
-	 * 
-	 * @param backupServiceTracker
-	 *        the tracker to use
-	 * @deprecated use {@link #setBackupServices(Collection)}
-	 */
-	@Deprecated
-	public void setBackupServiceTracker(OptionalService<BackupService> backupServiceTracker) {
-		// ignore this
 	}
 
 	/**

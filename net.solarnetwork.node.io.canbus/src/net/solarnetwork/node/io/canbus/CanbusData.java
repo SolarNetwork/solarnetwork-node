@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.canbus;
 
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -46,7 +47,7 @@ import net.solarnetwork.util.ByteUtils;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class CanbusData implements DataAccessor {
 
@@ -80,8 +81,8 @@ public class CanbusData implements DataAccessor {
 	}
 
 	@Override
-	public long getDataTimestamp() {
-		return dataTimestamp;
+	public Instant getDataTimestamp() {
+		return dataTimestamp > 0 ? Instant.ofEpochMilli(dataTimestamp) : null;
 	}
 
 	@Override

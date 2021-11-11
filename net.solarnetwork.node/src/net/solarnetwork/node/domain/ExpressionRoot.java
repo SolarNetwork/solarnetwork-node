@@ -22,14 +22,19 @@
 
 package net.solarnetwork.node.domain;
 
+import static java.util.Collections.singleton;
+import java.util.Collection;
 import java.util.Map;
-import net.solarnetwork.domain.DatumSamplesExpressionRoot;
-import net.solarnetwork.domain.GeneralDatumSamples;
+import net.solarnetwork.domain.DatumExpressionRoot;
 import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamplesExpressionRoot;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.DatumService;
 
 /**
  * An object to use as the "root" for
- * {@link net.solarnetwork.support.ExpressionService} evaluation.
+ * {@link net.solarnetwork.service.ExpressionService} evaluation.
  * 
  * <p>
  * This object extends {@link DatumSamplesExpressionRoot} to allow all datum
@@ -38,10 +43,12 @@ import net.solarnetwork.domain.datum.Datum;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 2.0
  * @since 1.79
  */
 public class ExpressionRoot extends DatumSamplesExpressionRoot {
+
+	private final DatumService datumService;
 
 	/**
 	 * Constructor.
@@ -50,7 +57,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	 *        the datum currently being populated
 	 */
 	public ExpressionRoot(Datum datum) {
-		this(datum, null, null);
+		this(datum, null, null, null);
 	}
 
 	/**
@@ -61,8 +68,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	 * @param samples
 	 *        the samples
 	 */
-	public ExpressionRoot(Datum datum, GeneralDatumSamples samples) {
-		this(datum, samples, null);
+	public ExpressionRoot(Datum datum, DatumSamplesOperations samples) {
+		this(datum, samples, null, null);
 	}
 
 	/**
@@ -75,7 +82,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	 * @since 1.2
 	 */
 	public ExpressionRoot(Map<String, ?> data, Datum datum) {
-		this(datum, null, data);
+		this(datum, null, data, null);
 	}
 
 	/**
@@ -87,9 +94,62 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	 *        the samples
 	 * @param parameters
 	 *        the parameters
+	 * @param datumService
+	 *        the optional datum service
 	 */
-	public ExpressionRoot(Datum datum, GeneralDatumSamples samples, Map<String, ?> parameters) {
+	public ExpressionRoot(Datum datum, DatumSamplesOperations samples, Map<String, ?> parameters,
+			DatumService datumService) {
 		super(datum, samples, parameters);
+		this.datumService = datumService;
+	}
+
+	/**
+	 * Test if a "latest" datum is available for a given source ID.
+	 * 
+	 * <p>
+	 * This can be used to test if {@link #latest(String)} will return a
+	 * non-null value.
+	 * </p>
+	 * 
+	 * @param sourceId
+	 *        the source ID of the datum to look for
+	 * @return {@literal true} if {@link #latest(String)} for the given
+	 *         {@code sourceId} will return a non-null value
+	 */
+	public boolean hasLatest(String sourceId) {
+		if ( datumService == null || sourceId == null ) {
+			return false;
+		}
+		Collection<NodeDatum> d = datumService.latest(singleton(sourceId), NodeDatum.class);
+		return (d != null && !d.isEmpty());
+	}
+
+	/**
+	 * Get the latest available datum for a given source ID, as an
+	 * {@link DatumExpressionRoot}.
+	 * 
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 * 
+	 * @param sourceId
+	 *        the source ID of the datum to look for
+	 * @return the latest datum, or {@literal null} if {@code sourceId} is
+	 *         {@literal null}, the {@link DatumService} provided to this
+	 *         instance's constructor was {@literal null}, or
+	 *         {@link DatumService#latest(java.util.Set, Class)} returns
+	 *         {@literal null} for the given {@code sourceId}
+	 */
+	public DatumExpressionRoot latest(String sourceId) {
+		if ( datumService == null || sourceId == null ) {
+			return null;
+		}
+		Collection<NodeDatum> d = datumService.latest(singleton(sourceId), NodeDatum.class);
+		if ( d == null || d.isEmpty() ) {
+			return null;
+		}
+		return new ExpressionRoot(d.iterator().next());
 	}
 
 }

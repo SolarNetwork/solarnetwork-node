@@ -32,13 +32,13 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import de.michaeldenk.yasdi4j.YasdiDevice;
-import net.solarnetwork.node.LockTimeoutException;
+import net.solarnetwork.node.service.LockTimeoutException;
 
 /**
  * Implementation of {@link YasdiMaster}.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class YasdiMasterDevice implements YasdiMaster {
 
@@ -51,14 +51,16 @@ public class YasdiMasterDevice implements YasdiMaster {
 	/**
 	 * Constructor.
 	 * 
-	 * @param device
-	 *        the device
+	 * @param devices
+	 *        the devices
+	 * @param commDevice
+	 *        the device name
 	 */
 	public YasdiMasterDevice(Collection<YasdiDevice> devices, String commDevice) {
 		super();
 		this.devices = devices;
 		this.commDevice = commDevice;
-		this.locks = new HashMap<Long, ReentrantLock>(devices == null ? 0 : devices.size());
+		this.locks = new HashMap<>(devices == null ? 0 : devices.size());
 		if ( devices != null ) {
 			for ( YasdiDevice device : devices ) {
 				locks.put(device.getSN(), new ReentrantLock(true));

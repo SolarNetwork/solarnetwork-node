@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.io.gpsd.util;
 
-import static net.solarnetwork.node.io.gpsd.util.JsonUtils.writeNumberField;
+import static net.solarnetwork.codec.JsonUtils.writeNumberField;
 import java.io.IOException;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.SerializerProvider;
@@ -32,7 +32,7 @@ import net.solarnetwork.node.io.gpsd.domain.VersionMessage;
  * Serializer for {@link VersionMessage} objects.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class VersionMessageSerializer extends AbstractGpsdMessageSerializer<VersionMessage> {
 

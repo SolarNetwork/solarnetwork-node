@@ -5,7 +5,7 @@
 		http://www.osgi.org/xmlns/blueprint/v1.0.0
 		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd">
 		
-	<service interface="net.solarnetwork.node.reactor.FeedbackInstructionHandler">
+	<service interface="net.solarnetwork.node.reactor.InstructionHandler">
 		<service-properties>
 			<entry key="instruction">
 				<array value-type="java.lang.String">

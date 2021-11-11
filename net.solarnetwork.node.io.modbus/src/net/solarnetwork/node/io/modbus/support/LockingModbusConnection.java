@@ -29,10 +29,10 @@ import java.util.BitSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
-import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
+import net.solarnetwork.node.service.LockTimeoutException;
 
 /**
  * A {@link ModbusConnection} that wraps another connection with a lock.
@@ -43,7 +43,7 @@ import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  * @since 3.3
  */
 public class LockingModbusConnection implements ModbusConnection {

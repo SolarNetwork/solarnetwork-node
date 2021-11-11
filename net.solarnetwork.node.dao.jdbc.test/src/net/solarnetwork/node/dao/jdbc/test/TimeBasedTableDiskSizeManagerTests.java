@@ -45,7 +45,7 @@ import net.solarnetwork.node.dao.jdbc.TimeBasedTableDiskSizeManager;
 import net.solarnetwork.node.dao.jdbc.derby.DerbyDatabaseSystemService;
 import net.solarnetwork.node.dao.jdbc.derby.DerbyFullCompressTablesService;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Tests for the {@link TimeBasedTableDiskSizeManager} class.
@@ -72,7 +72,7 @@ public class TimeBasedTableDiskSizeManagerTests extends AbstractNodeTransactiona
 	@Before
 	public void setup() {
 		jdbcTemplate = new JdbcTemplate(dataSource);
-		manager = new TimeBasedTableDiskSizeManager();
+		manager = new TimeBasedTableDiskSizeManager(jdbcTemplate);
 		dbService = new DerbyDatabaseSystemService();
 		dbService.setJdbcOperations(jdbcTemplate);
 
@@ -80,7 +80,6 @@ public class TimeBasedTableDiskSizeManagerTests extends AbstractNodeTransactiona
 		compressService.setJdbcOperations(jdbcTemplate);
 		dbService.setCompressTablesService(compressService);
 
-		manager.setJdbcOperations(jdbcTemplate);
 		manager.setDbSystemService(new StaticOptionalService<DatabaseSystemService>(dbService));
 		manager.setMinTableSizeThreshold(1024);
 		manager.setSchemaName("SOLARNODE");
@@ -160,7 +159,7 @@ public class TimeBasedTableDiskSizeManagerTests extends AbstractNodeTransactiona
 	}
 
 	@Test
-	public void test() {
+	public void test() throws Exception {
 		final Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 		cal.set(Calendar.MILLISECOND, 0);
 		cal.set(Calendar.SECOND, 0);
@@ -176,7 +175,7 @@ public class TimeBasedTableDiskSizeManagerTests extends AbstractNodeTransactiona
 
 		long diskSizeBefore = totalDiskSize(dbDir);
 
-		manager.performMaintenance();
+		manager.executeJobService();
 
 		int count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM SOLARNODE.TEST_TIME_BASED",
 				Integer.class);

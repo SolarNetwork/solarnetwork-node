@@ -49,10 +49,10 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 import net.solarnetwork.domain.KeyValuePair;
-import net.solarnetwork.node.Setting;
-import net.solarnetwork.node.Setting.SettingFlag;
 import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.domain.Setting.SettingFlag;
+import net.solarnetwork.service.OptionalService;
 
 /**
  * Simple JDBC-based implementation of {@link SettingDao}.
@@ -72,7 +72,7 @@ import net.solarnetwork.util.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 1.7
+ * @version 2.0
  */
 public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements SettingDao {
 
@@ -197,21 +197,6 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 			return res.get(0);
 		}
 		return null;
-	}
-
-	@SuppressWarnings("deprecation")
-	@Override
-	public List<net.solarnetwork.node.support.KeyValuePair> getSettings(String key) {
-		return getJdbcTemplate().query(this.sqlFind,
-				new RowMapper<net.solarnetwork.node.support.KeyValuePair>() {
-
-					@Override
-					public net.solarnetwork.node.support.KeyValuePair mapRow(ResultSet rs, int rowNum)
-							throws SQLException {
-						return new net.solarnetwork.node.support.KeyValuePair(rs.getString(1),
-								rs.getString(2));
-					}
-				}, key);
 	}
 
 	@Override

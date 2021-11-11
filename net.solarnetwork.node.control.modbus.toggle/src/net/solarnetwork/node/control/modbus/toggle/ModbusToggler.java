@@ -23,10 +23,10 @@
 package net.solarnetwork.node.control.modbus.toggle;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,10 +34,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
+import net.solarnetwork.domain.BasicNodeControlInfo;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.domain.NodeControlPropertyType;
-import net.solarnetwork.node.NodeControlProvider;
-import net.solarnetwork.node.domain.NodeControlInfoDatum;
+import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusFunction;
@@ -46,25 +47,27 @@ import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
 import net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.support.DatumEvents;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.NodeControlProvider;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.CachedResult;
-import net.solarnetwork.util.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * Control a Modbus "coil" or "holding" type digital switch register on and off.
  * 
  * @author matt
- * @version 2.1
+ * @version 3.0
  */
 public class ModbusToggler extends ModbusDeviceSupport
-		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler, DatumEvents {
+		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
 
 	/** The default value for the {@code address} property. */
 	public static final int DEFAULT_ADDRESS = 0x4008;
@@ -72,7 +75,7 @@ public class ModbusToggler extends ModbusDeviceSupport
 	/** The default value for the {@code controlId} property. */
 	public static final String DEFAULT_CONTROL_ID = "/switch/1";
 
-	private final AtomicReference<CachedResult<NodeControlInfoDatum>> cachedSample = new AtomicReference<CachedResult<NodeControlInfoDatum>>(
+	private final AtomicReference<CachedResult<SimpleNodeControlInfoDatum>> cachedSample = new AtomicReference<CachedResult<SimpleNodeControlInfoDatum>>(
 			null);
 
 	private int address = DEFAULT_ADDRESS;
@@ -91,13 +94,13 @@ public class ModbusToggler extends ModbusDeviceSupport
 	 * 
 	 * @return Boolean for the switch status, or {@literal null} if not known
 	 */
-	private NodeControlInfoDatum currentValue() throws IOException {
-		CachedResult<NodeControlInfoDatum> result = cachedSample.get();
+	private SimpleNodeControlInfoDatum currentValue() throws IOException {
+		CachedResult<SimpleNodeControlInfoDatum> result = cachedSample.get();
 		if ( result == null || !result.isValid() ) {
 			Boolean value = readCurrentValue();
 			if ( value != null ) {
-				NodeControlInfoDatum data = newNodeControlInfoDatum(this.controlId, value);
-				cachedSample.compareAndSet(result, new CachedResult<NodeControlInfoDatum>(data,
+				SimpleNodeControlInfoDatum data = newSimpleNodeControlInfoDatum(this.controlId, value);
+				cachedSample.compareAndSet(result, new CachedResult<SimpleNodeControlInfoDatum>(data,
 						sampleCacheMs, TimeUnit.MILLISECONDS));
 				result = cachedSample.get();
 			}
@@ -167,9 +170,9 @@ public class ModbusToggler extends ModbusDeviceSupport
 			}
 		});
 		if ( result ) {
-			NodeControlInfoDatum data = newNodeControlInfoDatum(this.controlId, result);
-			cachedSample.set(
-					new CachedResult<NodeControlInfoDatum>(data, sampleCacheMs, TimeUnit.MILLISECONDS));
+			SimpleNodeControlInfoDatum data = newSimpleNodeControlInfoDatum(this.controlId, result);
+			cachedSample.set(new CachedResult<SimpleNodeControlInfoDatum>(data, sampleCacheMs,
+					TimeUnit.MILLISECONDS));
 		}
 		return result;
 	}
@@ -193,7 +196,7 @@ public class ModbusToggler extends ModbusDeviceSupport
 		}
 		// read the control's current status
 		log.debug("Reading {} status", controlId);
-		NodeControlInfoDatum result = null;
+		SimpleNodeControlInfoDatum result = null;
 		try {
 			result = currentValue();
 		} catch ( Exception e ) {
@@ -205,17 +208,19 @@ public class ModbusToggler extends ModbusDeviceSupport
 		return result;
 	}
 
-	private NodeControlInfoDatum newNodeControlInfoDatum(String controlId, Boolean status) {
-		NodeControlInfoDatum info = new NodeControlInfoDatum();
-		info.setCreated(new Date());
-		info.setSourceId(controlId);
-		info.setType(NodeControlPropertyType.Boolean);
-		info.setReadonly(false);
-		info.setValue(status.toString());
-		return info;
+	private SimpleNodeControlInfoDatum newSimpleNodeControlInfoDatum(String controlId, Boolean status) {
+		// @formatter:off
+		NodeControlInfo info = BasicNodeControlInfo.builder()
+				.withControlId(resolvePlaceholders(controlId))
+				.withType(NodeControlPropertyType.Boolean)
+				.withReadonly(false)
+				.withValue(status.toString())
+				.build();
+		// @formatter:on
+		return new SimpleNodeControlInfoDatum(info, Instant.now());
 	}
 
-	private void postControlEvent(NodeControlInfoDatum info, String topic) {
+	private void postControlEvent(SimpleNodeControlInfoDatum info, String topic) {
 		final EventAdmin admin = (eventAdmin != null ? eventAdmin.service() : null);
 		if ( admin == null ) {
 			return;
@@ -232,7 +237,7 @@ public class ModbusToggler extends ModbusDeviceSupport
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		if ( !InstructionHandler.TOPIC_SET_CONTROL_PARAMETER.equals(instruction.getTopic()) ) {
 			return null;
 		}
@@ -253,7 +258,7 @@ public class ModbusToggler extends ModbusDeviceSupport
 							controlId, e.getMessage());
 				}
 				if ( success ) {
-					postControlEvent(newNodeControlInfoDatum(controlId, desiredValue),
+					postControlEvent(newSimpleNodeControlInfoDatum(controlId, desiredValue),
 							NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED);
 					result = InstructionState.Completed;
 				} else {
@@ -261,13 +266,13 @@ public class ModbusToggler extends ModbusDeviceSupport
 				}
 			}
 		}
-		return result;
+		return (result != null ? InstructionUtils.createStatus(instruction, result) : null);
 	}
 
 	// SettingSpecifierProvider
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.control.modbus.toggle";
 	}
 
@@ -284,7 +289,7 @@ public class ModbusToggler extends ModbusDeviceSupport
 		// get current value
 		BasicTitleSettingSpecifier status = new BasicTitleSettingSpecifier("status", "N/A", true);
 		try {
-			NodeControlInfoDatum val = currentValue();
+			SimpleNodeControlInfoDatum val = currentValue();
 			if ( val != null ) {
 				status.setDefaultValue(val.getValue());
 			}
@@ -294,8 +299,8 @@ public class ModbusToggler extends ModbusDeviceSupport
 		results.add(status);
 
 		results.add(new BasicTextFieldSettingSpecifier("controlId", defaults.getControlId()));
-		results.add(new BasicTextFieldSettingSpecifier("groupUID", defaults.getGroupUID()));
-		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['UID']",
+		results.add(new BasicTextFieldSettingSpecifier("groupUid", defaults.getGroupUid()));
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['uid']",
 				"Serial Port"));
 		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(defaults.getUnitId())));
 		results.add(

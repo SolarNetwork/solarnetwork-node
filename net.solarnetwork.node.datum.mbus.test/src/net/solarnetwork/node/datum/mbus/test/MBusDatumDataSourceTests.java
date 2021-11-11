@@ -22,23 +22,25 @@
 
 package net.solarnetwork.node.datum.mbus.test;
 
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.Instant;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
+import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.datum.mbus.MBusDatumDataSource;
 import net.solarnetwork.node.datum.mbus.MBusPropertyConfig;
 import net.solarnetwork.node.datum.mbus.WMBusDatumDataSource;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.io.mbus.MBusConnection;
 import net.solarnetwork.node.io.mbus.MBusData;
 import net.solarnetwork.node.io.mbus.MBusDataDescription;
@@ -46,13 +48,13 @@ import net.solarnetwork.node.io.mbus.MBusDataRecord;
 import net.solarnetwork.node.io.mbus.MBusDataType;
 import net.solarnetwork.node.io.mbus.MBusMessage;
 import net.solarnetwork.node.io.mbus.MBusNetwork;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link WMBusDatumDataSource} class.
  * 
  * @author alex
- * @version 1.0
+ * @version 2.0
  */
 public class MBusDatumDataSourceTests {
 
@@ -90,14 +92,14 @@ public class MBusDatumDataSourceTests {
 	public void readDatumWithInstantaneousValues() throws IOException {
 		// GIVEN
 		MBusPropertyConfig[] propConfigs = new MBusPropertyConfig[] {
-				new MBusPropertyConfig(TEST_BCD_PROP_NAME, GeneralDatumSamplesType.Instantaneous,
+				new MBusPropertyConfig(TEST_BCD_PROP_NAME, DatumSamplesType.Instantaneous,
 						MBusDataType.BCD, MBusDataDescription.Volume, BigDecimal.ONE, 3),
-				new MBusPropertyConfig(TEST_DOUBLE_PROP_NAME, GeneralDatumSamplesType.Instantaneous,
+				new MBusPropertyConfig(TEST_DOUBLE_PROP_NAME, DatumSamplesType.Instantaneous,
 						MBusDataType.Double, MBusDataDescription.Energy, BigDecimal.ONE, 3),
-				new MBusPropertyConfig(TEST_LONG_PROP_NAME, GeneralDatumSamplesType.Instantaneous,
+				new MBusPropertyConfig(TEST_LONG_PROP_NAME, DatumSamplesType.Instantaneous,
 						MBusDataType.Long, MBusDataDescription.Current, BigDecimal.ONE, 0), };
 		dataSource.setPropConfigs(propConfigs);
-		final MBusData data = new MBusMessage(new Date());
+		final MBusData data = new MBusMessage(Instant.now());
 		data.dataRecords.add(new MBusDataRecord(MBusDataDescription.Volume, MBusDataType.BCD, 27L, -3));
 		data.dataRecords.add(new MBusDataRecord(MBusDataDescription.Energy, 1.234, 0));
 		data.dataRecords
@@ -115,16 +117,20 @@ public class MBusDatumDataSourceTests {
 		expect(mbusConnection.read()).andReturn(data);
 		replayAll();
 
-		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+		NodeDatum datum = dataSource.readCurrentDatum();
 
 		// THEN
 		assertThat("Datum returned", datum, notNullValue());
-		assertThat("Created", datum.getCreated(), notNullValue());
+		assertThat("Created", datum.getTimestamp(), notNullValue());
 		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
-		assertThat("BCD value", datum.getInstantaneousSampleDouble(TEST_BCD_PROP_NAME), equalTo(0.027));
-		assertThat("Double value", datum.getInstantaneousSampleDouble(TEST_DOUBLE_PROP_NAME),
+		assertThat("BCD value",
+				datum.asSampleOperations().getSampleDouble(Instantaneous, TEST_BCD_PROP_NAME),
+				equalTo(0.027));
+		assertThat("Double value",
+				datum.asSampleOperations().getSampleDouble(Instantaneous, TEST_DOUBLE_PROP_NAME),
 				equalTo(1.234));
-		assertThat("Long value", datum.getInstantaneousSampleDouble(TEST_LONG_PROP_NAME),
+		assertThat("Long value",
+				datum.asSampleOperations().getSampleDouble(Instantaneous, TEST_LONG_PROP_NAME),
 				equalTo(874234.0));
 	}
 
@@ -132,9 +138,9 @@ public class MBusDatumDataSourceTests {
 	public void readDatumWithStatusInteger() throws IOException {
 		// GIVEN
 		MBusPropertyConfig[] propConfigs = new MBusPropertyConfig[] {
-				new MBusPropertyConfig(TEST_STATUS_PROP_NAME, GeneralDatumSamplesType.Status), };
+				new MBusPropertyConfig(TEST_STATUS_PROP_NAME, DatumSamplesType.Status), };
 		dataSource.setPropConfigs(propConfigs);
-		final MBusData data = new MBusData(new Date());
+		final MBusData data = new MBusData(Instant.now());
 		final int expected = 7;
 		data.status = expected;
 
@@ -150,12 +156,13 @@ public class MBusDatumDataSourceTests {
 		expect(mbusConnection.read()).andReturn(data);
 		replayAll();
 
-		GeneralNodeDatum datum = dataSource.readCurrentDatum();
+		NodeDatum datum = dataSource.readCurrentDatum();
 
 		// THEN
 		assertThat("Datum returned", datum, notNullValue());
-		assertThat("Created", datum.getCreated(), notNullValue());
-		assertThat("Status", datum.getStatusSampleInteger(TEST_STATUS_PROP_NAME), equalTo(expected));
+		assertThat("Created", datum.getTimestamp(), notNullValue());
+		assertThat("Status", datum.asSampleOperations().getSampleInteger(Status, TEST_STATUS_PROP_NAME),
+				equalTo(expected));
 	}
 
 }

@@ -26,39 +26,40 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
-import static net.solarnetwork.node.OperationalModesService.EVENT_PARAM_ACTIVE_OPERATIONAL_MODES;
-import static net.solarnetwork.node.OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED;
+import static net.solarnetwork.node.service.OperationalModesService.EVENT_PARAM_ACTIVE_OPERATIONAL_MODES;
+import static net.solarnetwork.node.service.OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
-import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
+import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
 import net.solarnetwork.domain.DeviceOperatingState;
-import net.solarnetwork.node.OperationalModesService;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.control.opmode.OperationalStateManager;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionHandler;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
+import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link OperationalStateManager} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class OperationalStateManagerTests {
 
@@ -102,8 +103,16 @@ public class OperationalStateManagerTests {
 		// given
 		Capture<Instruction> instructionCaptor = new Capture<>(CaptureType.ALL);
 		expect(instrService.executeInstruction(capture(instructionCaptor)))
-				.andReturn(new BasicInstructionStatus(null, InstructionState.Completed, new Date()))
-				.times(2);
+				.andAnswer(new IAnswer<InstructionStatus>() {
+
+					@Override
+					public InstructionStatus answer() throws Throwable {
+						return InstructionUtils.createStatus(
+								instructionCaptor.getValues()
+										.get(instructionCaptor.getValues().size() - 1),
+								InstructionState.Completed);
+					}
+				}).times(2);
 
 		// when
 		replayAll();
@@ -136,8 +145,16 @@ public class OperationalStateManagerTests {
 
 		Capture<Instruction> instructionCaptor = new Capture<>(CaptureType.ALL);
 		expect(instrService.executeInstruction(capture(instructionCaptor)))
-				.andReturn(new BasicInstructionStatus(null, InstructionState.Completed, new Date()))
-				.times(2);
+				.andAnswer(new IAnswer<InstructionStatus>() {
+
+					@Override
+					public InstructionStatus answer() throws Throwable {
+						return InstructionUtils.createStatus(
+								instructionCaptor.getValues()
+										.get(instructionCaptor.getValues().size() - 1),
+								InstructionState.Completed);
+					}
+				}).times(2);
 
 		// when
 		replayAll();
@@ -160,4 +177,5 @@ public class OperationalStateManagerTests {
 					equalTo(String.valueOf(DeviceOperatingState.Normal.getCode())));
 		}
 	}
+
 }

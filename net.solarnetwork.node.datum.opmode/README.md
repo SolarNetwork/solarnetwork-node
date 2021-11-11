@@ -2,16 +2,8 @@
 
 This project provides a SolarNode plugin that allows you to configure groups of datum data sources
 that respond to operational mode changes. As modes are activated, matching data sources can be
-scheduled to sample data at a schedule specific to that mode. When modes are deactivated, the
-sampling configured for that schedule will stop.
-
-**Note** that this plugin merely _requests_ the datum data sources to provide a new datum. This
-plugin doesn't actually do anything with the returned datum. This is still useful, however, because datum
-data sources generally emit a `DATUM_CAPTURED` event when they provide a new sample. That event
-can be used by other plugins. For example, the [SolarFlux Upload][solarflux-upload] plugin listens
-for `DATUM_CAPTURED` events and uploads the associated datum to [SolarFlux][solarflux]. Thus you
-could use an operational mode to toggle higher-frequency datum sampling to SolarFlux on and off.
-
+scheduled to poll for datum at a schedule specific to that mode. When modes are deactivated, the
+polling configured for that schedule will stop.
 
 ![settings](docs/solarnode-datum-opmode-invoker-settings.png)
 
@@ -54,16 +46,18 @@ are left empty all data sources will be included in the configuration.
 | Service Group | The service group of a data source to match. |
 | Datum Type | The datum type the data source must collect. |
 | Schedule | Either a number of seconds, or a cron expression, at which to sample datum from the data sources matching this configuration. |
+| Persist | When enabled, then persist the polled datum in SolarNetwork. Otherwise the datum are still available for other plugins to use but not persisted. |
+
 
 ## Overall device settings notes
 
-<dl>
-	<dt>Schedule</dt>
-	<dd>If just a number, then the frequency in seconds at which to collect samples. Otherwise a 
-	<a href="https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Cron-Job-Syntax">cron expression</a>
-	representing the schedule at which to collect samples.</dd>
-</dl>
+ * **Schedule:** if just a number, then the frequency in seconds at which to poll for datum. Otherwise a 
+   [cron expression][cron-syntax] representing the schedule at which to poll for datum.
+ * **Persist:** when disabled the datum polled from the configured data sources can be used by other plugins. For 
+	example, the [SolarFlux Upload][solarflux-upload] plugin will upload the datum to [SolarFlux][solarflux]. Thus 
+	you could use an operational mode to toggle higher-frequency datum sampling to SolarFlux on and off.
 
 
+[cron-syntax]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Cron-Job-Syntax
 [solarflux]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarFlux-API
 [solarflux-upload]: https://github.com/SolarNetwork/solarnetwork-node/tree/develop/net.solarnetwork.node.upload.flux

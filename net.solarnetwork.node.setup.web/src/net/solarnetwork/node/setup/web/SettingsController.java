@@ -54,15 +54,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
-import net.solarnetwork.node.IdentityService;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
 import net.solarnetwork.node.backup.BackupServiceSupport;
-import net.solarnetwork.node.settings.FactorySettingSpecifierProvider;
+import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.settings.SettingResourceHandler;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
 import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
@@ -71,8 +68,11 @@ import net.solarnetwork.node.settings.support.SettingSpecifierProviderFactoryMes
 import net.solarnetwork.node.settings.support.SettingSpecifierProviderMessageComparator;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
-import net.solarnetwork.support.SearchFilter;
-import net.solarnetwork.util.OptionalService;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.settings.FactorySettingSpecifierProvider;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingSpecifierProviderFactory;
+import net.solarnetwork.util.SearchFilter;
 import net.solarnetwork.web.domain.Response;
 import net.solarnetwork.web.support.MultipartFileResource;
 
@@ -80,7 +80,7 @@ import net.solarnetwork.web.support.MultipartFileResource;
  * Web controller for the settings UI.
  * 
  * @author matt
- * @version 1.10
+ * @version 2.0
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -180,12 +180,12 @@ public class SettingsController {
 	}
 
 	@RequestMapping(value = { "/manage", "/filters/manage" }, method = RequestMethod.GET)
-	public String settingsList(@RequestParam(value = "uid", required = true) String factoryUID,
+	public String settingsList(@RequestParam(value = "uid", required = true) String factoryUid,
 			ModelMap model, HttpServletRequest req) {
 		final SettingsService service = settingsServiceTracker.service();
 		if ( service != null ) {
 			Map<String, FactorySettingSpecifierProvider> providers = service
-					.getProvidersForFactory(factoryUID);
+					.getProvidersForFactory(factoryUid);
 			if ( providers != null && !providers.isEmpty() ) {
 				// sort map keys numerically
 				String[] instanceIds = providers.keySet().toArray(new String[providers.size()]);
@@ -198,7 +198,7 @@ public class SettingsController {
 			} else {
 				model.put(KEY_PROVIDERS, Collections.emptyMap());
 			}
-			model.put(KEY_PROVIDER_FACTORY, service.getProviderFactory(factoryUID));
+			model.put(KEY_PROVIDER_FACTORY, service.getProviderFactory(factoryUid));
 			model.put(KEY_SETTINGS_SERVICE, service);
 		}
 		return (req.getRequestURI().contains("/filters/") ? "filters-factory-settings-list"
@@ -208,11 +208,11 @@ public class SettingsController {
 	@RequestMapping(value = "/manage/add", method = RequestMethod.POST)
 	@ResponseBody
 	public Response<String> addConfiguration(
-			@RequestParam(value = "uid", required = true) String factoryUID) {
+			@RequestParam(value = "uid", required = true) String factoryUid) {
 		final SettingsService service = settingsServiceTracker.service();
 		String result = null;
 		if ( service != null ) {
-			result = service.addProviderFactoryInstance(factoryUID);
+			result = service.addProviderFactoryInstance(factoryUid);
 		}
 		return response(result);
 	}
@@ -220,11 +220,11 @@ public class SettingsController {
 	@RequestMapping(value = "/manage/delete", method = RequestMethod.POST)
 	@ResponseBody
 	public Response<Object> deleteConfiguration(
-			@RequestParam(value = "uid", required = true) String factoryUID,
-			@RequestParam(value = "instance", required = true) String instanceUID) {
+			@RequestParam(value = "uid", required = true) String factoryUid,
+			@RequestParam(value = "instance", required = true) String instanceUid) {
 		final SettingsService service = settingsServiceTracker.service();
 		if ( service != null ) {
-			service.deleteProviderFactoryInstance(factoryUID, instanceUID);
+			service.deleteProviderFactoryInstance(factoryUid, instanceUid);
 		}
 		return response(null);
 	}
@@ -232,11 +232,11 @@ public class SettingsController {
 	@RequestMapping(value = "/manage/reset", method = RequestMethod.POST)
 	@ResponseBody
 	public Response<Object> resetConfiguration(
-			@RequestParam(value = "uid", required = true) String factoryUID,
-			@RequestParam(value = "instance", required = true) String instanceUID) {
+			@RequestParam(value = "uid", required = true) String factoryUid,
+			@RequestParam(value = "instance", required = true) String instanceUid) {
 		final SettingsService service = settingsServiceTracker.service();
 		if ( service != null ) {
-			service.resetProviderFactoryInstance(factoryUID, instanceUID);
+			service.resetProviderFactoryInstance(factoryUid, instanceUid);
 		}
 		return response(null);
 	}

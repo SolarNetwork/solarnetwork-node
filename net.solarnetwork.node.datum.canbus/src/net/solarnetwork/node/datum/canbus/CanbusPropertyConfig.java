@@ -32,16 +32,16 @@ import java.util.List;
 import java.util.Map;
 import net.solarnetwork.domain.BitDataType;
 import net.solarnetwork.domain.ByteOrdering;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
 import net.solarnetwork.domain.KeyValuePair;
-import net.solarnetwork.domain.NumberDatumSamplePropertyConfig;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.domain.datum.NumberDatumSamplePropertyConfig;
 import net.solarnetwork.node.io.canbus.CanbusSignalReference;
-import net.solarnetwork.node.settings.SettingSpecifier;
 import net.solarnetwork.node.settings.SettingValueBean;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
 
 /**
@@ -53,7 +53,7 @@ import net.solarnetwork.util.ArrayUtils;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Integer>
 		implements CanbusSignalReference {
@@ -80,7 +80,7 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 * Default constructor.
 	 */
 	public CanbusPropertyConfig() {
-		super(null, GeneralDatumSamplesType.Instantaneous, DEFAULT_BIT_OFFSET);
+		super(null, DatumSamplesType.Instantaneous, DEFAULT_BIT_OFFSET);
 	}
 
 	/**
@@ -93,7 +93,7 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 * @param bitOffset
 	 *        the CAN message bit offset
 	 */
-	public CanbusPropertyConfig(String name, GeneralDatumSamplesType datumPropertyType, int bitOffset) {
+	public CanbusPropertyConfig(String name, DatumSamplesType datumPropertyType, int bitOffset) {
 		super(name, datumPropertyType, bitOffset);
 	}
 
@@ -115,7 +115,7 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 * @param normalizedUnit
 	 *        the normalized unit
 	 */
-	public CanbusPropertyConfig(String name, GeneralDatumSamplesType datumPropertyType, int bitOffset,
+	public CanbusPropertyConfig(String name, DatumSamplesType datumPropertyType, int bitOffset,
 			BitDataType dataType, int bitLength, String unit, String normalizedUnit) {
 		this(name, datumPropertyType, bitOffset);
 		setDataType(dataType);
@@ -140,7 +140,7 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
 				prefix + "propertyTypeKey", String.valueOf(DEFAULT_PROPERTY_TYPE.toKey()));
 		Map<String, String> propTypeTitles = new LinkedHashMap<String, String>(3);
-		for ( GeneralDatumSamplesType e : GeneralDatumSamplesType.values() ) {
+		for ( DatumSamplesType e : DatumSamplesType.values() ) {
 			propTypeTitles.put(Character.toString(e.toKey()), e.toString());
 		}
 		propTypeSpec.setValueTitles(propTypeTitles);
@@ -174,8 +174,8 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 		KeyValuePair[] labels = getValueLabels();
 		List<KeyValuePair> labelsList = (labels != null ? Arrays.asList(labels)
 				: Collections.<KeyValuePair> emptyList());
-		results.add(SettingsUtil.dynamicListSettingSpecifier(prefix + "valueLabels", labelsList,
-				new SettingsUtil.KeyedListCallback<KeyValuePair>() {
+		results.add(SettingUtils.dynamicListSettingSpecifier(prefix + "valueLabels", labelsList,
+				new SettingUtils.KeyedListCallback<KeyValuePair>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(KeyValuePair value, int index,
@@ -193,8 +193,8 @@ public class CanbusPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 		KeyValuePair[] names = getLocalizedNames();
 		List<KeyValuePair> namesList = (names != null ? Arrays.asList(names)
 				: Collections.<KeyValuePair> emptyList());
-		results.add(SettingsUtil.dynamicListSettingSpecifier(prefix + "localizedNames", namesList,
-				new SettingsUtil.KeyedListCallback<KeyValuePair>() {
+		results.add(SettingUtils.dynamicListSettingSpecifier(prefix + "localizedNames", namesList,
+				new SettingUtils.KeyedListCallback<KeyValuePair>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(KeyValuePair value, int index,

@@ -27,28 +27,33 @@ import java.math.RoundingMode;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import net.solarnetwork.domain.GeneralDatumSamplesType;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.node.domain.datum.MutableNodeDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.io.mbus.MBusData;
 import net.solarnetwork.node.io.mbus.support.WMBusDeviceDatumDataSourceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.StringUtils;
 
+/**
+ * Datum data source for wireless M-Bus devices.
+ * 
+ * @author matt
+ * @version 2.0
+ */
 public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
-		implements DatumDataSource<GeneralNodeDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, SettingSpecifierProvider {
 
 	private String sourceId;
 	private MBusPropertyConfig[] propConfigs;
@@ -114,27 +119,27 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 	}
 
 	@Override
-	public GeneralNodeDatum readCurrentDatum() {
+	public NodeDatum readCurrentDatum() {
 		final MBusData currSample = getCurrentSample();
 		if ( currSample == null ) {
 			return null;
 		}
-		GeneralNodeDatum d = new GeneralNodeDatum();
-		d.setCreated(new Date(currSample.getDataTimestamp()));
-		d.setSourceId(sourceId);
+		SimpleDatum d = SimpleDatum.nodeDatum(resolvePlaceholders(sourceId),
+				currSample.getDataTimestamp());
 		populateDatumProperties(currSample, d, propConfigs);
 		return d;
 	}
 
-	private void populateDatumProperties(MBusData sample, GeneralNodeDatum d,
+	private void populateDatumProperties(MBusData sample, MutableNodeDatum d,
 			MBusPropertyConfig[] propConfs) {
 		if ( propConfs == null ) {
 			return;
 		}
 		for ( MBusPropertyConfig conf : propConfs ) {
 			// Special case for status
-			if ( conf.getDatumPropertyType() == GeneralDatumSamplesType.Status ) {
-				d.putSampleValue(conf.getPropertyType(), conf.getPropertyKey(), sample.status);
+			if ( conf.getDatumPropertyType() == DatumSamplesType.Status ) {
+				d.asMutableSampleOperations().putSampleValue(conf.getPropertyType(),
+						conf.getPropertyKey(), sample.status);
 				continue;
 			}
 
@@ -183,7 +188,8 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 					default:
 						// nothing
 				}
-				d.putSampleValue(conf.getPropertyType(), conf.getPropertyKey(), propVal);
+				d.asMutableSampleOperations().putSampleValue(conf.getPropertyType(),
+						conf.getPropertyKey(), propVal);
 			}
 		}
 	}
@@ -208,7 +214,7 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.mbus.wireless";
 	}
 
@@ -218,11 +224,11 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 	}
 
 	private String getSampleMessage(MBusData sample) {
-		if ( sample == null || sample.getDataTimestamp() < 1 ) {
+		if ( sample == null || sample.getDataTimestamp() == null ) {
 			return "N/A";
 		}
 
-		GeneralNodeDatum d = new GeneralNodeDatum();
+		SimpleDatum d = SimpleDatum.nodeDatum(null);
 		populateDatumProperties(sample, d, propConfigs);
 
 		Map<String, ?> data = d.getSampleData();
@@ -232,8 +238,7 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 
 		StringBuilder buf = new StringBuilder();
 		buf.append(StringUtils.delimitedStringFromMap(data));
-		buf.append("; sampled at ")
-				.append(DateTimeFormat.forStyle("LS").print(new DateTime(sample.getDataTimestamp())));
+		buf.append("; sampled at ").append(sample.getDataTimestamp());
 		return buf.toString();
 	}
 
@@ -252,8 +257,8 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 		MBusPropertyConfig[] confs = getPropConfigs();
 		List<MBusPropertyConfig> confsList = (confs != null ? Arrays.asList(confs)
 				: Collections.<MBusPropertyConfig> emptyList());
-		results.add(SettingsUtil.dynamicListSettingSpecifier("propConfigs", confsList,
-				new SettingsUtil.KeyedListCallback<MBusPropertyConfig>() {
+		results.add(SettingUtils.dynamicListSettingSpecifier("propConfigs", confsList,
+				new SettingUtils.KeyedListCallback<MBusPropertyConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(MBusPropertyConfig value,
@@ -268,8 +273,8 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 	}
 
 	@Override
-	public Class<? extends GeneralNodeDatum> getDatumType() {
-		return GeneralNodeDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return NodeDatum.class;
 	}
 
 }

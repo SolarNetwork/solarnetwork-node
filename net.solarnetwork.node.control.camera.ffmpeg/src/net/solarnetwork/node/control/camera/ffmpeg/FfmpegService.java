@@ -23,13 +23,13 @@
 package net.solarnetwork.node.control.camera.ffmpeg;
 
 import java.io.IOException;
-import net.solarnetwork.domain.Identifiable;
+import net.solarnetwork.service.Identifiable;
 
 /**
  * API for ffmpeg integration.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public interface FfmpegService extends Identifiable {
 

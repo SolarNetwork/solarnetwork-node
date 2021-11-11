@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.control.esi;
 
+import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.service.OptionalServiceCollection.services;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -29,19 +31,18 @@ import java.util.Map;
 import net.solarnetwork.esi.domain.DerProgramType;
 import net.solarnetwork.node.control.esi.domain.PriceMapAccessor;
 import net.solarnetwork.node.control.esi.domain.ResourceAccessor;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.util.FilterableService;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.OptionalServiceCollection;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
+import net.solarnetwork.service.OptionalServiceCollection.OptionalFilterableServiceCollection;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 
 /**
  * General settings for ESI program integration.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class EsiProgram extends BaseEsiMetadataComponent {
 
@@ -49,8 +50,8 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 	public static final String ESI_PROGRAM_METADATA_KEY = "esi-program";
 
 	private DerProgramType programType;
-	private OptionalService<ResourceAccessor> resource;
-	private OptionalServiceCollection<PriceMapAccessor> priceMaps;
+	private OptionalFilterableService<ResourceAccessor> resource;
+	private OptionalFilterableServiceCollection<PriceMapAccessor> priceMaps;
 
 	/**
 	 * Constructor.
@@ -60,7 +61,7 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.control.esi.program";
 	}
 
@@ -89,12 +90,12 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 		programTypeSpec.setValueTitles(programTypeTitles);
 		results.add(programTypeSpec);
 
-		results.add(new BasicTextFieldSettingSpecifier("resource.propertyFilters['UID']", "Main"));
+		results.add(new BasicTextFieldSettingSpecifier("resource.propertyFilters['uid']", "Main"));
 		results.add(new BasicTitleSettingSpecifier("resourceStatus",
 				resourceStatusMessage(Locale.getDefault()), true));
 
-		results.add(new BasicTextFieldSettingSpecifier("priceMaps.propertyFilters['UID']", ""));
-		results.add(new BasicTextFieldSettingSpecifier("priceMaps.propertyFilters['groupUID']", "Main"));
+		results.add(new BasicTextFieldSettingSpecifier("priceMaps.propertyFilters['uid']", ""));
+		results.add(new BasicTextFieldSettingSpecifier("priceMaps.propertyFilters['groupUid']", "Main"));
 		results.add(new BasicTitleSettingSpecifier("priceMapsStatus",
 				priceMapsStatusMessage(Locale.getDefault()), true));
 
@@ -107,19 +108,13 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 
 		result.put("programTypeNumber", getProgramTypeNumber());
 
-		if ( resource instanceof FilterableService ) {
-			FilterableService f = (FilterableService) resource;
-			final Object uid = f.getPropertyFilters().get("UID");
-			result.put("resourceId", uid != null ? uid.toString() : "");
-		}
+		final Object uid = resource.getPropertyFilters().get("uid");
+		result.put("resourceId", uid != null ? uid.toString() : "");
 
-		if ( priceMaps instanceof FilterableService ) {
-			FilterableService f = (FilterableService) priceMaps;
-			final Object uid = f.getPropertyFilters().get("UID");
-			final Object guid = f.getPropertyFilters().get("groupUID");
-			result.put("priceMapId", uid != null ? uid.toString() : "");
-			result.put("priceMapGroupUid", guid != null ? guid.toString() : "");
-		}
+		final Object pmUid = priceMaps.getPropertyFilters().get("uid");
+		final Object pmGuid = priceMaps.getPropertyFilters().get("groupUid");
+		result.put("priceMapId", pmUid != null ? pmUid.toString() : "");
+		result.put("priceMapGroupUid", pmGuid != null ? pmGuid.toString() : "");
 
 		return result;
 	}
@@ -136,12 +131,12 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 			return getMessageSource().getMessage("status.error.noProgramType", null, locale);
 		}
 
-		final ResourceAccessor rsrc = resource();
+		final ResourceAccessor rsrc = service(resource);
 		if ( rsrc == null ) {
 			return getMessageSource().getMessage("status.error.noResource", null, locale);
 		}
 
-		final Iterable<PriceMapAccessor> pms = priceMaps();
+		final Iterable<PriceMapAccessor> pms = services(priceMaps);
 		if ( pms == null || !pms.iterator().hasNext() ) {
 			return getMessageSource().getMessage("status.error.noPriceMap", null, locale);
 		}
@@ -149,25 +144,15 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 		return null;
 	}
 
-	private ResourceAccessor resource() {
-		OptionalService<ResourceAccessor> s = getResource();
-		return (s != null ? s.service() : null);
-	}
-
 	private String resourceStatusMessage(Locale locale) {
-		ResourceAccessor r = resource();
+		ResourceAccessor r = service(resource);
 		return (r != null ? r.getStatusMessage(locale)
 				: getMessageSource().getMessage("status.error.noResource", null, locale));
 	}
 
-	private Iterable<PriceMapAccessor> priceMaps() {
-		OptionalServiceCollection<PriceMapAccessor> s = getPriceMaps();
-		return (s != null ? s.services() : null);
-	}
-
 	private String priceMapsStatusMessage(Locale locale) {
 		StringBuilder buf = new StringBuilder();
-		Iterable<PriceMapAccessor> pms = priceMaps();
+		Iterable<PriceMapAccessor> pms = services(priceMaps);
 		if ( pms != null ) {
 			for ( PriceMapAccessor p : pms ) {
 				if ( buf.length() > 0 ) {
@@ -232,7 +217,7 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 	 * 
 	 * @return the resource
 	 */
-	public OptionalService<ResourceAccessor> getResource() {
+	public OptionalFilterableService<ResourceAccessor> getResource() {
 		return resource;
 	}
 
@@ -242,7 +227,7 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 	 * @param resource
 	 *        the resource
 	 */
-	public void setResource(OptionalService<ResourceAccessor> resource) {
+	public void setResource(OptionalFilterableService<ResourceAccessor> resource) {
 		this.resource = resource;
 	}
 
@@ -251,7 +236,7 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 	 * 
 	 * @return the price maps
 	 */
-	public OptionalServiceCollection<PriceMapAccessor> getPriceMaps() {
+	public OptionalFilterableServiceCollection<PriceMapAccessor> getPriceMaps() {
 		return priceMaps;
 	}
 
@@ -261,7 +246,7 @@ public class EsiProgram extends BaseEsiMetadataComponent {
 	 * @param priceMaps
 	 *        the price maps
 	 */
-	public void setPriceMaps(OptionalServiceCollection<PriceMapAccessor> priceMaps) {
+	public void setPriceMaps(OptionalFilterableServiceCollection<PriceMapAccessor> priceMaps) {
 		this.priceMaps = priceMaps;
 	}
 

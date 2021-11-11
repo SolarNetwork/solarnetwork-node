@@ -22,27 +22,25 @@
 
 package net.solarnetwork.node.datum.elkor.wattson;
 
+import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import net.solarnetwork.node.DatumDataSource;
-import net.solarnetwork.node.MultiDatumDataSource;
-import net.solarnetwork.node.domain.ACPhase;
-import net.solarnetwork.node.domain.GeneralNodeACEnergyDatum;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.datum.AcEnergyDatum;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.elkor.upt.WattsOnData;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * {@link DatumDataSource} for Elkor WattsOn meters.
@@ -51,8 +49,7 @@ import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
  * @version 1.3
  */
 public class WattsOnDatumDataSource extends ModbusDataDatumDataSourceSupport<WattsOnData>
-		implements DatumDataSource<GeneralNodeACEnergyDatum>,
-		MultiDatumDataSource<GeneralNodeACEnergyDatum>, SettingSpecifierProvider {
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	private String sourceId;
 	private boolean backwards = false;
@@ -77,7 +74,7 @@ public class WattsOnDatumDataSource extends ModbusDataDatumDataSourceSupport<Wat
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.datum.elkor.wattson";
 	}
 
@@ -107,38 +104,38 @@ public class WattsOnDatumDataSource extends ModbusDataDatumDataSourceSupport<Wat
 	}
 
 	@Override
-	public Class<? extends GeneralNodeACEnergyDatum> getDatumType() {
-		return GeneralNodeACEnergyDatum.class;
+	public Class<? extends NodeDatum> getDatumType() {
+		return AcEnergyDatum.class;
 	}
 
 	@Override
-	public Class<? extends GeneralNodeACEnergyDatum> getMultiDatumType() {
-		return GeneralNodeACEnergyDatum.class;
+	public Class<? extends NodeDatum> getMultiDatumType() {
+		return AcEnergyDatum.class;
 	}
 
 	@Override
-	public GeneralNodeACEnergyDatum readCurrentDatum() {
+	public AcEnergyDatum readCurrentDatum() {
+		final String sourceId = resolvePlaceholders(this.sourceId);
 		try {
 			final WattsOnData currSample = getCurrentSample();
 			if ( currSample == null ) {
 				return null;
 			}
-			WattsOnDatum d = new WattsOnDatum(currSample, ACPhase.Total, this.backwards);
+			WattsOnDatum d = new WattsOnDatum(currSample, sourceId, AcPhase.Total, this.backwards);
 			if ( this.includePhaseMeasurements ) {
 				d.populatePhaseMeasurementProperties(currSample);
 			}
-			d.setSourceId(resolvePlaceholders(sourceId));
 			return d;
 		} catch ( IOException e ) {
-			log.error("Communication problem reading source {} from WattsOn device {}: {}",
-					this.sourceId, modbusDeviceName(), e.getMessage());
+			log.error("Communication problem reading source {} from WattsOn device {}: {}", sourceId,
+					modbusDeviceName(), e.getMessage());
 			return null;
 		}
 	}
 
 	@Override
-	public Collection<GeneralNodeACEnergyDatum> readMultipleDatum() {
-		GeneralNodeACEnergyDatum datum = readCurrentDatum();
+	public Collection<NodeDatum> readMultipleDatum() {
+		AcEnergyDatum datum = readCurrentDatum();
 		// TODO: support phases
 		if ( datum != null ) {
 			return Collections.singletonList(datum);
@@ -169,7 +166,7 @@ public class WattsOnDatumDataSource extends ModbusDataDatumDataSourceSupport<Wat
 	}
 
 	private String getSampleMessage(WattsOnData data) {
-		if ( data.getDataTimestamp() < 1 ) {
+		if ( data.getDataTimestamp() == null ) {
 			return "N/A";
 		}
 		StringBuilder buf = new StringBuilder();
@@ -177,9 +174,7 @@ public class WattsOnDatumDataSource extends ModbusDataDatumDataSourceSupport<Wat
 		buf.append(", VAR = ").append(data.getReactivePower());
 		buf.append(", Wh rec = ").append(data.getActiveEnergyReceived());
 		buf.append(", Wh del = ").append(data.getActiveEnergyDelivered());
-		buf.append("; sampled at ").append(
-				DateTimeFormatter.ofLocalizedDateTime(FormatStyle.LONG, FormatStyle.SHORT).format(
-						Instant.ofEpochMilli(data.getDataTimestamp()).atZone(ZoneId.systemDefault())));
+		buf.append("; sampled at ").append(formatForLocalDisplay(data.getDataTimestamp()));
 		return buf.toString();
 	}
 

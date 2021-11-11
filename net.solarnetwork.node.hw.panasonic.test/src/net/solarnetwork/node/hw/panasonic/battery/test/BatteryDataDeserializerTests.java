@@ -23,16 +23,16 @@
 package net.solarnetwork.node.hw.panasonic.battery.test;
 
 import java.io.InputStream;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.junit.Assert;
 import org.junit.Test;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.codec.ObjectMapperFactoryBean;
 import net.solarnetwork.node.hw.panasonic.battery.BatteryData;
 import net.solarnetwork.node.hw.panasonic.battery.BatteryDataDeserializer;
-import net.solarnetwork.util.ObjectMapperFactoryBean;
 
 /**
  * Test cases for the {@link BatteryDataDeserializer} class.
@@ -42,17 +42,26 @@ import net.solarnetwork.util.ObjectMapperFactoryBean;
  */
 public class BatteryDataDeserializerTests {
 
-	@Test
-	public void parseBatteryDataJSON() throws Exception {
+	private ObjectMapper createObjectMapper() {
 		ObjectMapperFactoryBean factory = new ObjectMapperFactoryBean();
 		factory.setDeserializers(
 				Arrays.asList(new JsonDeserializer<?>[] { new BatteryDataDeserializer() }));
-		ObjectMapper om = factory.getObject();
+		try {
+			return factory.getObject();
+		} catch ( Exception e ) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@Test
+	public void parseBatteryDataJSON() throws Exception {
+		ObjectMapper om = createObjectMapper();
 		InputStream in = getClass().getResourceAsStream("battery-data-01.json");
 		BatteryData bd = om.readValue(in, BatteryData.class);
 		Assert.assertNotNull(bd);
 		Assert.assertEquals("1666729", bd.getDeviceID());
-		Assert.assertEquals(new DateTime(2016, 2, 9, 14, 16, 41, DateTimeZone.UTC), bd.getDate());
+		Assert.assertEquals(LocalDateTime.of(2016, 2, 9, 14, 16, 41).toInstant(ZoneOffset.UTC),
+				bd.getDate());
 		Assert.assertEquals("A", bd.getStatus());
 		Assert.assertEquals(Integer.valueOf(7000), bd.getAvailableCapacity());
 		Assert.assertEquals(Integer.valueOf(8400), bd.getTotalCapacity());
@@ -60,17 +69,14 @@ public class BatteryDataDeserializerTests {
 
 	@Test
 	public void parseInvalidDate() throws Exception {
-		ObjectMapperFactoryBean factory = new ObjectMapperFactoryBean();
-		factory.setDeserializers(
-				Arrays.asList(new JsonDeserializer<?>[] { new BatteryDataDeserializer() }));
-		ObjectMapper om = factory.getObject();
+		ObjectMapper om = createObjectMapper();
 		InputStream in = getClass().getResourceAsStream("battery-data-02.json");
 		BatteryData bd = om.readValue(in, BatteryData.class);
 		Assert.assertNotNull(bd);
 		Assert.assertEquals("1666729", bd.getDeviceID());
 		Assert.assertNotNull(bd.getDate());
 		Assert.assertTrue("Date should be set to now",
-				(System.currentTimeMillis() - bd.getDate().getMillis()) < 1000);
+				(System.currentTimeMillis() - bd.getDate().toEpochMilli()) < 1000);
 		Assert.assertEquals("A", bd.getStatus());
 		Assert.assertEquals(Integer.valueOf(7000), bd.getAvailableCapacity());
 		Assert.assertEquals(Integer.valueOf(8400), bd.getTotalCapacity());

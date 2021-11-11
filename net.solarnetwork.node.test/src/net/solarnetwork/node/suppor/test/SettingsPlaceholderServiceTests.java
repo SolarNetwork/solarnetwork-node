@@ -42,8 +42,8 @@ import org.junit.Test;
 import org.springframework.core.task.support.TaskExecutorAdapter;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.node.support.SettingsPlaceholderService;
-import net.solarnetwork.util.StaticOptionalService;
+import net.solarnetwork.node.service.support.SettingsPlaceholderService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link SettingsPlaceholderService} class.
@@ -55,7 +55,7 @@ import net.solarnetwork.util.StaticOptionalService;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class SettingsPlaceholderServiceTests {
 

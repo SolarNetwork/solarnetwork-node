@@ -25,6 +25,7 @@ package net.solarnetwork.node.settings.ca;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -82,6 +83,7 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.util.LinkedCaseInsensitiveMap;
 import org.supercsv.cellprocessor.ConvertNullTo;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.io.CsvBeanReader;
@@ -90,11 +92,9 @@ import org.supercsv.io.ICsvBeanReader;
 import org.supercsv.io.ICsvBeanWriter;
 import org.supercsv.prefs.CsvPreference;
 import org.supercsv.util.CsvContext;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.io.TransferrableResource;
-import net.solarnetwork.node.Setting;
-import net.solarnetwork.node.Setting.SettingFlag;
-import net.solarnetwork.node.SetupSettings;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.backup.BackupResourceInfo;
 import net.solarnetwork.node.backup.BackupResourceProvider;
@@ -106,25 +106,26 @@ import net.solarnetwork.node.dao.BasicBatchOptions;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.node.reactor.FeedbackInstructionHandler;
+import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.domain.Setting.SettingFlag;
 import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.reactor.InstructionStatus.InstructionState;
-import net.solarnetwork.node.reactor.support.BasicInstructionStatus;
-import net.solarnetwork.node.settings.FactorySettingSpecifierProvider;
-import net.solarnetwork.node.settings.KeyedSettingSpecifier;
 import net.solarnetwork.node.settings.SettingResourceHandler;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.SettingSpecifierProviderFactory;
 import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsImportOptions;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.SettingsUpdates;
-import net.solarnetwork.node.settings.support.BasicFactorySettingSpecifierProvider;
-import net.solarnetwork.support.SearchFilter;
+import net.solarnetwork.node.setup.SetupSettings;
+import net.solarnetwork.settings.FactorySettingSpecifierProvider;
+import net.solarnetwork.settings.KeyedSettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingSpecifierProviderFactory;
+import net.solarnetwork.settings.support.BasicFactorySettingSpecifierProvider;
+import net.solarnetwork.util.SearchFilter;
 
 /**
  * Implementation of {@link SettingsService} that uses
@@ -132,13 +133,12 @@ import net.solarnetwork.support.SearchFilter;
  * {@link SettingDao} to persist changes between application restarts.
  * 
  * @author matt
- * @version 1.10
+ * @version 2.0
  */
-public class CASettingsService
-		implements SettingsService, BackupResourceProvider, FeedbackInstructionHandler {
+public class CASettingsService implements SettingsService, BackupResourceProvider, InstructionHandler {
 
 	/** The OSGi service property key for the setting PID. */
-	public static final String OSGI_PROPERTY_KEY_SETTING_PID = "settingPid";
+	public static final String OSGI_PROPERTY_KEY_SETTING_PID = net.solarnetwork.node.Constants.SETTING_PID;
 
 	private static final String OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY = CASettingsService.class
 			.getName() + ".FACTORY_INSTANCE_KEY";
@@ -162,9 +162,9 @@ public class CASettingsService
 	private MessageSource messageSource;
 	private TaskExecutor taskExecutor;
 
-	private final Map<String, FactoryHelper> factories = new ConcurrentSkipListMap<String, FactoryHelper>();
-	private final Map<String, ProviderHelper> providers = new ConcurrentSkipListMap<String, ProviderHelper>();
-	private final Map<String, SettingResourceHandler> handlers = new ConcurrentSkipListMap<String, SettingResourceHandler>();
+	private final Map<String, FactoryHelper> factories = new ConcurrentSkipListMap<>();
+	private final Map<String, ProviderHelper> providers = new ConcurrentSkipListMap<>();
+	private final Map<String, SettingResourceHandler> handlers = new ConcurrentSkipListMap<>();
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -187,7 +187,7 @@ public class CASettingsService
 	 */
 	public void onBindFactory(SettingSpecifierProviderFactory provider, Map<String, ?> properties) {
 		log.debug("Bind called on factory {} with props {}", provider, properties);
-		final String factoryPid = provider.getFactoryUID();
+		final String factoryPid = provider.getFactoryUid();
 		synchronized ( factories ) {
 			factories.put(factoryPid, new FactoryHelper(provider, properties));
 
@@ -257,7 +257,7 @@ public class CASettingsService
 			return;
 		}
 		log.debug("Unbind called on factory {} with props {}", provider, properties);
-		final String pid = provider.getFactoryUID();
+		final String pid = provider.getFactoryUid();
 		synchronized ( factories ) {
 			factories.remove(pid);
 		}
@@ -273,7 +273,7 @@ public class CASettingsService
 	 */
 	public void onBind(SettingSpecifierProvider provider, Map<String, ?> properties) {
 		log.debug("Bind called on {} with props {}", provider, properties);
-		final String pid = provider.getSettingUID();
+		final String pid = provider.getSettingUid();
 
 		boolean factoryFound = false;
 		String factoryInstanceKey = null;
@@ -283,7 +283,10 @@ public class CASettingsService
 				// Note: SERVICE_PID not normally provided by Spring: requires
 				// custom SN implementation bundle
 				String instancePid = (String) properties.get(Constants.SERVICE_PID);
-
+				if ( instancePid == null ) {
+					throw new IllegalArgumentException(
+							"The service.pid property must be provided for factory instances.");
+				}
 				Configuration conf;
 				try {
 					conf = configurationAdmin.getConfiguration(instancePid, null);
@@ -345,7 +348,7 @@ public class CASettingsService
 			return;
 		}
 		log.debug("Unbind called on {} with props {}", provider, properties);
-		final String pid = provider.getSettingUID();
+		final String pid = provider.getSettingUid();
 
 		synchronized ( factories ) {
 			FactoryHelper helper = factories.get(pid);
@@ -381,8 +384,8 @@ public class CASettingsService
 	}
 
 	@Override
-	public SettingSpecifierProviderFactory getProviderFactory(String factoryUID) {
-		FactoryHelper helper = factories.get(factoryUID);
+	public SettingSpecifierProviderFactory getProviderFactory(String factoryUid) {
+		FactoryHelper helper = factories.get(factoryUid);
 		if ( helper != null ) {
 			return helper.getFactory();
 		}
@@ -390,14 +393,14 @@ public class CASettingsService
 	}
 
 	@Override
-	public Map<String, FactorySettingSpecifierProvider> getProvidersForFactory(String factoryUID) {
+	public Map<String, FactorySettingSpecifierProvider> getProvidersForFactory(String factoryUid) {
 		Map<String, FactorySettingSpecifierProvider> results = new LinkedHashMap<>();
-		FactoryHelper helper = factories.get(factoryUID);
+		FactoryHelper helper = factories.get(factoryUid);
 		if ( helper != null ) {
 			for ( Map.Entry<String, SettingSpecifierProvider> me : helper.instanceEntrySet() ) {
-				String instanceUID = me.getKey();
-				results.put(instanceUID,
-						new BasicFactorySettingSpecifierProvider(instanceUID, me.getValue()));
+				String instanceUid = me.getKey();
+				results.put(instanceUid,
+						new BasicFactorySettingSpecifierProvider(instanceUid, me.getValue()));
 			}
 		}
 		return results;
@@ -410,12 +413,12 @@ public class CASettingsService
 			if ( keyedSetting.isTransient() ) {
 				return keyedSetting.getDefaultValue();
 			}
-			final String providerUID = provider.getSettingUID();
-			final String instanceUID = (provider instanceof FactorySettingSpecifierProvider
+			final String providerUID = provider.getSettingUid();
+			final String instanceUid = (provider instanceof FactorySettingSpecifierProvider
 					? ((FactorySettingSpecifierProvider) provider).getFactoryInstanceUID()
 					: null);
 			try {
-				Configuration conf = getConfiguration(providerUID, instanceUID);
+				Configuration conf = getConfiguration(providerUID, instanceUid);
 				Dictionary<String, ?> props = conf.getProperties();
 				Object val = (props == null ? null : props.get(keyedSetting.getKey()));
 				if ( val == null ) {
@@ -433,8 +436,13 @@ public class CASettingsService
 
 	@Override
 	public void updateSettings(SettingsCommand command) {
+		updateSettings(command, false);
+	}
+
+	private void updateSettings(final SettingsCommand command, final boolean configurationOnly) {
 		if ( command.getProviderKey() != null ) {
-			applySettingsUpdates(command, command.getProviderKey(), command.getInstanceKey(), false);
+			applySettingsUpdates(command, command.getProviderKey(), command.getInstanceKey(),
+					configurationOnly);
 			return;
 		}
 		// group all updates by provider+instance, to reduce the number of CA updates
@@ -451,7 +459,7 @@ public class CASettingsService
 					log.info("Updating component [{}] settings: {}", cmd.getProviderKey(), msg);
 				}
 			}
-			applySettingsUpdates(cmd, cmd.getProviderKey(), cmd.getInstanceKey(), false);
+			applySettingsUpdates(cmd, cmd.getProviderKey(), cmd.getInstanceKey(), configurationOnly);
 		}
 	}
 
@@ -479,7 +487,7 @@ public class CASettingsService
 	 */
 	private List<SettingsCommand> orderedUpdateGroups(SettingsUpdates updates, String defaultProviderKey,
 			String defaultInstanceKey) {
-		Map<String, SettingsCommand> groups = new LinkedHashMap<String, SettingsCommand>(8);
+		Map<String, SettingsCommand> groups = new LinkedHashMap<>(8);
 		if ( updates != null ) {
 			for ( SettingsUpdates.Change change : updates.getSettingValueUpdates() ) {
 				final String providerKey = change.getProviderKey() != null ? change.getProviderKey()
@@ -549,7 +557,7 @@ public class CASettingsService
 		}
 		Dictionary<String, Object> props = conf.getProperties();
 		if ( props == null ) {
-			props = new Hashtable<String, Object>();
+			props = new Hashtable<>();
 		}
 
 		// track configuration changes, to only update if there are actual changes
@@ -558,7 +566,10 @@ public class CASettingsService
 			String k = e.nextElement();
 			originalProps.put(k, props.get(k));
 		}
-		Map<String, Object> propUpdates = new HashMap<>(originalProps);
+
+		// Configuration Dictionary is case-preserving case-insensitive
+		Map<String, Object> propUpdates = new LinkedCaseInsensitiveMap<>(originalProps.size());
+		propUpdates.putAll(originalProps);
 		if ( updates != null ) {
 			if ( updates.getSettingKeyPatternsToClean() != null ) {
 				Set<String> keysToRemove = new HashSet<>();
@@ -569,10 +580,20 @@ public class CASettingsService
 						}
 					}
 				}
-				for ( String key : keysToRemove ) {
-					propUpdates.remove(key);
-					if ( !configurationOnly ) {
-						settingDao.deleteSetting(settingKey, key);
+				if ( !keysToRemove.isEmpty() ) {
+					if ( keysToRemove.size() == propUpdates.size() ) {
+						// delete all optimization
+						propUpdates.clear();
+						if ( !configurationOnly ) {
+							settingDao.deleteSetting(settingKey);
+						}
+					} else {
+						for ( String key : keysToRemove ) {
+							propUpdates.remove(key);
+							if ( !configurationOnly ) {
+								settingDao.deleteSetting(settingKey, key);
+							}
+						}
 					}
 				}
 			}
@@ -595,7 +616,9 @@ public class CASettingsService
 		if ( instanceKey != null && !instanceKey.isEmpty() ) {
 			propUpdates.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceKey);
 		}
-		if ( !originalProps.equals(propUpdates) ) {
+
+		// note must call LinkedCaseInsensitiveMap.equals() here to pick up case changes
+		if ( !propUpdates.equals(originalProps) ) {
 			conf.update(new Hashtable<>(propUpdates));
 		} else {
 			log.debug("Configuration for service {} unchanged: {}", settingKey, originalProps);
@@ -621,10 +644,10 @@ public class CASettingsService
 	}
 
 	@Override
-	public String addProviderFactoryInstance(String factoryUID) {
+	public String addProviderFactoryInstance(String factoryUid) {
 		synchronized ( factories ) {
 			List<KeyValuePair> instanceKeys = settingDao
-					.getSettingValues(getFactorySettingKey(factoryUID));
+					.getSettingValues(getFactorySettingKey(factoryUid));
 			int next = instanceKeys.size() + 1;
 			// verify key doesn't exist
 			boolean done = false;
@@ -638,23 +661,23 @@ public class CASettingsService
 				}
 			}
 			String newInstanceKey = String.valueOf(next);
-			addProviderFactoryInstance(factoryUID, newInstanceKey);
-			log.info("Registered component [{}] instance {}", factoryUID, newInstanceKey);
+			addProviderFactoryInstance(factoryUid, newInstanceKey);
+			log.info("Registered component [{}] instance {}", factoryUid, newInstanceKey);
 			return newInstanceKey;
 		}
 	}
 
 	@Override
-	public void deleteProviderFactoryInstance(String factoryUID, String instanceUID) {
+	public void deleteProviderFactoryInstance(String factoryUid, String instanceUid) {
 		synchronized ( factories ) {
 			// delete factory reference
-			settingDao.deleteSetting(getFactorySettingKey(factoryUID), instanceUID);
+			settingDao.deleteSetting(getFactorySettingKey(factoryUid), instanceUid);
 
 			// delete Configuration
 			try {
-				Configuration conf = getConfiguration(factoryUID, instanceUID);
+				Configuration conf = getConfiguration(factoryUid, instanceUid);
 				conf.delete();
-				log.info("Deleted component [{}] instance {}", factoryUID, instanceUID);
+				log.info("Deleted component [{}] instance {}", factoryUid, instanceUid);
 			} catch ( IOException e ) {
 				throw new RuntimeException(e);
 			} catch ( InvalidSyntaxException e ) {
@@ -664,26 +687,26 @@ public class CASettingsService
 	}
 
 	@Override
-	public void resetProviderFactoryInstance(String factoryUID, String instanceUID) {
+	public void resetProviderFactoryInstance(String factoryUid, String instanceUid) {
 		synchronized ( factories ) {
-			deleteProviderFactoryInstance(factoryUID, instanceUID);
+			deleteProviderFactoryInstance(factoryUid, instanceUid);
 
 			// delete instance values
-			settingDao.deleteSetting(getFactoryInstanceSettingKey(factoryUID, instanceUID));
+			settingDao.deleteSetting(getFactoryInstanceSettingKey(factoryUid, instanceUid));
 
-			addProviderFactoryInstance(factoryUID, instanceUID);
+			addProviderFactoryInstance(factoryUid, instanceUid);
 		}
 	}
 
-	private void addProviderFactoryInstance(String factoryUID, String instanceUID) {
-		settingDao.storeSetting(getFactorySettingKey(factoryUID), instanceUID, instanceUID);
+	private void addProviderFactoryInstance(String factoryUid, String instanceUid) {
+		settingDao.storeSetting(getFactorySettingKey(factoryUid), instanceUid, instanceUid);
 		try {
-			Configuration conf = getConfiguration(factoryUID, instanceUID);
+			Configuration conf = getConfiguration(factoryUid, instanceUid);
 			Dictionary<String, Object> props = conf.getProperties();
 			if ( props == null ) {
-				props = new Hashtable<String, Object>();
+				props = new Hashtable<>();
 			}
-			props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceUID);
+			props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceUid);
 			conf.update(props);
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
@@ -699,7 +722,7 @@ public class CASettingsService
 	@Override
 	public void exportSettingsCSV(Writer out) throws IOException {
 		final ICsvBeanWriter writer = new CsvBeanWriter(out, CsvPreference.STANDARD_PREFERENCE);
-		final List<IOException> errors = new ArrayList<IOException>(1);
+		final List<IOException> errors = new ArrayList<>(1);
 		final CellProcessor[] processors = new CellProcessor[] {
 				new org.supercsv.cellprocessor.Optional(), new org.supercsv.cellprocessor.Optional(),
 				new org.supercsv.cellprocessor.Optional(), new CellProcessor() {
@@ -707,9 +730,9 @@ public class CASettingsService
 					@SuppressWarnings("unchecked")
 					@Override
 					public Object execute(Object value, CsvContext ctx) {
-						Set<net.solarnetwork.node.Setting.SettingFlag> set = (Set<net.solarnetwork.node.Setting.SettingFlag>) value;
+						Set<SettingFlag> set = (Set<SettingFlag>) value;
 						if ( set != null ) {
-							return net.solarnetwork.node.Setting.SettingFlag.maskForSet(set);
+							return SettingFlag.maskForSet(set);
 						}
 						return 0;
 					}
@@ -759,8 +782,8 @@ public class CASettingsService
 		 *        the setting value
 		 * @param value
 		 *        the setting value
-		 * @return <em>true</em> to allow the setting to be imported,
-		 *         <em>false</em> to skip
+		 * @return {@literal true} to allow the setting to be imported,
+		 *         {@literal false} to skip
 		 */
 		boolean shouldImportSetting(Setting setting);
 
@@ -785,8 +808,9 @@ public class CASettingsService
 						return false;
 					}
 					if ( options.isAddOnly() ) {
-						// check if setting exists already, and if so do not import it
-						if ( settingDao.getSetting(s.getKey(), s.getType()) != null ) {
+						// only allow if value is provided and setting does not already exist
+						if ( s.getValue() == null
+								|| settingDao.getSetting(s.getKey(), s.getType()) != null ) {
 							log.debug("Not updating existing setting {}", s.getKey());
 							return false;
 						}
@@ -805,16 +829,16 @@ public class CASettingsService
 					@SuppressWarnings("unchecked")
 					@Override
 					public Object execute(Object arg, CsvContext ctx) {
-						Set<net.solarnetwork.node.Setting.SettingFlag> set = null;
+						Set<Setting.SettingFlag> set = null;
 						if ( arg != null ) {
 							int mask = Integer.parseInt(arg.toString());
-							set = net.solarnetwork.node.Setting.SettingFlag.setForMask(mask);
+							set = Setting.SettingFlag.setForMask(mask);
 						}
 						return set;
 					}
 				}, new org.supercsv.cellprocessor.ParseDate(SETTING_MODIFIED_DATE_FORMAT) };
 		reader.getHeader(true);
-		final List<Setting> importedSettings = new ArrayList<Setting>();
+		final List<Setting> importedSettings = new ArrayList<>();
 		transactionTemplate.execute(new TransactionCallbackWithoutResult() {
 
 			@Override
@@ -830,10 +854,11 @@ public class CASettingsService
 						}
 						if ( s.getValue() == null ) {
 							settingDao.deleteSetting(s.getKey(), s.getType());
+
 						} else {
 							settingDao.storeSetting(s);
-							importedSettings.add(s);
 						}
+						importedSettings.add(s);
 					}
 				} catch ( IOException e ) {
 					log.error("Unable to import settings: {}", e.getMessage());
@@ -928,10 +953,11 @@ public class CASettingsService
 			bean.setKey(s.getType());
 			bean.setValue(s.getValue());
 			bean.setTransient(s.getFlags() != null && s.getFlags().contains(SettingFlag.Volatile));
+			bean.setRemove(s.getValue() == null);
 			cmd.getValues().add(bean);
 		}
 		if ( cmd.getValues().size() > 0 ) {
-			updateSettings(cmd);
+			updateSettings(cmd, true);
 		}
 	}
 
@@ -945,7 +971,7 @@ public class CASettingsService
 	 */
 	public void onBindHandler(SettingResourceHandler handler, Map<String, ?> properties) {
 		log.debug("Bind called on handler {} with props {}", handler, properties);
-		final String pid = handler.getSettingUID();
+		final String pid = handler.getSettingUid();
 
 		boolean factoryFound = false;
 		String factoryInstanceKey = null;
@@ -992,7 +1018,7 @@ public class CASettingsService
 			return;
 		}
 		log.debug("Unbind called on handler {} with props {}", handler, properties);
-		final String pid = handler.getSettingUID();
+		final String pid = handler.getSettingUid();
 
 		synchronized ( factories ) {
 			FactoryHelper helper = factories.get(pid);
@@ -1356,16 +1382,9 @@ public class CASettingsService
 	}
 
 	@Override
-	public InstructionState processInstruction(Instruction instruction) {
-		InstructionStatus status = processInstructionWithFeedback(instruction);
-		return (status != null ? status.getInstructionState() : null);
-	}
-
-	@Override
-	public InstructionStatus processInstructionWithFeedback(Instruction instruction) {
+	public InstructionStatus processInstruction(Instruction instruction) {
 		final String topic = (instruction != null ? instruction.getTopic() : null);
 		if ( TOPIC_UPDATE_SETTING.equals(topic) ) {
-			final InstructionStatus status = (instruction != null ? instruction.getStatus() : null);
 			// support passing any number of settings, which must be defined in parameter order
 			final String[] keys = instruction.getAllParameterValues(PARAM_UPDATE_SETTING_KEY);
 			final String[] types = instruction.getAllParameterValues(PARAM_UPDATE_SETTING_TYPE);
@@ -1390,7 +1409,11 @@ public class CASettingsService
 							}
 						}
 						Setting s = new Setting(key, type, value, flagSet);
-						settingDao.storeSetting(s);
+						if ( value == null ) {
+							settingDao.deleteSetting(key, type);
+						} else {
+							settingDao.storeSetting(s);
+						}
 						added.add(s);
 					}
 					applyImportedSettings(added);
@@ -1401,16 +1424,11 @@ public class CASettingsService
 							"Invalid settings parameters: must have equal number of keys/types/values but found %d/%d/%d.",
 							keys.length, (types != null ? types.length : 0),
 							(values != null ? values.length : 0)));
-					return (status != null
-							? status.newCopyWithState(InstructionState.Declined, resultParams)
-							: new BasicInstructionStatus(instruction.getId(), InstructionState.Declined,
-									new Date(), null, resultParams));
+					return createStatus(instruction, InstructionState.Declined, resultParams);
 				} catch ( IOException e ) {
 					log.warn("Error applying updated settings values {}: {}", added, e.toString());
 				}
-				return (status != null ? status.newCopyWithState(InstructionState.Completed)
-						: new BasicInstructionStatus(instruction.getId(), InstructionState.Completed,
-								new Date()));
+				return createStatus(instruction, InstructionState.Completed);
 
 			}
 		}

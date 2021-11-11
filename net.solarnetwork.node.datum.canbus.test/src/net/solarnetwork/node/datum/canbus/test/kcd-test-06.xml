@@ -5,7 +5,7 @@
 	<Document name="Bus" version="1.0" author="J Doe" company="ACME" date="2019-09-20">Bus CAN</Document>
 	
 	<Node id="2" name="Vehicle" sn:source-id="/BUS1/VEH1" sn:publish-interval="60000">
-		<Metadata sn:type="setting" sn:key="samplesTransformService.propertyFilters['UID']">Vehicle Virtual Meter</Metadata>
+		<Metadata sn:type="setting" sn:key="samplesTransformService.propertyFilters['uid']">Vehicle Virtual Meter</Metadata>
 	</Node>
 	
 	<Bus name="CANB">

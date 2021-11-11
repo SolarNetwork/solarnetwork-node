@@ -25,8 +25,8 @@ package net.solarnetwork.node.runtime.test;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,8 +38,10 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.junit.Before;
 import org.junit.Test;
-import net.solarnetwork.node.domain.Datum;
-import net.solarnetwork.node.domain.GeneralNodeDatum;
+import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.runtime.DatumHistory;
 
 /**
@@ -52,7 +54,7 @@ public class DatumHistoryTests {
 
 	private final DatumHistory.Configuration TINY_CONFIG = new DatumHistory.Configuration(3);
 
-	private ConcurrentMap<String, Queue<Datum>> raw;
+	private ConcurrentMap<String, Queue<NodeDatum>> raw;
 
 	@Before
 	public void setup() {
@@ -65,9 +67,7 @@ public class DatumHistoryTests {
 		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
 
 		// WHEN
-		GeneralNodeDatum datum = new GeneralNodeDatum();
-		datum.setSourceId("test");
-		datum.setCreated(new Date());
+		SimpleDatum datum = SimpleDatum.nodeDatum("test", Instant.now(), new DatumSamples());
 		h.add(datum);
 
 		// THEN
@@ -83,11 +83,9 @@ public class DatumHistoryTests {
 
 		// WHEN
 		String sourceId = "test";
-		List<Datum> all = new ArrayList<>();
+		List<NodeDatum> all = new ArrayList<>();
 		for ( int i = 0; i < 4; i++ ) {
-			GeneralNodeDatum datum = new GeneralNodeDatum();
-			datum.setSourceId(sourceId);
-			datum.setCreated(new Date());
+			SimpleDatum datum = SimpleDatum.nodeDatum(sourceId, Instant.now(), new DatumSamples());
 			all.add(datum);
 			h.add(datum);
 		}
@@ -106,9 +104,8 @@ public class DatumHistoryTests {
 		// WHEN
 		Map<String, Datum> all = new LinkedHashMap<>();
 		for ( int i = 0; i < 4; i++ ) {
-			GeneralNodeDatum datum = new GeneralNodeDatum();
-			datum.setSourceId(String.format("test.%d", i));
-			datum.setCreated(new Date());
+			SimpleDatum datum = SimpleDatum.nodeDatum(String.format("test.%d", i), Instant.now(),
+					new DatumSamples());
 			all.put(datum.getSourceId(), datum);
 			h.add(datum);
 		}
@@ -131,9 +128,8 @@ public class DatumHistoryTests {
 		Map<String, Datum> all = new LinkedHashMap<>();
 		for ( int i = 0; i < 4; i++ ) {
 			for ( int j = 0; j < 4; j++ ) {
-				GeneralNodeDatum datum = new GeneralNodeDatum();
-				datum.setSourceId(String.format("test.%d", j));
-				datum.setCreated(new Date());
+				SimpleDatum datum = SimpleDatum.nodeDatum(String.format("test.%d", i), Instant.now(),
+						new DatumSamples());
 				all.put(datum.getSourceId(), datum);
 				h.add(datum);
 			}

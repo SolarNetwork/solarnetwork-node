@@ -2,14 +2,28 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Outback MX60 Power Datum DataSource
 Bundle-SymbolicName: net.solarnetwork.node.datum.outback.mx60
+Automatic-Module-Name: net.solarnetwork.node.datum.outback.mx60
 Bundle-Description: Collect generation data from Outback MX60 inverters.
-Bundle-Version: 1.0.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
-Bundle-RequiredExecutionEnvironment: JavaSE-1.6
+Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
- net.solarnetwork.node;version="1.22.0",
- net.solarnetwork.node.domain;version="1.10.0",
- net.solarnetwork.node.util;version="1.4.0",
+ net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
+ net.solarnetwork.domain.datum;version="[2.0,3.0)",
+ net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
+ net.solarnetwork.node.io.serial;version="[3.0,4.0)",
+ net.solarnetwork.node.io.serial.support;version="[3.0,4.0)",
+ net.solarnetwork.node.job;version="[2.0,3.0)",
+ net.solarnetwork.node.service;version="[1.0,2.0)",
+ net.solarnetwork.node.service.support;version="[1.0,2.0)",
+ net.solarnetwork.service;version="[1.0,2.0)",
+ net.solarnetwork.service.support;version="[1.0,2.0)",
+ net.solarnetwork.settings;version="[2.0,3.0)",
+ net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.support;version="[2.0,3.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.beans.factory;version="[4.2,5.0)",
- org.springframework.core;version="[4.2,5.0)"
+ org.springframework.beans;version="[4.3,5.0)",
+ org.springframework.beans.factory;version="[4.3,5.0)",
+ org.springframework.context;version="[4.3,5.0)",
+ org.springframework.context.support;version="[4.3,5.0)",
+ org.springframework.core;version="[4.3,5.0)"

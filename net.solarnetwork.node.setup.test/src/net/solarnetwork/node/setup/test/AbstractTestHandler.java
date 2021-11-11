@@ -72,7 +72,7 @@ public abstract class AbstractTestHandler extends AbstractHandler {
 	 * @param request
 	 * @param response
 	 * @param dispatch
-	 * @return <em>true</em> if the request was handled successfully, and as
+	 * @return {@literal true} if the request was handled successfully, and as
 	 *         expected.
 	 * @throws Exception
 	 *         If any problem occurs.

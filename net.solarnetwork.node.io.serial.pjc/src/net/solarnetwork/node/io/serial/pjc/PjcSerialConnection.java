@@ -37,9 +37,9 @@ import java.util.concurrent.TimeoutException;
 import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.LockTimeoutException;
 import net.solarnetwork.node.io.serial.SerialConnection;
-import net.solarnetwork.node.support.SerialPortBeanParameters;
+import net.solarnetwork.node.service.LockTimeoutException;
+import net.solarnetwork.node.service.support.SerialPortBeanParameters;
 import net.solarnetwork.util.ByteList;
 import purejavacomm.CommPortIdentifier;
 import purejavacomm.NoSuchPortException;
@@ -53,7 +53,7 @@ import purejavacomm.UnsupportedCommOperationException;
  * PureJavaComm implementation of {@link SerialConnection}.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public class PjcSerialConnection implements SerialConnection, SerialPortEventListener {
 

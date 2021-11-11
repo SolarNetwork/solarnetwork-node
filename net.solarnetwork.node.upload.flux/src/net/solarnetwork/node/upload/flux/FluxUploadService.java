@@ -27,8 +27,8 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
-import static net.solarnetwork.node.OperationalModesService.hasActiveOperationalMode;
-import static net.solarnetwork.node.settings.support.SettingsUtil.dynamicListSettingSpecifier;
+import static net.solarnetwork.node.service.OperationalModesService.hasActiveOperationalMode;
+import static net.solarnetwork.settings.support.SettingUtils.dynamicListSettingSpecifier;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,6 +53,7 @@ import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.codec.ObjectEncoder;
 import net.solarnetwork.common.mqtt.BaseMqttConnectionService;
 import net.solarnetwork.common.mqtt.BasicMqttMessage;
 import net.solarnetwork.common.mqtt.MqttConnection;
@@ -69,37 +70,34 @@ import net.solarnetwork.common.mqtt.dao.MqttMessageEntity;
 import net.solarnetwork.dao.BasicBatchOptions;
 import net.solarnetwork.dao.BatchableDao;
 import net.solarnetwork.dao.BatchableDao.BatchCallbackResult;
-import net.solarnetwork.domain.GeneralDatumSamples;
-import net.solarnetwork.domain.Identifiable;
-import net.solarnetwork.domain.datum.GeneralDatumSamplesContainer;
-import net.solarnetwork.io.ObjectEncoder;
-import net.solarnetwork.node.DatumQueue;
-import net.solarnetwork.node.GeneralDatumSamplesTransformService;
-import net.solarnetwork.node.IdentityService;
-import net.solarnetwork.node.OperationalModesService;
-import net.solarnetwork.node.domain.GeneralDatum;
-import net.solarnetwork.node.settings.SettingSpecifier;
-import net.solarnetwork.node.settings.SettingSpecifierProvider;
-import net.solarnetwork.node.settings.support.BasicGroupSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicMultiValueSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicTitleSettingSpecifier;
-import net.solarnetwork.node.settings.support.BasicToggleSettingSpecifier;
-import net.solarnetwork.node.settings.support.SettingsUtil;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.service.DatumQueue;
+import net.solarnetwork.node.service.IdentityService;
+import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.service.DatumFilterService;
+import net.solarnetwork.service.Identifiable;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.OptionalServiceCollection;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
-import net.solarnetwork.util.OptionalService;
-import net.solarnetwork.util.OptionalServiceCollection;
 
 /**
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 1.14
+ * @version 2.0
  */
-public class FluxUploadService extends BaseMqttConnectionService
-		implements EventHandler, Consumer<GeneralDatum>, SettingSpecifierProvider,
-		SettingsChangeObserver, MqttConnectionObserver {
+public class FluxUploadService extends BaseMqttConnectionService implements EventHandler,
+		Consumer<NodeDatum>, SettingSpecifierProvider, SettingsChangeObserver, MqttConnectionObserver {
 
 	/** The MQTT topic template for node data publication. */
 	public static final String NODE_DATUM_TOPIC_TEMPLATE = "node/%d/datum/0/%s";
@@ -162,7 +160,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 	private FluxFilterConfig[] filters;
 	private boolean includeVersionTag = DEFAULT_INCLUDE_VERSION_TAG;
 	private OptionalServiceCollection<ObjectEncoder> datumEncoders;
-	private OptionalServiceCollection<GeneralDatumSamplesTransformService> transformServices;
+	private OptionalServiceCollection<DatumFilterService> transformServices;
 	private OptionalService<MqttMessageDao> mqttMessageDao;
 	private int cachedMessagePublishMaximum = DEFAULT_CACHED_MESSAGE_PUBLISH_MAXIMUM;
 	private boolean publishRetained = DEFAULT_PUBLISH_RETAINED;
@@ -389,7 +387,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 	}
 
 	@Override
-	public void accept(GeneralDatum datum) {
+	public void accept(NodeDatum datum) {
 		if ( datum == null || datum.getSourceId() == null ) {
 			return;
 		}
@@ -524,8 +522,8 @@ public class FluxUploadService extends BaseMqttConnectionService
 				FluxFilterConfig::getDatumEncoderUid);
 	}
 
-	private GeneralDatumSamplesTransformService transformServiceForSourceId(
-			FluxFilterConfig[] activeFilters, String sourceId) {
+	private DatumFilterService filterServiceForSourceId(FluxFilterConfig[] activeFilters,
+			String sourceId) {
 		return serviceForSourceId(activeFilters, sourceId, getTransformServices(),
 				FluxFilterConfig::getTransformServiceUid);
 	}
@@ -562,23 +560,21 @@ public class FluxUploadService extends BaseMqttConnectionService
 		return null;
 	}
 
-	private Map<String, Object> mapForDatum(FluxFilterConfig[] activeFilters, GeneralDatum datum) {
+	private Map<String, Object> mapForDatum(FluxFilterConfig[] activeFilters, NodeDatum datum) {
 		Map<String, Object> map = new LinkedHashMap<>();
-		if ( datum instanceof GeneralDatumSamplesContainer ) {
-			GeneralDatumSamplesContainer gds = (GeneralDatumSamplesContainer) datum;
-			GeneralDatumSamplesTransformService xform = transformServiceForSourceId(activeFilters,
-					datum.getSourceId());
-			if ( xform != null ) {
-				GeneralDatumSamples samples = xform.transformSamples(datum, gds.getSamples(),
-						new HashMap<>(4));
-				if ( samples == null ) {
-					return null;
-				}
-				if ( samples != gds.getSamples() ) {
-					datum = (GeneralDatum) gds.copyWithSamples(samples);
-				}
+
+		DatumFilterService xform = filterServiceForSourceId(activeFilters, datum.getSourceId());
+		if ( xform != null ) {
+			DatumSamplesOperations samples = xform.filter(datum, datum.asSampleOperations(),
+					new HashMap<>(4));
+			if ( samples == null ) {
+				return null;
+			}
+			if ( samples.differsFrom(datum.asSampleOperations()) ) {
+				datum = datum.copyWithSamples(samples);
 			}
 		}
+
 		Map<String, ?> datumProps = datum.asSimpleMap();
 		Pattern exPattern = this.excludePropertyNamesPattern;
 		if ( datumProps != null ) {
@@ -595,7 +591,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 	}
 
 	@Override
-	public String getSettingUID() {
+	public String getSettingUid() {
 		return "net.solarnetwork.node.upload.flux";
 	}
 
@@ -646,7 +642,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 		FluxFilterConfig[] confs = getFilters();
 		List<FluxFilterConfig> confsList = (confs != null ? asList(confs) : emptyList());
 		results.add(dynamicListSettingSpecifier("filters", confsList,
-				new SettingsUtil.KeyedListCallback<FluxFilterConfig>() {
+				new SettingUtils.KeyedListCallback<FluxFilterConfig>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(FluxFilterConfig value,
@@ -932,7 +928,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 	 * @return the transform services
 	 * @since 1.9
 	 */
-	public OptionalServiceCollection<GeneralDatumSamplesTransformService> getTransformServices() {
+	public OptionalServiceCollection<DatumFilterService> getTransformServices() {
 		return transformServices;
 	}
 
@@ -943,8 +939,7 @@ public class FluxUploadService extends BaseMqttConnectionService
 	 *        the services to set
 	 * @since 1.9
 	 */
-	public void setTransformServices(
-			OptionalServiceCollection<GeneralDatumSamplesTransformService> transformServices) {
+	public void setTransformServices(OptionalServiceCollection<DatumFilterService> transformServices) {
 		this.transformServices = transformServices;
 	}
 

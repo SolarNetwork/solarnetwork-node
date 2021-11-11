@@ -25,13 +25,13 @@ package net.solarnetwork.node.control.esi.domain;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Locale;
-import net.solarnetwork.domain.Identifiable;
+import net.solarnetwork.service.Identifiable;
 
 /**
  * API for accessing PriceMap information.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
 public interface PriceMapAccessor extends Identifiable {
 
@@ -65,6 +65,8 @@ public interface PriceMapAccessor extends Identifiable {
 	 * Get a brief informational string out of the main aspects of this price
 	 * map.
 	 * 
+	 * @param locale
+	 *        the locale
 	 * @return the string
 	 */
 	String toInfoString(Locale locale);
