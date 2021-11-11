@@ -108,7 +108,7 @@ public class DatumDataSourceOpModeInvoker extends BasicIdentifiable implements S
 	/**
 	 * Constructor.
 	 * 
-	 * @param taskScheduler
+	 * @param scheduler
 	 *        the task scheduler
 	 * @param opModesService
 	 *        the op modes service
