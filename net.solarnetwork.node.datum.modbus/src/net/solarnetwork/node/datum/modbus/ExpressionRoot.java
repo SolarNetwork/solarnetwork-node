@@ -81,6 +81,8 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	 *        the datum currently being populated
 	 * @param sample
 	 *        the current Modbus sample data
+	 * @param datumService
+	 *        the datum service
 	 */
 	public ExpressionRoot(NodeDatum datum, ModbusData sample, DatumService datumService) {
 		super(datum, null, null, datumService);
