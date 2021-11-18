@@ -53,6 +53,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
@@ -370,6 +372,31 @@ public class FluxUploadServiceTests {
 		// THEN
 		MqttMessage publishedMsg = msgCaptor.getValue();
 		assertMessage(publishedMsg, TEST_SOURCE_ID, datumMap(datum));
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void postDatum_invalidSourceId() throws Exception {
+		// GIVEN
+		expectMqttConnectionSetup();
+
+		Capture<MqttMessage> msgCaptor = new Capture<>();
+		CompletableFuture<Object> f = new CompletableFuture<>();
+		f.completeExceptionally(new IllegalArgumentException("Bad topic"));
+		expect(connection.publish(capture(msgCaptor))).andReturn((Future) f);
+
+		// WHEN
+		replayAll();
+		service.init();
+
+		String sourceId = "test#source";
+		SimpleDatum datum = SimpleDatum.nodeDatum(sourceId);
+		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
+		service.accept(datum);
+
+		// THEN
+		MqttMessage publishedMsg = msgCaptor.getValue();
+		assertMessage(publishedMsg, sourceId, datumMap(datum));
 	}
 
 	@Test
