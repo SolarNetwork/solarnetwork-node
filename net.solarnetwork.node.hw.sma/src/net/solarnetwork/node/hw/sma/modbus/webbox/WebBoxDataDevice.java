@@ -121,7 +121,7 @@ public class WebBoxDataDevice<T extends SmaDeviceData & SmaDeviceDataAccessor> i
 	public synchronized SmaDeviceDataAccessor refreshData(long maxAge) throws IOException {
 		if ( maxAge > 0 ) {
 			Instant ts = data.getDataTimestamp();
-			if ( ts != null && ts.until(Instant.now(), ChronoUnit.MILLIS) > maxAge ) {
+			if ( ts != null && ts.until(Instant.now(), ChronoUnit.MILLIS) < maxAge ) {
 				// data has not expired
 				return data.copy();
 			}

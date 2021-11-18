@@ -94,7 +94,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class FluxUploadService extends BaseMqttConnectionService implements EventHandler,
 		Consumer<NodeDatum>, SettingSpecifierProvider, SettingsChangeObserver, MqttConnectionObserver {
@@ -499,7 +499,11 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 				String message = (root instanceof TimeoutException ? "timeout" : root.getMessage());
 				log.warn("Error publishing to MQTT topic {} datum {} @ {}: {}", topic, data,
 						getMqttConfig().getServerUri(), message);
-				if ( dao != null ) {
+				if ( root instanceof IllegalArgumentException ) {
+					log.error(
+							"Discarding MQTT topic {} datum {} @ {} because of invalid data (illegal character in source ID?): {}",
+							topic, data, getMqttConfig().getServerUri(), message);
+				} else if ( dao != null ) {
 					msgToPersist = msg;
 				}
 			}
