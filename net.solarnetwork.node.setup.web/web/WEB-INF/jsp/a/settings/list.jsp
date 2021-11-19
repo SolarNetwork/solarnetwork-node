@@ -17,6 +17,13 @@
 			<c:forEach items="${factories}" var="factory" varStatus="factoryStatus">
 				<!--  ${factory.factoryUid} -->
 				<tr>
+					<td class="span1">
+						<c:if test="${fn:length(factory.settingSpecifierProviderInstanceIds) > 0}">
+							<span class="badge badge-info" title="<fmt:message key='settings.factories.instanceCount.caption'/>">
+								${fn:length(factory.settingSpecifierProviderInstanceIds)}
+							</span>
+						</c:if>
+					</td>
 					<td><strong><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></strong></td>
 					<td>
 						<a class="btn" href="<setup:url value='/a/settings/manage?uid=${factory.factoryUid}'/>">
