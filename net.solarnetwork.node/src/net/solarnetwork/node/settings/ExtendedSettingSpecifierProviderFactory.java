@@ -31,6 +31,7 @@ import net.solarnetwork.settings.SettingSpecifierProviderFactory;
  * 
  * @author matt
  * @version 1.0
+ * @since 2.1
  */
 public interface ExtendedSettingSpecifierProviderFactory extends SettingSpecifierProviderFactory {
 
