@@ -22,13 +22,21 @@
 
 package net.solarnetwork.node.settings.ca;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import net.solarnetwork.node.settings.ExtendedSettingSpecifierProviderFactory;
 import net.solarnetwork.node.settings.SettingResourceHandler;
+import net.solarnetwork.node.settings.support.FactoryInstanceIdComparator;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProviderFactory;
 import net.solarnetwork.util.MapPathMatcher;
@@ -38,9 +46,10 @@ import net.solarnetwork.util.SearchFilter;
  * Helper class for managing factory providers.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
-public final class FactoryHelper {
+@JsonIgnoreProperties({ "factory", "messageSource", "properties" })
+public final class FactoryHelper implements ExtendedSettingSpecifierProviderFactory {
 
 	private static final Logger log = LoggerFactory.getLogger(FactoryHelper.class);
 
@@ -56,6 +65,8 @@ public final class FactoryHelper {
 	 *        the factory to provide help to
 	 * @param properties
 	 *        the properties
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
 	 */
 	public FactoryHelper(SettingSpecifierProviderFactory factory, Map<String, ?> properties) {
 		this(factory, properties, new TreeMap<>(), new TreeMap<>());
@@ -72,15 +83,17 @@ public final class FactoryHelper {
 	 *        a map to use for tracking instance providers
 	 * @param handlerMap
 	 *        a map to use for tracking instance handlers
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
 	 */
 	public FactoryHelper(SettingSpecifierProviderFactory factory, Map<String, ?> properties,
 			Map<String, SettingSpecifierProvider> instanceMap,
 			Map<String, SettingResourceHandler> handlerMap) {
 		super();
-		this.factory = factory;
-		this.properties = properties;
-		this.instanceMap = instanceMap;
-		this.handlerMap = handlerMap;
+		this.factory = requireNonNullArgument(factory, "factory");
+		this.properties = requireNonNullArgument(properties, "properties");
+		this.instanceMap = requireNonNullArgument(instanceMap, "instanceMap");
+		this.handlerMap = requireNonNullArgument(handlerMap, "handlerMap");
 	}
 
 	/**
@@ -90,6 +103,34 @@ public final class FactoryHelper {
 	 */
 	public SettingSpecifierProviderFactory getFactory() {
 		return factory;
+	}
+
+	@Override
+	public String getFactoryUid() {
+		return factory.getFactoryUid();
+	}
+
+	@Override
+	public String getDisplayName() {
+		return factory.getDisplayName();
+	}
+
+	@Override
+	public MessageSource getMessageSource() {
+		return factory.getMessageSource();
+	}
+
+	@Override
+	public Set<String> getSettingSpecifierProviderInstanceIds() {
+		Set<String> keys = instanceMap.keySet();
+		if ( keys.isEmpty() ) {
+			return Collections.emptySet();
+		} else if ( keys.size() == 1 ) {
+			return Collections.singleton(keys.iterator().next());
+		}
+		Set<String> result = new TreeSet<>(FactoryInstanceIdComparator.INSTANCE);
+		result.addAll(keys);
+		return result;
 	}
 
 	/**
