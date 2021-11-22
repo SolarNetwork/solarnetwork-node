@@ -154,18 +154,18 @@ public class SolarCfgWifiConfiguration extends BaseIdentifiable
 			someArgProvided = true;
 		}
 		Map<String, Object> resultParams = new LinkedHashMap<>(3);
-		InstructionState resultState = InstructionState.Declined;
+		InstructionState resultState = InstructionState.Completed;
 		try {
 			if ( !configurationValid() ) {
 				resultParams.put(PARAM_MESSAGE,
 						getMessageSource().getMessage("error.incompleteConfiguration", null,
 								"Incomplete configuration.", Locale.getDefault()));
+				resultState = InstructionState.Declined;
 			} else if ( !someArgProvided ) {
 				// return status
 				Status status = currentStatus();
 				if ( status != null ) {
 					resultParams.put(PARAM_SERVICE_RESULT, status);
-					resultState = InstructionState.Completed;
 				}
 			} else {
 				List<String> result = updateConfiguration();
@@ -174,7 +174,6 @@ public class SolarCfgWifiConfiguration extends BaseIdentifiable
 							"error.updateStatusUnknown", null, "Unknown result.", Locale.getDefault()));
 				} else {
 					resultParams.put(PARAM_SERVICE_RESULT, result);
-					resultState = InstructionState.Completed;
 				}
 			}
 		} catch ( Exception e ) {
