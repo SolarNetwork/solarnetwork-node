@@ -31,13 +31,25 @@ and to update the WiFi settings. The `service` parameter must be `wifi`.
 
 ## Status instruction
 
-To get the device status, pass no additional instruction parameters. The response parameter `result`
+To get the device status, pass no additional instruction parameters. The result parameter `result`
 will be a status object with the following properties:
 
 | Property | Type | Description |
 |:---------|:-----|:------------|
 | `active` | `boolean` | Will be `true` if the WiFi connection is active. |
 | `addresses` | `List<String>` | A list of IP addresses associated with the WiFi device. |
+
+Here's an example result, expressed in JSON:
+
+```json
+{
+  "active": true,
+  "addresses": [
+    "192.168.1.134",
+    "2406:e006:3093:b301:65b1:4726:2af:d721"
+  ]
+}
+```
 
 ## Update instruction
 
