@@ -49,5 +49,7 @@ The `SystemConfigure` instruction topic can be used to test the HTTP connection,
 to verify SolarNode's network connectivity status. If no **Service Name** is configured, the
 instruction `service` parameter must be `ping`. Otherwise the `service` parameter must be
 `ping-{service name}` where `{service name}` is the **Service Name** value. The instruction will
-return the `Completed` state if the ping test is successful. Otherwise a `Declined` state will be
-returned. Either way a `message` result parameter will contain a description of the outcome.
+return the `Completed` state regardless if the ping test is successful or not. A `message` result
+parameter will contain a description of the outcome. If the ping test fails for any reason, a
+`result` result parameter will contain either the ping requests's returned status code, or `-1` if
+the request could not be completed, e.g. the connection could not be established.

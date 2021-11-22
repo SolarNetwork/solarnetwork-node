@@ -186,11 +186,9 @@ public class HttpRequesterJob extends BaseIdentifiable implements JobService, In
 			return null;
 		}
 		Map<String, Object> resultParams = new LinkedHashMap<>(3);
-		InstructionState resultState = InstructionState.Declined;
 		try {
 			int responseCode = doPing();
 			if ( isResponseCodeOk(responseCode) ) {
-				resultState = InstructionState.Completed;
 				resultParams.put(PARAM_MESSAGE, getMessageSource().getMessage("ping.success.msg",
 						new Object[] { url }, "Connection success.", Locale.getDefault()));
 			} else {
@@ -198,6 +196,7 @@ public class HttpRequesterJob extends BaseIdentifiable implements JobService, In
 						getMessageSource().getMessage("ping.errorStatus.msg",
 								new Object[] { responseCode, url }, "Error status returned.",
 								Locale.getDefault()));
+				resultParams.put(PARAM_SERVICE_RESULT, responseCode);
 			}
 		} catch ( Exception e ) {
 			Throwable root = e;
@@ -206,8 +205,10 @@ public class HttpRequesterJob extends BaseIdentifiable implements JobService, In
 			}
 			resultParams.put(PARAM_MESSAGE, getMessageSource().getMessage("ping.error.msg",
 					new Object[] { url, root.toString() }, "Error connecting.", Locale.getDefault()));
+			resultParams.put(PARAM_SERVICE_RESULT, -1);
 		}
-		return InstructionUtils.createStatus(instruction, resultState, Instant.now(), resultParams);
+		return InstructionUtils.createStatus(instruction, InstructionState.Completed, Instant.now(),
+				resultParams);
 	}
 
 	private String serviceName() {

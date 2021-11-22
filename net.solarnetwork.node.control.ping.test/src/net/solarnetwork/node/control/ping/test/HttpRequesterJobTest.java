@@ -27,6 +27,7 @@ import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
@@ -202,7 +203,7 @@ public class HttpRequesterJobTest {
 		verify(handler);
 		assertThat("Request count", httpHandler.getCount(), is(1));
 		assertThat("Instruction returned result", result, is(notNullValue()));
-		assertThat("Compelted OK", result.getInstructionState(), is(InstructionState.Completed));
+		assertThat("Completed ping", result.getInstructionState(), is(InstructionState.Completed));
 		assertThat("Result parameters provided", result.getResultParameters(), is(notNullValue()));
 		log.debug("Got ping result message: {}",
 				result.getResultParameters().get(InstructionHandler.PARAM_MESSAGE));
@@ -237,13 +238,16 @@ public class HttpRequesterJobTest {
 		// THEN
 		verify(handler);
 		assertThat("Instruction returned result", result, is(notNullValue()));
-		assertThat("Compelted with error", result.getInstructionState(), is(InstructionState.Declined));
+		assertThat("Completed ping", result.getInstructionState(), is(InstructionState.Completed));
 		assertThat("Result parameters provided", result.getResultParameters(), is(notNullValue()));
 		log.debug("Got ping result message: {}",
 				result.getResultParameters().get(InstructionHandler.PARAM_MESSAGE));
 		assertThat("Result parameter message provided",
 				result.getResultParameters().get(InstructionHandler.PARAM_MESSAGE),
 				is(instanceOf(String.class)));
+		assertThat("Result parameter result is status code",
+				result.getResultParameters().get(InstructionHandler.PARAM_SERVICE_RESULT),
+				is(equalTo(500)));
 	}
 
 	@Test
@@ -263,13 +267,16 @@ public class HttpRequesterJobTest {
 		// THEN
 		verify(handler);
 		assertThat("Instruction returned result", result, is(notNullValue()));
-		assertThat("Compelted with error", result.getInstructionState(), is(InstructionState.Declined));
+		assertThat("Completed ping", result.getInstructionState(), is(InstructionState.Completed));
 		assertThat("Result parameters provided", result.getResultParameters(), is(notNullValue()));
 		log.debug("Got ping result message: {}",
 				result.getResultParameters().get(InstructionHandler.PARAM_MESSAGE));
 		assertThat("Result parameter message provided",
 				result.getResultParameters().get(InstructionHandler.PARAM_MESSAGE),
 				is(instanceOf(String.class)));
+		assertThat("Result parameter result is error code",
+				result.getResultParameters().get(InstructionHandler.PARAM_SERVICE_RESULT),
+				is(equalTo(-1)));
 	}
 
 }
