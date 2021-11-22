@@ -27,8 +27,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Scanner;
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLSocketFactory;
@@ -37,6 +41,7 @@ import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.job.JobService;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
+import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
@@ -110,7 +115,15 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
  * @author matt
  * @version 3.0
  */
-public class HttpRequesterJob extends BaseIdentifiable implements JobService {
+public class HttpRequesterJob extends BaseIdentifiable implements JobService, InstructionHandler {
+
+	/**
+	 * The {@literal service} instruction parameter value for WiFi
+	 * configuration.
+	 * 
+	 * @since 2.1
+	 */
+	public static final String PING_SERVICE_NAME = "ping";
 
 	public static final int DEFAULT_OS_COMMAND_SLEEP_SECONDS = 5;
 
@@ -158,6 +171,51 @@ public class HttpRequesterJob extends BaseIdentifiable implements JobService {
 			}
 			handleOSCommand(osCommandToggleOn);
 		}
+	}
+
+	@Override
+	public boolean handlesTopic(String topic) {
+		return InstructionHandler.TOPIC_SYSTEM_CONFIGURE.equals(topic);
+	}
+
+	@Override
+	public InstructionStatus processInstruction(Instruction instruction) {
+		final String serviceName = serviceName();
+		if ( instruction == null || !handlesTopic(instruction.getTopic())
+				|| !serviceName.equals(instruction.getParameterValue(PARAM_SERVICE)) ) {
+			return null;
+		}
+		Map<String, Object> resultParams = new LinkedHashMap<>(3);
+		InstructionState resultState = InstructionState.Declined;
+		try {
+			int responseCode = doPing();
+			if ( isResponseCodeOk(responseCode) ) {
+				resultState = InstructionState.Completed;
+				resultParams.put(PARAM_MESSAGE, getMessageSource().getMessage("ping.success.msg",
+						new Object[] { url }, "Connection success.", Locale.getDefault()));
+			} else {
+				resultParams.put(PARAM_MESSAGE,
+						getMessageSource().getMessage("ping.errorStatus.msg",
+								new Object[] { responseCode, url }, "Error status returned.",
+								Locale.getDefault()));
+			}
+		} catch ( Exception e ) {
+			Throwable root = e;
+			while ( root.getCause() != null ) {
+				root = root.getCause();
+			}
+			resultParams.put(PARAM_MESSAGE, getMessageSource().getMessage("ping.error.msg",
+					new Object[] { url, root.toString() }, "Error connecting.", Locale.getDefault()));
+		}
+		return InstructionUtils.createStatus(instruction, resultState, Instant.now(), resultParams);
+	}
+
+	private String serviceName() {
+		String uid = getUid();
+		if ( uid != null && !uid.isEmpty() ) {
+			return String.format("%s-%s", PING_SERVICE_NAME, uid);
+		}
+		return PING_SERVICE_NAME;
 	}
 
 	private void handleOSCommand(String command) {
@@ -229,29 +287,38 @@ public class HttpRequesterJob extends BaseIdentifiable implements JobService {
 	private boolean ping() {
 		log.debug("Attempting to ping {}", url);
 		try {
-			HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
-			connection.setConnectTimeout(connectionTimeoutSeconds * 1000);
-			connection.setReadTimeout(connectionTimeoutSeconds * 1000);
-			connection.setRequestMethod("HEAD");
-			connection.setInstanceFollowRedirects(false);
-
-			if ( sslService != null && connection instanceof HttpsURLConnection ) {
-				SSLService service = sslService.service();
-				if ( service != null ) {
-					SSLSocketFactory factory = service.getSSLSocketFactory();
-					if ( factory != null ) {
-						HttpsURLConnection sslConnection = (HttpsURLConnection) connection;
-						sslConnection.setSSLSocketFactory(factory);
-					}
-				}
-			}
-
-			int responseCode = connection.getResponseCode();
-			return (responseCode >= 200 && responseCode < 400);
+			int responseCode = doPing();
+			return isResponseCodeOk(responseCode);
 		} catch ( IOException e ) {
 			log.info("Error pinging {}: {}", url, e.getMessage());
 			return false;
 		}
+	}
+
+	private static boolean isResponseCodeOk(int responseCode) {
+		return (responseCode >= 200 && responseCode < 400);
+	}
+
+	private int doPing() throws IOException {
+		log.debug("Attempting to ping {}", url);
+		HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+		connection.setConnectTimeout(connectionTimeoutSeconds * 1000);
+		connection.setReadTimeout(connectionTimeoutSeconds * 1000);
+		connection.setRequestMethod("HEAD");
+		connection.setInstanceFollowRedirects(false);
+
+		if ( sslService != null && connection instanceof HttpsURLConnection ) {
+			SSLService service = sslService.service();
+			if ( service != null ) {
+				SSLSocketFactory factory = service.getSSLSocketFactory();
+				if ( factory != null ) {
+					HttpsURLConnection sslConnection = (HttpsURLConnection) connection;
+					sslConnection.setSSLSocketFactory(factory);
+				}
+			}
+		}
+
+		return connection.getResponseCode();
 	}
 
 	private InstructionState toggleControl(final InstructionExecutionService service,
@@ -291,6 +358,7 @@ public class HttpRequesterJob extends BaseIdentifiable implements JobService {
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<>(8);
+		results.addAll(baseIdentifiableSettings(""));
 		results.add(new BasicTextFieldSettingSpecifier("url", DEFAULT_URL));
 		results.add(new BasicTextFieldSettingSpecifier("controlId", null));
 		results.add(new BasicToggleSettingSpecifier("failedToggleValue",

@@ -36,6 +36,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.control.ping.HttpRequesterJob</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
@@ -53,7 +54,15 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.ping.http" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedJob</beans:value>
+			<beans:value>net.solarnetwork.node.reactor.InstructionHandler</beans:value>
 		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="instruction">
+				<beans:list>
+					<beans:value>SystemConfigure</beans:value>
+				</beans:list>
+			</beans:entry>
+		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.job.SimpleManagedJob" 
 				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 			<argument>

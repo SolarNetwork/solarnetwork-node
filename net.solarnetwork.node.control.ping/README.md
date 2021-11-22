@@ -32,6 +32,8 @@ Each device configuration contains the following overall settings:
 | Setting              | Description |
 |----------------------|-------------|
 | Schedule             | A cron schedule that determines when data is collected. |
+| Service Name         | A unique name to identify this data source with. |
+| Service Group        | A group name to associate this data source with. |
 | URL                  | The absolute HTTP URL to test, e.g. `http://www.google.com/`. |
 | Control ID           | The ID of another SolarNode control to toggle when a network problem is detected. This control must allow toggling its value between `true` (on) and `false` (off). May be omitted if only **Command toggle on/off** is desired. |
 | Control toggle value | The value to set the configured control to if the ping is considered a failure. After the control is toggled to this value, it will be toggled back to the opposite value after the configured delay. |
@@ -40,3 +42,12 @@ Each device configuration contains the following overall settings:
 | Command toggle off   | An OS-specific command that, if configured, will be executed when the HTTP request fails. This can be used with or without the **Control ID** and **Command toggle on** settings. |
 | Command toggle on    | An OS-specific command that, if configured, will be executed after the configured **Toggle delay** after a HTTP request fails. This can be used with or without the **Control ID** and **Command toggle off** settings. |
 | Command delay        | The number of seconds to wait after executing either of the configured OS commands successfully. |
+
+# `SystemConfigure` instruction support
+
+The `SystemConfigure` instruction topic can be used to test the HTTP connection, which can be used
+to verify SolarNode's network connectivity status. If no **Service Name** is configured, the
+instruction `service` parameter must be `ping`. Otherwise the `service` parameter must be
+`ping-{service name}` where `{service name}` is the **Service Name** value. The instruction will
+return the `Completed` state if the ping test is successful. Otherwise a `Declined` state will be
+returned. Either way a `message` result parameter will contain a description of the outcome.
