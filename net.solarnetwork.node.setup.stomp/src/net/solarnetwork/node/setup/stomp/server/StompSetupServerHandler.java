@@ -548,7 +548,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 
 	private void pubMessage(ChannelHandlerContext ctx, SetupSession session, String topic,
 			MultiValueMap<String, String> headers, Object body) {
-		Collection<String> subIds = session.subscriptionIdsForTopic(SetupTopic.DatumLatest.getValue(),
+		Collection<String> subIds = session.subscriptionIdsForTopic(topic,
 				serverService.getPathMatcher());
 		if ( subIds != null && !subIds.isEmpty() ) {
 			byte[] json = null;
