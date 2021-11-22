@@ -18,9 +18,15 @@
 	<service>
 		<interfaces>
 			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
+			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
 		</interfaces>
 		<service-properties>
 			<entry key="on-association" value="true"/>
+			<entry key="instruction">
+				<list>
+					<value>SystemConfigure</value>
+				</list>
+			</entry>
 		</service-properties>
 		<bean class="net.solarnetwork.node.setup.wifi.SolarCfgWifiConfiguration">
 			<osgix:managed-properties persistent-id="net.solarnetwork.node.setup.wifi.SolarCfgWifiConfiguration" 

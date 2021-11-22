@@ -26,14 +26,21 @@ import static net.solarnetwork.node.Constants.solarNodeHome;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -46,15 +53,44 @@ import net.solarnetwork.util.StringUtils;
  * Settings provider for WiFi.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class SolarCfgWifiConfiguration extends BaseIdentifiable
-		implements SettingSpecifierProvider, SettingsChangeObserver {
+		implements SettingSpecifierProvider, SettingsChangeObserver, InstructionHandler {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	/** The default value for the {@code command} property. */
 	public static final String DEFAULT_COMMAND = solarNodeHome() + "/bin/solarcfg";
+
+	/**
+	 * The country instruction parameter.
+	 * 
+	 * @since 2.1
+	 */
+	public static final String PARAM_COUNTRY = "country";
+
+	/**
+	 * The SSID instruction parameter.
+	 * 
+	 * @since 2.1
+	 */
+	public static final String PARAM_SSID = "ssid";
+
+	/**
+	 * The password instruction parameter.
+	 * 
+	 * @since 2.1
+	 */
+	public static final String PARAM_PASSWORD = "password";
+
+	/**
+	 * The {@literal service} instruction parameter value for WiFi
+	 * configuration.
+	 * 
+	 * @since 2.1
+	 */
+	public static final String WIFI_SERVICE_NAME = "wifi";
 
 	private String command = DEFAULT_COMMAND;
 	private String country;
@@ -81,12 +117,70 @@ public class SolarCfgWifiConfiguration extends BaseIdentifiable
 				ssid = s.ssid;
 			}
 		}
-		if ( command == null || command.isEmpty() || country == null || country.isEmpty() || ssid == null
-				|| ssid.isEmpty() || password == null || password.isEmpty() ) {
+		if ( !configurationValid() ) {
 			return;
 		}
 		log.info("WiFi configuration updated: country = {}, ssid = [{}]", country, ssid);
 		updateConfiguration();
+	}
+
+	private boolean configurationValid() {
+		return !(command == null || command.isEmpty() || country == null || country.isEmpty()
+				|| ssid == null || ssid.isEmpty() || password == null || password.isEmpty());
+	}
+
+	@Override
+	public boolean handlesTopic(String topic) {
+		return InstructionHandler.TOPIC_SYSTEM_CONFIGURE.equals(topic);
+	}
+
+	@Override
+	public synchronized InstructionStatus processInstruction(Instruction instruction) {
+		if ( instruction == null || !handlesTopic(instruction.getTopic())
+				|| !WIFI_SERVICE_NAME.equals(instruction.getParameterValue(PARAM_SERVICE)) ) {
+			return null;
+		}
+		boolean someArgProvided = false;
+		if ( instruction.isParameterAvailable(PARAM_COUNTRY) ) {
+			country = instruction.getParameterValue(PARAM_COUNTRY);
+			someArgProvided = true;
+		}
+		if ( instruction.isParameterAvailable(PARAM_SSID) ) {
+			ssid = instruction.getParameterValue(PARAM_SSID);
+			someArgProvided = true;
+		}
+		if ( instruction.isParameterAvailable(PARAM_PASSWORD) ) {
+			password = instruction.getParameterValue(PARAM_PASSWORD);
+			someArgProvided = true;
+		}
+		Map<String, Object> resultParams = new LinkedHashMap<>(3);
+		InstructionState resultState = InstructionState.Declined;
+		try {
+			if ( !configurationValid() ) {
+				resultParams.put(PARAM_MESSAGE,
+						getMessageSource().getMessage("error.incompleteConfiguration", null,
+								"Incomplete configuration.", Locale.getDefault()));
+			} else if ( !someArgProvided ) {
+				// return status
+				Status status = currentStatus();
+				if ( status != null ) {
+					resultParams.put(PARAM_SERVICE_RESULT, status);
+					resultState = InstructionState.Completed;
+				}
+			} else {
+				List<String> result = updateConfiguration();
+				if ( result.isEmpty() ) {
+					resultParams.put(PARAM_MESSAGE, getMessageSource().getMessage(
+							"error.updateStatusUnknown", null, "Unknown result.", Locale.getDefault()));
+				} else {
+					resultParams.put(PARAM_SERVICE_RESULT, result);
+					resultState = InstructionState.Completed;
+				}
+			}
+		} catch ( Exception e ) {
+			resultParams.put(PARAM_MESSAGE, e.toString());
+		}
+		return InstructionUtils.createStatus(instruction, resultState, Instant.now(), resultParams);
 	}
 
 	@Override
@@ -159,7 +253,10 @@ public class SolarCfgWifiConfiguration extends BaseIdentifiable
 		}
 	}
 
-	private static final class Status {
+	/**
+	 * A status class.
+	 */
+	public static final class Status {
 
 		private final boolean active;
 		private final List<String> addresses;
@@ -169,6 +266,25 @@ public class SolarCfgWifiConfiguration extends BaseIdentifiable
 			this.active = active;
 			this.addresses = addresses;
 		}
+
+		/**
+		 * Get the WiFi active status.
+		 * 
+		 * @return {@literal true} if WiFi is active
+		 */
+		public boolean isActive() {
+			return active;
+		}
+
+		/**
+		 * Get the WiFi IP address(es).
+		 * 
+		 * @return the IP address(es) assigned to WiFi
+		 */
+		public List<String> getAddresses() {
+			return addresses;
+		}
+
 	}
 
 	private Status currentStatus() {
