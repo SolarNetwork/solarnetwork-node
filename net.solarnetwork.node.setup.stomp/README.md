@@ -259,7 +259,7 @@ public boolean handlesTopic(String topic) {
   return InstructionHandler.TOPIC_SYSTEM_CONFIGURE.equals(topic);
 }
 
-public InstructionStatus processInstructionWithFeedback(Instruction instruction) {
+public InstructionStatus processInstruction(Instruction instruction) {
   if ( instruction == null || !handlesTopic(instruction.getTopic()) ) {
     return null;
   }
@@ -268,7 +268,7 @@ public InstructionStatus processInstructionWithFeedback(Instruction instruction)
     return null;
   }
   final String result = "Hi there!";
-  return InstructionStatus.createStatus(instruction, InstructionState.Completed, new Date(),
+  return InstructionStatus.createStatus(instruction, InstructionState.Completed, Instant.now(),
       Collections.singletonMap(InstructionHandler.PARAM_SERVICE_RESULT, result));
 }
 ```
