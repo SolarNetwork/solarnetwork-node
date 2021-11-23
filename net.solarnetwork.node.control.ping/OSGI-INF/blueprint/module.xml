@@ -54,15 +54,7 @@
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.ping.http" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedJob</beans:value>
-			<beans:value>net.solarnetwork.node.reactor.InstructionHandler</beans:value>
 		</osgix:interfaces>
-		<osgix:service-properties>
-			<beans:entry key="instruction">
-				<beans:list>
-					<beans:value>SystemConfigure</beans:value>
-				</beans:list>
-			</beans:entry>
-		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.job.SimpleManagedJob" 
 				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 			<argument>
@@ -73,6 +65,28 @@
 				</bean>
 			</argument>
 			<argument value="0 0/5 * * * ?"/>
+			<property name="serviceProviderConfigurations">
+				<map>
+					<entry key="instructionHandler">
+						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
+							<property name="interfaces">
+								<list>
+									<value>net.solarnetwork.node.reactor.InstructionHandler</value>
+								</list>
+							</property>
+							<property name="properties">
+								<map>
+									<entry key="instruction">
+										<list>
+											<value>SystemConfigure</value>
+										</list>
+									</entry>
+								</map>
+							</property>
+						</bean>
+					</entry>
+				</map>
+			</property>
 		</bean>
 	</osgix:managed-service-factory>
 

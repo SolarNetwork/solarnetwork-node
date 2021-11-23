@@ -386,6 +386,20 @@ public class HttpRequesterJob extends BaseIdentifiable implements JobService, In
 		return messageSource;
 	}
 
+	/**
+	 * Get this class as an instruction handler.
+	 * 
+	 * <p>
+	 * This method exists to support registering this class via the dynamic
+	 * service provider API.
+	 * </p>
+	 * 
+	 * @return this instance
+	 */
+	public InstructionHandler getInstructionHandler() {
+		return this;
+	}
+
 	public void setControlId(String value) {
 		if ( value != null && value.length() < 1 ) {
 			value = null;
