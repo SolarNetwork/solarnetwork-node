@@ -348,7 +348,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 					try {
 						ServiceRegistration<?> ref = bundleContext.registerService(interfaces, service,
 								props);
-						log.debug("Job [{}] registered managed service {} as {} with props {}",
+						log.info("Job [{}] registered managed service {} as {} with props {}",
 								identifier, service, Arrays.toString(interfaces), props);
 						if ( refs == null ) {
 							refs = new ArrayList<>(services.size());
