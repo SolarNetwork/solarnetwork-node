@@ -90,7 +90,7 @@ public class SolarCfgWifiConfiguration extends BaseIdentifiable
 	 * 
 	 * @since 2.1
 	 */
-	public static final String WIFI_SERVICE_NAME = "wifi";
+	public static final String WIFI_SERVICE_NAME = "/setup/network/wifi";
 
 	private String command = DEFAULT_COMMAND;
 	private String country;

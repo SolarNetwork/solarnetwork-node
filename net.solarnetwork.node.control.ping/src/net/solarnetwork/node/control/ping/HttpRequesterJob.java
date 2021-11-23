@@ -123,7 +123,7 @@ public class HttpRequesterJob extends BaseIdentifiable implements JobService, In
 	 * 
 	 * @since 2.1
 	 */
-	public static final String PING_SERVICE_NAME = "ping";
+	public static final String PING_SERVICE_NAME = "/setup/network/ping";
 
 	public static final int DEFAULT_OS_COMMAND_SLEEP_SECONDS = 5;
 
