@@ -214,7 +214,7 @@ public class HttpRequesterJob extends BaseIdentifiable implements JobService, In
 	private String serviceName() {
 		String uid = getUid();
 		if ( uid != null && !uid.isEmpty() ) {
-			return String.format("%s-%s", PING_SERVICE_NAME, uid);
+			return String.format("%s/%s", PING_SERVICE_NAME, uid);
 		}
 		return PING_SERVICE_NAME;
 	}

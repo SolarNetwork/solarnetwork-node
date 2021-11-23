@@ -27,7 +27,7 @@ Each device configuration contains the following overall settings:
 # `SystemConfigure` instruction support
 
 The `SystemConfigure` instruction topic can be used to both get the current WiFi device status
-and to update the WiFi settings. The `service` parameter must be `wifi`. 
+and to update the WiFi settings. The `service` parameter must be `/setup/network/wifi`. 
 
 ## Status instruction
 

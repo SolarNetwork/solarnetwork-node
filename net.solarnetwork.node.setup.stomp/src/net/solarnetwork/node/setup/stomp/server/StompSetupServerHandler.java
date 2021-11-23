@@ -367,7 +367,9 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 			return;
 		}
 
-		executeInstruction(ctx, frame, session, dest);
+		final MultiValueMap<String, String> reqHeaders = headerMap(frame);
+		executeInstruction(ctx, frame, session, reqHeaders, dest,
+				InstructionHandler.TOPIC_SYSTEM_CONFIGURE);
 	}
 
 	private void authenticate(ChannelHandlerContext ctx, StompFrame frame, SetupSession session) {
@@ -451,22 +453,34 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 		return auth;
 	}
 
-	private void executeInstruction(final ChannelHandlerContext ctx, final StompFrame frame,
-			final SetupSession session, final String topic) {
-		Map<String, String> instrParams = new LinkedHashMap<>();
+	private static MultiValueMap<String, String> headerMap(StompFrame frame) {
 		StompHeaders headers = frame.headers();
-		MultiValueMap<String, String> reqHeaders = new LinkedMultiValueMap<>(headers.size());
+		MultiValueMap<String, String> map = new LinkedMultiValueMap<>(headers.size());
 		for ( Iterator<Entry<String, String>> itr = headers.iteratorAsString(); itr.hasNext(); ) {
 			Entry<String, String> entry = itr.next();
 			String key = entry.getKey();
 			String value = decodeStompHeaderValue(entry.getValue());
-			reqHeaders.add(key, value);
+			map.add(key, value);
+		}
+		return map;
+	}
+
+	private void executeInstruction(final ChannelHandlerContext ctx, final StompFrame frame,
+			final SetupSession session, final MultiValueMap<String, String> reqHeaders,
+			final String dest, final String topic) {
+		Map<String, String> instrParams = new LinkedHashMap<>();
+		for ( Entry<String, List<String>> entry : reqHeaders.entrySet() ) {
+			String key = entry.getKey();
 			if ( StompHeader.ContentType.getValue().equals(key)
 					|| !(STOMP_HEADER_NAMES.contains(key) || SETUP_HEADER_NAMES.contains(key)) ) {
-				instrParams.put(key, value);
+				List<String> vals = entry.getValue();
+				if ( !vals.isEmpty() ) {
+					// only take the first param
+					instrParams.put(key, vals.get(0));
+				}
 			}
 		}
-		instrParams.put(InstructionHandler.PARAM_SERVICE, topic);
+		instrParams.put(InstructionHandler.PARAM_SERVICE, dest);
 		if ( frame.content().isReadable() ) {
 			byte[] data = ByteBufUtil.getBytes(frame.content());
 			if ( data != null && data.length > 0 ) {
@@ -515,7 +529,7 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 									.toString();
 						}
 					}
-					pubStatusMessage(ctx, session, topic, reqHeaders, statusCode, message, result);
+					pubStatusMessage(ctx, session, dest, reqHeaders, statusCode, message, result);
 				} catch ( Exception e ) {
 					Throwable root = e;
 					while ( root.getCause() != null ) {
@@ -525,8 +539,8 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 					if ( msg == null ) {
 						msg = root.toString();
 					}
-					pubStatusMessage(ctx, session, topic, reqHeaders,
-							SetupStatus.InternalError.getCode(), msg, null);
+					pubStatusMessage(ctx, session, dest, reqHeaders, SetupStatus.InternalError.getCode(),
+							msg, null);
 				} finally {
 					SecurityContextHolder.getContext().setAuthentication(null);
 				}
