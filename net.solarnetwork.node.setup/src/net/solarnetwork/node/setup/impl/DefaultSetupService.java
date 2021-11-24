@@ -97,8 +97,8 @@ import net.solarnetwork.service.OptionalService;
  * {@link SetupSettings#KEY_SOLARNETWORK_HOST_PORT}.</dd>
  * 
  * <dt>forceTLS</dt>
- * <dd>If {@literal true} then use TLS (SSL) even on a port other than {@code 443}
- * (the default TLS port). Defaults to {@literal false}.</dd>
+ * <dd>If {@literal true} then use TLS (SSL) even on a port other than
+ * {@code 443} (the default TLS port). Defaults to {@literal false}.</dd>
  * 
  * <dt>solarInUrlPrefix</dt>
  * <dd>The URL prefix for the SolarIn service. Defaults to
@@ -106,7 +106,7 @@ import net.solarnetwork.service.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class DefaultSetupService extends XmlServiceSupport
 		implements SetupService, IdentityService, InstructionHandler {
@@ -149,6 +149,14 @@ public class DefaultSetupService extends XmlServiceSupport
 	 * @since 1.8
 	 */
 	public static final String NETWORK_APP_CONFIGURATION_URL_PATH = "/api/v1/pub/config";
+
+	/**
+	 * The {@literal service} instruction parameter value for identity
+	 * information configuration.
+	 * 
+	 * @since 2.1
+	 */
+	public static final String IDENTITY_SERVICE_NAME = "/setup/identity";
 
 	public static final Pattern DEFAULT_SUBJECT_NAME_NODE_ID_PATTERN = Pattern
 			.compile("UID\\s*=\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
@@ -489,14 +497,22 @@ public class DefaultSetupService extends XmlServiceSupport
 
 	@Override
 	public boolean handlesTopic(String topic) {
-		return INSTRUCTION_TOPIC_RENEW_CERTIFICATE.equalsIgnoreCase(topic);
+		return (INSTRUCTION_TOPIC_RENEW_CERTIFICATE.equalsIgnoreCase(topic)
+				|| TOPIC_SYSTEM_CONFIGURE.equalsIgnoreCase(topic));
 	}
 
 	@Override
 	public InstructionStatus processInstruction(Instruction instruction) {
-		if ( !INSTRUCTION_TOPIC_RENEW_CERTIFICATE.equalsIgnoreCase(instruction.getTopic()) ) {
-			return null;
+		final String topic = (instruction != null ? instruction.getTopic() : null);
+		if ( INSTRUCTION_TOPIC_RENEW_CERTIFICATE.equalsIgnoreCase(topic) ) {
+			return processRenewCertificateInstruction(instruction);
+		} else if ( TOPIC_SYSTEM_CONFIGURE.equalsIgnoreCase(topic) ) {
+			return processSystemConfigureInstruction(instruction);
 		}
+		return null;
+	}
+
+	private InstructionStatus processRenewCertificateInstruction(Instruction instruction) {
 		PKIService pki = pkiService;
 		if ( pki == null ) {
 			return null;
@@ -520,6 +536,32 @@ public class DefaultSetupService extends XmlServiceSupport
 			log.error("Failed to install renewed certificate", e);
 		}
 		return null;
+	}
+
+	private InstructionStatus processSystemConfigureInstruction(Instruction instruction) {
+		final String service = instruction.getParameterValue(PARAM_SERVICE);
+		if ( !IDENTITY_SERVICE_NAME.equals(service) ) {
+			return null;
+		}
+		// get the info, sans password
+		Long nodeId = getNodeId();
+		String solarInBaseUrl = null;
+		try {
+			solarInBaseUrl = getSolarInBaseUrl();
+		} catch ( SetupException e ) {
+			// ignore
+		}
+
+		X509Certificate cert = null;
+		;
+		if ( pkiService != null ) {
+			cert = pkiService.getNodeCertificate();
+		}
+
+		SystemConfigureIdentityInfo identInfo = new SystemConfigureIdentityInfo(nodeId, solarInBaseUrl,
+				cert);
+		return InstructionUtils.createStatus(instruction, InstructionState.Completed,
+				Collections.singletonMap(PARAM_SERVICE_RESULT, identInfo));
 	}
 
 	@Override

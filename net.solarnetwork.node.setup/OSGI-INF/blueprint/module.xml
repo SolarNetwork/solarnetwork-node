@@ -68,6 +68,14 @@
 			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
 			<value>net.solarnetwork.node.setup.SetupService</value>
 		</interfaces>
+		<service-properties>
+			<entry key="instruction">
+				<array value-type="java.lang.String">
+					<value>#{T(net.solarnetwork.node.reactor.InstructionHandler).TOPIC_SYSTEM_CONFIGURE}</value>
+					<value>#{T(net.solarnetwork.node.setup.impl.DefaultSetupService).INSTRUCTION_TOPIC_RENEW_CERTIFICATE}</value>
+				</array>
+			</entry>
+		</service-properties>
 	</service>
 
 	<service ref="pkiService">
