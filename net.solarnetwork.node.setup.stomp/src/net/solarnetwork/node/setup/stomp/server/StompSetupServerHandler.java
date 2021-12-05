@@ -288,12 +288,20 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 		if ( login == null || login.isEmpty() ) {
 			sendError(ctx, "The login header is required.");
 			return;
-		}
-
-		final UserAuthenticationInfo authInfo = serverService.getUserService().authenticationInfo(login);
-		if ( authInfo == null ) {
-			sendError(ctx, "Unauthorized.");
-			return;
+		}		
+		
+		String hashAlgorithm = "";
+		Map<String, ?> hashParameters = Collections.emptyMap();
+		try {			
+			final UserAuthenticationInfo authInfo = serverService.getUserService().authenticationInfo(login);
+			if ( authInfo == null ) {
+				sendError(ctx, "Unauthorized.");
+				return;
+			}
+			hashAlgorithm = authInfo.getHashAlgorithm();
+			hashParameters = authInfo.getHashParameters();
+		} catch (Exception e) {
+			sendError(ctx, "User does not exist");
 		}
 
 		final Channel channel = ctx.channel();
@@ -319,8 +327,8 @@ public class StompSetupServerHandler extends ChannelInboundHandlerAdapter {
 		f.headers().set(StompHeaders.MESSAGE, "Please authenticate.");
 		f.headers().set(SetupHeader.Authenticate.getValue(), SnsAuthorizationBuilder.SCHEME_NAME);
 		f.headers().set(SetupHeader.AuthHash.getValue(),
-				encodeStompHeaderValue(authInfo.getHashAlgorithm()));
-		for ( Entry<String, ?> me : authInfo.getHashParameters().entrySet() ) {
+				encodeStompHeaderValue(hashAlgorithm));
+		for ( Entry<String, ?> me : hashParameters.entrySet() ) {
 			Object val = me.getValue();
 			if ( val == null ) {
 				continue;
