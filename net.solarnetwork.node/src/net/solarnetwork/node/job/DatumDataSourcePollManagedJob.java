@@ -40,6 +40,7 @@ import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumMetadataService;
 import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.DeviceInfoProvider;
+import net.solarnetwork.node.service.LockTimeoutException;
 import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.OptionalService;
@@ -180,16 +181,17 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 	}
 
 	private void logThrowable(Throwable e) {
-		IOException ioEx = null;
+		Throwable ioEx = null;
 		Throwable t = e;
 		while ( true ) {
-			if ( t instanceof IOException ) {
-				ioEx = (IOException) t;
-			}
-			t = t.getCause();
-			if ( t == null ) {
+			if ( t instanceof IOException || t instanceof LockTimeoutException ) {
+				ioEx = t;
 				break;
 			}
+			if ( t.getCause() == null ) {
+				break;
+			}
+			t = t.getCause();
 		}
 		if ( ioEx != null ) {
 			log.warn("Communication problem collecting data from {}: {}",
