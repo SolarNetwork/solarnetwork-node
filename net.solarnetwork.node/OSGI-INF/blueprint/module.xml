@@ -539,5 +539,16 @@
 			<argument ref="datumQueue"/>
 		</bean>
 	</service>
+	
+	<!-- 
+		System health support
+	 -->
+	<service interface="net.solarnetwork.node.service.SystemHealthService">
+		<bean class="net.solarnetwork.node.runtime.DefaultSystemHealthService">
+			<argument>
+				<reference-list interface="net.solarnetwork.service.PingTest" availability="optional"/>
+			</argument>
+		</bean>
+	</service>
 
 </blueprint>

@@ -28,6 +28,8 @@
 		interface="org.springframework.transaction.PlatformTransactionManager"
 		filter="(db=node)"/>
 	
+	<osgi:reference id="systemHealthService" interface="net.solarnetwork.node.service.SystemHealthService"/>
+
 	<osgi:reference id="identityService" interface="net.solarnetwork.node.service.IdentityService"/>
 	
 	<osgi:reference id="platformService" interface="net.solarnetwork.node.service.PlatformService"/>
