@@ -29,6 +29,7 @@ import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static net.solarnetwork.node.service.OperationalModesService.hasActiveOperationalMode;
 import static net.solarnetwork.settings.support.SettingUtils.dynamicListSettingSpecifier;
+import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -79,6 +80,7 @@ import net.solarnetwork.service.DatumFilterService;
 import net.solarnetwork.service.Identifiable;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.OptionalServiceCollection;
+import net.solarnetwork.service.PingTestResult;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
@@ -187,6 +189,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		getMqttConfig().setUsername(DEFAULT_MQTT_USERNAME);
 		getMqttConfig().setServerUriValue(DEFAULT_MQTT_HOST);
 		getMqttConfig().setVersion(DEFAULT_MQTT_VERSION);
+		setDisplayName("SolarFlux Upload Service");
 	}
 
 	@Override
@@ -600,11 +603,6 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	}
 
 	@Override
-	public String getDisplayName() {
-		return "SolarFlux Upload Service";
-	}
-
-	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<>(4);
 		results.add(new BasicTitleSettingSpecifier("status", getStatusMessage(), true, true));
@@ -680,6 +678,39 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	@Override
 	public String getPingTestName() {
 		return getDisplayName();
+	}
+
+	@Override
+	public String getPingTestId() {
+		Object ident = getUid();
+		if ( ident == null ) {
+			URI uri = getMqttConfig().getServerUri();
+			if ( uri != null ) {
+				ident = uri;
+			}
+		}
+		if ( ident != null ) {
+			return String.format("%s-%s", super.getPingTestId(), ident);
+		}
+
+		return super.getPingTestId();
+	}
+
+	@Override
+	public Result performPingTest() throws Exception {
+		Result r = super.performPingTest();
+		Map<String, Object> props = new LinkedHashMap<>(8);
+		if ( r.getProperties() != null ) {
+			props.putAll(r.getProperties());
+		}
+		final MqttStats stats = getMqttStats();
+		for ( MqttStats.BasicCounts stat : Arrays.asList(MqttStats.BasicCounts.ConnectionAttempts,
+				MqttStats.BasicCounts.ConnectionFail, MqttStats.BasicCounts.ConnectionLost,
+				MqttStats.BasicCounts.MessagesDelivered, MqttStats.BasicCounts.MessagesDeliveredFail,
+				MqttStats.BasicCounts.PayloadBytesDelivered) ) {
+			props.put(stat.name(), stats.get(stat));
+		}
+		return new PingTestResult(r.isSuccess(), r.getMessage(), props);
 	}
 
 	/**
