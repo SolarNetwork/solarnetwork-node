@@ -28,6 +28,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static net.solarnetwork.node.service.OperationalModesService.hasActiveOperationalMode;
+import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.settings.support.SettingUtils.dynamicListSettingSpecifier;
 import java.net.URI;
 import java.time.Instant;
@@ -96,7 +97,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class FluxUploadService extends BaseMqttConnectionService implements EventHandler,
 		Consumer<NodeDatum>, SettingSpecifierProvider, SettingsChangeObserver, MqttConnectionObserver {
@@ -166,6 +167,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	private OptionalService<MqttMessageDao> mqttMessageDao;
 	private int cachedMessagePublishMaximum = DEFAULT_CACHED_MESSAGE_PUBLISH_MAXIMUM;
 	private boolean publishRetained = DEFAULT_PUBLISH_RETAINED;
+	private boolean mqttMessageDaoRequired;
 
 	/**
 	 * Constructor.
@@ -463,7 +465,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		if ( sourceId.isEmpty() ) {
 			return;
 		}
-		final MqttMessageDao dao = OptionalService.service(mqttMessageDao);
+		final MqttMessageDao dao = service(mqttMessageDao);
 		final boolean retained = isPublishRetained();
 		MqttMessage msgToPersist = null;
 		MqttConnection conn = connection();
@@ -613,6 +615,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		results.add(new BasicTextFieldSettingSpecifier("excludePropertyNamesRegex",
 				DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN.pattern()));
 		results.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode", ""));
+		results.add(new BasicToggleSettingSpecifier("mqttMessageDaoRequired", false));
 		results.add(new BasicTextFieldSettingSpecifier("cachedMessagePublishMaximum",
 				String.valueOf(DEFAULT_CACHED_MESSAGE_PUBLISH_MAXIMUM)));
 
@@ -710,7 +713,20 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 				MqttStats.BasicCounts.PayloadBytesDelivered) ) {
 			props.put(stat.name(), stats.get(stat));
 		}
-		return new PingTestResult(r.isSuccess(), r.getMessage(), props);
+		boolean success = r.isSuccess();
+		String msg = r.getMessage();
+		if ( mqttMessageDaoRequired ) {
+			MqttMessageDao dao = service(mqttMessageDao);
+			if ( dao == null ) {
+				success = false;
+				msg = getMessageSource().getMessage("status.mqttMessageDaoMissing", null,
+						"MqttMessageDao missing.", Locale.getDefault());
+				if ( r.getMessage() != null ) {
+					msg += " " + r.getMessage();
+				}
+			}
+		}
+		return new PingTestResult(success, msg, props);
 	}
 
 	/**
@@ -1040,6 +1056,32 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	 */
 	public void setPublishRetained(boolean publishRetained) {
 		this.publishRetained = publishRetained;
+	}
+
+	/**
+	 * Get the "MQTT message DAO required" flag.
+	 * 
+	 * @return {@literal true} to treat the lack of a
+	 *         {@link #getMqttMessageDao()} service as an error state
+	 * @since 2.2
+	 */
+	public boolean isMqttMessageDaoRequired() {
+		return mqttMessageDaoRequired;
+	}
+
+	/**
+	 * Set the "MQTT message DAO required" flag.
+	 * 
+	 * <p>
+	 * This setting affects the {@link #performPingTest()} method.
+	 * </p>
+	 * 
+	 * @param {@literal true} to treat the lack of a
+	 * {@link #getMqttMessageDao()} service as an error state
+	 * @since 2.2
+	 */
+	public void setMqttMessageDaoRequired(boolean mqttMessageDaoRequired) {
+		this.mqttMessageDaoRequired = mqttMessageDaoRequired;
 	}
 
 }
