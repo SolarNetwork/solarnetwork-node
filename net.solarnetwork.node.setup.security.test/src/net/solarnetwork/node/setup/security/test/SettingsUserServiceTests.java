@@ -22,11 +22,14 @@
 
 package net.solarnetwork.node.setup.security.test;
 
+import static net.solarnetwork.test.EasyMockUtils.assertWith;
+import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import org.easymock.EasyMock;
 import org.junit.After;
@@ -34,10 +37,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import net.solarnetwork.node.dao.BasicBatchResult;
+import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.setup.UserAuthenticationInfo;
 import net.solarnetwork.node.setup.security.SettingsUserService;
+import net.solarnetwork.test.Assertion;
 
 /**
  * Test cases for the {@link SettingsUserService}.
@@ -89,6 +96,71 @@ public class SettingsUserServiceTests {
 		assertThat("Info alg matches", info.getHashAlgorithm(), is(equalTo("bcrypt")));
 		assertThat("Info salt param populated", info.getHashParameters(),
 				hasEntry("salt", "$2a$10$bmJyEhL/EUQWubIpssV.L."));
+	}
+
+	@Test
+	public void authInfo_userNotFound_someUserExists() {
+		// GIVEN
+		final String username = "foo";
+		expect(settingDao.getSetting(username, SettingsUserService.SETTING_TYPE_USER)).andReturn(null);
+
+		BasicBatchResult queryResult = new BasicBatchResult(1);
+		expect(settingDao.batchProcess(assertWith(new Assertion<BatchCallback<Setting>>() {
+
+			@Override
+			public void check(BatchCallback<Setting> cb) throws Throwable {
+				Setting s = new Setting("otheruser", SettingsUserService.SETTING_TYPE_USER, "secret",
+						null);
+				cb.handle(s);
+			}
+		}), anyObject())).andReturn(queryResult);
+
+		// WHEN
+		replayAll();
+		UserAuthenticationInfo info = service.authenticationInfo(username);
+
+		// THEN
+		assertThat("Null info returned when no username found", info, is(nullValue()));
+	}
+
+	@Test
+	public void authInfo_userNotFound_noUserExists_noNodeId() {
+		// GIVEN
+		final String username = "foo";
+		expect(settingDao.getSetting(username, SettingsUserService.SETTING_TYPE_USER)).andReturn(null);
+
+		BasicBatchResult queryResult = new BasicBatchResult(0);
+		expect(settingDao.batchProcess(anyObject(), anyObject())).andReturn(queryResult);
+
+		// assume no node ID available either, if no user available
+		expect(identityService.getNodeId()).andReturn(null);
+
+		// WHEN
+		replayAll();
+		UserAuthenticationInfo info = service.authenticationInfo(username);
+
+		// THEN
+		assertThat("Null info returned when no username found", info, is(nullValue()));
+	}
+
+	@Test
+	public void authInfo_userNotFound_noUserExists_withNodeId() {
+		// GIVEN
+		final String username = "foo";
+		expect(settingDao.getSetting(username, SettingsUserService.SETTING_TYPE_USER)).andReturn(null);
+
+		BasicBatchResult queryResult = new BasicBatchResult(0);
+		expect(settingDao.batchProcess(anyObject(), anyObject())).andReturn(queryResult);
+
+		// assume no node ID available either, if no user available
+		expect(identityService.getNodeId()).andReturn(1L);
+
+		// WHEN
+		replayAll();
+		UserAuthenticationInfo info = service.authenticationInfo(username);
+
+		// THEN
+		assertThat("Null info returned when no username found", info, is(nullValue()));
 	}
 
 }

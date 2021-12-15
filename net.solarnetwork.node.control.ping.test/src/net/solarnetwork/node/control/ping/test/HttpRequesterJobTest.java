@@ -27,10 +27,15 @@ import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -46,6 +51,7 @@ import org.mortbay.jetty.Server;
 import org.mortbay.jetty.handler.AbstractHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.control.ping.HttpRequesterJob;
 import net.solarnetwork.node.reactor.BasicInstruction;
@@ -60,7 +66,7 @@ import net.solarnetwork.service.StaticOptionalService;
  * Unit tests for the {@link HttpRequesterJob} class.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class HttpRequesterJobTest {
 
@@ -102,6 +108,11 @@ public class HttpRequesterJobTest {
 		job.setInstructionExecutionService(new StaticOptionalService<>(
 				new SimpleInstructionExecutionService(singletonList(handler))));
 		job.setSleepSeconds(0);
+
+		ResourceBundleMessageSource msgSource = new ResourceBundleMessageSource();
+		msgSource.setBasenames(HttpRequesterJob.class.getName());
+		job.setMessageSource(msgSource);
+
 		return job;
 	}
 
@@ -172,4 +183,100 @@ public class HttpRequesterJobTest {
 		assertThat("Control set OFF", instr2.getParameterValue(TEST_CONTROL_ID),
 				is(Boolean.FALSE.toString()));
 	}
+
+	@Test
+	public void systemConfigure_success() throws Exception {
+		// GIVEN
+		final TestHandler httpHandler = new TestHandler();
+		server.setHandler(httpHandler);
+		HttpRequesterJob job = newJobInstance();
+
+		// WHEN
+		replay(handler);
+		Map<String, String> instrParams = new LinkedHashMap<>(4);
+		instrParams.put(InstructionHandler.PARAM_SERVICE, HttpRequesterJob.PING_SERVICE_NAME);
+		Instruction instr = InstructionUtils
+				.createLocalInstruction(InstructionHandler.TOPIC_SYSTEM_CONFIGURE, instrParams);
+		InstructionStatus result = job.processInstruction(instr);
+
+		// THEN
+		verify(handler);
+		assertThat("Request count", httpHandler.getCount(), is(1));
+		assertThat("Instruction returned result", result, is(notNullValue()));
+		assertThat("Completed ping", result.getInstructionState(), is(InstructionState.Completed));
+		assertThat("Result parameters provided", result.getResultParameters(), is(notNullValue()));
+		log.debug("Got ping result message: {}",
+				result.getResultParameters().get(InstructionHandler.PARAM_MESSAGE));
+		assertThat("Result parameter message provided",
+				result.getResultParameters().get(InstructionHandler.PARAM_MESSAGE),
+				is(instanceOf(String.class)));
+	}
+
+	@Test
+	public void systemConfigure_statusError() throws Exception {
+		// GIVEN
+		final AbstractHandler httpHandler = new AbstractHandler() {
+
+			@Override
+			public void handle(String target, HttpServletRequest request, HttpServletResponse response,
+					int dispatch) throws IOException, ServletException {
+				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				((Request) request).setHandled(true);
+			}
+		};
+		server.setHandler(httpHandler);
+		HttpRequesterJob job = newJobInstance();
+
+		// WHEN
+		replay(handler);
+		Map<String, String> instrParams = new LinkedHashMap<>(4);
+		instrParams.put(InstructionHandler.PARAM_SERVICE, HttpRequesterJob.PING_SERVICE_NAME);
+		Instruction instr = InstructionUtils
+				.createLocalInstruction(InstructionHandler.TOPIC_SYSTEM_CONFIGURE, instrParams);
+		InstructionStatus result = job.processInstruction(instr);
+
+		// THEN
+		verify(handler);
+		assertThat("Instruction returned result", result, is(notNullValue()));
+		assertThat("Completed ping", result.getInstructionState(), is(InstructionState.Completed));
+		assertThat("Result parameters provided", result.getResultParameters(), is(notNullValue()));
+		log.debug("Got ping result message: {}",
+				result.getResultParameters().get(InstructionHandler.PARAM_MESSAGE));
+		assertThat("Result parameter message provided",
+				result.getResultParameters().get(InstructionHandler.PARAM_MESSAGE),
+				is(instanceOf(String.class)));
+		assertThat("Result parameter result is status code",
+				result.getResultParameters().get(InstructionHandler.PARAM_SERVICE_RESULT),
+				is(equalTo(500)));
+	}
+
+	@Test
+	public void systemConfigure_error() throws Exception {
+		// GIVEN
+		server.stop();
+		HttpRequesterJob job = newJobInstance();
+
+		// WHEN
+		replay(handler);
+		Map<String, String> instrParams = new LinkedHashMap<>(4);
+		instrParams.put(InstructionHandler.PARAM_SERVICE, HttpRequesterJob.PING_SERVICE_NAME);
+		Instruction instr = InstructionUtils
+				.createLocalInstruction(InstructionHandler.TOPIC_SYSTEM_CONFIGURE, instrParams);
+		InstructionStatus result = job.processInstruction(instr);
+
+		// THEN
+		verify(handler);
+		assertThat("Instruction returned result", result, is(notNullValue()));
+		assertThat("Completed ping", result.getInstructionState(), is(InstructionState.Completed));
+		assertThat("Result parameters provided", result.getResultParameters(), is(notNullValue()));
+		log.debug("Got ping result message: {}",
+				result.getResultParameters().get(InstructionHandler.PARAM_MESSAGE));
+		assertThat("Result parameter message provided",
+				result.getResultParameters().get(InstructionHandler.PARAM_MESSAGE),
+				is(instanceOf(String.class)));
+		assertThat("Result parameter result is error code",
+				result.getResultParameters().get(InstructionHandler.PARAM_SERVICE_RESULT),
+				is(equalTo(-1)));
+	}
+
 }

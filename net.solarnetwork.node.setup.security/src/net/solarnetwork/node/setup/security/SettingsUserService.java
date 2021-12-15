@@ -33,6 +33,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -55,7 +56,7 @@ import net.solarnetwork.node.setup.UserService;
  * {@link UserDetailsService} that uses {@link SettingDao} for users and roles.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class SettingsUserService implements UserService, UserDetailsService {
 
@@ -259,7 +260,12 @@ public class SettingsUserService implements UserService, UserDetailsService {
 
 	@Override
 	public UserAuthenticationInfo authenticationInfo(String username) {
-		UserDetails user = loadUserByUsername(username);
+		UserDetails user = null;
+		try {
+			user = loadUserByUsername(username);
+		} catch ( AuthenticationException e ) {
+			return null;
+		}
 		if ( user == null ) {
 			return null;
 		}

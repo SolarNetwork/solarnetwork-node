@@ -374,22 +374,17 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	@Override
 	public List<SettingSpecifierProviderFactory> getProviderFactories() {
-		return factories.values().stream().map(FactoryHelper::getFactory).collect(toList());
+		return factories.values().stream().collect(toList());
 	}
 
 	@Override
 	public List<SettingSpecifierProviderFactory> getProviderFactories(SearchFilter filter) {
-		return factories.values().stream().filter(h -> h.matches(filter)).map(FactoryHelper::getFactory)
-				.collect(toList());
+		return factories.values().stream().filter(h -> h.matches(filter)).collect(toList());
 	}
 
 	@Override
 	public SettingSpecifierProviderFactory getProviderFactory(String factoryUid) {
-		FactoryHelper helper = factories.get(factoryUid);
-		if ( helper != null ) {
-			return helper.getFactory();
-		}
-		return null;
+		return factories.get(factoryUid);
 	}
 
 	@Override

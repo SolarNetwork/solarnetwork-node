@@ -36,6 +36,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.control.ping.HttpRequesterJob</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
@@ -64,6 +65,28 @@
 				</bean>
 			</argument>
 			<argument value="0 0/5 * * * ?"/>
+			<property name="serviceProviderConfigurations">
+				<map>
+					<entry key="instructionHandler">
+						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
+							<property name="interfaces">
+								<list>
+									<value>net.solarnetwork.node.reactor.InstructionHandler</value>
+								</list>
+							</property>
+							<property name="properties">
+								<map>
+									<entry key="instruction">
+										<list>
+											<value>SystemConfigure</value>
+										</list>
+									</entry>
+								</map>
+							</property>
+						</bean>
+					</entry>
+				</map>
+			</property>
 		</bean>
 	</osgix:managed-service-factory>
 

@@ -27,6 +27,7 @@ import static net.solarnetwork.node.job.JobUtils.triggerForExpression;
 import static net.solarnetwork.util.CollectionUtils.dictionaryForMap;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import static org.osgi.framework.Constants.SERVICE_PID;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -240,8 +241,10 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 			if ( js != null ) {
 				try {
 					job.getJobService().executeJobService();
+				} catch ( IOException e ) {
+					log.warn("Communication error executing job {}: {}", identifier, e.toString());
 				} catch ( Throwable t ) {
-					log.error("Error executing job {}: {}", identifier, t.getMessage());
+					log.error("Error executing job {}: {}", identifier, t.getMessage(), t);
 				}
 			}
 
@@ -348,7 +351,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 					try {
 						ServiceRegistration<?> ref = bundleContext.registerService(interfaces, service,
 								props);
-						log.debug("Job [{}] registered managed service {} as {} with props {}",
+						log.info("Job [{}] registered managed service {} as {} with props {}",
 								identifier, service, Arrays.toString(interfaces), props);
 						if ( refs == null ) {
 							refs = new ArrayList<>(services.size());

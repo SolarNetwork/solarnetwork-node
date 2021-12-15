@@ -223,7 +223,7 @@ content-length:159
 # SolarNode setup command handling
 
 Internally, each STOMP `SEND` setup command will be converted to an `Instruction` object and offered
-to all [`FeedbackInstructionHandler`][FeedbackInstructionHandler.java] services registered at
+to all [`InstructionHandler`][InstructionHandler.java] services registered at
 runtime. The first handler to return a non-`null` result status will cause the Setup STOMP server to
 convert the result into a `MESSAGE` response and and publish that to the client.
 
@@ -259,7 +259,7 @@ public boolean handlesTopic(String topic) {
   return InstructionHandler.TOPIC_SYSTEM_CONFIGURE.equals(topic);
 }
 
-public InstructionStatus processInstructionWithFeedback(Instruction instruction) {
+public InstructionStatus processInstruction(Instruction instruction) {
   if ( instruction == null || !handlesTopic(instruction.getTopic()) ) {
     return null;
   }
@@ -268,7 +268,7 @@ public InstructionStatus processInstructionWithFeedback(Instruction instruction)
     return null;
   }
   final String result = "Hi there!";
-  return InstructionStatus.createStatus(instruction, InstructionState.Completed, new Date(),
+  return InstructionStatus.createStatus(instruction, InstructionState.Completed, Instant.now(),
       Collections.singletonMap(InstructionHandler.PARAM_SERVICE_RESULT, result));
 }
 ```
@@ -300,7 +300,7 @@ content-length:11
 > :warning: **Note** how the response is a JSON string, enclosed in double-quotes. All messages 
 > returned from the server will be encoded into JSON.
 
-[FeedbackInstructionHandler.java]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node/src/net/solarnetwork/node/reactor/FeedbackInstructionHandler.java
+[InstructionHandler.java]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node/src/net/solarnetwork/node/reactor/InstructionHandler.java
 [s3-sigv4]: https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-requests.html
 [SnsAuthorizationBuilder.java]: https://github.com/SolarNetwork/solarnetwork-common/blob/develop/net.solarnetwork.common/src/net/solarnetwork/security/SnsAuthorizationBuilder.java
 [sns-auth-builder-example-java]: https://github.com/SolarNetwork/solarnetwork-node/blob/0d387a6ceb973c88c87e45ac7d0cd9a0bc95ba02/net.solarnetwork.node.setup.stomp.test/src/net/solarnetwork/node/setup/stomp/test/StompSetupServerHandlerTests.java#L260-L308
