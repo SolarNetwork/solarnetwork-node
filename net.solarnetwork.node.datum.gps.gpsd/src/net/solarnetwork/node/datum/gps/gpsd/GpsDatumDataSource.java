@@ -23,6 +23,7 @@
 package net.solarnetwork.node.datum.gps.gpsd;
 
 import static net.solarnetwork.util.StringUtils.delimitedStringFromMap;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -180,7 +181,19 @@ public class GpsDatumDataSource extends DatumDataSourceSupport
 		if ( locService != null ) {
 			net.solarnetwork.domain.Location loc = locationForTpvMessage(message);
 			if ( loc != null ) {
-				locService.updateNodeLocation(loc);
+				try {
+					locService.updateNodeLocation(loc);
+				} catch ( RuntimeException e ) {
+					Throwable root = e;
+					while ( root.getCause() != null ) {
+						root = root.getCause();
+					}
+					if ( root instanceof IOException ) {
+						log.warn("Communication error updating node location: {}", root.toString());
+					} else {
+						log.error("Error updating node location: {}", root.toString(), root);
+					}
+				}
 			}
 		}
 	}
