@@ -25,11 +25,17 @@ package net.solarnetwork.node.datum.healthcheck;
 import static java.util.Collections.singleton;
 import static net.solarnetwork.node.domain.datum.SimpleDatum.nodeDatum;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -42,8 +48,8 @@ import net.solarnetwork.node.service.support.DatumDataSourceSupport;
 import net.solarnetwork.service.PingTestResultDisplay;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
 
 /**
@@ -64,13 +70,23 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 	/** The maximum length allowed for a source ID. */
 	public static final int SOURCE_ID_MAX_LENGTH = 64;
 
+	/** The {@code publishMode} property default value. */
+	public static final PublishMode DEFAULT_PUBLISH_MODE = PublishMode.OnChange;
+
+	/** The {@code unchangedPublishMaxSeconds} property default value. */
+	public static final int DEFAULT_UNCHANGED_PUBLISH_MAX_SECONDS = 3599;
+
 	private static final Pattern RESERVED_SOURCE_ID_CHARACTERS = Pattern.compile("[.*#+?]");
 
 	private static final String NET_SOLARNETWORK_PREFIX = "net.solarnetwork.";
 
+	// status map for all instances, to track changes
+	private final Map<String, PingTestResultDisplay> resultStatusMap = new HashMap<>(32);
+
 	private final SystemHealthService systemHealthService;
 	private String sourceId;
-	private boolean publishWhenOk;
+	private PublishMode publishMode = DEFAULT_PUBLISH_MODE;
+	private int unchangedPublishMaxSeconds = DEFAULT_UNCHANGED_PUBLISH_MAX_SECONDS;
 	private String[] pingTestIdFilters;
 
 	/**
@@ -107,9 +123,12 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 		if ( sourceId == null || sourceId.isEmpty() ) {
 			// return one Datum per ping test
 			result = generateDatumCollection(results);
-		} else if ( !results.isAllGood() || publishWhenOk ) {
+		} else {
 			// merge all results into single datum
-			result = singleton(generateDatum(results, sourceId));
+			NodeDatum datum = generateDatum(results, sourceId);
+			if ( datum != null ) {
+				result = singleton(datum);
+			}
 		}
 		return result;
 	}
@@ -117,7 +136,8 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 	private List<NodeDatum> generateDatumCollection(PingTestResults results) {
 		List<NodeDatum> list = new ArrayList<>(results.getResults().size());
 		for ( PingTestResultDisplay result : results.getResults().values() ) {
-			if ( result.isSuccess() && !publishWhenOk ) {
+			final boolean shouldPublish = trackResultStatus(result);
+			if ( !shouldPublish ) {
 				continue;
 			}
 			String sourceId = sourceIdForPingTestResult(result, SOURCE_ID_MAX_LENGTH);
@@ -129,6 +149,31 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 			list.add(nodeDatum(sourceId, result.getStart(), samples));
 		}
 		return list;
+	}
+
+	private boolean trackResultStatus(PingTestResultDisplay result) {
+		final PingTestResultDisplay oldStatus;
+		synchronized ( resultStatusMap ) {
+			oldStatus = resultStatusMap.put(result.getPingTestId(), result);
+		}
+		final boolean changed = (oldStatus == null || oldStatus.isSuccess() != result.isSuccess());
+		final PublishMode mode = this.publishMode;
+		final int unchangedMaxSecs = this.unchangedPublishMaxSeconds;
+		switch (mode) {
+			case OnChange:
+				return (changed || (unchangedMaxSecs > 0 && Duration
+						.between(oldStatus.getStart(), Instant.now()).getSeconds() > unchangedMaxSecs));
+
+			case OnFailure:
+				return !result.isSuccess();
+
+			case Always:
+				return true;
+
+			default:
+				// should not be here
+				throw new RuntimeException("Unsupported publish mode: " + mode);
+		}
 	}
 
 	private String sourceIdForPingTestResult(final PingTestResultDisplay result, final int maxLength) {
@@ -155,14 +200,22 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 
 	private NodeDatum generateDatum(PingTestResults results, String sourceId) {
 		DatumSamples samples = new DatumSamples();
+		boolean shouldPublishOverall = false;
 		for ( PingTestResultDisplay result : results.getResults().values() ) {
-			String pingId = sourceIdForPingTestResult(result, -1);
-			if ( !result.isSuccess() || publishWhenOk ) {
-				samples.putStatusSampleValue(pingId + "_" + PROP_SUCCESS, result.isSuccess());
+			final boolean shouldPublish = trackResultStatus(result);
+			if ( !shouldPublish ) {
+				continue;
+			} else {
+				shouldPublishOverall = true;
 			}
+			String pingId = sourceIdForPingTestResult(result, -1);
+			samples.putStatusSampleValue(pingId + "_" + PROP_SUCCESS, result.isSuccess());
 			if ( !result.isSuccess() ) {
 				samples.putStatusSampleValue(pingId + "_" + PROP_MESSAGE, result.getMessage());
 			}
+		}
+		if ( !shouldPublishOverall ) {
+			return null;
 		}
 		samples.putStatusSampleValue(PROP_SUCCESS, results.isAllGood());
 		return nodeDatum(sourceId, results.getDate(), samples);
@@ -178,7 +231,21 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 		List<SettingSpecifier> results = getIdentifiableSettingSpecifiers();
 
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));
-		results.add(new BasicToggleSettingSpecifier("publishWhenOk", false));
+
+		// menu for publishMode
+		BasicMultiValueSettingSpecifier pubModeSpec = new BasicMultiValueSettingSpecifier(
+				"publishModeCode", Character.toString((char) DEFAULT_PUBLISH_MODE.getCode()));
+		Map<String, String> pubModeTitles = new LinkedHashMap<>(3);
+		for ( PublishMode e : PublishMode.values() ) {
+			String title = getMessageSource().getMessage(String.format("publishMode.%c", e.getCode()),
+					null, Locale.getDefault());
+			pubModeTitles.put(Character.toString((char) e.getCode()), title);
+		}
+		pubModeSpec.setValueTitles(pubModeTitles);
+		results.add(pubModeSpec);
+
+		results.add(new BasicTextFieldSettingSpecifier("unchangedPublishMaxSeconds",
+				String.valueOf(DEFAULT_UNCHANGED_PUBLISH_MAX_SECONDS)));
 
 		// menu for pingTestIdFilters
 		String[] filters = getPingTestIdFilters();
@@ -278,26 +345,44 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 	}
 
 	/**
-	 * Get the "publish when OK" flag.
+	 * Get the publish mode.
 	 * 
-	 * @return {@literal true} if datum should also be generated when all health
-	 *         checks pass, or {@literal false} to only generate datum when
-	 *         there is a failure
+	 * @return the mode, never {@literal null}
 	 */
-	public boolean isPublishWhenOk() {
-		return publishWhenOk;
+	public PublishMode getPublishMode() {
+		return publishMode;
 	}
 
 	/**
-	 * Set the "publish when OK" flag.
+	 * Set the publish mode.
 	 * 
-	 * @param publishWhenOk
-	 *        {@literal true} if datum should also be generated when all health
-	 *        checks pass, or {@literal false} to only generate datum when there
-	 *        is a failure
+	 * @param publishMode
+	 *        the mode to publish datum; if {@literal null} then
+	 *        {@link #DEFAULT_PUBLISH_MODE} will be set instead
 	 */
-	public void setPublishWhenOk(boolean publishWhenOk) {
-		this.publishWhenOk = publishWhenOk;
+	public void setPublishMode(PublishMode publishMode) {
+		this.publishMode = (publishMode != null ? publishMode : DEFAULT_PUBLISH_MODE);
+	}
+
+	/**
+	 * Get the unchanged publish maximum seconds.
+	 * 
+	 * @return the maximum seconds to refrain from publishing an unchanged
+	 *         status value, or {@literal 0} for no limit
+	 */
+	public int getUnchangedPublishMaxSeconds() {
+		return unchangedPublishMaxSeconds;
+	}
+
+	/**
+	 * Set the unchanged publish maximum seconds.
+	 * 
+	 * @param unchangedPublishMaxSeconds
+	 *        the maximum seconds to refrain from publishing an unchanged status
+	 *        value, or {@literal 0} for no limit
+	 */
+	public void setUnchangedPublishMaxSeconds(int unchangedPublishMaxSeconds) {
+		this.unchangedPublishMaxSeconds = unchangedPublishMaxSeconds;
 	}
 
 }
