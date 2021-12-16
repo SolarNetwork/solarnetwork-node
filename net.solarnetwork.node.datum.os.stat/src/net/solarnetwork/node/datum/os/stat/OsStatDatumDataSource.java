@@ -40,7 +40,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.context.MessageSource;
@@ -139,7 +138,6 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 
 	private final AtomicReference<CachedResult<NodeDatum>> sampleCache = new AtomicReference<>();
 
-	private final UUID localUid = UUID.randomUUID();
 	private Set<String> actions = StatAction.ALL_ACTIONS;
 	private ActionCommandRunner commandRunner = new ProcessActionCommandRunner();
 	private Set<String> fsUseMounts = new LinkedHashSet<>(Arrays.asList("/", "/run"));
@@ -510,8 +508,8 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	public String getPingTestId() {
 		String settingUid = getSettingUid();
 		String uid = getUid();
-		if ( uid == null ) {
-			uid = localUid.toString();
+		if ( uid == null || uid.isEmpty() ) {
+			return settingUid;
 		}
 		return settingUid + "-" + uid;
 	}
