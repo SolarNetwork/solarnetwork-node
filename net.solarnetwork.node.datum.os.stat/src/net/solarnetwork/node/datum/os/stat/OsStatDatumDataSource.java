@@ -37,8 +37,10 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.springframework.context.MessageSource;
@@ -51,6 +53,8 @@ import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.NodeMetadataService;
 import net.solarnetwork.node.service.support.DatumDataSourceSupport;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.PingTest;
+import net.solarnetwork.service.PingTestResult;
 import net.solarnetwork.settings.MappableSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -128,7 +132,10 @@ import net.solarnetwork.util.StringUtils;
  * @version 1.3
  */
 public class OsStatDatumDataSource extends DatumDataSourceSupport
-		implements DatumDataSource, SettingSpecifierProvider {
+		implements DatumDataSource, SettingSpecifierProvider, PingTest {
+
+	/** The {@code fsUseWarningThreshold} property default value. */
+	public static final float DEFAULT_FS_USE_WARNING = 0.92f;
 
 	private final AtomicReference<CachedResult<NodeDatum>> sampleCache = new AtomicReference<>();
 
@@ -139,6 +146,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	private long sampleCacheMs = 20000;
 	private String sourceId = "OS Stats";
 	private OptionalService<NodeMetadataService> nodeMetadataService;
+	private float fsUseWarningThreshold = DEFAULT_FS_USE_WARNING;
 
 	@Override
 	public Class<? extends NodeDatum> getDatumType() {
@@ -226,19 +234,8 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 
 	private void populateInstantaneousValue(String action, Map<String, String> row, String key,
 			String propName, MutableNodeDatum result, BigDecimal scaleFactor) {
-		BigDecimal d = null;
-		try {
-			d = new BigDecimal(row.get(key));
-			if ( scaleFactor != null ) {
-				d = d.multiply(scaleFactor);
-			}
-			result.asMutableSampleOperations().putSampleValue(Instantaneous, propName, d);
-		} catch ( NullPointerException e ) {
-			// ignore, property not available
-		} catch ( NumberFormatException e ) {
-			log.debug("Error parsing {} action {} value [{}]: {}", action, key, row.get(key),
-					e.getMessage());
-		}
+		BigDecimal d = scaledNumber(action, key, row.get(key), scaleFactor);
+		result.asMutableSampleOperations().putSampleValue(Instantaneous, propName, d);
 	}
 
 	private void populateAccumulatingValue(StatAction action, Map<String, String> row, String key,
@@ -248,19 +245,8 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 
 	private void populateAccumulatingValue(String action, Map<String, String> row, String key,
 			String propName, MutableNodeDatum result, BigDecimal scaleFactor) {
-		BigDecimal d = null;
-		try {
-			d = new BigDecimal(row.get(key));
-			if ( scaleFactor != null ) {
-				d = d.multiply(scaleFactor);
-			}
-			result.asMutableSampleOperations().putSampleValue(Accumulating, propName, d);
-		} catch ( NullPointerException e ) {
-			// ignore, property not available
-		} catch ( NumberFormatException e ) {
-			log.debug("Error parsing {} action {} value [{}]: {}", action, key, row.get(key),
-					e.getMessage());
-		}
+		BigDecimal d = scaledNumber(action, key, row.get(key), scaleFactor);
+		result.asMutableSampleOperations().putSampleValue(Accumulating, propName, d);
 	}
 
 	private void populateStatusValue(Map<String, String> row, String key, String propName,
@@ -442,6 +428,8 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		result.add(new BasicTextFieldSettingSpecifier("actionsValue", defaults.getActionsValue()));
 		result.add(
 				new BasicTextFieldSettingSpecifier("fsUseMountsValue", defaults.getFsUseMountsValue()));
+		result.add(new BasicTextFieldSettingSpecifier("fsUseWarningThreshold",
+				String.valueOf(DEFAULT_FS_USE_WARNING)));
 		result.add(new BasicTextFieldSettingSpecifier("netDevicesValue", defaults.getNetDevicesValue()));
 
 		if ( commandRunner instanceof SettingSpecifierProvider ) {
@@ -499,6 +487,88 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		}
 		return StringUtils.delimitedStringFromMap(data, " = ", ", ");
 
+	}
+
+	private BigDecimal scaledNumber(String action, String key, String val, BigDecimal scaleFactor) {
+		BigDecimal d = null;
+		try {
+			d = new BigDecimal(val);
+			if ( scaleFactor != null ) {
+				d = d.multiply(scaleFactor);
+			}
+			return d;
+		} catch ( NullPointerException e ) {
+			// ignore, property not available
+		} catch ( NumberFormatException e ) {
+			log.debug("Error parsing {} action {} value [{}]: {}", action, key, val, e.getMessage());
+		}
+		return null;
+	}
+
+	@Override
+	public String getPingTestId() {
+		String settingUid = getSettingUid();
+		String uid = getUid();
+		if ( uid == null ) {
+			uid = UUID.randomUUID().toString();
+		}
+		return settingUid + "-" + uid;
+	}
+
+	@Override
+	public String getPingTestName() {
+		return getDisplayName();
+	}
+
+	@Override
+	public long getPingTestMaximumExecutionMilliseconds() {
+		return 10000;
+	}
+
+	@Override
+	public Result performPingTest() throws Exception {
+		List<Map<String, String>> data = null;
+		boolean ok = true;
+		String msg = null;
+		Map<String, BigDecimal> props = new LinkedHashMap<>(4);
+		final String action = StatAction.FilesystemUse.getAction();
+		final float warnThreshold = getFsUseWarningThreshold();
+		try {
+			data = commandRunner.executeAction(action);
+			if ( data != null ) {
+				for ( Map<String, String> row : data ) {
+					String mount = row.get("mount");
+					if ( mount == null || !fsUseMounts.contains(mount) ) {
+						continue;
+					}
+					BigDecimal sizeKb = scaledNumber(action, "size-kb", row.get("size-kb"), null);
+					BigDecimal usedKb = scaledNumber(action, "used-kb", row.get("used-kb"), null);
+					BigDecimal usedPercent = scaledNumber(action, "used-percent",
+							row.get("used-percent"), null);
+					if ( usedPercent != null ) {
+						props.put("fs_used_percent_" + mount, usedPercent);
+						String m = super.getMessageSource().getMessage("msg.fsUse",
+								new Object[] { mount, usedPercent, sizeKb, usedKb },
+								Locale.getDefault());
+						if ( msg == null ) {
+							msg = m;
+						} else {
+							msg = msg + " " + m;
+						}
+						float usedPercentFloat = usedPercent.floatValue() / 100.0f;
+						if ( warnThreshold > 0f && usedPercentFloat >= warnThreshold ) {
+							ok = false;
+						}
+					}
+				}
+
+			}
+		} catch ( Exception e ) {
+			msg = super.getMessageSource().getMessage("msg.action.exception",
+					new Object[] { StatAction.FilesystemUse.getAction(), e.toString() },
+					Locale.getDefault());
+		}
+		return new PingTestResult(ok, msg, props);
 	}
 
 	/**
@@ -684,4 +754,26 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		}
 		this.sourceId = sourceId;
 	}
+
+	/**
+	 * Get the filesystem use percentage threshold for triggering a ping test
+	 * failure.
+	 * 
+	 * @return the threshold; defaults to {@link #DEFAULT_FS_USE_WARNING}
+	 */
+	public float getFsUseWarningThreshold() {
+		return fsUseWarningThreshold;
+	}
+
+	/**
+	 * Set the filesystem use percentage threshold for triggering a ping test
+	 * failure.
+	 * 
+	 * @param fsUseWarningThreshold
+	 *        the threshold to set, or {@literal 0} to disable
+	 */
+	public void setFsUseWarningThreshold(float fsUseWarningThreshold) {
+		this.fsUseWarningThreshold = fsUseWarningThreshold;
+	}
+
 }

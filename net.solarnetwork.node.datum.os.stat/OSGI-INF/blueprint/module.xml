@@ -102,6 +102,20 @@
 				</bean>
 			</argument>
 			<argument value="5 0/10 * * * ?"/>
+			<property name="serviceProviderConfigurations">
+				<map>
+					<entry key="datumDataSource">
+						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
+							<property name="interfaces">
+								<list>
+									<value>net.solarnetwork.node.service.DatumDataSource</value>
+									<value>net.solarnetwork.service.PingTest</value>
+								</list>
+							</property>
+						</bean>
+					</entry>
+				</map>
+			</property>
 		</bean>
 	</osgix:managed-service-factory>
 
