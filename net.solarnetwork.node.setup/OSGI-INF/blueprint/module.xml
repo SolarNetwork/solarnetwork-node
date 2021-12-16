@@ -67,6 +67,7 @@
 			<value>net.solarnetwork.node.service.IdentityService</value>
 			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
 			<value>net.solarnetwork.node.setup.SetupService</value>
+			<value>net.solarnetwork.service.PingTest</value>
 		</interfaces>
 		<service-properties>
 			<entry key="instruction">
@@ -115,6 +116,11 @@
 		<property name="sslService">
 			<bean class="net.solarnetwork.service.StaticOptionalService">
 				<argument ref="pkiService"/>
+			</bean>
+		</property>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basename" value="net.solarnetwork.node.setup.impl.DefaultSetupService"/>
 			</bean>
 		</property>
 	</bean>
