@@ -25,7 +25,7 @@ package net.solarnetwork.node.setup.impl;
 import java.security.cert.X509Certificate;
 
 /**
- * Identity information for {@link SystemConfigure} instruction support.
+ * Identity information for {@literal SystemConfigure} instruction support.
  * 
  * @author matt
  * @version 1.0
