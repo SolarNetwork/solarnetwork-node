@@ -139,6 +139,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 
 	private final AtomicReference<CachedResult<NodeDatum>> sampleCache = new AtomicReference<>();
 
+	private final UUID localUid = UUID.randomUUID();
 	private Set<String> actions = StatAction.ALL_ACTIONS;
 	private ActionCommandRunner commandRunner = new ProcessActionCommandRunner();
 	private Set<String> fsUseMounts = new LinkedHashSet<>(Arrays.asList("/", "/run"));
@@ -510,7 +511,7 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		String settingUid = getSettingUid();
 		String uid = getUid();
 		if ( uid == null ) {
-			uid = UUID.randomUUID().toString();
+			uid = localUid.toString();
 		}
 		return settingUid + "-" + uid;
 	}
