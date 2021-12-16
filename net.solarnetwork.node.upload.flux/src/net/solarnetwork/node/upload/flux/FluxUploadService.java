@@ -1076,8 +1076,9 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	 * This setting affects the {@link #performPingTest()} method.
 	 * </p>
 	 * 
-	 * @param {@literal true} to treat the lack of a
-	 * {@link #getMqttMessageDao()} service as an error state
+	 * @param mqttMessageDaoRequired
+	 *        {@literal true} to treat the lack of a
+	 *        {@link #getMqttMessageDao()} service as an error state
 	 * @since 2.2
 	 */
 	public void setMqttMessageDaoRequired(boolean mqttMessageDaoRequired) {
