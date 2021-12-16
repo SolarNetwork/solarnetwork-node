@@ -715,7 +715,8 @@ public class DefaultSetupService extends XmlServiceSupport
 					new Object[] { certDisplayName, daysToExpire,
 							DateUtils.DISPLAY_DATE_LONG_TIME_SHORT.format(expires.atZone(zone)) },
 					Locale.getDefault());
-			if ( daysToExpire <= getNodeCertificateExpireWarningDays() ) {
+			int maxDays = getNodeCertificateExpireWarningDays();
+			if ( maxDays > 0 && daysToExpire <= maxDays ) {
 				ok = false;
 			}
 		}
