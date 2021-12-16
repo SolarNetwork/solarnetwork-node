@@ -701,7 +701,15 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	@Override
 	public Result performPingTest() throws Exception {
-		Result r = super.performPingTest();
+		Result r = null;
+		if ( (requiredOperationalMode == null || requiredOperationalMode.isEmpty()
+				|| opModesService == null
+				|| opModesService.isOperationalModeActive(requiredOperationalMode)) ) {
+			r = super.performPingTest();
+		} else {
+			r = new PingTestResult(true, getMessageSource().getMessage("status.opModeDoesNotMatch",
+					new Object[] { requiredOperationalMode }, Locale.getDefault()));
+		}
 		Map<String, Object> props = new LinkedHashMap<>(8);
 		if ( r.getProperties() != null ) {
 			props.putAll(r.getProperties());
