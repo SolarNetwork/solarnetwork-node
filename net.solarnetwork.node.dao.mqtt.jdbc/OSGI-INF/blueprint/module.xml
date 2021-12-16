@@ -21,8 +21,7 @@
 	<osgix:cm-properties id="cfg" persistent-id="net.solarnetwork.node.dao.mqtt.jdbc">
 		<beans:prop key="JdbcMqttMessageDao.initSqlResource">classpath:/net/solarnetwork/node/dao/mqtt/jdbc/derby-message-init.sql</beans:prop>
 		<beans:prop key="JdbcMqttMessageDao.sqlResourcePrefix">derby-message</beans:prop>
-		<beans:prop key="job.mqttMessageCleaner.cron">35 0 0/2 ? * *</beans:prop>
-		<beans:prop key="job.mqttMessageCleaner.uploadedTrimHours">4</beans:prop>
+		<beans:prop key="JdbcMqttMessageDao.maxCountPingFail">10000</beans:prop>
 	</osgix:cm-properties>
 
 	<!-- Service References -->
@@ -41,6 +40,7 @@
 		<interfaces>
 			<value>net.solarnetwork.common.mqtt.dao.MqttMessageDao</value>
 			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
+			<value>net.solarnetwork.service.PingTest</value>
 		</interfaces>
 	</service>
 
@@ -67,6 +67,7 @@
 		<property name="eventAdmin" ref="eventAdmin" />
 		<property name="initSqlResource" value="${JdbcMqttMessageDao.initSqlResource}" />
 		<property name="sqlResourcePrefix" value="${JdbcMqttMessageDao.sqlResourcePrefix}" />
+		<property name="maxCountPingFail" value="${JdbcMqttMessageDao.maxCountPingFail}" />
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 				<property name="basename" value="net.solarnetwork.node.dao.mqtt.jdbc.JdbcMqttMessageDao"/>
