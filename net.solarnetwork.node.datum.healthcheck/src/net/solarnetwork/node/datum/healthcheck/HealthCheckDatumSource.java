@@ -148,7 +148,7 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 			}
 			list.add(nodeDatum(sourceId, result.getStart(), samples));
 		}
-		return list;
+		return (list.isEmpty() ? null : list);
 	}
 
 	private boolean trackResultStatus(PingTestResultDisplay result) {
