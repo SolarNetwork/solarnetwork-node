@@ -686,7 +686,7 @@ public class DefaultSetupService extends XmlServiceSupport
 
 	@Override
 	public long getPingTestMaximumExecutionMilliseconds() {
-		return 1000;
+		return 15000;
 	}
 
 	@Override
