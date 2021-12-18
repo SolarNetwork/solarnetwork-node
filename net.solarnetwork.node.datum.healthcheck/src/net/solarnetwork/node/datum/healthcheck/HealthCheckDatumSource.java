@@ -26,7 +26,6 @@ import static java.util.Collections.singleton;
 import static net.solarnetwork.node.domain.datum.SimpleDatum.nodeDatum;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -151,28 +150,42 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 		return (list.isEmpty() ? null : list);
 	}
 
-	private boolean trackResultStatus(PingTestResultDisplay result) {
+	private boolean trackResultStatus(PingTestResultDisplay testResult) {
 		final PingTestResultDisplay oldStatus;
 		synchronized ( resultStatusMap ) {
-			oldStatus = resultStatusMap.put(result.getPingTestId(), result);
-		}
-		final boolean changed = (oldStatus == null || oldStatus.isSuccess() != result.isSuccess());
-		final PublishMode mode = this.publishMode;
-		final int unchangedMaxSecs = this.unchangedPublishMaxSeconds;
-		switch (mode) {
-			case OnChange:
-				return (changed || (unchangedMaxSecs > 0 && Duration
-						.between(oldStatus.getStart(), Instant.now()).getSeconds() > unchangedMaxSecs));
+			oldStatus = resultStatusMap.get(testResult.getPingTestId());
 
-			case OnFailure:
-				return !result.isSuccess();
+			boolean update = true; // maybe not if OnChange within threshold
+			boolean result = true;
+			final boolean changed = (oldStatus == null
+					|| oldStatus.isSuccess() != testResult.isSuccess());
+			final PublishMode mode = this.publishMode;
+			final int unchangedMaxSecs = this.unchangedPublishMaxSeconds;
+			switch (mode) {
+				case OnChange:
+					result = (changed || (unchangedMaxSecs > 0
+							&& Duration.between(oldStatus.getStart(), testResult.getStart())
+									.getSeconds() > unchangedMaxSecs));
+					update = result;
+					break;
 
-			case Always:
-				return true;
+				case OnFailure:
+					result = !testResult.isSuccess();
+					break;
 
-			default:
-				// should not be here
-				throw new RuntimeException("Unsupported publish mode: " + mode);
+				case Always:
+					result = true;
+					break;
+
+				default:
+					// should not be here
+					throw new RuntimeException("Unsupported publish mode: " + mode);
+			}
+
+			if ( update ) {
+				resultStatusMap.put(testResult.getPingTestId(), testResult);
+			}
+			return result;
 		}
 	}
 

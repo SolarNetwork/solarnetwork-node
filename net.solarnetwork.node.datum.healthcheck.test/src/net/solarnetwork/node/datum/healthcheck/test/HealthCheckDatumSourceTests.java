@@ -33,6 +33,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -463,6 +464,63 @@ public class HealthCheckDatumSourceTests {
 				ops.getSampleString(DatumSamplesType.Status, HealthCheckDatumSource.PROP_MESSAGE),
 				is(testResult2.getMessage()));
 
+	}
+
+	@Test
+	public void pubOnChange_ok_ok_expireOk() throws Exception {
+		// GIVEN
+		final Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS).minusSeconds(10);
+		final String testId = "foo";
+		ds.setPublishMode(PublishMode.OnChange);
+		ds.setUnchangedPublishMaxSeconds(3);
+
+		PingTestResult testResult1 = new PingTestResult(true, "OK");
+		PingTest test1 = newMockTest(testId, "Foo Test", 1000, testResult1);
+		Map<String, PingTestResultDisplay> resultMap1 = new LinkedHashMap<>();
+		resultMap1.put(testId, new PingTestResultDisplay(test1, testResult1, start));
+		PingTestResults testResults1 = new PingTestResults(start, resultMap1);
+		expect(systemHealthService.performPingTests(null)).andReturn(testResults1);
+
+		// advance 2s; still within threshold
+		final Instant start2 = start.plusSeconds(2);
+		PingTestResult testResult2 = new PingTestResult(true, "OK");
+		PingTest test2 = newMockTest(testId, "Foo Test", 1000, testResult2);
+		Map<String, PingTestResultDisplay> resultMap2 = new LinkedHashMap<>();
+		resultMap2.put(testId, new PingTestResultDisplay(test2, testResult2, start2));
+		PingTestResults testResults2 = new PingTestResults(start2, resultMap2);
+		expect(systemHealthService.performPingTests(null)).andReturn(testResults2);
+
+		// advance 2s; now past 3s threshold
+		final Instant start3 = start.plusSeconds(4);
+		PingTestResult testResult3 = new PingTestResult(true, "OK");
+		PingTest test3 = newMockTest(testId, "Foo Test", 1000, testResult3);
+		Map<String, PingTestResultDisplay> resultMap3 = new LinkedHashMap<>();
+		resultMap3.put(testId, new PingTestResultDisplay(test3, testResult3, start3));
+		PingTestResults testResults3 = new PingTestResults(start3, resultMap3);
+		expect(systemHealthService.performPingTests(null)).andReturn(testResults3);
+
+		// WHEN
+		replayAll();
+		Collection<NodeDatum> datum1 = ds.readMultipleDatum();
+		Collection<NodeDatum> datum2 = ds.readMultipleDatum();
+		Collection<NodeDatum> datum3 = ds.readMultipleDatum();
+
+		// THEN
+		assertThat("Datum returned for first OnChange test result", datum1, hasSize(1));
+		NodeDatum d = datum1.iterator().next();
+		DatumSamplesOperations ops = d.asSampleOperations();
+		assertThat("Source ID derived from test ID", d.getSourceId(), is(equalTo(testId)));
+		assertThat("Status property OK",
+				ops.getSampleString(DatumSamplesType.Status, HealthCheckDatumSource.PROP_SUCCESS),
+				is(equalTo("true")));
+		assertThat("Message property not published when OK",
+				ops.getSampleString(Status, format("%s_%s", testId, PROP_MESSAGE)), is(nullValue()));
+
+		assertThat("No Datum returned for OnChange test result that has not changed within threshold",
+				datum2, is(nullValue()));
+
+		assertThat("Datum returned for unchanged OnChange test result past threshold", datum3,
+				hasSize(1));
 	}
 
 }
