@@ -99,6 +99,11 @@
 		</bean>
 	</service>
 
-	<service ref="mqttUploadService" interface="net.solarnetwork.settings.SettingSpecifierProvider"/>
+	<service ref="mqttUploadService">
+		<interfaces>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
+			<value>net.solarnetwork.service.PingTest</value>
+		</interfaces>
+	</service>
 
 </blueprint>

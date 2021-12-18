@@ -28,7 +28,9 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static net.solarnetwork.node.service.OperationalModesService.hasActiveOperationalMode;
+import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.settings.support.SettingUtils.dynamicListSettingSpecifier;
+import java.net.URI;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -79,6 +81,7 @@ import net.solarnetwork.service.DatumFilterService;
 import net.solarnetwork.service.Identifiable;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.OptionalServiceCollection;
+import net.solarnetwork.service.PingTestResult;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
@@ -94,7 +97,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class FluxUploadService extends BaseMqttConnectionService implements EventHandler,
 		Consumer<NodeDatum>, SettingSpecifierProvider, SettingsChangeObserver, MqttConnectionObserver {
@@ -164,6 +167,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	private OptionalService<MqttMessageDao> mqttMessageDao;
 	private int cachedMessagePublishMaximum = DEFAULT_CACHED_MESSAGE_PUBLISH_MAXIMUM;
 	private boolean publishRetained = DEFAULT_PUBLISH_RETAINED;
+	private boolean mqttMessageDaoRequired;
 
 	/**
 	 * Constructor.
@@ -187,6 +191,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		getMqttConfig().setUsername(DEFAULT_MQTT_USERNAME);
 		getMqttConfig().setServerUriValue(DEFAULT_MQTT_HOST);
 		getMqttConfig().setVersion(DEFAULT_MQTT_VERSION);
+		setDisplayName("SolarFlux Upload Service");
 	}
 
 	@Override
@@ -460,7 +465,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		if ( sourceId.isEmpty() ) {
 			return;
 		}
-		final MqttMessageDao dao = OptionalService.service(mqttMessageDao);
+		final MqttMessageDao dao = service(mqttMessageDao);
 		final boolean retained = isPublishRetained();
 		MqttMessage msgToPersist = null;
 		MqttConnection conn = connection();
@@ -600,11 +605,6 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	}
 
 	@Override
-	public String getDisplayName() {
-		return "SolarFlux Upload Service";
-	}
-
-	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<>(4);
 		results.add(new BasicTitleSettingSpecifier("status", getStatusMessage(), true, true));
@@ -615,6 +615,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		results.add(new BasicTextFieldSettingSpecifier("excludePropertyNamesRegex",
 				DEFAULT_EXCLUDE_PROPERTY_NAMES_PATTERN.pattern()));
 		results.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode", ""));
+		results.add(new BasicToggleSettingSpecifier("mqttMessageDaoRequired", false));
 		results.add(new BasicTextFieldSettingSpecifier("cachedMessagePublishMaximum",
 				String.valueOf(DEFAULT_CACHED_MESSAGE_PUBLISH_MAXIMUM)));
 
@@ -680,6 +681,60 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	@Override
 	public String getPingTestName() {
 		return getDisplayName();
+	}
+
+	@Override
+	public String getPingTestId() {
+		Object ident = getUid();
+		if ( ident == null ) {
+			URI uri = getMqttConfig().getServerUri();
+			if ( uri != null ) {
+				ident = uri;
+			}
+		}
+		if ( ident != null ) {
+			return String.format("%s-%s", super.getPingTestId(), ident);
+		}
+
+		return super.getPingTestId();
+	}
+
+	@Override
+	public Result performPingTest() throws Exception {
+		Result r = null;
+		if ( (requiredOperationalMode == null || requiredOperationalMode.isEmpty()
+				|| opModesService == null
+				|| opModesService.isOperationalModeActive(requiredOperationalMode)) ) {
+			r = super.performPingTest();
+		} else {
+			r = new PingTestResult(true, getMessageSource().getMessage("status.opModeDoesNotMatch",
+					new Object[] { requiredOperationalMode }, Locale.getDefault()));
+		}
+		Map<String, Object> props = new LinkedHashMap<>(8);
+		if ( r.getProperties() != null ) {
+			props.putAll(r.getProperties());
+		}
+		final MqttStats stats = getMqttStats();
+		for ( MqttStats.BasicCounts stat : Arrays.asList(MqttStats.BasicCounts.ConnectionAttempts,
+				MqttStats.BasicCounts.ConnectionFail, MqttStats.BasicCounts.ConnectionLost,
+				MqttStats.BasicCounts.MessagesDelivered, MqttStats.BasicCounts.MessagesDeliveredFail,
+				MqttStats.BasicCounts.PayloadBytesDelivered) ) {
+			props.put(stat.name(), stats.get(stat));
+		}
+		boolean success = r.isSuccess();
+		String msg = r.getMessage();
+		if ( mqttMessageDaoRequired ) {
+			MqttMessageDao dao = service(mqttMessageDao);
+			if ( dao == null ) {
+				success = false;
+				msg = getMessageSource().getMessage("status.mqttMessageDaoMissing", null,
+						"MqttMessageDao missing.", Locale.getDefault());
+				if ( r.getMessage() != null ) {
+					msg += " " + r.getMessage();
+				}
+			}
+		}
+		return new PingTestResult(success, msg, props);
 	}
 
 	/**
@@ -1009,6 +1064,33 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	 */
 	public void setPublishRetained(boolean publishRetained) {
 		this.publishRetained = publishRetained;
+	}
+
+	/**
+	 * Get the "MQTT message DAO required" flag.
+	 * 
+	 * @return {@literal true} to treat the lack of a
+	 *         {@link #getMqttMessageDao()} service as an error state
+	 * @since 2.2
+	 */
+	public boolean isMqttMessageDaoRequired() {
+		return mqttMessageDaoRequired;
+	}
+
+	/**
+	 * Set the "MQTT message DAO required" flag.
+	 * 
+	 * <p>
+	 * This setting affects the {@link #performPingTest()} method.
+	 * </p>
+	 * 
+	 * @param mqttMessageDaoRequired
+	 *        {@literal true} to treat the lack of a
+	 *        {@link #getMqttMessageDao()} service as an error state
+	 * @since 2.2
+	 */
+	public void setMqttMessageDaoRequired(boolean mqttMessageDaoRequired) {
+		this.mqttMessageDaoRequired = mqttMessageDaoRequired;
 	}
 
 }

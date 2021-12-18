@@ -15,6 +15,7 @@
 		<headers>
 			<frame-options disabled="true"/>
 		</headers>
+		<intercept-url pattern='/ping' access="permitAll"/>
 		<intercept-url pattern='/*.do' access="permitAll"/>
 		<intercept-url pattern='/pub/**' access="permitAll"/>
 	    <intercept-url pattern="/a/**" access="hasRole('ROLE_USER')"/>

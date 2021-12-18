@@ -440,3 +440,17 @@ div.plugin .desc {
 .carousel .popover-content {
 	line-height: 20px;
 }
+
+/* ping test */
+
+.ping .caption {
+	font-size: 11px;
+	color: #ccc;
+	margin: 4px 0;
+	font-weight: normal;
+}
+
+.ping .fail {
+	color: #c00;
+	background-color: inherit;
+}
