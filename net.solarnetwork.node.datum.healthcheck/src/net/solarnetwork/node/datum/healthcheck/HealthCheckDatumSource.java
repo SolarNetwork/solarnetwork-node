@@ -214,24 +214,34 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 	private NodeDatum generateDatum(PingTestResults results, String sourceId) {
 		DatumSamples samples = new DatumSamples();
 		boolean shouldPublishOverall = false;
+		List<PingTestResultDisplay> skippedResults = new ArrayList<>();
 		for ( PingTestResultDisplay result : results.getResults().values() ) {
 			final boolean shouldPublish = trackResultStatus(result);
-			if ( !shouldPublish ) {
+			if ( !(shouldPublish || shouldPublishOverall) ) {
+				skippedResults.add(result);
 				continue;
 			} else {
+				// backfill any skipped results now that we know we're publishing
+				for ( PingTestResultDisplay skipped : skippedResults ) {
+					populateDatumProperties(samples, skipped);
+				}
 				shouldPublishOverall = true;
 			}
-			String pingId = sourceIdForPingTestResult(result, -1);
-			samples.putStatusSampleValue(pingId + "_" + PROP_SUCCESS, result.isSuccess());
-			if ( !result.isSuccess() ) {
-				samples.putStatusSampleValue(pingId + "_" + PROP_MESSAGE, result.getMessage());
-			}
+			populateDatumProperties(samples, result);
 		}
 		if ( !shouldPublishOverall ) {
 			return null;
 		}
 		samples.putStatusSampleValue(PROP_SUCCESS, results.isAllGood());
 		return nodeDatum(sourceId, results.getDate(), samples);
+	}
+
+	private void populateDatumProperties(DatumSamples samples, PingTestResultDisplay result) {
+		String pingId = sourceIdForPingTestResult(result, -1);
+		samples.putStatusSampleValue(pingId + "_" + PROP_SUCCESS, result.isSuccess());
+		if ( !result.isSuccess() ) {
+			samples.putStatusSampleValue(pingId + "_" + PROP_MESSAGE, result.getMessage());
+		}
 	}
 
 	@Override

@@ -414,26 +414,37 @@ public class HealthCheckDatumSourceTests {
 	}
 
 	@Test
-	public void pubOnChange_firstTestResult_ok_fail() throws Exception {
+	public void pubOnChange_firstTestResult_ok_fail_merged() throws Exception {
 		// GIVEN
-		final Instant now = Instant.now();
-		final String testId = "foo";
+		final Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS).minusSeconds(10);
+		final String testId1 = "foo";
+		final String testId2 = "bar";
 		ds.setPublishMode(PublishMode.OnChange);
+		ds.setSourceId(TEST_SOURCE_ID);
 
 		PingTestResult testResult1 = new PingTestResult(true, "OK");
-		PingTest test1 = newMockTest(testId, "Foo Test", 1000, testResult1);
+		PingTest test1 = newMockTest(testId1, "Foo Test", 1000, testResult1);
+
+		PingTestResult testResult2 = new PingTestResult(true, "BOO");
+		PingTest test2 = newMockTest(testId2, "Bar Test", 1000, testResult2);
+
 		Map<String, PingTestResultDisplay> resultMap1 = new LinkedHashMap<>();
-		resultMap1.put(testId, new PingTestResultDisplay(test1, testResult1, now));
-		PingTestResults testResults1 = new PingTestResults(Instant.now(), resultMap1);
+		resultMap1.put(testId1, new PingTestResultDisplay(test1, testResult1, start));
+		resultMap1.put(testId2, new PingTestResultDisplay(test2, testResult2, start));
+		PingTestResults testResults1 = new PingTestResults(start, resultMap1);
 		expect(systemHealthService.performPingTests(null)).andReturn(testResults1);
 
-		Thread.sleep(200);
-		final Instant now2 = Instant.now();
-		PingTestResult testResult2 = new PingTestResult(false, "BOO");
-		PingTest test2 = newMockTest(testId, "Foo Test", 1000, testResult2);
+		PingTestResult testResult3 = new PingTestResult(true, "OK");
+		PingTest test3 = newMockTest(testId1, "Foo Test", 1000, testResult3);
+
+		PingTestResult testResult4 = new PingTestResult(false, "BOO");
+		PingTest test4 = newMockTest(testId2, "Bar Test", 1000, testResult4);
+
+		final Instant start2 = start.plusSeconds(2);
 		Map<String, PingTestResultDisplay> resultMap2 = new LinkedHashMap<>();
-		resultMap2.put(testId, new PingTestResultDisplay(test2, testResult2, now2));
-		PingTestResults testResults2 = new PingTestResults(Instant.now(), resultMap2);
+		resultMap2.put(testId1, new PingTestResultDisplay(test3, testResult3, start2));
+		resultMap2.put(testId2, new PingTestResultDisplay(test4, testResult4, start2));
+		PingTestResults testResults2 = new PingTestResults(start2, resultMap2);
 		expect(systemHealthService.performPingTests(null)).andReturn(testResults2);
 
 		// WHEN
@@ -444,26 +455,36 @@ public class HealthCheckDatumSourceTests {
 		// THEN
 		assertThat("Datum returned for first OnChange test result", datum1, hasSize(1));
 		NodeDatum d = datum1.iterator().next();
+		assertThat("1 OVERALL, 2 OK properties published", d.getSampleData().size(), is(equalTo(3)));
 		DatumSamplesOperations ops = d.asSampleOperations();
-		assertThat("Source ID derived from test ID", d.getSourceId(), is(equalTo(testId)));
-		assertThat("Status property OK",
-				ops.getSampleString(DatumSamplesType.Status, HealthCheckDatumSource.PROP_SUCCESS),
+		assertThat("Source ID fixed", d.getSourceId(), is(equalTo(TEST_SOURCE_ID)));
+		assertThat("Overall status property OK",
+				ops.getSampleString(DatumSamplesType.Status, PROP_SUCCESS), is(equalTo("true")));
+		assertThat("Status property 1 OK",
+				ops.getSampleString(DatumSamplesType.Status, format("%s_%s", testId1, PROP_SUCCESS)),
 				is(equalTo("true")));
-		assertThat("Message property not published when OK",
-				ops.getSampleString(Status, format("%s_%s", testId, PROP_MESSAGE)), is(nullValue()));
+		assertThat("Status property 2 OK",
+				ops.getSampleString(DatumSamplesType.Status, format("%s_%s", testId2, PROP_SUCCESS)),
+				is(equalTo("true")));
 
-		assertThat("Datum returned for second OnChange test result because status changed", datum1,
+		assertThat("Datum returned for second OnChange test result because status changed", datum2,
 				hasSize(1));
 		d = datum2.iterator().next();
+		assertThat("1 OVERALL, 2 OK, 1 MSG properties published", d.getSampleData().size(),
+				is(equalTo(4)));
 		ops = d.asSampleOperations();
-		assertThat("Source ID derived from test ID", d.getSourceId(), is(equalTo(testId)));
-		assertThat("Status property FAIL",
-				ops.getSampleString(DatumSamplesType.Status, HealthCheckDatumSource.PROP_SUCCESS),
+		assertThat("Source ID fixed", d.getSourceId(), is(equalTo(TEST_SOURCE_ID)));
+		assertThat("Overall status property FAIL",
+				ops.getSampleString(DatumSamplesType.Status, PROP_SUCCESS), is(equalTo("false")));
+		assertThat("Status property 1 OK",
+				ops.getSampleString(DatumSamplesType.Status, format("%s_%s", testId1, PROP_SUCCESS)),
+				is(equalTo("true")));
+		assertThat("Status property 2 FAIL",
+				ops.getSampleString(DatumSamplesType.Status, format("%s_%s", testId2, PROP_SUCCESS)),
 				is(equalTo("false")));
-		assertThat("Message property published when test FAIL",
-				ops.getSampleString(DatumSamplesType.Status, HealthCheckDatumSource.PROP_MESSAGE),
-				is(testResult2.getMessage()));
-
+		assertThat("Message property 2 provided",
+				ops.getSampleString(DatumSamplesType.Status, format("%s_%s", testId2, PROP_MESSAGE)),
+				is(equalTo("BOO")));
 	}
 
 	@Test
