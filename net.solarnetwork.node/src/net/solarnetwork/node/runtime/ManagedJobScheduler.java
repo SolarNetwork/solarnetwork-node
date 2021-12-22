@@ -31,14 +31,18 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.osgi.framework.BundleContext;
@@ -57,6 +61,8 @@ import org.springframework.scheduling.support.CronTrigger;
 import net.solarnetwork.node.job.JobService;
 import net.solarnetwork.node.job.ManagedJob;
 import net.solarnetwork.node.job.ServiceProvider;
+import net.solarnetwork.service.PingTest;
+import net.solarnetwork.service.PingTestResult;
 import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -86,18 +92,26 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class ManagedJobScheduler implements ServiceLifecycleObserver, ConfigurationListener {
+public class ManagedJobScheduler implements ServiceLifecycleObserver, ConfigurationListener, PingTest {
 
 	/** The {@code randomizedCron} property default value. */
 	public static final boolean DEFAULT_RANDOMIZED_CRON = true;
+
+	/** The {@code jobStartDelaySeconds} property default value. */
+	public static final int DEFAULT_JOB_START_DELAY_SECS = 0;
 
 	private static final Logger log = LoggerFactory.getLogger(ManagedJobScheduler.class);
 
 	private final BundleContext bundleContext;
 	private final TaskScheduler taskScheduler;
 	private boolean randomizedCron = DEFAULT_RANDOMIZED_CRON;
+	private MessageSource messageSource;
+	private int jobStartDelaySeconds = DEFAULT_JOB_START_DELAY_SECS;
+
+	private long startTime = 0;
+	private ScheduledFuture<?> startupTask;
 
 	// our runtime registration database; with nested map so jobs can be bundled into 
 	// a single pid value, for example when a plugin registers several related jobs
@@ -183,7 +197,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 
 	}
 
-	private static class ScheduledJob implements Runnable {
+	private static final class ScheduledJob implements Runnable {
 
 		private final String pid;
 		private final ManagedJob job;
@@ -192,6 +206,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		private ScheduledFuture<?> future;
 		private String schedule;
 		private String triggerSchedule;
+		private Throwable throwable;
 
 		private ScheduledJob(String pid, ManagedJob job,
 				List<ServiceRegistration<?>> registeredServices) {
@@ -240,19 +255,33 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 			JobService js = job.getJobService();
 			if ( js != null ) {
 				try {
+					throwable = null;
 					job.getJobService().executeJobService();
 				} catch ( IOException e ) {
+					throwable = e;
 					log.warn("Communication error executing job {}: {}", identifier, e.toString());
 				} catch ( Throwable t ) {
+					throwable = t;
 					log.error("Error executing job {}: {}", identifier, t.getMessage(), t);
 				}
 			}
-
 		}
 
 		@Override
 		public String toString() {
 			return String.format("ScheduledJob{%s @ %s}", identifier, schedule);
+		}
+
+	}
+
+	private final class StartupTask implements Runnable {
+
+		private final int delaySecs = getJobStartDelaySeconds();
+
+		@Override
+		public void run() {
+			log.info("Scheduling jobs after startup delay of {}s", delaySecs);
+			scheduleAllJobs();
 		}
 
 	}
@@ -298,8 +327,12 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 	}
 
 	@Override
-	public void serviceDidStartup() {
-		// nothing		
+	public synchronized void serviceDidStartup() {
+		startTime = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(jobStartDelaySeconds);
+		if ( startupTask != null ) {
+			startupTask.cancel(true);
+		}
+		startupTask = taskScheduler.schedule(new StartupTask(), new Date(startTime));
 	}
 
 	@Override
@@ -316,6 +349,18 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 			configurationListenerRef.unregister();
 			configurationListenerRef = null;
 		}
+		if ( startupTask != null ) {
+			startupTask.cancel(true);
+		}
+	}
+
+	private synchronized void scheduleAllJobs() {
+		for ( ScheduledJobs sjs : pidMap.values() ) {
+			for ( ScheduledJob sj : sjs.jobMap.values() ) {
+				scheduleJob(sj);
+			}
+		}
+		this.startupTask = null;
 	}
 
 	/**
@@ -384,13 +429,22 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 			sjs.settingProviderReg = bundleContext.registerService(SettingSpecifierProvider.class, sjs,
 					settingProps);
 		}
+		if ( isSchedulerActive() ) {
+			scheduleJob(sj);
+		}
+	}
 
-		String expr = job.getSchedule();
+	private void scheduleJob(final ScheduledJob sj) {
+		String expr = sj.job.getSchedule();
 		Trigger trigger = triggerForSchedule(expr);
 		if ( trigger != null ) {
 			ScheduledFuture<?> f = taskScheduler.schedule(sj, trigger);
 			sj.scheduled(f, expr, trigger);
 		}
+	}
+
+	private boolean isSchedulerActive() {
+		return (jobStartDelaySeconds < 1 || (startTime > 0 && startTime < System.currentTimeMillis()));
 	}
 
 	/**
@@ -461,7 +515,8 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 				newSchedule = configScheduleExpression.toString();
 			}
 
-			if ( newSchedule != null && !oldSchedule.equalsIgnoreCase(newSchedule) ) {
+			if ( isSchedulerActive() && newSchedule != null
+					&& !oldSchedule.equalsIgnoreCase(newSchedule) ) {
 				Trigger trigger = triggerForSchedule(newSchedule);
 				if ( trigger != null ) {
 					sj.stop();
@@ -484,6 +539,54 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 		return (o != null ? o.toString() : defaultPid);
 	}
 
+	@Override
+	public String getPingTestId() {
+		return "net.solarnetwork.node.runtime.ManagedJobScheduler";
+	}
+
+	@Override
+	public String getPingTestName() {
+		return "Managed Job Scheduler";
+	}
+
+	@Override
+	public long getPingTestMaximumExecutionMilliseconds() {
+		return 2000;
+	}
+
+	@Override
+	public synchronized Result performPingTest() throws Exception {
+		boolean ok = true;
+		Map<String, String> errors = new TreeMap<>();
+		Map<String, String> all = new TreeMap<>();
+		for ( Entry<String, ScheduledJobs> e : pidMap.entrySet() ) {
+			ScheduledJobs sjs = e.getValue();
+			for ( Entry<String, ScheduledJob> sje : sjs.jobMap.entrySet() ) {
+				ScheduledJob sj = sje.getValue();
+				final String ident = sj.identifier;
+				final Throwable t = sj.throwable;
+				if ( t != null ) {
+					Throwable root = t;
+					while ( root.getCause() != null ) {
+						root = root.getCause();
+					}
+					errors.put(ident, root.toString());
+				}
+				all.put(ident, String.format("%s @ %s", sj.identifier, sj.schedule));
+			}
+		}
+		Map<String, Object> props = new LinkedHashMap<>();
+		if ( !errors.isEmpty() ) {
+			props.put("errors", errors);
+		}
+		if ( !all.isEmpty() ) {
+			props.put("jobs", all);
+		}
+		String msg = messageSource.getMessage("msg.jobCountStatus",
+				new Object[] { all.size(), errors.size() }, "Scheduler running.", Locale.getDefault());
+		return new PingTestResult(ok, msg, props);
+	}
+
 	/**
 	 * Get the randomized cron flag.
 	 * 
@@ -503,6 +606,48 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 	 */
 	public void setRandomizedCron(boolean randomizedCron) {
 		this.randomizedCron = randomizedCron;
+	}
+
+	/**
+	 * Get the message source.
+	 * 
+	 * @return the message source
+	 */
+	public MessageSource getMessageSource() {
+		return messageSource;
+	}
+
+	/**
+	 * Set the message source.
+	 * 
+	 * @param messageSource
+	 *        the message source to set
+	 */
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
+	}
+
+	/**
+	 * Get the number of seconds to delay the first execution of a registered
+	 * job.
+	 * 
+	 * @return the number of seconds to delay the first execution of a
+	 *         registered job; defaults to {@link #DEFAULT_JOB_START_DELAY_SECS}
+	 */
+	public int getJobStartDelaySeconds() {
+		return jobStartDelaySeconds;
+	}
+
+	/**
+	 * Set the number of seconds to delay the first execution of a registered
+	 * job.
+	 * 
+	 * @param jobStartDelaySeconds
+	 *        the number of seconds to delay the first execution of a registered
+	 *        job
+	 */
+	public void setJobStartDelaySeconds(int jobStartDelaySeconds) {
+		this.jobStartDelaySeconds = jobStartDelaySeconds;
 	}
 
 }

@@ -30,11 +30,14 @@ import java.net.URLConnection;
 import java.security.Principal;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -67,6 +70,9 @@ import net.solarnetwork.node.setup.SetupService;
 import net.solarnetwork.node.setup.SetupSettings;
 import net.solarnetwork.service.CertificateException;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.PingTest;
+import net.solarnetwork.service.PingTestResult;
+import net.solarnetwork.util.DateUtils;
 
 /**
  * Implementation of {@link SetupService}.
@@ -106,10 +112,10 @@ import net.solarnetwork.service.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class DefaultSetupService extends XmlServiceSupport
-		implements SetupService, IdentityService, InstructionHandler {
+		implements SetupService, IdentityService, InstructionHandler, PingTest {
 
 	/** The default value for the {@code hostName} property. */
 	public static final String DEFAULT_HOST_NAME = "in.solarnetwork.net";
@@ -158,8 +164,12 @@ public class DefaultSetupService extends XmlServiceSupport
 	 */
 	public static final String IDENTITY_SERVICE_NAME = "/setup/identity";
 
+	/** A pattern to extract a node ID from a certificate subject name. */
 	public static final Pattern DEFAULT_SUBJECT_NAME_NODE_ID_PATTERN = Pattern
 			.compile("UID\\s*=\\s*(\\d+)", Pattern.CASE_INSENSITIVE);
+
+	/** The {@code nodeCertificateExpireWarningDays} property default value. */
+	public static final int DEFAULT_CERT_EXPIRE_WARNING_DAYS = 14;
 
 	private static final long APP_CONFIG_CACHE_MS = 24 * 60 * 60 * 1000L; // 1 day
 
@@ -202,6 +212,7 @@ public class DefaultSetupService extends XmlServiceSupport
 	private PKIService pkiService;
 	private String solarInUrlPrefix = DEFAULT_SOLARIN_URL_PREFIX;
 	private String solarUserUrlPrefix = DEFAULT_SOLARUSER_URL_PREFIX;
+	private int nodeCertificateExpireWarningDays = DEFAULT_CERT_EXPIRE_WARNING_DAYS;
 
 	private NodeAppConfiguration appConfiguration = new NodeAppConfiguration();
 
@@ -215,6 +226,7 @@ public class DefaultSetupService extends XmlServiceSupport
 		super();
 		this.setupIdentityDao = setupIdentityDao;
 		setConnectionTimeout(60000);
+		setDisplayName("Setup Service");
 	}
 
 	private Map<String, XPathExpression> getNodeAssociationPropertyMapping() {
@@ -662,6 +674,55 @@ public class DefaultSetupService extends XmlServiceSupport
 		return config;
 	}
 
+	@Override
+	public String getPingTestId() {
+		return "net.solarnetwork.node.setup.impl.DefaultSetupService";
+	}
+
+	@Override
+	public String getPingTestName() {
+		return getDisplayName();
+	}
+
+	@Override
+	public long getPingTestMaximumExecutionMilliseconds() {
+		return 15000;
+	}
+
+	@Override
+	public Result performPingTest() throws Exception {
+		final X509Certificate nodeCert = (pkiService != null ? pkiService.getNodeCertificate() : null);
+		if ( nodeCert == null ) {
+			return new PingTestResult(true, "Node certificate not available.");
+		}
+		final Instant now = Instant.now();
+		final ZoneId zone = ZoneId.systemDefault();
+		String certDisplayName = String.format("%s (0x%x)", nodeCert.getSubjectDN(),
+				nodeCert.getSerialNumber());
+		Instant expires = nodeCert.getNotAfter().toInstant();
+		boolean ok = true;
+		String msg = null;
+
+		if ( expires.isBefore(now) ) {
+			ok = false;
+			msg = getMessageSource().getMessage("error.nodeCertExpired",
+					new Object[] { certDisplayName,
+							DateUtils.DISPLAY_DATE_LONG_TIME_SHORT.format(expires.atZone(zone)) },
+					Locale.getDefault());
+		} else {
+			long daysToExpire = ChronoUnit.DAYS.between(now.atZone(zone), expires.atZone(zone));
+			msg = getMessageSource().getMessage("msg.nodeCertExpiring",
+					new Object[] { certDisplayName, daysToExpire,
+							DateUtils.DISPLAY_DATE_LONG_TIME_SHORT.format(expires.atZone(zone)) },
+					Locale.getDefault());
+			int maxDays = getNodeCertificateExpireWarningDays();
+			if ( maxDays > 0 && daysToExpire <= maxDays ) {
+				ok = false;
+			}
+		}
+		return new PingTestResult(ok, msg);
+	}
+
 	/**
 	 * Set the URL path prefix to use for the SolarIn application.
 	 * 
@@ -690,6 +751,31 @@ public class DefaultSetupService extends XmlServiceSupport
 
 	public void setBackupManager(OptionalService<BackupManager> backupManager) {
 		this.backupManager = backupManager;
+	}
+
+	/**
+	 * Get the number of days before treating an expiring node certificate as a
+	 * {@link PingTest} failure.
+	 * 
+	 * @return the nodeCertificateExpireWarningDays the number of days; defaults
+	 *         to {@link DefaultSetupService#DEFAULT_CERT_EXPIRE_WARNING_DAYS}
+	 * @since 2.2
+	 */
+	public int getNodeCertificateExpireWarningDays() {
+		return nodeCertificateExpireWarningDays;
+	}
+
+	/**
+	 * Set the number of days before treating an expiring node certificate as a
+	 * {@link PingTest} failure.
+	 * 
+	 * @param nodeCertificateExpireWarningDays
+	 *        the nodeCertificateExpireWarningDays the number of days, or
+	 *        {@literal 0} to disable the warning
+	 * @since 2.2
+	 */
+	public void setNodeCertificateExpireWarningDays(int nodeCertificateExpireWarningDays) {
+		this.nodeCertificateExpireWarningDays = nodeCertificateExpireWarningDays;
 	}
 
 }

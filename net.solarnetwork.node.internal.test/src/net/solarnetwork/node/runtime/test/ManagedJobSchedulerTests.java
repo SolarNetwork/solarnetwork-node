@@ -35,6 +35,7 @@ import static org.hamcrest.Matchers.is;
 import static org.osgi.service.cm.ConfigurationEvent.CM_UPDATED;
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.List;
@@ -74,7 +75,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * Test cases for the {@link ManagedJobScheduler} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ManagedJobSchedulerTests {
 
@@ -206,6 +207,72 @@ public class ManagedJobSchedulerTests {
 		assertThat("Scheduled trigger is cron", trigCaptor.getValue(),
 				is(new CronTrigger(managedJob.getSchedule())));
 		assertThat("Scheduled task active", future.isDone(), is(false));
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Test
+	public void register_basic_delay() {
+		// GIVEN
+		service.setJobStartDelaySeconds(1);
+
+		// schedule startup task
+		Capture<Runnable> startupTaskCaptor = new Capture<>();
+		Capture<Date> startupTaskDelayCaptor = new Capture<>();
+		TestScheduledFuture startupTaskFuture = new TestScheduledFuture();
+		expect(taskScheduler.schedule(capture(startupTaskCaptor), capture(startupTaskDelayCaptor)))
+				.andReturn((ScheduledFuture) startupTaskFuture);
+
+		final String settingPid = "foo.bar";
+		JobService job = EasyMock.createMock(JobService.class);
+		expect(job.getSettingUid()).andReturn(settingPid).anyTimes();
+		expect(job.getDisplayName()).andReturn(null).anyTimes();
+
+		// register ConfigurationListener first time
+		ServiceRegistration<ConfigurationListener> configurationListenerReg = EasyMock
+				.createMock(ServiceRegistration.class);
+		expect(bundleContext.registerService(ConfigurationListener.class, service, null))
+				.andReturn(configurationListenerReg);
+
+		// register SettingSpecifierProvider for job
+		ServiceRegistration<SettingSpecifierProvider> settingProviderReg = EasyMock
+				.createMock(ServiceRegistration.class);
+		Capture<Dictionary<String, ?>> settingProviderRegPropsCaptor = new Capture<>();
+		expect(bundleContext.registerService(eq(SettingSpecifierProvider.class),
+				anyObject(SettingSpecifierProvider.class), capture(settingProviderRegPropsCaptor)))
+						.andReturn(settingProviderReg);
+
+		// WHEN
+		replayAll(job, configurationListenerReg, settingProviderReg);
+		service.serviceDidStartup();
+		SimpleManagedJob managedJob = new SimpleManagedJob(job);
+		managedJob.setSchedule("0 * * * * ?");
+		service.registerJob(managedJob, Collections.emptyMap());
+
+		// THEN
+		Map<String, ?> settingProviderRegProps = mapForDictionary(
+				settingProviderRegPropsCaptor.getValue());
+		assertThat("ManagedJob SettingSpecifierProvider registered with settingPid property",
+				settingProviderRegProps, hasEntry(Constants.SETTING_PID, settingPid));
+
+		EasyMock.verify(taskScheduler);
+		EasyMock.reset(taskScheduler);
+
+		// schedule the actual job
+		Capture<Runnable> taskCaptor = new Capture<>();
+		Capture<Trigger> trigCaptor = new Capture<>();
+		TestScheduledFuture future = new TestScheduledFuture();
+		expect(taskScheduler.schedule(capture(taskCaptor), capture(trigCaptor)))
+				.andReturn((ScheduledFuture) future);
+
+		// WHEN
+		// run the startup task to schedule the job
+		EasyMock.replay(taskScheduler);
+		startupTaskCaptor.getValue().run();
+
+		assertThat("Scheduled trigger is cron", trigCaptor.getValue(),
+				is(new CronTrigger(managedJob.getSchedule())));
+		assertThat("Scheduled task active", future.isDone(), is(false));
+
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })

@@ -64,7 +64,7 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class SettingsPlaceholderService implements PlaceholderService {
 
@@ -119,7 +119,7 @@ public class SettingsPlaceholderService implements PlaceholderService {
 
 	private Map<String, ?> allPlaceholders(Map<String, ?> parameters) {
 		Map<String, ?> result = null;
-		if ( cacheSeconds > 0 ) {
+		if ( cacheSeconds > 0 && settingDao.service() != null ) {
 			final CachedResult<Map<String, ?>> cached = this.placeholdersCache;
 			result = (cached != null ? cached.getResult() : null);
 			if ( cached == null || !cached.isValid() ) {

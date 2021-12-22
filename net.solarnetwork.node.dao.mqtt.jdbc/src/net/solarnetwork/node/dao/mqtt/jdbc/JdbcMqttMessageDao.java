@@ -39,6 +39,8 @@ import net.solarnetwork.common.mqtt.dao.BasicMqttMessageEntity;
 import net.solarnetwork.common.mqtt.dao.MqttMessageDao;
 import net.solarnetwork.common.mqtt.dao.MqttMessageEntity;
 import net.solarnetwork.node.dao.jdbc.BaseJdbcBatchableDao;
+import net.solarnetwork.service.PingTest;
+import net.solarnetwork.service.PingTestResult;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
@@ -47,10 +49,10 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * JDBC implementation of {@link MqttMessageDao}.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, Long>
-		implements MqttMessageDao, SettingSpecifierProvider {
+		implements MqttMessageDao, SettingSpecifierProvider, PingTest {
 
 	/**
 	 * The default SQL template for the {@code sqlGetTablesVersion} property.
@@ -64,6 +66,9 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 
 	/** The charge point table version. */
 	public static final int VERSION = 1;
+
+	/** The {@code maxCountPingFail} property default value. */
+	public static final int DEFAULT_MAX_COUNT_PING_FAIL = 10000;
 
 	/**
 	 * Enumeration of SQL resources.
@@ -81,6 +86,9 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 
 		/** Batch update for a specific destination. */
 		BatchUpdateForDestination("batch-update-for-destination"),
+
+		/** Get a count of stored records. */
+		Count("count"),
 
 		;
 
@@ -101,6 +109,7 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 	}
 
 	public final MqttStats stats;
+	private int maxCountPingFail = DEFAULT_MAX_COUNT_PING_FAIL;
 
 	/**
 	 * Constructor.
@@ -131,12 +140,25 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 
 	private String getStatusMessage() {
 		// @formatter:off
+		long rowCount = 0;
+		try {
+			rowCount = rowCount();
+		} catch ( Exception e ) {
+			log.warn("Error finding MQTT message row count.", e);
+		}
 		return getMessageSource().getMessage("status.msg",
 				new Object[] { 
+						rowCount,
 						stats.get(MqttMessageDaoStat.MessagesStored),
 						stats.get(MqttMessageDaoStat.MessagesDeleted) },
 				Locale.getDefault());
 		// @formatter:on
+	}
+
+	private long rowCount() {
+		final Number rowCountNum = getJdbcTemplate()
+				.queryForObject(getSqlResource(SqlResource.Count.getResource()), Number.class);
+		return (rowCountNum == null ? 0 : rowCountNum.longValue());
 	}
 
 	@Override
@@ -266,6 +288,34 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 		resultSet.updateBytes(7, entity.getPayload());
 	}
 
+	@Override
+	public String getPingTestId() {
+		return getSettingUid();
+	}
+
+	@Override
+	public String getPingTestName() {
+		return getDisplayName();
+	}
+
+	@Override
+	public long getPingTestMaximumExecutionMilliseconds() {
+		return 5000;
+	}
+
+	@Override
+	public Result performPingTest() throws Exception {
+		final long rowCount = rowCount();
+		final int maxCount = getMaxCountPingFail();
+		boolean ok = true;
+		String msg = getMessageSource().getMessage("msg.messageCount", new Object[] { rowCount },
+				Locale.getDefault());
+		if ( maxCount > 0 && rowCount > maxCount ) {
+			ok = false;
+		}
+		return new PingTestResult(ok, msg, Collections.singletonMap("count", rowCount));
+	}
+
 	/**
 	 * Get the statistics object.
 	 * 
@@ -277,6 +327,28 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 	 */
 	public MqttStats getStats() {
 		return stats;
+	}
+
+	/**
+	 * Get the maximum number of messages to store before failing ping tests.
+	 * 
+	 * @return the maximum count, or {@literal 0} to disable the test; defaults
+	 *         to {@link #DEFAULT_MAX_COUNT_PING_FAIL}
+	 * @since 2.1
+	 */
+	public int getMaxCountPingFail() {
+		return maxCountPingFail;
+	}
+
+	/**
+	 * Set the maximum number of messages to store before failing ping tests.
+	 * 
+	 * @param maxCountPingFail
+	 *        the maximum count, or {@literal 0} to disable the test
+	 * @since 2.1
+	 */
+	public void setMaxCountPingFail(int maxCountPingFail) {
+		this.maxCountPingFail = maxCountPingFail;
 	}
 
 }

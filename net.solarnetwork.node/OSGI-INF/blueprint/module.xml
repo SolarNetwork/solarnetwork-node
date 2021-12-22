@@ -53,7 +53,14 @@
 			init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 		<argument ref="bundleContext"/>
 		<argument ref="taskScheduler"/>
+		<property name="jobStartDelaySeconds" value="${scheduler.startupDelay}"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basename" value="net.solarnetwork.node.runtime.ManagedJobScheduler"/>
+			</bean>
+		</property>
 	</bean>
+	<service ref="managedJobsListener" interface="net.solarnetwork.service.PingTest"/>
 
 	<reference-list id="backupServices" availability="optional"
 		interface="net.solarnetwork.node.backup.BackupService"/>
@@ -537,6 +544,17 @@
 		</service-properties>
 		<bean class="net.solarnetwork.node.dao.QueueDatumDao">
 			<argument ref="datumQueue"/>
+		</bean>
+	</service>
+	
+	<!-- 
+		System health support
+	 -->
+	<service interface="net.solarnetwork.node.service.SystemHealthService">
+		<bean class="net.solarnetwork.node.runtime.DefaultSystemHealthService">
+			<argument>
+				<reference-list interface="net.solarnetwork.service.PingTest" availability="optional"/>
+			</argument>
 		</bean>
 	</service>
 

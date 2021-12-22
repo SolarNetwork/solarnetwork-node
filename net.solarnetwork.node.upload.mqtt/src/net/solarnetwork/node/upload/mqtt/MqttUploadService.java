@@ -29,6 +29,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -76,6 +78,7 @@ import net.solarnetwork.node.service.DatumMetadataService;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.service.UploadService;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.PingTestResult;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
@@ -159,6 +162,16 @@ public class MqttUploadService extends BaseMqttConnectionService
 		getMqttConfig().getProperties()
 				.addProperty(new BasicMqttProperty<Integer>(MqttPropertyType.TOPIC_ALIAS_MAXIMUM, 7));
 		//getMqttConfig().setWireLoggingEnabled(true);
+		setDisplayName("SolarIn/MQTT");
+	}
+
+	@Override
+	public String getDisplayName() {
+		URI uri = getMqttConfig().getServerUri();
+		if ( uri == null ) {
+			return super.getDisplayName();
+		}
+		return String.format("%s @ %s", super.getDisplayName(), uri);
 	}
 
 	@Override
@@ -504,6 +517,20 @@ public class MqttUploadService extends BaseMqttConnectionService
 	@Override
 	public String getPingTestName() {
 		return getDisplayName();
+	}
+
+	@Override
+	public Result performPingTest() throws Exception {
+		Result r = super.performPingTest();
+		Map<String, Object> props = new LinkedHashMap<>(8);
+		if ( r.getProperties() != null ) {
+			props.putAll(r.getProperties());
+		}
+		final MqttStats stats = getMqttStats();
+		for ( MqttStats.BasicCounts stat : EnumSet.allOf(MqttStats.BasicCounts.class) ) {
+			props.put(stat.name(), stats.get(stat));
+		}
+		return new PingTestResult(r.isSuccess(), r.getMessage(), props);
 	}
 
 	@Override
