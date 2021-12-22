@@ -53,6 +53,7 @@
 			init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 		<argument ref="bundleContext"/>
 		<argument ref="taskScheduler"/>
+		<property name="jobStartDelaySeconds" value="${scheduler.startupDelay}"/>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 				<property name="basename" value="net.solarnetwork.node.runtime.ManagedJobScheduler"/>
