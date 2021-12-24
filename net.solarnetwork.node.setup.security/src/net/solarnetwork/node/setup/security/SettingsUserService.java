@@ -24,6 +24,7 @@ package net.solarnetwork.node.setup.security;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -116,16 +117,41 @@ public class SettingsUserService implements UserService, UserDetailsService {
 		return result;
 	}
 
+	/**
+	 * Test if some user exists.
+	 * 
+	 * <p>
+	 * This implementation returns {@literal true} only if a
+	 * {@link #SETTING_TYPE_ROLE} record with a value of
+	 * {@link #GRANTED_AUTH_USER} exists along with a {@link #SETTING_TYPE_USER}
+	 * for the same key.
+	 * </p>
+	 * 
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean someUserExists() {
 		final AtomicBoolean result = new AtomicBoolean(false);
+		final Map<String, Boolean> userMap = new HashMap<>(2);
 		settingDao.batchProcess(new BatchCallback<Setting>() {
 
 			@Override
-			public BatchCallbackResult handle(Setting domainObject) {
-				if ( domainObject.getType().equals(SETTING_TYPE_USER) ) {
-					result.set(true);
-					return BatchCallbackResult.STOP;
+			public BatchCallbackResult handle(Setting setting) {
+				if ( setting.getType().equals(SETTING_TYPE_ROLE)
+						&& GRANTED_AUTH_USER.equals(setting.getValue()) ) {
+					if ( userMap.containsKey(setting.getKey()) ) {
+						// found role + user
+						result.set(true);
+						return BatchCallbackResult.STOP;
+					}
+					userMap.put(setting.getKey(), Boolean.TRUE);
+				} else if ( setting.getType().equals(SETTING_TYPE_USER) ) {
+					if ( Boolean.TRUE.equals(userMap.get(setting.getKey())) ) {
+						// found role + user
+						result.set(true);
+						return BatchCallbackResult.STOP;
+					}
+					userMap.put(setting.getKey(), Boolean.FALSE);
 				}
 				return BatchCallbackResult.CONTINUE;
 			}
