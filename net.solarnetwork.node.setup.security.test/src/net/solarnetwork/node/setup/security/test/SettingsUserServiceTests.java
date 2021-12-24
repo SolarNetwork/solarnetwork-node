@@ -112,6 +112,9 @@ public class SettingsUserServiceTests {
 				Setting s = new Setting("otheruser", SettingsUserService.SETTING_TYPE_USER, "secret",
 						null);
 				cb.handle(s);
+				s = new Setting("otheruser", SettingsUserService.SETTING_TYPE_ROLE,
+						SettingsUserService.GRANTED_AUTH_USER, null);
+				cb.handle(s);
 			}
 		}), anyObject())).andReturn(queryResult);
 
