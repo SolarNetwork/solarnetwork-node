@@ -35,10 +35,12 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.dao.TransientDataAccessException;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.service.PlaceholderService;
@@ -64,7 +66,7 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class SettingsPlaceholderService implements PlaceholderService {
 
@@ -78,14 +80,23 @@ public class SettingsPlaceholderService implements PlaceholderService {
 	 */
 	public static final int DEFAULT_CACHE_SECONDS = 20;
 
+	/**
+	 * The default {@code daoRetryCount} property value.
+	 * 
+	 * @since 2.2
+	 */
+	public static final int DEFAULT_DAO_RETRY_COUNT = 3;
+
 	private final OptionalService<SettingDao> settingDao;
 	private Path staticPropertiesPath;
 	private int cacheSeconds = DEFAULT_CACHE_SECONDS;
 	private AsyncTaskExecutor taskExecutor;
+	private int daoRetryCount = DEFAULT_DAO_RETRY_COUNT;
 
 	private Map<String, ?> staticProps;
 
-	private CachedResult<Map<String, ?>> placeholdersCache;
+	private volatile CachedResult<Map<String, ?>> placeholdersCache;
+	private volatile Future<Map<String, ?>> refreshCacheTask;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -114,7 +125,11 @@ public class SettingsPlaceholderService implements PlaceholderService {
 
 		String resolved = s;
 		Map<String, ?> placeholders = allPlaceholders(parameters);
-		return StringUtils.expandTemplateString(resolved, placeholders);
+		String result = StringUtils.expandTemplateString(resolved, placeholders);
+		if ( log.isTraceEnabled() && !result.equals(s) ) {
+			log.trace("Placeholders in [{}] resolved to [{}]", s, result);
+		}
+		return result;
 	}
 
 	private Map<String, ?> allPlaceholders(Map<String, ?> parameters) {
@@ -122,23 +137,27 @@ public class SettingsPlaceholderService implements PlaceholderService {
 		if ( cacheSeconds > 0 && settingDao.service() != null ) {
 			final CachedResult<Map<String, ?>> cached = this.placeholdersCache;
 			result = (cached != null ? cached.getResult() : null);
-			if ( cached == null || !cached.isValid() ) {
-				Callable<Map<String, ?>> task = new CacheRefreshTask();
+			if ( result == null || cached == null || !cached.isValid() ) {
 				final AsyncTaskExecutor executor = this.taskExecutor;
-				try {
-					if ( executor != null && cached != null ) {
-						log.debug("Refreshing placeholder cache in background.");
-						executor.submit(task);
-						// refresh cache asynchronously and return expired data
-						result = cached.getResult();
-					} else {
-						result = task.call();
+				synchronized ( this ) {
+					if ( refreshCacheTask == null || refreshCacheTask.isDone() ) {
+						final Callable<Map<String, ?>> task = new CacheRefreshTask();
+						try {
+							if ( executor != null && result != null ) {
+								// refresh cache asynchronously and return expired data
+								refreshCacheTask = executor.submit(task);
+							} else {
+								log.debug("Loading initial setting placeholder values");
+								result = task.call();
+							}
+						} catch ( Exception e ) {
+							log.error("Error loading placeholders: {}", e);
+						}
 					}
-				} catch ( Exception e ) {
-					log.error("Error loading placeholders: {}", e);
 				}
 			}
-		} else {
+		}
+		if ( result == null ) {
 			result = allPlaceholdersWithoutCache();
 		}
 		return placeholdersMergedWithParameters(result, parameters);
@@ -148,27 +167,31 @@ public class SettingsPlaceholderService implements PlaceholderService {
 
 		@Override
 		public Map<String, ?> call() throws Exception {
+			final CachedResult<Map<String, ?>> cached;
 			synchronized ( SettingsPlaceholderService.this ) {
-				final CachedResult<Map<String, ?>> cached = placeholdersCache;
+				cached = placeholdersCache;
 				if ( cached != null && cached.isValid() ) {
 					return cached.getResult();
 				}
-				try {
-					Map<String, ?> placeholders = allPlaceholdersWithoutCache();
+			}
+			log.debug("Refreshing placeholder cache in background");
+			try {
+				Map<String, ?> placeholders = allPlaceholdersWithoutCache();
+				synchronized ( SettingsPlaceholderService.this ) {
 					placeholdersCache = new CachedResult<Map<String, ?>>(placeholders, cacheSeconds,
 							TimeUnit.SECONDS);
-					return placeholders;
-				} catch ( Exception e ) {
-					Throwable root = e;
-					while ( root.getCause() != null ) {
-						root = root.getCause();
-					}
-					log.warn(
-							"Error refreshing placeholders from SettingDao; returning cached values: {}",
-							root.toString());
 				}
-				return (cached != null ? cached.getResult() : null);
+				log.info("Cached {} placeholder values", placeholders.size());
+				return placeholders;
+			} catch ( Exception e ) {
+				Throwable root = e;
+				while ( root.getCause() != null ) {
+					root = root.getCause();
+				}
+				log.warn("Error refreshing placeholders from SettingDao; returning cached values: {}",
+						root.toString());
 			}
+			return (cached != null ? cached.getResult() : null);
 		}
 
 	}
@@ -234,15 +257,30 @@ public class SettingsPlaceholderService implements PlaceholderService {
 	private List<KeyValuePair> settingValues() {
 		SettingDao dao = service(settingDao);
 		if ( dao != null ) {
-			try {
-				return dao.getSettingValues(SETTING_KEY);
-			} catch ( Exception e ) {
-				Throwable t = e;
-				while ( t.getCause() != null ) {
-					t = t.getCause();
-				}
-				log.warn("Exception loading placeholder values from SettingDao: {}", t.toString());
+			return settingValues(dao, daoRetryCount);
+		} else {
+			log.warn("SettingDao not available for resolving placeholders.");
+		}
+		return null;
+	}
+
+	private List<KeyValuePair> settingValues(SettingDao dao, int i) {
+		try {
+			return dao.getSettingValues(SETTING_KEY);
+		} catch ( TransientDataAccessException e ) {
+			// try this again
+			if ( i > 0 ) {
+				log.warn(
+						"Transient exception loading placeholder values from SettingDao, will retry up to {} more times: {}",
+						i, e);
+				return settingValues(dao, i - 1);
 			}
+		} catch ( Exception e ) {
+			Throwable t = e;
+			while ( t.getCause() != null ) {
+				t = t.getCause();
+			}
+			log.warn("Exception loading placeholder values from SettingDao: {}", t.toString());
 		}
 		return null;
 	}
@@ -386,4 +424,28 @@ public class SettingsPlaceholderService implements PlaceholderService {
 	public void setTaskExecutor(AsyncTaskExecutor taskExecutor) {
 		this.taskExecutor = taskExecutor;
 	}
+
+	/**
+	 * Get the maximum number of time to retry transient DAO exceptions when
+	 * loading placeholder values from {@link SettingDao}.
+	 * 
+	 * @return the maximum number of retry times
+	 * @since 2.2
+	 */
+	public int getDaoRetryCount() {
+		return daoRetryCount;
+	}
+
+	/**
+	 * Set the number of time to retry transient DAO exceptions when loading
+	 * placeholder values from {@link SettingDao}.
+	 * 
+	 * @param daoRetryCount
+	 *        the maximum number of retry times, or {@literal 0} to disable
+	 * @since 2.2
+	 */
+	public void setDaoRetryCount(int daoRetryCount) {
+		this.daoRetryCount = daoRetryCount;
+	}
+
 }
