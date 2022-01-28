@@ -27,12 +27,12 @@ import static org.junit.Assert.assertNotNull;
 import java.util.Map;
 import javax.annotation.Resource;
 import javax.sql.DataSource;
-import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
-import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
+import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
+import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 
 /**
  * Unit tests for the {@link DatabaseSetup} class.
@@ -58,6 +58,6 @@ public class DatabaseSetupTest extends AbstractNodeTransactionalTest {
 		log.debug("Got sn_settings.version record {}", results);
 		assertNotNull(results);
 		assertEquals("Should have key, value, type, flags, and modified values", 5, results.size());
-		assertEquals("5", results.get("svalue"));
+		assertEquals("6", results.get("svalue"));
 	}
 }
