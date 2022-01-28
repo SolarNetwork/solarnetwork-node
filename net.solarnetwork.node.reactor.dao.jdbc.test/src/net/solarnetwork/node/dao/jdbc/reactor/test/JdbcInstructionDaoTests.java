@@ -1,5 +1,5 @@
 /* ==================================================================
- * JdbcInstructionDaoTest.java - Oct 1, 2011 11:55:54 AM
+ * JdbcInstructionDaoTests.java - Oct 1, 2011 11:55:54 AM
  * 
  * Copyright 2007 SolarNetwork.net Dev Team
  * 
@@ -58,7 +58,7 @@ import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
  * @version 2.0
  */
 @ContextConfiguration
-public class JdbcInstructionDaoTest extends AbstractNodeTransactionalTest {
+public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 
 	private static final Long TEST_ID = Math.abs(UUID.randomUUID().getMostSignificantBits());
 	private static final String TEST_INSTRUCTOR = "Test Instructor";
