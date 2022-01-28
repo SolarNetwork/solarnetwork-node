@@ -65,7 +65,7 @@ import net.solarnetwork.service.OptionalService;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @param <T>
  *        the domain object type managed by this DAO
  */
@@ -280,9 +280,8 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 		} else if ( result instanceof Number ) {
 			return Long.valueOf(((Number) result).longValue());
 		}
-		if ( log.isWarnEnabled() ) {
-			log.warn("Unexpected (non-number) primary key returned: " + result);
-		}
+		log.debug("Non-number primary key [{}] returned from insert of {} using SQL: {}", result, obj,
+				sqlInsert);
 		return null;
 	}
 
