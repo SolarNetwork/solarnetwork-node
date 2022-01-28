@@ -1,0 +1,1 @@
+{"id":11558055,"created":"2021-12-24 00:29:46.124Z","topic":"StartRemoteSsh","instructionDate":"2021-12-24 00:29:46.124Z","state":"Queued","parameters":[{"name":"host","value":"ssh.solarnetwork.net"},{"name":"user","value":"52bf7669-3632-4ade-8bce-7790f91c4cb2"},{"name":"port","value":"8022"},{"name":"rport","value":"43332"}],"nodeId":572}

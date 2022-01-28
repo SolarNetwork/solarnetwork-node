@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.dao.jdbc.reactor.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -30,7 +31,8 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -44,6 +46,9 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.util.FileCopyUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.dao.jdbc.reactor.JdbcInstructionDao;
 import net.solarnetwork.node.reactor.BasicInstruction;
@@ -88,6 +93,32 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 
 		dao.storeInstruction(instr);
 		lastDatum = dao.getInstruction(instr.getId(), instr.getInstructorId());
+	}
+
+	private String stringResource(String resource) {
+		try {
+			return FileCopyUtils.copyToString(
+					new InputStreamReader(getClass().getResourceAsStream(resource), "UTF-8"));
+		} catch ( Exception e ) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	@Test
+	public void storeNew_fromJson() throws IOException {
+		// GIVEN
+		ObjectMapper mapper = JsonUtils.newDatumObjectMapper();
+		String json = stringResource("instr-01.json");
+		net.solarnetwork.domain.Instruction externalInstr = mapper.readValue(json,
+				net.solarnetwork.domain.Instruction.class);
+		BasicInstruction instr = BasicInstruction.from(externalInstr, TEST_INSTRUCTOR);
+
+		// WHEN
+		dao.storeInstruction(instr);
+		Instruction result = dao.getInstruction(instr.getId(), instr.getInstructorId());
+
+		// THEN
+		assertThat("Instruction persisted", result, is(notNullValue()));
 	}
 
 	@Test(expected = DuplicateKeyException.class)

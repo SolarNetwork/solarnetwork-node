@@ -4,7 +4,7 @@ Bundle-Name: Reactor Database Storage
 Bundle-SymbolicName: net.solarnetwork.node.reactor.dao.jdbc
 Automatic-Module-Name: net.solarnetwork.node.reactor.dao.jdbc
 Bundle-Description: Database storage cache for SolarNet instruction requests.
-Bundle-Version: 2.0.0
+Bundle-Version: 2.0.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
