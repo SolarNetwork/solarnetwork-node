@@ -133,7 +133,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implemen
 	@Override
 	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	public void setDatumUploaded(NodeDatum datum, Instant date, String destination, String trackingId) {
-		updateDatumUpload(datum, date == null ? System.currentTimeMillis() : date.toEpochMilli());
+		updateDatumUpload(datum, date == null ? Instant.now() : date);
 	}
 
 	@Override
@@ -404,8 +404,8 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implemen
 	 * @param timestamp
 	 *        the date the upload happened
 	 */
-	protected void updateDatumUpload(final NodeDatum datum, final long timestamp) {
-		updateDatumUpload(datum.getTimestamp().toEpochMilli(), datum.getSourceId(), timestamp);
+	protected void updateDatumUpload(final NodeDatum datum, final Instant timestamp) {
+		updateDatumUpload(datum.getTimestamp(), datum.getSourceId(), timestamp);
 	}
 
 	/**
@@ -430,7 +430,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implemen
 	 *        the date the upload happened
 	 * @return the number of updated rows
 	 */
-	protected int updateDatumUpload(final long created, final Object id, final long timestamp) {
+	protected int updateDatumUpload(final Instant created, final Object id, final Instant timestamp) {
 		return getJdbcTemplate().update(new PreparedStatementCreator() {
 
 			@Override
@@ -438,8 +438,8 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implemen
 				PreparedStatement ps = con
 						.prepareStatement(getSqlResource(SQL_RESOURCE_UPDATE_UPLOADED));
 				int col = 1;
-				ps.setTimestamp(col++, new java.sql.Timestamp(timestamp));
-				ps.setTimestamp(col++, new java.sql.Timestamp(created));
+				ps.setTimestamp(col++, Timestamp.from(timestamp));
+				ps.setTimestamp(col++, Timestamp.from(created));
 				ps.setObject(col++, id);
 				return ps;
 			}

@@ -106,8 +106,7 @@ public class DatumDaoBulkUploadJob extends BaseIdentifiable implements JobServic
 					if ( log.isTraceEnabled() ) {
 						log.trace("Bulk uploaded [{} {}] [{}] and received tid [{}]",
 								new Object[] { result.getDatum().getClass().getSimpleName(),
-										(result.getDatum().getTimestamp() == null ? null
-												: result.getDatum().getTimestamp().toEpochMilli()),
+										result.getDatum().getTimestamp(),
 										result.getDatum().getSourceId(), tid });
 					}
 

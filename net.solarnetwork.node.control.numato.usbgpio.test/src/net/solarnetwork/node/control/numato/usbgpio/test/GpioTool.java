@@ -70,7 +70,7 @@ public class GpioTool {
 				try {
 					System.out.print("> ");
 					String line = in.readLine().trim();
-					String[] components = line.split("\s+");
+					String[] components = line.split("\\s+");
 					if ( components.length < 1 ) {
 						continue;
 					}

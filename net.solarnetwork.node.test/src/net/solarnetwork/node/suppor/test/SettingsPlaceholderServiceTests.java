@@ -25,8 +25,10 @@ package net.solarnetwork.node.suppor.test;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertThat;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -34,12 +36,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.easymock.EasyMock;
+import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.task.support.TaskExecutorAdapter;
+import org.springframework.dao.TransientDataAccessResourceException;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.service.support.SettingsPlaceholderService;
@@ -62,6 +70,8 @@ public class SettingsPlaceholderServiceTests {
 	private ExecutorService executor;
 	private SettingDao settingDao;
 	private SettingsPlaceholderService service;
+
+	private final Logger log = LoggerFactory.getLogger(SettingsPlaceholderServiceTests.class);
 
 	@Before
 	public void setup() {
@@ -150,6 +160,45 @@ public class SettingsPlaceholderServiceTests {
 
 		// THEN
 		assertThat("Resolved static placeholders with default", result, equalTo("one != bar"));
+	}
+
+	@Test
+	public void resolveWithSettings_retryAfterTransientFailure() {
+		// GIVEN
+
+		// first try throw exception
+		expect(settingDao.getSettingValues(SettingsPlaceholderService.SETTING_KEY))
+				.andThrow(new TransientDataAccessResourceException("Try again!"));
+
+		// second try succeed
+		List<KeyValuePair> data = Arrays.asList(new KeyValuePair("foo", "bar"));
+		expect(settingDao.getSettingValues(SettingsPlaceholderService.SETTING_KEY)).andReturn(data);
+
+		// WHEN
+		replayAll();
+		String result = service.resolvePlaceholders("{a} != {foo}", null);
+
+		// THEN
+		assertThat("Resolved static placeholders with default after DAO retry", result,
+				equalTo("one != bar"));
+	}
+
+	@Test
+	public void resolveWithSettings_giveUpAfterRetryAfterTransientFailures() {
+		// GIVEN
+		service.setDaoRetryCount(2);
+
+		// first try + 2 retry throw exception
+		expect(settingDao.getSettingValues(SettingsPlaceholderService.SETTING_KEY))
+				.andThrow(new TransientDataAccessResourceException("Try again!")).times(3);
+
+		// WHEN
+		replayAll();
+		String result = service.resolvePlaceholders("{a} != {foo}", null);
+
+		// THEN
+		assertThat("Resolved static placeholders with default only after DAO retries giveup", result,
+				equalTo("one != "));
 	}
 
 	@Test
@@ -327,6 +376,68 @@ public class SettingsPlaceholderServiceTests {
 				result3, equalTo("eh != BOO! != two != b"));
 		assertThat("Resolved static placeholders with DAO (cache refreshed cached again) and parameters",
 				result4, equalTo("eh != BOO!! != two != B"));
+	}
+
+	@Test
+	public void resolveWithParametersArgument_cached_expired_async_slowDao() throws Exception {
+		// GIVEN
+		service.setTaskExecutor(new TaskExecutorAdapter(executor));
+		service.setCacheSeconds(1);
+
+		final AtomicInteger count = new AtomicInteger();
+		expect(settingDao.getSettingValues(SettingsPlaceholderService.SETTING_KEY))
+				.andAnswer(new IAnswer<List<KeyValuePair>>() {
+
+					@Override
+					public List<KeyValuePair> answer() throws Throwable {
+						Thread.sleep(200);
+						int i = count.incrementAndGet();
+						log.info("Returning setting placeholders version {}", i);
+				// @formatter:off
+						return Arrays.asList(
+								new KeyValuePair("a", String.format("a-%d", i)),
+								new KeyValuePair("f", String.format("f-%d", i)));
+						// @formatter:on
+					}
+				}).anyTimes();
+
+		// WHEN
+		replayAll();
+
+		final int numThreads = 8;
+		final long runMs = TimeUnit.SECONDS.toMillis(10);
+		final long endDate = System.currentTimeMillis() + runMs;
+		final AtomicInteger threadCount = new AtomicInteger();
+		final Map<String, Object> params = new HashMap<>(4);
+
+		ExecutorService tp = Executors.newWorkStealingPool();
+		List<Future<?>> taskFutures = new ArrayList<>();
+		for ( int i = 0; i < numThreads; i++ ) {
+			taskFutures.add(tp.submit(new Runnable() {
+
+				private final int idx = threadCount.incrementAndGet();
+
+				@Override
+				public void run() {
+					log.info("Thread {} starting...", idx);
+					while ( System.currentTimeMillis() < endDate ) {
+						String result = service.resolvePlaceholders("{a}", params);
+						assertThat("{a} should resolve to DAO value", result, startsWith("a-"));
+					}
+					log.info("Thread {} finished.", idx);
+				}
+			}));
+		}
+
+		// let threads run
+		Thread.sleep(runMs);
+
+		tp.shutdown();
+		tp.awaitTermination(2, TimeUnit.SECONDS);
+
+		for ( Future<?> f : taskFutures ) {
+			f.get();
+		}
 	}
 
 	@Test
