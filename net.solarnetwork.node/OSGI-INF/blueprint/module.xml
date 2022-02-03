@@ -430,33 +430,28 @@
 		</bean>
 	</osgix:managed-service-factory>
 
-	<service>
+	<bean id="datumService" class="net.solarnetwork.node.runtime.DefaultDatumService">
+		<argument>
+			<bean class="org.springframework.util.AntPathMatcher" >
+				<property name="cachePatterns" value="true"/>
+				<property name="caseSensitive" value="false"/>
+			</bean>
+		</argument>
+		<argument ref="objectMapper"/>
+	</bean>
+	
+	<service ref="datumService">
 		<interfaces>
 			<value>net.solarnetwork.node.service.DatumService</value>
 			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
-			<value>org.osgi.service.event.EventHandler</value>
 		</interfaces>
 		<service-properties>
-			<entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
-				<array value-type="java.lang.String">
-					<value>#{T(net.solarnetwork.node.service.DatumDataSource).EVENT_TOPIC_DATUM_CAPTURED}</value>
-				</array>
-			</entry>
 			<entry key="instruction">
 				<array value-type="java.lang.String">
 					<value>#{T(net.solarnetwork.node.reactor.InstructionHandler).TOPIC_SYSTEM_CONFIGURE}</value>
 				</array>
 			</entry>
 		</service-properties>
-		<bean class="net.solarnetwork.node.runtime.DefaultDatumService">
-			<argument>
-				<bean class="org.springframework.util.AntPathMatcher" >
-					<property name="cachePatterns" value="true"/>
-					<property name="caseSensitive" value="false"/>
-				</bean>
-			</argument>
-			<argument ref="objectMapper"/>
-		</bean>
 	</service>
 
 	<!--
@@ -464,8 +459,8 @@
 
 		This queue serves as sort of serial queue for captured datum across all of SolarNode.
 		For Datum to be added to the queue, processed, and then persisted (i.e. for SolarIn)
-		we publish DatumDao services of rank 1000 that add datum to the queue insted of
-		persisting them directly. Once processed, those datum are then
+		we publish DatumDao services of rank 1000 that add datum to the queue instead of
+		persisting them directly. Once processed, those datum are then filtered and persisted.
 	 -->
 	<bean id="datumQueue" class="net.solarnetwork.node.runtime.DefaultDatumQueue" init-method="startup" destroy-method="shutdown">
 		<osgix:managed-properties persistent-id="net.solarnetwork.node.runtime.dq" autowire-on-update="true"/>
@@ -483,6 +478,11 @@
 			</bean>
 		</argument>
 		<argument ref="eventAdmin"/>
+		<argument>
+			<bean class="net.solarnetwork.service.StaticOptionalService">
+				<argument ref="datumService"/>
+			</bean>
+		</argument>
 		<property name="messageSource">
 			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 				<property name="basenames">

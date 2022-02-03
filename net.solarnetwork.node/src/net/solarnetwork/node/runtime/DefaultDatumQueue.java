@@ -23,7 +23,9 @@
 package net.solarnetwork.node.runtime;
 
 import static java.util.stream.Collectors.joining;
+import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.DateUtils.formatHoursMinutesSeconds;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -51,6 +53,7 @@ import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.DatumFilterService;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.OptionalService.OptionalFilterableService;
+import net.solarnetwork.service.StaticOptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
@@ -69,12 +72,18 @@ import net.solarnetwork.util.StatCounter;
  * </p>
  * 
  * <p>
+ * The {@code directConsumer} passed to the constructor will receive datum after
+ * filters have been applied, sequentially in queue order directly on the queue
+ * processing thread.
+ * </p>
+ * 
+ * <p>
  * Each registered {@link Consumer} will receive datum sequentially in queue
  * order via a single thread.
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 1.89
  */
 public class DefaultDatumQueue extends BaseIdentifiable
@@ -98,6 +107,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	private final DatumDao nodeDatumDao;
 	private final OptionalService<EventAdmin> eventAdmin;
+	private final OptionalService<Consumer<NodeDatum>> directConsumer;
 	private long startupDelayMs = DEFAULT_STARTUP_DELAY_MS;
 	private long queueDelayMs = DEFAULT_QUEUE_DELAY_MS;
 	private OptionalFilterableService<DatumFilterService> datumFilterService;
@@ -117,15 +127,31 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 *         if any argument is {@literal null}
 	 */
 	public DefaultDatumQueue(DatumDao nodeDatumDao, OptionalService<EventAdmin> eventAdmin) {
+		this(nodeDatumDao, eventAdmin, new StaticOptionalService<>(null));
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param nodeDatumDao
+	 *        the node datum DAO to use
+	 * @param eventAdmin
+	 *        the event admin
+	 * @param directConsumer
+	 *        the direct consumer, which is invoked directly on the queue
+	 *        processor thread, after filters are applied but before the
+	 *        {@link DatumDataSource#EVENT_TOPIC_DATUM_CAPTURED} is posted and
+	 *        before any consumers added via {@link #addConsumer(Consumer)}
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 * @since 2.1
+	 */
+	public DefaultDatumQueue(DatumDao nodeDatumDao, OptionalService<EventAdmin> eventAdmin,
+			OptionalService<Consumer<NodeDatum>> directConsumer) {
 		super();
-		if ( nodeDatumDao == null ) {
-			throw new IllegalArgumentException("The nodeDatumDao argument must not be null.");
-		}
-		this.nodeDatumDao = nodeDatumDao;
-		if ( eventAdmin == null ) {
-			throw new IllegalArgumentException("The eventAdmin argument must not be null.");
-		}
-		this.eventAdmin = eventAdmin;
+		this.nodeDatumDao = requireNonNullArgument(nodeDatumDao, "nodeDatumDao");
+		this.eventAdmin = requireNonNullArgument(eventAdmin, "eventAdmin");
+		this.directConsumer = requireNonNullArgument(directConsumer, "directConsumer");
 		this.processorStartupDelayMs = -1;
 	}
 
@@ -380,6 +406,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 					} catch ( InterruptedException e ) {
 						// keep going
 					}
+					final Consumer<NodeDatum> dirConsumer = service(directConsumer);
 					final long start = System.currentTimeMillis();
 					DelayedDatum p;
 					EVENT: for ( int i = 0, len = events.size(); i < len; i++ ) {
@@ -410,6 +437,15 @@ public class DefaultDatumQueue extends BaseIdentifiable
 							throw t;
 						}
 						if ( result != null ) {
+							if ( dirConsumer != null ) {
+								try {
+									dirConsumer.accept(result);
+								} catch ( Throwable t ) {
+									stats.incrementAndGet(QueueStats.Errors);
+									log.error("Direct consumer {} error on datum {}; ignoring.",
+											dirConsumer, result, t);
+								}
+							}
 							postEvent(DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED, result);
 							if ( event.persist ) {
 								try {
@@ -437,7 +473,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	}
 
 	private void postEvent(String topic, NodeDatum datum) {
-		final EventAdmin service = OptionalService.service(eventAdmin);
+		final EventAdmin service = service(eventAdmin);
 		if ( service != null ) {
 			Event event = DatumEvents.datumEvent(topic, datum);
 			if ( event != null ) {
@@ -447,7 +483,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	}
 
 	private NodeDatum applyTransform(DelayedDatum event) {
-		DatumFilterService xform = OptionalService.service(datumFilterService);
+		DatumFilterService xform = service(datumFilterService);
 		if ( xform == null ) {
 			return event.datum;
 		}

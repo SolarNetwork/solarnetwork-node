@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.springframework.util.PathMatcher;
@@ -57,7 +58,8 @@ import net.solarnetwork.util.StringUtils;
  * @author matt
  * @version 2.0
  */
-public class DefaultDatumService implements DatumService, EventHandler, InstructionHandler {
+public class DefaultDatumService
+		implements DatumService, EventHandler, InstructionHandler, Consumer<NodeDatum> {
 
 	/** The service name to retrieve the latest datum. */
 	public static final String SETUP_SERVICE_LATEST_DATUM = "/setup/datum/latest";
@@ -92,11 +94,17 @@ public class DefaultDatumService implements DatumService, EventHandler, Instruct
 		this.objectMapper = objectMapper;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	public <T extends NodeDatum> Collection<T> latest(Set<String> sourceIdFilter, Class<T> type) {
+		return offset(sourceIdFilter, 0, type);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T extends NodeDatum> Collection<T> offset(Set<String> sourceIdFilter, int offset,
+			Class<T> type) {
 		List<T> result = new ArrayList<>();
-		for ( NodeDatum d : history.latest() ) {
+		for ( NodeDatum d : history.offset(offset) ) {
 			if ( !type.isAssignableFrom(d.getClass()) ) {
 				continue;
 			}
@@ -112,6 +120,11 @@ public class DefaultDatumService implements DatumService, EventHandler, Instruct
 			}
 		}
 		return result;
+	}
+
+	@Override
+	public void accept(NodeDatum datum) {
+		history.add(datum);
 	}
 
 	@Override

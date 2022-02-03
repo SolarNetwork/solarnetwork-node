@@ -30,7 +30,7 @@ import net.solarnetwork.node.domain.datum.NodeDatum;
  * API for a service that supports node-wide datum information.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.89
  */
 public interface DatumService {
@@ -39,6 +39,10 @@ public interface DatumService {
 	 * Get the latest available datum of a given type, optionally filtered by
 	 * source IDs.
 	 * 
+	 * <p>
+	 * This is equivalent to calling {@code offset(sourceIdFilter, 0, type)}.
+	 * </p>
+	 * 
 	 * @param <T>
 	 *        the type of datum to get
 	 * @param sourceIdFilter
@@ -46,7 +50,25 @@ public interface DatumService {
 	 * @param type
 	 *        the type of datum
 	 * @return the matching datum, never {@literal null}
+	 * @see #offset(Set, int, Class)
 	 */
 	<T extends NodeDatum> Collection<T> latest(Set<String> sourceIdFilter, Class<T> type);
+
+	/**
+	 * Get an offset from the latest available datum of a given type, optionally
+	 * filtered by source IDs.
+	 * 
+	 * @param <T>
+	 *        the type of datum to get
+	 * @param sourceIdFilter
+	 *        an optional set of Ant-style source ID patterns to filter by
+	 * @param offset
+	 *        the offset from the latest, {@literal 0} being the latest and
+	 *        {@literal 1} the next later, and so on
+	 * @param type
+	 *        the type of datum
+	 * @return the matching datum, never {@literal null}
+	 */
+	<T extends NodeDatum> Collection<T> offset(Set<String> sourceIdFilter, int offset, Class<T> type);
 
 }

@@ -52,7 +52,7 @@ import net.solarnetwork.util.CircularFifoQueue;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.89
  */
 public class DatumHistory {
@@ -169,11 +169,32 @@ public class DatumHistory {
 	}
 
 	/**
-	 * Get an iterable over the latest available raw datum.
+	 * Get an {@code Iterable} over the latest available raw datum.
 	 * 
-	 * @return the iterable, never {@literal null}
+	 * <p>
+	 * This is equivalent to calling {@code offset(0)}.
+	 * </p>
+	 * 
+	 * @return the {@code Iterable}, never {@literal null}
+	 * @see #offset(int)
 	 */
 	public Iterable<NodeDatum> latest() {
+		return offset(0);
+	}
+
+	/**
+	 * Get an {@code Iterable} over an offset from the latest available raw
+	 * datum.
+	 * 
+	 * <p>
+	 * An offset of {@literal 0} means the latest datum, and {@literal 1} means
+	 * the one before the latest datum, and so on.
+	 * </p>
+	 * 
+	 * @return the {@code Iterable}, never {@literal null}
+	 * @since 1.1
+	 */
+	public Iterable<NodeDatum> offset(int offset) {
 		// 
 		return new Iterable<NodeDatum>() {
 
@@ -183,9 +204,9 @@ public class DatumHistory {
 				for ( Queue<NodeDatum> q : raw.values() ) {
 					NodeDatum d;
 					synchronized ( q ) {
-						int end = q.size() - 1;
-						if ( end >= 0 ) {
-							d = ((CircularFifoQueue<NodeDatum>) q).get(end);
+						int idx = q.size() - 1 - offset;
+						if ( idx >= 0 ) {
+							d = ((CircularFifoQueue<NodeDatum>) q).get(idx);
 						} else {
 							d = null;
 						}

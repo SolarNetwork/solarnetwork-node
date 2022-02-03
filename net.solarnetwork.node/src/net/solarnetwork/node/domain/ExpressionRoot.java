@@ -43,7 +43,7 @@ import net.solarnetwork.node.service.DatumService;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 1.79
  */
 public class ExpressionRoot extends DatumSamplesExpressionRoot {
@@ -146,6 +146,120 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 			return null;
 		}
 		Collection<NodeDatum> d = datumService.latest(singleton(sourceId), NodeDatum.class);
+		if ( d == null || d.isEmpty() ) {
+			return null;
+		}
+		return new ExpressionRoot(d.iterator().next());
+	}
+
+	/**
+	 * Get the datum's source ID.
+	 * 
+	 * @return the source ID, or {@literal null}
+	 * @since 2.1
+	 */
+	public String sourceId() {
+		Datum datum = getDatum();
+		return (datum != null ? datum.getSourceId() : null);
+	}
+
+	/**
+	 * Test if an offset from a "latest" datum is available for the
+	 * {@link #getDatum()} source ID.
+	 * 
+	 * <p>
+	 * This can be used to test if {@link #offset(int)} will return a non-null
+	 * value.
+	 * </p>
+	 * 
+	 * @param offset
+	 *        the offset from the latest, {@literal 0} being the latest and
+	 *        {@literal 1} the next later, and so on
+	 * @return {@literal true} if {@link #offset(int)} will return a non-null
+	 *         value
+	 * @since 2.1
+	 */
+	public boolean hasOffset(int offset) {
+		return hasOffset(sourceId(), offset);
+	}
+
+	/**
+	 * Get an offset from latest available datum for the {@link #getDatum()}
+	 * source ID, as an {@link DatumExpressionRoot}.
+	 * 
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 * 
+	 * @param sourceId
+	 *        the source ID of the datum to look for
+	 * @param offset
+	 *        the offset from the latest, {@literal 0} being the latest and
+	 *        {@literal 1} the next later, and so on
+	 * @return the offset from the latest datum, or {@literal null} if
+	 *         {@link #sourceId()} is {@literal null}, the {@link DatumService}
+	 *         provided to this instance's constructor was {@literal null}, or
+	 *         {@link DatumService#offset(java.util.Set, int, Class)} returns
+	 *         {@literal null} for {@link #sourceId()}
+	 * @since 2.1
+	 */
+	public DatumExpressionRoot offset(int offset) {
+		return offset(sourceId(), offset);
+	}
+
+	/**
+	 * Test if an offset from a "latest" datum is available for a given source
+	 * ID.
+	 * 
+	 * <p>
+	 * This can be used to test if {@link #offset(String,int)} will return a
+	 * non-null value.
+	 * </p>
+	 * 
+	 * @param sourceId
+	 *        the source ID of the datum to look for
+	 * @param offset
+	 *        the offset from the latest, {@literal 0} being the latest and
+	 *        {@literal 1} the next later, and so on
+	 * @return {@literal true} if {@link #offset(String, int)} for the given
+	 *         {@code sourceId} will return a non-null value
+	 * @since 2.1
+	 */
+	public boolean hasOffset(String sourceId, int offset) {
+		if ( datumService == null || sourceId == null ) {
+			return false;
+		}
+		Collection<NodeDatum> d = datumService.offset(singleton(sourceId), offset, NodeDatum.class);
+		return (d != null && !d.isEmpty());
+	}
+
+	/**
+	 * Get an offset from latest available datum for a given source ID, as an
+	 * {@link DatumExpressionRoot}.
+	 * 
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 * 
+	 * @param sourceId
+	 *        the source ID of the datum to look for
+	 * @param offset
+	 *        the offset from the latest, {@literal 0} being the latest and
+	 *        {@literal 1} the next later, and so on
+	 * @return the offset from the latest datum, or {@literal null} if
+	 *         {@code sourceId} is {@literal null}, the {@link DatumService}
+	 *         provided to this instance's constructor was {@literal null}, or
+	 *         {@link DatumService#offset(java.util.Set, int, Class)} returns
+	 *         {@literal null} for the given {@code sourceId}
+	 * @since 2.1
+	 */
+	public DatumExpressionRoot offset(String sourceId, int offset) {
+		if ( datumService == null || sourceId == null ) {
+			return null;
+		}
+		Collection<NodeDatum> d = datumService.offset(singleton(sourceId), offset, NodeDatum.class);
 		if ( d == null || d.isEmpty() ) {
 			return null;
 		}

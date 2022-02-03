@@ -26,6 +26,7 @@ import static java.util.Collections.singleton;
 import static net.solarnetwork.node.service.DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED;
 import static net.solarnetwork.node.service.DatumEvents.datumEvent;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.Assert.assertThat;
 import java.time.Instant;
 import java.util.Arrays;
@@ -40,6 +41,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
 import org.springframework.util.AntPathMatcher;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamples;
@@ -57,18 +60,26 @@ public class DefaultDatumServiceTests {
 
 	private DefaultDatumService service;
 
+	private MultiValueMap<String, NodeDatum> population;
+
 	@Before
 	public void setup() {
 		service = new DefaultDatumService(new AntPathMatcher(), new ObjectMapper());
 	}
 
 	private Map<String, NodeDatum> populateDatum() {
+		return populateDatum(5);
+	}
+
+	private Map<String, NodeDatum> populateDatum(final int count) {
+		population = new LinkedMultiValueMap<>();
 		Map<String, NodeDatum> all = new LinkedHashMap<>();
-		for ( int i = 0; i < 5; i++ ) {
+		for ( int i = 0; i < count; i++ ) {
 			for ( int j = 0; j < 11; j++ ) {
-				SimpleDatum datum = SimpleDatum.nodeDatum(String.format("test.%d", j),
-						Instant.now(), new DatumSamples());
+				SimpleDatum datum = SimpleDatum.nodeDatum(String.format("test.%d", j), Instant.now(),
+						new DatumSamples());
 				all.put(datum.getSourceId(), datum);
+				population.add(datum.getSourceId(), datum);
 
 				Event evt = datumEvent(EVENT_TOPIC_DATUM_CAPTURED, datum);
 				service.handleEvent(evt);
@@ -137,6 +148,37 @@ public class DefaultDatumServiceTests {
 		// THEN
 		assertThat("Latest datum returned", latest,
 				containsInAnyOrder(all.get("test.1"), all.get("test.10")));
+	}
+
+	@Test
+	public void offset_all() {
+		// GIVEN
+		final int count = 8;
+		populateDatum(count);
+
+		// WHEN
+		List<NodeDatum> result = StreamSupport
+				.stream(service.offset(null, 1, NodeDatum.class).spliterator(), false)
+				.collect(Collectors.toList());
+
+		// THEN
+		Datum[] expected = population.values().stream().map(l -> l.get(count - 2)).toArray(Datum[]::new);
+		assertThat("Offset datum returned", result, containsInAnyOrder(expected));
+	}
+
+	@Test
+	public void offset_notAvailable() {
+		// GIVEN
+		final int count = 8;
+		populateDatum(count);
+
+		// WHEN
+		List<NodeDatum> result = StreamSupport
+				.stream(service.offset(null, 8, NodeDatum.class).spliterator(), false)
+				.collect(Collectors.toList());
+
+		// THEN
+		assertThat("No offset datum available so far back", result, hasSize(0));
 	}
 
 }
