@@ -33,7 +33,7 @@ Each expression configuration contains the following settings:
 |:--------------------|:------------------------------------------------------------------|
 | Property            | The datum property to store the expression result in. |
 | Property Type       | The datum property type to use. |
-| Expression          | The expression to evaluate.See [below](#expressions) for more info. |
+| Expression          | The expression to evaluate. See [below](#expressions) for more info. |
 | Expression Language | The [expression language][expr] to write **Expression** in. |
 
 # Expressions
