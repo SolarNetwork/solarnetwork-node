@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.runtime.test;
 
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static net.solarnetwork.node.service.DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED;
 import static net.solarnetwork.node.service.DatumEvents.datumEvent;
@@ -95,7 +96,7 @@ public class DefaultDatumServiceTests {
 
 		// WHEN
 		List<NodeDatum> latest = StreamSupport
-				.stream(service.latest(null, NodeDatum.class).spliterator(), false)
+				.stream(service.latest(emptySet(), NodeDatum.class).spliterator(), false)
 				.collect(Collectors.toList());
 
 		// THEN
@@ -158,7 +159,7 @@ public class DefaultDatumServiceTests {
 
 		// WHEN
 		List<NodeDatum> result = StreamSupport
-				.stream(service.offset(null, 1, NodeDatum.class).spliterator(), false)
+				.stream(service.offset(emptySet(), 1, NodeDatum.class).spliterator(), false)
 				.collect(Collectors.toList());
 
 		// THEN
@@ -174,7 +175,7 @@ public class DefaultDatumServiceTests {
 
 		// WHEN
 		List<NodeDatum> result = StreamSupport
-				.stream(service.offset(null, 8, NodeDatum.class).spliterator(), false)
+				.stream(service.offset(emptySet(), 8, NodeDatum.class).spliterator(), false)
 				.collect(Collectors.toList());
 
 		// THEN

@@ -99,6 +99,18 @@ public class DefaultDatumService
 		return offset(sourceIdFilter, 0, type);
 	}
 
+	@Override
+	public <T extends NodeDatum> T latest(String sourceId, Class<T> type) {
+		return offset(sourceId, 0, type);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T extends NodeDatum> T offset(String sourceId, int offset, Class<T> type) {
+		NodeDatum result = history.offset(sourceId, offset);
+		return (result != null && type.isAssignableFrom(result.getClass()) ? (T) result : null);
+	}
+
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T extends NodeDatum> Collection<T> offset(Set<String> sourceIdFilter, int offset,
@@ -108,7 +120,7 @@ public class DefaultDatumService
 			if ( !type.isAssignableFrom(d.getClass()) ) {
 				continue;
 			}
-			if ( sourceIdFilter != null ) {
+			if ( sourceIdFilter != null && !sourceIdFilter.isEmpty() ) {
 				for ( String filter : sourceIdFilter ) {
 					if ( pathMatcher.match(filter, d.getSourceId()) ) {
 						result.add((T) d);
@@ -120,6 +132,37 @@ public class DefaultDatumService
 			}
 		}
 		return result;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T extends NodeDatum> Collection<T> offset(Set<String> sourceIdFilter, Instant timestamp,
+			int offset, Class<T> type) {
+		List<T> result = new ArrayList<>();
+		for ( NodeDatum d : history.offset(timestamp, offset) ) {
+			if ( !type.isAssignableFrom(d.getClass()) ) {
+				continue;
+			}
+			if ( sourceIdFilter != null && !sourceIdFilter.isEmpty() ) {
+				for ( String filter : sourceIdFilter ) {
+					if ( pathMatcher.match(filter, d.getSourceId()) ) {
+						result.add((T) d);
+						break;
+					}
+				}
+			} else {
+				result.add((T) d);
+			}
+		}
+		return result;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T extends NodeDatum> T offset(String sourceId, Instant timestamp, int offset,
+			Class<T> type) {
+		NodeDatum result = history.offset(sourceId, timestamp, offset);
+		return (result != null && type.isAssignableFrom(result.getClass()) ? (T) result : null);
 	}
 
 	@Override

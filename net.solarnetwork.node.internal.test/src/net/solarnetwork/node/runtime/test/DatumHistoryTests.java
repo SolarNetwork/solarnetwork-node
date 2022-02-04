@@ -24,8 +24,13 @@ package net.solarnetwork.node.runtime.test;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -124,7 +129,6 @@ public class DatumHistoryTests {
 		// GIVEN
 		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
 
-		// WHEN
 		Map<String, Datum> all = new LinkedHashMap<>();
 		for ( int i = 0; i < 4; i++ ) {
 			for ( int j = 0; j < 4; j++ ) {
@@ -135,13 +139,156 @@ public class DatumHistoryTests {
 			}
 		}
 
+		// WHEN
+		List<NodeDatum> latest = StreamSupport.stream(h.latest().spliterator(), false)
+				.collect(Collectors.toList());
+
 		// THEN
 		assertThat("Raw map added queue for each datum source ID", raw.keySet(),
 				containsInAnyOrder(all.keySet().toArray(new String[all.size()])));
-		List<Datum> latest = StreamSupport.stream(h.latest().spliterator(), false)
-				.collect(Collectors.toList());
-		Datum[] expected = all.values().toArray(new Datum[all.values().size()]);
+		NodeDatum[] expected = all.values().toArray(new NodeDatum[all.values().size()]);
 		assertThat("Latest datum returned", latest, containsInAnyOrder(expected));
+	}
+
+	@Test
+	public void latest_source() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		Map<String, NodeDatum> all = new LinkedHashMap<>();
+		for ( int i = 0; i < 4; i++ ) {
+			for ( int j = 0; j < 4; j++ ) {
+				SimpleDatum datum = SimpleDatum.nodeDatum(String.format("test.%d", i), Instant.now(),
+						new DatumSamples());
+				all.put(datum.getSourceId(), datum);
+				h.add(datum);
+			}
+		}
+
+		// WHEN
+		NodeDatum latest = h.latest("test.0");
+
+		// THEN
+		NodeDatum expected = all.get("test.0");
+		assertThat("Latest datum returned", latest, is(sameInstance(expected)));
+	}
+
+	@Test
+	public void offsetTime_latest_exact() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		for ( int j = 0; j < 4; j++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(String.format("test.%d", 0), start.plusSeconds(j),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		NodeDatum offset = h.offset("test.0", start.plusSeconds(3), 0);
+
+		// THEN
+		assertThat("Latest datum returned", offset.getTimestamp(), is(start.plusSeconds(3)));
+	}
+
+	@Test
+	public void offsetTime_latest_lessThan() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		for ( int j = 0; j < 4; j++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(String.format("test.%d", 0), start.plusSeconds(j),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		NodeDatum offset = h.offset("test.0", start.plusSeconds(4), 0);
+
+		// THEN
+		assertThat("Offset datum returned", offset.getTimestamp(), is(start.plusSeconds(3)));
+	}
+
+	@Test
+	public void offsetTime_noneEarlier() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		for ( int j = 0; j < 4; j++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(String.format("test.%d", 0), start.plusSeconds(j),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		NodeDatum offset = h.offset("test.0", start.minusSeconds(1), 0);
+
+		// THEN
+		assertThat("Offset datum not available", offset, is(nullValue()));
+	}
+
+	@Test
+	public void offsetTime_offsetTooFar() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		for ( int j = 0; j < 4; j++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(String.format("test.%d", 0), start.plusSeconds(j),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		NodeDatum offset = h.offset("test.0", start.plusSeconds(3), 10);
+
+		// THEN
+		assertThat("Offset datum not available", offset, is(nullValue()));
+	}
+
+	@Test
+	public void offsetTime_all() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		for ( int i = 0; i < 4; i++ ) {
+			for ( int j = 0; j < 4; j++ ) {
+				SimpleDatum datum = SimpleDatum.nodeDatum(String.format("test.%d", i),
+						start.plusMillis(i * 200 + j * 100), new DatumSamples());
+				h.add(datum);
+			}
+		}
+
+		// WHEN
+		Iterable<NodeDatum> offsets = h.offset(start.plusMillis(450), 0);
+
+		// THEN
+		for ( NodeDatum d : offsets ) {
+			final String sourceId = d.getSourceId();
+			switch (sourceId) {
+				case "test.0":
+					assertThat("Source 0 timestamp", d.getTimestamp(),
+							is(start.plusMillis(0 * 200 + 3 * 100)));
+					break;
+
+				case "test.1":
+					assertThat("Source 1 timestamp", d.getTimestamp(),
+							is(start.plusMillis(1 * 200 + 2 * 100)));
+					break;
+
+				case "test.2":
+					assertThat("Source 2 timestamp", d.getTimestamp(),
+							is(start.plusMillis(2 * 200 + 0 * 100)));
+					break;
+
+				default:
+					fail("Unknown source: " + sourceId);
+			}
+		}
 	}
 
 }

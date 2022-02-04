@@ -22,8 +22,7 @@
 
 package net.solarnetwork.node.domain;
 
-import static java.util.Collections.singleton;
-import java.util.Collection;
+import java.time.Instant;
 import java.util.Map;
 import net.solarnetwork.domain.DatumExpressionRoot;
 import net.solarnetwork.domain.datum.Datum;
@@ -117,11 +116,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	 *         {@code sourceId} will return a non-null value
 	 */
 	public boolean hasLatest(String sourceId) {
-		if ( datumService == null || sourceId == null ) {
-			return false;
-		}
-		Collection<NodeDatum> d = datumService.latest(singleton(sourceId), NodeDatum.class);
-		return (d != null && !d.isEmpty());
+		return hasOffset(sourceId, 0);
 	}
 
 	/**
@@ -142,14 +137,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	 *         {@literal null} for the given {@code sourceId}
 	 */
 	public DatumExpressionRoot latest(String sourceId) {
-		if ( datumService == null || sourceId == null ) {
-			return null;
-		}
-		Collection<NodeDatum> d = datumService.latest(singleton(sourceId), NodeDatum.class);
-		if ( d == null || d.isEmpty() ) {
-			return null;
-		}
-		return new ExpressionRoot(d.iterator().next());
+		return offset(sourceId, 0);
 	}
 
 	/**
@@ -158,14 +146,25 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	 * @return the source ID, or {@literal null}
 	 * @since 2.1
 	 */
-	public String sourceId() {
+	public String getSourceId() {
 		Datum datum = getDatum();
 		return (datum != null ? datum.getSourceId() : null);
 	}
 
 	/**
+	 * Get the datum's timestamp.
+	 * 
+	 * @return the timestamp, or {@literal null}
+	 * @since 2.1
+	 */
+	public Instant getTimestamp() {
+		Datum datum = getDatum();
+		return (datum != null ? datum.getTimestamp() : null);
+	}
+
+	/**
 	 * Test if an offset from a "latest" datum is available for the
-	 * {@link #getDatum()} source ID.
+	 * {@link #getDatum()} source ID and timestamp.
 	 * 
 	 * <p>
 	 * This can be used to test if {@link #offset(int)} will return a non-null
@@ -175,37 +174,52 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	 * @param offset
 	 *        the offset from the latest, {@literal 0} being the latest and
 	 *        {@literal 1} the next later, and so on
-	 * @return {@literal true} if {@link #offset(int)} will return a non-null
-	 *         value
+	 * @return {@literal true} if {@link #offset(String, Instant, int)} will
+	 *         return a non-null value
 	 * @since 2.1
+	 * @see #hasOffset(String, Instant, int)
 	 */
 	public boolean hasOffset(int offset) {
-		return hasOffset(sourceId(), offset);
+		if ( offset == 0 ) {
+			return true;
+		}
+		Datum datum = getDatum();
+		if ( datum == null ) {
+			return false;
+		}
+		return hasOffset(datum.getSourceId(), datum.getTimestamp(), offset);
 	}
 
 	/**
 	 * Get an offset from latest available datum for the {@link #getDatum()}
-	 * source ID, as an {@link DatumExpressionRoot}.
+	 * source ID and timestamp, as an {@link DatumExpressionRoot}.
 	 * 
 	 * <p>
 	 * Note a non-null {@link DatumService} instance must have been provided to
 	 * the constructor of this instance for this method to work.
 	 * </p>
 	 * 
-	 * @param sourceId
-	 *        the source ID of the datum to look for
 	 * @param offset
 	 *        the offset from the latest, {@literal 0} being the latest and
 	 *        {@literal 1} the next later, and so on
 	 * @return the offset from the latest datum, or {@literal null} if
-	 *         {@link #sourceId()} is {@literal null}, the {@link DatumService}
-	 *         provided to this instance's constructor was {@literal null}, or
+	 *         {@link #getSourceId()} or {@link #getTimestamp()} are
+	 *         {@literal null}, the {@link DatumService} provided to this
+	 *         instance's constructor was {@literal null}, or
 	 *         {@link DatumService#offset(java.util.Set, int, Class)} returns
-	 *         {@literal null} for {@link #sourceId()}
+	 *         {@literal null} for {@link #getSourceId()}
 	 * @since 2.1
+	 * @see #offset(String, Instant, int)
 	 */
 	public DatumExpressionRoot offset(int offset) {
-		return offset(sourceId(), offset);
+		Datum datum = getDatum();
+		if ( datum == null ) {
+			return null;
+		}
+		if ( offset == 0 ) {
+			return this;
+		}
+		return offset(datum.getSourceId(), datum.getTimestamp(), offset);
 	}
 
 	/**
@@ -230,8 +244,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 		if ( datumService == null || sourceId == null ) {
 			return false;
 		}
-		Collection<NodeDatum> d = datumService.offset(singleton(sourceId), offset, NodeDatum.class);
-		return (d != null && !d.isEmpty());
+		NodeDatum d = datumService.offset(sourceId, offset, NodeDatum.class);
+		return (d != null);
 	}
 
 	/**
@@ -259,11 +273,73 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 		if ( datumService == null || sourceId == null ) {
 			return null;
 		}
-		Collection<NodeDatum> d = datumService.offset(singleton(sourceId), offset, NodeDatum.class);
-		if ( d == null || d.isEmpty() ) {
+		NodeDatum d = datumService.offset(sourceId, offset, NodeDatum.class);
+		if ( d == null ) {
 			return null;
 		}
-		return new ExpressionRoot(d.iterator().next());
+		return new ExpressionRoot(d);
+	}
+
+	/**
+	 * Test if a datum offset from a given timestamp is available for a given
+	 * source ID.
+	 * 
+	 * <p>
+	 * This can be used to test if {@link #offset(String,Instant,int)} will
+	 * return a non-null value.
+	 * </p>
+	 * 
+	 * @param sourceId
+	 *        the source ID of the datum to look for
+	 * @param timestamp
+	 *        the timestamp refernce point
+	 * @param offset
+	 *        the offset from the latest, {@literal 0} being the latest and
+	 *        {@literal 1} the next later, and so on
+	 * @return {@literal true} if {@link #offset(String, int)} for the given
+	 *         {@code sourceId} will return a non-null value
+	 * @since 2.1
+	 */
+	public boolean hasOffset(String sourceId, Instant timestamp, int offset) {
+		if ( datumService == null || sourceId == null || timestamp == null ) {
+			return false;
+		}
+		NodeDatum d = datumService.offset(sourceId, timestamp, offset, NodeDatum.class);
+		return (d != null);
+	}
+
+	/**
+	 * Get a datum offset from a given timestamp for a given source ID, as an
+	 * {@link DatumExpressionRoot}.
+	 * 
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 * 
+	 * @param sourceId
+	 *        the source ID of the datum to look for
+	 * @param timestamp
+	 *        the timestamp refernce point
+	 * @param offset
+	 *        the offset from the latest, {@literal 0} being the latest and
+	 *        {@literal 1} the next later, and so on
+	 * @return the offset from the latest datum, or {@literal null} if
+	 *         {@code sourceId} is {@literal null}, the {@link DatumService}
+	 *         provided to this instance's constructor was {@literal null}, or
+	 *         {@link DatumService#offset(java.util.Set, int, Class)} returns
+	 *         {@literal null} for the given {@code sourceId}
+	 * @since 2.1
+	 */
+	public DatumExpressionRoot offset(String sourceId, Instant timestamp, int offset) {
+		if ( datumService == null || sourceId == null || timestamp == null ) {
+			return null;
+		}
+		NodeDatum d = datumService.offset(sourceId, timestamp, offset, NodeDatum.class);
+		if ( d == null ) {
+			return null;
+		}
+		return new ExpressionRoot(d);
 	}
 
 }

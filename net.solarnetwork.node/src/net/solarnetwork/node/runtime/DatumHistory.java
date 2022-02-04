@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.runtime;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -183,6 +184,22 @@ public class DatumHistory {
 	}
 
 	/**
+	 * Get the latest datum available with a given source ID.
+	 * 
+	 * <p>
+	 * This is equivalent to calling {@code offset(sourceId, 0)}.
+	 * </p>
+	 * 
+	 * @param sourceId
+	 *        the source ID to find
+	 * @return the datum, or {@literal null}
+	 * @see #offset(String,int)
+	 */
+	public NodeDatum latest(String sourceId) {
+		return offset(sourceId, 0);
+	}
+
+	/**
 	 * Get an {@code Iterable} over an offset from the latest available raw
 	 * datum.
 	 * 
@@ -191,26 +208,20 @@ public class DatumHistory {
 	 * the one before the latest datum, and so on.
 	 * </p>
 	 * 
+	 * @param offset
+	 *        the offset from the latest, {@literal 0} being the latest and
+	 *        {@literal 1} the next later, and so on
 	 * @return the {@code Iterable}, never {@literal null}
 	 * @since 1.1
 	 */
 	public Iterable<NodeDatum> offset(int offset) {
-		// 
 		return new Iterable<NodeDatum>() {
 
 			@Override
 			public Iterator<NodeDatum> iterator() {
 				final List<NodeDatum> datum = new ArrayList<>(raw.size());
-				for ( Queue<NodeDatum> q : raw.values() ) {
-					NodeDatum d;
-					synchronized ( q ) {
-						int idx = q.size() - 1 - offset;
-						if ( idx >= 0 ) {
-							d = ((CircularFifoQueue<NodeDatum>) q).get(idx);
-						} else {
-							d = null;
-						}
-					}
+				for ( String sourceId : raw.keySet() ) {
+					NodeDatum d = offset(sourceId, offset);
 					if ( d != null ) {
 						datum.add(d);
 					}
@@ -218,6 +229,120 @@ public class DatumHistory {
 				return datum.iterator();
 			}
 		};
+	}
+
+	/**
+	 * Get the datum offset from the latest available raw datum for a given
+	 * source ID.
+	 * 
+	 * <p>
+	 * An offset of {@literal 0} means the latest datum, and {@literal 1} means
+	 * the one before the latest datum, and so on.
+	 * </p>
+	 * 
+	 * @param sourceId
+	 *        the source ID to find
+	 * @param offset
+	 *        the offset from the latest, {@literal 0} being the latest and
+	 *        {@literal 1} the next later, and so on
+	 * @return the {@code Iterable}, never {@literal null}
+	 * @since 1.1
+	 */
+	public NodeDatum offset(String sourceId, int offset) {
+		final Queue<NodeDatum> q = raw.get(sourceId);
+		if ( q == null ) {
+			return null;
+		}
+		NodeDatum result;
+		synchronized ( q ) {
+			int idx = q.size() - 1 - offset;
+			if ( idx >= 0 ) {
+				result = ((CircularFifoQueue<NodeDatum>) q).get(idx);
+			} else {
+				result = null;
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Get an {@code Iterable} over an offset from a datum offset from a given
+	 * timestamp.
+	 * 
+	 * <p>
+	 * An offset of {@literal 0} means the datum closest before or equal to the
+	 * given timestamp, and {@literal 1} means the next one before that, and so
+	 * on. Note that no sorting of datum is performed by this method: it assumes
+	 * elements have been added in ascending timestamp order already.
+	 * </p>
+	 * 
+	 * @param timestamp
+	 *        the timestamp to offset from
+	 * @param offset
+	 *        the offset from {@code timestamp}, {@literal 0} being the latest
+	 *        and {@literal 1} the next later, and so on
+	 * @return the {@code Iterable}, never {@literal null}
+	 * @since 1.1
+	 */
+	public Iterable<NodeDatum> offset(Instant timestamp, int offset) {
+		return new Iterable<NodeDatum>() {
+
+			@Override
+			public Iterator<NodeDatum> iterator() {
+				final List<NodeDatum> datum = new ArrayList<>(raw.size());
+				for ( String sourceId : raw.keySet() ) {
+					NodeDatum d = offset(sourceId, timestamp, offset);
+					if ( d != null ) {
+						datum.add(d);
+					}
+				}
+				return datum.iterator();
+			}
+		};
+	}
+
+	/**
+	 * Get the datum offset from a given timestamp for a given source ID.
+	 * 
+	 * <p>
+	 * An offset of {@literal 0} means the datum closest before or equal to the
+	 * given timestamp, and {@literal 1} means the next one before that, and so
+	 * on. Note that no sorting of datum is performed by this method: it assumes
+	 * elements have been added in ascending timestamp order already.
+	 * </p>
+	 * 
+	 * @param sourceId
+	 *        the source ID to find
+	 * @param timestamp
+	 *        the timestamp to offset from
+	 * @param offset
+	 *        the offset from the latest, {@literal 0} being the latest and
+	 *        {@literal 1} the next later, and so on
+	 * @return the datum, or {@literal null} if no such datum is available
+	 * @since 1.1
+	 */
+	public NodeDatum offset(String sourceId, Instant timestamp, int offset) {
+		final Queue<NodeDatum> q = raw.get(sourceId);
+		if ( q == null ) {
+			return null;
+		}
+		NodeDatum result = null;
+		synchronized ( q ) {
+			int idx = q.size();
+			while ( --idx >= 0 ) {
+				NodeDatum d = ((CircularFifoQueue<NodeDatum>) q).get(idx);
+				if ( d.getTimestamp().compareTo(timestamp) <= 0 ) {
+					// found reference, so return offset from here
+					int offsetIdx = idx - offset;
+					if ( offsetIdx > 0 ) {
+						result = (offsetIdx == idx ? d
+								: ((CircularFifoQueue<NodeDatum>) q).get(offsetIdx));
+					}
+					break;
+				}
+			}
+		}
+		return result;
 	}
 
 	/**

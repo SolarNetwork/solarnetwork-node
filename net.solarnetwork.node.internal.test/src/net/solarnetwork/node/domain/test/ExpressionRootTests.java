@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.domain.test;
 
-import static java.util.Collections.singleton;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static org.easymock.EasyMock.expect;
@@ -95,8 +94,7 @@ public class ExpressionRootTests {
 		SimpleDatum other = SimpleDatum.nodeDatum("bar");
 		other.putSampleValue(Instantaneous, "aa", 100);
 
-		expect(datumService.latest(singleton("bar"), NodeDatum.class))
-				.andReturn(singleton((NodeDatum) other));
+		expect(datumService.offset("bar", 0, NodeDatum.class)).andReturn(other);
 
 		// WHEN
 		replayAll();
@@ -111,7 +109,7 @@ public class ExpressionRootTests {
 	@Test
 	public void hasLatest_no() {
 		// GIVEN
-		expect(datumService.latest(singleton("bar"), NodeDatum.class)).andReturn(null);
+		expect(datumService.offset("bar", 0, NodeDatum.class)).andReturn(null);
 
 		// WHEN
 		replayAll();
@@ -130,8 +128,7 @@ public class ExpressionRootTests {
 		SimpleDatum other = SimpleDatum.nodeDatum("bar");
 		other.putSampleValue(Instantaneous, "aa", 100);
 
-		expect(datumService.latest(singleton("bar"), NodeDatum.class))
-				.andReturn(singleton((NodeDatum) other));
+		expect(datumService.offset("bar", 0, NodeDatum.class)).andReturn(other);
 
 		// WHEN
 		replayAll();
@@ -150,8 +147,7 @@ public class ExpressionRootTests {
 		other.putSampleValue(Instantaneous, "aa", 100);
 		other.putSampleValue(Accumulating, "bb", 200);
 
-		expect(datumService.latest(singleton("bar"), NodeDatum.class))
-				.andReturn(singleton((NodeDatum) other)).times(3);
+		expect(datumService.offset("bar", 0, NodeDatum.class)).andReturn(other).times(3);
 
 		// WHEN
 		replayAll();
