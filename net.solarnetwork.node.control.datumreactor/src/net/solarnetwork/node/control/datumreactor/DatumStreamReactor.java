@@ -26,7 +26,6 @@ import static java.util.Collections.singletonMap;
 import static net.solarnetwork.domain.InstructionStatus.InstructionState.Completed;
 import static net.solarnetwork.domain.InstructionStatus.InstructionState.Declined;
 import static net.solarnetwork.node.reactor.InstructionHandler.PARAM_MESSAGE;
-import static net.solarnetwork.node.reactor.InstructionHandler.TOPIC_SET_CONTROL_PARAMETER;
 import static net.solarnetwork.node.reactor.InstructionUtils.createLocalInstruction;
 import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
 import static net.solarnetwork.service.OptionalService.service;
@@ -45,6 +44,7 @@ import org.springframework.expression.ExpressionException;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
+import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumEvents;
@@ -60,8 +60,8 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.DateUtils;
 
 /**
- * Service to monitor a datum stream and set a control value in response via an
- * expression.
+ * Service to monitor a datum stream and issue an instruction to a control with
+ * a value resulting from evaluating an expression.
  * 
  * @author matt
  * @version 1.0
@@ -69,9 +69,13 @@ import net.solarnetwork.util.DateUtils;
 public class DatumStreamReactor extends BaseIdentifiable
 		implements SettingSpecifierProvider, EventHandler {
 
+	/** The {@code instructionTopic} property default value. */
+	public static final String DEFAULT_INSTRUCTION_TOPIC = InstructionHandler.TOPIC_SET_CONTROL_PARAMETER;
+
 	private final ControlPropertyConfig config = new ControlPropertyConfig();
 	private Executor executor;
 	private Pattern sourceIdRegex;
+	private String instructionTopic = DEFAULT_INSTRUCTION_TOPIC;
 	private OptionalService<InstructionExecutionService> instructionExecutionService;
 	private OptionalService<DatumService> datumService;
 
@@ -107,24 +111,26 @@ public class DatumStreamReactor extends BaseIdentifiable
 
 			@Override
 			public void run() {
-				Number desiredControlValue = null;
+				Object desiredControlValue = null;
 				Instruction instr = null;
 				InstructionStatus instrResult = null;
 				try {
 					if ( config.getExpression() != null && config.getExpressionServiceId() != null ) {
 						desiredControlValue = evaluateExpression(datum);
 					}
-					desiredControlValue = applyConstraints(desiredControlValue);
+					desiredControlValue = applyNumberConstraints(desiredControlValue);
 					if ( log.isDebugEnabled() ) {
-						log.debug("Load balance for input {} result for control [{}]: {}",
-								datum.asSimpleMap(), config.getControlId(), desiredControlValue);
+						log.debug("Reaction for input {} to {} on control [{}]: {}", datum.asSimpleMap(),
+								instructionTopic, config.getControlId(), desiredControlValue);
 					}
 					if ( desiredControlValue == null ) {
 						return;
 					}
 					InstructionExecutionService instrService = service(instructionExecutionService);
-					instr = createLocalInstruction(TOPIC_SET_CONTROL_PARAMETER, config.getControlId(),
-							bigDecimalForNumber(desiredControlValue).toPlainString());
+					instr = createLocalInstruction(instructionTopic, config.getControlId(),
+							desiredControlValue instanceof Number
+									? bigDecimalForNumber((Number) desiredControlValue).toPlainString()
+									: desiredControlValue.toString());
 					if ( instrService != null ) {
 						instrResult = instrService.executeInstruction(instr);
 					} else {
@@ -132,8 +138,7 @@ public class DatumStreamReactor extends BaseIdentifiable
 								"No InstructionExecutionService available."));
 					}
 				} catch ( ExpressionException e ) {
-					instr = createLocalInstruction(TOPIC_SET_CONTROL_PARAMETER, config.getControlId(),
-							"-1");
+					instr = createLocalInstruction(instructionTopic, config.getControlId(), "-1");
 					instrResult = createStatus(instr, Declined,
 							singletonMap(PARAM_MESSAGE,
 									String.format("Exception evaluating expression [%s]: %s",
@@ -143,11 +148,11 @@ public class DatumStreamReactor extends BaseIdentifiable
 							"Exception handling instruction: " + e.toString()));
 				}
 				if ( instrResult == null ) {
-					log.warn("Unable to set control [{}] value to [{}]: control not available",
-							config.getControlId(), desiredControlValue);
+					log.warn("Unable to {} on control [{}] with [{}]: control not available",
+							instructionTopic, config.getControlId(), desiredControlValue);
 				} else if ( instrResult.getInstructionState() != Completed ) {
-					log.warn("Failed to set control [{}] value to [{}] (instruction result {}): {}",
-							config.getControlId(), desiredControlValue, instrResult,
+					log.warn("Failed to {} control [{}] with [{}] (instruction result {}): {}",
+							instructionTopic, config.getControlId(), desiredControlValue, instrResult,
 							instrResult.getResultParameters());
 				}
 				synchronized ( this ) {
@@ -165,8 +170,8 @@ public class DatumStreamReactor extends BaseIdentifiable
 		}
 	}
 
-	private Number evaluateExpression(final NodeDatum datum) {
-		Number result = null;
+	private Object evaluateExpression(final NodeDatum datum) {
+		Object result = null;
 		final Iterable<ExpressionService> services = services(getExpressionServices());
 		ExpressionRoot root = ExpressionRoot.of(datum, service(datumService), config.getMinValue(),
 				config.getMaxValue());
@@ -181,7 +186,7 @@ public class DatumStreamReactor extends BaseIdentifiable
 		if ( expr != null ) {
 			try {
 				result = expr.getService().evaluateExpression(expr.getExpression(), null, root, null,
-						Number.class);
+						Object.class);
 				if ( log.isTraceEnabled() ) {
 					log.trace(
 							"Service [{}] evaluated control [{}] expression `{}` \u2192 {}\n\nExpression root: {}",
@@ -193,17 +198,21 @@ public class DatumStreamReactor extends BaseIdentifiable
 			} catch ( ExpressionException e ) {
 				log.warn(
 						"Error evaluating service [{}] control [{}] expression `{}`: {}\n\nExpression root: {}",
-						getUid(), config.getControlId(), config.getExpression(), e.getMessage(), root);
+						getUid(), config.getControlId(), config.getExpression(), e.getMessage(), root,
+						e);
 				throw e;
 			}
 		}
 		return result;
 	}
 
-	private Number applyConstraints(Number result) {
-		if ( result != null && (config.getMinValue() != null || config.getMaxValue() != null) ) {
+	private Object applyNumberConstraints(Object result) {
+		if ( !(result instanceof Number) ) {
+			return result;
+		}
+		if ( config.getMinValue() != null || config.getMaxValue() != null ) {
 			// apply min/max
-			BigDecimal resultDecimal = bigDecimalForNumber(result);
+			BigDecimal resultDecimal = bigDecimalForNumber((Number) result);
 			if ( config.getMinValue() != null && resultDecimal.compareTo(config.getMinValue()) < 0 ) {
 				result = config.getMinValue();
 			} else if ( config.getMaxValue() != null
@@ -231,6 +240,7 @@ public class DatumStreamReactor extends BaseIdentifiable
 		results.add(new BasicTitleSettingSpecifier("statusDate", getStatusMessageDate()));
 		results.addAll(baseIdentifiableSettings(""));
 		results.add(new BasicTextFieldSettingSpecifier("sourceIdRegexValue", ""));
+		results.add(new BasicTextFieldSettingSpecifier("instructionTopic", DEFAULT_INSTRUCTION_TOPIC));
 		results.addAll(ControlPropertyConfig.settings("config.", services(getExpressionServices())));
 		return results;
 	}
@@ -249,22 +259,23 @@ public class DatumStreamReactor extends BaseIdentifiable
 		String controlVal = instr.getParameterValue(controlId);
 		if ( instrResult == null ) {
 			return getMessageSource().getMessage("error.missingControl",
-					new Object[] { controlId, controlVal }, "Control not available.",
+					new Object[] { instr.getTopic(), controlId, controlVal }, "Control not available.",
 					Locale.getDefault());
 		}
 		if ( instrResult.getInstructionState() == Completed ) {
-			return getMessageSource().getMessage("status.ok", new Object[] { controlId, controlVal },
-					"Control value set.", Locale.getDefault());
+			return getMessageSource().getMessage("status.ok",
+					new Object[] { instr.getTopic(), controlId, controlVal },
+					"Control instruction executed.", Locale.getDefault());
 		}
-		return getMessageSource().getMessage("error.failSetControl", new Object[] { controlId,
-				controlVal, instrResult.getInstructionState(),
+		return getMessageSource().getMessage("error.failSetControl", new Object[] { instr.getTopic(),
+				controlId, controlVal, instrResult.getInstructionState(),
 				(instrResult.getResultParameters() != null
 						&& !instrResult.getResultParameters().isEmpty()
 								? instrResult.getResultParameters()
 								: getMessageSource().getMessage("error.noInstructionResultParameters",
 										null, "No result information available.",
 										Locale.getDefault())) },
-				"Failed to set control value.", Locale.getDefault());
+				"Failed to execute control instruction.", Locale.getDefault());
 	}
 
 	private String getStatusMessageDate() {
@@ -375,6 +386,27 @@ public class DatumStreamReactor extends BaseIdentifiable
 	 */
 	public void setDatumService(OptionalService<DatumService> datumService) {
 		this.datumService = datumService;
+	}
+
+	/**
+	 * Get the instruction topic.
+	 * 
+	 * @return the instruction topic, never {@literal null}
+	 */
+	public String getInstructionTopic() {
+		return instructionTopic;
+	}
+
+	/**
+	 * Set the instruction topic.
+	 * 
+	 * @param instructionTopic
+	 *        the instruction topic to set; if {@literal null} then
+	 *        {@link #DEFAULT_INSTRUCTION_TOPIC} will be set instead
+	 */
+	public void setInstructionTopic(String instructionTopic) {
+		this.instructionTopic = (instructionTopic != null ? instructionTopic
+				: DEFAULT_INSTRUCTION_TOPIC);
 	}
 
 }

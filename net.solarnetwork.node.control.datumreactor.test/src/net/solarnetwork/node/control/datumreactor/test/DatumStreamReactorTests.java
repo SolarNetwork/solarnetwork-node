@@ -1,5 +1,5 @@
 /* ==================================================================
- * LoadBalancerTests.java - 3/02/2022 2:01:04 PM
+ * DatumStreamReactorTests.java - 3/02/2022 2:01:04 PM
  * 
  * Copyright 2022 SolarNetwork.net Dev Team
  * 
@@ -24,6 +24,7 @@ package net.solarnetwork.node.control.datumreactor.test;
 
 import static java.util.Collections.singleton;
 import static net.solarnetwork.node.reactor.InstructionHandler.TOPIC_SET_CONTROL_PARAMETER;
+import static net.solarnetwork.node.reactor.InstructionHandler.TOPIC_SIGNAL;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.is;
@@ -42,12 +43,14 @@ import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.control.datumreactor.DatumStreamReactor;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
+import net.solarnetwork.node.domain.datum.SimpleDayDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.service.ExpressionService;
 import net.solarnetwork.service.StaticOptionalService;
 import net.solarnetwork.service.StaticOptionalServiceCollection;
@@ -58,7 +61,7 @@ import net.solarnetwork.service.StaticOptionalServiceCollection;
  * @author matt
  * @version 1.0
  */
-public class LoadBalancerTests {
+public class DatumStreamReactorTests {
 
 	private static final String TEST_SOURCE_ID = "/load/1";
 
@@ -66,8 +69,9 @@ public class LoadBalancerTests {
 
 	private static final String TEST_DATUM_PROP = "load";
 
-	private InstructionExecutionService instructionExecutionService;
 	private ExpressionService expressionService;
+	private InstructionExecutionService instructionExecutionService;
+	private DatumService datumService;
 	private DatumStreamReactor service;
 
 	@Before
@@ -75,6 +79,8 @@ public class LoadBalancerTests {
 		expressionService = new SpelExpressionService();
 
 		instructionExecutionService = EasyMock.createMock(InstructionExecutionService.class);
+		datumService = EasyMock.createMock(DatumService.class);
+
 		service = new DatumStreamReactor();
 		service.setSourceIdRegexValue(TEST_SOURCE_ID);
 		service.getConfig().setControlId(TEST_CONTROL_ID);
@@ -83,15 +89,16 @@ public class LoadBalancerTests {
 		service.setExpressionServices(
 				new StaticOptionalServiceCollection<>(singleton(expressionService)));
 		service.setInstructionExecutionService(new StaticOptionalService<>(instructionExecutionService));
+		service.setDatumService(new StaticOptionalService<>(datumService));
 	}
 
 	@After
 	public void teardown() {
-		EasyMock.verify(instructionExecutionService);
+		EasyMock.verify(instructionExecutionService, datumService);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(instructionExecutionService);
+		EasyMock.replay(instructionExecutionService, datumService);
 	}
 
 	private static SimpleDatum createTestGeneralNodeDatum(String sourceId, String prop, Number val) {
@@ -105,7 +112,7 @@ public class LoadBalancerTests {
 	}
 
 	@Test
-	public void balance_processed() {
+	public void simple() {
 		// GIVEN
 		final Integer inputVal = 124;
 		final SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID, TEST_DATUM_PROP, inputVal);
@@ -126,6 +133,117 @@ public class LoadBalancerTests {
 						return InstructionUtils.createStatus(instr, InstructionState.Completed);
 					}
 				});
+
+		// WHEN
+		replayAll();
+		service.handleEvent(datumCapturedEvent(datum));
+
+		// THEN
+	}
+
+	// @formatter:off
+	private static final String OFFSET_EXPR = 
+			"has('load') and hasOffset(1) and offset(1).has('load') ? ("
+			+ "offset(1).load == 0 and load == 1 "
+			+ "? 'PlugConnected' "
+			+ ": (offset(1).load == 1 and load == 0 "
+			   + "? 'PlugDisconnected' "
+			   + ": null)"
+			+ ") : null";
+	// @formatter:on
+
+	@Test
+	public void expressionWithHistoryOffset_01() {
+		// GIVEN
+		service.setInstructionTopic(TOPIC_SIGNAL);
+		final Integer inputVal = 1;
+		final SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID, TEST_DATUM_PROP, inputVal);
+
+		final Integer prevInputVal = 0;
+		final DatumSamples prevDatumSamples = new DatumSamples(datum.getSamples());
+		prevDatumSamples.putInstantaneousSampleValue(TEST_DATUM_PROP, prevInputVal);
+		final SimpleDatum prevDatum = new SimpleDayDatum(TEST_SOURCE_ID,
+				datum.getTimestamp().minusSeconds(60), prevDatumSamples);
+
+		// execute hasOffset(1) in expression to get prev datum in stream
+		expect(datumService.offset(TEST_SOURCE_ID, datum.getTimestamp(), 1, NodeDatum.class))
+				.andReturn(prevDatum).anyTimes();
+
+		service.getConfig().setExpression(OFFSET_EXPR);
+
+		Capture<Instruction> instrCaptor = new Capture<>();
+		expect(instructionExecutionService.executeInstruction(capture(instrCaptor)))
+				.andAnswer(new IAnswer<InstructionStatus>() {
+
+					@Override
+					public InstructionStatus answer() throws Throwable {
+						Instruction instr = instrCaptor.getValue();
+						assertThat("Instruction topic", instr.getTopic(), is(TOPIC_SIGNAL));
+						assertThat("Control signal is result of expression",
+								instr.getParameterValue(TEST_CONTROL_ID), is("PlugConnected"));
+						return InstructionUtils.createStatus(instr, InstructionState.Completed);
+					}
+				});
+
+		// WHEN
+		replayAll();
+		service.handleEvent(datumCapturedEvent(datum));
+
+		// THEN
+	}
+
+	@Test
+	public void expressionWithHistoryOffset_02() {
+		// GIVEN
+		service.setInstructionTopic(TOPIC_SIGNAL);
+		final Integer inputVal = 0;
+		final SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID, TEST_DATUM_PROP, inputVal);
+
+		final Integer prevInputVal = 1;
+		final DatumSamples prevDatumSamples = new DatumSamples(datum.getSamples());
+		prevDatumSamples.putInstantaneousSampleValue(TEST_DATUM_PROP, prevInputVal);
+		final SimpleDatum prevDatum = new SimpleDayDatum(TEST_SOURCE_ID,
+				datum.getTimestamp().minusSeconds(60), prevDatumSamples);
+
+		// execute hasOffset(1) in expression to get prev datum in stream
+		expect(datumService.offset(TEST_SOURCE_ID, datum.getTimestamp(), 1, NodeDatum.class))
+				.andReturn(prevDatum).anyTimes();
+
+		service.getConfig().setExpression(OFFSET_EXPR);
+
+		Capture<Instruction> instrCaptor = new Capture<>();
+		expect(instructionExecutionService.executeInstruction(capture(instrCaptor)))
+				.andAnswer(new IAnswer<InstructionStatus>() {
+
+					@Override
+					public InstructionStatus answer() throws Throwable {
+						Instruction instr = instrCaptor.getValue();
+						assertThat("Instruction topic", instr.getTopic(), is(TOPIC_SIGNAL));
+						assertThat("Control signal is result of expression",
+								instr.getParameterValue(TEST_CONTROL_ID), is("PlugDisconnected"));
+						return InstructionUtils.createStatus(instr, InstructionState.Completed);
+					}
+				});
+
+		// WHEN
+		replayAll();
+		service.handleEvent(datumCapturedEvent(datum));
+
+		// THEN
+	}
+
+	@Test
+	public void expressionWithHistoryOffset_03() {
+		// GIVEN
+		service.setInstructionTopic(TOPIC_SIGNAL);
+		final Integer inputVal = 0;
+		final SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID, TEST_DATUM_PROP, inputVal);
+
+		// execute hasOffset(1) in expression to get prev datum in stream
+		expect(datumService.offset(TEST_SOURCE_ID, datum.getTimestamp(), 1, NodeDatum.class))
+				.andReturn(null).anyTimes();
+
+		service.getConfig().setExpression(OFFSET_EXPR);
 
 		// WHEN
 		replayAll();
