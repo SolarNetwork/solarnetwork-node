@@ -105,6 +105,8 @@ public class DatumStreamReactor extends BaseIdentifiable
 			return;
 		}
 
+		final String controlId = controlId();
+
 		// evaluate expression to determine load balance output based in input load value,
 		// and then set configured control to that result
 		Runnable task = new Runnable() {
@@ -116,18 +118,18 @@ public class DatumStreamReactor extends BaseIdentifiable
 				InstructionStatus instrResult = null;
 				try {
 					if ( config.getExpression() != null && config.getExpressionServiceId() != null ) {
-						desiredControlValue = evaluateExpression(datum);
+						desiredControlValue = evaluateExpression(datum, controlId);
 					}
 					desiredControlValue = applyNumberConstraints(desiredControlValue);
 					if ( log.isDebugEnabled() ) {
 						log.debug("Reaction for input {} to {} on control [{}]: {}", datum.asSimpleMap(),
-								instructionTopic, config.getControlId(), desiredControlValue);
+								instructionTopic, controlId, desiredControlValue);
 					}
 					if ( desiredControlValue == null ) {
 						return;
 					}
 					InstructionExecutionService instrService = service(instructionExecutionService);
-					instr = createLocalInstruction(instructionTopic, config.getControlId(),
+					instr = createLocalInstruction(instructionTopic, controlId,
 							desiredControlValue instanceof Number
 									? bigDecimalForNumber((Number) desiredControlValue).toPlainString()
 									: desiredControlValue.toString());
@@ -138,7 +140,7 @@ public class DatumStreamReactor extends BaseIdentifiable
 								"No InstructionExecutionService available."));
 					}
 				} catch ( ExpressionException e ) {
-					instr = createLocalInstruction(instructionTopic, config.getControlId(), "-1");
+					instr = createLocalInstruction(instructionTopic, controlId, "-1");
 					instrResult = createStatus(instr, Declined,
 							singletonMap(PARAM_MESSAGE,
 									String.format("Exception evaluating expression [%s]: %s",
@@ -149,10 +151,10 @@ public class DatumStreamReactor extends BaseIdentifiable
 				}
 				if ( instrResult == null ) {
 					log.warn("Unable to {} on control [{}] with [{}]: control not available",
-							instructionTopic, config.getControlId(), desiredControlValue);
+							instructionTopic, controlId, desiredControlValue);
 				} else if ( instrResult.getInstructionState() != Completed ) {
 					log.warn("Failed to {} control [{}] with [{}] (instruction result {}): {}",
-							instructionTopic, config.getControlId(), desiredControlValue, instrResult,
+							instructionTopic, controlId, desiredControlValue, instrResult,
 							instrResult.getResultParameters());
 				}
 				synchronized ( this ) {
@@ -170,7 +172,12 @@ public class DatumStreamReactor extends BaseIdentifiable
 		}
 	}
 
-	private Object evaluateExpression(final NodeDatum datum) {
+	private String controlId() {
+		String controlId = getConfig().getControlId();
+		return resolvePlaceholders(controlId);
+	}
+
+	private Object evaluateExpression(final NodeDatum datum, final String controlId) {
 		Object result = null;
 		final Iterable<ExpressionService> services = services(getExpressionServices());
 		ExpressionRoot root = ExpressionRoot.of(datum, service(datumService), config.getMinValue(),
@@ -190,16 +197,15 @@ public class DatumStreamReactor extends BaseIdentifiable
 				if ( log.isTraceEnabled() ) {
 					log.trace(
 							"Service [{}] evaluated control [{}] expression `{}` \u2192 {}\n\nExpression root: {}",
-							getUid(), config.getControlId(), config.getExpression(), result, root);
+							getUid(), controlId, config.getExpression(), result, root);
 				} else if ( log.isDebugEnabled() ) {
 					log.debug("Service [{}] evaluated control [{}] expression `{}` \u2192 {}", getUid(),
-							config.getControlId(), config.getExpression(), result);
+							controlId, config.getExpression(), result);
 				}
 			} catch ( ExpressionException e ) {
 				log.warn(
 						"Error evaluating service [{}] control [{}] expression `{}`: {}\n\nExpression root: {}",
-						getUid(), config.getControlId(), config.getExpression(), e.getMessage(), root,
-						e);
+						getUid(), controlId, config.getExpression(), e.getMessage(), root, e);
 				throw e;
 			}
 		}
