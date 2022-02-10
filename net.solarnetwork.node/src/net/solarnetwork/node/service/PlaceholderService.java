@@ -378,11 +378,6 @@ public interface PlaceholderService {
 	 *        the optional service
 	 * @param destination
 	 *        the map to copy all placeholders to
-	 * @param keyFilter
-	 *        an optional pattern to match against placeholder keys to restrict
-	 *        copying matches into {@code destination}; the
-	 *        {@link java.util.regex.Matcher#find()} method is used so the
-	 *        pattern matches anywhere within the key values
 	 * @since 2.1
 	 * @see PlaceholderService#smartCopyPlaceholders(Map, Pattern)
 	 */
