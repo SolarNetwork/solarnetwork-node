@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.domain;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Map;
 import net.solarnetwork.domain.DatumExpressionRoot;
@@ -30,6 +31,8 @@ import net.solarnetwork.domain.datum.DatumSamplesExpressionRoot;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.DatumService;
+import net.solarnetwork.util.NumberUtils;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * An object to use as the "root" for
@@ -340,6 +343,59 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 			return null;
 		}
 		return new ExpressionRoot(d);
+	}
+
+	/**
+	 * Return a {@link BigDecimal} for a given value.
+	 * 
+	 * @param value
+	 *        the object to get as a {@link BigDecimal}
+	 * @return the decimal instance, or {@literal null} if {@code value} is
+	 *         {@literal null} or cannot be parsed as a decimal
+	 * @since 2.1
+	 */
+	public BigDecimal decimal(Object value) {
+		if ( value == null ) {
+			return null;
+		}
+		Number n = null;
+		if ( value instanceof Number ) {
+			n = (Number) value;
+		} else {
+			n = StringUtils.numberValue(value.toString());
+		}
+		return NumberUtils.bigDecimalForNumber(n);
+
+	}
+
+	/**
+	 * Return the minimum between two number values.
+	 * 
+	 * @param n1
+	 *        the first number
+	 * @param n2
+	 *        the second number
+	 * @return the minimum number, or {@literal null} if both arguments are
+	 *         {@literal null}
+	 * @since 2.1
+	 */
+	public Number min(Number n1, Number n2) {
+		return NumberUtils.min(n1, n2);
+	}
+
+	/**
+	 * Return the maximum between two number values.
+	 * 
+	 * @param n1
+	 *        the first number
+	 * @param n2
+	 *        the second number
+	 * @return the maximum number, or {@literal null} if both arguments are
+	 *         {@literal null}
+	 * @since 2.1
+	 */
+	public Number max(Number n1, Number n2) {
+		return NumberUtils.max(n1, n2);
 	}
 
 }

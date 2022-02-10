@@ -32,6 +32,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * API for a service that can resolve "placeholder" variables in strings.
@@ -41,20 +42,6 @@ import net.solarnetwork.service.OptionalService;
  * @since 1.76
  */
 public interface PlaceholderService {
-
-	/**
-	 * A pattern to match integer values.
-	 * 
-	 * @since 2.1
-	 */
-	static Pattern INTEGER_PATTERN = Pattern.compile("[+-]?\\d+");
-
-	/**
-	 * A pattern to match decimal values.
-	 * 
-	 * @since 2.1
-	 */
-	static Pattern DECIMAL_PATTERN = Pattern.compile("[+-]?\\d+(\\.\\d+)?([Ee][+-]?\\d+)?");
 
 	/**
 	 * Resolve all placeholders.
@@ -197,15 +184,9 @@ public interface PlaceholderService {
 			return s.map(entry -> {
 				Object v = entry.getValue();
 				if ( v != null && !(v instanceof Number) ) {
-					String str = v.toString();
-					try {
-						if ( INTEGER_PATTERN.matcher(str).matches() ) {
-							v = new BigInteger(str);
-						} else if ( DECIMAL_PATTERN.matcher(str).matches() ) {
-							v = new BigDecimal(str);
-						}
-					} catch ( NumberFormatException e ) {
-						// don't expect to get here, but just to be sure we ignore this
+					Number n = StringUtils.numberValue(v.toString());
+					if ( n != null ) {
+						v = n;
 					}
 				}
 				return new SimpleEntry<>(entry.getKey(), v);
