@@ -54,11 +54,16 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	 * @param maxValue
 	 *        the maximum desired value, will be configured as the parameter
 	 *        {@link #PARAM_MAX_VALUE}
+	 * @param parameters
+	 *        optional additional parameters to use with the expression
 	 * @return the new instance
 	 */
 	public static ExpressionRoot of(NodeDatum datum, DatumService datumService, Number minValue,
-			Number maxValue) {
-		Map<String, Object> params = new HashMap<>(2);
+			Number maxValue, Map<String, ?> parameters) {
+		Map<String, Object> params = new HashMap<>(2 + (parameters != null ? parameters.size() : 0));
+		if ( parameters != null ) {
+			params.putAll(parameters);
+		}
 		if ( minValue != null ) {
 			params.put(PARAM_MIN_VALUE, minValue);
 		}

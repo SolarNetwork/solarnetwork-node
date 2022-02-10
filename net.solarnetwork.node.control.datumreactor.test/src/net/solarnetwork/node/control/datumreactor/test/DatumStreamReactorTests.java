@@ -25,11 +25,14 @@ package net.solarnetwork.node.control.datumreactor.test;
 import static java.util.Collections.singleton;
 import static net.solarnetwork.node.reactor.InstructionHandler.TOPIC_SET_CONTROL_PARAMETER;
 import static net.solarnetwork.node.reactor.InstructionHandler.TOPIC_SIGNAL;
+import static net.solarnetwork.test.EasyMockUtils.assertWith;
+import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import java.time.Instant;
+import java.util.Map;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
@@ -51,9 +54,11 @@ import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.DatumService;
+import net.solarnetwork.node.service.PlaceholderService;
 import net.solarnetwork.service.ExpressionService;
 import net.solarnetwork.service.StaticOptionalService;
 import net.solarnetwork.service.StaticOptionalServiceCollection;
+import net.solarnetwork.test.Assertion;
 
 /**
  * Test cases for the {@link DatumStreamReactor} class.
@@ -71,6 +76,7 @@ public class DatumStreamReactorTests {
 
 	private ExpressionService expressionService;
 	private InstructionExecutionService instructionExecutionService;
+	private PlaceholderService placeholderService;
 	private DatumService datumService;
 	private DatumStreamReactor service;
 
@@ -80,6 +86,7 @@ public class DatumStreamReactorTests {
 
 		instructionExecutionService = EasyMock.createMock(InstructionExecutionService.class);
 		datumService = EasyMock.createMock(DatumService.class);
+		placeholderService = EasyMock.createMock(PlaceholderService.class);
 
 		service = new DatumStreamReactor();
 		service.setSourceIdRegexValue(TEST_SOURCE_ID);
@@ -90,15 +97,16 @@ public class DatumStreamReactorTests {
 				new StaticOptionalServiceCollection<>(singleton(expressionService)));
 		service.setInstructionExecutionService(new StaticOptionalService<>(instructionExecutionService));
 		service.setDatumService(new StaticOptionalService<>(datumService));
+		service.setPlaceholderService(new StaticOptionalService<>(placeholderService));
 	}
 
 	@After
 	public void teardown() {
-		EasyMock.verify(instructionExecutionService, datumService);
+		EasyMock.verify(instructionExecutionService, datumService, placeholderService);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(instructionExecutionService, datumService);
+		EasyMock.replay(instructionExecutionService, datumService, placeholderService);
 	}
 
 	private static SimpleDatum createTestGeneralNodeDatum(String sourceId, String prop, Number val) {
@@ -114,6 +122,9 @@ public class DatumStreamReactorTests {
 	@Test
 	public void simple() {
 		// GIVEN
+		expect(placeholderService.resolvePlaceholders(TEST_CONTROL_ID, null)).andReturn(TEST_CONTROL_ID);
+		placeholderService.smartCopyPlaceholders(anyObject());
+
 		final Integer inputVal = 124;
 		final SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID, TEST_DATUM_PROP, inputVal);
 		service.getConfig().setExpression(String.format("%s / 2", TEST_DATUM_PROP));
@@ -141,6 +152,46 @@ public class DatumStreamReactorTests {
 		// THEN
 	}
 
+	@Test
+	public void placeholders() {
+		// GIVEN
+		expect(placeholderService.resolvePlaceholders(TEST_CONTROL_ID, null)).andReturn(TEST_CONTROL_ID);
+		final Integer fooVal = 123;
+		placeholderService.smartCopyPlaceholders(assertWith(new Assertion<Map<String, Object>>() {
+
+			@Override
+			public void check(Map<String, Object> dest) throws Throwable {
+				dest.put("foo", fooVal);
+			}
+		}));
+
+		final Integer inputVal = 124;
+		final SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID, TEST_DATUM_PROP, inputVal);
+		service.getConfig().setExpression(String.format("%s / 2 + foo", TEST_DATUM_PROP));
+
+		Capture<Instruction> instrCaptor = new Capture<>();
+		expect(instructionExecutionService.executeInstruction(capture(instrCaptor)))
+				.andAnswer(new IAnswer<InstructionStatus>() {
+
+					@Override
+					public InstructionStatus answer() throws Throwable {
+						Instruction instr = instrCaptor.getValue();
+						assertThat("Instruction topic", instr.getTopic(),
+								is(TOPIC_SET_CONTROL_PARAMETER));
+						assertThat("Control output value is result of expression",
+								instr.getParameterValue(TEST_CONTROL_ID),
+								is(String.valueOf(inputVal / 2 + fooVal)));
+						return InstructionUtils.createStatus(instr, InstructionState.Completed);
+					}
+				});
+
+		// WHEN
+		replayAll();
+		service.handleEvent(datumCapturedEvent(datum));
+
+		// THEN
+	}
+
 	// @formatter:off
 	private static final String OFFSET_EXPR = 
 			"has('load') and hasOffset(1) and offset(1).has('load') ? ("
@@ -156,6 +207,10 @@ public class DatumStreamReactorTests {
 	public void expressionWithHistoryOffset_01() {
 		// GIVEN
 		service.setInstructionTopic(TOPIC_SIGNAL);
+
+		expect(placeholderService.resolvePlaceholders(TEST_CONTROL_ID, null)).andReturn(TEST_CONTROL_ID);
+		placeholderService.smartCopyPlaceholders(anyObject());
+
 		final Integer inputVal = 1;
 		final SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID, TEST_DATUM_PROP, inputVal);
 
@@ -196,6 +251,10 @@ public class DatumStreamReactorTests {
 	public void expressionWithHistoryOffset_02() {
 		// GIVEN
 		service.setInstructionTopic(TOPIC_SIGNAL);
+
+		expect(placeholderService.resolvePlaceholders(TEST_CONTROL_ID, null)).andReturn(TEST_CONTROL_ID);
+		placeholderService.smartCopyPlaceholders(anyObject());
+
 		final Integer inputVal = 0;
 		final SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID, TEST_DATUM_PROP, inputVal);
 
@@ -236,6 +295,10 @@ public class DatumStreamReactorTests {
 	public void expressionWithHistoryOffset_03() {
 		// GIVEN
 		service.setInstructionTopic(TOPIC_SIGNAL);
+
+		expect(placeholderService.resolvePlaceholders(TEST_CONTROL_ID, null)).andReturn(TEST_CONTROL_ID);
+		placeholderService.smartCopyPlaceholders(anyObject());
+
 		final Integer inputVal = 0;
 		final SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID, TEST_DATUM_PROP, inputVal);
 

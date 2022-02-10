@@ -28,13 +28,16 @@ import static net.solarnetwork.domain.InstructionStatus.InstructionState.Decline
 import static net.solarnetwork.node.reactor.InstructionHandler.PARAM_MESSAGE;
 import static net.solarnetwork.node.reactor.InstructionUtils.createLocalInstruction;
 import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
+import static net.solarnetwork.node.service.PlaceholderService.smartCopyPlaceholders;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
 import static net.solarnetwork.util.NumberUtils.bigDecimalForNumber;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -178,10 +181,12 @@ public class DatumStreamReactor extends BaseIdentifiable
 	}
 
 	private Object evaluateExpression(final NodeDatum datum, final String controlId) {
+		Map<String, Object> parameters = new HashMap<>(8);
+		smartCopyPlaceholders(getPlaceholderService(), parameters);
 		Object result = null;
 		final Iterable<ExpressionService> services = services(getExpressionServices());
 		ExpressionRoot root = ExpressionRoot.of(datum, service(datumService), config.getMinValue(),
-				config.getMaxValue());
+				config.getMaxValue(), parameters);
 		final ExpressionServiceExpression expr;
 		try {
 			expr = config.getExpression(services);
