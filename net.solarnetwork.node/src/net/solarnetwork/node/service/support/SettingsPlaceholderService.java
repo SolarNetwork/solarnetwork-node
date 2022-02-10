@@ -32,11 +32,15 @@ import java.util.AbstractMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.task.AsyncTaskExecutor;
@@ -66,7 +70,7 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class SettingsPlaceholderService implements PlaceholderService {
 
@@ -130,6 +134,42 @@ public class SettingsPlaceholderService implements PlaceholderService {
 			log.trace("Placeholders in [{}] resolved to [{}]", s, result);
 		}
 		return result;
+	}
+
+	@Override
+	@SuppressWarnings("unchecked")
+	public <T> void mapPlaceholders(Map<String, T> destination,
+			Function<Stream<Entry<String, ?>>, Stream<Entry<String, T>>> filter) {
+		Map<String, ?> placeholders = allPlaceholders(null);
+		if ( placeholders == null || placeholders.isEmpty() ) {
+			return;
+		}
+		if ( filter == null ) {
+			destination.putAll((Map<String, T>) placeholders);
+		} else {
+			@SuppressWarnings("rawtypes")
+			Stream<Entry<String, ?>> input = (Stream) placeholders.entrySet().stream();
+			Stream<Entry<String, T>> output = filter.apply(input);
+			output.forEach(e -> {
+				destination.put(e.getKey(), e.getValue());
+			});
+		}
+	}
+
+	@Override
+	public <T> void copyPlaceholders(Map<String, T> destination, Predicate<Entry<String, T>> filter) {
+		@SuppressWarnings("unchecked")
+		Map<String, T> placeholders = (Map<String, T>) allPlaceholders(null);
+		if ( placeholders == null || placeholders.isEmpty() ) {
+			return;
+		}
+		if ( filter == null ) {
+			destination.putAll(placeholders);
+		} else {
+			placeholders.entrySet().stream().filter(filter).forEach(e -> {
+				destination.put(e.getKey(), e.getValue());
+			});
+		}
 	}
 
 	private Map<String, ?> allPlaceholders(Map<String, ?> parameters) {

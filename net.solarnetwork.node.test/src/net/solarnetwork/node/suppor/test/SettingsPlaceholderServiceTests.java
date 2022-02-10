@@ -23,11 +23,16 @@
 package net.solarnetwork.node.suppor.test;
 
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.startsWith;
-import static org.junit.Assert.assertThat;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.file.Paths;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -39,6 +44,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 import org.junit.After;
@@ -63,7 +69,7 @@ import net.solarnetwork.service.StaticOptionalService;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class SettingsPlaceholderServiceTests {
 
@@ -452,6 +458,122 @@ public class SettingsPlaceholderServiceTests {
 		params.put("foo", "bar");
 		params.put("bim", "bam");
 		service.registerParameters(params);
+	}
+
+	@Test
+	public void copy_merged() {
+		// GIVEN
+		service.setStaticPropertiesPath(null);
+		List<KeyValuePair> data = Arrays.asList(new KeyValuePair("foo", "bar"),
+				new KeyValuePair("bim", "bam"));
+		expect(settingDao.getSettingValues(SettingsPlaceholderService.SETTING_KEY)).andReturn(data);
+
+		// WHEN
+		replayAll();
+		Map<String, String> params = new LinkedHashMap<>(4);
+		params.put("foo", "not.bar");
+		params.put("baz", "zab");
+		service.copyPlaceholders(params);
+
+		// THEN
+		assertThat("All placeholders copied, overwriting existing", params.keySet(), hasSize(3));
+		assertThat("Existing duplicate parameter overwritten", params, hasEntry("foo", "bar"));
+		assertThat("Existing parameter remains", params, hasEntry("baz", "zab"));
+		assertThat("New placeholder added", params, hasEntry("bim", "bam"));
+	}
+
+	@Test
+	public void copy_filtered() {
+		// GIVEN
+		service.setStaticPropertiesPath(null);
+		List<KeyValuePair> data = Arrays.asList(new KeyValuePair("foo", "bar"),
+				new KeyValuePair("bim", "bam"));
+		expect(settingDao.getSettingValues(SettingsPlaceholderService.SETTING_KEY)).andReturn(data);
+
+		// WHEN
+		replayAll();
+		Map<String, String> params = new LinkedHashMap<>(4);
+		service.copyPlaceholders(params, e -> {
+			return "foo".equals(e.getKey());
+		});
+
+		// THEN
+		assertThat("Filtered placeholders copied", params.keySet(), hasSize(1));
+		assertThat("Placeholder passing filter copied", params, hasEntry("foo", "bar"));
+	}
+
+	@Test
+	public void copy_filtered_regex() {
+		// GIVEN
+		service.setStaticPropertiesPath(null);
+		List<KeyValuePair> data = Arrays.asList(new KeyValuePair("foo", "bar"),
+				new KeyValuePair("foo.1", "bar.1"), new KeyValuePair("bim", "bam"));
+		expect(settingDao.getSettingValues(SettingsPlaceholderService.SETTING_KEY)).andReturn(data);
+
+		// WHEN
+		replayAll();
+		Pattern pat = Pattern.compile("^foo");
+		Map<String, String> params = new LinkedHashMap<>(4);
+		service.copyPlaceholders(params, pat);
+
+		// THEN
+		assertThat("Regex filtered placeholders copied", params.keySet(), hasSize(2));
+		assertThat("Placeholder matching regex copied", params, hasEntry("foo", "bar"));
+		assertThat("Placeholder matching regex copied", params, hasEntry("foo.1", "bar.1"));
+	}
+
+	@Test
+	public void map() {
+		// GIVEN
+		service.setStaticPropertiesPath(null);
+		List<KeyValuePair> data = Arrays.asList(new KeyValuePair("foo", "123"),
+				new KeyValuePair("bim", "bam"));
+		expect(settingDao.getSettingValues(SettingsPlaceholderService.SETTING_KEY)).andReturn(data);
+
+		// WHEN
+		replayAll();
+		Map<String, Object> params = new LinkedHashMap<>(4);
+		params.put("s", "string");
+		service.mapPlaceholders(params, s -> {
+			return s.filter(e -> {
+				return e.getKey().equals("foo");
+			}).map(e -> {
+				return new SimpleEntry<>(e.getKey(), Integer.valueOf(e.getValue().toString()));
+			});
+		});
+
+		// THEN
+		assertThat("Filtered placeholders copied", params.keySet(), hasSize(2));
+		assertThat("Placeholder passing filter copied", params, hasEntry("foo", 123));
+		assertThat("Existing parameter untouched", params, hasEntry("fsoo", "string"));
+	}
+
+	@Test
+	public void smartCopy() {
+		// GIVEN
+		service.setStaticPropertiesPath(null);
+		// @formatter:off
+		List<KeyValuePair> data = Arrays.asList(
+				new KeyValuePair("foo", "123"),
+				new KeyValuePair("bim", "1.234"),
+				new KeyValuePair("exp", "1.23e-3"),
+				new KeyValuePair("str", "string"));
+		// @formatter:on
+		expect(settingDao.getSettingValues(SettingsPlaceholderService.SETTING_KEY)).andReturn(data);
+
+		// WHEN
+		replayAll();
+		Map<String, Object> params = new LinkedHashMap<>(4);
+		service.smartCopyPlaceholders(params);
+
+		// THEN
+		assertThat("All placeholders copied", params.keySet(), hasSize(4));
+		assertThat("Integer value mapped to BigInteger", params, hasEntry("foo", new BigInteger("123")));
+		assertThat("Decimal value mapped to BigDecimal", params,
+				hasEntry("bim", new BigDecimal("1.234")));
+		assertThat("Exponent value mapped to BigDecimal", params,
+				hasEntry("exp", new BigDecimal("1.23e-3")));
+		assertThat("String value copied as-is", params, hasEntry("str", "string"));
 	}
 
 }
