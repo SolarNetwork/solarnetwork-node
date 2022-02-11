@@ -46,7 +46,7 @@ be available:
 | `minValue` | Number | The **Minimum Value** configured on this component. |
 | `maxValue` | Number | The **Maximum Value** configured on this component. |
 
-In addition, all [placeholders][placeholder] will be available as variables. Placeholder values that
+In addition, all [placeholders][placeholders] will be available as variables. Placeholder values that
 are valid integer or decimal numbers will be converted to Number instances. All other values will be
 String instances.
 
