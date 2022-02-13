@@ -145,6 +145,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
 		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
+		directConsumer.accept(datum);
 		datumDao.storeDatum(datum);
 		consumer.accept(datum);
 
