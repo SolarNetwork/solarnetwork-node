@@ -31,6 +31,7 @@ import net.solarnetwork.domain.datum.DatumSamplesExpressionRoot;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.DatumService;
+import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.StringUtils;
 
@@ -51,6 +52,7 @@ import net.solarnetwork.util.StringUtils;
 public class ExpressionRoot extends DatumSamplesExpressionRoot {
 
 	private final DatumService datumService;
+	private final OperationalModesService opModesService;
 
 	/**
 	 * Constructor.
@@ -101,8 +103,29 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	 */
 	public ExpressionRoot(Datum datum, DatumSamplesOperations samples, Map<String, ?> parameters,
 			DatumService datumService) {
+		this(datum, samples, parameters, datumService, null);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param datum
+	 *        the datum currently being populated
+	 * @param samples
+	 *        the samples
+	 * @param parameters
+	 *        the parameters
+	 * @param datumService
+	 *        the optional datum service
+	 * @param opModesService
+	 *        the optional operational modes service
+	 * @since 2.1
+	 */
+	public ExpressionRoot(Datum datum, DatumSamplesOperations samples, Map<String, ?> parameters,
+			DatumService datumService, OperationalModesService opModesService) {
 		super(datum, samples, parameters);
 		this.datumService = datumService;
+		this.opModesService = opModesService;
 	}
 
 	/**
@@ -396,6 +419,25 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	 */
 	public Number max(Number n1, Number n2) {
 		return NumberUtils.max(n1, n2);
+	}
+
+	/**
+	 * Test if an operational mode is active.
+	 * 
+	 * @param mode
+	 *        the mode to test
+	 * @return {@literal true} if the {@link OperationalModesService} provided
+	 *         to this instance's constructor was not {@literal null} and
+	 *         {@link OperationalModesService#isOperationalModeActive(String)}
+	 *         returns {@literal true} for the given mode
+	 * @see OperationalModesService#isOperationalModeActive(String)
+	 * @since 2.1
+	 */
+	public boolean isOpMode(String mode) {
+		if ( opModesService == null ) {
+			return false;
+		}
+		return opModesService.isOperationalModeActive(mode);
 	}
 
 }

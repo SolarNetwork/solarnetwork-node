@@ -39,6 +39,7 @@ import net.solarnetwork.node.domain.ExpressionRoot;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.service.DatumService;
+import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.service.ExpressionService;
 
 /**
@@ -50,23 +51,30 @@ import net.solarnetwork.service.ExpressionService;
 public class ExpressionRootTests {
 
 	private DatumService datumService;
+	private OperationalModesService opModesService;
 	private ExpressionService expressionService = new SpelExpressionService();
 
 	@Before
 	public void setup() {
 		datumService = EasyMock.createMock(DatumService.class);
+		opModesService = EasyMock.createMock(OperationalModesService.class);
 	}
 
 	@After
 	public void teardown() {
-		EasyMock.verify(datumService);
+		EasyMock.verify(datumService, opModesService);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(datumService);
+		EasyMock.replay(datumService, opModesService);
 	}
 
 	private ExpressionRoot createTestRoot() {
+		return createTestRoot(datumService, opModesService);
+	}
+
+	private ExpressionRoot createTestRoot(DatumService datumService,
+			OperationalModesService opModesService) {
 		SimpleDatum d = SimpleDatum.nodeDatum("foo");
 		d.putSampleValue(Instantaneous, "a", 3);
 		d.putSampleValue(Instantaneous, "b", 5);
@@ -85,7 +93,7 @@ public class ExpressionRootTests {
 		p.put("f", 35);
 		p.put("g", 35);
 
-		return new ExpressionRoot(d, s, p, datumService);
+		return new ExpressionRoot(d, s, p, datumService, opModesService);
 	}
 
 	@Test
@@ -158,6 +166,39 @@ public class ExpressionRootTests {
 
 		// THEN
 		assertThat("Expression resolves latest datum conditionally", result, is(3 + 100 + 200));
+	}
+
+	@Test
+	public void isOpMode_noService() {
+		// GIVEN
+
+		// WHEN
+		replayAll();
+		ExpressionRoot root = createTestRoot(datumService, null);
+		Boolean result = expressionService.evaluateExpression("isOpMode('foo')", null, root, null,
+				Boolean.class);
+
+		// THEN
+		assertThat("isOpMode() returns false when no service available", result, is(false));
+	}
+
+	@Test
+	public void isOpMode() {
+		// GIVEN
+		expect(opModesService.isOperationalModeActive("foo")).andReturn(true);
+		expect(opModesService.isOperationalModeActive("bar")).andReturn(false);
+
+		// WHEN
+		replayAll();
+		ExpressionRoot root = createTestRoot();
+		Boolean result1 = expressionService.evaluateExpression("isOpMode('foo')", null, root, null,
+				Boolean.class);
+		Boolean result2 = expressionService.evaluateExpression("isOpMode('bar')", null, root, null,
+				Boolean.class);
+
+		// THEN
+		assertThat("isOpMode('foo') returns result of isOperationalModeActive()", result1, is(true));
+		assertThat("isOpMode('bar') returns result of isOperationalModeActive()", result2, is(false));
 	}
 
 }
