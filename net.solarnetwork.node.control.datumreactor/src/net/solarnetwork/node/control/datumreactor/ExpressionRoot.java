@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.DatumService;
+import net.solarnetwork.node.service.OperationalModesService;
 
 /**
  * Load balancer expression root object.
@@ -48,6 +49,8 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	 *        the datum
 	 * @param datumService
 	 *        the optional datum service
+	 * @param opModesService
+	 *        the operational modes service
 	 * @param minValue
 	 *        the minimum desired value, will be configured as the parameter
 	 *        {@link #PARAM_MIN_VALUE}
@@ -58,8 +61,9 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	 *        optional additional parameters to use with the expression
 	 * @return the new instance
 	 */
-	public static ExpressionRoot of(NodeDatum datum, DatumService datumService, Number minValue,
-			Number maxValue, Map<String, ?> parameters) {
+	public static ExpressionRoot of(NodeDatum datum, DatumService datumService,
+			OperationalModesService opModesService, Number minValue, Number maxValue,
+			Map<String, ?> parameters) {
 		Map<String, Object> params = new HashMap<>(2 + (parameters != null ? parameters.size() : 0));
 		if ( parameters != null ) {
 			params.putAll(parameters);
@@ -70,7 +74,7 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 		if ( maxValue != null ) {
 			params.put(PARAM_MAX_VALUE, maxValue);
 		}
-		return new ExpressionRoot(datum, datumService, params);
+		return new ExpressionRoot(datum, datumService, opModesService, params);
 	}
 
 	/**
@@ -80,11 +84,14 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	 *        the datum
 	 * @param datumService
 	 *        the optional datum service
+	 * @param opModesService
+	 *        the optional operational modes service
 	 * @param parameters
 	 *        the parameters
 	 */
-	public ExpressionRoot(NodeDatum datum, DatumService datumService, Map<String, ?> parameters) {
-		super(datum, null, parameters, datumService);
+	public ExpressionRoot(NodeDatum datum, DatumService datumService,
+			OperationalModesService opModesService, Map<String, ?> parameters) {
+		super(datum, null, parameters, datumService, opModesService);
 	}
 
 }

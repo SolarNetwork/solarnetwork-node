@@ -52,6 +52,7 @@ import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.DatumService;
+import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.ExpressionService;
 import net.solarnetwork.service.OptionalService;
@@ -81,6 +82,7 @@ public class DatumStreamReactor extends BaseIdentifiable
 	private String instructionTopic = DEFAULT_INSTRUCTION_TOPIC;
 	private OptionalService<InstructionExecutionService> instructionExecutionService;
 	private OptionalService<DatumService> datumService;
+	private OptionalService<OperationalModesService> opModesService;
 
 	private Instruction lastInstruction;
 	private InstructionStatus lastInstructionResult;
@@ -185,8 +187,8 @@ public class DatumStreamReactor extends BaseIdentifiable
 		smartCopyPlaceholders(getPlaceholderService(), parameters);
 		Object result = null;
 		final Iterable<ExpressionService> services = services(getExpressionServices());
-		ExpressionRoot root = ExpressionRoot.of(datum, service(datumService), config.getMinValue(),
-				config.getMaxValue(), parameters);
+		ExpressionRoot root = ExpressionRoot.of(datum, service(datumService), service(opModesService),
+				config.getMinValue(), config.getMaxValue(), parameters);
 		final ExpressionServiceExpression expr;
 		try {
 			expr = config.getExpression(services);
@@ -418,6 +420,25 @@ public class DatumStreamReactor extends BaseIdentifiable
 	public void setInstructionTopic(String instructionTopic) {
 		this.instructionTopic = (instructionTopic != null ? instructionTopic
 				: DEFAULT_INSTRUCTION_TOPIC);
+	}
+
+	/**
+	 * Get the operational modes service.
+	 * 
+	 * @return the service
+	 */
+	public OptionalService<OperationalModesService> getOpModesService() {
+		return opModesService;
+	}
+
+	/**
+	 * Set the operational modes service.
+	 * 
+	 * @param opModesService
+	 *        the service to set
+	 */
+	public void setOpModesService(OptionalService<OperationalModesService> opModesService) {
+		this.opModesService = opModesService;
 	}
 
 }

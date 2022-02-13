@@ -39,6 +39,12 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="opModesService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.OperationalModesService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
@@ -94,6 +100,7 @@
 			<property name="instructionExecutionService" ref="instructionExecutionService"/>
 			<property name="expressionServices" ref="expressionServices"/>
 			<property name="datumService" ref="datumService"/>
+			<property name="opModesService" ref="opModesService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
