@@ -148,7 +148,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		datumDao.storeDatum(datum);
 		consumer.accept(datum);
 
-		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(capture(eventCaptor));
 		expectLastCall().times(2);
 
@@ -178,7 +178,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		datumDao.storeDatum(datum);
 		consumer.accept(datum);
 
-		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(capture(eventCaptor));
 		expectLastCall().times(2);
 
@@ -208,7 +208,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		datumDao.storeDatum(datum);
 		consumer.accept(datum);
 
-		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(capture(eventCaptor));
 		expectLastCall().times(2);
 
@@ -236,7 +236,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		directConsumer.accept(datum);
 		consumer.accept(datum);
 
-		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(capture(eventCaptor));
 		expectLastCall().times(2);
 
@@ -265,7 +265,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		directConsumer.accept(datum);
 		consumer.accept(datum);
 
-		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(capture(eventCaptor));
 		expectLastCall().times(2);
 
@@ -294,7 +294,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		datumDao.storeDatum(datum);
 		consumer.accept(datum);
 
-		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(capture(eventCaptor));
 		expectLastCall().times(2);
 
@@ -330,19 +330,19 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		final int count = 20;
 		final int sources = 2;
 
-		Capture<NodeDatum> directDatumCaptor = new Capture<>(CaptureType.ALL);
+		Capture<NodeDatum> directDatumCaptor = Capture.newInstance(CaptureType.ALL);
 		directConsumer.accept(capture(directDatumCaptor));
 		expectLastCall().anyTimes();//.times(count);
 
-		Capture<NodeDatum> datumCaptor = new Capture<>(CaptureType.ALL);
+		Capture<NodeDatum> datumCaptor = Capture.newInstance(CaptureType.ALL);
 		datumDao.storeDatum(capture(datumCaptor));
 		expectLastCall().anyTimes();//.times(count);
 
-		Capture<NodeDatum> generalDatumCaptor = new Capture<>(CaptureType.ALL);
+		Capture<NodeDatum> generalDatumCaptor = Capture.newInstance(CaptureType.ALL);
 		consumer.accept(capture(generalDatumCaptor));
 		expectLastCall().anyTimes();//.times(count);
 
-		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(capture(eventCaptor));
 		expectLastCall().times(count * 2);
 
@@ -409,7 +409,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
 		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
-		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(capture(eventCaptor));
 		expectLastCall();
 
@@ -452,16 +452,16 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		SimpleDatum datum = SimpleDatum.nodeDatum(TEST_SOURCE_ID, Instant.now(), new DatumSamples());
 		datum.getSamples().putInstantaneousSampleValue("watts", 1234);
 
-		Capture<NodeDatum> directDatumCaptor = new Capture<>();
+		Capture<NodeDatum> directDatumCaptor = Capture.newInstance();
 		directConsumer.accept(capture(directDatumCaptor));
 
-		Capture<NodeDatum> datumCaptor = new Capture<>();
+		Capture<NodeDatum> datumCaptor = Capture.newInstance();
 		datumDao.storeDatum(capture(datumCaptor));
 
-		Capture<NodeDatum> generalDatumCaptor = new Capture<>();
+		Capture<NodeDatum> generalDatumCaptor = Capture.newInstance();
 		consumer.accept(capture(generalDatumCaptor));
 
-		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(capture(eventCaptor));
 		expectLastCall().times(2);
 
@@ -520,7 +520,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		datumDao.storeDatum(datum2);
 		consumer.accept(datum2);
 
-		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(capture(eventCaptor));
 		expectLastCall().times(4);
 
@@ -581,7 +581,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		datumDao.storeDatum(datum2);
 		consumer.accept(datum2);
 
-		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(capture(eventCaptor));
 		expectLastCall().times(3);
 
@@ -637,7 +637,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		datumDao.storeDatum(datum2);
 		consumer.accept(datum2);
 
-		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(capture(eventCaptor));
 		expectLastCall().times(4);
 
@@ -688,7 +688,7 @@ public class DefaultDatumQueueTests implements UncaughtExceptionHandler {
 		datumDao.storeDatum(datum2);
 		consumer.accept(datum2);
 
-		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(capture(eventCaptor));
 		expectLastCall().times(4);
 

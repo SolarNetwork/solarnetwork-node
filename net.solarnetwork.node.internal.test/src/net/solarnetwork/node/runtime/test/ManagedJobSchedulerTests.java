@@ -181,14 +181,14 @@ public class ManagedJobSchedulerTests {
 		// register SettingSpecifierProvider for job
 		ServiceRegistration<SettingSpecifierProvider> settingProviderReg = EasyMock
 				.createMock(ServiceRegistration.class);
-		Capture<Dictionary<String, ?>> settingProviderRegPropsCaptor = new Capture<>();
+		Capture<Dictionary<String, ?>> settingProviderRegPropsCaptor = Capture.newInstance();
 		expect(bundleContext.registerService(eq(SettingSpecifierProvider.class),
 				anyObject(SettingSpecifierProvider.class), capture(settingProviderRegPropsCaptor)))
 						.andReturn(settingProviderReg);
 
 		// schedule the actual job
-		Capture<Runnable> taskCaptor = new Capture<>();
-		Capture<Trigger> trigCaptor = new Capture<>();
+		Capture<Runnable> taskCaptor = Capture.newInstance();
+		Capture<Trigger> trigCaptor = Capture.newInstance();
 		TestScheduledFuture future = new TestScheduledFuture();
 		expect(taskScheduler.schedule(capture(taskCaptor), capture(trigCaptor)))
 				.andReturn((ScheduledFuture) future);
@@ -216,8 +216,8 @@ public class ManagedJobSchedulerTests {
 		service.setJobStartDelaySeconds(1);
 
 		// schedule startup task
-		Capture<Runnable> startupTaskCaptor = new Capture<>();
-		Capture<Date> startupTaskDelayCaptor = new Capture<>();
+		Capture<Runnable> startupTaskCaptor = Capture.newInstance();
+		Capture<Date> startupTaskDelayCaptor = Capture.newInstance();
 		TestScheduledFuture startupTaskFuture = new TestScheduledFuture();
 		expect(taskScheduler.schedule(capture(startupTaskCaptor), capture(startupTaskDelayCaptor)))
 				.andReturn((ScheduledFuture) startupTaskFuture);
@@ -236,7 +236,7 @@ public class ManagedJobSchedulerTests {
 		// register SettingSpecifierProvider for job
 		ServiceRegistration<SettingSpecifierProvider> settingProviderReg = EasyMock
 				.createMock(ServiceRegistration.class);
-		Capture<Dictionary<String, ?>> settingProviderRegPropsCaptor = new Capture<>();
+		Capture<Dictionary<String, ?>> settingProviderRegPropsCaptor = Capture.newInstance();
 		expect(bundleContext.registerService(eq(SettingSpecifierProvider.class),
 				anyObject(SettingSpecifierProvider.class), capture(settingProviderRegPropsCaptor)))
 						.andReturn(settingProviderReg);
@@ -258,8 +258,8 @@ public class ManagedJobSchedulerTests {
 		EasyMock.reset(taskScheduler);
 
 		// schedule the actual job
-		Capture<Runnable> taskCaptor = new Capture<>();
-		Capture<Trigger> trigCaptor = new Capture<>();
+		Capture<Runnable> taskCaptor = Capture.newInstance();
+		Capture<Trigger> trigCaptor = Capture.newInstance();
 		TestScheduledFuture future = new TestScheduledFuture();
 		expect(taskScheduler.schedule(capture(taskCaptor), capture(trigCaptor)))
 				.andReturn((ScheduledFuture) future);
@@ -293,14 +293,14 @@ public class ManagedJobSchedulerTests {
 		// register SettingSpecifierProvider for job
 		ServiceRegistration<SettingSpecifierProvider> settingProviderReg = EasyMock
 				.createMock(ServiceRegistration.class);
-		Capture<Dictionary<String, ?>> settingProviderRegPropsCaptor = new Capture<>();
+		Capture<Dictionary<String, ?>> settingProviderRegPropsCaptor = Capture.newInstance();
 		expect(bundleContext.registerService(eq(SettingSpecifierProvider.class),
 				anyObject(SettingSpecifierProvider.class), capture(settingProviderRegPropsCaptor)))
 						.andReturn(settingProviderReg);
 
 		// schedule the actual job
-		Capture<Runnable> taskCaptor = new Capture<>();
-		Capture<Trigger> trigCaptor = new Capture<>();
+		Capture<Runnable> taskCaptor = Capture.newInstance();
+		Capture<Trigger> trigCaptor = Capture.newInstance();
 		TestScheduledFuture future = new TestScheduledFuture();
 		expect(taskScheduler.schedule(capture(taskCaptor), capture(trigCaptor)))
 				.andReturn((ScheduledFuture) future);
@@ -344,7 +344,7 @@ public class ManagedJobSchedulerTests {
 		// register the service provider
 		ServiceRegistration<Serializable> serviceProviderReg = EasyMock
 				.createMock(ServiceRegistration.class);
-		Capture<Dictionary<String, ?>> serviceProviderRegPropsCaptor = new Capture<>();
+		Capture<Dictionary<String, ?>> serviceProviderRegPropsCaptor = Capture.newInstance();
 		expect(bundleContext.registerService(
 				EasyMock.aryEq(new String[] { Serializable.class.getName() }),
 				anyObject(Serializable.class), capture(serviceProviderRegPropsCaptor)))
@@ -353,14 +353,14 @@ public class ManagedJobSchedulerTests {
 		// register SettingSpecifierProvider for job
 		ServiceRegistration<SettingSpecifierProvider> settingProviderReg = EasyMock
 				.createMock(ServiceRegistration.class);
-		Capture<Dictionary<String, ?>> settingProviderRegPropsCaptor = new Capture<>();
+		Capture<Dictionary<String, ?>> settingProviderRegPropsCaptor = Capture.newInstance();
 		expect(bundleContext.registerService(eq(SettingSpecifierProvider.class),
 				anyObject(SettingSpecifierProvider.class), capture(settingProviderRegPropsCaptor)))
 						.andReturn(settingProviderReg);
 
 		// schedule the actual job
-		Capture<Runnable> taskCaptor = new Capture<>();
-		Capture<Trigger> trigCaptor = new Capture<>();
+		Capture<Runnable> taskCaptor = Capture.newInstance();
+		Capture<Trigger> trigCaptor = Capture.newInstance();
 		TestScheduledFuture future = new TestScheduledFuture();
 		expect(taskScheduler.schedule(capture(taskCaptor), capture(trigCaptor)))
 				.andReturn((ScheduledFuture) future);
@@ -413,14 +413,14 @@ public class ManagedJobSchedulerTests {
 		// register SettingSpecifierProvider for job
 		ServiceRegistration<SettingSpecifierProvider> settingProviderReg = EasyMock
 				.createMock(ServiceRegistration.class);
-		Capture<Dictionary<String, ?>> settingProviderRegPropsCaptor = new Capture<>();
+		Capture<Dictionary<String, ?>> settingProviderRegPropsCaptor = Capture.newInstance();
 		expect(bundleContext.registerService(eq(SettingSpecifierProvider.class),
 				anyObject(SettingSpecifierProvider.class), capture(settingProviderRegPropsCaptor)))
 						.andReturn(settingProviderReg);
 
 		// schedule the actual job
-		Capture<Runnable> taskCaptor = new Capture<>();
-		Capture<Trigger> trigCaptor = new Capture<>();
+		Capture<Runnable> taskCaptor = Capture.newInstance();
+		Capture<Trigger> trigCaptor = Capture.newInstance();
 		TestScheduledFuture future = new TestScheduledFuture();
 		expect(taskScheduler.schedule(capture(taskCaptor), capture(trigCaptor)))
 				.andReturn((ScheduledFuture) future);
@@ -465,14 +465,14 @@ public class ManagedJobSchedulerTests {
 		// register SettingSpecifierProvider for job
 		ServiceRegistration<SettingSpecifierProvider> settingProviderReg = EasyMock
 				.createMock(ServiceRegistration.class);
-		Capture<Dictionary<String, ?>> settingProviderRegPropsCaptor = new Capture<>();
+		Capture<Dictionary<String, ?>> settingProviderRegPropsCaptor = Capture.newInstance();
 		expect(bundleContext.registerService(eq(SettingSpecifierProvider.class),
 				anyObject(SettingSpecifierProvider.class), capture(settingProviderRegPropsCaptor)))
 						.andReturn(settingProviderReg);
 
 		// schedule the actual job
-		Capture<Runnable> taskCaptor = new Capture<>();
-		Capture<Trigger> trigCaptor = new Capture<>();
+		Capture<Runnable> taskCaptor = Capture.newInstance();
+		Capture<Trigger> trigCaptor = Capture.newInstance();
 		TestScheduledFuture future = new TestScheduledFuture();
 		expect(taskScheduler.schedule(capture(taskCaptor), capture(trigCaptor)))
 				.andReturn((ScheduledFuture) future);
@@ -513,7 +513,7 @@ public class ManagedJobSchedulerTests {
 		// register the service provider
 		ServiceRegistration<Serializable> serviceProviderReg = EasyMock
 				.createMock(ServiceRegistration.class);
-		Capture<Dictionary<String, ?>> serviceProviderRegPropsCaptor = new Capture<>();
+		Capture<Dictionary<String, ?>> serviceProviderRegPropsCaptor = Capture.newInstance();
 		expect(bundleContext.registerService(
 				EasyMock.aryEq(new String[] { Serializable.class.getName() }),
 				anyObject(Serializable.class), capture(serviceProviderRegPropsCaptor)))
@@ -522,14 +522,14 @@ public class ManagedJobSchedulerTests {
 		// register SettingSpecifierProvider for job
 		ServiceRegistration<SettingSpecifierProvider> settingProviderReg = EasyMock
 				.createMock(ServiceRegistration.class);
-		Capture<Dictionary<String, ?>> settingProviderRegPropsCaptor = new Capture<>();
+		Capture<Dictionary<String, ?>> settingProviderRegPropsCaptor = Capture.newInstance();
 		expect(bundleContext.registerService(eq(SettingSpecifierProvider.class),
 				anyObject(SettingSpecifierProvider.class), capture(settingProviderRegPropsCaptor)))
 						.andReturn(settingProviderReg);
 
 		// schedule the actual job
-		Capture<Runnable> taskCaptor = new Capture<>();
-		Capture<Trigger> trigCaptor = new Capture<>();
+		Capture<Runnable> taskCaptor = Capture.newInstance();
+		Capture<Trigger> trigCaptor = Capture.newInstance();
 		TestScheduledFuture future = new TestScheduledFuture();
 		expect(taskScheduler.schedule(capture(taskCaptor), capture(trigCaptor)))
 				.andReturn((ScheduledFuture) future);
@@ -581,14 +581,14 @@ public class ManagedJobSchedulerTests {
 		// register SettingSpecifierProvider for job
 		ServiceRegistration<SettingSpecifierProvider> settingProviderReg = EasyMock
 				.createMock(ServiceRegistration.class);
-		Capture<Dictionary<String, ?>> settingProviderRegPropsCaptor = new Capture<>();
+		Capture<Dictionary<String, ?>> settingProviderRegPropsCaptor = Capture.newInstance();
 		expect(bundleContext.registerService(eq(SettingSpecifierProvider.class),
 				anyObject(SettingSpecifierProvider.class), capture(settingProviderRegPropsCaptor)))
 						.andReturn(settingProviderReg);
 
 		// schedule the actual job
-		Capture<Runnable> taskCaptor = new Capture<>();
-		Capture<Trigger> trigCaptor = new Capture<>();
+		Capture<Runnable> taskCaptor = Capture.newInstance();
+		Capture<Trigger> trigCaptor = Capture.newInstance();
 		TestScheduledFuture future = new TestScheduledFuture();
 		expect(taskScheduler.schedule(capture(taskCaptor), capture(trigCaptor)))
 				.andReturn((ScheduledFuture) future);
@@ -603,8 +603,8 @@ public class ManagedJobSchedulerTests {
 		expect(conf.getProperties()).andReturn(confProps);
 
 		// reschedule the actual job
-		Capture<Runnable> taskCaptor2 = new Capture<>();
-		Capture<Trigger> trigCaptor2 = new Capture<>();
+		Capture<Runnable> taskCaptor2 = Capture.newInstance();
+		Capture<Trigger> trigCaptor2 = Capture.newInstance();
 		TestScheduledFuture future2 = new TestScheduledFuture();
 		expect(taskScheduler.schedule(capture(taskCaptor2), capture(trigCaptor2)))
 				.andReturn((ScheduledFuture) future2);
