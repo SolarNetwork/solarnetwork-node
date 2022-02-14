@@ -153,7 +153,7 @@
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier')}">
 						<input type="${setting.secureTextEntry == true ? 'password' : 'text' }" name="${settingId}" id="${settingId}" 
-							class="span5" maxLength="255"
+							class="span5" maxLength="4096"
 							<c:choose>
 								<c:when test='${setting.secureTextEntry == true}'>
 									placeholder="<fmt:message key='settings.secureTextEntry.placeholder'/>"
