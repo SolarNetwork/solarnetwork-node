@@ -392,36 +392,6 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	}
 
 	/**
-	 * Return the minimum between two number values.
-	 * 
-	 * @param n1
-	 *        the first number
-	 * @param n2
-	 *        the second number
-	 * @return the minimum number, or {@literal null} if both arguments are
-	 *         {@literal null}
-	 * @since 2.1
-	 */
-	public Number min(Number n1, Number n2) {
-		return NumberUtils.min(n1, n2);
-	}
-
-	/**
-	 * Return the maximum between two number values.
-	 * 
-	 * @param n1
-	 *        the first number
-	 * @param n2
-	 *        the second number
-	 * @return the maximum number, or {@literal null} if both arguments are
-	 *         {@literal null}
-	 * @since 2.1
-	 */
-	public Number max(Number n1, Number n2) {
-		return NumberUtils.max(n1, n2);
-	}
-
-	/**
 	 * Test if an operational mode is active.
 	 * 
 	 * @param mode
