@@ -71,7 +71,7 @@ import net.solarnetwork.settings.support.SettingUtils;
  * A test bed experiment for the settings framework.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourceHandler {
 
@@ -95,6 +95,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 	private String menu = DEFAULT_MENU[0];
 	private String textAreaContent = null;
 	private String fileContent = null;
+	private String textAreaDirect = null;
 
 	// group support
 	private List<String> listString = new ArrayList<String>(4);
@@ -164,6 +165,9 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 
 		results.add(getLocationSettingSpecifier());
 		results.add(getWeatherLocationSettingSpecifier());
+
+		// text area (direct)
+		results.add(new BasicTextAreaSettingSpecifier("textAreaDirect", "", true));
 
 		// text area
 		results.add(new BasicTextAreaSettingSpecifier(RESOURCE_KEY_TEXT_AREA, ""));
@@ -636,4 +640,26 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 			lCount++;
 		}
 	}
+
+	/**
+	 * Get the text area direct value.
+	 * 
+	 * @return the value
+	 * @since 2.1
+	 */
+	public String getTextAreaDirect() {
+		return textAreaDirect;
+	}
+
+	/**
+	 * Set the text area direct value.
+	 * 
+	 * @param textAreaDirect
+	 *        the value to set
+	 * @since 2.1
+	 */
+	public void setTextAreaDirect(String textAreaDirect) {
+		this.textAreaDirect = textAreaDirect;
+	}
+
 }
