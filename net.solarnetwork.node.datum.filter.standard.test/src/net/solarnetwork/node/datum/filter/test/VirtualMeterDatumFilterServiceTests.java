@@ -485,6 +485,7 @@ public class VirtualMeterDatumFilterServiceTests {
 
 		private static final long serialVersionUID = -7208625218989724725L;
 
+		@SuppressWarnings("deprecation")
 		public CloningCapture(CaptureType type) {
 			super(type);
 		}
