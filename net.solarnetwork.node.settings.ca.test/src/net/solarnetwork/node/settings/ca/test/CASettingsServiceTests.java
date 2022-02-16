@@ -24,6 +24,7 @@ package net.solarnetwork.node.settings.ca.test;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toList;
@@ -297,7 +298,7 @@ public class CASettingsServiceTests {
 
 		// WHEN
 		replayAll();
-		service.onBindFactory(factory, null);
+		service.onBindFactory(factory, emptyMap());
 
 		Hashtable<String, Object> instanceProps = new Hashtable<>(
 				singletonMap(org.osgi.framework.Constants.SERVICE_PID, instancePid));
@@ -381,7 +382,7 @@ public class CASettingsServiceTests {
 
 		// WHEN
 		replayAll();
-		service.onBindFactory(factory, null);
+		service.onBindFactory(factory, emptyMap());
 
 		Hashtable<String, Object> instanceProps = new Hashtable<>(
 				singletonMap(org.osgi.framework.Constants.SERVICE_PID, instancePid));
