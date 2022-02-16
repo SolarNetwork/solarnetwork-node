@@ -134,7 +134,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>();
+		List<SettingSpecifier> results = new ArrayList<>();
 
 		results.add(new BasicTextFieldSettingSpecifier("string", DEFAULT_STRING));
 		results.add(new BasicTextFieldSettingSpecifier("password", null, true));
@@ -144,7 +144,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 
 		BasicRadioGroupSettingSpecifier radioSpec = new BasicRadioGroupSettingSpecifier("radio",
 				DEFAULT_RADIO[0]);
-		Map<String, String> radioValues = new LinkedHashMap<String, String>(3);
+		Map<String, String> radioValues = new LinkedHashMap<>(3);
 		for ( String s : DEFAULT_RADIO ) {
 			radioValues.put(s, s);
 		}
@@ -154,7 +154,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 		// drop-down menu
 		BasicMultiValueSettingSpecifier menuSpec = new BasicMultiValueSettingSpecifier("menu",
 				DEFAULT_MENU[0]);
-		Map<String, String> menuValues = new LinkedHashMap<String, String>(3);
+		Map<String, String> menuValues = new LinkedHashMap<>(3);
 		for ( String s : DEFAULT_MENU ) {
 			menuValues.put(s, s);
 		}
