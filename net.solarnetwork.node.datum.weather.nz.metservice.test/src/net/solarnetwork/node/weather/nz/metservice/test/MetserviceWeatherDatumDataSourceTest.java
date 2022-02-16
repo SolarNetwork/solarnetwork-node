@@ -79,7 +79,7 @@ public class MetserviceWeatherDatumDataSourceTest {
 		assertNotNull(datum);
 
 		assertNotNull(datum.getTimestamp());
-		assertEquals("2pm sun, 17 oct", tsFormat.format(datum.getTimestamp()).toLowerCase());
+		assertEquals("2:00pm sun, 17 oct", tsFormat.format(datum.getTimestamp()).toLowerCase());
 
 		assertNotNull(datum.getTemperature());
 		assertEquals(15.0, datum.getTemperature().doubleValue(), 0.001);
@@ -105,7 +105,7 @@ public class MetserviceWeatherDatumDataSourceTest {
 
 		AtmosphericDatum datum = (AtmosphericDatum) itr.next();
 		assertNotNull(datum.getTimestamp());
-		assertEquals("2pm sun, 17 oct", tsFormat.format(datum.getTimestamp()).toLowerCase());
+		assertEquals("2:00pm sun, 17 oct", tsFormat.format(datum.getTimestamp()).toLowerCase());
 
 		assertNotNull(datum.getTemperature());
 		assertEquals(15.0, datum.getTemperature().doubleValue(), 0.001);
@@ -118,7 +118,7 @@ public class MetserviceWeatherDatumDataSourceTest {
 
 		datum = (AtmosphericDatum) itr.next();
 		assertNotNull(datum.getTimestamp());
-		assertEquals("4pm sun, 17 oct", tsFormat.format(datum.getTimestamp()).toLowerCase());
+		assertEquals("4:00pm sun, 17 oct", tsFormat.format(datum.getTimestamp()).toLowerCase());
 		assertEquals(new BigDecimal("15.0"), datum.getTemperature());
 	}
 

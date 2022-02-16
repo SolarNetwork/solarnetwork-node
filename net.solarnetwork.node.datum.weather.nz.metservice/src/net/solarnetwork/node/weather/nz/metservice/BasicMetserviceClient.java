@@ -62,7 +62,7 @@ import net.solarnetwork.node.service.support.HttpClientSupport;
  * Basic implementation of {@link MetserviceClient}.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class BasicMetserviceClient extends HttpClientSupport implements MetserviceClient {
 
@@ -99,7 +99,7 @@ public class BasicMetserviceClient extends HttpClientSupport implements Metservi
 	public static final String DEFAULT_TIME_DATE_FORMAT = "h:mma";
 
 	/** The default value for the {@code timestampDateFormat} property. */
-	public static final String DEFAULT_TIMESTAMP_DATE_FORMAT = "ha EE, d MMM";
+	public static final String DEFAULT_TIMESTAMP_DATE_FORMAT = "h:mma EE, d MMM";
 
 	/** The default value for the {@code timeZoneId} property. */
 	public static final String DEFAULT_TIME_ZONE_ID = "Pacific/Auckland";
