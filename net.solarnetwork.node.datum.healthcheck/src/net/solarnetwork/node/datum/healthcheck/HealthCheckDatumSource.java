@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import net.solarnetwork.domain.CodedValue;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.MultiDatumDataSource;
@@ -55,7 +56,7 @@ import net.solarnetwork.settings.support.SettingUtils;
  * Datum source for health check information.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class HealthCheckDatumSource extends DatumDataSourceSupport
 		implements MultiDatumDataSource, SettingSpecifierProvider {
@@ -385,6 +386,26 @@ public class HealthCheckDatumSource extends DatumDataSourceSupport
 	 */
 	public void setPublishMode(PublishMode publishMode) {
 		this.publishMode = (publishMode != null ? publishMode : DEFAULT_PUBLISH_MODE);
+	}
+
+	/**
+	 * Get the publish mode code value.
+	 * 
+	 * @return the publish mode code
+	 */
+	public int getPublishModeCode() {
+		return publishMode.getCode();
+	}
+
+	/**
+	 * Set the publish mode as a code value.
+	 * 
+	 * @param code
+	 *        the publish mode code; if unsupported then
+	 *        {@link #DEFAULT_PUBLISH_MODE} will be set instead
+	 */
+	public void setPublishModeCode(int code) {
+		setPublishMode(CodedValue.forCodeValue(code, PublishMode.class, DEFAULT_PUBLISH_MODE));
 	}
 
 	/**
