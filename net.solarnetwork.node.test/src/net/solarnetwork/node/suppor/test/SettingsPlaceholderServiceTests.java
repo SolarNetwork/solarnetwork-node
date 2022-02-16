@@ -545,7 +545,7 @@ public class SettingsPlaceholderServiceTests {
 		// THEN
 		assertThat("Filtered placeholders copied", params.keySet(), hasSize(2));
 		assertThat("Placeholder passing filter copied", params, hasEntry("foo", 123));
-		assertThat("Existing parameter untouched", params, hasEntry("fsoo", "string"));
+		assertThat("Existing parameter untouched", params, hasEntry("s", "string"));
 	}
 
 	@Test
