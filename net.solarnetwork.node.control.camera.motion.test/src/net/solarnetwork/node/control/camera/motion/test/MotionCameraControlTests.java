@@ -250,8 +250,9 @@ public class MotionCameraControlTests extends AbstractHttpClientTests {
 		assertThat("Snapshot job service", snapJob.getService(), sameInstance(control));
 
 		Trigger jobTrigger = trigCaptor.getValue();
-		assertThat("Snapshot job trigger is simple", jobTrigger,
-				equalTo(new PeriodicTrigger(123, TimeUnit.SECONDS)));
+		PeriodicTrigger expectedTrigger = new PeriodicTrigger(123, TimeUnit.SECONDS);
+		expectedTrigger.setFixedRate(true);
+		assertThat("Snapshot job trigger is simple", jobTrigger, equalTo(expectedTrigger));
 
 		assertThat("Future not done", taskFuture.isDone(), equalTo(false));
 	}
