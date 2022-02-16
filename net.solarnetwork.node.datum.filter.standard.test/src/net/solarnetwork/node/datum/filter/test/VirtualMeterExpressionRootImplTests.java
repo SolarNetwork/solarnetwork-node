@@ -23,7 +23,6 @@
 package net.solarnetwork.node.datum.filter.test;
 
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singleton;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
@@ -34,7 +33,6 @@ import static org.junit.Assert.assertThat;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
-import java.util.Collections;
 import org.easymock.EasyMock;
 import org.junit.Test;
 import net.solarnetwork.common.expr.spel.SpelExpressionService;
@@ -247,8 +245,7 @@ public class VirtualMeterExpressionRootImplTests {
 
 		DatumService datumService = EasyMock.createMock(DatumService.class);
 
-		expect(datumService.latest(singleton("bar"), NodeDatum.class))
-				.andReturn(Collections.singleton((NodeDatum) d2));
+		expect(datumService.offset("bar", 0, NodeDatum.class)).andReturn(d2);
 
 		// WHEN
 		replay(datumService);
