@@ -1,4 +1,5 @@
 /build
 /target
 /solarnode
+/solarnode-derby-test
 /derby.log
