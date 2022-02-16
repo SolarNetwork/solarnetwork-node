@@ -136,7 +136,7 @@ public class OutstationServceTests {
 		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Binary);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
-		Capture<Instruction> instrCaptor = new Capture<>();
+		Capture<Instruction> instrCaptor = Capture.newInstance();
 		expect(instructionService.executeInstruction(capture(instrCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 
@@ -172,7 +172,7 @@ public class OutstationServceTests {
 		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Binary);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
-		Capture<Instruction> instrCaptor = new Capture<>();
+		Capture<Instruction> instrCaptor = Capture.newInstance();
 		expect(instructionService.executeInstruction(capture(instrCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 
@@ -210,7 +210,7 @@ public class OutstationServceTests {
 		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Binary);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
-		Capture<Instruction> instrCaptor = new Capture<>();
+		Capture<Instruction> instrCaptor = Capture.newInstance();
 		expect(instructionService.executeInstruction(capture(instrCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 
@@ -252,7 +252,7 @@ public class OutstationServceTests {
 		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Analog);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
-		Capture<Instruction> instrCaptor = new Capture<>();
+		Capture<Instruction> instrCaptor = Capture.newInstance();
 		expect(instructionService.executeInstruction(capture(instrCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 
@@ -289,7 +289,7 @@ public class OutstationServceTests {
 		ControlConfig cConfig = new ControlConfig(null, controlId, ControlType.Analog);
 		service.setControlConfigs(new ControlConfig[] { cConfig });
 
-		Capture<Instruction> instrCaptor = new Capture<>();
+		Capture<Instruction> instrCaptor = Capture.newInstance();
 		expect(instructionService.executeInstruction(capture(instrCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 

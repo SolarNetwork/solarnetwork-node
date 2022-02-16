@@ -174,7 +174,7 @@ public class HttpRequesterJobTest {
 	public void pingFailure() throws Exception {
 		final TestHandler httpHandler = new TestHandler();
 		server.stop();
-		Capture<BasicInstruction> instructions = new Capture<>(CaptureType.ALL);
+		Capture<BasicInstruction> instructions = Capture.newInstance(CaptureType.ALL);
 		expect(handler.handlesTopic(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER))
 				.andReturn(Boolean.TRUE);
 		expect(handler.processInstruction(capture(instructions)))
@@ -218,7 +218,7 @@ public class HttpRequesterJobTest {
 		// GIVEN
 		final TestHandler httpHandler = new TestHandler();
 		server.stop();
-		Capture<BasicInstruction> instructions = new Capture<>(CaptureType.ALL);
+		Capture<BasicInstruction> instructions = Capture.newInstance(CaptureType.ALL);
 		expect(handler.handlesTopic(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER))
 				.andReturn(Boolean.TRUE);
 		expect(handler.processInstruction(capture(instructions)))

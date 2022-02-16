@@ -196,7 +196,7 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Node, TEST_NODE_ID,
 				TEST_SOURCE_ID)).andReturn(null);
 
-		Capture<Event> eventCaptor = new Capture<Event>(CaptureType.ALL);
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(eventCaptor));
 
 		// WHEN
@@ -257,7 +257,7 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Node, TEST_NODE_ID,
 				TEST_SOURCE_ID)).andReturn(meta).times(2);
 
-		Capture<Event> eventCaptor = new Capture<Event>(CaptureType.ALL);
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(eventCaptor));
 
 		// WHEN
@@ -374,11 +374,11 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 				.add(new BasicInstructionStatus(123L, InstructionStatus.InstructionState.Received, now));
 		statusResult
 				.add(new BasicInstructionStatus(124L, InstructionStatus.InstructionState.Received, now));
-		Capture<Instruction> instructionCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Instruction> instructionCaptor = Capture.newInstance(CaptureType.ALL);
 		expect(reactorService.processInstruction(capture(instructionCaptor)))
 				.andReturn(statusResult.get(0)).andReturn(statusResult.get(1));
 
-		Capture<Event> eventCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(eventCaptor));
 
 		// WHEN

@@ -93,7 +93,7 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 
 	@Test
 	public void insertWithChangeEvent() {
-		Capture<Event> eventCapture = new Capture<Event>();
+		Capture<Event> eventCapture = Capture.newInstance();
 		eventAdminMock.postEvent(EasyMock.capture(eventCapture));
 
 		replay(eventAdminMock);
@@ -130,7 +130,7 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 		insertWithChangeEvent();
 		EasyMock.reset(eventAdminMock);
 
-		Capture<Event> eventCapture = new Capture<Event>();
+		Capture<Event> eventCapture = Capture.newInstance();
 		eventAdminMock.postEvent(EasyMock.capture(eventCapture));
 
 		replay(eventAdminMock);
@@ -170,7 +170,7 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 		insertWithChangeEvent();
 		EasyMock.reset(eventAdminMock);
 
-		Capture<Event> eventCapture = new Capture<Event>();
+		Capture<Event> eventCapture = Capture.newInstance();
 		eventAdminMock.postEvent(EasyMock.capture(eventCapture));
 
 		replay(eventAdminMock);

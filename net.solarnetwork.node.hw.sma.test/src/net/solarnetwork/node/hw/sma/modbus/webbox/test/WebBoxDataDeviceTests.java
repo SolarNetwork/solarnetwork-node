@@ -112,7 +112,7 @@ public class WebBoxDataDeviceTests {
 		final ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(
 				parseTestData("device-data-01.txt"));
 
-		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = Capture.newInstance();
 		expect(modbusNetwork.performAction(eq(TEST_UNIT_ID), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
@@ -148,7 +148,7 @@ public class WebBoxDataDeviceTests {
 		final ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(
 				parseTestData("device-data-01.txt"));
 
-		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>(CaptureType.ALL);
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = Capture.newInstance(CaptureType.ALL);
 		expect(modbusNetwork.performAction(eq(TEST_UNIT_ID), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 

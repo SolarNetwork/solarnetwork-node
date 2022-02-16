@@ -285,7 +285,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		getHttpServer().addHandler(handler);
 
 		// then persist copy locally as settings resource
-		Capture<Iterable<Resource>> resourcesCaptor = new Capture<>();
+		Capture<Iterable<Resource>> resourcesCaptor = Capture.newInstance();
 		settingsService.importSettingResources(eq(service.getSettingUid()), isNull(), eq(settingKey),
 				capture(resourcesCaptor));
 
@@ -324,7 +324,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 				.andReturn("{\"m\":{\"foo\":\"bar\"}}");
 
 		// then store as settings resource
-		Capture<Iterable<Resource>> resourcesCaptor = new Capture<>();
+		Capture<Iterable<Resource>> resourcesCaptor = Capture.newInstance();
 		settingsService.importSettingResources(eq(service.getSettingUid()), isNull(), eq(settingKey),
 				capture(resourcesCaptor));
 
@@ -382,7 +382,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 				.andReturn(Collections.singleton(jsonResource));
 
 		// then store as settings resource
-		Capture<Iterable<Resource>> resourcesCaptor = new Capture<>();
+		Capture<Iterable<Resource>> resourcesCaptor = Capture.newInstance();
 		settingsService.importSettingResources(eq(service.getSettingUid()), isNull(), eq(settingKey),
 				capture(resourcesCaptor));
 
@@ -440,7 +440,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 				.andReturn(Collections.singleton(jsonResource));
 
 		// then store as settings resource
-		Capture<Iterable<Resource>> resourcesCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Iterable<Resource>> resourcesCaptor = Capture.newInstance(CaptureType.ALL);
 		settingsService.importSettingResources(eq(service.getSettingUid()), isNull(), eq(settingKey),
 				capture(resourcesCaptor));
 		expectLastCall().times(2);
@@ -517,7 +517,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 				.andReturn(Collections.singleton(jsonResource));
 
 		// then store as settings resource
-		Capture<Iterable<Resource>> resourcesCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Iterable<Resource>> resourcesCaptor = Capture.newInstance(CaptureType.ALL);
 		settingsService.importSettingResources(eq(service.getSettingUid()), isNull(), eq(settingKey),
 				capture(resourcesCaptor));
 		expectLastCall().times(2); // persisted locally each time
@@ -639,8 +639,8 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 				.andReturn(Collections.singleton(jsonResource));
 
 		// create delayed persist task
-		Capture<Runnable> persistRunCaptor = new Capture<>(CaptureType.ALL);
-		Capture<Date> persistDateCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Runnable> persistRunCaptor = Capture.newInstance(CaptureType.ALL);
+		Capture<Date> persistDateCaptor = Capture.newInstance(CaptureType.ALL);
 		TestScheduledFuture f1 = new TestScheduledFuture();
 		TestScheduledFuture f2 = new TestScheduledFuture();
 		expect(taskScheduler.schedule(capture(persistRunCaptor), capture(persistDateCaptor)))
@@ -655,7 +655,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 				});
 
 		// then store as settings resource
-		Capture<Iterable<Resource>> resourcesCaptor = new Capture<>();
+		Capture<Iterable<Resource>> resourcesCaptor = Capture.newInstance();
 		settingsService.importSettingResources(eq(service.getSettingUid()), isNull(), eq(settingKey),
 				capture(resourcesCaptor));
 

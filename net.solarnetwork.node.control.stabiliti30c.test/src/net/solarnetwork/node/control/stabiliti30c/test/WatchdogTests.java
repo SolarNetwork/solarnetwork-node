@@ -114,9 +114,9 @@ public class WatchdogTests {
 	@Test
 	public void startupSchedulesTask() {
 		// GIVEN
-		Capture<Runnable> taskCaptor = new Capture<>();
-		Capture<Date> dateCaptor = new Capture<>();
-		Capture<Long> delayCaptor = new Capture<>();
+		Capture<Runnable> taskCaptor = Capture.newInstance();
+		Capture<Date> dateCaptor = Capture.newInstance();
+		Capture<Long> delayCaptor = Capture.newInstance();
 		expect(taskScheduler.scheduleWithFixedDelay(capture(taskCaptor), capture(dateCaptor),
 				captureLong(delayCaptor))).andReturn(scheduledFuture());
 
@@ -135,7 +135,7 @@ public class WatchdogTests {
 	@Test
 	public void runTaskWritesTimeoutSecondsToWatchdogRegister() throws IOException {
 		// GIVEN
-		Capture<Runnable> taskCaptor = new Capture<>();
+		Capture<Runnable> taskCaptor = Capture.newInstance();
 		expect(taskScheduler.scheduleWithFixedDelay(capture(taskCaptor), anyObject(Date.class),
 				anyLong())).andReturn(scheduledFuture());
 

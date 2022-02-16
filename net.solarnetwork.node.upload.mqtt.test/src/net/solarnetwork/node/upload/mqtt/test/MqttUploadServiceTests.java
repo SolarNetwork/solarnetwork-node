@@ -259,7 +259,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Node, nodeId,
 				datum.getSourceId())).andReturn(null);
 
-		Capture<Event> eventCaptor = new Capture<Event>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdminService.postEvent(capture(eventCaptor));
 
 		replayAll();
@@ -307,7 +307,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Node, nodeId,
 				datum.getSourceId())).andReturn(meta);
 
-		Capture<Event> eventCaptor = new Capture<Event>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdminService.postEvent(capture(eventCaptor));
 
 		replayAll();
@@ -359,7 +359,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Node, nodeId,
 				datum.getSourceId())).andReturn(meta);
 
-		Capture<Event> eventCaptor = new Capture<Event>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdminService.postEvent(capture(eventCaptor));
 
 		replayAll();
@@ -411,7 +411,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Node, nodeId,
 				datum.getSourceId())).andReturn(meta);
 
-		Capture<Event> eventCaptor = new Capture<Event>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdminService.postEvent(capture(eventCaptor));
 
 		replayAll();
@@ -459,7 +459,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Node, nodeId,
 				datum.getSourceId())).andReturn(meta);
 
-		Capture<Event> eventCaptor = new Capture<Event>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdminService.postEvent(capture(eventCaptor));
 
 		replayAll();
@@ -507,7 +507,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Location, locationId,
 				datum.getSourceId())).andReturn(null);
 
-		Capture<Event> eventCaptor = new Capture<Event>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdminService.postEvent(capture(eventCaptor));
 
 		replayAll();
@@ -559,7 +559,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Location, locationId,
 				datum.getSourceId())).andReturn(meta);
 
-		Capture<Event> eventCaptor = new Capture<Event>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdminService.postEvent(capture(eventCaptor));
 
 		replayAll();
@@ -676,22 +676,22 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		final Instruction inputInstruction = instructions.get(0);
 
 		// persist Executing state
-		Capture<Instruction> storeInstructionCaptor = new Capture<>();
+		Capture<Instruction> storeInstructionCaptor = Capture.newInstance();
 		reactorService.storeInstruction(capture(storeInstructionCaptor));
 
 		// execute single instruction
-		Capture<Instruction> execInstructionCaptor = new Capture<>();
+		Capture<Instruction> execInstructionCaptor = Capture.newInstance();
 		InstructionStatus execResultStatus = new BasicInstructionStatus(inputInstruction.getId(),
 				InstructionStatus.InstructionState.Completed, Instant.now());
 		expect(instructionExecutionService.executeInstruction(capture(execInstructionCaptor)))
 				.andReturn(execResultStatus);
 
 		// save result back to DB
-		Capture<Instruction> storeCompletedInstructionCaptor = new Capture<>();
+		Capture<Instruction> storeCompletedInstructionCaptor = Capture.newInstance();
 		reactorService.storeInstruction(capture(storeCompletedInstructionCaptor));
 
 		// save result back to DB
-		Capture<Instruction> storeCompletedInstructionAckCaptor = new Capture<>();
+		Capture<Instruction> storeCompletedInstructionAckCaptor = Capture.newInstance();
 		reactorService.storeInstruction(capture(storeCompletedInstructionAckCaptor));
 
 		replayAll();
@@ -813,7 +813,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		});
 	
 		Long localId = Math.abs(UUID.randomUUID().getLeastSignificantBits());
-		Capture<Instruction> ackCaptor = new Capture<>();
+		Capture<Instruction> ackCaptor = Capture.newInstance();
 		expect(reactorService.storeInstruction(capture(ackCaptor))).andReturn(localId);
 	
 		replayAll();
@@ -871,7 +871,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		final Instruction inputInstruction = instructions.get(0);
 
 		// persist Executing state
-		Capture<Instruction> storeInstructionCaptor = new Capture<>();
+		Capture<Instruction> storeInstructionCaptor = Capture.newInstance();
 		reactorService.storeInstruction(capture(storeInstructionCaptor));
 		EasyMock.expectLastCall().andThrow(new DuplicateKeyException("Duplicate key"));
 
@@ -920,20 +920,20 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		final Instruction inputInstruction = instructions.get(0);
 
 		// persist Executing state
-		Capture<Instruction> storeInstructionCaptor = new Capture<>();
+		Capture<Instruction> storeInstructionCaptor = Capture.newInstance();
 		reactorService.storeInstruction(capture(storeInstructionCaptor));
 
 		// execute single instruction
-		Capture<Instruction> execInstructionCaptor = new Capture<>();
+		Capture<Instruction> execInstructionCaptor = Capture.newInstance();
 		expect(instructionExecutionService.executeInstruction(capture(execInstructionCaptor)))
 				.andReturn(null);
 
 		// save result back to DB
-		Capture<Instruction> storeReceivedInstructionCaptor = new Capture<>();
+		Capture<Instruction> storeReceivedInstructionCaptor = Capture.newInstance();
 		reactorService.storeInstruction(capture(storeReceivedInstructionCaptor));
 
 		// save ack result back to DB
-		Capture<Instruction> storeReceivedAckInstructionCaptor = new Capture<>();
+		Capture<Instruction> storeReceivedAckInstructionCaptor = Capture.newInstance();
 		reactorService.storeInstruction(capture(storeReceivedAckInstructionCaptor));
 
 		replayAll();

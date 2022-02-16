@@ -210,8 +210,8 @@ public class FluxUploadServiceTests {
 		service.setMqttMessageDao(new StaticOptionalService<>(messageDao));
 		expectMqttConnectionSetup();
 
-		Capture<BatchableDao.BatchCallback<MqttMessageEntity>> callbackCaptor = new Capture<>();
-		Capture<BatchableDao.BatchOptions> optionsCaptor = new Capture<>();
+		Capture<BatchableDao.BatchCallback<MqttMessageEntity>> callbackCaptor = Capture.newInstance();
+		Capture<BatchableDao.BatchOptions> optionsCaptor = Capture.newInstance();
 		expect(messageDao.batchProcess(capture(callbackCaptor), capture(optionsCaptor)))
 				.andReturn(new BasicBatchResult(0));
 
@@ -239,8 +239,8 @@ public class FluxUploadServiceTests {
 				service.getMqttConfig().getServerUriValue(), "some/topic", false, MqttQos.ExactlyOnce,
 				"Hello, world".getBytes());
 
-		Capture<BatchableDao.BatchCallback<MqttMessageEntity>> callbackCaptor = new Capture<>();
-		Capture<BatchableDao.BatchOptions> optionsCaptor = new Capture<>();
+		Capture<BatchableDao.BatchCallback<MqttMessageEntity>> callbackCaptor = Capture.newInstance();
+		Capture<BatchableDao.BatchOptions> optionsCaptor = Capture.newInstance();
 		expect(messageDao.batchProcess(capture(callbackCaptor), capture(optionsCaptor)))
 				.andAnswer(new IAnswer<BatchableDao.BatchResult>() {
 
@@ -251,7 +251,7 @@ public class FluxUploadServiceTests {
 					}
 				});
 
-		Capture<MqttMessage> msgCaptor = new Capture<>();
+		Capture<MqttMessage> msgCaptor = Capture.newInstance();
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
 
 		// WHEN
@@ -286,8 +286,8 @@ public class FluxUploadServiceTests {
 		}
 
 		// first "page" of cached messages
-		Capture<BatchableDao.BatchCallback<MqttMessageEntity>> callbackCaptor = new Capture<>();
-		Capture<BatchableDao.BatchOptions> optionsCaptor = new Capture<>();
+		Capture<BatchableDao.BatchCallback<MqttMessageEntity>> callbackCaptor = Capture.newInstance();
+		Capture<BatchableDao.BatchOptions> optionsCaptor = Capture.newInstance();
 		expect(messageDao.batchProcess(capture(callbackCaptor), capture(optionsCaptor)))
 				.andAnswer(new IAnswer<BatchableDao.BatchResult>() {
 
@@ -300,8 +300,8 @@ public class FluxUploadServiceTests {
 				});
 
 		// second "page"
-		Capture<BatchableDao.BatchCallback<MqttMessageEntity>> callbackCaptor2 = new Capture<>();
-		Capture<BatchableDao.BatchOptions> optionsCaptor2 = new Capture<>();
+		Capture<BatchableDao.BatchCallback<MqttMessageEntity>> callbackCaptor2 = Capture.newInstance();
+		Capture<BatchableDao.BatchOptions> optionsCaptor2 = Capture.newInstance();
 		expect(messageDao.batchProcess(capture(callbackCaptor2), capture(optionsCaptor2)))
 				.andAnswer(new IAnswer<BatchableDao.BatchResult>() {
 
@@ -312,7 +312,7 @@ public class FluxUploadServiceTests {
 					}
 				});
 
-		Capture<MqttMessage> msgCaptor = new Capture<>(CaptureType.ALL);
+		Capture<MqttMessage> msgCaptor = Capture.newInstance(CaptureType.ALL);
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null)).times(3);
 
 		// WHEN
@@ -358,7 +358,7 @@ public class FluxUploadServiceTests {
 		// GIVEN
 		expectMqttConnectionSetup();
 
-		Capture<MqttMessage> msgCaptor = new Capture<>();
+		Capture<MqttMessage> msgCaptor = Capture.newInstance();
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
 
 		// WHEN
@@ -380,7 +380,7 @@ public class FluxUploadServiceTests {
 		// GIVEN
 		expectMqttConnectionSetup();
 
-		Capture<MqttMessage> msgCaptor = new Capture<>();
+		Capture<MqttMessage> msgCaptor = Capture.newInstance();
 		CompletableFuture<Object> f = new CompletableFuture<>();
 		f.completeExceptionally(new IllegalArgumentException("Bad topic"));
 		expect(connection.publish(capture(msgCaptor))).andReturn((Future) f);
@@ -405,7 +405,7 @@ public class FluxUploadServiceTests {
 		service.setPublishRetained(false);
 		expectMqttConnectionSetup();
 
-		Capture<MqttMessage> msgCaptor = new Capture<>();
+		Capture<MqttMessage> msgCaptor = Capture.newInstance();
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
 
 		// WHEN
@@ -426,7 +426,7 @@ public class FluxUploadServiceTests {
 		// GIVEN
 		expectMqttConnectionSetup();
 
-		Capture<MqttMessage> msgCaptor = new Capture<>();
+		Capture<MqttMessage> msgCaptor = Capture.newInstance();
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
 
 		// WHEN
@@ -451,7 +451,7 @@ public class FluxUploadServiceTests {
 		service.setIncludeVersionTag(true);
 		expectMqttConnectionSetup();
 
-		Capture<MqttMessage> msgCaptor = new Capture<>();
+		Capture<MqttMessage> msgCaptor = Capture.newInstance();
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
 
 		// WHEN
@@ -477,7 +477,7 @@ public class FluxUploadServiceTests {
 
 		expectMqttConnectionSetup();
 
-		Capture<MqttMessage> msgCaptor = new Capture<>();
+		Capture<MqttMessage> msgCaptor = Capture.newInstance();
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
 
 		// WHEN
@@ -507,7 +507,7 @@ public class FluxUploadServiceTests {
 
 		expectMqttConnectionSetup();
 
-		Capture<MqttMessage> msgCaptor = new Capture<>();
+		Capture<MqttMessage> msgCaptor = Capture.newInstance();
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
 
 		// WHEN
@@ -562,7 +562,7 @@ public class FluxUploadServiceTests {
 
 		expectMqttConnectionSetup();
 
-		Capture<MqttMessage> msgCaptor = new Capture<>();
+		Capture<MqttMessage> msgCaptor = Capture.newInstance();
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
 
 		// WHEN
@@ -594,7 +594,7 @@ public class FluxUploadServiceTests {
 
 		expectMqttConnectionSetup();
 
-		Capture<MqttMessage> msgCaptor = new Capture<>();
+		Capture<MqttMessage> msgCaptor = Capture.newInstance();
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
 
 		// WHEN
@@ -627,14 +627,14 @@ public class FluxUploadServiceTests {
 		expectMqttConnectionSetup();
 
 		expect(xformService.getUid()).andReturn("test.filter").anyTimes();
-		Capture<DatumSamplesOperations> samplesCaptor = new Capture<>();
+		Capture<DatumSamplesOperations> samplesCaptor = Capture.newInstance();
 		DatumSamples xformed = new DatumSamples();
 		xformed.putInstantaneousSampleValue("wattsX", 12345);
 		xformed.putInstantaneousSampleValue("wattHoursX", 23456);
 		xformed.putStatusSampleValue("wattFoo", "bar");
 		expect(xformService.filter(anyObject(), capture(samplesCaptor), anyObject())).andReturn(xformed);
 
-		Capture<MqttMessage> msgCaptor = new Capture<>();
+		Capture<MqttMessage> msgCaptor = Capture.newInstance();
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
 
 		// WHEN
@@ -672,7 +672,7 @@ public class FluxUploadServiceTests {
 
 		expectMqttConnectionSetup();
 
-		Capture<MqttMessage> msgCaptor = new Capture<>();
+		Capture<MqttMessage> msgCaptor = Capture.newInstance();
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
 
 		// WHEN
@@ -703,7 +703,7 @@ public class FluxUploadServiceTests {
 
 		expectMqttConnectionSetup();
 
-		Capture<MqttMessage> msgCaptor = new Capture<>();
+		Capture<MqttMessage> msgCaptor = Capture.newInstance();
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
 
 		// WHEN
@@ -733,7 +733,7 @@ public class FluxUploadServiceTests {
 
 		expectMqttConnectionSetup();
 
-		Capture<MqttMessage> msgCaptor = new Capture<>(CaptureType.ALL);
+		Capture<MqttMessage> msgCaptor = Capture.newInstance(CaptureType.ALL);
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null)).anyTimes();
 
 		// WHEN
@@ -770,7 +770,7 @@ public class FluxUploadServiceTests {
 
 		expectMqttConnectionSetup();
 
-		Capture<MqttMessage> msgCaptor = new Capture<>(CaptureType.ALL);
+		Capture<MqttMessage> msgCaptor = Capture.newInstance(CaptureType.ALL);
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null)).anyTimes();
 
 		// WHEN
@@ -825,7 +825,7 @@ public class FluxUploadServiceTests {
 
 		expect(operationalModeService.isOperationalModeActive("test")).andReturn(false).anyTimes();
 
-		Capture<MqttMessage> msgCaptor = new Capture<>(CaptureType.ALL);
+		Capture<MqttMessage> msgCaptor = Capture.newInstance(CaptureType.ALL);
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null)).anyTimes();
 
 		// WHEN
@@ -858,7 +858,7 @@ public class FluxUploadServiceTests {
 
 		expect(operationalModeService.isOperationalModeActive("test")).andReturn(true).anyTimes();
 
-		Capture<MqttMessage> msgCaptor = new Capture<>(CaptureType.ALL);
+		Capture<MqttMessage> msgCaptor = Capture.newInstance(CaptureType.ALL);
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null)).anyTimes();
 
 		// WHEN
@@ -949,7 +949,7 @@ public class FluxUploadServiceTests {
 		expect(operationalModeService.isOperationalModeActive("test")).andReturn(true);
 		expect(operationalModeService.isOperationalModeActive("!test")).andReturn(false);
 
-		Capture<MqttMessage> msgCaptor = new Capture<>();
+		Capture<MqttMessage> msgCaptor = Capture.newInstance();
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
 
 		// WHEN
@@ -994,7 +994,7 @@ public class FluxUploadServiceTests {
 		expect(operationalModeService.isOperationalModeActive("test")).andReturn(false);
 		expect(operationalModeService.isOperationalModeActive("!test")).andReturn(true);
 
-		Capture<MqttMessage> msgCaptor = new Capture<>();
+		Capture<MqttMessage> msgCaptor = Capture.newInstance();
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
 
 		// WHEN
@@ -1031,10 +1031,10 @@ public class FluxUploadServiceTests {
 		expect(encoder.getUid()).andReturn(encoderUid);
 
 		final byte[] encodedBytes = "encoded".getBytes();
-		Capture<Object> encoderObjectCaptor = new Capture<>();
+		Capture<Object> encoderObjectCaptor = Capture.newInstance();
 		expect(encoder.encodeAsBytes(capture(encoderObjectCaptor), isNull())).andReturn(encodedBytes);
 
-		Capture<MqttMessage> msgCaptor = new Capture<>();
+		Capture<MqttMessage> msgCaptor = Capture.newInstance();
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
 
 		// WHEN
@@ -1070,10 +1070,10 @@ public class FluxUploadServiceTests {
 		expect(encoder.getUid()).andReturn(encoderUid);
 
 		final byte[] encodedBytes = "encoded".getBytes();
-		Capture<Object> encoderObjectCaptor = new Capture<>();
+		Capture<Object> encoderObjectCaptor = Capture.newInstance();
 		expect(encoder.encodeAsBytes(capture(encoderObjectCaptor), isNull())).andReturn(encodedBytes);
 
-		Capture<MqttMessage> msgCaptor = new Capture<>();
+		Capture<MqttMessage> msgCaptor = Capture.newInstance();
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
 
 		// WHEN
@@ -1114,10 +1114,10 @@ public class FluxUploadServiceTests {
 		expect(encoder.getUid()).andReturn(encoderUid);
 
 		final byte[] encodedBytes = "encoded".getBytes();
-		Capture<Object> encoderObjectCaptor = new Capture<>();
+		Capture<Object> encoderObjectCaptor = Capture.newInstance();
 		expect(encoder.encodeAsBytes(capture(encoderObjectCaptor), isNull())).andReturn(encodedBytes);
 
-		Capture<MqttMessage> msgCaptor = new Capture<>();
+		Capture<MqttMessage> msgCaptor = Capture.newInstance();
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
 
 		// WHEN
@@ -1155,7 +1155,7 @@ public class FluxUploadServiceTests {
 
 		expect(encoder.getUid()).andReturn("foo").anyTimes();
 
-		Capture<MqttMessage> msgCaptor = new Capture<>();
+		Capture<MqttMessage> msgCaptor = Capture.newInstance();
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
 
 		// WHEN

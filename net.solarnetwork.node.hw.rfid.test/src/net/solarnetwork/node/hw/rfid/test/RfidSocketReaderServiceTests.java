@@ -121,7 +121,7 @@ public class RfidSocketReaderServiceTests {
 
 		eventAdmin = EasyMock.createMock(EventAdmin.class);
 
-		Capture<Event> eventCapt = new Capture<Event>();
+		Capture<Event> eventCapt = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCapt));
 		replay(eventAdmin);
 
@@ -156,7 +156,7 @@ public class RfidSocketReaderServiceTests {
 
 		EasyMock.reset(eventAdmin);
 
-		Capture<Event> eventCapt = new Capture<Event>();
+		Capture<Event> eventCapt = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCapt));
 		replay(eventAdmin);
 
@@ -229,7 +229,7 @@ public class RfidSocketReaderServiceTests {
 
 		eventAdmin = EasyMock.createMock(EventAdmin.class);
 
-		Capture<Event> eventCapt = new Capture<Event>();
+		Capture<Event> eventCapt = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCapt));
 		replay(eventAdmin);
 

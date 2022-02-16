@@ -142,7 +142,7 @@ public class CASettingsServiceTests {
 
 		expect(handler.getSettingUid()).andReturn(handlerKey).anyTimes();
 
-		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
+		Capture<Iterable<Resource>> resourceCaptor = Capture.newInstance();
 		expect(handler.applySettingResources(eq(settingKey), capture(resourceCaptor)))
 				.andReturn(new SettingsCommand());
 
@@ -200,7 +200,7 @@ public class CASettingsServiceTests {
 		dao.storeSetting(daoSettingKey1, "foo", "bar");
 
 		// and finally update CA props
-		Capture<Dictionary<String, ?>> confUpdateCaptor1 = new Capture<>();
+		Capture<Dictionary<String, ?>> confUpdateCaptor1 = Capture.newInstance();
 		config1.update(capture(confUpdateCaptor1));
 
 		Configuration config2 = EasyMock.createMock(Configuration.class);
@@ -222,10 +222,10 @@ public class CASettingsServiceTests {
 		dao.storeSetting(daoSettingKey2, "bim", "bam");
 
 		// and finally update CA props
-		Capture<Dictionary<String, ?>> confUpdateCaptor2 = new Capture<>();
+		Capture<Dictionary<String, ?>> confUpdateCaptor2 = Capture.newInstance();
 		config2.update(capture(confUpdateCaptor2));
 
-		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
+		Capture<Iterable<Resource>> resourceCaptor = Capture.newInstance();
 		SettingsCommand updates = new SettingsCommand(
 				asList(new SettingValueBean("foo", "bar"),
 						new SettingValueBean(otherProviderKey, null, "bim", "bam")),
@@ -291,7 +291,7 @@ public class CASettingsServiceTests {
 		expect(config.getPid()).andReturn(instancePid).anyTimes();
 		expect(config.getProperties()).andReturn(configProps).anyTimes();
 
-		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
+		Capture<Iterable<Resource>> resourceCaptor = Capture.newInstance();
 		expect(handler.applySettingResources(eq(settingKey), capture(resourceCaptor)))
 				.andReturn(new SettingsCommand());
 
@@ -354,7 +354,7 @@ public class CASettingsServiceTests {
 		expect(config.getPid()).andReturn(instancePid).anyTimes();
 		expect(config.getProperties()).andReturn(configProps).anyTimes();
 
-		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
+		Capture<Iterable<Resource>> resourceCaptor = Capture.newInstance();
 		SettingsCommand updates = new SettingsCommand(
 				asList(new SettingValueBean("foo", "bar"), new SettingValueBean("bim", true)),
 				asList(Pattern.compile("baz.*")));
@@ -376,7 +376,7 @@ public class CASettingsServiceTests {
 		expect(dao.deleteSetting(daoSettingKey, "bim")).andReturn(true);
 
 		// and finally update CA props
-		Capture<Dictionary<String, ?>> confUpdateCaptor = new Capture<>();
+		Capture<Dictionary<String, ?>> confUpdateCaptor = Capture.newInstance();
 		config.update(capture(confUpdateCaptor));
 
 		// WHEN
@@ -422,11 +422,11 @@ public class CASettingsServiceTests {
 
 		expect(handler.getSettingUid()).andReturn(handlerKey).anyTimes();
 
-		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
+		Capture<Iterable<Resource>> resourceCaptor = Capture.newInstance();
 		expect(handler.applySettingResources(eq(settingKey), capture(resourceCaptor)))
 				.andReturn(new SettingsCommand());
 
-		Capture<BatchCallback<Setting>> batchCaptor = new Capture<>();
+		Capture<BatchCallback<Setting>> batchCaptor = Capture.newInstance();
 		expect(dao.batchProcess(capture(batchCaptor), EasyMock.anyObject()))
 				.andReturn(new BasicBatchResult(0));
 
@@ -471,7 +471,7 @@ public class CASettingsServiceTests {
 		expect(tx.isRollbackOnly()).andReturn(false);
 
 		// import 2 settings
-		Capture<Setting> settingCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Setting> settingCaptor = Capture.newInstance(CaptureType.ALL);
 		dao.storeSetting(EasyMock.capture(settingCaptor));
 		expectLastCall().times(2);
 
@@ -487,7 +487,7 @@ public class CASettingsServiceTests {
 		Hashtable<String, Object> configProps = new Hashtable<>();
 		expect(ca.getConfiguration("bim", null)).andReturn(config);
 		expect(config.getProperties()).andReturn(configProps);
-		Capture<Dictionary<String, ?>> configPropsUpdatesCaptor = new Capture<>();
+		Capture<Dictionary<String, ?>> configPropsUpdatesCaptor = Capture.newInstance();
 		config.update(capture(configPropsUpdatesCaptor));
 
 		// handle "del" CA configuration update
@@ -498,7 +498,7 @@ public class CASettingsServiceTests {
 		configProps2.put("crash", "true");
 		expect(ca.getConfiguration("del", null)).andReturn(config2);
 		expect(config2.getProperties()).andReturn(configProps2);
-		Capture<Dictionary<String, ?>> configPropsUpdatesCaptor2 = new Capture<>();
+		Capture<Dictionary<String, ?>> configPropsUpdatesCaptor2 = Capture.newInstance();
 		config2.update(capture(configPropsUpdatesCaptor2));
 
 		// WHEN

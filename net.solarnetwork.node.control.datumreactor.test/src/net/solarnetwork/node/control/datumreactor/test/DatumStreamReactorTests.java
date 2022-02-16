@@ -129,7 +129,7 @@ public class DatumStreamReactorTests {
 		final SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID, TEST_DATUM_PROP, inputVal);
 		service.getConfig().setExpression(String.format("%s / 2", TEST_DATUM_PROP));
 
-		Capture<Instruction> instrCaptor = new Capture<>();
+		Capture<Instruction> instrCaptor = Capture.newInstance();
 		expect(instructionExecutionService.executeInstruction(capture(instrCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 
@@ -169,7 +169,7 @@ public class DatumStreamReactorTests {
 		final SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID, TEST_DATUM_PROP, inputVal);
 		service.getConfig().setExpression(String.format("%s / 2 + foo", TEST_DATUM_PROP));
 
-		Capture<Instruction> instrCaptor = new Capture<>();
+		Capture<Instruction> instrCaptor = Capture.newInstance();
 		expect(instructionExecutionService.executeInstruction(capture(instrCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 
@@ -226,7 +226,7 @@ public class DatumStreamReactorTests {
 
 		service.getConfig().setExpression(OFFSET_EXPR);
 
-		Capture<Instruction> instrCaptor = new Capture<>();
+		Capture<Instruction> instrCaptor = Capture.newInstance();
 		expect(instructionExecutionService.executeInstruction(capture(instrCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 
@@ -270,7 +270,7 @@ public class DatumStreamReactorTests {
 
 		service.getConfig().setExpression(OFFSET_EXPR);
 
-		Capture<Instruction> instrCaptor = new Capture<>();
+		Capture<Instruction> instrCaptor = Capture.newInstance();
 		expect(instructionExecutionService.executeInstruction(capture(instrCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 

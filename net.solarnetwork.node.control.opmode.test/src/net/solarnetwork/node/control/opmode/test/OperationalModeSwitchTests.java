@@ -119,7 +119,7 @@ public class OperationalModeSwitchTests {
 		// given
 		expect(opModesService.isOperationalModeActive(TEST_OP_MODE)).andReturn(false);
 
-		Capture<Event> eventCaptor = new Capture<>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
 
 		// when
@@ -206,7 +206,7 @@ public class OperationalModeSwitchTests {
 	@Test
 	public void eventOpModeAdded() {
 		// given
-		Capture<Event> eventCaptor = new Capture<>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
 
 		// when
@@ -228,7 +228,7 @@ public class OperationalModeSwitchTests {
 		eventOpModeAdded();
 		resetAll();
 
-		Capture<Event> eventCaptor = new Capture<>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
 
 		// when

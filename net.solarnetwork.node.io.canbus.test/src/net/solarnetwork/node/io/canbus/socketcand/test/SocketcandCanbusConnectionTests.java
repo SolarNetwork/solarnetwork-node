@@ -150,7 +150,7 @@ public class SocketcandCanbusConnectionTests {
 		CanbusFrameListener listener = EasyMock.createMock(CanbusFrameListener.class);
 		mocks.add(listener);
 
-		Capture<CanbusFrame> frameCaptor = new Capture<>(CaptureType.ALL);
+		Capture<CanbusFrame> frameCaptor = Capture.newInstance(CaptureType.ALL);
 		listener.canbusFrameReceived(capture(frameCaptor));
 
 		// WHEN
@@ -213,7 +213,7 @@ public class SocketcandCanbusConnectionTests {
 		CanbusFrameListener listener = EasyMock.createMock(CanbusFrameListener.class);
 		mocks.add(listener);
 
-		Capture<CanbusFrame> frameCaptor = new Capture<>(CaptureType.ALL);
+		Capture<CanbusFrame> frameCaptor = Capture.newInstance(CaptureType.ALL);
 		listener.canbusFrameReceived(capture(frameCaptor));
 
 		// WHEN
@@ -258,7 +258,7 @@ public class SocketcandCanbusConnectionTests {
 		CanbusFrameListener listener = EasyMock.createMock(CanbusFrameListener.class);
 		mocks.add(listener);
 
-		Capture<CanbusFrame> frameCaptor = new Capture<>(CaptureType.ALL);
+		Capture<CanbusFrame> frameCaptor = Capture.newInstance(CaptureType.ALL);
 		listener.canbusFrameReceived(capture(frameCaptor));
 
 		// WHEN

@@ -144,7 +144,7 @@ public class CanbusDatumDataSourceTests {
 		dataSource.setSourceId(TEST_SOURCE);
 		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
 
-		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>();
+		Capture<GeneralDatumMetadata> metaCaptor = Capture.newInstance();
 		datumMetadataService.addSourceMetadata(eq(TEST_SOURCE), capture(metaCaptor));
 
 		// WHEN
@@ -196,7 +196,7 @@ public class CanbusDatumDataSourceTests {
 		dataSource.setSourceId(TEST_SOURCE);
 		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
 
-		Capture<NodeDatum> eventCaptor = new Capture<>();
+		Capture<NodeDatum> eventCaptor = Capture.newInstance();
 		expect(datumQueue.offer(capture(eventCaptor), eq(false))).andReturn(true);
 
 		// WHEN
@@ -230,7 +230,7 @@ public class CanbusDatumDataSourceTests {
 		dataSource.setSourceId(TEST_SOURCE);
 		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
 
-		Capture<NodeDatum> eventCaptor = new Capture<>();
+		Capture<NodeDatum> eventCaptor = Capture.newInstance();
 		expect(datumQueue.offer(capture(eventCaptor), eq(false))).andReturn(true);
 
 		// WHEN
@@ -262,7 +262,7 @@ public class CanbusDatumDataSourceTests {
 		dataSource.setSourceId(TEST_SOURCE);
 		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
 
-		Capture<NodeDatum> eventCaptor = new Capture<>();
+		Capture<NodeDatum> eventCaptor = Capture.newInstance();
 		expect(datumQueue.offer(capture(eventCaptor), eq(false))).andReturn(true);
 
 		// WHEN
@@ -293,7 +293,7 @@ public class CanbusDatumDataSourceTests {
 		dataSource.setSourceId(TEST_SOURCE);
 		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
 
-		Capture<NodeDatum> eventCaptor = new Capture<>();
+		Capture<NodeDatum> eventCaptor = Capture.newInstance();
 		expect(datumQueue.offer(capture(eventCaptor), eq(false))).andReturn(true);
 
 		// WHEN
@@ -324,7 +324,7 @@ public class CanbusDatumDataSourceTests {
 		dataSource.setSourceId(TEST_SOURCE);
 		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
 
-		Capture<NodeDatum> eventCaptor = new Capture<>();
+		Capture<NodeDatum> eventCaptor = Capture.newInstance();
 		expect(datumQueue.offer(capture(eventCaptor), eq(false))).andReturn(true);
 
 		// WHEN
@@ -386,7 +386,7 @@ public class CanbusDatumDataSourceTests {
 		dataSource.setSourceId(TEST_SOURCE);
 		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
 
-		Capture<NodeDatum> eventCaptor = new Capture<>();
+		Capture<NodeDatum> eventCaptor = Capture.newInstance();
 		expect(datumQueue.offer(capture(eventCaptor), eq(false))).andReturn(true);
 
 		// WHEN
@@ -421,7 +421,7 @@ public class CanbusDatumDataSourceTests {
 		dataSource.setSourceId(TEST_SOURCE);
 		dataSource.setMsgConfigs(new CanbusMessageConfig[] { message });
 
-		Capture<NodeDatum> eventCaptor = new Capture<>(CaptureType.ALL);
+		Capture<NodeDatum> eventCaptor = Capture.newInstance(CaptureType.ALL);
 		expect(datumQueue.offer(capture(eventCaptor), eq(false))).andReturn(true).times(3);
 
 		// WHEN
@@ -497,7 +497,7 @@ public class CanbusDatumDataSourceTests {
 						SpelExpressionService.class.getName()), };
 		dataSource.setExpressionConfigs(exprConfigs);
 
-		Capture<NodeDatum> eventCaptor = new Capture<>();
+		Capture<NodeDatum> eventCaptor = Capture.newInstance();
 		expect(datumQueue.offer(capture(eventCaptor), eq(false))).andReturn(true);
 
 		// WHEN
@@ -543,7 +543,7 @@ public class CanbusDatumDataSourceTests {
 						SpelExpressionService.class.getName()), };
 		dataSource.setExpressionConfigs(exprConfigs);
 
-		Capture<NodeDatum> eventCaptor = new Capture<>();
+		Capture<NodeDatum> eventCaptor = Capture.newInstance();
 		expect(datumQueue.offer(capture(eventCaptor), eq(false))).andReturn(true);
 
 		// WHEN
