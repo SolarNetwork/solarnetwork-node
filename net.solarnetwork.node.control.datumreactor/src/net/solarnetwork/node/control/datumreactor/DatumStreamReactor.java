@@ -127,7 +127,7 @@ public class DatumStreamReactor extends BaseIdentifiable
 					}
 					desiredControlValue = applyNumberConstraints(desiredControlValue);
 					if ( log.isDebugEnabled() ) {
-						log.debug("Reaction for input {} to {} on control [{}]: {}", datum.asSimpleMap(),
+						log.debug("Reaction to input {} to {} on control [{}]: {}", datum,
 								instructionTopic, controlId, desiredControlValue);
 					}
 					if ( desiredControlValue == null ) {
@@ -365,6 +365,7 @@ public class DatumStreamReactor extends BaseIdentifiable
 			try {
 				p = Pattern.compile(sourceIdRegex, Pattern.CASE_INSENSITIVE);
 			} catch ( PatternSyntaxException e ) {
+				log.error("Invalid source ID pattern [{}]: {}", sourceIdRegex, e.getMessage());
 				// ignore
 			}
 		}
