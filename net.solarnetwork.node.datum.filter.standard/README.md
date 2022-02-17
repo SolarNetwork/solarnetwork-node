@@ -10,6 +10,7 @@ filters can be useful for scenarios like this:
  4. you want to generate an accumulating meter reading property out of another property
  5. you'd like to downsample high-frequency datum into lower-frequency averages
  6. you'd like to toggle operational modes based on datum properties
+ 7. you need to combine the properties from multiple sources into a new source
 
 # Install
 
@@ -23,6 +24,8 @@ documentation:
    using an average
  * [Expression Datum Filter](README-Expression.md) - generate dynamic datum properties by evaluating
    expressions against existing datum properties
+ * [Join Datum Filter](README-Join.md) - combine the properties of multiple datum streams into a
+   single new stream
  * [Operational Mode Datum Filter](README-OpMode.md) - evaluate expressions to toggle operational
    modes
  * [Virtual Meter Datum Filter](README-VirtualMeter.md) - derive accumulating meter-style reading
