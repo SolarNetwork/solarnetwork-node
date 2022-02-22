@@ -49,8 +49,8 @@ import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
-import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
@@ -94,7 +94,7 @@ public class DatumStreamReactor extends BaseIdentifiable
 			return;
 		}
 		final String topic = event.getTopic();
-		if ( !DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED.equals(topic) ) {
+		if ( !DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED.equals(topic) ) {
 			return;
 		}
 		final Object val = event.getProperty(DatumEvents.DATUM_PROPERTY);

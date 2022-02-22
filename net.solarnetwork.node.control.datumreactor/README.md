@@ -16,8 +16,11 @@ component will become available.
 Once configured, this component will monitor the configured datum stream(s) and evaluate the
 configured **Expression** on each datum generated in the stream(s). If the expression returns a
 non-`null` result, an instruction (defaulting to [`SetControlParameter`][SetControlParameter])
- will be generated for the configured control, with the corresponding value being the expression
- result.
+will be generated for the configured control, with the corresponding value being the expression
+result.
+
+> :warning: **Note** that this component monitors datum streams _after_ any 
+  [Datum Queue][datum-queue] datum filter has been applied.
 
 # Configuration
 
@@ -50,6 +53,7 @@ In addition, all [placeholders][placeholders] will be available as variables. Pl
 are valid integer or decimal numbers will be converted to Number instances. All other values will be
 String instances.
 
+[datum-queue]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Datum-Queue
 [expr]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Expressions
 [SetControlParameter]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#setcontrolparameter
 [placeholders]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Placeholders
