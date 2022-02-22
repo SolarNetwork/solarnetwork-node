@@ -50,6 +50,69 @@ The **Source ID** pattern can define _capture groups_ that will be provided to t
 | `/power/2`      | `/power/(\d+)$`   | `{p}_s{1}` | `watts_s2` |
 | `/solar/1`      | `/(\w+)/(\d+)$`   | `{p}_{1}{2}` | `watts_solar1` |
 
+To help visualize property mapping with a more complete example, let's imagine we have some datum
+streams being collected and the most recent datum from each look like this:
+
+<table>
+<thead>
+<tr>
+	<th>/meter/1</th>
+	<th>/meter/2</th>
+	<th>/solar/1</th>
+</tr>
+<tr>
+<td><pre>{
+  "watts"       : 3213,
+}</pre></td>
+<td><pre>{
+  "watts"       : -842,
+}</pre></td>
+<td><pre>{
+  "watts"       : 4055,
+  "current"     : 16.89583
+}</pre></td>
+</tr>
+</thead>
+</table>
+
+Here are some examples of how some source mapping expressions could be defined, including how 
+multiple mappings can be used at once:
+
+<table>
+<thead>
+<tr>
+	<th>Source ID Patterns</th>
+	<th>Mappings</th>
+	<th>Result</th>
+</tr>
+<tr>
+<td><code>/(\w+)/(\d+)</code></td>
+<td><code>{1}_{p}{2}</code></td>
+<td><pre>{
+  "power_watts1"  : 3213,
+  "power_watts2"  : -842,
+  "solar_watts1"  : 4055,
+  "solar_current" : 16.89583
+}</pre></td>
+</tr>
+<tr>
+<td><ol>
+	<li><code>/power/(\d+)</code></li>
+	<li><code>/solar/1</code></li>
+</ol></td>
+<td><ol>
+	<li><code>{p}_{1}</code></li>
+	<li><code>{p}</code></li>
+</ol></td>
+<td><pre>{
+  "watts_1"  : 3213,
+  "watts_2"  : -842,
+  "watts"    : 4055,
+  "current"  : 16.89583
+}</pre></td>
+</tr>
+</thead>
+</table>
 
 [opmodes]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Operational-Modes
 [placeholders]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Placeholders
