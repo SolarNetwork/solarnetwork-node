@@ -24,6 +24,7 @@ package net.solarnetwork.node.datum.filter.std;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import net.solarnetwork.domain.KeyValuePair;
@@ -94,17 +95,29 @@ public class PatternKeyValuePair extends KeyValuePair {
 	 * 
 	 * @param k
 	 *        the string to test
-	 * @return {@literal true} if {@code k} matches the key pattern
+	 * @return if the string does not match, {@literal null}; otherwise an array
+	 *         whose first element is the key and any additional elements are
+	 *         pattern placeholder values
 	 */
-	public boolean keyMatches(String k) {
+	public String[] keyMatches(String k) {
 		if ( k == null ) {
-			return false;
+			return null;
 		}
 		final Pattern p = this.keyPattern;
 		if ( p != null ) {
-			return p.matcher(k).find();
+			Matcher m = p.matcher(k);
+			if ( m.find() ) {
+				int groupCount = m.groupCount();
+				String[] result = new String[1 + groupCount];
+				result[0] = k;
+				for ( int i = 1; i <= groupCount; i++ ) {
+					result[i] = m.group(i);
+				}
+				return result;
+			}
+			return null;
 		}
-		return k.equals(getKey());
+		return (k.equals(getKey()) ? new String[] { k } : null);
 	}
 
 }

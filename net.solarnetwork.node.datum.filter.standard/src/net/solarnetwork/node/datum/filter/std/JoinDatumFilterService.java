@@ -28,6 +28,7 @@ import static net.solarnetwork.service.OptionalService.service;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -103,7 +104,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 			incrementIgnoredStats(start);
 			return samples;
 		}
-		final String propSourceMapping = propertySourceMapping(datum);
+		final String[] propSourceMapping = propertySourceMapping(datum);
 		synchronized ( mergedSamples ) {
 			coalescedSourceIds.add(datum.getSourceId());
 			if ( propSourceMapping == null ) {
@@ -116,8 +117,13 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 						Map<String, ?> data = samples.getSampleData(type);
 						if ( data != null && !data.isEmpty() ) {
 							for ( Entry<String, ?> e : data.entrySet() ) {
-								String p = StringUtils.expandTemplateString(propSourceMapping,
-										Collections.singletonMap("p", e.getKey()));
+								Map<String, Object> params = new HashMap<>(propSourceMapping.length);
+								params.put("p", e.getKey());
+								for ( int i = 1; i < propSourceMapping.length; i++ ) {
+									params.put(String.valueOf(i), propSourceMapping[i]);
+								}
+								String p = StringUtils.expandTemplateString(propSourceMapping[0],
+										params);
 								mergedSamples.putSampleValue(type, p, e.getValue());
 							}
 						}
@@ -142,15 +148,27 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 		return result;
 	}
 
-	private String propertySourceMapping(Datum datum) {
+	/**
+	 * Return an array with the property mapping value an optional regular
+	 * expression parameter values.
+	 * 
+	 * @param datum
+	 *        the datum to find the property source mapping for
+	 * @return the mapping data, or {@literal null}
+	 */
+	private String[] propertySourceMapping(Datum datum) {
 		final String inputSourceId = datum.getSourceId();
 		final PatternKeyValuePair[] mappings = getPropertySourceMappings();
 		if ( mappings != null && mappings.length > 0 ) {
 			for ( PatternKeyValuePair mapping : mappings ) {
 				String t = mapping.getValue();
-				if ( mapping.keyMatches(inputSourceId) && t != null && !t.isEmpty()
-						&& t.contains(PROPERTY_NAME_PARAMETER) ) {
-					return t;
+				if ( t == null || t.isEmpty() || !t.contains(PROPERTY_NAME_PARAMETER) ) {
+					continue;
+				}
+				String[] result = mapping.keyMatches(inputSourceId);
+				if ( result != null ) {
+					result[0] = t;
+					return result;
 				}
 			}
 		}

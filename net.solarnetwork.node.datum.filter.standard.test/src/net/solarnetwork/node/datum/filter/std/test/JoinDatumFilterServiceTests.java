@@ -248,4 +248,36 @@ public class JoinDatumFilterServiceTests {
 				hasEntry(format("%s_s2", PROP_2), 234));
 	}
 
+	@Test
+	public void sourceMappedMerge_regexPlaceholders_coalesce() throws Exception {
+		// GIVEN
+		xform.setCoalesceThreshold(2);
+		xform.setPropertySourceMappings(
+				new PatternKeyValuePair[] { new PatternKeyValuePair("_(\\d+)$", "{p}_s{1}") });
+		Capture<NodeDatum> outputCaptor = Capture.newInstance();
+		expect(datumQueue.offer(capture(outputCaptor), eq(true))).andReturn(true);
+
+		// WHEN
+		replayAll();
+		SimpleDatum d1 = createTestSimpleDatum(SOURCE_ID_1, PROP_1, 123);
+		DatumSamplesOperations result1 = xform.filter(d1, d1.getSamples(), null);
+		Thread.sleep(100);
+		SimpleDatum d2 = createTestSimpleDatum(SOURCE_ID_2, PROP_2, 234);
+		DatumSamplesOperations result2 = xform.filter(d2, d2.getSamples(), null);
+
+		// THEN
+		assertThat("Result 1 unchanged", result1, is(sameInstance(d1.getSamples())));
+		assertThat("Result 2 unchanged", result2, is(sameInstance(d2.getSamples())));
+		assertThat("Output datum generated", outputCaptor.getValue(), is(notNullValue()));
+		SimpleDatum o = (SimpleDatum) outputCaptor.getValue();
+		assertThat("Output ID has timestamp from most recent input datum", o.getId(),
+				is(equalTo(DatumId.nodeId(null, OUTPUT_SOURCE_ID, d2.getTimestamp()))));
+		Map<String, Number> i = o.getSamples().getInstantaneous();
+		assertThat("Output props count", i.keySet(), hasSize(2));
+		assertThat("Output prop 1 mapped from 2nd input datum", i,
+				hasEntry(format("%s_s1", PROP_1), 123));
+		assertThat("Output prop 2 mapped from 2rd input datum", i,
+				hasEntry(format("%s_s2", PROP_2), 234));
+	}
+
 }
