@@ -22,9 +22,12 @@
 
 package net.solarnetwork.node.service.support;
 
+import static net.solarnetwork.node.service.PlaceholderService.smartCopyPlaceholders;
 import static net.solarnetwork.util.DateUtils.formatHoursMinutesSeconds;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.springframework.context.MessageSource;
@@ -32,6 +35,7 @@ import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.node.service.PlaceholderService;
 import net.solarnetwork.service.DatumFilterStats;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
@@ -45,7 +49,7 @@ import net.solarnetwork.util.StatCounter.Stat;
  * {@link net.solarnetwork.service.DatumFilterService} to extend.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public class BaseDatumFilterSupport extends BaseIdentifiable {
@@ -319,6 +323,31 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 			return false;
 		}
 		return service.isOperationalModeActive(mode);
+	}
+
+	/**
+	 * Create a parameter map that includes placeholders.
+	 * 
+	 * <p>
+	 * If the {@link #getPlaceholderService()} is configured the
+	 * {@link PlaceholderService#smartCopyPlaceholders(Map)} method will be
+	 * invoked to create valid {@code Number} instances out of placeholder
+	 * values. The {@code parameters} map, if provided, will be copied into the
+	 * returned map, overwriting any duplicate entries.
+	 * </p>
+	 * 
+	 * @param parameters
+	 *        an optional set of parameters to copy into the result
+	 * @return a new map, never {@literal null}
+	 * @since 1.1
+	 */
+	protected Map<String, Object> smartPlaceholders(Map<String, Object> parameters) {
+		Map<String, Object> params = new HashMap<>(8);
+		smartCopyPlaceholders(getPlaceholderService(), params);
+		if ( parameters != null ) {
+			params.putAll(parameters);
+		}
+		return params;
 	}
 
 	/**
