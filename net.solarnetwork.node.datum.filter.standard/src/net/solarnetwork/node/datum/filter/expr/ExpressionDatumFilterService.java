@@ -65,7 +65,8 @@ public class ExpressionDatumFilterService extends BaseDatumFilterSupport
 			incrementIgnoredStats(start);
 			return samples;
 		}
-		ExpressionRoot root = new ExpressionRoot(datum, samples, parameters, service(getDatumService()),
+		Map<String, Object> params = smartPlaceholders(parameters);
+		ExpressionRoot root = new ExpressionRoot(datum, samples, params, service(getDatumService()),
 				getOpModesService());
 		DatumSamples s = new DatumSamples(samples);
 		populateExpressionDatumProperties(s, getExpressionConfigs(), root);

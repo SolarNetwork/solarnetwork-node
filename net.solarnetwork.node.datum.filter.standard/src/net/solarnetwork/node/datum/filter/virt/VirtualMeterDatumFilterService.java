@@ -63,7 +63,7 @@ import net.solarnetwork.util.ArrayUtils;
  * derived from another property.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 1.4
  */
 public class VirtualMeterDatumFilterService extends DatumFilterSupport
@@ -328,8 +328,9 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 					BigDecimal newReading = null;
 					VirtualMeterExpressionConfig exprConfig = expressionForConfig(meterPropName);
 					if ( exprConfig != null ) {
+						Map<String, Object> params = smartPlaceholders(parameters);
 						VirtualMeterExpressionRoot root = new VirtualMeterExpressionRootImpl(d, samples,
-								parameters, service(getDatumService()), config, prevDate, date, prevVal,
+								params, service(getDatumService()), config, prevDate, date, prevVal,
 								currVal, prevReading);
 						populateExpressionDatumProperties(samples,
 								new VirtualMeterExpressionConfig[] { exprConfig }, root);

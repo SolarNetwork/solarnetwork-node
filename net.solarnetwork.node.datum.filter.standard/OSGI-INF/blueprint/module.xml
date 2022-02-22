@@ -97,6 +97,7 @@
 			<property name="messageSource" ref="simpleFilterMessageSource"/>
 			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
+			<property name="placeholderService" ref="placeholderService"/>
 			<property name="settingUid" value="net.solarnetwork.node.datum.samplefilter.simple"/>
 		</bean>
 	</osgix:managed-service-factory>
@@ -156,6 +157,7 @@
 			<property name="settingDao" ref="settingDao"/>
 			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
+			<property name="placeholderService" ref="placeholderService"/>
 			<property name="messageSource" ref="propFilterMessageSource"/>
 			<property name="settingUid" value="net.solarnetwork.node.datum.samplefilter.prop"/>
 		</bean>
@@ -211,6 +213,7 @@
 			<property name="messageSource" ref="sourceThrottleMessageSource"/>
 			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
+			<property name="placeholderService" ref="placeholderService"/>
 			<property name="settingUid" value="net.solarnetwork.node.datum.samplefilter.throttle"/>
 		</bean>
 	</osgix:managed-service-factory>
@@ -270,6 +273,7 @@
 			<property name="settingDao" ref="settingDao"/>
 			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
+			<property name="placeholderService" ref="placeholderService"/>
 			<property name="messageSource" ref="throttleFilterMessageSource"/>
 			<property name="settingUid" value="net.solarnetwork.node.datum.samplefilter.limiter"/>
 		</bean>
@@ -324,6 +328,7 @@
 			<property name="messageSource" ref="downsamplerMessageSource"/>
 			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
+			<property name="placeholderService" ref="placeholderService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -379,6 +384,7 @@
 			<property name="expressionServices" ref="expressionServices"/>
 			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
+			<property name="placeholderService" ref="placeholderService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -433,6 +439,7 @@
 			<property name="messageSource" ref="expressionMessageSource"/>
 			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
+			<property name="placeholderService" ref="placeholderService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
@@ -487,6 +494,7 @@
 			<property name="messageSource" ref="opModeMessageSource"/>
 			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
+			<property name="placeholderService" ref="placeholderService"/>
 		</bean>
 	</osgix:managed-service-factory>
 
