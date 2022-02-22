@@ -39,7 +39,6 @@ import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
-import net.solarnetwork.node.domain.datum.SimpleDayDatum;
 import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
 import net.solarnetwork.service.DatumFilterService;
@@ -132,7 +131,7 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 			}
 			if ( coalescedSourceIds.size() >= coalesceThreshold ) {
 				// generate datum
-				SimpleDatum d = new SimpleDayDatum(outputSourceId,
+				SimpleDatum d = SimpleDatum.nodeDatum(outputSourceId,
 						datum.getTimestamp() != null ? datum.getTimestamp() : Instant.now(),
 						new DatumSamples(mergedSamples));
 				log.debug("Generated merged datum {}", d);
