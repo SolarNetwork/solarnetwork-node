@@ -57,7 +57,7 @@ import net.solarnetwork.settings.support.SettingUtils;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public class PropertyDatumFilterService extends DatumFilterSupport
@@ -83,7 +83,7 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 			return samples;
 		}
 
-		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
+		if ( !conditionsMatch(datum, samples, params) ) {
 			incrementIgnoredStats(start);
 			return samples;
 		}

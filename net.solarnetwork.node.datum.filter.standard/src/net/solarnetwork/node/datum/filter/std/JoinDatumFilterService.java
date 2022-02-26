@@ -98,8 +98,8 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 		final long start = incrementInputStats();
 		final String outputSourceId = resolvePlaceholders(getOutputSourceId(), parameters);
 		if ( !(outputSourceId != null && !outputSourceId.trim().isEmpty()
-				&& !outputSourceId.equals(datum.getSourceId()) && sourceIdMatches(datum)
-				&& operationalModeMatches()) ) {
+				&& !outputSourceId.equals(datum.getSourceId())
+				&& conditionsMatch(datum, samples, parameters)) ) {
 			incrementIgnoredStats(start);
 			return samples;
 		}

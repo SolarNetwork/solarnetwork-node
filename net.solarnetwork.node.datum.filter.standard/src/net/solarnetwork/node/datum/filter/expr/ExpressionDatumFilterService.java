@@ -61,7 +61,7 @@ public class ExpressionDatumFilterService extends BaseDatumFilterSupport
 	public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
 			Map<String, Object> parameters) {
 		final long start = incrementInputStats();
-		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
+		if ( !conditionsMatch(datum, samples, parameters) ) {
 			incrementIgnoredStats(start);
 			return samples;
 		}

@@ -27,6 +27,7 @@ Each filter configuration contains the following overall settings:
 | Service Group      | An optional service group name to assign. |
 | Source ID          | The source ID(s) to filter. |
 | Required Mode      | If configured, an [operational mode](https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Operational-Modes) that must be active for this filter to be applied. |
+| Required Tag       | Only apply the filter on datum with the given tag. A tag may be prefixed with <code>!</code> to invert the logic so that the filter only applies to datum **without** the given tag. Multiple tags can be defined using a `,` delimiter, in which case **at least one** of the configured tags must match to apply the filter. |
 | Metadata Service   | The **Service Name** of the Metadata Service to obtain the tariff schedule from. See [below](#metadata-service) for more information. |
 | Metadata Path      | The metadata path that will resolve the tariff schedule from the configured Metadata Service. |
 | Language           | A IETF BCP 47 language tag to parse the tariff data with. If not configured then the default system language will be assumed.

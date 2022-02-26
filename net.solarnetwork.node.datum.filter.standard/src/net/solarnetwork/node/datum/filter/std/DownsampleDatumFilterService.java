@@ -75,7 +75,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * </ul>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public class DownsampleDatumFilterService extends DatumFilterSupport
@@ -123,7 +123,7 @@ public class DownsampleDatumFilterService extends DatumFilterSupport
 			incrementIgnoredStats(start);
 			return samples;
 		}
-		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
+		if ( !conditionsMatch(datum, samples, parameters) ) {
 			incrementIgnoredStats(start);
 			return samples;
 		}

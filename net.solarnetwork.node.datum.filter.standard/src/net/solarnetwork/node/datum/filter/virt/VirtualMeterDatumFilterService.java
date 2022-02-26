@@ -201,7 +201,7 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 			incrementIgnoredStats(start);
 			return samples;
 		}
-		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
+		if ( !conditionsMatch(datum, samples, parameters) ) {
 			incrementIgnoredStats(start);
 			return samples;
 		}

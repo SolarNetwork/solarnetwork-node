@@ -73,7 +73,7 @@ import net.solarnetwork.util.CachedResult;
  * spreadsheet style tariff metadata.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public class TariffDatumFilterService extends BaseDatumFilterSupport
@@ -120,7 +120,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	@Override
 	public DatumSamplesOperations filter(Datum datum, DatumSamplesOperations samples,
 			Map<String, Object> parameters) {
-		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
+		if ( !conditionsMatch(datum, samples, parameters) ) {
 			return samples;
 		}
 		final LocalDateTime date = (datum.getTimestamp() != null

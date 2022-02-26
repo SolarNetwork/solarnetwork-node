@@ -53,7 +53,7 @@ import net.solarnetwork.util.WeakValueConcurrentHashMap;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public class DatumFilterChainService extends BaseDatumFilterSupport
@@ -238,7 +238,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	public DatumSamplesOperations filter(final Datum datum, final DatumSamplesOperations samples,
 			final Map<String, Object> parameters) {
 		final long start = incrementInputStats();
-		if ( !operationalModeMatches() ) {
+		if ( !conditionsMatch(datum, samples, parameters) ) {
 			incrementIgnoredStats(start);
 			return samples;
 		}

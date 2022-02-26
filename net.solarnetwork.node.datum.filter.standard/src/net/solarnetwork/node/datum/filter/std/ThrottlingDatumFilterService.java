@@ -72,7 +72,7 @@ public class ThrottlingDatumFilterService extends DatumFilterSupport
 			return samples;
 		}
 
-		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
+		if ( !conditionsMatch(datum, samples, params) ) {
 			incrementIgnoredStats(start);
 			return samples;
 		}
