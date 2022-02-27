@@ -328,7 +328,12 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 			// service not available, so automatically does not match
 			return false;
 		}
-		return service.isOperationalModeActive(mode);
+		boolean result = service.isOperationalModeActive(mode);
+		if ( !result && log.isTraceEnabled() ) {
+			log.trace("Filter [{}] required operational mode [{}] not active; not filtering", getUid(),
+					mode);
+		}
+		return result;
 	}
 
 	/**
@@ -361,15 +366,24 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 			return true;
 		}
 		String[] requiredTags = TAG_COMMA_DELIM.split(requiredTagExpr.trim());
+		log.trace("Filter [{}] requires tag expression [{}] for datum {}", getUid(), requiredTagExpr,
+				datum);
 		boolean hasMatch = anyTagMatches(requiredTags, samples);
 		if ( hasMatch ) {
 			return true;
 		}
 		final DatumSamplesOperations datumSamples = (datum != null ? datum.asSampleOperations() : null);
 		if ( datumSamples == null || datumSamples == samples ) {
+			log.trace("Filter [{}] required tag [{}] does not match; not filtering datum {}", getUid(),
+					requiredTagExpr, datum);
 			return false;
 		}
-		return anyTagMatches(requiredTags, datumSamples);
+		boolean result = anyTagMatches(requiredTags, datumSamples);
+		if ( !result ) {
+			log.trace("Filter [{}] required tag [{}] does not match; not filtering datum {}", getUid(),
+					requiredTagExpr, datum);
+		}
+		return result;
 	}
 
 	private boolean anyTagMatches(String[] tags, final DatumSamplesOperations samples) {
