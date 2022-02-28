@@ -125,3 +125,27 @@ net.solarnetwork.node.io.modbus.2,serialParams.portName,/dev/ttyUSB0,0,2014-03-0
 net.solarnetwork.node.io.modbus.FACTORY,1,1,0,2014-03-01 21:00:31
 net.solarnetwork.node.io.modbus.FACTORY,2,2,0,2014-03-01 21:00:31
 ```
+
+# Settings Backup Resource Provider
+
+This plugin is a [Backup Resource Provider][BackupResourceProvider] that contributes the following
+backup resources:
+
+| Provider Key | Backup Path | Description |
+|:-------------|:-----|:------------|
+| `net.solarnetwork.node.settings.ca.CASettingsService` | `settings.csv` | A full settings export in [CSV form](#settings-csv-format). |
+| `net.solarnetwork.node.settings.ca.CASettingsService` | `{handlerKey}/{instanceKey}/{settingKey}` | A [Setting Resource Handler][SettingResourceHandler] resource. |
+
+This settings service supports SolarNode [Setting Resource Handler][SettingResourceHandler] services
+that can contribute arbitrary resources to save as custom setting data. These custom resources use
+backup paths with the following placeholders:
+
+| Placeholder | Description |
+|:------------|:------------|
+| `handlerKey` | A unique ID for the [Setting Resource Handler][SettingResourceHandler] that contributed the resource. |
+| `instanceKey` | The unique component instance of the handler. |
+| `settingKey` | The handler-unique setting key for the resource. |
+
+
+[BackupResourceProvider]: ../net.solarnetwork.node/src/net/solarnetwork/node/backup/BackupResourceProvider.java
+[SettingResourceHandler]: /Users/matt/Documents/SolarNetwork/Developer/git/solarnetwork-review/solarnetwork-node/net.solarnetwork.node/src/net/solarnetwork/node/settings/SettingResourceHandler.java
