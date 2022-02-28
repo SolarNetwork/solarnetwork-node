@@ -35,35 +35,41 @@ storageClass = STANDARD_IA
 
 # S3 Structure
 
-Backups are stored using a **shared** object structure, where individual backup
-resources are named after the SHA256 digest of their content with a
-`backup-data/` prefix added. Metadata about each backup (for example a
-listing of the resources included in the backup) is then stored as an
-object named with the node ID and backup timestamp with a `backup-meta/` prefix
-added.
+Backups are stored using a **shared** object structure, where individual backup resources are named
+after the SHA256 digest of their content with a `backup-data/` prefix added. Metadata about each
+backup (for example a listing of the resources included in the backup) is then stored as an object
+named with the node ID and backup timestamp with a `backup-meta/` prefix added. The object names use
+this pattern:
 
-Here's a an example listing of the objects stored in S3 after a couple of
-backups have finished:
+| Object Type | Path Template |
+|:------------|:--------------|
+| Metadata    | `backup-meta/node-{nodeId}-backup-{timestamp}` |
+| Resource    | `backup-data/{sha256Hex}` |
+
+| Placeholder | Description |
+|:------------|:------------|
+| `{nodeId}`    | The ID of the node that created the backup. |
+| `{timestamp}` | The backup date, using the `yyyyMMdd'T'HHmmss` pattern. |
+| `{sha256Hex}` | The SHA256 digest of the associated resource, encoded in hex. |
+
+Here's a an example listing of the objects stored in S3 after a couple of backups have finished:
 
 ![objects](docs/solarnode-s3-backup-objects.png)
 
-The **shared** aspect of the backups means that individual `backup-data/`
-objects can be referenced by multiple backups. Once a resource is backed
-up to S3, it won't be uploaded to S3 again in future backups unless the
-resource changes.
+The **shared** aspect of the backups means that individual `backup-data/` objects can be referenced
+by multiple backups. Once a resource is backed up to S3, it won't be uploaded to S3 again in future
+backups unless the resource changes.
 
-The **shared** aspect of the backups also means that multiple _nodes_ can
-be configured to save backup data to the same S3 location. In that
-situation the same resources across the nodes will only be stored once
-in `backup-data/`, and referenced by their respective backup metadata.
+The **shared** aspect of the backups also means that multiple _nodes_ can be configured to save
+backup data to the same S3 location. In that situation the same resources across the nodes will only
+be stored once in `backup-data/`, and referenced by their respective backup metadata.
 
 # Metadata Structure
 
-The backup metadata is a JSON document that defines some general information
-about the backup along with a list of all resources included in the backup. Each
-resource contains a SolarNode-specific `providerKey` representing the provider
-of the resource, a `backupPath` defined by that provider, and an `objectKey`
-that points to the S3 object that contains the data for that resource.
+The backup metadata is a JSON document that defines some general information about the backup along
+with a list of all resources included in the backup. Each resource contains a SolarNode-specific
+`providerKey` representing the provider of the resource, a `backupPath` defined by that provider,
+and an `objectKey` that points to the S3 object that contains the data for that resource.
 
 ```json
 {
@@ -93,3 +99,36 @@ that points to the S3 object that contains the data for that resource.
   ]
 }
 ```
+
+## Metadata object
+
+The metadata JSON object has the following properties:
+
+| Property           |  Type | Description |
+|:-------------------|:------|:------------|
+| `complete`         | boolean | `true` if the full backup was completed successfully. |
+| `date`             | number | The date the backup was completed. |
+| `key`              | string | The unique name of the backup, which is also used in the metadata object path. |
+| `nodeId`           | number | The ID of the node that created the backup. |
+| `resourceMetadata` | array  | List of resource metadata objects. |
+
+## Resource metadata object
+
+The `resourceMetadata` array contains a list of JSON objects, each of which represents an individual
+backup resource. The SolarNode backup service does not actually control what should be included in
+any given backup, nor understand what any resource represents. Instead it relies on SolarNode
+plugins to contribute [Backup Resource Provider][BackupResourceProvider] services at runtime, each
+of which contributes a set of resources to the backup, and can restore those resources when asked.
+Thus to understand what a given backup resource actually is, you need to consult the documentation
+of the Backup Resource Provider that provided the resource, which is uniquely defined by a `key`.
+
+Each JSON object has the following properties:
+
+| Property           |  Type | Description |
+|:-------------------|:------|:------------|
+| `providerKey`      | string | The unique ID of the [Backup Resource Provider][BackupResourceProvider] services that contributed the backup resource. |
+| `objectKey`        | string | The absolute S3 object path that contains the backup resource data. |
+| `backupPath`       | string | A SolarNode resource-specific path. These take the form of `{providerKey}/{path}`. |
+| `modificationDate` | number | A millisecond epoch modification date associated with the resource. If less than `1` then the date is _unknown_. |
+
+[BackupResourceProvider]: ../net.solarnetwork.node/src/net/solarnetwork/node/backup/BackupResourceProvider.java
