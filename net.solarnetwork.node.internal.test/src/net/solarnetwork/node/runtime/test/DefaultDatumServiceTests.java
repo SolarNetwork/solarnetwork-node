@@ -24,13 +24,13 @@ package net.solarnetwork.node.runtime.test;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
-import static net.solarnetwork.node.service.DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED;
-import static net.solarnetwork.node.service.DatumEvents.datumEvent;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -40,7 +40,6 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import org.junit.Before;
 import org.junit.Test;
-import org.osgi.service.event.Event;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -73,17 +72,20 @@ public class DefaultDatumServiceTests {
 	}
 
 	private Map<String, NodeDatum> populateDatum(final int count) {
+		return populateDatum(count, "test.%d");
+	}
+
+	private Map<String, NodeDatum> populateDatum(final int count, String sourceIdTemplate) {
 		population = new LinkedMultiValueMap<>();
 		Map<String, NodeDatum> all = new LinkedHashMap<>();
 		for ( int i = 0; i < count; i++ ) {
 			for ( int j = 0; j < 11; j++ ) {
-				SimpleDatum datum = SimpleDatum.nodeDatum(String.format("test.%d", j), Instant.now(),
-						new DatumSamples());
+				SimpleDatum datum = SimpleDatum.nodeDatum(String.format(sourceIdTemplate, j),
+						Instant.now(), new DatumSamples());
 				all.put(datum.getSourceId(), datum);
 				population.add(datum.getSourceId(), datum);
 
-				Event evt = datumEvent(EVENT_TOPIC_DATUM_CAPTURED, datum);
-				service.handleEvent(evt);
+				service.accept(datum);
 			}
 		}
 		return all;
@@ -149,6 +151,26 @@ public class DefaultDatumServiceTests {
 		// THEN
 		assertThat("Latest datum returned", latest,
 				containsInAnyOrder(all.get("test.1"), all.get("test.10")));
+	}
+
+	@Test
+	public void latest_filter_pattern_2() {
+		// GIVEN
+		Map<String, NodeDatum> all = populateDatum(5, "foo/bar/charger/%d/111111111");
+
+		// add another that does not match pattern
+		SimpleDatum outlier = SimpleDatum.nodeDatum("foo/bar/charger/1/111111111/MAX", Instant.now(),
+				new DatumSamples());
+		service.accept(outlier);
+
+		// WHEN
+		List<NodeDatum> latest = StreamSupport
+				.stream(service.latest(singleton("**/charger/*/*"), NodeDatum.class).spliterator(),
+						false)
+				.collect(Collectors.toList());
+
+		// THEN
+		assertThat("Latest datum returned", new HashSet<>(latest), is(new HashSet<>(all.values())));
 	}
 
 	@Test

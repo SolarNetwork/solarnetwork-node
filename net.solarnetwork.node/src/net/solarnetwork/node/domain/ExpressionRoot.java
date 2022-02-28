@@ -22,18 +22,20 @@
 
 package net.solarnetwork.node.domain;
 
-import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import net.solarnetwork.domain.DatumExpressionRoot;
+import java.util.Set;
 import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumExpressionRoot;
 import net.solarnetwork.domain.datum.DatumSamplesExpressionRoot;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.node.service.OperationalModesService;
-import net.solarnetwork.util.NumberUtils;
-import net.solarnetwork.util.StringUtils;
 
 /**
  * An object to use as the "root" for
@@ -164,6 +166,52 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	 */
 	public DatumExpressionRoot latest(String sourceId) {
 		return offset(sourceId, 0);
+	}
+
+	/**
+	 * Test if a "latest" datum is available for a given source ID.
+	 * 
+	 * <p>
+	 * This can be used to test if {@link #latest(String)} will return a
+	 * non-null value.
+	 * </p>
+	 * 
+	 * @param sourceIdPattern
+	 *        the Ant-style source ID pattern of the datum to look for
+	 * @return {@literal true} if {@link #latestMatching(String)} for the given
+	 *         {@code sourceIdPattern} will return a non-null value
+	 */
+	public boolean hasLatestMatching(String sourceIdPattern) {
+		return latestMatching(sourceIdPattern) != null;
+	}
+
+	/**
+	 * Get the latest available datum matching a given source ID pattern, as
+	 * {@link DatumExpressionRoot} instances.
+	 * 
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 * 
+	 * @param sourceIdPattern
+	 *        the Ant-style source ID pattern of the datum to look for
+	 * @return the matching datum, never {@literal null}
+	 */
+	public Collection<DatumExpressionRoot> latestMatching(String sourceIdPattern) {
+		if ( datumService == null || sourceIdPattern == null ) {
+			return Collections.emptyList();
+		}
+		Set<String> pats = Collections.singleton(sourceIdPattern);
+		Collection<NodeDatum> found = datumService.offset(pats, getTimestamp(), 0, NodeDatum.class);
+		if ( found == null || found.isEmpty() ) {
+			return Collections.emptyList();
+		}
+		List<DatumExpressionRoot> result = new ArrayList<>(found.size());
+		for ( Datum d : found ) {
+			result.add(new ExpressionRoot(d));
+		}
+		return result;
 	}
 
 	/**
@@ -346,7 +394,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	 * @param sourceId
 	 *        the source ID of the datum to look for
 	 * @param timestamp
-	 *        the timestamp refernce point
+	 *        the timestamp reference point
 	 * @param offset
 	 *        the offset from the latest, {@literal 0} being the latest and
 	 *        {@literal 1} the next later, and so on
@@ -366,29 +414,6 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 			return null;
 		}
 		return new ExpressionRoot(d);
-	}
-
-	/**
-	 * Return a {@link BigDecimal} for a given value.
-	 * 
-	 * @param value
-	 *        the object to get as a {@link BigDecimal}
-	 * @return the decimal instance, or {@literal null} if {@code value} is
-	 *         {@literal null} or cannot be parsed as a decimal
-	 * @since 2.1
-	 */
-	public BigDecimal decimal(Object value) {
-		if ( value == null ) {
-			return null;
-		}
-		Number n = null;
-		if ( value instanceof Number ) {
-			n = (Number) value;
-		} else {
-			n = StringUtils.numberValue(value.toString());
-		}
-		return NumberUtils.bigDecimalForNumber(n);
-
 	}
 
 	/**
