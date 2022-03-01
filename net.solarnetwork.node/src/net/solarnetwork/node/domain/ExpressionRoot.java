@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.domain;
 
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -30,6 +31,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumExpressionRoot;
 import net.solarnetwork.domain.datum.DatumMetadataOperations;
@@ -54,6 +57,8 @@ import net.solarnetwork.node.service.OperationalModesService;
  * @since 1.79
  */
 public class ExpressionRoot extends DatumSamplesExpressionRoot {
+
+	private static final Logger log = LoggerFactory.getLogger(ExpressionRoot.class);
 
 	private final DatumService datumService;
 	private final OperationalModesService opModesService;
@@ -130,6 +135,34 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 		super(datum, samples, parameters);
 		this.datumService = datumService;
 		this.opModesService = opModesService;
+	}
+
+	@Override
+	public String toString() {
+		String data = super.toString();
+		if ( log.isTraceEnabled() ) {
+			if ( datumService != null ) {
+				Collection<NodeDatum> latestDatum = datumService.latest(emptySet(), NodeDatum.class);
+				if ( latestDatum != null && !latestDatum.isEmpty() ) {
+					for ( NodeDatum d : latestDatum ) {
+						data += "\nDatum [" + d.getSourceId() + "]: " + d;
+					}
+					for ( NodeDatum d : latestDatum ) {
+						DatumMetadataOperations meta = datumService.datumMetadata(d.getSourceId());
+						if ( meta != null && !meta.isEmpty() ) {
+							data += "\nMeta [" + d.getSourceId() + "]: " + meta;
+						}
+					}
+				}
+			}
+			if ( opModesService != null ) {
+				Set<String> activeModes = opModesService.activeOperationalModes();
+				if ( activeModes != null && !activeModes.isEmpty() ) {
+					data += "\nActive op modes: " + activeModes;
+				}
+			}
+		}
+		return data;
 	}
 
 	/**
