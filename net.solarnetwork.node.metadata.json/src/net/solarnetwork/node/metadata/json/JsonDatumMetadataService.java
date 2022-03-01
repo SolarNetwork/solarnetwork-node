@@ -41,7 +41,6 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.DigestUtils;
-import net.solarnetwork.domain.datum.DatumMetadataOperations;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.domain.datum.ObjectDatumStreamMetadata;
@@ -141,8 +140,10 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	}
 
 	@Override
-	public Set<String> availableSourceMetadata() {
-		return sourceMetadata.keySet();
+	public Set<String> availableSourceMetadataSourceIds() {
+		Set<String> sourceIds = sourceMetadata.keySet();
+		log.debug("Available source metadata sourceIds: {}", sourceIds);
+		return sourceIds;
 	}
 
 	/**
@@ -210,7 +211,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 				changed = true;
 			}
 			if ( changed ) {
-				metadata.merge((DatumMetadataOperations) newMetadata, true);
+				metadata.merge(newMetadata, true);
 				lastChange = System.currentTimeMillis();
 				if ( updatePersistDelaySeconds > 0 ) {
 					persistLaterUnlessUpdated(updatePersistDelaySeconds);
@@ -364,6 +365,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	public GeneralDatumMetadata getSourceMetadata(String sourceId) {
 		CachedMetadata cachedMetadata = getCachedMetadata(sourceId);
 		GeneralDatumMetadata meta = cachedMetadata.metadata;
+		log.debug("Source metadata for [{}]: {}", sourceId, meta);
 		return meta != null ? new GeneralDatumMetadata(meta) : null;
 	}
 
