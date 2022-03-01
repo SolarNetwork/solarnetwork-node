@@ -25,6 +25,7 @@ package net.solarnetwork.node.service;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.Set;
+import net.solarnetwork.domain.datum.DatumMetadataOperations;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 
 /**
@@ -151,5 +152,26 @@ public interface DatumService {
 	 * @return the datum, or {@literal null} if no such datum is available
 	 */
 	<T extends NodeDatum> T offset(String sourceId, Instant timestamp, int offset, Class<T> type);
+
+	/**
+	 * Get the metadata for a given datum stream.
+	 * 
+	 * @param sourceId
+	 *        the source ID of the datum metadata to get
+	 * @return the metadata, or {@literal null} if no such metadata is available
+	 * @since 1.1
+	 */
+	DatumMetadataOperations datumMetadata(String sourceId);
+
+	/**
+	 * Get the metadata for a set of datum streams matching a filter.
+	 * 
+	 * @param sourceIdFilter
+	 *        an optional set of Ant-style source ID patterns to filter by; use
+	 *        {@literal null} or an empty set to return all available sources
+	 * @return the matching metadata, never {@literal null}
+	 * @since 1.1
+	 */
+	Collection<DatumMetadataOperations> datumMetadata(Set<String> sourceIdFilter);
 
 }

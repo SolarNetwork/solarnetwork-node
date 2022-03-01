@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.service;
 
+import java.util.Collections;
+import java.util.Set;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.domain.datum.ObjectDatumStreamMetadata;
@@ -31,9 +33,19 @@ import net.solarnetwork.domain.datum.ObjectDatumStreamMetadata;
  * source.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public interface DatumMetadataService {
+
+	/**
+	 * Get the set of source IDs with associated datum metadata.
+	 * 
+	 * @return the available source IDs, never {@literal null}
+	 * @since 2.1
+	 */
+	default Set<String> availableSourceMetadata() {
+		return Collections.emptySet();
+	}
 
 	/**
 	 * Add metadata to a specific source. If metadata already exists for the

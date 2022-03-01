@@ -22,14 +22,20 @@
 
 package net.solarnetwork.node.runtime.test;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
+import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -38,6 +44,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
+import org.easymock.EasyMock;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.util.AntPathMatcher;
@@ -45,26 +53,42 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumMetadataOperations;
 import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.runtime.DefaultDatumService;
+import net.solarnetwork.node.service.DatumMetadataService;
+import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link DefaultDatumService} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class DefaultDatumServiceTests {
 
 	private DefaultDatumService service;
+	private DatumMetadataService datumMetadataService;
 
 	private MultiValueMap<String, NodeDatum> population;
 
 	@Before
 	public void setup() {
-		service = new DefaultDatumService(new AntPathMatcher(), new ObjectMapper());
+		datumMetadataService = EasyMock.createMock(DatumMetadataService.class);
+		service = new DefaultDatumService(new AntPathMatcher(), new ObjectMapper(),
+				new StaticOptionalService<>(datumMetadataService));
+	}
+
+	@After
+	public void teardown() {
+		EasyMock.verify(datumMetadataService);
+	}
+
+	private void replayAll() {
+		EasyMock.replay(datumMetadataService);
 	}
 
 	private Map<String, NodeDatum> populateDatum() {
@@ -97,6 +121,7 @@ public class DefaultDatumServiceTests {
 		Map<String, NodeDatum> all = populateDatum();
 
 		// WHEN
+		replayAll();
 		List<NodeDatum> latest = StreamSupport
 				.stream(service.latest(emptySet(), NodeDatum.class).spliterator(), false)
 				.collect(Collectors.toList());
@@ -112,6 +137,7 @@ public class DefaultDatumServiceTests {
 		Map<String, NodeDatum> all = populateDatum();
 
 		// WHEN
+		replayAll();
 		String sourceId = "test.2";
 		List<NodeDatum> latest = StreamSupport
 				.stream(service.latest(singleton(sourceId), NodeDatum.class).spliterator(), false)
@@ -128,6 +154,7 @@ public class DefaultDatumServiceTests {
 		Map<String, NodeDatum> all = populateDatum();
 
 		// WHEN
+		replayAll();
 		Set<String> sourceIds = new LinkedHashSet<>(Arrays.asList("test.1", "test.3", "test.5"));
 		List<NodeDatum> latest = StreamSupport
 				.stream(service.latest(sourceIds, NodeDatum.class).spliterator(), false)
@@ -144,6 +171,7 @@ public class DefaultDatumServiceTests {
 		Map<String, NodeDatum> all = populateDatum();
 
 		// WHEN
+		replayAll();
 		List<NodeDatum> latest = StreamSupport
 				.stream(service.latest(singleton("test.1*"), NodeDatum.class).spliterator(), false)
 				.collect(Collectors.toList());
@@ -164,6 +192,7 @@ public class DefaultDatumServiceTests {
 		service.accept(outlier);
 
 		// WHEN
+		replayAll();
 		List<NodeDatum> latest = StreamSupport
 				.stream(service.latest(singleton("**/charger/*/*"), NodeDatum.class).spliterator(),
 						false)
@@ -180,6 +209,7 @@ public class DefaultDatumServiceTests {
 		populateDatum(count);
 
 		// WHEN
+		replayAll();
 		List<NodeDatum> result = StreamSupport
 				.stream(service.offset(emptySet(), 1, NodeDatum.class).spliterator(), false)
 				.collect(Collectors.toList());
@@ -196,6 +226,7 @@ public class DefaultDatumServiceTests {
 		populateDatum(count);
 
 		// WHEN
+		replayAll();
 		List<NodeDatum> result = StreamSupport
 				.stream(service.offset(emptySet(), 8, NodeDatum.class).spliterator(), false)
 				.collect(Collectors.toList());
@@ -204,4 +235,86 @@ public class DefaultDatumServiceTests {
 		assertThat("No offset datum available so far back", result, hasSize(0));
 	}
 
+	@Test
+	public void metaForSource_missing() {
+		// GIVEN
+		final String sourceId = "test.source";
+
+		expect(datumMetadataService.getSourceMetadata(sourceId)).andReturn(null);
+
+		// WHEN
+		replayAll();
+		DatumMetadataOperations result = service.datumMetadata(sourceId);
+
+		assertThat("null returned when DatumMetadataService returns null", result, is(nullValue()));
+	}
+
+	@Test
+	public void metaForSource_found() {
+		// GIVEN
+		final String sourceId = "test.source";
+
+		GeneralDatumMetadata meta = new GeneralDatumMetadata();
+		expect(datumMetadataService.getSourceMetadata(sourceId)).andReturn(meta);
+
+		// WHEN
+		replayAll();
+		DatumMetadataOperations result = service.datumMetadata(sourceId);
+
+		assertThat("Same instance returned as from DatumMetadataService", result,
+				is(sameInstance(meta)));
+	}
+
+	@Test
+	public void metaForSourcePattern_noAvailableSourceIds() {
+		// GIVEN
+		final String sourceIdPat = "test*";
+		expect(datumMetadataService.availableSourceMetadata()).andReturn(Collections.emptySet());
+
+		// WHEN
+		replayAll();
+		Collection<DatumMetadataOperations> result = service.datumMetadata(singleton(sourceIdPat));
+
+		// THEN
+		assertThat("Empty result returned when no source IDs available", result, hasSize(0));
+	}
+
+	@Test
+	public void metaForSourcePattern_noMatchingSourceIds() {
+		// GIVEN
+		final String sourceIdPat = "test*";
+
+		Set<String> availSourceIds = new HashSet<>(Arrays.asList("foo", "bar"));
+		expect(datumMetadataService.availableSourceMetadata()).andReturn(availSourceIds);
+
+		// WHEN
+		replayAll();
+		Collection<DatumMetadataOperations> result = service.datumMetadata(singleton(sourceIdPat));
+
+		// THEN
+		assertThat("Empty result returned when no source IDs match", result, hasSize(0));
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public void metaForSourcePattern_matchingSourceIds() {
+		// GIVEN
+		final String sourceIdPat = "test*";
+
+		Set<String> availSourceIds = new HashSet<>(asList("test.1", "test.2", "foo", "bar"));
+		expect(datumMetadataService.availableSourceMetadata()).andReturn(availSourceIds);
+
+		GeneralDatumMetadata meta1 = new GeneralDatumMetadata();
+		expect(datumMetadataService.getSourceMetadata("test.1")).andReturn(meta1);
+		GeneralDatumMetadata meta2 = new GeneralDatumMetadata();
+		expect(datumMetadataService.getSourceMetadata("test.2")).andReturn(meta2);
+
+		// WHEN
+		replayAll();
+		Collection<DatumMetadataOperations> result = service.datumMetadata(singleton(sourceIdPat));
+
+		// THEN
+		assertThat("Matches returned when source IDs match", result,
+				containsInAnyOrder(sameInstance(meta1), sameInstance(meta2)));
+	}
 }

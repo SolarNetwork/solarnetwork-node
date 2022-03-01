@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.runtime;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ import org.osgi.service.event.EventHandler;
 import org.springframework.util.PathMatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
+import net.solarnetwork.domain.datum.DatumMetadataOperations;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
@@ -44,7 +46,9 @@ import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.DatumMetadataService;
 import net.solarnetwork.node.service.DatumService;
+import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -56,7 +60,7 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class DefaultDatumService
 		implements DatumService, EventHandler, InstructionHandler, Consumer<NodeDatum> {
@@ -69,6 +73,7 @@ public class DefaultDatumService
 
 	private final PathMatcher pathMatcher;
 	private final ObjectMapper objectMapper;
+	private final OptionalService<DatumMetadataService> datumMetadataService;
 	private DatumHistory history = new DatumHistory(
 			new DatumHistory.Configuration(DEFAFULT_HISTORY_RAW_COUNT));
 
@@ -79,19 +84,17 @@ public class DefaultDatumService
 	 *        the path matcher to use
 	 * @param objectMapper
 	 *        the object mapper to use
+	 * @param datumMetadataService
+	 *        the datum metadata service to use
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public DefaultDatumService(PathMatcher pathMatcher, ObjectMapper objectMapper) {
+	public DefaultDatumService(PathMatcher pathMatcher, ObjectMapper objectMapper,
+			OptionalService<DatumMetadataService> datumMetadataService) {
 		super();
-		if ( pathMatcher == null ) {
-			throw new IllegalArgumentException("The pathMatcher argument must not be null.");
-		}
-		this.pathMatcher = pathMatcher;
-		if ( objectMapper == null ) {
-			throw new IllegalArgumentException("The objectMapper argument must not be null.");
-		}
-		this.objectMapper = objectMapper;
+		this.pathMatcher = requireNonNullArgument(pathMatcher, "pathMatcher");
+		this.objectMapper = requireNonNullArgument(objectMapper, "objectMapper");
+		this.datumMetadataService = requireNonNullArgument(datumMetadataService, "datumMetadataService");
 	}
 
 	@Override
@@ -213,6 +216,45 @@ public class DefaultDatumService
 		Collection<NodeDatum> latest = latest(sourceIdFilters, NodeDatum.class);
 		return InstructionUtils.createStatus(instruction, InstructionState.Completed, Instant.now(),
 				Collections.singletonMap(InstructionHandler.PARAM_SERVICE_RESULT, latest));
+	}
+
+	@Override
+	public DatumMetadataOperations datumMetadata(String sourceId) {
+		DatumMetadataService service = OptionalService.service(datumMetadataService);
+		return (service != null ? service.getSourceMetadata(sourceId) : null);
+	}
+
+	@Override
+	public Collection<DatumMetadataOperations> datumMetadata(Set<String> sourceIdFilter) {
+		DatumMetadataService service = OptionalService.service(datumMetadataService);
+		if ( service == null ) {
+			return Collections.emptyList();
+		}
+		Set<String> metaSourceIds = service.availableSourceMetadata();
+		if ( metaSourceIds == null || metaSourceIds.isEmpty() ) {
+			return Collections.emptyList();
+		}
+		List<DatumMetadataOperations> result = new ArrayList<>(metaSourceIds.size());
+		for ( String sourceId : metaSourceIds ) {
+			boolean match = false;
+			if ( sourceIdFilter == null || sourceIdFilter.isEmpty() ) {
+				match = true;
+			} else {
+				for ( String filter : sourceIdFilter ) {
+					if ( pathMatcher.match(filter, sourceId) ) {
+						match = true;
+						break;
+					}
+				}
+			}
+			if ( match ) {
+				DatumMetadataOperations meta = service.getSourceMetadata(sourceId);
+				if ( meta != null ) {
+					result.add(meta);
+				}
+			}
+		}
+		return result;
 	}
 
 	/**

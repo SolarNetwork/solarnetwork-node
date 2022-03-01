@@ -27,20 +27,23 @@ import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
 import static org.easymock.EasyMock.isNull;
-import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.emptyCollectionOf;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -83,7 +86,7 @@ import net.solarnetwork.util.CachedResult;
  * Test cases for the {@link JsonDatumMetadataService} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 
@@ -752,6 +755,39 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		assertThat("Metadata object kind", meta.getKind(), is(equalTo(ObjectDatumKind.Node)));
 		assertThat("Metadata object ID", meta.getObjectId(), is(equalTo(TEST_NODE_ID)));
 		assertThat("Metadata source ID", meta.getSourceId(), is(equalTo(TEST_SOUCE_ID)));
+	}
+
+	@Test
+	public void availableSourceIds_noneLoaded() {
+		// GIVEN
+
+		// WHEN
+		replayAll();
+		Set<String> result = service.availableSourceMetadata();
+
+		// THEN
+		assertThat("Empty set returned when no sources loaded", result,
+				is(emptyCollectionOf(String.class)));
+	}
+
+	@Test
+	public void availableSourceIds_someLoaded() {
+		// GIVEN
+		// put metadata into cache from start
+		sourceMetadata.put(TEST_SOUCE_ID,
+				service.createCachedMetadata(TEST_SOUCE_ID, new GeneralDatumMetadata()));
+
+		final String sourceId2 = "test.source.2";
+		sourceMetadata.put(sourceId2,
+				service.createCachedMetadata(sourceId2, new GeneralDatumMetadata()));
+
+		// WHEN
+		replayAll();
+		Set<String> result = service.availableSourceMetadata();
+
+		// THEN
+		assertThat("Set contains loaded source IDs", result,
+				containsInAnyOrder(TEST_SOUCE_ID, sourceId2));
 	}
 
 }

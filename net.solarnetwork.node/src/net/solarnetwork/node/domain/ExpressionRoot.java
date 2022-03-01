@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.domain;
 
+import static java.util.Collections.singleton;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumExpressionRoot;
+import net.solarnetwork.domain.datum.DatumMetadataOperations;
 import net.solarnetwork.domain.datum.DatumSamplesExpressionRoot;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.node.domain.datum.NodeDatum;
@@ -433,6 +435,44 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 			return false;
 		}
 		return opModesService.isOperationalModeActive(mode);
+	}
+
+	/**
+	 * Get the metadata for a given datum stream.
+	 * 
+	 * @param sourceId
+	 *        the source ID of the datum metadata to get
+	 * @return the metadata, or {@literal null} if no such metadata is available
+	 * @since 2.1
+	 */
+	public boolean hasMeta(String sourceId) {
+		return meta(sourceId) != null;
+	}
+
+	/**
+	 * Get the metadata for a given datum stream.
+	 * 
+	 * @param sourceId
+	 *        the source ID of the datum metadata to get
+	 * @return the metadata, or {@literal null} if no such metadata is available
+	 * @since 2.1
+	 */
+	public DatumMetadataOperations meta(String sourceId) {
+		return (datumService != null ? datumService.datumMetadata(sourceId) : null);
+	}
+
+	/**
+	 * Get the metadata for a set of datum streams matching a filter.
+	 * 
+	 * @param sourceIdFilter
+	 *        an optional Ant-style source ID pattern to filter by; use
+	 *        {@literal null} to return metadata for all available sources
+	 * @return the matching metadata, never {@literal null}
+	 * @since 2.1
+	 */
+	public Collection<DatumMetadataOperations> metaMatching(String sourceIdFilter) {
+		return (datumService != null ? datumService.datumMetadata(singleton(sourceIdFilter))
+				: Collections.emptyList());
 	}
 
 }

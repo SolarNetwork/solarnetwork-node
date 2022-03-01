@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.domain.test;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
@@ -39,6 +40,7 @@ import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.common.expr.spel.SpelExpressionService;
 import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.domain.ExpressionRoot;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
@@ -239,6 +241,45 @@ public class ExpressionRootTests {
 		// THEN
 		assertThat("isOpMode('foo') returns result of isOperationalModeActive()", result1, is(true));
 		assertThat("isOpMode('bar') returns result of isOperationalModeActive()", result2, is(false));
+	}
+
+	@Test
+	public void datumMeta() {
+		// GIVEN
+		GeneralDatumMetadata meta1 = new GeneralDatumMetadata();
+		meta1.putInfoValue("a", 1);
+		meta1.putInfoValue("b", "two");
+		meta1.putInfoValue("deviceInfo", "Version", "1.23.4");
+		meta1.putInfoValue("deviceInfo", "Name", "Thingy");
+		meta1.putInfoValue("deviceInfo", "Capacity", 3000);
+
+		expect(datumService.datumMetadata("foo")).andReturn(meta1).anyTimes();
+
+		GeneralDatumMetadata meta2 = new GeneralDatumMetadata();
+		meta2.putInfoValue("a", 2);
+		meta2.putInfoValue("deviceInfo", "Capacity", 1000);
+
+		expect(datumService.datumMetadata(singleton("foo/*"))).andReturn(asList(meta1, meta2))
+				.anyTimes();
+
+		// WHEN
+		replayAll();
+		ExpressionRoot root = createTestRoot();
+		String result1 = expressionService.evaluateExpression("meta('foo')?.info?.b", null, root, null,
+				String.class);
+		Integer result2 = expressionService.evaluateExpression("sum(metaMatching('foo/*').![info?.a])",
+				null, root, null, Integer.class);
+		Integer result3 = expressionService.evaluateExpression(
+				"meta('foo')?.getInfoNumber('deviceInfo', 'Capacity')", null, root, null, Integer.class);
+		Integer result4 = expressionService.evaluateExpression(
+				"sum(metaMatching('foo/*').![getInfoNumber('deviceInfo', 'Capacity')])", null, root,
+				null, Integer.class);
+
+		// THEN
+		assertThat("Metadata info traversal", result1, is("two"));
+		assertThat("Metadata match info direct traversal", result2, is(3));
+		assertThat("Metadata property info traversal", result3, is(3000));
+		assertThat("Metadata match property info traversal", result4, is(4000));
 	}
 
 }
