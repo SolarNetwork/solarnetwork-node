@@ -211,7 +211,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 		}
 		List<DatumExpressionRoot> result = new ArrayList<>(found.size());
 		for ( Datum d : found ) {
-			result.add(new ExpressionRoot(d));
+			result.add(new ExpressionRoot(d, null, null, datumService, opModesService));
 		}
 		return result;
 	}
@@ -353,7 +353,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 		if ( d == null ) {
 			return null;
 		}
-		return new ExpressionRoot(d);
+		return new ExpressionRoot(d, null, null, datumService, opModesService);
 	}
 
 	/**
@@ -415,7 +415,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 		if ( d == null ) {
 			return null;
 		}
-		return new ExpressionRoot(d);
+		return new ExpressionRoot(d, null, null, datumService, opModesService);
 	}
 
 	/**
