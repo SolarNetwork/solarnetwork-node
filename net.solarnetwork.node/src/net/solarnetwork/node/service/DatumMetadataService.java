@@ -43,7 +43,7 @@ public interface DatumMetadataService {
 	 * @return the available source IDs, never {@literal null}
 	 * @since 2.1
 	 */
-	default Set<String> availableSourceMetadata() {
+	default Set<String> availableSourceMetadataSourceIds() {
 		return Collections.emptySet();
 	}
 

@@ -269,7 +269,8 @@ public class DefaultDatumServiceTests {
 	public void metaForSourcePattern_noAvailableSourceIds() {
 		// GIVEN
 		final String sourceIdPat = "test*";
-		expect(datumMetadataService.availableSourceMetadata()).andReturn(Collections.emptySet());
+		expect(datumMetadataService.availableSourceMetadataSourceIds())
+				.andReturn(Collections.emptySet());
 
 		// WHEN
 		replayAll();
@@ -285,7 +286,7 @@ public class DefaultDatumServiceTests {
 		final String sourceIdPat = "test*";
 
 		Set<String> availSourceIds = new HashSet<>(Arrays.asList("foo", "bar"));
-		expect(datumMetadataService.availableSourceMetadata()).andReturn(availSourceIds);
+		expect(datumMetadataService.availableSourceMetadataSourceIds()).andReturn(availSourceIds);
 
 		// WHEN
 		replayAll();
@@ -299,15 +300,16 @@ public class DefaultDatumServiceTests {
 	@Test
 	public void metaForSourcePattern_matchingSourceIds() {
 		// GIVEN
-		final String sourceIdPat = "test*";
+		final String sourceIdPat = "**/bam/**";
 
-		Set<String> availSourceIds = new HashSet<>(asList("test.1", "test.2", "foo", "bar"));
-		expect(datumMetadataService.availableSourceMetadata()).andReturn(availSourceIds);
+		Set<String> availSourceIds = new HashSet<>(
+				asList("foo/bar/bam/1/11111111", "foo/bar/bam/2/22222222", "bambi", "bar"));
+		expect(datumMetadataService.availableSourceMetadataSourceIds()).andReturn(availSourceIds);
 
 		GeneralDatumMetadata meta1 = new GeneralDatumMetadata();
-		expect(datumMetadataService.getSourceMetadata("test.1")).andReturn(meta1);
+		expect(datumMetadataService.getSourceMetadata("foo/bar/bam/1/11111111")).andReturn(meta1);
 		GeneralDatumMetadata meta2 = new GeneralDatumMetadata();
-		expect(datumMetadataService.getSourceMetadata("test.2")).andReturn(meta2);
+		expect(datumMetadataService.getSourceMetadata("foo/bar/bam/2/22222222")).andReturn(meta2);
 
 		// WHEN
 		replayAll();

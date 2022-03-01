@@ -56,7 +56,7 @@ import net.solarnetwork.util.ArrayUtils;
  * extend.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public class DatumDataSourceSupport extends BaseIdentifiable {
@@ -93,6 +93,19 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	private boolean publishDeviceInfoMetadata = DEFAULT_PUBLISH_DEVICE_INFO_METADATA;
 
 	private ScheduledFuture<?> subSampleFuture;
+
+	/**
+	 * Clear the source metadata cache.
+	 * 
+	 * <p>
+	 * This is designed to support testing primarily.
+	 * </p>
+	 * 
+	 * @since 1.1
+	 */
+	public static final void clearSourceMetadataCache() {
+		SOURCE_METADATA_CACHE.clear();
+	}
 
 	/**
 	 * Offer a non-persisted datum event to the configured {@link DatumQueue},

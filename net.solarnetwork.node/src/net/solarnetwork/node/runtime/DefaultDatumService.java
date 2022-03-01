@@ -230,7 +230,7 @@ public class DefaultDatumService
 		if ( service == null ) {
 			return Collections.emptyList();
 		}
-		Set<String> metaSourceIds = service.availableSourceMetadata();
+		Set<String> metaSourceIds = service.availableSourceMetadataSourceIds();
 		if ( metaSourceIds == null || metaSourceIds.isEmpty() ) {
 			return Collections.emptyList();
 		}
