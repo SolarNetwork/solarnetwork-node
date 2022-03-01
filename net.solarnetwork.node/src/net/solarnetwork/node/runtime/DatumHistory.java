@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.util.CircularFifoQueue;
 
@@ -60,6 +62,8 @@ public class DatumHistory {
 
 	/** A default configuration instance. */
 	public static final Configuration DEFAULT_CONFIG = new Configuration(5);
+
+	private static final Logger log = LoggerFactory.getLogger(DatumHistory.class);
 
 	private final Configuration config;
 	private final ConcurrentMap<String, Queue<NodeDatum>> raw;
@@ -159,6 +163,7 @@ public class DatumHistory {
 	 *        the datum to add
 	 */
 	public void add(NodeDatum datum) {
+		log.debug("Adding datum: {}", datum);
 		if ( datum == null || datum.getSourceId() == null || datum.getTimestamp() == null ) {
 			return;
 		}
@@ -250,6 +255,7 @@ public class DatumHistory {
 	 */
 	public NodeDatum offset(String sourceId, int offset) {
 		final Queue<NodeDatum> q = raw.get(sourceId);
+		log.debug("Queue [{}] @ {} : {}", sourceId, offset, q);
 		if ( q == null ) {
 			return null;
 		}
@@ -323,6 +329,7 @@ public class DatumHistory {
 	 */
 	public NodeDatum offset(String sourceId, Instant timestamp, int offset) {
 		final Queue<NodeDatum> q = raw.get(sourceId);
+		log.debug("Queue [{}] @ {} @ {} : {}", sourceId, timestamp, offset, q);
 		if ( q == null ) {
 			return null;
 		}
