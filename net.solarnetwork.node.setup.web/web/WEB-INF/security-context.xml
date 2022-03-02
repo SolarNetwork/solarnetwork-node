@@ -19,7 +19,8 @@
 		<intercept-url pattern='/*.do' access="permitAll"/>
 		<intercept-url pattern='/pub/**' access="permitAll"/>
 	    <intercept-url pattern="/a/**" access="hasRole('ROLE_USER')"/>
-	    <custom-filter ref="associationFilter" before="FIRST"/>
+	    <custom-filter ref="exceptionSupportFilter" before="FIRST"/>
+	    <custom-filter ref="associationFilter" after="FIRST" />
 	    <custom-filter ref="loginKeyAuthFilter" before="LOGIN_PAGE_FILTER"/>
 		<form-login login-page="/login.do" default-target-url="/a/home"
 			authentication-failure-url="/login.do?login_error=1"/>
@@ -49,6 +50,8 @@
 	</beans:bean>
 	
 	<beans:bean id="associationFilter" class="net.solarnetwork.node.setup.web.NodeAssociationFilter"/>
+	
+	<beans:bean id="exceptionSupportFilter" class="net.solarnetwork.node.setup.web.support.ExceptionSupportFilter"/>
 
 	<authentication-manager alias="authenticationManager">
 		<authentication-provider user-service-ref="userDetailsService">			
