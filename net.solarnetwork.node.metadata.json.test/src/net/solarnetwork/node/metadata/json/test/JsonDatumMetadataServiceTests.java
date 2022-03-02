@@ -763,7 +763,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 
 		// WHEN
 		replayAll();
-		Set<String> result = service.availableSourceMetadata();
+		Set<String> result = service.availableSourceMetadataSourceIds();
 
 		// THEN
 		assertThat("Empty set returned when no sources loaded", result,
@@ -783,7 +783,7 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 
 		// WHEN
 		replayAll();
-		Set<String> result = service.availableSourceMetadata();
+		Set<String> result = service.availableSourceMetadataSourceIds();
 
 		// THEN
 		assertThat("Set contains loaded source IDs", result,
