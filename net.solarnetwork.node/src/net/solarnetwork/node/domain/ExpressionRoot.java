@@ -207,7 +207,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	 * Test if a "latest" datum is available for a given source ID.
 	 * 
 	 * <p>
-	 * This can be used to test if {@link #latest(String)} will return a
+	 * This can be used to test if {@link #latestMatching(String)} will return a
 	 * non-null value.
 	 * </p>
 	 * 
@@ -245,6 +245,94 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 		List<DatumExpressionRoot> result = new ArrayList<>(found.size());
 		for ( Datum d : found ) {
 			result.add(new ExpressionRoot(d, null, null, datumService, opModesService));
+		}
+		return result;
+	}
+
+	/**
+	 * Test if a "latest" datum is available for a given source ID, excluding
+	 * the {@link #getSourceId()} source ID.
+	 * 
+	 * <p>
+	 * This can be used to test if {@link #latestOthersMatching(String)} will
+	 * return a non-null value.
+	 * </p>
+	 * 
+	 * @param sourceIdPattern
+	 *        the Ant-style source ID pattern of the datum to look for
+	 * @return {@literal true} if {@link #latestMatching(String)} for the given
+	 *         {@code sourceIdPattern} will return a non-null value
+	 */
+	public boolean hasLatestOthersMatching(String sourceIdPattern) {
+		return latestOthersMatching(sourceIdPattern) != null;
+	}
+
+	/**
+	 * Get the latest available datum matching a given source ID pattern,
+	 * excluding the {@link #getSourceId()} source ID, as
+	 * {@link DatumExpressionRoot} instances.
+	 * 
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 * 
+	 * @param sourceIdPattern
+	 *        the Ant-style source ID pattern of the datum to look for
+	 * @return the matching datum, never {@literal null}
+	 */
+	public Collection<DatumExpressionRoot> latestOthersMatching(String sourceIdPattern) {
+		if ( datumService == null || sourceIdPattern == null ) {
+			return Collections.emptyList();
+		}
+		Set<String> pats = Collections.singleton(sourceIdPattern);
+		Collection<NodeDatum> found = datumService.offset(pats, getTimestamp(), 0, NodeDatum.class);
+		if ( found == null || found.isEmpty() ) {
+			return Collections.emptyList();
+		}
+		final String sourceId = getSourceId();
+		List<DatumExpressionRoot> result = new ArrayList<>(found.size());
+		for ( Datum d : found ) {
+			if ( sourceId != null && sourceId.equals(d.getSourceId()) ) {
+				continue;
+			}
+			result.add(new ExpressionRoot(d, null, null, datumService, opModesService));
+		}
+		return result;
+	}
+
+	/**
+	 * Get the latest available datum matching a given source ID pattern,
+	 * including this instance, as {@link DatumExpressionRoot} instances.
+	 * 
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 * 
+	 * @param sourceIdPattern
+	 *        the Ant-style source ID pattern of the datum to look for
+	 * @return the matching datum, never {@literal null} and always having at
+	 *         least one value (this instance)
+	 */
+	public Collection<DatumExpressionRoot> selfAndLatestMatching(String sourceIdPattern) {
+		if ( datumService == null || sourceIdPattern == null ) {
+			return Collections.emptyList();
+		}
+		Set<String> pats = Collections.singleton(sourceIdPattern);
+		Collection<NodeDatum> found = datumService.offset(pats, getTimestamp(), 0, NodeDatum.class);
+		if ( found == null || found.isEmpty() ) {
+			return Collections.singleton(this);
+		}
+		final String sourceId = getSourceId();
+		List<DatumExpressionRoot> result = new ArrayList<>(found.size());
+		result.add(this);
+		for ( Datum d : found ) {
+			if ( sourceId != null && sourceId.equals(d.getSourceId()) ) {
+				continue;
+			} else {
+				result.add(new ExpressionRoot(d, null, null, datumService, opModesService));
+			}
 		}
 		return result;
 	}
@@ -471,11 +559,33 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	}
 
 	/**
-	 * Get the metadata for a given datum stream.
+	 * Test if metadata for the {@link #getSourceId()} datum stream is
+	 * available.
+	 * 
+	 * @return {@literal true} if metadata for {@link #getSourceId()} is
+	 *         available
+	 * @since 2.1
+	 */
+	public boolean hasMeta() {
+		return hasMeta(getSourceId());
+	}
+
+	/**
+	 * Get the metadata for the {@link #getSourceId()} datum stream.
+	 * 
+	 * @return the metadata, or {@literal null} if no such metadata is available
+	 * @since 2.1
+	 */
+	public DatumMetadataOperations getMeta() {
+		return meta(getSourceId());
+	}
+
+	/**
+	 * Test if metadata for a given datum stream is available.
 	 * 
 	 * @param sourceId
 	 *        the source ID of the datum metadata to get
-	 * @return the metadata, or {@literal null} if no such metadata is available
+	 * @return {@literal true} if metadata for {@code sourceId} is available
 	 * @since 2.1
 	 */
 	public boolean hasMeta(String sourceId) {
@@ -491,7 +601,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	 * @since 2.1
 	 */
 	public DatumMetadataOperations meta(String sourceId) {
-		return (datumService != null ? datumService.datumMetadata(sourceId) : null);
+		return (datumService != null && sourceId != null ? datumService.datumMetadata(sourceId) : null);
 	}
 
 	/**
