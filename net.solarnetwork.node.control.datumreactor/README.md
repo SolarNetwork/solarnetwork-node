@@ -30,9 +30,9 @@ Each service configuration contains the following settings:
 |:--------------------|:-------------|
 | Service Name        | A unique name to identify this data source with. |
 | Service Group       | A group name to associate this data source with. |
-| Source ID           | A regular expression to match the source ID(s) of the datum stream(s) to monitor. |
+| Source ID           | A regular expression to match the source ID(s) of the datum stream(s) to monitor. Capture groups are supported and can be used as numbered placeholders in **Control ID**. |
 | Instruction Topic   | The instruction topic to generate. |
-| Control ID          | The control ID to manage. |
+| Control ID          | The control ID to manage. Placeholders are supported, and **Source ID** capture groups will be available as numbered placeholders, e.g. `{1}` for the first capture group. |
 | Minimum Value       | An optional minimum value to enforce, applied on number expression evaluation results. |
 | Maximum Value       | An optional maximum value to enforce, applied on number expression evaluation results. |
 | Expression          | The [expression][expr] to evaluate. See [below](#expressions) for more info. |

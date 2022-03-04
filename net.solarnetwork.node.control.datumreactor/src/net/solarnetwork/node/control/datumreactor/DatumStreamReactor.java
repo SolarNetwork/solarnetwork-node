@@ -62,6 +62,7 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.DateUtils;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * Service to monitor a datum stream and issue an instruction to a control with
@@ -103,14 +104,16 @@ public class DatumStreamReactor extends BaseIdentifiable
 		}
 		final NodeDatum datum = (NodeDatum) val;
 		final Pattern sourceIdRegex = getSourceIdRegex();
-		if ( sourceIdRegex != null && (datum.getSourceId() == null
-				|| !sourceIdRegex.matcher(datum.getSourceId()).find()) ) {
+		final String[] sourceIdMatch = (sourceIdRegex != null
+				? StringUtils.match(sourceIdRegex, datum.getSourceId())
+				: new String[] { datum.getSourceId() });
+		if ( sourceIdMatch == null ) {
 			log.debug("Ignoring datum: ID {} does not match pattern {}", datum.getSourceId(),
 					sourceIdRegex);
 			return;
 		}
 
-		final String controlId = controlId();
+		final String controlId = controlId(sourceIdMatch);
 
 		// evaluate expression to determine load balance output based in input load value,
 		// and then set configured control to that result
@@ -177,9 +180,16 @@ public class DatumStreamReactor extends BaseIdentifiable
 		}
 	}
 
-	private String controlId() {
+	private String controlId(String[] sourceIdMatch) {
 		String controlId = getConfig().getControlId();
-		return resolvePlaceholders(controlId);
+		Map<String, String> params = null;
+		if ( sourceIdMatch != null && sourceIdMatch.length > 1 ) {
+			params = new HashMap<>(sourceIdMatch.length);
+			for ( int i = 1; i < sourceIdMatch.length; i++ ) {
+				params.put(String.valueOf(i), sourceIdMatch[i]);
+			}
+		}
+		return resolvePlaceholders(controlId, params);
 	}
 
 	private Object evaluateExpression(final NodeDatum datum, final String controlId) {

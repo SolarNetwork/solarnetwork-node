@@ -66,9 +66,9 @@ public class ExpressionDatumFilterService extends BaseDatumFilterSupport
 			return samples;
 		}
 		Map<String, Object> params = smartPlaceholders(parameters);
-		ExpressionRoot root = new ExpressionRoot(datum, samples, params, service(getDatumService()),
-				getOpModesService());
 		DatumSamples s = new DatumSamples(samples);
+		ExpressionRoot root = new ExpressionRoot(datum, s, params, service(getDatumService()),
+				getOpModesService());
 		populateExpressionDatumProperties(s, getExpressionConfigs(), root);
 		incrementStats(start, samples, s);
 		return s;

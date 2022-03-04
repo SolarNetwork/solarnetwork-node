@@ -28,11 +28,14 @@ import static net.solarnetwork.node.reactor.InstructionHandler.TOPIC_SIGNAL;
 import static net.solarnetwork.test.EasyMockUtils.assertWith;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
@@ -51,8 +54,8 @@ import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
-import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.node.service.PlaceholderService;
 import net.solarnetwork.service.ExpressionService;
@@ -71,6 +74,8 @@ public class DatumStreamReactorTests {
 	private static final String TEST_SOURCE_ID = "/load/1";
 
 	private static final String TEST_CONTROL_ID = "/throttle/1";
+
+	private static final String TEST_CONTROL_ID_PLACEHOLDERS = "/throttle/{site}/{1}";
 
 	private static final String TEST_DATUM_PROP = "load";
 
@@ -98,6 +103,8 @@ public class DatumStreamReactorTests {
 		service.setInstructionExecutionService(new StaticOptionalService<>(instructionExecutionService));
 		service.setDatumService(new StaticOptionalService<>(datumService));
 		service.setPlaceholderService(new StaticOptionalService<>(placeholderService));
+
+		expectDebugExpressionRoot();
 	}
 
 	@After
@@ -116,7 +123,12 @@ public class DatumStreamReactorTests {
 	}
 
 	private static Event datumCapturedEvent(NodeDatum datum) {
-		return DatumEvents.datumEvent(DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED, datum);
+		return DatumEvents.datumEvent(DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED, datum);
+	}
+
+	private void expectDebugExpressionRoot() {
+		expect(datumService.latest(EasyMock.<Set<String>> anyObject(), eq(NodeDatum.class)))
+				.andReturn(Collections.emptySet()).anyTimes();
 	}
 
 	@Test
@@ -155,12 +167,21 @@ public class DatumStreamReactorTests {
 	@Test
 	public void placeholders() {
 		// GIVEN
-		expect(placeholderService.resolvePlaceholders(TEST_CONTROL_ID, null)).andReturn(TEST_CONTROL_ID);
+		service.setSourceIdRegexValue("/load/(\\d+)");
+		service.getConfig().setControlId(TEST_CONTROL_ID_PLACEHOLDERS);
+
+		final String expectedControlId = "/throttle/abc/1";
+		final Map<String, String> expectedPlaceholderParameters = Collections.singletonMap("1", "1");
+
+		expect(placeholderService.resolvePlaceholders(TEST_CONTROL_ID_PLACEHOLDERS,
+				expectedPlaceholderParameters)).andReturn(expectedControlId);
+		final String site = "abc";
 		final Integer fooVal = 123;
 		placeholderService.smartCopyPlaceholders(assertWith(new Assertion<Map<String, Object>>() {
 
 			@Override
 			public void check(Map<String, Object> dest) throws Throwable {
+				dest.put("site", site);
 				dest.put("foo", fooVal);
 			}
 		}));
@@ -179,7 +200,7 @@ public class DatumStreamReactorTests {
 						assertThat("Instruction topic", instr.getTopic(),
 								is(TOPIC_SET_CONTROL_PARAMETER));
 						assertThat("Control output value is result of expression",
-								instr.getParameterValue(TEST_CONTROL_ID),
+								instr.getParameterValue(expectedControlId),
 								is(String.valueOf(inputVal / 2 + fooVal)));
 						return InstructionUtils.createStatus(instr, InstructionState.Completed);
 					}
