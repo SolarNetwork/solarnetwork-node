@@ -133,7 +133,7 @@ import net.solarnetwork.util.SearchFilter;
  * {@link SettingDao} to persist changes between application restarts.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class CASettingsService implements SettingsService, BackupResourceProvider, InstructionHandler {
 
@@ -153,6 +153,10 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	// a CA PID pattern so that only these are attempted to be restored
 	private static final Pattern CA_PID_PATTERN = Pattern.compile("^[a-zA-Z0-9.]+$");
+
+	// a setting pattern like foo.X that looks like a factory instance (X is the instance)
+	private static final Pattern SETTING_FACTORY_INSTANCE_PATTERN = Pattern
+			.compile("^([a-zA-Z0-9.]+)\\.(\\d+)$");
 
 	private ConfigurationAdmin configurationAdmin;
 	private SettingDao settingDao;
@@ -942,8 +946,15 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			}
 
 			if ( bean.getProviderKey() == null ) {
-				// not a factory setting
-				bean.setProviderKey(s.getKey());
+				// not a known factory setting, however look for foo.X setting that matches factory style
+				Matcher m = SETTING_FACTORY_INSTANCE_PATTERN.matcher(s.getKey());
+				if ( m.matches() ) {
+					bean.setProviderKey(m.group(1));
+					bean.setInstanceKey(m.group(2));
+				} else {
+					// not a factory setting
+					bean.setProviderKey(s.getKey());
+				}
 			}
 			bean.setKey(s.getType());
 			bean.setValue(s.getValue());
