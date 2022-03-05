@@ -28,5 +28,7 @@ documentation:
    single new stream
  * [Operational Mode Datum Filter](README-OpMode.md) - evaluate expressions to toggle operational
    modes
+ * [Parameter Expression Datum Filter](README-Parameter.md) - generate dynamic filter parameters
+   by evaluating expressions against existing datum properties
  * [Virtual Meter Datum Filter](README-VirtualMeter.md) - derive accumulating meter-style reading
    datum properties out of other datum properties
