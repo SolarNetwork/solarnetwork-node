@@ -142,23 +142,36 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 		String data = super.toString();
 		if ( log.isTraceEnabled() ) {
 			if ( datumService != null ) {
-				Collection<NodeDatum> latestDatum = datumService.latest(emptySet(), NodeDatum.class);
-				if ( latestDatum != null && !latestDatum.isEmpty() ) {
-					for ( NodeDatum d : latestDatum ) {
-						data += "\nDatum [" + d.getSourceId() + "]: " + d;
-					}
-					for ( NodeDatum d : latestDatum ) {
-						DatumMetadataOperations meta = datumService.datumMetadata(d.getSourceId());
-						if ( meta != null && !meta.isEmpty() ) {
-							data += "\nMeta [" + d.getSourceId() + "]: " + meta;
+				try {
+					Collection<NodeDatum> latestDatum = datumService.latest(emptySet(), NodeDatum.class);
+					if ( latestDatum != null && !latestDatum.isEmpty() ) {
+						for ( NodeDatum d : latestDatum ) {
+							data += "\nDatum [" + d.getSourceId() + "]: " + d;
+						}
+						for ( NodeDatum d : latestDatum ) {
+							try {
+								DatumMetadataOperations meta = datumService
+										.datumMetadata(d.getSourceId());
+								if ( meta != null && !meta.isEmpty() ) {
+									data += "\nMeta [" + d.getSourceId() + "]: " + meta;
+								}
+							} catch ( Exception e2 ) {
+								// ignore this
+							}
 						}
 					}
+				} catch ( Exception e ) {
+					// ignore this
 				}
 			}
 			if ( opModesService != null ) {
-				Set<String> activeModes = opModesService.activeOperationalModes();
-				if ( activeModes != null && !activeModes.isEmpty() ) {
-					data += "\nActive op modes: " + activeModes;
+				try {
+					Set<String> activeModes = opModesService.activeOperationalModes();
+					if ( activeModes != null && !activeModes.isEmpty() ) {
+						data += "\nActive op modes: " + activeModes;
+					}
+				} catch ( Exception e ) {
+					// ignore this
 				}
 			}
 		}
