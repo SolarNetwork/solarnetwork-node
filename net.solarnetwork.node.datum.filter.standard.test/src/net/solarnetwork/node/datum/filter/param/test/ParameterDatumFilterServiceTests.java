@@ -99,4 +99,31 @@ public class ParameterDatumFilterServiceTests {
 				allOf(hasEntry(PARAM_1, 246), hasEntry(PARAM_2, 42435)));
 	}
 
+	@Test
+	public void chainedExpressions() throws Exception {
+		// GIVEN
+		ExpressionConfig config1 = new ExpressionConfig();
+		config1.setName(PARAM_1);
+		config1.setExpressionServiceId(exprService.getUid());
+		config1.setExpression("voltage * 2");
+
+		ExpressionConfig config2 = new ExpressionConfig();
+		config2.setName(PARAM_2);
+		config2.setExpressionServiceId(exprService.getUid());
+		config2.setExpression("p1 * amps");
+		xform.setExpressionConfigs(new ExpressionConfig[] { config1, config2 });
+
+		// WHEN
+		SimpleDatum d = createTestSimpleDatum(SOURCE_ID_1, PROP_1, 123);
+		d.putSampleValue(DatumSamplesType.Instantaneous, PROP_2, 345);
+		Map<String, Object> parameters = new LinkedHashMap<>();
+		DatumSamplesOperations result = xform.filter(d, d.getSamples(), parameters);
+
+		// THEN
+		assertThat("Result unchanged", result, is(sameInstance(d.getSamples())));
+		assertThat("Output parameters generated", parameters.keySet(), hasSize(2));
+		assertThat("Parameters generated via expressions", parameters,
+				allOf(hasEntry(PARAM_1, 246), hasEntry(PARAM_2, 84870)));
+	}
+
 }

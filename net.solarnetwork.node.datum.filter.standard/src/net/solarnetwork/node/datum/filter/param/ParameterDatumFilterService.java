@@ -26,10 +26,12 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
+import java.util.AbstractMap;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
@@ -69,12 +71,61 @@ public class ParameterDatumFilterService extends BaseDatumFilterSupport
 			return samples;
 		}
 		Map<String, Object> params = smartPlaceholders(parameters);
-		MapSampleOperations s = new MapSampleOperations(parameters, samples);
+		MapSampleOperations s = new MapSampleOperations(new CopyingMap<>(parameters, params), samples);
 		ExpressionRoot root = new ExpressionRoot(datum, s, params, service(getDatumService()),
 				getOpModesService());
 		populateExpressionDatumProperties(s, getExpressionConfigs(), root);
 		incrementStats(start, samples, samples);
 		return samples;
+	}
+
+	private static final class CopyingMap<K, V> extends AbstractMap<K, V> {
+
+		private final Map<K, V> delegate;
+		private final Map<K, V> copy;
+
+		private CopyingMap(Map<K, V> delegate, Map<K, V> copy) {
+			super();
+			this.delegate = delegate;
+			this.copy = copy;
+		}
+
+		@Override
+		public Set<Entry<K, V>> entrySet() {
+			return delegate.entrySet();
+		}
+
+		@Override
+		public int size() {
+			return copy.size();
+		}
+
+		@Override
+		public boolean isEmpty() {
+			return copy.isEmpty();
+		}
+
+		@Override
+		public boolean containsKey(Object key) {
+			return copy.containsKey(key);
+		}
+
+		@Override
+		public V get(Object key) {
+			return copy.get(key);
+		}
+
+		@Override
+		public Set<K> keySet() {
+			return copy.keySet();
+		}
+
+		@Override
+		public V put(K key, V value) {
+			copy.put(key, value);
+			return delegate.put(key, value);
+		}
+
 	}
 
 	@Override
