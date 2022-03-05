@@ -73,7 +73,7 @@ public class ParameterDatumFilterService extends BaseDatumFilterSupport
 		ExpressionRoot root = new ExpressionRoot(datum, s, params, service(getDatumService()),
 				getOpModesService());
 		populateExpressionDatumProperties(s, getExpressionConfigs(), root);
-		incrementStats(start, samples, s);
+		incrementStats(start, samples, samples);
 		return samples;
 	}
 
