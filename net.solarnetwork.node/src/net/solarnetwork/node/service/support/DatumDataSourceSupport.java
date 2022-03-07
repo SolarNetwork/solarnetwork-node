@@ -33,6 +33,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import org.springframework.scheduling.TaskScheduler;
+import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.domain.ExpressionRoot;
@@ -345,6 +346,31 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	protected void populateExpressionDatumProperties(final MutableNodeDatum d,
 			final ExpressionConfig[] expressionConfs, final Object root) {
 		super.populateExpressionDatumProperties(d.asMutableSampleOperations(), expressionConfs, root);
+	}
+
+	/**
+	 * Save the {@link #getMetadata()} data as datum source metadata.
+	 * 
+	 * @param sourceId
+	 *        the source ID to save the metadata on
+	 * @since 1.1
+	 */
+	protected void saveMetadata(String sourceId) {
+		if ( sourceId == null || sourceId.isEmpty() ) {
+			return;
+		}
+		KeyValuePair[] data = getMetadata();
+		if ( data == null || data.length < 1 ) {
+			return;
+		}
+		GeneralDatumMetadata meta = new GeneralDatumMetadata();
+		meta.populate(data);
+		try {
+			addSourceMetadata(sourceId, meta);
+		} catch ( Exception e ) {
+			log.warn("Error saving metadata values {} for source [{}]: {}", meta,
+					resolvePlaceholders(sourceId), e);
+		}
 	}
 
 	/**
