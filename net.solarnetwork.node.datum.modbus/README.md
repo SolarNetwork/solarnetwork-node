@@ -21,17 +21,19 @@ for each Modbus device you want to collect data from.
 
 Each device configuration contains the following overall settings:
 
-| Setting            | Description                                                                      |
-|--------------------|----------------------------------------------------------------------------------|
-| Schedule           | A cron schedule that determines when data is collected.                          |
-| Service Name       | A unique name to identify this data source with.                                 |
-| Service Group      | A group name to associate this data source with.                                 |
-| Modbus Port        | The service name of the Modbus port to use.                                      |
-| Modbus Unit ID     | The ID of the Modbus device to collect data from, from 1 - 255.                  |
+| Setting            | Description |
+|:-------------------|:------------|
+| Schedule           | A cron schedule that determines when data is collected. |
+| Service Name       | A unique name to identify this data source with. |
+| Service Group      | A group name to associate this data source with. |
+| Modbus Connection  | The **service name** of the Modbus connection to use. |
+| Modbus Unit ID     | The ID of the Modbus device to collect data from, from 1 - 255. |
 | Source ID          | The SolarNetwork unique source ID to assign to datum collected from this device. |
-| Sample Maximum Age | A minimum time to cache captured Modbus data, in milliseconds.                   |
-| Max Read Length    | The maximum number of Modbus registers to request at once.                       |
-| Word Order         | For multi-register data types, the ordering to use when combining them.          |
+| Sample Maximum Age | A minimum time to cache captured Modbus data, in milliseconds. |
+| Max Read Length    | The maximum number of Modbus registers to request at once. |
+| Word Order         | For multi-register data types, the ordering to use when combining them. |
+| Datum Filter Service | The **service name** of a datum filter to apply. |
+| Sub-sample Frequency | If configured, the frequency at which samples should be collected from the device, in milliseconds. Set to `0` (or empty) to disable. Typically this would be combined with a **Datum Filter Service** to transform the sub-samples.
 
 ## Overall device settings notes
 
@@ -59,16 +61,33 @@ Each device configuration contains the following overall settings:
 	necessary to work better with those devices.</dd>
 </dl>
 
+## Metadata settings
+
+Since version **3.1**, metadata settings allow you to add datum source metadata to the configured
+datum stream.
+
+![Metadata settings](docs/solarnode-modbus-device-metadata-settings.png)
+
+Each metadata configuration contains the following settings:
+
+| Setting         | Description |
+|:----------------|:------------|
+| Name            | The metadata key. If starts with a `/` then will be treated as a [key-path][metadata-key-path]. Valid paths start with one of `/m/`, `/pm/`, and `/t`. |
+| Value           | The metadata value. |
+
+
 ## Datum property settings
 
-You must configure settings for each datum property you want to collect from each device.
-You can configure as many property settings as you like, using the <kbd>+</kbd> and <kbd>-</kbd>
-buttons to add/remove property configurations.
+You must configure settings for each datum property you want to collect from each device. You can
+configure as many property settings as you like, using the <kbd>+</kbd> and <kbd>-</kbd> buttons to
+add/remove property configurations.
+
+![Property settings](docs/solarnode-modbus-device-property-settings.png)
 
 Each property configuration contains the following settings:
 
 | Setting         | Description                                                                                             |
-|-----------------|---------------------------------------------------------------------------------------------------------|
+|:----------------|:--------------------------------------------------------------------------------------------------------|
 | Property        | The name of the datum property to save the Modbus value as.                                             |
 | Property Type   | The type of datum property to use.                                                                      |
 | Modbus Address  | The starting register address to read Modbus data from (zero-based).                                    |
@@ -119,7 +138,9 @@ register values.
 
 ### Expression root object
 
-The root object is a [ExpressionRoot][ExpressionRoot] object, which has the following properties:
+The root object is a `DatumExpressionRoot` that lets you treat all datum properties as expression
+variables directly. See the [SolarNode Expressions][sn-expressions] guide for more information. In 
+addition, the following properties are available:
 
 | Property | Type | Description |
 |:---------|:-----|:------------|
@@ -158,3 +179,5 @@ Then here are some example expressions and the results they would produce:
 [GeneralNodeDatum]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node/src/net/solarnetwork/node/domain/GeneralNodeDatum.java
 [ModbusData]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node.io.modbus/src/net/solarnetwork/node/io/modbus/ModbusData.java
 [meta-api]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarQuery-API#add-node-datum-metadata
+[metadata-key-path]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNet-API-global-objects#metadata-filter-key-paths
+[sn-expressions]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Expressions

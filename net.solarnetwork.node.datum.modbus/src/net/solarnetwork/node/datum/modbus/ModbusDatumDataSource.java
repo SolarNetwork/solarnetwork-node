@@ -68,7 +68,7 @@ import net.solarnetwork.util.StringUtils;
  * Generic Modbus device datum data source.
  * 
  * @author matt
- * @version 3.0
+ * @version 3.1
  */
 public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider, ModbusConnectionAction<ModbusData>,
@@ -327,6 +327,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		results.add(wordOrderSpec);
 
 		results.addAll(getSubSampleSettingSpecifiers());
+
+		results.addAll(basicIdentifiableMetadataSettings(null, getMetadata()));
 
 		ModbusPropertyConfig[] confs = getPropConfigs();
 		List<ModbusPropertyConfig> confsList = (confs != null ? Arrays.asList(confs)
