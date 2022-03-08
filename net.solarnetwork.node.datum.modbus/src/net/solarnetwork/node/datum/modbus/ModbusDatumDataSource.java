@@ -101,6 +101,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	@Override
 	public void configurationChanged(Map<String, Object> properties) {
 		startSubSampling(this);
+		saveMetadata(getSourceId());
 	}
 
 	@Override
