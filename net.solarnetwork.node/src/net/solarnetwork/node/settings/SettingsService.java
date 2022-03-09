@@ -42,7 +42,7 @@ import net.solarnetwork.util.SearchFilter;
  * Service API for settings.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public interface SettingsService {
@@ -168,6 +168,28 @@ public interface SettingsService {
 	 * @return the factory, or {@literal null} if not available
 	 */
 	SettingSpecifierProviderFactory getProviderFactory(String factoryUid);
+
+	/**
+	 * Enable a provider factory instance.
+	 * 
+	 * @param factoryUid
+	 *        the factory UID to enable
+	 * @param instanceUid
+	 *        the instance UID to enable
+	 * @since 1.1
+	 */
+	void enableProviderFactoryInstance(String factoryUid, String instanceUid);
+
+	/**
+	 * Disable a provider factory instance.
+	 * 
+	 * @param factoryUid
+	 *        the factory UID to disable
+	 * @param instanceUid
+	 *        the instance UID to disable
+	 * @since 1.1
+	 */
+	void disableProviderFactoryInstance(String factoryUid, String instanceUid);
 
 	/**
 	 * Add a new factory instance, and return the new instance ID.
