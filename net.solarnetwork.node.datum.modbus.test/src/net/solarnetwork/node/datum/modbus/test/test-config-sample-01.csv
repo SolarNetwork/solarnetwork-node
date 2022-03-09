@@ -1,0 +1,14 @@
+Instance,Source ID,Schedule,Connection,Unit ID,Sample Cache,Max Read,Word Order,Property,Property Type,Register,Register Type,Data Type,Data Length,Multiplier,Decimal Scale
+"# Rows whose first cell starts with ""#"" are ignored."
+"# Devices are uniquely defined by the Source ID column. Rows that omit a Source ID value will assume the first value found in previous rows, searching backwards.  Columns B-G are device-wide and need only be defined once."
+P1,power/1,0 * * * * *,Modbus Port,1,5000,64,Most to least,,,,,,,,
+"# The next row defines an ASCII string ""error"" message property, that spans 16 Modbus registers for a maximum of 32 characters."
+,,,,,,,,error,Status,1000,Holding,String ASCII,16,,
+"# The next rows define the 32-bit floating point ""current"" and ""voltage"" properties, each uses 2 Modbus registers. For fixed-length data types like this there is no need to define a Data Length."
+,,,,,,,,current,Instantaneous,0,Holding,32-bit float,,1,-1
+,,,,,,,,voltage,Instantaneous,2,Holding,32-bit float,,1,1
+"# The next row defines a 64-bit unsigned accumulator ""wattHours"" property, using 4 Modbus registers."
+,,,,,,,,wattHours,Accumulating,70,Holding,64-bit unsigned int,,,
+"# Next a new device is started with a new Source ID. Note how the first property can also be defined on this row; the ""frequency"" property is stored as a 16-bit unsigned value but mutliplied by 0.01 to produce the final decimal value (4987 becomes 49.87)"
+P2,power/2,0 * * * * *,Modbus Port,2,5000,64,Most to least,frequency,Instantaneous,10,Input,16-bit unsigned int,,0.01,
+,,,,,,,,watts,Instantaneous,11,Input,32-bit unsigned int,,,

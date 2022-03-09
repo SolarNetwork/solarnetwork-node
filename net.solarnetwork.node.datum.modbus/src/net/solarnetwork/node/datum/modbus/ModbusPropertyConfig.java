@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.modbus;
 
+import static java.lang.String.format;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -31,6 +32,7 @@ import net.solarnetwork.domain.datum.DatumSamplePropertyConfig;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
@@ -43,7 +45,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 
@@ -152,8 +154,67 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 		setDecimalScale(decimalScale);
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("ModbusPropertyConfig{");
+		if ( getName() != null ) {
+			builder.append("property=");
+			builder.append(getName());
+			builder.append(", ");
+		}
+		if ( getPropertyType() != null ) {
+			builder.append("propertyType=");
+			builder.append(getPropertyType());
+			builder.append(", ");
+		}
+		if ( function != null ) {
+			builder.append("function=");
+			builder.append(function);
+			builder.append(", ");
+		}
+		if ( getAddress() != null ) {
+			builder.append("address=");
+			builder.append(getAddress());
+		}
+		if ( dataType != null ) {
+			builder.append("dataType=");
+			builder.append(dataType);
+			builder.append(", ");
+		}
+		if ( wordLength != null ) {
+			builder.append("wordLength=");
+			builder.append(wordLength);
+			builder.append(", ");
+		}
+		if ( unitMultiplier != null ) {
+			builder.append("unitMultiplier=");
+			builder.append(unitMultiplier);
+			builder.append(", ");
+		}
+		if ( decimalScale != null ) {
+			builder.append("decimalScale=");
+			builder.append(decimalScale);
+			builder.append(", ");
+		}
+		builder.append("}");
+		return builder.toString();
+	}
+
 	/**
-	 * Test if this configuration appears to be vaild.
+	 * Test if this configuration is empty.
+	 * 
+	 * @return {@literal true} if all properties are null
+	 * @since 2.1
+	 */
+	public boolean isEmpty() {
+		return (dataType == null && decimalScale == null && function == null && unitMultiplier == null
+				&& wordLength == null && getName() == null && getPropertyType() == null
+				&& getConfig() == null);
+	}
+
+	/**
+	 * Test if this configuration appears to be valid.
 	 * 
 	 * @return {@literal true} if the configuration has all necessary properties
 	 *         configured
@@ -163,6 +224,41 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 		String propName = getName();
 		return (address != null && address.intValue() >= 0 && propName != null && !propName.isEmpty()
 				&& function != null && dataType != null);
+	}
+
+	/**
+	 * Generate a list of setting values.
+	 * 
+	 * @param providerId
+	 *        the setting provider ID
+	 * @param instanceId
+	 *        the factory instance ID
+	 * @param i
+	 *        the property index
+	 * @return the settings
+	 * @since 2.1
+	 */
+	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, int i) {
+		List<SettingValueBean> settings = new ArrayList<>(8);
+		addSetting(settings, providerId, instanceId, i, "name", getName());
+		addSetting(settings, providerId, instanceId, i, "datumPropertyTypeKey",
+				getDatumPropertyTypeKey());
+		addSetting(settings, providerId, instanceId, i, "address", getAddress());
+		addSetting(settings, providerId, instanceId, i, "functionCode", getFunctionCode());
+		addSetting(settings, providerId, instanceId, i, "dataTypeKey", getDataTypeKey());
+		addSetting(settings, providerId, instanceId, i, "wordLength", getWordLength());
+		addSetting(settings, providerId, instanceId, i, "unitMultiplier", getUnitMultiplier());
+		addSetting(settings, providerId, instanceId, i, "decimalScale", getDecimalScale());
+		return settings;
+	}
+
+	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
+			int i, String key, Object val) {
+		if ( val == null ) {
+			return;
+		}
+		settings.add(new SettingValueBean(providerId, instanceId,
+				format("jobService.datumDataSource.propConfigs[%d].%s", i, key), val.toString()));
 	}
 
 	/**
