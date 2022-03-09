@@ -660,7 +660,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				}
 			}
 			String newInstanceKey = String.valueOf(next);
-			addProviderFactoryInstance(factoryUid, newInstanceKey);
+			enableProviderFactoryInstance(factoryUid, newInstanceKey);
 			log.info("Registered component [{}] instance {}", factoryUid, newInstanceKey);
 			return newInstanceKey;
 		}
@@ -693,11 +693,17 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			// delete instance values
 			settingDao.deleteSetting(getFactoryInstanceSettingKey(factoryUid, instanceUid));
 
-			addProviderFactoryInstance(factoryUid, instanceUid);
+			enableProviderFactoryInstance(factoryUid, instanceUid);
 		}
 	}
 
-	private void addProviderFactoryInstance(String factoryUid, String instanceUid) {
+	@Override
+	public void disableProviderFactoryInstance(String factoryUid, String instanceUid) {
+		settingDao.deleteSetting(getFactorySettingKey(factoryUid), instanceUid);
+	}
+
+	@Override
+	public void enableProviderFactoryInstance(String factoryUid, String instanceUid) {
 		settingDao.storeSetting(getFactorySettingKey(factoryUid), instanceUid, instanceUid);
 		try {
 			Configuration conf = getConfiguration(factoryUid, instanceUid);
@@ -705,8 +711,10 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			if ( props == null ) {
 				props = new Hashtable<>();
 			}
-			props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceUid);
-			conf.update(props);
+			if ( !instanceUid.equals(props.get(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY)) ) {
+				props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceUid);
+				conf.update(props);
+			}
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		} catch ( InvalidSyntaxException e ) {
