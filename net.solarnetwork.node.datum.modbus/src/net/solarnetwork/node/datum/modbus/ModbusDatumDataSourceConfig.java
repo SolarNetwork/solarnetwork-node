@@ -22,9 +22,9 @@
 
 package net.solarnetwork.node.datum.modbus;
 
-import static java.lang.String.format;
 import java.util.ArrayList;
 import java.util.List;
+import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.io.modbus.ModbusWordOrder;
 import net.solarnetwork.node.settings.SettingValueBean;
 
@@ -36,6 +36,9 @@ import net.solarnetwork.node.settings.SettingValueBean;
  * @since 3.1
  */
 public class ModbusDatumDataSourceConfig {
+
+	/** The setting prefix for data source settings. */
+	public static final String JOB_SERVICE_SETTING_PREFIX = "jobService.datumDataSource.";
 
 	private String key;
 	private String sourceId;
@@ -57,7 +60,6 @@ public class ModbusDatumDataSourceConfig {
 	 * @param prefix
 	 *        a prefix to append to all setting keys
 	 * @return the list of setting values, never {@literal null}
-	 * @since 1.1
 	 */
 	public List<SettingValueBean> toSettingValues(String providerId) {
 		List<SettingValueBean> settings = new ArrayList<>(16);
@@ -76,13 +78,61 @@ public class ModbusDatumDataSourceConfig {
 		return settings;
 	}
 
+	/**
+	 * Populate a setting as a configuration value, if possible.
+	 * 
+	 * @param setting
+	 *        the setting to try to handle
+	 * @return {@literal true} if the setting was handled as a configuration
+	 *         value
+	 */
+	public boolean populateFromSetting(Setting setting) {
+		if ( "schedule".equals(setting.getType()) ) {
+			setSchedule(setting.getValue());
+			return true;
+		}
+		if ( ModbusPropertyConfig.populateFromSetting(this, setting) ) {
+			return true;
+		}
+		if ( setting.getType().startsWith(JOB_SERVICE_SETTING_PREFIX) ) {
+			String type = setting.getType().substring(JOB_SERVICE_SETTING_PREFIX.length());
+			String val = setting.getValue();
+			if ( val != null && !val.isEmpty() ) {
+				switch (type) {
+					case "sourceId":
+						setSourceId(val);
+						break;
+					case "modbusNetwork.propertyFilters['uid']":
+						setModbusNetworkName(val);
+						break;
+					case "unitId":
+						setUnitId(Integer.valueOf(val));
+						break;
+					case "sampleCacheMs":
+						setSampleCacheMs(Long.valueOf(val));
+						break;
+					case "maxReadWordCount":
+						setMaxReadWordCount(Integer.valueOf(val));
+						break;
+					case "wordOrderKey":
+						setWordOrderKey(val.charAt(0));
+						break;
+					default:
+						// ignore
+				}
+			}
+			return true;
+		}
+		return false;
+	}
+
 	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
 			String key, Object val) {
 		if ( val == null ) {
 			return;
 		}
-		settings.add(new SettingValueBean(providerId, instanceId,
-				format("jobService.datumDataSource.%s", key), val.toString()));
+		settings.add(new SettingValueBean(providerId, instanceId, JOB_SERVICE_SETTING_PREFIX.concat(key),
+				val.toString()));
 	}
 
 	@Override
@@ -283,6 +333,23 @@ public class ModbusDatumDataSourceConfig {
 			order = ModbusWordOrder.MostToLeastSignificant;
 		}
 		return order.getKey();
+	}
+
+	/**
+	 * Set the word order as a key value.
+	 * 
+	 * @param key
+	 *        the word order key to set; if {@code key} is not valid then
+	 *        {@link ModbusWordOrder#MostToLeastSignificant} will be set
+	 */
+	public void setWordOrderKey(char key) {
+		ModbusWordOrder order;
+		try {
+			order = ModbusWordOrder.forKey(key);
+		} catch ( IllegalArgumentException e ) {
+			order = ModbusWordOrder.MostToLeastSignificant;
+		}
+		setWordOrder(order);
 	}
 
 	/**

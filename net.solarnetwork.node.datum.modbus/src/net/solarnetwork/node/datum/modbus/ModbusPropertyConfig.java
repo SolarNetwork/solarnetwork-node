@@ -23,13 +23,17 @@
 package net.solarnetwork.node.datum.modbus;
 
 import static java.lang.String.format;
+import static net.solarnetwork.node.datum.modbus.ModbusDatumDataSourceConfig.JOB_SERVICE_SETTING_PREFIX;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.solarnetwork.domain.datum.DatumSamplePropertyConfig;
 import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.settings.SettingValueBean;
@@ -48,6 +52,19 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * @version 2.1
  */
 public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
+
+	/**
+	 * A setting type pattern for a property configuration element.
+	 * 
+	 * <p>
+	 * The pattern has two capture groups: the property configuration index and
+	 * the property setting name.
+	 * </p>
+	 * 
+	 * @since 2.1
+	 */
+	public static final Pattern PROP_SETTING_PATTERN = Pattern.compile(
+			Pattern.quote(JOB_SERVICE_SETTING_PREFIX.concat("propConfigs[")).concat("(\\d+)\\]\\.(.*)"));
 
 	private ModbusReadFunction function;
 	private ModbusDataType dataType;
@@ -176,6 +193,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 		if ( getAddress() != null ) {
 			builder.append("address=");
 			builder.append(getAddress());
+			builder.append(", ");
 		}
 		if ( dataType != null ) {
 			builder.append("dataType=");
@@ -259,6 +277,63 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 		}
 		settings.add(new SettingValueBean(providerId, instanceId,
 				format("jobService.datumDataSource.propConfigs[%d].%s", i, key), val.toString()));
+	}
+
+	/**
+	 * Populate a setting as a property configuration value, if possible.
+	 * 
+	 * @param config
+	 *        the overall configuration
+	 * @param setting
+	 *        the setting to try to handle
+	 * @return {@literal true} if the setting was handled as a property
+	 *         configuration value
+	 * @since 2.1
+	 */
+	public static boolean populateFromSetting(ModbusDatumDataSourceConfig config, Setting setting) {
+		Matcher m = PROP_SETTING_PATTERN.matcher(setting.getType());
+		if ( !m.matches() ) {
+			return false;
+		}
+		int idx = Integer.parseInt(m.group(1));
+		String name = m.group(2);
+		List<ModbusPropertyConfig> propConfigs = config.getPropertyConfigs();
+		if ( !(idx < propConfigs.size()) ) {
+			propConfigs.add(idx, new ModbusPropertyConfig());
+		}
+		ModbusPropertyConfig propConfig = propConfigs.get(idx);
+		String val = setting.getValue();
+		if ( val != null && !val.isEmpty() ) {
+			switch (name) {
+				case "name":
+					propConfig.setName(val);
+					break;
+				case "datumPropertyTypeKey":
+					propConfig.setDatumPropertyTypeKey(val);
+					break;
+				case "address":
+					propConfig.setAddress(Integer.valueOf(val));
+					break;
+				case "functionCode":
+					propConfig.setFunctionCode(val);
+					break;
+				case "dataTypeKey":
+					propConfig.setDataTypeKey(val);
+					break;
+				case "wordLength":
+					propConfig.setWordLength(Integer.valueOf(val));
+					break;
+				case "unitMultiplier":
+					propConfig.setUnitMultiplier(new BigDecimal(val));
+					break;
+				case "decimalScale":
+					propConfig.setDecimalScale(Integer.valueOf(val));
+					break;
+				default:
+					// ignore
+			}
+		}
+		return true;
 	}
 
 	/**

@@ -22,6 +22,21 @@
 
 package net.solarnetwork.node.datum.modbus;
 
+import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.DATA_LENGTH;
+import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.DATA_TYPE;
+import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.DECIMAL_SCALE;
+import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.MAX_WORD_COUNT;
+import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.MULTIPLIER;
+import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.NETWORK_NAME;
+import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.PROP_NAME;
+import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.PROP_TYPE;
+import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.REG_ADDR;
+import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.REG_TYPE;
+import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.SAMPLE_CACHE;
+import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.SCHEDULE;
+import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.SOURCE_ID;
+import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.UNIT_ID;
+import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.WORD_ORDER;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -65,23 +80,6 @@ public class ModbusDatumDataSourceConfigCsvParser {
 		this.messages = requireNonNullArgument(messages, "messages");
 	}
 
-	private static final int SOURCE_ID_COL = 1;
-	private static final int SCHEDULE_COL = 2;
-	private static final int NETWORK_NAME_COL = 3;
-	private static final int UNIT_ID_COL = 4;
-	private static final int SAMPLE_CACHE_COL = 5;
-	private static final int MAX_WORD_COUNT_COL = 6;
-	private static final int WORD_ORDER_COL = 7;
-
-	private static final int PROP_NAME_COL = 8;
-	private static final int PROP_TYPE_COL = 9;
-	private static final int REG_ADDR_COL = 10;
-	private static final int REG_TYPE_COL = 11;
-	private static final int DATA_TYPE_COL = 12;
-	private static final int DATA_LENGTH_COL = 13;
-	private static final int MULTIPLIER_COL = 14;
-	private static final int DECIMAL_SCALE_COL = 15;
-
 	/**
 	 * Parse CSV.
 	 * 
@@ -114,24 +112,30 @@ public class ModbusDatumDataSourceConfigCsvParser {
 				config = new ModbusDatumDataSourceConfig();
 				results.add(config);
 				config.setKey(key);
-				config.setSourceId(parseStringValue(row, rowLen, rowNum, SOURCE_ID_COL));
-				config.setSchedule(parseStringValue(row, rowLen, rowNum, SCHEDULE_COL));
-				config.setModbusNetworkName(parseStringValue(row, rowLen, rowNum, NETWORK_NAME_COL));
-				config.setUnitId(parseIntegerValue(row, rowLen, rowNum, UNIT_ID_COL));
-				config.setSampleCacheMs(parseLongValue(row, rowLen, rowNum, SAMPLE_CACHE_COL));
-				config.setMaxReadWordCount(parseIntegerValue(row, rowLen, rowNum, MAX_WORD_COUNT_COL));
-				config.setWordOrder(parseModbusWordOrderValue(row, rowLen, rowNum, WORD_ORDER_COL));
+				config.setSourceId(parseStringValue(row, rowLen, rowNum, SOURCE_ID.getCode()));
+				config.setSchedule(parseStringValue(row, rowLen, rowNum, SCHEDULE.getCode()));
+				config.setModbusNetworkName(
+						parseStringValue(row, rowLen, rowNum, NETWORK_NAME.getCode()));
+				config.setUnitId(parseIntegerValue(row, rowLen, rowNum, UNIT_ID.getCode()));
+				config.setSampleCacheMs(parseLongValue(row, rowLen, rowNum, SAMPLE_CACHE.getCode()));
+				config.setMaxReadWordCount(
+						parseIntegerValue(row, rowLen, rowNum, MAX_WORD_COUNT.getCode()));
+				config.setWordOrder(
+						parseModbusWordOrderValue(row, rowLen, rowNum, WORD_ORDER.getCode()));
 			}
 
 			ModbusPropertyConfig propConfig = new ModbusPropertyConfig();
-			propConfig.setName(parseStringValue(row, rowLen, rowNum, PROP_NAME_COL));
-			propConfig.setPropertyType(parseDatumSamplesTypeValue(row, rowLen, rowNum, PROP_TYPE_COL));
-			propConfig.setAddress(parseIntegerValue(row, rowLen, rowNum, REG_ADDR_COL));
-			propConfig.setFunction(parseModbusReadFunctionValue(row, rowLen, rowNum, REG_TYPE_COL));
-			propConfig.setDataType(parseModbusDataTypeValue(row, rowLen, rowNum, DATA_TYPE_COL));
-			propConfig.setWordLength(parseIntegerValue(row, rowLen, rowNum, DATA_LENGTH_COL));
-			propConfig.setUnitMultiplier(parseBigDecimalValue(row, rowLen, rowNum, MULTIPLIER_COL));
-			propConfig.setDecimalScale(parseIntegerValue(row, rowLen, rowNum, DECIMAL_SCALE_COL));
+			propConfig.setName(parseStringValue(row, rowLen, rowNum, PROP_NAME.getCode()));
+			propConfig.setPropertyType(
+					parseDatumSamplesTypeValue(row, rowLen, rowNum, PROP_TYPE.getCode()));
+			propConfig.setAddress(parseIntegerValue(row, rowLen, rowNum, REG_ADDR.getCode()));
+			propConfig
+					.setFunction(parseModbusReadFunctionValue(row, rowLen, rowNum, REG_TYPE.getCode()));
+			propConfig.setDataType(parseModbusDataTypeValue(row, rowLen, rowNum, DATA_TYPE.getCode()));
+			propConfig.setWordLength(parseIntegerValue(row, rowLen, rowNum, DATA_LENGTH.getCode()));
+			propConfig
+					.setUnitMultiplier(parseBigDecimalValue(row, rowLen, rowNum, MULTIPLIER.getCode()));
+			propConfig.setDecimalScale(parseIntegerValue(row, rowLen, rowNum, DECIMAL_SCALE.getCode()));
 			if ( propConfig.isEmpty() ) {
 				continue;
 			}

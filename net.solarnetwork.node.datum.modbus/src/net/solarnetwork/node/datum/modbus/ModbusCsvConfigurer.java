@@ -24,20 +24,28 @@ package net.solarnetwork.node.datum.modbus;
 
 import static java.util.Arrays.asList;
 import static net.solarnetwork.io.StreamUtils.inputStreamForPossibleGzipStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.Reader;
+import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.supercsv.io.CsvListReader;
+import org.supercsv.io.CsvListWriter;
 import org.supercsv.io.ICsvListReader;
+import org.supercsv.io.ICsvListWriter;
 import org.supercsv.prefs.CsvPreference;
+import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.SettingsCommand;
@@ -116,8 +124,35 @@ public class ModbusCsvConfigurer extends BasicIdentifiable
 
 	@Override
 	public Iterable<Resource> currentSettingResources(String settingKey) {
-		// TODO could translate current settings back into CSV
-		return null;
+		if ( !RESOURCE_KEY_CSV_FILE.equals(settingKey) ) {
+			log.warn("Ignoring setting resource key [{}]", settingKey);
+			return null;
+		}
+		final ByteArrayOutputStream byos = new ByteArrayOutputStream(4096);
+		try (Writer out = new OutputStreamWriter(byos, ByteUtils.UTF8);
+				ICsvListWriter writer = new CsvListWriter(out, CsvPreference.STANDARD_PREFERENCE)) {
+			ModbusDatumDataSourceConfigCsvWriter gen = new ModbusDatumDataSourceConfigCsvWriter(writer);
+
+			// iterate over each instance
+			for ( String instanceId : settingsService.getProvidersForFactory(settingProviderId)
+					.keySet() ) {
+				List<Setting> settings = settingsService.getSettings(settingProviderId, instanceId);
+				gen.generateCsv(settingProviderId, instanceId, settings);
+			}
+
+			return (byos.size() > 0 ? Collections
+					.singleton(new ByteArrayResource(byos.toByteArray(), "Modbus Device CSV") {
+
+						@Override
+						public String getFilename() {
+							return "modbus-device-config.csv";
+						}
+
+					}) : Collections.emptyList());
+		} catch ( IOException e ) {
+			log.error("Error generating Modbus Device configuration CSV: {}", e.toString());
+			return Collections.emptyList();
+		}
 	}
 
 	@Override
