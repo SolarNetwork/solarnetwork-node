@@ -34,12 +34,13 @@ import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -48,6 +49,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Dictionary;
 import java.util.Hashtable;
@@ -70,6 +73,7 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
+import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.dao.BasicBatchResult;
@@ -87,7 +91,7 @@ import net.solarnetwork.settings.SettingSpecifierProviderFactory;
  * Test cases for the {@link CASettingsService} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class CASettingsServiceTests {
 
@@ -521,6 +525,95 @@ public class CASettingsServiceTests {
 				hasProperty("type", equalTo("bam")),
 				hasProperty("value", equalTo("pow"))));
 		// @formatter:on
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void getSettings_nullArgs() {
+		// GIVEN
+
+		// WHEN
+		replayAll();
+		service.getSettings(null, null);
+	}
+
+	@Test
+	public void getSettings_factoryInstance_none() {
+		// GIVEN
+		final String factoryId = "f";
+		final String instanceId = "1";
+		expect(dao.getSettingValues("f.1")).andReturn(Collections.emptyList());
+
+		// WHEN
+		replayAll();
+		List<Setting> result = service.getSettings(factoryId, instanceId);
+
+		assertThat("Empty results returned from empty DAO result", result, hasSize(0));
+	}
+
+	@Test
+	public void getSettings_factoryInstance_some() {
+		// GIVEN
+		final String factoryId = "f";
+		final String instanceId = "1";
+		// @formatter:off
+		final List<KeyValuePair> data = Arrays.asList(new KeyValuePair[] {
+				new KeyValuePair("a", "b"),
+				new KeyValuePair("c", "d"),
+		});
+		// @formatter:on
+		expect(dao.getSettingValues("f.1")).andReturn(data);
+
+		// WHEN
+		replayAll();
+		List<Setting> result = service.getSettings(factoryId, instanceId);
+
+		assertThat("Same number of results returned as DAO results", result, hasSize(data.size()));
+		for ( int i = 0; i < data.size(); i++ ) {
+			KeyValuePair p = data.get(i);
+			Setting s = result.get(i);
+			assertThat("Setting key is factory instance value", s.getKey(), is("f.1"));
+			assertThat("Setting type is data key value", s.getType(), is(p.getKey()));
+			assertThat("Setting value is data value value", s.getValue(), is(p.getValue()));
+		}
+	}
+
+	@Test
+	public void getSettings_nonFactoryInstance_none() {
+		// GIVEN
+		final String instanceId = "c";
+		expect(dao.getSettingValues("c")).andReturn(Collections.emptyList());
+
+		// WHEN
+		replayAll();
+		List<Setting> result = service.getSettings(null, instanceId);
+
+		assertThat("Empty results returned from empty DAO result", result, hasSize(0));
+	}
+
+	@Test
+	public void getSettings_nonFactoryInstance_some() {
+		// GIVEN
+		final String instanceId = "c";
+		// @formatter:off
+		final List<KeyValuePair> data = Arrays.asList(new KeyValuePair[] {
+				new KeyValuePair("a", "b"),
+				new KeyValuePair("c", "d"),
+		});
+		// @formatter:on
+		expect(dao.getSettingValues("c")).andReturn(data);
+
+		// WHEN
+		replayAll();
+		List<Setting> result = service.getSettings(null, instanceId);
+
+		assertThat("Same number of results returned as DAO results", result, hasSize(data.size()));
+		for ( int i = 0; i < data.size(); i++ ) {
+			KeyValuePair p = data.get(i);
+			Setting s = result.get(i);
+			assertThat("Setting key is instance ID value", s.getKey(), is("c"));
+			assertThat("Setting type is data key value", s.getType(), is(p.getKey()));
+			assertThat("Setting value is data value value", s.getValue(), is(p.getValue()));
+		}
 	}
 
 }

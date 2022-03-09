@@ -774,6 +774,21 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		}
 	}
 
+	@Override
+	public List<Setting> getSettings(String factoryUid, String instanceUid) {
+		if ( factoryUid == null && instanceUid == null ) {
+			throw new IllegalArgumentException("One of factoryUid or instanceUid must be provided.");
+		}
+		String key = (factoryUid == null ? instanceUid
+				: getFactoryInstanceSettingKey(factoryUid, instanceUid));
+		List<KeyValuePair> data = settingDao.getSettingValues(key);
+		if ( data == null || data.isEmpty() ) {
+			return Collections.emptyList();
+		}
+		return data.stream().map(e -> new Setting(key, e.getKey(), e.getValue(), null))
+				.collect(Collectors.toList());
+	}
+
 	/**
 	 * A callback API for allowing the settings import process to decide which
 	 * settings should be imported.

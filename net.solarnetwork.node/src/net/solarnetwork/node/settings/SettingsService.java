@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.core.io.Resource;
 import net.solarnetwork.node.Constants;
+import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.settings.FactorySettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -319,6 +320,22 @@ public interface SettingsService {
 	 *         if any IO error occurs
 	 */
 	void exportSettingsCSV(Writer out) throws IOException;
+
+	/**
+	 * Get a list of all available settings for a given factory and/or instance
+	 * ID.
+	 * 
+	 * @param factoryUid
+	 *        the UID of the factory to get, or {@literal null} for a
+	 *        non-factory component
+	 * @param instanceUid
+	 *        if UID of the instance
+	 * @return the available settings, never {@literal null}
+	 * @throws IllegalArgumentException
+	 *         if both arguments are {@literal null}
+	 * @since 1.1
+	 */
+	List<Setting> getSettings(String factoryUid, String instanceUid);
 
 	/**
 	 * Import all settings from a CSV formatted text stream.
