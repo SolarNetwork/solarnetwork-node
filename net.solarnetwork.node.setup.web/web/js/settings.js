@@ -2,7 +2,7 @@
 'use strict';
 
 SolarNode.Settings = {
-		
+
 };
 
 SolarNode.Settings.runtime = {};
@@ -21,7 +21,7 @@ SolarNode.Settings.reset = function() {
 
 /**
  * Cache the value for specific setting.
- * 
+ *
  * <p>This method is used to cache locally a changed setting value.</p>
  */
 SolarNode.Settings.updateSetting = function(params, value) {
@@ -35,12 +35,12 @@ SolarNode.Settings.updateSetting = function(params, value) {
 	if ( updates[providerKey] === undefined ) {
 		updates[providerKey] = {};
 	}
-	updates[providerKey][params.setting] = {domID: params.key, 
-			provider: params.provider, 
-			instance: instance, 
+	updates[providerKey][params.setting] = {domID: params.key,
+			provider: params.provider,
+			instance: instance,
 			xint: params.xint === 'true' ? true : false,
 			value: value};
-	
+
 	// show the "active value" element
 	$('#cg-'+params.key+' span.active-value').removeClass('clean');
 
@@ -49,7 +49,7 @@ SolarNode.Settings.updateSetting = function(params, value) {
 
 /**
  * Setup a new Slider control.
- * 
+ *
  * @param params.key {String} the DOM element ID for the slider
  * @param params.min {Number} the minimum value
  * @param params.max {Number} the maximum value
@@ -79,7 +79,7 @@ SolarNode.Settings.addSlider = function(params) {
 
 /**
  * Setup a new Toggle control.
- * 
+ *
  * @param params.provider {String} the provider key
  * @param params.setting {String} the setting key
  * @param params.key {String} the DOM element ID for the slider
@@ -87,7 +87,7 @@ SolarNode.Settings.addSlider = function(params) {
  * @param params.off {String} the "off" value
  * @param params.value {Number} the initial value
  */
-SolarNode.Settings.addToggle = function(params) {	
+SolarNode.Settings.addToggle = function(params) {
 	var toggle = $('#'+params.key);
 	toggle.button();
 	toggle.click(function() {
@@ -106,7 +106,7 @@ SolarNode.Settings.addToggle = function(params) {
 
 /**
  * Setup a new radio control.
- * 
+ *
  * @param params.provider {String} the provider key
  * @param params.setting {String} the setting key
  * @param params.key {String} the DOM element ID for the radio buttons
@@ -122,7 +122,7 @@ SolarNode.Settings.addRadio = function(params) {
 
 /**
  * Setup a new select menu.
- * 
+ *
  * @param params.provider {String} the provider key
  * @param params.setting {String} the setting key
  * @param params.key {String} the DOM element ID for the select element
@@ -137,7 +137,7 @@ SolarNode.Settings.addSelect = function(params) {
 
 /**
  * Setup a new text field.
- * 
+ *
  * @param params.provider {String} the provider key
  * @param params.setting {String} the setting key
  * @param params.key {String} the DOM element ID for the text field
@@ -153,7 +153,7 @@ SolarNode.Settings.addTextField = function(params) {
 
 /**
  * Setup a new location finder field.
- * 
+ *
  * @param params.provider {String} the provider key
  * @param params.setting {String} the setting key
  * @param params.key {String} the DOM element ID for the control
@@ -170,7 +170,7 @@ SolarNode.Settings.addLocationFinder = function(params) {
 	var tbody = modal.find('tbody');
 	var templateRow = modal.find('tr.template');
 	var searchBtn = modal.find('button[type=submit]');
-		
+
 	if ( SolarNode.Settings.runtime[modalRuntimeKey] === undefined ) {
 		SolarNode.Settings.runtime[modalRuntimeKey] = modal.modal({show:false});
 		modal.ajaxForm({
@@ -197,7 +197,7 @@ SolarNode.Settings.addLocationFinder = function(params) {
 					tr.removeClass('template');
 					meta = results[i];
 					tr.data('locationMeta', meta);
-					
+
 					tr.children('td').each(function(idx, el) {
 						var td = $(el);
 						var prop = td.data('tprop');
@@ -217,7 +217,7 @@ SolarNode.Settings.addLocationFinder = function(params) {
 							td.text(val);
 						}
 					});
-					
+
 					tbody.append(tr);
 				}
 				tbody.parent().removeClass('hidden');
@@ -235,14 +235,14 @@ SolarNode.Settings.addLocationFinder = function(params) {
 		// common lookup
 		modal.find('input[name=sourceName]').val(params.sourceName);
 		modal.find('input[name=locationName]').val(params.locationName);
-		
+
 		// price lookup
 		modal.find('input[name=currency]').val(params.currency);
-		
+
 		// weather lookup
 		modal.find('input[name="location.country"]').val(params.country);
 		modal.find('input[name="location.postalCode"]').val(params.postalCode);
-		
+
 		// associate data with singleton modal
 		chooseBtn.data('params', params);
 		chooseBtn.data('label', labelSpan);
@@ -256,7 +256,7 @@ SolarNode.Settings.addGroupedSetting = function(params) {
 		count = Number(groupCount.val()),
 		container = groupCount.parent(),
 		url = $(groupCount.get(0).form).attr('action');
-	
+
 	// wire up the Add button to add dynamic elements
 	container.find('button.group-item-add').click(function() {
 		var newCount = count + 1;
@@ -292,7 +292,7 @@ SolarNode.Settings.addFile = function(params) {
 
 /**
  * Post any setting changes back to the node.
- * 
+ *
  * @param url {String} the URL to post to
  * @param msg.title {String} the result dialog title
  * @param msg.success {String} the message to display for a successful post
@@ -414,7 +414,7 @@ SolarNode.Settings.showConfirmation = function(params) {
 	var origButton = $(params.button);
 	origButton.attr('disabled', 'disabled');
 	var alert = $(params.alert).clone();
-	
+
 	var confirmationButton = alert.find('button.submit');
 	confirmationButton.click(function() {
 		$(this).attr('disabled', 'disabled');
@@ -468,10 +468,10 @@ function refreshBackupList() {
 
 function setupBackups() {
 	var createBackupSubmitButton = $('#backup-now-btn');
-	
+
 	$('#create-backup-form').ajaxForm({
 		dataType : 'json',
-		
+
 		beforeSubmit : function(dataArray, form, options) {
 			SolarNode.showSpinner(createBackupSubmitButton);
 			createBackupSubmitButton.attr('disabled', 'disabled');
@@ -491,7 +491,7 @@ function setupBackups() {
 			SolarNode.hideSpinner(createBackupSubmitButton);
 		}
 	});
-	
+
 	$('#backup-restore-button').on('click', function(event) {
 		var form = event.target.form,
 			backupKey = form.elements['backup-backups'].value;
@@ -506,9 +506,9 @@ function setupBackups() {
 			form.modal('show');
 		});
 	});
-	
+
 	$('#backup-restore-list-container').on('click', 'div.menu-item', function(event) {
-		var row = $(this), 
+		var row = $(this),
 			selectedCount = 0,
 			submit = $('#backup-restore-modal button[type=submit]');
 		row.toggleClass('selected');
@@ -519,7 +519,7 @@ function setupBackups() {
 			submit.removeAttr('disabled');
 		}
 	});
-	
+
 	$('#backup-restore-modal').ajaxForm({
 		dataType : 'json',
 		beforeSubmit : function(dataArray, form, options) {
@@ -566,7 +566,7 @@ function uploadSettingResourceProgress(event) {
 function uploadSettingResourceDone(event) {
 	var xhr = this;
 	if ( xhr.status >= 200 && xhr.status < 300 ) {
-		SolarNode.GlobalProgress.hide();		
+		SolarNode.GlobalProgress.hide();
 	} else {
 		console.error("Error uploading setting resource (%d): %s", xhr.status, xhr.responseText);
 	}
@@ -606,7 +606,7 @@ function uploadSettingResource(url, provider, instance, setting, dataKey, dataVa
 
 $(document).ready(function() {
 	$('.help-popover').popover();
-	
+
 	$('.lookup-modal table.search-results').on('click', 'tr', function() {
 		var me = $(this);
 		var form = me.closest('form');
@@ -670,6 +670,20 @@ $(document).ready(function() {
 				uploadSettingResource(url, provider, instance, setting, "data", val);
 			}
 		}
+	});
+	$('a.settings-resource-export').on('click', function(event) {
+		event.preventDefault();
+		var identSel = $(this).prevAll('select.settings-resource-ident').get(0);
+		if ( identSel ) {
+			var identOpt = identSel.selectedOptions[0];
+			if ( identOpt ) {
+				var href = this.href;
+				var query = 'handlerKey='+ encodeURIComponent(identOpt.dataset['handler'])
+					+ '&key=' + encodeURIComponent(identOpt.dataset['key']);
+				document.location = href+'?'+query;
+			}
+		}
+		return false;
 	});
 	setupBackups();
 });

@@ -22,7 +22,9 @@
 
 package net.solarnetwork.node.setup.web;
 
+import static java.lang.String.format;
 import static java.util.Collections.sort;
+import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.web.domain.Response.response;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -30,24 +32,33 @@ import java.io.Reader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.MessageSource;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.ui.ModelMap;
 import org.springframework.util.FileCopyUtils;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -67,6 +78,7 @@ import net.solarnetwork.node.settings.support.FactoryInstanceIdComparator;
 import net.solarnetwork.node.settings.support.SettingSpecifierProviderFactoryMessageComparator;
 import net.solarnetwork.node.settings.support.SettingSpecifierProviderMessageComparator;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
+import net.solarnetwork.node.setup.web.support.SettingResourceInfo;
 import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.FactorySettingSpecifierProvider;
@@ -80,7 +92,7 @@ import net.solarnetwork.web.support.MultipartFileResource;
  * Web controller for the settings UI.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -93,6 +105,7 @@ public class SettingsController {
 	private static final String KEY_USER_PROVIDER_FACTORIES = "userFactories";
 	private static final String KEY_SETTINGS_SERVICE = "settingsService";
 	private static final String KEY_SETTINGS_BACKUPS = "settingsBackups";
+	private static final String KEY_SETTING_RESOURCES = "settingResources";
 	private static final String KEY_BACKUP_MANAGER = "backupManager";
 	private static final String KEY_BACKUP_SERVICE = "backupService";
 	private static final String KEY_BACKUPS = "backups";
@@ -103,6 +116,8 @@ public class SettingsController {
 			.forLDAPSearchFilterString("(&(role=datum-filter)(role=global))");
 	private static final SearchFilter USER_DATUM_FILTER = SearchFilter
 			.forLDAPSearchFilterString("(&(role=datum-filter)(role=user))");
+
+	private static final String ZIP_ARCHIVE_CONTENT_TYPE = "application/zip";
 
 	@Autowired
 	@Qualifier("settingsService")
@@ -115,9 +130,12 @@ public class SettingsController {
 	@Autowired
 	private IdentityService identityService;
 
+	@Autowired
+	private MessageSource messageSource;
+
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String settingsList(ModelMap model, Locale locale) {
-		final SettingsService settingsService = settingsServiceTracker.service();
+		final SettingsService settingsService = service(settingsServiceTracker);
 		if ( locale == null ) {
 			locale = Locale.US;
 		}
@@ -135,6 +153,7 @@ public class SettingsController {
 			model.put(KEY_PROVIDER_FACTORIES, factories);
 			model.put(KEY_SETTINGS_SERVICE, settingsService);
 			model.put(KEY_SETTINGS_BACKUPS, settingsService.getAvailableBackups());
+			model.put(KEY_SETTING_RESOURCES, settingResources(settingsService, providers));
 		}
 		final BackupManager backupManager = backupManagerTracker.service();
 		if ( backupManager != null ) {
@@ -150,9 +169,58 @@ public class SettingsController {
 		return "settings-list";
 	}
 
+	private Map<String, List<SettingResourceInfo>> settingResources(SettingsService settingsService,
+			List<SettingSpecifierProvider> providers) {
+		List<SettingResourceHandler> handlers = settingsService.getSettingResourceHandlers();
+		if ( handlers == null || handlers.isEmpty() ) {
+			return Collections.emptyMap();
+		}
+		Map<String, List<SettingResourceInfo>> info = new TreeMap<>();
+		for ( SettingResourceHandler handler : handlers ) {
+			final String handlerKey = handler.getSettingUid();
+			Collection<String> supportedKeys = handler.supportedCurrentResourceSettingKeys();
+			if ( supportedKeys == null || supportedKeys.isEmpty() ) {
+				continue;
+			}
+			for ( String settingKey : supportedKeys ) {
+				String name = displayNameForSettingResource(providers, handlerKey, settingKey);
+				info.computeIfAbsent(handlerKey, k -> new ArrayList<SettingResourceInfo>())
+						.add(new SettingResourceInfo(name, handlerKey, null, settingKey));
+			}
+		}
+		info.values().stream().forEach(l -> Collections.sort(l, new Comparator<SettingResourceInfo>() {
+
+			@Override
+			public int compare(SettingResourceInfo o1, SettingResourceInfo o2) {
+				return o1.getName().compareTo(o2.getName());
+			}
+
+		}));
+		return info;
+	}
+
+	private String displayNameForSettingResource(List<SettingSpecifierProvider> providers,
+			String handlerKey, String settingKey) {
+		String handlerName = null;
+		String settingResourceName = null;
+		SettingSpecifierProvider p = providers.stream().filter(e -> handlerKey.equals(e.getSettingUid()))
+				.findAny().orElse(null);
+		MessageSource ms = (p != null ? p.getMessageSource() : null);
+		if ( ms != null ) {
+			handlerName = ms.getMessage("title", null, p.getDisplayName(), Locale.getDefault());
+			settingResourceName = ms.getMessage(format("resource.%s.title", settingKey), null,
+					Locale.getDefault());
+		} else {
+			handlerName = p.getDisplayName();
+			settingResourceName = messageSource.getMessage("settings.io.exportResource.unknownName",
+					null, "Unnamed resource", Locale.getDefault());
+		}
+		return format("%s - %s", handlerName, settingResourceName);
+	}
+
 	@RequestMapping(value = "/filters", method = RequestMethod.GET)
 	public String filterSettingsList(ModelMap model, Locale locale) {
-		final SettingsService settingsService = settingsServiceTracker.service();
+		final SettingsService settingsService = service(settingsServiceTracker);
 		if ( locale == null ) {
 			locale = Locale.US;
 		}
@@ -182,7 +250,7 @@ public class SettingsController {
 	@RequestMapping(value = { "/manage", "/filters/manage" }, method = RequestMethod.GET)
 	public String settingsList(@RequestParam(value = "uid", required = true) String factoryUid,
 			ModelMap model, HttpServletRequest req) {
-		final SettingsService service = settingsServiceTracker.service();
+		final SettingsService service = service(settingsServiceTracker);
 		if ( service != null ) {
 			Map<String, FactorySettingSpecifierProvider> providers = service
 					.getProvidersForFactory(factoryUid);
@@ -209,7 +277,7 @@ public class SettingsController {
 	@ResponseBody
 	public Response<String> addConfiguration(
 			@RequestParam(value = "uid", required = true) String factoryUid) {
-		final SettingsService service = settingsServiceTracker.service();
+		final SettingsService service = service(settingsServiceTracker);
 		String result = null;
 		if ( service != null ) {
 			result = service.addProviderFactoryInstance(factoryUid);
@@ -222,7 +290,7 @@ public class SettingsController {
 	public Response<Object> deleteConfiguration(
 			@RequestParam(value = "uid", required = true) String factoryUid,
 			@RequestParam(value = "instance", required = true) String instanceUid) {
-		final SettingsService service = settingsServiceTracker.service();
+		final SettingsService service = service(settingsServiceTracker);
 		if ( service != null ) {
 			service.deleteProviderFactoryInstance(factoryUid, instanceUid);
 		}
@@ -234,7 +302,7 @@ public class SettingsController {
 	public Response<Object> resetConfiguration(
 			@RequestParam(value = "uid", required = true) String factoryUid,
 			@RequestParam(value = "instance", required = true) String instanceUid) {
-		final SettingsService service = settingsServiceTracker.service();
+		final SettingsService service = service(settingsServiceTracker);
 		if ( service != null ) {
 			service.resetProviderFactoryInstance(factoryUid, instanceUid);
 		}
@@ -244,7 +312,7 @@ public class SettingsController {
 	@RequestMapping(value = "/save", method = RequestMethod.POST)
 	@ResponseBody
 	public Response<Object> saveSettings(CleanSupportSettingsCommand command, ModelMap model) {
-		final SettingsService service = settingsServiceTracker.service();
+		final SettingsService service = service(settingsServiceTracker);
 		SettingsCommand cmd = command;
 		if ( service != null ) {
 			if ( command.getSettingKeyPrefixToClean() != null ) {
@@ -266,7 +334,7 @@ public class SettingsController {
 	@ResponseBody
 	public void exportSettings(@RequestParam(required = false, value = "backup") String backupKey,
 			HttpServletResponse response) throws IOException {
-		final SettingsService service = settingsServiceTracker.service();
+		final SettingsService service = service(settingsServiceTracker);
 		if ( service != null ) {
 			response.setContentType(MediaType.TEXT_PLAIN.toString());
 			response.setHeader("Content-Disposition", "attachment; filename=settings"
@@ -282,9 +350,102 @@ public class SettingsController {
 		}
 	}
 
+	/**
+	 * Export settings resources.
+	 * 
+	 * @param handlerKey
+	 *        the {@link SettingResourceHandler} ID to import with
+	 * @param instanceKey
+	 *        the optional factory instance ID, or {@literal null}
+	 * @param key
+	 *        the resource setting key
+	 * @param response
+	 *        the HTTP response
+	 * @throws IOException
+	 *         if any IO error occurs
+	 * @since 2.1
+	 */
+	@RequestMapping(value = "/exportResources", method = RequestMethod.GET)
+	@ResponseBody
+	public void exportSettingsResources(@RequestParam("handlerKey") String handlerKey,
+			@RequestParam(name = "instanceKey", required = false) String instanceKey,
+			@RequestParam("key") String key, HttpServletResponse response) throws IOException {
+		final SettingsService service = service(settingsServiceTracker);
+		if ( service != null ) {
+			SettingResourceHandler handler = service.getSettingResourceHandler(handlerKey, instanceKey);
+			if ( handler != null ) {
+				Iterable<Resource> rItr = handler.currentSettingResources(key);
+				if ( rItr != null ) {
+					List<Resource> rList = StreamSupport.stream(rItr.spliterator(), false)
+							.collect(Collectors.toList());
+					if ( !rList.isEmpty() ) {
+						int idx = 1;
+						if ( rList.size() == 1 ) {
+							// return resource directly
+							Resource r = rList.get(0);
+							String rName = filenameForSettingsResource(r, key, idx);
+							response.setContentType(contentTypeForSettingsResource(r, rName));
+							response.setHeader("Content-Disposition",
+									format("attachment; filename=%s", rName));
+							FileCopyUtils.copy(r.getInputStream(), response.getOutputStream());
+						} else {
+							// zip up into a single archive
+							response.setContentType(ZIP_ARCHIVE_CONTENT_TYPE);
+							try (ZipOutputStream zos = new ZipOutputStream(response.getOutputStream())) {
+								for ( Resource r : rList ) {
+									String rName = filenameForSettingsResource(r, key, idx);
+									zos.putNextEntry(new ZipEntry(rName));
+									StreamUtils.copy(r.getInputStream(), zos);
+									idx++;
+								}
+							}
+						}
+						return;
+					}
+				}
+			}
+		}
+		response.sendError(HttpServletResponse.SC_NOT_FOUND);
+	}
+
+	private String contentTypeForSettingsResource(Resource r, String rName) {
+		int idx = rName.lastIndexOf('.');
+		String ext = null;
+		if ( idx > 0 ) {
+			ext = rName.substring(idx + 1).toLowerCase();
+		}
+		if ( ext != null ) {
+			switch (ext) {
+				case "csv":
+					return "text/csv; charset=utf-8";
+
+				case "txt":
+					return MediaType.TEXT_PLAIN + "; charset=utf-8";
+
+				case "xml":
+					return MediaType.TEXT_XML_VALUE;
+
+				default:
+					// don't know
+			}
+		}
+		return MediaType.APPLICATION_OCTET_STREAM_VALUE;
+	}
+
+	private static String filenameForSettingsResource(Resource r, String key, int idx) {
+		String name = r.getFilename();
+		if ( name == null ) {
+			name = r.getDescription();
+			if ( name == null ) {
+				name = key + "-" + idx;
+			}
+		}
+		return name;
+	}
+
 	@RequestMapping(value = "/import", method = RequestMethod.POST)
 	public String importSettings(@RequestParam("file") MultipartFile file) throws IOException {
-		final SettingsService service = settingsServiceTracker.service();
+		final SettingsService service = service(settingsServiceTracker);
 		if ( !file.isEmpty() && service != null ) {
 			InputStreamReader reader = new InputStreamReader(file.getInputStream(), "UTF-8");
 			service.importSettingsCSV(reader);
@@ -295,7 +456,7 @@ public class SettingsController {
 	@RequestMapping(value = "/backupNow", method = RequestMethod.POST)
 	@ResponseBody
 	public Response<Object> initiateBackup(ModelMap model) {
-		final BackupManager manager = backupManagerTracker.service();
+		final BackupManager manager = service(backupManagerTracker);
 		boolean result = false;
 		if ( manager != null ) {
 			manager.createBackup();
@@ -325,7 +486,7 @@ public class SettingsController {
 	@ResponseBody
 	public void exportBackup(@RequestParam(required = false, value = "backup") String backupKey,
 			HttpServletResponse response) throws IOException {
-		final BackupManager manager = backupManagerTracker.service();
+		final BackupManager manager = service(backupManagerTracker);
 		if ( manager == null ) {
 			return;
 		}
@@ -333,14 +494,14 @@ public class SettingsController {
 		final String exportFileName = backupExportFileNameForBackupKey(backupKey);
 
 		// create the zip archive for the backup files
-		response.setContentType("application/zip");
+		response.setContentType(ZIP_ARCHIVE_CONTENT_TYPE);
 		response.setHeader("Content-Disposition", "attachment; filename=" + exportFileName);
 		manager.exportBackupArchive(backupKey, response.getOutputStream());
 	}
 
 	@RequestMapping(value = "/importBackup", method = RequestMethod.POST)
 	public String importBackup(@RequestParam("file") MultipartFile file) throws IOException {
-		final BackupManager manager = backupManagerTracker.service();
+		final BackupManager manager = service(backupManagerTracker);
 		if ( manager == null ) {
 			return "redirect:/a/settings";
 		}
@@ -371,7 +532,7 @@ public class SettingsController {
 			@RequestParam(name = "instanceKey", required = false) String instanceKey,
 			@RequestParam("key") String key, @RequestPart("file") MultipartFile[] files)
 			throws IOException {
-		final SettingsService service = settingsServiceTracker.service();
+		final SettingsService service = service(settingsServiceTracker);
 		if ( service == null ) {
 			return new Response<Void>(false, null, "SettingsService not available.", null);
 		}
@@ -404,7 +565,7 @@ public class SettingsController {
 	public Response<Void> importResourceData(@RequestParam("handlerKey") String handlerKey,
 			@RequestParam(name = "instanceKey", required = false) String instanceKey,
 			@RequestParam("key") String key, @RequestParam("data") String data) throws IOException {
-		final SettingsService service = settingsServiceTracker.service();
+		final SettingsService service = service(settingsServiceTracker);
 		if ( service == null ) {
 			return new Response<Void>(false, null, "SettingsService not available.", null);
 		}
