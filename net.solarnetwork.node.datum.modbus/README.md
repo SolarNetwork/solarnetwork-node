@@ -27,21 +27,44 @@ Modbus Device components, without having to use the settings form.
 
 ## Modbus CSV Configuration Format
 
-The Modbus CSV Configuration uses the column structure shown below, with each row representing an
-individual datum property to read from the Modbus device. A header row is required. Comment lines
-are allowed, just start the line with a `#` character (i.e. the first cell value). The entire
-comment line will be ignored.
+The Modbus CSV Configuration uses the column structure detailed [below](#csv-column-definition),
+with each row representing an individual datum property to read from the Modbus device. A header row
+is required. Comment lines are allowed, just start the line with a `#` character (i.e. the first
+cell value). The entire comment line will be ignored.
+
+Here's an example screen shot of a configuration in a spreadsheet application. It is for two devices:
+
+ 1. Device `P1` with 4 datum properties: `error`, `current`, `voltage`, and `wattHours`
+ 2. Device `P2` with 2 datum properties: `frequency` and `watts`
+
+Spreadsheet applications generally allows you to export the sheet in the CSV format, which can
+then be loaded into SolarNode via the CSV Configurer.
 
 ![CSV Configuration example](docs/solarnode-modbus-device-csv-configuration-example-sheet.png)
 
-Individual Modbus Device components are defined by column **A**: **Instance ID**. You can assign any
-identifier you like (such as `Meter1`, `Inverter1`, and so on) or configure as a single dash
-character `-` to have SolarNode assign a simple number identifier. Once an Instance ID has been
-assigned on a given row, subsequent rows will use that value if the cell value is left empty.
+### Instance identifiers
 
-Columns **A - H** all apply to the _entire Modbus Device_ configuration, and only the values in the
-row that defines a new Instance ID will be used. Thus you can omit the values from these columns
-when defining more than one property for a given device.
+Individual Modbus Device components are defined by the first column (**Instance ID**). You can
+assign any identifier you like (such as `Meter`, `Inverter`, and so on) or configure as a single
+dash character `-` to have SolarNode assign a simple number identifier. Once an Instance ID has been
+assigned on a given row, subsequent rows will use that value if the corresponding cell value is left
+empty.
+
+Here's an example of how 3 custom instance IDs `Meter`, `Pyranometer`, and `Weather` appear in the
+SolarNode UI:
+
+![Modbus Device instance names](docs/solarnode-modbus-device-named-component-instances.png)
+
+### CSV column definition
+
+The following table defines all the CSV columns used by Modbus Device CSV Configuration. Columns
+**A - H** apply to the **entire Modbus Device configuration**, and only the values from the row that
+defines a new Instance ID will be used to configure the device. Thus you can omit the values from
+these columns when defining more than one property for a given device.
+
+Columns **I - P** define the mapping of Modbus registers to datum properties: each row defines an
+individual datum property.
+
 
 | Col | Name | Type | Default | Description |
 |:----|:-----|:-----|:--------|:------------|
