@@ -42,6 +42,7 @@ import net.solarnetwork.util.ObjectUtils;
 public class ModbusDatumDataSourceConfigCsvWriter {
 
 	private final ICsvListWriter writer;
+	private final int rowLen;
 
 	/**
 	 * Constructor.
@@ -50,10 +51,18 @@ public class ModbusDatumDataSourceConfigCsvWriter {
 	 *        the writer
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
+	 * @throws IOException
+	 *         if any IO error occurs
 	 */
-	public ModbusDatumDataSourceConfigCsvWriter(ICsvListWriter writer) {
+	public ModbusDatumDataSourceConfigCsvWriter(ICsvListWriter writer) throws IOException {
 		super();
 		this.writer = ObjectUtils.requireNonNullArgument(writer, "writer");
+		rowLen = ModbusCsvColumn.values().length;
+		String[] row = new String[rowLen];
+		for ( ModbusCsvColumn col : ModbusCsvColumn.values() ) {
+			row[col.getCode()] = col.getName();
+		}
+		writer.writeHeader(row);
 	}
 
 	/**
@@ -78,14 +87,7 @@ public class ModbusDatumDataSourceConfigCsvWriter {
 		for ( Setting s : settings ) {
 			config.populateFromSetting(s);
 		}
-		final int rowLen = ModbusCsvColumn.values().length;
 		String[] row = new String[rowLen];
-		for ( ModbusCsvColumn col : ModbusCsvColumn.values() ) {
-			row[col.getCode()] = col.getName();
-		}
-		writer.writeHeader(row);
-		fill(row, null);
-
 		row[ModbusCsvColumn.INSTANCE_ID.getCode()] = config.getKey();
 		row[ModbusCsvColumn.SOURCE_ID.getCode()] = config.getSourceId();
 		row[ModbusCsvColumn.SCHEDULE.getCode()] = config.getSchedule();

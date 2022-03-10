@@ -31,6 +31,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -123,6 +124,11 @@ public class ModbusCsvConfigurer extends BasicIdentifiable
 	}
 
 	@Override
+	public Collection<String> supportedCurrentResourceSettingKeys() {
+		return Collections.singletonList(RESOURCE_KEY_CSV_FILE);
+	}
+
+	@Override
 	public Iterable<Resource> currentSettingResources(String settingKey) {
 		if ( !RESOURCE_KEY_CSV_FILE.equals(settingKey) ) {
 			log.warn("Ignoring setting resource key [{}]", settingKey);
@@ -139,20 +145,20 @@ public class ModbusCsvConfigurer extends BasicIdentifiable
 				List<Setting> settings = settingsService.getSettings(settingProviderId, instanceId);
 				gen.generateCsv(settingProviderId, instanceId, settings);
 			}
-
-			return (byos.size() > 0 ? Collections
-					.singleton(new ByteArrayResource(byos.toByteArray(), "Modbus Device CSV") {
-
-						@Override
-						public String getFilename() {
-							return "modbus-device-config.csv";
-						}
-
-					}) : Collections.emptyList());
 		} catch ( IOException e ) {
 			log.error("Error generating Modbus Device configuration CSV: {}", e.toString());
 			return Collections.emptyList();
 		}
+		return (byos.size() > 0
+				? Collections.singleton(new ByteArrayResource(byos.toByteArray(), "Modbus Device CSV") {
+
+					@Override
+					public String getFilename() {
+						return "modbus-device-config.csv";
+					}
+
+				})
+				: Collections.emptyList());
 	}
 
 	@Override
