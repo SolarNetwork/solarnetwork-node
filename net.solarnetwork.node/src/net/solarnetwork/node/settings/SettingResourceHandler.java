@@ -23,6 +23,8 @@
 package net.solarnetwork.node.settings;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Collections;
 import org.springframework.core.io.Resource;
 
 /**
@@ -37,7 +39,7 @@ import org.springframework.core.io.Resource;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.70
  */
 public interface SettingResourceHandler {
@@ -55,6 +57,17 @@ public interface SettingResourceHandler {
 	 * @return unique ID
 	 */
 	String getSettingUid();
+
+	/**
+	 * Get a list of supported setting keys for the
+	 * {@link #currentSettingResources(String)} method.
+	 * 
+	 * @return the set of supported keys
+	 * @since 1.1
+	 */
+	default Collection<String> supportedCurrentResourceSettingKeys() {
+		return Collections.emptyList();
+	}
 
 	/**
 	 * Get the current setting resources for a specific key.

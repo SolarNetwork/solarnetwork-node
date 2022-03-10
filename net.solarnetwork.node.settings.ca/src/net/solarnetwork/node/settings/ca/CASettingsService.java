@@ -1061,6 +1061,11 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	@Override
+	public List<SettingResourceHandler> getSettingResourceHandlers() {
+		return handlers.values().stream().collect(Collectors.toList());
+	}
+
+	@Override
 	public SettingResourceHandler getSettingResourceHandler(String handlerKey, String instanceKey) {
 		SettingResourceHandler handler = null;
 		if ( instanceKey != null && !instanceKey.isEmpty() ) {

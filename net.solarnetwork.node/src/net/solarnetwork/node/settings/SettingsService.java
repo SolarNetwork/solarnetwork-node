@@ -43,7 +43,7 @@ import net.solarnetwork.util.SearchFilter;
  * Service API for settings.
  * 
  * @author matt
- * @version 1.1
+ * @version 2.1
  * @since 2.0
  */
 public interface SettingsService {
@@ -177,7 +177,7 @@ public interface SettingsService {
 	 *        the factory UID to enable
 	 * @param instanceUid
 	 *        the instance UID to enable
-	 * @since 1.1
+	 * @since 2.1
 	 */
 	void enableProviderFactoryInstance(String factoryUid, String instanceUid);
 
@@ -188,7 +188,7 @@ public interface SettingsService {
 	 *        the factory UID to disable
 	 * @param instanceUid
 	 *        the instance UID to disable
-	 * @since 1.1
+	 * @since 2.1
 	 */
 	void disableProviderFactoryInstance(String factoryUid, String instanceUid);
 
@@ -251,6 +251,14 @@ public interface SettingsService {
 	 *        the update command
 	 */
 	void updateSettings(SettingsCommand command);
+
+	/**
+	 * Get a list of all available setting resource handlers.
+	 * 
+	 * @return the handlers, never {@literal null}
+	 * @since 2.1
+	 */
+	List<SettingResourceHandler> getSettingResourceHandlers();
 
 	/**
 	 * Get a setting resource handler.
@@ -333,7 +341,7 @@ public interface SettingsService {
 	 * @return the available settings, never {@literal null}
 	 * @throws IllegalArgumentException
 	 *         if both arguments are {@literal null}
-	 * @since 1.1
+	 * @since 2.1
 	 */
 	List<Setting> getSettings(String factoryUid, String instanceUid);
 
