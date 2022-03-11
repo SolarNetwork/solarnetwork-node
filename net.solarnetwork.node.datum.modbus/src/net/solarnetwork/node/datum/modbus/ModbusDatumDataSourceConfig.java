@@ -56,10 +56,6 @@ public class ModbusDatumDataSourceConfig {
 	 * 
 	 * @param providerId
 	 *        the setting provider key to use
-	 * @param instanceId
-	 *        the setting provider instance key to use
-	 * @param prefix
-	 *        a prefix to append to all setting keys
 	 * @return the list of setting values, never {@literal null}
 	 */
 	public List<SettingValueBean> toSettingValues(String providerId) {
