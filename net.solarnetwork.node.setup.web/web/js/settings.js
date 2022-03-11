@@ -373,19 +373,6 @@ SolarNode.Settings.saveUpdates = function(url, msg, resultCallback, extraFormDat
 	return false;
 };
 
-SolarNode.Settings.addFactoryConfiguration = function(params) {
-	$(params.button).attr('disabled', 'disabled');
-	$.ajax({
-		type : 'POST',
-		url : params.url,
-		data : {uid:params.factoryUid},
-		beforeSend: function(xhr) {
-			SolarNode.csrf(xhr);
-        },
-		success: delayedReload
-	});
-};
-
 /**
  * Show an alert element asking the user if they really want to delete
  * the selected factory configuration, and allow them to dismiss the alert
@@ -684,6 +671,27 @@ $(document).ready(function() {
 			}
 		}
 		return false;
+	});
+	$('#add-component-instance-modal').ajaxForm({
+		dataType: 'json',
+		beforeSubmit: function(formData, jqForm, options) {
+			$('#add-component-instance-modal').find('button[type=submit]').attr('disabled', 'disabled');
+			return true;
+		},
+		success: function(json, status, xhr, form) {
+			var modal = $('#add-component-instance-modal');
+			if ( json && json.success === true ) {
+				delayedReload();
+			} else {
+				SolarNode.error(json.message, $('#add-component-instance-modal .modal-body.start'));
+			}
+		},
+		error: function(xhr, status, statusText) {
+			var json = $.parseJSON(xhr.responseText);
+			SolarNode.error(json.message, $('#add-component-instance-modal .modal-body.start'));
+		}
+	}).on('shown', function() {
+		$('#add-component-instance-name').val('').focus();
 	});
 	setupBackups();
 });

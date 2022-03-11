@@ -273,14 +273,24 @@ public class SettingsController {
 				: "factory-settings-list");
 	}
 
+	/**
+	 * Add a new factory instance.
+	 * 
+	 * @param factoryUid
+	 *        the factory to create a new instance for
+	 * @param instanceUid
+	 *        the instance ID, or {@literal null} to auto-assign one
+	 * @return the new instance ID
+	 */
 	@RequestMapping(value = "/manage/add", method = RequestMethod.POST)
 	@ResponseBody
 	public Response<String> addConfiguration(
-			@RequestParam(value = "uid", required = true) String factoryUid) {
+			@RequestParam(value = "uid", required = true) String factoryUid,
+			@RequestParam(value = "name", required = false) String instanceUid) {
 		final SettingsService service = service(settingsServiceTracker);
 		String result = null;
 		if ( service != null ) {
-			result = service.addProviderFactoryInstance(factoryUid);
+			result = service.addProviderFactoryInstance(factoryUid, instanceUid);
 		}
 		return response(result);
 	}

@@ -643,23 +643,31 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	@Override
-	public String addProviderFactoryInstance(String factoryUid) {
+	public String addProviderFactoryInstance(final String factoryUid) {
+		return addProviderFactoryInstance(factoryUid, null);
+	}
+
+	@Override
+	public String addProviderFactoryInstance(final String factoryUid, final String instanceUid) {
 		synchronized ( factories ) {
-			List<KeyValuePair> instanceKeys = settingDao
-					.getSettingValues(getFactorySettingKey(factoryUid));
-			int next = instanceKeys.size() + 1;
-			// verify key doesn't exist
-			boolean done = false;
-			while ( !done ) {
-				done = true;
-				for ( KeyValuePair instanceKey : instanceKeys ) {
-					if ( instanceKey.getKey().equals(String.valueOf(next)) ) {
-						done = false;
-						next++;
+			String newInstanceKey = instanceUid;
+			if ( newInstanceKey == null || newInstanceKey.trim().isEmpty() ) {
+				List<KeyValuePair> instanceKeys = settingDao
+						.getSettingValues(getFactorySettingKey(factoryUid));
+				int next = instanceKeys.size() + 1;
+				// verify key doesn't exist
+				boolean done = false;
+				while ( !done ) {
+					done = true;
+					for ( KeyValuePair instanceKey : instanceKeys ) {
+						if ( instanceKey.getKey().equals(String.valueOf(next)) ) {
+							done = false;
+							next++;
+						}
 					}
 				}
+				newInstanceKey = String.valueOf(next);
 			}
-			String newInstanceKey = String.valueOf(next);
 			enableProviderFactoryInstance(factoryUid, newInstanceKey);
 			log.info("Registered component [{}] instance {}", factoryUid, newInstanceKey);
 			return newInstanceKey;

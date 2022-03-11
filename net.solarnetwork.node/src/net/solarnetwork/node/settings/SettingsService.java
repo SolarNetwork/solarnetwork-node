@@ -202,6 +202,27 @@ public interface SettingsService {
 	String addProviderFactoryInstance(String factoryUid);
 
 	/**
+	 * Add a new factory instance, and return the new instance ID.
+	 * 
+	 * <p>
+	 * If {@code instanceUid} is provided and an instance already exists for
+	 * that ID, this will have the same effect as if
+	 * {@link #enableProviderFactoryInstance(String, String)} was called.
+	 * </p>
+	 * 
+	 * @param factoryUid
+	 *        the factory UID to create the new instance for
+	 * @param instanceUid
+	 *        the instance UID to create the new instance for, or
+	 *        {@literal null} to automatically assign one
+	 * @return the new instance ID
+	 * @since 2.1
+	 */
+	default String addProviderFactoryInstance(String factoryUid, String instanceUid) {
+		return addProviderFactoryInstance(factoryUid);
+	}
+
+	/**
 	 * Delete an existing factory instance.
 	 * 
 	 * @param factoryUid
