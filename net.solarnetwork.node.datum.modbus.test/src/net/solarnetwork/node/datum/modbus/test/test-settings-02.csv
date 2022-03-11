@@ -1,0 +1,36 @@
+key,type,value,flags,modified
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.maxReadWordCount,64,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.modbusNetwork.propertyFilters['uid'],Modbus Port,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[0].address,1000,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[0].dataTypeKey,a,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[0].datumPropertyTypeKey,s,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[0].decimalScale,0,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[0].functionCode,3,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[0].name,error,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[0].unitMultiplier,1,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[0].wordLength,16,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[1].address,0,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[1].dataTypeKey,f32,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[1].datumPropertyTypeKey,i,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[1].decimalScale,-1,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[1].functionCode,3,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[1].name,current,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[1].unitMultiplier,1,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[1].wordLength,1,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[2].address,2,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[2].dataTypeKey,f32,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[2].datumPropertyTypeKey,i,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[2].decimalScale,1,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[2].functionCode,3,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[2].name,voltage,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[2].unitMultiplier,1,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.propConfigs[2].wordLength,1,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.expressionConfigs[0].expression,foo + bar,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.expressionConfigs[0].expressionServiceId,net.solarnetwork.common.expr.spel.SpelExpressionService,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.expressionConfigs[0].datumPropertyTypeKey,a,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.expressionConfigs[0].name,wattHours,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.sampleCacheMs,5000,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.sourceId,power/1,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.unitId,1,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,jobService.datumDataSource.wordOrderKey,m,0,2022-03-09 18:30:01
+net.solarnetwork.node.datum.modbus.P1,schedule,0 * * * * *,0,2022-03-09 18:30:01

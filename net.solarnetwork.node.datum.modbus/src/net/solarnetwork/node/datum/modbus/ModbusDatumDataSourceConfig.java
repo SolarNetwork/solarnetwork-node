@@ -49,6 +49,7 @@ public class ModbusDatumDataSourceConfig {
 	private Integer maxReadWordCount;
 	private ModbusWordOrder wordOrder;
 	private final List<ModbusPropertyConfig> propertyConfigs = new ArrayList<>(8);
+	private final List<ExpressionConfig> expressionConfigs = new ArrayList<>(8);
 
 	/**
 	 * Generate a list of setting values from this instance.
@@ -75,6 +76,10 @@ public class ModbusDatumDataSourceConfig {
 		for ( ModbusPropertyConfig propConfig : propertyConfigs ) {
 			settings.addAll(propConfig.toSettingValues(providerId, key, i++));
 		}
+		i = 0;
+		for ( ExpressionConfig exprConfig : expressionConfigs ) {
+			settings.addAll(exprConfig.toSettingValues(providerId, key, i++));
+		}
 		return settings;
 	}
 
@@ -91,7 +96,9 @@ public class ModbusDatumDataSourceConfig {
 			setSchedule(setting.getValue());
 			return true;
 		}
-		if ( ModbusPropertyConfig.populateFromSetting(this, setting) ) {
+		if ( ExpressionConfig.populateFromSetting(this, setting) ) {
+			return true;
+		} else if ( ModbusPropertyConfig.populateFromSetting(this, setting) ) {
 			return true;
 		}
 		if ( setting.getType().startsWith(JOB_SERVICE_SETTING_PREFIX) ) {
@@ -378,6 +385,15 @@ public class ModbusDatumDataSourceConfig {
 	 */
 	public List<ModbusPropertyConfig> getPropertyConfigs() {
 		return propertyConfigs;
+	}
+
+	/**
+	 * Get the expression configurations.
+	 * 
+	 * @return the configurations, never {@literal null}
+	 */
+	public List<ExpressionConfig> getExpressionConfigs() {
+		return expressionConfigs;
 	}
 
 }

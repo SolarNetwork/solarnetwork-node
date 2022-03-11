@@ -62,7 +62,7 @@ The following table defines all the CSV columns used by Modbus Device CSV Config
 defines a new Instance ID will be used to configure the device. Thus you can omit the values from
 these columns when defining more than one property for a given device.
 
-Columns **I - P** define the mapping of Modbus registers to datum properties: each row defines an
+Columns **I - Q** define the mapping of Modbus registers to datum properties: each row defines an
 individual datum property.
 
 
@@ -84,6 +84,7 @@ individual datum property.
 | `N` | **Data Length** | integer |  | For variable length data types such as strings, the number of Modbus registers to read. |
 | `O` | **Multiplier** | decimal | `1` | For numeric data types, a multiplier to apply to the Modbus value to normalize it into a standard unit. |
 | `P` | **Decimal Scale** | integer | `0` | For numeric data types, a maximum number of decimal places to round decimal numbers to, or `-1` to not do any rounding. |
+| `Q` | **Expression** | string |  | An [expression][#expressions]. If configured, columns K - P are ignored. |
 
 ## Example CSV
 
@@ -91,14 +92,14 @@ Here is the CSV as shown in the example configuration screen shot above (comment
 removed for brevity):
 
 ```csv
-Instance ID,Source ID,Schedule,Connection,Unit ID,Sample Cache,Max Read,Word Order,Property,Property Type,Register,Register Type,Data Type,Data Length,Multiplier,Decimal Scale
-P1,power/1,0 * * * * *,Modbus Port,1,5000,64,Most to least,,,,,,,,
-,,,,,,,,error,Status,1000,Holding,String ASCII,16,,
-,,,,,,,,current,Instantaneous,0,Holding,32-bit float,,1,-1
-,,,,,,,,voltage,Instantaneous,2,Holding,32-bit float,,1,1
-,,,,,,,,wattHours,Accumulating,70,Holding,64-bit unsigned int,,,
-P2,power/2,0 * * * * *,Modbus Port,2,5000,64,Most to least,frequency,Instantaneous,10,Input,16-bit unsigned int,,0.01,
-,,,,,,,,watts,Instantaneous,11,Input,32-bit unsigned int,,,
+Instance ID,Source ID,Schedule,Connection,Unit ID,Sample Cache,Max Read,Word Order,Property,Property Type,Register,Register Type,Data Type,Data Length,Multiplier,Decimal Scale,Expression
+P1,power/1,0 * * * * *,Modbus Port,1,5000,64,Most to least,,,,,,,,,
+,,,,,,,,error,Status,1000,Holding,String ASCII,16,,,
+,,,,,,,,current,Instantaneous,0,Holding,32-bit float,,1,-1,
+,,,,,,,,voltage,Instantaneous,2,Holding,32-bit float,,1,1,
+,,,,,,,,wattHours,Accumulating,70,Holding,64-bit unsigned int,,,,
+P2,power/2,0 * * * * *,Modbus Port,2,5000,64,Most to least,frequency,Instantaneous,10,Input,16-bit unsigned int,,0.01,,
+,,,,,,,,watts,Instantaneous,11,Input,32-bit unsigned int,,,,
 ```
 
 

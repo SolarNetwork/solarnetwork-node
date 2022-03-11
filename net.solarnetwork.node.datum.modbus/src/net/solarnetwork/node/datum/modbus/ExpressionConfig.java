@@ -22,8 +22,15 @@
 
 package net.solarnetwork.node.datum.modbus;
 
+import static java.lang.String.format;
+import static net.solarnetwork.node.datum.modbus.ModbusDatumDataSourceConfig.JOB_SERVICE_SETTING_PREFIX;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.service.ExpressionService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.util.IntRangeSet;
@@ -36,10 +43,23 @@ import net.solarnetwork.util.IntRangeSet;
  * </p>
  * 
  * @author matt
- * @version 3.0
+ * @version 3.1
  * @since 1.4
  */
 public class ExpressionConfig extends net.solarnetwork.node.service.support.ExpressionConfig {
+
+	/**
+	 * A setting type pattern for an expression configuration element.
+	 * 
+	 * <p>
+	 * The pattern has two capture groups: the expression configuration index
+	 * and the property setting name.
+	 * </p>
+	 * 
+	 * @since 3.1
+	 */
+	public static final Pattern EXPR_SETTING_PATTERN = Pattern.compile(Pattern
+			.quote(JOB_SERVICE_SETTING_PREFIX.concat("expressionConfigs[")).concat("(\\d+)\\]\\.(.*)"));
 
 	/**
 	 * Get settings suitable for configuring an instance of this class.
@@ -54,6 +74,51 @@ public class ExpressionConfig extends net.solarnetwork.node.service.support.Expr
 			Iterable<ExpressionService> expressionServices) {
 		return net.solarnetwork.node.service.support.ExpressionConfig.settings(ExpressionConfig.class,
 				prefix, expressionServices);
+	}
+
+	/**
+	 * Populate a setting as an expression configuration value, if possible.
+	 * 
+	 * @param config
+	 *        the overall configuration
+	 * @param setting
+	 *        the setting to try to handle
+	 * @return {@literal true} if the setting was handled as an expression
+	 *         configuration value
+	 * @since 3.1
+	 */
+	public static boolean populateFromSetting(ModbusDatumDataSourceConfig config, Setting setting) {
+		Matcher m = EXPR_SETTING_PATTERN.matcher(setting.getType());
+		if ( !m.matches() ) {
+			return false;
+		}
+		int idx = Integer.parseInt(m.group(1));
+		String name = m.group(2);
+		List<ExpressionConfig> exprConfigs = config.getExpressionConfigs();
+		if ( !(idx < exprConfigs.size()) ) {
+			exprConfigs.add(idx, new ExpressionConfig());
+		}
+		ExpressionConfig exprConfig = exprConfigs.get(idx);
+		String val = setting.getValue();
+		if ( val != null && !val.isEmpty() ) {
+			switch (name) {
+				case "name":
+					exprConfig.setName(val);
+					break;
+				case "datumPropertyTypeKey":
+					exprConfig.setDatumPropertyTypeKey(val);
+					break;
+				case "expressionServiceId":
+					exprConfig.setExpressionServiceId(val);
+					break;
+				case "expression":
+					exprConfig.setExpression(val);
+					break;
+				default:
+					// ignore
+			}
+		}
+		return true;
 	}
 
 	/**
@@ -81,6 +146,18 @@ public class ExpressionConfig extends net.solarnetwork.node.service.support.Expr
 	}
 
 	/**
+	 * Test if this configuration appears to be valid.
+	 * 
+	 * @return {@literal true} if the configuration has all necessary properties
+	 *         configured
+	 * @since 3.1
+	 */
+	public boolean isValid() {
+		final String propName = getName();
+		return (propName != null && !propName.isEmpty());
+	}
+
+	/**
 	 * Get a set of referenced Modbus register addresses in the configured
 	 * expression.
 	 * 
@@ -88,6 +165,37 @@ public class ExpressionConfig extends net.solarnetwork.node.service.support.Expr
 	 */
 	public IntRangeSet registerAddressReferences() {
 		return ExpressionRoot.registerAddressReferences(getExpression());
+	}
+
+	/**
+	 * Generate a list of setting values.
+	 * 
+	 * @param providerId
+	 *        the setting provider ID
+	 * @param instanceId
+	 *        the factory instance ID
+	 * @param i
+	 *        the expression index
+	 * @return the settings
+	 * @since 3.1
+	 */
+	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, int i) {
+		List<SettingValueBean> settings = new ArrayList<>(8);
+		addSetting(settings, providerId, instanceId, i, "name", getName());
+		addSetting(settings, providerId, instanceId, i, "datumPropertyTypeKey",
+				getDatumPropertyTypeKey());
+		addSetting(settings, providerId, instanceId, i, "expressionServiceId", getExpressionServiceId());
+		addSetting(settings, providerId, instanceId, i, "expression", getExpression());
+		return settings;
+	}
+
+	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
+			int i, String key, Object val) {
+		if ( val == null ) {
+			return;
+		}
+		settings.add(new SettingValueBean(providerId, instanceId,
+				format("jobService.datumDataSource.expressionConfigs[%d].%s", i, key), val.toString()));
 	}
 
 }

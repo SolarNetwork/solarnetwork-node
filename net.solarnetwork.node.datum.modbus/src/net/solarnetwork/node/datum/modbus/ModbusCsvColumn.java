@@ -52,6 +52,7 @@ public enum ModbusCsvColumn implements CodedValue {
 	DATA_LENGTH(13, "Data Length"),
 	MULTIPLIER(14, "Multiplier"),
 	DECIMAL_SCALE(15, "Decimal Scale"),
+	EXPRESSION(16, "Expression"),
 
 	;
 

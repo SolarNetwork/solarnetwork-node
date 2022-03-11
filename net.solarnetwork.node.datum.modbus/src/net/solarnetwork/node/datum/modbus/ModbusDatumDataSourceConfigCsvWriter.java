@@ -120,6 +120,17 @@ public class ModbusDatumDataSourceConfigCsvWriter {
 			writer.write(row);
 			fill(row, null);
 		}
+		for ( ExpressionConfig exprConfig : config.getExpressionConfigs() ) {
+			if ( !ModbusDatumDataSourceConfigCsvParser.DEFAULT_EXPRESSION_SERVICE_ID
+					.equals(exprConfig.getExpressionServiceId()) ) {
+				continue;
+			}
+			row[ModbusCsvColumn.PROP_NAME.getCode()] = exprConfig.getName();
+			row[ModbusCsvColumn.PROP_TYPE.getCode()] = propertyTypeValue(exprConfig.getPropertyType());
+			row[ModbusCsvColumn.EXPRESSION.getCode()] = exprConfig.getExpression();
+			writer.write(row);
+			fill(row, null);
+		}
 	}
 
 	private String dataLengthValue(ModbusPropertyConfig propConfig) {

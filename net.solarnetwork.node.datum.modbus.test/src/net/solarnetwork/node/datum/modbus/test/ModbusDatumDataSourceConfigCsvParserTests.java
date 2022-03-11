@@ -39,6 +39,7 @@ import org.supercsv.io.CsvListReader;
 import org.supercsv.io.ICsvListReader;
 import org.supercsv.prefs.CsvPreference;
 import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.node.datum.modbus.ExpressionConfig;
 import net.solarnetwork.node.datum.modbus.ModbusCsvConfigurer;
 import net.solarnetwork.node.datum.modbus.ModbusDatumDataSourceConfig;
 import net.solarnetwork.node.datum.modbus.ModbusDatumDataSourceConfigCsvParser;
@@ -189,6 +190,41 @@ public class ModbusDatumDataSourceConfigCsvParserTests {
 			Integer wordLength, BigDecimal mult, Integer scale) {
 		assertThat(format("Prop config %s name", msg), propConfig.getName(), is(name));
 
+	}
+
+	@Test
+	public void parse_expression() throws IOException {
+		// GIVEN
+
+		// WHEN
+		try (Reader in = new InputStreamReader(getClass().getResourceAsStream("test-config-04.csv"),
+				ByteUtils.UTF8);
+				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
+			parser.parse(csv);
+		}
+
+		// THEN
+		assertThat("Read device infos", results, hasSize(1));
+		ModbusDatumDataSourceConfig config = results.get(0);
+		assertThat("Key parsed", config.getKey(), is("P"));
+		assertThat("Source ID parsed", config.getSourceId(), is("power/1"));
+		assertThat("Network name parsed", config.getModbusNetworkName(), is("Modbus Port"));
+		assertThat("Unit ID parsed", config.getUnitId(), is(1));
+		assertThat("Sample cache ms parsed", config.getSampleCacheMs(), is(5000L));
+		assertThat("Max read parsed", config.getMaxReadWordCount(), is(64));
+		assertThat("Word order parsed", config.getWordOrder(),
+				is(ModbusWordOrder.MostToLeastSignificant));
+
+		assertThat("No property configs", config.getPropertyConfigs(), hasSize(0));
+
+		assertThat("Parsed expression config", config.getExpressionConfigs(), hasSize(1));
+		ExpressionConfig exprConfig = config.getExpressionConfigs().get(0);
+		assertThat("Property name", exprConfig.getName(), is("foo"));
+		assertThat("Property type", exprConfig.getDatumPropertyType(),
+				is(DatumSamplesType.Instantaneous));
+		assertThat("Expression service ID", exprConfig.getExpressionServiceId(),
+				is(ModbusDatumDataSourceConfigCsvParser.DEFAULT_EXPRESSION_SERVICE_ID));
+		assertThat("Expression", exprConfig.getExpression(), is("foo + bar"));
 	}
 
 	@Test

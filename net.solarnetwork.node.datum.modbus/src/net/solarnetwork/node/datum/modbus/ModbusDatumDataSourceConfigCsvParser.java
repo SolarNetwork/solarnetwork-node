@@ -25,6 +25,7 @@ package net.solarnetwork.node.datum.modbus;
 import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.DATA_LENGTH;
 import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.DATA_TYPE;
 import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.DECIMAL_SCALE;
+import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.EXPRESSION;
 import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.MAX_WORD_COUNT;
 import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.MULTIPLIER;
 import static net.solarnetwork.node.datum.modbus.ModbusCsvColumn.NETWORK_NAME;
@@ -57,6 +58,9 @@ import net.solarnetwork.node.io.modbus.ModbusWordOrder;
  * @since 3.1
  */
 public class ModbusDatumDataSourceConfigCsvParser {
+
+	/** The default expression service ID used when parsing. */
+	public static final String DEFAULT_EXPRESSION_SERVICE_ID = "net.solarnetwork.common.expr.spel.SpelExpressionService";
 
 	private final List<ModbusDatumDataSourceConfig> results;
 	private final MessageSource messageSource;
@@ -124,27 +128,46 @@ public class ModbusDatumDataSourceConfigCsvParser {
 						parseModbusWordOrderValue(row, rowLen, rowNum, WORD_ORDER.getCode()));
 			}
 
-			ModbusPropertyConfig propConfig = new ModbusPropertyConfig();
-			propConfig.setName(parseStringValue(row, rowLen, rowNum, PROP_NAME.getCode()));
-			propConfig.setPropertyType(
-					parseDatumSamplesTypeValue(row, rowLen, rowNum, PROP_TYPE.getCode()));
-			propConfig.setAddress(parseIntegerValue(row, rowLen, rowNum, REG_ADDR.getCode()));
-			propConfig
-					.setFunction(parseModbusReadFunctionValue(row, rowLen, rowNum, REG_TYPE.getCode()));
-			propConfig.setDataType(parseModbusDataTypeValue(row, rowLen, rowNum, DATA_TYPE.getCode()));
-			propConfig.setWordLength(parseIntegerValue(row, rowLen, rowNum, DATA_LENGTH.getCode()));
-			propConfig
-					.setUnitMultiplier(parseBigDecimalValue(row, rowLen, rowNum, MULTIPLIER.getCode()));
-			propConfig.setDecimalScale(parseIntegerValue(row, rowLen, rowNum, DECIMAL_SCALE.getCode()));
-			if ( propConfig.isEmpty() ) {
-				continue;
-			}
-			if ( propConfig.isValid() ) {
-				config.getPropertyConfigs().add(propConfig);
-			} else if ( propConfig.getName() != null ) {
-				messages.add(messageSource.getMessage("message.invalidPropertyConfig",
-						new Object[] { rowNum }, "Invalid property configuration.",
-						Locale.getDefault()));
+			String expr = parseStringValue(row, rowLen, rowNum, EXPRESSION.getCode());
+			if ( expr != null ) {
+				ExpressionConfig exprConfig = new ExpressionConfig();
+				exprConfig.setName(parseStringValue(row, rowLen, rowNum, PROP_NAME.getCode()));
+				exprConfig.setPropertyType(
+						parseDatumSamplesTypeValue(row, rowLen, rowNum, PROP_TYPE.getCode()));
+				exprConfig.setExpression(expr);
+				exprConfig.setExpressionServiceId(DEFAULT_EXPRESSION_SERVICE_ID);
+				if ( exprConfig.isValid() ) {
+					config.getExpressionConfigs().add(exprConfig);
+				} else if ( exprConfig.getName() != null ) {
+					messages.add(messageSource.getMessage("message.invalidPropertyConfig",
+							new Object[] { rowNum }, "Invalid property configuration.",
+							Locale.getDefault()));
+				}
+			} else {
+				ModbusPropertyConfig propConfig = new ModbusPropertyConfig();
+				propConfig.setName(parseStringValue(row, rowLen, rowNum, PROP_NAME.getCode()));
+				propConfig.setPropertyType(
+						parseDatumSamplesTypeValue(row, rowLen, rowNum, PROP_TYPE.getCode()));
+				propConfig.setAddress(parseIntegerValue(row, rowLen, rowNum, REG_ADDR.getCode()));
+				propConfig.setFunction(
+						parseModbusReadFunctionValue(row, rowLen, rowNum, REG_TYPE.getCode()));
+				propConfig
+						.setDataType(parseModbusDataTypeValue(row, rowLen, rowNum, DATA_TYPE.getCode()));
+				propConfig.setWordLength(parseIntegerValue(row, rowLen, rowNum, DATA_LENGTH.getCode()));
+				propConfig.setUnitMultiplier(
+						parseBigDecimalValue(row, rowLen, rowNum, MULTIPLIER.getCode()));
+				propConfig.setDecimalScale(
+						parseIntegerValue(row, rowLen, rowNum, DECIMAL_SCALE.getCode()));
+				if ( propConfig.isEmpty() ) {
+					continue;
+				}
+				if ( propConfig.isValid() ) {
+					config.getPropertyConfigs().add(propConfig);
+				} else if ( propConfig.getName() != null ) {
+					messages.add(messageSource.getMessage("message.invalidPropertyConfig",
+							new Object[] { rowNum }, "Invalid property configuration.",
+							Locale.getDefault()));
+				}
 			}
 		}
 	}
