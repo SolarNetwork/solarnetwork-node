@@ -1432,13 +1432,13 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			final String[] types = instruction.getAllParameterValues(PARAM_UPDATE_SETTING_TYPE);
 			final String[] values = instruction.getAllParameterValues(PARAM_UPDATE_SETTING_VALUE);
 			final String[] flagValues = instruction.getAllParameterValues(PARAM_UPDATE_SETTING_FLAGS);
-			if ( keys != null ) {
+			if ( keys != null && types != null && keys.length <= types.length ) {
 				List<Setting> added = new ArrayList<>(2);
 				try {
 					for ( int i = 0; i < keys.length; i++ ) {
 						final String key = keys[i];
 						final String type = types[i];
-						final String value = values[i];
+						final String value = (values != null && values.length > i ? values[i] : null);
 						final String flags = (flagValues != null && flagValues.length >= keys.length
 								? flagValues[i]
 								: null);

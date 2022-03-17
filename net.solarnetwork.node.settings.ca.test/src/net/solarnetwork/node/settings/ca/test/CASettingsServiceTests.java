@@ -29,6 +29,7 @@ import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
+import static net.solarnetwork.node.reactor.InstructionUtils.createLocalInstruction;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
@@ -37,6 +38,7 @@ import static org.easymock.EasyMock.expectLastCall;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -54,7 +56,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -80,12 +84,15 @@ import net.solarnetwork.node.dao.BasicBatchResult;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.ca.CASettingsService;
 import net.solarnetwork.settings.SettingSpecifierProviderFactory;
+import net.solarnetwork.util.CollectionUtils;
 
 /**
  * Test cases for the {@link CASettingsService} class.
@@ -614,6 +621,61 @@ public class CASettingsServiceTests {
 			assertThat("Setting type is data key value", s.getType(), is(p.getKey()));
 			assertThat("Setting value is data value value", s.getValue(), is(p.getValue()));
 		}
+	}
+
+	@Test
+	public void processUpdateSetting() throws IOException {
+		// GIVEN
+		dao.storeSetting(new Setting("foo", "bar", "bam", null));
+
+		Configuration config = EasyMock.createMock(Configuration.class);
+		mocks.add(config);
+
+		Hashtable<String, Object> configProps = new Hashtable<>();
+		expect(ca.getConfiguration("foo", null)).andReturn(config);
+		expect(config.getProperties()).andReturn(configProps).anyTimes();
+
+		Capture<Dictionary<String, ?>> configPropsCaptor = Capture.newInstance();
+		config.update(capture(configPropsCaptor));
+
+		// WHEN
+		replayAll();
+		Map<String, String> params = new LinkedHashMap<>(2);
+		params.put("key", "foo");
+		params.put("type", "bar");
+		params.put("value", "bam");
+		Instruction instr = createLocalInstruction(SettingsService.TOPIC_UPDATE_SETTING, params);
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		assertThat("Result provided", result, is(notNullValue()));
+		Map<String, ?> props = CollectionUtils.mapForDictionary(configPropsCaptor.getValue());
+		assertThat("Config updated", props, hasEntry("bar", "bam"));
+		assertThat("Config updated props", props.keySet(), hasSize(1));
+	}
+
+	@Test
+	public void processUpdateSetting_noValue() throws IOException {
+		// GIVEN
+		expect(dao.deleteSetting("foo", "bar")).andReturn(true);
+
+		Configuration config = EasyMock.createMock(Configuration.class);
+		mocks.add(config);
+
+		Hashtable<String, Object> configProps = new Hashtable<>();
+		expect(ca.getConfiguration("foo", null)).andReturn(config);
+		expect(config.getProperties()).andReturn(configProps).anyTimes();
+
+		// WHEN
+		replayAll();
+		Map<String, String> params = new LinkedHashMap<>(2);
+		params.put("key", "foo");
+		params.put("type", "bar");
+		Instruction instr = createLocalInstruction(SettingsService.TOPIC_UPDATE_SETTING, params);
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		assertThat("Result provided", result, is(notNullValue()));
 	}
 
 }
