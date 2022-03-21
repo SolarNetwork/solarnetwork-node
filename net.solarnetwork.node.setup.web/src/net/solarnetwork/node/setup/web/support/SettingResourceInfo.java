@@ -37,10 +37,16 @@ public class SettingResourceInfo {
 	private final String key;
 
 	/**
+	 * Constructor.
+	 * 
 	 * @param name
+	 *        the name
 	 * @param handlerKey
+	 *        the handler key (factory ID)
 	 * @param instanceKey
+	 *        the instance key
 	 * @param key
+	 *        the key
 	 */
 	public SettingResourceInfo(String name, String handlerKey, String instanceKey, String key) {
 		super();
