@@ -145,7 +145,7 @@ public class OperationalModeDatumFilterServiceTests {
 		xform.setExpressionConfigs(new OperationalModeTransformConfig[] { config });
 
 		// not already active, so activate now
-		Capture<Instant> expireCaptor = new Capture<>();
+		Capture<Instant> expireCaptor = Capture.newInstance();
 		expect(opModesService.enableOperationalModes(eq(singleton(OP_MODE)), capture(expireCaptor)))
 				.andReturn(singleton(OP_MODE));
 

@@ -133,7 +133,7 @@ import net.solarnetwork.util.SearchFilter;
  * {@link SettingDao} to persist changes between application restarts.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class CASettingsService implements SettingsService, BackupResourceProvider, InstructionHandler {
 
@@ -153,6 +153,10 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	// a CA PID pattern so that only these are attempted to be restored
 	private static final Pattern CA_PID_PATTERN = Pattern.compile("^[a-zA-Z0-9.]+$");
+
+	// a setting pattern like foo.X that looks like a factory instance (X is the instance)
+	private static final Pattern SETTING_FACTORY_INSTANCE_PATTERN = Pattern
+			.compile("^([a-zA-Z0-9.]+)\\.(\\d+)$");
 
 	private ConfigurationAdmin configurationAdmin;
 	private SettingDao settingDao;
@@ -639,24 +643,32 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	@Override
-	public String addProviderFactoryInstance(String factoryUid) {
+	public String addProviderFactoryInstance(final String factoryUid) {
+		return addProviderFactoryInstance(factoryUid, null);
+	}
+
+	@Override
+	public String addProviderFactoryInstance(final String factoryUid, final String instanceUid) {
 		synchronized ( factories ) {
-			List<KeyValuePair> instanceKeys = settingDao
-					.getSettingValues(getFactorySettingKey(factoryUid));
-			int next = instanceKeys.size() + 1;
-			// verify key doesn't exist
-			boolean done = false;
-			while ( !done ) {
-				done = true;
-				for ( KeyValuePair instanceKey : instanceKeys ) {
-					if ( instanceKey.getKey().equals(String.valueOf(next)) ) {
-						done = false;
-						next++;
+			String newInstanceKey = instanceUid;
+			if ( newInstanceKey == null || newInstanceKey.trim().isEmpty() ) {
+				List<KeyValuePair> instanceKeys = settingDao
+						.getSettingValues(getFactorySettingKey(factoryUid));
+				int next = instanceKeys.size() + 1;
+				// verify key doesn't exist
+				boolean done = false;
+				while ( !done ) {
+					done = true;
+					for ( KeyValuePair instanceKey : instanceKeys ) {
+						if ( instanceKey.getKey().equals(String.valueOf(next)) ) {
+							done = false;
+							next++;
+						}
 					}
 				}
+				newInstanceKey = String.valueOf(next);
 			}
-			String newInstanceKey = String.valueOf(next);
-			addProviderFactoryInstance(factoryUid, newInstanceKey);
+			enableProviderFactoryInstance(factoryUid, newInstanceKey);
 			log.info("Registered component [{}] instance {}", factoryUid, newInstanceKey);
 			return newInstanceKey;
 		}
@@ -689,11 +701,17 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			// delete instance values
 			settingDao.deleteSetting(getFactoryInstanceSettingKey(factoryUid, instanceUid));
 
-			addProviderFactoryInstance(factoryUid, instanceUid);
+			enableProviderFactoryInstance(factoryUid, instanceUid);
 		}
 	}
 
-	private void addProviderFactoryInstance(String factoryUid, String instanceUid) {
+	@Override
+	public void disableProviderFactoryInstance(String factoryUid, String instanceUid) {
+		settingDao.deleteSetting(getFactorySettingKey(factoryUid), instanceUid);
+	}
+
+	@Override
+	public void enableProviderFactoryInstance(String factoryUid, String instanceUid) {
 		settingDao.storeSetting(getFactorySettingKey(factoryUid), instanceUid, instanceUid);
 		try {
 			Configuration conf = getConfiguration(factoryUid, instanceUid);
@@ -701,8 +719,10 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			if ( props == null ) {
 				props = new Hashtable<>();
 			}
-			props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceUid);
-			conf.update(props);
+			if ( !instanceUid.equals(props.get(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY)) ) {
+				props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceUid);
+				conf.update(props);
+			}
 		} catch ( IOException e ) {
 			throw new RuntimeException(e);
 		} catch ( InvalidSyntaxException e ) {
@@ -760,6 +780,21 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 				}
 			}
 		}
+	}
+
+	@Override
+	public List<Setting> getSettings(String factoryUid, String instanceUid) {
+		if ( factoryUid == null && instanceUid == null ) {
+			throw new IllegalArgumentException("One of factoryUid or instanceUid must be provided.");
+		}
+		String key = (factoryUid == null ? instanceUid
+				: getFactoryInstanceSettingKey(factoryUid, instanceUid));
+		List<KeyValuePair> data = settingDao.getSettingValues(key);
+		if ( data == null || data.isEmpty() ) {
+			return Collections.emptyList();
+		}
+		return data.stream().map(e -> new Setting(key, e.getKey(), e.getValue(), null))
+				.collect(Collectors.toList());
 	}
 
 	/**
@@ -942,8 +977,15 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			}
 
 			if ( bean.getProviderKey() == null ) {
-				// not a factory setting
-				bean.setProviderKey(s.getKey());
+				// not a known factory setting, however look for foo.X setting that matches factory style
+				Matcher m = SETTING_FACTORY_INSTANCE_PATTERN.matcher(s.getKey());
+				if ( m.matches() ) {
+					bean.setProviderKey(m.group(1));
+					bean.setInstanceKey(m.group(2));
+				} else {
+					// not a factory setting
+					bean.setProviderKey(s.getKey());
+				}
 			}
 			bean.setKey(s.getType());
 			bean.setValue(s.getValue());
@@ -1024,6 +1066,11 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		}
 
 		handlers.remove(pid, handler);
+	}
+
+	@Override
+	public List<SettingResourceHandler> getSettingResourceHandlers() {
+		return handlers.values().stream().collect(Collectors.toList());
 	}
 
 	@Override
@@ -1385,13 +1432,13 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 			final String[] types = instruction.getAllParameterValues(PARAM_UPDATE_SETTING_TYPE);
 			final String[] values = instruction.getAllParameterValues(PARAM_UPDATE_SETTING_VALUE);
 			final String[] flagValues = instruction.getAllParameterValues(PARAM_UPDATE_SETTING_FLAGS);
-			if ( keys != null ) {
+			if ( keys != null && types != null && keys.length <= types.length ) {
 				List<Setting> added = new ArrayList<>(2);
 				try {
 					for ( int i = 0; i < keys.length; i++ ) {
 						final String key = keys[i];
 						final String type = types[i];
-						final String value = values[i];
+						final String value = (values != null && values.length > i ? values[i] : null);
 						final String flags = (flagValues != null && flagValues.length >= keys.length
 								? flagValues[i]
 								: null);

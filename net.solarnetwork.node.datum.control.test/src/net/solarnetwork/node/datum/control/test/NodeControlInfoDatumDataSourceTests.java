@@ -120,7 +120,7 @@ public class NodeControlInfoDatumDataSourceTests {
 	@Test
 	public void handleChanged() {
 		// GIVEN
-		Capture<NodeDatum> datumCaptor = new Capture<>();
+		Capture<NodeDatum> datumCaptor = Capture.newInstance();
 		expect(datumQueue.offer(capture(datumCaptor), eq(false))).andReturn(true);
 
 		// WHEN
@@ -146,7 +146,7 @@ public class NodeControlInfoDatumDataSourceTests {
 	public void handleChanged_persist() {
 		// GIVEN
 		dataSource.setPersistMode(QueuePersistMode.PollAndEvent);
-		Capture<NodeDatum> datumCaptor = new Capture<>();
+		Capture<NodeDatum> datumCaptor = Capture.newInstance();
 		expect(datumQueue.offer(capture(datumCaptor), eq(true))).andReturn(true);
 
 		// WHEN
@@ -171,7 +171,7 @@ public class NodeControlInfoDatumDataSourceTests {
 	@Test
 	public void handleChanged_explicitPropertyName() {
 		// GIVEN
-		Capture<NodeDatum> datumCaptor = new Capture<>();
+		Capture<NodeDatum> datumCaptor = Capture.newInstance();
 		expect(datumQueue.offer(capture(datumCaptor), eq(false))).andReturn(true);
 
 		// WHEN
@@ -196,7 +196,7 @@ public class NodeControlInfoDatumDataSourceTests {
 	public void handleChanged_controlIdFilter_match() {
 		// GIVEN
 		dataSource.setControlIdRegexValue("^test");
-		Capture<NodeDatum> datumCaptor = new Capture<>();
+		Capture<NodeDatum> datumCaptor = Capture.newInstance();
 		expect(datumQueue.offer(capture(datumCaptor), eq(false))).andReturn(true);
 
 		// WHEN
@@ -235,7 +235,7 @@ public class NodeControlInfoDatumDataSourceTests {
 	@Test
 	public void handleCaptured() {
 		// GIVEN
-		Capture<NodeDatum> datumCaptor = new Capture<>();
+		Capture<NodeDatum> datumCaptor = Capture.newInstance();
 		expect(datumQueue.offer(capture(datumCaptor), eq(false))).andReturn(true);
 
 		// WHEN

@@ -24,21 +24,25 @@ package net.solarnetwork.node.settings.ca.test;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
+import static net.solarnetwork.node.reactor.InstructionUtils.createLocalInstruction;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.expectLastCall;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasProperty;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -47,10 +51,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -69,24 +77,28 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
+import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.dao.BasicBatchResult;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.ca.CASettingsService;
 import net.solarnetwork.settings.SettingSpecifierProviderFactory;
+import net.solarnetwork.util.CollectionUtils;
 
 /**
  * Test cases for the {@link CASettingsService} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class CASettingsServiceTests {
 
@@ -142,7 +154,7 @@ public class CASettingsServiceTests {
 
 		expect(handler.getSettingUid()).andReturn(handlerKey).anyTimes();
 
-		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
+		Capture<Iterable<Resource>> resourceCaptor = Capture.newInstance();
 		expect(handler.applySettingResources(eq(settingKey), capture(resourceCaptor)))
 				.andReturn(new SettingsCommand());
 
@@ -200,7 +212,7 @@ public class CASettingsServiceTests {
 		dao.storeSetting(daoSettingKey1, "foo", "bar");
 
 		// and finally update CA props
-		Capture<Dictionary<String, ?>> confUpdateCaptor1 = new Capture<>();
+		Capture<Dictionary<String, ?>> confUpdateCaptor1 = Capture.newInstance();
 		config1.update(capture(confUpdateCaptor1));
 
 		Configuration config2 = EasyMock.createMock(Configuration.class);
@@ -222,10 +234,10 @@ public class CASettingsServiceTests {
 		dao.storeSetting(daoSettingKey2, "bim", "bam");
 
 		// and finally update CA props
-		Capture<Dictionary<String, ?>> confUpdateCaptor2 = new Capture<>();
+		Capture<Dictionary<String, ?>> confUpdateCaptor2 = Capture.newInstance();
 		config2.update(capture(confUpdateCaptor2));
 
-		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
+		Capture<Iterable<Resource>> resourceCaptor = Capture.newInstance();
 		SettingsCommand updates = new SettingsCommand(
 				asList(new SettingValueBean("foo", "bar"),
 						new SettingValueBean(otherProviderKey, null, "bim", "bam")),
@@ -291,13 +303,13 @@ public class CASettingsServiceTests {
 		expect(config.getPid()).andReturn(instancePid).anyTimes();
 		expect(config.getProperties()).andReturn(configProps).anyTimes();
 
-		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
+		Capture<Iterable<Resource>> resourceCaptor = Capture.newInstance();
 		expect(handler.applySettingResources(eq(settingKey), capture(resourceCaptor)))
 				.andReturn(new SettingsCommand());
 
 		// WHEN
 		replayAll();
-		service.onBindFactory(factory, null);
+		service.onBindFactory(factory, emptyMap());
 
 		Hashtable<String, Object> instanceProps = new Hashtable<>(
 				singletonMap(org.osgi.framework.Constants.SERVICE_PID, instancePid));
@@ -354,7 +366,7 @@ public class CASettingsServiceTests {
 		expect(config.getPid()).andReturn(instancePid).anyTimes();
 		expect(config.getProperties()).andReturn(configProps).anyTimes();
 
-		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
+		Capture<Iterable<Resource>> resourceCaptor = Capture.newInstance();
 		SettingsCommand updates = new SettingsCommand(
 				asList(new SettingValueBean("foo", "bar"), new SettingValueBean("bim", true)),
 				asList(Pattern.compile("baz.*")));
@@ -376,12 +388,12 @@ public class CASettingsServiceTests {
 		expect(dao.deleteSetting(daoSettingKey, "bim")).andReturn(true);
 
 		// and finally update CA props
-		Capture<Dictionary<String, ?>> confUpdateCaptor = new Capture<>();
+		Capture<Dictionary<String, ?>> confUpdateCaptor = Capture.newInstance();
 		config.update(capture(confUpdateCaptor));
 
 		// WHEN
 		replayAll();
-		service.onBindFactory(factory, null);
+		service.onBindFactory(factory, emptyMap());
 
 		Hashtable<String, Object> instanceProps = new Hashtable<>(
 				singletonMap(org.osgi.framework.Constants.SERVICE_PID, instancePid));
@@ -422,11 +434,11 @@ public class CASettingsServiceTests {
 
 		expect(handler.getSettingUid()).andReturn(handlerKey).anyTimes();
 
-		Capture<Iterable<Resource>> resourceCaptor = new Capture<>();
+		Capture<Iterable<Resource>> resourceCaptor = Capture.newInstance();
 		expect(handler.applySettingResources(eq(settingKey), capture(resourceCaptor)))
 				.andReturn(new SettingsCommand());
 
-		Capture<BatchCallback<Setting>> batchCaptor = new Capture<>();
+		Capture<BatchCallback<Setting>> batchCaptor = Capture.newInstance();
 		expect(dao.batchProcess(capture(batchCaptor), EasyMock.anyObject()))
 				.andReturn(new BasicBatchResult(0));
 
@@ -471,7 +483,7 @@ public class CASettingsServiceTests {
 		expect(tx.isRollbackOnly()).andReturn(false);
 
 		// import 2 settings
-		Capture<Setting> settingCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Setting> settingCaptor = Capture.newInstance(CaptureType.ALL);
 		dao.storeSetting(EasyMock.capture(settingCaptor));
 		expectLastCall().times(2);
 
@@ -487,7 +499,7 @@ public class CASettingsServiceTests {
 		Hashtable<String, Object> configProps = new Hashtable<>();
 		expect(ca.getConfiguration("bim", null)).andReturn(config);
 		expect(config.getProperties()).andReturn(configProps);
-		Capture<Dictionary<String, ?>> configPropsUpdatesCaptor = new Capture<>();
+		Capture<Dictionary<String, ?>> configPropsUpdatesCaptor = Capture.newInstance();
 		config.update(capture(configPropsUpdatesCaptor));
 
 		// handle "del" CA configuration update
@@ -498,7 +510,7 @@ public class CASettingsServiceTests {
 		configProps2.put("crash", "true");
 		expect(ca.getConfiguration("del", null)).andReturn(config2);
 		expect(config2.getProperties()).andReturn(configProps2);
-		Capture<Dictionary<String, ?>> configPropsUpdatesCaptor2 = new Capture<>();
+		Capture<Dictionary<String, ?>> configPropsUpdatesCaptor2 = Capture.newInstance();
 		config2.update(capture(configPropsUpdatesCaptor2));
 
 		// WHEN
@@ -520,6 +532,150 @@ public class CASettingsServiceTests {
 				hasProperty("type", equalTo("bam")),
 				hasProperty("value", equalTo("pow"))));
 		// @formatter:on
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void getSettings_nullArgs() {
+		// GIVEN
+
+		// WHEN
+		replayAll();
+		service.getSettings(null, null);
+	}
+
+	@Test
+	public void getSettings_factoryInstance_none() {
+		// GIVEN
+		final String factoryId = "f";
+		final String instanceId = "1";
+		expect(dao.getSettingValues("f.1")).andReturn(Collections.emptyList());
+
+		// WHEN
+		replayAll();
+		List<Setting> result = service.getSettings(factoryId, instanceId);
+
+		assertThat("Empty results returned from empty DAO result", result, hasSize(0));
+	}
+
+	@Test
+	public void getSettings_factoryInstance_some() {
+		// GIVEN
+		final String factoryId = "f";
+		final String instanceId = "1";
+		// @formatter:off
+		final List<KeyValuePair> data = Arrays.asList(new KeyValuePair[] {
+				new KeyValuePair("a", "b"),
+				new KeyValuePair("c", "d"),
+		});
+		// @formatter:on
+		expect(dao.getSettingValues("f.1")).andReturn(data);
+
+		// WHEN
+		replayAll();
+		List<Setting> result = service.getSettings(factoryId, instanceId);
+
+		assertThat("Same number of results returned as DAO results", result, hasSize(data.size()));
+		for ( int i = 0; i < data.size(); i++ ) {
+			KeyValuePair p = data.get(i);
+			Setting s = result.get(i);
+			assertThat("Setting key is factory instance value", s.getKey(), is("f.1"));
+			assertThat("Setting type is data key value", s.getType(), is(p.getKey()));
+			assertThat("Setting value is data value value", s.getValue(), is(p.getValue()));
+		}
+	}
+
+	@Test
+	public void getSettings_nonFactoryInstance_none() {
+		// GIVEN
+		final String instanceId = "c";
+		expect(dao.getSettingValues("c")).andReturn(Collections.emptyList());
+
+		// WHEN
+		replayAll();
+		List<Setting> result = service.getSettings(null, instanceId);
+
+		assertThat("Empty results returned from empty DAO result", result, hasSize(0));
+	}
+
+	@Test
+	public void getSettings_nonFactoryInstance_some() {
+		// GIVEN
+		final String instanceId = "c";
+		// @formatter:off
+		final List<KeyValuePair> data = Arrays.asList(new KeyValuePair[] {
+				new KeyValuePair("a", "b"),
+				new KeyValuePair("c", "d"),
+		});
+		// @formatter:on
+		expect(dao.getSettingValues("c")).andReturn(data);
+
+		// WHEN
+		replayAll();
+		List<Setting> result = service.getSettings(null, instanceId);
+
+		assertThat("Same number of results returned as DAO results", result, hasSize(data.size()));
+		for ( int i = 0; i < data.size(); i++ ) {
+			KeyValuePair p = data.get(i);
+			Setting s = result.get(i);
+			assertThat("Setting key is instance ID value", s.getKey(), is("c"));
+			assertThat("Setting type is data key value", s.getType(), is(p.getKey()));
+			assertThat("Setting value is data value value", s.getValue(), is(p.getValue()));
+		}
+	}
+
+	@Test
+	public void processUpdateSetting() throws IOException {
+		// GIVEN
+		dao.storeSetting(new Setting("foo", "bar", "bam", null));
+
+		Configuration config = EasyMock.createMock(Configuration.class);
+		mocks.add(config);
+
+		Hashtable<String, Object> configProps = new Hashtable<>();
+		expect(ca.getConfiguration("foo", null)).andReturn(config);
+		expect(config.getProperties()).andReturn(configProps).anyTimes();
+
+		Capture<Dictionary<String, ?>> configPropsCaptor = Capture.newInstance();
+		config.update(capture(configPropsCaptor));
+
+		// WHEN
+		replayAll();
+		Map<String, String> params = new LinkedHashMap<>(2);
+		params.put("key", "foo");
+		params.put("type", "bar");
+		params.put("value", "bam");
+		Instruction instr = createLocalInstruction(SettingsService.TOPIC_UPDATE_SETTING, params);
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		assertThat("Result provided", result, is(notNullValue()));
+		Map<String, ?> props = CollectionUtils.mapForDictionary(configPropsCaptor.getValue());
+		assertThat("Config updated", props, hasEntry("bar", "bam"));
+		assertThat("Config updated props", props.keySet(), hasSize(1));
+	}
+
+	@Test
+	public void processUpdateSetting_noValue() throws IOException {
+		// GIVEN
+		expect(dao.deleteSetting("foo", "bar")).andReturn(true);
+
+		Configuration config = EasyMock.createMock(Configuration.class);
+		mocks.add(config);
+
+		Hashtable<String, Object> configProps = new Hashtable<>();
+		expect(ca.getConfiguration("foo", null)).andReturn(config);
+		expect(config.getProperties()).andReturn(configProps).anyTimes();
+
+		// WHEN
+		replayAll();
+		Map<String, String> params = new LinkedHashMap<>(2);
+		params.put("key", "foo");
+		params.put("type", "bar");
+		Instruction instr = createLocalInstruction(SettingsService.TOPIC_UPDATE_SETTING, params);
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		assertThat("Result provided", result, is(notNullValue()));
 	}
 
 }

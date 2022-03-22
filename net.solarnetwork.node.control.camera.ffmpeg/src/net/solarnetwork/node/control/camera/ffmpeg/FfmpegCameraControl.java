@@ -83,7 +83,7 @@ import net.solarnetwork.util.StringUtils;
  * capture images from camera video streams.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class FfmpegCameraControl extends BaseIdentifiable
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler,
@@ -540,7 +540,7 @@ public class FfmpegCameraControl extends BaseIdentifiable
 	 * @param outputFileTemplate
 	 *        the template to set
 	 */
-	public void setOutputFileExtension(String outputFileTemplate) {
+	public void setOutputFileTemplate(String outputFileTemplate) {
 		this.outputFileTemplate = outputFileTemplate;
 	}
 

@@ -157,7 +157,7 @@ public class DefaultOperationalModesServiceTests {
 		expectQueryForActiveModes("test");
 		expectQueryForModeExpiry(singletonMap("test", null));
 
-		Capture<Event> eventCaptor = new Capture<>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
 
 		// WHEN
@@ -179,7 +179,7 @@ public class DefaultOperationalModesServiceTests {
 		expectQueryForActiveModes("test");
 		expectQueryForModeExpiry(singletonMap("test", null));
 
-		Capture<Event> eventCaptor = new Capture<>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
 
 		txManager.commit(txStatus);
@@ -202,7 +202,7 @@ public class DefaultOperationalModesServiceTests {
 		expiryMap.put("bar", null);
 		expectQueryForModeExpiry(expiryMap);
 
-		Capture<Event> eventCaptor = new Capture<>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
 
 		// WHEN
@@ -321,7 +321,7 @@ public class DefaultOperationalModesServiceTests {
 		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE_EXPIRE, "test"))
 				.andReturn(false);
 
-		Capture<Event> eventCaptor = new Capture<>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
 
 		// WHEN
@@ -345,7 +345,7 @@ public class DefaultOperationalModesServiceTests {
 		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE_EXPIRE, "test"))
 				.andReturn(false);
 
-		Capture<Event> eventCaptor = new Capture<>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
 
 		txManager.commit(txStatus);
@@ -394,14 +394,14 @@ public class DefaultOperationalModesServiceTests {
 		settingDao.storeSetting(DefaultOperationalModesService.SETTING_OP_MODE, "test", "test");
 
 		// @formatter:off
-		Capture<String> expireCaptor = new Capture<>();
+		Capture<String> expireCaptor = Capture.newInstance();
 		settingDao.storeSetting(
 				eq(DefaultOperationalModesService.SETTING_OP_MODE_EXPIRE),
 				eq("test"),
 				capture(expireCaptor));
 		// @formatter:on
 
-		Capture<Event> eventCaptor = new Capture<>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
 
 		// WHEN
@@ -427,14 +427,14 @@ public class DefaultOperationalModesServiceTests {
 		settingDao.storeSetting(DefaultOperationalModesService.SETTING_OP_MODE, "test", "test");
 
 		// @formatter:off
-		Capture<String> expireCaptor = new Capture<>();
+		Capture<String> expireCaptor = Capture.newInstance();
 		settingDao.storeSetting(
 				eq(DefaultOperationalModesService.SETTING_OP_MODE_EXPIRE),
 				eq("test"),
 				capture(expireCaptor));
 		// @formatter:on
 
-		Capture<Event> eventCaptor = new Capture<>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
 
 		txManager.commit(txStatus);
@@ -487,7 +487,7 @@ public class DefaultOperationalModesServiceTests {
 		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE, "test"))
 				.andReturn(true);
 
-		Capture<Event> eventCaptor = new Capture<>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
 
 		// WHEN
@@ -511,7 +511,7 @@ public class DefaultOperationalModesServiceTests {
 		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE, "test"))
 				.andReturn(true);
 
-		Capture<Event> eventCaptor = new Capture<>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
 
 		txManager.commit(txStatus);
@@ -536,7 +536,7 @@ public class DefaultOperationalModesServiceTests {
 		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE, "bar"))
 				.andReturn(true);
 
-		Capture<Event> eventCaptor = new Capture<>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
 
 		// WHEN
@@ -564,7 +564,7 @@ public class DefaultOperationalModesServiceTests {
 		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE, "bar"))
 				.andReturn(true);
 
-		Capture<Event> eventCaptor = new Capture<>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
 
 		txManager.commit(txStatus);
@@ -708,7 +708,7 @@ public class DefaultOperationalModesServiceTests {
 		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE_EXPIRE, "test"))
 				.andReturn(true);
 
-		Capture<Event> eventCaptor = new Capture<>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
 
 		// WHEN
@@ -736,7 +736,7 @@ public class DefaultOperationalModesServiceTests {
 		expect(settingDao.deleteSetting(DefaultOperationalModesService.SETTING_OP_MODE_EXPIRE, "test"))
 				.andReturn(true);
 
-		Capture<Event> eventCaptor = new Capture<>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
 
 		txManager.commit(txStatus);
@@ -770,7 +770,7 @@ public class DefaultOperationalModesServiceTests {
 					.andReturn(true);
 		}
 
-		Capture<Event> eventCaptor = new Capture<>();
+		Capture<Event> eventCaptor = Capture.newInstance();
 		eventAdmin.postEvent(capture(eventCaptor));
 
 		txManager.commit(txStatus);

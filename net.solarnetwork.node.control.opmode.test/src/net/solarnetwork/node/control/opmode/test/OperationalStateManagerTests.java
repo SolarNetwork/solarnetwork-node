@@ -101,7 +101,7 @@ public class OperationalStateManagerTests {
 	@Test
 	public void enableMode() {
 		// given
-		Capture<Instruction> instructionCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Instruction> instructionCaptor = Capture.newInstance(CaptureType.ALL);
 		expect(instrService.executeInstruction(capture(instructionCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 
@@ -143,7 +143,7 @@ public class OperationalStateManagerTests {
 		enableMode();
 		resetAll();
 
-		Capture<Instruction> instructionCaptor = new Capture<>(CaptureType.ALL);
+		Capture<Instruction> instructionCaptor = Capture.newInstance(CaptureType.ALL);
 		expect(instrService.executeInstruction(capture(instructionCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 

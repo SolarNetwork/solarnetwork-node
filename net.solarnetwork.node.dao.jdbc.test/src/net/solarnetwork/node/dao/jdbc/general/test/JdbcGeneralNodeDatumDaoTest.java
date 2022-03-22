@@ -119,7 +119,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
 	@Test
 	public void insert() {
-		Capture<Event> captor = new Capture<Event>();
+		Capture<Event> captor = Capture.newInstance();
 		eventAdmin.postEvent(EasyMock.capture(captor));
 
 		replayAll();
@@ -134,7 +134,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
 	@Test
 	public void insert_location() {
-		Capture<Event> captor = new Capture<Event>();
+		Capture<Event> captor = Capture.newInstance();
 		eventAdmin.postEvent(EasyMock.capture(captor));
 
 		replayAll();
@@ -149,7 +149,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
 	@Test
 	public void insertSubclass() {
-		Capture<Event> captor = new Capture<Event>();
+		Capture<Event> captor = Capture.newInstance();
 		eventAdmin.postEvent(EasyMock.capture(captor));
 
 		replayAll();
@@ -179,7 +179,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		final long now = System.currentTimeMillis();
 		final DatumSamples samples = samplesInstance();
 
-		Capture<Event> captor = new Capture<>(CaptureType.ALL);
+		Capture<Event> captor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(capture(captor));
 		EasyMock.expectLastCall().times(numDatum);
 
@@ -213,7 +213,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		final long now = System.currentTimeMillis();
 		final DatumSamples samples = samplesInstance();
 
-		Capture<Event> captor = new Capture<>(CaptureType.ALL);
+		Capture<Event> captor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(captor));
 		EasyMock.expectLastCall().times(numDatum);
 
@@ -258,7 +258,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		final long now = System.currentTimeMillis();
 		final DatumSamples samples = samplesInstance();
 
-		Capture<Event> captor = new Capture<>(CaptureType.ALL);
+		Capture<Event> captor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(captor));
 		EasyMock.expectLastCall().times(numDatum);
 
@@ -306,7 +306,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 		final long start = System.currentTimeMillis() - (1000 * 60 * 60 * numDatum);
 		final DatumSamples samples = samplesInstance();
 
-		Capture<Event> captor = new Capture<>(CaptureType.ALL);
+		Capture<Event> captor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(captor));
 		EasyMock.expectLastCall().times(numDatum);
 
@@ -353,7 +353,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
 	@Test
 	public void update() {
-		Capture<Event> captor = new Capture<Event>(CaptureType.ALL);
+		Capture<Event> captor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(captor));
 		expectLastCall().times(2); // two store, one upload
 
@@ -390,7 +390,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
 	@Test
 	public void updateUnchangedSamples() {
-		Capture<Event> captor = new Capture<Event>(CaptureType.ALL);
+		Capture<Event> captor = Capture.newInstance(CaptureType.ALL);
 		eventAdmin.postEvent(EasyMock.capture(captor));
 
 		replayAll();

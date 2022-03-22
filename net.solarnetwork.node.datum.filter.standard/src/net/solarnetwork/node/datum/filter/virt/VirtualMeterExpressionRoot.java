@@ -25,7 +25,7 @@ package net.solarnetwork.node.datum.filter.virt;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.concurrent.TimeUnit;
-import net.solarnetwork.domain.DatumExpressionRoot;
+import net.solarnetwork.domain.datum.DatumExpressionRoot;
 
 /**
  * API for a virtual meter expression root object.

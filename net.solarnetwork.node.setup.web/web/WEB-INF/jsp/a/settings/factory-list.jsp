@@ -20,12 +20,12 @@
 			<i class="icon-arrow-left"></i>
 			<fmt:message key="back.label"/>
 		</a>
-		<button type="button" class="btn btn-primary" id="add">
+		<a href="#add-component-instance-modal" class="btn btn-primary" id="add" data-toggle="modal">
 			<i class="icon-plus icon-white"></i>
 			<fmt:message key='settings.factory.add'>
 				<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
 			</fmt:message>
-		</button>
+		</a>
 	</p>
 </section>
 
@@ -126,13 +126,6 @@ $(function() {
 			error: '<fmt:message key="settings.save.error.msg"/>',
 			title: '<fmt:message key="settings.save.result.title"/>',
 			button: '<fmt:message key="ok.label"/>'
-		});
-	});
-	$('#add').click(function() {
-		SolarNode.Settings.addFactoryConfiguration({
-			button: this,
-			url: '<setup:url value="/a/settings/manage/add"/>',
-			factoryUid: '${factory.factoryUid}'
 		});
 	});
 	SolarNode.Settings.reset();
@@ -255,5 +248,28 @@ $(function() {
 		<button type="button" class="btn btn-primary choose" disabled="disabled">
 			<fmt:message key="lookup.action.choose"/>
 		</button>
+	</div>
+</form>
+<form id="add-component-instance-modal" class="modal dynamic hide fade" data-backdrop="static" action="<setup:url value='/a/settings/manage/add'/>" method="post">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal">&times;</button>
+		<h3>
+			<fmt:message key='settings.factory.add'>
+				<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
+			</fmt:message>
+		</h3>
+	</div>
+	<div class="modal-body">
+		<p><fmt:message key='settings.factory.add.intro'/></p>
+		<div class="form-inline">
+			<input type="text" class="span4" maxlength="32" name="name" id="add-component-instance-name"
+				placeholder="<fmt:message key='settings.factory.add.placeholder'/>"/>
+		</div>
+	</div>
+	<div class="modal-footer">
+		<sec:csrfInput/>
+		<input type="hidden" name="uid" value="${factory.factoryUid}"/>
+		<button type="button" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></button>
+		<button type="submit" class="btn btn-primary"><fmt:message key="settings.factory.add.label"/></button>
 	</div>
 </form>

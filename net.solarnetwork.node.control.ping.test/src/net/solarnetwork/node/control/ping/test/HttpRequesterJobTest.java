@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.control.ping.test;
 
+import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
@@ -60,6 +61,7 @@ import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.reactor.SimpleInstructionExecutionService;
+import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.service.StaticOptionalService;
 
 /**
@@ -142,10 +144,37 @@ public class HttpRequesterJobTest {
 	}
 
 	@Test
+	public void pingSuccessful_opModes() throws Exception {
+		// GIVEN
+		final TestHandler httpHandler = new TestHandler();
+		server.setHandler(httpHandler);
+
+		final OperationalModesService opModesService = EasyMock
+				.createMock(OperationalModesService.class);
+
+		expect(opModesService
+				.enableOperationalModes(singleton(HttpRequesterJob.DEFAULT_SUCCESS_OP_MODE)))
+						.andReturn(singleton(HttpRequesterJob.DEFAULT_SUCCESS_OP_MODE));
+		expect(opModesService
+				.disableOperationalModes(singleton(HttpRequesterJob.DEFAULT_FAILURE_OP_MODE)))
+						.andReturn(singleton(HttpRequesterJob.DEFAULT_SUCCESS_OP_MODE));
+
+		// WHEN
+		replay(handler, opModesService);
+		HttpRequesterJob job = newJobInstance();
+		job.setOpModesService(new StaticOptionalService<>(opModesService));
+		job.executeJobService();
+
+		// THEN
+		verify(handler, opModesService);
+		assertThat("Request count", httpHandler.getCount(), is(1));
+	}
+
+	@Test
 	public void pingFailure() throws Exception {
 		final TestHandler httpHandler = new TestHandler();
 		server.stop();
-		Capture<BasicInstruction> instructions = new Capture<>(CaptureType.ALL);
+		Capture<BasicInstruction> instructions = Capture.newInstance(CaptureType.ALL);
 		expect(handler.handlesTopic(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER))
 				.andReturn(Boolean.TRUE);
 		expect(handler.processInstruction(capture(instructions)))
@@ -174,6 +203,65 @@ public class HttpRequesterJobTest {
 		HttpRequesterJob job = newJobInstance();
 		job.executeJobService();
 		verify(handler);
+		assertThat("No requests", httpHandler.getCount(), is(0));
+		assertThat("Instructions executed", instructions.getValues(), hasSize(2));
+		Instruction instr1 = instructions.getValues().get(0);
+		assertThat("Control set ON", instr1.getParameterValue(TEST_CONTROL_ID),
+				is(Boolean.TRUE.toString()));
+		Instruction instr2 = instructions.getValues().get(1);
+		assertThat("Control set OFF", instr2.getParameterValue(TEST_CONTROL_ID),
+				is(Boolean.FALSE.toString()));
+	}
+
+	@Test
+	public void pingFailure_opModes() throws Exception {
+		// GIVEN
+		final TestHandler httpHandler = new TestHandler();
+		server.stop();
+		Capture<BasicInstruction> instructions = Capture.newInstance(CaptureType.ALL);
+		expect(handler.handlesTopic(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER))
+				.andReturn(Boolean.TRUE);
+		expect(handler.processInstruction(capture(instructions)))
+				.andAnswer(new IAnswer<InstructionStatus>() {
+
+					@Override
+					public InstructionStatus answer() throws Throwable {
+						int size = instructions.getValues().size();
+						return InstructionUtils.createStatus(instructions.getValues().get(size - 1),
+								InstructionState.Completed);
+					}
+				});
+		expect(handler.handlesTopic(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER))
+				.andReturn(Boolean.TRUE);
+		expect(handler.processInstruction(capture(instructions)))
+				.andAnswer(new IAnswer<InstructionStatus>() {
+
+					@Override
+					public InstructionStatus answer() throws Throwable {
+						int size = instructions.getValues().size();
+						return InstructionUtils.createStatus(instructions.getValues().get(size - 1),
+								InstructionState.Completed);
+					}
+				});
+
+		final OperationalModesService opModesService = EasyMock
+				.createMock(OperationalModesService.class);
+
+		expect(opModesService
+				.enableOperationalModes(singleton(HttpRequesterJob.DEFAULT_FAILURE_OP_MODE)))
+						.andReturn(singleton(HttpRequesterJob.DEFAULT_FAILURE_OP_MODE));
+		expect(opModesService
+				.disableOperationalModes(singleton(HttpRequesterJob.DEFAULT_SUCCESS_OP_MODE)))
+						.andReturn(singleton(HttpRequesterJob.DEFAULT_FAILURE_OP_MODE));
+
+		// WHEN
+		replay(handler, opModesService);
+		HttpRequesterJob job = newJobInstance();
+		job.setOpModesService(new StaticOptionalService<>(opModesService));
+		job.executeJobService();
+
+		// THEN
+		verify(handler, opModesService);
 		assertThat("No requests", httpHandler.getCount(), is(0));
 		assertThat("Instructions executed", instructions.getValues(), hasSize(2));
 		Instruction instr1 = instructions.getValues().get(0);

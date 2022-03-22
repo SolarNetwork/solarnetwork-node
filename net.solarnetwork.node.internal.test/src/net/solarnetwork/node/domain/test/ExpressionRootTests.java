@@ -22,13 +22,17 @@
 
 package net.solarnetwork.node.domain.test;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.easymock.EasyMock;
 import org.junit.After;
@@ -36,10 +40,12 @@ import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.common.expr.spel.SpelExpressionService;
 import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.domain.ExpressionRoot;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.service.DatumService;
+import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.service.ExpressionService;
 
 /**
@@ -51,23 +57,30 @@ import net.solarnetwork.service.ExpressionService;
 public class ExpressionRootTests {
 
 	private DatumService datumService;
+	private OperationalModesService opModesService;
 	private ExpressionService expressionService = new SpelExpressionService();
 
 	@Before
 	public void setup() {
 		datumService = EasyMock.createMock(DatumService.class);
+		opModesService = EasyMock.createMock(OperationalModesService.class);
 	}
 
 	@After
 	public void teardown() {
-		EasyMock.verify(datumService);
+		EasyMock.verify(datumService, opModesService);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(datumService);
+		EasyMock.replay(datumService, opModesService);
 	}
 
 	private ExpressionRoot createTestRoot() {
+		return createTestRoot(datumService, opModesService);
+	}
+
+	private ExpressionRoot createTestRoot(DatumService datumService,
+			OperationalModesService opModesService) {
 		SimpleDatum d = SimpleDatum.nodeDatum("foo");
 		d.putSampleValue(Instantaneous, "a", 3);
 		d.putSampleValue(Instantaneous, "b", 5);
@@ -86,7 +99,7 @@ public class ExpressionRootTests {
 		p.put("f", 35);
 		p.put("g", 35);
 
-		return new ExpressionRoot(d, s, p, datumService);
+		return new ExpressionRoot(d, s, p, datumService, opModesService);
 	}
 
 	@Test
@@ -95,8 +108,7 @@ public class ExpressionRootTests {
 		SimpleDatum other = SimpleDatum.nodeDatum("bar");
 		other.putSampleValue(Instantaneous, "aa", 100);
 
-		expect(datumService.latest(singleton("bar"), NodeDatum.class))
-				.andReturn(singleton((NodeDatum) other));
+		expect(datumService.offset("bar", 0, NodeDatum.class)).andReturn(other);
 
 		// WHEN
 		replayAll();
@@ -111,7 +123,7 @@ public class ExpressionRootTests {
 	@Test
 	public void hasLatest_no() {
 		// GIVEN
-		expect(datumService.latest(singleton("bar"), NodeDatum.class)).andReturn(null);
+		expect(datumService.offset("bar", 0, NodeDatum.class)).andReturn(null);
 
 		// WHEN
 		replayAll();
@@ -130,8 +142,7 @@ public class ExpressionRootTests {
 		SimpleDatum other = SimpleDatum.nodeDatum("bar");
 		other.putSampleValue(Instantaneous, "aa", 100);
 
-		expect(datumService.latest(singleton("bar"), NodeDatum.class))
-				.andReturn(singleton((NodeDatum) other));
+		expect(datumService.offset("bar", 0, NodeDatum.class)).andReturn(other);
 
 		// WHEN
 		replayAll();
@@ -150,8 +161,7 @@ public class ExpressionRootTests {
 		other.putSampleValue(Instantaneous, "aa", 100);
 		other.putSampleValue(Accumulating, "bb", 200);
 
-		expect(datumService.latest(singleton("bar"), NodeDatum.class))
-				.andReturn(singleton((NodeDatum) other)).times(3);
+		expect(datumService.offset("bar", 0, NodeDatum.class)).andReturn(other).times(3);
 
 		// WHEN
 		replayAll();
@@ -162,6 +172,114 @@ public class ExpressionRootTests {
 
 		// THEN
 		assertThat("Expression resolves latest datum conditionally", result, is(3 + 100 + 200));
+	}
+
+	@Test
+	public void latestMatching() {
+		// GIVEN
+		ExpressionRoot root = createTestRoot();
+
+		SimpleDatum d1 = SimpleDatum.nodeDatum("foo/1");
+		d1.putSampleValue(Instantaneous, "aa", 100);
+		d1.putSampleValue(Accumulating, "bb", 200);
+
+		SimpleDatum d2 = SimpleDatum.nodeDatum("foo/2");
+		d2.putSampleValue(Instantaneous, "aa", 110);
+		d2.putSampleValue(Accumulating, "bb", 220);
+
+		SimpleDatum d3 = SimpleDatum.nodeDatum("foo/3");
+		d3.putSampleValue(Instantaneous, "aa", 111);
+		d3.putSampleValue(Accumulating, "bb", 222);
+
+		List<NodeDatum> matches = Arrays.asList(new NodeDatum[] { d1, d2, d3 });
+		expect(datumService.offset(singleton("foo/*"), root.getTimestamp(), 0, NodeDatum.class))
+				.andReturn(matches).anyTimes();
+
+		// WHEN
+		replayAll();
+		BigDecimal result = expressionService.evaluateExpression(
+				"sum(latestMatching('foo/*').?[aa < 111].![aa])", null, root, null, BigDecimal.class);
+		BigDecimal result2 = expressionService.evaluateExpression(
+				"sum(latestMatching('foo/*').?[aa < 111].![aa * bb])", null, root, null,
+				BigDecimal.class);
+
+		// THEN
+		assertThat("Expression resolves matching datum and evaluates projection", result,
+				is(new BigDecimal("210")));
+		assertThat("Expression resolves matching datum and evaluates projection", result2,
+				is(new BigDecimal("44200")));
+	}
+
+	@Test
+	public void isOpMode_noService() {
+		// GIVEN
+
+		// WHEN
+		replayAll();
+		ExpressionRoot root = createTestRoot(datumService, null);
+		Boolean result = expressionService.evaluateExpression("isOpMode('foo')", null, root, null,
+				Boolean.class);
+
+		// THEN
+		assertThat("isOpMode() returns false when no service available", result, is(false));
+	}
+
+	@Test
+	public void isOpMode() {
+		// GIVEN
+		expect(opModesService.isOperationalModeActive("foo")).andReturn(true);
+		expect(opModesService.isOperationalModeActive("bar")).andReturn(false);
+
+		// WHEN
+		replayAll();
+		ExpressionRoot root = createTestRoot();
+		Boolean result1 = expressionService.evaluateExpression("isOpMode('foo')", null, root, null,
+				Boolean.class);
+		Boolean result2 = expressionService.evaluateExpression("isOpMode('bar')", null, root, null,
+				Boolean.class);
+
+		// THEN
+		assertThat("isOpMode('foo') returns result of isOperationalModeActive()", result1, is(true));
+		assertThat("isOpMode('bar') returns result of isOperationalModeActive()", result2, is(false));
+	}
+
+	@Test
+	public void datumMeta() {
+		// GIVEN
+		GeneralDatumMetadata meta1 = new GeneralDatumMetadata();
+		meta1.putInfoValue("a", 1);
+		meta1.putInfoValue("b", "two");
+		meta1.putInfoValue("deviceInfo", "Version", "1.23.4");
+		meta1.putInfoValue("deviceInfo", "Name", "Thingy");
+		meta1.putInfoValue("deviceInfo", "Capacity", 3000);
+
+		expect(datumService.datumMetadata("foo")).andReturn(meta1).anyTimes();
+
+		GeneralDatumMetadata meta2 = new GeneralDatumMetadata();
+		meta2.putInfoValue("a", 2);
+		meta2.putInfoValue("deviceInfo", "Capacity", 1000);
+
+		expect(datumService.datumMetadata(singleton("foo/*"))).andReturn(asList(meta1, meta2))
+				.anyTimes();
+
+		// WHEN
+		replayAll();
+		ExpressionRoot root = createTestRoot();
+		String result1 = expressionService.evaluateExpression("meta('foo')?.info?.b", null, root, null,
+				String.class);
+		Integer result2 = expressionService.evaluateExpression("sum(metaMatching('foo/*').![info?.a])",
+				null, root, null, Integer.class);
+		Integer result3 = expressionService.evaluateExpression(
+				"meta('foo')?.getInfoNumber('deviceInfo', 'Capacity')", null, root, null, Integer.class);
+		Integer result4 = expressionService.evaluateExpression(
+				"sum(metaMatching('foo/*').![getInfoNumber('deviceInfo', 'Capacity')])", null, root,
+				null, Integer.class);
+
+		// THEN
+		assertThat("Metadata info traversal", result1, is("two"));
+		assertThat("Metadata match info direct traversal", result2, is(3));
+		assertThat("Metadata property info traversal", result3, is(3000));
+		assertThat("Metadata match property info traversal", result4, is(4000));
 	}
 
 }

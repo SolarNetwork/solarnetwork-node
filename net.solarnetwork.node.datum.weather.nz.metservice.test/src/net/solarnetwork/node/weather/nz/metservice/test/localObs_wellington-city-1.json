@@ -4,7 +4,7 @@
 "locationId":"93437",
 "threeHour":{
   "clothingLayers":"3",
-  "dateTime":"8:00am Sunday 29 May 2016",
+  "dateTime":"8:00am Sun, 29 May",
   "humidity":"90",
   "pressure":993,
   "rainfall":"0.0",
@@ -16,7 +16,7 @@
   "windSpeed":"11"
   },
 "twentyFourHour":{
-  "dateTime":"Midnight Saturday 28 May 2016",
+  "dateTime":"Midnight Sat, 28 May",
   "maxTemp":15,
   "minTemp":11,
   "rainfall":"26.6"

@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.core.io.Resource;
 import net.solarnetwork.node.Constants;
+import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.settings.FactorySettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -42,7 +43,7 @@ import net.solarnetwork.util.SearchFilter;
  * Service API for settings.
  * 
  * @author matt
- * @version 1.0
+ * @version 2.1
  * @since 2.0
  */
 public interface SettingsService {
@@ -170,6 +171,28 @@ public interface SettingsService {
 	SettingSpecifierProviderFactory getProviderFactory(String factoryUid);
 
 	/**
+	 * Enable a provider factory instance.
+	 * 
+	 * @param factoryUid
+	 *        the factory UID to enable
+	 * @param instanceUid
+	 *        the instance UID to enable
+	 * @since 2.1
+	 */
+	void enableProviderFactoryInstance(String factoryUid, String instanceUid);
+
+	/**
+	 * Disable a provider factory instance.
+	 * 
+	 * @param factoryUid
+	 *        the factory UID to disable
+	 * @param instanceUid
+	 *        the instance UID to disable
+	 * @since 2.1
+	 */
+	void disableProviderFactoryInstance(String factoryUid, String instanceUid);
+
+	/**
 	 * Add a new factory instance, and return the new instance ID.
 	 * 
 	 * @param factoryUid
@@ -177,6 +200,27 @@ public interface SettingsService {
 	 * @return the new instance ID
 	 */
 	String addProviderFactoryInstance(String factoryUid);
+
+	/**
+	 * Add a new factory instance, and return the new instance ID.
+	 * 
+	 * <p>
+	 * If {@code instanceUid} is provided and an instance already exists for
+	 * that ID, this will have the same effect as if
+	 * {@link #enableProviderFactoryInstance(String, String)} was called.
+	 * </p>
+	 * 
+	 * @param factoryUid
+	 *        the factory UID to create the new instance for
+	 * @param instanceUid
+	 *        the instance UID to create the new instance for, or
+	 *        {@literal null} to automatically assign one
+	 * @return the new instance ID
+	 * @since 2.1
+	 */
+	default String addProviderFactoryInstance(String factoryUid, String instanceUid) {
+		return addProviderFactoryInstance(factoryUid);
+	}
 
 	/**
 	 * Delete an existing factory instance.
@@ -228,6 +272,14 @@ public interface SettingsService {
 	 *        the update command
 	 */
 	void updateSettings(SettingsCommand command);
+
+	/**
+	 * Get a list of all available setting resource handlers.
+	 * 
+	 * @return the handlers, never {@literal null}
+	 * @since 2.1
+	 */
+	List<SettingResourceHandler> getSettingResourceHandlers();
 
 	/**
 	 * Get a setting resource handler.
@@ -297,6 +349,22 @@ public interface SettingsService {
 	 *         if any IO error occurs
 	 */
 	void exportSettingsCSV(Writer out) throws IOException;
+
+	/**
+	 * Get a list of all available settings for a given factory and/or instance
+	 * ID.
+	 * 
+	 * @param factoryUid
+	 *        the UID of the factory to get, or {@literal null} for a
+	 *        non-factory component
+	 * @param instanceUid
+	 *        if UID of the instance
+	 * @return the available settings, never {@literal null}
+	 * @throws IllegalArgumentException
+	 *         if both arguments are {@literal null}
+	 * @since 2.1
+	 */
+	List<Setting> getSettings(String factoryUid, String instanceUid);
 
 	/**
 	 * Import all settings from a CSV formatted text stream.

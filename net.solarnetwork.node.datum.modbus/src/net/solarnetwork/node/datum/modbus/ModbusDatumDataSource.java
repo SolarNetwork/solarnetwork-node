@@ -68,11 +68,18 @@ import net.solarnetwork.util.StringUtils;
  * Generic Modbus device datum data source.
  * 
  * @author matt
- * @version 3.0
+ * @version 3.1
  */
 public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider, ModbusConnectionAction<ModbusData>,
 		SettingsChangeObserver, ServiceLifecycleObserver {
+
+	/**
+	 * The setting UID used by this service.
+	 * 
+	 * @since 3.1
+	 */
+	public static final String SETTING_UID = "net.solarnetwork.node.datum.modbus";
 
 	/** The {@code sampleCacheMs} property default value. */
 	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000L;
@@ -101,6 +108,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	@Override
 	public void configurationChanged(Map<String, Object> properties) {
 		startSubSampling(this);
+		saveMetadata(getSourceId());
 	}
 
 	@Override
@@ -267,7 +275,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	@Override
 	public String getSettingUid() {
-		return "net.solarnetwork.node.datum.modbus";
+		return SETTING_UID;
 	}
 
 	@Override
@@ -327,6 +335,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		results.add(wordOrderSpec);
 
 		results.addAll(getSubSampleSettingSpecifiers());
+
+		results.addAll(basicIdentifiableMetadataSettings(null, getMetadata()));
 
 		ModbusPropertyConfig[] confs = getPropConfigs();
 		List<ModbusPropertyConfig> confsList = (confs != null ? Arrays.asList(confs)

@@ -34,7 +34,7 @@
 			<label class="control-label" for="${settingId}">
 				<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}" index="${groupIndex}"/>
 			</label>
-			<div class="controls ${setup:instanceOf(setting, 'net.solarnetwork.settings.TitleSettingSpecifier') ? 'static' : ''}">
+			<div class="controls ${setup:instanceOf(setting, 'net.solarnetwork.settings.TitleSettingSpecifier') and !setup:instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier') ? 'static' : ''}">
 				<c:choose>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.SliderSettingSpecifier')}">
 						<div id="${settingId}" class="setting slider span5"></div>
@@ -139,21 +139,38 @@
 						</script>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.TextAreaSettingSpecifier')}">
-						<textarea  name="${settingId}" id="${settingId}" class="span5">${settingValue}</textarea>
-						<button type="button" class="btn setting-resource-upload"
-							data-action="<setup:url value='/a/settings/importResource'/>"
-							data-key="${settingId}" 
-							data-xint="${setting['transient']}"
-							data-provider="${provider.settingUid}"
-							data-setting="${setup:js(setting.key)}"
-							data-instance="${instanceId}"
-							>
-							<fmt:message key="settings.resource.upload.action"/>
-						</button>
+						<textarea  name="${settingId}" id="${settingId}" class="span5" rows="${setting.direct ? 1 : 2}">${settingValue}</textarea>
+						<c:choose>
+							<c:when test="${setting.direct}">
+								<script>
+								$(function() {
+									SolarNode.Settings.addTextField({
+										key: '${settingId}',
+										xint: '${setting["transient"]}',
+										provider: '${provider.settingUid}',
+										setting: '${setup:js(setting.key)}',
+										instance: '${instanceId}'
+									});
+								});
+								</script>
+							</c:when>
+							<c:otherwise>
+								<button type="button" class="btn setting-resource-upload"
+									data-action="<setup:url value='/a/settings/importResource'/>"
+									data-key="${settingId}" 
+									data-xint="${setting['transient']}"
+									data-provider="${provider.settingUid}"
+									data-setting="${setup:js(setting.key)}"
+									data-instance="${instanceId}"
+									>
+									<fmt:message key="settings.resource.upload.action"/>
+								</button>
+							</c:otherwise>
+						</c:choose>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier')}">
 						<input type="${setting.secureTextEntry == true ? 'password' : 'text' }" name="${settingId}" id="${settingId}" 
-							class="span5" maxLength="255"
+							class="span5" maxLength="4096"
 							<c:choose>
 								<c:when test='${setting.secureTextEntry == true}'>
 									placeholder="<fmt:message key='settings.secureTextEntry.placeholder'/>"

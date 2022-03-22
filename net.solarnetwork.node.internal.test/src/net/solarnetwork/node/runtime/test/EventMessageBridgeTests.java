@@ -78,8 +78,8 @@ public class EventMessageBridgeTests {
 
 	@Test
 	public void handleDatumStoredEvent() {
-		Capture<String> destCaptor = new Capture<String>();
-		Capture<Object> msgCaptor = new Capture<Object>();
+		Capture<String> destCaptor = Capture.newInstance();
+		Capture<Object> msgCaptor = Capture.newInstance();
 		messageSendingOps.convertAndSend(capture(destCaptor), capture(msgCaptor),
 				EasyMock.<Map<String, Object>> isNull());
 
@@ -104,8 +104,8 @@ public class EventMessageBridgeTests {
 
 	@Test
 	public void handleDatumCapturedEvent() {
-		Capture<String> destCaptor = new Capture<String>();
-		Capture<Object> msgCaptor = new Capture<Object>();
+		Capture<String> destCaptor = Capture.newInstance();
+		Capture<Object> msgCaptor = Capture.newInstance();
 		messageSendingOps.convertAndSend(capture(destCaptor), capture(msgCaptor),
 				EasyMock.<Map<String, Object>> isNull());
 
@@ -131,8 +131,8 @@ public class EventMessageBridgeTests {
 	@SuppressWarnings("unchecked")
 	@Test
 	public void handleDatumCapturedEvent_datum() {
-		Capture<String> destCaptor = new Capture<String>();
-		Capture<Object> msgCaptor = new Capture<Object>();
+		Capture<String> destCaptor = Capture.newInstance();
+		Capture<Object> msgCaptor = Capture.newInstance();
 		messageSendingOps.convertAndSend(capture(destCaptor), capture(msgCaptor),
 				EasyMock.<Map<String, Object>> isNull());
 

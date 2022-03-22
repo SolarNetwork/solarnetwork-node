@@ -116,7 +116,7 @@ public class ModbusTransactionUtilsTests {
 		// given
 		ModbusTransaction trans = EasyMock.createMock(ModbusTransaction.class);
 
-		Capture<ModbusRequest> requestCaptor = new Capture<>();
+		Capture<ModbusRequest> requestCaptor = Capture.newInstance();
 		trans.setRequest(capture(requestCaptor));
 		trans.execute();
 
@@ -149,7 +149,7 @@ public class ModbusTransactionUtilsTests {
 		// given
 		ModbusTransaction trans = EasyMock.createMock(ModbusTransaction.class);
 
-		Capture<ModbusRequest> requestCaptor = new Capture<>();
+		Capture<ModbusRequest> requestCaptor = Capture.newInstance();
 		trans.setRequest(capture(requestCaptor));
 		trans.execute();
 
@@ -173,7 +173,7 @@ public class ModbusTransactionUtilsTests {
 		// given
 		ModbusTransaction trans = EasyMock.createMock(ModbusTransaction.class);
 
-		Capture<ModbusRequest> requestCaptor = new Capture<>();
+		Capture<ModbusRequest> requestCaptor = Capture.newInstance();
 		trans.setRequest(capture(requestCaptor));
 		trans.execute();
 

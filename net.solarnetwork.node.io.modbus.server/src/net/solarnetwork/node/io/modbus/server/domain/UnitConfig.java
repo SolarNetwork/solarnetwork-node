@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
@@ -37,7 +38,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Configuration for a single Modbus unit.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class UnitConfig {
 
@@ -52,6 +53,20 @@ public class UnitConfig {
 	 * @return the settings, never {@literal null}
 	 */
 	public List<SettingSpecifier> settings(String prefix) {
+		return settings(prefix, null);
+	}
+
+	/**
+	 * Get settings suitable for configuring an instance of this class.
+	 * 
+	 * @param prefix
+	 *        a setting key prefix to use
+	 * @param messageSource
+	 *        the message source to use, or {@literal null}
+	 * @return the settings, never {@literal null}
+	 * @since 2.1
+	 */
+	public List<SettingSpecifier> settings(String prefix, MessageSource messageSource) {
 		List<SettingSpecifier> result = new ArrayList<>(6);
 
 		result.add(new BasicTextFieldSettingSpecifier(prefix + "unitId", "0"));
@@ -66,7 +81,7 @@ public class UnitConfig {
 					public Collection<SettingSpecifier> mapListSettingKey(RegisterBlockConfig value,
 							int index, String key) {
 						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
-								value.settings(key + "."));
+								value.settings(key + ".", messageSource));
 						return Collections.<SettingSpecifier> singletonList(configGroup);
 					}
 				}));

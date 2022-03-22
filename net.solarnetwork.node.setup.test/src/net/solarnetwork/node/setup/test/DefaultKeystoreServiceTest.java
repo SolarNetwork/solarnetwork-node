@@ -123,7 +123,7 @@ public class DefaultKeystoreServiceTest {
 	@Test
 	public void checkForCertificateNoConfKey() {
 		expect(setupIdentityDao.getSetupIdentityInfo()).andReturn(SetupIdentityInfo.UNKNOWN_IDENTITY);
-		Capture<SetupIdentityInfo> infoCapture = new Capture<SetupIdentityInfo>();
+		Capture<SetupIdentityInfo> infoCapture = Capture.newInstance();
 		setupIdentityDao.saveSetupIdentityInfo(capture(infoCapture));
 		replayAll();
 		final boolean result = service.isNodeCertificateValid(TEST_DN);
@@ -149,7 +149,7 @@ public class DefaultKeystoreServiceTest {
 		expect(setupIdentityDao.getSetupIdentityInfo()).andReturn(SetupIdentityInfo.UNKNOWN_IDENTITY);
 
 		// generate new password for key store
-		final Capture<SetupIdentityInfo> infoCapture = new Capture<SetupIdentityInfo>();
+		final Capture<SetupIdentityInfo> infoCapture = Capture.newInstance();
 		setupIdentityDao.saveSetupIdentityInfo(capture(infoCapture));
 
 		// load the identity again, this time returning the captured value
@@ -182,7 +182,7 @@ public class DefaultKeystoreServiceTest {
 		expect(setupIdentityDao.getSetupIdentityInfo()).andReturn(info).times(2);
 
 		// generate new password for key store
-		final Capture<SetupIdentityInfo> infoCapture = new Capture<SetupIdentityInfo>(CaptureType.LAST);
+		final Capture<SetupIdentityInfo> infoCapture = Capture.newInstance(CaptureType.LAST);
 		setupIdentityDao.saveSetupIdentityInfo(capture(infoCapture));
 		EasyMock.expectLastCall().times(2);
 

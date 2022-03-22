@@ -40,6 +40,7 @@ import net.solarnetwork.service.ExpressionService;
 import net.solarnetwork.service.support.ExpressionServiceExpression;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextAreaSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
@@ -126,8 +127,8 @@ public class ExpressionConfig extends DatumSamplePropertyConfig<String> {
 
 			// only populate settings for expressions if we have at least one ExpressionService available
 			if ( !exprServiceTitles.isEmpty() ) {
-				BasicTextFieldSettingSpecifier exprSetting = new BasicTextFieldSettingSpecifier(
-						prefix + "expression", "");
+				BasicTextAreaSettingSpecifier exprSetting = new BasicTextAreaSettingSpecifier(
+						prefix + "expression", "", true);
 				exprSetting.setDescriptionArguments(new Object[] { getGeneralExpressionReferenceLink(),
 						expressionReferenceLink(clazz) });
 				results.add(exprSetting);

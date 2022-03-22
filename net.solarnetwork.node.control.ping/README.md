@@ -42,6 +42,9 @@ Each device configuration contains the following overall settings:
 | Command toggle off   | An OS-specific command that, if configured, will be executed when the HTTP request fails. This can be used with or without the **Control ID** and **Command toggle on** settings. |
 | Command toggle on    | An OS-specific command that, if configured, will be executed after the configured **Toggle delay** after a HTTP request fails. This can be used with or without the **Control ID** and **Command toggle off** settings. |
 | Command delay        | The number of seconds to wait after executing either of the configured OS commands successfully. |
+| Success Op Mode      | If configured, an [operational mode][opmodes] to activate when the URL is reached successfully. |
+| Failure Op Mode      | If configured, an [operational mode][opmodes] to activate when the URL is *not* reached successfully. |
+
 
 # `SystemConfigure` instruction support
 
@@ -53,3 +56,5 @@ The instruction will return the `Completed` state regardless if the ping test is
 A `message` result parameter will contain a description of the outcome. If the ping test fails for
 any reason, a `result` result parameter will contain either the ping requests's returned status
 code, or `-1` if the request could not be completed, e.g. the connection could not be established.
+
+[opmodes]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Operational-Modes

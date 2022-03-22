@@ -165,7 +165,7 @@ public class PropertyDatumFilterServiceTests {
 		List<KeyValuePair> initialSettings = Collections.emptyList();
 		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
-		Capture<Setting> savedSettingCapture = new Capture<Setting>(CaptureType.ALL);
+		Capture<Setting> savedSettingCapture = Capture.newInstance(CaptureType.ALL);
 		settingDao.storeSetting(capture(savedSettingCapture));
 		EasyMock.expectLastCall().times(2);
 
@@ -238,7 +238,7 @@ public class PropertyDatumFilterServiceTests {
 						Long.toString(System.currentTimeMillis() - TEST_FREQ * 10 * 1000L, 16)));
 		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
-		Capture<Setting> savedSettingCapture = new Capture<Setting>(CaptureType.ALL);
+		Capture<Setting> savedSettingCapture = Capture.newInstance(CaptureType.ALL);
 		settingDao.storeSetting(capture(savedSettingCapture));
 		EasyMock.expectLastCall().times(2);
 
@@ -312,7 +312,7 @@ public class PropertyDatumFilterServiceTests {
 				settingTypeValue(TEST_SOURCE_ID, PROP_WATTS), Long.toString(start, 16)));
 		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
-		Capture<Setting> savedSettingCapture = new Capture<Setting>(CaptureType.ALL);
+		Capture<Setting> savedSettingCapture = Capture.newInstance(CaptureType.ALL);
 		settingDao.storeSetting(capture(savedSettingCapture));
 
 		replay(settingDao);
@@ -380,7 +380,7 @@ public class PropertyDatumFilterServiceTests {
 						Long.toString(start - TEST_FREQ * 1000L - 500L, 16)));
 		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
-		Capture<Setting> savedSettingCapture = new Capture<Setting>(CaptureType.ALL);
+		Capture<Setting> savedSettingCapture = Capture.newInstance(CaptureType.ALL);
 		settingDao.storeSetting(capture(savedSettingCapture));
 
 		replay(settingDao);

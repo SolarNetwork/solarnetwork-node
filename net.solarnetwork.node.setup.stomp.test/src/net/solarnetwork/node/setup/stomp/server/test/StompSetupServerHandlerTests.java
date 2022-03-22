@@ -156,7 +156,7 @@ public class StompSetupServerHandlerTests {
 
 		// return ERROR to client
 		ChannelFuture responseFuture = new DefaultChannelPromise(channel);
-		Capture<Object> responseCaptor = new Capture<>();
+		Capture<Object> responseCaptor = Capture.newInstance();
 		expect(ctx.writeAndFlush(EasyMock.capture(responseCaptor))).andReturn(responseFuture);
 
 		// WHEN
@@ -184,7 +184,7 @@ public class StompSetupServerHandlerTests {
 
 		// return ERROR to client
 		ChannelFuture responseFuture = new DefaultChannelPromise(channel);
-		Capture<Object> responseCaptor = new Capture<>();
+		Capture<Object> responseCaptor = Capture.newInstance();
 		expect(ctx.writeAndFlush(EasyMock.capture(responseCaptor))).andReturn(responseFuture);
 
 		// WHEN
@@ -222,7 +222,7 @@ public class StompSetupServerHandlerTests {
 
 		// return CONNECTED to client
 		ChannelFuture responseFuture = new DefaultChannelPromise(channel);
-		Capture<Object> responseCaptor = new Capture<>();
+		Capture<Object> responseCaptor = Capture.newInstance();
 		expect(ctx.writeAndFlush(EasyMock.capture(responseCaptor))).andReturn(responseFuture);
 
 		// WHEN
@@ -316,7 +316,7 @@ public class StompSetupServerHandlerTests {
 
 		// return ERROR to client
 		ChannelFuture responseFuture = new DefaultChannelPromise(channel);
-		Capture<Object> responseCaptor = new Capture<>();
+		Capture<Object> responseCaptor = Capture.newInstance();
 		expect(ctx.writeAndFlush(EasyMock.capture(responseCaptor))).andReturn(responseFuture);
 
 		// WHEN
@@ -366,7 +366,7 @@ public class StompSetupServerHandlerTests {
 
 		// return ERROR to client
 		ChannelFuture responseFuture = new DefaultChannelPromise(channel);
-		Capture<Object> responseCaptor = new Capture<>();
+		Capture<Object> responseCaptor = Capture.newInstance();
 		expect(ctx.writeAndFlush(EasyMock.capture(responseCaptor))).andReturn(responseFuture);
 
 		// WHEN
@@ -504,7 +504,7 @@ public class StompSetupServerHandlerTests {
 		final String contentType = "text/plain;charset=utf-8";
 		final String arg = "Hello, world.";
 		final String res = "Good day to you, sir.";
-		Capture<Instruction> instrCaptor = new Capture<>();
+		Capture<Instruction> instrCaptor = Capture.newInstance();
 		expect(instructionHandler.processInstruction(capture(instrCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 
@@ -535,7 +535,7 @@ public class StompSetupServerHandlerTests {
 				});
 
 		// post instruction result as MESSAGE back to client
-		Capture<Object> msgCaptor = new Capture<>();
+		Capture<Object> msgCaptor = Capture.newInstance();
 		expect(ctx.writeAndFlush(capture(msgCaptor))).andReturn(new DefaultChannelPromise(channel));
 
 		// WHEN
@@ -578,7 +578,7 @@ public class StompSetupServerHandlerTests {
 				.andReturn(false);
 
 		// post instruction result as MESSAGE back to client
-		Capture<Object> msgCaptor = new Capture<>();
+		Capture<Object> msgCaptor = Capture.newInstance();
 		expect(ctx.writeAndFlush(capture(msgCaptor))).andReturn(new DefaultChannelPromise(channel));
 
 		// WHEN
@@ -615,7 +615,7 @@ public class StompSetupServerHandlerTests {
 				.andReturn(true);
 
 		final String arg = "Hello, world.";
-		Capture<Instruction> instrCaptor = new Capture<>();
+		Capture<Instruction> instrCaptor = Capture.newInstance();
 		expect(instructionHandler.processInstruction(capture(instrCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 
@@ -635,7 +635,7 @@ public class StompSetupServerHandlerTests {
 				});
 
 		// post instruction result as MESSAGE back to client
-		Capture<Object> msgCaptor = new Capture<>();
+		Capture<Object> msgCaptor = Capture.newInstance();
 		expect(ctx.writeAndFlush(capture(msgCaptor))).andReturn(new DefaultChannelPromise(channel));
 
 		// WHEN
@@ -672,7 +672,7 @@ public class StompSetupServerHandlerTests {
 				.andReturn(true);
 
 		final String arg = "Hello, world.";
-		Capture<Instruction> instrCaptor = new Capture<>();
+		Capture<Instruction> instrCaptor = Capture.newInstance();
 		expect(instructionHandler.processInstruction(capture(instrCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 
@@ -692,7 +692,7 @@ public class StompSetupServerHandlerTests {
 				});
 
 		// post instruction result as MESSAGE back to client
-		Capture<Object> msgCaptor = new Capture<>();
+		Capture<Object> msgCaptor = Capture.newInstance();
 		expect(ctx.writeAndFlush(capture(msgCaptor))).andReturn(new DefaultChannelPromise(channel));
 
 		// WHEN
@@ -730,7 +730,7 @@ public class StompSetupServerHandlerTests {
 
 		final String arg = "Hello, world.";
 		final String error = "No way!";
-		Capture<Instruction> instrCaptor = new Capture<>();
+		Capture<Instruction> instrCaptor = Capture.newInstance();
 		expect(instructionHandler.processInstruction(capture(instrCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 
@@ -742,7 +742,7 @@ public class StompSetupServerHandlerTests {
 				});
 
 		// post instruction result as MESSAGE back to client
-		Capture<Object> msgCaptor = new Capture<>();
+		Capture<Object> msgCaptor = Capture.newInstance();
 		expect(ctx.writeAndFlush(capture(msgCaptor))).andReturn(new DefaultChannelPromise(channel));
 
 		// WHEN
@@ -783,7 +783,7 @@ public class StompSetupServerHandlerTests {
 		// process instruction OK
 		final int statusCode = 8675309;
 		final String message = "Jenny I've got your number.";
-		Capture<Instruction> instrCaptor = new Capture<>();
+		Capture<Instruction> instrCaptor = Capture.newInstance();
 		expect(instructionHandler.processInstruction(capture(instrCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 
@@ -803,7 +803,7 @@ public class StompSetupServerHandlerTests {
 				});
 
 		// post instruction result as MESSAGE back to client
-		Capture<Object> msgCaptor = new Capture<>();
+		Capture<Object> msgCaptor = Capture.newInstance();
 		expect(ctx.writeAndFlush(capture(msgCaptor))).andReturn(new DefaultChannelPromise(channel));
 
 		// WHEN

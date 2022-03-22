@@ -92,7 +92,7 @@ public class ModbusConnectionHandlerTests {
 		ReadCoilsRequest req = new ReadCoilsRequest(0, 1);
 		req.setTransactionID(1);
 		req.setUnitID(2);
-		Capture<ModbusMessage> msgCaptor = new Capture<>();
+		Capture<ModbusMessage> msgCaptor = Capture.newInstance();
 		expectReadMessages(msgCaptor, req);
 
 		// WHEN
@@ -113,7 +113,7 @@ public class ModbusConnectionHandlerTests {
 		ReadCoilsRequest req = new ReadCoilsRequest(22, 1);
 		req.setTransactionID(1);
 		req.setUnitID(2);
-		Capture<ModbusMessage> msgCaptor = new Capture<>();
+		Capture<ModbusMessage> msgCaptor = Capture.newInstance();
 		expectReadMessages(msgCaptor, req);
 
 		// WHEN
@@ -140,7 +140,7 @@ public class ModbusConnectionHandlerTests {
 		ReadCoilsRequest req = new ReadCoilsRequest(0, 11);
 		req.setTransactionID(1);
 		req.setUnitID(2);
-		Capture<ModbusMessage> msgCaptor = new Capture<>();
+		Capture<ModbusMessage> msgCaptor = Capture.newInstance();
 		expectReadMessages(msgCaptor, req);
 
 		// WHEN
@@ -160,7 +160,7 @@ public class ModbusConnectionHandlerTests {
 		ReadInputDiscretesRequest req = new ReadInputDiscretesRequest(0, 1);
 		req.setTransactionID(1);
 		req.setUnitID(2);
-		Capture<ModbusMessage> msgCaptor = new Capture<>();
+		Capture<ModbusMessage> msgCaptor = Capture.newInstance();
 		expectReadMessages(msgCaptor, req);
 
 		// WHEN
@@ -182,7 +182,7 @@ public class ModbusConnectionHandlerTests {
 		ReadInputDiscretesRequest req = new ReadInputDiscretesRequest(22, 1);
 		req.setTransactionID(1);
 		req.setUnitID(2);
-		Capture<ModbusMessage> msgCaptor = new Capture<>();
+		Capture<ModbusMessage> msgCaptor = Capture.newInstance();
 		expectReadMessages(msgCaptor, req);
 
 		// WHEN
@@ -210,7 +210,7 @@ public class ModbusConnectionHandlerTests {
 		ReadInputDiscretesRequest req = new ReadInputDiscretesRequest(0, 11);
 		req.setTransactionID(1);
 		req.setUnitID(2);
-		Capture<ModbusMessage> msgCaptor = new Capture<>();
+		Capture<ModbusMessage> msgCaptor = Capture.newInstance();
 		expectReadMessages(msgCaptor, req);
 
 		// WHEN
@@ -232,7 +232,7 @@ public class ModbusConnectionHandlerTests {
 		ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(17, 1);
 		req.setTransactionID(1);
 		req.setUnitID(2);
-		Capture<ModbusMessage> msgCaptor = new Capture<>();
+		Capture<ModbusMessage> msgCaptor = Capture.newInstance();
 		expectReadMessages(msgCaptor, req);
 
 		// WHEN
@@ -255,7 +255,7 @@ public class ModbusConnectionHandlerTests {
 		ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(17, 3);
 		req.setTransactionID(1);
 		req.setUnitID(2);
-		Capture<ModbusMessage> msgCaptor = new Capture<>();
+		Capture<ModbusMessage> msgCaptor = Capture.newInstance();
 		expectReadMessages(msgCaptor, req);
 
 		// WHEN
@@ -277,7 +277,7 @@ public class ModbusConnectionHandlerTests {
 		ReadInputRegistersRequest req = new ReadInputRegistersRequest(17, 1);
 		req.setTransactionID(1);
 		req.setUnitID(2);
-		Capture<ModbusMessage> msgCaptor = new Capture<>();
+		Capture<ModbusMessage> msgCaptor = Capture.newInstance();
 		expectReadMessages(msgCaptor, req);
 
 		// WHEN
@@ -300,7 +300,7 @@ public class ModbusConnectionHandlerTests {
 		ReadInputRegistersRequest req = new ReadInputRegistersRequest(17, 3);
 		req.setTransactionID(1);
 		req.setUnitID(2);
-		Capture<ModbusMessage> msgCaptor = new Capture<>();
+		Capture<ModbusMessage> msgCaptor = Capture.newInstance();
 		expectReadMessages(msgCaptor, req);
 
 		// WHEN

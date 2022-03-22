@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Metadata Service (SolarNetwork)
 Bundle-Description: Support for loading/publishing node and source-level metadata from/to SolarNetwork.
 Bundle-SymbolicName: net.solarnetwork.node.metadata.json
-Bundle-Version: 2.0.0
+Bundle-Version: 2.1.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.metadata.json
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -16,11 +16,11 @@ Import-Package:
  net.solarnetwork.codec;version="[2.0,3.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
  net.solarnetwork.domain;version="[2.0,3.0)",
- net.solarnetwork.domain.datum;version="[2.0,3.0)",
+ net.solarnetwork.domain.datum;version="[2.1,3.0)",
  net.solarnetwork.node.dao;version="[2.0,3.0)",
  net.solarnetwork.node.domain;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
- net.solarnetwork.node.service;version="[1.0,2.0)",
+ net.solarnetwork.node.service;version="[1.2,2.0)",
  net.solarnetwork.node.service.support;version="[1.0,2.0)",
  net.solarnetwork.node.settings;version="[2.0,3.0)",
  net.solarnetwork.node.settings.support;version="[2.0,3.0)",

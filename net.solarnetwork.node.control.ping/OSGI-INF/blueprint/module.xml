@@ -30,6 +30,12 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="opModesService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.OperationalModesService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<!-- Supporting Services -->
 	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
@@ -62,6 +68,7 @@
 					<property name="instructionExecutionService" ref="instructionExecutionService"/>
 					<property name="sslService" ref="sslService"/>
 					<property name="messageSource" ref="messageSource"/>
+					<property name="opModesService" ref="opModesService"/>
 				</bean>
 			</argument>
 			<argument value="0 0/5 * * * ?"/>

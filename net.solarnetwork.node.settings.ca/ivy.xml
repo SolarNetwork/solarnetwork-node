@@ -15,7 +15,7 @@
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
     	<dependency org="commons-codec" name="commons-codec" rev="1.11"/>
 		<dependency org="net.sf.supercsv" name="super-csv" rev="2.1.0"/>
-    	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[2.1,)"/>
+    	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[2.3,)"/>
 		<dependency org="org.osgi" name="org.osgi.core" rev="5.0.0"/>
 		<dependency org="org.osgi" name="org.osgi.compendium" rev="5.0.0"/>
     	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.32"/>

@@ -227,8 +227,7 @@ public class HealthCheckDatumSourceTests {
 				is(nullValue()));
 	}
 
-	@Test
-	public void pubFailOnly_multiTestResult_mixed() throws Exception {
+	private void do_pubFailOnly_multiTestResult_mixed() throws Exception {
 		// GIVEN
 		final Instant now = Instant.now();
 		final String testId1 = "foo";
@@ -240,7 +239,6 @@ public class HealthCheckDatumSourceTests {
 		PingTestResult testResult2 = new PingTestResult(false, "BOO");
 		PingTest test2 = newMockTest(testId2, "Bar Test", 1000, testResult2);
 
-		ds.setPublishMode(PublishMode.OnFailure);
 		Map<String, PingTestResultDisplay> resultMap = new LinkedHashMap<>();
 		resultMap.put(testId1, new PingTestResultDisplay(test1, testResult1, now));
 		resultMap.put(testId2, new PingTestResultDisplay(test2, testResult2, now));
@@ -260,6 +258,18 @@ public class HealthCheckDatumSourceTests {
 		assertThat("Message property published when test FAIL",
 				d.asSampleOperations().getSampleString(Status, PROP_MESSAGE),
 				is(testResult2.getMessage()));
+	}
+
+	@Test
+	public void pubFailOnly_multiTestResult_mixed() throws Exception {
+		ds.setPublishMode(PublishMode.OnFailure);
+		do_pubFailOnly_multiTestResult_mixed();
+	}
+
+	@Test
+	public void pubFailOnly_multiTestResult_mixed_codeValue() throws Exception {
+		ds.setPublishModeCode(PublishMode.OnFailure.getCode());
+		do_pubFailOnly_multiTestResult_mixed();
 	}
 
 	@Test

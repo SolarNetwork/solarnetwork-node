@@ -34,19 +34,27 @@ import javax.sql.DataSource;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.AbstractTransactionalJUnit4SpringContextTests;
+import org.springframework.transaction.annotation.Transactional;
 import net.solarnetwork.node.dao.jdbc.derby.DerbyFullCompressTablesService;
-import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 
 /**
  * Tests for the {@link DerbyFullCompressTablesService} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class DerbyFullCompressTablesServiceTests extends AbstractNodeTransactionalTest {
+@ContextConfiguration
+@Transactional(transactionManager = "txManager")
+public class DerbyFullCompressTablesServiceTests extends AbstractTransactionalJUnit4SpringContextTests {
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Resource(name = "dataSource")
 	private DataSource dataSource;
@@ -140,6 +148,7 @@ public class DerbyFullCompressTablesServiceTests extends AbstractNodeTransaction
 				assert url.startsWith("jdbc:derby:");
 				url = url.substring(11, url.length());
 				File dir = new File(url);
+				log.info("DB location: {}", dir.getAbsolutePath());
 				conn.setAutoCommit(true);
 				long fsSizeBefore = totalDiskSize(dir);
 				log.debug("Disk size before insert: {}", fsSizeBefore);

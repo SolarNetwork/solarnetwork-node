@@ -1,0 +1,3 @@
+Instance,Source ID,Schedule,Connection,Unit ID,Sample Cache,Max Read,Word Order,Property,Property Type,Register,Register Type,Data Type,Data Length,Multiplier,Decimal Scale
+-,power/1,0 * * * * *,Modbus Port,1,5000,64,Most to least
+-,power/2,0 * * * * *,Modbus Port,2,5000,64,Least to most

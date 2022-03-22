@@ -27,6 +27,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -56,7 +58,7 @@ public class ModbusDataTests {
 	@Test
 	public void construct() {
 		ModbusData d = new ModbusData();
-		assertThat("Initial timestamp", d.getDataTimestamp().toEpochMilli(), equalTo(0L));
+		assertThat("Initial timestamp", d.getDataTimestamp(), is(nullValue()));
 	}
 
 	@Test
@@ -85,7 +87,7 @@ public class ModbusDataTests {
 			}
 		});
 
-		assertThat("Tmestamp not updated", d.getDataTimestamp().toEpochMilli(), equalTo(0L));
+		assertThat("Tmestamp not updated", d.getDataTimestamp(), is(nullValue()));
 	}
 
 	@Test

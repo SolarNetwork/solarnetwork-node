@@ -36,10 +36,10 @@ import static net.solarnetwork.node.io.modbus.ModbusDataUtils.shortArray;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
@@ -150,7 +150,7 @@ public class ModbusDatumDataSourceTests {
 						BigDecimal.ONE, -1), };
 		dataSource.setPropConfigs(propConfigs);
 
-		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = Capture.newInstance();
 		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
@@ -210,7 +210,7 @@ public class ModbusDatumDataSourceTests {
 		propConfig.setPropertyType(Status);
 		dataSource.setPropConfigs(new ModbusPropertyConfig[] { propConfig });
 
-		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = Capture.newInstance();
 		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
@@ -256,7 +256,7 @@ public class ModbusDatumDataSourceTests {
 						new BigDecimal("0.0001"), -1), };
 		dataSource.setPropConfigs(propConfigs);
 
-		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = Capture.newInstance();
 		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
@@ -310,7 +310,7 @@ public class ModbusDatumDataSourceTests {
 						new BigDecimal("0.0001"), -1), };
 		dataSource.setPropConfigs(propConfigs);
 
-		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = Capture.newInstance();
 		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
@@ -365,7 +365,7 @@ public class ModbusDatumDataSourceTests {
 		dataSource.setPropConfigs(propConfigs);
 		dataSource.setWordOrder(ModbusWordOrder.LeastToMostSignificant);
 
-		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = Capture.newInstance();
 		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
@@ -416,7 +416,7 @@ public class ModbusDatumDataSourceTests {
 		propConfig.setDecimalScale(-1);
 		dataSource.setPropConfigs(new ModbusPropertyConfig[] { propConfig });
 
-		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = Capture.newInstance();
 		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
@@ -469,7 +469,7 @@ public class ModbusDatumDataSourceTests {
 						SpelExpressionService.class.getName()), };
 		dataSource.setExpressionConfigs(exprConfigs);
 
-		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = Capture.newInstance();
 		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
@@ -522,7 +522,7 @@ public class ModbusDatumDataSourceTests {
 						SpelExpressionService.class.getName()), };
 		dataSource.setExpressionConfigs(exprConfigs);
 
-		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = Capture.newInstance();
 		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 
@@ -589,7 +589,7 @@ public class ModbusDatumDataSourceTests {
 						SpelExpressionService.class.getName()), };
 		dataSource.setExpressionConfigs(exprConfigs);
 
-		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = new Capture<>();
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = Capture.newInstance();
 		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<ModbusData>() {
 

@@ -77,7 +77,7 @@ import net.wimpi.modbus.io.ModbusTCPTransport;
  * Modbus TCP server service.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ModbusServer extends BaseIdentifiable
 		implements SettingSpecifierProvider, SettingsChangeObserver, EventHandler {
@@ -425,7 +425,7 @@ public class ModbusServer extends BaseIdentifiable
 					public Collection<SettingSpecifier> mapListSettingKey(UnitConfig value, int index,
 							String key) {
 						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
-								value.settings(key + "."));
+								value.settings(key + ".", getMessageSource()));
 						return Collections.<SettingSpecifier> singletonList(configGroup);
 					}
 				}));

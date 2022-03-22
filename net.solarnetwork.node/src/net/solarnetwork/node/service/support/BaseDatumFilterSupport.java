@@ -22,9 +22,12 @@
 
 package net.solarnetwork.node.service.support;
 
+import static net.solarnetwork.node.service.PlaceholderService.smartCopyPlaceholders;
 import static net.solarnetwork.util.DateUtils.formatHoursMinutesSeconds;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.springframework.context.MessageSource;
@@ -32,6 +35,7 @@ import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.node.service.DatumService;
 import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.node.service.PlaceholderService;
 import net.solarnetwork.service.DatumFilterStats;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
@@ -45,7 +49,7 @@ import net.solarnetwork.util.StatCounter.Stat;
  * {@link net.solarnetwork.service.DatumFilterService} to extend.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public class BaseDatumFilterSupport extends BaseIdentifiable {
@@ -62,6 +66,8 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 */
 	public static final int DEFAULT_STAT_LOG_FREQUENCY = 1000;
 
+	private static final Pattern TAG_COMMA_DELIM = Pattern.compile("\\s*,\\s*");
+
 	/**
 	 * A stats counter.
 	 * 
@@ -76,6 +82,7 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	private Pattern sourceId;
 	private OperationalModesService opModesService;
 	private String requiredOperationalMode;
+	private String requiredTag;
 
 	private OptionalService<DatumService> datumService;
 
@@ -110,10 +117,10 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 *        the settings to populate
 	 * @since 1.1
 	 * @see BaseDatumFilterSupport#populateBaseSampleTransformSupportSettings(List,
-	 *      String, String)
+	 *      String, String, String)
 	 */
 	public static void populateBaseSampleTransformSupportSettings(List<SettingSpecifier> settings) {
-		populateBaseSampleTransformSupportSettings(settings, null, null);
+		populateBaseSampleTransformSupportSettings(settings, null, null, null);
 	}
 
 	/**
@@ -130,13 +137,16 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 *        the default {@code sourceId} value
 	 * @param requiredOperationalModeDefault
 	 *        the default {@code requiredOperationalMode} value
+	 * @param requiredTagDefault
+	 *        the {@code requiredTag} default value
 	 * @since 1.1
 	 */
 	public static void populateBaseSampleTransformSupportSettings(List<SettingSpecifier> settings,
-			String sourceIdDefault, String requiredOperationalModeDefault) {
+			String sourceIdDefault, String requiredOperationalModeDefault, String requiredTagDefault) {
 		settings.add(new BasicTextFieldSettingSpecifier("sourceId", sourceIdDefault));
 		settings.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode",
 				requiredOperationalModeDefault));
+		settings.add(new BasicTextFieldSettingSpecifier("requiredTag", requiredTagDefault));
 
 	}
 
@@ -318,7 +328,138 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 			// service not available, so automatically does not match
 			return false;
 		}
-		return service.isOperationalModeActive(mode);
+		boolean result = service.isOperationalModeActive(mode);
+		if ( !result && log.isTraceEnabled() ) {
+			log.trace("Filter [{}] required operational mode [{}] not active; not filtering", getUid(),
+					mode);
+		}
+		return result;
+	}
+
+	/**
+	 * Test if the configured {@link #getRequiredTag()} expression matches the
+	 * given datum or samples.
+	 * 
+	 * <p>
+	 * If no required tag expression is configured, this method returns
+	 * {@literal true}. Otherwise, the expression is split on a comma delimiter
+	 * (surrounding whitespace is allowed) and each tag is tested against the
+	 * {@code samples} and {@code datum}. If any tag matches, {@literal true} is
+	 * returned, thus the multiple required tags are treated as if joined by a
+	 * logical {@code OR} operator. Any individual tag may be prefixed by
+	 * {@literal !} to invert the match logic, meaning the given samples match
+	 * if the given tag is <b>not</b> present.
+	 * </p>
+	 * 
+	 * @param datum
+	 *        the datum (may be {@literal null})
+	 * @param samples
+	 *        the samples (may be {@literal null})
+	 * @return {@literal true} if the configured {@code requiredTag} expression
+	 *         matches either {@code samples} or {@code datum}
+	 * @since 1.1
+	 */
+	protected boolean tagMatches(final Datum datum, final DatumSamplesOperations samples) {
+		final String requiredTagExpr = getRequiredTag();
+		if ( requiredTagExpr == null || requiredTagExpr.isEmpty() ) {
+			// no required tag, so automatically matches
+			return true;
+		}
+		String[] requiredTags = TAG_COMMA_DELIM.split(requiredTagExpr.trim());
+		log.trace("Filter [{}] requires tag expression [{}] for datum {}", getUid(), requiredTagExpr,
+				datum);
+		boolean hasMatch = anyTagMatches(requiredTags, samples);
+		if ( hasMatch ) {
+			return true;
+		}
+		final DatumSamplesOperations datumSamples = (datum != null ? datum.asSampleOperations() : null);
+		if ( datumSamples == null || datumSamples == samples ) {
+			log.trace("Filter [{}] required tag [{}] does not match; not filtering datum {}", getUid(),
+					requiredTagExpr, datum);
+			return false;
+		}
+		boolean result = anyTagMatches(requiredTags, datumSamples);
+		if ( !result ) {
+			log.trace("Filter [{}] required tag [{}] does not match; not filtering datum {}", getUid(),
+					requiredTagExpr, datum);
+		}
+		return result;
+	}
+
+	private boolean anyTagMatches(String[] tags, final DatumSamplesOperations samples) {
+		if ( samples == null ) {
+			return false;
+		}
+		for ( String tag : tags ) {
+			boolean inverted = false;
+			if ( tag.startsWith("!") ) {
+				inverted = true;
+				tag = tag.substring(1);
+			}
+			boolean hasTag = samples != null && samples.hasTag(tag);
+			if ( hasTag != inverted ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Test if any configured conditions match the given arguments.
+	 * 
+	 * <p>
+	 * This method calls the following condition-testing methods:
+	 * </p>
+	 * 
+	 * <ol>
+	 * <li>{@link #sourceIdMatches(Datum)}
+	 * <li>{@link #operationalModeMatches()}</li>
+	 * <li>{@link #tagMatches(Datum, DatumSamplesOperations)}</li>
+	 * </ol>
+	 * 
+	 * <p>
+	 * Extending classes can override this to add additional tests.
+	 * </p>
+	 * 
+	 * @param datum
+	 *        the datum associated with {@code samples}
+	 * @param samples
+	 *        the samples object to transform
+	 * @param parameters
+	 *        optional implementation-specific parameters to pass to the
+	 *        transformer
+	 * @return {@literal true} if all of the condition-testing methods return
+	 *         {@literal true}
+	 * @since 1.1
+	 */
+	protected boolean conditionsMatch(Datum datum, DatumSamplesOperations samples,
+			Map<String, Object> parameters) {
+		return (sourceIdMatches(datum) && operationalModeMatches() && tagMatches(datum, samples));
+	}
+
+	/**
+	 * Create a parameter map that includes placeholders.
+	 * 
+	 * <p>
+	 * If the {@link #getPlaceholderService()} is configured the
+	 * {@link PlaceholderService#smartCopyPlaceholders(Map)} method will be
+	 * invoked to create valid {@code Number} instances out of placeholder
+	 * values. The {@code parameters} map, if provided, will be copied into the
+	 * returned map, overwriting any duplicate entries.
+	 * </p>
+	 * 
+	 * @param parameters
+	 *        an optional set of parameters to copy into the result
+	 * @return a new map, never {@literal null}
+	 * @since 1.1
+	 */
+	protected Map<String, Object> smartPlaceholders(Map<String, Object> parameters) {
+		Map<String, Object> params = new HashMap<>(8);
+		smartCopyPlaceholders(getPlaceholderService(), params);
+		if ( parameters != null ) {
+			params.putAll(parameters);
+		}
+		return params;
 	}
 
 	/**
@@ -450,6 +591,27 @@ public class BaseDatumFilterSupport extends BaseIdentifiable {
 	 */
 	public void setDatumService(OptionalService<DatumService> datumService) {
 		this.datumService = datumService;
+	}
+
+	/**
+	 * Get the required tag expression.
+	 * 
+	 * @return the required tag
+	 * @since 1.1
+	 */
+	public String getRequiredTag() {
+		return requiredTag;
+	}
+
+	/**
+	 * Set the required tag expression.
+	 * 
+	 * @param requiredTag
+	 *        the tag expression to set
+	 * @since 1.1
+	 */
+	public void setRequiredTag(String requiredTag) {
+		this.requiredTag = requiredTag;
 	}
 
 }

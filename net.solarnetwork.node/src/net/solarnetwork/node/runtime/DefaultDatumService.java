@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.runtime;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -31,11 +32,13 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.springframework.util.PathMatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
+import net.solarnetwork.domain.datum.DatumMetadataOperations;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
@@ -43,7 +46,9 @@ import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.DatumMetadataService;
 import net.solarnetwork.node.service.DatumService;
+import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -55,9 +60,10 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
-public class DefaultDatumService implements DatumService, EventHandler, InstructionHandler {
+public class DefaultDatumService
+		implements DatumService, EventHandler, InstructionHandler, Consumer<NodeDatum> {
 
 	/** The service name to retrieve the latest datum. */
 	public static final String SETUP_SERVICE_LATEST_DATUM = "/setup/datum/latest";
@@ -67,6 +73,7 @@ public class DefaultDatumService implements DatumService, EventHandler, Instruct
 
 	private final PathMatcher pathMatcher;
 	private final ObjectMapper objectMapper;
+	private final OptionalService<DatumMetadataService> datumMetadataService;
 	private DatumHistory history = new DatumHistory(
 			new DatumHistory.Configuration(DEFAFULT_HISTORY_RAW_COUNT));
 
@@ -77,30 +84,46 @@ public class DefaultDatumService implements DatumService, EventHandler, Instruct
 	 *        the path matcher to use
 	 * @param objectMapper
 	 *        the object mapper to use
+	 * @param datumMetadataService
+	 *        the datum metadata service to use
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public DefaultDatumService(PathMatcher pathMatcher, ObjectMapper objectMapper) {
+	public DefaultDatumService(PathMatcher pathMatcher, ObjectMapper objectMapper,
+			OptionalService<DatumMetadataService> datumMetadataService) {
 		super();
-		if ( pathMatcher == null ) {
-			throw new IllegalArgumentException("The pathMatcher argument must not be null.");
-		}
-		this.pathMatcher = pathMatcher;
-		if ( objectMapper == null ) {
-			throw new IllegalArgumentException("The objectMapper argument must not be null.");
-		}
-		this.objectMapper = objectMapper;
+		this.pathMatcher = requireNonNullArgument(pathMatcher, "pathMatcher");
+		this.objectMapper = requireNonNullArgument(objectMapper, "objectMapper");
+		this.datumMetadataService = requireNonNullArgument(datumMetadataService, "datumMetadataService");
+	}
+
+	@Override
+	public <T extends NodeDatum> Collection<T> latest(Set<String> sourceIdFilter, Class<T> type) {
+		return offset(sourceIdFilter, 0, type);
+	}
+
+	@Override
+	public <T extends NodeDatum> T latest(String sourceId, Class<T> type) {
+		return offset(sourceId, 0, type);
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	public <T extends NodeDatum> Collection<T> latest(Set<String> sourceIdFilter, Class<T> type) {
+	public <T extends NodeDatum> T offset(String sourceId, int offset, Class<T> type) {
+		NodeDatum result = history.offset(sourceId, offset);
+		return (result != null && type.isAssignableFrom(result.getClass()) ? (T) result : null);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T extends NodeDatum> Collection<T> offset(Set<String> sourceIdFilter, int offset,
+			Class<T> type) {
 		List<T> result = new ArrayList<>();
-		for ( NodeDatum d : history.latest() ) {
+		for ( NodeDatum d : history.offset(offset) ) {
 			if ( !type.isAssignableFrom(d.getClass()) ) {
 				continue;
 			}
-			if ( sourceIdFilter != null ) {
+			if ( sourceIdFilter != null && !sourceIdFilter.isEmpty() ) {
 				for ( String filter : sourceIdFilter ) {
 					if ( pathMatcher.match(filter, d.getSourceId()) ) {
 						result.add((T) d);
@@ -112,6 +135,42 @@ public class DefaultDatumService implements DatumService, EventHandler, Instruct
 			}
 		}
 		return result;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T extends NodeDatum> Collection<T> offset(Set<String> sourceIdFilter, Instant timestamp,
+			int offset, Class<T> type) {
+		List<T> result = new ArrayList<>();
+		for ( NodeDatum d : history.offset(timestamp, offset) ) {
+			if ( !type.isAssignableFrom(d.getClass()) ) {
+				continue;
+			}
+			if ( sourceIdFilter != null && !sourceIdFilter.isEmpty() ) {
+				for ( String filter : sourceIdFilter ) {
+					if ( pathMatcher.match(filter, d.getSourceId()) ) {
+						result.add((T) d);
+						break;
+					}
+				}
+			} else {
+				result.add((T) d);
+			}
+		}
+		return result;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T extends NodeDatum> T offset(String sourceId, Instant timestamp, int offset,
+			Class<T> type) {
+		NodeDatum result = history.offset(sourceId, timestamp, offset);
+		return (result != null && type.isAssignableFrom(result.getClass()) ? (T) result : null);
+	}
+
+	@Override
+	public void accept(NodeDatum datum) {
+		history.add(datum);
 	}
 
 	@Override
@@ -157,6 +216,45 @@ public class DefaultDatumService implements DatumService, EventHandler, Instruct
 		Collection<NodeDatum> latest = latest(sourceIdFilters, NodeDatum.class);
 		return InstructionUtils.createStatus(instruction, InstructionState.Completed, Instant.now(),
 				Collections.singletonMap(InstructionHandler.PARAM_SERVICE_RESULT, latest));
+	}
+
+	@Override
+	public DatumMetadataOperations datumMetadata(String sourceId) {
+		DatumMetadataService service = OptionalService.service(datumMetadataService);
+		return (service != null ? service.getSourceMetadata(sourceId) : null);
+	}
+
+	@Override
+	public Collection<DatumMetadataOperations> datumMetadata(Set<String> sourceIdFilter) {
+		DatumMetadataService service = OptionalService.service(datumMetadataService);
+		if ( service == null ) {
+			return Collections.emptyList();
+		}
+		Set<String> metaSourceIds = service.availableSourceMetadataSourceIds();
+		if ( metaSourceIds == null || metaSourceIds.isEmpty() ) {
+			return Collections.emptyList();
+		}
+		List<DatumMetadataOperations> result = new ArrayList<>(metaSourceIds.size());
+		for ( String sourceId : metaSourceIds ) {
+			boolean match = false;
+			if ( sourceIdFilter == null || sourceIdFilter.isEmpty() ) {
+				match = true;
+			} else {
+				for ( String filter : sourceIdFilter ) {
+					if ( pathMatcher.match(filter, sourceId) ) {
+						match = true;
+						break;
+					}
+				}
+			}
+			if ( match ) {
+				DatumMetadataOperations meta = service.getSourceMetadata(sourceId);
+				if ( meta != null ) {
+					result.add(meta);
+				}
+			}
+		}
+		return result;
 	}
 
 	/**

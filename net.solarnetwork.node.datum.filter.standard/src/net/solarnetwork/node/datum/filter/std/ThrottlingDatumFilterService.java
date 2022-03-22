@@ -72,7 +72,7 @@ public class ThrottlingDatumFilterService extends DatumFilterSupport
 			return samples;
 		}
 
-		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
+		if ( !conditionsMatch(datum, samples, params) ) {
 			incrementIgnoredStats(start);
 			return samples;
 		}
@@ -96,8 +96,8 @@ public class ThrottlingDatumFilterService extends DatumFilterSupport
 
 		if ( filter ) {
 			if ( log.isDebugEnabled() ) {
-				log.debug("Throttle filter [{}] filtering source [{}] seen the past {}s ({}s ago)",
-						getUid(), sourceId, offset, (now - lastSaveTime) / 1000.0);
+				log.debug("Throttle filter [{}] filtering source [{}] seen the past {}s ({}s ago): {}",
+						getUid(), sourceId, offset, (now - lastSaveTime) / 1000.0, datum);
 			}
 			incrementStats(start, samples, null);
 			return null;

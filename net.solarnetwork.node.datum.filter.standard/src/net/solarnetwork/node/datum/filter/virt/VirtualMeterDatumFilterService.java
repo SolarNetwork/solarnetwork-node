@@ -63,7 +63,7 @@ import net.solarnetwork.util.ArrayUtils;
  * derived from another property.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 1.4
  */
 public class VirtualMeterDatumFilterService extends DatumFilterSupport
@@ -201,7 +201,7 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 			incrementIgnoredStats(start);
 			return samples;
 		}
-		if ( !(sourceIdMatches(datum) && operationalModeMatches()) ) {
+		if ( !conditionsMatch(datum, samples, parameters) ) {
 			incrementIgnoredStats(start);
 			return samples;
 		}
@@ -247,7 +247,24 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 			log.warn("DatumMetadataService is required for vitual meters, but not available");
 			return;
 		}
-		final GeneralDatumMetadata metadata = metadata(service, d.getSourceId());
+		final GeneralDatumMetadata metadata;
+		try {
+			metadata = metadata(service, d.getSourceId());
+		} catch ( RuntimeException e ) {
+			// catch IO errors and let slide
+			Throwable root = e;
+			while ( root.getCause() != null ) {
+				root = root.getCause();
+			}
+			if ( root instanceof IOException ) {
+				log.warn("Communication error acquiring metadata for source {}: {}", d.getSourceId(),
+						root.toString());
+			} else {
+				log.error("Error accessing metadata for source {}: {}", d.getSourceId(), root.toString(),
+						root);
+			}
+			return;
+		}
 		if ( metadata == null ) {
 			// should not happen, more to let the compiler know what we're expecting
 			log.error("Metadata not available for virtual meters");
@@ -328,8 +345,9 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 					BigDecimal newReading = null;
 					VirtualMeterExpressionConfig exprConfig = expressionForConfig(meterPropName);
 					if ( exprConfig != null ) {
+						Map<String, Object> params = smartPlaceholders(parameters);
 						VirtualMeterExpressionRoot root = new VirtualMeterExpressionRootImpl(d, samples,
-								parameters, service(getDatumService()), config, prevDate, date, prevVal,
+								params, service(getDatumService()), config, prevDate, date, prevVal,
 								currVal, prevReading);
 						populateExpressionDatumProperties(samples,
 								new VirtualMeterExpressionConfig[] { exprConfig }, root);

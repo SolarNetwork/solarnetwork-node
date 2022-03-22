@@ -36,7 +36,7 @@ import net.solarnetwork.util.IntRangeSet;
  * An object to use as the "root" for {@link ExpressionService} evaluation.
  * 
  * @author matt
- * @version 3.0
+ * @version 3.1
  */
 public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot {
 
@@ -51,11 +51,12 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 	 * <p>
 	 * This is designed to work with expressions like
 	 * {@code sample.getInt32(1, 2)} and {@code sample.getInt64(1, 2, 3, 4)},
-	 * returning the referenced register address arguments as captured values.
+	 * returning the referenced getter name followed by the register address
+	 * arguments as captured values.
 	 * </p>
 	 */
 	public static final Pattern SAMPLE_GETTER_REF = Pattern.compile(
-			"sample\\.get\\w+?(?<!Bytes|String)\\(\\s*(\\d+?)(?:\\s*,\\s*(\\d+))?(?:\\s*,\\s*(\\d+)\\s*,\\s*(\\d+))?\\s*\\)");
+			"sample\\.get(\\w+?(?<!Bytes|String))\\(\\s*(\\d+?)(?:\\s*,\\s*(\\d+))?(?:\\s*,\\s*(\\d+)\\s*,\\s*(\\d+))?\\s*\\)");
 
 	/**
 	 * A pattern for matching references to register ranges via getter methods
@@ -119,10 +120,28 @@ public class ExpressionRoot extends net.solarnetwork.node.domain.ExpressionRoot 
 
 		m = ExpressionRoot.SAMPLE_GETTER_REF.matcher(expression);
 		while ( m.find() ) {
-			for ( int i = 1; i <= m.groupCount(); i++ ) {
+			final int groupCount = m.groupCount();
+			final String dataName = m.group(1);
+			int start = -1;
+			int argCount = 0;
+			for ( int i = 2; i <= groupCount; i++ ) {
 				String s = m.group(i);
 				if ( s != null ) {
-					result.add(Integer.parseInt(m.group(i)));
+					int r = Integer.parseInt(m.group(i));
+					if ( i == 2 ) {
+						start = r;
+					}
+					result.add(r);
+					argCount++;
+				}
+			}
+			if ( argCount == 1 ) {
+				// check for multi-register data type in getter name; for example getInt32(0) would actually require
+				// two registers 0, 1
+				if ( dataName.endsWith("32") ) {
+					result.add(start + 1);
+				} else if ( dataName.endsWith("64") ) {
+					result.addRange(start + 1, start + 3);
 				}
 			}
 		}

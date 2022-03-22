@@ -24,9 +24,7 @@ package net.solarnetwork.node.io.canbus.support;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PushbackInputStream;
 import java.io.Reader;
-import java.util.zip.GZIPInputStream;
 import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
@@ -42,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import org.w3c.dom.ls.LSInput;
 import org.w3c.dom.ls.LSResourceResolver;
 import org.xml.sax.SAXException;
+import net.solarnetwork.io.StreamUtils;
 import net.solarnetwork.node.io.canbus.KcdParser;
 import net.solarnetwork.node.io.canbus.kcd.NetworkDefinitionType;
 
@@ -50,11 +49,10 @@ import net.solarnetwork.node.io.canbus.kcd.NetworkDefinitionType;
  * SolarNetwork-extended <i>SN-Definition-Datum.xsd</i> KDC XML.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class JaxbSnKcdParser implements KcdParser {
 
-	private static final int GZIP_MAGIC = 0x1f8b;
 	private static final Logger logger = LoggerFactory.getLogger(JaxbSnKcdParser.class);
 
 	private boolean validating;
@@ -195,29 +193,6 @@ public class JaxbSnKcdParser implements KcdParser {
 		}
 	}
 
-	private InputStream inputStreamForStream(InputStream in) throws IOException {
-		// checking for GZIP
-		if ( in instanceof GZIPInputStream ) {
-			return in;
-		}
-		PushbackInputStream s = new PushbackInputStream(in, 2);
-		int count = 0;
-		byte[] magic = new byte[] { -1, -1 };
-		while ( count < 2 ) {
-			int readCount = s.read(magic, count, 2 - count);
-			if ( readCount < 0 ) {
-				break;
-			}
-			count += readCount;
-		}
-		s.unread(magic, 0, count);
-		// GZIP magic bytes: 0x1F 0x8B
-		if ( magic[0] == (byte) (GZIP_MAGIC >> 8) && magic[1] == (byte) (GZIP_MAGIC) ) {
-			return new GZIPInputStream(s);
-		}
-		return s;
-	}
-
 	/**
 	 * Parse KCD data from an input stream, using a given file name.
 	 * 
@@ -228,7 +203,7 @@ public class JaxbSnKcdParser implements KcdParser {
 	 */
 	@Override
 	public NetworkDefinitionType parseKcd(InputStream in, boolean validate) throws IOException {
-		try (InputStream input = inputStreamForStream(in)) {
+		try (InputStream input = StreamUtils.inputStreamForPossibleGzipStream(in)) {
 			Unmarshaller umarshall = context.createUnmarshaller();
 			if ( validating && validate ) {
 				umarshall.setSchema(schema);

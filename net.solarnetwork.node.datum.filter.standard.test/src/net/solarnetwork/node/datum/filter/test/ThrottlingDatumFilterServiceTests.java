@@ -120,7 +120,7 @@ public class ThrottlingDatumFilterServiceTests {
 		List<KeyValuePair> initialSettings = Collections.emptyList();
 		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
-		Capture<Setting> savedSettingCapture = new Capture<Setting>();
+		Capture<Setting> savedSettingCapture = Capture.newInstance();
 		settingDao.storeSetting(capture(savedSettingCapture));
 
 		replay(settingDao);
@@ -167,7 +167,7 @@ public class ThrottlingDatumFilterServiceTests {
 						Long.toString(System.currentTimeMillis() - TEST_FREQ * 10 * 1000L, 16)));
 		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
-		Capture<Setting> savedSettingCapture = new Capture<Setting>();
+		Capture<Setting> savedSettingCapture = Capture.newInstance();
 		settingDao.storeSetting(capture(savedSettingCapture));
 
 		replay(settingDao);
@@ -212,7 +212,7 @@ public class ThrottlingDatumFilterServiceTests {
 				.singletonList(new KeyValuePair(datum.getSourceId(), Long.toString(start, 16)));
 		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
-		Capture<Setting> savedSettingCapture = new Capture<>();
+		Capture<Setting> savedSettingCapture = Capture.newInstance();
 		settingDao.storeSetting(capture(savedSettingCapture));
 
 		replay(settingDao);
@@ -260,7 +260,7 @@ public class ThrottlingDatumFilterServiceTests {
 		List<KeyValuePair> initialSettings = Collections.emptyList();
 		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
-		final Capture<Setting> savedSettingCapture = new Capture<Setting>(CaptureType.ALL);
+		final Capture<Setting> savedSettingCapture = Capture.newInstance(CaptureType.ALL);
 		settingDao.storeSetting(capture(savedSettingCapture));
 
 		// reload cached settings from DAO after expires
@@ -327,7 +327,7 @@ public class ThrottlingDatumFilterServiceTests {
 		// reload cached settings from DAO after expires (no changes)
 		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
-		final Capture<Setting> savedSettingCapture = new Capture<Setting>(CaptureType.ALL);
+		final Capture<Setting> savedSettingCapture = Capture.newInstance(CaptureType.ALL);
 		settingDao.storeSetting(capture(savedSettingCapture));
 
 		replay(settingDao);

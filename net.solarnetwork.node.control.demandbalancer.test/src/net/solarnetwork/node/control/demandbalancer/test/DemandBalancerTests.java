@@ -114,7 +114,7 @@ public class DemandBalancerTests {
 
 		expect(pcmHandler.handlesTopic(InstructionHandler.TOPIC_DEMAND_BALANCE)).andReturn(true);
 
-		Capture<Instruction> instructionCapture = new Capture<>();
+		Capture<Instruction> instructionCapture = Capture.newInstance();
 		expect(pcmHandler.processInstruction(EasyMock.capture(instructionCapture)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 

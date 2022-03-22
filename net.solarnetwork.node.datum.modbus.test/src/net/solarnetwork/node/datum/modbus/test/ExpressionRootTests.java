@@ -22,8 +22,8 @@
 
 package net.solarnetwork.node.datum.modbus.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
-import static org.junit.Assert.assertThat;
 import java.util.Set;
 import org.junit.Test;
 import net.solarnetwork.node.datum.modbus.ExpressionConfig;
@@ -33,7 +33,7 @@ import net.solarnetwork.node.datum.modbus.ExpressionRoot;
  * Test cases for the {@link ExpressionConfig} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ExpressionRootTests {
 
@@ -47,6 +47,12 @@ public class ExpressionRootTests {
 	public void regRefGet1Arg() {
 		Set<Integer> set = ExpressionRoot.registerAddressReferences("sample.getInt16(123)");
 		assertThat(set, contains(123));
+	}
+
+	@Test
+	public void regRefGet1Arg_singleArgMultiReg() {
+		Set<Integer> set = ExpressionRoot.registerAddressReferences("sample.getInt32(123)");
+		assertThat("getInt32(123) adds implicit 124", set, contains(123, 124));
 	}
 
 	@Test
@@ -85,6 +91,13 @@ public class ExpressionRootTests {
 		Set<Integer> set = ExpressionRoot
 				.registerAddressReferences("regs[3] * regs[8] + sample.getInt64(123, 234, 345, 456)");
 		assertThat(set, contains(3, 8, 123, 234, 345, 456));
+	}
+
+	@Test
+	public void regRefCombo_singleArgMultiReg() {
+		Set<Integer> set = ExpressionRoot
+				.registerAddressReferences("regs[3] * regs[8] + sample.getInt64(123)");
+		assertThat("getInt64(123) adds implicit 124,125,126", set, contains(3, 8, 123, 124, 125, 126));
 	}
 
 	@Test

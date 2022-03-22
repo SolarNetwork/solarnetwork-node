@@ -231,8 +231,8 @@ public class MotionCameraControlTests extends AbstractHttpClientTests {
 		control.setSnapshotConfigurations(new MotionSnapshotConfig[] { snapConfig });
 
 		// schedule job
-		Capture<Runnable> jobCaptor = new Capture<>();
-		Capture<Trigger> trigCaptor = new Capture<>();
+		Capture<Runnable> jobCaptor = Capture.newInstance();
+		Capture<Trigger> trigCaptor = Capture.newInstance();
 		TestScheduledFuture taskFuture = new TestScheduledFuture();
 		expect(scheduler.schedule(capture(jobCaptor), capture(trigCaptor)))
 				.andReturn((ScheduledFuture) taskFuture);
@@ -250,8 +250,9 @@ public class MotionCameraControlTests extends AbstractHttpClientTests {
 		assertThat("Snapshot job service", snapJob.getService(), sameInstance(control));
 
 		Trigger jobTrigger = trigCaptor.getValue();
-		assertThat("Snapshot job trigger is simple", jobTrigger,
-				equalTo(new PeriodicTrigger(123, TimeUnit.SECONDS)));
+		PeriodicTrigger expectedTrigger = new PeriodicTrigger(123, TimeUnit.SECONDS);
+		expectedTrigger.setFixedRate(true);
+		assertThat("Snapshot job trigger is simple", jobTrigger, equalTo(expectedTrigger));
 
 		assertThat("Future not done", taskFuture.isDone(), equalTo(false));
 	}
@@ -267,8 +268,8 @@ public class MotionCameraControlTests extends AbstractHttpClientTests {
 		control.setSnapshotConfigurations(new MotionSnapshotConfig[] { snapConfig });
 
 		// schedule job
-		Capture<Runnable> jobCaptor = new Capture<>();
-		Capture<Trigger> trigCaptor = new Capture<>();
+		Capture<Runnable> jobCaptor = Capture.newInstance();
+		Capture<Trigger> trigCaptor = Capture.newInstance();
 		TestScheduledFuture taskFuture = new TestScheduledFuture();
 		expect(scheduler.schedule(capture(jobCaptor), capture(trigCaptor)))
 				.andReturn((ScheduledFuture) taskFuture);

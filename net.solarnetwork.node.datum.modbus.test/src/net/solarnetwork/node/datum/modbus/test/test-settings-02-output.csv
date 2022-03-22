@@ -1,0 +1,5 @@
+Instance ID,Source ID,Schedule,Connection,Unit ID,Sample Cache,Max Read,Word Order,Property,Property Type,Register,Register Type,Data Type,Data Length,Multiplier,Decimal Scale,Expression
+1,power/1,0 * * * * *,Modbus Port,1,5000,64,Most to least,error,Status,1000,Holding,String ASCII,16,1,0,
+,,,,,,,,current,Instantaneous,0,Holding,32-bit float,,1,-1,
+,,,,,,,,voltage,Instantaneous,2,Holding,32-bit float,,1,1,
+,,,,,,,,wattHours,Accumulating,,,,,,,foo + bar

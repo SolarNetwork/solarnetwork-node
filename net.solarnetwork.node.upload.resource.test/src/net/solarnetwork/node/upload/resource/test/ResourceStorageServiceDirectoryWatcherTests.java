@@ -116,8 +116,8 @@ public class ResourceStorageServiceDirectoryWatcherTests {
 	@Test
 	public void createFile_noDatum() throws Exception {
 		// GIVEN
-		Capture<String> pathCaptor = new Capture<>();
-		Capture<Resource> resourceCaptor = new Capture<>();
+		Capture<String> pathCaptor = Capture.newInstance();
+		Capture<Resource> resourceCaptor = Capture.newInstance();
 		CompletableFuture<Boolean> saveResult = new CompletableFuture<>();
 		expect(storageService.saveResource(capture(pathCaptor), capture(resourceCaptor), eq(true),
 				anyObject())).andAnswer(new IAnswer<CompletableFuture<Boolean>>() {
@@ -151,8 +151,8 @@ public class ResourceStorageServiceDirectoryWatcherTests {
 	@Test
 	public void createFile() throws Exception {
 		// GIVEN
-		Capture<String> pathCaptor = new Capture<>(CaptureType.ALL);
-		Capture<Resource> resourceCaptor = new Capture<>();
+		Capture<String> pathCaptor = Capture.newInstance(CaptureType.ALL);
+		Capture<Resource> resourceCaptor = Capture.newInstance();
 		CompletableFuture<Boolean> saveResult = new CompletableFuture<>();
 		expect(storageService.saveResource(capture(pathCaptor), capture(resourceCaptor), eq(true),
 				anyObject())).andAnswer(new IAnswer<CompletableFuture<Boolean>>() {
@@ -167,7 +167,7 @@ public class ResourceStorageServiceDirectoryWatcherTests {
 		URL storageUrl = new URL("http://example.com/file.txt");
 		expect(storageService.resourceStorageUrl(capture(pathCaptor))).andReturn(storageUrl);
 
-		Capture<NodeDatum> datumCaptor = new Capture<>();
+		Capture<NodeDatum> datumCaptor = Capture.newInstance();
 		expect(datumQueue.offer(capture(datumCaptor))).andReturn(true);
 
 		// WHEN

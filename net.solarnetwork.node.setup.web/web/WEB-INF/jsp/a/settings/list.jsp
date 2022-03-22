@@ -79,7 +79,22 @@
 							</fmt:message>
 						</div>
 					</c:if>
-				</fieldset>
+					<c:if test="${not empty settingResources[provider.settingUid]}">
+					<div class="control-group">
+						<label class="control-label" for="settings-resource-ident">
+							<fmt:message key="settings.io.exportResource.label"/>
+						</label>
+						<div class="controls">
+							<select class="settings-resource-ident">
+								<c:forEach items="${settingResources[provider.settingUid]}" var="resource">
+									<option data-handler="${resource.handlerKey}" data-key="${resource.key}">${resource.name}</option>
+								</c:forEach>
+							</select> 
+  							<a class="btn btn-primary settings-resource-export" href="<setup:url value='/a/settings/exportResources'/>"><fmt:message key="settings.io.export.button"/></a>
+						</div>
+					</div>
+					</c:if>
+				</fieldset>				
 			</c:forEach>
 			<div class="form-actions">
 				<button type="button" class="btn btn-primary" id="submit"><fmt:message key='settings.save'/></button>
@@ -229,6 +244,23 @@
 					<sec:csrfInput/>
 				</form>
 			</div>
+			<c:if test="${not empty settingResources}">
+			<div class="control-group">
+				<label class="control-label" for="settings-resource-ident">
+					<fmt:message key="settings.io.exportResource.label"/>
+				</label>
+				<form class="controls">
+					<select class="settings-resource-ident">
+						<c:forEach items="${settingResources}" var="e">
+							<c:forEach items="${e.value}" var="resource">
+								<option data-handler="${resource.handlerKey}" data-key="${resource.key}">${resource.name}</option>
+							</c:forEach>
+						</c:forEach>
+					</select> 
+  					<a class="btn btn-primary settings-resource-export" href="<setup:url value='/a/settings/exportResources'/>"><fmt:message key="settings.io.export.button"/></a>
+				</form>
+			</div>
+			</c:if>
 			<c:if test="${fn:length(settingsBackups) > 0}">
 				<div class="control-group">
 					<label class="control-label" for="auto-backups">

@@ -23,8 +23,12 @@
 package net.solarnetwork.node.reactor.simple;
 
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.job.JobService;
 import net.solarnetwork.node.reactor.Instruction;
@@ -32,6 +36,7 @@ import net.solarnetwork.node.reactor.InstructionDao;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.settings.SettingSpecifier;
 
@@ -62,13 +67,29 @@ import net.solarnetwork.settings.SettingSpecifier;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public class InstructionExecutionJob extends BaseIdentifiable implements JobService {
 
+	/**
+	 * An instruction result error code when an instruction is declined from
+	 * expiring due to the {@code maximumIncompleteHours} setting.
+	 * 
+	 * @since 1.1
+	 */
+	public static final String ERROR_CODE_INSTRUCTION_EXPIRED = "IEXJ.001";
+
+	/**
+	 * The {@code maximumIncompleteHours} property default value.
+	 * 
+	 * @since 1.1
+	 */
+	public static final int DEFAULT_MAXIMUM_INCOMPLETE_HOURS = 168;
+
 	private final InstructionDao instructionDao;
 	private final InstructionExecutionService service;
+	private int maximumIncompleteHours = DEFAULT_MAXIMUM_INCOMPLETE_HOURS;
 
 	/**
 	 * Constructor.
@@ -121,16 +142,81 @@ public class InstructionExecutionJob extends BaseIdentifiable implements JobServ
 					// roll back to received status to try again later
 					status = receivedStatus;
 				}
+				if ( isExpired(instruction, status) ) {
+					status = expiredStatus(instruction);
+				}
 				if ( instructionDao.compareAndStoreInstructionStatus(instruction.getId(),
 						instruction.getInstructorId(), InstructionState.Executing, status) ) {
 					if ( log.isInfoEnabled()
 							&& status.getInstructionState() != InstructionState.Received ) {
-						log.info("Instruction {} {}  status changed to {}", instruction.getId(),
+						log.info("Instruction {} {} status changed to {}", instruction.getId(),
 								instruction.getTopic(), status.getInstructionState());
 					}
 				}
 			}
 		}
+		expireExecutingInstructions();
+	}
+
+	private boolean isExpired(Instruction instruction, InstructionStatus status) {
+		if ( maximumIncompleteHours > 0
+				&& (status.getInstructionState() == InstructionState.Received
+						|| status.getInstructionState() == InstructionState.Executing)
+				&& ChronoUnit.HOURS.between(instruction.getInstructionDate(),
+						Instant.now()) > maximumIncompleteHours ) {
+			return true;
+		}
+		return false;
+	}
+
+	private InstructionStatus expiredStatus(Instruction instruction) {
+		Map<String, Object> resultParams = new HashMap<>(2);
+		resultParams.put(InstructionStatus.ERROR_CODE_RESULT_PARAM, ERROR_CODE_INSTRUCTION_EXPIRED);
+		resultParams.put(InstructionStatus.MESSAGE_RESULT_PARAM,
+				String.format("Declining because unhandled within %d hours", maximumIncompleteHours));
+		return InstructionUtils.createStatus(instruction, InstructionState.Declined, resultParams);
+	}
+
+	private void expireExecutingInstructions() {
+		List<Instruction> instructions = instructionDao
+				.findInstructionsForState(InstructionState.Executing);
+		log.debug("Found {} instructions in Executing state", instructions.size());
+		for ( Instruction instruction : instructions ) {
+			if ( isExpired(instruction, instruction.getStatus()) ) {
+				InstructionStatus declined = expiredStatus(instruction);
+				if ( instructionDao.compareAndStoreInstructionStatus(instruction.getId(),
+						instruction.getInstructorId(), InstructionState.Executing, declined) ) {
+					if ( log.isInfoEnabled() ) {
+						log.info("Instruction {} {} expired after {} hours to {}", instruction.getId(),
+								instruction.getTopic(), maximumIncompleteHours,
+								declined.getInstructionState());
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Get the maximum number of hours before incomplete instructions can be
+	 * declined.
+	 * 
+	 * @return the maximum hours; defaults to
+	 *         {@link #DEFAULT_MAXIMUM_INCOMPLETE_HOURS}
+	 */
+	public int getMaximumIncompleteHours() {
+		return maximumIncompleteHours;
+	}
+
+	/**
+	 * Set the maximum number of hours before incomplete instructions can be
+	 * declined.
+	 * 
+	 * @param maximumIncompleteHours
+	 *        the hours to set; if less than {@literal 1} then instructions will
+	 *        not expire
+	 */
+	public void setMaximumIncompleteHours(int maximumIncompleteHours) {
+		this.maximumIncompleteHours = maximumIncompleteHours;
 	}
 
 }

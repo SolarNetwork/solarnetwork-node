@@ -23,6 +23,7 @@
 		<beans:prop key="job.instructionAcknowledgementUploader.cron">35 * * * * ?</beans:prop>
 		<beans:prop key="job.instructionExecution.cron">0/10 * * * * ?</beans:prop>
 		<beans:prop key="job.instructionExecution.executionReceivedHourLimit">24</beans:prop>
+		<beans:prop key="job.instructionExecution.incompleteHourLimit">168</beans:prop>
 		<beans:prop key="job.instructionCleaner.cron">20 43 0 ? * TUE,THU,SUN</beans:prop>
 		<beans:prop key="job.instructionCleaner.hours">72</beans:prop>
 	</osgix:cm-properties>
@@ -105,6 +106,7 @@
 					<argument ref="instructionExecutionService"/>
 					<property name="uid" value="net.solarnetwork.node.reactor.simple.exec"/>
 					<property name="messageSource" ref="jobsMessageSource"/>
+					<property name="maximumIncompleteHours" value="${job.instructionExecution.incompleteHourLimit}"/>
 				</bean>
 			</argument>
 			<argument value="${job.instructionExecution.cron}"/>

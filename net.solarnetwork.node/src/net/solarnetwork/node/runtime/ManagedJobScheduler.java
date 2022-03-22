@@ -516,7 +516,7 @@ public class ManagedJobScheduler implements ServiceLifecycleObserver, Configurat
 			}
 
 			if ( isSchedulerActive() && newSchedule != null
-					&& !oldSchedule.equalsIgnoreCase(newSchedule) ) {
+					&& (oldSchedule == null || !oldSchedule.equalsIgnoreCase(newSchedule)) ) {
 				Trigger trigger = triggerForSchedule(newSchedule);
 				if ( trigger != null ) {
 					sj.stop();

@@ -195,7 +195,7 @@ public class VirtualMeterDatumFilterServiceTests {
 		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(null);
 
 		// add metadata
-		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>();
+		Capture<GeneralDatumMetadata> metaCaptor = Capture.newInstance();
 		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
 
 		// WHEN
@@ -223,7 +223,7 @@ public class VirtualMeterDatumFilterServiceTests {
 		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(null);
 
 		// add metadata
-		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>();
+		Capture<GeneralDatumMetadata> metaCaptor = Capture.newInstance();
 		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
 
 		// WHEN
@@ -250,7 +250,7 @@ public class VirtualMeterDatumFilterServiceTests {
 		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(null);
 
 		// add metadata
-		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>(CaptureType.ALL);
+		Capture<GeneralDatumMetadata> metaCaptor = Capture.newInstance(CaptureType.ALL);
 		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
 		EasyMock.expectLastCall().times(3);
 
@@ -293,7 +293,7 @@ public class VirtualMeterDatumFilterServiceTests {
 
 		// add metadata
 		final int iterations = 6;
-		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>(CaptureType.ALL);
+		Capture<GeneralDatumMetadata> metaCaptor = Capture.newInstance(CaptureType.ALL);
 		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
 		EasyMock.expectLastCall().times(iterations);
 
@@ -338,7 +338,7 @@ public class VirtualMeterDatumFilterServiceTests {
 
 		// add metadata
 		final int iterations = 3;
-		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>(CaptureType.ALL);
+		Capture<GeneralDatumMetadata> metaCaptor = Capture.newInstance(CaptureType.ALL);
 		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
 		expectLastCall().times(iterations);
 
@@ -383,7 +383,7 @@ public class VirtualMeterDatumFilterServiceTests {
 
 		// add metadata
 		final int iterations = 3;
-		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>(CaptureType.ALL);
+		Capture<GeneralDatumMetadata> metaCaptor = Capture.newInstance(CaptureType.ALL);
 		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
 		expectLastCall().times(iterations);
 
@@ -437,7 +437,7 @@ public class VirtualMeterDatumFilterServiceTests {
 
 		// add metadata
 		final int iterations = 3;
-		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>(CaptureType.ALL);
+		Capture<GeneralDatumMetadata> metaCaptor = Capture.newInstance(CaptureType.ALL);
 		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
 		expectLastCall().times(iterations);
 
@@ -485,6 +485,7 @@ public class VirtualMeterDatumFilterServiceTests {
 
 		private static final long serialVersionUID = -7208625218989724725L;
 
+		@SuppressWarnings("deprecation")
 		public CloningCapture(CaptureType type) {
 			super(type);
 		}
@@ -596,7 +597,7 @@ public class VirtualMeterDatumFilterServiceTests {
 		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(null);
 
 		// add metadata
-		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>();
+		Capture<GeneralDatumMetadata> metaCaptor = Capture.newInstance();
 		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
 
 		// WHEN
@@ -647,7 +648,7 @@ public class VirtualMeterDatumFilterServiceTests {
 		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(null);
 
 		// add metadata
-		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>(CaptureType.ALL);
+		Capture<GeneralDatumMetadata> metaCaptor = Capture.newInstance(CaptureType.ALL);
 		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
 		expectLastCall().times(3);
 
@@ -694,7 +695,7 @@ public class VirtualMeterDatumFilterServiceTests {
 		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(null);
 
 		// add metadata
-		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>(CaptureType.ALL);
+		Capture<GeneralDatumMetadata> metaCaptor = Capture.newInstance(CaptureType.ALL);
 		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
 		expectLastCall().times(3);
 
@@ -747,7 +748,7 @@ public class VirtualMeterDatumFilterServiceTests {
 		GeneralDatumMetadata meta = new GeneralDatumMetadata();
 		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(meta).anyTimes();
 
-		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>(CaptureType.ALL);
+		Capture<GeneralDatumMetadata> metaCaptor = Capture.newInstance(CaptureType.ALL);
 		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
 		expectLastCall().anyTimes();
 
@@ -846,7 +847,7 @@ public class VirtualMeterDatumFilterServiceTests {
 		GeneralDatumMetadata meta = new GeneralDatumMetadata();
 		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(meta).anyTimes();
 
-		Capture<GeneralDatumMetadata> metaCaptor = new Capture<>(CaptureType.ALL);
+		Capture<GeneralDatumMetadata> metaCaptor = Capture.newInstance(CaptureType.ALL);
 		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
 		expectLastCall().times(5);
 

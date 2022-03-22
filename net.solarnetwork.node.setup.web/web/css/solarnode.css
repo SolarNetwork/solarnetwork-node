@@ -405,6 +405,8 @@ div.plugin .desc {
 	border: none;
 	margin: 10px;
 	cursor: pointer;
+	min-width: 10px;
+	width: auto !important;
 }
 
 .carousel-indicators li + li {

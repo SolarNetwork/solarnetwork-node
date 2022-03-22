@@ -71,7 +71,7 @@ import net.solarnetwork.settings.support.SettingUtils;
  * A test bed experiment for the settings framework.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourceHandler {
 
@@ -95,6 +95,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 	private String menu = DEFAULT_MENU[0];
 	private String textAreaContent = null;
 	private String fileContent = null;
+	private String textAreaDirect = null;
 
 	// group support
 	private List<String> listString = new ArrayList<String>(4);
@@ -133,19 +134,17 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>();
+		List<SettingSpecifier> results = new ArrayList<>();
 
-		SettingsPlaypen defaults = new SettingsPlaypen();
-
-		results.add(new BasicTextFieldSettingSpecifier("string", defaults.getString()));
-		results.add(new BasicTextFieldSettingSpecifier("password", defaults.getPassword(), true));
-		results.add(new BasicTextFieldSettingSpecifier("integer", defaults.getInteger().toString()));
-		results.add(new BasicToggleSettingSpecifier("toggle", defaults.getToggle()));
-		results.add(new BasicSliderSettingSpecifier("slide", defaults.getSlide(), 0.0, 10.0, 0.5));
+		results.add(new BasicTextFieldSettingSpecifier("string", DEFAULT_STRING));
+		results.add(new BasicTextFieldSettingSpecifier("password", null, true));
+		results.add(new BasicTextFieldSettingSpecifier("integer", DEFAULT_INTEGER.toString()));
+		results.add(new BasicToggleSettingSpecifier("toggle", false));
+		results.add(new BasicSliderSettingSpecifier("slide", DEFAULT_SLIDE, 0.0, 10.0, 0.5));
 
 		BasicRadioGroupSettingSpecifier radioSpec = new BasicRadioGroupSettingSpecifier("radio",
-				defaults.getRadio());
-		Map<String, String> radioValues = new LinkedHashMap<String, String>(3);
+				DEFAULT_RADIO[0]);
+		Map<String, String> radioValues = new LinkedHashMap<>(3);
 		for ( String s : DEFAULT_RADIO ) {
 			radioValues.put(s, s);
 		}
@@ -154,8 +153,8 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 
 		// drop-down menu
 		BasicMultiValueSettingSpecifier menuSpec = new BasicMultiValueSettingSpecifier("menu",
-				defaults.getMenu());
-		Map<String, String> menuValues = new LinkedHashMap<String, String>(3);
+				DEFAULT_MENU[0]);
+		Map<String, String> menuValues = new LinkedHashMap<>(3);
 		for ( String s : DEFAULT_MENU ) {
 			menuValues.put(s, s);
 		}
@@ -164,6 +163,9 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 
 		results.add(getLocationSettingSpecifier());
 		results.add(getWeatherLocationSettingSpecifier());
+
+		// text area (direct)
+		results.add(new BasicTextAreaSettingSpecifier("textAreaDirect", "", true));
 
 		// text area
 		results.add(new BasicTextAreaSettingSpecifier(RESOURCE_KEY_TEXT_AREA, ""));
@@ -636,4 +638,26 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 			lCount++;
 		}
 	}
+
+	/**
+	 * Get the text area direct value.
+	 * 
+	 * @return the value
+	 * @since 2.1
+	 */
+	public String getTextAreaDirect() {
+		return textAreaDirect;
+	}
+
+	/**
+	 * Set the text area direct value.
+	 * 
+	 * @param textAreaDirect
+	 *        the value to set
+	 * @since 2.1
+	 */
+	public void setTextAreaDirect(String textAreaDirect) {
+		this.textAreaDirect = textAreaDirect;
+	}
+
 }

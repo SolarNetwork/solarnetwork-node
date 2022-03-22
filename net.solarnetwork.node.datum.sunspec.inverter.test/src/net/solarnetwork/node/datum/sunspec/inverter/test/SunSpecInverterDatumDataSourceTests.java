@@ -84,7 +84,7 @@ public class SunSpecInverterDatumDataSourceTests {
 	private ModbusConnection expectStaticDataModbusConnection(String dataResource) throws IOException {
 		ModbusConnection modbusConnection = ModelDataUtils.getStaticDataConnection(getClass(),
 				dataResource);
-		Capture<ModbusConnectionAction<Object>> connActionCapture = new Capture<>();
+		Capture<ModbusConnectionAction<Object>> connActionCapture = Capture.newInstance();
 		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
 				.andAnswer(new IAnswer<Object>() {
 

@@ -32,6 +32,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
@@ -66,7 +67,7 @@ import net.solarnetwork.util.CachedResult;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class JsonDatumMetadataService extends JsonHttpClientSupport implements DatumMetadataService,
 		SettingResourceHandler, SettingSpecifierProvider, SettingsChangeObserver, Runnable {
@@ -136,6 +137,30 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 				: new ConcurrentHashMap<>(8, 0.9f, 4));
 		this.datumStreamMetadata = (datumStreamMetadata != null ? datumStreamMetadata
 				: new ConcurrentHashMap<>(8, 0.9f, 4));
+	}
+
+	@Override
+	public Set<String> availableSourceMetadataSourceIds() {
+		Set<String> sourceIds = sourceMetadata.keySet();
+		log.debug("Available source metadata sourceIds: {}", sourceIds);
+		return sourceIds;
+	}
+
+	/**
+	 * Create a new cached metadata instance.
+	 * 
+	 * <p>
+	 * This method is designed to support unit tests.
+	 * </p>
+	 * 
+	 * @param sourceId
+	 *        the source ID
+	 * @param meta
+	 *        the metadata
+	 * @return the cached metadata
+	 */
+	public CachedMetadata createCachedMetadata(String sourceId, GeneralDatumMetadata meta) {
+		return new CachedMetadata(sourceId, meta);
 	}
 
 	/**
@@ -340,6 +365,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	public GeneralDatumMetadata getSourceMetadata(String sourceId) {
 		CachedMetadata cachedMetadata = getCachedMetadata(sourceId);
 		GeneralDatumMetadata meta = cachedMetadata.metadata;
+		log.debug("Source metadata for [{}]: {}", sourceId, meta);
 		return meta != null ? new GeneralDatumMetadata(meta) : null;
 	}
 
