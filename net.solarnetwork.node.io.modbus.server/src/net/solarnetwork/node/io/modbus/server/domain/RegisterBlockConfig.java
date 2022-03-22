@@ -28,7 +28,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
@@ -54,7 +56,7 @@ import net.solarnetwork.util.ArrayUtils;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class RegisterBlockConfig {
 
@@ -73,11 +75,25 @@ public class RegisterBlockConfig {
 	 * @return the settings, never {@literal null}
 	 */
 	public List<SettingSpecifier> settings(String prefix) {
+		return settings(prefix, null);
+	}
+
+	/**
+	 * Get settings suitable for configuring an instance of this class.
+	 * 
+	 * @param prefix
+	 *        a setting key prefix to use
+	 * @param messageSource
+	 *        the message source to use, or {@literal null}
+	 * @return the settings, never {@literal null}
+	 * @since 2.1
+	 */
+	public List<SettingSpecifier> settings(String prefix, MessageSource messageSource) {
 		List<SettingSpecifier> result = new ArrayList<>(6);
 
-		String info = registerInfo();
+		String info = registerInfo(messageSource);
 		if ( info != null ) {
-			result.add(new BasicTitleSettingSpecifier("addressInfo", info, true));
+			result.add(new BasicTitleSettingSpecifier("addressInfo", info, true, messageSource != null));
 		}
 
 		result.add(new BasicTextFieldSettingSpecifier(prefix + "startAddress", "0"));
@@ -110,21 +126,34 @@ public class RegisterBlockConfig {
 		return result;
 	}
 
-	private String registerInfo() {
+	private String registerInfo(MessageSource messageSource) {
 		MeasurementConfig[] configs = getMeasurementConfigs();
 		if ( configs == null || configs.length < 1 ) {
 			return null;
 		}
 		StringBuilder buf = new StringBuilder();
 		int address = getStartAddress();
+		if ( messageSource != null ) {
+			buf.append(messageSource.getMessage("addressInfo.start", null, Locale.getDefault()));
+		}
 		for ( MeasurementConfig config : configs ) {
 			if ( buf.length() > 0 ) {
 				buf.append("\n");
 			}
 			int size = config.getSize();
-			buf.append(String.format("0x%1$04x %1$05d - %2$s.%3$s - %4$s (%5$d)", address,
-					config.getSourceId(), config.getPropertyName(), config.getDataType(), size));
+			if ( messageSource != null ) {
+				buf.append(messageSource.getMessage("addressInfo.row",
+						new Object[] { String.format("0x%1$04x", address), address, size,
+								config.getSourceId(), config.getPropertyName(), config.getDataType() },
+						Locale.getDefault()));
+			} else {
+				buf.append(String.format("0x%1$04x %1$05d - %2$s.%3$s - %4$s (%5$d)", address,
+						config.getSourceId(), config.getPropertyName(), config.getDataType(), size));
+			}
 			address += size;
+		}
+		if ( messageSource != null ) {
+			buf.append(messageSource.getMessage("addressInfo.end", null, Locale.getDefault()));
 		}
 		return buf.toString();
 	}
