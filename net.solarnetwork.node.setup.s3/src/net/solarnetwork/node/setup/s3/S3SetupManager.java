@@ -92,7 +92,7 @@ import net.solarnetwork.util.StringUtils;
  * Service for provisioning node resources based on versioned resource sets.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class S3SetupManager implements InstructionHandler {
 
@@ -216,7 +216,7 @@ public class S3SetupManager implements InstructionHandler {
 				String msg = "Unable to setup from S3: no versions available at path "
 						+ objectKeyForPath(META_OBJECT_KEY_PREFIX);
 				log.warn(msg);
-				return statusWithError(instruction, "S3SM003", msg);
+				return statusWithError(instruction, "S3SM004", msg);
 			}
 			S3SetupConfiguration config = getSetupConfiguration(metaKey);
 			applySetup(config);
