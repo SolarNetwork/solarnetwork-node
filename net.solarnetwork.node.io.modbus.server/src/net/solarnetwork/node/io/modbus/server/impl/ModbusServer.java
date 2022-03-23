@@ -58,8 +58,8 @@ import net.solarnetwork.node.io.modbus.server.domain.ModbusRegisterData;
 import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockConfig;
 import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockType;
 import net.solarnetwork.node.io.modbus.server.domain.UnitConfig;
-import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.NodeControlProvider;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.settings.SettingSpecifier;
@@ -307,7 +307,7 @@ public class ModbusServer extends BaseIdentifiable
 	@Override
 	public void handleEvent(Event event) {
 		String topic = (event != null ? event.getTopic() : null);
-		if ( DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED.equals(topic)
+		if ( DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED.equals(topic)
 				|| NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED.equals(topic)
 				|| NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED.equals(topic) ) {
 			handleDatumCapturedEvent(event);
