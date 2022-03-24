@@ -681,6 +681,9 @@ $(document).ready(function() {
 		success: function(json, status, xhr, form) {
 			var modal = $('#add-component-instance-modal');
 			if ( json && json.success === true ) {
+				if ( json.data ) {
+					document.location.hash = encodeURIComponent(json.data);
+				}
 				delayedReload();
 			} else {
 				SolarNode.error(json.message, $('#add-component-instance-modal .modal-body.start'));
@@ -693,6 +696,36 @@ $(document).ready(function() {
 	}).on('shown', function() {
 		$('#add-component-instance-name').val('').focus();
 	});
+	$('.delete-factory-instance').on('click', function() {
+		var button = this;
+		SolarNode.Settings.deleteFactoryConfiguration({
+			button: button,
+			url: button.dataset.target,
+			factoryUid: button.dataset.factoryUid,
+			instanceUid: button.dataset.instanceKey
+		});
+	});
+	$('.reset-factory-instance').on('click', function() {
+		var button = this;
+		SolarNode.Settings.resetFactoryConfiguration({
+			button: button,
+			url: button.dataset.target,
+			factoryUid: button.dataset.factoryUid,
+			instanceUid: button.dataset.instanceKey
+		});
+	});
+	$('#settings.carousel .carousel-indicators li').on('click', function(event) {
+		var instanceKey = this.dataset.instanceKey;
+		if ( !instanceKey ) {
+			return;
+		}
+		console.log('Carousel click to instance: ' +instanceKey);
+		document.location.hash = encodeURIComponent(instanceKey);
+	});
+	if ( document.location.hash ) {
+		$('#settings.carousel .carousel-indicators li[data-instance-key="'
+			+decodeURIComponent(document.location.hash.substring(1))+'"]').click();
+	}
 	setupBackups();
 });
 

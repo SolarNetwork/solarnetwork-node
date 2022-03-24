@@ -20,12 +20,12 @@
 			<i class="icon-arrow-left"></i>
 			<fmt:message key="back.label"/>
 		</a>
-		<a href="#add-component-instance-modal" class="btn btn-primary" id="add" data-toggle="modal">
+		<button type="button" class="btn btn-primary" id="add" data-toggle="modal" data-target="#add-component-instance-modal">
 			<i class="icon-plus icon-white"></i>
 			<fmt:message key='settings.factory.add'>
 				<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
 			</fmt:message>
-		</a>
+		</button>
 	</p>
 </section>
 
@@ -33,7 +33,7 @@
 	<c:if test="${fn:length(providers) > 1}">
 		<ol class="carousel-indicators numbered">
 			<c:forEach items="${providers}" var="instance" varStatus="instanceStatus">
-				<li data-target="#settings" data-slide-to="${instanceStatus.index}"
+				<li data-target="#settings" data-slide-to="${instanceStatus.index}" data-instance-key="${instance.key}"
 					class="${instanceStatus.index == 0 ? 'active' : ''}">${instance.key}</li>
 			</c:forEach>
 		</ol>
@@ -78,38 +78,26 @@
 					</c:if>
 					<div class="control-group">
 						<div class="controls">
-							<button type="button" class="btn btn-danger" id="del${instance.key}">
+							<button type="button" class="btn btn-danger delete-factory-instance" 
+									data-target="<setup:url value='/a/settings/manage/delete'/>"
+									data-factory-uid="${factory.factoryUid}"
+									data-instance-key="${instance.key}" 
+									>
 								<fmt:message key='settings.factory.delete'>
 									<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
 									<fmt:param value="${instance.key}"/>
 								</fmt:message>
 							</button>
-							<script>
-							$('#del${instance.key}').click(function() {
-								SolarNode.Settings.deleteFactoryConfiguration({
-									button: this,
-									url: '<setup:url value="/a/settings/manage/delete"/>',
-											factoryUid: '${factory.factoryUid}',
-											instanceUid: '${instance.key}'
-										});
-									});
-							</script>
-							<button type="button" class="btn btn-primary" id="reset${instance.key}">
+							<button type="button" class="btn btn-primary reset-factory-instance"
+									data-target="<setup:url value='/a/settings/manage/reset'/>"
+									data-factory-uid="${factory.factoryUid}"
+									data-instance-key="${instance.key}" 
+									>
 								<fmt:message key='settings.factory.reset'>
 									<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
 									<fmt:param value="${instance.key}"/>
 								</fmt:message>
 							</button>
-							<script>
-							$('#reset${instance.key}').click(function() {
-								SolarNode.Settings.resetFactoryConfiguration({
-									button: this,
-									url: '<setup:url value="/a/settings/manage/reset"/>',
-									factoryUid: '${factory.factoryUid}',
-									instanceUid: '${instance.key}'
-								});
-							});
-							</script>
 						</div>
 					</div>
 				</fieldset>
