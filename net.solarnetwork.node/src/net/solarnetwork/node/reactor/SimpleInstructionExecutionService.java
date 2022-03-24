@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.reactor;
 
+import static net.solarnetwork.node.reactor.InstructionUtils.createErrorResultParameters;
+import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,9 +102,11 @@ public class SimpleInstructionExecutionService implements InstructionExecutionSe
 		if ( instruction.getInstructionDate() != null ) {
 			long diffMs = now - instruction.getInstructionDate().toEpochMilli();
 			if ( diffMs > timeLimitMs ) {
-				log.info("Instruction {} [{}] not handled within {} hours; declining",
+				String msg = String.format("Instruction %s [%s] not handled within %d hours; declining",
 						instruction.getIdentifier(), topic, executionReceivedHourLimit);
-				return InstructionUtils.createStatus(instruction, InstructionState.Declined);
+				log.info(msg);
+				return createStatus(instruction, InstructionState.Declined,
+						createErrorResultParameters(msg, "IES.0001"));
 			}
 		}
 
