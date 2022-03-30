@@ -39,6 +39,12 @@ import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
+/**
+ * Supporting abstract class for WMBus datum data sources.
+ * 
+ * @author alex
+ * @version 1.1
+ */
 public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceSupport
 		implements MBusMessageHandler {
 
@@ -91,7 +97,7 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 	 * 
 	 * @return the MBus secondary address
 	 */
-	public MBusSecondaryAddress getSecondaryAddress() {
+	public MBusSecondaryAddress getMBusSecondaryAddress() {
 		return address;
 	}
 
@@ -101,8 +107,32 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 	 * @param address
 	 *        the MBus secondary address
 	 */
-	public void setSecondaryAddress(MBusSecondaryAddress address) {
+	public void setMBusSecondaryAddress(MBusSecondaryAddress address) {
 		this.address = address;
+		reconfigureConnection();
+	}
+
+	/**
+	 * Get the configured {@link MBusSecondaryAddress} as a hex-encoded string.
+	 * 
+	 * @return the MBus secondary address as a hex-encoded string
+	 * @since 1.1
+	 */
+	public String getSecondaryAddress() {
+		MBusSecondaryAddress addr = getMBusSecondaryAddress();
+		return (addr != null ? addr.toString() : null);
+	}
+
+	/**
+	 * Set the hex-encoded {@link MBusSecondaryAddress} to use.
+	 * 
+	 * @param address
+	 *        the MBus secondary address as a hex-encoded string
+	 * @since 1.1
+	 */
+	public void setSecondaryAddress(String address) {
+		setMBusSecondaryAddress(
+				address == null || address.isEmpty() ? null : new MBusSecondaryAddress(address));
 		reconfigureConnection();
 	}
 

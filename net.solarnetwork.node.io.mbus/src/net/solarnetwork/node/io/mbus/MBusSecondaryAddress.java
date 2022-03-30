@@ -30,7 +30,7 @@ import org.apache.commons.codec.binary.Hex;
  * An object that represents an MBus Secondary Address
  * 
  * @author alex
- * @version 1.0
+ * @version 1.1
  */
 public class MBusSecondaryAddress {
 
@@ -89,4 +89,15 @@ public class MBusSecondaryAddress {
 
 		return address.equals(mbsa.address);
 	}
+
+	/**
+	 * Return the hex-encoded address value.
+	 * 
+	 * {@inheritDoc}
+	 */
+	@Override
+	public String toString() {
+		return (address != null ? Hex.encodeHexString(address, false) : "");
+	}
+
 }
