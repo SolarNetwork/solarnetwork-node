@@ -83,6 +83,8 @@
 		<interfaces>
 			<value>net.solarnetwork.node.dao.DatumDao</value>
 			<value>net.solarnetwork.node.dao.jdbc.JdbcDao</value>
+			<value>net.solarnetwork.service.PingTest</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 		</interfaces>
 		<service-properties>
 			<entry key="datumClassName" value="net.solarnetwork.node.domain.datum.NodeDatum" />

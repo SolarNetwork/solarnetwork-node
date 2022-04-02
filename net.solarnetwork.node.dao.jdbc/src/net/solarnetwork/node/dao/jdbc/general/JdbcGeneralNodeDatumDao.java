@@ -31,7 +31,9 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import org.osgi.service.event.Event;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.DuplicateKeyException;
@@ -53,15 +55,22 @@ import net.solarnetwork.node.domain.Mock;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.service.PingTest;
+import net.solarnetwork.service.PingTestResult;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.util.StatCounter;
 
 /**
  * JDBC-based implementation of {@link net.solarnetwork.node.dao.DatumDao} for
  * {@link NodeDatum} domain objects.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
-public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implements DatumDao {
+public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
+		implements DatumDao, SettingSpecifierProvider, PingTest {
 
 	/** The default tables version. */
 	public static final int DEFAULT_TABLES_VERSION = 4;
@@ -79,16 +88,26 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implemen
 	/** The default value for the {@code maxFetchForUpload} property. */
 	public static final int DEFAULT_MAX_FETCH_FOR_UPLOAD = 60;
 
+	/**
+	 * The {@code maxCountPingFail} property default value.
+	 * 
+	 * @since 2.1
+	 */
+	public static final int DEFAULT_MAX_COUNT_PING_FAIL = 10000;
+
 	public static final String SQL_RESOURCE_INSERT = "insert";
 	public static final String SQL_RESOURCE_DELETE_OLD = "delete-old";
 	public static final String SQL_RESOURCE_FIND_FOR_UPLOAD = "find-upload";
 	public static final String SQL_RESOURCE_FIND_FOR_PRIMARY_KEY = "find-pk";
 	public static final String SQL_RESOURCE_UPDATE_UPLOADED = "update-upload";
 	public static final String SQL_RESOURCE_UPDATE_DATA = "update-data";
+	public static final String SQL_RESOURCE_COUNT = "count";
 
+	public final StatCounter stats;
 	private ObjectMapper objectMapper;
 	private int maxFetchForUpload = DEFAULT_MAX_FETCH_FOR_UPLOAD;
 	private boolean ignoreMockData = true;
+	private int maxCountPingFail = DEFAULT_MAX_COUNT_PING_FAIL;
 
 	/**
 	 * Default constructor.
@@ -100,6 +119,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implemen
 		setTablesVersion(DEFAULT_TABLES_VERSION);
 		setSqlGetTablesVersion(DEFAULT_SQL_GET_TABLES_VERSION);
 		setInitSqlResource(new ClassPathResource(DEFAULT_INIT_SQL, getClass()));
+		this.stats = new StatCounter("JdbcDatumDao", "", log, 100, DatumDaoStat.values());
 	}
 
 	@Override
@@ -237,7 +257,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implemen
 	 * @return the number of rows deleted
 	 */
 	protected int deleteUploadedDataOlderThanHours(final int hours) {
-		return getJdbcTemplate().update(new PreparedStatementCreator() {
+		int result = getJdbcTemplate().update(new PreparedStatementCreator() {
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
@@ -250,6 +270,8 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implemen
 				return ps;
 			}
 		});
+		stats.addAndGet(DatumDaoStat.DatumDeleted, result);
+		return result;
 	}
 
 	/**
@@ -371,8 +393,9 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implemen
 		}
 		insertDomainObject(datum, getSqlResource(SQL_RESOURCE_INSERT));
 		if ( log.isInfoEnabled() ) {
-			log.info("Persisting datum locally: {}", datum);
+			log.info("Persisted datum locally: {}", datum);
 		}
+		stats.incrementAndGet(DatumDaoStat.DatumStored);
 		postDatumStoredEvent(datum);
 	}
 
@@ -431,7 +454,7 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implemen
 	 * @return the number of updated rows
 	 */
 	protected int updateDatumUpload(final Instant created, final Object id, final Instant timestamp) {
-		return getJdbcTemplate().update(new PreparedStatementCreator() {
+		int result = getJdbcTemplate().update(new PreparedStatementCreator() {
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
@@ -444,6 +467,8 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implemen
 				return ps;
 			}
 		});
+		stats.addAndGet(DatumDaoStat.DatumUploaded, result);
+		return result;
 	}
 
 	/**
@@ -475,6 +500,75 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implemen
 	 */
 	protected Event createDatumStoredEvent(final NodeDatum datum) {
 		return DatumEvents.datumEvent(EVENT_TOPIC_DATUM_STORED, datum);
+	}
+
+	@Override
+	public String getPingTestId() {
+		return getSettingUid();
+	}
+
+	@Override
+	public String getPingTestName() {
+		return getDisplayName();
+	}
+
+	@Override
+	public long getPingTestMaximumExecutionMilliseconds() {
+		return 5000;
+	}
+
+	@Override
+	public Result performPingTest() throws Exception {
+		final long rowCount = rowCount();
+		final int maxCount = getMaxCountPingFail();
+		boolean ok = true;
+		String msg = getMessageSource().getMessage("db.rowCount", new Object[] { rowCount },
+				Locale.getDefault());
+		if ( maxCount > 0 && rowCount > maxCount ) {
+			ok = false;
+		}
+		return new PingTestResult(ok, msg, Collections.singletonMap("count", rowCount));
+	}
+
+	private long rowCount() {
+		final Number rowCountNum = getJdbcTemplate().queryForObject(getSqlResource(SQL_RESOURCE_COUNT),
+				Number.class);
+		return (rowCountNum == null ? 0 : rowCountNum.longValue());
+	}
+
+	@Override
+	public String getSettingUid() {
+		return "net.solarnetwork.node.dao.jdbc.general.datum";
+	}
+
+	@Override
+	public String getDisplayName() {
+		return "DatumDao (JDBC)";
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		return Collections.singletonList((SettingSpecifier) new BasicTitleSettingSpecifier("status",
+				getStatusMessage(), true, true));
+	}
+
+	private String getStatusMessage() {
+		// @formatter:off
+		long rowCount = 0;
+		try {
+			rowCount = rowCount();
+		} catch ( Exception e ) {
+			log.warn("Error finding datum row count.", e);
+		}
+		return getMessageSource().getMessage("status.msg",
+				new Object[] { 
+						rowCount,
+						stats.get(DatumDaoStat.DatumStored),
+						stats.get(DatumDaoStat.DatumUploaded),
+						stats.get(DatumDaoStat.DatumDeleted),
+						},
+				Locale.getDefault());
+		// @formatter:on
 	}
 
 	/**
@@ -524,6 +618,28 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum> implemen
 	 */
 	public void setIgnoreMockData(boolean ignoreMockData) {
 		this.ignoreMockData = ignoreMockData;
+	}
+
+	/**
+	 * Get the maximum number of messages to store before failing ping tests.
+	 * 
+	 * @return the maximum count, or {@literal 0} to disable the test; defaults
+	 *         to {@link #DEFAULT_MAX_COUNT_PING_FAIL}
+	 * @since 2.1
+	 */
+	public int getMaxCountPingFail() {
+		return maxCountPingFail;
+	}
+
+	/**
+	 * Set the maximum number of messages to store before failing ping tests.
+	 * 
+	 * @param maxCountPingFail
+	 *        the maximum count, or {@literal 0} to disable the test
+	 * @since 2.1
+	 */
+	public void setMaxCountPingFail(int maxCountPingFail) {
+		this.maxCountPingFail = maxCountPingFail;
 	}
 
 }
