@@ -417,9 +417,10 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	 * Mark a Datum as uploaded.
 	 * 
 	 * <p>
-	 * This method will call {@link #updateDatumUpload(long, Object, long)}
-	 * passing in {@link NodeDatum#getTimestamp()},
-	 * {@link NodeDatum#getSourceId()}, and {@code timestamp}.
+	 * This method will call
+	 * {@link #updateDatumUpload(Instant, Object, Instant)} passing in
+	 * {@link NodeDatum#getTimestamp()}, {@link NodeDatum#getSourceId()}, and
+	 * {@code timestamp}.
 	 * </p>
 	 * 
 	 * @param datum
