@@ -50,6 +50,7 @@ import net.solarnetwork.domain.datum.ObjectDatumStreamMetadata;
 import net.solarnetwork.external.indriya.IndriyaMeasurementServiceProvider;
 import net.solarnetwork.node.datum.canbus.CanbusDatumDataSource;
 import net.solarnetwork.node.datum.canbus.KcdConfigurer;
+import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.io.canbus.CanbusFrame;
 import net.solarnetwork.node.io.canbus.CanbusFrameFlag;
@@ -248,6 +249,26 @@ public class CanbusDatumDataSourceSimulator {
 
 		@Override
 		public Reader getReaderForBackup(SettingsBackup backup) {
+			return null;
+		}
+
+		@Override
+		public void enableProviderFactoryInstance(String factoryUid, String instanceUid) {
+			// ignore
+		}
+
+		@Override
+		public void disableProviderFactoryInstance(String factoryUid, String instanceUid) {
+			// ignore
+		}
+
+		@Override
+		public List<SettingResourceHandler> getSettingResourceHandlers() {
+			return null;
+		}
+
+		@Override
+		public List<Setting> getSettings(String factoryUid, String instanceUid) {
 			return null;
 		}
 
