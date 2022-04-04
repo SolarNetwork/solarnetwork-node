@@ -273,6 +273,8 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		private final int max;
 
 		private int processedCount = 0;
+		private int batchHandleCount = 0;
+		private boolean shouldContinue = true;
 
 		private PublishCachedMessagesTask(String dest, MqttMessageDao dao, MqttConnection connection,
 				int timeoutSecs, int max) {
@@ -291,7 +293,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 			synchronized ( dao ) {
 				batchProcess();
 			}
-			if ( isMaximumReached() && connection.isEstablished() ) {
+			if ( shouldContinue && connection.isEstablished() ) {
 				// submit new task to publish next block
 				final Executor e = executor;
 				Runnable task = new PublishCachedMessagesTask(dest, dao, connection, timeoutSecs, max);
@@ -304,11 +306,13 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		}
 
 		private void batchProcess() {
+			batchHandleCount = 0;
 			final BatchableDao.BatchResult result = dao
 					.batchProcess(new BatchableDao.BatchCallback<MqttMessageEntity>() {
 
 						@Override
 						public BatchCallbackResult handle(MqttMessageEntity entity) {
+							batchHandleCount++;
 							if ( !connection.isEstablished() || isMaximumReached() ) {
 								return BatchCallbackResult.STOP;
 							}
@@ -320,7 +324,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 								log.debug("Published cached MQTT message {} to topic {}", entity.getId(),
 										entity.getTopic());
 							} catch ( Exception e ) {
-								log.debug("Error publishing cached MQTT message {} to topic {}: {}",
+								log.warn("Error publishing cached MQTT message {} to topic {}: {}",
 										entity.getId(), entity.getTopic(), e.toString());
 								action = BatchCallbackResult.STOP;
 							}
@@ -332,6 +336,10 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 							singletonMap(MqttMessageDao.BATCH_OPTION_DESTINATION, dest)));
 			if ( result.numProcessed() > 0 ) {
 				log.info("Uploaded {} locally cached MQTT messages to {}", result.numProcessed(), dest);
+			}
+			if ( batchHandleCount < 1 ) {
+				// no more to process
+				shouldContinue = false;
 			}
 		}
 

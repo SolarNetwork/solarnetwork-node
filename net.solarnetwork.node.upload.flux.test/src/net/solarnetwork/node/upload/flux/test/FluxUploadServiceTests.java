@@ -239,17 +239,21 @@ public class FluxUploadServiceTests {
 				service.getMqttConfig().getServerUriValue(), "some/topic", false, MqttQos.ExactlyOnce,
 				"Hello, world".getBytes());
 
-		Capture<BatchableDao.BatchCallback<MqttMessageEntity>> callbackCaptor = Capture.newInstance();
-		Capture<BatchableDao.BatchOptions> optionsCaptor = Capture.newInstance();
+		Capture<BatchableDao.BatchCallback<MqttMessageEntity>> callbackCaptor = Capture
+				.newInstance(CaptureType.ALL);
+		Capture<BatchableDao.BatchOptions> optionsCaptor = Capture.newInstance(CaptureType.ALL);
 		expect(messageDao.batchProcess(capture(callbackCaptor), capture(optionsCaptor)))
 				.andAnswer(new IAnswer<BatchableDao.BatchResult>() {
 
 					@Override
 					public BatchableDao.BatchResult answer() throws Throwable {
-						callbackCaptor.getValue().handle(entity);
-						return new BasicBatchResult(1);
+						int callCount = callbackCaptor.getValues().size();
+						if ( callCount == 1 ) {
+							callbackCaptor.getValues().get(callCount - 1).handle(entity);
+						}
+						return new BasicBatchResult(callCount == 1 ? 1 : 0);
 					}
-				});
+				}).times(2);
 
 		Capture<MqttMessage> msgCaptor = Capture.newInstance();
 		expect(connection.publish(capture(msgCaptor))).andReturn(completedFuture(null));
@@ -309,6 +313,18 @@ public class FluxUploadServiceTests {
 					public BatchableDao.BatchResult answer() throws Throwable {
 						callbackCaptor2.getValue().handle(entities.get(2));
 						return new BasicBatchResult(1);
+					}
+				});
+
+		// third "page" (no batch callback, so stop processing)
+		Capture<BatchableDao.BatchCallback<MqttMessageEntity>> callbackCaptor3 = Capture.newInstance();
+		Capture<BatchableDao.BatchOptions> optionsCaptor3 = Capture.newInstance();
+		expect(messageDao.batchProcess(capture(callbackCaptor3), capture(optionsCaptor3)))
+				.andAnswer(new IAnswer<BatchableDao.BatchResult>() {
+
+					@Override
+					public BatchableDao.BatchResult answer() throws Throwable {
+						return new BasicBatchResult(0);
 					}
 				});
 
