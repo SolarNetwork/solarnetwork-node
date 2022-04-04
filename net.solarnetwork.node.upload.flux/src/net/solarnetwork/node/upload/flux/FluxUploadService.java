@@ -97,7 +97,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class FluxUploadService extends BaseMqttConnectionService implements EventHandler,
 		Consumer<NodeDatum>, SettingSpecifierProvider, SettingsChangeObserver, MqttConnectionObserver {
@@ -168,6 +168,8 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	private int cachedMessagePublishMaximum = DEFAULT_CACHED_MESSAGE_PUBLISH_MAXIMUM;
 	private boolean publishRetained = DEFAULT_PUBLISH_RETAINED;
 	private boolean mqttMessageDaoRequired;
+
+	private boolean mqttMessageDaoDiscovered = false;
 
 	/**
 	 * Constructor.
@@ -248,11 +250,17 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	@Override
 	public void onMqttServerConnectionEstablished(MqttConnection connection, boolean reconnected) {
+		tryPublishCachedMessages(connection);
+	}
+
+	private void tryPublishCachedMessages(MqttConnection connection) {
 		// if we have persistence, upload any cached messages now
 		MqttMessageDao dao = OptionalService.service(mqttMessageDao);
 		String dest = getMqttConfig().getServerUriValue();
 		int timeoutSecs = getMqttConfig().getConnectTimeoutSeconds();
 		if ( dao != null ) {
+			log.info("Starting task to publish cached MQTT messages to {}.", dest);
+			mqttMessageDaoDiscovered = true;
 			Runnable task = new PublishCachedMessagesTask(dest, dao, connection, timeoutSecs,
 					cachedMessagePublishMaximum);
 			Executor e = this.executor;
@@ -273,6 +281,8 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		private final int max;
 
 		private int processedCount = 0;
+		private int batchHandleCount = 0;
+		private boolean shouldContinue = true;
 
 		private PublishCachedMessagesTask(String dest, MqttMessageDao dao, MqttConnection connection,
 				int timeoutSecs, int max) {
@@ -291,7 +301,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 			synchronized ( dao ) {
 				batchProcess();
 			}
-			if ( isMaximumReached() && connection.isEstablished() ) {
+			if ( shouldContinue && connection.isEstablished() ) {
 				// submit new task to publish next block
 				final Executor e = executor;
 				Runnable task = new PublishCachedMessagesTask(dest, dao, connection, timeoutSecs, max);
@@ -304,34 +314,41 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		}
 
 		private void batchProcess() {
-			final BatchableDao.BatchResult result = dao
-					.batchProcess(new BatchableDao.BatchCallback<MqttMessageEntity>() {
+			final int startProcessedCount = processedCount;
+			batchHandleCount = 0;
+			dao.batchProcess(new BatchableDao.BatchCallback<MqttMessageEntity>() {
 
-						@Override
-						public BatchCallbackResult handle(MqttMessageEntity entity) {
-							if ( !connection.isEstablished() || isMaximumReached() ) {
-								return BatchCallbackResult.STOP;
-							}
-							BatchCallbackResult action;
-							try {
-								connection.publish(entity).get(timeoutSecs, TimeUnit.SECONDS);
-								action = BatchCallbackResult.DELETE;
-								processedCount++;
-								log.debug("Published cached MQTT message {} to topic {}", entity.getId(),
-										entity.getTopic());
-							} catch ( Exception e ) {
-								log.debug("Error publishing cached MQTT message {} to topic {}: {}",
-										entity.getId(), entity.getTopic(), e.toString());
-								action = BatchCallbackResult.STOP;
-							}
-							return action;
-						}
+				@Override
+				public BatchCallbackResult handle(MqttMessageEntity entity) {
+					batchHandleCount++;
+					if ( !connection.isEstablished() || isMaximumReached() ) {
+						return BatchCallbackResult.STOP;
+					}
+					BatchCallbackResult action;
+					try {
+						connection.publish(entity).get(timeoutSecs, TimeUnit.SECONDS);
+						action = BatchCallbackResult.DELETE;
+						processedCount++;
+						log.debug("Published cached MQTT message {} to topic {}", entity.getId(),
+								entity.getTopic());
+					} catch ( Exception e ) {
+						log.warn("Error publishing cached MQTT message {} to topic {}: {}",
+								entity.getId(), entity.getTopic(), e.toString());
+						action = BatchCallbackResult.STOP;
+					}
+					return action;
+				}
 
-					}, new BasicBatchOptions("Process cached MQTT messages",
-							BasicBatchOptions.DEFAULT_BATCH_SIZE, true,
-							singletonMap(MqttMessageDao.BATCH_OPTION_DESTINATION, dest)));
-			if ( result.numProcessed() > 0 ) {
-				log.info("Uploaded {} locally cached MQTT messages to {}", result.numProcessed(), dest);
+			}, new BasicBatchOptions("Process cached MQTT messages",
+					BasicBatchOptions.DEFAULT_BATCH_SIZE, true,
+					singletonMap(MqttMessageDao.BATCH_OPTION_DESTINATION, dest)));
+			final int count = processedCount - startProcessedCount;
+			if ( count > 0 ) {
+				log.info("Uploaded {} locally cached MQTT messages to {}", count, dest);
+			}
+			if ( batchHandleCount < 1 ) {
+				// no more to process
+				shouldContinue = false;
 			}
 		}
 
@@ -493,6 +510,9 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 					}
 					conn.publish(msg).get(getMqttConfig().getConnectTimeoutSeconds(), TimeUnit.SECONDS);
 					log.debug("Published to MQTT topic {}: {}", topic, data);
+					if ( mqttMessageDaoRequired && !mqttMessageDaoDiscovered ) {
+						tryPublishCachedMessages(conn);
+					}
 				} else if ( dao != null ) {
 					msgToPersist = msg;
 				}
