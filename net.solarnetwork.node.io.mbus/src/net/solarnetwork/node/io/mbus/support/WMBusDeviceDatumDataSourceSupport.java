@@ -24,8 +24,11 @@ package net.solarnetwork.node.io.mbus.support;
 
 import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ScheduledFuture;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import net.solarnetwork.node.io.mbus.MBusData;
@@ -43,7 +46,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * Supporting abstract class for WMBus datum data sources.
  * 
  * @author alex
- * @version 1.1
+ * @version 1.2
  */
 public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceSupport
 		implements MBusMessageHandler {
@@ -58,6 +61,8 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 	// Latest complete data
 	private MBusData latestData = null;
 	private final Object dataLock = new Object();
+
+	private ScheduledFuture<?> connectFuture;
 
 	@Override
 	public String toString() {
@@ -163,28 +168,66 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 	}
 
 	/**
-	 * Reconfigure connection to network
+	 * Reconfigure connection to network.
 	 */
-	private void reconfigureConnection() {
+	private synchronized void reconfigureConnection() {
+		if ( connectFuture != null && !connectFuture.isDone() ) {
+			return;
+		}
+		if ( address == null || key == null ) {
+			return;
+		}
+		ConnectTask task = new ConnectTask();
+		if ( getTaskScheduler() != null ) {
+			connectFuture = getTaskScheduler().schedule(task, Date.from(Instant.now().plusSeconds(1)));
+		} else {
+			task.run();
+		}
+	}
+
+	private synchronized void reconnect() {
 		if ( connection != null ) {
-			log.info("Closing wireless M-Bus connection {} for data source", connection, this);
+			log.info("Closing wireless M-Bus connection {} for {}", connection, address);
 			try {
 				connection.close();
+				connection = null;
 			} catch ( IOException e ) {
 			}
 		}
-		WMBusNetwork device = (wmbusNetwork == null ? null : wmbusNetwork.service());
+		WMBusNetwork device = service(wmbusNetwork);
 		if ( device != null && address != null && key != null ) {
-			connection = device.createConnection(address, key);
+			WMBusConnection conn = device.createConnection(address, key);
 			try {
-				log.info("Opening wireless M-Bus connection {} for data source {}", connection, this);
-				connection.open(this);
+				log.info("Opening wireless M-Bus connection {} for {}", conn, address);
+				conn.open(this);
+				connection = conn;
 			} catch ( IOException e ) {
-				log.error("Error opening wireless M-Bus connection {}: {}", connection, e.toString(), e);
+				log.error("Error opening wireless M-Bus connection {} for {}: {}", conn, address,
+						e.toString(), e);
 			}
-		} else if ( device == null ) {
-			log.debug("No wireless M-Bus network available for data source {}", this);
+		} else if ( device == null && address != null && key != null ) {
+			log.warn("No wireless M-Bus network available for {}", address);
 		}
+	}
+
+	private final class ConnectTask implements Runnable {
+
+		@Override
+		public void run() {
+			try {
+				reconnect();
+			} finally {
+				if ( connection == null ) {
+					// try again
+					if ( getTaskScheduler() != null ) {
+						log.info("Will try opening wireless M-Bus connection for {} in 10s", address);
+						connectFuture = getTaskScheduler().schedule(this,
+								Date.from(Instant.now().plusSeconds(10)));
+					}
+				}
+			}
+		}
+
 	}
 
 	@Override
