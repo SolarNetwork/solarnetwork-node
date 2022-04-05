@@ -69,6 +69,8 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 		} else {
 			builder.append(Integer.toHexString(hashCode()));
 		}
+		builder.append('@');
+		builder.append(address);
 		builder.append("}");
 		return builder.toString();
 	}
@@ -165,6 +167,7 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 	 */
 	private void reconfigureConnection() {
 		if ( connection != null ) {
+			log.info("Closing wireless M-Bus connection {} for data source", connection, this);
 			try {
 				connection.close();
 			} catch ( IOException e ) {
@@ -174,11 +177,13 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 		if ( device != null && address != null && key != null ) {
 			connection = device.createConnection(address, key);
 			try {
+				log.info("Opening wireless M-Bus connection {} for data source {}", connection, this);
 				connection.open(this);
 			} catch ( IOException e ) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				log.error("Error opening wireless M-Bus connection {}: {}", connection, e.toString(), e);
 			}
+		} else if ( device == null ) {
+			log.debug("No wireless M-Bus network available for data source {}", this);
 		}
 	}
 
