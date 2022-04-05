@@ -221,7 +221,8 @@ public class SettingsPlaceholderService implements PlaceholderService {
 					placeholdersCache = new CachedResult<Map<String, ?>>(placeholders, cacheSeconds,
 							TimeUnit.SECONDS);
 				}
-				log.debug("Cached {} placeholder values", placeholders.size());
+				log.debug("Cached {} placeholder values",
+						(placeholders != null ? placeholders.size() : 0));
 				return placeholders;
 			} catch ( Exception e ) {
 				Throwable root = e;
