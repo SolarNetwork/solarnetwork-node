@@ -217,12 +217,17 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 			try {
 				reconnect();
 			} finally {
-				if ( connection == null ) {
-					// try again
-					if ( getTaskScheduler() != null ) {
-						log.info("Will try opening wireless M-Bus connection for {} in 10s", address);
-						connectFuture = getTaskScheduler().schedule(this,
-								Date.from(Instant.now().plusSeconds(10)));
+				synchronized ( WMBusDeviceDatumDataSourceSupport.this ) {
+					if ( connection == null ) {
+						// try again
+						if ( getTaskScheduler() != null ) {
+							log.info("Will try opening wireless M-Bus connection for {} in 10s",
+									address);
+							connectFuture = getTaskScheduler().schedule(this,
+									Date.from(Instant.now().plusSeconds(10)));
+						}
+					} else {
+						connectFuture = null;
 					}
 				}
 			}
