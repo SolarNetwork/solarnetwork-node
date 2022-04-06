@@ -24,6 +24,7 @@ package net.solarnetwork.node.datum.modbus;
 
 import static java.util.Arrays.asList;
 import static net.solarnetwork.io.StreamUtils.inputStreamForPossibleGzipStream;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -47,18 +48,19 @@ import org.supercsv.io.ICsvListReader;
 import org.supercsv.io.ICsvListWriter;
 import org.supercsv.prefs.CsvPreference;
 import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.node.settings.SettingsUpdates;
 import net.solarnetwork.node.settings.support.BasicFileSettingSpecifier;
+import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.support.BasicIdentifiable;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.ByteUtils;
-import net.solarnetwork.util.ObjectUtils;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -66,7 +68,7 @@ import net.solarnetwork.util.StringUtils;
  * resources.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ModbusCsvConfigurer extends BasicIdentifiable
 		implements SettingSpecifierProvider, SettingResourceHandler {
@@ -77,6 +79,7 @@ public class ModbusCsvConfigurer extends BasicIdentifiable
 	private static final Logger log = LoggerFactory.getLogger(ModbusCsvConfigurer.class);
 
 	private final SettingsService settingsService;
+	private final OptionalService<IdentityService> identityService;
 
 	private String settingProviderId = ModbusDatumDataSource.SETTING_UID;
 
@@ -88,12 +91,16 @@ public class ModbusCsvConfigurer extends BasicIdentifiable
 	 * 
 	 * @param settingsService
 	 *        the settings service
+	 * @param identityService
+	 *        the identity service
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public ModbusCsvConfigurer(SettingsService settingsService) {
+	public ModbusCsvConfigurer(SettingsService settingsService,
+			OptionalService<IdentityService> identityService) {
 		super();
-		this.settingsService = ObjectUtils.requireNonNullArgument(settingsService, "settingsService");
+		this.settingsService = requireNonNullArgument(settingsService, "settingsService");
+		this.identityService = requireNonNullArgument(identityService, "identityService");
 	}
 
 	@Override
@@ -154,7 +161,11 @@ public class ModbusCsvConfigurer extends BasicIdentifiable
 
 					@Override
 					public String getFilename() {
-						return "modbus-device-config.csv";
+						IdentityService service = OptionalService.service(identityService);
+						Long nodeId = (service != null ? service.getNodeId() : null);
+						return (nodeId != null
+								? String.format("modbus-device-config-solarnode-%d.csv", nodeId)
+								: "modbus-device-config.csv");
 					}
 
 				})

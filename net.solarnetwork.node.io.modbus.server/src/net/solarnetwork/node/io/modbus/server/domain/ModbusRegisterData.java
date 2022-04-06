@@ -24,7 +24,10 @@ package net.solarnetwork.node.io.modbus.server.domain;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.BitSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
@@ -35,9 +38,11 @@ import net.solarnetwork.node.io.modbus.ModbusDataUtils;
  * Data for a Modbus register set.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ModbusRegisterData {
+
+	private static final Logger log = LoggerFactory.getLogger(ModbusRegisterData.class);
 
 	private final BitSet coils;
 	private final BitSet discretes;
@@ -324,7 +329,7 @@ public class ModbusRegisterData {
 	 *        the value to save
 	 */
 	public void writeHolding(int address, short value) {
-		writeRegisters(address, new short[] { value }, holdings);
+		writeHoldings(address, new short[] { value });
 	}
 
 	/**
@@ -336,7 +341,22 @@ public class ModbusRegisterData {
 	 *        the values to save
 	 */
 	public void writeHoldings(int address, short[] values) {
+		if ( log.isDebugEnabled() ) {
+			log.debug("Writing Holding registers {}-{} values: {}", address, address + values.length - 1,
+					Arrays.toString(hexValues(values)));
+		}
 		writeRegisters(address, values, holdings);
+	}
+
+	private static String[] hexValues(short[] values) {
+		if ( values == null ) {
+			return null;
+		}
+		String[] result = new String[values.length];
+		for ( int i = 0, len = values.length; i < len; i++ ) {
+			result[i] = String.format("0x%04x", values[i]);
+		}
+		return result;
 	}
 
 	/**
@@ -348,7 +368,7 @@ public class ModbusRegisterData {
 	 *        the value to save
 	 */
 	public void writeInput(int address, short value) {
-		writeRegisters(address, new short[] { value }, inputs);
+		writeInputs(address, new short[] { value });
 	}
 
 	/**
@@ -360,6 +380,10 @@ public class ModbusRegisterData {
 	 *        the values to save
 	 */
 	public void writeInputs(int address, short[] values) {
+		if ( log.isDebugEnabled() ) {
+			log.debug("Writing Input registers {}-{} values: {}", address, address + values.length - 1,
+					Arrays.toString(hexValues(values)));
+		}
 		writeRegisters(address, values, inputs);
 	}
 
@@ -375,6 +399,7 @@ public class ModbusRegisterData {
 			});
 		} catch ( IOException e ) {
 			// should not get here
+			log.error("Error writing register {} data: {}", address, Arrays.toString(values), e);
 		}
 	}
 

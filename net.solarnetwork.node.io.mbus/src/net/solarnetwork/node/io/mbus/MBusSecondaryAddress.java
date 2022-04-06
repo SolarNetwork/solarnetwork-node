@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.mbus;
 
+import java.util.Arrays;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 
@@ -30,7 +31,7 @@ import org.apache.commons.codec.binary.Hex;
  * An object that represents an MBus Secondary Address
  * 
  * @author alex
- * @version 1.0
+ * @version 1.1
  */
 public class MBusSecondaryAddress {
 
@@ -62,7 +63,7 @@ public class MBusSecondaryAddress {
 	 *        the raw MBus secondary address data
 	 */
 	public MBusSecondaryAddress(byte[] bytes) {
-		if ( bytes.length == SIZE ) {
+		if ( bytes != null && bytes.length == SIZE ) {
 			address = bytes;
 		}
 	}
@@ -72,21 +73,37 @@ public class MBusSecondaryAddress {
 	}
 
 	public boolean isValid() {
-		return !address.equals(INVALID_ADDRESS);
+		return !Arrays.equals(address, INVALID_ADDRESS);
 	}
 
 	@Override
-	public boolean equals(Object o) {
-		if ( o == this ) {
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + Arrays.hashCode(address);
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if ( this == obj ) {
 			return true;
 		}
-
-		if ( !(o instanceof MBusSecondaryAddress) ) {
+		if ( !(obj instanceof MBusSecondaryAddress) ) {
 			return false;
 		}
-
-		MBusSecondaryAddress mbsa = (MBusSecondaryAddress) o;
-
-		return address.equals(mbsa.address);
+		MBusSecondaryAddress other = (MBusSecondaryAddress) obj;
+		return Arrays.equals(address, other.address);
 	}
+
+	/**
+	 * Return the hex-encoded address value.
+	 * 
+	 * {@inheritDoc}
+	 */
+	@Override
+	public String toString() {
+		return (address != null ? Hex.encodeHexString(address, false) : "");
+	}
+
 }

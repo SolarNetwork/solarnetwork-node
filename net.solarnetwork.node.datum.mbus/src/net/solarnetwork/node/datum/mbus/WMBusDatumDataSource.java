@@ -50,7 +50,7 @@ import net.solarnetwork.util.StringUtils;
  * Datum data source for wireless M-Bus devices.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider {
@@ -106,6 +106,16 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 	public void setPropConfigsCount(int count) {
 		this.propConfigs = ArrayUtils.arrayWithLength(this.propConfigs, count, MBusPropertyConfig.class,
 				null);
+	}
+
+	/**
+	 * Get the source ID to use for the returned datum.
+	 * 
+	 * @return the source ID
+	 * @since 2.1
+	 */
+	public String getSourceId() {
+		return sourceId;
 	}
 
 	/**

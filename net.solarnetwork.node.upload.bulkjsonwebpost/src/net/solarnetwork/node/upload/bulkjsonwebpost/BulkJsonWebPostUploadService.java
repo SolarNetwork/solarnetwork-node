@@ -300,9 +300,14 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 											}
 										}
 									}
-									if ( created != null && created.equals(datum.getTimestamp())
+									if ( created != null && created.compareTo(datum.getTimestamp()) == 0
 											&& datum.getSourceId().equals(sourceId) ) {
 										id = currJsonNode.path("id").textValue();
+										if ( id == null ) {
+											// generate a synthetic ID string
+											id = DigestUtils.md5DigestAsHex(String
+													.format("%tQ;%s", created, sourceId).getBytes());
+										}
 										postDatumUploadedEvent(datum, currReqJsonNode);
 										currReqJsonNode = reqJsonItr.hasNext() ? reqJsonItr.next()
 												: null;
@@ -310,10 +315,7 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 									}
 								}
 								if ( id == null ) {
-									// generate a synthetic ID string
-									id = DigestUtils.md5DigestAsHex(String
-											.format("%tQ;%s", datum.getTimestamp(), datum.getSourceId())
-											.getBytes());
+									log.warn("Unknown datum result: {}", currJsonNode);
 								}
 							}
 							result.add(new BulkUploadResult(datum, id));

@@ -58,8 +58,8 @@ import net.solarnetwork.node.io.modbus.server.domain.ModbusRegisterData;
 import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockConfig;
 import net.solarnetwork.node.io.modbus.server.domain.RegisterBlockType;
 import net.solarnetwork.node.io.modbus.server.domain.UnitConfig;
-import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.DatumEvents;
+import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.NodeControlProvider;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.settings.SettingSpecifier;
@@ -307,7 +307,7 @@ public class ModbusServer extends BaseIdentifiable
 	@Override
 	public void handleEvent(Event event) {
 		String topic = (event != null ? event.getTopic() : null);
-		if ( DatumDataSource.EVENT_TOPIC_DATUM_CAPTURED.equals(topic)
+		if ( DatumQueue.EVENT_TOPIC_DATUM_ACQUIRED.equals(topic)
 				|| NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CAPTURED.equals(topic)
 				|| NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED.equals(topic) ) {
 			handleDatumCapturedEvent(event);
@@ -327,6 +327,8 @@ public class ModbusServer extends BaseIdentifiable
 		NodeDatum datum = (NodeDatum) d;
 		final DatumSamplesOperations ops = datum.asSampleOperations();
 		final String sourceId = datum.getSourceId();
+
+		log.trace("Inspecting {} event datum {} ", eventz.getTopic(), datum);
 
 		for ( UnitConfig unitConfig : unitConfigs ) {
 			RegisterBlockConfig[] blockConfigs = unitConfig.getRegisterBlockConfigs();
@@ -362,6 +364,8 @@ public class ModbusServer extends BaseIdentifiable
 	private void applyDatumCapturedUpdates(UnitConfig unitConfig, RegisterBlockConfig blockConfig,
 			MeasurementConfig measConfig, DatumSamplesOperations ops, int address) {
 		Object propVal = ops.findSampleValue(measConfig.getPropertyName());
+		log.trace("Measurement [{}.{}] in datum {}: {}", measConfig.getSourceId(),
+				measConfig.getPropertyName(), ops, propVal);
 		if ( propVal == null ) {
 			return;
 		}

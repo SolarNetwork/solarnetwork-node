@@ -22,18 +22,18 @@
 
 package net.solarnetwork.node.upload.bulkjsonwebpost.test;
 
+import static java.lang.String.format;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
+import static org.easymock.EasyMock.expectLastCall;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.Matchers.nullValue;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,6 +59,7 @@ import net.solarnetwork.domain.datum.BasicStreamDatum;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumProperties;
 import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleEnergyDatum;
@@ -135,9 +136,9 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		List<NodeDatum> data = new ArrayList<>();
 		List<BulkUploadResult> result = service.uploadBulkDatum(data);
 
-		assertNotNull(result);
-		assertEquals(0, result.size());
-		assertFalse("No network request made", handler.isHandled());
+		assertThat("Result returned", result, is(notNullValue()));
+		assertThat("Result item count", result.size(), is(0));
+		assertThat("No network request made", handler.isHandled(), is(false));
 	}
 
 	/*-
@@ -204,12 +205,12 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		List<BulkUploadResult> result = service.uploadBulkDatum(data);
 
 		// THEN
-		assertNotNull(result);
-		assertEquals(1, result.size());
+		assertThat("Result returned", result, is(notNullValue()));
+		assertThat("Result item count", result.size(), is(1));
 
 		BulkUploadResult datumResult = result.get(0);
-		assertEquals(datumResult.getId(), "abc123");
-		assertEquals(d, datumResult.getDatum());
+		assertThat("Result item has ID from response", datumResult.getId(), is("abc123"));
+		assertThat("Result item datum is from request", datumResult.getDatum(), is(d));
 
 		assertThat("Event count", eventCaptor.getValues(), hasSize(1));
 		Event event = eventCaptor.getValue();
@@ -274,6 +275,213 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 		assertThat("Event count", eventCaptor.getValues(), hasSize(1));
 		Event event = eventCaptor.getValue();
 		assertDatumUploadEventEqualsDatum(event, d);
+	}
+
+	@Test
+	public void uploadSingleDatum_emptyResponse() throws Exception {
+		// GIVEN
+		final Instant now = Instant.now();
+
+		TestBulkUploadHttpHandler handler = new TestBulkUploadHttpHandler() {
+
+			@Override
+			protected void handleJsonPost(HttpServletRequest request, HttpServletResponse response,
+					String json) throws Exception {
+				JSONAssert.assertEquals(
+						"[{\"created\":\"" + snTimestampString(now) + "\",\"sourceId\":\""
+								+ TEST_SOURCE_ID + "\",\"i\":{\"watts\":1},\"a\":{\"wattHours\":2}}]",
+						json, true);
+
+				respondWithJsonString(response, true, "{\"success\":true,\"data\":{}}");
+			}
+
+		};
+		getHttpServer().addHandler(handler);
+
+		List<NodeDatum> data = new ArrayList<>();
+		SimpleEnergyDatum d = new SimpleEnergyDatum(TEST_SOURCE_ID, now, new DatumSamples());
+		d.setWatts(1);
+		d.setWattHourReading(2L);
+		data.add(d);
+
+		// no stream metadata available
+		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Node, TEST_NODE_ID,
+				TEST_SOURCE_ID)).andReturn(null);
+
+		// WHEN
+		replayAll();
+		List<BulkUploadResult> result = service.uploadBulkDatum(data);
+
+		// THEN
+		assertThat("Result returned", result, is(notNullValue()));
+		assertThat("Result item count", result.size(), is(1));
+
+		BulkUploadResult datumResult = result.get(0);
+		assertThat("Result item has ID from response", datumResult.getId(), is(nullValue()));
+		assertThat("Result item datum is from request", datumResult.getDatum(), is(d));
+	}
+
+	@Test
+	public void uploadMultiDatum_noResultIds() throws Exception {
+		// GIVEN
+		final Instant now = Instant.now();
+
+		final List<NodeDatum> data = new ArrayList<>();
+		for ( int i = 0; i < 3; i++ ) {
+			SimpleEnergyDatum d = new SimpleEnergyDatum(TEST_SOURCE_ID, now, new DatumSamples());
+			d.setWatts(i + 1);
+			d.setWattHourReading(100L + i);
+			data.add(d);
+		}
+
+		TestBulkUploadHttpHandler handler = new TestBulkUploadHttpHandler() {
+
+			@Override
+			protected void handleJsonPost(HttpServletRequest request, HttpServletResponse response,
+					String json) throws Exception {
+				StringBuilder req = new StringBuilder("[");
+				StringBuilder res = new StringBuilder("{\"success\":true,\"data\":{\"datum\":[");
+				int i = 0;
+				for ( NodeDatum d : data ) {
+					if ( i > 0 ) {
+						req.append(',');
+						res.append(',');
+					}
+					req.append(format(
+							"{\"created\":\"%s\",\"sourceId\":\"%s\",\"i\":{\"watts\":%d},\"a\":{\"wattHours\":%d}}",
+							snTimestampString(d.getTimestamp()), TEST_SOURCE_ID,
+							d.asSampleOperations().getSampleInteger(DatumSamplesType.Instantaneous,
+									"watts"),
+							d.asSampleOperations().getSampleInteger(DatumSamplesType.Accumulating,
+									"wattHours")));
+					res.append(format("{\"created\":\"%s\",\"sourceId\":\"%s\"}",
+							snTimestampString(d.getTimestamp()), TEST_SOURCE_ID));
+					i++;
+				}
+				req.append("]");
+				res.append("]}}");
+				JSONAssert.assertEquals(req.toString(), json, true);
+
+				respondWithJsonString(response, true, res.toString());
+			}
+
+		};
+		getHttpServer().addHandler(handler);
+
+		// no stream metadata available
+		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Node, TEST_NODE_ID,
+				TEST_SOURCE_ID)).andReturn(null).anyTimes();
+
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
+		eventAdmin.postEvent(EasyMock.capture(eventCaptor));
+		expectLastCall().times(3);
+
+		// WHEN
+		replayAll();
+		List<BulkUploadResult> result = service.uploadBulkDatum(data);
+
+		// THEN
+		assertThat("Result returned", result, is(notNullValue()));
+		assertThat("Result item count", result.size(), is(3));
+
+		int i = 0;
+		for ( NodeDatum d : data ) {
+			BulkUploadResult datumResult = result.get(i);
+			assertThat(format("Result item %d datum is from request", i), datumResult.getDatum(), is(d));
+			assertThat(format("Result item %d has synthetic ID from response", i), datumResult.getId(),
+					is(tid(d)));
+
+			assertThat("Event count", eventCaptor.getValues(), hasSize(3));
+			Event event = eventCaptor.getValues().get(i);
+			assertDatumUploadEventEqualsDatum(event, d);
+			i++;
+		}
+	}
+
+	@Test
+	public void uploadMultiDatum_noResultIds_partialResponse() throws Exception {
+		// GIVEN
+		final Instant now = Instant.now();
+
+		final List<NodeDatum> data = new ArrayList<>();
+		for ( int i = 0; i < 3; i++ ) {
+			SimpleEnergyDatum d = new SimpleEnergyDatum(TEST_SOURCE_ID, now, new DatumSamples());
+			d.setWatts(i + 1);
+			d.setWattHourReading(100L + i);
+			data.add(d);
+		}
+
+		TestBulkUploadHttpHandler handler = new TestBulkUploadHttpHandler() {
+
+			@Override
+			protected void handleJsonPost(HttpServletRequest request, HttpServletResponse response,
+					String json) throws Exception {
+				StringBuilder req = new StringBuilder("[");
+				StringBuilder res = new StringBuilder("{\"success\":true,\"data\":{\"datum\":[");
+				int i = 0;
+				for ( NodeDatum d : data ) {
+					if ( i > 0 ) {
+						req.append(',');
+						res.append(',');
+					}
+					req.append(format(
+							"{\"created\":\"%s\",\"sourceId\":\"%s\",\"i\":{\"watts\":%d},\"a\":{\"wattHours\":%d}}",
+							snTimestampString(d.getTimestamp()), TEST_SOURCE_ID,
+							d.asSampleOperations().getSampleInteger(DatumSamplesType.Instantaneous,
+									"watts"),
+							d.asSampleOperations().getSampleInteger(DatumSamplesType.Accumulating,
+									"wattHours")));
+					if ( i < 2 ) {
+						res.append(format("{\"created\":\"%s\",\"sourceId\":\"%s\"}",
+								snTimestampString(d.getTimestamp()), TEST_SOURCE_ID));
+					} else {
+						res.append("{}");
+					}
+					i++;
+				}
+				req.append("]");
+				res.append("]}}");
+				JSONAssert.assertEquals(req.toString(), json, true);
+
+				respondWithJsonString(response, true, res.toString());
+			}
+
+		};
+		getHttpServer().addHandler(handler);
+
+		// no stream metadata available
+		expect(datumMetadataService.getDatumStreamMetadata(ObjectDatumKind.Node, TEST_NODE_ID,
+				TEST_SOURCE_ID)).andReturn(null).anyTimes();
+
+		Capture<Event> eventCaptor = Capture.newInstance(CaptureType.ALL);
+		eventAdmin.postEvent(EasyMock.capture(eventCaptor));
+		expectLastCall().times(2);
+
+		// WHEN
+		replayAll();
+		List<BulkUploadResult> result = service.uploadBulkDatum(data);
+
+		// THEN
+		assertThat("Result returned", result, is(notNullValue()));
+		assertThat("Result item count", result.size(), is(3));
+		assertThat("Uploaded event count", eventCaptor.getValues(), hasSize(2));
+
+		int i = 0;
+		for ( NodeDatum d : data ) {
+			BulkUploadResult datumResult = result.get(i);
+			assertThat(format("Result item %d datum is from request", i), datumResult.getDatum(), is(d));
+			if ( i < 2 ) {
+				assertThat(format("Result item %d has synthetic ID from response", i),
+						datumResult.getId(), is(tid(d)));
+				Event event = eventCaptor.getValues().get(i);
+				assertDatumUploadEventEqualsDatum(event, d);
+			} else {
+				assertThat(format("Result item %d has no ID because missing from response", i),
+						datumResult.getId(), is(nullValue()));
+			}
+
+			i++;
+		}
 	}
 
 	private String tid(Datum datum) {
@@ -387,7 +595,7 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 
 		// THEN
 		assertThat("Result provided", result, is(notNullValue()));
-		assertEquals(1, result.size());
+		assertThat("Result item count", result.size(), is(1));
 
 		BulkUploadResult datumResult = result.get(0);
 		assertThat("Upload result ID", tid(d), is(datumResult.getId()));

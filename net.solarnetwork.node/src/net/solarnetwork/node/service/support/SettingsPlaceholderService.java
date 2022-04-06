@@ -70,7 +70,7 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class SettingsPlaceholderService implements PlaceholderService {
 
@@ -221,7 +221,8 @@ public class SettingsPlaceholderService implements PlaceholderService {
 					placeholdersCache = new CachedResult<Map<String, ?>>(placeholders, cacheSeconds,
 							TimeUnit.SECONDS);
 				}
-				log.info("Cached {} placeholder values", placeholders.size());
+				log.debug("Cached {} placeholder values",
+						(placeholders != null ? placeholders.size() : 0));
 				return placeholders;
 			} catch ( Exception e ) {
 				Throwable root = e;

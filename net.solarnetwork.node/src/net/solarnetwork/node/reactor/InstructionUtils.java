@@ -23,6 +23,7 @@
 package net.solarnetwork.node.reactor;
 
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
@@ -31,7 +32,7 @@ import net.solarnetwork.domain.InstructionStatus.InstructionState;
  * Utilities for dealing with common Instruction patterns.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public final class InstructionUtils {
@@ -144,6 +145,27 @@ public final class InstructionUtils {
 			Object controlValue) {
 		return createLocalInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER, controlId,
 				controlValue.toString());
+	}
+
+	/**
+	 * Create a result parameter map for an error message and/or code.
+	 * 
+	 * @param message
+	 *        the message
+	 * @param code
+	 *        the code
+	 * @return the map, never {@literal null}
+	 * @since 1.1
+	 */
+	public static Map<String, Object> createErrorResultParameters(String message, String code) {
+		Map<String, Object> result = new LinkedHashMap<>(2);
+		if ( message != null && !message.isEmpty() ) {
+			result.put(InstructionStatus.MESSAGE_RESULT_PARAM, message);
+		}
+		if ( code != null && !code.isEmpty() ) {
+			result.put(InstructionStatus.ERROR_CODE_RESULT_PARAM, code);
+		}
+		return result;
 	}
 
 }

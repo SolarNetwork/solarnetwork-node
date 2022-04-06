@@ -71,7 +71,7 @@
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.modbus.server"/>
 			<beans:entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
 				<beans:array value-type="java.lang.String">
-					<beans:value>#{T(net.solarnetwork.node.service.DatumDataSource).EVENT_TOPIC_DATUM_CAPTURED}</beans:value>
+					<beans:value>#{T(net.solarnetwork.node.service.DatumQueue).EVENT_TOPIC_DATUM_ACQUIRED}</beans:value>
 					<beans:value>#{T(net.solarnetwork.node.service.NodeControlProvider).EVENT_TOPIC_CONTROL_INFO_CAPTURED}</beans:value>
 					<beans:value>#{T(net.solarnetwork.node.service.NodeControlProvider).EVENT_TOPIC_CONTROL_INFO_CHANGED}</beans:value>
 				</beans:array>

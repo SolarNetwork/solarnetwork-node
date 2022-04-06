@@ -24,8 +24,11 @@ package net.solarnetwork.node.io.mbus.support;
 
 import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ScheduledFuture;
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import net.solarnetwork.node.io.mbus.MBusData;
@@ -39,6 +42,12 @@ import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
+/**
+ * Supporting abstract class for WMBus datum data sources.
+ * 
+ * @author alex
+ * @version 1.2
+ */
 public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceSupport
 		implements MBusMessageHandler {
 
@@ -53,6 +62,8 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 	private MBusData latestData = null;
 	private final Object dataLock = new Object();
 
+	private ScheduledFuture<?> connectFuture;
+
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder(getClass().getSimpleName());
@@ -63,6 +74,8 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 		} else {
 			builder.append(Integer.toHexString(hashCode()));
 		}
+		builder.append('@');
+		builder.append(address);
 		builder.append("}");
 		return builder.toString();
 	}
@@ -91,7 +104,7 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 	 * 
 	 * @return the MBus secondary address
 	 */
-	public MBusSecondaryAddress getSecondaryAddress() {
+	public MBusSecondaryAddress getMBusSecondaryAddress() {
 		return address;
 	}
 
@@ -101,8 +114,32 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 	 * @param address
 	 *        the MBus secondary address
 	 */
-	public void setSecondaryAddress(MBusSecondaryAddress address) {
+	public void setMBusSecondaryAddress(MBusSecondaryAddress address) {
 		this.address = address;
+		reconfigureConnection();
+	}
+
+	/**
+	 * Get the configured {@link MBusSecondaryAddress} as a hex-encoded string.
+	 * 
+	 * @return the MBus secondary address as a hex-encoded string
+	 * @since 1.1
+	 */
+	public String getSecondaryAddress() {
+		MBusSecondaryAddress addr = getMBusSecondaryAddress();
+		return (addr != null ? addr.toString() : null);
+	}
+
+	/**
+	 * Set the hex-encoded {@link MBusSecondaryAddress} to use.
+	 * 
+	 * @param address
+	 *        the MBus secondary address as a hex-encoded string
+	 * @since 1.1
+	 */
+	public void setSecondaryAddress(String address) {
+		setMBusSecondaryAddress(
+				address == null || address.isEmpty() ? null : new MBusSecondaryAddress(address));
 		reconfigureConnection();
 	}
 
@@ -131,25 +168,71 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 	}
 
 	/**
-	 * Reconfigure connection to network
+	 * Reconfigure connection to network.
 	 */
-	private void reconfigureConnection() {
+	private synchronized void reconfigureConnection() {
+		if ( connectFuture != null && !connectFuture.isDone() ) {
+			return;
+		}
+		if ( address == null || key == null ) {
+			return;
+		}
+		ConnectTask task = new ConnectTask();
+		if ( getTaskScheduler() != null ) {
+			connectFuture = getTaskScheduler().schedule(task, Date.from(Instant.now().plusSeconds(1)));
+		} else {
+			task.run();
+		}
+	}
+
+	private synchronized void reconnect() {
 		if ( connection != null ) {
+			log.info("Closing wireless M-Bus connection {} for {}", connection, address);
 			try {
 				connection.close();
+				connection = null;
 			} catch ( IOException e ) {
 			}
 		}
-		WMBusNetwork device = (wmbusNetwork == null ? null : wmbusNetwork.service());
+		WMBusNetwork device = service(wmbusNetwork);
 		if ( device != null && address != null && key != null ) {
-			connection = device.createConnection(address, key);
+			WMBusConnection conn = device.createConnection(address, key);
 			try {
-				connection.open(this);
+				log.info("Opening wireless M-Bus connection {} for {}", conn, address);
+				conn.open(this);
+				connection = conn;
 			} catch ( IOException e ) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				log.error("Error opening wireless M-Bus connection {} for {}: {}", conn, address,
+						e.toString(), e);
+			}
+		} else if ( device == null && address != null && key != null ) {
+			log.warn("No wireless M-Bus network available for {}", address);
+		}
+	}
+
+	private final class ConnectTask implements Runnable {
+
+		@Override
+		public void run() {
+			try {
+				reconnect();
+			} finally {
+				synchronized ( WMBusDeviceDatumDataSourceSupport.this ) {
+					if ( connection == null ) {
+						// try again
+						if ( getTaskScheduler() != null ) {
+							log.info("Will try opening wireless M-Bus connection for {} in 10s",
+									address);
+							connectFuture = getTaskScheduler().schedule(this,
+									Date.from(Instant.now().plusSeconds(10)));
+						}
+					} else {
+						connectFuture = null;
+					}
+				}
 			}
 		}
+
 	}
 
 	@Override
