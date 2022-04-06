@@ -29,6 +29,7 @@ import static org.junit.Assert.assertThat;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.easymock.Capture;
+import org.easymock.CaptureType;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
@@ -81,8 +82,8 @@ public class ModbusConnectionHandlerTests {
 		for ( ModbusRequest req : reqs ) {
 			expect(transport.readRequest()).andReturn(req);
 			transport.writeMessage(capture(captor));
-			expect(transport.readRequest()).andThrow(new ModbusIOException(true));
 		}
+		expect(transport.readRequest()).andThrow(new ModbusIOException(true));
 		transport.close();
 	}
 
@@ -268,6 +269,42 @@ public class ModbusConnectionHandlerTests {
 				equalTo(Modbus.READ_MULTIPLE_REGISTERS));
 		assertThat("Response frame", msg.getHexMessage().trim().toUpperCase(),
 				equalTo("00 01 00 00 00 09 02 03 06 00 7B 00 00 FE DC"));
+	}
+
+	@Test
+	public void readHoldings_throttled() throws Exception {
+		// GIVEN
+		handler = new ModbusConnectionHandler(transport, units, "Test", null, 1000);
+		registers.writeHolding(17, (short) 0x007B);
+		registers.writeHolding(19, (short) 0xFEDC);
+		Capture<ModbusMessage> msgCaptor = Capture.newInstance(CaptureType.ALL);
+
+		ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(17, 1);
+		req.setTransactionID(1);
+		req.setUnitID(2);
+
+		ReadMultipleRegistersRequest req2 = new ReadMultipleRegistersRequest(19, 1);
+		req.setTransactionID(2);
+		req.setUnitID(2);
+
+		expectReadMessages(msgCaptor, req, req2);
+
+		// WHEN
+		replayAll();
+		handler.run();
+
+		// THEN
+		ModbusMessage msg = msgCaptor.getValues().get(0);
+		assertThat("Response function code", msg.getFunctionCode(),
+				equalTo(Modbus.READ_MULTIPLE_REGISTERS));
+		assertThat("Response frame", msg.getHexMessage().trim().toUpperCase(),
+				equalTo("00 02 00 00 00 05 02 03 02 00 7B"));
+
+		msg = msgCaptor.getValues().get(1);
+		assertThat("Response 2 function code", msg.getFunctionCode(),
+				equalTo(Modbus.READ_MULTIPLE_REGISTERS));
+		assertThat("Response 2 frame", msg.getHexMessage().trim().toUpperCase(),
+				equalTo("00 00 00 00 00 05 00 03 02 00 00"));
 	}
 
 	@Test
