@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Modbus Server (TCP)
 Bundle-Description: Expose a Modbus TCP server for integration with other systems.
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.server
-Bundle-Version: 2.0.3
+Bundle-Version: 2.1.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.server
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -33,4 +33,5 @@ Import-Package:
  org.springframework.context;version="[4.3,5.0)",
  org.springframework.context.support;version="[4.3,5.0)",
  org.springframework.core.task;version="[4.3,5.0)",
- org.springframework.scheduling;version="[4.3,5.0)"
+ org.springframework.scheduling;version="[4.3,5.0)",
+ org.springframework.scheduling.concurrent;version="[4.3,5.0)"

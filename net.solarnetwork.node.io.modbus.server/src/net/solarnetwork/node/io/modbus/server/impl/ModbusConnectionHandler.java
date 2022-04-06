@@ -46,7 +46,7 @@ import net.wimpi.modbus.procimg.SimpleRegister;
  * Handler for a Modbus server connection.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ModbusConnectionHandler implements Runnable, Closeable {
 
@@ -56,6 +56,7 @@ public class ModbusConnectionHandler implements Runnable, Closeable {
 	private final ConcurrentMap<Integer, ModbusRegisterData> registers;
 	private final ModbusTransport transport;
 	private final Closeable closeable;
+	private final long requestThrottle;
 
 	/**
 	 * Constructor.
@@ -71,7 +72,7 @@ public class ModbusConnectionHandler implements Runnable, Closeable {
 	 */
 	public ModbusConnectionHandler(ModbusTransport transport,
 			ConcurrentMap<Integer, ModbusRegisterData> registers, String description) {
-		this(transport, registers, description, null);
+		this(transport, registers, description, null, 0);
 	}
 
 	/**
@@ -85,12 +86,15 @@ public class ModbusConnectionHandler implements Runnable, Closeable {
 	 *        a description for the connection
 	 * @param closeable
 	 *        if provided, something to close when the handler is finished
+	 * @param requestThrottle
+	 *        if greater than {@literal 0} then a throttle in milliseconds to
+	 *        handling requests
 	 * @throws IllegalArgumentException
 	 *         if any argument other than {@code closeable} is {@literal null}
 	 */
 	public ModbusConnectionHandler(ModbusTransport transport,
 			ConcurrentMap<Integer, ModbusRegisterData> registers, String description,
-			Closeable closeable) {
+			Closeable closeable, long requestThrottle) {
 		super();
 		if ( transport == null ) {
 			throw new IllegalArgumentException("The transport argument must not be null.");
@@ -105,6 +109,7 @@ public class ModbusConnectionHandler implements Runnable, Closeable {
 		}
 		this.description = description;
 		this.closeable = closeable;
+		this.requestThrottle = requestThrottle;
 	}
 
 	@Override
@@ -123,9 +128,28 @@ public class ModbusConnectionHandler implements Runnable, Closeable {
 
 	@Override
 	public void run() {
+		long lastRequestTime = 0;
 		try {
 			do {
 				ModbusRequest req = transport.readRequest();
+				if ( requestThrottle > 0 ) {
+					long now = System.currentTimeMillis();
+					long elapsed = now - lastRequestTime;
+					if ( elapsed < requestThrottle ) {
+						try {
+							long diff = requestThrottle - elapsed;
+							log.trace("Request sooner than configured {}ms throttle: sleeping for {}ms",
+									requestThrottle, diff);
+							Thread.sleep(diff);
+						} catch ( InterruptedException e ) {
+							// ignore and continue
+						} finally {
+							lastRequestTime = System.currentTimeMillis();
+						}
+					} else {
+						lastRequestTime = now;
+					}
+				}
 				if ( log.isTraceEnabled() ) {
 					log.trace("Modbus [{}] request: {}", description, req.getHexMessage());
 				}

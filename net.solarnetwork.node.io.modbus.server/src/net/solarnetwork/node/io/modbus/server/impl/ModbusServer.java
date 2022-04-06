@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.modbus.server.impl;
 
+import static java.lang.String.format;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -42,7 +43,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
@@ -77,10 +81,10 @@ import net.wimpi.modbus.io.ModbusTCPTransport;
  * Modbus TCP server service.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class ModbusServer extends BaseIdentifiable
-		implements SettingSpecifierProvider, SettingsChangeObserver, EventHandler {
+		implements SettingSpecifierProvider, SettingsChangeObserver, EventHandler, ThreadFactory {
 
 	/** The default listen port. */
 	public static final int DEFAULT_PORT = 502;
@@ -94,14 +98,20 @@ public class ModbusServer extends BaseIdentifiable
 	/** The default {@code bindAddress} property value. */
 	public static final String DEFAULT_BIND_ADDRESS = "0.0.0.0";
 
+	/** The default {@code requestThrottle} property value. */
+	public static final long DEFAULT_REQUEST_THROTTLE = 100;
+
 	private static final Logger log = LoggerFactory.getLogger(ModbusServer.class);
 
 	private final Executor executor;
+	private final Executor serverExecutor;
 	private final ConcurrentMap<Integer, ModbusRegisterData> registers;
+	private final AtomicInteger clientThreadCount = new AtomicInteger(0);
 	private int port = DEFAULT_PORT;
 	private String bindAddress = DEFAULT_BIND_ADDRESS;
 	private int backlog = DEFAULT_BACKLOG;
 	private int startupDelay = DEFAULT_STARTUP_DELAY_SECS;
+	private long requestThrottle = DEFAULT_REQUEST_THROTTLE;
 	private TaskScheduler taskScheduler;
 	private UnitConfig[] unitConfigs;
 
@@ -136,10 +146,19 @@ public class ModbusServer extends BaseIdentifiable
 			throw new IllegalArgumentException("The executor argument must not be null.");
 		}
 		this.executor = executor;
+		this.serverExecutor = Executors.newCachedThreadPool(this);
 		if ( registers == null ) {
 			throw new IllegalArgumentException("The registers argument must not be null.");
 		}
 		this.registers = registers;
+	}
+
+	@Override
+	public Thread newThread(Runnable r) {
+		Thread thread = new Thread(null, r,
+				format("ModbusServer-%d-Client-%d", getPort(), clientThreadCount.incrementAndGet()));
+		thread.setDaemon(true);
+		return thread;
 	}
 
 	@Override
@@ -216,6 +235,7 @@ public class ModbusServer extends BaseIdentifiable
 
 		private final InetAddress addr;
 		private final int port;
+		private final int backlog;
 		private ServerSocket socket;
 		private boolean listening;
 
@@ -225,6 +245,7 @@ public class ModbusServer extends BaseIdentifiable
 			super();
 			this.addr = InetAddress.getByName(bindAddress);
 			this.port = port;
+			this.backlog = backlog;
 			bind();
 		}
 
@@ -281,9 +302,10 @@ public class ModbusServer extends BaseIdentifiable
 						log.debug("Modbus server {}:{} connection created: {}", addr, port, in);
 						ModbusConnectionHandler handler = new ModbusConnectionHandler(
 								new ModbusTCPTransport(in), registers,
-								String.format("TCP %s:%d %d", addr, port, in.getLocalPort()), in);
+								String.format("TCP %s:%d %d", addr, port, in.getLocalPort()), in,
+								requestThrottle);
 						clients.add(handler);
-						executor.execute(handler);
+						serverExecutor.execute(handler);
 					} catch ( SocketTimeoutException e ) {
 						//  just try to accept again
 						log.debug("Socket timeout exception in Modbus server {}:{}: {}", addr, port,
@@ -314,8 +336,8 @@ public class ModbusServer extends BaseIdentifiable
 		}
 	}
 
-	private void handleDatumCapturedEvent(Event eventz) {
-		Object d = eventz.getProperty(DatumEvents.DATUM_PROPERTY);
+	private void handleDatumCapturedEvent(Event event) {
+		Object d = event.getProperty(DatumEvents.DATUM_PROPERTY);
 		if ( !(d instanceof NodeDatum && ((NodeDatum) d).getSourceId() != null) ) {
 			return;
 		}
@@ -328,8 +350,8 @@ public class ModbusServer extends BaseIdentifiable
 		final DatumSamplesOperations ops = datum.asSampleOperations();
 		final String sourceId = datum.getSourceId();
 
-		log.trace("Inspecting {} event datum {} ", eventz.getTopic(), datum);
-
+		log.trace("Inspecting {} event datum {} ", event.getTopic(), datum);
+		List<MeasurementUpdate> updates = null;
 		for ( UnitConfig unitConfig : unitConfigs ) {
 			RegisterBlockConfig[] blockConfigs = unitConfig.getRegisterBlockConfigs();
 			if ( blockConfigs == null || blockConfigs.length < 1 ) {
@@ -345,49 +367,110 @@ public class ModbusServer extends BaseIdentifiable
 					if ( sourceId.equals(measConfig.getSourceId())
 							&& measConfig.getPropertyName() != null
 							&& ops.hasSampleValue(measConfig.getPropertyName()) ) {
-						final int measAddr = address;
-						executor.execute(new Runnable() {
-
-							@Override
-							public void run() {
-								applyDatumCapturedUpdates(unitConfig, blockConfig, measConfig, ops,
-										measAddr);
-							}
-						});
+						MeasurementUpdate up = new MeasurementUpdate(unitConfig, blockConfig, measConfig,
+								ops.findSampleValue(measConfig.getPropertyName()), address);
+						if ( updates == null ) {
+							updates = new ArrayList<>(4);
+						}
+						updates.add(up);
 					}
 					address += measConfig.getSize();
 				}
 			}
 		}
+		if ( updates != null ) {
+			log.trace("Queuing [{}] updates: {}", sourceId, updates.stream().map(Object::toString)
+					.collect(Collectors.joining(",\n\t", "[\n\t", "\n]")));
+			final List<MeasurementUpdate> finalUpdates = updates;
+			executor.execute(new Runnable() {
+
+				@Override
+				public void run() {
+					applyDatumCapturedUpdates(finalUpdates);
+				}
+			});
+		}
 	}
 
-	private void applyDatumCapturedUpdates(UnitConfig unitConfig, RegisterBlockConfig blockConfig,
-			MeasurementConfig measConfig, DatumSamplesOperations ops, int address) {
-		Object propVal = ops.findSampleValue(measConfig.getPropertyName());
-		log.trace("Measurement [{}.{}] in datum {}: {}", measConfig.getSourceId(),
-				measConfig.getPropertyName(), ops, propVal);
-		if ( propVal == null ) {
-			return;
+	private static class MeasurementUpdate {
+
+		private final UnitConfig unitConfig;
+		private final RegisterBlockConfig blockConfig;
+		private final MeasurementConfig measConfig;
+		private final Object propertyValue;
+		private final int address;
+
+		public MeasurementUpdate(UnitConfig unitConfig, RegisterBlockConfig blockConfig,
+				MeasurementConfig measConfig, Object propertyValue, int address) {
+			super();
+			this.unitConfig = unitConfig;
+			this.blockConfig = blockConfig;
+			this.measConfig = measConfig;
+			this.propertyValue = propertyValue;
+			this.address = address;
 		}
-		RegisterBlockType blockType = blockConfig.getBlockType();
-		ModbusDataType dataType = measConfig.getDataType();
-		Integer unitId = unitConfig.getUnitId();
-		ModbusRegisterData regData = registers.computeIfAbsent(unitId, k -> {
-			return new ModbusRegisterData();
-		});
-		switch (blockType) {
-			case Coil:
-			case Discrete:
-				boolean bitVal = booleanPropertyValue(propVal);
-				regData.writeBit(blockType, address, bitVal);
-				break;
 
-			case Holding:
-			case Input:
-				Object xVal = measConfig.applyTransforms(propVal);
-				regData.writeValue(blockType, dataType, address, measConfig.getWordLength(), xVal);
-				break;
+		@Override
+		public String toString() {
+			StringBuilder builder = new StringBuilder();
+			builder.append("MeasurementUpdate{");
+			if ( unitConfig != null ) {
+				builder.append("unit=");
+				builder.append(unitConfig.getUnitId());
+				builder.append(", ");
+			}
+			if ( blockConfig != null ) {
+				builder.append("blockType=");
+				builder.append(blockConfig.getBlockType());
+				builder.append(", ");
+			}
+			if ( measConfig != null ) {
+				builder.append("dataType=");
+				builder.append(measConfig.getDataType());
+				builder.append(", ");
+			}
+			if ( propertyValue != null ) {
+				builder.append("address=");
+				builder.append(address);
+				builder.append(", ");
+			}
+			builder.append("value=");
+			builder.append(propertyValue);
+			builder.append("}");
+			return builder.toString();
+		}
 
+	}
+
+	private void applyDatumCapturedUpdates(final Collection<MeasurementUpdate> updates) {
+		for ( MeasurementUpdate update : updates ) {
+			Integer unitId = update.unitConfig.getUnitId();
+			RegisterBlockType blockType = update.blockConfig.getBlockType();
+			ModbusDataType dataType = update.measConfig.getDataType();
+			log.trace("Updating measurement [{}.{}] unit {} {} {} @ {}: {}",
+					update.measConfig.getSourceId(), update.measConfig.getPropertyName(), unitId,
+					blockType, dataType, update.address, update.propertyValue);
+			if ( update.propertyValue == null ) {
+				continue;
+			}
+			ModbusRegisterData regData = registers.computeIfAbsent(unitId, k -> {
+				return new ModbusRegisterData();
+			});
+			switch (blockType) {
+				case Coil:
+				case Discrete:
+					boolean bitVal = booleanPropertyValue(update.propertyValue);
+					regData.writeBit(blockType, update.address, bitVal);
+					break;
+
+				case Holding:
+				case Input:
+					Object xVal = update.measConfig.applyTransforms(update.propertyValue);
+					regData.writeValue(blockType, dataType, update.address,
+							update.measConfig.getWordLength(), xVal);
+					break;
+
+			}
 		}
 	}
 
@@ -418,6 +501,8 @@ public class ModbusServer extends BaseIdentifiable
 		result.addAll(baseIdentifiableSettings(null));
 		result.add(new BasicTextFieldSettingSpecifier("bindAddress", DEFAULT_BIND_ADDRESS));
 		result.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(DEFAULT_PORT)));
+		result.add(new BasicTextFieldSettingSpecifier("requestThrottle",
+				String.valueOf(DEFAULT_REQUEST_THROTTLE)));
 
 		UnitConfig[] blockConfs = getUnitConfigs();
 		List<UnitConfig> blockConfsList = (blockConfs != null ? Arrays.asList(blockConfs)
@@ -636,4 +721,28 @@ public class ModbusServer extends BaseIdentifiable
 	public void setUnitConfigsCount(int count) {
 		this.unitConfigs = ArrayUtils.arrayWithLength(this.unitConfigs, count, UnitConfig.class, null);
 	}
+
+	/**
+	 * Get the request throttle.
+	 * 
+	 * @return the minimum time in milliseconds allowed between client requests,
+	 *         or {@code 0} for no minimum
+	 * @since 2.2
+	 */
+	public long getRequestThrottle() {
+		return requestThrottle;
+	}
+
+	/**
+	 * Set the request throttle.
+	 * 
+	 * @param requestThrottle
+	 *        the minimum time in milliseconds allowed between client requests,
+	 *        or {@code 0} to disable
+	 * @since 2.2
+	 */
+	public void setRequestThrottle(long requestThrottle) {
+		this.requestThrottle = requestThrottle;
+	}
+
 }
