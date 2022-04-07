@@ -94,7 +94,7 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 		// verify database table exists, and if not create it
 		verifyDatabaseExists(this.schemaName, this.tableName, this.initSqlResource);
 
-		// now veryify database tables version is up-to-date
+		// now verify database tables version is up-to-date
 		try {
 			upgradeTablesVersion();
 		} catch ( IOException e ) {
