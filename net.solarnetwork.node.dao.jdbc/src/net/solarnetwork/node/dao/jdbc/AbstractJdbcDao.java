@@ -65,7 +65,7 @@ import net.solarnetwork.service.OptionalService;
  * </p>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  * @param <T>
  *        the domain object type managed by this DAO
  */
@@ -209,8 +209,13 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 				return ps;
 			}
 		}, keyHolder);
-		if ( keyHolder.getKey() != null ) {
-			return Long.valueOf(keyHolder.getKey().longValue());
+		Map<String, Object> keys = keyHolder.getKeys();
+		if ( keys != null ) {
+			for ( Object key : keys.values() ) {
+				if ( key instanceof Number ) {
+					return Long.valueOf(((Number) key).longValue());
+				}
+			}
 		}
 		return null;
 	}
