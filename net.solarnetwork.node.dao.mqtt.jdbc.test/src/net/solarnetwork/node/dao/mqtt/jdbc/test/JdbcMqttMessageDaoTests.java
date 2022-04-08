@@ -32,6 +32,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -90,7 +91,8 @@ public class JdbcMqttMessageDaoTests extends AbstractNodeTest {
 
 	private BasicMqttMessageEntity createTestMqttMessageEntity(String dest, String topic,
 			boolean retained, MqttQos qos, byte[] payload) {
-		return new BasicMqttMessageEntity(null, Instant.now(), dest, topic, retained, qos, payload);
+		return new BasicMqttMessageEntity(null, Instant.now().truncatedTo(ChronoUnit.MILLIS), dest,
+				topic, retained, qos, payload);
 	}
 
 	@Test
