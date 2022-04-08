@@ -84,6 +84,11 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 	/**
 	 * Constructor.
 	 * 
+	 * <p>
+	 * This will default to a backup provider key of
+	 * {@literal net.solarnetwork.node.dao.jdbc.JdbcTableBackupResourceProvider}.
+	 * </p>
+	 * 
 	 * @param jdbcTemplate
 	 *        The JDBC template to use.
 	 * @param transactionTemplate
@@ -100,6 +105,8 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 	/**
 	 * Constructor.
 	 * 
+	 * @param key
+	 *        the backup provider key to use
 	 * @param jdbcTemplate
 	 *        The JDBC template to use.
 	 * @param transactionTemplate
