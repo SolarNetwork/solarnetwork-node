@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicLong;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import net.solarnetwork.common.mqtt.MqttQos;
 import net.solarnetwork.common.mqtt.MqttStats;
 import net.solarnetwork.common.mqtt.dao.BasicMqttMessageEntity;
@@ -161,6 +163,7 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 		return (rowCountNum == null ? 0 : rowCountNum.longValue());
 	}
 
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	@Override
 	public Long save(MqttMessageEntity entity) {
 		Long id = super.save(entity);
@@ -168,6 +171,7 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 		return id;
 	}
 
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	@Override
 	public void delete(MqttMessageEntity entity) {
 		super.delete(entity);
@@ -220,6 +224,7 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 
 	}
 
+	@Transactional(readOnly = false, propagation = Propagation.REQUIRED)
 	@Override
 	public BatchResult batchProcess(BatchCallback<MqttMessageEntity> callback, BatchOptions options) {
 		// wrap callback to track delete stats
