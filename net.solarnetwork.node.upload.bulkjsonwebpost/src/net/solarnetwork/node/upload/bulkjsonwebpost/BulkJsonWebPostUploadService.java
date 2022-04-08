@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -73,7 +74,7 @@ import net.solarnetwork.util.DateUtils;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 		implements BulkUploadService, InstructionAcknowledgementService, SettingSpecifierProvider {
@@ -280,7 +281,8 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 										try {
 											// parse as strict ISO8601 (SN returns space date/time delimiter)
 											created = DateUtils.ISO_DATE_TIME_ALT_UTC
-													.parse(createdObj.textValue(), Instant::from);
+													.parse(createdObj.textValue(), Instant::from)
+													.truncatedTo(ChronoUnit.MILLIS);
 										} catch ( DateTimeParseException e ) {
 											log.debug("Unexpected created date format: {}", createdObj);
 										}
@@ -300,7 +302,9 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 											}
 										}
 									}
-									if ( created != null && created.compareTo(datum.getTimestamp()) == 0
+									if ( created != null
+											&& created.compareTo(datum.getTimestamp()
+													.truncatedTo(ChronoUnit.MILLIS)) == 0
 											&& datum.getSourceId().equals(sourceId) ) {
 										id = currJsonNode.path("id").textValue();
 										if ( id == null ) {
@@ -373,7 +377,8 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 			// posted as Stream, so just convert original datum to event data
 			props = (Map<String, Object>) datum.asSimpleMap();
 			// for compatibility with serialized node format, convert time stamp to string
-			props.put("created", DateUtils.ISO_DATE_TIME_ALT_UTC.format(datum.getTimestamp()));
+			props.put("created", DateUtils.ISO_DATE_TIME_ALT_UTC
+					.format(datum.getTimestamp().truncatedTo(ChronoUnit.MILLIS)));
 		} else {
 			props = JsonUtils.getStringMapFromTree(node);
 		}
