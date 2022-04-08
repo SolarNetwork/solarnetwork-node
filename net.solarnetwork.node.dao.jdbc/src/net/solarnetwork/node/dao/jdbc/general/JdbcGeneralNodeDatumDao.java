@@ -30,6 +30,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
@@ -213,7 +214,9 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	protected void setStoreStatementValues(NodeDatum datum, PreparedStatement ps) throws SQLException {
 		int col = 0;
 		ps.setTimestamp(++col,
-				Timestamp.from(datum.getTimestamp() == null ? Instant.now() : datum.getTimestamp()));
+				Timestamp
+						.from(datum.getTimestamp() == null ? Instant.now().truncatedTo(ChronoUnit.MILLIS)
+								: datum.getTimestamp().truncatedTo(ChronoUnit.MILLIS)));
 		ps.setString(++col, datum.getSourceId() == null ? "" : datum.getSourceId());
 		if ( datum.getKind() == ObjectDatumKind.Location ) {
 			ps.setObject(++col, datum.getObjectId());
