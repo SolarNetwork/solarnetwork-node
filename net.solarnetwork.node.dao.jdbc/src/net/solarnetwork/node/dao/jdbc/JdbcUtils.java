@@ -39,7 +39,7 @@ import org.supercsv.cellprocessor.ift.CellProcessor;
  * Utilities to help with JDBC.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.17
  */
 public abstract class JdbcUtils {
@@ -66,6 +66,12 @@ public abstract class JdbcUtils {
 			CellProcessor processor = null;
 			int sqlType = meta.getColumnType(i + 1);
 			switch (sqlType) {
+				case Types.BINARY:
+				case Types.VARBINARY:
+				case Types.LONGVARBINARY:
+					processor = new ConvertNullTo("", new JdbcFmtBytes());
+					break;
+
 				case Types.DATE:
 					processor = new ConvertNullTo("", new JdbcFmtDate.Date());
 					break;
@@ -133,6 +139,12 @@ public abstract class JdbcUtils {
 				int sqlType = rs.getInt(5);
 				CellProcessor processor = null;
 				switch (sqlType) {
+					case Types.BINARY:
+					case Types.VARBINARY:
+					case Types.LONGVARBINARY:
+						processor = new JdbcParseBytes();
+						break;
+
 					case Types.BOOLEAN:
 						processor = new ParseBool();
 						break;
