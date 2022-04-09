@@ -15,6 +15,8 @@
 	
 	<reference id="taskExecutor" interface="org.springframework.core.task.TaskExecutor" filter="(function=node)"/>
 	
+	<reference id="settingsService" interface="net.solarnetwork.node.settings.SettingsService"/>
+
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Modbus Server (TCP)"/>
@@ -22,6 +24,12 @@
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
+	
+	<bean id="identityService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.IdentityService"/>
+		<property name="sticky" value="true"/>
+	</bean>	
 	
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
@@ -62,6 +70,27 @@
 		</property>
 	</bean>
 	
+	<service>
+		<interfaces>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
+			<value>net.solarnetwork.node.settings.SettingResourceHandler</value>
+		</interfaces>
+		<bean class="net.solarnetwork.node.io.modbus.server.impl.ModbusServerCsvConfigurer">
+			<argument ref="settingsService"/>
+			<argument ref="identityService"/>
+			<property name="messageSource">
+				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+					<property name="basenames">
+						<list>
+							<value>net.solarnetwork.node.io.modbus.server.impl.ModbusServerCsvConfigurer</value>
+							<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+						</list>
+					</property>
+				</bean>
+			</property>
+		</bean>
+	</service>
+
 	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.modbus.server" autowire-on-update="true" update-method="configurationChanged">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>

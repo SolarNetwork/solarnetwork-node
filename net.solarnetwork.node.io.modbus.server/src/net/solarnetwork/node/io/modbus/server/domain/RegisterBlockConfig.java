@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.modbus.server.domain;
 
+import static java.lang.String.format;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,7 +31,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.springframework.context.MessageSource;
+import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
@@ -56,16 +61,72 @@ import net.solarnetwork.util.ArrayUtils;
  * </p>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class RegisterBlockConfig {
 
 	/** The default value for the {@code blockType} property. */
 	public static final RegisterBlockType DEFAULT_BLOCK_TYPE = RegisterBlockType.Holding;
 
+	/**
+	 * A setting type pattern for a register block configuration element.
+	 * 
+	 * <p>
+	 * The pattern has two capture groups: the block configuration index and the
+	 * property setting name.
+	 * </p>
+	 * 
+	 * @since 2.2
+	 */
+	public static final Pattern BLOCK_SETTING_PATTERN = Pattern
+			.compile(".+".concat(Pattern.quote(".registerBlockConfigs[")).concat("(\\d+)\\]\\.(.*)"));
+
 	private int startAddress;
 	private RegisterBlockType blockType = DEFAULT_BLOCK_TYPE;
 	private MeasurementConfig[] measurementConfigs;
+
+	/**
+	 * Populate a setting as a configuration value, if possible.
+	 * 
+	 * @param config
+	 *        the overall configuration
+	 * @param setting
+	 *        the setting to try to handle
+	 * @return {@literal true} if the setting was handled as a property
+	 *         configuration value
+	 * @since 2.2
+	 */
+	public static boolean populateFromSetting(UnitConfig config, Setting setting) {
+		Matcher m = BLOCK_SETTING_PATTERN.matcher(setting.getType());
+		if ( !m.matches() ) {
+			return false;
+		}
+		int idx = Integer.parseInt(m.group(1));
+		String name = m.group(2);
+		if ( idx >= config.getRegisterBlockConfigsCount() ) {
+			config.setRegisterBlockConfigsCount(idx + 1);
+		}
+		RegisterBlockConfig blockConfig = config.getRegisterBlockConfigs()[idx];
+
+		if ( MeasurementConfig.populateFromSetting(blockConfig, setting) ) {
+			return true;
+		}
+
+		String val = setting.getValue();
+		if ( val != null && !val.isEmpty() ) {
+			switch (name) {
+				case "startAddress":
+					blockConfig.setStartAddress(Integer.parseInt(val));
+					break;
+				case "blockTypeKey":
+					blockConfig.setBlockTypeKey(val);
+					break;
+				default:
+					// ignore
+			}
+		}
+		return true;
+	}
 
 	/**
 	 * Get settings suitable for configuring an instance of this class.
@@ -126,6 +187,49 @@ public class RegisterBlockConfig {
 		return result;
 	}
 
+	/**
+	 * Generate a list of setting values.
+	 * 
+	 * @param providerId
+	 *        the setting provider ID
+	 * @param instanceId
+	 *        the factory instance ID
+	 * @param unitIdx
+	 *        the unit configuration index
+	 * @param blockIdx
+	 *        the block configuration index
+	 * @return the settings
+	 * @since 2.2
+	 */
+	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, int unitIdx,
+			int blockIdx) {
+		List<SettingValueBean> settings = new ArrayList<>(2);
+		addSetting(settings, providerId, instanceId, unitIdx, blockIdx, "blockTypeKey",
+				getBlockTypeKey());
+		addSetting(settings, providerId, instanceId, unitIdx, blockIdx, "startAddress",
+				getStartAddress());
+		addSetting(settings, providerId, instanceId, unitIdx, blockIdx, "measurementConfigsCount",
+				getMeasurementConfigsCount());
+		if ( measurementConfigs != null ) {
+			int i = 0;
+			for ( MeasurementConfig measConfig : measurementConfigs ) {
+				settings.addAll(
+						measConfig.toSettingValues(providerId, instanceId, unitIdx, blockIdx, i++));
+			}
+		}
+		return settings;
+	}
+
+	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
+			int unitIdx, int blockIdx, String key, Object val) {
+		if ( val == null ) {
+			return;
+		}
+		settings.add(new SettingValueBean(providerId, instanceId,
+				format("unitConfigs[%d].registerBlockConfigs[%d].%s", unitIdx, blockIdx, key),
+				val.toString()));
+	}
+
 	private String registerInfo(MessageSource messageSource) {
 		MeasurementConfig[] configs = getMeasurementConfigs();
 		if ( configs == null || configs.length < 1 ) {
@@ -176,6 +280,26 @@ public class RegisterBlockConfig {
 			count += c.getSize();
 		}
 		return count;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("RegisterBlockConfig{");
+		if ( blockType != null ) {
+			builder.append("blockType=");
+			builder.append(blockType);
+			builder.append(", ");
+		}
+		builder.append("startAddress=");
+		builder.append(startAddress);
+		builder.append(", ");
+		if ( measurementConfigs != null ) {
+			builder.append("measurementConfigs=");
+			builder.append(Arrays.toString(measurementConfigs));
+		}
+		builder.append("}");
+		return builder.toString();
 	}
 
 	/**

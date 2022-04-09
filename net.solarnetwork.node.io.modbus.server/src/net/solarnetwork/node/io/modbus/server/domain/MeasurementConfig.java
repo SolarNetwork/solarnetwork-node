@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.modbus.server.domain;
 
+import static java.lang.String.format;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
@@ -29,7 +30,11 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
+import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
@@ -39,7 +44,7 @@ import net.solarnetwork.util.NumberUtils;
  * Configuration for a Modbus measurement captured from a datum source property.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.2
  */
 public class MeasurementConfig {
 
@@ -55,12 +60,76 @@ public class MeasurementConfig {
 	/** The default value for the {@code wordLength} property . */
 	public static final int DEFAULT_WORD_LENGTH = 1;
 
+	/**
+	 * A setting type pattern for a unit configuration element.
+	 * 
+	 * <p>
+	 * The pattern has two capture groups: the unit configuration index and the
+	 * property setting name.
+	 * </p>
+	 * 
+	 * @since 2.2
+	 */
+	public static final Pattern MEASUREMENT_SETTING_PATTERN = Pattern
+			.compile(".+".concat(Pattern.quote(".measurementConfigs[")).concat("(\\d+)\\]\\.(.*)"));
+
 	private String sourceId;
 	private String propertyName;
 	private ModbusDataType dataType = DEFAULT_DATA_TYPE;
-	private int wordLength = DEFAULT_WORD_LENGTH;
+	private Integer wordLength = DEFAULT_WORD_LENGTH;
 	private BigDecimal unitMultiplier = DEFAULT_UNIT_MULTIPLIER;
-	private int decimalScale = DEFAULT_DECIMAL_SCALE;
+	private Integer decimalScale = DEFAULT_DECIMAL_SCALE;
+
+	/**
+	 * Populate a setting as a property configuration value, if possible.
+	 * 
+	 * @param config
+	 *        the overall configuration
+	 * @param setting
+	 *        the setting to try to handle
+	 * @return {@literal true} if the setting was handled as a property
+	 *         configuration value
+	 * @since 2.2
+	 */
+	public static boolean populateFromSetting(RegisterBlockConfig config, Setting setting) {
+		Matcher m = MEASUREMENT_SETTING_PATTERN.matcher(setting.getType());
+		if ( !m.matches() ) {
+			return false;
+		}
+		int idx = Integer.parseInt(m.group(1));
+		String name = m.group(2);
+		if ( idx >= config.getMeasurementConfigsCount() ) {
+			config.setMeasurementConfigsCount(idx + 1);
+		}
+		MeasurementConfig measConfig = config.getMeasurementConfigs()[idx];
+
+		String val = setting.getValue();
+		if ( val != null && !val.isEmpty() ) {
+			switch (name) {
+				case "sourceId":
+					measConfig.setSourceId(val);
+					break;
+				case "propertyName":
+					measConfig.setPropertyName(val);
+					break;
+				case "dataTypeKey":
+					measConfig.setDataTypeKey(val);
+					break;
+				case "wordLength":
+					measConfig.setWordLength(Integer.valueOf(val));
+					break;
+				case "unitMultiplier":
+					measConfig.setUnitMultiplier(new BigDecimal(val));
+					break;
+				case "decimalScale":
+					measConfig.setDecimalScale(Integer.valueOf(val));
+					break;
+				default:
+					// ignore
+			}
+		}
+		return true;
+	}
 
 	/**
 	 * Get settings suitable for configuring an instance of this class.
@@ -93,6 +162,76 @@ public class MeasurementConfig {
 				String.valueOf(DEFAULT_DECIMAL_SCALE)));
 
 		return results;
+	}
+
+	/**
+	 * Generate a list of setting values.
+	 * 
+	 * @param providerId
+	 *        the setting provider ID
+	 * @param instanceId
+	 *        the factory instance ID
+	 * @param unitIdx
+	 *        the unit configuration index
+	 * @param blockIdx
+	 *        the block configuration index
+	 * @param measIdx
+	 *        the measurement configuration index
+	 * @return the settings
+	 * @since 2.2
+	 */
+	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, int unitIdx,
+			int blockIdx, int measIdx) {
+		List<SettingValueBean> settings = new ArrayList<>(2);
+		addSetting(settings, providerId, instanceId, unitIdx, blockIdx, measIdx, "sourceId",
+				getSourceId());
+		addSetting(settings, providerId, instanceId, unitIdx, blockIdx, measIdx, "propertyName",
+				getPropertyName());
+		addSetting(settings, providerId, instanceId, unitIdx, blockIdx, measIdx, "dataTypeKey",
+				getDataTypeKey());
+		addSetting(settings, providerId, instanceId, unitIdx, blockIdx, measIdx, "wordLength",
+				getWordLength());
+		addSetting(settings, providerId, instanceId, unitIdx, blockIdx, measIdx, "unitMultiplier",
+				getUnitMultiplier());
+		addSetting(settings, providerId, instanceId, unitIdx, blockIdx, measIdx, "decimalScale",
+				getDecimalScale());
+		return settings;
+	}
+
+	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
+			int unitIdx, int blockIdx, int measIdx, String key, Object val) {
+		if ( val == null ) {
+			return;
+		}
+		settings.add(new SettingValueBean(providerId, instanceId,
+				format("unitConfigs[%d].registerBlockConfigs[%d].measurementConfigs[%d].%s", unitIdx,
+						blockIdx, measIdx, key),
+				val.toString()));
+	}
+
+	/**
+	 * Test if this configuration is empty.
+	 * 
+	 * @return {@literal true} if all properties are null
+	 * @since 2.2
+	 */
+	public boolean isEmpty() {
+		return (dataType == null && decimalScale == null && propertyName == null && sourceId == null
+				&& unitMultiplier == null);
+	}
+
+	/**
+	 * Test if this configuration appears to be valid.
+	 * 
+	 * @return {@literal true} if the configuration has all necessary properties
+	 *         configured
+	 * @since 2.2
+	 */
+	public boolean isValid() {
+		String sourceId = getSourceId();
+		String propName = getPropertyName();
+		return (sourceId != null && !sourceId.trim().isEmpty() && propName != null
+				&& !propName.trim().isEmpty() && dataType != null);
 	}
 
 	/**
@@ -147,9 +286,46 @@ public class MeasurementConfig {
 	public int getSize() {
 		int len = dataType.getWordLength();
 		if ( len < 1 ) {
-			len = getWordLength();
+			len = (getWordLength() != null ? getWordLength().intValue() : 1);
 		}
 		return len;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("MeasurementConfig{");
+		if ( sourceId != null ) {
+			builder.append("sourceId=");
+			builder.append(sourceId);
+			builder.append(", ");
+		}
+		if ( propertyName != null ) {
+			builder.append("propertyName=");
+			builder.append(propertyName);
+			builder.append(", ");
+		}
+		if ( dataType != null ) {
+			builder.append("dataType=");
+			builder.append(dataType);
+			builder.append(", ");
+		}
+		if ( wordLength != null ) {
+			builder.append("wordLength=");
+			builder.append(wordLength);
+			builder.append(", ");
+		}
+		if ( unitMultiplier != null ) {
+			builder.append("unitMultiplier=");
+			builder.append(unitMultiplier);
+			builder.append(", ");
+		}
+		if ( decimalScale != null ) {
+			builder.append("decimalScale=");
+			builder.append(decimalScale);
+		}
+		builder.append("}");
+		return builder.toString();
 	}
 
 	/**
@@ -249,7 +425,7 @@ public class MeasurementConfig {
 	 * 
 	 * @return the register count to read
 	 */
-	public int getWordLength() {
+	public Integer getWordLength() {
 		return wordLength;
 	}
 
@@ -263,8 +439,8 @@ public class MeasurementConfig {
 	 * @param wordLength
 	 *        the register count to read
 	 */
-	public void setWordLength(int wordLength) {
-		if ( wordLength < 1 ) {
+	public void setWordLength(Integer wordLength) {
+		if ( wordLength != null && wordLength.intValue() < 1 ) {
 			return;
 		}
 		this.wordLength = wordLength;
@@ -302,7 +478,7 @@ public class MeasurementConfig {
 	 * 
 	 * @return the decimal scale
 	 */
-	public int getDecimalScale() {
+	public Integer getDecimalScale() {
 		return decimalScale;
 	}
 
@@ -319,7 +495,7 @@ public class MeasurementConfig {
 	 * @param decimalScale
 	 *        the scale to set, or {@literal -1} to disable rounding completely
 	 */
-	public void setDecimalScale(int decimalScale) {
+	public void setDecimalScale(Integer decimalScale) {
 		this.decimalScale = decimalScale;
 	}
 
