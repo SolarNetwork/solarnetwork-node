@@ -184,6 +184,8 @@ public class DatumFilterSupport extends BaseDatumFilterSupport implements Settin
 			} else {
 				result = (lastSaveTime != null ? lastSaveTime : now);
 			}
+		} else {
+			return now;
 		}
 		return result;
 	}
