@@ -31,7 +31,9 @@ import java.util.concurrent.ConcurrentMap;
  * <p>
  * This API is designed for simple, small, and fast access to transient runtime
  * data shared across SolarNode. Values added to the map are <b>not</b>
- * persisted across application restarts.
+ * persisted across application restarts. Settings are arranged as a map of
+ * maps, both with string keys, similar to how the {@link SettingDao} uses a
+ * primary key composed of two strings to group related settings together.
  * </p>
  * 
  * @author matt
@@ -44,6 +46,8 @@ public interface TransientSettingDao extends ConcurrentMap<String, ConcurrentMap
 	 * 
 	 * @param <V>
 	 *        the value type to cast to
+	 * @param key
+	 *        the settings key to get
 	 * @return the settings for the given key, never {@literal null}
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
