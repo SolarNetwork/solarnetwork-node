@@ -564,5 +564,12 @@
 			</argument>
 		</bean>
 	</service>
+	
+	<!--
+		Transient Setting DAO
+	 -->
+	<service interface="net.solarnetwork.node.dao.TransientSettingDao">
+		<bean class="net.solarnetwork.node.dao.DefaultTransientSettingDao"/>
+	</service>
 
 </blueprint>

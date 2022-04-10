@@ -27,42 +27,35 @@ import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import static net.solarnetwork.node.datum.filter.std.DatumFilterSupport.SETTING_KEY_TEMPLATE;
-import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.ListIterator;
-import org.easymock.Capture;
-import org.easymock.CaptureType;
+import java.util.concurrent.ConcurrentMap;
 import org.easymock.EasyMock;
-import org.junit.Before;
 import org.junit.Test;
-import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
-import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.dao.DefaultTransientSettingDao;
+import net.solarnetwork.node.dao.TransientSettingDao;
 import net.solarnetwork.node.datum.filter.std.PropertyDatumFilterService;
 import net.solarnetwork.node.datum.filter.std.PropertyFilterConfig;
-import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.service.OperationalModesService;
 
@@ -76,7 +69,6 @@ public class PropertyDatumFilterServiceTests {
 
 	private static final String TEST_SOURCE_ID = "test.source";
 	private static final int TEST_FREQ = 1;
-	private static final int TEST_SETTING_CACHE_SECS = 3;
 	private static final String TEST_UID = "test";
 
 	private static final String PROP_WATTS = "watts";
@@ -93,15 +85,12 @@ public class PropertyDatumFilterServiceTests {
 		return datum;
 	}
 
-	@Before
-	public void setup() {
-		PropertyDatumFilterService.clearSettingCache();
-	}
-
 	@Test
 	public void testExclude() {
+		final TransientSettingDao transientSettingDao = new DefaultTransientSettingDao();
 		SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
 		PropertyDatumFilterService xform = new PropertyDatumFilterService();
+		xform.setTransientSettingDao(transientSettingDao);
 		xform.setSourceId("^test");
 		xform.setExcludes(new String[] { "^watt" });
 		xform.init();
@@ -119,8 +108,10 @@ public class PropertyDatumFilterServiceTests {
 
 	@Test
 	public void testExcludeMultiplePatterns() {
+		final TransientSettingDao transientSettingDao = new DefaultTransientSettingDao();
 		SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
 		PropertyDatumFilterService xform = new PropertyDatumFilterService();
+		xform.setTransientSettingDao(transientSettingDao);
 		xform.setSourceId("^test");
 		xform.setExcludes(new String[] { "^watt", "^phase$" });
 		xform.init();
@@ -137,8 +128,10 @@ public class PropertyDatumFilterServiceTests {
 
 	@Test
 	public void testNoMatchingExcludes() {
+		final TransientSettingDao transientSettingDao = new DefaultTransientSettingDao();
 		SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
 		PropertyDatumFilterService xform = new PropertyDatumFilterService();
+		xform.setTransientSettingDao(transientSettingDao);
 		xform.setSourceId("^test");
 		xform.setExcludes(new String[] { "^foo" });
 		xform.init();
@@ -151,25 +144,19 @@ public class PropertyDatumFilterServiceTests {
 	}
 
 	@Test
-	public void testIncludeLimitNoInitialSetting() {
-		SettingDao settingDao = EasyMock.createMock(SettingDao.class);
+	public void testIncludeLimitNoInitialSetting() throws Exception {
+		final TransientSettingDao transientSettingDao = new DefaultTransientSettingDao();
+
 		PropertyDatumFilterService xform = new PropertyDatumFilterService();
-		xform.setSettingDao(settingDao);
-		xform.setSettingCacheSecs(TEST_SETTING_CACHE_SECS);
+		xform.setTransientSettingDao(transientSettingDao);
 		xform.setUid(TEST_UID);
 		xform.setSourceId("^test");
 		xform.setPropIncludes(new PropertyFilterConfig[] { new PropertyFilterConfig("^watt", 1) });
 		xform.init();
 
+		final Instant start = Instant.now();
+
 		final String settingKey = String.format(SETTING_KEY_TEMPLATE, TEST_UID);
-		List<KeyValuePair> initialSettings = Collections.emptyList();
-		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
-
-		Capture<Setting> savedSettingCapture = Capture.newInstance(CaptureType.ALL);
-		settingDao.storeSetting(capture(savedSettingCapture));
-		EasyMock.expectLastCall().times(2);
-
-		replay(settingDao);
 
 		SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
 		DatumSamples expectedSamples = new DatumSamples();
@@ -188,61 +175,34 @@ public class PropertyDatumFilterServiceTests {
 			}
 			count++;
 		}
-		assertTrue("More than 1 cycle examined", count > 1);
+		assertThat("More than 1 cycle examined", count, is(greaterThan(1)));
 
-		assertNotNull("Seen date settings should be persisted", savedSettingCapture.getValues());
-		assertEquals("Seen date settings count", 2, savedSettingCapture.getValues().size());
+		final ConcurrentMap<String, Instant> settings = transientSettingDao.settings(settingKey);
 
-		for ( ListIterator<Setting> itr = savedSettingCapture.getValues().listIterator(); itr
-				.hasNext(); ) {
-			Setting savedSetting = itr.next();
-			assertEquals("Setting key", settingKey, savedSetting.getKey());
-			assertEquals("Setting flags",
-					EnumSet.of(Setting.SettingFlag.Volatile, Setting.SettingFlag.IgnoreModificationDate),
-					savedSetting.getFlags());
-			assertTrue("Setting value",
-					Long.valueOf(savedSetting.getValue(), 16) < System.currentTimeMillis());
-
-			String expectedPropName = null;
-			switch (itr.previousIndex()) {
-				case 0:
-					expectedPropName = "watts";
-					break;
-
-				case 1:
-					expectedPropName = "wattHours";
-					break;
-
-			}
-			assertEquals("Setting type", settingTypeValue(datum.getSourceId(), expectedPropName),
-					savedSetting.getType());
-		}
-
-		verify(settingDao);
+		assertThat("Seen date for watts persisted",
+				settings.get(settingTypeValue(datum.getSourceId(), "watts")),
+				allOf(greaterThanOrEqualTo(start), lessThan(Instant.now())));
+		assertThat("Seen date for wattHours persisted",
+				settings.get(settingTypeValue(datum.getSourceId(), "wattHours")),
+				allOf(greaterThanOrEqualTo(start), lessThan(Instant.now())));
 	}
 
 	@Test
 	public void testIncludeLimitExpiredSetting() {
-		SettingDao settingDao = EasyMock.createMock(SettingDao.class);
+		final TransientSettingDao transientSettingDao = new DefaultTransientSettingDao();
 		PropertyDatumFilterService xform = new PropertyDatumFilterService();
-		xform.setSettingDao(settingDao);
-		xform.setSettingCacheSecs(TEST_SETTING_CACHE_SECS);
+		xform.setTransientSettingDao(transientSettingDao);
 		xform.setUid(TEST_UID);
 		xform.setSourceId("^test");
 		xform.setPropIncludes(new PropertyFilterConfig[] { new PropertyFilterConfig("^watt", 1) });
 		xform.init();
 
 		final String settingKey = String.format(SETTING_KEY_TEMPLATE, TEST_UID);
-		List<KeyValuePair> initialSettings = Collections
-				.singletonList(new KeyValuePair(settingTypeValue(TEST_SOURCE_ID, PROP_WATTS),
-						Long.toString(System.currentTimeMillis() - TEST_FREQ * 10 * 1000L, 16)));
-		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
 
-		Capture<Setting> savedSettingCapture = Capture.newInstance(CaptureType.ALL);
-		settingDao.storeSetting(capture(savedSettingCapture));
-		EasyMock.expectLastCall().times(2);
-
-		replay(settingDao);
+		final Instant start = Instant.now();
+		final ConcurrentMap<String, Instant> settings = transientSettingDao.settings(settingKey);
+		final Instant lastSeen = start.minusSeconds(TEST_FREQ * 10);
+		settings.put(settingTypeValue(TEST_SOURCE_ID, PROP_WATTS), lastSeen);
 
 		SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
 		DatumSamples expectedSamples = new DatumSamples();
@@ -261,61 +221,32 @@ public class PropertyDatumFilterServiceTests {
 			}
 			count++;
 		}
-		assertTrue("More than 1 cycle examined", count > 1);
+		assertThat("More than 1 cycle examined", count, is(greaterThan(1)));
 
-		assertNotNull("Seen date settings should be persisted", savedSettingCapture.getValues());
-		assertEquals("Seen date settings count", 2, savedSettingCapture.getValues().size());
-
-		for ( ListIterator<Setting> itr = savedSettingCapture.getValues().listIterator(); itr
-				.hasNext(); ) {
-			Setting savedSetting = itr.next();
-			assertEquals("Setting key", settingKey, savedSetting.getKey());
-			assertEquals("Setting flags",
-					EnumSet.of(Setting.SettingFlag.Volatile, Setting.SettingFlag.IgnoreModificationDate),
-					savedSetting.getFlags());
-			assertTrue("Setting value",
-					Long.valueOf(savedSetting.getValue(), 16) < System.currentTimeMillis());
-
-			String expectedPropName = null;
-			switch (itr.previousIndex()) {
-				case 0:
-					expectedPropName = "watts";
-					break;
-
-				case 1:
-					expectedPropName = "wattHours";
-					break;
-
-			}
-			assertEquals("Setting type", settingTypeValue(datum.getSourceId(), expectedPropName),
-					savedSetting.getType());
-		}
-
-		verify(settingDao);
+		assertThat("Seen date for watts persisted",
+				settings.get(settingTypeValue(datum.getSourceId(), "watts")),
+				allOf(greaterThanOrEqualTo(start), lessThan(Instant.now())));
+		assertThat("Seen date for wattHours persisted",
+				settings.get(settingTypeValue(datum.getSourceId(), "wattHours")),
+				allOf(greaterThanOrEqualTo(start), lessThan(Instant.now())));
 	}
 
 	@Test
 	public void testIncludeLimitNonExpiredSetting() {
-		SettingDao settingDao = EasyMock.createMock(SettingDao.class);
+		final TransientSettingDao transientSettingDao = new DefaultTransientSettingDao();
 		PropertyDatumFilterService xform = new PropertyDatumFilterService();
-		xform.setSettingDao(settingDao);
-		xform.setSettingCacheSecs(TEST_SETTING_CACHE_SECS);
+		xform.setTransientSettingDao(transientSettingDao);
 		xform.setUid(TEST_UID);
 		xform.setSourceId("^test");
 		xform.setPropIncludes(new PropertyFilterConfig[] { new PropertyFilterConfig("^watt", 1) });
 		xform.init();
 
-		final long start = System.currentTimeMillis();
+		final Instant start = Instant.now();
 
 		final String settingKey = String.format(SETTING_KEY_TEMPLATE, TEST_UID);
-		List<KeyValuePair> initialSettings = Collections.singletonList(new KeyValuePair(
-				settingTypeValue(TEST_SOURCE_ID, PROP_WATTS), Long.toString(start, 16)));
-		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
-
-		Capture<Setting> savedSettingCapture = Capture.newInstance(CaptureType.ALL);
-		settingDao.storeSetting(capture(savedSettingCapture));
-
-		replay(settingDao);
+		final ConcurrentMap<String, Instant> settings = transientSettingDao.settings(settingKey);
+		final Instant lastSeen = start;
+		settings.put(settingTypeValue(TEST_SOURCE_ID, PROP_WATTS), lastSeen);
 
 		SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
 
@@ -337,33 +268,19 @@ public class PropertyDatumFilterServiceTests {
 			}
 			count++;
 		}
-		assertTrue("More than 1 cycle examined", count > 1);
+		assertThat("More than 1 cycle examined", count, is(greaterThan(1)));
 
-		assertNotNull("Seen date settings should be persisted", savedSettingCapture.getValues());
-		assertEquals("Seen date settings count", 1, savedSettingCapture.getValues().size());
-
-		for ( ListIterator<Setting> itr = savedSettingCapture.getValues().listIterator(); itr
-				.hasNext(); ) {
-			Setting savedSetting = itr.next();
-			assertEquals("Setting key", settingKey, savedSetting.getKey());
-			assertEquals("Setting flags",
-					EnumSet.of(Setting.SettingFlag.Volatile, Setting.SettingFlag.IgnoreModificationDate),
-					savedSetting.getFlags());
-			assertTrue("Setting value",
-					Long.valueOf(savedSetting.getValue(), 16) < System.currentTimeMillis());
-			assertEquals("Setting type", settingTypeValue(datum.getSourceId(), "wattHours"),
-					savedSetting.getType());
-		}
-
-		verify(settingDao);
+		assertThat("Seen date for wattHours persisted",
+				settings.get(settingTypeValue(datum.getSourceId(), "wattHours")),
+				allOf(greaterThanOrEqualTo(start), lessThan(Instant.now())));
 	}
 
 	@Test
 	public void testIncludeLimitDifferentExpiredSettings() {
-		SettingDao settingDao = EasyMock.createMock(SettingDao.class);
-		PropertyDatumFilterService xform = new PropertyDatumFilterService();
-		xform.setSettingDao(settingDao);
-		xform.setSettingCacheSecs(TEST_SETTING_CACHE_SECS);
+		final TransientSettingDao transientSettingDao = new DefaultTransientSettingDao();
+
+		final PropertyDatumFilterService xform = new PropertyDatumFilterService();
+		xform.setTransientSettingDao(transientSettingDao);
 		xform.setUid(TEST_UID);
 		xform.setSourceId("^test");
 		xform.setPropIncludes(new PropertyFilterConfig[] { new PropertyFilterConfig("^watts$", 1),
@@ -373,17 +290,10 @@ public class PropertyDatumFilterServiceTests {
 		final long start = System.currentTimeMillis();
 
 		final String settingKey = String.format(SETTING_KEY_TEMPLATE, TEST_UID);
-		List<KeyValuePair> initialSettings = Arrays.asList(
-				new KeyValuePair(settingTypeValue(TEST_SOURCE_ID, PROP_WATTS),
-						Long.toString(start - TEST_FREQ * 1000L - 500L, 16)),
-				new KeyValuePair(settingTypeValue(TEST_SOURCE_ID, PROP_WATTHOURS),
-						Long.toString(start - TEST_FREQ * 1000L - 500L, 16)));
-		expect(settingDao.getSettingValues(settingKey)).andReturn(initialSettings);
-
-		Capture<Setting> savedSettingCapture = Capture.newInstance(CaptureType.ALL);
-		settingDao.storeSetting(capture(savedSettingCapture));
-
-		replay(settingDao);
+		final ConcurrentMap<String, Object> settings = transientSettingDao.settings(settingKey);
+		final Instant lastSeen = Instant.ofEpochMilli(start - TEST_FREQ * 1000L - 500L);
+		settings.put(settingTypeValue(TEST_SOURCE_ID, PROP_WATTS), lastSeen);
+		settings.put(settingTypeValue(TEST_SOURCE_ID, PROP_WATTHOURS), lastSeen);
 
 		SimpleDatum datum = createTestGeneralNodeDatum(TEST_SOURCE_ID);
 		DatumSamples expectedSamples = new DatumSamples();
@@ -400,25 +310,12 @@ public class PropertyDatumFilterServiceTests {
 			}
 			count++;
 		}
-		assertTrue("More than 1 cycle examined", count > 1);
+		assertThat("More than 1 cycle examined", count, greaterThan(1));
 
-		assertNotNull("Seen date settings should be persisted", savedSettingCapture.getValues());
-		assertEquals("Seen date settings count", 1, savedSettingCapture.getValues().size());
+		assertThat("Last seen date value updated for watts property",
+				(Instant) settings.get(settingTypeValue(datum.getSourceId(), "watts")),
+				allOf(greaterThan(lastSeen), lessThan(Instant.now())));
 
-		for ( ListIterator<Setting> itr = savedSettingCapture.getValues().listIterator(); itr
-				.hasNext(); ) {
-			Setting savedSetting = itr.next();
-			assertEquals("Setting key", settingKey, savedSetting.getKey());
-			assertEquals("Setting flags",
-					EnumSet.of(Setting.SettingFlag.Volatile, Setting.SettingFlag.IgnoreModificationDate),
-					savedSetting.getFlags());
-			assertTrue("Setting value",
-					Long.valueOf(savedSetting.getValue(), 16) < System.currentTimeMillis());
-			assertEquals("Setting type", settingTypeValue(datum.getSourceId(), "watts"),
-					savedSetting.getType());
-		}
-
-		verify(settingDao);
 	}
 
 	@Test
@@ -449,7 +346,9 @@ public class PropertyDatumFilterServiceTests {
 	@Test
 	public void operationalMode_match() {
 		// GIVEN
+		final TransientSettingDao transientSettingDao = new DefaultTransientSettingDao();
 		PropertyDatumFilterService xs = new PropertyDatumFilterService();
+		xs.setTransientSettingDao(transientSettingDao);
 		xs.setSourceId("^test");
 		xs.setExcludes(new String[] { "^watt" });
 		xs.init();

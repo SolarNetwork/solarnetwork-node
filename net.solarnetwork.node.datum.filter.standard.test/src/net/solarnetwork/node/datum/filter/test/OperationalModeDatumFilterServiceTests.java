@@ -45,7 +45,6 @@ import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.datum.filter.opmode.OperationalModeDatumFilterService;
 import net.solarnetwork.node.datum.filter.opmode.OperationalModeTransformConfig;
-import net.solarnetwork.node.datum.filter.std.ThrottlingDatumFilterService;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.service.ExpressionService;
@@ -70,7 +69,6 @@ public class OperationalModeDatumFilterServiceTests {
 	@Before
 	public void setup() {
 		opModesService = EasyMock.createMock(OperationalModesService.class);
-		ThrottlingDatumFilterService.clearSettingCache();
 		xform = new OperationalModeDatumFilterService();
 		xform.setSourceId("^F");
 		xform.setOpModesService(opModesService);
