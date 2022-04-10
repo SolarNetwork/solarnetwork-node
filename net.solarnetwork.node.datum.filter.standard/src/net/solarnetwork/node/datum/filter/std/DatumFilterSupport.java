@@ -213,6 +213,10 @@ public class DatumFilterSupport extends BaseDatumFilterSupport implements Settin
 	 * available.
 	 * </p>
 	 * 
+	 * @param <V>
+	 *        the setting value type; this is merely a generic cast and the
+	 *        actual map declaration is
+	 *        {@code ConcurrentMap&lt;String,Object&gt;}
 	 * @param settingKey
 	 *        the setting key to get transient settings
 	 * @return the settings map, never {@literal null}
