@@ -84,7 +84,7 @@ individual datum property.
 | `N` | **Data Length** | integer |  | For variable length data types such as strings, the number of Modbus registers to read. |
 | `O` | **Multiplier** | decimal | `1` | For numeric data types, a multiplier to apply to the Modbus value to normalize it into a standard unit. |
 | `P` | **Decimal Scale** | integer | `0` | For numeric data types, a maximum number of decimal places to round decimal numbers to, or `-1` to not do any rounding. |
-| `Q` | **Expression** | string |  | An [expression][#expressions]. If configured, columns K - P are ignored. |
+| `Q` | **Expression** | string |  | An [expression](#expressions). If configured, columns K - P are ignored. |
 
 ## Example CSV
 
