@@ -53,7 +53,7 @@ import net.solarnetwork.util.WeakValueConcurrentHashMap;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.0
  */
 public class DatumFilterChainService extends BaseDatumFilterSupport
@@ -65,6 +65,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	private final DatumFilterService staticService;
 	private String[] transformUids;
 	private List<DatumFilterService> alternateDatumFilterServices;
+	private boolean ignoreTransformUids;
 
 	private final ConcurrentMap<String, DatumFilterService> serviceCache = new WeakValueConcurrentHashMap<>(
 			16, 0.9f, 2);
@@ -136,6 +137,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 		this.transformServices = transformServices;
 		this.configurableUid = configurableUid;
 		this.staticService = staticService;
+		this.ignoreTransformUids = false;
 	}
 
 	@Override
@@ -254,24 +256,36 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 				return null;
 			}
 		}
-		final String[] uids = getTransformUids();
-		if ( uids == null || uids.length < 1 ) {
-			incrementStats(start, samples, out);
-			return out;
-		}
-		for ( String uid : uids ) {
-			if ( uid == null || uid.isEmpty() ) {
-				continue;
-			}
-			DatumFilterService s = findService(uid);
-			if ( s != null ) {
-				if ( p == null ) {
-					p = new HashMap<>(8);
+		if ( ignoreTransformUids ) {
+			if ( transformServices != null ) {
+				for ( DatumFilterService s : transformServices ) {
+					out = s.filter(datum, out, parameters);
+					if ( out == null ) {
+						incrementStats(start, samples, out);
+						return null;
+					}
 				}
-				out = s.filter(datum, out, p);
-				if ( out == null ) {
-					incrementStats(start, samples, out);
-					return null;
+			}
+		} else {
+			final String[] uids = getTransformUids();
+			if ( uids == null || uids.length < 1 ) {
+				incrementStats(start, samples, out);
+				return out;
+			}
+			for ( String uid : uids ) {
+				if ( uid == null || uid.isEmpty() ) {
+					continue;
+				}
+				DatumFilterService s = findService(uid);
+				if ( s != null ) {
+					if ( p == null ) {
+						p = new HashMap<>(8);
+					}
+					out = s.filter(datum, out, p);
+					if ( out == null ) {
+						incrementStats(start, samples, out);
+						return null;
+					}
 				}
 			}
 		}
@@ -337,6 +351,27 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	 */
 	public void setAlternateDatumFilterServices(List<DatumFilterService> alternateDatumFilterServices) {
 		this.alternateDatumFilterServices = alternateDatumFilterServices;
+	}
+
+	/**
+	 * Get the ignore {@code transformUids} flag.
+	 * 
+	 * @return {@literal true} to always apply all available filters in the
+	 *         {@code transformServices} property; defaults to {@literal false}
+	 * @since 1.2
+	 */
+	public boolean isIgnoreTransformUids() {
+		return ignoreTransformUids;
+	}
+
+	/**
+	 * Set the ignore {@code transformUids} flag.{@literal true} to always apply
+	 * all available filters in the {@code transformServices} property
+	 * 
+	 * @since 1.2
+	 */
+	public void setIgnoreTransformUids(boolean ignoreTransformUids) {
+		this.ignoreTransformUids = ignoreTransformUids;
 	}
 
 }
