@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.dao;
 
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
@@ -30,32 +29,34 @@ import java.util.concurrent.ConcurrentMap;
  * 
  * <p>
  * This API is designed for simple, small, and fast access to transient runtime
- * data shared across SolarNode. Values added to the map are <b>not</b>
- * persisted across application restarts. Settings are arranged as a map of
- * maps, both with string keys, similar to how the {@link SettingDao} uses a
- * primary key composed of two strings to group related settings together.
+ * data shared across SolarNode. Values added to the maps returned from
+ * {@link #settings(String)} are <b>not</b> persisted across application
+ * restarts. The API is arranged as a map of maps, both with string keys,
+ * similar to how the {@link SettingDao} uses a primary key composed of two
+ * strings to group related settings together.
  * </p>
  * 
  * @author matt
  * @version 1.0
+ * @since 2.5
  */
-public interface TransientSettingDao extends ConcurrentMap<String, ConcurrentMap<String, Object>> {
+public interface TransientSettingDao {
 
 	/**
 	 * Get the settings map for a given key.
 	 * 
+	 * <p>
+	 * This method will always return the same map instance for a given key.
+	 * </p>
+	 * 
 	 * @param <V>
-	 *        the value type to cast to
+	 *        the value type to cast to; note this is only a generic casting
+	 *        operation for convenience and the actual map is expected to
+	 *        actually be declared as {@code ConcurrentMap&ltString, Object&gt;}
 	 * @param key
 	 *        the settings key to get
 	 * @return the settings for the given key, never {@literal null}
 	 */
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	default <V> ConcurrentMap<String, V> settings(String key) {
-		ConcurrentMap<String, Object> result = this.computeIfAbsent(key,
-				k -> new ConcurrentHashMap<String, Object>(4, 0.8f,
-						Runtime.getRuntime().availableProcessors()));
-		return (ConcurrentMap) result;
-	}
+	<V> ConcurrentMap<String, V> settings(String key);
 
 }
