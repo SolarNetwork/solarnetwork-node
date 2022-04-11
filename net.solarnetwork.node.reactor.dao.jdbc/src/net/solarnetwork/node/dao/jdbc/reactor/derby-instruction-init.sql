@@ -1,7 +1,7 @@
 CREATE TABLE solarnode.sn_instruction (
 	id					BIGINT NOT NULL,
 	instructor_id		VARCHAR(255) NOT NULL,
-	created				TIMESTAMP NOT NULL WITH DEFAULT CURRENT_TIMESTAMP,
+	created				TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	topic				VARCHAR(255) NOT NULL,
 	CONSTRAINT sn_instruction_pkey PRIMARY KEY (id, instructor_id)
 );
