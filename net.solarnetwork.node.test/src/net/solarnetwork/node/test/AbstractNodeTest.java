@@ -24,12 +24,13 @@ package net.solarnetwork.node.test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Properties;
+import java.util.TimeZone;
 import org.junit.Before;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
 
@@ -37,14 +38,33 @@ import org.springframework.test.context.junit4.AbstractJUnit4SpringContextTests;
  * Base test class for non-transactional unit tests.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 @ContextConfiguration
 public abstract class AbstractNodeTest extends AbstractJUnit4SpringContextTests {
 
+	/** A test Node ID. */
+	public static final Long TEST_NODE_ID = -5555L;
+
+	/** A test Weather Source ID. */
+	public static final Long TEST_WEATHER_SOURCE_ID = -5554L;
+
+	/** A test Location ID. */
+	public static final Long TEST_LOC_ID = -5553L;
+
+	/** A test TimeZone ID. */
+	public static final String TEST_TZ = "Pacific/Auckland";
+
+	/** A date + time format. */
+	public static final DateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+	static {
+		dateTimeFormat.setTimeZone(TimeZone.getTimeZone(TEST_TZ));
+	}
+
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
+	/** The {@literal env.properties} file from the classpath. */
 	protected final Properties envProperties = new Properties();
 
 	@Before
@@ -65,16 +85,14 @@ public abstract class AbstractNodeTest extends AbstractJUnit4SpringContextTests 
 	 * @return the database builder
 	 * @since 1.1
 	 */
-	protected EmbeddedDatabaseBuilder createEmbeddedDatabase(String environmentTypeKey) {
-		EmbeddedDatabaseBuilder db = new EmbeddedDatabaseBuilder().generateUniqueName(true);
-		EmbeddedDatabaseType dbType = EmbeddedDatabaseType.DERBY;
-		if ( envProperties.containsKey(environmentTypeKey) ) {
-			String prefix = envProperties.getProperty(environmentTypeKey);
-			if ( "h2".equals(prefix) ) {
-				dbType = EmbeddedDatabaseType.H2;
-			}
+	protected TestEmbeddedDatabase createEmbeddedDatabase(String environmentTypeKey) {
+		TestEmbeddedDatabaseFactoryBean factory = new TestEmbeddedDatabaseFactoryBean(
+				environmentTypeKey);
+		try {
+			return factory.getObject();
+		} catch ( Exception e ) {
+			throw new RuntimeException(e);
 		}
-		return db.setType(dbType);
 	}
 
 }

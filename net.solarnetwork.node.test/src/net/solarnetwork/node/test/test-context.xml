@@ -24,15 +24,16 @@
 		</property>
 	</bean>
 	
+	<bean id="db" class="net.solarnetwork.node.test.TestEmbeddedDatabaseFactoryBean">
+		<constructor-arg value="db.type"/>
+	</bean>
+	
 	<bean id="dataSource" class="com.zaxxer.hikari.HikariDataSource" destroy-method="close">
 	    <constructor-arg>
 			<bean id="hikariConfig" class="com.zaxxer.hikari.HikariConfig">
 			    <property name="poolName" value="SolarNode-Test"/>
 			    <property name="connectionTestQuery" value="VALUES CURRENT_DATE"/>
-			    <property name="driverClassName" value="${jdbc.driver}"/>
-			    <property name="jdbcUrl" value="${jdbc.url}"/>
-			    <property name="username" value="${jdbc.user}"/>
-			    <property name="password" value="${jdbc.pass}"/>
+			    <property name="dataSource" ref="db"/>
 			</bean>
 	    </constructor-arg>
 	</bean>
