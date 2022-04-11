@@ -79,7 +79,6 @@ public abstract class AbstractNodeTransactionalTest extends AbstractNodeTest {
 	 * @throws DataAccessException
 	 *         if there is an error executing a statement
 	 * @see ResourceDatabasePopulator
-	 * @see #setSqlScriptEncoding
 	 */
 	protected void executeSqlScript(String sqlResourcePath, boolean continueOnError)
 			throws DataAccessException {
