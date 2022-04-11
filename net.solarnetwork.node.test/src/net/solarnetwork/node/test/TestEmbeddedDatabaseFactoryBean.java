@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 
@@ -72,6 +73,9 @@ public class TestEmbeddedDatabaseFactoryBean implements FactoryBean<TestEmbedded
 		EmbeddedDatabaseBuilder builder = new EmbeddedDatabaseBuilder().generateUniqueName(true)
 				.setType(dbType);
 		this.db = new SimpleTestEmbeddedDatabase(builder.build(), dbType);
+		if ( dbType == EmbeddedDatabaseType.DERBY ) {
+			TestDbUtils.setupDerbyFunctions(new JdbcTemplate(db));
+		}
 		return this.db;
 	}
 
