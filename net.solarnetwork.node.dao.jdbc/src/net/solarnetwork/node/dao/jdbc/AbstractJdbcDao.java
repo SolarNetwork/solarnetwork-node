@@ -25,7 +25,6 @@ package net.solarnetwork.node.dao.jdbc;
 import static net.solarnetwork.node.dao.jdbc.JdbcDaoConstants.SCHEMA_NAME;
 import static net.solarnetwork.node.dao.jdbc.JdbcDaoConstants.TABLE_SETTINGS;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -41,7 +40,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -50,8 +48,6 @@ import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.util.FileCopyUtils;
-import org.springframework.util.StringUtils;
 import net.solarnetwork.service.OptionalService;
 
 /**
@@ -85,7 +81,7 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 	private String sqlForUpdateSuffix = " FOR UPDATE";
 	private OptionalService<EventAdmin> eventAdmin;
 
-	private final Map<String, String> sqlResourceCache = new HashMap<String, String>(10);
+	private final Map<String, String> sqlResourceCache = new HashMap<>(10);
 
 	/**
 	 * Initialize this class after properties are set.
@@ -489,42 +485,8 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 	 * @return the String
 	 */
 	protected String getSqlResource(String classPathResource) {
-		Class<?> myClass = getClass();
-		String resourceName = getSqlResourcePrefix() + "-" + classPathResource + ".sql";
-		String key = myClass.getName() + ";" + classPathResource;
-		if ( sqlResourceCache.containsKey(key) ) {
-			return sqlResourceCache.get(key);
-		}
-		String[] prefixes = getSqlResourcePrefix().split("-");
-		int prefixEndIndex = prefixes.length - 1;
-		try {
-			Resource r = new ClassPathResource(resourceName, myClass);
-			while ( !r.exists() && prefixEndIndex >= 0 ) {
-				// try by chopping down prefix, which we split on a dash character
-				String subName;
-				if ( prefixEndIndex > 0 ) {
-					String[] subPrefixes = new String[prefixEndIndex];
-					System.arraycopy(prefixes, prefixEndIndex, subPrefixes, 0, prefixEndIndex);
-					subName = StringUtils.arrayToDelimitedString(subPrefixes, "-") + "-"
-							+ classPathResource;
-				} else {
-					subName = classPathResource;
-				}
-				subName += ".sql";
-				r = new ClassPathResource(subName, myClass);
-				prefixEndIndex--;
-			}
-			if ( !r.exists() ) {
-				throw new RuntimeException("SQL resource " + resourceName + " not found");
-			}
-			String result = FileCopyUtils.copyToString(new InputStreamReader(r.getInputStream()));
-			if ( result != null && result.length() > 0 ) {
-				sqlResourceCache.put(key, result);
-			}
-			return result;
-		} catch ( IOException e ) {
-			throw new RuntimeException(e);
-		}
+		return JdbcUtils.getSqlResource(classPathResource, getClass(), getSqlResourcePrefix(),
+				sqlResourceCache);
 	}
 
 	/**
@@ -535,11 +497,7 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 	 * @return the String
 	 */
 	protected String getSqlResource(Resource resource) {
-		try {
-			return FileCopyUtils.copyToString(new InputStreamReader(resource.getInputStream()));
-		} catch ( IOException e ) {
-			throw new RuntimeException(e);
-		}
+		return JdbcUtils.getSqlResource(resource);
 	}
 
 	/**
@@ -551,11 +509,7 @@ public abstract class AbstractJdbcDao<T> extends JdbcDaoSupport implements JdbcD
 	 * @return split SQL
 	 */
 	protected String[] getBatchSqlResource(Resource sqlResource) {
-		String sql = getSqlResource(sqlResource);
-		if ( sql == null ) {
-			return null;
-		}
-		return sql.split(";\\s*");
+		return JdbcUtils.getBatchSqlResource(sqlResource);
 	}
 
 	/**

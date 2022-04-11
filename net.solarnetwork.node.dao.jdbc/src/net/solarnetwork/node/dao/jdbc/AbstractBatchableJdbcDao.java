@@ -27,9 +27,12 @@ import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.ConnectionCallback;
 import org.springframework.jdbc.core.support.JdbcDaoSupport;
@@ -45,12 +48,15 @@ import net.solarnetwork.node.dao.BatchableDao;
  * @param <T>
  *        the type of domain object this DAO supports
  * @author matt
- * @version 1.4
+ * @version 1.5
  */
 public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport implements BatchableDao<T> {
 
 	private TransactionTemplate transactionTemplate;
 	private String sqlForUpdateSuffix = " FOR UPDATE";
+	private String sqlResourcePrefix = null;
+
+	private final Map<String, String> sqlResourceCache = new HashMap<>(10);
 
 	/**
 	 * A class-level logger.
@@ -136,7 +142,8 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 				DatabaseMetaData meta = con.getMetaData();
 				int scrollType = (options.isUpdatable()
 						? (meta.supportsResultSetType(ResultSet.TYPE_SCROLL_SENSITIVE)
-								? ResultSet.TYPE_SCROLL_SENSITIVE : ResultSet.TYPE_SCROLL_INSENSITIVE)
+								? ResultSet.TYPE_SCROLL_SENSITIVE
+								: ResultSet.TYPE_SCROLL_INSENSITIVE)
 						: ResultSet.TYPE_FORWARD_ONLY);
 				int concurType = (options.isUpdatable() ? ResultSet.CONCUR_UPDATABLE
 						: ResultSet.CONCUR_READ_ONLY);
@@ -180,6 +187,47 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 		return new BasicBatchResult(rowCount.intValue());
 	}
 
+	/**
+	 * Load a classpath SQL resource into a string.
+	 * 
+	 * @param classPathResource
+	 *        the classpath resource to load as a SQL string
+	 * @return the SQL
+	 * @see JdbcUtils#getSqlResource(String, Class, String, Map)
+	 * @since 1.5
+	 */
+	protected String getSqlResource(String classPathResource) {
+		return JdbcUtils.getSqlResource(classPathResource, getClass(), getSqlResourcePrefix(),
+				sqlResourceCache);
+	}
+
+	/**
+	 * Load a SQL resource into a String.
+	 * 
+	 * @param resource
+	 *        the SQL resource to load
+	 * @return the SQL
+	 * @see JdbcUtils#getSqlResource(Resource)
+	 * @since 1.5
+	 */
+	protected String getSqlResource(Resource resource) {
+		return JdbcUtils.getSqlResource(resource);
+	}
+
+	/**
+	 * Get batch SQL statements, split into multiple statements on the
+	 * {@literal ;} character.
+	 * 
+	 * @param sqlResource
+	 *        the SQL resource to load
+	 * @return split SQL
+	 * @see JdbcUtils#getBatchSqlResource(Resource)
+	 * @since 1.5
+	 */
+	protected String[] getBatchSqlResource(Resource sqlResource) {
+		return JdbcUtils.getBatchSqlResource(sqlResource);
+	}
+
 	public TransactionTemplate getTransactionTemplate() {
 		return transactionTemplate;
 	}
@@ -214,6 +262,27 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 	 */
 	public void setSqlForUpdateSuffix(String sqlForUpdateSuffix) {
 		this.sqlForUpdateSuffix = sqlForUpdateSuffix;
+	}
+
+	/**
+	 * Get a SQL resource prefix.
+	 * 
+	 * @return the prefix
+	 * @since 1.5
+	 */
+	public String getSqlResourcePrefix() {
+		return sqlResourcePrefix;
+	}
+
+	/**
+	 * Set a SQL resource prefix.
+	 * 
+	 * @param sqlResourcePrefix
+	 *        the prefix to set
+	 * @since 1.5
+	 */
+	public void setSqlResourcePrefix(String sqlResourcePrefix) {
+		this.sqlResourcePrefix = sqlResourcePrefix;
 	}
 
 }

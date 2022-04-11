@@ -24,8 +24,6 @@
 
 package net.solarnetwork.node.dao.jdbc;
 
-import static net.solarnetwork.node.dao.jdbc.JdbcDaoConstants.SCHEMA_NAME;
-import static net.solarnetwork.node.dao.jdbc.JdbcDaoConstants.TABLE_SETTINGS;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -72,40 +70,27 @@ import net.solarnetwork.service.OptionalService;
  * </dl>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements SettingDao {
 
-	private static final String DEFAULT_SQL_FIND = "SELECT tkey,svalue FROM " + SCHEMA_NAME + '.'
-			+ TABLE_SETTINGS + " WHERE skey = ? ORDER BY tkey";
-
-	private static final String DEFAULT_SQL_GET = "SELECT svalue,modified,skey,tkey,flags FROM "
-			+ SCHEMA_NAME + '.' + TABLE_SETTINGS + " WHERE skey = ?";
-
-	private static final String DEFAULT_SQL_TYPED_GET_MODIFIER = " AND tkey = ?";
-
-	private static final String DEFAULT_BATCH_SQL_GET_FOR_UPDATE = "SELECT svalue,modified,skey,tkey,flags FROM "
-			+ SCHEMA_NAME + '.' + TABLE_SETTINGS;
-
-	private static final String DEFAULT_BATCH_SQL_GET = DEFAULT_BATCH_SQL_GET_FOR_UPDATE
-			+ " ORDER BY skey,tkey";
-
-	private static final String DEFAULT_SQL_GET_DATE = "SELECT modified FROM " + SCHEMA_NAME + '.'
-			+ TABLE_SETTINGS + " WHERE skey = ? AND tkey = ?";
-
-	private static final String DEFAULT_SQL_GET_MOST_RECENT_DATE = "SELECT modified FROM " + SCHEMA_NAME
-			+ '.' + TABLE_SETTINGS
-			+ " WHERE SOLARNODE.BITWISE_AND(flags, ?) <> ? ORDER BY modified DESC";
-
-	private final String sqlNonTypedGet = DEFAULT_SQL_GET;
-	private final String sqlTypedGet = DEFAULT_SQL_GET + DEFAULT_SQL_TYPED_GET_MODIFIER;
-	private final String sqlFind = DEFAULT_SQL_FIND;
-	private final String sqlBatchGetForUpdate = DEFAULT_BATCH_SQL_GET_FOR_UPDATE;
-	private final String sqlBatchGet = DEFAULT_BATCH_SQL_GET;
-	private final String sqlGetDate = DEFAULT_SQL_GET_DATE;
-	private final String sqlGetMostRecentDate = DEFAULT_SQL_GET_MOST_RECENT_DATE;
+	public static final String SQL_RESOURCE_NON_TYPED_GET = "non-typed-get";
+	public static final String SQL_RESOURCE_TYPED_GET = "typed-get";
+	public static final String SQL_RESOURCE_FIND = "find";
+	public static final String SQL_RESOURCE_BATCH_GET_FOR_UPDATE = "batch-get-for-update";
+	public static final String SQL_RESOURCE_BATCH_GET = "batch-get";
+	public static final String SQL_RESOURCE_GET_DATE = "get-date";
+	public static final String SQL_RESOURCE_GET_MOST_RECENT_DATE = "get-most-recent-date";
 
 	private OptionalService<EventAdmin> eventAdmin;
+
+	/**
+	 * Constructor.
+	 */
+	public JdbcSettingDao() {
+		super();
+		setSqlResourcePrefix("derby-settings");
+	}
 
 	@Override
 	public boolean deleteSetting(String key) {
@@ -147,9 +132,9 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 		final String sql;
 		//check if we are taking type into consideration
 		if ( type == null ) {
-			sql = sqlForUpdate(sqlNonTypedGet);
+			sql = sqlForUpdate(getSqlResource(SQL_RESOURCE_NON_TYPED_GET));
 		} else {
-			sql = sqlForUpdate(sqlTypedGet);
+			sql = sqlForUpdate(getSqlResource(SQL_RESOURCE_TYPED_GET));
 		}
 		Setting setting = getJdbcTemplate().query(new PreparedStatementCreator() {
 
@@ -186,13 +171,14 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 	@Override
 	public String getSetting(String key, String type) {
-		List<String> res = getJdbcTemplate().query(this.sqlTypedGet, new RowMapper<String>() {
+		List<String> res = getJdbcTemplate().query(getSqlResource(SQL_RESOURCE_TYPED_GET),
+				new RowMapper<String>() {
 
-			@Override
-			public String mapRow(ResultSet rs, int rowNum) throws SQLException {
-				return rs.getString(1);
-			}
-		}, key, type);
+					@Override
+					public String mapRow(ResultSet rs, int rowNum) throws SQLException {
+						return rs.getString(1);
+					}
+				}, key, type);
 		if ( res != null && res.size() > 0 ) {
 			return res.get(0);
 		}
@@ -201,7 +187,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 	@Override
 	public List<KeyValuePair> getSettingValues(String key) {
-		return getJdbcTemplate().query(this.sqlFind, new RowMapper<KeyValuePair>() {
+		return getJdbcTemplate().query(getSqlResource(SQL_RESOURCE_FIND), new RowMapper<KeyValuePair>() {
 
 			@Override
 			public KeyValuePair mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -246,13 +232,14 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 	@Override
 	public Setting readSetting(String key, String type) {
-		List<Setting> res = getJdbcTemplate().query(this.sqlTypedGet, new RowMapper<Setting>() {
+		List<Setting> res = getJdbcTemplate().query(getSqlResource(SQL_RESOURCE_TYPED_GET),
+				new RowMapper<Setting>() {
 
-			@Override
-			public Setting mapRow(ResultSet rs, int rowNum) throws SQLException {
-				return getBatchRowEntity(null, rs, rowNum);
-			}
-		}, key, type);
+					@Override
+					public Setting mapRow(ResultSet rs, int rowNum) throws SQLException {
+						return getBatchRowEntity(null, rs, rowNum);
+					}
+				}, key, type);
 		if ( res != null && res.size() > 0 ) {
 			return res.get(0);
 		}
@@ -263,7 +250,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 			final int flags) {
 		final String type = (ttype == null ? "" : ttype);
 		final Timestamp now = new Timestamp(System.currentTimeMillis());
-		final String sql = sqlForUpdate(sqlTypedGet);
+		final String sql = sqlForUpdate(getSqlResource(SQL_RESOURCE_TYPED_GET));
 		// to avoid bumping modified date column when values haven't changed, we are careful here
 		// to compare before actually updating
 		getJdbcTemplate().execute(new ConnectionCallback<Boolean>() {
@@ -330,7 +317,7 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-				PreparedStatement stmt = con.prepareStatement(sqlGetDate);
+				PreparedStatement stmt = con.prepareStatement(getSqlResource(SQL_RESOURCE_GET_DATE));
 				stmt.setMaxRows(1);
 				stmt.setString(1, key);
 				stmt.setString(2, type);
@@ -354,7 +341,8 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 			@Override
 			public PreparedStatement createPreparedStatement(Connection con) throws SQLException {
-				PreparedStatement stmt = con.prepareStatement(sqlGetMostRecentDate);
+				PreparedStatement stmt = con
+						.prepareStatement(getSqlResource(SQL_RESOURCE_GET_MOST_RECENT_DATE));
 				stmt.setMaxRows(1);
 				final int mask = SettingFlag.maskForSet(EnumSet.of(SettingFlag.IgnoreModificationDate));
 				stmt.setInt(1, mask);
@@ -375,8 +363,9 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 
 	@Override
 	protected String getBatchJdbcStatement(BatchOptions options) {
-		return (options != null && options.isUpdatable() ? sqlForUpdate(sqlBatchGetForUpdate)
-				: sqlBatchGet);
+		return (options != null && options.isUpdatable()
+				? getSqlResource(SQL_RESOURCE_BATCH_GET_FOR_UPDATE)
+				: getSqlResource(SQL_RESOURCE_BATCH_GET));
 	}
 
 	@Override

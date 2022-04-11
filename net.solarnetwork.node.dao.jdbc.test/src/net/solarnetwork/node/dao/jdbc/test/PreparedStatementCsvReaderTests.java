@@ -40,17 +40,16 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.annotation.Resource;
-import javax.sql.DataSource;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.ConnectionCallback;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowCallbackHandler;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 import org.supercsv.prefs.CsvPreference;
 import net.solarnetwork.node.dao.jdbc.ColumnCsvMetaData;
@@ -63,22 +62,15 @@ import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
  * Test cases for the {@link PreparedStatementCsvReader} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class PreparedStatementCsvReaderTests extends AbstractNodeTransactionalTest {
-
-	@Resource(name = "dataSource")
-	private DataSource dataSource;
-
-	private JdbcTemplate jdbcTemplate;
 
 	@Before
 	public void setup() {
 		DatabaseSetup setup = new DatabaseSetup();
 		setup.setDataSource(dataSource);
 		setup.init();
-
-		jdbcTemplate = new JdbcTemplate(dataSource);
 	}
 
 	private void importData(final String tableName) {
@@ -195,8 +187,14 @@ public class PreparedStatementCsvReaderTests extends AbstractNodeTransactionalTe
 		executeSqlScript("net/solarnetwork/node/dao/jdbc/test/csv-data-01.sql", false);
 		importData(tableName);
 
-		// verify the savepoint logic works to ignore inserts on data that already exists
-		importData(tableName);
+		txTemplate.execute(new TransactionCallbackWithoutResult() {
+
+			@Override
+			protected void doInTransactionWithoutResult(TransactionStatus status) {
+				// verify the savepoint logic works to ignore inserts on data that already exists
+				importData(tableName);
+			}
+		});
 	}
 
 }

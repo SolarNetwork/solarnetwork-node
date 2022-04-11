@@ -27,8 +27,6 @@ import static org.easymock.EasyMock.verify;
 import static org.junit.Assert.assertEquals;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.annotation.Resource;
-import javax.sql.DataSource;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.Assert;
@@ -36,8 +34,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.dao.BasicBatchOptions;
@@ -59,12 +55,6 @@ import net.solarnetwork.service.StaticOptionalService;
  */
 public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 
-	@Resource(name = "dataSource")
-	private DataSource dataSource;
-
-	@Resource(name = "txManager")
-	private PlatformTransactionManager txManager;
-
 	private JdbcSettingDao dao;
 	private SettingDao settingDao; // to work with just public API
 	private EventAdmin eventAdminMock;
@@ -80,7 +70,7 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 
 		dao = new JdbcSettingDao();
 		dao.setDataSource(dataSource);
-		dao.setTransactionTemplate(new TransactionTemplate(txManager));
+		dao.setTransactionTemplate(txTemplate);
 
 		eventAdminMock = EasyMock.createMock(EventAdmin.class);
 		dao.setEventAdmin(new StaticOptionalService<EventAdmin>(eventAdminMock));

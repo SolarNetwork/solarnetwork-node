@@ -34,15 +34,12 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
-import javax.annotation.Resource;
-import javax.sql.DataSource;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.util.FileCopyUtils;
 import org.supercsv.cellprocessor.ift.CellProcessor;
@@ -56,22 +53,15 @@ import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
  * Test cases for the {@link ResultSetCsvWriter} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ResultSetCsvWriterTests extends AbstractNodeTransactionalTest {
-
-	@Resource(name = "dataSource")
-	private DataSource dataSource;
-
-	private JdbcTemplate jdbcTemplate;
 
 	@Before
 	public void setup() {
 		DatabaseSetup setup = new DatabaseSetup();
 		setup.setDataSource(dataSource);
 		setup.init();
-
-		jdbcTemplate = new JdbcTemplate(dataSource);
 	}
 
 	private void populateTestData() {

@@ -22,6 +22,8 @@
 
 package net.solarnetwork.node.dao.jdbc;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -29,6 +31,10 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.util.FileCopyUtils;
+import org.springframework.util.StringUtils;
 import org.supercsv.cellprocessor.ConvertNullTo;
 import org.supercsv.cellprocessor.Optional;
 import org.supercsv.cellprocessor.ParseBigDecimal;
@@ -39,7 +45,7 @@ import org.supercsv.cellprocessor.ift.CellProcessor;
  * Utilities to help with JDBC.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.17
  */
 public abstract class JdbcUtils {
@@ -240,6 +246,114 @@ public abstract class JdbcUtils {
 			csvColumns.put(header[i], i);
 		}
 		return csvColumns;
+	}
+
+	/**
+	 * Load a classpath SQL resource into a String.
+	 * 
+	 * <p>
+	 * The classpath resource is taken as the {@code prefix} value and {@code -}
+	 * and the {@code classPathResource} combined with a {@code .sql} suffix. If
+	 * that resource is not found, then the prefix is split into components
+	 * separated by a {@code -} character, and the last component is dropped and
+	 * then combined with {@code -} and {@code classPathResource} again to try
+	 * to find a match, until there is no prefix left and just the
+	 * {@code classPathResource} itself is tried.
+	 * </p>
+	 * 
+	 * <p>
+	 * This method will cache the SQL resource in the given {@code Map} for
+	 * quick future access.
+	 * </p>
+	 * 
+	 * @param classPathResource
+	 *        the classpath resource to load as a SQL string
+	 * @param resourceClass
+	 *        the class to load the resource for
+	 * @param prefix
+	 *        a dash-delimited prefix to add to the resource name
+	 * @param sqlResourceCache
+	 *        a cache to use for the loaded resource
+	 * @return the SQL as a string
+	 * @throws RuntimeException
+	 *         if the SQL resource cannot be loaded
+	 * @since 1.2
+	 */
+	public static String getSqlResource(String classPathResource, Class<?> resourceClass, String prefix,
+			Map<String, String> sqlResourceCache) {
+		Class<?> myClass = resourceClass;
+		String resourceName = prefix + "-" + classPathResource + ".sql";
+		String key = myClass.getName() + ";" + classPathResource;
+		if ( sqlResourceCache.containsKey(key) ) {
+			return sqlResourceCache.get(key);
+		}
+		String[] prefixes = prefix.split("-");
+		int prefixEndIndex = prefixes.length - 1;
+		try {
+			Resource r = new ClassPathResource(resourceName, myClass);
+			while ( !r.exists() && prefixEndIndex >= 0 ) {
+				// try by chopping down prefix, which we split on a dash character
+				String subName;
+				if ( prefixEndIndex > 0 ) {
+					String[] subPrefixes = new String[prefixEndIndex];
+					System.arraycopy(prefixes, prefixEndIndex, subPrefixes, 0, prefixEndIndex);
+					subName = StringUtils.arrayToDelimitedString(subPrefixes, "-") + "-"
+							+ classPathResource;
+				} else {
+					subName = classPathResource;
+				}
+				subName += ".sql";
+				r = new ClassPathResource(subName, myClass);
+				prefixEndIndex--;
+			}
+			if ( !r.exists() ) {
+				throw new RuntimeException("SQL resource " + resourceName + " not found");
+			}
+			String result = FileCopyUtils.copyToString(new InputStreamReader(r.getInputStream()));
+			if ( result != null && result.length() > 0 ) {
+				sqlResourceCache.put(key, result);
+			}
+			return result;
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Load a SQL resource into a String.
+	 * 
+	 * @param resource
+	 *        the SQL resource to load
+	 * @return the String
+	 * @throws RuntimeException
+	 *         if the resource cannot be loaded
+	 * @since 1.2
+	 */
+	public static String getSqlResource(Resource resource) {
+		try {
+			return FileCopyUtils.copyToString(new InputStreamReader(resource.getInputStream()));
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	/**
+	 * Get batch SQL statements, split into multiple statements on the
+	 * {@literal ;} character.
+	 * 
+	 * @param sqlResource
+	 *        the SQL resource to load
+	 * @return the split SQL statements
+	 * @throws RuntimeException
+	 *         if the resource cannot be loaded
+	 * @since 1.2
+	 */
+	public static String[] getBatchSqlResource(Resource sqlResource) {
+		String sql = getSqlResource(sqlResource);
+		if ( sql == null ) {
+			return null;
+		}
+		return sql.split(";\\s*");
 	}
 
 }
