@@ -150,6 +150,7 @@ public class H2OnlineBackupService extends BasicIdentifiable implements EventHan
 			public void run() {
 				log.info("Performing database backup...");
 				backup();
+				backupFuture = null;
 				log.info("Database backup complete.");
 			}
 
