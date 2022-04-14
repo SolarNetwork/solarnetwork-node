@@ -206,13 +206,14 @@ public class H2OnlineBackupService extends BasicIdentifiable implements EventHan
 						components = dbName.split("/");
 						dbName = components[components.length - 1];
 					}
-					Path tmpDestPath = temporaryDestinationPath.resolve(String.format("%s.zip", dbName));
+					String archiveName = String.format("%s.zip", dbName);
+					Path tmpDestPath = temporaryDestinationPath.resolve(archiveName);
 					log.debug("Backing up [{}] database to [{}]", dbName, tmpDestPath);
 					try (PreparedStatement stmt = con.prepareStatement("BACKUP TO ?")) {
 						stmt.setString(1, tmpDestPath.toString());
 						stmt.execute();
 					}
-					Path destPath = destinationPath.resolve(String.format("%s.zip", dbName));
+					Path destPath = destinationPath.resolve(archiveName);
 					try {
 						if ( Files.exists(tmpDestPath) && Files.size(tmpDestPath) > 0 ) {
 							log.debug("Moving database [{}] temporary backup [{}] to [{}]", dbName,
