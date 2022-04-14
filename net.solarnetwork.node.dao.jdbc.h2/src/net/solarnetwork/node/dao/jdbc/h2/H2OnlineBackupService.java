@@ -23,8 +23,11 @@
 package net.solarnetwork.node.dao.jdbc.h2;
 
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -59,6 +62,11 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * Service to perform online backups of H2 databases using the {@code BACkUP TO}
  * command.
  * 
+ * <p>
+ * For robustness the backup is performed first to a temporary location, and
+ * then the output file is renamed to the actual destination.
+ * </p>
+ * 
  * @author matt
  * @version 1.0
  */
@@ -72,6 +80,7 @@ public class H2OnlineBackupService extends BasicIdentifiable implements EventHan
 	private final Collection<DataSource> dataSources;
 	private TaskScheduler taskScheduler;
 	private Path destinationPath;
+	private Path temporaryDestinationPath;
 	private int backupDelaySecs;
 
 	private ScheduledFuture<?> backupFuture;
@@ -88,6 +97,7 @@ public class H2OnlineBackupService extends BasicIdentifiable implements EventHan
 		super();
 		this.dataSources = requireNonNullArgument(dataSources, "dataSources");
 		this.destinationPath = Paths.get("var", "db-bak");
+		this.temporaryDestinationPath = Paths.get("var", "work");
 		this.backupDelaySecs = DEFAULT_BACKUP_DELAY_SECS;
 		setUid(getSettingUid());
 	}
@@ -101,6 +111,8 @@ public class H2OnlineBackupService extends BasicIdentifiable implements EventHan
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = new ArrayList<>(4);
 		result.add(new BasicTextFieldSettingSpecifier("destination", destinationPath.toString()));
+		result.add(new BasicTextFieldSettingSpecifier("temporaryDestination",
+				temporaryDestinationPath.toString()));
 		return result;
 	}
 
@@ -159,6 +171,12 @@ public class H2OnlineBackupService extends BasicIdentifiable implements EventHan
 
 	/**
 	 * Execute the backup.
+	 * 
+	 * <p>
+	 * The backup is first performed to the
+	 * {@link #getTemporaryDestinationPath()} directory, and assuming no error
+	 * occurs is then moved to {@link #getDestinationPath()}.
+	 * </p>
 	 */
 	public void backup() {
 		final Set<String> completedUrls = new LinkedHashSet<>();
@@ -168,6 +186,7 @@ public class H2OnlineBackupService extends BasicIdentifiable implements EventHan
 
 				@Override
 				public Void doInConnection(Connection con) throws SQLException, DataAccessException {
+					con.setAutoCommit(true);
 					String url = con.getMetaData().getURL();
 					if ( completedUrls.contains(url) ) {
 						return null;
@@ -187,13 +206,28 @@ public class H2OnlineBackupService extends BasicIdentifiable implements EventHan
 						components = dbName.split("/");
 						dbName = components[components.length - 1];
 					}
-					Path destPath = destinationPath.resolve(String.format("%s.zip", dbName));
-					log.debug("Backing up [{}] database to [{}]", dbName, destPath);
+					Path tmpDestPath = temporaryDestinationPath.resolve(String.format("%s.zip", dbName));
+					log.debug("Backing up [{}] database to [{}]", dbName, tmpDestPath);
 					try (PreparedStatement stmt = con.prepareStatement("BACKUP TO ?")) {
-						stmt.setString(1, destPath.toString());
+						stmt.setString(1, tmpDestPath.toString());
 						stmt.execute();
 					}
-					log.info("Backed up [{}] database to [{}]", dbName, destPath);
+					Path destPath = destinationPath.resolve(String.format("%s.zip", dbName));
+					try {
+						if ( Files.exists(tmpDestPath) && Files.size(tmpDestPath) > 0 ) {
+							log.debug("Moving database [{}] temporary backup [{}] to [{}]", dbName,
+									tmpDestPath, destPath);
+							if ( !Files.isDirectory(destinationPath) ) {
+								Files.createDirectories(destinationPath);
+							}
+							Files.move(tmpDestPath, destPath, StandardCopyOption.ATOMIC_MOVE,
+									StandardCopyOption.REPLACE_EXISTING);
+							log.info("Backed up [{}] database to [{}]", dbName, destPath);
+						}
+					} catch ( IOException e ) {
+						log.error("Error backup up database [{}] to [{}]: {}", dbName, destPath,
+								e.toString());
+					}
 					completedUrls.add(url);
 					return null;
 				}
@@ -244,6 +278,51 @@ public class H2OnlineBackupService extends BasicIdentifiable implements EventHan
 			return;
 		}
 		setDestinationPath(Paths.get(destination));
+	}
+
+	/**
+	 * Get the temporary destination path (directory) for the backup archives.
+	 * 
+	 * @return the temporary destination path for the backup archives, never
+	 *         {@literal null}
+	 */
+	public Path getTemporaryDestinationPath() {
+		return destinationPath;
+	}
+
+	/**
+	 * Set the temporary destination path (directory) for the backup archives.
+	 * 
+	 * @param destinationPath
+	 *        the path to use; {@literal null} value will be ignored
+	 */
+	public void setTemporaryDestinationPath(Path destinationPath) {
+		if ( destinationPath == null ) {
+			return;
+		}
+		this.destinationPath = destinationPath;
+	}
+
+	/**
+	 * Get the temporary destination path as a string.
+	 * 
+	 * @return the path, never {@literal null}
+	 */
+	public String getTemporaryDestination() {
+		return destinationPath.toString();
+	}
+
+	/**
+	 * Set the temporary destination path as a string.
+	 * 
+	 * @param destination
+	 *        the path to set
+	 */
+	public void setTemporaryDestination(String destination) {
+		if ( destination == null || destination.isEmpty() ) {
+			return;
+		}
+		setTemporaryDestinationPath(Paths.get(destination));
 	}
 
 	/**
