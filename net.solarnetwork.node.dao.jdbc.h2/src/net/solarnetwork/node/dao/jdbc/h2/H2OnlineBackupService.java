@@ -191,20 +191,10 @@ public class H2OnlineBackupService extends BasicIdentifiable implements EventHan
 					if ( completedUrls.contains(url) ) {
 						return null;
 					}
-					if ( !url.startsWith("jdbc:h2:") ) {
+					String dbName = H2Utils.h2DatabaseName(url);
+					if ( dbName == null ) {
 						log.debug("Ignoring DataSource {}", url);
 						return null;
-					}
-					String[] components = url.split(":");
-					String dbName = components[components.length - 1];
-					int optIdx = dbName.indexOf(';');
-					if ( optIdx > 0 ) {
-						dbName = dbName.substring(0, optIdx);
-					}
-					optIdx = dbName.indexOf('/');
-					if ( optIdx >= 0 ) {
-						components = dbName.split("/");
-						dbName = components[components.length - 1];
 					}
 					String archiveName = String.format("%s.zip", dbName);
 					Path tmpDestPath = temporaryDestinationPath.resolve(archiveName);

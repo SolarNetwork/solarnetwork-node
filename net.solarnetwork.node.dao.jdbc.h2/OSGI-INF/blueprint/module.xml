@@ -44,6 +44,15 @@
 		</service-properties>
 	</service>
 
+	<service interface="net.solarnetwork.node.dao.jdbc.DatabaseSystemService">
+		<service-properties>
+			<entry key="db" value="node"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.dao.jdbc.h2.H2DatabaseSystemService">
+			<argument ref="dataSources"/>
+		</bean>
+	</service>
+
 
 	<service interface="net.solarnetwork.node.job.ManagedJob">
 		<service-properties>
