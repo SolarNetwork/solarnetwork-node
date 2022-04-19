@@ -5,7 +5,7 @@ Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc.h2
 Bundle-Description: Provides automated maintenance tasks for the H2 database.
 Bundle-Version: 1.1.0
 Bundle-Vendor: SolarNetwork
-Automatic-Module-Name: net.solarnetwork.noe.dao.jdbc.h2
+Automatic-Module-Name: net.solarnetwork.node.dao.jdbc.h2
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
  javax.sql,
