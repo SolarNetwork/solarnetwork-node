@@ -3,13 +3,14 @@ Bundle-ManifestVersion: 2
 Bundle-Name: DAO JDBC Derby Tests
 Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc.derby.test
 Automatic-Module-Name: net.solarnetwork.node.dao.jdbc.derby.test
-Bundle-Version: 2.0.0
+Bundle-Version: 2.1.0
 Bundle-Vendor: SolarNetwork
 Fragment-Host: net.solarnetwork.node.dao.jdbc.derby;bundle-version="[2.0,3.0)"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
  com.fasterxml.jackson.annotation;version="[2.4,3.0)",
  net.solarnetwork.node.test;version="[1.7,2.0)",
+ net.solarnetwork.service;version="[1.0,2.0)",
  org.easymock;version="[3.6,4.0)",
  org.junit;version="[4.5,5.0)",
  org.junit.runner;version="[4.5,5.0)",

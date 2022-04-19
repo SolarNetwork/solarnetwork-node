@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.dao.jdbc.test;
+package net.solarnetwork.node.dao.jdbc.derby.test;
 
 import static org.junit.Assert.assertEquals;
 import java.io.File;
