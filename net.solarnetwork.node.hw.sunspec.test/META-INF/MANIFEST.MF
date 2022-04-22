@@ -2,9 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Veris Hardware Support Tests
 Bundle-SymbolicName: net.solarnetwork.node.hw.sunspec.test
-Bundle-Version: 3.0.0
+Bundle-Version: 3.0.1
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.hw.sunspec;bundle-version="[3.0,4.0)"
+Fragment-Host: net.solarnetwork.node.hw.sunspec;bundle-version="[3.0.1,4.0)"
 Automatic-Module-Name: net.solarnetwork.node.hw.sunspec.test
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
