@@ -23,13 +23,18 @@
 package net.solarnetwork.node.io.canbus.support;
 
 import static java.util.stream.Collectors.toSet;
+import static net.solarnetwork.service.FilterableService.filterPropValue;
+import static net.solarnetwork.service.FilterableService.setFilterProp;
 import java.io.IOException;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
@@ -43,8 +48,10 @@ import net.solarnetwork.node.io.canbus.CanbusConnection;
 import net.solarnetwork.node.io.canbus.CanbusFrameListener;
 import net.solarnetwork.node.io.canbus.CanbusNetwork;
 import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.node.service.support.DatumDataSourceSupport;
-import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.FilterableService;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
 import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingsChangeObserver;
@@ -55,23 +62,30 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * {@link DatumDataSource} implementations.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSupport
 		implements SettingsChangeObserver, ServiceLifecycleObserver, CanbusFrameListener {
 
-	/** The default value for the {@code connectionCheckFrequency} property. */
-	public static final long DEFAULT_CONNECTION_CHECK_FREQUENCY = 60000L;
+	/** The {@code connectionCheckFrequency} property default value. */
+	public static final long DEFAULT_CONNECTION_CHECK_FREQUENCY = 60_000L;
+
+	/** The {@code reconnectDelay} property default value. */
+	public static final long DEFAULT_RECONNECT_DELAY = 10_000L;
+
+	private static final ConcurrentMap<String, Instant> CONNECTION_CHECK_TIMES = new ConcurrentHashMap<>(
+			8, 0.9f, 1);
 
 	private final AtomicReference<CanbusConnection> connection = new AtomicReference<CanbusConnection>();
 	private final AtomicReference<CanbusFrameListener> monitor = new AtomicReference<CanbusFrameListener>();
 	private final ConcurrentMap<Integer, CanbusSubscription> subscriptions = new ConcurrentHashMap<>(16,
 			0.9f, 1);
 
-	private OptionalService<CanbusNetwork> canbusNetwork;
+	private OptionalFilterableService<CanbusNetwork> canbusNetwork;
 	private String busName;
 	private TaskScheduler taskScheduler;
 	private long connectionCheckFrequency = DEFAULT_CONNECTION_CHECK_FREQUENCY;
+	private long reconnectDelay = DEFAULT_RECONNECT_DELAY;
 	private MeasurementHelper measurementHelper;
 
 	private ScheduledFuture<?> connectionCheckFuture;
@@ -93,6 +107,8 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 		results.add(
 				new BasicTextFieldSettingSpecifier(prefix + "canbusNetwork.propertyFilters['uid']", ""));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "busName", ""));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "reconnectDelay",
+				String.valueOf(DEFAULT_RECONNECT_DELAY)));
 		return results;
 	}
 
@@ -347,19 +363,57 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 		@Override
 		public void run() {
 			try {
+				final String networkUid = getCanbusNetworkUid();
 				CanbusConnection conn = sharedCanbusConnection();
-				if ( conn == null ) {
+				if ( conn == null || networkUid == null ) {
 					log.info("No CAN bus connection available to {} (missing configuration?)",
 							canbusNetworkName());
 				} else {
-					Future<Boolean> verification = conn.verifyConnectivity();
+					// limit check to once/frequency per bus
+					final Instant now = Instant.now();
+					final long checkFreq = getConnectionCheckFrequency();
+					final Instant checkTime = CONNECTION_CHECK_TIMES.compute(networkUid, (k, v) -> {
+						if ( v == null ) {
+							return now;
+						}
+						if ( ChronoUnit.MILLIS.between(v, now) < checkFreq ) {
+							return v;
+						}
+						return now;
+					});
+					if ( checkTime != now ) {
+						log.debug("Not checking CAN bus connectivity to {}; last check within {}ms",
+								canbusNetworkName(), checkFreq);
+						return;
+					}
+					final boolean closed = conn.isClosed();
+					Future<Boolean> verification = (!closed ? conn.verifyConnectivity()
+							: CompletableFuture.completedFuture(false));
 					Boolean result = verification.get(connectionCheckFrequency, TimeUnit.MILLISECONDS);
 					if ( result != null && result.booleanValue() ) {
 						log.info("Verified CAN bus connectivity to {}", canbusNetworkName());
 					} else {
-						log.warn("Failed to verify CAN bus connectivity to {}; closing connection now",
-								canbusNetworkName());
-						closeSharedCanbusConnection();
+						if ( closed ) {
+							log.info("CAN bus connectivity to {} closed; re-opening connection now",
+									canbusNetworkName());
+						} else {
+							log.warn(
+									"Failed to verify CAN bus connectivity to {}; re-opening connection now",
+									canbusNetworkName());
+						}
+						try {
+							if ( !closed ) {
+								closeSharedCanbusConnection();
+								long delay = getReconnectDelay();
+								if ( delay > 0 ) {
+									Thread.sleep(delay);
+								}
+							}
+						} catch ( InterruptedException e ) {
+							// ignore
+						} finally {
+							sharedCanbusConnection();
+						}
 					}
 				}
 			} catch ( Exception e ) {
@@ -501,7 +555,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	 * 
 	 * @return the network
 	 */
-	public OptionalService<CanbusNetwork> getCanbusNetwork() {
+	public OptionalFilterableService<CanbusNetwork> getCanbusNetwork() {
 		return canbusNetwork;
 	}
 
@@ -511,8 +565,29 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	 * @param canbusNetwork
 	 *        the network
 	 */
-	public void setCanbusNetwork(OptionalService<CanbusNetwork> canbusNetwork) {
+	public void setCanbusNetwork(OptionalFilterableService<CanbusNetwork> canbusNetwork) {
 		this.canbusNetwork = canbusNetwork;
+	}
+
+	/**
+	 * Get the CAN bus network UID.
+	 * 
+	 * @return the CAN bus network UID
+	 * @since 2.1
+	 */
+	public String getCanbusNetworkUid() {
+		return filterPropValue((FilterableService) canbusNetwork, BaseIdentifiable.UID_PROPERTY);
+	}
+
+	/**
+	 * Set the CAN bus network UID.
+	 * 
+	 * @param uid
+	 *        the CAN bus network UID
+	 * @since 2.1
+	 */
+	public void setCanbusNetworkUid(String uid) {
+		setFilterProp((FilterableService) canbusNetwork, BaseIdentifiable.UID_PROPERTY, uid);
 	}
 
 	/**
@@ -603,6 +678,27 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 	 */
 	public void setMeasurementHelper(MeasurementHelper measurementHelper) {
 		this.measurementHelper = measurementHelper;
+	}
+
+	/**
+	 * Get the reconnect delay.
+	 * 
+	 * @return the delay, in milliseconds
+	 * @since 2.1
+	 */
+	public long getReconnectDelay() {
+		return reconnectDelay;
+	}
+
+	/**
+	 * Set the reconnect delay.
+	 * 
+	 * @param reconnectDelay
+	 *        the delay to set, in milliseconds
+	 * @since 2.1
+	 */
+	public void setReconnectDelay(long reconnectDelay) {
+		this.reconnectDelay = reconnectDelay;
 	}
 
 }
