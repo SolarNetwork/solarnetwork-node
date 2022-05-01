@@ -40,6 +40,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.measure.Quantity;
 import javax.measure.Unit;
@@ -389,7 +390,13 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 					final boolean closed = conn.isClosed();
 					Future<Boolean> verification = (!closed ? conn.verifyConnectivity()
 							: CompletableFuture.completedFuture(false));
-					Boolean result = verification.get(connectionCheckFrequency, TimeUnit.MILLISECONDS);
+					Boolean result = false;
+					try {
+						result = verification.get(connectionCheckFrequency, TimeUnit.MILLISECONDS);
+					} catch ( TimeoutException e ) {
+						log.warn("Timeout waiting {}ms for connection check result.",
+								connectionCheckFrequency);
+					}
 					if ( result != null && result.booleanValue() ) {
 						log.info("Verified CAN bus connectivity to {}", canbusNetworkName());
 					} else {
