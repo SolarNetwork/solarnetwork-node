@@ -67,7 +67,7 @@ import net.solarnetwork.util.CachedResult;
  * </p>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class JsonDatumMetadataService extends JsonHttpClientSupport implements DatumMetadataService,
 		SettingResourceHandler, SettingSpecifierProvider, SettingsChangeObserver, Runnable {
@@ -321,7 +321,15 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 				if ( m.needsPersist() ) {
 					m.persistMetadataLocally(metaToSync, timestamp);
 				}
-				syncMetadata(me.getKey(), metaToSync, timestamp);
+				try {
+					syncMetadata(me.getKey(), metaToSync, timestamp);
+				} catch ( IOException e ) {
+					log.warn("Communication error synchronizing datum metadata for [{}]: {}",
+							me.getKey(), e.toString());
+				} catch ( Exception e ) {
+					log.error("Error synchronizing datum metadata for [{}]: {}", me.getKey(),
+							e.toString(), e);
+				}
 			}
 		}
 	}
@@ -451,14 +459,21 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 			}
 		}
 		if ( metaToSync != null ) {
-			syncMetadata(sourceId, metaToSync, timestamp);
+			try {
+				syncMetadata(sourceId, metaToSync, timestamp);
+			} catch ( IOException e ) {
+				throw new RuntimeException(
+						String.format("Communication problem synchronizing datum metadata for [%s]: %s",
+								sourceId, e.toString()),
+						e);
+			}
 		} else if ( !changed && log.isDebugEnabled() ) {
 			log.debug("Metadata has not changed for source {}", sourceId);
 		}
 	}
 
 	private void syncMetadata(final String sourceId, final GeneralDatumMetadata metadata,
-			final long timestamp) {
+			final long timestamp) throws IOException {
 		final String url = nodeSourceMetadataUrl(sourceId);
 		log.info("Posting metadata for source {}", sourceId);
 		try {
@@ -476,7 +491,6 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 			} else if ( log.isDebugEnabled() ) {
 				log.debug("Unable to post data: " + e.getMessage());
 			}
-			throw new RuntimeException(e);
 		}
 	}
 

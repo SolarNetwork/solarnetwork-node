@@ -24,11 +24,15 @@ package net.solarnetwork.node.dao.jdbc.test;
 
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.junit.Assert.assertEquals;
+import java.time.Instant;
+import java.util.Date;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.annotation.Resource;
-import javax.sql.DataSource;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.Assert;
@@ -36,8 +40,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.node.dao.BasicBatchOptions;
@@ -59,12 +61,6 @@ import net.solarnetwork.service.StaticOptionalService;
  */
 public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 
-	@Resource(name = "dataSource")
-	private DataSource dataSource;
-
-	@Resource(name = "txManager")
-	private PlatformTransactionManager txManager;
-
 	private JdbcSettingDao dao;
 	private SettingDao settingDao; // to work with just public API
 	private EventAdmin eventAdminMock;
@@ -80,7 +76,9 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 
 		dao = new JdbcSettingDao();
 		dao.setDataSource(dataSource);
-		dao.setTransactionTemplate(new TransactionTemplate(txManager));
+		dao.setTransactionTemplate(txTemplate);
+		dao.setSqlResourcePrefix(
+				String.format("%s-settings", dataSource.getDatabaseType().toString().toLowerCase()));
 
 		eventAdminMock = EasyMock.createMock(EventAdmin.class);
 		dao.setEventAdmin(new StaticOptionalService<EventAdmin>(eventAdminMock));
@@ -292,4 +290,72 @@ public class JdbcSettingsDaoTests extends AbstractNodeTransactionalTest {
 		Assert.assertNotNull(s.getModified());
 		assertEquals(in.getFlags(), s.getFlags());
 	}
+
+	@Test
+	public void mostRecentDate() throws Exception {
+		// GIVEN
+		final int count = 5;
+		Instant before = null;
+		Instant after = null;
+		for ( int i = 0; i < count; i += 1 ) {
+			before = Instant.now();
+			settingDao.storeSetting(TEST_KEY + i, TEST_TYPE, TEST_VALUE);
+			after = Instant.now();
+			Thread.sleep(200);
+		}
+
+		// WHEN
+		Date result = settingDao.getMostRecentModificationDate();
+
+		// THEN
+		assertThat("Most recent date returned", result.toInstant(),
+				allOf(greaterThanOrEqualTo(before), lessThanOrEqualTo(after)));
+	}
+
+	@Test
+	public void mostRecentDate_unchangedValue() throws Exception {
+		// GIVEN
+		final int count = 5;
+		Instant before = null;
+		Instant after = null;
+		for ( int i = 0; i < count; i += 1 ) {
+			before = Instant.now();
+			settingDao.storeSetting(TEST_KEY + i, TEST_TYPE, TEST_VALUE);
+			after = Instant.now();
+			Thread.sleep(200);
+		}
+
+		// we're not changing the value, so the latest date is still the old value
+		settingDao.storeSetting(TEST_KEY + 2, TEST_TYPE, TEST_VALUE);
+
+		// WHEN
+		Date result = settingDao.getMostRecentModificationDate();
+
+		// THEN
+		assertThat("Most recent date returned", result.toInstant(),
+				allOf(greaterThanOrEqualTo(before), lessThanOrEqualTo(after)));
+	}
+
+	@Test
+	public void mostRecentDate_changedValue() throws Exception {
+		// GIVEN
+		final int count = 5;
+		for ( int i = 0; i < count; i += 1 ) {
+			settingDao.storeSetting(TEST_KEY + i, TEST_TYPE, TEST_VALUE);
+		}
+		Thread.sleep(200);
+
+		// the modification date is set by the DAO, so have to box the update by time to verify date
+		Instant before = Instant.now();
+		settingDao.storeSetting(TEST_KEY + 2, TEST_TYPE, TEST_VALUE + " updated");
+		Instant after = Instant.now();
+
+		// WHEN
+		Date result = settingDao.getMostRecentModificationDate();
+
+		// THEN
+		assertThat("Most recent date returned", result.toInstant(),
+				allOf(greaterThanOrEqualTo(before), lessThanOrEqualTo(after)));
+	}
+
 }

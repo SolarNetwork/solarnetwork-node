@@ -75,7 +75,6 @@ import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
-import net.solarnetwork.node.datum.filter.std.ThrottlingDatumFilterService;
 import net.solarnetwork.node.datum.filter.virt.VirtualMeterConfig;
 import net.solarnetwork.node.datum.filter.virt.VirtualMeterDatumFilterService;
 import net.solarnetwork.node.datum.filter.virt.VirtualMeterExpressionConfig;
@@ -114,7 +113,6 @@ public class VirtualMeterDatumFilterServiceTests {
 	public void setup() {
 		datumMetadataService = EasyMock.createMock(DatumMetadataService.class);
 		opModesService = EasyMock.createMock(OperationalModesService.class);
-		ThrottlingDatumFilterService.clearSettingCache();
 		xform = new VirtualMeterDatumFilterService(new StaticOptionalService<>(datumMetadataService));
 		xform.setUid(TEST_UID);
 		xform.setSourceId("^F");

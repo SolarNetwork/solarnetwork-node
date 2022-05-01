@@ -26,6 +26,7 @@ import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import static net.solarnetwork.util.StringUtils.patterns;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -92,12 +93,10 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 		final Pattern[] excs = this.excludePatterns;
 
 		// load all Datum "last created" settings, if we need to throttle by frequency
-		final ConcurrentMap<String, String> lastSeenMap = loadSettingsIfFrequencyLimitConfigured(
-				settingKey, incs);
+		final ConcurrentMap<String, Instant> lastSeenMap = transientSettings(settingKey);
 
-		final long now = (datum != null && datum.getTimestamp() != null
-				? datum.getTimestamp().toEpochMilli()
-				: System.currentTimeMillis());
+		final Instant now = (datum != null && datum.getTimestamp() != null ? datum.getTimestamp()
+				: Instant.now());
 		log.trace(
 				"Property filter [{}] examining datum {} @ {} with {} include and {} exclude configurations",
 				getUid(), datum, now, (incs != null ? incs.length : 0),
@@ -115,15 +114,16 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 						String lastSeenKey = (lastSeenMap != null && match != null
 								? datum.getSourceId() + ';' + propName
 								: null);
-						if ( match == null
-								|| shouldLimitByFrequency(match, lastSeenKey, lastSeenMap, now) ) {
+						Instant lastFilterDate = shouldLimitByFrequency(match, lastSeenKey, lastSeenMap,
+								now);
+						if ( match == null || lastFilterDate == null ) {
 							if ( copy == null ) {
 								copy = new DatumSamples(samples);
 							}
 							copy.putSampleValue(t, propName, null);
 						} else if ( lastSeenMap != null && match != null ) {
-							saveLastSeenSetting(match.getFrequencySeconds(), now, settingKey,
-									lastSeenKey, lastSeenMap);
+							saveLastSeenSetting(match.getFrequency(), now, lastSeenKey, lastFilterDate,
+									lastSeenMap);
 						}
 					}
 				}
@@ -170,13 +170,12 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 		return out;
 	}
 
-	private void saveLastSeenSetting(final Integer limit, final long now, final String settingKey,
-			final String lastSeenKey, ConcurrentMap<String, String> lastSeenMap) {
+	private void saveLastSeenSetting(final Integer limit, final Instant now, final String lastSeenKey,
+			Instant oldLastSeenValue, ConcurrentMap<String, Instant> settings) {
 		if ( limit == null || limit.intValue() < 1 ) {
 			return;
 		}
-		final String oldLastSeenValue = lastSeenMap.get(lastSeenKey);
-		super.saveLastSeenSetting(now, settingKey, lastSeenKey, oldLastSeenValue, lastSeenMap);
+		super.saveLastSeenSetting(now, lastSeenKey, oldLastSeenValue, settings);
 	}
 
 	/**

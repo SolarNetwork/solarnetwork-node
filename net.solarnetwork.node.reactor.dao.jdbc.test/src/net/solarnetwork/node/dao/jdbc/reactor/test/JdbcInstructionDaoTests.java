@@ -43,13 +43,12 @@ import java.util.Set;
 import java.util.UUID;
 import org.junit.Before;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.util.FileCopyUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
+import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.dao.jdbc.reactor.JdbcInstructionDao;
 import net.solarnetwork.node.reactor.BasicInstruction;
 import net.solarnetwork.node.reactor.Instruction;
@@ -60,9 +59,8 @@ import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
  * Test case for the {@link JdbcInstructionDao} class.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
-@ContextConfiguration
 public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 
 	private static final Long TEST_ID = Math.abs(UUID.randomUUID().getMostSignificantBits());
@@ -71,13 +69,20 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 	private static final String TEST_PARAM_KEY = "Test Param";
 	private static final String TEST_PARAM_VALUE = "Test Value";
 
-	@Autowired
 	private JdbcInstructionDao dao;
 
 	private Instruction lastDatum;
 
 	@Before
 	public void setUp() throws Exception {
+		DatabaseSetup setup = new DatabaseSetup();
+		setup.setDataSource(dataSource);
+		setup.init();
+
+		dao = new JdbcInstructionDao();
+		dao.setDataSource(dataSource);
+		dao.init();
+
 		lastDatum = null;
 	}
 

@@ -66,14 +66,16 @@ import net.solarnetwork.node.backup.SimpleBackupResourceProviderInfo;
  * Backup support for JDBC tables.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 1.17
  */
 public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 
+	private final String key;
 	private final JdbcTemplate jdbcTemplate;
 	private final TransactionTemplate transactionTemplate;
 	private final TaskExecutor taskExecutor;
+
 	private MessageSource messageSource;
 	private String[] tableNames;
 
@@ -81,6 +83,11 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 
 	/**
 	 * Constructor.
+	 * 
+	 * <p>
+	 * This will default to a backup provider key of
+	 * {@literal net.solarnetwork.node.dao.jdbc.JdbcTableBackupResourceProvider}.
+	 * </p>
 	 * 
 	 * @param jdbcTemplate
 	 *        The JDBC template to use.
@@ -91,7 +98,27 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 	 */
 	public JdbcTableBackupResourceProvider(JdbcTemplate jdbcTemplate,
 			TransactionTemplate transactionTemplate, TaskExecutor taskExecutor) {
+		this("net.solarnetwork.node.dao.jdbc.JdbcTableBackupResourceProvider", jdbcTemplate,
+				transactionTemplate, taskExecutor);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param key
+	 *        the backup provider key to use
+	 * @param jdbcTemplate
+	 *        The JDBC template to use.
+	 * @param transactionTemplate
+	 *        A transaction template to use, for supporting savepoints.
+	 * @param taskExecutor
+	 *        A task executor to use.
+	 * @since 1.3
+	 */
+	public JdbcTableBackupResourceProvider(String key, JdbcTemplate jdbcTemplate,
+			TransactionTemplate transactionTemplate, TaskExecutor taskExecutor) {
 		super();
+		this.key = key;
 		this.jdbcTemplate = jdbcTemplate;
 		this.transactionTemplate = transactionTemplate;
 		this.taskExecutor = taskExecutor;
@@ -99,7 +126,7 @@ public class JdbcTableBackupResourceProvider implements BackupResourceProvider {
 
 	@Override
 	public String getKey() {
-		return getClass().getName();
+		return key;
 	}
 
 	@Override

@@ -37,8 +37,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Resource;
-import javax.sql.DataSource;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
@@ -68,9 +66,6 @@ import net.solarnetwork.service.StaticOptionalService;
  * @version 2.0
  */
 public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
-
-	@Resource(name = "dataSource")
-	private DataSource dataSource;
 
 	private JdbcGeneralNodeDatumDao dao;
 	private EventAdmin eventAdmin;

@@ -4,11 +4,11 @@ Bundle-Name: Core Database Storage Support
 Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc
 Automatic-Module-Name: net.solarnetwork.node.dao.jdbc
 Bundle-Description: Provides standardized database storage infrastructure for the SolarNode application.
-Bundle-Version: 2.2.0
+Bundle-Version: 2.4.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: 
- net.solarnetwork.node.dao.jdbc;version="2.0.2"
+ net.solarnetwork.node.dao.jdbc;version="2.2.0"
 Import-Package: 
  com.fasterxml.jackson.annotation;version="[2.4,3.0)",
  com.fasterxml.jackson.core;version="[2.4,3.0)",
@@ -34,6 +34,8 @@ Import-Package:
  net.solarnetwork.settings.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.aopalliance.aop;version="[1.0,2.0)",
+ org.apache.commons.codec;version="[1.11,2.0)",
+ org.apache.commons.codec.binary;version="[1.11,2.0)",
  org.apache.derby.jdbc;version="10.12";resolution:=optional,
  org.osgi.framework;version="[1.7,2.0)",
  org.osgi.service.event;version="[1.2,2.0)",

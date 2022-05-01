@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.dao.mqtt.jdbc.test;
 
+import static java.lang.String.format;
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
@@ -29,16 +30,18 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import java.io.IOException;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
-import javax.annotation.Resource;
-import javax.sql.DataSource;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import net.solarnetwork.common.mqtt.MqttQos;
 import net.solarnetwork.common.mqtt.dao.BasicMqttMessageEntity;
 import net.solarnetwork.common.mqtt.dao.MqttMessageDao;
@@ -49,7 +52,8 @@ import net.solarnetwork.dao.BatchableDao.BatchCallbackResult;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.dao.mqtt.jdbc.JdbcMqttMessageDao;
 import net.solarnetwork.node.dao.mqtt.jdbc.MqttMessageDaoStat;
-import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
+import net.solarnetwork.node.test.AbstractNodeTest;
+import net.solarnetwork.node.test.TestEmbeddedDatabase;
 
 /**
  * Test cases for the {@link JdbcMqttMessageDao} class.
@@ -57,28 +61,38 @@ import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
  * @author matt
  * @version 1.0
  */
-public class JdbcMqttMessageDaoTests extends AbstractNodeTransactionalTest {
+public class JdbcMqttMessageDaoTests extends AbstractNodeTest {
 
-	@Resource(name = "dataSource")
-	private DataSource dataSource;
+	private TestEmbeddedDatabase dataSource;
 
 	private JdbcMqttMessageDao dao;
 	private BasicMqttMessageEntity last;
 
 	@Before
-	public void setup() {
+	public void setup() throws IOException {
+		dao = new JdbcMqttMessageDao();
+
+		TestEmbeddedDatabase db = createEmbeddedDatabase("data.db.type");
+		if ( db.getDatabaseType() != EmbeddedDatabaseType.DERBY ) {
+			String dbType = db.getDatabaseType().toString().toLowerCase();
+			dao.setInitSqlResource(new ClassPathResource(format("%s-message-init.sql", dbType),
+					JdbcMqttMessageDao.class));
+			dao.setSqlResourcePrefix(format("%s-message", dbType));
+		}
+		dataSource = db;
+
 		DatabaseSetup setup = new DatabaseSetup();
 		setup.setDataSource(dataSource);
 		setup.init();
 
-		dao = new JdbcMqttMessageDao();
 		dao.setDataSource(dataSource);
 		dao.init();
 	}
 
 	private BasicMqttMessageEntity createTestMqttMessageEntity(String dest, String topic,
 			boolean retained, MqttQos qos, byte[] payload) {
-		return new BasicMqttMessageEntity(null, Instant.now(), dest, topic, retained, qos, payload);
+		return new BasicMqttMessageEntity(null, Instant.now().truncatedTo(ChronoUnit.MILLIS), dest,
+				topic, retained, qos, payload);
 	}
 
 	@Test

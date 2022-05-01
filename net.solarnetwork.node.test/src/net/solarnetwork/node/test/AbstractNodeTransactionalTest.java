@@ -22,53 +22,74 @@
 
 package net.solarnetwork.node.test;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.TimeZone;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.AbstractTransactionalJUnit4SpringContextTests;
-import org.springframework.test.context.transaction.BeforeTransaction;
-import org.springframework.transaction.annotation.Transactional;
+import java.io.IOException;
+import java.io.InputStream;
+import org.junit.After;
+import org.junit.Before;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.FileCopyUtils;
 
 /**
  * Base test class for transactional unit tests.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
-@ContextConfiguration(locations = { "classpath:/net/solarnetwork/node/test/test-context.xml" })
-@Transactional(transactionManager = "txManager")
-@Rollback
-public abstract class AbstractNodeTransactionalTest
-		extends AbstractTransactionalJUnit4SpringContextTests {
+public abstract class AbstractNodeTransactionalTest extends AbstractNodeTest {
 
-	/** A test Node ID. */
-	protected static final Long TEST_NODE_ID = -5555L;
+	protected TestEmbeddedDatabase dataSource;
+	protected JdbcTemplate jdbcTemplate;
+	protected PlatformTransactionManager txManager;
+	protected TransactionTemplate txTemplate;
 
-	/** A test Weather Source ID. */
-	protected static final Long TEST_WEATHER_SOURCE_ID = -5554L;
+	@Before
+	public void setupNodeTransactionalTest() {
+		dataSource = createEmbeddedDatabase("db.type");
+		jdbcTemplate = new JdbcTemplate(dataSource);
+		txManager = new DataSourceTransactionManager(dataSource);
+		txTemplate = new TransactionTemplate(txManager);
+	}
 
-	/** A test Location ID. */
-	protected static final Long TEST_LOC_ID = -5553L;
-
-	/** A test TimeZone ID. */
-	protected static final String TEST_TZ = "Pacific/Auckland";
-
-	/** A date + time format. */
-	protected final DateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
-
-	/** A class-level logger. */
-	protected final Logger log = LoggerFactory.getLogger(getClass());
+	@After
+	public void teardownNodeTransactionalTest() {
+		dataSource.shutdown();
+	}
 
 	/**
-	 * Setup the {@link #dateTimeFormat} timezone.
+	 * Execute the given SQL script.
+	 * <p>
+	 * Use with caution outside of a transaction!
+	 * <p>
+	 * The script will normally be loaded by classpath.
+	 * <p>
+	 * <b>Do not use this method to execute DDL if you expect rollback.</b>
+	 * 
+	 * @param sqlResourcePath
+	 *        the Spring resource path for the SQL script
+	 * @param continueOnError
+	 *        whether or not to continue without throwing an exception in the
+	 *        event of an error
+	 * @throws DataAccessException
+	 *         if there is an error executing a statement
+	 * @see ResourceDatabasePopulator
 	 */
-	@BeforeTransaction
-	public void setupDateTime() {
-		dateTimeFormat.setTimeZone(TimeZone.getTimeZone(TEST_TZ));
+	protected void executeSqlScript(String sqlResourcePath, boolean continueOnError)
+			throws DataAccessException {
+		Resource resource;
+		try (InputStream in = getClass().getClassLoader().getResourceAsStream(sqlResourcePath)) {
+			resource = new ByteArrayResource(FileCopyUtils.copyToByteArray(in));
+		} catch ( IOException e ) {
+			throw new RuntimeException(
+					String.format("Error loading SQL from [%s]: %s", sqlResourcePath, e.toString()), e);
+		}
+		new ResourceDatabasePopulator(continueOnError, false, null, resource).execute(dataSource);
 	}
 
 }

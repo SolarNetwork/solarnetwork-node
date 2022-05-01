@@ -1,6 +1,7 @@
 
 package net.solarnetwork.node.dao.jdbc.con;
 
+import java.util.concurrent.TimeUnit;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
@@ -16,21 +17,56 @@ import org.osgi.service.cm.ConfigurationAdmin;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class Activator implements BundleActivator {
 
+	/**
+	 * A system property key for the startup sleep time, in milliseconds.
+	 * 
+	 * @since 1.1
+	 */
+	private static final String SYS_PROP_STARTUP_SLEEP = "net.solarnetwork.node.dao.jdbc.con.startupSleepMs";
+
 	@Override
 	public void start(BundleContext bundleContext) throws Exception {
-		ServiceReference<ConfigurationAdmin> caRef = bundleContext
-				.getServiceReference(ConfigurationAdmin.class);
-		if ( caRef != null ) {
-			ConfigurationAdmin ca = bundleContext.getService(caRef);
-			if ( ca != null ) {
-				DefaultDataSourceConfigurer configurer = new DefaultDataSourceConfigurer(ca);
-				configurer.init();
+		final long sleepTime = sleepTime();
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					Thread.sleep(sleepTime);
+				} catch ( InterruptedException e ) {
+					// ignore and continue
+				} finally {
+					ServiceReference<ConfigurationAdmin> caRef = bundleContext
+							.getServiceReference(ConfigurationAdmin.class);
+					if ( caRef != null ) {
+						ConfigurationAdmin ca = bundleContext.getService(caRef);
+						if ( ca != null ) {
+							DefaultDataSourceConfigurer configurer = new DefaultDataSourceConfigurer(ca);
+							configurer.init();
+						}
+					}
+
+				}
+
+			}
+		}).start();
+	}
+
+	private long sleepTime() {
+		long sleepTime = TimeUnit.SECONDS.toMillis(15);
+		String propSleep = System.getProperty(SYS_PROP_STARTUP_SLEEP);
+		if ( propSleep != null && !propSleep.isEmpty() ) {
+			try {
+				sleepTime = Long.parseLong(propSleep);
+			} catch ( Exception e ) {
+				// ignore
 			}
 		}
+		return sleepTime;
 	}
 
 	@Override

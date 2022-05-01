@@ -81,7 +81,7 @@ import net.wimpi.modbus.io.ModbusTCPTransport;
  * Modbus TCP server service.
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class ModbusServer extends BaseIdentifiable
 		implements SettingSpecifierProvider, SettingsChangeObserver, EventHandler, ThreadFactory {
@@ -100,6 +100,13 @@ public class ModbusServer extends BaseIdentifiable
 
 	/** The default {@code requestThrottle} property value. */
 	public static final long DEFAULT_REQUEST_THROTTLE = 100;
+
+	/**
+	 * The setting UID used by this service.
+	 * 
+	 * @since 2.3
+	 */
+	public static final String SETTING_UID = "net.solarnetwork.node.io.modbus.server";
 
 	private static final Logger log = LoggerFactory.getLogger(ModbusServer.class);
 
@@ -466,8 +473,8 @@ public class ModbusServer extends BaseIdentifiable
 				case Holding:
 				case Input:
 					Object xVal = update.measConfig.applyTransforms(update.propertyValue);
-					regData.writeValue(blockType, dataType, update.address,
-							update.measConfig.getWordLength(), xVal);
+					regData.writeValue(blockType, dataType, update.address, update.measConfig.getSize(),
+							xVal);
 					break;
 
 			}
@@ -486,7 +493,7 @@ public class ModbusServer extends BaseIdentifiable
 
 	@Override
 	public String getSettingUid() {
-		return "net.solarnetwork.node.io.modbus.server";
+		return SETTING_UID;
 	}
 
 	@Override

@@ -142,7 +142,27 @@ public class ModelDataFactoryTests {
 		assertThat("Version", data.getVersion(), equalTo("2.115"));
 		assertThat("Serial number", data.getSerialNumber(), equalTo("4E4C3699"));
 		assertThat("Device address", data.getDeviceAddress(), equalTo(7));
+	}
 
+	@Test(expected = IOException.class)
+	public void findBaseAddress_noMagicBytes() throws IOException {
+		// GIVEN
+		IntShortMap map = new IntShortMap(8);
+		ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(map);
+
+		// WHEN
+		ModelDataFactory.getInstance().getModelData(conn, ModelDataFactory.DEFAULT_MAX_READ_WORDS_COUNT);
+	}
+
+	@Test(expected = IOException.class)
+	public void fixedBaseAddress_noMagicBytes() throws IOException {
+		// GIVEN
+		IntShortMap map = new IntShortMap(8);
+		ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(map);
+
+		// WHEN
+		ModelDataFactory.getInstance().getModelData(conn, ModelDataFactory.DEFAULT_MAX_READ_WORDS_COUNT,
+				0);
 	}
 
 }

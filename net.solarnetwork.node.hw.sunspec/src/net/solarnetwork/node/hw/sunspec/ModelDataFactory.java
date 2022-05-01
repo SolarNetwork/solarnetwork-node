@@ -59,7 +59,7 @@ import net.solarnetwork.util.ByteUtils;
  * </p>
  * 
  * @author matt
- * @version 1.7
+ * @version 1.8
  */
 public class ModelDataFactory {
 
@@ -114,7 +114,7 @@ public class ModelDataFactory {
 		super();
 	}
 
-	private int findSunSpecBaseAddress(ModbusConnection conn) {
+	private int findSunSpecBaseAddress(ModbusConnection conn) throws IOException {
 		for ( ModelRegister r : ModelRegister.BASE_ADDRESSES ) {
 			try {
 				if ( isSunSpecBaseAddress(conn, r.getAddress()) ) {
@@ -126,7 +126,7 @@ public class ModelDataFactory {
 						e.toString());
 			}
 		}
-		throw new RuntimeException("SunSpec ID 'SunS' not found at any known base address.");
+		throw new IOException("SunSpec ID 'SunS' not found at any known base address.");
 	}
 
 	private boolean isSunSpecBaseAddress(ModbusConnection conn, final int address) {
@@ -155,10 +155,9 @@ public class ModelDataFactory {
 	 * @param conn
 	 *        the modbus connection
 	 * @return the data
-	 * @throws RuntimeException
-	 *         if no supported model data can be discovered
 	 * @throws IOException
-	 *         if any communication error occurs
+	 *         if any communication error occurs or no supported model data can
+	 *         be discovered
 	 */
 	public ModelData getModelData(ModbusConnection conn) throws IOException {
 		return getModelData(conn, DEFAULT_MAX_READ_WORDS_COUNT);
@@ -180,10 +179,9 @@ public class ModelDataFactory {
 	 *        the maxReadWordsCount to set; anything less than {@literal 1} is
 	 *        ignored; pass {@link Integer#MAX_VALUE} for no limit
 	 * @return the data
-	 * @throws RuntimeException
-	 *         if no supported model data can be discovered
 	 * @throws IOException
-	 *         if any communication error occurs
+	 *         if any communication error occurs or no supported model data can
+	 *         be discovered
 	 */
 	public ModelData getModelData(ModbusConnection conn, int maxReadWordsCount) throws IOException {
 		final int sunSpecBaseAddress = findSunSpecBaseAddress(conn);
@@ -202,16 +200,15 @@ public class ModelDataFactory {
 	 * @param baseAddress
 	 *        the Modbus address where the {@literal SunS} magic bytes start
 	 * @return the data
-	 * @throws RuntimeException
-	 *         if no supported model data can be discovered
 	 * @throws IOException
-	 *         if any communication error occurs
+	 *         if any communication error occurs or no supported model data can
+	 *         be discovered
 	 * @since 1.5
 	 */
 	public ModelData getModelData(ModbusConnection conn, int maxReadWordsCount, int baseAddress)
 			throws IOException {
 		if ( !isSunSpecBaseAddress(conn, baseAddress) ) {
-			throw new RuntimeException(String
+			throw new IOException(String
 					.format("SunSpec ID 'SunS' not found at base address 0x%1$04x (%1$d)", baseAddress));
 		}
 		return readModelData(conn, maxReadWordsCount, baseAddress);

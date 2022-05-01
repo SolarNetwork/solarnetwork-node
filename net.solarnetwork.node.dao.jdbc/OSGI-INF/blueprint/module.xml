@@ -29,6 +29,7 @@
 		<beans:prop key="JdbcDatumDao.maxFetchForUpload">240</beans:prop>
 		<beans:prop key="JdbcGeneralNodeDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generalnodedatum-init.sql</beans:prop>
 		<beans:prop key="JdbcGeneralNodeDatumDao.sqlResourcePrefix">derby-generalnodedatum</beans:prop>
+		<beans:prop key="JdbcSettingDao.sqlResourcePrefix">derby-settings</beans:prop>
 		<beans:prop key="job.generalNodeDatumCleaner.cron">35 0 0/2 ? * *</beans:prop>
 		<beans:prop key="job.generalNodeDatumCleaner.uploadedTrimHours">4</beans:prop>
 		<beans:prop key="job.generalNodeDatumTrimmer.cron">35 0 1/2 ? * *</beans:prop>
@@ -134,6 +135,7 @@
 	</bean>
 
 	<bean id="settingDao" class="net.solarnetwork.node.dao.jdbc.JdbcSettingDao">
+		<property name="sqlResourcePrefix" value="${JdbcSettingDao.sqlResourcePrefix}" />
 		<property name="dataSource" ref="dataSource" />
 		<property name="eventAdmin" ref="eventAdmin" />
 		<property name="transactionTemplate">

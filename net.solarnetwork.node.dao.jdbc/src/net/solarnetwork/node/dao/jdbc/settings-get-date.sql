@@ -1,0 +1,3 @@
+SELECT modified
+FROM SOLARNODE.SN_SETTINGS
+WHERE skey = ? AND tkey = ?

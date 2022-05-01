@@ -22,20 +22,16 @@
 
 package net.solarnetwork.node.datum.filter.std;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.domain.KeyValuePair;
-import net.solarnetwork.node.dao.SettingDao;
-import net.solarnetwork.node.domain.Setting;
-import net.solarnetwork.node.domain.Setting.SettingFlag;
+import net.solarnetwork.node.dao.TransientSettingDao;
 import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.settings.SettingSpecifier;
@@ -45,13 +41,10 @@ import net.solarnetwork.settings.SettingsChangeObserver;
  * Support class for sample transformers.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public class DatumFilterSupport extends BaseDatumFilterSupport implements SettingsChangeObserver {
-
-	/** The default value for the {@code settingCacheSecs} property. */
-	public static final int DEFAULT_SETTING_CACHE_SECS = 15;
 
 	/**
 	 * A setting key template, takes a single string parameter (the datum source
@@ -59,33 +52,16 @@ public class DatumFilterSupport extends BaseDatumFilterSupport implements Settin
 	 */
 	public static final String SETTING_KEY_TEMPLATE = "%s/valueCaptured";
 
-	/**
-	 * A global cache for helping with transformers that require persistence.
-	 */
-	protected static final ConcurrentMap<String, ConcurrentMap<String, String>> SETTING_CACHE = new ConcurrentHashMap<String, ConcurrentMap<String, String>>(
-			4, 0.9f, 1);
-
-	private SettingDao settingDao;
-	private int settingCacheSecs;
+	private TransientSettingDao transientSettingDao;
 	private String settingKey;
 	private boolean excludeBaseIdentifiableSettings;
-
-	private final AtomicLong settingCacheExpiry = new AtomicLong(0);
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
-	/**
-	 * Clear the internal setting cache.
-	 */
-	public static void clearSettingCache() {
-		SETTING_CACHE.clear();
-	}
-
 	public DatumFilterSupport() {
 		super();
 		setUid(DEFAULT_UID);
-		setSettingCacheSecs(DEFAULT_SETTING_CACHE_SECS);
 		setSettingKey(String.format(SETTING_KEY_TEMPLATE, DEFAULT_UID));
 	}
 
@@ -166,25 +142,52 @@ public class DatumFilterSupport extends BaseDatumFilterSupport implements Settin
 	 *        epoch date values (long)
 	 * @param now
 	 *        the date of the property
-	 * @return {@literal true} if the property should be limited
+	 * @return if the property should be limited, {@literal null}; otherwise the
+	 *         last saved date of that property
+	 * @since 1.1
 	 */
-	protected boolean shouldLimitByFrequency(PropertyFilterConfig config, final String lastSeenKey,
-			final ConcurrentMap<String, String> lastSeenMap, final long now) {
-		boolean limit = false;
-		if ( lastSeenMap != null && lastSeenKey != null && config != null
-				&& config.getFrequency() != null && config.getFrequency().intValue() > 0 ) {
-			final long offset = config.getFrequency() * 1000L;
-			String lastSaveSetting = lastSeenMap.get(lastSeenKey);
-			long lastSaveTime = (lastSaveSetting != null ? Long.valueOf(lastSaveSetting, 16) : 0);
-			if ( lastSaveTime > 0 && lastSaveTime + offset > now ) {
+	protected Instant shouldLimitByFrequency(PropertyFilterConfig config, final String lastSeenKey,
+			final ConcurrentMap<String, Instant> lastSeenMap, final Instant now) {
+		return shouldLimitByFrequency((config != null ? config.getFrequency() : null), lastSeenKey,
+				lastSeenMap, now);
+	}
+
+	/**
+	 * Test if a property should be limited based on a configuration test.
+	 * 
+	 * @param frequency
+	 *        the throttle frequency
+	 * @param lastSeenKey
+	 *        the key to use for the last seen date
+	 * @param lastSeenMap
+	 *        a map of string keys to string values, where the values are; if
+	 *        {@literal null} then {@literal false} will be returned hex-encoded
+	 *        epoch date values (long)
+	 * @param now
+	 *        the date of the property
+	 * @return if the property should be limited, {@literal null}; otherwise the
+	 *         last saved date of that property
+	 * @since 1.1
+	 */
+	protected Instant shouldLimitByFrequency(Integer frequency, final String lastSeenKey,
+			final ConcurrentMap<String, Instant> lastSeenMap, final Instant now) {
+		Instant result = null;
+		if ( lastSeenMap != null && lastSeenKey != null && frequency != null
+				&& frequency.intValue() > 0 ) {
+			Instant lastSaveTime = lastSeenMap.get(lastSeenKey);
+			if ( lastSaveTime != null && lastSaveTime.plusSeconds(frequency).isAfter(now) ) {
 				if ( log.isDebugEnabled() ) {
-					log.debug("Property {} was seen in the past {}s ({}s ago); filtering", lastSeenKey,
-							offset, (now - lastSaveTime) / 1000.0);
+					log.debug("Key [{}] was seen in the past {}s ({}s ago); filtering", lastSeenKey,
+							frequency,
+							(lastSaveTime != null ? ChronoUnit.MILLIS.between(lastSaveTime, now) : -1L));
 				}
-				limit = true;
+			} else {
+				result = (lastSaveTime != null ? lastSaveTime : now);
 			}
+		} else {
+			return now;
 		}
-		return limit;
+		return result;
 	}
 
 	/**
@@ -203,95 +206,50 @@ public class DatumFilterSupport extends BaseDatumFilterSupport implements Settin
 	}
 
 	/**
-	 * Load all available settings for a given key, if some property
-	 * configuration has a frequency limit defined.
-	 * 
-	 * @param key
-	 *        the key to load
-	 * @param configs
-	 *        the property configurations
-	 * @return the settings map, or {@literal null} if no configuration has a
-	 *         frequency set higher than {@literal 0}
-	 * @since 1.5
-	 */
-	protected ConcurrentMap<String, String> loadSettingsIfFrequencyLimitConfigured(String key,
-			PropertyFilterConfig[] configs) {
-		ConcurrentMap<String, String> result = null;
-		if ( configs != null && configs.length > 0 ) {
-			for ( int i = 0, len = configs.length; i < len; i++ ) {
-				PropertyFilterConfig config = configs[i];
-				if ( config.getFrequency() != null && config.getFrequency().intValue() > 0 ) {
-					result = loadSettings(key);
-					break;
-				}
-			}
-		}
-		return result;
-	}
-
-	/**
-	 * Load all available settings for a given key.
+	 * Get transient settings for a given key.
 	 * 
 	 * <p>
-	 * This method caches the results for at most {@code settingCacheSecs}
-	 * seconds.
+	 * This method requires the {@link #getTransientSettingDao()} to be
+	 * available.
 	 * </p>
 	 * 
-	 * @param key
-	 *        the key to load
-	 * @return the settings, mapped into a {@code ConcurrentMap} using the
-	 *         setting {@code type} for keys and the setting {@code value} for
-	 *         the associated values
+	 * @param <V>
+	 *        the setting value type; this is merely a generic cast and the
+	 *        actual map declaration is
+	 *        {@code ConcurrentMap&lt;String,Object&gt;}
+	 * @param settingKey
+	 *        the setting key to get transient settings
+	 * @return the settings map, never {@literal null}
+	 * @throws RuntimeException
+	 *         if no {@link TransientSettingDao} is available
+	 * @since 1.1
 	 */
-	protected ConcurrentMap<String, String> loadSettings(String key) {
-		ConcurrentMap<String, String> result = SETTING_CACHE.get(key);
-		if ( result == null ) {
-			SETTING_CACHE.putIfAbsent(key, new ConcurrentHashMap<String, String>(16, 0.9f, 1));
-			result = SETTING_CACHE.get(key);
+	protected <V> ConcurrentMap<String, V> transientSettings(String settingKey) {
+		final TransientSettingDao dao = getTransientSettingDao();
+		if ( dao == null ) {
+			throw new RuntimeException("No TransientSettingDao available.");
 		}
-		final long expiry = settingCacheExpiry.get();
-		if ( expiry > System.currentTimeMillis() ) {
-			return result;
-		}
-		SettingDao dao = getSettingDao();
-		if ( dao != null ) {
-			List<KeyValuePair> pairs = dao.getSettingValues(key);
-			if ( pairs != null && !pairs.isEmpty() ) {
-				for ( KeyValuePair pair : pairs ) {
-					result.put(pair.getKey(), pair.getValue());
-				}
-			}
-		}
-		settingCacheExpiry.compareAndSet(expiry, System.currentTimeMillis() + settingCacheSecs * 1000L);
-		return result;
+		return transientSettingDao.settings(settingKey);
 	}
 
 	/**
 	 * Save a "last seen" setting.
 	 * 
-	 * @param seenDate
+	 * @param newLastSeenValue
 	 *        the "last seen" date to use
-	 * @param settingKey
-	 *        the setting key to save the date to
 	 * @param lastSeenKey
-	 *        the setting type key to save the date to
+	 *        the last seen key to save the date to
 	 * @param oldLastSeenValue
 	 *        the previous "last seen" value, or {@literal null}
-	 * @param lastSeenMap
-	 *        a map to save the last seen date to, as a hex-encoded string
+	 * @param settings
+	 *        the settings map to save the last seen date to
+	 * @since 1.1
 	 */
-	protected void saveLastSeenSetting(final long seenDate, final String settingKey,
-			final String lastSeenKey, final String oldLastSeenValue,
-			ConcurrentMap<String, String> lastSeenMap) {
-		// save the new setting date
-		final String newLastSeenValue = Long.toString(seenDate, 16);
-		if ( (oldLastSeenValue == null && lastSeenMap.putIfAbsent(lastSeenKey, newLastSeenValue) == null)
-				|| (oldLastSeenValue != null
-						&& lastSeenMap.replace(lastSeenKey, oldLastSeenValue, newLastSeenValue)) ) {
-			log.debug("Saving {} last seen date: {}", lastSeenKey, seenDate);
-			Setting s = new Setting(settingKey, lastSeenKey, Long.toString(seenDate, 16),
-					EnumSet.of(SettingFlag.Volatile, SettingFlag.IgnoreModificationDate));
-			getSettingDao().storeSetting(s);
+	protected void saveLastSeenSetting(final Instant newLastSeenValue, final String lastSeenKey,
+			final Instant oldLastSeenValue, ConcurrentMap<String, Instant> settings) {
+		if ( (settings.putIfAbsent(lastSeenKey, newLastSeenValue) == null) || (oldLastSeenValue != null
+				&& settings.replace(lastSeenKey, oldLastSeenValue, newLastSeenValue)) ) {
+			log.debug("Saved {} last seen date: {}", lastSeenKey, newLastSeenValue);
 		}
 	}
 
@@ -305,50 +263,12 @@ public class DatumFilterSupport extends BaseDatumFilterSupport implements Settin
 	}
 
 	/**
-	 * Get the SettingDao to use.
-	 * 
-	 * @return the DAO
-	 */
-	public SettingDao getSettingDao() {
-		return this.settingDao;
-	}
-
-	/**
-	 * Set the {@link SettingDao} to use to persist "last seen" time stamps
-	 * with.
-	 * 
-	 * @param settingDao
-	 *        the DAO to set
-	 */
-	public void setSettingDao(SettingDao settingDao) {
-		this.settingDao = settingDao;
-	}
-
-	/**
-	 * The maximum number of seconds to use cached {@link SettingDao} data when
-	 * filtering datum.
-	 * 
-	 * <p>
-	 * An internal cache is used so that when iterating over sets of datum the
-	 * settings don't need to be loaded from the database each time over a very
-	 * short amount of time.
-	 * </p>
-	 * 
-	 * @param settingCacheSecs
-	 *        the settingCacheSecs to set
-	 */
-	public void setSettingCacheSecs(int settingCacheSecs) {
-		this.settingCacheSecs = settingCacheSecs;
-	}
-
-	/**
 	 * Set the setting key to use for saved settings.
 	 * 
 	 * @param settingKey
 	 *        the key to set
 	 * @throws IllegalArgumentException
 	 *         if {@code settingKey} is {@literal null}
-	 * @since 1.2
 	 */
 	public void setSettingKey(String settingKey) {
 		if ( settingKey == null ) {
@@ -363,7 +283,6 @@ public class DatumFilterSupport extends BaseDatumFilterSupport implements Settin
 	 * 
 	 * @return {@literal true} to exclude base identifiable service settings;
 	 *         defaults to {@literal false}
-	 * @since 1.3
 	 */
 	public boolean isExcludeBaseIdentifiableSettings() {
 		return excludeBaseIdentifiableSettings;
@@ -376,10 +295,30 @@ public class DatumFilterSupport extends BaseDatumFilterSupport implements Settin
 	 * @param excludeBaseIdentifiableSettings
 	 *        {@literal true} to exclude base identifiable service settings;
 	 *        defaults to {@literal false}
-	 * @since 1.3
 	 */
 	public void setExcludeBaseIdentifiableSettings(boolean excludeBaseIdentifiableSettings) {
 		this.excludeBaseIdentifiableSettings = excludeBaseIdentifiableSettings;
+	}
+
+	/**
+	 * Get the transient setting DAO.
+	 * 
+	 * @return the DAO, or {@literal null}
+	 * @since 1.1
+	 */
+	public TransientSettingDao getTransientSettingDao() {
+		return transientSettingDao;
+	}
+
+	/**
+	 * Set the transient setting DAO.
+	 * 
+	 * @param transientSettingDao
+	 *        the DAO to set
+	 * @since 1.1
+	 */
+	public void setTransientSettingDao(TransientSettingDao transientSettingDao) {
+		this.transientSettingDao = transientSettingDao;
 	}
 
 }

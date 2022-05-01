@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.filter.std;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
@@ -80,34 +81,22 @@ public class ThrottlingDatumFilterService extends DatumFilterSupport
 		final String sourceId = datum.getSourceId();
 
 		// load all Datum "last created" settings
-		final ConcurrentMap<String, String> createdSettings = loadSettings(settingKey);
+		final ConcurrentMap<String, Instant> lastSeenMap = transientSettings(settingKey);
 
-		final long now = (datum != null && datum.getTimestamp() != null
-				? datum.getTimestamp().toEpochMilli()
-				: System.currentTimeMillis());
-		final long offset = frequencySeconds * 1000L;
+		final Instant now = (datum != null && datum.getTimestamp() != null ? datum.getTimestamp()
+				: Instant.now());
 
-		boolean filter = false;
-		String lastSaveSetting = createdSettings.get(sourceId);
-		long lastSaveTime = (lastSaveSetting != null ? Long.valueOf(lastSaveSetting, 16) : 0);
-		if ( lastSaveTime > 0 && lastSaveTime + offset > now ) {
-			filter = true;
-		}
-
-		if ( filter ) {
-			if ( log.isDebugEnabled() ) {
-				log.debug("Throttle filter [{}] filtering source [{}] seen the past {}s ({}s ago): {}",
-						getUid(), sourceId, offset, (now - lastSaveTime) / 1000.0, datum);
-			}
+		Instant lastFilterDate = shouldLimitByFrequency(frequencySeconds, sourceId, lastSeenMap, now);
+		if ( lastFilterDate == null ) {
 			incrementStats(start, samples, null);
 			return null;
 		}
+		saveLastSeenSetting(now, sourceId, lastFilterDate, lastSeenMap);
 
 		log.trace("Throttle filter [{}] has not seen source [{}] in the past {}s; not filtering",
-				getUid(), sourceId, offset);
+				getUid(), sourceId, frequencySeconds);
 
 		// save the new setting date
-		saveLastSeenSetting(now, settingKey, sourceId, lastSaveSetting, createdSettings);
 		incrementStats(start, samples, samples);
 		return samples;
 	}

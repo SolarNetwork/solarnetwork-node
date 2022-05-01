@@ -25,12 +25,9 @@ package net.solarnetwork.node.dao.jdbc.test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import java.util.Map;
-import javax.annotation.Resource;
-import javax.sql.DataSource;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.core.JdbcOperations;
-import org.springframework.jdbc.core.JdbcTemplate;
 import net.solarnetwork.node.dao.jdbc.DatabaseSetup;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 
@@ -38,12 +35,9 @@ import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
  * Unit tests for the {@link DatabaseSetup} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class DatabaseSetupTest extends AbstractNodeTransactionalTest {
-
-	@Resource(name = "dataSource")
-	private DataSource dataSource;
 
 	@Test
 	public void createDatabaseSetup() {
@@ -52,7 +46,7 @@ public class DatabaseSetupTest extends AbstractNodeTransactionalTest {
 		setup.setInitSqlResource(new ClassPathResource("derby-init.sql", DatabaseSetup.class));
 		setup.init();
 
-		JdbcOperations jdbcOps = new JdbcTemplate(dataSource);
+		JdbcOperations jdbcOps = this.jdbcTemplate;
 		Map<String, ?> results = jdbcOps.queryForMap(
 				"SELECT * FROM solarnode.sn_settings WHERE skey = ?", "solarnode.sn_settings.version");
 		log.debug("Got sn_settings.version record {}", results);

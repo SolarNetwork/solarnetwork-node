@@ -23,6 +23,8 @@
 
 	<reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>
 
+	<reference id="transientSettingDao" interface="net.solarnetwork.node.dao.TransientSettingDao"/>
+
 	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
@@ -93,7 +95,7 @@
 			</beans:entry>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.datum.filter.std.PropertyDatumFilterService" init-method="init">
-			<property name="settingDao" ref="settingDao"/>
+			<property name="transientSettingDao" ref="transientSettingDao"/>
 			<property name="messageSource" ref="simpleFilterMessageSource"/>
 			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
@@ -154,7 +156,7 @@
 			</beans:entry>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.datum.filter.std.PropertyDatumFilterService" init-method="init">
-			<property name="settingDao" ref="settingDao"/>
+			<property name="transientSettingDao" ref="transientSettingDao"/>
 			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
 			<property name="placeholderService" ref="placeholderService"/>
@@ -209,7 +211,7 @@
 			</beans:entry>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.datum.filter.std.ThrottlingDatumFilterService" init-method="init">
-			<property name="settingDao" ref="settingDao"/>
+			<property name="transientSettingDao" ref="transientSettingDao"/>
 			<property name="messageSource" ref="sourceThrottleMessageSource"/>
 			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
@@ -270,7 +272,7 @@
 			</beans:entry>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.datum.filter.std.ThrottlingDatumFilterService" init-method="init">
-			<property name="settingDao" ref="settingDao"/>
+			<property name="transientSettingDao" ref="transientSettingDao"/>
 			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
 			<property name="placeholderService" ref="placeholderService"/>

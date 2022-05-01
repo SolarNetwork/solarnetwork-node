@@ -171,6 +171,7 @@
 				<argument value="net.solarnetwork.node.datum.filter.chain.global"/>
 				<argument ref="globalDatumFilterServices"/>
 				<argument value="false"/>
+				<property name="ignoreTransformUids" value="true"/>
 			</bean>
 		</argument>
 		<property name="alternateDatumFilterServices" ref="globalDatumFilterServices"/>
@@ -563,6 +564,13 @@
 				<reference-list interface="net.solarnetwork.service.PingTest" availability="optional"/>
 			</argument>
 		</bean>
+	</service>
+	
+	<!--
+		Transient Setting DAO
+	 -->
+	<service interface="net.solarnetwork.node.dao.TransientSettingDao">
+		<bean class="net.solarnetwork.node.dao.DefaultTransientSettingDao"/>
 	</service>
 
 </blueprint>

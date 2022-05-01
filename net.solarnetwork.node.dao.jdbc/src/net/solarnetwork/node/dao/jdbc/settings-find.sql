@@ -1,0 +1,2 @@
+SELECT tkey,svalue FROM SOLARNODE.SN_SETTINGS
+WHERE skey = ? ORDER BY tkey

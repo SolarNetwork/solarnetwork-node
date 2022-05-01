@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgi="http://www.eclipse.org/gemini/blueprint/schema/blueprint"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint/gemini-blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+	<!-- Configuration -->
+	
+	<osgix:cm-properties id="cfg" persistent-id="net.solarnetwork.node.dao.jdbc.h2">
+		<beans:prop key="backup.schedule">3 0 * * * *</beans:prop>
+		<beans:prop key="backup.destinationPath">var/db-bak</beans:prop>
+	</osgix:cm-properties>
+	
+	<ctx:property-placeholder properties-ref="cfg"/>
+	
+	<!-- Service references -->
+
+	<reference-list id="dataSources" interface="javax.sql.DataSource" availability="optional"/>
+	
+	<!-- Services -->
+
+	<service ref="backupService" interface="org.osgi.service.event.EventHandler">
+		<service-properties>
+			<entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
+				<array value-type="java.lang.String">
+					<value>#{T(net.solarnetwork.node.setup.SetupService).TOPIC_NETWORK_ASSOCIATION_ACCEPTED}</value>
+					<value>#{T(net.solarnetwork.node.dao.SettingDao).EVENT_TOPIC_SETTING_CHANGED}</value>
+					<value>#{T(net.solarnetwork.node.Constants).EVENT_TOPIC_CONFIGURATION_CHANGED}</value>
+				</array>
+			</entry>
+		</service-properties>
+	</service>
+
+	<service interface="net.solarnetwork.node.dao.jdbc.DatabaseSystemService">
+		<service-properties>
+			<entry key="db" value="node"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.dao.jdbc.h2.H2DatabaseSystemService">
+			<argument ref="dataSources"/>
+		</bean>
+	</service>
+
+
+	<service interface="net.solarnetwork.node.job.ManagedJob">
+		<service-properties>
+			<entry key="service.pid" value="net.solarnetwork.node.dao.jdbc.h2.backup"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob">
+			<argument ref="backupService"/>
+			<argument value="${backup.schedule}"/>
+			<property name="displayName" value="H2OnlineBackupJob"/>
+		</bean>
+	</service>
+	
+	<bean id="backupService" class="net.solarnetwork.node.dao.jdbc.h2.H2OnlineBackupService">
+		<argument ref="dataSources"/>
+		<property name="destination" value="${backup.destinationPath}"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basenames">
+					<list>
+						<value>net.solarnetwork.node.dao.jdbc.h2.H2OnlineBackupService</value>
+						<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+					</list>
+				</property>
+			</bean>
+		</property>
+	</bean>
+
+</blueprint>

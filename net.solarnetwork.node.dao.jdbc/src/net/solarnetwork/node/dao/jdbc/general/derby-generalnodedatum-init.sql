@@ -1,5 +1,5 @@
 CREATE TABLE solarnode.sn_general_node_datum (
-	created			TIMESTAMP NOT NULL WITH DEFAULT CURRENT_TIMESTAMP,
+	created			TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	source_id 		VARCHAR(64) NOT NULL,
 	obj_id			BIGINT,
 	uploaded		TIMESTAMP,

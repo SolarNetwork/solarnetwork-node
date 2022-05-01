@@ -22,12 +22,17 @@
 
 package net.solarnetwork.node.io.modbus.server.domain;
 
+import static java.lang.String.format;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.springframework.context.MessageSource;
+import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
@@ -38,9 +43,22 @@ import net.solarnetwork.util.ArrayUtils;
  * Configuration for a single Modbus unit.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class UnitConfig {
+
+	/**
+	 * A setting type pattern for a unit configuration element.
+	 * 
+	 * <p>
+	 * The pattern has two capture groups: the unit configuration index and the
+	 * property setting name.
+	 * </p>
+	 * 
+	 * @since 2.2
+	 */
+	public static final Pattern UNIT_SETTING_PATTERN = Pattern
+			.compile(Pattern.quote("unitConfigs[").concat("(\\d+)\\]\\.(.*)"));
 
 	private int unitId;
 	private RegisterBlockConfig[] registerBlockConfigs;
@@ -87,6 +105,96 @@ public class UnitConfig {
 				}));
 
 		return result;
+	}
+
+	/**
+	 * Populate a setting as a property configuration value, if possible.
+	 * 
+	 * @param config
+	 *        the overall configuration
+	 * @param setting
+	 *        the setting to try to handle
+	 * @return {@literal true} if the setting was handled as a property
+	 *         configuration value
+	 * @since 2.1
+	 */
+	public static boolean populateFromSetting(ModbusServerConfig config, Setting setting) {
+		Matcher m = UNIT_SETTING_PATTERN.matcher(setting.getType());
+		if ( !m.matches() ) {
+			return false;
+		}
+		int idx = Integer.parseInt(m.group(1));
+		String name = m.group(2);
+		List<UnitConfig> unitConfigs = config.getUnitConfigs();
+		if ( !(idx < unitConfigs.size()) ) {
+			unitConfigs.add(idx, new UnitConfig());
+		}
+		UnitConfig unitConfig = unitConfigs.get(idx);
+
+		if ( RegisterBlockConfig.populateFromSetting(unitConfig, setting) ) {
+			return true;
+		}
+
+		String val = setting.getValue();
+		if ( val != null && !val.isEmpty() ) {
+			switch (name) {
+				case "unitId":
+					unitConfig.setUnitId(Integer.valueOf(val));
+					break;
+				default:
+					// ignore
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Generate a list of setting values.
+	 * 
+	 * @param providerId
+	 *        the setting provider ID
+	 * @param instanceId
+	 *        the factory instance ID
+	 * @param unitIdx
+	 *        the unit configuration index
+	 * @return the settings
+	 * @since 2.2
+	 */
+	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, int unitIdx) {
+		List<SettingValueBean> settings = new ArrayList<>(2);
+		addSetting(settings, providerId, instanceId, unitIdx, "unitId", getUnitId());
+		addSetting(settings, providerId, instanceId, unitIdx, "registerBlockConfigsCount",
+				getRegisterBlockConfigsCount());
+		if ( registerBlockConfigs != null ) {
+			int i = 0;
+			for ( RegisterBlockConfig blockConfig : registerBlockConfigs ) {
+				settings.addAll(blockConfig.toSettingValues(providerId, instanceId, unitIdx, i++));
+			}
+		}
+		return settings;
+	}
+
+	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
+			int i, String key, Object val) {
+		if ( val == null ) {
+			return;
+		}
+		settings.add(new SettingValueBean(providerId, instanceId, format("unitConfigs[%d].%s", i, key),
+				val.toString()));
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("UnitConfig{unitId=");
+		builder.append(unitId);
+		builder.append(", ");
+		if ( registerBlockConfigs != null ) {
+			builder.append("registerBlockConfigs=");
+			builder.append(Arrays.toString(registerBlockConfigs));
+		}
+		builder.append("}");
+		return builder.toString();
 	}
 
 	/**
