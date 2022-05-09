@@ -28,6 +28,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.chrono.IsoChronology;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -80,7 +82,21 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 	 * 
 	 * @since 2.1
 	 */
-	public static final String DEFAULT_CAPTURE_LOG = "var/log/canbus-{busName}-{date}.log";
+	public static final String DEFAULT_CAPTURE_LOG_PATH = "var/log/canbus-{busName}-{date}.log.gz";
+
+	/**
+	 * The {@code captureInlineDate} property default value.
+	 * 
+	 * @since 2.1
+	 */
+	public static final boolean DEFAULT_CAPTURE_INLINE_DATE = true;
+
+	/**
+	 * The {@code captureLogGzip} property default value.
+	 * 
+	 * @since 2.1
+	 */
+	public static final boolean DEFAULT_CAPTURE_LOG_GZIP = true;
 
 	/**
 	 * A {@literal Signal} instruction parameter for capturing all CAN bus
@@ -133,6 +149,21 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 	 * @since 2.1
 	 */
 	public static final String CANBUS_CAPTURE_DATE_PLACEHOLDER = "date";
+
+	/**
+	 * The capture log file date placeholder format.
+	 * 
+	 * @since 2.1
+	 */
+	public static final DateTimeFormatter CAPTURE_DATE_PLACEHOLDER_FORMATTER;
+	static {
+		// @formatter:off
+		CAPTURE_DATE_PLACEHOLDER_FORMATTER = DateTimeFormatter
+				.ofPattern("yyyy-MM-dd-HHmmss")
+				.withChronology(IsoChronology.INSTANCE)
+				.withZone(ZoneOffset.UTC);
+		// @formatter:on
+	}
 
 	/**
 	 * Enumeration of CAN bus capture actions.
@@ -212,8 +243,9 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 	private String host = DEFAULT_HOST;
 	private int port = DEFAULT_PORT;
 
-	private String captureLogPath;
-	private boolean captureIncludeDate;
+	private String captureLogPath = DEFAULT_CAPTURE_LOG_PATH;
+	private boolean captureInlineDate = DEFAULT_CAPTURE_INLINE_DATE;
+	private boolean captureLogGzip = DEFAULT_CAPTURE_LOG_GZIP;
 	private TaskScheduler taskScheduler;
 
 	/**
@@ -270,8 +302,6 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 		results.addAll(basicIdentifiableSettings("", DEFAULT_UID, ""));
 		results.add(new BasicTextFieldSettingSpecifier("host", DEFAULT_HOST));
 		results.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(DEFAULT_PORT)));
-		results.add(new BasicTextFieldSettingSpecifier("captureLogPath", DEFAULT_CAPTURE_LOG));
-		results.add(new BasicToggleSettingSpecifier("captureIncludeDate", Boolean.TRUE));
 
 		if ( socketProvider instanceof SettingSpecifierProvider ) {
 			List<SettingSpecifier> socketSettings = ((SettingSpecifierProvider) socketProvider)
@@ -286,6 +316,10 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 				}
 			}
 		}
+
+		results.add(new BasicTextFieldSettingSpecifier("captureLogPath", DEFAULT_CAPTURE_LOG_PATH));
+		results.add(new BasicToggleSettingSpecifier("captureLogGzip", DEFAULT_CAPTURE_LOG_GZIP));
+		results.add(new BasicToggleSettingSpecifier("captureInlineDate", DEFAULT_CAPTURE_INLINE_DATE));
 
 		return results;
 	}
@@ -376,15 +410,14 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 					resultParameters.put(InstructionHandler.PARAM_MESSAGE, "Already capturing.");
 					return false;
 				}
-				if ( !conn.isMonitoring() ) {
-					Map<String, String> nameParameters = new HashMap<>(2);
-					nameParameters.put(CANBUS_CAPTURE_BUS_NAME_PLACEHOLDER, busName);
-					nameParameters.put(CANBUS_CAPTURE_DATE_PLACEHOLDER,
-							DateTimeFormatter.ISO_INSTANT.format(date != null ? date : Instant.now()));
-					Path logPath = Paths.get(expandTemplateString(captureLogPath, nameParameters));
-					conn.monitor(
-							new LoggingCanbusFrameListener(busName, logPath, captureIncludeDate, false));
-				}
+				Map<String, String> nameParameters = new HashMap<>(2);
+				nameParameters.put(CANBUS_CAPTURE_BUS_NAME_PLACEHOLDER, busName);
+				nameParameters.put(CANBUS_CAPTURE_DATE_PLACEHOLDER,
+						CAPTURE_DATE_PLACEHOLDER_FORMATTER.format(date != null ? date : Instant.now()));
+				Path logPath = Paths.get(expandTemplateString(captureLogPath, nameParameters));
+				LoggingCanbusFrameListener listener = new LoggingCanbusFrameListener(busName, logPath,
+						captureInlineDate, false, captureLogGzip);
+				conn.monitor(listener);
 				return true;
 			}
 		} catch ( IOException e ) {
@@ -407,6 +440,20 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 			captureConn.stopFuture.cancel(false);
 		}
 		return true;
+	}
+
+	/**
+	 * Get an existing connection used for capturing.
+	 * 
+	 * @param busName
+	 *        the CAN bus name to get the capturing connection for
+	 * @return the connection, or {@literal null} if no capturing connection has
+	 *         been established for {@code busName}
+	 * @since 2.1
+	 */
+	public CanbusConnection capturingConnection(String busName) {
+		final CaptureCanbusConnection captureConn = captureConnections.get(busName);
+		return (captureConn != null ? captureConn.connection : null);
 	}
 
 	// Accessors
@@ -488,27 +535,27 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 	}
 
 	/**
-	 * Get the debug "include date" flag.
+	 * Get the debug "inline date" flag.
 	 * 
 	 * @return {@literal true} if a time stamp should be included in the debug
 	 *         log output as the first field of each frame line
 	 * @since 2.1
 	 */
-	public boolean isCaptureIncludeDate() {
-		return captureIncludeDate;
+	public boolean isCaptureInlineDate() {
+		return captureInlineDate;
 	}
 
 	/**
 	 * Set the debug "include date" flag.
 	 * 
-	 * @param captureIncludeDate
+	 * @param captureInlineDate
 	 *        {@literal true} if a time stamp should be included in the debug
 	 *        log output as the first field of each frame line, {@literal false}
 	 *        to include the date as a separate comment line
 	 * @since 2.1
 	 */
-	public void setCaptureIncludeDate(boolean debugIncludeDate) {
-		this.captureIncludeDate = debugIncludeDate;
+	public void setCaptureInlineDate(boolean captureInlineDate) {
+		this.captureInlineDate = captureInlineDate;
 	}
 
 	/**
@@ -530,6 +577,29 @@ public class SocketcandCanbusNetwork extends AbstractCanbusNetwork
 	 */
 	public void setTaskScheduler(TaskScheduler taskScheduler) {
 		this.taskScheduler = taskScheduler;
+	}
+
+	/**
+	 * Get the toggle setting for using gzip on the capture log file.
+	 * 
+	 * @return {@literal true} if the capture log output should be compressed
+	 *         with gzip
+	 * @since 2.1
+	 */
+	public boolean isCaptureLogGzip() {
+		return captureLogGzip;
+	}
+
+	/**
+	 * Set the toggle setting for using gzip on the capture log file.
+	 * 
+	 * @param captureLogGzip
+	 *        {@literal true} if the capture log output should be compressed
+	 *        with gzip
+	 * @since 2.1
+	 */
+	public void setCaptureLogGzip(boolean captureLogGzip) {
+		this.captureLogGzip = captureLogGzip;
 	}
 
 }

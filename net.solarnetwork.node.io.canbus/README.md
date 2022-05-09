@@ -4,7 +4,7 @@ This plugin provides configurable [`socketcand`][socketcand] daemon connections 
 components. The [SolarNode CAN Bus Datum Data Source][can-datum-source] plugin uses this, for
 example.
 
-![Settings](docs/solarnode-canbus-tcp-conn-settings.png)
+![Settings](docs/solarnode-canbus-tcp-conn-settings@2x.png)
 
 # Install
 
@@ -32,6 +32,40 @@ Each device configuration contains the following overall settings:
 | Socket TCP No Delay | Toggle the TCP _no-delay_ option on the socket. |
 | Socket Reuse        | Toggle the _reuse_ flag on the socket. This is generally recommended. |
 | Socket Keep Alive   | Toggle the _keep-alive_ flag on the socket. |
+| Capture File        | File path where captured CAN messages should be written. Supports `{busName}` and `{date}` placeholders. See [Instruction support](#instruction-support) for more information about "capture mode". |
+| Capture Compress    | When enabled, compress the captured CAN messages with the gzip compressor. This can significantly reduce the size of the captured data file. |
+| Capture Inline Date | When enabled, include a time stamp as the first field in each message line captured in Capture File. When disabled a time stamp will be written as a separate comment line before each CAN message, making the output compatible with the output of the `candump` tool. |
+
+
+# Instruction support
+
+This component supports the [`Signal` instruction][signal-instr]. A `canbus-capture` parameter
+must provide the CAN bus name to capture messages from and save them to a file, in a format
+compatible with the output of the `candump` tool. The
+[Storage Service Upload][storge-service-upload] plugin can be used to watch for the capture
+files and upload them, creating a datum stream that references the uploaded files. The following
+instruction parameters are supported:
+
+| Parameter | Description |
+|:----------|:------------|
+| `canbus-capture` | Provides the name of the CAN bus to capture the messages from, e.g. `can0`. |
+| `action`         | Must be `start` to start capturing messages or `stop` to stop. |
+| `duration`       | An **optional** duration used if the `action` is `start`, to signify how long until capturing should stop. If not provided capturing will continue until another `Signal` instruction with the `stop` action is received. The format must be in [ISO-8601 duration][duration] form, e.g. `PT15M` for 15 minutes. |
+
+For example, to request capturing to start on `can0` and automatically stop in 30 seconds, the following instruction parameters would be used:
+
+| Parameter | Value |
+|:----------|:------|
+| `canbus-capture` | `can0` |
+| `action` | `start` |
+| `duration` | `PT30S` |
+
+To request capturing to stop on `can0` the following instruction parameters would be used:
+
+| Parameter | Value |
+|:----------|:------|
+| `canbus-capture` | `can0` |
+| `action` | `stop` |
 
 
 # SolarNetwork KCD Support
@@ -212,9 +246,12 @@ JAVA_HOME=/Library/Java/JavaVirtualMachines/jdk1.8.0_211.jdk/Contents/Home xjc \
   -d src
 ```
 
-[expr]: https://github.com/SolarNetwork/solarnetwork/wiki/Expression-Languages
-[socketcand]: https://github.com/linux-can/socketcand
 [can-datum-source]: ../net.solarnetwork.node.datum.canbus
 [datum-samples]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNet-API-global-objects#datum-samples
+[duration]: https://en.wikipedia.org/wiki/ISO_8601#Durations
+[expr]: https://github.com/SolarNetwork/solarnetwork/wiki/Expression-Languages
 [kcd]: https://github.com/julietkilo/kcd
 [kcd-parser]: src/net/solarnetwork/node/io/canbus/KcdParser.java
+[signal-instr]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#signal
+[socketcand]: https://github.com/linux-can/socketcand
+[storge-service-upload]: ../net.solarnetwork.node.upload.resource/

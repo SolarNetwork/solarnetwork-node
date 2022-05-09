@@ -25,12 +25,16 @@ package net.solarnetwork.node.io.canbus.support;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.io.BufferedWriter;
+import java.io.Closeable;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
+import java.util.zip.GZIPOutputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.canbus.CanbusFrame;
@@ -45,13 +49,14 @@ import net.solarnetwork.util.ByteUtils;
  * @version 1.0
  * @since 2.1
  */
-public class LoggingCanbusFrameListener implements CanbusFrameListener, AutoCloseable {
+public class LoggingCanbusFrameListener implements CanbusFrameListener, Closeable {
 
 	private static final Logger log = LoggerFactory.getLogger(LoggingCanbusFrameListener.class);
 
 	private final String busName;
 	private final Path logFile;
-	private final boolean includeDate;
+	private final boolean inlineDate;
+	private final boolean gzip;
 	private final PrintWriter out;
 	private boolean closed;
 	private boolean autoFlush;
@@ -63,21 +68,28 @@ public class LoggingCanbusFrameListener implements CanbusFrameListener, AutoClos
 	 *        a busName to use for debug log messages
 	 * @param logFile
 	 *        the log file to write to
-	 * @param includeDate
+	 * @param inlineDate
 	 *        {@literal true} to include a time stamp as the first field in
 	 *        every message line
 	 * @param autoFlush
 	 *        {@literal true} to flush the output stream after every message
+	 * @param gzip
+	 *        {@literal true} to compress the output with gzip
 	 * @throws IOException
 	 *         if the logging can not be set up successfully
 	 */
 	public LoggingCanbusFrameListener(String busName, Path logFile, boolean includeDate,
-			boolean autoFlush) throws IOException {
+			boolean autoFlush, boolean gzip) throws IOException {
 		super();
 		this.busName = requireNonNullArgument(busName, "busName");
 		this.logFile = requireNonNullArgument(logFile, "logFile");
-		this.includeDate = includeDate;
+		this.inlineDate = includeDate;
+		this.gzip = gzip;
+		this.out = createOutputStream();
+		this.closed = false;
+	}
 
+	private PrintWriter createOutputStream() throws IOException {
 		if ( !Files.exists(logFile.getParent()) ) {
 			try {
 				Files.createDirectories(logFile.getParent());
@@ -85,17 +97,24 @@ public class LoggingCanbusFrameListener implements CanbusFrameListener, AutoClos
 				log.warn("Error creating debug log directory {}: {}", logFile.getParent(), e.toString());
 			}
 		}
-		PrintWriter newOut = new PrintWriter(
-				Files.newBufferedWriter(logFile, ByteUtils.UTF8, CREATE, APPEND));
-		this.out = newOut;
-		log.info("Capturing CAN frames for {} to {}", this.busName, logFile.toAbsolutePath());
-		this.closed = false;
+		PrintWriter out;
+		if ( gzip ) {
+			out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(
+					new GZIPOutputStream(Files.newOutputStream(logFile, CREATE, APPEND), 4096),
+					ByteUtils.UTF8)));
+		} else {
+			out = new PrintWriter(Files.newBufferedWriter(logFile, ByteUtils.UTF8, CREATE, APPEND));
+		}
+		log.info("Capturing CAN frames for {} (gzip = {}) to {}", busName, gzip,
+				logFile.toAbsolutePath());
+		return out;
 	}
 
 	@Override
-	public synchronized void close() throws Exception {
+	public synchronized void close() throws IOException {
 		if ( !closed ) {
 			try {
+				out.flush();
 				out.close();
 			} finally {
 				closed = true;
@@ -109,12 +128,14 @@ public class LoggingCanbusFrameListener implements CanbusFrameListener, AutoClos
 			return;
 		}
 		final Instant now = Instant.now();
-		if ( includeDate ) {
-			out.print(DateTimeFormatter.ISO_INSTANT.format(now));
+		if ( !inlineDate ) {
+			out.print("# ");
+		}
+		out.print(DateTimeFormatter.ISO_INSTANT.format(now));
+		if ( inlineDate ) {
 			out.print(' ');
 		} else {
-			String comment = String.format("# %1$tY-%1$tm-%1$tdT%1$tH:%1$tM:%1$tS.%1$tLZ", now);
-			out.println(comment);
+			out.println();
 		}
 		final String f = CanbusUtils.encodeCandumpLog(frame, busName);
 		out.println(f);
@@ -139,6 +160,15 @@ public class LoggingCanbusFrameListener implements CanbusFrameListener, AutoClos
 	 */
 	public Path getLogFile() {
 		return logFile;
+	}
+
+	/**
+	 * Get the gzip compression setting.
+	 * 
+	 * @return {@literal true} if the output is compressed with gzip
+	 */
+	public boolean isGzip() {
+		return gzip;
 	}
 
 }
