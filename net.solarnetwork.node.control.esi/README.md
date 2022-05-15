@@ -6,7 +6,7 @@ application.
 
 The plugin can be installed via the **Plugins** page on your SolarNode. It appears under the
 **Control** category as **ESI Facility Integration**. Once installed, several new **ESI** components
-will appear on the **Settings** pageon your SolarNode. Click on the **Manage** button to configure
+will appear on the **Settings** page on your SolarNode. Click on the **Manage** button to configure
 price maps.
 
 # ESI PriceMap
