@@ -43,6 +43,8 @@ import java.util.function.Consumer;
 import java.util.function.DoubleBinaryOperator;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.node.io.gpsd.domain.GpsdMessage;
 import net.solarnetwork.node.io.gpsd.domain.GpsdReportMessage;
@@ -68,6 +70,8 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  */
 public class MockGpsdClientService extends BasicIdentifiable
 		implements GpsdClientConnection, SettingSpecifierProvider, SettingsChangeObserver, Runnable {
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final ConcurrentMap<Class<? extends GpsdMessage>, Set<GpsdMessageListener<GpsdMessage>>> messageListeners = new ConcurrentHashMap<>(
 			8, 0.9f, 1);
@@ -250,7 +254,12 @@ public class MockGpsdClientService extends BasicIdentifiable
 				Set<GpsdMessageListener<GpsdMessage>> listeners = me.getValue();
 				if ( listeners != null ) {
 					for ( GpsdMessageListener<GpsdMessage> listener : listeners ) {
-						listener.onGpsdMessage(message);
+						try {
+							listener.onGpsdMessage(message);
+						} catch ( Exception e ) {
+							log.error("GPS listener error handling message {}: {}", message,
+									e.toString(), e);
+						}
 					}
 				}
 			}

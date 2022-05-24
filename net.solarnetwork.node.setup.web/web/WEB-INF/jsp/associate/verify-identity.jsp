@@ -5,21 +5,21 @@
 <table class="table">
 	<tbody>
 		<tr><th><fmt:message key="node.setup.identity.service"/></th><td>${association.host}</td></tr>
-		<tr><th><fmt:message key="node.setup.identity.identity"/></th><td>${association.identityKey}</td></tr>
+		<tr><th><fmt:message key="node.setup.identity.identity"/></th><td><c:out value="${association.identityKey}"/></td></tr>
 		<tr>
 			<th><fmt:message key="node.setup.identity.username"/></th>
-			<td>${details.username}</td>
+			<td><c:out value="${details.username}"/></td>
 		</tr>
 		<tr>
 			<th><fmt:message key="node.setup.identity.securityPhrase"/></th>
 			<td>
-				<p>${association.securityPhrase}</p>
+				<p><c:out value="${association.securityPhrase}"/></p>
 				<div class="alert alert-warning"><fmt:message key='node.setup.identity.securityPhrase.caption'/></div>
 			</td>
 		</tr>
 		<tr>
 			<th><fmt:message key="node.setup.identity.tos"/></th>
-			<td><pre class="pre-scrollable">${association.termsOfService}</pre></td>
+			<td><pre class="pre-scrollable"><c:out value="${association.termsOfService}"/></pre></td>
 		</tr>
 	</tbody>
 </table>

@@ -84,7 +84,6 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 
 	private OptionalFilterableService<CanbusNetwork> canbusNetwork;
 	private String busName;
-	private TaskScheduler taskScheduler;
 	private long connectionCheckFrequency = DEFAULT_CONNECTION_CHECK_FREQUENCY;
 	private long reconnectDelay = DEFAULT_RECONNECT_DELAY;
 	private MeasurementHelper measurementHelper;
@@ -118,6 +117,7 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 			connectionCheckFuture.cancel(true);
 			connectionCheckFuture = null;
 		}
+		final TaskScheduler taskScheduler = getTaskScheduler();
 		if ( taskScheduler != null && connectionCheckFuture == null ) {
 			log.info("Scheduling CAN bus [{}] connectivity check for {}ms", busName,
 					connectionCheckFrequency);
@@ -619,27 +619,6 @@ public abstract class CanbusDatumDataSourceSupport extends DatumDataSourceSuppor
 			throw new IllegalArgumentException("The CAN bus name must be provided.");
 		}
 		this.busName = busName;
-	}
-
-	/**
-	 * Get the task scheduler.
-	 * 
-	 * @return the task scheduler
-	 */
-	@Override
-	public TaskScheduler getTaskScheduler() {
-		return taskScheduler;
-	}
-
-	/**
-	 * Set the task scheduler.
-	 * 
-	 * @param taskScheduler
-	 *        the task scheduler
-	 */
-	@Override
-	public void setTaskScheduler(TaskScheduler taskScheduler) {
-		this.taskScheduler = taskScheduler;
 	}
 
 	/**

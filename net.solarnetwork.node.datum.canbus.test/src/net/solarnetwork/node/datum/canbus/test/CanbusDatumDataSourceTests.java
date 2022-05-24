@@ -35,23 +35,16 @@ import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
-import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
@@ -60,7 +53,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.common.expr.spel.SpelExpressionService;
 import net.solarnetwork.domain.BitDataType;
 import net.solarnetwork.domain.ByteOrdering;
@@ -343,37 +335,6 @@ public class CanbusDatumDataSourceTests {
 		assertThat("Datum distance instantaneous value",
 				d.asSampleOperations().getSampleBigDecimal(Instantaneous, "distance"),
 				equalTo(new BigDecimal("0.017")));
-	}
-
-	private static final Pattern DEBUG_LOG_PAT = Pattern.compile(
-			"# \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z\n\\(\\d+\\.\\d{6}\\) can0 (\\d+)#([0-9A-F]*)");
-
-	@Test
-	public void frameReceived_debug() throws IOException {
-		// GIVEN
-		Path tmpFile = Files.createTempFile("canbus-debug-out-test-", ".log");
-		dataSource.setSourceId(TEST_SOURCE);
-		dataSource.setBusName("can0");
-		dataSource.setDebug(true);
-		dataSource.setDebugLogPath(tmpFile.toAbsolutePath().toString());
-
-		// WHEN
-		replayAll();
-		FrameMessageImpl f = new FrameMessageImpl(1, false, 1, 2,
-				new byte[] { (byte) 0x11, (byte) 0x00, (byte) 0xFD });
-		dataSource.canbusFrameReceived(f);
-		dataSource.serviceDidShutdown();
-
-		// THEN
-		String logData = FileCopyUtils.copyToString(Files.newBufferedReader(tmpFile));
-		assertThat("Log data captured one line", logData, not(isEmptyOrNullString()));
-		Matcher m = DEBUG_LOG_PAT.matcher(logData.trim());
-		assertThat("Log line formatted with comment and timestamp, address, hex data", m.matches(),
-				equalTo(true));
-		assertThat("Log line address", m.group(1), equalTo("1"));
-		assertThat("Log line hex data", m.group(2), equalTo("1100FD"));
-
-		Files.deleteIfExists(tmpFile);
 	}
 
 	@Test

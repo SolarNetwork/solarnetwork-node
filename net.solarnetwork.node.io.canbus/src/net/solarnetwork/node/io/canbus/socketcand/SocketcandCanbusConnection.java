@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.canbus.socketcand;
 
 import static java.util.stream.Collectors.toList;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.SocketTimeoutException;
@@ -57,7 +58,7 @@ import net.solarnetwork.node.io.canbus.support.CanbusSubscription;
  * Implementation of {@link CanbusNetwork} for socketcand CAN bus servers.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @see <a href=
  *      "https://github.com/linux-can/socketcand">linux-can/socketcand</a>
  */
@@ -142,7 +143,7 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 	private Message readNextMessage(CanbusSocket s) throws IOException {
 		if ( s != null ) {
 			Message m = s.nextMessage(messageTimeout, messageTimeoutUnit);
-			if ( log.isTraceEnabled() ) {
+			if ( m != null && log.isTraceEnabled() ) {
 				StringWriter out = new StringWriter();
 				m.write(out);
 				log.trace("{} <- {}", busName, out);
@@ -169,6 +170,10 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 
 	@Override
 	public synchronized void open() throws IOException {
+		if ( closed ) {
+			throw new IOException("Connection has been closed.");
+		}
+
 		CanbusSocket s = socketProvider.createCanbusSocket();
 		s.open(host, port);
 		setSocket(s);
@@ -253,12 +258,32 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 		}
 	}
 
+	/**
+	 * Closes this stream and releases any system resources associated with it.
+	 * 
+	 * <p>
+	 * If the monitor {@link CanbusFrameListener} configured via
+	 * {@link #monitor(CanbusFrameListener)} implements {@link Closeable} then
+	 * that listener will be closed as well.
+	 * </p>
+	 * 
+	 * {@inheritDoc}
+	 */
 	@Override
 	public synchronized void close() throws IOException {
 		if ( closed ) {
 			return;
 		}
 		closed = true;
+
+		synchronized ( monitorSubscription ) {
+			CanbusFrameListener listener = monitorSubscription.get();
+			if ( listener != null && listener instanceof Closeable ) {
+				((Closeable) listener).close();
+			}
+			unmonitor();
+		}
+
 		CanbusSocket socket = getSocket();
 		if ( socket != null ) {
 			// TODO: stop reader thread
@@ -436,8 +461,8 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 			throw new IllegalArgumentException("The listener must not be null.");
 		}
 		synchronized ( monitorSubscription ) {
-			writeMessage(getSocket(), new BasicMessage(MessageType.Rawmode));
 			monitorSubscription.set(listener);
+			writeMessage(getSocket(), new BasicMessage(MessageType.Rawmode));
 		}
 
 	}
@@ -456,6 +481,16 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 		synchronized ( monitorSubscription ) {
 			return monitorSubscription.get() != null;
 		}
+	}
+
+	/**
+	 * Get the listener configured for monitoring.
+	 * 
+	 * @return the listener, or {@literal null} if not available
+	 * @since 1.1
+	 */
+	public CanbusFrameListener getMonitoringListener() {
+		return monitorSubscription.get();
 	}
 
 	@Override

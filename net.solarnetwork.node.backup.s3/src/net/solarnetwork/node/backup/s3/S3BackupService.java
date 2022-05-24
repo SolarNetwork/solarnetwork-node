@@ -97,7 +97,7 @@ import net.solarnetwork.util.CachedResult;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class S3BackupService extends BackupServiceSupport
 		implements SettingSpecifierProvider, SettingsChangeObserver {
@@ -122,6 +122,13 @@ public class S3BackupService extends BackupServiceSupport
 	 * @since 1.2
 	 */
 	public static final String DEFAULT_STORAGE_CLASS = "STANDARD";
+
+	/**
+	 * The {@code cacheSeconds} property default value.
+	 * 
+	 * @since 2.1
+	 */
+	public static final int DEFAULT_CACHE_SECONDS = 3600;
 
 	private static final String META_NAME_FORMAT = "node-%2$d-backup-%1$tY%1$tm%1$tdT%1$tH%1$tM%1$tS";
 	private static final String META_OBJECT_KEY_PREFIX = "backup-meta/";
@@ -152,7 +159,7 @@ public class S3BackupService extends BackupServiceSupport
 		super();
 		setRegionName(DEFAULT_REGION_NAME);
 		setObjectKeyPrefix(DEFAULT_OBJECT_KEY_PREFIX);
-		setCacheSeconds((int) TimeUnit.HOURS.toSeconds(1));
+		setCacheSeconds(DEFAULT_CACHE_SECONDS);
 		setAdditionalBackupCount(DEFAULT_ADDITIONAL_BACKUP_COUNT);
 	}
 
@@ -160,6 +167,8 @@ public class S3BackupService extends BackupServiceSupport
 	public void configurationChanged(Map<String, Object> properties) {
 		s3Client.configurationChanged(properties);
 		setupClient();
+		cachedBackupList.set(null);
+		CACHED_BACKUPS.clear();
 	}
 
 	@Override
@@ -536,6 +545,8 @@ public class S3BackupService extends BackupServiceSupport
 		result.add(new BasicTextFieldSettingSpecifier("storageClass", DEFAULT_STORAGE_CLASS));
 		result.add(new BasicSliderSettingSpecifier("additionalBackupCount",
 				(double) DEFAULT_ADDITIONAL_BACKUP_COUNT, 0.0, 20.0, 1.0));
+		result.add(new BasicTextFieldSettingSpecifier("cacheSeconds",
+				String.valueOf(DEFAULT_CACHE_SECONDS)));
 		return result;
 	}
 
