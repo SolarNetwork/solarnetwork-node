@@ -82,7 +82,7 @@ import net.solarnetwork.util.StringUtils;
  * implementation.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class OBRPluginService implements PluginService, SettingSpecifierProvider {
 
@@ -497,9 +497,13 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 					}
 				}
 				if ( failures.length == 1 ) {
-					buf.insert(0, "The following requirement is not satisfied: ");
+					buf.insert(0,
+							messageSource.getMessage("resolve.failed.unsatisfied.requierment.intro",
+									null, "The following requirement is not satisfied: ", locale));
 				} else {
-					buf.insert(0, "The following requirements are not satisfied: ");
+					buf.insert(0,
+							messageSource.getMessage("resolve.failed.unsatisfied.requierments.intro",
+									null, "The following requirements are not satisfied: ", locale));
 				}
 			} else {
 				buf.append("Unknown error");
