@@ -1,5 +1,5 @@
 SolarNode.Plugins = {
-		
+
 };
 
 SolarNode.Plugins.runtime = {};
@@ -47,7 +47,7 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 	var availableContainer = availableSection.children('.list-content');
 	var upgradeContainer = upgradeSection.children('.list-content');
 	var installedContainer = installedSection.children('.list-content');
-	
+
 	var groupNameForPlugin = function(plugin) {
 		var match = plugin.uid.match(/^net\.solarnetwork\.node\.(\w+)/);
 		if ( match == null ) {
@@ -59,11 +59,11 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 		if ( n === 'io' ) {
 			return 'I/O';
 		}
-		
+
 		// capitalize
 		return (n.charAt(0).toUpperCase() + n.substring(1));
 	};
-	
+
 	var pluginRefNameComparator = function(l, r) {
 		if ( l.name < r.name ) {
 			return -1;
@@ -73,7 +73,7 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 		}
 		return 0;
 	};
-	
+
 	var groupPlugins = function(data) {
 		var i, len;
 		var plugin;
@@ -115,7 +115,7 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 		result.upToDate.sort(pluginRefNameComparator);
 		return result;
 	};
-	
+
 	var createGroup = function(groupName, container) {
 		var group = $('<div class="accordion-group"/>');
 		var heading = $('<div class="accordion-heading"/>');
@@ -132,7 +132,7 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 		container.append(group);
 		return innerBody;
 	};
-	
+
 	var createPluginUI = function(plugin, installed, showVersions) {
 		var id = "Plugin-" +plugin.uid.replace(/\W/g, '-');
 		var row = $('<div class="plugin row-fluid"/>').attr('id', id);
@@ -152,7 +152,7 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 			} else if ( SolarNode.Plugins.compareVersions(plugin.version, installedPlugin.version) > 0 ) {
 				// update available
 				//versionLabel.addClass('label-info');
-				
+
 				// also add existing version to title
 				$('<span class="label suffix">' +SolarNode.Plugins.versionLabel(installedPlugin) +'</span>').appendTo(titleContainer);
 			} else {
@@ -186,7 +186,7 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 		}
 		return row;
 	};
-	
+
 	SolarNode.showLoading($('#plugins-refresh'));
 	$.getJSON(url, function(data) {
 		SolarNode.hideLoading($('#plugins-refresh'));
@@ -206,7 +206,7 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 		var groupName = undefined;
 		var group = undefined;
 		var plugin = undefined;
-		
+
 		// construct "upgradable" section
 		html = $('<div id="plugin-upgrade-list"/>');
 		for ( i = 0, iMax = groupedPlugins.upgradable.length; i < iMax; i++ ) {
@@ -220,7 +220,7 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 			upgradeContainer.empty();
 			upgradeSection.addClass('hide');
 		}
-		
+
 		// construct "up to date" section
 		html = $('<div id="plugin-intalled-list"/>');
 		for ( i = 0, iMax = groupedPlugins.upToDate.length; i < iMax; i++ ) {
@@ -234,7 +234,7 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 			installedContainer.empty();
 			installedSection.addClass('hide');
 		}
-		
+
 		// construct "available" section
 		html = $('<div class="accordion" id="plugin-list"/>');
 		for ( i = 0, iMax = groupedPlugins.groupNames.length; i < iMax; i++ ) {
@@ -243,21 +243,21 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 			group = groupedPlugins.groups[groupName];
 			GROUP: for ( j = 0, jMax = group.length; j < jMax; j++ ) {
 				plugin = group[j];
-				
+
 				// skip upgradable plugins
 				for ( k = 0, kMax = groupedPlugins.upgradable.length; k < kMax; k++ ) {
 					if ( plugin.uid === groupedPlugins.upgradable[k].uid ) {
 						continue GROUP;
 					}
 				}
-				
+
 				// skip up-to-date plugins
 				for ( k = 0, kMax = groupedPlugins.upToDate.length; k < kMax; k++ ) {
 					if ( plugin.uid === groupedPlugins.upToDate[k].uid ) {
 						continue GROUP;
 					}
 				}
-				
+
 				if ( groupBody === null ) {
 					groupBody = createGroup(groupName, html);
 				}
@@ -275,11 +275,6 @@ SolarNode.Plugins.populateUI = function(availableSection, upgradeSection, instal
 };
 
 SolarNode.Plugins.renderInstallPreview = function(data) {
-	if ( data === undefined || data.success !== true || data.data === undefined ) {
-		// TODO: l10n
-		SolarNode.warn('Error!', 'An error occured loading plugin information.', list);
-		return;
-	}
 	var form = $('#plugin-preview-install-modal');
 	var container = $('#plugin-preview-install-list').empty();
 	var installBtn = form.find('button[type=submit]');
@@ -287,10 +282,17 @@ SolarNode.Plugins.renderInstallPreview = function(data) {
 	var pluginToInstall;
 	var list = $('<ul/>');
 	var version;
+	if ( data === undefined || data.success !== true || data.data === undefined ) {
+		$('#plugin-preview-install-list').addClass('alert alert-error').html(
+			data !== undefined && data.message ? '<p>' + data.message + '</p>' + (
+			data.data ? '<p>' + data.data +'</p>' : ''
+			) : 'Unknown error.');
+		return;
+	}
 	for ( i = 0, len = data.data.pluginsToInstall.length; i < len; i++ ) {
 		pluginToInstall = data.data.pluginsToInstall[i];
 		version = SolarNode.Plugins.versionLabel(pluginToInstall);
-		$('<li/>').html('<b>' +pluginToInstall.info.name  
+		$('<li/>').html('<b>' +pluginToInstall.info.name
 				+'</b> <span class="label">' +version +'</span>').appendTo(list);
 	}
 	container.append(list);
@@ -301,7 +303,7 @@ SolarNode.Plugins.renderInstallPreview = function(data) {
 SolarNode.Plugins.previewInstall = function(plugin) {
 	var form = $('#plugin-preview-install-modal');
 	var previewURL = form.attr('action') + '?uid=' +encodeURIComponent(plugin.uid);
-	var container = $('#plugin-preview-install-list').empty();
+	var container = $('#plugin-preview-install-list').empty().removeClass('alert').removeClass('alert-error');
 	var title = form.find('h3');
 	var installBtn = form.find('button[type=submit]');
 	installBtn.attr('disabled', 'disabled');
@@ -333,7 +335,7 @@ SolarNode.Plugins.previewRemove = function(plugin) {
 	form.modal('show');
 	var list = $('<ul/>');
 	var	version = SolarNode.Plugins.versionLabel(plugin);
-	$('<li/>').html('<b>' +plugin.info.name  
+	$('<li/>').html('<b>' +plugin.info.name
 			+'</b> <span class="label">' +version +'</span>').appendTo(list);
 	container.append(list);
 };
@@ -345,7 +347,7 @@ SolarNode.Plugins.handleInstall = function(form) {
 	var errorContainer = form.find('.message-container');
 	var refreshPluginListOnModalClose = false;
 	var keepPollingForStatus = true;
-	
+
 	var showAlert = function(msg) {
 		SolarNode.hideLoading(installBtn);
 		progressBar.addClass('hide');
@@ -356,16 +358,16 @@ SolarNode.Plugins.handleInstall = function(form) {
 		SolarNode.hideLoading(installBtn);
 		progressBar.addClass('hide');
 		installBtn.removeClass('hide');
-		
+
 		// refresh the plugin list, if we've installed/removed anything
 		if ( refreshPluginListOnModalClose === true ) {
 			SolarNode.Plugins.populateUI($('#plugins'), $('#plugin-upgrades'), $('#plugin-installed'));
 			refreshPluginListOnModalClose = false;
 		}
-		
+
 		// in case we were still polling when close... don't bother to keep going
 		keepPollingForStatus = false;
-		
+
 		// clear out any error/message
 		errorContainer.addClass('hide').empty();
 	});
@@ -387,14 +389,14 @@ SolarNode.Plugins.handleInstall = function(form) {
 			}
 			// TODO: support message? var message = json.data.statusMessage;
 			var progress = Math.round(json.data.overallProgress * 100);
-			var pollURL = SolarNode.context.path('/a/plugins/provisionStatus') +'?id=' 
+			var pollURL = SolarNode.context.path('/a/plugins/provisionStatus') +'?id='
 					+encodeURIComponent(json.data.provisionID) +'&p=';
 			var restartRequired = json.data.restartRequired;
-			
+
 			if ( restartRequired ) {
 				form.find('.without-restart').addClass('hide');
 			}
-			
+
 			function handleRestart() {
 				SolarNode.hideLoading(installBtn);
     				progressFill.css('width', '100%');
@@ -404,9 +406,9 @@ SolarNode.Plugins.handleInstall = function(form) {
 					SolarNode.tryGotoURL(SolarNode.context.path('/a/home'));
 				}, 10000);
 			}
-			
+
 			(function poll() {
-			    $.ajax({ 
+			    $.ajax({
 				    	url: (pollURL + progress),
 				    	dataType: "json",
 				    	success: function(json) {
@@ -419,7 +421,7 @@ SolarNode.Plugins.handleInstall = function(form) {
 				    			}
 				    			keepPollingForStatus = false;
 				    		}
-				    	}, 
+				    	},
 				    	complete: function(xhr, status) {
 				    		if ( status === 'error' ) {
 				    			if ( handleRestart ) {
@@ -442,7 +444,7 @@ SolarNode.Plugins.handleInstall = function(form) {
 				    		} else if ( keepPollingForStatus ) {
 				    			poll();
 				    		}
-				    	}, 
+				    	},
 				    	timeout: 20000,
 			    });
 			})();
