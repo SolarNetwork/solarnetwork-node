@@ -58,7 +58,13 @@
 		filter="(function=node)"/>
 		
 	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
-		factory-ref="objectMapperService" factory-method="getObjectMapper"/>
+		factory-ref="objectMapperService" factory-method="getObjectMapper"/>	
+	
+	<bean id="systemService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.SystemService"/>
+		<property name="sticky" value="true"/>
+	</bean>
 	
 	<!-- Published Services -->
 	
@@ -111,6 +117,7 @@
 		<argument ref="setupIdentityDao"/>
 		<property name="solarInUrlPrefix" value="${SetupService.solarInUrlPrefix}"/>
 		<property name="pkiService" ref="pkiService"/>
+		<property name="systemService" ref="systemService"/>
 		<property name="backupManager" ref="backupManager"/>
 		<property name="eventAdmin" ref="eventAdmin"/>
 		<property name="sslService">
