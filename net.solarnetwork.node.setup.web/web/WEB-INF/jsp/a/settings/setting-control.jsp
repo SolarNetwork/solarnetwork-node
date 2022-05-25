@@ -1,6 +1,6 @@
 <%--
 	Expects the following request-or-higher properties:
-	
+
 	settingsService - the SettingService
 	provider - the current provider
 	setting - the current setting
@@ -11,18 +11,18 @@
 	groupIndex - an optional group index
 --%>
 <c:set var="settingValue" scope="page">
-	<setup:settingValue service='${settingsService}' provider='${provider}' setting='${setting}' 
-		escapeXml="${setup:instanceOf(setting, 'net.solarnetwork.settings.MarkupSetting') 
+	<setup:settingValue service='${settingsService}' provider='${provider}' setting='${setting}'
+		escapeXml="${setup:instanceOf(setting, 'net.solarnetwork.settings.MarkupSetting')
 			? !setting.markup : true}"/>
 </c:set>
 <c:choose>
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.SetupResourceSettingSpecifier')}">
 		<setup:resources role="USER" type="text/html" inline="true"
-			provider="${setting.setupResourceProvider}" 
+			provider="${setting.setupResourceProvider}"
 			properties="${setting.setupResourceProperties}"
 			wrapperElement="div"
 			wrapperClass="control-group setup-resource-container"
-			id="cg-${settingId}" 
+			id="cg-${settingId}"
 			data-provider-id="${provider.settingUid}"
 			data-setting-id="${settingId}"
 			data-instance-id="${instanceId}"
@@ -55,7 +55,7 @@
 						</script>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.ToggleSettingSpecifier')}">
-					    <button type="button" class="toggle btn<c:if test='${settingValue eq  setting.trueValue}'> btn-success active</c:if>" 
+					    <button type="button" class="toggle btn<c:if test='${settingValue eq  setting.trueValue}'> btn-success active</c:if>"
 					    	id="${settingId}">
 					    	<c:choose>
 					    		<c:when test="${settingValue eq  setting.trueValue}">
@@ -90,11 +90,11 @@
 									<c:if test='${settingValue eq  entry.key}'>checked="checked"</c:if>
 									/>
 								${entry.value}
-							</label>							
+							</label>
 							<c:set var="help">
 								<setup:message key='${entry.key}.desc' messageSource='${provider.messageSource}'/>
 							</c:set>
-			
+
 							<c:if test="${fn:length(help) > 0}">
 								<button type="button" class=" help-popover help-icon" tabindex="-1"
 										data-content="${fn:escapeXml(help)}"
@@ -157,7 +157,7 @@
 							<c:otherwise>
 								<button type="button" class="btn setting-resource-upload"
 									data-action="<setup:url value='/a/settings/importResource'/>"
-									data-key="${settingId}" 
+									data-key="${settingId}"
 									data-xint="${setting['transient']}"
 									data-provider="${provider.settingUid}"
 									data-setting="${setup:js(setting.key)}"
@@ -169,8 +169,17 @@
 						</c:choose>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier')}">
-						<input type="${setting.secureTextEntry == true ? 'password' : 'text' }" name="${settingId}" id="${settingId}" 
-							class="span5" maxLength="4096"
+						<c:if test="${setup:js(setting.key) == 'schedule'}">
+							<select class="span2">
+								<option value="cron"><fmt:message key='settings.schedulePeriod.cron.label'/></option>
+								<option value="ms"><fmt:message key='settings.schedulePeriod.milliseconds.label'/></option>
+								<option value="s"><fmt:message key='settings.schedulePeriod.seconds.label'/></option>
+								<option value="m"><fmt:message key='settings.schedulePeriod.minutes.label'/></option>
+								<option value="h"><fmt:message key='settings.schedulePeriod.hours.label'/></option>
+							</select>
+						</c:if>
+						<input type="${setting.secureTextEntry == true ? 'password' : 'text' }" name="${settingId}" id="${settingId}"
+							class="span${setup:js(setting.key) == 'schedule' ? '3' : '5'}" maxLength="4096"
 							<c:choose>
 								<c:when test='${setting.secureTextEntry == true}'>
 									placeholder="<fmt:message key='settings.secureTextEntry.placeholder'/>"
@@ -182,7 +191,14 @@
 							/>
 						<script>
 						$(function() {
+						<c:choose>
+							<c:when test="${setup:js(setting.key) == 'schedule'}">
+							SolarNode.Settings.addScheduleField({
+							</c:when>
+							<c:otherwise>
 							SolarNode.Settings.addTextField({
+							</c:otherwise>
+						</c:choose>
 								key: '${settingId}',
 								xint: '${setting["transient"]}',
 								provider: '${provider.settingUid}',
@@ -197,7 +213,7 @@
 							<c:when test="${setting.markup}">
 								<div class="title">${settingValue}</div>
 							</c:when>
-							<c:otherwise>				
+							<c:otherwise>
 								<span class="title">${settingValue}</span>
 							</c:otherwise>
 						</c:choose>
@@ -239,7 +255,7 @@
 								<c:if test="${!fileTypeStatus.first}">,</c:if><c:out value="${fileType}" />
 							</c:forEach>
 						</c:set>
-						<input type="file" name="${settingId}" id="${settingId}" class="span5" 
+						<input type="file" name="${settingId}" id="${settingId}" class="span5"
 							<c:if test="${fn:length(acceptFileTypes) gt 0}">
 								accept="${acceptFileTypes}"
 							</c:if>
@@ -249,7 +265,7 @@
 							/>
 						<button type="button" class="btn setting-resource-upload"
 							data-action="<setup:url value='/a/settings/importResource'/>"
-							data-key="${settingId}" 
+							data-key="${settingId}"
 							data-xint="${setting['transient']}"
 							data-provider="${provider.settingUid}"
 							data-setting="${setup:js(setting.key)}"
@@ -260,7 +276,7 @@
 						</button>
 					</c:when>
 				</c:choose>
-				
+
 				<c:set var="help">
 					<setup:message key='${setting.key}.desc' messageSource='${provider.messageSource}' arguments='${setting.descriptionArguments}'/>
 				</c:set>
@@ -272,7 +288,7 @@
 						<i class="fa fa-question-circle-o" aria-hidden="true"></i>
 					</button>
 				</c:if>
-				
+
 				<span class="help-inline active-value clean"><span class="text-info">
 					<c:choose>
 						<c:when test="${(setup:instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier') and setting.secureTextEntry == true)
