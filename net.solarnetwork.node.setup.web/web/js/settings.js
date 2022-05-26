@@ -878,6 +878,25 @@ $(document).ready(function() {
 	}).on('shown', function() {
 		$('#add-component-instance-name').val('').focus();
 	});
+	$('#remove-all-component-instance-modal').ajaxForm({
+		dataType: 'json',
+		beforeSubmit: function(formData, jqForm, options) {
+			$('#remove-all-component-instance-modal').find('button[type=submit]').attr('disabled', 'disabled');
+			return true;
+		},
+		success: function(json, status, xhr, form) {
+			var modal = $('#remove-all-component-instance-modal');
+			if ( json && json.success === true ) {
+				delayedReload();
+			} else {
+				SolarNode.error(json.message, $('#remove-all-component-instance-modal .modal-body.start'));
+			}
+		},
+		error: function(xhr, status, statusText) {
+			var json = $.parseJSON(xhr.responseText);
+			SolarNode.error(json.message, $('#remove-all-component-instance-modal .modal-body.start'));
+		}
+	});
 	$('.delete-factory-instance').on('click', function() {
 		var button = this;
 		SolarNode.Settings.deleteFactoryConfiguration({

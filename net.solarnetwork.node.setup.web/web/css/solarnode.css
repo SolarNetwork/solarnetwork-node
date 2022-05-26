@@ -456,3 +456,7 @@ div.plugin .desc {
 	color: #c00;
 	background-color: inherit;
 }
+
+.action-bar button + button {
+	margin-left: 1em;
+}
