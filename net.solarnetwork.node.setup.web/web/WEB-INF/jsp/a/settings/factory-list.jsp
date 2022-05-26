@@ -288,7 +288,7 @@ $(function() {
 	<div class="modal-body">
 		<p><fmt:message key='settings.factory.add.intro'/></p>
 		<div class="form-inline">
-			<input type="text" class="span4" maxlength="32" name="name" id="add-component-instance-name"
+			<input type="text" class="span5" maxlength="32" name="name" id="add-component-instance-name"
 				placeholder="<fmt:message key='settings.factory.add.placeholder'/>"/>
 		</div>
 	</div>
