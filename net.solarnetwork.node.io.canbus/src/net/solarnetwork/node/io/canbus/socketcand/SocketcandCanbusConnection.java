@@ -281,7 +281,9 @@ public class SocketcandCanbusConnection implements CanbusConnection, Runnable {
 			if ( listener != null && listener instanceof Closeable ) {
 				((Closeable) listener).close();
 			}
-			unmonitor();
+			if ( isMonitoring() ) {
+				unmonitor();
+			}
 		}
 
 		CanbusSocket socket = getSocket();
