@@ -5,19 +5,9 @@
     		location="../${test.bundle.name}/ivy.xml"/>
     </info>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(runtime)">
-		<!-- Logging -->
-    	<dependency org="log4j" name="log4j" rev="1.2.17" conf="runtime"/>
-    	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.32"/>
-		<dependency org="org.slf4j" name="slf4j-log4j12" rev="1.7.32" conf="runtime"/>
-		<dependency org="org.slf4j" name="jcl-over-slf4j" rev="1.7.32" conf="runtime"/>
-		<dependency org="org.slf4j" name="osgi-over-slf4j" rev="1.7.32" conf="runtime"/>
-
 		<!-- Testing -->
-		<dependency org="junit" name="junit" rev="4.12"/>
-		<dependency org="org.easymock" name="easymock" rev="3.6"/>
-		<dependency org="org.springframework" name="spring-test" rev="4.3.23.RELEASE"/>		
-		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[1.11,)"/>
-		
+		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[1.15,)"/>
+
 		<!-- Testing support -->
     </dependencies>
 </ivy-module>
