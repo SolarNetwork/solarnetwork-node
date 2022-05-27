@@ -35,6 +35,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -160,7 +161,7 @@ public class BulkJsonWebPostUploadServiceTests extends AbstractHttpTests {
 	 */
 
 	private static String snTimestampString(Instant date) {
-		return DateUtils.ISO_DATE_TIME_ALT_UTC.format(date);
+		return DateUtils.ISO_DATE_TIME_ALT_UTC.format(date.truncatedTo(ChronoUnit.MILLIS));
 	}
 
 	@Test
