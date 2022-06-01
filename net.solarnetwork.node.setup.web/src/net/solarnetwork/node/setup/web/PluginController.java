@@ -43,6 +43,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import net.solarnetwork.node.setup.Plugin;
+import net.solarnetwork.node.setup.PluginProvisionException;
 import net.solarnetwork.node.setup.PluginProvisionStatus;
 import net.solarnetwork.node.setup.PluginService;
 import net.solarnetwork.node.setup.SimplePluginQuery;
@@ -99,11 +100,21 @@ public class PluginController {
 
 	public static final String ERROR_UNKNOWN_PROVISION_ID = "unknown.provisionID";
 
+	public static final String FAILED_PROVISION = "failed.provision";
+
 	@ExceptionHandler(IllegalArgumentException.class)
 	@ResponseBody
 	public Response<Object> unknownProvisionID(IllegalArgumentException e, Locale locale) {
 		return new Response<Object>(Boolean.FALSE, ERROR_UNKNOWN_PROVISION_ID,
 				messageSource.getMessage("plugins.error.unknown-provisionID", null, locale), null);
+	}
+
+	@ExceptionHandler(PluginProvisionException.class)
+	@ResponseBody
+	public Response<Object> provisioningException(PluginProvisionException e, Locale locale) {
+		return new Response<Object>(Boolean.FALSE, FAILED_PROVISION,
+				messageSource.getMessage("plugins.error.failed-provision", null, locale),
+				e.getMessage());
 	}
 
 	@RequestMapping(value = "", method = RequestMethod.GET)

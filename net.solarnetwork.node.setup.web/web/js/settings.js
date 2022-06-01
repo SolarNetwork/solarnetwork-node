@@ -3,6 +3,12 @@
 
 SolarNode.Settings = {
 
+	/** A regular expression that matches a cron expression. */
+	CRON_REGEX : /([0-9*\/,-]+)\s+([0-9*\/,-]+)\s+([0-9*\/,-]+)\s+([0-9*\/,-]+)\s+([0-9*\/,-]+)\s+([0-9*\/,-]+)(.*)/,
+
+	/** A regular expression that matches a cron slash-based period. */
+	CRON_FIELD_PERIOD_REGEX : /^([0-9]+|\*)\/([0-9]+|\*)$/,
+
 };
 
 SolarNode.Settings.runtime = {};
@@ -141,7 +147,6 @@ SolarNode.Settings.addSelect = function(params) {
  * @param params.provider {String} the provider key
  * @param params.setting {String} the setting key
  * @param params.key {String} the DOM element ID for the text field
- * @param params.value {String} the initial value
  */
 SolarNode.Settings.addTextField = function(params) {
 	var field = $('#'+params.key);
@@ -149,6 +154,183 @@ SolarNode.Settings.addTextField = function(params) {
 			var value = field.val();
 			SolarNode.Settings.updateSetting(params, value);
 		});
+};
+
+/**
+ * Setup a new schedule field.
+ *
+ * @param params.provider {String} the provider key
+ * @param params.setting {String} the setting key
+ * @param params.key {String} the DOM element ID for the text field
+ */
+SolarNode.Settings.addScheduleField = function(params) {
+	var field = $('#'+params.key);
+	var select = field.parent().children('select');
+	var prevOption = select.val();
+	var prevCronMatch = field.val().match(SolarNode.Settings.CRON_REGEX);
+
+	(function() {
+		// reset the initial form fields to friendly values if possible
+		var expr = field.val();
+		var exprNum = Number(expr);
+		var resultOption = 'cron';
+		var resultExpr = expr;
+		if ( !isNaN(exprNum) ) {
+			// it is a number, so translate into largest possible unit
+			if ( exprNum >= 3600000 && exprNum % 3600000 === 0 ) {
+				resultOption = 'h';
+				resultExpr = exprNum / 3600000;
+			} else if ( exprNum >= 60000 && exprNum % 60000 === 0 ) {
+				resultOption = 'm';
+				resultExpr = exprNum / 60000;
+			} else if ( exprNum >= 1000 && exprNum % 1000 === 0 ) {
+				resultOption = 's';
+				resultExpr = exprNum / 1000;
+			} else {
+				resultOption = 'ms';
+				resultExpr = exprNum;
+			}
+		}
+		if ( resultOption !== prevOption ) {
+			select.val(resultOption);
+			field.val(resultExpr);
+			prevOption = resultOption;
+			prevCronMatch = null;
+		}
+	})();
+
+	function valueForSetting(option, value) {
+		var valueNum = Number(value);
+		if ( option === 's' && !isNaN(valueNum) ) {
+			value = value * 1000;
+		} else if ( option === 'm' && !isNaN(valueNum) ) {
+			value = value * 60000;
+		} else if ( option === 'h' && !isNaN(valueNum) ) {
+			value = value * 3600000;
+		}
+		return String(value);
+	}
+
+	field.change(function() {
+		var value = valueForSetting(prevOption, field.val());
+		var cronMatch = value.match(SolarNode.Settings.CRON_REGEX);
+		if ( cronMatch && prevOption !== 'cron' ) {
+			select.val('cron');
+			prevOption = 'cron';
+			prevCronMatch = cronMatch;
+		} else if ( !cronMatch && prevOption === 'cron' ) {
+			select.val('ms');
+			prevOption = 'ms';
+			prevCronMatch = null;
+		}
+		SolarNode.Settings.updateSetting(params, value);
+	});
+
+	select.on('change', function() {
+		var option = select.val();
+		var expr = field.val();
+		var cronMatch = expr.match(SolarNode.Settings.CRON_REGEX);
+		var exprNum = Number(expr);
+		var resultExpr = expr;
+		var fieldMatch;
+		var settingValue;
+
+		function updateResultForCronFieldPeriod(cronMatch, cronFieldIndex, multiplier) {
+			if ( cronMatch ) {
+				fieldMatch = cronMatch[cronFieldIndex].match(SolarNode.Settings.CRON_FIELD_PERIOD_REGEX);
+				if ( fieldMatch ) {
+					resultExpr = fieldMatch[2] === '*' ? multiplier : Number(fieldMatch[2]) * multiplier;
+				} else {
+					resultExpr = multiplier;
+				}
+			} else {
+				resultExpr = multiplier;
+			}
+		}
+
+		if ( option === 'cron' ) {
+			if ( !isNaN(exprNum) ) {
+				if ( prevOption === 'ms' && exprNum <= 60000 ) {
+					resultExpr = '0/' + Math.ceil(exprNum / 1000) + ' * * * * *';
+				} else if ( prevOption === 's' && exprNum <= 60 ) {
+					resultExpr = '0/' + Math.ceil(exprNum) + ' * * * * *';
+				} else if ( prevOption === 'm' && exprNum <= 60 ) {
+					resultExpr = '0 0/' + Math.ceil(exprNum) + ' * * * *';
+				} else if ( prevOption === 'h' && exprNum <= 24 ) {
+					resultExpr = '0 0 0/' + Math.ceil(exprNum) + ' * * *';
+				} else {
+					resultExpr = '0 * * * * *';
+				}
+			} else {
+				resultExpr = '0 * * * * *';
+			}
+		} else if ( prevOption === 'cron' ) {
+			if ( option === 'ms' ) {
+				updateResultForCronFieldPeriod(prevCronMatch, 1, 1000);
+			} else if ( option === 's' ) {
+				updateResultForCronFieldPeriod(prevCronMatch, 1, 1);
+			} else if ( option === 'm' ) {
+				updateResultForCronFieldPeriod(prevCronMatch, 2, 1);
+			} else if ( option === 'h' ) {
+				updateResultForCronFieldPeriod(prevCronMatch, 3, 1);
+			} else {
+				resultExpr = 1;
+			}
+		} else if ( prevOption === 'ms' ) {
+			if ( isNaN(exprNum) ) {
+				resultExpr = '500';
+			} else if ( option === 's' ) {
+				resultExpr /= 1000;
+			} else if ( option === 'm' )  {
+				resultExpr /= 60000;
+			} else if ( option === 'h' ) {
+				resultExpr /= 3600000;
+			}
+		} else if ( prevOption === 's' ) {
+			if ( isNaN(exprNum) ) {
+				resultExpr = '30';
+			} else if ( option === 'ms' ) {
+				resultExpr *= 1000;
+			} else if ( option === 'm' )  {
+				resultExpr /= 60;
+			} else if ( option === 'h' ) {
+				resultExpr /= 3600;
+			}
+		} else if ( prevOption === 'm' ) {
+			if ( isNaN(exprNum) ) {
+				resultExpr = '10';
+			} else if ( option === 'ms' ) {
+				resultExpr *= 60000;
+			} else if ( option === 's' )  {
+				resultExpr *= 60;
+			} else if ( option === 'h' ) {
+				resultExpr /= 60;
+			}
+		} else if ( prevOption === 'h' ) {
+			if ( isNaN(exprNum) ) {
+				resultExpr = '2';
+			} else if ( option === 'ms' ) {
+				resultExpr *= 3600000;
+			} else if ( option === 's' )  {
+				resultExpr *= 60000;
+			} else if ( option === 'm' ) {
+				resultExpr *= 60;
+			}
+		}
+		if ( typeof resultExpr === 'number' ) {
+			resultExpr = Math.ceil(resultExpr);
+		}
+		resultExpr = String(resultExpr);
+		if ( resultExpr !== expr ) {
+			field.val(resultExpr);
+			settingValue = valueForSetting(option, resultExpr);
+			if ( valueForSetting(prevOption, expr) !== settingValue ) {
+				SolarNode.Settings.updateSetting(params, settingValue);
+			}
+		}
+		prevOption = option;
+		prevCronMatch = resultExpr.match(SolarNode.Settings.CRON_REGEX);
+	});
 };
 
 /**
@@ -695,6 +877,25 @@ $(document).ready(function() {
 		}
 	}).on('shown', function() {
 		$('#add-component-instance-name').val('').focus();
+	});
+	$('#remove-all-component-instance-modal').ajaxForm({
+		dataType: 'json',
+		beforeSubmit: function(formData, jqForm, options) {
+			$('#remove-all-component-instance-modal').find('button[type=submit]').attr('disabled', 'disabled');
+			return true;
+		},
+		success: function(json, status, xhr, form) {
+			var modal = $('#remove-all-component-instance-modal');
+			if ( json && json.success === true ) {
+				delayedReload();
+			} else {
+				SolarNode.error(json.message, $('#remove-all-component-instance-modal .modal-body.start'));
+			}
+		},
+		error: function(xhr, status, statusText) {
+			var json = $.parseJSON(xhr.responseText);
+			SolarNode.error(json.message, $('#remove-all-component-instance-modal .modal-body.start'));
+		}
 	});
 	$('.delete-factory-instance').on('click', function() {
 		var button = this;

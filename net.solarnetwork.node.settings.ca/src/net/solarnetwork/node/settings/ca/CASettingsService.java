@@ -706,6 +706,16 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	}
 
 	@Override
+	public void removeProviderFactoryInstances(String factoryUid, Set<String> instanceUids) {
+		synchronized ( factories ) {
+			for ( String instanceUid : instanceUids ) {
+				deleteProviderFactoryInstance(factoryUid, instanceUid);
+				settingDao.deleteSetting(getFactoryInstanceSettingKey(factoryUid, instanceUid));
+			}
+		}
+	}
+
+	@Override
 	public void disableProviderFactoryInstance(String factoryUid, String instanceUid) {
 		settingDao.deleteSetting(getFactorySettingKey(factoryUid), instanceUid);
 	}

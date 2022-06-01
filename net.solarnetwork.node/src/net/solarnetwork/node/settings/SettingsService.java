@@ -30,6 +30,7 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.core.io.Resource;
 import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.domain.Setting;
@@ -43,7 +44,7 @@ import net.solarnetwork.util.SearchFilter;
  * Service API for settings.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  * @since 2.0
  */
 public interface SettingsService {
@@ -241,6 +242,22 @@ public interface SettingsService {
 	 *        the instance UID to reset
 	 */
 	void resetProviderFactoryInstance(String factoryUid, String instanceUid);
+
+	/**
+	 * Reset and delete factory instances.
+	 * 
+	 * @param factoryUid
+	 *        the factory UID of the instances to remove
+	 * @param instanceUids
+	 *        the instance UID to remove
+	 * @since 2.2
+	 */
+	default void removeProviderFactoryInstances(String factoryUid, Set<String> instanceUids) {
+		for ( String instanceUid : instanceUids ) {
+			resetProviderFactoryInstance(factoryUid, instanceUid);
+			deleteProviderFactoryInstance(factoryUid, instanceUid);
+		}
+	}
 
 	/**
 	 * Get all possible setting providers for a specific factory UID, grouped by

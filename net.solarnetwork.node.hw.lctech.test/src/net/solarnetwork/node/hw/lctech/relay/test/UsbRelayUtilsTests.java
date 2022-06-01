@@ -62,7 +62,7 @@ public class UsbRelayUtilsTests {
 	@Test
 	public void controlStateOpen1() throws IOException {
 		// given
-		expect(conn.getPortName()).andReturn("/dev/ttyTEST0");
+		expect(conn.getPortName()).andReturn("/dev/ttyTEST0").anyTimes();
 		conn.writeMessage(aryEq(
 				new byte[] { IDENT, (byte) 1, (byte) 1, (byte) ((DEFAULT_IDENTITY + 1 + 1) & 0xFF) }));
 
@@ -74,7 +74,7 @@ public class UsbRelayUtilsTests {
 	@Test
 	public void controlStateClose1() throws IOException {
 		// given
-		expect(conn.getPortName()).andReturn("/dev/ttyTEST0");
+		expect(conn.getPortName()).andReturn("/dev/ttyTEST0").anyTimes();
 		conn.writeMessage(aryEq(
 				new byte[] { IDENT, (byte) 1, (byte) 0, (byte) ((DEFAULT_IDENTITY + 1 + 0) & 0xFF) }));
 
@@ -86,7 +86,7 @@ public class UsbRelayUtilsTests {
 	@Test
 	public void controlStateOpen2() throws IOException {
 		// given
-		expect(conn.getPortName()).andReturn("/dev/ttyTEST0");
+		expect(conn.getPortName()).andReturn("/dev/ttyTEST0").anyTimes();
 		conn.writeMessage(aryEq(
 				new byte[] { IDENT, (byte) 2, (byte) 1, (byte) ((DEFAULT_IDENTITY + 2 + 1) & 0xFF) }));
 
@@ -98,7 +98,7 @@ public class UsbRelayUtilsTests {
 	@Test
 	public void controlStateClose2() throws IOException {
 		// given
-		expect(conn.getPortName()).andReturn("/dev/ttyTEST0");
+		expect(conn.getPortName()).andReturn("/dev/ttyTEST0").anyTimes();
 		conn.writeMessage(aryEq(
 				new byte[] { IDENT, (byte) 2, (byte) 0, (byte) ((DEFAULT_IDENTITY + 2 + 0) & 0xFF) }));
 

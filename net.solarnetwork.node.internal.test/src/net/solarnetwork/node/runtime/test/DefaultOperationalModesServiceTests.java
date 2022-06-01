@@ -315,6 +315,34 @@ public class DefaultOperationalModesServiceTests {
 	}
 
 	@Test
+	public void isActive_expiring_yes() {
+		// GIVEN
+		Instant expire = Instant.now().plus(1, ChronoUnit.HOURS);
+		activeModeCache.put("test", expire.toEpochMilli());
+
+		// WHEN
+		replayAll();
+		boolean result = service.isOperationalModeActive("test");
+
+		// THEN
+		assertThat("Mode is active", result, is(equalTo(true)));
+	}
+
+	@Test
+	public void isActive_expiring_expired() {
+		// GIVEN
+		Instant expire = Instant.now().minus(1, ChronoUnit.HOURS);
+		activeModeCache.put("test", expire.toEpochMilli());
+
+		// WHEN
+		replayAll();
+		boolean result = service.isOperationalModeActive("test");
+
+		// THEN
+		assertThat("Mode is expired", result, is(equalTo(false)));
+	}
+
+	@Test
 	public void enableMode() {
 		// GIVEN
 		settingDao.storeSetting(DefaultOperationalModesService.SETTING_OP_MODE, "test", "test");
@@ -331,6 +359,8 @@ public class DefaultOperationalModesServiceTests {
 		// THEN
 		assertThat("Mode activated", active, containsInAnyOrder("test"));
 		assertModesChangedEvent("Activated ", eventCaptor.getValue(), "test");
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(true)));
 	}
 
 	@Test
@@ -357,6 +387,8 @@ public class DefaultOperationalModesServiceTests {
 		// THEN
 		assertThat("Mode activated", active, containsInAnyOrder("test"));
 		assertModesChangedEvent("Activated ", eventCaptor.getValue(), "test");
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(true)));
 	}
 
 	@Test
@@ -370,6 +402,8 @@ public class DefaultOperationalModesServiceTests {
 
 		// THEN
 		assertThat("Mode activated", active, containsInAnyOrder("test"));
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(true)));
 	}
 
 	@Test
@@ -386,6 +420,8 @@ public class DefaultOperationalModesServiceTests {
 
 		// THEN
 		assertThat("Mode activated", active, containsInAnyOrder("test"));
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(true)));
 	}
 
 	@Test
@@ -414,6 +450,8 @@ public class DefaultOperationalModesServiceTests {
 		assertModesChangedEvent("Activated ", eventCaptor.getValue(), "test");
 		assertThat("Expire value saved", expireCaptor.getValue(),
 				is(equalTo(String.valueOf(expire.toEpochMilli()))));
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(true)));
 	}
 
 	@Test
@@ -449,6 +487,8 @@ public class DefaultOperationalModesServiceTests {
 		assertModesChangedEvent("Activated ", eventCaptor.getValue(), "test");
 		assertThat("Expire value saved", expireCaptor.getValue(),
 				is(equalTo(String.valueOf(expire.toEpochMilli()))));
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(true)));
 	}
 
 	@Test
@@ -463,6 +503,8 @@ public class DefaultOperationalModesServiceTests {
 
 		// THEN
 		assertThat("Mode activated", active, containsInAnyOrder("test"));
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(true)));
 	}
 
 	@Test
@@ -478,6 +520,8 @@ public class DefaultOperationalModesServiceTests {
 
 		// THEN
 		assertThat("Mode activated", active, containsInAnyOrder("test"));
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(true)));
 	}
 
 	@Test
@@ -497,6 +541,8 @@ public class DefaultOperationalModesServiceTests {
 		// THEN
 		assertThat("Mode deactivated", active, hasSize(0));
 		assertModesChangedEvent("Deactivated ", eventCaptor.getValue());
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(false)));
 	}
 
 	@Test
@@ -523,6 +569,8 @@ public class DefaultOperationalModesServiceTests {
 		// THEN
 		assertThat("Mode deactivated", active, hasSize(0));
 		assertModesChangedEvent("Deactivated ", eventCaptor.getValue());
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(false)));
 	}
 
 	@Test
@@ -546,6 +594,12 @@ public class DefaultOperationalModesServiceTests {
 		// THEN
 		assertThat("Mode deactivated", active, containsInAnyOrder("foo"));
 		assertModesChangedEvent("Deactivated ", eventCaptor.getValue(), "foo");
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(false)));
+		assertThat("Service reports mode state", service.isOperationalModeActive("foo"),
+				is(equalTo(true)));
+		assertThat("Service reports mode state", service.isOperationalModeActive("bar"),
+				is(equalTo(false)));
 	}
 
 	@Test
@@ -576,6 +630,12 @@ public class DefaultOperationalModesServiceTests {
 		// THEN
 		assertThat("Mode deactivated", active, containsInAnyOrder("foo"));
 		assertModesChangedEvent("Deactivated ", eventCaptor.getValue(), "foo");
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(false)));
+		assertThat("Service reports mode state", service.isOperationalModeActive("foo"),
+				is(equalTo(true)));
+		assertThat("Service reports mode state", service.isOperationalModeActive("bar"),
+				is(equalTo(false)));
 	}
 
 	@Test
@@ -588,6 +648,8 @@ public class DefaultOperationalModesServiceTests {
 
 		// THEN
 		assertThat("Mode deactivated", active, hasSize(0));
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(false)));
 	}
 
 	@Test
@@ -601,6 +663,8 @@ public class DefaultOperationalModesServiceTests {
 
 		// THEN
 		assertThat("Mode deactivated", active, hasSize(0));
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(false)));
 	}
 
 	@Test
@@ -614,6 +678,8 @@ public class DefaultOperationalModesServiceTests {
 
 		// THEN
 		assertThat("Mode deactivated", active, containsInAnyOrder("foo"));
+		assertThat("Service reports mode state", service.isOperationalModeActive("foo"),
+				is(equalTo(true)));
 	}
 
 	@Test
@@ -628,6 +694,8 @@ public class DefaultOperationalModesServiceTests {
 
 		// THEN
 		assertThat("Mode deactivated", active, containsInAnyOrder("foo"));
+		assertThat("Service reports mode state", service.isOperationalModeActive("foo"),
+				is(equalTo(true)));
 	}
 
 	@Test
@@ -642,6 +710,8 @@ public class DefaultOperationalModesServiceTests {
 
 		// THEN
 		assertThat("Mode deactivated", active, hasSize(0));
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(false)));
 	}
 
 	@Test
@@ -679,6 +749,8 @@ public class DefaultOperationalModesServiceTests {
 
 		// THEN
 		assertThat("Non-expired mode remains", activeModeCache, hasEntry("test", expire));
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(true)));
 	}
 
 	@Test
@@ -695,6 +767,8 @@ public class DefaultOperationalModesServiceTests {
 
 		// THEN
 		assertThat("Non-expired mode remains", activeModeCache, hasEntry("test", expire));
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(true)));
 	}
 
 	@Test
@@ -718,6 +792,8 @@ public class DefaultOperationalModesServiceTests {
 		// THEN
 		assertThat("Expired mode purged", activeModeCache, not(hasEntry("test", expire)));
 		assertModesChangedEvent("Expired ", eventCaptor.getValue());
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(false)));
 	}
 
 	@Test
@@ -748,6 +824,8 @@ public class DefaultOperationalModesServiceTests {
 		// THEN
 		assertThat("Expired mode purged", activeModeCache, not(hasEntry("test", expire)));
 		assertModesChangedEvent("Expired ", eventCaptor.getValue());
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(false)));
 	}
 
 	@Test
@@ -785,6 +863,12 @@ public class DefaultOperationalModesServiceTests {
 		assertThat("Non-expired mode remains", activeModeCache,
 				hasEntry("bar", DefaultOperationalModesService.NO_EXPIRATION));
 		assertModesChangedEvent("Expired ", eventCaptor.getValue(), "bar");
+		assertThat("Service reports mode state", service.isOperationalModeActive("test"),
+				is(equalTo(false)));
+		assertThat("Service reports mode state", service.isOperationalModeActive("foo"),
+				is(equalTo(false)));
+		assertThat("Service reports mode state", service.isOperationalModeActive("bar"),
+				is(equalTo(true)));
 	}
 
 }

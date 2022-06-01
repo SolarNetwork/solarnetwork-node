@@ -27,8 +27,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +52,7 @@ import net.solarnetwork.util.StringUtils;
  * functions.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class CmdlineSystemService
 		implements SystemService, SettingSpecifierProvider, InstructionHandler {
@@ -66,10 +69,18 @@ public class CmdlineSystemService
 	/** The default value for the {@code resetAooCommand} property. */
 	public static final String DEFAULT_RESET_APP_COMMAND = "sudo systemctl start sn-reset-app";
 
+	/**
+	 * The {@code successExitCodes} property default value.
+	 * 
+	 * @since 2.1
+	 */
+	public static final Set<Integer> DEFAULT_SUCCESS_EXIT_CODES = Collections.singleton(143);
+
 	private String exitCommand = DEFAULT_EXIT_COMMAND;
 	private String rebootCommand = DEFAULT_REBOOT_COMMAND;
 	private String resetCommand = DEFAULT_RESET_COMMAND;
 	private String resetAppCommand = DEFAULT_RESET_APP_COMMAND;
+	private Set<Integer> successExitCodes = DEFAULT_SUCCESS_EXIT_CODES;
 
 	private final BundleContext bundleContext;
 	private MessageSource messageSource;
@@ -231,7 +242,7 @@ public class CmdlineSystemService
 			logInputStream(pr.getInputStream(), false);
 			logInputStream(pr.getErrorStream(), true);
 			pr.waitFor();
-			if ( pr.exitValue() == 0 ) {
+			if ( isExitValueSuccess(pr) ) {
 				log.debug("Command [{}] executed", delimitedStringFromCollection(arguments, " "));
 			} else {
 				log.error("Error executing [{}], exit status: {}",
@@ -242,6 +253,11 @@ public class CmdlineSystemService
 		} catch ( InterruptedException e ) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private boolean isExitValueSuccess(Process pr) {
+		int status = pr.exitValue();
+		return (status == 0 || (successExitCodes != null && successExitCodes.contains(status)));
 	}
 
 	private void logInputStream(final InputStream src, final boolean errorStream) {
@@ -319,6 +335,8 @@ public class CmdlineSystemService
 
 		results.add(new BasicTextFieldSettingSpecifier("exitCommand", DEFAULT_EXIT_COMMAND));
 		results.add(new BasicTextFieldSettingSpecifier("rebootCommand", DEFAULT_REBOOT_COMMAND));
+		results.add(new BasicTextFieldSettingSpecifier("successExitCodesValue",
+				StringUtils.commaDelimitedStringFromCollection(DEFAULT_SUCCESS_EXIT_CODES)));
 
 		return results;
 	}
@@ -382,6 +400,64 @@ public class CmdlineSystemService
 	 */
 	public void setResetAppCommand(String resetAppCommand) {
 		this.resetAppCommand = resetAppCommand;
+	}
+
+	/**
+	 * Get the exit codes to be considered as successful (in addition to
+	 * {@literal 0}).
+	 * 
+	 * @return the exit codes; defaults to {@link #DEFAULT_SUCCESS_EXIT_CODES}
+	 * @since 2.1
+	 */
+	public Set<Integer> getSuccessExitCodes() {
+		return successExitCodes;
+	}
+
+	/**
+	 * Set the exit codes to be considered as successful (in addition to
+	 * {@literal 0}).
+	 * 
+	 * @param successExitCodes
+	 *        the exit codes to set
+	 * @since 2.1
+	 */
+	public void setSuccessExitCodes(Set<Integer> successExitCodes) {
+		this.successExitCodes = successExitCodes;
+	}
+
+	/**
+	 * Get the exit codes to be considered as successful (in addition to
+	 * {@literal 0}) as a comma-delimited list.
+	 * 
+	 * @return the comma-delimited exit codes list
+	 * @see #getSuccessExitCodes()
+	 * @since 2.1
+	 */
+	public String getSuccessExitCodesValue() {
+		return StringUtils.commaDelimitedStringFromCollection(getSuccessExitCodes());
+	}
+
+	/**
+	 * Set the exit codes to be considered as successful (in addition to
+	 * {@literal 0}) as a comma-delimited list.
+	 * 
+	 * @param value
+	 *        the comma-delimited exit codes list to set
+	 * @since 2.1
+	 */
+	public void setSuccessExitCodesValue(String value) {
+		Set<String> set = StringUtils.commaDelimitedStringToSet(value);
+		Set<Integer> codes = (set != null ? new LinkedHashSet<>(set.size()) : null);
+		if ( set != null ) {
+			for ( String code : set ) {
+				try {
+					codes.add(Integer.valueOf(code));
+				} catch ( NumberFormatException e ) {
+					log.warn("Ignoring non-integer success code value: [{}]", code);
+				}
+			}
+		}
+		setSuccessExitCodes(codes.isEmpty() ? null : codes);
 	}
 
 }

@@ -23,6 +23,7 @@
 package net.solarnetwork.node.setup.impl;
 
 import static net.solarnetwork.node.setup.SetupSettings.KEY_NODE_ID;
+import static net.solarnetwork.service.OptionalService.service;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -63,6 +64,7 @@ import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.service.PKIService;
+import net.solarnetwork.node.service.SystemService;
 import net.solarnetwork.node.service.support.XmlServiceSupport;
 import net.solarnetwork.node.setup.InvalidVerificationCodeException;
 import net.solarnetwork.node.setup.SetupException;
@@ -112,7 +114,7 @@ import net.solarnetwork.util.DateUtils;
  * </dl>
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class DefaultSetupService extends XmlServiceSupport
 		implements SetupService, IdentityService, InstructionHandler, PingTest {
@@ -209,6 +211,7 @@ public class DefaultSetupService extends XmlServiceSupport
 
 	private final SetupIdentityDao setupIdentityDao;
 	private OptionalService<BackupManager> backupManager;
+	private OptionalService<SystemService> systemService;
 	private PKIService pkiService;
 	private String solarInUrlPrefix = DEFAULT_SOLARIN_URL_PREFIX;
 	private String solarUserUrlPrefix = DEFAULT_SOLARUSER_URL_PREFIX;
@@ -543,6 +546,22 @@ public class DefaultSetupService extends XmlServiceSupport
 				log.info("Installed node certificate {}, valid to {}", nodeCert.getSerialNumber(),
 						nodeCert.getNotAfter());
 			}
+			final SystemService systemService = service(getSystemService());
+			if ( systemService != null ) {
+				new Thread(new Runnable() {
+
+					@Override
+					public void run() {
+						try {
+							Thread.sleep(1000);
+						} catch ( InterruptedException e ) {
+							// ignore this
+						}
+						systemService.exit(true); // this will exit "soon"
+					}
+
+				}).start();
+			}
 			return InstructionUtils.createStatus(instruction, InstructionState.Completed);
 		} catch ( CertificateException e ) {
 			log.error("Failed to install renewed certificate", e);
@@ -776,6 +795,27 @@ public class DefaultSetupService extends XmlServiceSupport
 	 */
 	public void setNodeCertificateExpireWarningDays(int nodeCertificateExpireWarningDays) {
 		this.nodeCertificateExpireWarningDays = nodeCertificateExpireWarningDays;
+	}
+
+	/**
+	 * Get an optional system service.
+	 * 
+	 * @return the service
+	 * @since 2.3
+	 */
+	public OptionalService<SystemService> getSystemService() {
+		return systemService;
+	}
+
+	/**
+	 * Set the optional system service.
+	 * 
+	 * @param systemService
+	 *        the service to set
+	 * @since 2.3
+	 */
+	public void setSystemService(OptionalService<SystemService> systemService) {
+		this.systemService = systemService;
 	}
 
 }

@@ -149,8 +149,10 @@ public class LoggingCanbusFrameListenerTests {
 				"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z \\((\\d+)\\.(\\d{6})\\) can0 (\\d+)#([0-9A-F]*)");
 		for ( int i = 0; i < logData.length; i++ ) {
 			Matcher m = logPat.matcher(logData[i].trim());
-			assertThat("Log line formatted with comment and timestamp, address, hex data", m.matches(),
-					equalTo(true));
+			assertThat(
+					String.format("Log line formatted with comment and timestamp, address, hex data: %s",
+							logData[i].trim()),
+					m.matches(), is(true));
 			assertThat("Log seconds", m.group(1), is(String.valueOf(msgs.get(i).getSeconds())));
 			assertThat("Log seconds", m.group(2), is(format("%06d", msgs.get(i).getMicroseconds())));
 			assertThat("Log line address", m.group(3), is("1"));
