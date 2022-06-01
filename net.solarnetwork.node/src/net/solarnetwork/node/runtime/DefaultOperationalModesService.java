@@ -73,7 +73,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * Default implementation of {@link OperationalModesService}.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class DefaultOperationalModesService extends BaseIdentifiable implements OperationalModesService,
 		InstructionHandler, SettingSpecifierProvider, ServiceLifecycleObserver {
@@ -384,7 +384,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 		}
 		Long exp = activeModes.get(mode);
 		boolean result = exp != null
-				&& (NO_EXPIRATION.equals(exp) || exp.longValue() < System.currentTimeMillis());
+				&& (NO_EXPIRATION.equals(exp) || exp.longValue() > System.currentTimeMillis());
 		return (inverted ? !result : result);
 	}
 
