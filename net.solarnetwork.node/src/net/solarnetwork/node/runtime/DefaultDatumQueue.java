@@ -31,7 +31,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.BlockingQueue;
@@ -542,13 +541,16 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	@Override
 	public synchronized void removeConsumer(Consumer<NodeDatum> consumer) {
-		for ( Iterator<ConsumerThread> itr = consumers.iterator(); itr.hasNext(); ) {
-			ConsumerThread t = itr.next();
+		ConsumerThread threadToRemove = null;
+		for ( ConsumerThread t : consumers ) {
 			if ( t.consumer == consumer ) {
-				itr.remove();
-				t.shutdown();
-				return;
+				threadToRemove = t;
+				break;
 			}
+		}
+		if ( threadToRemove != null ) {
+			consumers.remove(threadToRemove);
+			threadToRemove.shutdown();
 		}
 	}
 
