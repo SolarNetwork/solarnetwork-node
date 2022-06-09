@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.control.modbus;
 
+import static net.solarnetwork.node.io.modbus.ModbusDataUtils.shortArrayForBitSet;
 import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -371,13 +372,14 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 						}
 						switch (readFunction) {
 							case ReadCoil:
-								m.saveDataArray(shortArrayForBitSet(conn.readDiscreetValues(start, len),
-										start, len), start);
+								m.saveDataArray(
+										shortArrayForBitSet(conn.readDiscreetValues(start, len), len),
+										start);
 								break;
 
 							case ReadDiscreteInput:
 								m.saveDataArray(shortArrayForBitSet(
-										conn.readInputDiscreteValues(start, len), start, len), start);
+										conn.readInputDiscreteValues(start, len), len), start);
 								break;
 
 							case ReadHoldingRegister:
@@ -391,18 +393,10 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 								break;
 						}
 					}
-					return false;
+					return false; // this means the data is never cached
 				}
 			});
 		}
-	}
-
-	private static short[] shortArrayForBitSet(BitSet set, int start, int count) {
-		short[] result = new short[count];
-		for ( int i = 0; i < count; i++ ) {
-			result[i] = set.get(start + i) ? (short) 1 : (short) 0;
-		}
-		return result;
 	}
 
 	// NodeControlProvider
