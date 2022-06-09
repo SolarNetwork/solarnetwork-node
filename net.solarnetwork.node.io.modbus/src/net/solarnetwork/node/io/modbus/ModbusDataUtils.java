@@ -26,6 +26,7 @@ import static net.solarnetwork.node.io.modbus.ModbusWordOrder.LeastToMostSignifi
 import static net.solarnetwork.node.io.modbus.ModbusWordOrder.MostToLeastSignificant;
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.BitSet;
 import net.solarnetwork.util.Half;
 
 /**
@@ -37,7 +38,7 @@ import net.solarnetwork.util.Half;
  * </p>
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  * @since 2.6
  */
 public final class ModbusDataUtils {
@@ -1085,6 +1086,105 @@ public final class ModbusDataUtils {
 			result = BigInteger.ZERO;
 		}
 		return result;
+	}
+
+	/**
+	 * Return the minimum number of 16-bit register words that can accommodate
+	 * the active bits in a bit set.
+	 * 
+	 * <p>
+	 * If no bits are set, the returned value is {@literal 0}.
+	 * </p>
+	 * 
+	 * @param bits
+	 *        the bit set
+	 * @return the minimum number of words
+	 * @since 2.3
+	 */
+	public static int wordSize(BitSet bits) {
+		final int len = bits.length();
+		return (len / 16) + (len % 16 > 0 ? 1 : 0);
+	}
+
+	/**
+	 * Convert a bit set into an array of 16-bit register values.
+	 * 
+	 * @param bits
+	 *        the bit set
+	 * @param count
+	 *        the number of words to fill
+	 * @param wordOrder
+	 *        the word order for the result
+	 * @return the words, never {@literal null}
+	 * @since 2.3
+	 */
+	public static short[] shortArrayForBitSet(BitSet bits, int count, ModbusWordOrder wordOrder) {
+		short[] result = new short[count];
+		for ( int i = bits.nextSetBit(0); i >= 0; i = bits.nextSetBit(i + 1) ) {
+			int pos = (wordOrder == ModbusWordOrder.LeastToMostSignificant ? i / 16
+					: count - (i / 16) - 1);
+			int bitPos = i % 16;
+			if ( bits.get(i) ) {
+				result[pos] |= 1 << bitPos;
+			}
+			if ( i == Integer.MAX_VALUE ) {
+				break;
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Convert a bit set into an array of 16-bit register values, using
+	 * {@link ModbusWordOrder#MostToLeastSignificant} word order.
+	 * 
+	 * @param bits
+	 *        the bit set
+	 * @param count
+	 *        the number of words to fill
+	 * @return the words, never {@literal null}
+	 * @since 2.3
+	 */
+	public static short[] shortArrayForBitSet(BitSet bits, int count) {
+		return shortArrayForBitSet(bits, count, MostToLeastSignificant);
+	}
+
+	/**
+	 * Convert an array of 16-bit register values into a bit set.
+	 * 
+	 * @param words
+	 *        the words
+	 * @param wordOrder
+	 *        the word order for the result
+	 * @return the bit set, never {@literal null}
+	 * @since 2.3
+	 */
+	public static BitSet bitSetForShortArray(short[] words, ModbusWordOrder wordOrder) {
+		final int size = (words != null ? words.length : 0);
+		final BitSet result = new BitSet(size);
+		for ( int pos = 0; pos < words.length; pos++ ) {
+			short w = words[pos];
+			for ( int i = 0; i < 16; i++ ) {
+				int bitPos = ((wordOrder == LeastToMostSignificant ? pos * 16 : (size - pos - 1) * 16)
+						+ (i % 16));
+				int bit = (w >> i) & 1;
+				result.set(bitPos, bit == 1);
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Convert an array of 16-bit register values into a bit set, using
+	 * {@link ModbusWordOrder#MostToLeastSignificant} word order.
+	 * 
+	 * @param words
+	 *        the words
+	 * @return the bit set, never {@literal null}
+	 * @since 2.3
+	 */
+	public static BitSet bitSetForShortArray(short[] words) {
+		return bitSetForShortArray(words, MostToLeastSignificant);
 	}
 
 }

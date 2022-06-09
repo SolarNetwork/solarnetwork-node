@@ -22,16 +22,21 @@
 
 package net.solarnetwork.node.io.modbus.test;
 
+import static net.solarnetwork.node.io.modbus.ModbusDataUtils.integerArray;
+import static net.solarnetwork.node.io.modbus.ModbusDataUtils.wordSize;
 import static net.solarnetwork.node.io.modbus.ModbusWordOrder.LeastToMostSignificant;
+import static net.solarnetwork.node.io.modbus.ModbusWordOrder.MostToLeastSignificant;
 import static net.solarnetwork.util.ByteUtils.objectArray;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertThat;
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.BitSet;
 import org.hamcrest.Matchers;
 import org.junit.Test;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
@@ -42,7 +47,7 @@ import net.solarnetwork.util.Half;
  * Test cases for the {@link ModbusDataUtils} class.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ModbusDataUtilsTests {
 
@@ -301,4 +306,147 @@ public class ModbusDataUtilsTests {
 		assertThat(n, equalTo(new Half((short) 0x4240)));
 	}
 
+	@Test
+	public void bitSetToWords_bit() {
+		BitSet bits = new BitSet();
+		bits.set(0);
+		short[] words = ModbusDataUtils.shortArrayForBitSet(bits, wordSize(bits),
+				MostToLeastSignificant);
+		assertThat("Words encoded", integerArray(words), arrayContaining(1));
+	}
+
+	@Test
+	public void bitSetToWords_bits() {
+		BitSet bits = new BitSet();
+		bits.set(0);
+		bits.set(1);
+		bits.set(7);
+		bits.set(15);
+		short[] words = ModbusDataUtils.shortArrayForBitSet(bits, wordSize(bits),
+				MostToLeastSignificant);
+		assertThat("Words encoded", integerArray(words), arrayContaining(0b10000000_10000011));
+	}
+
+	@Test
+	public void bitSetToWords_bits_multiWord() {
+		BitSet bits = new BitSet();
+		bits.set(0);
+		bits.set(7);
+		bits.set(18);
+		bits.set(31);
+		bits.set(44);
+		short[] words = ModbusDataUtils.shortArrayForBitSet(bits, wordSize(bits),
+				MostToLeastSignificant);
+		assertThat("Words encoded", integerArray(words),
+				arrayContaining(0b00010000_00000000, 0b10000000_00000100, 0b00000000_10000001));
+	}
+
+	@Test
+	public void bitSetToWords_bit_leastToMost() {
+		BitSet bits = new BitSet();
+		bits.set(0);
+		short[] words = ModbusDataUtils.shortArrayForBitSet(bits, wordSize(bits),
+				LeastToMostSignificant);
+		assertThat("Words encoded", integerArray(words), arrayContaining(1));
+	}
+
+	@Test
+	public void bitSetToWords_bits_leastToMost() {
+		BitSet bits = new BitSet();
+		bits.set(0);
+		bits.set(1);
+		bits.set(7);
+		bits.set(15);
+		short[] words = ModbusDataUtils.shortArrayForBitSet(bits, wordSize(bits),
+				LeastToMostSignificant);
+		assertThat("Words encoded", integerArray(words), arrayContaining(0b10000000_10000011));
+	}
+
+	@Test
+	public void bitSetToWords_bits_multiWord_leastToMost() {
+		BitSet bits = new BitSet();
+		bits.set(0);
+		bits.set(7);
+		bits.set(18);
+		bits.set(31);
+		bits.set(44);
+		short[] words = ModbusDataUtils.shortArrayForBitSet(bits, wordSize(bits),
+				LeastToMostSignificant);
+		assertThat("Words encoded", integerArray(words),
+				arrayContaining(0b00000000_10000001, 0b10000000_00000100, 0b00010000_00000000));
+	}
+
+	@Test
+	public void wordsToBitSet_bit() {
+		BitSet result = ModbusDataUtils.bitSetForShortArray(new short[] { (short) 0b00000001 },
+				MostToLeastSignificant);
+
+		BitSet expected = new BitSet();
+		expected.set(0);
+		assertThat("BitSet encoded", result, is(equalTo(expected)));
+	}
+
+	@Test
+	public void wordsToBitSet_bits() {
+		BitSet result = ModbusDataUtils.bitSetForShortArray(new short[] { (short) 0b10000000_10000011 },
+				MostToLeastSignificant);
+
+		BitSet expected = new BitSet();
+		expected.set(0);
+		expected.set(1);
+		expected.set(7);
+		expected.set(15);
+		assertThat("BitSet encoded", result, is(equalTo(expected)));
+	}
+
+	@Test
+	public void wordsToBitSet_bits_multiWord() {
+		BitSet result = ModbusDataUtils.bitSetForShortArray(new short[] { (short) 0b00010000_00000000,
+				(short) 0b10000000_00000100, (short) 0b00000000_10000001 }, MostToLeastSignificant);
+
+		BitSet expected = new BitSet();
+		expected.set(0);
+		expected.set(7);
+		expected.set(18);
+		expected.set(31);
+		expected.set(44);
+		assertThat("BitSet encoded", result, is(equalTo(expected)));
+	}
+
+	@Test
+	public void wordsToBitSet_bit_leastToMost() {
+		BitSet result = ModbusDataUtils.bitSetForShortArray(new short[] { (short) 0b00000001 },
+				LeastToMostSignificant);
+
+		BitSet expected = new BitSet();
+		expected.set(0);
+		assertThat("BitSet encoded", result, is(equalTo(expected)));
+	}
+
+	@Test
+	public void wordsToBitSet_bits_leastToMost() {
+		BitSet result = ModbusDataUtils.bitSetForShortArray(new short[] { (short) 0b10000000_10000011 },
+				LeastToMostSignificant);
+
+		BitSet expected = new BitSet();
+		expected.set(0);
+		expected.set(1);
+		expected.set(7);
+		expected.set(15);
+		assertThat("BitSet encoded", result, is(equalTo(expected)));
+	}
+
+	@Test
+	public void wordsToBitSet_bits_multiWord_leastToMost() {
+		BitSet result = ModbusDataUtils.bitSetForShortArray(new short[] { (short) 0b00000000_10000001,
+				(short) 0b10000000_00000100, (short) 0b00010000_00000000 }, LeastToMostSignificant);
+
+		BitSet expected = new BitSet();
+		expected.set(0);
+		expected.set(7);
+		expected.set(18);
+		expected.set(31);
+		expected.set(44);
+		assertThat("BitSet encoded", result, is(equalTo(expected)));
+	}
 }
