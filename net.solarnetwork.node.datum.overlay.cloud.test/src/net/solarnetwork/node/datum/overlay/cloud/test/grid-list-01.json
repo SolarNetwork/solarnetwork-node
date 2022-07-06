@@ -1,0 +1,24 @@
+[
+  {
+    "gridId": 1,
+    "name": "Foobar Gym Basement",
+    "feeds": [
+      {
+        "feedId": 1,
+        "name": "Foobar Gym Basement-TX",
+        "resources": []
+      }
+    ]
+  },
+  {
+    "gridId": 2,
+    "name": "Someplace Else",
+    "feeds": [
+      {
+        "feedId": 2,
+        "name": "Someplace Else-TX",
+        "resources": []
+      }
+    ]
+  }
+]
