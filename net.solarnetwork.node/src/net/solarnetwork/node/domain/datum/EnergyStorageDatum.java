@@ -23,12 +23,13 @@
 package net.solarnetwork.node.domain.datum;
 
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 
 /**
  * Standardized API for energy storage system related datum to implement.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface EnergyStorageDatum
 		extends net.solarnetwork.domain.datum.EnergyStorageDatum, MutableNodeDatum {
@@ -41,7 +42,21 @@ public interface EnergyStorageDatum
 	 *        storage
 	 */
 	default void setAvailableEnergyPercentage(Float value) {
-		asMutableSampleOperations().putSampleValue(Instantaneous, PERCENTAGE_KEY, value);
+		asMutableSampleOperations().putSampleValue(Instantaneous, STATE_OF_CHARGE_PERCENTAGE_KEY, value);
+	}
+
+	/**
+	 * Set a percentage of storage "health" in terms of practical total capacity
+	 * right now versus theoretical total capacity when the storage was
+	 * manufactured.
+	 * 
+	 * @param value
+	 *        the total energy capacity now as a percentage of the theoretical
+	 *        total capacity of the storage when manufactured
+	 * @since 1.1
+	 */
+	default void setStateOfHealthPercentage(Float value) {
+		asMutableSampleOperations().putSampleValue(Instantaneous, STATE_OF_HEALTH_PERCENTAGE_KEY, value);
 	}
 
 	/**
@@ -52,6 +67,17 @@ public interface EnergyStorageDatum
 	 */
 	default void setAvailableEnergy(Long value) {
 		asMutableSampleOperations().putSampleValue(Instantaneous, AVAILABLE_WATT_HOURS_KEY, value);
+	}
+
+	/**
+	 * Set the energy capacity of the storage system, in Wh.
+	 * 
+	 * @param value
+	 *        the energy capacity of the storage
+	 * @since 1.1
+	 */
+	default void setEnergyCapacity(Long value) {
+		asMutableSampleOperations().putSampleValue(Status, CAPACITY_WATT_HOURS_KEY, value);
 	}
 
 }
