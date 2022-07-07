@@ -32,7 +32,7 @@ import static net.solarnetwork.domain.datum.AcEnergyDatum.VOLTAGE_KEY;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import static net.solarnetwork.domain.datum.EnergyDatum.WATTS_KEY;
-import static net.solarnetwork.domain.datum.EnergyStorageDatum.PERCENTAGE_KEY;
+import static net.solarnetwork.domain.datum.EnergyStorageDatum.STATE_OF_CHARGE_PERCENTAGE_KEY;
 import static net.solarnetwork.node.datum.overlay.cloud.FeedDatum.CAPACITY_WATT_HOURS_KEY;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -119,7 +119,7 @@ public class FeedDatumTests {
 		assertThat("Available charge",
 				samples.getSampleLong(Instantaneous, FeedDatum.AVAILABLE_WATT_HOURS_KEY),
 				is(equalTo(10000000L)));
-		assertThat("Charge percentage", samples.getSampleFloat(Instantaneous, PERCENTAGE_KEY),
+		assertThat("Charge percentage", samples.getSampleFloat(Instantaneous, STATE_OF_CHARGE_PERCENTAGE_KEY),
 				is(equalTo(0.81000006f)));
 		assertThat("State of health",
 				samples.getSampleFloat(Instantaneous, FeedDatum.STATE_OF_HEALTH_PERCENTAGE_KEY),
