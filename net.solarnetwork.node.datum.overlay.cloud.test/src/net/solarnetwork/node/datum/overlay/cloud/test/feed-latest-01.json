@@ -1,8 +1,21 @@
 {
   "feedReportId": 4453,
   "timestamp": "2022-03-01T00:10:00Z",
+  "wattsA": 8000,
+  "wattsB": 7000,
+  "wattsC": 6000,
   "currentA": 36,
   "currentB": 8,
   "currentC": 12,
-  "currentN": 0
+  "currentN": 0,
+  "frequency": 50.0,
+  "powerFactorA": 0.99,
+  "powerFactorB": 0.98,
+  "powerFactorC": 0.97,
+  "voltageAN": 240.0,
+  "voltageBN": 240.1,
+  "voltageCN": 240.2,
+  "chargeCapacity": 12345678,
+  "availableCharge": 10000000,
+  "stateOfHealth": 98
 }

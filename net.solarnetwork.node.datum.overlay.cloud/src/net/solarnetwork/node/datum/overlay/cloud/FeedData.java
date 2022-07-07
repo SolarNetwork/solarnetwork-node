@@ -23,6 +23,9 @@
 package net.solarnetwork.node.datum.overlay.cloud;
 
 import java.time.Instant;
+import java.util.Map;
+import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 
 /**
  * Feed data (aggregate of all resources within feed).
@@ -30,9 +33,12 @@ import java.time.Instant;
  * @author matt
  * @version 1.0
  */
-public class FeedData {
+public class FeedData implements FeedDataAccessor {
 
 	private Instant timestamp;
+	private Integer wattsA;
+	private Integer wattsB;
+	private Integer wattsC;
 	private Float frequency;
 	private Float powerFactorA;
 	private Float powerFactorB;
@@ -40,11 +46,132 @@ public class FeedData {
 	private Float voltageAN;
 	private Float voltageBN;
 	private Float voltageCN;
-	private Double currentA;
-	private Double currentB;
-	private Double currentC;
+	private Float currentA;
+	private Float currentB;
+	private Float currentC;
 	private Long chargeCapacity; // Wh
 	private Long availableCharge; // Wh
+	private Integer stateOfHealth;
+
+	private static Float avgValue(Float a, Float b, Float c) {
+		double total = 0;
+		int count = 0;
+		if ( a != null ) {
+			count += 1;
+			total += a.doubleValue();
+		}
+		if ( b != null ) {
+			count += 1;
+			total += b.doubleValue();
+		}
+		if ( c != null ) {
+			count += 1;
+			total += c.doubleValue();
+		}
+		if ( count < 1 ) {
+			return null;
+		}
+		return (float) (total / count);
+	}
+
+	private static Integer sumValue(Integer a, Integer b, Integer c) {
+		int total = 0;
+		int count = 0;
+		if ( a != null ) {
+			count += 1;
+			total += a.longValue();
+		}
+		if ( b != null ) {
+			count += 1;
+			total += b.longValue();
+		}
+		if ( c != null ) {
+			count += 1;
+			total += c.longValue();
+		}
+		if ( count < 1 ) {
+			return null;
+		}
+		return total;
+	}
+
+	private static Float sumValue(Float a, Float b, Float c) {
+		float total = 0;
+		int count = 0;
+		if ( a != null ) {
+			count += 1;
+			total += a.floatValue();
+		}
+		if ( b != null ) {
+			count += 1;
+			total += b.floatValue();
+		}
+		if ( c != null ) {
+			count += 1;
+			total += c.floatValue();
+		}
+		if ( count < 1 ) {
+			return null;
+		}
+		return total;
+	}
+
+	/**
+	 * Get the watts, phase A.
+	 * 
+	 * @return the watts
+	 */
+	public Integer getWattsA() {
+		return wattsA;
+	}
+
+	/**
+	 * Set the watts, phase A.
+	 * 
+	 * @param wattsA
+	 *        the watts to set
+	 */
+	public void setWattsA(Integer wattsA) {
+		this.wattsA = wattsA;
+	}
+
+	/**
+	 * Get the watts, phase B.
+	 * 
+	 * @return the watts
+	 */
+	public Integer getWattsB() {
+		return wattsB;
+	}
+
+	/**
+	 * Set the watts, phase B.
+	 * 
+	 * @param wattsB
+	 *        the watts to set
+	 */
+	public void setWattsB(Integer wattsB) {
+		this.wattsB = wattsB;
+	}
+
+	/**
+	 * Get the watts, phase C.
+	 * 
+	 * @return the watts
+	 */
+	public Integer getWattsC() {
+		return wattsC;
+	}
+
+	/**
+	 * Set the watts, phase C.
+	 * 
+	 * @param wattsC
+	 *        the watts to set
+	 */
+	public void setWattsC(Integer wattsC) {
+		this.wattsC = wattsC;
+	}
 
 	/**
 	 * Get the timestamp.
@@ -70,6 +197,7 @@ public class FeedData {
 	 * 
 	 * @return the frequency, in Hz
 	 */
+	@Override
 	public Float getFrequency() {
 		return frequency;
 	}
@@ -203,7 +331,7 @@ public class FeedData {
 	 * 
 	 * @return the current, in A
 	 */
-	public Double getCurrentA() {
+	public Float getCurrentA() {
 		return currentA;
 	}
 
@@ -213,7 +341,7 @@ public class FeedData {
 	 * @param currentA
 	 *        the current to set, in A
 	 */
-	public void setCurrentA(Double currentA) {
+	public void setCurrentA(Float currentA) {
 		this.currentA = currentA;
 	}
 
@@ -222,7 +350,7 @@ public class FeedData {
 	 * 
 	 * @return the current, in A
 	 */
-	public Double getCurrentB() {
+	public Float getCurrentB() {
 		return currentB;
 	}
 
@@ -232,7 +360,7 @@ public class FeedData {
 	 * @param currentB
 	 *        the current to set, in A
 	 */
-	public void setCurrentB(Double currentB) {
+	public void setCurrentB(Float currentB) {
 		this.currentB = currentB;
 	}
 
@@ -241,7 +369,7 @@ public class FeedData {
 	 * 
 	 * @return the current, in A
 	 */
-	public Double getCurrentC() {
+	public Float getCurrentC() {
 		return currentC;
 	}
 
@@ -251,7 +379,7 @@ public class FeedData {
 	 * @param currentC
 	 *        the current to set
 	 */
-	public void setCurrentC(Double currentC) {
+	public void setCurrentC(Float currentC) {
 		this.currentC = currentC;
 	}
 
@@ -293,4 +421,460 @@ public class FeedData {
 		this.availableCharge = availableCharge;
 	}
 
+	/**
+	 * Get the state of health.
+	 * 
+	 * @return the health, as an integer percentage between 0 and 100
+	 */
+	public Integer getStateOfHealth() {
+		return stateOfHealth;
+	}
+
+	/**
+	 * Set the state of health.
+	 * 
+	 * @param stateOfHealth
+	 *        the health, as an integer percentage between 0 and 100
+	 */
+	public void setStateOfHealth(Integer stateOfHealth) {
+		this.stateOfHealth = stateOfHealth;
+	}
+
+	@Override
+	public FeedDataAccessor accessorForPhase(AcPhase phase) {
+		if ( phase == AcPhase.Total ) {
+			return this;
+		}
+		return new PhaseFeedDataAccessor(phase);
+	}
+
+	@Override
+	public FeedDataAccessor reversed() {
+		return new ReversedFeedDataAccessor(this);
+	}
+
+	@Override
+	public Float getCurrent() {
+		return sumValue(currentA, currentB, currentC);
+	}
+
+	@Override
+	public Float getNeutralCurrent() {
+		return null;
+	}
+
+	@Override
+	public Float getVoltage() {
+		return avgValue(voltageAN, voltageBN, voltageCN);
+	}
+
+	@Override
+	public Float getLineVoltage() {
+		return null;
+	}
+
+	@Override
+	public Float getPowerFactor() {
+		return avgValue(powerFactorA, powerFactorB, powerFactorC);
+	}
+
+	@Override
+	public Integer getActivePower() {
+		return sumValue(wattsA, wattsB, wattsC);
+	}
+
+	@Override
+	public Long getActiveEnergyDelivered() {
+		return null;
+	}
+
+	@Override
+	public Long getActiveEnergyReceived() {
+		return null;
+	}
+
+	@Override
+	public Integer getApparentPower() {
+		return null;
+	}
+
+	@Override
+	public Long getApparentEnergyDelivered() {
+		return null;
+	}
+
+	@Override
+	public Long getApparentEnergyReceived() {
+		return null;
+	}
+
+	@Override
+	public Integer getReactivePower() {
+		return null;
+	}
+
+	@Override
+	public Long getReactiveEnergyDelivered() {
+		return null;
+	}
+
+	@Override
+	public Long getReactiveEnergyReceived() {
+		return null;
+	}
+
+	@Override
+	public Instant getDataTimestamp() {
+		return getTimestamp();
+	}
+
+	@Override
+	public Map<String, Object> getDeviceInfo() {
+		return null;
+	}
+
+	@Override
+	public Float getAvailableEnergyPercentage() {
+		Long avail = getAvailableEnergy();
+		Long capac = getEnergyCapacity();
+		if ( avail != null && capac != null && capac.doubleValue() > 0.0 ) {
+			return (float) (avail.doubleValue() / capac.doubleValue());
+		}
+		return null;
+	}
+
+	@Override
+	public Long getAvailableEnergy() {
+		return availableCharge;
+	}
+
+	@Override
+	public Long getEnergyCapacity() {
+		return chargeCapacity;
+	}
+
+	@Override
+	public Float getStateOfHealthPercentage() {
+		Integer soh = getStateOfHealth();
+		if ( soh != null ) {
+			return soh.floatValue() / 100.0f;
+		}
+		return null;
+	}
+
+	private class PhaseFeedDataAccessor implements FeedDataAccessor {
+
+		private final AcPhase phase;
+
+		private PhaseFeedDataAccessor(AcPhase phase) {
+			super();
+			this.phase = phase;
+		}
+
+		@Override
+		public Map<String, Object> getDeviceInfo() {
+			return FeedData.this.getDeviceInfo();
+		}
+
+		@Override
+		public Instant getDataTimestamp() {
+			return FeedData.this.getDataTimestamp();
+		}
+
+		@Override
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
+			return FeedData.this.accessorForPhase(phase);
+		}
+
+		@Override
+		public AcEnergyDataAccessor reversed() {
+			return FeedData.this.reversed();
+		}
+
+		@Override
+		public Float getFrequency() {
+			return FeedData.this.getFrequency();
+		}
+
+		@Override
+		public Float getCurrent() {
+			switch (phase) {
+				case PhaseA:
+					return currentA;
+
+				case PhaseB:
+					return currentB;
+
+				case PhaseC:
+					return currentC;
+
+				default:
+					return FeedData.this.getCurrent();
+			}
+		}
+
+		@Override
+		public Float getNeutralCurrent() {
+			return FeedData.this.getNeutralCurrent();
+		}
+
+		@Override
+		public Float getVoltage() {
+			Number n = null;
+			switch (phase) {
+				case PhaseA:
+					n = voltageAN;
+					break;
+
+				case PhaseB:
+					n = voltageBN;
+					break;
+
+				case PhaseC:
+					n = voltageCN;
+					break;
+
+				default:
+					return FeedData.this.getVoltage();
+			}
+			return (n != null ? n.floatValue() : null);
+		}
+
+		@Override
+		public Float getLineVoltage() {
+			return FeedData.this.getLineVoltage();
+		}
+
+		@Override
+		public Float getPowerFactor() {
+			switch (phase) {
+				case PhaseA:
+					return powerFactorA;
+
+				case PhaseB:
+					return powerFactorB;
+
+				case PhaseC:
+					return powerFactorC;
+
+				default:
+					return FeedData.this.getCurrent();
+			}
+		}
+
+		@Override
+		public Integer getActivePower() {
+			switch (phase) {
+				case PhaseA:
+					return wattsA;
+
+				case PhaseB:
+					return wattsB;
+
+				case PhaseC:
+					return wattsC;
+
+				default:
+					return FeedData.this.getActivePower();
+			}
+		}
+
+		@Override
+		public Integer getApparentPower() {
+			return FeedData.this.getApparentPower();
+		}
+
+		@Override
+		public Integer getReactivePower() {
+			return FeedData.this.getReactivePower();
+		}
+
+		@Override
+		public Long getActiveEnergyDelivered() {
+			return FeedData.this.getActiveEnergyDelivered();
+		}
+
+		@Override
+		public Long getActiveEnergyReceived() {
+			return FeedData.this.getActiveEnergyReceived();
+		}
+
+		@Override
+		public Long getReactiveEnergyDelivered() {
+			return FeedData.this.getReactiveEnergyDelivered();
+		}
+
+		@Override
+		public Long getReactiveEnergyReceived() {
+			return FeedData.this.getReactiveEnergyReceived();
+		}
+
+		@Override
+		public Long getApparentEnergyDelivered() {
+			return FeedData.this.getApparentEnergyDelivered();
+		}
+
+		@Override
+		public Long getApparentEnergyReceived() {
+			return FeedData.this.getApparentEnergyReceived();
+		}
+
+		@Override
+		public Float getAvailableEnergyPercentage() {
+			return FeedData.this.getAvailableEnergyPercentage();
+		}
+
+		@Override
+		public Long getAvailableEnergy() {
+			return FeedData.this.getAvailableEnergy();
+		}
+
+		@Override
+		public Long getEnergyCapacity() {
+			return FeedData.this.getEnergyCapacity();
+		}
+
+		@Override
+		public Float getStateOfHealthPercentage() {
+			return FeedData.this.getStateOfHealthPercentage();
+		}
+
+	}
+
+	private static class ReversedFeedDataAccessor implements FeedDataAccessor {
+
+		private final FeedDataAccessor delegate;
+
+		private ReversedFeedDataAccessor(FeedDataAccessor delegate) {
+			super();
+			this.delegate = delegate;
+		}
+
+		@Override
+		public Map<String, Object> getDeviceInfo() {
+			return delegate.getDeviceInfo();
+		}
+
+		@Override
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
+			return delegate.accessorForPhase(phase);
+		}
+
+		@Override
+		public AcEnergyDataAccessor reversed() {
+			return delegate;
+		}
+
+		@Override
+		public Instant getDataTimestamp() {
+			return delegate.getDataTimestamp();
+		}
+
+		@Override
+		public Float getFrequency() {
+			return delegate.getFrequency();
+		}
+
+		@Override
+		public Float getCurrent() {
+			return delegate.getCurrent();
+		}
+
+		@Override
+		public Float getNeutralCurrent() {
+			return delegate.getNeutralCurrent();
+		}
+
+		@Override
+		public Float getVoltage() {
+			return delegate.getVoltage();
+		}
+
+		@Override
+		public Float getLineVoltage() {
+			return delegate.getLineVoltage();
+		}
+
+		@Override
+		public Float getPowerFactor() {
+			return delegate.getPowerFactor();
+		}
+
+		@Override
+		public Integer getActivePower() {
+			Integer n = delegate.getActivePower();
+			return (n != null ? n * -1 : null);
+		}
+
+		@Override
+		public Integer getApparentPower() {
+			return delegate.getApparentPower();
+		}
+
+		@Override
+		public Integer getReactivePower() {
+			Integer n = delegate.getReactivePower();
+			return (n != null ? n * -1 : null);
+		}
+
+		@Override
+		public Long getActiveEnergyDelivered() {
+			return delegate.getActiveEnergyReceived();
+		}
+
+		@Override
+		public Long getActiveEnergyReceived() {
+			return delegate.getActiveEnergyDelivered();
+		}
+
+		@Override
+		public Long getReactiveEnergyDelivered() {
+			return delegate.getReactiveEnergyReceived();
+		}
+
+		@Override
+		public Long getReactiveEnergyReceived() {
+			return delegate.getReactiveEnergyDelivered();
+		}
+
+		@Override
+		public Long getApparentEnergyDelivered() {
+			return delegate.getApparentEnergyReceived();
+		}
+
+		@Override
+		public Long getApparentEnergyReceived() {
+			return delegate.getApparentEnergyDelivered();
+		}
+
+		@Override
+		public Float getAvailableEnergyPercentage() {
+			Float avail = delegate.getAvailableEnergyPercentage();
+			if ( avail != null ) {
+				return 1.0f - avail.floatValue();
+			}
+			return null;
+		}
+
+		@Override
+		public Long getAvailableEnergy() {
+			Long capacity = delegate.getAvailableEnergy();
+			Long avail = delegate.getAvailableEnergy();
+			if ( capacity != null && avail != null ) {
+				return capacity - avail;
+			}
+			return null;
+		}
+
+		@Override
+		public Long getEnergyCapacity() {
+			return delegate.getEnergyCapacity();
+		}
+
+		@Override
+		public Float getStateOfHealthPercentage() {
+			return delegate.getStateOfHealthPercentage();
+		}
+
+	}
 }

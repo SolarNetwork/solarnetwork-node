@@ -120,9 +120,22 @@ public class RestTemplateOverlayCloudServiceTests {
 		assertThat("Feed data returned", result, is(notNullValue()));
 		assertThat("Timestamp", result.getTimestamp(),
 				is(equalTo(LocalDateTime.of(2022, 3, 1, 0, 10, 0).toInstant(ZoneOffset.UTC))));
+		assertThat("Watts A", result.getWattsA(), is(equalTo(8000)));
+		assertThat("Watts B", result.getWattsB(), is(equalTo(7000)));
+		assertThat("Watts C", result.getWattsC(), is(equalTo(6000)));
+		assertThat("Frequency", result.getFrequency(), is(equalTo(50.0f)));
 		assertThat("Current A", result.getCurrentA(), is(equalTo(36.0)));
 		assertThat("Current B", result.getCurrentB(), is(equalTo(8.0)));
 		assertThat("Current C", result.getCurrentC(), is(equalTo(12.0)));
+		assertThat("Voltage AN", result.getVoltageAN(), is(equalTo(240.0f)));
+		assertThat("Voltage BN", result.getVoltageBN(), is(equalTo(240.1f)));
+		assertThat("Voltage CN", result.getVoltageCN(), is(equalTo(240.2f)));
+		assertThat("Power factor A", result.getPowerFactorA(), is(equalTo(0.99f)));
+		assertThat("Power factor B", result.getPowerFactorB(), is(equalTo(0.98f)));
+		assertThat("Power factor C", result.getPowerFactorC(), is(equalTo(0.97f)));
+		assertThat("Charge capacity", result.getChargeCapacity(), is(equalTo(12345678L)));
+		assertThat("Available charge", result.getAvailableCharge(), is(equalTo(10000000L)));
+		assertThat("State of health", result.getStateOfHealth(), is(equalTo(98)));
 	}
 
 }
