@@ -29,7 +29,6 @@ import java.util.Set;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
-import net.solarnetwork.node.domain.datum.AcEnergyDatum;
 import net.solarnetwork.node.domain.datum.EnergyStorageDatum;
 import net.solarnetwork.node.domain.datum.SimpleAcEnergyDatum;
 
@@ -39,7 +38,7 @@ import net.solarnetwork.node.domain.datum.SimpleAcEnergyDatum;
  * @author matt
  * @version 1.0
  */
-public class FeedDatum extends SimpleAcEnergyDatum implements EnergyStorageDatum, AcEnergyDatum {
+public class FeedDatum extends SimpleAcEnergyDatum implements EnergyStorageDatum {
 
 	private static final long serialVersionUID = -2627650132197287299L;
 
@@ -87,10 +86,11 @@ public class FeedDatum extends SimpleAcEnergyDatum implements EnergyStorageDatum
 
 	@Override
 	public void populatePhaseMeasurementProperties(AcEnergyDataAccessor data) {
-		AcEnergyDatum.super.populatePhaseMeasurementProperties(data);
 		Set<AcPhase> phases = EnumSet.of(AcPhase.PhaseA, AcPhase.PhaseB, AcPhase.PhaseC);
 		for ( AcPhase phase : phases ) {
 			AcEnergyDataAccessor acc = data.accessorForPhase(phase);
+			setCurrent(phase, acc.getCurrent());
+			setVoltage(phase, acc.getVoltage());
 			putSampleValue(Instantaneous, phase.withKey(WATTS_KEY), acc.getActivePower());
 			putSampleValue(Instantaneous, phase.withKey(POWER_FACTOR_KEY), acc.getPowerFactor());
 		}

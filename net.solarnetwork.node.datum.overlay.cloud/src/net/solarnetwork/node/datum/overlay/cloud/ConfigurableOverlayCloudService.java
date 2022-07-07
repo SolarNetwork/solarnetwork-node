@@ -22,6 +22,9 @@
 
 package net.solarnetwork.node.datum.overlay.cloud;
 
+import java.util.List;
+import net.solarnetwork.settings.SettingSpecifier;
+
 /**
  * Extension of {@link OverlayCloudService} with configurable settings.
  * 
@@ -53,5 +56,14 @@ public interface ConfigurableOverlayCloudService extends OverlayCloudService {
 	 *        the password
 	 */
 	void setPassword(String password);
+
+	/**
+	 * Get settings to configure the service with.
+	 * 
+	 * @param prefix
+	 *        an optional prefix to append to all setting keys
+	 * @return the settings.
+	 */
+	List<SettingSpecifier> getSettingSpecifiers(String prefix);
 
 }

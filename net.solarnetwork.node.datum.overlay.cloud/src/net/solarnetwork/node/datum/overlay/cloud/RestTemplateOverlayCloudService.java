@@ -47,6 +47,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.service.RemoteServiceException;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Implementation of {@link OverlayCloudService} using {@link RestTemplate}.
@@ -120,6 +122,16 @@ public class RestTemplateOverlayCloudService
 			}
 		}
 		return execution.execute(request, body);
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers(String prefix) {
+		prefix = (prefix != null ? prefix : "");
+		List<SettingSpecifier> results = new ArrayList<>(3);
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "baseUrl", DEFAULT_BASE_URL));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "username", null));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "password", null, true));
+		return results;
 	}
 
 	@Override

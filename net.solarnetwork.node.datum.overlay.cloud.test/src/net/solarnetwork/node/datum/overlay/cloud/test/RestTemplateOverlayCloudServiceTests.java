@@ -124,9 +124,9 @@ public class RestTemplateOverlayCloudServiceTests {
 		assertThat("Watts B", result.getWattsB(), is(equalTo(7000)));
 		assertThat("Watts C", result.getWattsC(), is(equalTo(6000)));
 		assertThat("Frequency", result.getFrequency(), is(equalTo(50.0f)));
-		assertThat("Current A", result.getCurrentA(), is(equalTo(36.0)));
-		assertThat("Current B", result.getCurrentB(), is(equalTo(8.0)));
-		assertThat("Current C", result.getCurrentC(), is(equalTo(12.0)));
+		assertThat("Current A", result.getCurrentA(), is(equalTo(36.0f)));
+		assertThat("Current B", result.getCurrentB(), is(equalTo(8.0f)));
+		assertThat("Current C", result.getCurrentC(), is(equalTo(12.0f)));
 		assertThat("Voltage AN", result.getVoltageAN(), is(equalTo(240.0f)));
 		assertThat("Voltage BN", result.getVoltageBN(), is(equalTo(240.1f)));
 		assertThat("Voltage CN", result.getVoltageCN(), is(equalTo(240.2f)));
