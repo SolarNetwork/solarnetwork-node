@@ -42,10 +42,28 @@ public class J2ModUdpModbusConnection extends AbstractModbusConnection implement
 
 	private final UDPMasterConnection connection;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @param unitId
+	 *        the unit ID
+	 */
 	public J2ModUdpModbusConnection(UDPMasterConnection conn, int unitId) {
 		this(conn, unitId, false);
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @param unitId
+	 *        the unit ID
+	 * @param headless
+	 *        the headless flag
+	 */
 	public J2ModUdpModbusConnection(UDPMasterConnection conn, int unitId, boolean headless) {
 		super(unitId, headless);
 		this.connection = conn;

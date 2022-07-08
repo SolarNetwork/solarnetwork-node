@@ -43,10 +43,30 @@ public class J2ModSerialModbusConnection extends AbstractModbusConnection implem
 	private final SerialConnection connection;
 	private final String name;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @param unitId
+	 *        the unit ID
+	 */
 	public J2ModSerialModbusConnection(SerialConnection conn, int unitId) {
 		this(conn, unitId, true, "UNKNOWN");
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @param unitId
+	 *        the unit ID
+	 * @param headless
+	 *        the headless flag
+	 * @param name
+	 *        the connection name
+	 */
 	public J2ModSerialModbusConnection(SerialConnection conn, int unitId, boolean headless,
 			String name) {
 		super(unitId, headless);

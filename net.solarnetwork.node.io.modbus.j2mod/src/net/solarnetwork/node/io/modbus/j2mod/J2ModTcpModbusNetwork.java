@@ -76,6 +76,9 @@ public class J2ModTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 
 	private final AtomicReference<CachedTcpConnection> cachedConnection = new AtomicReference<>();
 
+	/**
+	 * Constructor.
+	 */
 	public J2ModTcpModbusNetwork() {
 		super();
 		setDisplayName("Modbus TCP port");

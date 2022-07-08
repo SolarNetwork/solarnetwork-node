@@ -26,17 +26,14 @@ import java.util.ArrayList;
 import java.util.List;
 import com.ghgande.j2mod.modbus.net.SerialConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
- * FIXME
- * 
- * <p>
- * TODO
- * </p>
+ * j2mod implementation of {@link ModbusNetwork} using a serial connection.
  * 
  * @author matt
  * @version 1.0
