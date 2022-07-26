@@ -1,0 +1,38 @@
+${ivy.pom.license}
+${ivy.pom.header}
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>${ivy.pom.groupId}</groupId>
+  <artifactId>${ivy.pom.artifactId}</artifactId>
+  <packaging>${ivy.pom.packaging}</packaging>
+  <version>${ivy.pom.version}</version>
+  <name>${ivy.pom.name}</name>
+  <description>${ivy.pom.description}</description>
+  <url>https://github.com/SolarNetwork/solarnetwork-node/tree/develop/${ivy.pom.url.path}</url>
+  
+  <licenses>
+    <license>
+      <name>GNU General Public License (GPL) version 2.0</name>
+      <url>https://www.gnu.org/licenses/gpl-2.0.html</url>
+    </license>
+  </licenses>
+  
+  <developers>
+    <developer>
+      <name>Matt Magoffin</name>
+      <email>matt@solarnetwork.net</email>
+      <organization>SolarNetwork Foundation</organization>
+      <organizationUrl>https://solarnetwork.org.nz</organizationUrl>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:https://github.com/SolarNetwork/solarnetwork-node.git</connection>
+    <developerConnection>scm:git:git@github.com:SolarNetwork/solarnetwork-node.git</developerConnection>
+    <url>https://github.com/SolarNetwork/solarnetwork-node</url>
+  </scm>
+
+</project>
+
