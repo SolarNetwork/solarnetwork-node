@@ -1,6 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: CurrentCost Support
+Bundle-Description: Hardware support for CurrentCost devices.
 Bundle-SymbolicName: net.solarnetwork.node.hw.currentcost
 Automatic-Module-Name: net.solarnetwork.node.hw.currentcost
 Bundle-Version: 4.0.0

@@ -1,6 +1,8 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: MQTT Persistence (JDBC)
+Bundle-Description: Provides persistence for MQTT messages when network connectivity is lost, so
+ they can be uploaded once connectivity is restored.
 Bundle-SymbolicName: net.solarnetwork.node.dao.mqtt.jdbc
 Bundle-Version: 2.2.0
 Bundle-Vendor: SolarNetwork
