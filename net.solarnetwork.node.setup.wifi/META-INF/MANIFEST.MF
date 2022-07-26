@@ -1,6 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: WiFi Setup
+Bundle-Description: System WiFi setup support.
 Bundle-SymbolicName: net.solarnetwork.node.setup.wifi
 Bundle-Version: 2.1.0
 Bundle-Vendor: SolarNetwork

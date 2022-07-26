@@ -1,6 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Elkor Hardware Support
+Bundle-Description: Hardware support for Elkor devices.
 Bundle-SymbolicName: net.solarnetwork.node.hw.elkor
 Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
