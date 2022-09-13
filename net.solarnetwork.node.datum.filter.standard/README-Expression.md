@@ -39,9 +39,9 @@ Each expression configuration contains the following settings:
 
 # Expressions
 
-The root object is a [`DatumExpressionRoot`][DatumExpressionRoot] that lets you
-treat all datum properties, and filter parameters, as expression variables directly, along with
-the following properties:
+See the [SolarNode Expressions][node-expr] guide for general expressions reference. The root object
+is a [`DatumExpressionRoot`][DatumExpressionRoot] that lets you treat all datum properties, and
+filter parameters, as expression variables directly, along with the following properties:
 
 | Property | Type | Description |
 |:---------|:-----|:------------|
@@ -79,3 +79,4 @@ Then here are some example expressions and the results they would produce:
 [expr]: https://github.com/SolarNetwork/solarnetwork/wiki/Expression-Languages
 [DatumExpressionRoot]: https://github.com/SolarNetwork/solarnetwork-common/blob/develop/net.solarnetwork.common/src/net/solarnetwork/domain/DatumExpressionRoot.java
 [Datum]: https://github.com/SolarNetwork/solarnetwork-common/blob/develop/net.solarnetwork.common/src/net/solarnetwork/domain/datum/Datum.java
+[node-expr]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Expressions

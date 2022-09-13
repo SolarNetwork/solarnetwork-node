@@ -68,10 +68,10 @@ of the datum property depends on property type configured:
 
 # Expressions
 
-The expression must evaluate to  a **boolean** (`true` or `false`) result. When it evaluates to
-`true` the configured operational mode will be **activated**. When it evaluates to `false` the
-operational mode will be **deactivated** (unless an [expire setting](#expire-setting) has been
-configured).
+See the [SolarNode Expressions][node-expr] guide for general expressions reference. The expression
+must evaluate to  a **boolean** (`true` or `false`) result. When it evaluates to `true` the
+configured operational mode will be **activated**. When it evaluates to `false` the operational mode
+will be **deactivated** (unless an [expire setting](#expire-setting) has been configured).
 
 The root object is a [datum samples expression object][DatumSamplesExpressionRoot] that lets you
 treat all datum properties, and filter parameters, as expression variables directly, along with
@@ -109,4 +109,5 @@ Then here are some example expressions and the results they would produce:
 [expr]: https://github.com/SolarNetwork/solarnetwork/wiki/Expression-Languages
 [DatumSamplesExpressionRoot]: https://github.com/SolarNetwork/solarnetwork-common/blob/develop/net.solarnetwork.common/src/net/solarnetwork/domain/DatumSamplesExpressionRoot.java
 [GeneralNodeDatum]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node/src/net/solarnetwork/node/domain/GeneralNodeDatum.java
+[node-expr]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Expressions
 [opmodes]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Operational-Modes
