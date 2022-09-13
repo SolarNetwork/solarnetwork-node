@@ -115,9 +115,10 @@ filter:
 
 # Expressions
 
-Expressions can be configured to calculate the **output** meter datum property, instead of using the
-default averaging algorithm. If an expression configuration exists for the same **property name** as
-the configured (or implied) meter **reading property name**, then the expression will be invoked to
+See the [SolarNode Expressions][node-expr] guide for general expressions reference. Expressions can
+be configured to calculate the **output** meter datum property, instead of using the default
+averaging algorithm. If an expression configuration exists for the same **property name** as the
+configured (or implied) meter **reading property name**, then the expression will be invoked to
 generate the new meter reading value.
 
 > :warning: **Note** it is important to remember that the expression must calculate the next 
@@ -218,6 +219,7 @@ example, continuing the `irradianceHours` example, an example set of datum metad
 [expr]: https://github.com/SolarNetwork/solarnetwork/wiki/Expression-Languages
 [Datum]: https://github.com/SolarNetwork/solarnetwork-common/blob/develop/net.solarnetwork.common/src/net/solarnetwork/domain/datum/Datum.java
 [meta-api]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarIn-API#node-datum-metadata-add
+[node-expr]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Expressions
 [tariff-filter]: ../net.solarnetwork.node.datum.filter.tariff
 [VirtualMeterConfig]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node.datum.filter.standard/src/net/solarnetwork/node/datum/filter/virt/VirtualMeterConfig.java
 [VirtualMeterExpressionRoot]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node.datum.filter.standard/src/net/solarnetwork/node/datum/filter/virt/VirtualMeterExpressionRoot.java

@@ -39,9 +39,9 @@ Each expression configuration contains the following settings:
 
 # Expressions
 
-The root object is a `DatumExpressionRoot` that lets you treat all datum properties, and filter
-parameters, as expression variables directly. See the [SolarNode Expressions][sn-expressions] guide
-for more information.
+See the [SolarNode Expressions][node-expr] guide for general expressions reference. The root object
+is a `DatumExpressionRoot` that lets you treat all datum properties, and filter parameters, as
+expression variables directly.
 
 [expr-lang]: https://github.com/SolarNetwork/solarnetwork/wiki/Expression-Languages
-[sn-expressions]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Expressions
+[node-expr]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Expressions
