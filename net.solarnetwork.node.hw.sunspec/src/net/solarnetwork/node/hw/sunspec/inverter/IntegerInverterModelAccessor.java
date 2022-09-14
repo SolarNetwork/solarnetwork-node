@@ -92,21 +92,49 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 		return FIXED_BLOCK_LENGTH;
 	}
 
+	/**
+	 * Get a frequency register value.
+	 * 
+	 * @param ref
+	 *        the register reference to read
+	 * @return the register value, interpreted as a frequency value
+	 */
 	public Float getFrequencyValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerInverterModelRegister.ScaleFactorFrequency);
 		return (n != null ? n.floatValue() : null);
 	}
 
+	/**
+	 * Get a current register value.
+	 * 
+	 * @param ref
+	 *        the register reference to read
+	 * @return the register value, interpreted as a current value
+	 */
 	public Float getCurrentValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerInverterModelRegister.ScaleFactorCurrent);
 		return (n != null ? n.floatValue() : null);
 	}
 
+	/**
+	 * Get a voltage register value.
+	 * 
+	 * @param ref
+	 *        the register reference to read
+	 * @return the register value, interpreted as a voltage value
+	 */
 	public Float getVoltageValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerInverterModelRegister.ScaleFactorVoltage);
 		return (n != null ? n.floatValue() : null);
 	}
 
+	/**
+	 * Get a power factor register value.
+	 * 
+	 * @param ref
+	 *        the register reference to read
+	 * @return the register value, interpreted as a power factor value
+	 */
 	public Float getPowerFactorValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerInverterModelRegister.ScaleFactorPowerFactor);
 		if ( n == null ) {
@@ -129,26 +157,61 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 		return f;
 	}
 
+	/**
+	 * Get an active power register value.
+	 * 
+	 * @param ref
+	 *        the register reference
+	 * @return the register value, interpreted as an active power value
+	 */
 	public Integer getActivePowerValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerInverterModelRegister.ScaleFactorActivePower);
 		return (n != null ? n.intValue() : null);
 	}
 
+	/**
+	 * Get an apparent power register value.
+	 * 
+	 * @param ref
+	 *        the register reference
+	 * @return the register value, interpreted as an apparent power value
+	 */
 	public Integer getApparentPowerValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerInverterModelRegister.ScaleFactorApparentPower);
 		return (n != null ? n.intValue() : null);
 	}
 
+	/**
+	 * Get an reactive power register value.
+	 * 
+	 * @param ref
+	 *        the register reference
+	 * @return the register value, interpreted as an reactive power value
+	 */
 	public Integer getReactivePowerValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerInverterModelRegister.ScaleFactorReactivePower);
 		return (n != null ? n.intValue() : null);
 	}
 
+	/**
+	 * Get an active energy register value.
+	 * 
+	 * @param ref
+	 *        the register reference
+	 * @return the register value, interpreted as an active energy value
+	 */
 	public Long getActiveEnergyValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerInverterModelRegister.ScaleFactorActiveEnergy);
 		return (n != null ? n.longValue() : null);
 	}
 
+	/**
+	 * Get a temperature register value.
+	 * 
+	 * @param ref
+	 *        the register reference
+	 * @return the register value, interpreted as a temperature value
+	 */
 	public Float getTemperatureValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerInverterModelRegister.ScaleFactorTemperature);
 		return (n != null ? n.floatValue() : null);

@@ -94,6 +94,13 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 		return FIXED_BLOCK_LENGTH;
 	}
 
+	/**
+	 * Get a power factor value.
+	 * 
+	 * @param ref
+	 *        the register reference to read
+	 * @return the register value, interpreted as a power factor value
+	 */
 	public Float getPowerFactorValue(ModbusReference ref) {
 		Float n = getFloatValue(FloatingPointInverterModelRegister.PowerFactorAverage);
 		if ( n == null ) {

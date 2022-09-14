@@ -33,18 +33,25 @@ import net.solarnetwork.node.hw.sunspec.ModelId;
  */
 public enum InverterModelId implements ModelId {
 
+	/** Single phase inverter. */
 	SinglePhaseInverterInteger(101, "Single phase inverter"),
 
+	/** Split phase inverter. */
 	SplitPhaseInverterInteger(102, "Split phase inverter"),
 
+	/** 3-phase inverter. */
 	ThreePhaseInverterInteger(103, "3-phase inverter"),
 
+	/** Single phase inverter (floating point). */
 	SinglePhaseInverterFloatingPoint(111, "Single phase inverter (floating point)"),
 
+	/** Split phase inverter (floating point). */
 	SplitPhaseInverterFloatingPoint(112, "Split phase inverter (floating point)"),
 
+	/** 3-phase inverter (floating point). */
 	ThreePhaseInverterFloatingPoint(113, "3-phase inverter (floating point)"),
 
+	/** Multiple MPPT Inverter Extension Model. */
 	MultipleMpptInverterExtension(
 			160,
 			"Multiple MPPT Inverter Extension Model",

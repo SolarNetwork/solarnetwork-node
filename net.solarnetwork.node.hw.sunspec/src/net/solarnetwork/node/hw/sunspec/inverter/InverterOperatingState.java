@@ -34,24 +34,34 @@ import net.solarnetwork.node.hw.sunspec.OperatingState;
  */
 public enum InverterOperatingState implements OperatingState {
 
+	/** Device operating normally. */
 	Normal(0, "Device operating normally"),
 
+	/** Device is not operating. */
 	Off(1, "Device is not operating"),
 
+	/** Device is sleeping / auto-shudown. */
 	Sleeping(2, "Device is sleeping / auto-shudown"),
 
+	/** Device is starting up. */
 	Starting(3, "Device is starting up"),
 
+	/** Device is auto tracking maximum power point. */
 	Mppt(4, "Device is auto tracking maximum power point"),
 
+	/** Device is operating at reduced power output. */
 	Throttled(5, "Device is operating at reduced power output"),
 
+	/** Device is shutting down. */
 	ShuttingDown(6, "Device is shutting down"),
 
+	/** One or more faults exist. */
 	Fault(7, "One or more faults exist"),
 
+	/** Device is in standby mode. */
 	Standby(8, "Device is in standby mode"),
 
+	/** Device is in test mode. */
 	Test(9, "Device is in test mode");
 
 	private final int code;

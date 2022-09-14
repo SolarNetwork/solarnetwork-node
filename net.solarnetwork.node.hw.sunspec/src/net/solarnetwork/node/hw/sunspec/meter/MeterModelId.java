@@ -33,20 +33,28 @@ import net.solarnetwork.node.hw.sunspec.ModelId;
  */
 public enum MeterModelId implements ModelId {
 
+	/** Single phase (A-N or A-B) meter. */
 	SinglePhaseMeterInteger(201, "Single phase (A-N or A-B) meter"),
 
+	/** Split single phase (A-B-N) meter. */
 	SplitSinglePhaseMeterInteger(202, "Split single phase (A-B-N) meter"),
 
+	/** WYE connect 3-phase (ABCN) meter. */
 	WyeConnectThreePhaseMeterInteger(203, "WYE connect 3-phase (ABCN) meter"),
 
+	/** Delta connect 3-phase (ABC) meter. */
 	DeltaConnectThreePhaseMeterInteger(204, "Delta connect 3-phase (ABC) meter"),
 
+	/** Single phase (A-N or A-B) meter. */
 	SinglePhaseMeterFloat(211, "Single phase (A-N or A-B) meter"),
 
+	/** Split single phase (A-B-N) meter. */
 	SplitSinglePhaseMeterFLoat(212, "Split single phase (A-B-N) meter"),
 
+	/** WYE connect 3-phase (ABCN) meter. */
 	WyeConnectThreePhaseMeterFloat(213, "WYE connect 3-phase (ABCN) meter"),
 
+	/** Delta connect 3-phase (ABC) meter. */
 	DeltaConnectThreePhaseMeterFloat(214, "Delta connect 3-phase (ABC) meter");
 
 	private final int id;

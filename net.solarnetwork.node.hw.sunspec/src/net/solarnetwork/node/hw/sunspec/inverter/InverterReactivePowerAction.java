@@ -34,8 +34,10 @@ import net.solarnetwork.node.hw.sunspec.ReactivePowerAction;
  */
 public enum InverterReactivePowerAction implements ReactivePowerAction {
 
+	/** Switch VAR characterization. */
 	Switch(1, "Switch VAR characterization"),
 
+	/** Maintain VAR characterization. */
 	Maintain(2, "Maintain VAR characterization");
 
 	private final int code;

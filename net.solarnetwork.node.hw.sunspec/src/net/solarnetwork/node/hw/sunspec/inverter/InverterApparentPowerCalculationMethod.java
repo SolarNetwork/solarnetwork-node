@@ -34,8 +34,10 @@ import net.solarnetwork.node.hw.sunspec.ModelData;
  */
 public enum InverterApparentPowerCalculationMethod implements ApparentPowerCalculationMethod {
 
+	/** Vector method. */
 	Vector(1, "Switch VAR characterization"),
 
+	/** Arithmetic method. */
 	Arithmetic(2, "Maintain VAR characterization");
 
 	private final int code;

@@ -34,8 +34,10 @@ import net.solarnetwork.node.hw.sunspec.ModelData;
  */
 public enum InverterDerType implements DistributedEnergyResourceType {
 
+	/** Photovoltaic generation. */
 	PV(4, "Photovoltaic generation"),
 
+	/** Photovoltaic generation with battery storage. */
 	PVAndStorage(82, "Photovoltaic generation with battery storage");
 
 	private final int code;

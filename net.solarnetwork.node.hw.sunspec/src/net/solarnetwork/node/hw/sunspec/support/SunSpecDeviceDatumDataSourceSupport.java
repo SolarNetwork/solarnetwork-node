@@ -253,6 +253,11 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 
 	// SettingSpecifierProvider
 
+	/**
+	 * Get an instance of this object to use as default values for settings.
+	 * 
+	 * @return the default settings instance
+	 */
 	protected abstract SunSpecDeviceDatumDataSourceSupport getSettingsDefaultInstance();
 
 	/**
