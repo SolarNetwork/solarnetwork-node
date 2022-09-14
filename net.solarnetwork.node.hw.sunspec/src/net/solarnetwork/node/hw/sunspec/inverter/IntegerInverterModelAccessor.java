@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.sunspec.inverter;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Set;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
@@ -280,6 +281,74 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 		return InverterModelEvent.forBitmask(n.longValue());
 	}
 
+	@Override
+	public Float getNeutralCurrent() {
+		return null;
+	}
+
+	@Override
+	public Float getLineVoltage() {
+		final int modelId = (getModelId() != null ? getModelId().getId() : -1);
+		int count = 0;
+		float total = 0;
+		Float f = getVoltageValue(IntegerInverterModelRegister.VoltagePhaseAPhaseB);
+		if ( f != null ) {
+			total = f.floatValue();
+			count++;
+		}
+		if ( modelId > InverterModelId.SinglePhaseInverterInteger.getId() ) {
+			Float f2 = getVoltageValue(IntegerInverterModelRegister.VoltagePhaseBPhaseC);
+			if ( f2 != null ) {
+				total += f2.floatValue();
+				count++;
+			}
+		}
+		if ( modelId > InverterModelId.SplitPhaseInverterInteger.getId() ) {
+			Float f3 = getVoltageValue(IntegerInverterModelRegister.VoltagePhaseCPhaseA);
+			if ( f3 != null ) {
+				total += f3.floatValue();
+				count++;
+			}
+		}
+
+		return (count > 0 ? total / count : null);
+	}
+
+	@Override
+	public Long getActiveEnergyDelivered() {
+		return getActiveEnergyExported();
+	}
+
+	@Override
+	public Long getActiveEnergyReceived() {
+		return null;
+	}
+
+	@Override
+	public Long getApparentEnergyDelivered() {
+		return null;
+	}
+
+	@Override
+	public Long getApparentEnergyReceived() {
+		return null;
+	}
+
+	@Override
+	public Long getReactiveEnergyDelivered() {
+		return null;
+	}
+
+	@Override
+	public Long getReactiveEnergyReceived() {
+		return null;
+	}
+
+	@Override
+	public Map<String, Object> getDeviceInfo() {
+		return getData().getDeviceInfo();
+	}
+
 	private class PhaseInverterModelAccessor implements InverterModelAccessor {
 
 		private final AcPhase phase;
@@ -512,5 +581,71 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 			return IntegerInverterModelAccessor.this.getEvents();
 		}
 
+		@Override
+		public Float getNeutralCurrent() {
+			return IntegerInverterModelAccessor.this.getNeutralCurrent();
+		}
+
+		@Override
+		public Float getLineVoltage() {
+			switch (phase) {
+				case PhaseA:
+					return getVoltageValue(IntegerInverterModelRegister.VoltagePhaseAPhaseB);
+
+				case PhaseB:
+					return getVoltageValue(IntegerInverterModelRegister.VoltagePhaseBPhaseC);
+
+				case PhaseC:
+					return getVoltageValue(IntegerInverterModelRegister.VoltagePhaseCPhaseA);
+
+				default:
+					return IntegerInverterModelAccessor.this.getLineVoltage();
+			}
+		}
+
+		@Override
+		public Long getActiveEnergyDelivered() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return IntegerInverterModelAccessor.this.getActiveEnergyDelivered();
+			}
+		}
+
+		@Override
+		public Long getActiveEnergyReceived() {
+			return null;
+		}
+
+		@Override
+		public Long getApparentEnergyDelivered() {
+			return null;
+		}
+
+		@Override
+		public Long getApparentEnergyReceived() {
+			return null;
+		}
+
+		@Override
+		public Long getReactiveEnergyDelivered() {
+			return null;
+		}
+
+		@Override
+		public Long getReactiveEnergyReceived() {
+			return null;
+		}
+
+		@Override
+		public Map<String, Object> getDeviceInfo() {
+			return IntegerInverterModelAccessor.this.getDeviceInfo();
+		}
+
 	}
+
 }

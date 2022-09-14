@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.sunspec.inverter;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Set;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
@@ -37,7 +38,7 @@ import net.solarnetwork.util.IntRange;
  * Data access object for an floating point inverter models.
  * 
  * @author matt
- * @version 3.0
+ * @version 3.1
  * @since 1.4
  */
 public class FloatingPointInverterModelAccessor extends BaseModelAccessor
@@ -235,6 +236,74 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 	public Set<ModelEvent> getEvents() {
 		Number n = getBitfield(FloatingPointInverterModelRegister.EventsBitmask);
 		return InverterModelEvent.forBitmask(n.longValue());
+	}
+
+	@Override
+	public Float getNeutralCurrent() {
+		return null;
+	}
+
+	@Override
+	public Float getLineVoltage() {
+		final int modelId = (getModelId() != null ? getModelId().getId() : -1);
+		int count = 0;
+		float total = 0;
+		Float f = getFloatValue(FloatingPointInverterModelRegister.VoltagePhaseAPhaseB);
+		if ( f != null ) {
+			total = f.floatValue();
+			count++;
+		}
+		if ( modelId > InverterModelId.SinglePhaseInverterFloatingPoint.getId() ) {
+			Float f2 = getFloatValue(FloatingPointInverterModelRegister.VoltagePhaseBPhaseC);
+			if ( f2 != null ) {
+				total += f2.floatValue();
+				count++;
+			}
+		}
+		if ( modelId > InverterModelId.SplitPhaseInverterFloatingPoint.getId() ) {
+			Float f3 = getFloatValue(FloatingPointInverterModelRegister.VoltagePhaseCPhaseA);
+			if ( f3 != null ) {
+				total += f3.floatValue();
+				count++;
+			}
+		}
+
+		return (count > 0 ? total / count : null);
+	}
+
+	@Override
+	public Long getActiveEnergyDelivered() {
+		return getActiveEnergyExported();
+	}
+
+	@Override
+	public Long getActiveEnergyReceived() {
+		return null;
+	}
+
+	@Override
+	public Long getApparentEnergyDelivered() {
+		return null;
+	}
+
+	@Override
+	public Long getApparentEnergyReceived() {
+		return null;
+	}
+
+	@Override
+	public Long getReactiveEnergyDelivered() {
+		return null;
+	}
+
+	@Override
+	public Long getReactiveEnergyReceived() {
+		return null;
+	}
+
+	@Override
+	public Map<String, Object> getDeviceInfo() {
+		return getData().getDeviceInfo();
 	}
 
 	private class PhaseInverterModelAccessor implements InverterModelAccessor {
@@ -469,5 +538,71 @@ public class FloatingPointInverterModelAccessor extends BaseModelAccessor
 			return FloatingPointInverterModelAccessor.this.getEvents();
 		}
 
+		@Override
+		public Float getNeutralCurrent() {
+			return FloatingPointInverterModelAccessor.this.getNeutralCurrent();
+		}
+
+		@Override
+		public Float getLineVoltage() {
+			switch (phase) {
+				case PhaseA:
+					return getFloatValue(FloatingPointInverterModelRegister.VoltagePhaseAPhaseB);
+
+				case PhaseB:
+					return getFloatValue(FloatingPointInverterModelRegister.VoltagePhaseBPhaseC);
+
+				case PhaseC:
+					return getFloatValue(FloatingPointInverterModelRegister.VoltagePhaseCPhaseA);
+
+				default:
+					return FloatingPointInverterModelAccessor.this.getLineVoltage();
+			}
+		}
+
+		@Override
+		public Long getActiveEnergyDelivered() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return FloatingPointInverterModelAccessor.this.getActiveEnergyDelivered();
+			}
+		}
+
+		@Override
+		public Long getActiveEnergyReceived() {
+			return null;
+		}
+
+		@Override
+		public Long getApparentEnergyDelivered() {
+			return null;
+		}
+
+		@Override
+		public Long getApparentEnergyReceived() {
+			return null;
+		}
+
+		@Override
+		public Long getReactiveEnergyDelivered() {
+			return null;
+		}
+
+		@Override
+		public Long getReactiveEnergyReceived() {
+			return null;
+		}
+
+		@Override
+		public Map<String, Object> getDeviceInfo() {
+			return FloatingPointInverterModelAccessor.this.getDeviceInfo();
+		}
+
 	}
+
 }

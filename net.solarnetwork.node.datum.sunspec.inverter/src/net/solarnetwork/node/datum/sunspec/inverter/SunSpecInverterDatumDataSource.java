@@ -47,19 +47,21 @@ import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * {@link DatumDataSource} for a SunSpec compatible inverter.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	private Set<InverterOperatingState> ignoreStates = EnumSet.of(InverterOperatingState.Off,
 			InverterOperatingState.Sleeping, InverterOperatingState.Standby);
+	private boolean includePhaseMeasurements = false;
 
 	/**
 	 * Default constructor.
@@ -133,6 +135,9 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 					.findTypedModel(InverterMpptExtensionModelAccessor.class);
 			d.populateDcModulesProperties(mppt);
 		}
+		if ( this.includePhaseMeasurements ) {
+			d.populatePhaseMeasurementProperties(data);
+		}
 		return d;
 	}
 
@@ -171,6 +176,8 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 			SunSpecInverterDatumDataSource iDefaults = (SunSpecInverterDatumDataSource) defaults;
 			results.add(new BasicTextFieldSettingSpecifier("ignoreStatesValue",
 					iDefaults.getIgnoreStatesValue()));
+			results.add(new BasicToggleSettingSpecifier("includePhaseMeasurements",
+					iDefaults.includePhaseMeasurements));
 		}
 
 		return results;
@@ -292,6 +299,17 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 	 */
 	public String getIgnoreStatesValue() {
 		return StringUtils.commaDelimitedStringFromCollection(ignoreStates);
+	}
+
+	/**
+	 * Toggle the inclusion of phase measurement properties in collected datum.
+	 * 
+	 * @param includePhaseMeasurements
+	 *        {@literal true} to collect phase measurements
+	 * @since 2.1
+	 */
+	public void setIncludePhaseMeasurements(boolean includePhaseMeasurements) {
+		this.includePhaseMeasurements = includePhaseMeasurements;
 	}
 
 }
