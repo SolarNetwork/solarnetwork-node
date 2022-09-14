@@ -43,6 +43,7 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -1389,6 +1390,57 @@ public class VirtualMeterDatumFilterServiceTests {
 				new BigDecimal("0"), new BigDecimal("3.2"));
 		assertVirtualMeterMetadata("3rd", savedMetas.get(2), "pulses", dates.get(4).toEpochMilli(),
 				new BigDecimal("1"), new BigDecimal("4"));
+	}
+
+	@Test
+	public void filter_variableTime() {
+		// GIVEN
+		final SimpleDatum datum = createTestGeneralNodeDatum(SOURCE_ID);
+		final VirtualMeterConfig vmConfig = createTestVirtualMeterConfig(PROP_WATTS);
+		vmConfig.setMaxAgeSeconds(3600);
+		vmConfig.setTimeUnit(TimeUnit.HOURS);
+		vmConfig.setReadingPropertyName(PROP_WATT_HOURS);
+		xform.setVirtualMeterConfigs(new VirtualMeterConfig[] { vmConfig });
+
+		// no metadata available yet
+		expect(datumMetadataService.getSourceMetadata(SOURCE_ID)).andReturn(null);
+
+		// add metadata
+		final int iterations = 4;
+		Capture<GeneralDatumMetadata> metaCaptor = Capture.newInstance(CaptureType.ALL);
+		datumMetadataService.addSourceMetadata(eq(SOURCE_ID), capture(metaCaptor));
+		expectLastCall().times(iterations);
+
+		// WHEN
+		replayAll();
+		List<DatumSamplesOperations> outputs = new ArrayList<>();
+		List<Instant> dates = new ArrayList<>();
+		final Instant start = LocalDateTime.of(2021, 5, 14, 10, 0).toInstant(ZoneOffset.UTC);
+		for ( int i = 0; i < iterations; i++ ) {
+			Instant ts = start.plusMillis(TimeUnit.MINUTES.toMillis(i * i));
+			SimpleDatum d = datum.copyWithId(DatumId.nodeId(null, datum.getSourceId(), ts));
+			d.getSamples().putInstantaneousSampleValue(PROP_WATTS, 5 * (i + 1));
+			dates.add(ts);
+			outputs.add(xform.filter(d, d.getSamples(), emptyMap()));
+		}
+
+		// THEN
+		BigDecimal[] expectedValues = new BigDecimal[] { new BigDecimal("5"), new BigDecimal("10"),
+				new BigDecimal("15"), new BigDecimal("20") };
+		// the value difference between samples is a constant 5, but the time diff is squared
+		BigDecimal[] expectedReadings = new BigDecimal[] { null,
+				new BigDecimal("7.5").multiply(new BigDecimal("1")).divide(new BigDecimal("60"),
+						vmConfig.getVirtualMeterScale(), RoundingMode.HALF_UP),
+				new BigDecimal("12.5").multiply(new BigDecimal("3")).divide(new BigDecimal("60"),
+						vmConfig.getVirtualMeterScale(), RoundingMode.HALF_UP),
+				new BigDecimal("17.5").multiply(new BigDecimal("5")).divide(new BigDecimal("60"),
+						vmConfig.getVirtualMeterScale(), RoundingMode.HALF_UP) };
+
+		for ( int i = 0; i < iterations; i++ ) {
+			DatumSamplesOperations result = outputs.get(i);
+			assertOutputValue("at sample " + i, result, PROP_WATTS, PROP_WATT_HOURS, expectedValues[i],
+					expectedReadings[i]);
+		}
 	}
 
 }
