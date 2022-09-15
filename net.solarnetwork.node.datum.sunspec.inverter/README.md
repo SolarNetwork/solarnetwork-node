@@ -32,6 +32,7 @@ Each device configuration contains the following overall settings:
 | Source ID          | The SolarNetwork source ID to assign to captured datum. |
 | Secondary Models   | List of additional SunSpec model IDs to capture data from. |
 | Ignore States      | A list of inverter operating states to skip collecting data while in. |
+| Phase Measurements | Toggle to collect additional phase-specific measurement properties. |
 
 ## Overall device settings notes
 
