@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.sunspec.inverter;
 
 import java.util.Set;
 import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.OperatingState;
@@ -32,15 +33,16 @@ import net.solarnetwork.node.hw.sunspec.OperatingState;
  * API for accessing inverter model data.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
-public interface InverterModelAccessor extends ModelAccessor {
+public interface InverterModelAccessor extends ModelAccessor, AcEnergyDataAccessor {
 
 	/**
 	 * Get the current, in A.
 	 * 
 	 * @return the current
 	 */
+	@Override
 	Float getCurrent();
 
 	/**
@@ -48,6 +50,7 @@ public interface InverterModelAccessor extends ModelAccessor {
 	 * 
 	 * @return the voltage
 	 */
+	@Override
 	Float getVoltage();
 
 	/**
@@ -55,6 +58,7 @@ public interface InverterModelAccessor extends ModelAccessor {
 	 * 
 	 * @return the active power
 	 */
+	@Override
 	Integer getActivePower();
 
 	/**
@@ -62,6 +66,7 @@ public interface InverterModelAccessor extends ModelAccessor {
 	 * 
 	 * @return the frequency
 	 */
+	@Override
 	Float getFrequency();
 
 	/**
@@ -69,6 +74,7 @@ public interface InverterModelAccessor extends ModelAccessor {
 	 * 
 	 * @return the apparent power
 	 */
+	@Override
 	Integer getApparentPower();
 
 	/**
@@ -76,6 +82,7 @@ public interface InverterModelAccessor extends ModelAccessor {
 	 * 
 	 * @return the reactive power
 	 */
+	@Override
 	Integer getReactivePower();
 
 	/**
@@ -83,6 +90,7 @@ public interface InverterModelAccessor extends ModelAccessor {
 	 * 
 	 * @return the power factor
 	 */
+	@Override
 	Float getPowerFactor();
 
 	/**
@@ -162,5 +170,19 @@ public interface InverterModelAccessor extends ModelAccessor {
 	 *        the phase to get an accessor for
 	 * @return the accessor
 	 */
+	@Override
 	InverterModelAccessor accessorForPhase(AcPhase phase);
+
+	/**
+	 * Get a "reversed" model accessor, where import/export directions are
+	 * switched.
+	 * 
+	 * @return the reversed accessor
+	 * @since 2.1
+	 */
+	@Override
+	default InverterModelAccessor reversed() {
+		return new ReversedInverterModelAccessor(this);
+	}
+
 }

@@ -36,64 +36,94 @@ import net.solarnetwork.node.hw.sunspec.ModelEvent;
  */
 public enum MeterModelEvent implements ModelEvent {
 
+	/** Loss of power or phase. */
 	PowerFailure(2, "Loss of power or phase"),
 
+	/** Voltage below threshold (phase loss). */
 	UnderVoltage(3, "Voltage below threshold (phase loss)"),
 
+	/** Power factor below threshold. */
 	LowPowerFactor(4, "Power factor below threshold"),
 
+	/** Current input over threshold. */
 	OverCurrent(5, "Current input over threshold"),
 
+	/** Voltage input over threshold. */
 	OverVoltage(6, "Voltage input over threshold"),
 
+	/** Sensor not connected. */
 	MissingSensor(7, "Sensor not connected"),
 
+	/** Reserved 1. */
 	Reserved_01(8, "Reserved 1"),
 
+	/** Reserved 2. */
 	Reserved_02(9, "Reserved 2"),
 
+	/** Reserved 3. */
 	Reserved_03(10, "Reserved 3"),
 
+	/** Reserved 4. */
 	Reserved_04(11, "Reserved 4"),
 
+	/** Reserved 5. */
 	Reserved_05(12, "Reserved 5"),
 
+	/** Reserved 6. */
 	Reserved_06(13, "Reserved 6"),
 
+	/** Reserved 7. */
 	Reserved_07(14, "Reserved 7"),
 
+	/** Reserved 8. */
 	Reserved_08(15, "Reserved 8"),
 
+	/** OEM 1. */
 	OEM_01(16, "OEM 1"),
 
+	/** OEM 2. */
 	OEM_02(17, "OEM 2"),
 
+	/** OEM 3. */
 	OEM_03(18, "OEM 3"),
 
+	/** OEM 4. */
 	OEM_04(19, "OEM 4"),
 
+	/** OEM 5. */
 	OEM_05(20, "OEM 5"),
 
+	/** OEM 6. */
 	OEM_06(21, "OEM 6"),
 
+	/** OEM 7. */
 	OEM_07(22, "OEM 7"),
 
+	/** OEM 8. */
 	OEM_08(23, "OEM 8"),
 
+	/** OEM 9. */
 	OEM_09(24, "OEM 9"),
 
+	/** OEM 10. */
 	OEM_10(25, "OEM 10"),
 
+	/** OEM 11. */
 	OEM_11(26, "OEM 11"),
 
+	/** OEM 12. */
 	OEM_12(27, "OEM 12"),
 
+	/** OEM 13. */
 	OEM_13(28, "OEM 13"),
 
+	/** OEM 14. */
 	OEM_14(29, "OEM 14"),
 
+	/** OEM 15. */
 	OEM_15(30, "OEM 15"),
 
+	/** OEM 16. */
 	OEM_16(31, "OEM 16");
 
 	private final int index;

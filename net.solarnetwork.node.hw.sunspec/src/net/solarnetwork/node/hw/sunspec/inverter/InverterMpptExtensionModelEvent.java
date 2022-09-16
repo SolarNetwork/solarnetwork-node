@@ -37,32 +37,46 @@ import net.solarnetwork.node.hw.sunspec.ModelEvent;
  */
 public enum InverterMpptExtensionModelEvent implements ModelEvent {
 
+	/** Ground fault. */
 	GroundFault(0, "Ground fault"),
 
+	/** DC over voltage. */
 	DcOverVoltage(1, "DC over voltage"),
 
+	/** DC disconnect open. */
 	DcDisconnect(3, "DC disconnect open"),
 
+	/** Cabinet open. */
 	CabinetOpen(5, "Cabinet open"),
 
+	/** Manual shutdown. */
 	ManualShutdown(6, "Manual shutdown"),
 
+	/** Over temperature. */
 	OverTemperature(7, "Over temperature"),
 
+	/** Blown fuse. */
 	BlownStringFuse(12, "Blown fuse"),
 
+	/** Under temperature. */
 	UnderTemperature(13, "Under temperature"),
 
+	/** Generic memory or communication error (internal). */
 	MemoryLoss(14, "Generic memory or communication error (internal)"),
 
+	/** Arc detection. */
 	ArcDetection(15, "Arc detection"),
 
+	/** Reserved. */
 	Reserved(19, "Reserved"),
 
+	/** Hardware test failure. */
 	HwTestFailure(20, "Hardware test failure"),
 
+	/** DC under voltage. */
 	DcUnderVoltage(21, "DC under voltage"),
 
+	/** DC over current. */
 	DcOverCurrent(22, "DC over current");
 
 	private final int index;

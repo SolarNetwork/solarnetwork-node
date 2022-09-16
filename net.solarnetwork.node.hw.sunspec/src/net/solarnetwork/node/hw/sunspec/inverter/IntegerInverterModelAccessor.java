@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.sunspec.inverter;
 
 import java.time.Instant;
+import java.util.Map;
 import java.util.Set;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.hw.sunspec.BaseModelAccessor;
@@ -91,21 +92,49 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 		return FIXED_BLOCK_LENGTH;
 	}
 
+	/**
+	 * Get a frequency register value.
+	 * 
+	 * @param ref
+	 *        the register reference to read
+	 * @return the register value, interpreted as a frequency value
+	 */
 	public Float getFrequencyValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerInverterModelRegister.ScaleFactorFrequency);
 		return (n != null ? n.floatValue() : null);
 	}
 
+	/**
+	 * Get a current register value.
+	 * 
+	 * @param ref
+	 *        the register reference to read
+	 * @return the register value, interpreted as a current value
+	 */
 	public Float getCurrentValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerInverterModelRegister.ScaleFactorCurrent);
 		return (n != null ? n.floatValue() : null);
 	}
 
+	/**
+	 * Get a voltage register value.
+	 * 
+	 * @param ref
+	 *        the register reference to read
+	 * @return the register value, interpreted as a voltage value
+	 */
 	public Float getVoltageValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerInverterModelRegister.ScaleFactorVoltage);
 		return (n != null ? n.floatValue() : null);
 	}
 
+	/**
+	 * Get a power factor register value.
+	 * 
+	 * @param ref
+	 *        the register reference to read
+	 * @return the register value, interpreted as a power factor value
+	 */
 	public Float getPowerFactorValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerInverterModelRegister.ScaleFactorPowerFactor);
 		if ( n == null ) {
@@ -128,26 +157,61 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 		return f;
 	}
 
+	/**
+	 * Get an active power register value.
+	 * 
+	 * @param ref
+	 *        the register reference
+	 * @return the register value, interpreted as an active power value
+	 */
 	public Integer getActivePowerValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerInverterModelRegister.ScaleFactorActivePower);
 		return (n != null ? n.intValue() : null);
 	}
 
+	/**
+	 * Get an apparent power register value.
+	 * 
+	 * @param ref
+	 *        the register reference
+	 * @return the register value, interpreted as an apparent power value
+	 */
 	public Integer getApparentPowerValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerInverterModelRegister.ScaleFactorApparentPower);
 		return (n != null ? n.intValue() : null);
 	}
 
+	/**
+	 * Get an reactive power register value.
+	 * 
+	 * @param ref
+	 *        the register reference
+	 * @return the register value, interpreted as an reactive power value
+	 */
 	public Integer getReactivePowerValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerInverterModelRegister.ScaleFactorReactivePower);
 		return (n != null ? n.intValue() : null);
 	}
 
+	/**
+	 * Get an active energy register value.
+	 * 
+	 * @param ref
+	 *        the register reference
+	 * @return the register value, interpreted as an active energy value
+	 */
 	public Long getActiveEnergyValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerInverterModelRegister.ScaleFactorActiveEnergy);
 		return (n != null ? n.longValue() : null);
 	}
 
+	/**
+	 * Get a temperature register value.
+	 * 
+	 * @param ref
+	 *        the register reference
+	 * @return the register value, interpreted as a temperature value
+	 */
 	public Float getTemperatureValue(ModbusReference ref) {
 		Number n = getScaledValue(ref, IntegerInverterModelRegister.ScaleFactorTemperature);
 		return (n != null ? n.floatValue() : null);
@@ -278,6 +342,74 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 	public Set<ModelEvent> getEvents() {
 		Number n = getBitfield(IntegerInverterModelRegister.EventsBitmask);
 		return InverterModelEvent.forBitmask(n.longValue());
+	}
+
+	@Override
+	public Float getNeutralCurrent() {
+		return null;
+	}
+
+	@Override
+	public Float getLineVoltage() {
+		final int modelId = (getModelId() != null ? getModelId().getId() : -1);
+		int count = 0;
+		float total = 0;
+		Float f = getVoltageValue(IntegerInverterModelRegister.VoltagePhaseAPhaseB);
+		if ( f != null ) {
+			total = f.floatValue();
+			count++;
+		}
+		if ( modelId > InverterModelId.SinglePhaseInverterInteger.getId() ) {
+			Float f2 = getVoltageValue(IntegerInverterModelRegister.VoltagePhaseBPhaseC);
+			if ( f2 != null ) {
+				total += f2.floatValue();
+				count++;
+			}
+		}
+		if ( modelId > InverterModelId.SplitPhaseInverterInteger.getId() ) {
+			Float f3 = getVoltageValue(IntegerInverterModelRegister.VoltagePhaseCPhaseA);
+			if ( f3 != null ) {
+				total += f3.floatValue();
+				count++;
+			}
+		}
+
+		return (count > 0 ? total / count : null);
+	}
+
+	@Override
+	public Long getActiveEnergyDelivered() {
+		return getActiveEnergyExported();
+	}
+
+	@Override
+	public Long getActiveEnergyReceived() {
+		return null;
+	}
+
+	@Override
+	public Long getApparentEnergyDelivered() {
+		return null;
+	}
+
+	@Override
+	public Long getApparentEnergyReceived() {
+		return null;
+	}
+
+	@Override
+	public Long getReactiveEnergyDelivered() {
+		return null;
+	}
+
+	@Override
+	public Long getReactiveEnergyReceived() {
+		return null;
+	}
+
+	@Override
+	public Map<String, Object> getDeviceInfo() {
+		return getData().getDeviceInfo();
 	}
 
 	private class PhaseInverterModelAccessor implements InverterModelAccessor {
@@ -512,5 +644,71 @@ public class IntegerInverterModelAccessor extends BaseModelAccessor implements I
 			return IntegerInverterModelAccessor.this.getEvents();
 		}
 
+		@Override
+		public Float getNeutralCurrent() {
+			return IntegerInverterModelAccessor.this.getNeutralCurrent();
+		}
+
+		@Override
+		public Float getLineVoltage() {
+			switch (phase) {
+				case PhaseA:
+					return getVoltageValue(IntegerInverterModelRegister.VoltagePhaseAPhaseB);
+
+				case PhaseB:
+					return getVoltageValue(IntegerInverterModelRegister.VoltagePhaseBPhaseC);
+
+				case PhaseC:
+					return getVoltageValue(IntegerInverterModelRegister.VoltagePhaseCPhaseA);
+
+				default:
+					return IntegerInverterModelAccessor.this.getLineVoltage();
+			}
+		}
+
+		@Override
+		public Long getActiveEnergyDelivered() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return IntegerInverterModelAccessor.this.getActiveEnergyDelivered();
+			}
+		}
+
+		@Override
+		public Long getActiveEnergyReceived() {
+			return null;
+		}
+
+		@Override
+		public Long getApparentEnergyDelivered() {
+			return null;
+		}
+
+		@Override
+		public Long getApparentEnergyReceived() {
+			return null;
+		}
+
+		@Override
+		public Long getReactiveEnergyDelivered() {
+			return null;
+		}
+
+		@Override
+		public Long getReactiveEnergyReceived() {
+			return null;
+		}
+
+		@Override
+		public Map<String, Object> getDeviceInfo() {
+			return IntegerInverterModelAccessor.this.getDeviceInfo();
+		}
+
 	}
+
 }

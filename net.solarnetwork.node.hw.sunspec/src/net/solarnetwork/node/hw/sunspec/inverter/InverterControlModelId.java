@@ -33,59 +33,85 @@ import net.solarnetwork.node.hw.sunspec.ModelId;
  */
 public enum InverterControlModelId implements ModelId {
 
+	/** Nameplate ratings. */
 	NameplateRatings(
 			120,
 			"Inverter controls nameplate ratings",
 			InverterNameplateRatingsModelAccessor.class),
 
+	/** Basic settings. */
 	BasicSettings(121, "Inverter controls basic settings", InverterBasicSettingsModelAccessor.class),
 
+	/** Extended measurements. */
 	ExtendedMeasurements(122, "Inverter controls extended measurements and status"),
 
+	/** Immediate controls. */
 	ImmediateControls(123, "Inverter immediate controls"),
 
+	/** Basic storage controls. */
 	BasicStorageControls(124, "Basic storage controls"),
 
+	/** Pricing signal. */
 	PricingSignal(125, "Pricing signal"),
 
+	/** Static volt-VAR arrays. */
 	StaticVoltVarArrays(126, "Static volt-VAR arrays"),
 
+	/** Parameterized frequency-watt. */
 	ParameterizedFrequencyWatt(127, "Parameterized frequency-watt"),
 
+	/** Dynamic reactive current. */
 	DynamicReactiveCurrent(128, "Dynamic reactive current"),
 
+	/** LVRT must disconnect. */
 	LvrtMustDisconnect(129, "LVRT must disconnect"),
 
+	/** HVRT must disconnect. */
 	HvrtMustDisconnect(130, "HVRT must disconnect"),
 
+	/** Watt-power factor. */
 	WattPowerFactor(131, "Watt-power factor"),
 
+	/** Volt-watt. */
 	VoltWatt(132, "Volt-watt"),
 
+	/** Basic scheduling. */
 	BasicScheduling(133, "Basic scheduling"),
 
+	/** Curve based frequency-watt. */
 	CurveBasedFrequencyWatt(134, "Curve-based frequency-watt"),
 
+	/** Low frequency ride-through. */
 	LowFrequencyRideThrough(135, "Low frequency ride-through"),
 
+	/** High frequency ride-through. */
 	HighFrequencyRideThrough(136, "High frequency ride-through"),
 
+	/** LVRT must remain connected. */
 	LvrtMustRemainConnected(137, "LVRT must remain connected"),
 
+	/** HVRT must remain connected. */
 	HvrtMustRemainConnected(138, "HVRT must remain connected"),
 
+	/** LVRT extended curve. */
 	LvrtExtendedCurve(139, "LVRT extended curve"),
 
+	/** HVRT extended curve. */
 	HvrtExtendedCurve(140, "HVRT extended curve"),
 
+	/** LFRT must remain connected. */
 	LfrtMustRemainConnected(141, "LFRT must remain connected"),
 
+	/** HFRT must remain connected. */
 	HfrtMustRemainConnected(142, "HFRT must remain connected"),
 
+	/** LFRT extended curve. */
 	LfrtEextendedCurve(143, "LFRT extended curve"),
 
+	/** HFRT extended curve. */
 	HfrtEextendedCurve(144, "HFRT extended curve"),
 
+	/** Inverter controls extended settings. */
 	ExtendedSettings(145, "Inverter controls extended settings");
 
 	private final int id;

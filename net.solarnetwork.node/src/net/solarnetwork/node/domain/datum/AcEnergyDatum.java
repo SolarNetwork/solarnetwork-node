@@ -82,7 +82,7 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	}
 
 	/**
-	 * Get the instantaneous real power, in watts (W).
+	 * Set the instantaneous real power, in watts (W).
 	 * 
 	 * <p>
 	 * This should return the same value as {@link EnergyDatum#getWatts()} but
@@ -97,7 +97,7 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	}
 
 	/**
-	 * Get the instantaneous apparent power, in volt-amperes (VA).
+	 * Set the instantaneous apparent power, in volt-amperes (VA).
 	 * 
 	 * @param value
 	 *        the apparent power in volt-amperes, or {@literal null} if not
@@ -109,7 +109,7 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	}
 
 	/**
-	 * Get the instantaneous reactive power, in reactive volt-amperes (var).
+	 * Set the instantaneous reactive power, in reactive volt-amperes (var).
 	 * 
 	 * @param value
 	 *        the reactive power in reactive volt-amperes, or {@literal null} if
@@ -121,7 +121,7 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	}
 
 	/**
-	 * Get the effective instantaneous power factor, as a value between
+	 * Set the effective instantaneous power factor, as a value between
 	 * {@code -1} and {@code 1}. If the phase angle is positive (current leads
 	 * voltage) this method returns a positive value. If the phase angle is
 	 * negative (current lags voltage) this method returns a negative value.
@@ -144,7 +144,7 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	}
 
 	/**
-	 * Get the instantaneous frequency, in hertz (Hz).
+	 * Set the instantaneous frequency, in hertz (Hz).
 	 * 
 	 * @param value
 	 *        the frequency, or {@literal null} if not known
@@ -154,7 +154,7 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	}
 
 	/**
-	 * Get the instantaneous neutral voltage.
+	 * Set the instantaneous neutral voltage.
 	 * 
 	 * @param value
 	 *        the volts, or {@literal null} if not known
@@ -164,7 +164,7 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	}
 
 	/**
-	 * Get the instantaneous phase-to-neutral line voltage for a specific phase.
+	 * Set the instantaneous phase-to-neutral line voltage for a specific phase.
 	 * 
 	 * @param phase
 	 *        the phase
@@ -176,7 +176,7 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	}
 
 	/**
-	 * Get the instantaneous current, in amps.
+	 * Set the instantaneous current, in amps.
 	 * 
 	 * <p>
 	 * This method is equivalent to calling
@@ -191,7 +191,7 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	}
 
 	/**
-	 * Get the instantaneous current, in amps, for a specific phase.
+	 * Set the instantaneous current, in amps, for a specific phase.
 	 * 
 	 * @param phase
 	 *        the phase
@@ -203,7 +203,7 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	}
 
 	/**
-	 * Get the instantaneous neutral current, in amps.
+	 * Set the instantaneous neutral current, in amps.
 	 * 
 	 * @param value
 	 *        the amps, or {@literal null} if not known
@@ -213,7 +213,7 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	}
 
 	/**
-	 * Get the instantaneous phase-to-neutral line voltage.
+	 * Set the instantaneous phase-to-neutral line voltage.
 	 * 
 	 * <p>
 	 * This metnod is equivalent to calling
@@ -228,58 +228,27 @@ public interface AcEnergyDatum extends EnergyDatum, net.solarnetwork.domain.datu
 	}
 
 	/**
-	 * Get the instantaneous phase-to-phase line voltage.
-	 * 
-	 * <p>
-	 * For the {@link #getAcPhase()}, this value represents the difference
-	 * between this phase and the <i>next</i> phase, in {@literal a},
-	 * {@literal b}, {@literal c} order, with {@code PhaseC} wrapping around
-	 * back to {@code PhaseA}. Thus the possible values represent:
-	 * </p>
-	 * 
-	 * <dl>
-	 * <dt>{@code PhaseA}</dt>
-	 * <dd>Vab</dd>
-	 * <dt>{@code PhaseB}</dt>
-	 * <dd>Vbc</dd>
-	 * <dt>{@code PhaseC}</dt>
-	 * <dd>Vca</dd>
-	 * </dl>
-	 * 
-	 * <p>
-	 * This metnod is equivalent to calling
-	 * {@code datum.getLineVoltage(datum.getPhase())}.
-	 * </p>
+	 * Set the instantaneous phase-to-phase line voltage.
 	 * 
 	 * @param value
 	 *        the line voltage
-	 * @see #getLineVoltage(AcPhase)
+	 * @see #setLineVoltage(AcPhase,Float)
 	 */
 	default void setLineVoltage(Float value) {
 		asMutableSampleOperations().putSampleValue(Instantaneous, LINE_VOLTAGE_KEY, value);
 	}
 
 	/**
-	 * Get the instantaneous phase-to-phase line voltage for a specific phase.
+	 * Set the instantaneous phase-to-phase line voltage for a specific phase.
 	 * 
 	 * @param phase
-	 *        the phase (first)
+	 *        the phase
 	 * @param value
 	 *        the line voltage
 	 */
 	default void setLineVoltage(AcPhase phase, Float value) {
 		asMutableSampleOperations().putSampleValue(Instantaneous, phase.withLineKey(VOLTAGE_KEY), value);
 
-	}
-
-	/**
-	 * Get the instantaneous power factor.
-	 * 
-	 * @param value
-	 *        the power factor, or {@literal null} if not known
-	 */
-	default void getPowerFactor(Float value) {
-		asMutableSampleOperations().putSampleValue(Instantaneous, POWER_FACTOR_KEY, value);
 	}
 
 }

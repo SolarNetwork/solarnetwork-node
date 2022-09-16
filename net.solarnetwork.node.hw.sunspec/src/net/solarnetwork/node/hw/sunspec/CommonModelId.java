@@ -30,6 +30,7 @@ package net.solarnetwork.node.hw.sunspec;
  */
 public enum CommonModelId implements ModelId {
 
+	/** The "common" model information. */
 	CommonModel(1, "Common model");
 
 	private final int id;

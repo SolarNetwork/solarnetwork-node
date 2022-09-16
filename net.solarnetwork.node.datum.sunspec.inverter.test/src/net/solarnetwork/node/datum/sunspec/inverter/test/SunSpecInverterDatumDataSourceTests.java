@@ -27,6 +27,7 @@ import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
@@ -38,6 +39,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.domain.DeviceOperatingState;
+import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.datum.sunspec.inverter.SunSpecInverterDatumDataSource;
 import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
@@ -171,6 +173,88 @@ public class SunSpecInverterDatumDataSourceTests {
 				equalTo(InverterOperatingState.Mppt.getCode()));
 		assertThat("Datum eve ts",
 				d.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "events"), equalTo(0));
+	}
+
+	@Test
+	public void collectDatum_phaseMeasurements() throws IOException {
+		// GIVEN
+		dataSource.setIncludePhaseMeasurements(true);
+		expectStaticDataModbusConnection("test-data-113-01.txt");
+
+		// WHEN
+		replayAll();
+		long start = System.currentTimeMillis();
+		AcDcEnergyDatum d = dataSource.readCurrentDatum();
+
+		// THEN
+		assertThat("Datum returned", d, notNullValue());
+		assertThat("Datum source ID", d.getSourceId(), equalTo(TEST_SOURCE_ID));
+		assertThat("Datum created now", d.getTimestamp().toEpochMilli(), greaterThanOrEqualTo(start));
+		assertThat("Datum frequency",
+				d.asSampleOperations().getSampleFloat(DatumSamplesType.Instantaneous, "frequency"),
+				equalTo(50.05f));
+		assertThat("Datum voltage",
+				d.asSampleOperations().getSampleFloat(DatumSamplesType.Instantaneous, "voltage"),
+				equalTo(248.13335f));
+		assertThat("Datum current",
+				d.asSampleOperations().getSampleFloat(DatumSamplesType.Instantaneous, "current"),
+				equalTo(0.7f));
+		assertThat("Datum power factor",
+				d.asSampleOperations().getSampleFloat(DatumSamplesType.Instantaneous, "powerFactor"),
+				equalTo(1.0f));
+		assertThat("Datum apparent power",
+				d.asSampleOperations().getSampleInteger(DatumSamplesType.Instantaneous, "apparentPower"),
+				equalTo(70));
+		assertThat("Datum reactive power",
+				d.asSampleOperations().getSampleInteger(DatumSamplesType.Instantaneous, "reactivePower"),
+				equalTo(0));
+		assertThat("Datum DC voltage",
+				d.asSampleOperations().getSampleFloat(DatumSamplesType.Instantaneous, "dcVoltage"),
+				equalTo(406.9f));
+		assertThat("Datum DC power",
+				d.asSampleOperations().getSampleInteger(DatumSamplesType.Instantaneous, "dcPower"),
+				equalTo(61));
+		assertThat("Datum power",
+				d.asSampleOperations().getSampleInteger(DatumSamplesType.Instantaneous, "watts"),
+				equalTo(70));
+		assertThat("Datum energy",
+				d.asSampleOperations().getSampleLong(DatumSamplesType.Accumulating, "wattHours"),
+				equalTo(11937020L));
+		assertThat("Datum status",
+				d.asSampleOperations().getSampleString(DatumSamplesType.Status, "phase"),
+				equalTo("Total"));
+		assertThat("Datum opState",
+				d.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "opState"),
+				equalTo(DeviceOperatingState.Normal.getCode()));
+		assertThat("Datum sunsOpState",
+				d.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "sunsOpState"),
+				equalTo(InverterOperatingState.Mppt.getCode()));
+		assertThat("Datum eve ts",
+				d.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "events"), equalTo(0));
+
+		DatumSamplesOperations ops = d.asSampleOperations();
+		assertThat("Datum voltage phase A",
+				ops.getSampleFloat(DatumSamplesType.Instantaneous, "voltage_a"),
+				is(equalTo(247.40001f)));
+		assertThat("Datum voltage phase B",
+				ops.getSampleFloat(DatumSamplesType.Instantaneous, "voltage_b"),
+				is(equalTo(250.90001f)));
+		assertThat("Datum voltage phase C",
+				ops.getSampleFloat(DatumSamplesType.Instantaneous, "voltage_c"), is(equalTo(246.1f)));
+		assertThat("Datum voltage phase AB",
+				ops.getSampleFloat(DatumSamplesType.Instantaneous, "voltage_ab"), is(equalTo(431.0f)));
+		assertThat("Datum voltage phase BC",
+				ops.getSampleFloat(DatumSamplesType.Instantaneous, "voltage_bc"), is(equalTo(427.0f)));
+		assertThat("Datum voltage phase CA",
+				ops.getSampleFloat(DatumSamplesType.Instantaneous, "voltage_ca"), is(equalTo(426.2f)));
+		assertThat("Datum current phase A",
+				ops.getSampleFloat(DatumSamplesType.Instantaneous, "current_a"),
+				is(equalTo(0.19999999f)));
+		assertThat("Datum voltcurrentage phase B",
+				ops.getSampleFloat(DatumSamplesType.Instantaneous, "current_b"), is(equalTo(0.17f)));
+		assertThat("Datum current phase C",
+				ops.getSampleFloat(DatumSamplesType.Instantaneous, "current_c"),
+				is(equalTo(0.32999998f)));
 	}
 
 }

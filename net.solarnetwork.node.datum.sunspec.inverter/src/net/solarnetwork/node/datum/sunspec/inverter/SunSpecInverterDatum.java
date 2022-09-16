@@ -59,6 +59,7 @@ public class SunSpecInverterDatum extends SimpleAcDcEnergyDatum {
 	 */
 	public static final String EVENTS_KEY = "events";
 
+	/** The model data. */
 	private final InverterModelAccessor data;
 
 	/**
@@ -86,6 +87,7 @@ public class SunSpecInverterDatum extends SimpleAcDcEnergyDatum {
 		setApparentPower(data.getApparentPower());
 		setReactivePower(data.getReactivePower());
 
+		setDcCurrent(data.getDcCurrent());
 		setDcVoltage(data.getDcVoltage());
 		setDcPower(data.getDcPower());
 

@@ -37,42 +37,61 @@ import net.solarnetwork.node.hw.sunspec.ModelEvent;
  */
 public enum StringCombinerModelEvent implements ModelEvent {
 
+	/** Low voltage. */
 	LowVoltage(0, "Low voltage"),
 
+	/** Low power. */
 	LowPower(1, "Low power"),
 
+	/** Low efficiency. */
 	LowEfficiency(2, "Low efficiency"),
 
+	/** Current. */
 	Current(3, "Current"),
 
+	/** Voltage. */
 	Voltage(4, "Voltage"),
 
+	/** Power. */
 	Power(5, "Power"),
 
+	/** PR. */
 	PR(6, "PR"),
 
+	/** Disconnected. */
 	Disconnected(7, "Disconnected"),
 
+	/** FuseFault. */
 	FuseFault(8, "FuseFault"),
 
+	/** Combiner fuse fault. */
 	CombinerFuseFault(9, "Combiner fuse fault"),
 
+	/** Combiner cabinet open. */
 	CombinerCabinetOpen(10, "Combiner cabinet open"),
 
+	/** Temperature. */
 	Temperature(11, "Temperature"),
 
+	/** Ground fault. */
 	GroundFault(12, "Ground fault"),
 
+	/** Reversed polarity. */
 	ReversedPolarity(13, "Reversed polarity"),
 
+	/** Incompatible. */
 	Incompatible(14, "Incompatible"),
 
+	/** Communication error. */
 	CommError(15, "Communication error"),
 
+	/** Internal error. */
 	InternalError(16, "Internal error"),
 
+	/** Theft. */
 	Theft(17, "Theft"),
 
+	/** Arc detected. */
 	ArcDetected(18, "Arc detected");
 
 	private final int index;

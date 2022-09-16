@@ -34,12 +34,16 @@ import net.solarnetwork.node.hw.sunspec.ModelId;
  */
 public enum StringCombinerModelId implements ModelId {
 
+	/** Basic string combiner. */
 	BasicStringCombiner(401, "Basic string combiner"),
 
+	/** Advanced string combiner. */
 	AdvancedStringCombiner(402, "Advanced string combiner", StringCombinerAdvancedModelAccessor.class),
 
+	/** Basic string combiner v2. */
 	BasicStringCombiner2(403, "Basic string combiner v2"),
 
+	/** Advanced string combiner v2. */
 	AdvancedStringCombiner2(
 			404,
 			"Advanced string combiner v2",
