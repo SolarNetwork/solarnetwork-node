@@ -87,6 +87,7 @@ public class SunSpecInverterDatum extends SimpleAcDcEnergyDatum {
 		setApparentPower(data.getApparentPower());
 		setReactivePower(data.getReactivePower());
 
+		setDcCurrent(data.getDcCurrent());
 		setDcVoltage(data.getDcVoltage());
 		setDcPower(data.getDcPower());
 
