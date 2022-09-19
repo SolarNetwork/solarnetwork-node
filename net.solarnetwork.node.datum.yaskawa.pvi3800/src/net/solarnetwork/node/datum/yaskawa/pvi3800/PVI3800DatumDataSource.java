@@ -52,7 +52,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * {@link DatumDataSource} for the Solectria PVI-3800 series inverter.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport<AcDcEnergyDatum>
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
@@ -206,6 +206,16 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport<A
 		buf.append(", Wh = ").append(datum.getWattHourReading());
 		buf.append("; sampled at ").append(datum.getTimestamp());
 		return buf.toString();
+	}
+
+	/**
+	 * Get the unit ID.
+	 * 
+	 * @return the unit ID
+	 * @since 2.1
+	 */
+	public int getUnitId() {
+		return this.unitId;
 	}
 
 	/**
