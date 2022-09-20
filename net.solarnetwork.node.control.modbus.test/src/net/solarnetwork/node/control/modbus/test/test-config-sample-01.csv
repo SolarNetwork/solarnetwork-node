@@ -1,0 +1,16 @@
+Instance ID,Connection,Unit ID,Sample Cache,Word Order,Control ID,Property Type,Register,Register Type,Data Type,Data Length,Multiplier,Decimal Scale
+"# Rows whose first cell starts with ""#"" are ignored.",,,,,,,,,,,,
+"# Devices are uniquely defined by the Instance ID column. Rows that omit an Instance ID value will assume the first value found in previous rows, searching backwards.  Columns B-E are device-wide and need only be defined once, with the Instance ID.",,,,,,,,,,,,
+P1,Modbus Port,1,5000,Most to least,,,,,,,,
+"# The next row defines an ASCII string message control, that spans 16 Modbus registers for a maximum of 32 characters.",,,,,,,,,,,,
+,,,,,msg/1,String,1000,Holding,String ASCII,16,,
+"# The next rows define the 32-bit floating point controls, each uses 2 Modbus registers. For fixed-length data types like this there is no need to define a Data Length.",,,,,,,,,,,,
+,,,,,analog/1,Float,0,Holding,32-bit float,,1,-1
+,,,,,analog/2,Float,2,Holding,32-bit float,,1,1
+"# The next row defines a 64-bit unsigned accumulator control, using 4 Modbus registers.",,,,,,,,,,,,
+,,,,,meter/1,Integer,70,Holding,64-bit unsigned int,,,
+"# The next row defines a boolean control, using a Modbus coil register",,,,,,,,,,,,
+,,,,,switch/1,Boolean,100,Coil,Boolean,,,
+"# Next a new device is started with a new Instance ID. Note how the first control can also be defined on this row; the ""power/1"" control is stored as a 16-bit unsigned value but mutliplied by 0.01 to produce the final decimal value (4987 becomes 49.87)",,,,,,,,,,,,
+P2,Modbus Port,2,5000,Most to least,power/1,Integer,10,Holding,16-bit unsigned int,,0.01,
+,,,,,power/2,Integer,11,Holding,32-bit unsigned int,,,

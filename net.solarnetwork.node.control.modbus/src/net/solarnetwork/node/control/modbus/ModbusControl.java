@@ -77,7 +77,7 @@ import net.solarnetwork.util.StringUtils;
  * Read and write a Modbus "coil" or "holding" type register.
  * 
  * @author matt
- * @version 3.0
+ * @version 3.1
  */
 public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
@@ -87,6 +87,13 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 
 	/** The default value for the {@code controlId} property. */
 	public static final String DEFAULT_CONTROL_ID = "/thermostat/temp/comfort";
+
+	/**
+	 * The setting UID used by this service.
+	 * 
+	 * @since 3.1
+	 */
+	public static final String SETTING_UID = "net.solarnetwork.node.control.modbus";
 
 	private ModbusWritePropertyConfig[] propConfigs;
 	private OptionalService<EventAdmin> eventAdmin;
@@ -514,7 +521,7 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 
 	@Override
 	public String getSettingUid() {
-		return "net.solarnetwork.node.control.modbus";
+		return SETTING_UID;
 	}
 
 	@Override
@@ -597,10 +604,21 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 		return results;
 	}
 
+	/**
+	 * Get the event admin service.
+	 * 
+	 * @return the event admin
+	 */
 	public OptionalService<EventAdmin> getEventAdmin() {
 		return eventAdmin;
 	}
 
+	/**
+	 * Set the event admin sevice.
+	 * 
+	 * @param eventAdmin
+	 *        the service to set
+	 */
 	public void setEventAdmin(OptionalService<EventAdmin> eventAdmin) {
 		this.eventAdmin = eventAdmin;
 	}
