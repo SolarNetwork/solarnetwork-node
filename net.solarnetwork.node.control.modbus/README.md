@@ -10,7 +10,7 @@ Modbus register values, such as numbers or strings.
 The plugin can be installed via the **Plugins** page on your SolarNode. It
 appears under the **Control** category as **Modbus Control**.
 
-# Configuration
+# Use
 
 Once installed, a new **Modbus Control** component will appear on the
 **Settings** page on your SolarNode. Click on the **Manage** button to configure
@@ -28,7 +28,90 @@ display the latest readings obtained from the configured Modbus registers.
 Each Modbus Control component is specific to one Modbus device. You can add
 as many components as you like, if you want to control multiple devices.
 
-## Overall device settings
+
+# CSV Configurer
+
+This plugin also provides a **Modbus Control CSV Configurer** component will appear on the main
+settings page. This component lets you upload a Modbus Control CSV Configuration file to configure
+all Modbus Control components, without having to use the settings form.
+
+![CSV Configurer settings](docs/solarnode-modbus-control-csv-configurer-settings.png)
+
+## Modbus Control CSV Configuration Format
+
+The Modbus Control CSV Configuration uses the column structure detailed [below](#csv-column-definition),
+with each row representing an individual control to write to the Modbus device. A header row
+is required. Comment lines are allowed, just start the line with a `#` character (i.e. the first
+cell value). The entire comment line will be ignored.
+
+Here's an example screen shot of a configuration in a spreadsheet application. It is for two devices:
+
+ 1. Device `P1` with 5 controls: `msg/1`, `analog/1`, `analog/2`, `meter/1`, and `switch/1`
+ 2. Device `P2` with 2 controls: `power/1` and `power/2`
+
+Spreadsheet applications generally allows you to export the sheet in the CSV format, which can
+then be loaded into SolarNode via the CSV Configurer.
+
+![CSV Configuration example](docs/solarnode-modbus-control-csv-configurer-example.png)
+
+### Instance identifiers
+
+Individual Modbus Control components are defined by the first column (**Instance ID**). You can
+assign any identifier you like (such as `Relay`, `PLC`, and so on) or configure as a single
+dash character `-` to have SolarNode assign a simple number identifier. Once an Instance ID has been
+assigned on a given row, subsequent rows will use that value if the corresponding cell value is left
+empty.
+
+Here's an example of how 3 custom instance IDs `Relay`, `PLC`, and `Inverter` appear in the
+SolarNode UI:
+
+![Modbus Control instance names](docs/solarnode-modbus-control-instance-keys.png)
+
+### CSV column definition
+
+The following table defines all the CSV columns used by Modbus Device CSV Configuration. Columns
+**A - H** apply to the **entire Modbus Device configuration**, and only the values from the row that
+defines a new Instance ID will be used to configure the device. Thus you can omit the values from
+these columns when defining more than one property for a given device.
+
+Columns **I - Q** define the mapping of Modbus registers to datum properties: each row defines an
+individual datum property.
+
+
+| Col | Name | Type | Default | Description |
+|:----|:-----|:-----|:--------|:------------|
+| `A` | **Instance ID** | string |  | The unique identifier for a single Modbus Device component. Can specify `-` to automatically assign a simple number value, which will start at `1`. |
+| `B` | **Connection** | string | `Modbus Port` | The **service name** of the Modbus connection to use. |
+| `C` | **Unit ID** | integer | `1` | The Modbus unit ID of the device to collect data from (1 - 255). |
+| `D` | **Sample Cache** | integer | `5000` | A minimum time to cache captured Modbus data, in milliseconds. |
+| `E` | **Word Order** | enum | `Most to least` |  For multi-register data types, the ordering to use when combining them. Must be either `Most to least` or `Least to most`, and can be shortened to just `m` or `l`. |
+| `F` | **Control ID** | string |  | The node-unique identifier for the control. |
+| `G` | **Property Type** | enum | `Boolean` |  The type of control property to use. Must be one of `Boolean`, `Float`, `Integer`, `Percent`, or `String`, and can be shortened to just `b`, `f`, `i`, `p`, or `s`. |
+| `H` | **Register** | integer |  | The register address to read Modbus data from (zero-based). For multi-register data types this is the _first_ register to read from. |
+| `I` | **Register Type** | enum | `Coil` | The Modbus write function to execute. Must be one of `Coil` or `Holding`. |
+| `J` | **Data Type** | enum | `Boolean` | The type of data to expect from the read Modbus register(s). Must be one of `Boolean` or `bit`, `16-bit float` or `f16`, `32-bit float` or `f32`, `16-bit signed int` or `i16`, `16-bit unsigned int` or `u16`, `32-bit signed int` or `i32`, `32-bit unsigned int` or `u32`, `64-bit signed int` or `i64`, `64-bit unsigned int` or `u16`, `Bytes` or `b`, `String UTF-8` or `s`, `String ASCII` or `a`. |
+| `K` | **Data Length** | integer |  | For variable length data types such as strings, the number of Modbus registers to read. |
+| `L` | **Multiplier** | decimal | `1` | For numeric data types, a multiplier to apply to the Modbus value to normalize it into a standard unit. |
+| `M` | **Decimal Scale** | integer | `0` | For numeric data types, a maximum number of decimal places to round decimal numbers to, or `-1` to not do any rounding. |
+
+## Example CSV
+
+Here is the CSV as shown in the example configuration screen shot above (comments have been
+removed for brevity):
+
+```csv
+Instance ID,Connection,Unit ID,Sample Cache,Word Order,Control ID,Property Type,Register,Register Type,Data Type,Data Length,Multiplier,Decimal Scale
+P1,Modbus Port,1,5000,Most to least,,,,,,,,
+,,,,,msg/1,String,1000,Holding,String ASCII,16,,
+,,,,,analog/1,Float,0,Holding,32-bit float,,1,-1
+,,,,,analog/2,Float,2,Holding,32-bit float,,1,1
+,,,,,meter/1,Integer,70,Holding,64-bit unsigned int,,,
+,,,,,switch/1,Boolean,100,Coil,Boolean,,,
+P2,Modbus Port,2,5000,Most to least,power/1,Integer,10,Holding,16-bit unsigned int,,0.01,
+,,,,,power/2,Integer,11,Holding,32-bit unsigned int,,,
+```
+
+# Control settings
 
 Each device configuration contains the following overall settings:
 
@@ -110,7 +193,7 @@ Each property configuration contains the following settings:
 	rounding completely.</dd>
 </dl>
 
-# Use
+# Control manipulation
 
 Once configured each control can be changed on the node itself or via the
 SolarNetwork API.
