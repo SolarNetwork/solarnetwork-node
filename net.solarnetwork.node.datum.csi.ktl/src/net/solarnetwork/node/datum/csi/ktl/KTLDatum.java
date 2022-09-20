@@ -42,7 +42,7 @@ import net.solarnetwork.node.hw.csi.inverter.KTLCTInverterWorkMode;
  * 
  * @author matt
  * @author maxieduncan
- * @version 2.0
+ * @version 2.1
  */
 public class KTLDatum extends SimpleAcDcEnergyDatum {
 
@@ -103,6 +103,10 @@ public class KTLDatum extends SimpleAcDcEnergyDatum {
 		setWatts(data.getActivePower());
 		setWattHourReading(data.getActiveEnergyDelivered());
 		setApparentPower(data.getActivePower());
+		setReactivePower(data.getReactivePower());
+
+		setDcPower(data.getDcPower());
+		setDcVoltage(data.getDcVoltage());
 
 		ops.putSampleValue(Instantaneous, DcEnergyDatum.DC_VOLTAGE_KEY + "1", data.getPv1Voltage());
 		ops.putSampleValue(Instantaneous, DcEnergyDatum.DC_POWER_KEY + "1",
@@ -116,6 +120,7 @@ public class KTLDatum extends SimpleAcDcEnergyDatum {
 
 		ops.putSampleValue(Instantaneous, "temp", data.getModuleTemperature());
 		ops.putSampleValue(Instantaneous, "ambientTemp", data.getInternalTemperature());
+		ops.putSampleValue(Instantaneous, "efficiency", data.getEfficiency());
 	}
 
 	/**
