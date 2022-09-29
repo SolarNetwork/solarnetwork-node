@@ -161,7 +161,9 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 					.getDataTimestamp().until(Instant.now(), ChronoUnit.MILLIS)) > sampleCacheMs) ) {
 				try {
 					latestData = performRead();
-					currSample = new MBusData(latestData);
+					if ( latestData != null ) {
+						currSample = new MBusData(latestData);
+					}
 				} catch ( IOException e ) {
 					Throwable t = e;
 					while ( t.getCause() != null ) {

@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.mbus;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -35,22 +36,48 @@ import java.util.List;
  */
 public class MBusData {
 
+	/** The received time. */
 	public Instant receivedTime = Instant.now();
-	public int status = 0;
-	public List<MBusDataRecord> dataRecords = new ArrayList<MBusDataRecord>();
 
+	/** The status. */
+	public int status = 0;
+
+	/** The data records. */
+	public final List<MBusDataRecord> dataRecords = new ArrayList<>();
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param receivedTime
+	 */
 	public MBusData(Instant receivedTime) {
 		this.receivedTime = receivedTime;
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param data
+	 *        the data
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
 	public MBusData(MBusData data) {
-		this.receivedTime = data.receivedTime;
+		this.receivedTime = requireNonNullArgument(data, "data").receivedTime;
 		this.status = data.status;
 		addRecordsFrom(data);
 	}
 
+	/**
+	 * Add data to this instance.
+	 * 
+	 * @param data
+	 *        the data to add
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
 	public void addRecordsFrom(MBusData data) {
-		for ( MBusDataRecord record : data.dataRecords ) {
+		for ( MBusDataRecord record : requireNonNullArgument(data, "data").dataRecords ) {
 			dataRecords.add(new MBusDataRecord(record));
 		}
 	}
