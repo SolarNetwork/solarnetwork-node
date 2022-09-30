@@ -41,7 +41,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * Abstract base class for MBus based datum data sources.
  * 
  * @author alex
- * @version 2.0
+ * @version 2.1
  */
 public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSupport {
 
@@ -153,7 +153,32 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 		return result;
 	}
 
-	protected MBusData getCurrentSample() {
+	/**
+	 * Get the latest available sample.
+	 * 
+	 * <p>
+	 * This method will <b>not</b> refresh the data.
+	 * </p>
+	 * 
+	 * @return the latest sample, or {@literal null}
+	 */
+	protected final MBusData getLatestSample() {
+		MBusData currSample = null;
+		synchronized ( dataLock ) {
+			if ( latestData != null ) {
+				currSample = new MBusData(latestData);
+			}
+		}
+		return currSample;
+	}
+
+	/**
+	 * Get the current sample, reading from the device if necessary.
+	 * 
+	 * @return the current sample, or {@literal null} if unable to read from
+	 *         device
+	 */
+	protected final MBusData getCurrentSample() {
 		MBusData currSample = null;
 		synchronized ( dataLock ) {
 			// Check latest sample to see if it's current enough to use
@@ -181,6 +206,23 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 	}
 
 	/**
+	 * Get setting specifiers for the {@literal unitId} and
+	 * {@literal mBusNetwork.propertyFilters['uid']} properties.
+	 * 
+	 * @return list of setting specifiers
+	 * @since 1.1
+	 */
+	protected List<SettingSpecifier> getMBusNetworkSettingSpecifiers() {
+		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
+		results.add(
+				new BasicTextFieldSettingSpecifier("mBusNetwork.propertyFilters['uid']", "M-Bus Port"));
+		results.add(new BasicTextFieldSettingSpecifier("address", ""));
+		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
+				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
+		return results;
+	}
+
+	/**
 	 * Get the sample cache maximum age, in milliseconds.
 	 * 
 	 * @return the cache milliseconds
@@ -197,23 +239,6 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 	 */
 	public void setSampleCacheMs(long sampleCacheMs) {
 		this.sampleCacheMs = sampleCacheMs;
-	}
-
-	/**
-	 * Get setting specifiers for the {@literal unitId} and
-	 * {@literal mBusNetwork.propertyFilters['uid']} properties.
-	 * 
-	 * @return list of setting specifiers
-	 * @since 1.1
-	 */
-	protected List<SettingSpecifier> getMBusNetworkSettingSpecifiers() {
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
-		results.add(
-				new BasicTextFieldSettingSpecifier("mBusNetwork.propertyFilters['uid']", "M-Bus Port"));
-		results.add(new BasicTextFieldSettingSpecifier("address", ""));
-		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
-				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
-		return results;
 	}
 
 }

@@ -1,0 +1,3 @@
+Instance ID,Service Name,Service Group,Source ID,Schedule,Connection,Address,Sample Cache,Property,Property Type,Data Type,Data Description,Multiplier,Decimal Scale
+P1,S1,G1,src/1,0 * * * * *,M-Bus Port,1,5000
+P2,S2,G2,src/2,0 * * * * *,M-Bus Port,2,5000

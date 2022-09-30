@@ -22,15 +22,24 @@
 
 package net.solarnetwork.node.datum.mbus;
 
+import static java.lang.String.format;
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toList;
+import static net.solarnetwork.node.datum.mbus.BaseDatumDataSourceConfig.JOB_SERVICE_SETTING_PREFIX;
+import static net.solarnetwork.node.datum.mbus.BaseDatumDataSourceConfig.addJobSetting;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.solarnetwork.domain.datum.DatumSamplePropertyConfig;
 import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.io.mbus.MBusDataDescription;
 import net.solarnetwork.node.io.mbus.MBusDataType;
+import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
@@ -43,13 +52,26 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * </p>
  * 
  * @author alex
- * @version 2.0
+ * @version 2.1
  */
 public class MBusPropertyConfig extends DatumSamplePropertyConfig<MBusDataDescription> {
 
+	/**
+	 * A setting type pattern for a property configuration element.
+	 * 
+	 * <p>
+	 * The pattern has two capture groups: the property configuration index and
+	 * the property setting name.
+	 * </p>
+	 * 
+	 * @since 2.1
+	 */
+	public static final Pattern PROP_SETTING_PATTERN = Pattern.compile(
+			Pattern.quote(JOB_SERVICE_SETTING_PREFIX.concat("propConfigs[")).concat("(\\d+)\\]\\.(.*)"));
+
 	private MBusDataType dataType;
 	private BigDecimal unitMultiplier;
-	private int decimalScale;
+	private Integer decimalScale;
 
 	/**
 	 * Default constructor.
@@ -124,14 +146,14 @@ public class MBusPropertyConfig extends DatumSamplePropertyConfig<MBusDataDescri
 	 */
 	public static List<SettingSpecifier> settings(String prefix) {
 		MBusPropertyConfig defaults = new MBusPropertyConfig();
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>();
+		List<SettingSpecifier> results = new ArrayList<>();
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "name", ""));
 
 		// drop-down menu for datumPropertyType
 		BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
 				prefix + "datumPropertyTypeKey", defaults.getDatumPropertyTypeValue());
-		Map<String, String> propTypeTitles = new LinkedHashMap<String, String>(3);
+		Map<String, String> propTypeTitles = new LinkedHashMap<>(3);
 		for ( DatumSamplesType e : DatumSamplesType.values() ) {
 			propTypeTitles.put(Character.toString(e.toKey()), e.toString());
 		}
@@ -141,8 +163,9 @@ public class MBusPropertyConfig extends DatumSamplePropertyConfig<MBusDataDescri
 		// drop-down menu for dataDescription
 		BasicMultiValueSettingSpecifier dataDescriptionSpec = new BasicMultiValueSettingSpecifier(
 				prefix + "dataDescriptionKey", defaults.getDataDescriptionKey());
-		Map<String, String> dataDescriptionTitles = new LinkedHashMap<String, String>(256);
-		for ( MBusDataDescription e : MBusDataDescription.values() ) {
+		Map<String, String> dataDescriptionTitles = new LinkedHashMap<>(256);
+		for ( MBusDataDescription e : stream(MBusDataDescription.values())
+				.sorted((l, r) -> l.name().compareTo(r.name())).collect(toList()) ) {
 			dataDescriptionTitles.put(e.toString(), e.toString());
 		}
 		dataDescriptionSpec.setValueTitles(dataDescriptionTitles);
@@ -151,7 +174,7 @@ public class MBusPropertyConfig extends DatumSamplePropertyConfig<MBusDataDescri
 		// drop-down menu for dataType
 		BasicMultiValueSettingSpecifier dataTypeSpec = new BasicMultiValueSettingSpecifier(
 				prefix + "dataTypeKey", defaults.getDataTypeKey());
-		Map<String, String> dataTypeTitles = new LinkedHashMap<String, String>(8);
+		Map<String, String> dataTypeTitles = new LinkedHashMap<>(8);
 		for ( MBusDataType e : MBusDataType.values() ) {
 			dataTypeTitles.put(e.toString(), e.toString());
 		}
@@ -161,6 +184,113 @@ public class MBusPropertyConfig extends DatumSamplePropertyConfig<MBusDataDescri
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "unitMultiplier", "1"));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "decimalScale", "0"));
 		return results;
+	}
+
+	/**
+	 * Test if this configuration is empty.
+	 * 
+	 * @return {@literal true} if all properties are null
+	 * @since 2.1
+	 */
+	public boolean isEmpty() {
+		return (dataType == null && decimalScale == null && unitMultiplier == null && getName() == null
+				&& getPropertyType() == null && getConfig() == null);
+	}
+
+	/**
+	 * Test if this configuration is valid.
+	 * 
+	 * @return {@literal true} if all required properties are set
+	 * @since 2.1
+	 */
+	public boolean isValid() {
+		String propName = getName();
+		return (dataType != null && propName != null && !propName.isEmpty() && getPropertyType() != null
+				&& getConfig() != null);
+	}
+
+	/**
+	 * Generate a list of setting values.
+	 * 
+	 * @param providerId
+	 *        the setting provider ID
+	 * @param instanceId
+	 *        the factory instance ID
+	 * @param i
+	 *        the property index
+	 * @return the settings
+	 * @since 2.1
+	 */
+	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, int i) {
+		List<SettingValueBean> settings = new ArrayList<>(8);
+		addSetting(settings, providerId, instanceId, i, "name", getName());
+		addSetting(settings, providerId, instanceId, i, "datumPropertyTypeKey",
+				getDatumPropertyTypeKey());
+		addSetting(settings, providerId, instanceId, i, "dataTypeKey", getDataTypeKey());
+		addSetting(settings, providerId, instanceId, i, "dataDescriptionKey", getDataDescriptionKey());
+		addSetting(settings, providerId, instanceId, i, "unitMultiplier", getUnitMultiplier());
+		addSetting(settings, providerId, instanceId, i, "decimalScale", getDecimalScale());
+		return settings;
+	}
+
+	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
+			int i, String key, Object val) {
+		if ( val == null ) {
+			return;
+		}
+		String pKey = format("propConfigs[%d].%s", i, key);
+		addJobSetting(settings, providerId, instanceId, pKey, val);
+	}
+
+	/**
+	 * Populate a setting as a property configuration value, if possible.
+	 * 
+	 * @param config
+	 *        the overall configuration
+	 * @param setting
+	 *        the setting to try to handle
+	 * @return {@literal true} if the setting was handled as a property
+	 *         configuration value
+	 * @since 2.1
+	 */
+	public static boolean populateFromSetting(BaseDatumDataSourceConfig config, Setting setting) {
+		Matcher m = PROP_SETTING_PATTERN.matcher(setting.getType());
+		if ( !m.matches() ) {
+			return false;
+		}
+		int idx = Integer.parseInt(m.group(1));
+		String name = m.group(2);
+		List<MBusPropertyConfig> propConfigs = config.getPropertyConfigs();
+		if ( !(idx < propConfigs.size()) ) {
+			propConfigs.add(idx, new MBusPropertyConfig());
+		}
+		MBusPropertyConfig propConfig = propConfigs.get(idx);
+		String val = setting.getValue();
+		if ( val != null && !val.isEmpty() ) {
+			switch (name) {
+				case "name":
+					propConfig.setName(val);
+					break;
+				case "datumPropertyTypeKey":
+					propConfig.setDatumPropertyTypeKey(val);
+					break;
+				case "dataTypeKey":
+					propConfig.setDataTypeKey(val);
+					break;
+				case "dataDescriptionKey":
+					propConfig.setDataDescriptionKey(val);
+					break;
+				case "unitMultiplier":
+					propConfig.setUnitMultiplier(new BigDecimal(val));
+					break;
+				case "decimalScale":
+					propConfig.setDecimalScale(Integer.valueOf(val));
+					break;
+				default:
+					// ignore
+			}
+		}
+		return true;
 	}
 
 	/**
@@ -419,7 +549,7 @@ public class MBusPropertyConfig extends DatumSamplePropertyConfig<MBusDataDescri
 	 * 
 	 * @return the decimal scale
 	 */
-	public int getDecimalScale() {
+	public Integer getDecimalScale() {
 		return decimalScale;
 	}
 
@@ -436,7 +566,7 @@ public class MBusPropertyConfig extends DatumSamplePropertyConfig<MBusDataDescri
 	 * @param decimalScale
 	 *        the scale to set, or {@literal -1} to disable rounding completely
 	 */
-	public void setDecimalScale(int decimalScale) {
+	public void setDecimalScale(Integer decimalScale) {
 		this.decimalScale = decimalScale;
 	}
 }

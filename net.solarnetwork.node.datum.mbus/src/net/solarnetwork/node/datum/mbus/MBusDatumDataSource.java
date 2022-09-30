@@ -46,71 +46,25 @@ import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.StringUtils;
 
+/**
+ * {@link DatumDataSource} for M-Bus devices.
+ * 
+ * @author alex
+ * @author matt
+ * @version 1.1
+ */
 public class MBusDatumDataSource extends MBusDeviceDatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider {
 
+	/**
+	 * The setting UID used by this service.
+	 * 
+	 * @since 1.1
+	 */
+	public static final String SETTING_UID = "net.solarnetwork.node.datum.mbus";
+
 	private String sourceId;
 	private MBusPropertyConfig[] propConfigs;
-
-	public MBusDatumDataSource() {
-		super();
-		sourceId = "mbus";
-	}
-
-	/**
-	 * Get the property configurations.
-	 * 
-	 * @return the property configurations
-	 */
-	public MBusPropertyConfig[] getPropConfigs() {
-		return propConfigs;
-	}
-
-	/**
-	 * Set the property configurations to use.
-	 * 
-	 * @param propConfigs
-	 *        the configs to use
-	 */
-	public void setPropConfigs(MBusPropertyConfig[] propConfigs) {
-		this.propConfigs = propConfigs;
-	}
-
-	/**
-	 * Get the number of configured {@code propConfigs} elements.
-	 * 
-	 * @return the number of {@code propConfigs} elements
-	 */
-	public int getPropConfigsCount() {
-		MBusPropertyConfig[] confs = this.propConfigs;
-		return (confs == null ? 0 : confs.length);
-	}
-
-	/**
-	 * Adjust the number of configured {@code propConfigs} elements.
-	 * 
-	 * <p>
-	 * Any newly added element values will be set to new
-	 * {@link MBusPropertyConfig} instances.
-	 * </p>
-	 * 
-	 * @param count
-	 *        The desired number of {@code propConfigs} elements.
-	 */
-	public void setPropConfigsCount(int count) {
-		this.propConfigs = ArrayUtils.arrayWithLength(this.propConfigs, count, MBusPropertyConfig.class,
-				null);
-	}
-
-	/**
-	 * Set the source ID to use for returned datum.
-	 * 
-	 * @param sourceId
-	 *        the source ID to use; defaults to {@literal wmbus}
-	 */
-	public void setSourceId(String sourceId) {
-		this.sourceId = sourceId;
-	}
 
 	@Override
 	public NodeDatum readCurrentDatum() {
@@ -209,7 +163,7 @@ public class MBusDatumDataSource extends MBusDeviceDatumDataSourceSupport
 
 	@Override
 	public String getSettingUid() {
-		return "net.solarnetwork.node.datum.mbus";
+		return SETTING_UID;
 	}
 
 	@Override
@@ -271,9 +225,71 @@ public class MBusDatumDataSource extends MBusDeviceDatumDataSourceSupport
 		return NodeDatum.class;
 	}
 
+	/**
+	 * Constructor.
+	 */
+	public MBusDatumDataSource() {
+		super();
+	}
+
+	/**
+	 * Get the property configurations.
+	 * 
+	 * @return the property configurations
+	 */
+	public MBusPropertyConfig[] getPropConfigs() {
+		return propConfigs;
+	}
+
+	/**
+	 * Set the property configurations to use.
+	 * 
+	 * @param propConfigs
+	 *        the configs to use
+	 */
+	public void setPropConfigs(MBusPropertyConfig[] propConfigs) {
+		this.propConfigs = propConfigs;
+	}
+
+	/**
+	 * Get the number of configured {@code propConfigs} elements.
+	 * 
+	 * @return the number of {@code propConfigs} elements
+	 */
+	public int getPropConfigsCount() {
+		MBusPropertyConfig[] confs = this.propConfigs;
+		return (confs == null ? 0 : confs.length);
+	}
+
+	/**
+	 * Adjust the number of configured {@code propConfigs} elements.
+	 * 
+	 * <p>
+	 * Any newly added element values will be set to new
+	 * {@link MBusPropertyConfig} instances.
+	 * </p>
+	 * 
+	 * @param count
+	 *        The desired number of {@code propConfigs} elements.
+	 */
+	public void setPropConfigsCount(int count) {
+		this.propConfigs = ArrayUtils.arrayWithLength(this.propConfigs, count, MBusPropertyConfig.class,
+				null);
+	}
+
 	@Override
 	public String getSourceId() {
 		return this.sourceId;
+	}
+
+	/**
+	 * Set the source ID to use for returned datum.
+	 * 
+	 * @param sourceId
+	 *        the source ID to use; defaults to {@literal wmbus}
+	 */
+	public void setSourceId(String sourceId) {
+		this.sourceId = sourceId;
 	}
 
 }
