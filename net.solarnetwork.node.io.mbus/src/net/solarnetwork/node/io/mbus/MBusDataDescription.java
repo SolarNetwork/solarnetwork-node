@@ -29,85 +29,248 @@ package net.solarnetwork.node.io.mbus;
  * @version 1.0
  */
 public enum MBusDataDescription {
+	/** Energy data. */
 	Energy,
+
+	/** Volume data. */
 	Volume,
+
+	/** Mass data. */
 	Mass,
+
+	/** On time. */
 	OnTime,
+
+	/** Operating time. */
 	OperatingTime,
+
+	/** Power. */
 	Power,
+
+	/** Volume flow. */
 	VolumeFlow,
+
+	/** Volume flow external. */
 	VolumeFlowExt,
+
+	/** Mass flow. */
 	MassFlow,
+
+	/** Flow temperature. */
 	FlowTemperature,
+
+	/** Return temperature. */
 	ReturnTemperature,
+
+	/** Temperature difference. */
 	TemperatureDifference,
+
+	/** External temperature. */
 	ExternalTemperature,
+
+	/** Pressure. */
 	Pressure,
+
+	/** Date. */
 	Date,
+
+	/** Date and time. */
 	DateTime,
+
+	/** Voltage. */
 	Voltage,
+
+	/** Current. */
 	Current,
+
+	/** Averaging duration. */
 	AveragingDuration,
+
+	/** Actuality duration. */
 	ActualityDuration,
+
+	/** Fabrication number. */
 	FabricationNo,
+
+	/** Model version. */
 	ModelVersion,
+
+	/** Parameter set ID. */
 	ParameterSetId,
+
+	/** Hardware version. */
 	HardwareVersion,
+
+	/** Firmware version. */
 	FirmwareVersion,
+
+	/** Error flags. */
 	ErrorFlags,
+
+	/** Customer. */
 	Customer,
+
+	/** Reserved. */
 	Reserved,
+
+	/** Operating time battery. */
 	OperatingTimeBattery,
+
+	/** HCA. */
 	HCA,
+
+	/** Reactive energy. */
 	ReactiveEnergy,
+
+	/** Temperature limit. */
 	TemperatureLimit,
+
+	/** Max power. */
 	MaxPower,
+
+	/** Reactive power. */
 	ReactivePower,
+
+	/** Relative humidity. */
 	RelativeHumidity,
+
+	/** Frequency. */
 	Frequency,
+
+	/** Phase. */
 	Phase,
+
+	/** Extended identification. */
 	ExtendedIdentification,
+
+	/** Address. */
 	Address,
+
+	/** Not supported. */
 	NotSupported,
+
+	/** Manufacturer specific. */
 	ManufacturerSpecific,
+
+	/** Future value. */
 	FutureValue,
+
+	/** User defined. */
 	UserDefined,
+
+	/** Apparent energy. */
 	ApparentEnergy,
+
+	/** Customer location. */
 	CustomerLocation,
+
+	/** Access code operator. */
 	AccessCodeOperator,
+
+	/** Access code user. */
 	AccessCodeUser,
+
+	/** Password. */
 	Password,
+
+	/** Access code system developer. */
 	AccessCodeSystemDeveloper,
+
+	/** Other software version. */
 	OtherSoftwareVersion,
+
+	/** Access code system operator. */
 	AccessCodeSytemOperator,
+
+	/** Error mask. */
 	ErrorMask,
+
+	/** Security key. */
 	SecurityKey,
+
+	/** Digital input. */
 	DigitalInput,
+
+	/** Baud rate. */
 	BaudRate,
+
+	/** Digital output. */
 	DigitalOutput,
+
+	/** Response delay time. */
 	ResponseDelayTime,
+
+	/** Retry. */
 	Retry,
+
+	/** First storage number cyclic. */
 	FirstStorageNumberCyclic,
-	RemoteControl,
+
+	/**
+	 * Remote control. *. RemoteControl,
+	 * 
+	 * /** Last storage number cyclic.
+	 */
 	LastStorageNumberCyclic,
-	SizeStorageBlock,
+
+	/**
+	 * Size storage block. *? SizeStorageBlock,
+	 * 
+	 * /** Storage interval.
+	 */
 	StorageInterval,
+
+	/** Tariff start. */
 	TariffStart,
+
+	/** Duration last readout. */
 	DurationLastReadout,
+
+	/** Time point. */
 	TimePoint,
+
+	/** Tariff duration. */
 	TariffDuration,
+
+	/** Operator specific data. */
 	OperatorSpecificData,
+
+	/** Tariff period. */
 	TariffPeriod,
+
+	/** Number stops. */
 	NumberStops,
+
+	/** Last cumulation duration. */
 	LastCumulationDuration,
+
+	/** Special supplier information. */
 	SpecialSupplierInformation,
+
+	/** Parameter activation state. */
 	ParameterActivationState,
+
+	/** Control signal. */
 	ControlSignal,
+
+	/** Week number. */
 	WeekNumber,
+
+	/** Day of week. */
 	DayOfWeek,
+
+	/** Remaining battery life time. */
 	RemainingBatteryLifeTime,
+
+	/** Time point day change. */
 	TimePointDayChange,
+
+	/** Cumulation counter. */
 	CumulationCounter,
+
+	/** RF level. */
 	RFLevel,
+
+	/** Reset counter. */
 	ResetCounter;
 }

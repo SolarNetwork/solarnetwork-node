@@ -49,6 +49,7 @@ public class MBusData {
 	 * Constructor.
 	 * 
 	 * @param receivedTime
+	 *        the received time
 	 */
 	public MBusData(Instant receivedTime) {
 		this.receivedTime = receivedTime;

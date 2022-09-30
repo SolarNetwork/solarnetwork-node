@@ -129,6 +129,11 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 		return address + "@" + mbusNetwork();
 	}
 
+	/**
+	 * Get the data source ID.
+	 * 
+	 * @return the source ID
+	 */
 	public abstract String getSourceId();
 
 	/**

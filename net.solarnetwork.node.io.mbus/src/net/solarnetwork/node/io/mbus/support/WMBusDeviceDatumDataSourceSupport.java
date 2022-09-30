@@ -256,6 +256,11 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 		}
 	}
 
+	/**
+	 * Get the current sample.
+	 * 
+	 * @return the current sample, or {@literal null} if no data is available
+	 */
 	protected MBusData getCurrentSample() {
 		synchronized ( dataLock ) {
 			if ( latestData == null ) {

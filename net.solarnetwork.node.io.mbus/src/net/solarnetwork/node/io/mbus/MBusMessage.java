@@ -33,12 +33,25 @@ import java.time.Instant;
  */
 public class MBusMessage extends MBusData {
 
+	/** Flag indicating if more message data is to follow. */
 	public boolean moreRecordsFollow = false;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param data
+	 *        the data of the message
+	 */
 	public MBusMessage(MBusData data) {
 		super(data);
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param receivedTime
+	 *        the received time
+	 */
 	public MBusMessage(Instant receivedTime) {
 		super(receivedTime);
 	}
