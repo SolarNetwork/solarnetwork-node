@@ -205,19 +205,17 @@ public enum MBusDataDescription {
 
 	/** First storage number cyclic. */
 	FirstStorageNumberCyclic,
-
-	/**
-	 * Remote control. *. RemoteControl,
-	 * 
-	 * /** Last storage number cyclic.
-	 */
+	
+	/** Remote control. */ 
+	RemoteControl,
+	
+	/** Last storage number cyclic. */
 	LastStorageNumberCyclic,
-
-	/**
-	 * Size storage block. *? SizeStorageBlock,
-	 * 
-	 * /** Storage interval.
-	 */
+	
+	/** Size storage block. */
+	SizeStorageBlock,
+	
+	/** Storage interval.*/
 	StorageInterval,
 
 	/** Tariff start. */
