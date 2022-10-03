@@ -44,7 +44,7 @@ import net.solarnetwork.util.NumberUtils;
  * Data object for the AE 500NX series inverter.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 2.1
  */
 public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
@@ -249,6 +249,12 @@ public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
 	}
 
 	@Override
+	public Float getDcCurrent() {
+		Number n = getNumber(AE500NxRegister.InverterPvCurrent);
+		return (n != null ? n.floatValue() : null);
+	}
+
+	@Override
 	public Float getDcVoltage() {
 		Number n = getNumber(AE500NxRegister.InverterPvVoltage);
 		return (n != null ? n.floatValue() : null);
@@ -256,7 +262,7 @@ public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
 
 	@Override
 	public Integer getDcPower() {
-		Number n = getNumber(AE500NxRegister.InverterPvCurrent);
+		Float n = getDcCurrent();
 		Float v = getDcVoltage();
 		if ( n != null && v != null ) {
 			return (int) (n.floatValue() * v.floatValue());
@@ -277,6 +283,30 @@ public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
 			s = s.replaceAll("\\s+(?=;)", "");
 		}
 		return s;
+	}
+
+	@Override
+	public Float getAmbientTemperature() {
+		Number n = getNumber(AE500NxRegister.InverterTemperatureAmbient);
+		return (n != null ? n.floatValue() : null);
+	}
+
+	@Override
+	public Float getCabinetTemperature() {
+		Number n = getNumber(AE500NxRegister.InverterTemperatureCabinet);
+		return (n != null ? n.floatValue() : null);
+	}
+
+	@Override
+	public Float getCoolantTemperature() {
+		Number n = getNumber(AE500NxRegister.InverterTemperatureCoolant);
+		return (n != null ? n.floatValue() : null);
+	}
+
+	@Override
+	public Float getReactorTemperature() {
+		Number n = getNumber(AE500NxRegister.InverterTemperatureReactor);
+		return (n != null ? n.floatValue() : null);
 	}
 
 	@Override
