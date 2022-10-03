@@ -38,6 +38,7 @@ public class PM5100Datum extends SimpleAcEnergyDatum {
 
 	private static final long serialVersionUID = 1505771206897549991L;
 
+	/** The sample data. */
 	private final PM5100DataAccessor data;
 
 	/**
