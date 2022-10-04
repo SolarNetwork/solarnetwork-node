@@ -153,14 +153,6 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 		return n.floatValue() / 10;
 	}
 
-	private Float getMilliValueAsFloat(ModbusReference ref) {
-		Number n = getNumber(ref);
-		if ( n == null ) {
-			return null;
-		}
-		return n.floatValue() / 100;
-	}
-
 	private Integer getHectoValueAsInteger(ModbusReference ref) {
 		Number n = getNumber(ref);
 		if ( n == null ) {
@@ -261,7 +253,11 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 
 	@Override
 	public Float getPowerFactor() {
-		return getMilliValueAsFloat(PVITLRegister.InverterPowerFactor);
+		Number n = getNumber(PVITLRegister.InverterPowerFactor);
+		if ( n == null ) {
+			return null;
+		}
+		return n.floatValue() / 1_000;
 	}
 
 	@Override
