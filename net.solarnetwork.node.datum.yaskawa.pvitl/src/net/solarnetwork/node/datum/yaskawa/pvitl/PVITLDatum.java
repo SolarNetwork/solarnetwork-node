@@ -69,9 +69,13 @@ public class PVITLDatum extends SimpleAcDcEnergyDatum {
 		getSamples().putInstantaneousSampleValue(AcEnergyDatum.FREQUENCY_KEY, data.getFrequency());
 		getSamples().putInstantaneousSampleValue(AcEnergyDatum.CURRENT_KEY, data.getCurrent());
 
+		getSamples().putInstantaneousSampleValue(DcEnergyDatum.DC_CURRENT_KEY + "1",
+				data.getPv1Current());
 		getSamples().putInstantaneousSampleValue(DcEnergyDatum.DC_VOLTAGE_KEY + "1",
 				data.getPv1Voltage());
 		getSamples().putInstantaneousSampleValue(DcEnergyDatum.DC_POWER_KEY + "1", data.getPv1Power());
+		getSamples().putInstantaneousSampleValue(DcEnergyDatum.DC_CURRENT_KEY + "2",
+				data.getPv2Current());
 		getSamples().putInstantaneousSampleValue(DcEnergyDatum.DC_VOLTAGE_KEY + "2",
 				data.getPv2Voltage());
 		getSamples().putInstantaneousSampleValue(DcEnergyDatum.DC_POWER_KEY + "2", data.getPv2Power());
