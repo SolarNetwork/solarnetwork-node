@@ -30,11 +30,16 @@ package net.solarnetwork.node.hw.yaskawa.ecb;
  */
 public enum PacketType {
 
+	/** MasterLinkRequest. */
 	MasterLinkRequest((byte) 0x05),
 
+	/** SlaveAcceptLinkRequest. */
 	SlaveAcceptLinkRequest((byte) 0x06),
 
-	SlaveDeclineLinkRequest((byte) 0x15);
+	/** SlaveDeclineLinkRequest. */
+	SlaveDeclineLinkRequest((byte) 0x15),
+
+	;
 
 	private final byte code;
 

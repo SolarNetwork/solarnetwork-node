@@ -33,12 +33,13 @@ import net.solarnetwork.node.hw.yaskawa.mb.inverter.PVITLDataAccessor;
  * samples.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class PVITLDatum extends SimpleAcDcEnergyDatum {
 
 	private static final long serialVersionUID = -6059283981724116296L;
 
+	/** The sample. */
 	private final PVITLDataAccessor sample;
 
 	/**
@@ -56,11 +57,14 @@ public class PVITLDatum extends SimpleAcDcEnergyDatum {
 	}
 
 	private void populateMeasurements(PVITLDataAccessor data) {
-		setDcPower(data.getDcPower());
+		setDcCurrent(data.getDcCurrent());
 		setDcVoltage(data.getDcVoltage());
+		setDcPower(data.getDcPower());
 		setVoltage(data.getVoltage());
 		setWattHourReading(data.getActiveEnergyDelivered());
 		setWatts(data.getActivePower());
+		setApparentPower(data.getApparentPower());
+		setPowerFactor(data.getPowerFactor());
 
 		getSamples().putInstantaneousSampleValue(AcEnergyDatum.FREQUENCY_KEY, data.getFrequency());
 		getSamples().putInstantaneousSampleValue(AcEnergyDatum.CURRENT_KEY, data.getCurrent());

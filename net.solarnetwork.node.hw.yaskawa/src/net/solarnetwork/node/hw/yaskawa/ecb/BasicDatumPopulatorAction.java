@@ -45,6 +45,14 @@ public class BasicDatumPopulatorAction implements SerialConnectionAction<AcDcEne
 	private final int unitId;
 	private final String sourceId;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param unitId
+	 *        the unit ID
+	 * @param sourceId
+	 *        the source ID
+	 */
 	public BasicDatumPopulatorAction(int unitId, String sourceId) {
 		super();
 		this.unitId = unitId;

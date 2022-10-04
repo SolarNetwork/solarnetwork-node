@@ -33,15 +33,22 @@ import net.solarnetwork.node.io.modbus.ModbusDataType;
  */
 public enum NotImplemented {
 
+	/** Int16. */
 	Int16(0x800),
 
+	/** UInt16. */
 	UInt16(0xFFFF),
 
+	/** Int32. */
 	Int32(0x8000000),
 
+	/** UInt32. */
 	UInt32(0xFFFFFFFF),
 
-	String(0x00);
+	/** String. */
+	String(0x00),
+
+	;
 
 	private final int value;
 

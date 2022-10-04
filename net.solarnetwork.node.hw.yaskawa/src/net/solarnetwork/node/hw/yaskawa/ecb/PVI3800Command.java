@@ -42,7 +42,10 @@ public enum PVI3800Command implements Command {
 	/** Read the AC combined active power, as UInt16 W. */
 	MeterReadAcCombinedActivePower(71, 4, 2),
 
-	NOOP(0, 0, 0);
+	/** No operation. */
+	NOOP(0, 0, 0),
+
+	;
 
 	private static final byte[] NULL_BODY = new byte[] { 0 };
 
