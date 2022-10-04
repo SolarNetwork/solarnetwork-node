@@ -33,27 +33,42 @@ import net.solarnetwork.domain.Bitmaskable;
  */
 public enum AE500NxSystemStatus implements Bitmaskable {
 
+	/** Set if unit is on. */
 	Power(0, "Set if unit is on."),
 
+	/** Set if unit has one or more active faults. */
 	Fault(1, "Set if unit has one or more active faults."),
 
+	/**
+	 * Set if unit operation has been affected by one or more operating limits.
+	 */
 	Limit(2, "Set if unit operation has been affected by one or more operating limits."),
 
+	/** Set if master control enabled. */
 	Enabled(3, "Set if master control enabled."),
 
+	/** Set if unit is in startup mode. */
 	Startup(4, "Set if unit is in startup mode."),
 
+	/** Set if unit has one or more active warnings. */
 	Warning(5, "Set if unit has one or more active warnings."),
 
+	/** Set if the unit has been locked out. */
 	Lockout(6, "Set if the unit has been locked out."),
 
+	/** Set if MPPT is active. */
 	Mppt(8, "Set if MPPT is active."),
 
+	/** Set for sleep. */
 	Sleep(9, "Set for sleep."),
 
+	/** Set if auto-start is on. */
 	Autostart(10, "Set if auto-start is on."),
 
-	BadMov(11, "Set if a surge protection device has failed.");
+	/** Set if a surge protection device has failed. */
+	BadMov(11, "Set if a surge protection device has failed."),
+
+	;
 
 	private final int bit;
 	private final String description;

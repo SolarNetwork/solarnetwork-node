@@ -31,28 +31,40 @@ package net.solarnetwork.node.hw.ae.inverter.tx;
  */
 public enum AE250TxSystemFault implements AE250TxFault {
 
+	/** Ground fault, check the PV array field wiring. */
 	Ground(0, "Ground fault, check the PV array field wiring."),
 
+	/** AC contactor fault. */
 	AcContactor(1, "AC contactor fault."),
 
+	/** DC contactor fault. */
 	DcContactor(2, "DC contactor fault."),
 
+	/** Watchdog timer fault. */
 	Watchdog(3, "Watchdog timer fault."),
 
+	/** CPU load fault. */
 	CpuLoad(4, "CPU load fault."),
 
+	/** Too many fault restarts. */
 	RestartLimit(5, "Too many fault restarts."),
 
+	/** Configuration fault. */
 	Configuration(6, "Configuration fault."),
 
+	/** AC current imbalance. */
 	CurrentImbalance(7, "AC current imbalance."),
 
+	/** No AC voltage detected. */
 	AcVoltageSense(8, "No AC voltage detected."),
 
+	/** Thermal switch open. */
 	ThermalSwitchOpen(9, "Thermal switch open."),
 
+	/** Disconnect open. */
 	DisconnectOpen(10, "Disconnect open."),
 
+	/** DC mis-wired for configured grounding, check DC wiring. */
 	DcMiswire(11, "DC mis-wired for configured grounding, check DC wiring."),
 
 	;

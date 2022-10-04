@@ -30,13 +30,19 @@ package net.solarnetwork.node.hw.ae.inverter.tx;
  */
 public enum InverterVoltageType {
 
+	/** AC 208 volts. */
 	AC_208(0x001, "AC 208 volts"),
 
+	/** AC 240 volts. */
 	AC_240(0x002, "AC 240 volts"),
 
+	/** AC 480 volts. */
 	AC_480(0x004, "AC 480 volts"),
 
-	AC_600(0x200, "AC 600 volts");
+	/** AC 600 volts. */
+	AC_600(0x200, "AC 600 volts"),
+
+	;
 
 	private final int code;
 	private final String description;

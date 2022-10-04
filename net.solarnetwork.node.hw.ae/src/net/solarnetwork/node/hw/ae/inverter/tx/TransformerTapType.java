@@ -30,9 +30,13 @@ package net.solarnetwork.node.hw.ae.inverter.tx;
  */
 public enum TransformerTapType {
 
+	/** 265 volts. */
 	V_265(0x0008, "265 volts"),
 
-	V_295(0x0000, "295 volts");
+	/** 295 volts. */
+	V_295(0x0000, "295 volts"),
+
+	;
 
 	private final int code;
 	private final String description;

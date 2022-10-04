@@ -30,9 +30,13 @@ package net.solarnetwork.node.hw.ae.inverter.tx;
  */
 public enum TransformerWiringType {
 
+	/** Wye wiring. */
 	Wye(0x0010, "Wye wiring"),
 
-	Delta(0x0000, "Delta wiring");
+	/** Delta wiring. */
+	Delta(0x0000, "Delta wiring"),
+
+	;
 
 	private final int code;
 	private final String description;

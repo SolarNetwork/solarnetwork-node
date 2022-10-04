@@ -35,39 +35,49 @@ import java.util.Set;
  */
 public enum AEInverterType {
 
+	/** PVP30kW. */
 	PVP30kW(
 			unmodifiableSet(
 					new LinkedHashSet<String>(asList("0272", "0273", "0274", "0288", "0289", "0290"))),
 			"PVP30kW"),
 
+	/** AE 35TX. */
 	AE35TX(
 			unmodifiableSet(new LinkedHashSet<String>(asList("0300", "0301", "0302", "0303"))),
 			"AE 35TX"),
 
+	/** AE 50TX. */
 	AE50TX(
 			unmodifiableSet(new LinkedHashSet<String>(asList("0304", "0305", "0306", "0307"))),
 			"AE 50TX"),
 
+	/** AE 75TX. */
 	AE75TX(
 			unmodifiableSet(new LinkedHashSet<String>(asList("0276", "0277", "0278", "0279"))),
 			"AE 75TX"),
 
+	/** AE 100TX. */
 	AE100TX(
 			unmodifiableSet(new LinkedHashSet<String>(asList("0280", "0281", "0282", "0283"))),
 			"AE 100TX"),
 
+	/** AE 250TX. */
 	AE250TX(
 			unmodifiableSet(new LinkedHashSet<String>(
 					asList("0312", "0313", "0314", "0315", "0316", "0317", "0318", "0319"))),
 			"AE 250TX"),
 
 	// the documentation lists the same model code values for AE260TX as AE250TX!
+	/** AE 260TX. */
 	AE260TX(
 			unmodifiableSet(new LinkedHashSet<String>(
 					asList("0312", "0313", "0314", "0315", "0316", "0317", "0318", "0319"))),
 			"AE 260TX"),
 
-	AE500TX(unmodifiableSet(new LinkedHashSet<String>(asList("0386", "0387"))), "AE 500TX");
+	/** AE 500TX. */
+	AE500TX(unmodifiableSet(new LinkedHashSet<String>(asList("0386", "0387"))), "AE 500TX"),
+
+	;
 
 	private final Set<String> modelCodes;
 	private final String description;

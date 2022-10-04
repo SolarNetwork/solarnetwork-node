@@ -31,67 +31,120 @@ package net.solarnetwork.node.hw.ae.inverter.nx;
  */
 public enum AE500NxFault2 implements AE500NxFault {
 
+	/**
+	 * There is too much AC common mode voltage on the PV array neutral and hot
+	 * wires.
+	 */
 	CommonMode(0, "There is too much AC common mode voltage on the PV array neutral and hot wires."),
 
+	/**
+	 * The DC contactor has reported that it has unexpectedly opened or has not
+	 * operated properly during startup.
+	 */
 	DcContactor(
 			1,
 			"The DC contactor has reported that it has unexpectedly opened or has not operated properly during startup."),
 
+	/** The ambient temperature has exceeded the upper limit. */
 	AmbientTemp(2, "The ambient temperature has exceeded the upper limit."),
 
+	/** The cabinet temperature has exceeded the upper limit. */
 	CabinetTemp(3, "The cabinet temperature has exceeded the upper limit."),
 
+	/**
+	 * The PV array tie contactor has reported that it has unexpectedly opened
+	 * or has not operated properly during startup.
+	 */
 	TieContactor(
 			4,
 			"The PV array tie contactor has reported that it has unexpectedly opened or has not operated properly during startup."),
 
+	/** A cable or connector has become loose inside the unit. */
 	DriveAInterlock(9, "A cable or connector has become loose inside the unit."),
 
+	/** A cable or connector has become loose inside the unit. */
 	DriveBInterlock(10, "A cable or connector has become loose inside the unit."),
 
+	/** A cable or connector has become loose inside the unit. */
 	DriveCInterlock(11, "A cable or connector has become loose inside the unit."),
 
+	/** A cable or connector has become loose inside the unit. */
 	ISenseInterlock(12, "A cable or connector has become loose inside the unit."),
 
+	/** A cable or connector has become loose inside the unit. */
 	Relay1Interlock(13, "A cable or connector has become loose inside the unit."),
 
+	/** A cable or connector has become loose inside the unit. */
 	Relay2Interlock(14, "A cable or connector has become loose inside the unit."),
 
+	/** A cable or connector has become loose inside the unit. */
 	SetInterlock(15, "A cable or connector has become loose inside the unit."),
 
+	/** A cable or connector has become loose inside the unit. */
 	ThermalInterlock(16, "A cable or connector has become loose inside the unit."),
 
+	/**
+	 * The internal DC bus voltage did not reach an acceptable level quickly
+	 * enough.
+	 */
 	ChargeFail(17, "The internal DC bus voltage did not reach an acceptable level quickly enough."),
 
+	/**
+	 * Someone has pressed the Stop button or the external interlock is
+	 * preventing the unit from operating.
+	 */
 	StopButton(
 			18,
 			"Someone has pressed the Stop button or the external interlock is preventing the unit from operating."),
 
+	/**
+	 * A cloud edge disturbed the PV voltage to the unit during turn-on before
+	 * the unit's DC contactor could close.
+	 */
 	TurnOn(
 			19,
 			"A cloud edge disturbed the PV voltage to the unit during turn-on before the unit's DC contactor could close."),
 
+	/** Fan is not running fast enough. */
 	Fan1(20, "Fan is not running fast enough."),
 
+	/** Fan is not running fast enough. */
 	Fan2(21, "Fan is not running fast enough."),
 
+	/** Fan is not running fast enough. */
 	Fan3(22, "Fan is not running fast enough."),
 
+	/** Fan is not running fast enough. */
 	Fan4(23, "Fan is not running fast enough."),
 
+	/** Fan is not running fast enough. */
 	Fan5(24, "Fan is not running fast enough."),
 
+	/**
+	 * The positive and negative bipolar PV array voltages are out of balance.
+	 */
 	ArrayImbalance(25, "The positive and negative bipolar PV array voltages are out of balance."),
 
+	/**
+	 * The available PV array power increased too fast for the inverter to back
+	 * off the voltage and keep the power from exceeding the trip limit.
+	 */
 	OverPower(
 			26,
 			"The available PV array power increased too fast for the inverter to back off the voltage and keep the power from exceeding the trip limit."),
 
+	/**
+	 * A failure has occurred in a ground fault detection component in the unit.
+	 */
 	GfiFailure(27, "A failure has occurred in a ground fault detection component in the unit."),
 
+	/** Fan is not running fast enough. */
 	Fan6(28, "Fan is not running fast enough."),
 
-	Fan7(29, "Fan is not running fast enough.");
+	/** Fan is not running fast enough. */
+	Fan7(29, "Fan is not running fast enough."),
+
+	;
 
 	private final int bit;
 	private final String description;
