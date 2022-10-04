@@ -67,12 +67,10 @@ public enum AEInverterType {
 					asList("0312", "0313", "0314", "0315", "0316", "0317", "0318", "0319"))),
 			"AE 250TX"),
 
-	// the documentation lists the same model code values for AE260TX as AE250TX!
+	// the documentation lists the same model code values for AE260TX as AE250TX; below values taken from actual device
+
 	/** AE 260TX. */
-	AE260TX(
-			unmodifiableSet(new LinkedHashSet<String>(
-					asList("0312", "0313", "0314", "0315", "0316", "0317", "0318", "0319"))),
-			"AE 260TX"),
+	AE260TX(unmodifiableSet(new LinkedHashSet<String>(asList("0286", "0287"))), "AE 260TX"),
 
 	/** AE 500TX. */
 	AE500TX(unmodifiableSet(new LinkedHashSet<String>(asList("0386", "0387"))), "AE 500TX"),
