@@ -66,6 +66,9 @@ public class PVITLDatum extends SimpleAcDcEnergyDatum {
 		setApparentPower(data.getApparentPower());
 		setPowerFactor(data.getPowerFactor());
 
+		getSamples().putInstantaneousSampleValue("temp", data.getInternalTemperature());
+		getSamples().putInstantaneousSampleValue("temp_heatSink", data.getModuleTemperature());
+
 		getSamples().putInstantaneousSampleValue(AcEnergyDatum.FREQUENCY_KEY, data.getFrequency());
 		getSamples().putInstantaneousSampleValue(AcEnergyDatum.CURRENT_KEY, data.getCurrent());
 
