@@ -84,6 +84,11 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 		super(other);
 	}
 
+	/**
+	 * Get a snapshot (copy).
+	 * 
+	 * @return the copy
+	 */
 	public KTLCTData getSnapshot() {
 		return new KTLCTData(this);
 	}

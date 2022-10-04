@@ -30,11 +30,16 @@ package net.solarnetwork.node.hw.csi.inverter;
  */
 public enum KTLCTInverterType {
 
+	/** 50 kW KTL CT. */
 	CSI_50KTL_CT(0x4031, "50 kW KTL CT"),
 
+	/** 60 kW KTL CT. */
 	CSI_60KTL_CT(0x4032, "60 kW KTL CT"),
 
-	CSI_60KTL_CT_V2(0x4033, "60 kW KTL CT v2");
+	/** 60 kW KTL CT v2. */
+	CSI_60KTL_CT_V2(0x4033, "60 kW KTL CT v2"),
+
+	;
 
 	private final int code;
 	private final String description;
