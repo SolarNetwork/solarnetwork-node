@@ -1,21 +1,21 @@
 /* ==================================================================
  * KTLDatum.java - 23/11/2017 3:07:11 pm
- * 
+ *
  * Copyright 2007-2016 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -39,7 +39,7 @@ import net.solarnetwork.node.hw.csi.inverter.KTLCTInverterWorkMode;
 /**
  * Extension of {@link SimpleAcDcEnergyDatum} with additional properties
  * supported by the KTL series inverters.
- * 
+ *
  * @author matt
  * @author maxieduncan
  * @version 2.1
@@ -48,11 +48,12 @@ public class KTLDatum extends SimpleAcDcEnergyDatum {
 
 	private static final long serialVersionUID = 2770342711914064679L;
 
+	/** The datum sample. */
 	private final KTLCTDataAccessor sample;
 
 	/**
 	 * Construct with a sample.
-	 * 
+	 *
 	 * @param data
 	 *        the sample
 	 * @param sourceId
@@ -102,30 +103,36 @@ public class KTLDatum extends SimpleAcDcEnergyDatum {
 		setFrequency(data.getFrequency());
 		setWatts(data.getActivePower());
 		setWattHourReading(data.getActiveEnergyDelivered());
-		setApparentPower(data.getActivePower());
+		setApparentPower(data.getApparentPower());
 		setReactivePower(data.getReactivePower());
+		setPowerFactor(data.getPowerFactor());
 
+		setDcCurrent(data.getDcCurrent());
 		setDcPower(data.getDcPower());
 		setDcVoltage(data.getDcVoltage());
 
 		ops.putSampleValue(Instantaneous, DcEnergyDatum.DC_VOLTAGE_KEY + "1", data.getPv1Voltage());
+		ops.putSampleValue(Instantaneous, DcEnergyDatum.DC_CURRENT_KEY + "1", data.getPv1Current());
 		ops.putSampleValue(Instantaneous, DcEnergyDatum.DC_POWER_KEY + "1",
 				data.getPv1Voltage() * data.getPv1Current());
 		ops.putSampleValue(Instantaneous, DcEnergyDatum.DC_VOLTAGE_KEY + "2", data.getPv2Voltage());
+		ops.putSampleValue(Instantaneous, DcEnergyDatum.DC_CURRENT_KEY + "2", data.getPv2Current());
 		ops.putSampleValue(Instantaneous, DcEnergyDatum.DC_POWER_KEY + "2",
 				data.getPv2Voltage() * data.getPv2Current());
 		ops.putSampleValue(Instantaneous, DcEnergyDatum.DC_VOLTAGE_KEY + "3", data.getPv3Voltage());
+		ops.putSampleValue(Instantaneous, DcEnergyDatum.DC_CURRENT_KEY + "3", data.getPv3Current());
 		ops.putSampleValue(Instantaneous, DcEnergyDatum.DC_POWER_KEY + "3",
 				data.getPv3Voltage() * data.getPv3Current());
 
-		ops.putSampleValue(Instantaneous, "temp", data.getModuleTemperature());
-		ops.putSampleValue(Instantaneous, "ambientTemp", data.getInternalTemperature());
+		ops.putSampleValue(Instantaneous, "temp", data.getInternalTemperature());
+		ops.putSampleValue(Instantaneous, "temp_heatSink", data.getModuleTemperature());
+		ops.putSampleValue(Instantaneous, "temp_transformer", data.getTransformerTemperature());
 		ops.putSampleValue(Instantaneous, "efficiency", data.getEfficiency());
 	}
 
 	/**
 	 * Test if the data appears valid in this datum.
-	 * 
+	 *
 	 * @return {@literal true} if the data appears to be valid
 	 */
 	public boolean isValid() {
@@ -134,7 +141,7 @@ public class KTLDatum extends SimpleAcDcEnergyDatum {
 
 	/**
 	 * Get the raw sample data used by this datum.
-	 * 
+	 *
 	 * @return the sample data
 	 */
 	public KTLCTDataAccessor getSample() {
