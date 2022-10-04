@@ -87,7 +87,12 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	public Map<String, Object> getDeviceInfo() {
 		AE250TxDataAccessor data = getSnapshot();
 		Map<String, Object> result = new LinkedHashMap<>(4);
-		AEInverterType type = data.getInverterType();
+		AEInverterType type = null;
+		try {
+			type = data.getInverterType();
+		} catch ( IllegalArgumentException e ) {
+			// ignore and continue
+		}
 		if ( type != null ) {
 			String firmwareVersion = data.getFirmwareRevision();
 			if ( firmwareVersion != null ) {
