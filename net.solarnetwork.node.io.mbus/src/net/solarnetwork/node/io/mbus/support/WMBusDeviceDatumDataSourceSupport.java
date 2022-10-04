@@ -192,6 +192,7 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 				connection.close();
 				connection = null;
 			} catch ( IOException e ) {
+				// ignore
 			}
 		}
 		WMBusNetwork device = service(wmbusNetwork);
@@ -203,7 +204,7 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 				connection = conn;
 			} catch ( IOException e ) {
 				log.error("Error opening wireless M-Bus connection {} for {}: {}", conn, address,
-						e.toString(), e);
+						e.toString());
 			}
 		} else if ( device == null && address != null && key != null ) {
 			log.warn("No wireless M-Bus network available for {}", address);
