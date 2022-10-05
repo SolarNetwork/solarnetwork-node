@@ -32,9 +32,11 @@ import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.yaskawa.mb.inverter.PVITLData;
 import net.solarnetwork.node.hw.yaskawa.mb.inverter.PVITLDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
@@ -77,6 +79,36 @@ public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITL
 	public PVITLDatumDataSource(PVITLData sample) {
 		super(sample);
 		setSampleCacheMs(DEFAULT_SAMPLE_CACHE_MS);
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder buf = new StringBuilder();
+		boolean notEmpty = false;
+		if ( sourceId != null ) {
+			buf.append("sourceId=").append(sourceId);
+			notEmpty = true;
+		}
+		ModbusNetwork net = OptionalService.service(getModbusNetwork());
+		if ( net != null ) {
+			if ( notEmpty ) {
+				buf.append(',');
+			} else {
+				notEmpty = true;
+			}
+			buf.append("network=").append(net);
+		}
+		if ( getUid() != null ) {
+			if ( notEmpty ) {
+				buf.append(',');
+			} else {
+				notEmpty = true;
+			}
+			buf.append("uid=").append(getUid());
+		}
+		buf.insert(0, "PVITLDatumDataSource{");
+		buf.append('}');
+		return buf.toString();
 	}
 
 	@Override

@@ -40,9 +40,11 @@ import net.solarnetwork.node.hw.yaskawa.ecb.PVI3800Identification;
 import net.solarnetwork.node.hw.yaskawa.ecb.Packet;
 import net.solarnetwork.node.hw.yaskawa.ecb.PacketUtils;
 import net.solarnetwork.node.io.serial.SerialConnection;
+import net.solarnetwork.node.io.serial.SerialNetwork;
 import net.solarnetwork.node.io.serial.support.SerialDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
@@ -78,6 +80,36 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport<A
 	public PVI3800DatumDataSource(AtomicReference<AcDcEnergyDatum> sample) {
 		super(sample);
 		setDisplayName("Solectria PVI-3800 Meter");
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder buf = new StringBuilder();
+		boolean notEmpty = false;
+		if ( getSourceId() != null ) {
+			buf.append("sourceId=").append(getSourceId());
+			notEmpty = true;
+		}
+		SerialNetwork net = OptionalService.service(getSerialNetwork());
+		if ( net != null ) {
+			if ( notEmpty ) {
+				buf.append(',');
+			} else {
+				notEmpty = true;
+			}
+			buf.append("network=").append(net.getPortName());
+		}
+		if ( getUid() != null ) {
+			if ( notEmpty ) {
+				buf.append(',');
+			} else {
+				notEmpty = true;
+			}
+			buf.append("uid=").append(getUid());
+		}
+		buf.insert(0, "PVITLDatumDataSource{");
+		buf.append('}');
+		return buf.toString();
 	}
 
 	private AcDcEnergyDatum getCurrentSample() {

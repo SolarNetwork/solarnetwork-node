@@ -75,7 +75,7 @@ public class BasicDatumPopulatorAction implements SerialConnectionAction<AcDcEne
 			return null;
 		}
 		if ( !p.isAcceptedResponse() ) {
-			log.warn("Unaccepted response to {}: {}", cmd, p.toDebugString());
+			log.debug("Unaccepted response to {}: {}", cmd, p.toDebugString());
 			return null;
 		}
 		if ( p.getBodyLength() < len ) {
