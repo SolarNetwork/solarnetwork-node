@@ -31,7 +31,7 @@ import net.solarnetwork.util.NumberUtils;
  * An ECB message packet.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class Packet {
 
@@ -255,6 +255,29 @@ public class Packet {
 	 */
 	public byte getSubCommand() {
 		return data[offset + 5];
+	}
+
+	/**
+	 * Get the length of the body data.
+	 * 
+	 * @return the body length
+	 * @since 1.1
+	 */
+	public int getBodyLength() {
+		int dataLength = header.getDataLength();
+		return Math.max(dataLength - 2, 0);
+	}
+
+	/**
+	 * Test if the packet is an accepted acknowledgement from the device.
+	 * 
+	 * @return {@literal true} if the packet type is
+	 *         {@link PacketType#SlaveAcceptLinkRequest}
+	 * @since 1.1
+	 */
+	public boolean isAcceptedResponse() {
+		PacketType type = header.getType();
+		return (type == PacketType.SlaveAcceptLinkRequest);
 	}
 
 	/**

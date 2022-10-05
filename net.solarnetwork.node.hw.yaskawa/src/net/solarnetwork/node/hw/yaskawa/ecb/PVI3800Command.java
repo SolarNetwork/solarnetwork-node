@@ -26,7 +26,7 @@ package net.solarnetwork.node.hw.yaskawa.ecb;
  * Enumeration of command + subcommands.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum PVI3800Command implements Command {
 
@@ -36,11 +36,59 @@ public enum PVI3800Command implements Command {
 	/** Read the device serial number. */
 	InfoReadSerialNumber(0, 1, 10),
 
+	/** Read the ambient internal temperature, as Int16 degrees Celsius. */
+	MeterReadTemperatureAmbient(3, 1, 2),
+
+	/** Read the heat sink temperature, as Int16 degrees Celsius. */
+	MeterReadTemperatureHeatsink(3, 2, 2),
+
 	/** Read the lifetime total energy export, as UInt64 Wh. */
 	MeterReadLifetimeTotalEnergy(24, 1, 8),
 
+	/** Read the PV1 voltage, as UInt16 V. */
+	MeterReadPv1Voltage(28, 1, 2),
+
+	/** Read the PV1 current, as UInt16 .1 A. */
+	MeterReadPv1Current(28, 2, 2),
+
+	/** Read the PV1 power, as UInt16 W. */
+	MeterReadPv1Power(28, 5, 2),
+
+	/** Read the PV2 voltage, as UInt16 V. */
+	MeterReadPv2Voltage(36, 1, 2),
+
+	/** Read the PV2 current, as UInt16 .1 A. */
+	MeterReadPv2Current(36, 2, 2),
+
+	/** Read the PV2 power, as UInt16 W. */
+	MeterReadPv2Power(36, 5, 2),
+
+	/** Read the PV3 voltage, as UInt16 V. */
+	MeterReadPv3Voltage(44, 1, 2),
+
+	/** Read the PV3 current, as UInt16 .1 A. */
+	MeterReadPv3Current(44, 2, 2),
+
+	/** Read the PV3 power, as UInt16 W. */
+	MeterReadPv3Power(44, 5, 2),
+
+	/** Read the AC voltage total, as UInt16 V. */
+	MeterReadAcCombinedVoltage(71, 1, 2),
+
+	/** Read the AC frequency, as UInt16 .01 Hz. */
+	MeterReadAcCombinedFrequency(71, 2, 2),
+
+	/** Read the AC current, as UInt16 .1 A. */
+	MeterReadAcCombinedCurrent(71, 3, 2),
+
 	/** Read the AC combined active power, as UInt16 W. */
 	MeterReadAcCombinedActivePower(71, 4, 2),
+
+	/** Read the AC combined reactive power, as Int16 VAR. */
+	MeterReadAcCombinedReactivePower(71, 5, 2),
+
+	/** Read the AC combined reactive power, as Int16 .001 PF. */
+	MeterReadAcCombinedPowerFactor(71, 6, 2),
 
 	/** No operation. */
 	NOOP(0, 0, 0),
