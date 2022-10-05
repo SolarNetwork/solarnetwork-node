@@ -52,16 +52,13 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * {@link DatumDataSource} for the Solectria PVI-3800 series inverter.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport<AcDcEnergyDatum>
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	/** The {@code unitId} property default value. */
 	public static final int DEFAULT_UNIT_ID = 1;
-
-	/** The {@code sourceId} property default value. */
-	public static final String DEFAULT_SOURCE_ID = "PVI-3800";
 
 	private int unitId = DEFAULT_UNIT_ID;
 
@@ -81,7 +78,6 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport<A
 	public PVI3800DatumDataSource(AtomicReference<AcDcEnergyDatum> sample) {
 		super(sample);
 		setDisplayName("Solectria PVI-3800 Meter");
-		setSourceId(DEFAULT_SOURCE_ID);
 	}
 
 	private AcDcEnergyDatum getCurrentSample() {
@@ -174,7 +170,7 @@ public class PVI3800DatumDataSource extends SerialDeviceDatumDataSourceSupport<A
 		result.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(getSample()), true));
 
 		result.addAll(getIdentifiableSettingSpecifiers());
-		result.add(new BasicTextFieldSettingSpecifier("sourceId", DEFAULT_SOURCE_ID));
+		result.add(new BasicTextFieldSettingSpecifier("sourceId", null));
 		result.add(new BasicTextFieldSettingSpecifier("serialNetwork.propertyFilters['uid']",
 				"Serial Port"));
 		result.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(DEFAULT_UNIT_ID)));
