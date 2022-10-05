@@ -55,7 +55,7 @@ import net.solarnetwork.support.PrefixedMessageSource;
  * Simple implementation of {@link ManagedJob}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SimpleManagedJob extends BaseIdentifiable
 		implements ManagedJob, SettingsChangeObserver, ServiceLifecycleObserver {
@@ -356,6 +356,21 @@ public class SimpleManagedJob extends BaseIdentifiable
 					return jobServiceAccessor.getPropertyValue(key.toString());
 				}
 				return null;
+			}
+
+			@Override
+			public Object put(String key, Object value) {
+				if ( key == null ) {
+					return null;
+				}
+				Object result = null;
+				if ( jobServiceAccessor.isWritableProperty(key) ) {
+					if ( jobServiceAccessor.isReadableProperty(key) ) {
+						result = jobServiceAccessor.getPropertyValue(key);
+					}
+					jobServiceAccessor.setPropertyValue(key, value);
+				}
+				return result;
 			}
 
 			@Override
