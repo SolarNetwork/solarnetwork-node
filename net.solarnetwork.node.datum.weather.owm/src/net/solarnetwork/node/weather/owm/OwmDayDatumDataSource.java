@@ -41,6 +41,14 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
 public class OwmDayDatumDataSource extends ConfigurableOwmClientService
 		implements SettingSpecifierProvider, DatumDataSource, MultiDatumDataSource {
 
+	/**
+	 * Constructor.
+	 */
+	public OwmDayDatumDataSource() {
+		super();
+		setDisplayName("OWM day information");
+	}
+
 	@Override
 	public Class<? extends NodeDatum> getDatumType() {
 		return DayDatum.class;
@@ -85,11 +93,6 @@ public class OwmDayDatumDataSource extends ConfigurableOwmClientService
 	@Override
 	public String getSettingUid() {
 		return "net.solarnetwork.node.weather.owm.day";
-	}
-
-	@Override
-	public String getDisplayName() {
-		return "OWM day information";
 	}
 
 }
