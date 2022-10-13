@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.springframework.context.MessageSource;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.support.DatumDataSourceSupport;
 import net.solarnetwork.node.settings.support.BasicSetupResourceSettingSpecifier;
@@ -40,7 +39,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * Support class for configurable {@link OwmClient} based data sources.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public abstract class ConfigurableOwmClientService extends DatumDataSourceSupport {
 
@@ -50,12 +49,9 @@ public abstract class ConfigurableOwmClientService extends DatumDataSourceSuppor
 	/** The default value for the {@code timeZoneId} property. */
 	public static final String DEFAULT_TIME_ZONE_ID = "UTC";
 
-	private String uid;
-	private String groupUid;
 	private String locationIdentifier;
 	private String timeZoneId = DEFAULT_TIME_ZONE_ID;
 	private OwmClient client;
-	private MessageSource messageSource;
 	private SetupResourceProvider locationSettingResourceProvider;
 
 	/** A map to be used for caching datum data. */
@@ -90,48 +86,6 @@ public abstract class ConfigurableOwmClientService extends DatumDataSourceSuppor
 		return results;
 	}
 
-	@Override
-	public String getUID() {
-		return getUid();
-	}
-
-	/**
-	 * Alias for {@link #getUID()}.
-	 * 
-	 * @return the UID
-	 */
-	@Override
-	public String getUid() {
-		return uid;
-	}
-
-	/**
-	 * Set the UID.
-	 * 
-	 * @param uid
-	 *        the UID to set
-	 */
-	@Override
-	public void setUid(String uid) {
-		this.uid = uid;
-	}
-
-	@Override
-	public String getGroupUid() {
-		return groupUid;
-	}
-
-	/**
-	 * Set the group UID.
-	 * 
-	 * @param groupUid
-	 *        the group UID to set
-	 */
-	@Override
-	public void setGroupUid(String groupUid) {
-		this.groupUid = groupUid;
-	}
-
 	/**
 	 * Get the configured client.
 	 * 
@@ -149,27 +103,6 @@ public abstract class ConfigurableOwmClientService extends DatumDataSourceSuppor
 	 */
 	public void setClient(OwmClient client) {
 		this.client = client;
-	}
-
-	/**
-	 * Get a {@link MessageSource} for supporting message resolution.
-	 * 
-	 * @return the message source
-	 */
-	@Override
-	public MessageSource getMessageSource() {
-		return messageSource;
-	}
-
-	/**
-	 * Set a {@link MessageSource} to support message resolution.
-	 * 
-	 * @param messageSource
-	 *        the message source to set
-	 */
-	@Override
-	public void setMessageSource(MessageSource messageSource) {
-		this.messageSource = messageSource;
 	}
 
 	/**
