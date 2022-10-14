@@ -23,7 +23,6 @@
 package net.solarnetwork.node.dao;
 
 import java.util.Map;
-
 import net.solarnetwork.node.dao.BatchableDao.BatchOptions;
 
 /**
@@ -33,10 +32,13 @@ import net.solarnetwork.node.dao.BatchableDao.BatchOptions;
  * @version 1.0
  */
 public class BasicBatchOptions implements BatchOptions {
-	
+
+	/** The default batch name. */
 	public static final String DEFAULT_BATCH_NAME = "Anonymous";
+
+	/** The default batch size. */
 	public static final int DEFAULT_BATCH_SIZE = 50;
-	
+
 	private String name;
 	private boolean updatable = false;
 	private int batchSize = DEFAULT_BATCH_SIZE;
@@ -48,32 +50,38 @@ public class BasicBatchOptions implements BatchOptions {
 	public BasicBatchOptions() {
 		this(DEFAULT_BATCH_NAME);
 	}
-	
+
 	/**
 	 * Construct with a name.
 	 * 
-	 * @param name the name
+	 * @param name
+	 *        the name
 	 */
 	public BasicBatchOptions(String name) {
 		this(name, DEFAULT_BATCH_SIZE, false, null);
 	}
-	
+
 	/**
 	 * Construct with values.
 	 * 
-	 * @param name the name
-	 * @param batchSize the size
-	 * @param updatable updatable
-	 * @param parameters the parameters
+	 * @param name
+	 *        the name
+	 * @param batchSize
+	 *        the size
+	 * @param updatable
+	 *        updatable
+	 * @param parameters
+	 *        the parameters
 	 */
-	public BasicBatchOptions(String name, int batchSize, boolean updatable, Map<String, Object> parameters) {
+	public BasicBatchOptions(String name, int batchSize, boolean updatable,
+			Map<String, Object> parameters) {
 		super();
 		this.name = name;
 		this.batchSize = batchSize;
 		this.updatable = updatable;
 		this.parameters = parameters;
 	}
-	
+
 	@Override
 	public String getName() {
 		return name;

@@ -39,18 +39,40 @@ public class PriceLocation extends SimpleDatumLocation {
 				+ this.unit + '}';
 	}
 
+	/**
+	 * Get the currency symbol.
+	 * 
+	 * @return the currency symbol
+	 */
 	public String getCurrency() {
 		return currency;
 	}
 
+	/**
+	 * Set the currency symbol.
+	 * 
+	 * @param currency
+	 *        the currency symbol to set
+	 */
 	public void setCurrency(String currency) {
 		this.currency = currency;
 	}
 
+	/**
+	 * Get the unit.
+	 * 
+	 * @return the unit
+	 */
 	public String getUnit() {
 		return unit;
 	}
 
+	/**
+	 * Set the unit.
+	 * 
+	 * @param unit
+	 *        the unit to set
+	 */
 	public void setUnit(String unit) {
 		this.unit = unit;
 	}

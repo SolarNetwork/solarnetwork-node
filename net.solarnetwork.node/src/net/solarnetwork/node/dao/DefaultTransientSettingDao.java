@@ -47,8 +47,13 @@ public class DefaultTransientSettingDao extends ConcurrentHashMap<String, Concur
 	/** The {@code settingsConcurrencyLevel} property default value. */
 	public static final int DEFAULT_SETTINGS_CONCURRENCY_LEVEL = 2;
 
+	/** The settings initial capacity. */
 	private int settingsInitialCapacity = DEFAULT_SETTINGS_INITIAL_CAPACITY;
+
+	/** The settings load factor. */
 	private float settingsLoadFactor = DEFAULT_SETTINGS_LOAD_FACTOR;
+
+	/** The settings concurrency level. */
 	private int settingsConcurrencyLevel = DEFAULT_SETTINGS_CONCURRENCY_LEVEL;
 
 	/**

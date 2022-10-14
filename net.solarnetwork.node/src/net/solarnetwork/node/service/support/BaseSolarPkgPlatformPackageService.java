@@ -116,22 +116,31 @@ public abstract class BaseSolarPkgPlatformPackageService extends BasePlatformPac
 	 */
 	public static enum Action {
 
+		/** Clean up cached resources. */
 		Clean("clean"),
 
+		/** Install a package. */
 		Install("install"),
 
+		/** Test if a package is installed. */
 		IsInstalled("is-installed"),
 
+		/** List all packages. */
 		List("list"),
 
+		/** List available packages. */
 		ListAvailable("list-available"),
 
+		/** List installed packages. */
 		ListInstalled("list-installed"),
 
+		/** Refresh local package cache. */
 		Refresh("refresh"),
 
+		/** Remove a package. */
 		Remove("remove"),
 
+		/** Upgrade a package. */
 		Upgrade("upgrade");
 
 		private final String command;

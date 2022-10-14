@@ -200,18 +200,25 @@ public class DefaultDatumQueue extends BaseIdentifiable
 	 */
 	public static enum QueueStats implements StatCounter.Stat {
 
+		/** Added datum. */
 		Added("added datum"),
 
+		/** Captured. */
 		Captured("captured datum"),
 
+		/** Processed. */
 		Processed("processed"),
 
+		/** Duplicates. */
 		Duplicates("duplicates"),
 
+		/** Filtered. */
 		Filtered("filtered"),
 
+		/** Persisted. */
 		Persisted("persisted"),
 
+		/** Errors. */
 		Errors("errors"),
 
 		/** Milliseconds spent processing all input datum. */

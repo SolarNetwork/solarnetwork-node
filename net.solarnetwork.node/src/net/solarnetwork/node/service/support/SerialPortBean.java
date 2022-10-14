@@ -110,18 +110,40 @@ public class SerialPortBean implements Cloneable {
 		}
 	}
 
+	/**
+	 * Get the DTR toggle.
+	 * 
+	 * @return the DTR toggle
+	 */
 	public boolean isDtr() {
 		return dtrFlag > 0;
 	}
 
+	/**
+	 * Set the DTR toggle.
+	 * 
+	 * @param dtr
+	 *        the DTR toggle to set
+	 */
 	public void setDtr(boolean dtr) {
 		this.dtrFlag = (dtr ? 1 : 0);
 	}
 
+	/**
+	 * Get the RTS toggle.
+	 * 
+	 * @return the RTS toggle
+	 */
 	public boolean isRts() {
 		return rtsFlag > 0;
 	}
 
+	/**
+	 * Set the RTS toggle.
+	 * 
+	 * @param rts
+	 *        the RTS toggle to set
+	 */
 	public void setRts(boolean rts) {
 		this.rtsFlag = (rts ? 1 : 0);
 	}

@@ -32,10 +32,21 @@ public class SettingsImportOptions {
 
 	private boolean addOnly;
 
+	/**
+	 * Get the "add only" flag.
+	 * 
+	 * @return the flag
+	 */
 	public boolean isAddOnly() {
 		return addOnly;
 	}
 
+	/**
+	 * Set the "add only" flag.
+	 * 
+	 * @param addOnly
+	 *        the flag value to set
+	 */
 	public void setAddOnly(boolean addOnly) {
 		this.addOnly = addOnly;
 	}

@@ -35,19 +35,21 @@ public class SettingsBackup {
 
 	private final String backupKey;
 	private final Date backupDate;
-	
+
 	/**
 	 * Construct with values.
 	 * 
-	 * @param backupKey the backup key
-	 * @param backupDate the backup date
+	 * @param backupKey
+	 *        the backup key
+	 * @param backupDate
+	 *        the backup date
 	 */
 	public SettingsBackup(String backupKey, Date backupDate) {
 		super();
 		this.backupKey = backupKey;
 		this.backupDate = backupDate;
 	}
-	
+
 	/**
 	 * Get a standardized representation of the backup date.
 	 * 
@@ -57,10 +59,21 @@ public class SettingsBackup {
 		SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy HH:mm");
 		return sdf.format(backupDate);
 	}
-	
+
+	/**
+	 * Get the backup key.
+	 * 
+	 * @return the backup key
+	 */
 	public String getBackupKey() {
 		return backupKey;
 	}
+
+	/**
+	 * Get the backup date.
+	 * 
+	 * @return the backup date
+	 */
 	public Date getBackupDate() {
 		return backupDate;
 	}

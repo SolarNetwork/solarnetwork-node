@@ -38,6 +38,12 @@ public class SimplePluginQuery implements PluginQuery {
 		return latestVersionOnly;
 	}
 
+	/**
+	 * Set the latest version only flag.
+	 * 
+	 * @param latestVersionOnly
+	 *        the flag to set
+	 */
 	public void setLatestVersionOnly(boolean latestVersionOnly) {
 		this.latestVersionOnly = latestVersionOnly;
 	}
@@ -47,6 +53,12 @@ public class SimplePluginQuery implements PluginQuery {
 		return simpleQuery;
 	}
 
+	/**
+	 * Set the simple query.
+	 * 
+	 * @param simpleQuery
+	 *        the query to set
+	 */
 	public void setSimpleQuery(String simpleQuery) {
 		this.simpleQuery = simpleQuery;
 	}

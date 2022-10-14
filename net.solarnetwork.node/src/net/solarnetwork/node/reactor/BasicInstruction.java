@@ -40,6 +40,7 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 
 	private static final long serialVersionUID = 3391977559465548659L;
 
+	/** The instrucctor ID. */
 	private final String instructorId;
 
 	/**

@@ -57,6 +57,7 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	private String fileNamePattern = "\\.jar$";
 	private MessageSource messageSource;
 
+	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Override
@@ -224,6 +225,11 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 		return StringUtils.arrayToCommaDelimitedString(getResourceDirectories());
 	}
 
+	/**
+	 * Get the root path.
+	 * 
+	 * @return the root path
+	 */
 	public String getRootPath() {
 		return rootPath;
 	}
@@ -245,6 +251,12 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 		this.rootPath = rootPath;
 	}
 
+	/**
+	 * Get an array of directory paths, relative to {@code rootPath}, to look
+	 * for files to include in the backup.
+	 * 
+	 * @return the paths to use
+	 */
 	public String[] getResourceDirectories() {
 		return resourceDirectories;
 	}
@@ -260,6 +272,11 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 		this.resourceDirectories = bundlePaths;
 	}
 
+	/**
+	 * Get the file name patter.
+	 * 
+	 * @return the pattern to use
+	 */
 	public String getFileNamePattern() {
 		return fileNamePattern;
 	}

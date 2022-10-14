@@ -63,6 +63,7 @@ public abstract class BackupServiceSupport implements BackupService {
 	public static final Pattern NODE_AND_DATE_BACKUP_KEY_PATTERN = Pattern
 			.compile("node-(\\d+)-backup-(\\d{8}T\\d{6})(-(\\w+))?");
 
+	/** The object mapper to use. */
 	protected static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
 			.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 

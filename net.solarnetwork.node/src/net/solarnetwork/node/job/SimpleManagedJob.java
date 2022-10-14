@@ -123,6 +123,11 @@ public class SimpleManagedJob extends BaseIdentifiable
 		return String.format("SimpleManagedJob{%s @ %s}", jobName(), getSchedule());
 	}
 
+	/**
+	 * Get the job trigger.
+	 * 
+	 * @return the trigger
+	 */
 	public Trigger getTrigger() {
 		final String expression = getSchedule();
 		if ( expression != null ) {

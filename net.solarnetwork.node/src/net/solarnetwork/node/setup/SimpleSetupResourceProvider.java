@@ -89,6 +89,11 @@ public class SimpleSetupResourceProvider implements SetupResourceProvider {
 		return result;
 	}
 
+	/**
+	 * Get the setup resources.
+	 * 
+	 * @return the resources
+	 */
 	public List<SetupResource> getResources() {
 		return resources;
 	}

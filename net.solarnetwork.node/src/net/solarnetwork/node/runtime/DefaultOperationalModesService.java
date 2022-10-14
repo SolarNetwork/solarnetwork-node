@@ -536,6 +536,13 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 		postEvent(event);
 	}
 
+	/**
+	 * Create an operational modes changed event.
+	 * 
+	 * @param activeModes
+	 *        the active modes
+	 * @return the event
+	 */
 	protected Event createOperationalModesChangedEvent(Set<String> activeModes) {
 		if ( activeModes == null ) {
 			activeModes = emptySet();
@@ -544,6 +551,12 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 		return new Event(EVENT_TOPIC_OPERATIONAL_MODES_CHANGED, props);
 	}
 
+	/**
+	 * Post an event.
+	 * 
+	 * @param event
+	 *        the event to post
+	 */
 	protected final void postEvent(Event event) {
 		EventAdmin ea = (eventAdmin == null ? null : eventAdmin.service());
 		if ( ea == null || event == null ) {
