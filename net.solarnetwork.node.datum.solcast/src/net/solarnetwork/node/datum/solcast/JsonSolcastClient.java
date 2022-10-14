@@ -38,6 +38,7 @@ import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.AtmosphericDatum;
 import net.solarnetwork.node.domain.datum.SimpleAtmosphericDatum;
 import net.solarnetwork.node.service.support.JsonHttpClientSupport;
+import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -139,6 +140,32 @@ public class JsonSolcastClient extends JsonHttpClientSupport
 						} else if ( "air_temp".equals(fieldName) ) {
 							if ( n.isNumber() ) {
 								s.putInstantaneousSampleValue(AtmosphericDatum.TEMPERATURE_KEY,
+										n.numberValue());
+							}
+						} else if ( "dewpoint_temp".equals(fieldName) ) {
+							if ( n.isNumber() ) {
+								s.putInstantaneousSampleValue(AtmosphericDatum.DEW_POINT_KEY,
+										n.numberValue());
+							}
+						} else if ( "relative_humidity".equals(fieldName) ) {
+							if ( n.isNumber() ) {
+								s.putInstantaneousSampleValue(AtmosphericDatum.HUMIDITY_KEY,
+										n.numberValue());
+							}
+						} else if ( "surface_pressure".equals(fieldName) ) {
+							// convert hPa to Pa
+							if ( n.isNumber() ) {
+								s.putInstantaneousSampleValue(AtmosphericDatum.ATMOSPHERIC_PRESSURE_KEY,
+										NumberUtils.scaled(n.numberValue(), 2));
+							}
+						} else if ( "wind_direction_10m".equals(fieldName) ) {
+							if ( n.isNumber() ) {
+								s.putInstantaneousSampleValue(AtmosphericDatum.WIND_DIRECTION_KEY,
+										n.numberValue());
+							}
+						} else if ( "wind_speed_10m".equals(fieldName) ) {
+							if ( n.isNumber() ) {
+								s.putInstantaneousSampleValue(AtmosphericDatum.WIND_SPEED_KEY,
 										n.numberValue());
 							}
 						} else if ( n.isNumber() ) {
