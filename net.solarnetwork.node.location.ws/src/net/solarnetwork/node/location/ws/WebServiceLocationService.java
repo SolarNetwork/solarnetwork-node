@@ -31,6 +31,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.domain.Location;
 import net.solarnetwork.domain.SimpleLocation;
@@ -42,12 +43,13 @@ import net.solarnetwork.node.service.support.JsonHttpClientSupport;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.util.CachedResult;
 
 /**
  * Web service implementation of {@link WebServiceLocationService}.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class WebServiceLocationService extends JsonHttpClientSupport
 		implements LocationService, SettingSpecifierProvider {
@@ -98,6 +100,7 @@ public class WebServiceLocationService extends JsonHttpClientSupport
 	private Long cacheTtl = DEFAULT_CACHE_TTL;
 	private double minLatLonDeviation = DEFAULT_MIN_LAT_LON_DEVIATION;
 
+	private CachedResult<Location> cachedNodeLocation;
 	private Location nodeLocation;
 
 	/**
@@ -245,6 +248,36 @@ public class WebServiceLocationService extends JsonHttpClientSupport
 		return buf.toString();
 	}
 
+	private String locationViewUrl() {
+		StringBuilder buf = new StringBuilder(getIdentityService().getSolarInBaseUrl());
+		buf.append(url);
+		buf.append("/view");
+		return buf.toString();
+	}
+
+	@Override
+	public synchronized Location getNodeLocation() {
+		if ( cachedNodeLocation != null && cachedNodeLocation.isValid() ) {
+			return cachedNodeLocation.getResult();
+		}
+		final String url = locationViewUrl();
+		log.debug("Fetching node location");
+		try (InputStream in = jsonGET(url)) {
+			Location loc = extractResponseData(in, Location.class);
+			if ( loc != null && cacheTtl != null ) {
+				cachedNodeLocation = new CachedResult<>(loc, cacheTtl, TimeUnit.MILLISECONDS);
+			}
+			return loc;
+		} catch ( IOException e ) {
+			if ( log.isTraceEnabled() ) {
+				log.trace("IOException fetching node location at " + url, e);
+			} else if ( log.isDebugEnabled() ) {
+				log.debug("Unable to fetch node location: " + e.getMessage());
+			}
+			throw new RuntimeException(e);
+		}
+	}
+
 	@Override
 	public synchronized void updateNodeLocation(net.solarnetwork.domain.Location location) {
 		final double dist = distanceBetween(nodeLocation, location);
@@ -354,18 +387,40 @@ public class WebServiceLocationService extends JsonHttpClientSupport
 		return result;
 	}
 
+	/**
+	 * Get the URL.
+	 * 
+	 * @return the URL
+	 */
 	public String getUrl() {
 		return url;
 	}
 
+	/**
+	 * Set the URL.
+	 * 
+	 * @param url
+	 *        the URL to set
+	 */
 	public void setUrl(String url) {
 		this.url = url;
 	}
 
+	/**
+	 * Get the cache TTL.
+	 * 
+	 * @return the cache TTL
+	 */
 	public Long getCacheTtl() {
 		return cacheTtl;
 	}
 
+	/**
+	 * Set the cache TTL.
+	 * 
+	 * @param cacheTtl
+	 *        the cache TTL to set
+	 */
 	public void setCacheTtl(Long cacheTtl) {
 		this.cacheTtl = cacheTtl;
 	}
