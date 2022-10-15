@@ -43,7 +43,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * Stores the configuration for accessing an eGauge register.
  * 
  * @author maxieduncan
- * @version 2.0
+ * @version 2.1
  */
 public class EGaugePropertyConfig {
 
@@ -99,6 +99,7 @@ public class EGaugePropertyConfig {
 			BasicMultiValueSettingSpecifier propTypeSpec = new BasicMultiValueSettingSpecifier(
 					prefix + "registerName", registerNames.get(0));
 			Map<String, String> propTypeTitles = new LinkedHashMap<>();
+			propTypeTitles.put("", ""); // empty value for "no selection"
 			for ( String registerName : registerNames ) {
 				propTypeTitles.put(registerName, registerName);
 			}
