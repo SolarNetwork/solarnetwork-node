@@ -64,22 +64,47 @@ public class DataRegister {
 		this.instant = instant;
 	}
 
+	/**
+	 * Get the name.
+	 * 
+	 * @return the name
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * Get the type.
+	 * 
+	 * @return the type
+	 */
 	public String getType() {
 		return type;
 	}
 
+	/**
+	 * Get the runtime type.
+	 * 
+	 * @return the runtime type
+	 */
 	public String getRuntimeType() {
 		return runtimeType;
 	}
 
+	/**
+	 * Get the value.
+	 * 
+	 * @return the value
+	 */
 	public BigInteger getValue() {
 		return value;
 	}
 
+	/**
+	 * Get the instant value.
+	 * 
+	 * @return the instant value
+	 */
 	public BigDecimal getInstant() {
 		return instant;
 	}

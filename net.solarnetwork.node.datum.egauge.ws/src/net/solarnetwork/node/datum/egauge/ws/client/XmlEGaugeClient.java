@@ -24,6 +24,7 @@ package net.solarnetwork.node.datum.egauge.ws.client;
 
 import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import static net.solarnetwork.service.OptionalServiceCollection.services;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -55,8 +56,6 @@ import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
 import net.solarnetwork.node.service.support.XmlServiceSupport;
-import net.solarnetwork.service.ExpressionService;
-import net.solarnetwork.service.OptionalServiceCollection;
 import net.solarnetwork.service.support.ExpressionServiceExpression;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
@@ -73,7 +72,7 @@ import net.solarnetwork.util.ArrayUtils;
  * to be returned by the {@code url}.
  * 
  * @author maxieduncan
- * @version 2.0
+ * @version 2.1
  */
 public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
@@ -94,8 +93,6 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	/** The list of property/register configurations. */
 	private EGaugeDatumSamplePropertyConfig[] propertyConfigs;
-
-	private OptionalServiceCollection<ExpressionService> expressionServices;
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
@@ -135,8 +132,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 						// Add the EGaugePropertyConfig properties
 						List<String> registerNames = getRegisterNames();
 						settingSpecifiers.addAll(EGaugePropertyConfig.settings(key + ".config.",
-								registerNames,
-								expressionServices != null ? expressionServices.services() : null));
+								registerNames, services(getExpressionServices())));
 
 						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
 								settingSpecifiers);
@@ -171,6 +167,14 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		return datum;
 	}
 
+	/**
+	 * Populate a datum.
+	 * 
+	 * @param datum
+	 *        the datum to populate
+	 * @throws XmlEGaugeClientException
+	 *         if a client error occurs
+	 */
 	protected void populateDatum(AcDcEnergyDatum datum) throws XmlEGaugeClientException {
 		EGaugeDatumSamplePropertyConfig[] configs = getPropertyConfigs();
 		if ( configs != null ) {
@@ -218,6 +222,16 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		return regs;
 	}
 
+	/**
+	 * Populate a datum property.
+	 * 
+	 * @param datum
+	 *        the datum to populate the property on
+	 * @param propertyConfig
+	 *        the property configuration
+	 * @param registers
+	 *        the available registers
+	 */
 	protected void populateDatumProperty(AcDcEnergyDatum datum,
 			EGaugeDatumSamplePropertyConfig propertyConfig, List<DataRegister> registers) {
 
@@ -229,8 +243,7 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 		final DatumSamplesType propertyType = propertyConfig.getPropertyType();
 		final ExpressionServiceExpression expr;
 		try {
-			expr = propertyConfig
-					.getExpression(expressionServices != null ? expressionServices.services() : null);
+			expr = propertyConfig.getExpression(services(getExpressionServices()));
 		} catch ( ExpressionException e ) {
 			log.warn("Error parsing property [{}] expression `{}`: {}", propertyConfig.getPropertyKey(),
 					propertyConfig.getConfig().getExpression(), e.getMessage());
@@ -458,6 +471,11 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 
 	}
 
+	/**
+	 * Get the URL.
+	 * 
+	 * @return the URL
+	 */
 	public String getUrl() {
 		StringBuilder builder = new StringBuilder();
 		if ( getBaseUrl() != null ) {
@@ -500,37 +518,42 @@ public class XmlEGaugeClient extends XmlServiceSupport implements EGaugeClient {
 				+ ", propertyConfigs=" + Arrays.toString(propertyConfigs) + "}";
 	}
 
+	/**
+	 * Get the base URL.
+	 * 
+	 * @return the base URL
+	 */
 	public String getBaseUrl() {
 		return baseUrl;
 	}
 
+	/**
+	 * Set the base URL.
+	 * 
+	 * @param baseUrl
+	 *        the base URL to set
+	 */
 	public void setBaseUrl(String baseUrl) {
 		this.baseUrl = baseUrl;
 	}
 
+	/**
+	 * Get the query URL.
+	 * 
+	 * @return the query URL
+	 */
 	public String getQueryUrl() {
 		return queryUrl;
 	}
 
+	/**
+	 * Set the query URL.
+	 * 
+	 * @param queryUrl
+	 *        the query URL to set
+	 */
 	public void setQueryUrl(String queryUrl) {
 		this.queryUrl = queryUrl;
-	}
-
-	/**
-	 * Configure an optional collection of {@link ExpressionService}.
-	 * 
-	 * <p>
-	 * Configuring these services allows expressions to be defined to calculate
-	 * dynamic datum property values at runtime.
-	 * </p>
-	 * 
-	 * @param expressionServices
-	 *        the optional {@link ExpressionService} collection to use
-	 * @since 1.1
-	 */
-	@Override
-	public void setExpressionServices(OptionalServiceCollection<ExpressionService> expressionServices) {
-		this.expressionServices = expressionServices;
 	}
 
 }

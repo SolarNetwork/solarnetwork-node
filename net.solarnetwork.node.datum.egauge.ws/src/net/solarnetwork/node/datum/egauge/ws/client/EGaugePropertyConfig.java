@@ -53,10 +53,19 @@ public class EGaugePropertyConfig {
 
 	private Expression cachedExpression;
 
+	/**
+	 * Default constructor.
+	 */
 	public EGaugePropertyConfig() {
 		super();
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param registerName
+	 *        the register name
+	 */
 	public EGaugePropertyConfig(String registerName) {
 		this();
 		this.registerName = registerName;
