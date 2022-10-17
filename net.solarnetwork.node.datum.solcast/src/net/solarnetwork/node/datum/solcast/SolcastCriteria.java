@@ -38,6 +38,9 @@ public class SolcastCriteria {
 	private BigDecimal lon;
 	private Set<String> parameters;
 	private Duration period;
+	private Integer azimuth;
+	private Integer tilt;
+	private String arrayType;
 
 	/**
 	 * Test if the configured criteria is valid.
@@ -46,7 +49,8 @@ public class SolcastCriteria {
 	 *         submitting to Solcast
 	 */
 	public boolean isValid() {
-		return (lat != null && lon != null);
+		return (lat != null && lon != null && (azimuth == null || (azimuth >= -180 && azimuth <= 180))
+				&& (tilt == null || (tilt >= 0 && tilt <= 90)));
 	}
 
 	/**
@@ -80,7 +84,7 @@ public class SolcastCriteria {
 	/**
 	 * Set the GPS longitude to use in Solcast API calls.
 	 * 
-	 * @param lat
+	 * @param lon
 	 *        the longitude to set
 	 */
 	public void setLon(BigDecimal lon) {
@@ -123,6 +127,65 @@ public class SolcastCriteria {
 	 */
 	public void setPeriod(Duration period) {
 		this.period = period;
+	}
+
+	/**
+	 * Get the azimuth, for GTI calculations.
+	 * 
+	 * @return the azimuth, between -180 and 180
+	 */
+	public Integer getAzimuth() {
+		return azimuth;
+	}
+
+	/**
+	 * Set the azimuth, for GTI calculations.
+	 * 
+	 * @param azimuth
+	 *        the azimuth to set, between -180 and 180
+	 */
+	public void setAzimuth(Integer azimuth) {
+		this.azimuth = azimuth;
+	}
+
+	/**
+	 * Get the tilt, for GTI calculations.
+	 * 
+	 * @return the tilt, between 0 and 90
+	 */
+	public Integer getTilt() {
+		return tilt;
+	}
+
+	/**
+	 * Set the tilt, for GTI calculations.
+	 * 
+	 * @param tilt
+	 *        the tilt to set, between 0 and 90
+	 */
+	public void setTilt(Integer tilt) {
+		this.tilt = tilt;
+	}
+
+	/**
+	 * Get the array type, for GTI calculations.
+	 * 
+	 * @return the arrayType the array type, e.g {@literal fixed} or
+	 *         {@literal horizontal_single_axis}
+	 */
+	public String getArrayType() {
+		return arrayType;
+	}
+
+	/**
+	 * Set the array type, for GTI calculations.
+	 * 
+	 * @param arrayType
+	 *        the arrayType to set, e.g {@literal fixed} or
+	 *        {@literal horizontal_single_axis}
+	 */
+	public void setArrayType(String arrayType) {
+		this.arrayType = arrayType;
 	}
 
 }

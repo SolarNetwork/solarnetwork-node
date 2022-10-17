@@ -92,6 +92,15 @@ public class JsonSolcastClient extends JsonHttpClientSupport
 				.queryParam("longitude", criteria.getLon())
 				.queryParam("hours", 1);
 		// @formatter:on
+		if ( criteria.getAzimuth() != null ) {
+			uriBuilder.queryParam("azimuth", criteria.getAzimuth());
+		}
+		if ( criteria.getTilt() != null ) {
+			uriBuilder.queryParam("tilt", criteria.getTilt());
+		}
+		if ( criteria.getArrayType() != null && !criteria.getArrayType().isEmpty() ) {
+			uriBuilder.queryParam("array_type", criteria.getArrayType());
+		}
 		if ( criteria.getParameters() != null && !criteria.getParameters().isEmpty() ) {
 			uriBuilder.queryParam("output_parameters",
 					StringUtils.commaDelimitedStringFromCollection(criteria.getParameters()));
@@ -145,6 +154,11 @@ public class JsonSolcastClient extends JsonHttpClientSupport
 						} else if ( "dewpoint_temp".equals(fieldName) ) {
 							if ( n.isNumber() ) {
 								s.putInstantaneousSampleValue(AtmosphericDatum.DEW_POINT_KEY,
+										n.numberValue());
+							}
+						} else if ( "ghi".equals(fieldName) ) {
+							if ( n.isNumber() ) {
+								s.putInstantaneousSampleValue(AtmosphericDatum.IRRADIANCE_KEY,
 										n.numberValue());
 							}
 						} else if ( "relative_humidity".equals(fieldName) ) {

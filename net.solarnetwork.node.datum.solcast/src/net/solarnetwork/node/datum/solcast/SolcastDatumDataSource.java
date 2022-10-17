@@ -66,6 +66,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 	/** The {@code resolution} default value. */
 	public static final Duration DEFAULT_RESOLUTION = Duration.ofMinutes(30);
 
+	/** The Solcast supported resolutions. */
 	public static final Set<Duration> SUPPORTED_RESOLUTIONS;
 	static {
 		SUPPORTED_RESOLUTIONS = Collections.unmodifiableSet(new LinkedHashSet<>(Arrays.asList(
@@ -89,6 +90,9 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 	private boolean useNodeLocation;
 	private Set<String> parameters;
 	private Duration resolution = DEFAULT_RESOLUTION;
+	private Integer azimuth;
+	private Integer tilt;
+	private String arrayType;
 
 	/**
 	 * Constructor.
@@ -166,17 +170,32 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 		results.add(new BasicTextFieldSettingSpecifier("lat", null));
 		results.add(new BasicTextFieldSettingSpecifier("lon", null));
 		results.add(new BasicTextFieldSettingSpecifier("parametersValue", DEFAULT_PARAMETERS_VALUE));
+		results.add(new BasicTextFieldSettingSpecifier("azimuth", null));
+		results.add(new BasicTextFieldSettingSpecifier("tilt", null));
+
+		// drop-down menu for array type
+		BasicMultiValueSettingSpecifier arrayTypeSpec = new BasicMultiValueSettingSpecifier("arrayType",
+				"");
+		Map<String, String> arrayTypeValues = new LinkedHashMap<>(3);
+		arrayTypeValues.put("", "");
+		arrayTypeValues.put("fixed",
+				getMessageSource().getMessage("arrayType.fixed", null, "Fixed", Locale.getDefault()));
+		arrayTypeValues.put("horizontal_single_axis",
+				getMessageSource().getMessage("arrayType.horizontal_single_axis", null,
+						"Horizontal Single Axis", Locale.getDefault()));
+		arrayTypeSpec.setValueTitles(arrayTypeValues);
+		results.add(arrayTypeSpec);
 
 		// drop-down menu for all possible resolutions
 		BasicMultiValueSettingSpecifier resolutionSpec = new BasicMultiValueSettingSpecifier(
 				"resolutionValue", DEFAULT_RESOLUTION.toString());
-		Map<String, String> menuValues = new LinkedHashMap<>(3);
+		Map<String, String> resolutionMenuValues = new LinkedHashMap<>(3);
 		for ( Duration d : SUPPORTED_RESOLUTIONS ) {
 			String key = d.toString();
-			menuValues.put(key,
+			resolutionMenuValues.put(key,
 					getMessageSource().getMessage("resolution." + key, null, key, Locale.getDefault()));
 		}
-		resolutionSpec.setValueTitles(menuValues);
+		resolutionSpec.setValueTitles(resolutionMenuValues);
 		results.add(resolutionSpec);
 
 		return results;
@@ -257,7 +276,7 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Set the GPS longitude to use in Solcast API calls.
 	 * 
-	 * @param lat
+	 * @param lon
 	 *        the longitude to set
 	 */
 	public void setLon(BigDecimal lon) {
@@ -354,6 +373,65 @@ public class SolcastDatumDataSource extends DatumDataSourceSupport
 		} catch ( DateTimeParseException e ) {
 			log.warn("Invalid resoultion format [%s]; must be in ISO 8601 duration format like PT15m");
 		}
+	}
+
+	/**
+	 * Get the azimuth, for GTI calculations.
+	 * 
+	 * @return the azimuth, between -180 and 180
+	 */
+	public Integer getAzimuth() {
+		return azimuth;
+	}
+
+	/**
+	 * Set the azimuth, for GTI calculations.
+	 * 
+	 * @param azimuth
+	 *        the azimuth to set, between -180 and 180
+	 */
+	public void setAzimuth(Integer azimuth) {
+		this.azimuth = azimuth;
+	}
+
+	/**
+	 * Get the tilt, for GTI calculations.
+	 * 
+	 * @return the tilt, between 0 and 90
+	 */
+	public Integer getTilt() {
+		return tilt;
+	}
+
+	/**
+	 * Set the tilt, for GTI calculations.
+	 * 
+	 * @param tilt
+	 *        the tilt to set, between 0 and 90
+	 */
+	public void setTilt(Integer tilt) {
+		this.tilt = tilt;
+	}
+
+	/**
+	 * Get the array type, for GTI calculations.
+	 * 
+	 * @return the arrayType the array type, e.g {@literal fixed} or
+	 *         {@literal horizontal_single_axis}
+	 */
+	public String getArrayType() {
+		return arrayType;
+	}
+
+	/**
+	 * Set the array type, for GTI calculations.
+	 * 
+	 * @param arrayType
+	 *        the arrayType to set, e.g {@literal fixed} or
+	 *        {@literal horizontal_single_axis}
+	 */
+	public void setArrayType(String arrayType) {
+		this.arrayType = arrayType;
 	}
 
 }

@@ -113,9 +113,8 @@ public class JsonSolcastClientTests extends AbstractHttpClientTests {
 				is(equalTo(Duration.ofMinutes(30).getSeconds())));
 		assertThat("Ambient temp mapped to temp", datum.getTemperature(),
 				is(equalTo(new BigDecimal("10"))));
-		assertThat("GHI",
-				datum.asSampleOperations().getSampleInteger(DatumSamplesType.Instantaneous, "ghi"),
-				is(equalTo(970)));
+		assertThat("GHI mapped to irradiance", datum.asSampleOperations()
+				.getSampleInteger(DatumSamplesType.Instantaneous, "irradiance"), is(equalTo(970)));
 		assertThat("EBH",
 				datum.asSampleOperations().getSampleInteger(DatumSamplesType.Instantaneous, "ebh"),
 				is(equalTo(869)));
