@@ -32,6 +32,9 @@ Each device configuration contains the following overall settings:
 | Latitude             | The GPS latitude to use, if _Use Node Location_ is not enabled or the node has no GPS coordinate configured in SolarNetwork. |
 | Longitude            | The GPS longitude to use, if _Use Node Location_ is not enabled or the node has no GPS coordinate configured in SolarNetwork. |
 | Parameters           | A comma-delimited  list of Solcast _output parameters_ to include when querying. |
+| Azimuth              | The angle (degrees) from true north that the PV system is facing, used for GTI calculations. The value must be between `-180` and `180`. |
+| Tilt                 | The angle (degrees) tilt from `0` (facing directly upwards) to `90` (facing the horizon). Used for GTI calculations. |
+| Array Type           | The array mount type. Used for GTI calculations. |
 | Resolution           | The desired _period_ of the Solcast data. Not all locations support all resolutions. See the [Solcast][solcast] site for more information. |
 
 # Datum property mappings
