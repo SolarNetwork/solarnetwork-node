@@ -42,8 +42,8 @@ import net.wimpi.modbus.msg.ModbusResponse;
 import net.wimpi.modbus.msg.WriteCoilRequest;
 
 /**
- * Class implementing a <tt>WriteCoilResponse</tt>. The implementation directly
- * correlates with the class 0 function <i>write coil (FC 5)</i>. It
+ * Class implementing a <code>WriteCoilResponse</code>. The implementation
+ * directly correlates with the class 0 function <i>write coil (FC 5)</i>. It
  * encapsulates the corresponding response message.
  *
  * @author Dieter Wimberger
@@ -71,7 +71,6 @@ public final class WriteCoilResponse extends ModbusResponse {
 
 	/**
 	 * Sets the state that has been returned in the raw response.
-	 * <p>
 	 * 
 	 * @param b
 	 *        true if the coil should be set of false if it should be unset.
@@ -81,8 +80,8 @@ public final class WriteCoilResponse extends ModbusResponse {
 	}//setCoil
 
 	/**
-	 * Gets the state that has been returned in this <tt>WriteCoilRequest</tt>.
-	 * <p>
+	 * Gets the state that has been returned in this
+	 * <code>WriteCoilRequest</code>.
 	 * 
 	 * @return true if the coil is set, false if unset.
 	 */
@@ -93,7 +92,6 @@ public final class WriteCoilResponse extends ModbusResponse {
 	/**
 	 * Returns the reference of the register of the coil that has been written
 	 * to with the request.
-	 * <p>
 	 * 
 	 * @return the reference of the coil's register.
 	 */
@@ -104,7 +102,6 @@ public final class WriteCoilResponse extends ModbusResponse {
 	/**
 	 * Sets the reference of the register of the coil that has been written to
 	 * with the request.
-	 * <p>
 	 * 
 	 * @param ref
 	 *        the reference of the coil's register.

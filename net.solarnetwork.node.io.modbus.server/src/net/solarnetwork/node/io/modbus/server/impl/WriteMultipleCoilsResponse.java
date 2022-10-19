@@ -41,9 +41,9 @@ import net.wimpi.modbus.msg.ModbusResponse;
 import net.wimpi.modbus.msg.WriteMultipleCoilsRequest;
 
 /**
- * Class implementing a <tt>WriteMultipleCoilsResponse</tt>. The implementation
- * directly correlates with the class 1 function <i>read coils (FC 15)</i>. It
- * encapsulates the corresponding response message.
+ * Class implementing a <code>WriteMultipleCoilsResponse</code>. The
+ * implementation directly correlates with the class 1 function <i>read coils
+ * (FC 15)</i>. It encapsulates the corresponding response message.
  * <p>
  * Coils are understood as bits that can be manipulated (i.e. set or unset).
  *
@@ -73,11 +73,10 @@ public final class WriteMultipleCoilsResponse extends ModbusResponse {
 
 	/**
 	 * Returns the reference of the register to to start reading from with this
-	 * <tt>WriteMultipleCoilsRequest</tt>.
-	 * <p>
+	 * <code>WriteMultipleCoilsRequest</code>.
 	 * 
 	 * @return the reference of the register to start reading from as
-	 *         <tt>int</tt>.
+	 *         <code>int</code>.
 	 */
 	public int getReference() {
 		return m_Reference;
@@ -85,7 +84,6 @@ public final class WriteMultipleCoilsResponse extends ModbusResponse {
 
 	/**
 	 * Returns the number of bits (i.e. coils) read with the request.
-	 * <p>
 	 * 
 	 * @return the number of bits that have been read.
 	 */

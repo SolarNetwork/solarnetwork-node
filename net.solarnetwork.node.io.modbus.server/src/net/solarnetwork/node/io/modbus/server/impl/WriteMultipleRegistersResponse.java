@@ -41,7 +41,7 @@ import net.wimpi.modbus.msg.ModbusResponse;
 import net.wimpi.modbus.msg.WriteMultipleRegistersRequest;
 
 /**
- * Class implementing a <tt>WriteMultipleRegistersResponse</tt>. The
+ * Class implementing a <code>WriteMultipleRegistersResponse</code>. The
  * implementation directly correlates with the class 0 function <i>read multiple
  * registers (FC 16)</i>. It encapsulates the corresponding response message.
  *
@@ -71,11 +71,11 @@ public final class WriteMultipleRegistersResponse extends ModbusResponse {
 
 	/**
 	 * Sets the reference of the register to start writing to with this
-	 * <tt>WriteMultipleRegistersResponse</tt>.
-	 * <p>
+	 * <code>WriteMultipleRegistersResponse</code>.
 	 * 
 	 * @param ref
-	 *        the reference of the register to start writing to as <tt>int</tt>.
+	 *        the reference of the register to start writing to as
+	 *        <code>int</code>.
 	 */
 	private void setReference(int ref) {
 		m_Reference = ref;
@@ -83,11 +83,10 @@ public final class WriteMultipleRegistersResponse extends ModbusResponse {
 
 	/**
 	 * Returns the reference of the register to start writing to with this
-	 * <tt>WriteMultipleRegistersResponse</tt>.
-	 * <p>
+	 * <code>WriteMultipleRegistersResponse</code>.
 	 * 
 	 * @return the reference of the register to start writing to as
-	 *         <tt>int</tt>.
+	 *         <code>int</code>.
 	 */
 	public int getReference() {
 		return m_Reference;
@@ -95,9 +94,8 @@ public final class WriteMultipleRegistersResponse extends ModbusResponse {
 
 	/**
 	 * Returns the number of bytes that have been written.
-	 * <p>
 	 * 
-	 * @return the number of bytes that have been read as <tt>int</tt>.
+	 * @return the number of bytes that have been read as <code>int</code>.
 	 */
 	public int getByteCount() {
 		return m_WordCount * 2;
@@ -106,9 +104,8 @@ public final class WriteMultipleRegistersResponse extends ModbusResponse {
 	/**
 	 * Returns the number of words that have been read. The returned value
 	 * should be half of the byte count of the response.
-	 * <p>
 	 * 
-	 * @return the number of words that have been read as <tt>int</tt>.
+	 * @return the number of words that have been read as <code>int</code>.
 	 */
 	public int getWordCount() {
 		return m_WordCount;
@@ -116,10 +113,9 @@ public final class WriteMultipleRegistersResponse extends ModbusResponse {
 
 	/**
 	 * Sets the number of words that have been returned.
-	 * <p>
 	 * 
 	 * @param count
-	 *        the number of words as <tt>int</tt>.
+	 *        the number of words as <code>int</code>.
 	 */
 	private void setWordCount(int count) {
 		m_WordCount = count;

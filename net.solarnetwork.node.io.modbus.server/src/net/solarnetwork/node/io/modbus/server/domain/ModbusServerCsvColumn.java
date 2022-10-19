@@ -35,19 +35,43 @@ import net.solarnetwork.domain.CodedValue;
  */
 public enum ModbusServerCsvColumn implements CodedValue {
 
+	/** The component instance ID. */
 	INSTANCE_ID(0, "Instance ID"),
+
+	/** The bind address. */
 	BIND_ADDRESS(1, "Bind Address"),
+
+	/** The IP port. */
 	PORT(2, "Port"),
+
+	/** The throttle time. */
 	THROTTLE(3, "Throttle"),
+
+	/** The unit ID. */
 	UNIT_ID(4, "Unit ID"),
 
+	/** The register type. */
 	REG_TYPE(5, "Register Type"),
+
+	/** The register address. */
 	REG_ADDR(6, "Register"),
+
+	/** The data type. */
 	DATA_TYPE(7, "Data Type"),
+
+	/** The data length. */
 	DATA_LENGTH(8, "Data Length"),
+
+	/** The source ID. */
 	SOURCE_ID(9, "Source ID"),
+
+	/** The datum property name. */
 	PROPERTY(10, "Property"),
+
+	/** A value multiplier. */
 	MULTIPLIER(11, "Multiplier"),
+
+	/** A value decimal scale. */
 	DECIMAL_SCALE(12, "Decimal Scale"),
 
 	;

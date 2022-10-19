@@ -87,7 +87,6 @@ public final class ReadMultipleRegistersResponse extends ModbusResponse {
 
 	/**
 	 * Returns the number of bytes that have been read.
-	 * <p>
 	 * 
 	 * @return the number of bytes that have been read as <code>int</code>.
 	 */
@@ -99,7 +98,6 @@ public final class ReadMultipleRegistersResponse extends ModbusResponse {
 	 * Returns the number of words that have been read. The returned value
 	 * should be half of the the byte count of this
 	 * <code>ReadMultipleRegistersResponse</code>.
-	 * <p>
 	 * 
 	 * @return the number of words that have been read as <code>int</code>.
 	 */
@@ -110,7 +108,6 @@ public final class ReadMultipleRegistersResponse extends ModbusResponse {
 	/**
 	 * Returns the value of the register at the given position (relative to the
 	 * reference used in the request) interpreted as unsigned short.
-	 * <p>
 	 * 
 	 * @param index
 	 *        the relative index of the register for which the value should be
@@ -128,7 +125,6 @@ public final class ReadMultipleRegistersResponse extends ModbusResponse {
 	/**
 	 * Returns the <code>Register</code> at the given position (relative to the
 	 * reference used in the request).
-	 * <p>
 	 * 
 	 * @param index
 	 *        the relative index of the <code>Register</code>.

@@ -41,7 +41,7 @@ import net.wimpi.modbus.msg.ModbusResponse;
 import net.wimpi.modbus.msg.WriteSingleRegisterRequest;
 
 /**
- * Class implementing a <tt>WriteSingleRegisterResponse</tt>. The implementation
+ * Class implementing a <code>WriteSingleRegisterResponse</code>. The implementation
  * directly correlates with the class 0 function <i>write single register (FC
  * 6)</i>. It encapsulates the corresponding response message.
  *
@@ -70,7 +70,7 @@ public final class WriteSingleRegisterResponse extends ModbusResponse {
 	}
 
 	/**
-	 * Constructs a new <tt>WriteSingleRegisterResponse</tt> instance.
+	 * Constructs a new <code>WriteSingleRegisterResponse</code> instance.
 	 */
 	public WriteSingleRegisterResponse() {
 		super();
@@ -78,7 +78,7 @@ public final class WriteSingleRegisterResponse extends ModbusResponse {
 	}//constructor
 
 	/**
-	 * Constructs a new <tt>WriteSingleRegisterResponse</tt> instance.
+	 * Constructs a new <code>WriteSingleRegisterResponse</code> instance.
 	 *
 	 * @param reference
 	 *        the offset of the register written.
@@ -94,8 +94,7 @@ public final class WriteSingleRegisterResponse extends ModbusResponse {
 
 	/**
 	 * Returns the value that has been returned in this
-	 * <tt>WriteSingleRegisterResponse</tt>.
-	 * <p>
+	 * <code>WriteSingleRegisterResponse</code>.
 	 * 
 	 * @return the value of the register.
 	 */
@@ -105,7 +104,6 @@ public final class WriteSingleRegisterResponse extends ModbusResponse {
 
 	/**
 	 * Sets the value that has been returned in the response message.
-	 * <p>
 	 * 
 	 * @param value
 	 *        the returned register value.
@@ -116,7 +114,6 @@ public final class WriteSingleRegisterResponse extends ModbusResponse {
 
 	/**
 	 * Returns the reference of the register that has been written to.
-	 * <p>
 	 * 
 	 * @return the reference of the written register.
 	 */
@@ -126,7 +123,6 @@ public final class WriteSingleRegisterResponse extends ModbusResponse {
 
 	/**
 	 * Sets the reference of the register that has been written to.
-	 * <p>
 	 * 
 	 * @param ref
 	 *        the reference of the written register.
@@ -149,17 +145,5 @@ public final class WriteSingleRegisterResponse extends ModbusResponse {
 		//update data length
 		setDataLength(4);
 	}//readData
-	/*
-	 * protected void assembleData() throws IOException {
-	 * m_DataOut.writeShort(getReference());
-	 * m_DataOut.writeShort(getRegisterValue()); }//assembleData
-	 * 
-	 * protected void readData(DataInputStream in) throws EOFException,
-	 * IOException {
-	 * 
-	 * setReference(in.readUnsignedShort());
-	 * setRegisterValue(in.readUnsignedShort()); //update data length
-	 * setDataLength(4); }//readData
-	 */
 
 }//class WriteSingleRegisterResponse

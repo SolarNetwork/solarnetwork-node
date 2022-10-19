@@ -32,12 +32,16 @@ import net.solarnetwork.domain.CodedValue;
  */
 public enum RegisterBlockType implements CodedValue {
 
+	/** Coil (toggle) type. */
 	Coil(1, 1, false),
 
+	/** Discrete (input) type. */
 	Discrete(2, 1, true),
 
+	/** Holding (output) type. */
 	Holding(3, 16, false),
 
+	/** Input type. */
 	Input(4, 16, true),
 
 	;
