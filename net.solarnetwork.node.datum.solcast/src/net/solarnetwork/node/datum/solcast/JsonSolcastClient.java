@@ -87,7 +87,7 @@ public class JsonSolcastClient extends JsonHttpClientSupport
 			return null;
 		}
 		// @formatter:off
-		final UriComponentsBuilder uriBuilder = uri("/world_radiation/estimated_actuals")
+		final UriComponentsBuilder uriBuilder = uri("/data/live/radiation_and_weather")
 				.queryParam("latitude", criteria.getLat())
 				.queryParam("longitude", criteria.getLon())
 				.queryParam("hours", 1);
