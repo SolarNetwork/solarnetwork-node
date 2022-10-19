@@ -115,6 +115,7 @@ Each server configuration contains the following settings:
 | Bind Address       | The IP address or host name to listen on. Set to `0.0.0.0` to listen on all available addresses. |
 | Port               | The port number to listen on. The default Modbus port is `502`. See [port considerations](#solarnodeos-port-considerations) for more info. |
 | Request Throttle   | A number of milliseconds to limit client requests by. |
+| Allow Writes       | If enabled, then allow Modbus clients to write to coil and output registers. |
 | Units              | The list of [unit configurations](#unit-configuration). |
 
 ## SolarNodeOS port considerations

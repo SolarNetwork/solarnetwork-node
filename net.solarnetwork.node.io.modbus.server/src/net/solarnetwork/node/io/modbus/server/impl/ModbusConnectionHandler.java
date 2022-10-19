@@ -38,6 +38,10 @@ import net.wimpi.modbus.msg.ReadCoilsRequest;
 import net.wimpi.modbus.msg.ReadInputDiscretesRequest;
 import net.wimpi.modbus.msg.ReadInputRegistersRequest;
 import net.wimpi.modbus.msg.ReadMultipleRegistersRequest;
+import net.wimpi.modbus.msg.WriteCoilRequest;
+import net.wimpi.modbus.msg.WriteMultipleCoilsRequest;
+import net.wimpi.modbus.msg.WriteMultipleRegistersRequest;
+import net.wimpi.modbus.msg.WriteSingleRegisterRequest;
 import net.wimpi.modbus.procimg.InputRegister;
 import net.wimpi.modbus.procimg.Register;
 import net.wimpi.modbus.procimg.SimpleRegister;
@@ -46,7 +50,7 @@ import net.wimpi.modbus.procimg.SimpleRegister;
  * Handler for a Modbus server connection.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class ModbusConnectionHandler implements Runnable, Closeable {
 
@@ -57,6 +61,7 @@ public class ModbusConnectionHandler implements Runnable, Closeable {
 	private final ModbusTransport transport;
 	private final Closeable closeable;
 	private final long requestThrottle;
+	private final boolean allowWrites;
 
 	/**
 	 * Constructor.
@@ -95,6 +100,32 @@ public class ModbusConnectionHandler implements Runnable, Closeable {
 	public ModbusConnectionHandler(ModbusTransport transport,
 			ConcurrentMap<Integer, ModbusRegisterData> registers, String description,
 			Closeable closeable, long requestThrottle) {
+		this(transport, registers, description, closeable, requestThrottle, false);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param transport
+	 *        the transport to use
+	 * @param registers
+	 *        the register data
+	 * @param description
+	 *        a description for the connection
+	 * @param closeable
+	 *        if provided, something to close when the handler is finished
+	 * @param requestThrottle
+	 *        if greater than {@literal 0} then a throttle in milliseconds to
+	 *        handling requests
+	 * @param allowWrites
+	 *        {@literal true} to allow Modbus write operations
+	 * @throws IllegalArgumentException
+	 *         if any argument other than {@code closeable} is {@literal null}
+	 * @since 1.2
+	 */
+	public ModbusConnectionHandler(ModbusTransport transport,
+			ConcurrentMap<Integer, ModbusRegisterData> registers, String description,
+			Closeable closeable, long requestThrottle, boolean allowWrites) {
 		super();
 		if ( transport == null ) {
 			throw new IllegalArgumentException("The transport argument must not be null.");
@@ -110,6 +141,7 @@ public class ModbusConnectionHandler implements Runnable, Closeable {
 		this.description = description;
 		this.closeable = closeable;
 		this.requestThrottle = requestThrottle;
+		this.allowWrites = allowWrites;
 	}
 
 	@Override
@@ -162,6 +194,16 @@ public class ModbusConnectionHandler implements Runnable, Closeable {
 					res = readHoldings((ReadMultipleRegistersRequest) req);
 				} else if ( req instanceof ReadInputRegistersRequest ) {
 					res = readInputs((ReadInputRegistersRequest) req);
+				} else if ( allowWrites ) {
+					if ( req instanceof WriteMultipleRegistersRequest ) {
+						res = writeRegisters((WriteMultipleRegistersRequest) req);
+					} else if ( req instanceof WriteSingleRegisterRequest ) {
+						res = writeRegister((WriteSingleRegisterRequest) req);
+					} else if ( req instanceof WriteMultipleCoilsRequest ) {
+						res = writeCoils((WriteMultipleCoilsRequest) req);
+					} else if ( req instanceof WriteCoilRequest ) {
+						res = writeCoil((WriteCoilRequest) req);
+					}
 				}
 				if ( res == null ) {
 					res = req.createExceptionResponse(Modbus.ILLEGAL_FUNCTION_EXCEPTION);
@@ -234,6 +276,35 @@ public class ModbusConnectionHandler implements Runnable, Closeable {
 			regs[i] = new SimpleRegister(data[a], data[a + 1]);
 		}
 		return new ReadInputRegistersResponse(req, regs);
+	}
+
+	private ModbusResponse writeCoil(WriteCoilRequest req) {
+		registerData(req).writeCoil(req.getReference(), req.getCoil());
+		return new WriteCoilResponse(req);
+	}
+
+	private ModbusResponse writeCoils(WriteMultipleCoilsRequest req) {
+		BitSet set = new BitSet();
+		int count = req.getBitCount();
+		for ( int i = 0; i < count; i++ ) {
+			set.set(i, req.getCoilStatus(i));
+		}
+		registerData(req).writeCoils(req.getReference(), count, set);
+		return new WriteMultipleCoilsResponse(req);
+	}
+
+	private ModbusResponse writeRegister(WriteSingleRegisterRequest req) {
+		registerData(req).writeHolding(req.getReference(), req.getRegister().toShort());
+		return new WriteSingleRegisterResponse(req.getReference(), req.getRegister().getValue());
+	}
+
+	private ModbusResponse writeRegisters(WriteMultipleRegistersRequest req) {
+		short[] values = new short[req.getWordCount()];
+		for ( int i = 0; i < values.length; i++ ) {
+			values[i] = req.getRegister(i).toShort();
+		}
+		registerData(req).writeHoldings(req.getReference(), values);
+		return new WriteMultipleRegistersResponse(req);
 	}
 
 }
