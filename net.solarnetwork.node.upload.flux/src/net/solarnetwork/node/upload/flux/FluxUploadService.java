@@ -50,6 +50,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 import org.apache.commons.codec.binary.Hex;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
@@ -72,8 +73,10 @@ import net.solarnetwork.common.mqtt.dao.MqttMessageEntity;
 import net.solarnetwork.dao.BasicBatchOptions;
 import net.solarnetwork.dao.BatchableDao;
 import net.solarnetwork.dao.BatchableDao.BatchCallbackResult;
+import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.service.OperationalModesService;
@@ -97,7 +100,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class FluxUploadService extends BaseMqttConnectionService implements EventHandler,
 		Consumer<NodeDatum>, SettingSpecifierProvider, SettingsChangeObserver, MqttConnectionObserver {
@@ -149,6 +152,13 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	 * @since 1.14
 	 */
 	public static final boolean DEFAULT_PUBLISH_RETAINED = true;
+
+	/**
+	 * The EventAdmin topic for log events.
+	 * 
+	 * @since 2.4
+	 */
+	public static final String EVENT_ADMIN_LOG_TOPIC = "net/solarnetwork/Log";
 
 	private final ConcurrentMap<String, Long> SOURCE_CAPTURE_TIMES = new ConcurrentHashMap<>(16, 0.9f,
 			2);
@@ -366,9 +376,15 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	@Override
 	public void handleEvent(Event event) {
 		final String topic = event.getTopic();
-		if ( !OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED.equals(topic) ) {
-			return;
+		if ( OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED.equals(topic) ) {
+			handleEventOpModesChanged(event);
+		} else if ( EVENT_ADMIN_LOG_TOPIC.equals(topic) ) {
+			handleEventLog(event);
 		}
+
+	}
+
+	private void handleEventOpModesChanged(Event event) {
 		final String requiredMode = this.requiredOperationalMode;
 		if ( requiredMode == null || requiredMode.isEmpty() ) {
 			return;
@@ -405,6 +421,40 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 			e.execute(task);
 		} else {
 			task.run();
+		}
+	}
+
+	private void handleEventLog(Event event) {
+		Object ts = event.getProperty("ts");
+		Object name = event.getProperty("name");
+		Object level = event.getProperty("level");
+		Object msg = event.getProperty("msg");
+		if ( ts instanceof Long && name != null && level != null && msg != null ) {
+			DatumSamples s = new DatumSamples();
+
+			Object priority = event.getProperty("priority");
+			if ( priority instanceof Integer ) {
+				s.putInstantaneousSampleValue("priority", (Integer) priority);
+			}
+			s.putStatusSampleValue("level", level);
+			s.putStatusSampleValue("msg", msg);
+			s.putStatusSampleValue("exMsg", event.getProperty("exMsg"));
+			Object st = event.getProperty("exSt");
+			if ( st instanceof String[] ) {
+				String stString = Arrays.stream((String[]) st).collect(Collectors.joining("\n"));
+				s.putStatusSampleValue("exSt", stString);
+			}
+
+			String sourceId = "log/" + name.toString().replace('.', '/');
+			SimpleDatum d = SimpleDatum.nodeDatum(sourceId, Instant.ofEpochMilli((Long) ts), s);
+			Executor e = this.executor;
+			if ( e != null ) {
+				e.execute(() -> {
+					accept(d);
+				});
+			} else {
+				accept(d);
+			}
 		}
 	}
 
