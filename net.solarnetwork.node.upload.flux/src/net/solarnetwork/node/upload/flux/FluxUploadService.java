@@ -154,6 +154,13 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	public static final boolean DEFAULT_PUBLISH_RETAINED = true;
 
 	/**
+	 * A source ID prefix for log messages posted as datum.
+	 * 
+	 * @since 2.4
+	 */
+	public static final String LOG_SOURCE_ID_PREFIX = "log/";
+
+	/**
 	 * The EventAdmin topic for log events.
 	 * 
 	 * @since 2.4
@@ -445,24 +452,29 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 				s.putStatusSampleValue("exSt", stString);
 			}
 
-			String sourceId = "log/" + name.toString().replace('.', '/');
+			String sourceId = LOG_SOURCE_ID_PREFIX + name.toString().replace('.', '/');
 			SimpleDatum d = SimpleDatum.nodeDatum(sourceId, Instant.ofEpochMilli((Long) ts), s);
 			Executor e = this.executor;
 			if ( e != null ) {
 				e.execute(() -> {
-					accept(d);
+					acceptInternal(d);
 				});
 			} else {
-				accept(d);
+				acceptInternal(d);
 			}
 		}
 	}
 
 	@Override
 	public void accept(NodeDatum datum) {
-		if ( datum == null || datum.getSourceId() == null ) {
+		if ( datum == null || datum.getSourceId() == null
+				|| datum.getSourceId().startsWith(LOG_SOURCE_ID_PREFIX) ) {
 			return;
 		}
+		acceptInternal(datum);
+	}
+
+	private void acceptInternal(NodeDatum datum) {
 		final String requiredMode = this.requiredOperationalMode;
 		final OperationalModesService modeService = this.opModesService;
 		if ( requiredMode != null && !requiredMode.isEmpty()
