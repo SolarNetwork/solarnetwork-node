@@ -154,11 +154,18 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	public static final boolean DEFAULT_PUBLISH_RETAINED = true;
 
 	/**
+	 * A source ID for log messages posted as datum.
+	 * 
+	 * @since 2.4
+	 */
+	public static final String LOG_SOURCE_ID = "log";
+
+	/**
 	 * A source ID prefix for log messages posted as datum.
 	 * 
 	 * @since 2.4
 	 */
-	public static final String LOG_SOURCE_ID_PREFIX = "log/";
+	public static final String LOG_SOURCE_ID_PREFIX = LOG_SOURCE_ID + "/";
 
 	/**
 	 * The EventAdmin topic for log events.
@@ -468,6 +475,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	@Override
 	public void accept(NodeDatum datum) {
 		if ( datum == null || datum.getSourceId() == null
+				|| datum.getSourceId().equalsIgnoreCase(LOG_SOURCE_ID)
 				|| datum.getSourceId().startsWith(LOG_SOURCE_ID_PREFIX) ) {
 			return;
 		}
