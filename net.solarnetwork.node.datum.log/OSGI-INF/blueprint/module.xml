@@ -37,6 +37,13 @@
 			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 			<value>org.osgi.service.event.EventHandler</value>
 		</interfaces>
+		<service-properties>
+			<entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
+				<array value-type="java.lang.String">
+					<value>net/solarnetwork/Log</value>
+				</array>
+			</entry>
+		</service-properties>
 		<bean class="net.solarnetwork.node.datum.log.LogDatumGenerator">
 			<argument ref="datumQueue"/>
 			<property name="messageSource" ref="messageSource"/>
