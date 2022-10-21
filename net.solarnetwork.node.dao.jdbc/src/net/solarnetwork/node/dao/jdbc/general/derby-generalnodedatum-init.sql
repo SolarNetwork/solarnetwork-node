@@ -3,9 +3,9 @@ CREATE TABLE solarnode.sn_general_node_datum (
 	source_id 		VARCHAR(64) NOT NULL,
 	obj_id			BIGINT,
 	uploaded		TIMESTAMP,
-	jdata			VARCHAR(1024) NOT NULL,
+	jdata			VARCHAR(8096) NOT NULL,
 	PRIMARY KEY (created, source_id)
 );
 
 INSERT INTO solarnode.sn_settings (skey, svalue) 
-VALUES ('solarnode.sn_general_node_datum.version', '4');
+VALUES ('solarnode.sn_general_node_datum.version', '5');

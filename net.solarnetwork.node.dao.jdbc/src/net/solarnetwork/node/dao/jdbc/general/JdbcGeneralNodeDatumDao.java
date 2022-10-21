@@ -68,13 +68,13 @@ import net.solarnetwork.util.StatCounter;
  * {@link NodeDatum} domain objects.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 		implements DatumDao, SettingSpecifierProvider, PingTest {
 
 	/** The default tables version. */
-	public static final int DEFAULT_TABLES_VERSION = 4;
+	public static final int DEFAULT_TABLES_VERSION = 5;
 
 	/** The table name for datum. */
 	public static final String TABLE_GENERAL_NODE_DATUM = "sn_general_node_datum";
