@@ -33,13 +33,19 @@ import net.solarnetwork.common.mqtt.MqttStats.MqttStat;
  */
 public enum SolarInCountStat implements MqttStat {
 
+	/** Posted datum. */
 	NodeDatumPosted(0, "node datum posted"),
 
+	/** Posted location datum. */
 	LocationDatumPosted(1, "location datum posted"),
 
+	/** Posted instruction statuses. */
 	InstructionStatusPosted(2, "instruction status posted"),
 
-	InstructionsReceived(3, "instructions received");
+	/** Received instructions. */
+	InstructionsReceived(3, "instructions received"),
+
+	;
 
 	private final int index;
 	private final String description;
