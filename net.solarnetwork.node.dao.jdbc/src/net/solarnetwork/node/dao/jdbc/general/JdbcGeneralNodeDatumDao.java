@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.dao.jdbc.general;
 
+import static java.lang.String.format;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -49,6 +50,7 @@ import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesContainer;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.dao.jdbc.AbstractJdbcDao;
@@ -75,6 +77,9 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 
 	/** The default tables version. */
 	public static final int DEFAULT_TABLES_VERSION = 5;
+
+	/** The maximum allowed length of a datum samples when encoded as JSON. */
+	public static final int MAX_SAMPLES_JSON_LENGTH = 8192;
 
 	/** The table name for datum. */
 	public static final String TABLE_GENERAL_NODE_DATUM = "sn_general_node_datum";
@@ -227,12 +232,38 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	}
 
 	private String jsonForSamples(NodeDatum datum) {
+		DatumSamples s = ((DatumSamplesContainer) datum).getSamples();
 		String json;
 		try {
-			json = objectMapper.writeValueAsString(((DatumSamplesContainer) datum).getSamples());
+			json = objectMapper.writeValueAsString(s);
 		} catch ( IOException e ) {
 			log.error("Error serializing DatumSamples into JSON: {}", e.getMessage());
 			json = "{}";
+		}
+		int len = (json != null ? json.length() : 0);
+		if ( len > MAX_SAMPLES_JSON_LENGTH ) {
+			// try to remove all status properties and replace with error message
+			DatumSamples s2 = new DatumSamples(s);
+			if ( s2.getStatus() != null && !s2.getStatus().isEmpty() ) {
+				if ( s2.hasSampleValue(DatumSamplesType.Status, "exSt") ) {
+					s2.putStatusSampleValue("exSt", null);
+				} else {
+					s2.getStatus().clear();
+					s2.putStatusSampleValue("error",
+							format("Datum must be less than %d characters, but is %d",
+									MAX_SAMPLES_JSON_LENGTH, len));
+				}
+			}
+			try {
+				json = objectMapper.writeValueAsString(s2);
+			} catch ( IOException e ) {
+				log.error("Error serializing DatumSamples into JSON: {}", e.getMessage());
+				json = "{}";
+			}
+		}
+		len = (json != null ? json.length() : 0);
+		if ( len > MAX_SAMPLES_JSON_LENGTH ) {
+			json = "{}"; // fallback
 		}
 		return json;
 	}

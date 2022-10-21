@@ -487,7 +487,10 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		final OperationalModesService modeService = this.opModesService;
 		if ( requiredMode != null && !requiredMode.isEmpty()
 				&& (modeService == null || !modeService.isOperationalModeActive(requiredMode)) ) {
-			log.trace("Not posting to SolarFlux because operational mode [{}] not active", requiredMode);
+			if ( log.isTraceEnabled() && canLogForDatum(datum.getSourceId()) ) {
+				log.trace("Not posting to SolarFlux because operational mode [{}] not active",
+						requiredMode);
+			}
 			return;
 		}
 		final FluxFilterConfig[] activeFilters = activeFilters(getFilters(), datum.getSourceId());
@@ -552,6 +555,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		if ( sourceId.isEmpty() ) {
 			return;
 		}
+		final boolean canLog = canLogForDatum(sourceId);
 		final MqttMessageDao dao = service(mqttMessageDao);
 		final boolean retained = isPublishRetained();
 		MqttMessage msgToPersist = null;
@@ -570,16 +574,20 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 					}
 					JsonNode jsonData = objectMapper.valueToTree(data);
 					payload = objectMapper.writeValueAsBytes(jsonData);
-					log.trace("Publishing to MQTT topic {} JSON:\n{}", topic, jsonData);
+					if ( canLog ) {
+						log.trace("Publishing to MQTT topic {} JSON:\n{}", topic, jsonData);
+					}
 				}
 				msg = new BasicMqttMessage(topic, retained, getPublishQos(), payload);
 				if ( conn != null && conn.isEstablished() ) {
-					if ( log.isTraceEnabled() ) {
+					if ( canLog && log.isTraceEnabled() ) {
 						log.trace("Publishing to MQTT topic {}\n{}", topic,
 								Hex.encodeHexString(payload));
 					}
 					conn.publish(msg).get(getMqttConfig().getConnectTimeoutSeconds(), TimeUnit.SECONDS);
-					log.debug("Published to MQTT topic {}: {}", topic, data);
+					if ( canLog ) {
+						log.debug("Published to MQTT topic {}: {}", topic, data);
+					}
 					if ( mqttMessageDaoRequired && !mqttMessageDaoDiscovered ) {
 						tryPublishCachedMessages(conn);
 					}
@@ -592,12 +600,16 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 					root = root.getCause();
 				}
 				String message = (root instanceof TimeoutException ? "timeout" : root.getMessage());
-				log.warn("Error publishing to MQTT topic {} datum {} @ {}: {}", topic, data,
-						getMqttConfig().getServerUri(), message);
+				if ( canLog ) {
+					log.warn("Error publishing to MQTT topic {} datum {} @ {}: {}", topic, data,
+							getMqttConfig().getServerUri(), message);
+				}
 				if ( root instanceof IllegalArgumentException ) {
-					log.error(
-							"Discarding MQTT topic {} datum {} @ {} because of invalid data (illegal character in source ID?): {}",
-							topic, data, getMqttConfig().getServerUri(), message);
+					if ( canLog ) {
+						log.error(
+								"Discarding MQTT topic {} datum {} @ {} because of invalid data (illegal character in source ID?): {}",
+								topic, data, getMqttConfig().getServerUri(), message);
+					}
 				} else if ( dao != null ) {
 					msgToPersist = msg;
 				}
@@ -606,14 +618,20 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		if ( msgToPersist != null ) {
 			String dest = getMqttConfig().getServerUriValue();
 			if ( dest != null ) {
-				log.debug("Locally persisting MQTT message to {} on topic {}", dest,
-						msgToPersist.getTopic());
+				if ( canLog ) {
+					log.debug("Locally persisting MQTT message to {} on topic {}", dest,
+							msgToPersist.getTopic());
+				}
 				BasicMqttMessageEntity entity = new BasicMqttMessageEntity(null, Instant.now(), dest,
 						msgToPersist.getTopic(), false, msgToPersist.getQosLevel(),
 						msgToPersist.getPayload());
 				dao.save(entity);
 			}
 		}
+	}
+
+	private static boolean canLogForDatum(String sourceId) {
+		return !(LOG_SOURCE_ID.equalsIgnoreCase(sourceId) || sourceId.startsWith(LOG_SOURCE_ID_PREFIX));
 	}
 
 	private ObjectEncoder encoderForSourceId(FluxFilterConfig[] activeFilters, String sourceId) {
