@@ -33,10 +33,13 @@ import net.solarnetwork.util.StatCounter.Stat;
  */
 public enum DatumDaoStat implements Stat {
 
+	/** Stored datum. */
 	DatumStored(0, "datum stored"),
 
+	/** Uploaded datum. */
 	DatumUploaded(1, "datum uploaded"),
 
+	/** Deleted datum. */
 	DatumDeleted(2, "datum deleted"),
 
 	;

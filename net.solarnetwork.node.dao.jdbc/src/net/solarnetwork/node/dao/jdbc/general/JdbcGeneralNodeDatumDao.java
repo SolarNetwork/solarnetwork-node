@@ -96,15 +96,28 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	 */
 	public static final int DEFAULT_MAX_COUNT_PING_FAIL = 10000;
 
+	/** The SQL resource to insert. */
 	public static final String SQL_RESOURCE_INSERT = "insert";
+
+	/** The SQL resource to delete old uploaded rows. */
 	public static final String SQL_RESOURCE_DELETE_OLD = "delete-old";
+
+	/** The SQL resource to find rows needing upload. */
 	public static final String SQL_RESOURCE_FIND_FOR_UPLOAD = "find-upload";
+
+	/** The SQL resource to fetch by primary key. */
 	public static final String SQL_RESOURCE_FIND_FOR_PRIMARY_KEY = "find-pk";
+
+	/** The SQL resource to update the upload date. */
 	public static final String SQL_RESOURCE_UPDATE_UPLOADED = "update-upload";
+
+	/** The SQL resource to update data. */
 	public static final String SQL_RESOURCE_UPDATE_DATA = "update-data";
+
+	/** The SQL resource to count. */
 	public static final String SQL_RESOURCE_COUNT = "count";
 
-	public final StatCounter stats;
+	private final StatCounter stats;
 	private ObjectMapper objectMapper;
 	private int maxFetchForUpload = DEFAULT_MAX_FETCH_FOR_UPLOAD;
 	private boolean ignoreMockData = true;
@@ -228,10 +241,21 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 		ps.setString(++col, json);
 	}
 
+	/**
+	 * Get the object mapper.
+	 * 
+	 * @return the mapper
+	 */
 	public ObjectMapper getObjectMapper() {
 		return objectMapper;
 	}
 
+	/**
+	 * Set the object mapper.
+	 * 
+	 * @param objectMapper
+	 *        the mapper to set
+	 */
 	public void setObjectMapper(ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
 	}

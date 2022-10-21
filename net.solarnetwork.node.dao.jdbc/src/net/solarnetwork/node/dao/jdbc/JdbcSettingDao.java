@@ -74,12 +74,25 @@ import net.solarnetwork.service.OptionalService;
  */
 public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements SettingDao {
 
+	/** The SQL resource for a non-typed fetch. */
 	public static final String SQL_RESOURCE_NON_TYPED_GET = "non-typed-get";
+
+	/** The SQL resource for a typed fetch. */
 	public static final String SQL_RESOURCE_TYPED_GET = "typed-get";
+
+	/** The SQL resource for a search. */
 	public static final String SQL_RESOURCE_FIND = "find";
+
+	/** The SQL resource for a fetch for update. */
 	public static final String SQL_RESOURCE_BATCH_GET_FOR_UPDATE = "batch-get-for-update";
+
+	/** The SQL resource for a a batch fetch. */
 	public static final String SQL_RESOURCE_BATCH_GET = "batch-get";
+
+	/** The SQL resource for a fetch for date. */
 	public static final String SQL_RESOURCE_GET_DATE = "get-date";
+
+	/** The SQL resource for a fetch for most recent date. */
 	public static final String SQL_RESOURCE_GET_MOST_RECENT_DATE = "get-most-recent-date";
 
 	private OptionalService<EventAdmin> eventAdmin;
@@ -410,6 +423,11 @@ public class JdbcSettingDao extends AbstractBatchableJdbcDao<Setting> implements
 		ea.postEvent(event);
 	}
 
+	/**
+	 * Get the EventAdmin service.
+	 * 
+	 * @return the EventAdmin service
+	 */
 	public OptionalService<EventAdmin> getEventAdmin() {
 		return eventAdmin;
 	}
