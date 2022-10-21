@@ -117,6 +117,20 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	/** The SQL resource to count. */
 	public static final String SQL_RESOURCE_COUNT = "count";
 
+	/**
+	 * A source ID for log messages posted as datum.
+	 * 
+	 * @since 2.2
+	 */
+	public static final String LOG_SOURCE_ID = "log";
+
+	/**
+	 * A source ID prefix for log messages posted as datum.
+	 * 
+	 * @since 2.2
+	 */
+	public static final String LOG_SOURCE_ID_PREFIX = LOG_SOURCE_ID + "/";
+
 	private final StatCounter stats;
 	private ObjectMapper objectMapper;
 	private int maxFetchForUpload = DEFAULT_MAX_FETCH_FOR_UPLOAD;
@@ -419,7 +433,8 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 			return;
 		}
 		insertDomainObject(datum, getSqlResource(SQL_RESOURCE_INSERT));
-		if ( log.isInfoEnabled() ) {
+		if ( !(LOG_SOURCE_ID.equalsIgnoreCase(datum.getSourceId())
+				|| datum.getSourceId().startsWith(LOG_SOURCE_ID_PREFIX)) ) {
 			log.info("Persisted datum locally: {}", datum);
 		}
 		stats.incrementAndGet(DatumDaoStat.DatumStored);
