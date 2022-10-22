@@ -25,13 +25,29 @@ The generated datum stream consists of the following properties:
 | `exMsg`    | `s` | String  | An exception message, if an exception was included. |
 | `exSt`     | `s` | String  | A newline-delimited list of stack trace element values, if an exception was included. |
 
+Here's an example datum, in JSON form:
+
+```json
+{
+  "created": "2022-10-22 02:58:03.002Z",
+  "nodeId": 123,
+  "sourceId": "log",
+  "localDate": "2022-10-22",
+  "localTime": "15:58",
+  "priority": 200,
+  "msg": "Communication problem reading source null from Modbus device 1@JamodSerialModbusNetwork{/dev/ttyS0}: null",
+  "name": "net.solarnetwork.node.datum.modbus.ModbusDatumDataSource",
+  "level": "ERROR"
+}
+```
+
 # Settings
 
 Each plugin offers the following settings:
 
 | Setting            | Description |
 |:-------------------|:------------|
-| Source ID          | The SolarNetwork unique source ID to assign to the generated datum. [Placeholders][placeholders] are allowed. |
+| Source ID          | The SolarNetwork unique source ID to assign to the generated datum. [Placeholders][placeholders] are allowed. The source ID must resolve to either `log` or start with `log/`. |
 
 ## Source ID Placeholders
 
