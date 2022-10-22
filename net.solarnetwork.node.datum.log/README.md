@@ -9,22 +9,6 @@ This project provides SolarNode plugin that turns log events into datum.
 The plugin can be installed via the **Plugins** page on your SolarNode. It appears under the
 **Datum** category as **Log Datum Generator**.
 
-# Use
-
-Once installed, a new **Log Datum Generator** component will appear on the **Settings** page on your
-SolarNode.
-
-The generated datum stream consists of the following properties:
-
-| Property | Class. | Type | Description |
-|:---------|:-------|:-----|:------------|
-| `level`    | `s` | String  | The log level name, e.g. `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, or `FATAL`. |
-| `priority` | `i` | Integer | The log level priority (lower values have more priority), e.g. `600`, `500`, `400`, `300`, `200`, or `100`. |
-| `name`     | `s` | String  | The log name. |
-| `msg`      | `s` | String  | The log message . |
-| `exMsg`    | `s` | String  | An exception message, if an exception was included. |
-| `exSt`     | `s` | String  | A newline-delimited list of stack trace element values, if an exception was included. |
-
 Here's an example datum, in JSON form:
 
 ```json
@@ -40,6 +24,22 @@ Here's an example datum, in JSON form:
   "level": "ERROR"
 }
 ```
+
+# Use
+
+Once installed, a new **Log Datum Generator** component will appear on the **Settings** page on your
+SolarNode.
+
+The generated datum stream consists of the following properties:
+
+| Property | Class. | Type | Description |
+|:---------|:-------|:-----|:------------|
+| `level`    | `s` | String  | The log level name, e.g. `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, or `FATAL`. |
+| `priority` | `i` | Integer | The log level priority (lower values have more priority), e.g. `600`, `500`, `400`, `300`, `200`, or `100`. |
+| `name`     | `s` | String  | The log name. |
+| `msg`      | `s` | String  | The log message . |
+| `exMsg`    | `s` | String  | An exception message, if an exception was included. |
+| `exSt`     | `s` | String  | A newline-delimited list of stack trace element values, if an exception was included. |
 
 # Settings
 
