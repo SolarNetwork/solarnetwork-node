@@ -453,6 +453,11 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 
 	// Accessors
 
+	/**
+	 * Get the URL.
+	 * 
+	 * @return the URL
+	 */
 	public String getUrl() {
 		return url;
 	}

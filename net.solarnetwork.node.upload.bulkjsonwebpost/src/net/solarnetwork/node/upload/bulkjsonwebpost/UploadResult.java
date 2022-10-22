@@ -32,10 +32,21 @@ public class UploadResult {
 
 	private String id;
 
+	/**
+	 * Get the ID.
+	 * 
+	 * @return the ID
+	 */
 	public String getId() {
 		return id;
 	}
 
+	/**
+	 * Set the ID.
+	 * 
+	 * @param id
+	 *        the ID to set
+	 */
 	public void setId(String id) {
 		this.id = id;
 	}
