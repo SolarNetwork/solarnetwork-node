@@ -54,8 +54,11 @@ public class LogDatumGenerator extends BaseIdentifiable
 	/** The EventAdmin topic for log events. */
 	public static final String EVENT_ADMIN_LOG_TOPIC = "net/solarnetwork/Log";
 
-	/** The {@code sourceId} property default value.. */
+	/** The {@code sourceId} property default value. */
 	public static final String DEFAULT_SOURCE_ID = "log";
+
+	/** The default source ID prefix. */
+	public static final String DEFAULT_SOURCE_ID_PREFIX = DEFAULT_SOURCE_ID + "/";
 
 	private final OptionalService<DatumQueue> datumQueue;
 	private String sourceId = DEFAULT_SOURCE_ID;
@@ -127,9 +130,13 @@ public class LogDatumGenerator extends BaseIdentifiable
 				s.putStatusSampleValue("exSt", stString);
 			}
 
-			SimpleDatum d = SimpleDatum.nodeDatum(resolvePlaceholders(sourceId, placeholders),
-					Instant.ofEpochMilli((Long) ts), s);
-			queue.offer(d);
+			String resolvedSourceId = resolvePlaceholders(sourceId, placeholders);
+			if ( resolvedSourceId != null && (DEFAULT_SOURCE_ID.equals(resolvedSourceId)
+					|| resolvedSourceId.startsWith(DEFAULT_SOURCE_ID_PREFIX)) ) {
+				SimpleDatum d = SimpleDatum.nodeDatum(resolvedSourceId, Instant.ofEpochMilli((Long) ts),
+						s);
+				queue.offer(d);
+			}
 		}
 	}
 
