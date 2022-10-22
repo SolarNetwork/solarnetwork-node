@@ -50,6 +50,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.MessageSource;
@@ -65,6 +67,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
+import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
@@ -118,6 +121,8 @@ public class SettingsController {
 			.forLDAPSearchFilterString("(&(role=datum-filter)(role=user))");
 
 	private static final String ZIP_ARCHIVE_CONTENT_TYPE = "application/zip";
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Autowired
 	@Qualifier("settingsService")
@@ -551,7 +556,7 @@ public class SettingsController {
 	 */
 	@RequestMapping(value = "/importResource", method = RequestMethod.POST, params = "!data")
 	@ResponseBody
-	public Response<Void> importResource(@RequestParam("handlerKey") String handlerKey,
+	public Result<Void> importResource(@RequestParam("handlerKey") String handlerKey,
 			@RequestParam(name = "instanceKey", required = false) String instanceKey,
 			@RequestParam("key") String key, @RequestPart("file") MultipartFile[] files)
 			throws IOException {
@@ -564,8 +569,16 @@ public class SettingsController {
 			MultipartFileResource r = new MultipartFileResource(file);
 			resources.add(r);
 		}
-		service.importSettingResources(handlerKey, instanceKey, key, resources);
-		return Response.response(null);
+		try {
+			service.importSettingResources(handlerKey, instanceKey, key, resources);
+			return Result.success();
+		} catch ( RuntimeException e ) {
+			String msg = String.format(
+					"Error importing settings resource for handler [%s] instance [%s] key [%s]: %s",
+					handlerKey, instanceKey, key, e.getMessage());
+			log.error(msg, e);
+			return Response.error("SET.0001", msg);
+		}
 	}
 
 	/**
