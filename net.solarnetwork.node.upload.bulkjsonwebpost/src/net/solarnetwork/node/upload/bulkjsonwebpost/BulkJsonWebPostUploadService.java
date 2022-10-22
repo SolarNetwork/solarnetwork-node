@@ -74,10 +74,24 @@ import net.solarnetwork.util.DateUtils;
  * </p>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 		implements BulkUploadService, InstructionAcknowledgementService, SettingSpecifierProvider {
+
+	/**
+	 * A source ID for log messages posted as datum.
+	 * 
+	 * @since 2.2
+	 */
+	public static final String LOG_SOURCE_ID = "log";
+
+	/**
+	 * A source ID prefix for log messages posted as datum.
+	 * 
+	 * @since 2.2
+	 */
+	public static final String LOG_SOURCE_ID_PREFIX = LOG_SOURCE_ID + "/";
 
 	private String url = "/bulkUpload.do";
 	private final OptionalService<ReactorService> reactorServiceOpt;
@@ -209,9 +223,11 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 										datumProps);
 							}
 						} catch ( IllegalArgumentException e ) {
-							log.debug(
-									"Unable to post datum as stream datum, falling back to general datum: "
-											+ e.getMessage());
+							if ( canLogForDatum(datum.getSourceId()) ) {
+								log.debug(
+										"Unable to post datum as stream datum, falling back to general datum: {}",
+										e.getMessage());
+							}
 						}
 					}
 				}
@@ -274,19 +290,6 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 									if ( createdObj.isMissingNode() ) {
 										createdObj = currJsonNode.path("timestamp");
 									}
-									Instant created = null;
-									if ( createdObj.isNumber() ) {
-										created = Instant.ofEpochMilli(createdObj.longValue());
-									} else if ( createdObj.isTextual() ) {
-										try {
-											// parse as strict ISO8601 (SN returns space date/time delimiter)
-											created = DateUtils.ISO_DATE_TIME_ALT_UTC
-													.parse(createdObj.textValue(), Instant::from)
-													.truncatedTo(ChronoUnit.MILLIS);
-										} catch ( DateTimeParseException e ) {
-											log.debug("Unexpected created date format: {}", createdObj);
-										}
-									}
 									String sourceId = currJsonNode.path("sourceId").textValue();
 									if ( sourceId == null ) {
 										String streamId = currJsonNode.path("streamId").textValue();
@@ -299,6 +302,22 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 															datum.getSourceId());
 											if ( meta.getStreamId().toString().equals(streamId) ) {
 												sourceId = datum.getSourceId();
+											}
+										}
+									}
+									Instant created = null;
+									if ( createdObj.isNumber() ) {
+										created = Instant.ofEpochMilli(createdObj.longValue());
+									} else if ( createdObj.isTextual() ) {
+										try {
+											// parse as strict ISO8601 (SN returns space date/time delimiter)
+											created = DateUtils.ISO_DATE_TIME_ALT_UTC
+													.parse(createdObj.textValue(), Instant::from)
+													.truncatedTo(ChronoUnit.MILLIS);
+										} catch ( DateTimeParseException e ) {
+											if ( canLogForDatum(sourceId) ) {
+												log.debug("Unexpected created date format: {}",
+														createdObj);
 											}
 										}
 									}
@@ -318,7 +337,7 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 										currJsonNode = jsonItr.hasNext() ? jsonItr.next() : null;
 									}
 								}
-								if ( id == null ) {
+								if ( id == null && canLogForDatum(datum.getSourceId()) ) {
 									log.warn("Unknown datum result: {}", currJsonNode);
 								}
 							}
@@ -345,6 +364,11 @@ public class BulkJsonWebPostUploadService extends JsonHttpClientSupport
 		}
 
 		return result;
+	}
+
+	private static boolean canLogForDatum(String sourceId) {
+		return !(LOG_SOURCE_ID.equalsIgnoreCase(sourceId) || sourceId == null
+				|| sourceId.startsWith(LOG_SOURCE_ID_PREFIX));
 	}
 
 	private void processResponseInstructions(JsonNode instrArray) {
