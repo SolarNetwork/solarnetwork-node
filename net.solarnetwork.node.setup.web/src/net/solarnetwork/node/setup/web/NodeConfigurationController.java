@@ -45,12 +45,23 @@ public class NodeConfigurationController extends BaseSetupWebServiceController {
 
 	private final SetupService setupService;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param setupService
+	 *        the setup service
+	 */
 	@Autowired
 	public NodeConfigurationController(SetupService setupService) {
 		super();
 		this.setupService = setupService;
 	}
 
+	/**
+	 * Get the application configuration.
+	 * 
+	 * @return the result
+	 */
 	@RequestMapping(value = "/config", method = RequestMethod.GET)
 	@ResponseBody
 	public Response<NodeAppConfiguration> getAppConfiguration() {

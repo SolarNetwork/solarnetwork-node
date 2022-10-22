@@ -47,18 +47,36 @@ public class PlatformController extends BaseSetupWebServiceController
 
 	private final PlatformService platformService;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param platformService
+	 *        the platform service
+	 */
 	@Autowired
 	public PlatformController(PlatformService platformService) {
 		super();
 		this.platformService = platformService;
 	}
 
+	/**
+	 * Get the platform state.
+	 * 
+	 * @return the result
+	 */
 	@RequestMapping(value = "/pub/platform/state", method = RequestMethod.GET)
 	public Response<PlatformService.PlatformState> activePlatformState() {
 		PlatformService.PlatformState state = platformService.activePlatformState();
 		return Response.response(state);
 	}
 
+	/**
+	 * Get the platform task.
+	 * 
+	 * @param locale
+	 *        the locale
+	 * @return the result
+	 */
 	@RequestMapping(value = "/pub/platform/task", method = RequestMethod.GET)
 	public Response<PlatformService.PlatformTaskInfo> activePlatformTaskInfo(Locale locale) {
 		PlatformService.PlatformTaskInfo info = platformService.activePlatformTaskInfo(locale);

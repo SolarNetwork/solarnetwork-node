@@ -58,17 +58,34 @@ public class SetupResourcesTag extends HtmlEscapingAwareTag implements DynamicAt
 
 	private static final long serialVersionUID = 5353893185255879473L;
 
+	/** The setup resource service. */
 	private SetupResourceService setupResourceService;
 
+	/** The role. */
 	private String role;
+
+	/** The type. */
 	private String type = SetupResource.JAVASCRIPT_CONTENT_TYPE;
+
+	/** The provider. */
 	private SetupResourceProvider provider;
+
+	/** The scope. */
 	private SetupResourceScope scope;
+
+	/** The inline mode. */
 	private boolean inline = false;
+
+	/** The properties. */
 	private Map<String, ?> properties;
+
+	/** The wrapper HTML element name. */
 	private String wrapperElement;
+
+	/** The wrapper CSS class. */
 	private String wrapperClass;
 
+	/** The dynamic attributes. */
 	private Map<String, Object> dynamicAttributes;
 
 	@Override
@@ -232,34 +249,82 @@ public class SetupResourcesTag extends HtmlEscapingAwareTag implements DynamicAt
 		return false;
 	}
 
+	/**
+	 * Set the setup resource service.
+	 * 
+	 * @param setupResourceService
+	 *        the service to set
+	 */
 	public void setSetupResourceService(SetupResourceService setupResourceService) {
 		this.setupResourceService = setupResourceService;
 	}
 
+	/**
+	 * Set the role.
+	 * 
+	 * @param role
+	 *        the role
+	 */
 	public void setRole(String role) {
 		this.role = role;
 	}
 
+	/**
+	 * Set the type.
+	 * 
+	 * @param type
+	 *        the type
+	 */
 	public void setType(String type) {
 		this.type = type;
 	}
 
+	/**
+	 * Set the provider.
+	 * 
+	 * @param provider
+	 *        the provider
+	 */
 	public void setProvider(SetupResourceProvider provider) {
 		this.provider = provider;
 	}
 
+	/**
+	 * Set the inline toggle.
+	 * 
+	 * @param inline
+	 *        {@literal true} to inline
+	 */
 	public void setInline(boolean inline) {
 		this.inline = inline;
 	}
 
+	/**
+	 * Set the properties.
+	 * 
+	 * @param properties
+	 *        the properties
+	 */
 	public void setProperties(Map<String, ?> properties) {
 		this.properties = properties;
 	}
 
+	/**
+	 * Set the wrapper element name.
+	 * 
+	 * @param propertiesWrapperElement
+	 *        the wrapper element name
+	 */
 	public void setWrapperElement(String propertiesWrapperElement) {
 		this.wrapperElement = propertiesWrapperElement;
 	}
 
+	/**
+	 * Set the wrapper CSS class.
+	 * 
+	 * @param wrapperClass
+	 *        the wrapper CSS class name
+	 */
 	public void setWrapperClass(String wrapperClass) {
 		this.wrapperClass = wrapperClass;
 	}

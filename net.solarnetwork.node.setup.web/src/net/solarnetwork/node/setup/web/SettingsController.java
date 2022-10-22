@@ -138,6 +138,15 @@ public class SettingsController {
 	@Autowired
 	private MessageSource messageSource;
 
+	/**
+	 * List settings.
+	 * 
+	 * @param model
+	 *        the model
+	 * @param locale
+	 *        the locale
+	 * @return the settings list view name
+	 */
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String settingsList(ModelMap model, Locale locale) {
 		final SettingsService settingsService = service(settingsServiceTracker);
@@ -223,6 +232,15 @@ public class SettingsController {
 		return format("%s - %s", handlerName, settingResourceName);
 	}
 
+	/**
+	 * List filters.
+	 * 
+	 * @param model
+	 *        the model
+	 * @param locale
+	 *        the locale
+	 * @return the filters list view name
+	 */
 	@RequestMapping(value = "/filters", method = RequestMethod.GET)
 	public String filterSettingsList(ModelMap model, Locale locale) {
 		final SettingsService settingsService = service(settingsServiceTracker);
@@ -252,6 +270,17 @@ public class SettingsController {
 		return "filters-list";
 	}
 
+	/**
+	 * Manage a specific settings factory.
+	 * 
+	 * @param factoryUid
+	 *        the UID of the factory to manage
+	 * @param model
+	 *        the model
+	 * @param req
+	 *        the request
+	 * @return the manage factory view name
+	 */
 	@RequestMapping(value = { "/manage", "/filters/manage" }, method = RequestMethod.GET)
 	public String settingsList(@RequestParam(value = "uid", required = true) String factoryUid,
 			ModelMap model, HttpServletRequest req) {
@@ -300,6 +329,15 @@ public class SettingsController {
 		return response(result);
 	}
 
+	/**
+	 * Delete a setting.
+	 * 
+	 * @param factoryUid
+	 *        the factory UID
+	 * @param instanceUid
+	 *        the instance UID
+	 * @return the result
+	 */
 	@RequestMapping(value = "/manage/delete", method = RequestMethod.POST)
 	@ResponseBody
 	public Response<Object> deleteConfiguration(
@@ -312,6 +350,15 @@ public class SettingsController {
 		return response(null);
 	}
 
+	/**
+	 * Reset settings to default values.
+	 * 
+	 * @param factoryUid
+	 *        the factory UID
+	 * @param instanceUid
+	 *        the instance UID
+	 * @return the result
+	 */
 	@RequestMapping(value = "/manage/reset", method = RequestMethod.POST)
 	@ResponseBody
 	public Response<Object> resetConfiguration(
@@ -324,6 +371,13 @@ public class SettingsController {
 		return response(null);
 	}
 
+	/**
+	 * Remove all settings for a factory.
+	 * 
+	 * @param factoryUid
+	 *        the factory UID
+	 * @return the result
+	 */
 	@RequestMapping(value = "/manage/removeall", method = RequestMethod.POST)
 	@ResponseBody
 	public Response<Object> removeAllConfigurations(
@@ -337,6 +391,15 @@ public class SettingsController {
 		return response(null);
 	}
 
+	/**
+	 * Save settings.
+	 * 
+	 * @param command
+	 *        the settings to save
+	 * @param model
+	 *        the model
+	 * @return the result
+	 */
 	@RequestMapping(value = "/save", method = RequestMethod.POST)
 	@ResponseBody
 	public Response<Object> saveSettings(CleanSupportSettingsCommand command, ModelMap model) {
@@ -358,6 +421,16 @@ public class SettingsController {
 		return response(null);
 	}
 
+	/**
+	 * Export settings to CSV.
+	 * 
+	 * @param backupKey
+	 *        the backup key
+	 * @param response
+	 *        the response
+	 * @throws IOException
+	 *         if an IO error occurs
+	 */
 	@RequestMapping(value = "/export", method = RequestMethod.GET)
 	@ResponseBody
 	public void exportSettings(@RequestParam(required = false, value = "backup") String backupKey,
@@ -471,6 +544,15 @@ public class SettingsController {
 		return name;
 	}
 
+	/**
+	 * Import settings.
+	 * 
+	 * @param file
+	 *        the CSV settings resource to import
+	 * @return the result view name
+	 * @throws IOException
+	 *         if an IO error occurs
+	 */
 	@RequestMapping(value = "/import", method = RequestMethod.POST)
 	public String importSettings(@RequestParam("file") MultipartFile file) throws IOException {
 		final SettingsService service = service(settingsServiceTracker);
@@ -481,6 +563,13 @@ public class SettingsController {
 		return "redirect:/a/settings";
 	}
 
+	/**
+	 * Initiate a backup.
+	 * 
+	 * @param model
+	 *        the model
+	 * @return the result
+	 */
 	@RequestMapping(value = "/backupNow", method = RequestMethod.POST)
 	@ResponseBody
 	public Response<Object> initiateBackup(ModelMap model) {
@@ -510,6 +599,16 @@ public class SettingsController {
 				+ (key == null ? "" : "-" + key) + ".zip";
 	}
 
+	/**
+	 * Export a backup.
+	 * 
+	 * @param backupKey
+	 *        the backup to export
+	 * @param response
+	 *        the response
+	 * @throws IOException
+	 *         if an IO error occurs
+	 */
 	@RequestMapping(value = "/exportBackup", method = RequestMethod.GET)
 	@ResponseBody
 	public void exportBackup(@RequestParam(required = false, value = "backup") String backupKey,
@@ -527,6 +626,15 @@ public class SettingsController {
 		manager.exportBackupArchive(backupKey, response.getOutputStream());
 	}
 
+	/**
+	 * Import a backup.
+	 * 
+	 * @param file
+	 *        the backup to import
+	 * @return the settings view name
+	 * @throws IOException
+	 *         if an IO error occurs
+	 */
 	@RequestMapping(value = "/importBackup", method = RequestMethod.POST)
 	public String importBackup(@RequestParam("file") MultipartFile file) throws IOException {
 		final BackupManager manager = service(backupManagerTracker);

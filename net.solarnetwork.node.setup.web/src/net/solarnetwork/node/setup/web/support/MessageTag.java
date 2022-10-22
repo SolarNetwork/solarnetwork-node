@@ -33,28 +33,6 @@ import org.springframework.context.NoSuchMessageException;
 /**
  * JSP tag for resolving a message from an existing {@link MessageSource}.
  * 
- * <p>
- * TODO: support nested parameters.
- * </p>
- * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>messageSource</dt>
- * <dd>The {@link MessageSource} to resolve messages from.</dd>
- * 
- * <dt>key</dt>
- * <dd>The message key to resolve.</dd>
- * 
- * <dt>text</dt>
- * <dd>An optional default value to use if message can't be resolved.</dd>
- * 
- * <dt>arguments</dt>
- * <dd>An optional array of objects to pass to the message when formatting.</dd>
- * </dl>
- * 
  * @author matt
  * @version 1.3
  */
@@ -62,10 +40,19 @@ public class MessageTag extends TagSupport {
 
 	private static final long serialVersionUID = 5738525496721788477L;
 
+	/** The message source. */
 	private MessageSource messageSource;
+
+	/** The key. */
 	private String key;
+
+	/** The text. */
 	private String text;
+
+	/** The index. */
 	private Integer index;
+
+	/** The arguments. */
 	private Object[] arguments;
 
 	private static final Pattern IndexKeysPattern = Pattern.compile("\\[\\d+\\]");
@@ -114,22 +101,52 @@ public class MessageTag extends TagSupport {
 		return EVAL_PAGE;
 	}
 
+	/**
+	 * Set the {@link MessageSource} to resolve messages from.
+	 * 
+	 * @param messageSource
+	 *        the message source
+	 */
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
 
+	/**
+	 * Set the message key to resolve.
+	 * 
+	 * @param key
+	 *        the message key
+	 */
 	public void setKey(String key) {
 		this.key = key;
 	}
 
+	/**
+	 * Set an optional default value to use if message can't be resolved.
+	 * 
+	 * @param text
+	 *        the optional default
+	 */
 	public void setText(String text) {
 		this.text = text;
 	}
 
+	/**
+	 * Set the index.
+	 * 
+	 * @param index
+	 *        the index to set
+	 */
 	public void setIndex(Integer index) {
 		this.index = index;
 	}
 
+	/**
+	 * Set an optional array of objects to pass to the message when formatting.
+	 * 
+	 * @param arguments
+	 *        the arguments to set
+	 */
 	public void setArguments(Object[] arguments) {
 		this.arguments = arguments;
 	}

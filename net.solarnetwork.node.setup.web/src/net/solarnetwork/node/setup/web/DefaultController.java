@@ -35,6 +35,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @Controller
 public class DefaultController {
 
+	/**
+	 * Get the hello view.
+	 * 
+	 * @param principal
+	 *        the actor
+	 * @return the result view name
+	 */
 	@RequestMapping({ "/", "/hello" })
 	public String hello(Principal principal) {
 		return (principal == null ? "home" : "a/home");

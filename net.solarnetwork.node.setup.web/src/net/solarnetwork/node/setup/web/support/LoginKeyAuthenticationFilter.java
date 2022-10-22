@@ -51,7 +51,10 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
  */
 public class LoginKeyAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
 
+	/** A username parameter. */
 	public static final String USERNAME_PARAM = "username";
+
+	/** A password parameter. */
 	public static final String PASSWORD_PARAM = "password";
 
 	private final LoginKeyHelper loginHelper;

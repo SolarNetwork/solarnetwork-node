@@ -53,6 +53,18 @@ public class SetupResourceController extends BaseSetupWebServiceController {
 	@Autowired
 	private SetupResourceService resourceService;
 
+	/**
+	 * Setup a resource.
+	 * 
+	 * @param id
+	 *        the resource ID
+	 * @param req
+	 *        the request
+	 * @param res
+	 *        the response
+	 * @throws IOException
+	 *         if an IO error occurs
+	 */
 	@RequestMapping({ "/rsrc/{id:.+}", "/a/rsrc/{id:.+}" })
 	public void setupResource(@PathVariable("id") String id, WebRequest req, HttpServletResponse res)
 			throws IOException {

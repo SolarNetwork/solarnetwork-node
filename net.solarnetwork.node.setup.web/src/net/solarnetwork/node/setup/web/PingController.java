@@ -61,6 +61,13 @@ public class PingController {
 		this.systemHealthService = requireNonNullArgument(systemHealthService, "systemHealthService");
 	}
 
+	/**
+	 * Execute a ping test.
+	 * 
+	 * @param ids
+	 *        the IDs of the tests to execute
+	 * @return the result
+	 */
 	@RequestMapping(value = "", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
 	public Response<PingTestResults> executePingTest(
@@ -68,6 +75,15 @@ public class PingController {
 		return Response.response(systemHealthService.performPingTests(ids));
 	}
 
+	/**
+	 * Execute a ping test.
+	 * 
+	 * @param ids
+	 *        the IDs of the tests to execute
+	 * @param model
+	 *        the model
+	 * @return the result view
+	 */
 	@RequestMapping(value = "", method = RequestMethod.GET, produces = MediaType.TEXT_HTML_VALUE)
 	public String executePingTest(@RequestParam(name = "ids", required = false) Set<String> ids,
 			Model model) {

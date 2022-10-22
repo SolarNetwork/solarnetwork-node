@@ -68,8 +68,15 @@ public class InstructorController {
 	@Resource(name = "instructionExecutionService")
 	private OptionalService<InstructionExecutionService> instructionService;
 
+	/**
+	 * List controls.
+	 * 
+	 * @param model
+	 *        the model
+	 * @return the result view
+	 */
 	@RequestMapping(value = "", method = RequestMethod.GET)
-	public String settingsList(ModelMap model) {
+	public String controlsList(ModelMap model) {
 		List<String> providerIds = new ArrayList<String>();
 		for ( NodeControlProvider provider : providers ) {
 			providerIds.addAll(provider.getAvailableControlIds());
@@ -78,6 +85,15 @@ public class InstructorController {
 		return "control/list";
 	}
 
+	/**
+	 * Manage a control.
+	 * 
+	 * @param controlId
+	 *        the control ID to manage
+	 * @param model
+	 *        the model
+	 * @return the result view name
+	 */
 	@RequestMapping(value = "/manage", method = RequestMethod.GET)
 	public String manage(@RequestParam("id") String controlId, ModelMap model) {
 		NodeControlProvider provider = null;
@@ -107,6 +123,17 @@ public class InstructorController {
 		return "control/manage";
 	}
 
+	/**
+	 * Set a control parameter.
+	 * 
+	 * @param instruction
+	 *        the instruction.
+	 * @param model
+	 *        the model
+	 * @param request
+	 *        the request
+	 * @return the result view name
+	 */
 	@RequestMapping(value = "/setControlParameter", method = RequestMethod.POST)
 	public String setControlParameter(SetControlParameterInstruction instruction, ModelMap model,
 			HttpServletRequest request) {
@@ -139,10 +166,22 @@ public class InstructorController {
 		return "redirect:/a/controls/manage?id=" + instruction.getControlId();
 	}
 
+	/**
+	 * Set the available control providers.
+	 * 
+	 * @param providers
+	 *        the providers to set
+	 */
 	public void setProviders(Collection<NodeControlProvider> providers) {
 		this.providers = providers;
 	}
 
+	/**
+	 * Set the instruction service.
+	 * 
+	 * @param instructionService
+	 *        the service to set
+	 */
 	public void setInstructionService(OptionalService<InstructionExecutionService> instructionService) {
 		this.instructionService = instructionService;
 	}

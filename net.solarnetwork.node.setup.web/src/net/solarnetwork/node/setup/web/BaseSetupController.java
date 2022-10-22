@@ -32,25 +32,12 @@ import net.solarnetwork.node.setup.SetupService;
 /**
  * Base class for setup controllers.
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>setupBiz</dt>
- * <dd>The {@link SetupService} to use for querying/storing application state
- * information.</dd>
- * 
- * <dt>identityService</dt>
- * <dd>The {@link IdentityService} to use for querying identity
- * information.</dd>
- * </dl>
- * 
  * @author matt
  * @version 2.0
  */
 public class BaseSetupController {
 
+	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Autowired
@@ -120,18 +107,42 @@ public class BaseSetupController {
 		}
 	}
 
+	/**
+	 * Get the {@link SetupService} to use for querying/storing application
+	 * state information.
+	 * 
+	 * @return the service
+	 */
 	public SetupService getSetupBiz() {
 		return setupBiz;
 	}
 
+	/**
+	 * Set the {@link SetupService} to use for querying/storing application
+	 * state information.
+	 * 
+	 * @param setupBiz
+	 *        the service to set
+	 */
 	public void setSetupBiz(SetupService setupBiz) {
 		this.setupBiz = setupBiz;
 	}
 
+	/**
+	 * Get the {@link IdentityService} to use for querying identity information.
+	 * 
+	 * @return the service
+	 */
 	public IdentityService getIdentityService() {
 		return identityService;
 	}
 
+	/**
+	 * Set the {@link IdentityService} to use for querying identity information.
+	 * 
+	 * @param identityService
+	 *        the service to set
+	 */
 	public void setIdentityService(IdentityService identityService) {
 		this.identityService = identityService;
 	}
