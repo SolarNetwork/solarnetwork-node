@@ -1,0 +1,3 @@
+Instance ID,Connection,Unit ID,Sample Cache,Word Order,Control ID,Property Type,Register,Register Type,Data Type,Data Length,Multiplier,Decimal Scale
+-,Modbus Port,1,5000,Most to least,control/1
+-,Modbus Port,2,5000,Least to most,control/2

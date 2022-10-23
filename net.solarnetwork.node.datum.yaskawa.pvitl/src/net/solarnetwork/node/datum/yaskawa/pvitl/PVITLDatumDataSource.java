@@ -32,25 +32,36 @@ import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.yaskawa.mb.inverter.PVITLData;
 import net.solarnetwork.node.hw.yaskawa.mb.inverter.PVITLDataAccessor;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
+import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.ModbusDataDatumDataSourceSupport;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * {@link DatumDataSource} implementation for {@link AcDcEnergyDatum} with the
  * PVI-XXTL series inverter.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.2
  */
 public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITLData>
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
-	private String sourceId = "PVI-XXTL";
+	/**
+	 * The {@code sampleCacheMs} property default value.
+	 * 
+	 * @since 2.2
+	 */
+	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000L;
+
+	private String sourceId;
+	private boolean includePhaseMeasurements = false;
 
 	/**
 	 * Default constructor.
@@ -67,6 +78,37 @@ public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITL
 	 */
 	public PVITLDatumDataSource(PVITLData sample) {
 		super(sample);
+		setSampleCacheMs(DEFAULT_SAMPLE_CACHE_MS);
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder buf = new StringBuilder();
+		boolean notEmpty = false;
+		if ( sourceId != null ) {
+			buf.append("sourceId=").append(sourceId);
+			notEmpty = true;
+		}
+		ModbusNetwork net = OptionalService.service(getModbusNetwork());
+		if ( net != null ) {
+			if ( notEmpty ) {
+				buf.append(',');
+			} else {
+				notEmpty = true;
+			}
+			buf.append("network=").append(net);
+		}
+		if ( getUid() != null ) {
+			if ( notEmpty ) {
+				buf.append(',');
+			} else {
+				notEmpty = true;
+			}
+			buf.append("uid=").append(getUid());
+		}
+		buf.insert(0, "PVITLDatumDataSource{");
+		buf.append('}');
+		return buf.toString();
 	}
 
 	@Override
@@ -97,7 +139,11 @@ public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITL
 			if ( currSample == null ) {
 				return null;
 			}
-			return new PVITLDatum(currSample, sourceId);
+			PVITLDatum d = new PVITLDatum(currSample, sourceId);
+			if ( this.includePhaseMeasurements ) {
+				d.populatePhaseMeasurementProperties(currSample);
+			}
+			return d;
 		} catch ( IOException e ) {
 			log.error("Communication problem reading source {} from PVI-TL device {}: {}", sourceId,
 					modbusDeviceName(), e.getMessage());
@@ -140,10 +186,10 @@ public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITL
 		results.addAll(getIdentifiableSettingSpecifiers());
 		results.addAll(getModbusNetworkSettingSpecifiers());
 
-		PVITLDatumDataSource defaults = new PVITLDatumDataSource();
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
-				String.valueOf(defaults.getSampleCacheMs())));
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
+				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
+		results.add(new BasicToggleSettingSpecifier("includePhaseMeasurements", false));
 
 		results.addAll(getDeviceInfoMetadataSettingSpecifiers());
 
@@ -177,6 +223,16 @@ public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITL
 	}
 
 	/**
+	 * Get the source ID.
+	 * 
+	 * @return the source ID
+	 * @since 2.1
+	 */
+	public String getSourceId() {
+		return sourceId;
+	}
+
+	/**
 	 * Set the source ID to use for returned datum.
 	 * 
 	 * @param sourceId
@@ -185,4 +241,27 @@ public class PVITLDatumDataSource extends ModbusDataDatumDataSourceSupport<PVITL
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
 	}
+
+	/**
+	 * Get the inclusion toggle of phase measurement properties in collected
+	 * datum.
+	 * 
+	 * @return {@literal true} to collect phase measurements
+	 * @since 2.2
+	 */
+	public boolean isIncludePhaseMeasurements() {
+		return includePhaseMeasurements;
+	}
+
+	/**
+	 * Toggle the inclusion of phase measurement properties in collected datum.
+	 * 
+	 * @param includePhaseMeasurements
+	 *        {@literal true} to collect phase measurements
+	 * @since 2.2
+	 */
+	public void setIncludePhaseMeasurements(boolean includePhaseMeasurements) {
+		this.includePhaseMeasurements = includePhaseMeasurements;
+	}
+
 }

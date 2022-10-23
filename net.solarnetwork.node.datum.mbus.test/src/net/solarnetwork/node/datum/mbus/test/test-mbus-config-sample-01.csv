@@ -1,0 +1,12 @@
+Instance ID,Service Name,Service Group,Source ID,Schedule,Connection,Address,Sample Cache,Property,Property Type,Data Type,Data Description,Multiplier,Decimal Scale
+"# Rows whose first cell starts with ""#"" are ignored.",,,,,,,,,,,,,
+"# Devices are uniquely defined by the Instance ID column. Rows that omit an Instance ID value will assume the first value found in previous rows, searching backwards.  Columns B-H are device-wide and need only be defined once, with the Instance ID.",,,,,,,,,,,,,
+P1,,,power/1,0 * * * * *,M-Bus Port,1,5000,,,,,,
+"# The next rows define the floating point ""current"" and ""voltage"" properties",,,,,,,,,,,,,
+,,,,,,,,current,Instantaneous,Double,Current,1,-1
+,,,,,,,,voltage,Instantaneous,Double,Voltage,1,1
+"# The next row defines a Long accumulator ""wattHours"" property",,,,,,,,,,,,,
+,,,,,,,,wattHours,Accumulating,Long,Energy,,
+# Next a new device is started with a new Source ID. Note how the first property can also be defined on this row,,,,,,,,,,,,,
+P2,,,power/2,0 * * * * *,M-Bus Port,2,5000,frequency,Instantaneous,Double,Frequency,1,2
+,,,,,,,,watts,Instantaneous,Double,Power,1,0

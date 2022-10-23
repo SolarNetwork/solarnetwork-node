@@ -40,9 +40,16 @@ public class SettingValueTag extends TagSupport {
 
 	private static final long serialVersionUID = 3625222283623204656L;
 
+	/** The settings service. */
 	private SettingsService service;
+
+	/** The setting specifier provider. */
 	private SettingSpecifierProvider provider;
+
+	/** The setting. */
 	private SettingSpecifier setting;
+
+	/** The escape XML toggle. */
 	private boolean escapeXml = true;
 
 	@Override
@@ -64,22 +71,51 @@ public class SettingValueTag extends TagSupport {
 		return EVAL_PAGE;
 	}
 
+	/**
+	 * Set the settings service.
+	 * 
+	 * @param service
+	 *        the service to set
+	 */
 	public void setService(SettingsService service) {
 		this.service = service;
 	}
 
+	/**
+	 * Set the provider.
+	 * 
+	 * @param provider
+	 *        the provider to set
+	 */
 	public void setProvider(SettingSpecifierProvider provider) {
 		this.provider = provider;
 	}
 
+	/**
+	 * Set the setting.
+	 * 
+	 * @param setting
+	 *        the setting to set
+	 */
 	public void setSetting(SettingSpecifier setting) {
 		this.setting = setting;
 	}
 
+	/**
+	 * Get the XML escape mode.
+	 * 
+	 * @return {@literal true} to escape XML characters
+	 */
 	public boolean isEscapeXml() {
 		return escapeXml;
 	}
 
+	/**
+	 * Set the XML escape mode.
+	 * 
+	 * @param escapeXml
+	 *        {@literal true} to escape XML characters
+	 */
 	public void setEscapeXml(boolean escapeXml) {
 		this.escapeXml = escapeXml;
 	}

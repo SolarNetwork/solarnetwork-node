@@ -90,6 +90,21 @@ public class NativeTarPlatformPackageService extends BasePlatformPackageService 
 				context);
 	}
 
+	/**
+	 * Create a new task.
+	 * 
+	 * @param <T>
+	 *        the task type
+	 * @param archive
+	 *        the archive
+	 * @param baseDirectory
+	 *        the base directory
+	 * @param progressListener
+	 *        a progress listener
+	 * @param context
+	 *        the context
+	 * @return the task
+	 */
 	protected <T> Callable<PlatformPackageResult<T>> createTask(Path archive, Path baseDirectory,
 			ProgressListener<T> progressListener, T context) {
 		return new Callable<PlatformPackageService.PlatformPackageResult<T>>() {

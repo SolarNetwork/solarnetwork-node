@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.datum.ae.ae500nx;
 
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import java.math.BigInteger;
 import java.util.BitSet;
@@ -44,6 +45,7 @@ public class AE500NxDatum extends SimpleAcDcEnergyDatum {
 
 	private static final long serialVersionUID = -3525924176266298024L;
 
+	/** The sample data. */
 	private final AE500NxDataAccessor data;
 
 	/**
@@ -65,11 +67,16 @@ public class AE500NxDatum extends SimpleAcDcEnergyDatum {
 		setVoltage(data.getVoltage());
 		setCurrent(data.getCurrent());
 		setNeutralCurrent(data.getNeutralCurrent());
+		setDcCurrent(data.getDcCurrent());
 		setDcVoltage(data.getDcVoltage());
 		setDcPower(data.getDcPower());
 		setWatts(data.getActivePower());
 		setWattHourReading(data.getActiveEnergyDelivered());
 		setReactivePower(data.getReactivePower());
+
+		asMutableSampleOperations().putSampleValue(Instantaneous, "temp", data.getCabinetTemperature());
+		asMutableSampleOperations().putSampleValue(Instantaneous, "temp_ambient",
+				data.getAmbientTemperature());
 
 		DeviceOperatingState opState = data.getDeviceOperatingState();
 		if ( opState != null ) {

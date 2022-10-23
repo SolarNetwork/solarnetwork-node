@@ -167,6 +167,14 @@ public class Cmdline {
 		return handleCommand(input, conn);
 	}
 
+	/**
+	 * Execute the command.
+	 * 
+	 * @param cmd
+	 *        the command to execute
+	 * @throws IOException
+	 *         if any IO error occurs
+	 */
 	public void execute(String cmd) throws IOException {
 		SerialConnection conn = null;
 		BufferedReader reader;
@@ -186,6 +194,12 @@ public class Cmdline {
 		}
 	}
 
+	/**
+	 * Start the app event loop.
+	 * 
+	 * @throws IOException
+	 *         if any IO error occurs
+	 */
 	public void go() throws IOException {
 		SerialConnection conn = null;
 		BufferedReader reader;

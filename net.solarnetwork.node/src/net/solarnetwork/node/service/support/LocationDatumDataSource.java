@@ -220,6 +220,12 @@ public class LocationDatumDataSource
 		return messageSource;
 	}
 
+	/**
+	 * Set the message source.
+	 * 
+	 * @param messageSource
+	 *        the message source to set
+	 */
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
@@ -473,22 +479,49 @@ public class LocationDatumDataSource
 		this.locationId = locationId;
 	}
 
+	/**
+	 * Get the location.
+	 * 
+	 * @return the location
+	 */
 	public DatumLocation getLocation() {
 		return location;
 	}
 
+	/**
+	 * Get the datum class names to ignore.
+	 * 
+	 * @return the ignore set
+	 */
 	public Set<String> getDatumClassNameIgnore() {
 		return datumClassNameIgnore;
 	}
 
+	/**
+	 * Set the datum class names to ignore.
+	 * 
+	 * @param datumClassNameIgnore
+	 *        the ignore set
+	 */
 	public void setDatumClassNameIgnore(Set<String> datumClassNameIgnore) {
 		this.datumClassNameIgnore = datumClassNameIgnore;
 	}
 
+	/**
+	 * Get the source ID.
+	 * 
+	 * @return the source ID
+	 */
 	public String getSourceId() {
 		return sourceId;
 	}
 
+	/**
+	 * Set the source ID.
+	 * 
+	 * @param sourceId
+	 *        the source ID to use
+	 */
 	public void setSourceId(String sourceId) {
 		if ( this.location != null && sourceId != null
 				&& !sourceId.equals(this.location.getSourceId()) ) {

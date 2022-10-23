@@ -39,6 +39,7 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
  */
 public class MethodAndIgnoreRequestMatcher implements RequestMatcher {
 
+	/** The default allowed methods. */
 	public static final Set<String> DEFAULT_ALLOWED_METHODS = Collections
 			.unmodifiableSet(new HashSet<String>(Arrays.asList("GET", "HEAD", "TRACE", "OPTIONS")));
 

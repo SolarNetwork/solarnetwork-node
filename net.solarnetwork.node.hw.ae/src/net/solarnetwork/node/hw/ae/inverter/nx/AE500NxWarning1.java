@@ -31,21 +31,31 @@ package net.solarnetwork.node.hw.ae.inverter.nx;
  */
 public enum AE500NxWarning1 implements AE500NxWarning {
 
+	/** Fan not operating normally. */
 	Fan1(1, "Fan not operating normally."),
 
+	/** Fan not operating normally. */
 	Fan2(2, "Fan not operating normally."),
 
+	/** Fan not operating normally. */
 	Fan3(3, "Fan not operating normally."),
 
+	/** Fan not operating normally. */
 	Fan4(4, "Fan not operating normally."),
 
+	/** Fan not operating normally. */
 	Fan5(5, "Fan not operating normally."),
 
+	/** Fan not operating normally. */
 	Fan6(6, "Fan not operating normally."),
 
+	/** Fan not operating normally. */
 	Fan7(7, "Fan not operating normally."),
 
-	Fan8(13, "Charge abatement option not operating correctly."),;
+	/** Charge abatement option not operating correctly. */
+	Fan8(13, "Charge abatement option not operating correctly."),
+
+	;
 
 	private final int bit;
 	private final String description;

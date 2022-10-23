@@ -365,9 +365,11 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 	}
 
 	/**
-	 * Set the ignore {@code transformUids} flag.{@literal true} to always apply
-	 * all available filters in the {@code transformServices} property
+	 * Set the ignore {@code transformUids} flag.
 	 * 
+	 * @param ignoreTransformUids
+	 *        {@literal true} to always apply all available filters in the
+	 *        {@code transformServices} property
 	 * @since 1.2
 	 */
 	public void setIgnoreTransformUids(boolean ignoreTransformUids) {

@@ -133,6 +133,12 @@ public class SettingValueBean implements SettingsUpdates.Change {
 		return trans;
 	}
 
+	/**
+	 * Set the transient flag.
+	 * 
+	 * @param value
+	 *        the value to set
+	 */
 	public void setTransient(boolean value) {
 		this.trans = value;
 	}
@@ -142,6 +148,12 @@ public class SettingValueBean implements SettingsUpdates.Change {
 		return providerKey;
 	}
 
+	/**
+	 * Set the provider key.
+	 * 
+	 * @param providerKey
+	 *        the key to set
+	 */
 	public void setProviderKey(String providerKey) {
 		this.providerKey = providerKey;
 	}
@@ -151,6 +163,12 @@ public class SettingValueBean implements SettingsUpdates.Change {
 		return key;
 	}
 
+	/**
+	 * Set the key.
+	 * 
+	 * @param key
+	 *        the key to set
+	 */
 	public void setKey(String key) {
 		this.key = key;
 	}
@@ -160,6 +178,12 @@ public class SettingValueBean implements SettingsUpdates.Change {
 		return value;
 	}
 
+	/**
+	 * Set the value.
+	 * 
+	 * @param value
+	 *        the value to set
+	 */
 	public void setValue(String value) {
 		this.value = value;
 	}
@@ -169,6 +193,12 @@ public class SettingValueBean implements SettingsUpdates.Change {
 		return instanceKey;
 	}
 
+	/**
+	 * Set the instance key.
+	 * 
+	 * @param instanceKey
+	 *        the key to set
+	 */
 	public void setInstanceKey(String instanceKey) {
 		this.instanceKey = instanceKey;
 	}

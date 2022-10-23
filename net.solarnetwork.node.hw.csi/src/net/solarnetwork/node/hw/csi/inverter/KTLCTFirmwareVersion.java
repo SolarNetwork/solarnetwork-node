@@ -34,6 +34,14 @@ public class KTLCTFirmwareVersion {
 	private final int dspVersion;
 	private final int mcuVersion;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param dspVersion
+	 *        the DSP version
+	 * @param mcuVersion
+	 *        the MCU version
+	 */
 	public KTLCTFirmwareVersion(int dspVersion, int mcuVersion) {
 		super();
 		this.dspVersion = dspVersion;

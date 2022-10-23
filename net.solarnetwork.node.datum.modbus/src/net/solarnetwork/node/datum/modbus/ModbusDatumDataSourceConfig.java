@@ -32,7 +32,7 @@ import net.solarnetwork.node.settings.SettingValueBean;
  * Overall configuration for a Modbus data source.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.1
  */
 public class ModbusDatumDataSourceConfig {
@@ -60,7 +60,9 @@ public class ModbusDatumDataSourceConfig {
 	 */
 	public List<SettingValueBean> toSettingValues(String providerId) {
 		List<SettingValueBean> settings = new ArrayList<>(16);
-		settings.add(new SettingValueBean(providerId, key, "schedule", schedule));
+		if ( schedule != null ) {
+			settings.add(new SettingValueBean(providerId, key, "schedule", schedule));
+		}
 		addSetting(settings, providerId, key, "sourceId", sourceId);
 		addSetting(settings, providerId, key, "modbusNetwork.propertyFilters['uid']", modbusNetworkName);
 		addSetting(settings, providerId, key, "unitId", unitId);

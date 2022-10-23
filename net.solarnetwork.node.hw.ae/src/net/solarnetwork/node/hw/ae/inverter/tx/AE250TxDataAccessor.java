@@ -31,7 +31,7 @@ import net.solarnetwork.node.domain.DcEnergyDataAccessor;
  * API for reading AE 250TX data.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public interface AE250TxDataAccessor extends DcEnergyDataAccessor, AcEnergyDataAccessor {
 
@@ -83,6 +83,22 @@ public interface AE250TxDataAccessor extends DcEnergyDataAccessor, AcEnergyDataA
 	 * @return the rated power
 	 */
 	Integer getInverterRatedPower();
+
+	/**
+	 * Get the DC current, in A.
+	 * 
+	 * @return the DC current
+	 * @since 2.1
+	 */
+	Float getDcCurrent();
+
+	/**
+	 * Get the PV voltage, in volts.
+	 * 
+	 * @return the PV voltage
+	 * @since 2.1
+	 */
+	Float getPvVoltage();
 
 	/**
 	 * Get the system status.

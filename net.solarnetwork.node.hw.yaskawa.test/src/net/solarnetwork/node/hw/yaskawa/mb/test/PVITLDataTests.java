@@ -189,6 +189,11 @@ public class PVITLDataTests {
 	}
 
 	@Test
+	public void getPowerFactor() {
+		assertThat("Power factor", data.getPowerFactor(), equalTo(-0.985f));
+	}
+
+	@Test
 	public void getActiveEnergyDelivered() {
 		assertThat("Active energy delivered", data.getActiveEnergyDelivered(), equalTo(106394000L));
 	}

@@ -22,12 +22,14 @@
 
 package net.solarnetwork.node.hw.yaskawa.ecb.test;
 
+import static java.lang.String.format;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.arrayWithSize;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import org.apache.commons.codec.DecoderException;
 import org.junit.Test;
 import net.solarnetwork.node.hw.yaskawa.ecb.Packet;
@@ -209,10 +211,30 @@ public class PacketTests {
 	public void readAmbientTemp() throws DecoderException, UnsupportedEncodingException {
 		Packet p = Packet.forData("02060104", "03010021078d03");
 		assertThat("Packet valid", p.isValid(), equalTo(true));
-		byte[] versions = p.getBody();
-		assertThat("Version length", byteArray(versions), arrayWithSize(2));
-		int temp = (versions[0] & 0xFF) << 8 | versions[1] & 0xFF;
-		assertThat("Ambient temp", temp, equalTo(33));
+		byte[] data = p.getBody();
+		assertThat("Body length", byteArray(data), arrayWithSize(2));
+		ByteBuffer buf = ByteBuffer.wrap(data);
+		assertThat("Ambient temp", buf.getShort(), equalTo((short) 33));
+	}
+
+	@Test
+	public void readHeatSinkTemp() throws DecoderException, UnsupportedEncodingException {
+		Packet p = Packet.forData("02060104", "03020021f78d03");
+		assertThat(format("Packet valid (%x)", p.getCalculatedCrc()), p.isValid(), equalTo(true));
+		byte[] data = p.getBody();
+		assertThat("Body length", byteArray(data), arrayWithSize(2));
+		ByteBuffer buf = ByteBuffer.wrap(data);
+		assertThat("Heat sink temp", buf.getShort(), equalTo((short) 33));
+	}
+
+	@Test
+	public void readAmbientTemp_neg() throws DecoderException, UnsupportedEncodingException {
+		Packet p = Packet.forData("02060104", "0301FFFC862403");
+		assertThat("Packet valid", p.isValid(), equalTo(true));
+		byte[] data = p.getBody();
+		assertThat("Data length", byteArray(data), arrayWithSize(2));
+		ByteBuffer buf = ByteBuffer.wrap(data);
+		assertThat("Ambient temp", buf.getShort(), equalTo((short) -4));
 	}
 
 	@Test
@@ -236,23 +258,85 @@ public class PacketTests {
 	}
 
 	@Test
+	public void readPv1Voltage() throws DecoderException, UnsupportedEncodingException {
+		Packet p = Packet.forData("02060104", "1C0101A501aa03");
+		assertThat(format("Packet valid (%x)", p.getCalculatedCrc()), p.isValid(), equalTo(true));
+		byte[] body = p.getBody();
+		assertThat("Body length", byteArray(body), arrayWithSize(2));
+		assertThat("PV 1 voltage V", new BigInteger(1, body).intValue(), equalTo(421));
+	}
+
+	@Test
+	public void readPv1Current() throws DecoderException, UnsupportedEncodingException {
+		Packet p = Packet.forData("02060104", "1C02002Eb05d03");
+		assertThat(format("Packet valid (%x)", p.getCalculatedCrc()), p.isValid(), equalTo(true));
+		byte[] body = p.getBody();
+		assertThat("Body length", byteArray(body), arrayWithSize(2));
+		assertThat("PV 1 current A x10", new BigInteger(1, body).intValue(), equalTo(46));
+	}
+
+	@Test
 	public void readPv1Power() throws DecoderException, UnsupportedEncodingException {
 		Packet p = Packet.forData("02060104", "1c050070806403");
 		assertThat("Packet valid", p.isValid(), equalTo(true));
 		byte[] body = p.getBody();
 		assertThat("Body length", byteArray(body), arrayWithSize(2));
 		BigInteger power = new BigInteger(1, body);
-		assertThat("PV1 Power", power.intValue(), equalTo(112));
+		assertThat("PV1 Power W", power.intValue(), equalTo(112));
+	}
+
+	@Test
+	public void readPv2Voltage() throws DecoderException, UnsupportedEncodingException {
+		Packet p = Packet.forData("02060104", "240101A50cca03");
+		assertThat(format("Packet valid (%x)", p.getCalculatedCrc()), p.isValid(), equalTo(true));
+		byte[] body = p.getBody();
+		assertThat("Body length", byteArray(body), arrayWithSize(2));
+		assertThat("PV 2 voltage V", new BigInteger(1, body).intValue(), equalTo(421));
+	}
+
+	@Test
+	public void readPv2Current() throws DecoderException, UnsupportedEncodingException {
+		Packet p = Packet.forData("02060104", "2402002Ebd3d03");
+		assertThat(format("Packet valid (%x)", p.getCalculatedCrc()), p.isValid(), equalTo(true));
+		byte[] body = p.getBody();
+		assertThat("Body length", byteArray(body), arrayWithSize(2));
+		assertThat("PV 2 current A x10", new BigInteger(1, body).intValue(), equalTo(46));
 	}
 
 	@Test
 	public void readPv2Power() throws DecoderException, UnsupportedEncodingException {
 		Packet p = Packet.forData("02060104", "240500288cfe03");
-		assertThat("Packet valid", p.isValid(), equalTo(true));
+		assertThat(format("Packet valid (%x)", p.getCalculatedCrc()), p.isValid(), equalTo(true));
 		byte[] body = p.getBody();
 		assertThat("Body length", byteArray(body), arrayWithSize(2));
-		BigInteger power = new BigInteger(1, body);
-		assertThat("PV 2 Power", power.intValue(), equalTo(40));
+		assertThat("PV 2 Power W", new BigInteger(1, body).intValue(), equalTo(40));
+	}
+
+	@Test
+	public void readPv3Voltage() throws DecoderException, UnsupportedEncodingException {
+		Packet p = Packet.forData("02060104", "2C0101A50eaa03");
+		assertThat(format("Packet valid (%x)", p.getCalculatedCrc()), p.isValid(), equalTo(true));
+		byte[] body = p.getBody();
+		assertThat("Body length", byteArray(body), arrayWithSize(2));
+		assertThat("PV 3 voltage V", new BigInteger(1, body).intValue(), equalTo(421));
+	}
+
+	@Test
+	public void readPv3Current() throws DecoderException, UnsupportedEncodingException {
+		Packet p = Packet.forData("02060104", "2C02002Ebf5d03");
+		assertThat(format("Packet valid (%x)", p.getCalculatedCrc()), p.isValid(), equalTo(true));
+		byte[] body = p.getBody();
+		assertThat("Body length", byteArray(body), arrayWithSize(2));
+		assertThat("PV 3 current A x10", new BigInteger(1, body).intValue(), equalTo(46));
+	}
+
+	@Test
+	public void readPv3Power() throws DecoderException, UnsupportedEncodingException {
+		Packet p = Packet.forData("02060104", "2C0500288e9e03");
+		assertThat(format("Packet valid (%x)", p.getCalculatedCrc()), p.isValid(), equalTo(true));
+		byte[] body = p.getBody();
+		assertThat("Body length", byteArray(body), arrayWithSize(2));
+		assertThat("PV 3 Power W", new BigInteger(1, body).intValue(), equalTo(40));
 	}
 
 	@Test
@@ -291,7 +375,34 @@ public class PacketTests {
 		assertThat("Packet valid", p.isValid(), equalTo(true));
 		byte[] body = p.getBody();
 		assertThat("Body length", byteArray(body), arrayWithSize(2));
-		BigInteger power = new BigInteger(1, body);
-		assertThat("AC power W", power.intValue(), equalTo(42));
+		assertThat("AC power W", new BigInteger(1, body).intValue(), equalTo(42));
 	}
+
+	@Test
+	public void readAcCombinedRectivePower() throws DecoderException, UnsupportedEncodingException {
+		Packet p = Packet.forData("02060104", "4705FE9652aa03");
+		assertThat(format("Packet valid (%x)", p.getCalculatedCrc()), p.isValid(), equalTo(true));
+		byte[] body = p.getBody();
+		assertThat("Body length", byteArray(body), arrayWithSize(2));
+		assertThat("AC reactive power VAR", ByteBuffer.wrap(body).getShort(), equalTo((short) -362));
+	}
+
+	@Test
+	public void readPowerFactor() throws DecoderException, UnsupportedEncodingException {
+		Packet p = Packet.forData("02060104", "4706FC1B63AF03");
+		assertThat("Packet valid", p.isValid(), equalTo(true));
+		byte[] data = p.getBody();
+		assertThat("Data length", byteArray(data), arrayWithSize(2));
+		assertThat("Power factor x1000", ByteBuffer.wrap(data).getShort(), equalTo((short) -997));
+	}
+
+	@Test
+	public void readPowerFactor_nak() throws DecoderException, UnsupportedEncodingException {
+		Packet p = new Packet("02 15 0b 02 47 06 1dd5 03");
+		assertThat("Packet valid", p.isValid(), equalTo(true));
+		assertThat("Packet not accepted", p.isAcceptedResponse(), equalTo(false));
+		byte[] data = p.getBody();
+		assertThat("Data length", byteArray(data), arrayWithSize(0));
+	}
+
 }

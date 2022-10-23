@@ -41,6 +41,12 @@ public class SimpleServiceProviderConfiguration implements ServiceProvider.Servi
 		return service;
 	}
 
+	/**
+	 * Set the service.
+	 * 
+	 * @param service
+	 *        the service to set
+	 */
 	public void setService(Object service) {
 		this.service = service;
 	}
@@ -50,6 +56,12 @@ public class SimpleServiceProviderConfiguration implements ServiceProvider.Servi
 		return interfaces;
 	}
 
+	/**
+	 * Set the interfaces.
+	 * 
+	 * @param interfaces
+	 *        the interfaces to set
+	 */
 	public void setInterfaces(String[] interfaces) {
 		this.interfaces = interfaces;
 	}
@@ -59,6 +71,12 @@ public class SimpleServiceProviderConfiguration implements ServiceProvider.Servi
 		return properties;
 	}
 
+	/**
+	 * Set the properties.
+	 * 
+	 * @param properties
+	 *        the properties to set
+	 */
 	public void setProperties(Map<String, Object> properties) {
 		this.properties = properties;
 	}

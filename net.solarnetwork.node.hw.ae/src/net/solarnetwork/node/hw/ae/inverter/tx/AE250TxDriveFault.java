@@ -31,32 +31,46 @@ package net.solarnetwork.node.hw.ae.inverter.tx;
  */
 public enum AE250TxDriveFault implements AE250TxFault {
 
+	/** Drive protection fault, phase A low. */
 	DriveALow(0, "Drive protection fault, phase A low."),
 
+	/** Drive protection fault, phase A high. */
 	DriveAHigh(1, "Drive protection fault, phase A high."),
 
+	/** Drive protection fault, phase B low. */
 	DriveBLow(2, "Drive protection fault, phase B low."),
 
+	/** Drive protection fault, phase B high. */
 	DriveBHigh(3, "Drive protection fault, phase B high."),
 
+	/** Drive protection fault, phase C low. */
 	DriveCLow(4, "Drive protection fault, phase C low."),
 
+	/** Drive protection fault, phase C high. */
 	DriveCHigh(5, "Drive protection fault, phase C high."),
 
+	/** Peak over-current, phase A. */
 	HwOverCurrentA(6, "Peak over-current, phase A."),
 
+	/** Peak over-current, phase B. */
 	HwOverCurrentB(7, "Peak over-current, phase B."),
 
+	/** Peak over-current, phase C. */
 	HwOverCurrentC(8, "Peak over-current, phase C."),
 
+	/** RMS over-current, phase A. */
 	RmsOverCurrentA(6, "RMS over-current, phase A."),
 
+	/** RMS over-current, phase B. */
 	RmsOverCurrentB(7, "RMS over-current, phase B."),
 
+	/** RMS over-current, phase C. */
 	RmsOverCurrentC(8, "RMS over-current, phase C."),
 
+	/** DC volts over range. */
 	DcOverVoltage(7, "DC volts over range."),
 
+	/** DC volts under range. */
 	DcUnderVoltage(8, "DC volts under range."),
 
 	;

@@ -40,6 +40,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
@@ -112,6 +113,8 @@ public class KTLCTDataTests {
 				.andReturn(mapSlice(TEST_DATA, 0, 59));
 		expect(conn.readWords(ModbusReadFunction.ReadHoldingRegister, 4096, 2))
 				.andReturn(mapSlice(TEST_DATA, 4096, 2));
+		expect(conn.readWords(ModbusReadFunction.ReadInputRegister, 33027, 15))
+				.andReturn(mapSlice(TEST_DATA, 33027, 15));
 
 		// when
 		replay(conn);
@@ -143,18 +146,55 @@ public class KTLCTDataTests {
 	}
 
 	@Test
+	public void reactivePower() {
+		assertThat("Reactive power", data.getReactivePower(), equalTo(800));
+	}
+
+	@Test
+	public void reactivePower_phased() {
+		assertThat("Reactive power A", data.accessorForPhase(AcPhase.PhaseA).getReactivePower(),
+				equalTo(0));
+		assertThat("Reactive power B", data.accessorForPhase(AcPhase.PhaseB).getReactivePower(),
+				equalTo(594800));
+		assertThat("Reactive power C", data.accessorForPhase(AcPhase.PhaseC).getReactivePower(),
+				equalTo(900));
+	}
+
+	@Test
 	public void apparentPower() {
 		assertThat("Apparent power", data.getApparentPower(), equalTo(15700));
 	}
 
 	@Test
+	public void current() {
+		assertThat("Current", data.getCurrent(), equalTo(42.6f));
+	}
+
+	@Test
+	public void current_phased() {
+		assertThat("Current A", data.accessorForPhase(AcPhase.PhaseA).getCurrent(), equalTo(14.2f));
+		assertThat("Current B", data.accessorForPhase(AcPhase.PhaseB).getCurrent(), equalTo(14.5f));
+		assertThat("Current C", data.accessorForPhase(AcPhase.PhaseC).getCurrent(), equalTo(13.9f));
+	}
+
+	@Test
 	public void voltage() {
-		assertThat("Voltage", data.getVoltage(), equalTo(490.7f));
+		assertThat("Voltage", data.getVoltage(), equalTo(100.86667f));
 	}
 
 	@Test
 	public void lineVoltage() {
-		assertThat("Voltage", data.getLineVoltage(), equalTo(490.7f));
+		assertThat("Line voltage", data.getLineVoltage(), equalTo(490.7f));
+	}
+
+	@Test
+	public void lineVoltage_phased() {
+		assertThat("Line voltage A", data.accessorForPhase(AcPhase.PhaseA).getLineVoltage(),
+				equalTo(490.6f));
+		assertThat("Line voltage B", data.accessorForPhase(AcPhase.PhaseB).getLineVoltage(),
+				equalTo(490.0f));
+		assertThat("Line voltage C", data.accessorForPhase(AcPhase.PhaseC).getLineVoltage(),
+				equalTo(491.5f));
 	}
 
 	@Test

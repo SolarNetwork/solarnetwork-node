@@ -59,6 +59,12 @@ public class LoginController extends BaseSetupWebServiceController {
 
 	private final LoginKeyHelper helper;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param helper
+	 *        the helper to use
+	 */
 	@Autowired
 	public LoginController(LoginKeyHelper helper) {
 		super();

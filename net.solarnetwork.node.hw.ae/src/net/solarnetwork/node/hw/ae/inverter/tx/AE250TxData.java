@@ -26,6 +26,7 @@ import static net.solarnetwork.domain.Bitmaskable.setForBitmask;
 import static net.solarnetwork.domain.CodedValue.forCodeValue;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.SortedSet;
@@ -45,7 +46,7 @@ import net.solarnetwork.util.NumberUtils;
  * Data object for the AE 250TX series inverter.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 
@@ -87,7 +88,12 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	public Map<String, Object> getDeviceInfo() {
 		AE250TxDataAccessor data = getSnapshot();
 		Map<String, Object> result = new LinkedHashMap<>(4);
-		AEInverterType type = data.getInverterType();
+		AEInverterType type = null;
+		try {
+			type = data.getInverterType();
+		} catch ( IllegalArgumentException e ) {
+			// ignore and continue
+		}
 		if ( type != null ) {
 			String firmwareVersion = data.getFirmwareRevision();
 			if ( firmwareVersion != null ) {
@@ -180,7 +186,10 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 
 	@Override
 	public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
-		throw new UnsupportedOperationException();
+		if ( phase == AcPhase.Total ) {
+			return this;
+		}
+		return new PhaseDataAccessor(phase);
 	}
 
 	@Override
@@ -340,6 +349,12 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	}
 
 	@Override
+	public Float getPvVoltage() {
+		Number n = getNumber(AE250TxRegister.InverterPvVoltage);
+		return (n != null ? n.floatValue() : null);
+	}
+
+	@Override
 	public Integer getActivePower() {
 		return getKiloValueAsInteger(AE250TxRegister.InverterActivePowerTotal);
 	}
@@ -347,6 +362,12 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	@Override
 	public Long getActiveEnergyDelivered() {
 		return getKiloValueAsLong(AE250TxRegister.InverterActiveEnergyDelivered);
+	}
+
+	@Override
+	public Float getDcCurrent() {
+		Number n = getNumber(AE250TxRegister.InverterDcCurrent);
+		return (n != null ? n.floatValue() : null);
 	}
 
 	@Override
@@ -398,6 +419,309 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 	@Override
 	public Long getReactiveEnergyReceived() {
 		return null;
+	}
+
+	private class PhaseDataAccessor implements AE250TxDataAccessor {
+
+		private final AcPhase phase;
+
+		private PhaseDataAccessor(AcPhase phase) {
+			super();
+			this.phase = phase;
+		}
+
+		@Override
+		public Instant getDataTimestamp() {
+			return AE250TxData.this.getDataTimestamp();
+		}
+
+		@Override
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
+			return AE250TxData.this.accessorForPhase(phase);
+		}
+
+		@Override
+		public Float getFrequency() {
+			return AE250TxData.this.getFrequency();
+		}
+
+		@Override
+		public Float getCurrent() {
+			Number n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getNumber(AE250TxRegister.InverterCurrentPhaseA);
+					break;
+
+				case PhaseB:
+					n = getNumber(AE250TxRegister.InverterCurrentPhaseB);
+					break;
+
+				case PhaseC:
+					n = getNumber(AE250TxRegister.InverterCurrentPhaseC);
+					break;
+
+				default:
+					return AE250TxData.this.getCurrent();
+			}
+			return (n != null ? n.floatValue() : null);
+		}
+
+		@Override
+		public Float getVoltage() {
+			Number n = null;
+			switch (phase) {
+				case PhaseA:
+					n = getNumber(AE250TxRegister.InverterVoltageLineNeutralPhaseA);
+					break;
+
+				case PhaseB:
+					n = getNumber(AE250TxRegister.InverterVoltageLineNeutralPhaseB);
+					break;
+
+				case PhaseC:
+					n = getNumber(AE250TxRegister.InverterVoltageLineNeutralPhaseC);
+					break;
+
+				default:
+					return AE250TxData.this.getVoltage();
+			}
+			return (n != null ? n.floatValue() : null);
+		}
+
+		@Override
+		public Float getPowerFactor() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return AE250TxData.this.getPowerFactor();
+			}
+		}
+
+		@Override
+		public Integer getActivePower() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return AE250TxData.this.getActivePower();
+			}
+		}
+
+		@Override
+		public Integer getApparentPower() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return AE250TxData.this.getApparentPower();
+			}
+		}
+
+		@Override
+		public Integer getReactivePower() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return AE250TxData.this.getReactivePower();
+			}
+		}
+
+		@Override
+		public Float getPvVoltage() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return AE250TxData.this.getPvVoltage();
+			}
+		}
+
+		@Override
+		public Float getDcCurrent() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return AE250TxData.this.getDcCurrent();
+			}
+		}
+
+		@Override
+		public Float getDcVoltage() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return AE250TxData.this.getDcVoltage();
+			}
+		}
+
+		@Override
+		public Integer getDcPower() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return AE250TxData.this.getDcPower();
+			}
+		}
+
+		@Override
+		public Float getLineVoltage() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return AE250TxData.this.getLineVoltage();
+			}
+		}
+
+		@Override
+		public Long getActiveEnergyDelivered() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return AE250TxData.this.getActiveEnergyDelivered();
+			}
+		}
+
+		@Override
+		public Long getActiveEnergyReceived() {
+			return null;
+		}
+
+		@Override
+		public Long getApparentEnergyDelivered() {
+			return null;
+		}
+
+		@Override
+		public Long getApparentEnergyReceived() {
+			return null;
+		}
+
+		@Override
+		public Long getReactiveEnergyDelivered() {
+			return null;
+		}
+
+		@Override
+		public Long getReactiveEnergyReceived() {
+			return null;
+		}
+
+		@Override
+		public Map<String, Object> getDeviceInfo() {
+			return AE250TxData.this.getDeviceInfo();
+		}
+
+		@Override
+		public AcEnergyDataAccessor reversed() {
+			return AE250TxData.this.reversed();
+		}
+
+		@Override
+		public String getSerialNumber() {
+			return AE250TxData.this.getSerialNumber();
+		}
+
+		@Override
+		public DeviceOperatingState getDeviceOperatingState() {
+			return AE250TxData.this.getDeviceOperatingState();
+		}
+
+		@Override
+		public Float getNeutralCurrent() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return AE250TxData.this.getNeutralCurrent();
+			}
+		}
+
+		@Override
+		public AEInverterType getInverterType() {
+			return AE250TxData.this.getInverterType();
+		}
+
+		@Override
+		public String getIdNumber() {
+			return AE250TxData.this.getIdNumber();
+		}
+
+		@Override
+		public String getFirmwareRevision() {
+			return AE250TxData.this.getFirmwareRevision();
+		}
+
+		@Override
+		public Integer getMapVersion() {
+			return AE250TxData.this.getMapVersion();
+		}
+
+		@Override
+		public AEInverterConfiguration getInverterConfiguration() {
+			return AE250TxData.this.getInverterConfiguration();
+		}
+
+		@Override
+		public Integer getInverterRatedPower() {
+			return AE250TxData.this.getInverterRatedPower();
+		}
+
+		@Override
+		public AE250TxSystemStatus getSystemStatus() {
+			return AE250TxData.this.getSystemStatus();
+		}
+
+		@Override
+		public SortedSet<AE250TxFault> getFaults() {
+			return AE250TxData.this.getFaults();
+		}
+
+		@Override
+		public SortedSet<AE250TxWarning> getWarnings() {
+			return AE250TxData.this.getWarnings();
+		}
+
 	}
 
 }

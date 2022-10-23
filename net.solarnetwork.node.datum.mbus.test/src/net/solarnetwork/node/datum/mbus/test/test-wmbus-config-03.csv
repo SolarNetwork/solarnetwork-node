@@ -1,0 +1,4 @@
+Instance ID,Service Name,Service Group,Source ID,Schedule,Connection,Address,Key,Property,Property Type,Data Type,Data Description,Multiplier,Decimal Scale
+-,S1,G1,src/1,0 * * * * *,WM-Bus Port,123ABC,ABCDEF
+P,S2,G2,src/2,0 * * * * *,WM-Bus Port,234DEF,DEFABC
+-,S3,G3,src/3,0 * * * * *,WM-Bus Port,345EF0,012345

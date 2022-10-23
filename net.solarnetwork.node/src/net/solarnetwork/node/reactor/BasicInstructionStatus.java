@@ -37,6 +37,7 @@ public class BasicInstructionStatus extends net.solarnetwork.domain.BasicInstruc
 
 	private static final long serialVersionUID = 2582625556107338247L;
 
+	/** The acknowledged instruction state. */
 	private final InstructionState acknowledgedInstructionState;
 
 	/**

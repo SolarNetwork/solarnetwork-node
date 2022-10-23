@@ -23,22 +23,29 @@
 package net.solarnetwork.node.hw.yaskawa.mb.inverter;
 
 /**
- * Enumeration of CSI inverter types.
+ * Enumeration of inverter types.
  * 
  * @author matt
  * @version 1.0
  */
 public enum PVITLInverterType {
 
+	/** 14TL. */
 	PVI_14TL("14TL"),
 
+	/** 20TL. */
 	PVI_20TL("20TL"),
 
+	/** 23TL. */
 	PVI_23TL("23TL"),
 
+	/** 28TL. */
 	PVI_28TL("28TL"),
 
-	PVI_36TL("36TL");
+	/** 36TL. */
+	PVI_36TL("36TL"),
+
+	;
 
 	private final String description;
 

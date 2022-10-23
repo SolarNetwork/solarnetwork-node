@@ -42,8 +42,8 @@ import net.wimpi.modbus.msg.ReadCoilsRequest;
 import net.wimpi.modbus.util.BitVector;
 
 /**
- * Class implementing a <code>ReadCoilsResponse</code>. The implementation directly
- * correlates with the class 1 function <i>read coils (FC 1)</i>. It
+ * Class implementing a <code>ReadCoilsResponse</code>. The implementation
+ * directly correlates with the class 1 function <i>read coils (FC 1)</i>. It
  * encapsulates the corresponding response message.
  * <p>
  * Coils are understood as bits that can be manipulated (i.e. set or unset).
@@ -71,7 +71,6 @@ public final class ReadCoilsResponse extends ModbusResponse {
 
 	/**
 	 * Returns the number of bits (i.e. coils) read with the request.
-	 * <p>
 	 * 
 	 * @return the number of bits that have been read.
 	 */
@@ -96,9 +95,8 @@ public final class ReadCoilsResponse extends ModbusResponse {
 	}//setBitCount
 
 	/**
-	 * Returns the <code>BitVector</code> that stores the collection of bits that
-	 * have been read.
-	 * <p>
+	 * Returns the <code>BitVector</code> that stores the collection of bits
+	 * that have been read.
 	 * 
 	 * @return the <code>BitVector</code> holding the bits that have been read.
 	 */
@@ -108,7 +106,6 @@ public final class ReadCoilsResponse extends ModbusResponse {
 
 	/**
 	 * Convenience method that returns the state of the bit at the given index.
-	 * <p>
 	 * 
 	 * @param index
 	 *        the index of the coil for which the status should be returned.

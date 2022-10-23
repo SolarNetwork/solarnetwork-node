@@ -29,10 +29,22 @@ package net.solarnetwork.node.io.mbus;
  * @version 1.0
  */
 public enum MBusDataType {
+
+	/** A date (instant). */
 	Date,
+
+	/** A string. */
 	String,
+
+	/** A double. */
 	Double,
+
+	/** A long. */
 	Long,
+
+	/** Binary. */
 	BCD,
+
+	/** No type. */
 	None,
 }

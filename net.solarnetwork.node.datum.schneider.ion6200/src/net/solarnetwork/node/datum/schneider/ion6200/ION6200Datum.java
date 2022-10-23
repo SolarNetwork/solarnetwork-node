@@ -38,6 +38,7 @@ public class ION6200Datum extends SimpleAcEnergyDatum {
 
 	private static final long serialVersionUID = 8425868115217879119L;
 
+	/** The sample data. */
 	private final ION6200DataAccessor data;
 
 	/**

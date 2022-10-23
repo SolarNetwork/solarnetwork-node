@@ -33,18 +33,40 @@ public class InstructionParameter {
 	private String name;
 	private String value;
 
+	/**
+	 * Get the name.
+	 * 
+	 * @return the name
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * Set the name.
+	 * 
+	 * @param name
+	 *        the name to set
+	 */
 	public void setName(String name) {
 		this.name = name;
 	}
 
+	/**
+	 * Get the value.
+	 * 
+	 * @return the value
+	 */
 	public String getValue() {
 		return value;
 	}
 
+	/**
+	 * Set the value.
+	 * 
+	 * @param value
+	 *        the value to set
+	 */
 	public void setValue(String value) {
 		this.value = value;
 	}

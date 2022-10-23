@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.yaskawa.mb.inverter;
 
 import static java.util.Arrays.asList;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.StringAscii;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
 import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt32;
@@ -38,7 +39,7 @@ import net.solarnetwork.util.IntRangeSet;
  * Enumeration of Modbus register mappings for the CSI 50KTL-CT series inverter.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public enum PVITLRegister implements ModbusReference {
 
@@ -58,7 +59,7 @@ public enum PVITLRegister implements ModbusReference {
 	InverterActiveEnergyDeliveredToday(0x18, UInt16),
 
 	/** Power factor from 0 - 1, in 0.001 increment. */
-	InverterPowerFactor(0x1A, UInt16),
+	InverterPowerFactor(0x1A, Int16),
 
 	/** AC active power total, in 0.1 kW (100 W). */
 	InverterActivePowerTotal(0x1D, UInt16),
@@ -108,8 +109,8 @@ public enum PVITLRegister implements ModbusReference {
 	/** Status mode code, see {@link PVITLInverterState}. */
 	StatusMode(0x2F, UInt16);
 
-	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(
-			PVITLRegister.class, new HashSet<>(asList("Info", "Config"))).immutableCopy();
+	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(PVITLRegister.class,
+			new HashSet<>(asList("Info", "Config"))).immutableCopy();
 	private static final IntRangeSet INVERTER_REGISTER_ADDRESS_SET = createAddressSet(
 			PVITLRegister.class, new HashSet<>(asList("Inverter", "Status"))).immutableCopy();
 

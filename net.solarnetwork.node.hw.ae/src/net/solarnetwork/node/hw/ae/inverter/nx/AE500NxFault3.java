@@ -31,31 +31,52 @@ package net.solarnetwork.node.hw.ae.inverter.nx;
  */
 public enum AE500NxFault3 implements AE500NxFault {
 
+	/**
+	 * The cable for the ground fault detection and interruption device is loose
+	 * or removed.
+	 */
 	GfiInterlock(
 			0,
 			"The cable for the ground fault detection and interruption device is loose or removed."),
 
+	/**
+	 * The softstart contactor is likely to be welded closed and unable to open.
+	 */
 	SoftStartStuck(1, "The softstart contactor is likely to be welded closed and unable to open."),
 
+	/**
+	 * The PV Tie contactor is likely to be welded closed and unable to open.
+	 */
 	PvTieStuck(2, "The PV Tie contactor is likely to be welded closed and unable to open."),
 
+	/** The DC contactor is likely to be welded closed and unable to open. */
 	DcContactorStuck(3, "The DC contactor is likely to be welded closed and unable to open."),
 
+	/** The AC contactor is likely to be welded closed and unable to open. */
 	AcContactorStuck(4, "The AC contactor is likely to be welded closed and unable to open."),
 
+	/** Fan is not running fast enough. */
 	Fan8(8, "Fan is not running fast enough."),
 
+	/** Phase A low. */
 	PhaseALow(9, "Phase A low."),
 
+	/** Phase B low. */
 	PhaseBLow(10, "Phase B low."),
 
+	/** Phase C low. */
 	PhaseCLow(11, "Phase C low."),
 
+	/** Phase A high. */
 	PhaseAHigh(12, "Phase A high."),
 
+	/** Phase B high. */
 	PhaseBHigh(13, "Phase B high."),
 
-	PhaseCHigh(14, "Phase C high.");
+	/** Phase C high. */
+	PhaseCHigh(14, "Phase C high."),
+
+	;
 
 	private final int bit;
 	private final String description;

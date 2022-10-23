@@ -228,10 +228,21 @@ public abstract class AbstractBatchableJdbcDao<T> extends JdbcDaoSupport impleme
 		return JdbcUtils.getBatchSqlResource(sqlResource);
 	}
 
+	/**
+	 * Get the transaction template.
+	 * 
+	 * @return the template
+	 */
 	public TransactionTemplate getTransactionTemplate() {
 		return transactionTemplate;
 	}
 
+	/**
+	 * Set the transaction template.
+	 * 
+	 * @param transactionTemplate
+	 *        the template to set
+	 */
 	public void setTransactionTemplate(TransactionTemplate transactionTemplate) {
 		this.transactionTemplate = transactionTemplate;
 	}

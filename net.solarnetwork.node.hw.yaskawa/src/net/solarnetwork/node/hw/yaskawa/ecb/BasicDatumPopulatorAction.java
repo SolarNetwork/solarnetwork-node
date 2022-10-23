@@ -22,12 +22,19 @@
 
 package net.solarnetwork.node.hw.yaskawa.ecb;
 
-import static net.solarnetwork.domain.datum.EnergyDatum.WATTS_KEY;
-import static net.solarnetwork.domain.datum.EnergyDatum.WATT_HOUR_READING_KEY;
+import static java.lang.String.format;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
+import static net.solarnetwork.node.hw.yaskawa.ecb.PacketUtils.sendPacket;
+import static net.solarnetwork.util.NumberUtils.narrow;
+import static net.solarnetwork.util.NumberUtils.scaled;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.time.Instant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DcEnergyDatum;
 import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
 import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
 import net.solarnetwork.node.io.serial.SerialConnection;
@@ -42,30 +49,182 @@ import net.solarnetwork.node.io.serial.SerialConnectionAction;
  */
 public class BasicDatumPopulatorAction implements SerialConnectionAction<AcDcEnergyDatum> {
 
+	private static final Logger log = LoggerFactory.getLogger(BasicDatumPopulatorAction.class);
+
 	private final int unitId;
 	private final String sourceId;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param unitId
+	 *        the unit ID
+	 * @param sourceId
+	 *        the source ID
+	 */
 	public BasicDatumPopulatorAction(int unitId, String sourceId) {
 		super();
 		this.unitId = unitId;
 		this.sourceId = sourceId;
 	}
 
+	private Packet sendForPacketWithLength(SerialConnection conn, PVI3800Command cmd, int len)
+			throws IOException {
+		Packet p = sendPacket(conn, cmd.request(unitId));
+		if ( p == null ) {
+			return null;
+		}
+		if ( !p.isAcceptedResponse() ) {
+			log.debug("Unaccepted response to {}: {}", cmd, p.toDebugString());
+			return null;
+		}
+		if ( p.getBodyLength() < len ) {
+			log.warn("Not enough data in {} response (wanted {}): {}", cmd, len, p.toDebugString());
+			return null;
+		}
+		log.debug("Got {} response: {}", cmd, p.toDebugString());
+		return p;
+	}
+
 	@Override
 	public AcDcEnergyDatum doWithConnection(SerialConnection conn) throws IOException {
 		SimpleAcDcEnergyDatum d = new SimpleAcDcEnergyDatum(sourceId, Instant.now(), new DatumSamples());
 
-		Packet power = PacketUtils.sendPacket(conn,
-				PVI3800Command.MeterReadAcCombinedActivePower.request(unitId));
-		if ( power != null ) {
-			d.getSamples().putInstantaneousSampleValue(WATTS_KEY, new BigInteger(1, power.getBody()));
+		Packet p = sendForPacketWithLength(conn, PVI3800Command.MeterReadAcCombinedActivePower, 2);
+		if ( p != null ) {
+			d.setWatts(new BigInteger(1, p.getBody()).intValue());
 		}
 
-		Packet energy = PacketUtils.sendPacket(conn,
-				PVI3800Command.MeterReadLifetimeTotalEnergy.request(unitId));
-		if ( power != null ) {
-			d.getSamples().putAccumulatingSampleValue(WATT_HOUR_READING_KEY,
-					new BigInteger(1, energy.getBody()));
+		p = sendForPacketWithLength(conn, PVI3800Command.MeterReadLifetimeTotalEnergy, 8);
+		if ( p != null ) {
+			d.setWattHourReading(new BigInteger(1, p.getBody()).longValue());
+		}
+
+		p = sendForPacketWithLength(conn, PVI3800Command.MeterReadAcCombinedFrequency, 2);
+		if ( p != null ) {
+			d.setFrequency(scaled(new BigInteger(1, p.getBody()), -2).floatValue());
+		}
+
+		p = sendForPacketWithLength(conn, PVI3800Command.MeterReadAcCombinedCurrent, 2);
+		if ( p != null ) {
+			d.setCurrent(scaled(new BigInteger(1, p.getBody()), -1).floatValue());
+		}
+
+		p = sendForPacketWithLength(conn, PVI3800Command.MeterReadAcCombinedVoltage, 2);
+		if ( p != null ) {
+			d.setVoltage(new BigInteger(1, p.getBody()).floatValue());
+		}
+
+		p = sendForPacketWithLength(conn, PVI3800Command.MeterReadAcCombinedPowerFactor, 2);
+		if ( p != null ) {
+			d.setPowerFactor(scaled(ByteBuffer.wrap(p.getBody()).getShort(), -3).floatValue());
+		}
+
+		p = sendForPacketWithLength(conn, PVI3800Command.MeterReadAcCombinedReactivePower, 2);
+		if ( p != null ) {
+			d.setReactivePower((int) ByteBuffer.wrap(p.getBody()).getShort());
+		}
+
+		p = sendForPacketWithLength(conn, PVI3800Command.MeterReadTemperatureAmbient, 2);
+		if ( p != null ) {
+			d.putSampleValue(Instantaneous, "temp", ByteBuffer.wrap(p.getBody()).getShort());
+		}
+
+		p = sendForPacketWithLength(conn, PVI3800Command.MeterReadTemperatureHeatsink, 2);
+		if ( p != null ) {
+			d.putSampleValue(Instantaneous, "temp_heatSink", ByteBuffer.wrap(p.getBody()).getShort());
+		}
+
+		int totalVoltage = 0;
+		int totalVoltageCount = 0;
+
+		float totalCurrent = 0f;
+		int totalCurrentCount = 0;
+
+		int totalPower = 0;
+		int totalPowerCount = 0;
+
+		p = sendForPacketWithLength(conn, PVI3800Command.MeterReadPv1Voltage, 2);
+		if ( p != null ) {
+			short n = ByteBuffer.wrap(p.getBody()).getShort();
+			totalVoltage += n;
+			totalVoltageCount++;
+			d.putSampleValue(Instantaneous, format("%s_%d", DcEnergyDatum.DC_VOLTAGE_KEY, 1), n);
+		}
+
+		p = sendForPacketWithLength(conn, PVI3800Command.MeterReadPv1Current, 2);
+		if ( p != null ) {
+			Number n = narrow(scaled(ByteBuffer.wrap(p.getBody()).getShort(), -1), 2);
+			totalCurrent += n.floatValue();
+			totalCurrentCount++;
+			d.putSampleValue(Instantaneous, format("%s_%d", DcEnergyDatum.DC_CURRENT_KEY, 1), n);
+		}
+
+		p = sendForPacketWithLength(conn, PVI3800Command.MeterReadPv1Power, 2);
+		if ( p != null ) {
+			short n = ByteBuffer.wrap(p.getBody()).getShort();
+			totalPower += n;
+			totalPowerCount++;
+			d.putSampleValue(Instantaneous, format("%s_%d", DcEnergyDatum.DC_POWER_KEY, 1), n);
+		}
+
+		p = sendForPacketWithLength(conn, PVI3800Command.MeterReadPv2Voltage, 2);
+		if ( p != null ) {
+			short n = ByteBuffer.wrap(p.getBody()).getShort();
+			totalVoltage += n;
+			totalVoltageCount++;
+			d.putSampleValue(Instantaneous, format("%s_%d", DcEnergyDatum.DC_VOLTAGE_KEY, 2), n);
+		}
+
+		p = sendForPacketWithLength(conn, PVI3800Command.MeterReadPv2Current, 2);
+		if ( p != null ) {
+			Number n = narrow(scaled(ByteBuffer.wrap(p.getBody()).getShort(), -1), 2);
+			totalCurrent += n.floatValue();
+			totalCurrentCount++;
+			d.putSampleValue(Instantaneous, format("%s_%d", DcEnergyDatum.DC_CURRENT_KEY, 2), n);
+		}
+
+		p = sendForPacketWithLength(conn, PVI3800Command.MeterReadPv2Power, 2);
+		if ( p != null ) {
+			short n = ByteBuffer.wrap(p.getBody()).getShort();
+			totalPower += n;
+			totalPowerCount++;
+			d.putSampleValue(Instantaneous, format("%s_%d", DcEnergyDatum.DC_POWER_KEY, 2), n);
+		}
+
+		p = sendForPacketWithLength(conn, PVI3800Command.MeterReadPv3Voltage, 2);
+		if ( p != null ) {
+			short n = ByteBuffer.wrap(p.getBody()).getShort();
+			totalVoltage += n;
+			totalVoltageCount++;
+			d.putSampleValue(Instantaneous, format("%s_%d", DcEnergyDatum.DC_VOLTAGE_KEY, 3), n);
+		}
+
+		p = sendForPacketWithLength(conn, PVI3800Command.MeterReadPv3Current, 2);
+		if ( p != null ) {
+			Number n = narrow(scaled(ByteBuffer.wrap(p.getBody()).getShort(), -1), 2);
+			totalCurrent += n.floatValue();
+			totalCurrentCount++;
+			d.putSampleValue(Instantaneous, format("%s_%d", DcEnergyDatum.DC_CURRENT_KEY, 3), n);
+		}
+
+		p = sendForPacketWithLength(conn, PVI3800Command.MeterReadPv3Power, 2);
+		if ( p != null ) {
+			short n = ByteBuffer.wrap(p.getBody()).getShort();
+			totalPower += n;
+			totalPowerCount++;
+			d.putSampleValue(Instantaneous, format("%s_%d", DcEnergyDatum.DC_POWER_KEY, 3), n);
+		}
+
+		if ( totalVoltageCount > 0 ) {
+			float n = ((float) totalVoltage / (float) totalVoltageCount);
+			d.setDcVoltage(n);
+		}
+		if ( totalCurrentCount > 0 ) {
+			d.setDcCurrent(totalCurrent);
+		}
+		if ( totalPowerCount > 0 ) {
+			d.setDcPower(totalPower);
 		}
 
 		return d;

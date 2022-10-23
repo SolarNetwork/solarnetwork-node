@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.yaskawa.mb.inverter;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import net.solarnetwork.domain.AcPhase;
@@ -37,7 +38,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Implementation for accessing PVI-14TL series data.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class PVITLData extends ModbusData implements PVITLDataAccessor {
 
@@ -60,6 +61,11 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 		super(other);
 	}
 
+	/**
+	 * Get a snapshot (copy).
+	 * 
+	 * @return the copy
+	 */
 	public PVITLData getSnapshot() {
 		return new PVITLData(this);
 	}
@@ -147,14 +153,6 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 		return n.floatValue() / 10;
 	}
 
-	private Float getMilliValueAsFloat(ModbusReference ref) {
-		Number n = getNumber(ref);
-		if ( n == null ) {
-			return null;
-		}
-		return n.floatValue() / 100;
-	}
-
 	private Integer getHectoValueAsInteger(ModbusReference ref) {
 		Number n = getNumber(ref);
 		if ( n == null ) {
@@ -179,6 +177,11 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 	}
 
 	@Override
+	public Float getPv1Current() {
+		return getCentiValueAsFloat(PVITLRegister.InverterPv1Current);
+	}
+
+	@Override
 	public Float getPv1Voltage() {
 		return getCentiValueAsFloat(PVITLRegister.InverterPv1Voltage);
 	}
@@ -189,6 +192,11 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 		Float v = getPv1Voltage();
 		return (a != null && v != null ? Math.round(a * v) : null);
 
+	}
+
+	@Override
+	public Float getPv2Current() {
+		return getCentiValueAsFloat(PVITLRegister.InverterPv2Current);
 	}
 
 	@Override
@@ -205,7 +213,7 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 
 	@Override
 	public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
-		throw new UnsupportedOperationException();
+		return new PhaseDataAccessor(phase);
 	}
 
 	@Override
@@ -245,7 +253,11 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 
 	@Override
 	public Float getPowerFactor() {
-		return getMilliValueAsFloat(PVITLRegister.InverterPowerFactor);
+		Number n = getNumber(PVITLRegister.InverterPowerFactor);
+		if ( n == null ) {
+			return null;
+		}
+		return n.floatValue() / 1_000;
 	}
 
 	@Override
@@ -300,6 +312,20 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 		float f = v1;
 		if ( v2 != null ) {
 			f = (v1 + v2) / 2.0f;
+		}
+		return f;
+	}
+
+	@Override
+	public Float getDcCurrent() {
+		Float f1 = getPv1Current();
+		if ( f1 == null ) {
+			return null;
+		}
+		Float f2 = getPv2Current();
+		float f = f1;
+		if ( f2 != null ) {
+			f += f2;
 		}
 		return f;
 	}
@@ -374,6 +400,321 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 	@Override
 	public Float getInternalTemperature() {
 		return getCentiValueAsFloat(PVITLRegister.InverterInternalTemperature);
+	}
+
+	private class PhaseDataAccessor implements PVITLDataAccessor {
+
+		private final AcPhase phase;
+
+		private PhaseDataAccessor(AcPhase phase) {
+			super();
+			this.phase = phase;
+		}
+
+		@Override
+		public Instant getDataTimestamp() {
+			return PVITLData.this.getDataTimestamp();
+		}
+
+		@Override
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
+			return PVITLData.this.accessorForPhase(phase);
+		}
+
+		@Override
+		public Float getFrequency() {
+			return PVITLData.this.getFrequency();
+		}
+
+		@Override
+		public Float getCurrent() {
+			switch (phase) {
+				case PhaseA:
+					return getCentiValueAsFloat(PVITLRegister.InverterCurrentPhaseA);
+
+				case PhaseB:
+					return getCentiValueAsFloat(PVITLRegister.InverterCurrentPhaseB);
+
+				case PhaseC:
+					return getCentiValueAsFloat(PVITLRegister.InverterCurrentPhaseC);
+
+				default:
+					return PVITLData.this.getCurrent();
+			}
+		}
+
+		@Override
+		public Float getVoltage() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return PVITLData.this.getVoltage();
+			}
+		}
+
+		@Override
+		public Float getPowerFactor() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return PVITLData.this.getPowerFactor();
+			}
+		}
+
+		@Override
+		public Integer getActivePower() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return PVITLData.this.getActivePower();
+			}
+		}
+
+		@Override
+		public Integer getApparentPower() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return PVITLData.this.getApparentPower();
+			}
+		}
+
+		@Override
+		public Integer getReactivePower() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return PVITLData.this.getReactivePower();
+			}
+		}
+
+		@Override
+		public Float getDcCurrent() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return PVITLData.this.getDcCurrent();
+			}
+		}
+
+		@Override
+		public Float getDcVoltage() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return PVITLData.this.getDcVoltage();
+			}
+		}
+
+		@Override
+		public Integer getDcPower() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return PVITLData.this.getDcPower();
+			}
+		}
+
+		@Override
+		public Float getNeutralCurrent() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+				default:
+					return PVITLData.this.getNeutralCurrent();
+			}
+		}
+
+		@Override
+		public Float getLineVoltage() {
+			switch (phase) {
+				case PhaseA:
+					return getCentiValueAsFloat(PVITLRegister.InverterVoltageLineLinePhaseAPhaseB);
+
+				case PhaseB:
+					return getCentiValueAsFloat(PVITLRegister.InverterVoltageLineLinePhaseBPhaseC);
+
+				case PhaseC:
+					return getCentiValueAsFloat(PVITLRegister.InverterVoltageLineLinePhaseCPhaseA);
+
+				default:
+					return PVITLData.this.getLineVoltage();
+			}
+		}
+
+		@Override
+		public Long getActiveEnergyDelivered() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return PVITLData.this.getActiveEnergyDelivered();
+			}
+		}
+
+		@Override
+		public Long getActiveEnergyReceived() {
+			return null;
+		}
+
+		@Override
+		public Long getApparentEnergyDelivered() {
+			return null;
+		}
+
+		@Override
+		public Long getApparentEnergyReceived() {
+			return null;
+		}
+
+		@Override
+		public Long getReactiveEnergyDelivered() {
+			return null;
+		}
+
+		@Override
+		public Long getReactiveEnergyReceived() {
+			return null;
+		}
+
+		@Override
+		public Map<String, Object> getDeviceInfo() {
+			return PVITLData.this.getDeviceInfo();
+		}
+
+		@Override
+		public AcEnergyDataAccessor reversed() {
+			return PVITLData.this.reversed();
+		}
+
+		@Override
+		public PVITLInverterType getInverterType() {
+			return PVITLData.this.getInverterType();
+		}
+
+		@Override
+		public String getModelName() {
+			return PVITLData.this.getModelName();
+		}
+
+		@Override
+		public String getSerialNumber() {
+			return PVITLData.this.getSerialNumber();
+		}
+
+		@Override
+		public Float getModuleTemperature() {
+			return PVITLData.this.getModuleTemperature();
+		}
+
+		@Override
+		public Float getInternalTemperature() {
+			return PVITLData.this.getInternalTemperature();
+		}
+
+		@Override
+		public Long getActiveEnergyDeliveredToday() {
+			return PVITLData.this.getActiveEnergyDeliveredToday();
+		}
+
+		@Override
+		public Float getPv1Voltage() {
+			return PVITLData.this.getPv1Voltage();
+		}
+
+		@Override
+		public Float getPv1Current() {
+			return PVITLData.this.getPv1Current();
+		}
+
+		@Override
+		public Float getPv2Voltage() {
+			return PVITLData.this.getPv2Voltage();
+		}
+
+		@Override
+		public Float getPv2Current() {
+			return PVITLData.this.getPv2Current();
+		}
+
+		@Override
+		public PVITLInverterState getOperatingState() {
+			return PVITLData.this.getOperatingState();
+		}
+
+		@Override
+		public String getDspFirmwareVersion() {
+			return PVITLData.this.getDspFirmwareVersion();
+		}
+
+		@Override
+		public String getLcdFirmwareVersion() {
+			return PVITLData.this.getLcdFirmwareVersion();
+		}
+
+		@Override
+		public Integer getPv1Power() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return PVITLData.this.getPv1Power();
+			}
+		}
+
+		@Override
+		public Integer getPv2Power() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return PVITLData.this.getPv2Power();
+			}
+		}
+
 	}
 
 }

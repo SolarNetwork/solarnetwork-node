@@ -44,6 +44,12 @@ public class SimpleDatumLocation implements DatumLocation {
 		return locationId;
 	}
 
+	/**
+	 * Set the location ID.
+	 * 
+	 * @param locationId
+	 *        the ID to set
+	 */
 	public void setLocationId(Long locationId) {
 		this.locationId = locationId;
 	}
@@ -59,6 +65,12 @@ public class SimpleDatumLocation implements DatumLocation {
 		return locationName;
 	}
 
+	/**
+	 * Set the location name.
+	 * 
+	 * @param locationName
+	 *        the location name to set
+	 */
 	public void setLocationName(String locationName) {
 		this.locationName = locationName;
 	}
@@ -68,6 +80,12 @@ public class SimpleDatumLocation implements DatumLocation {
 		return sourceId;
 	}
 
+	/**
+	 * Set the source ID.
+	 * 
+	 * @param sourceId
+	 *        the source ID to set
+	 */
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
 	}
@@ -80,6 +98,12 @@ public class SimpleDatumLocation implements DatumLocation {
 		return sourceName;
 	}
 
+	/**
+	 * Set the source name.
+	 * 
+	 * @param sourceName
+	 *        the name to set
+	 */
 	public void setSourceName(String sourceName) {
 		this.sourceName = sourceName;
 	}
@@ -89,10 +113,21 @@ public class SimpleDatumLocation implements DatumLocation {
 		return (sourceMetadata == null ? null : sourceMetadata.getMeta());
 	}
 
+	/**
+	 * Get the source metadata.
+	 * 
+	 * @return the metadata
+	 */
 	public GeneralLocationSourceMetadata getSourceMetadata() {
 		return sourceMetadata;
 	}
 
+	/**
+	 * Set the source metadata.
+	 * 
+	 * @param sourceMetadata
+	 *        the metadata to set
+	 */
 	public void setSourceMetadata(GeneralLocationSourceMetadata sourceMetadata) {
 		this.sourceMetadata = sourceMetadata;
 	}

@@ -31,30 +31,43 @@ package net.solarnetwork.node.hw.ae.inverter.tx;
  */
 public enum AE250TxTemperatureFault implements AE250TxFault {
 
+	/** Module heat sink A1 temperature high. */
 	HeatsinkTempA1(0, "Module heat sink A1 temperature high."),
 
+	/** Module heat sink A2 temperature high. */
 	HeatsinkTempA2(1, "Module heat sink A2 temperature high."),
 
+	/** Module heat sink B1 temperature high. */
 	HeatsinkTempB1(2, "Module heat sink B1 temperature high."),
 
+	/** Module heat sink B2 temperature high. */
 	HeatsinkTempB2(3, "Module heat sink B2 temperature high."),
 
+	/** Module heat sink C1 temperature high. */
 	HeatsinkTempC1(4, "Module heat sink C1 temperature high."),
 
+	/** Module heat sink C2 temperature high. */
 	HeatsinkTempC2(5, "Module heat sink C2 temperature high."),
 
+	/** Control board temperature high. */
 	BoardTempHigh(6, "Control board temperature high."),
 
+	/** Drive temperature low. */
 	DriveTempLow(7, "Drive temperature low."),
 
+	/** Magnetics temperature high. */
 	MagTempHigh(8, "Magnetics temperature high."),
 
+	/** Ambient temperature low. */
 	AmbientTempLow(9, "Ambient temperature low."),
 
+	/** Magnetics temperature low. */
 	MagTempLow(10, "Magnetics temperature low."),
 
+	/** IPM temperature high. */
 	IpmTempHigh(11, "IPM temperature high."),
 
+	/** Inductor temperature high. */
 	InductorTempHigh(12, "Inductor temperature high."),
 
 	;

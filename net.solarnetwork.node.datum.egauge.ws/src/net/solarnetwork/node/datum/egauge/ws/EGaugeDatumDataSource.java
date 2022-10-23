@@ -147,6 +147,11 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 		return results;
 	}
 
+	/**
+	 * Get the client settings.
+	 * 
+	 * @return the client settings
+	 */
 	protected List<SettingSpecifier> getClientSettings() {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>();
 
@@ -199,14 +204,40 @@ public class EGaugeDatumDataSource extends DatumDataSourceSupport
 		return (buf.length() < 1 ? "N/A" : buf.toString());
 	}
 
+	/**
+	 * Get the sample cache TTL, in milliseconds.
+	 * 
+	 * @return the TTL, in milliseconds
+	 */
+	public long getSampleCacheMs() {
+		return sampleCacheMs;
+	}
+
+	/**
+	 * Set the sample cache TTL, in milliseconds.
+	 * 
+	 * @param sampleCacheMs
+	 *        the TTL in milliseconds
+	 */
 	public void setSampleCacheMs(long sampleCacheMs) {
 		this.sampleCacheMs = sampleCacheMs;
 	}
 
+	/**
+	 * Get the client.
+	 * 
+	 * @return the client
+	 */
 	public EGaugeClient getClient() {
 		return client;
 	}
 
+	/**
+	 * Set the client.
+	 * 
+	 * @param client
+	 *        the client
+	 */
 	public void setClient(EGaugeClient client) {
 		this.client = client;
 	}

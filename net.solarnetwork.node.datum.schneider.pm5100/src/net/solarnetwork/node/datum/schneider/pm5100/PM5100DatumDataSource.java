@@ -54,17 +54,24 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
  * {@link DatumDataSource} for the PM5100 series meter.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
+	/**
+	 * The {@code sampleCacheMs} property default value.
+	 * 
+	 * @since 2.1
+	 */
+	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000;
+
 	private final PM5100Data sample;
 
-	private long sampleCacheMs = 5000;
-	private String sourceId = "PM5100";
-	private boolean backwards = false;
-	private boolean includePhaseMeasurements = false;
+	private long sampleCacheMs = DEFAULT_SAMPLE_CACHE_MS;
+	private String sourceId;
+	private boolean backwards;
+	private boolean includePhaseMeasurements;
 
 	/**
 	 * Default constructor.
@@ -144,6 +151,11 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		return Collections.emptyList();
 	}
 
+	/**
+	 * Get the sample.
+	 * 
+	 * @return the sample
+	 */
 	public PM5100Data getSample() {
 		return sample;
 	}
@@ -212,13 +224,11 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		results.addAll(getIdentifiableSettingSpecifiers());
 		results.addAll(getModbusNetworkSettingSpecifiers());
 
-		PM5100DatumDataSource defaults = new PM5100DatumDataSource();
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
-				String.valueOf(defaults.getSampleCacheMs())));
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
-		results.add(new BasicToggleSettingSpecifier("backwards", defaults.backwards));
-		results.add(new BasicToggleSettingSpecifier("includePhaseMeasurements",
-				defaults.includePhaseMeasurements));
+				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));
+		results.add(new BasicToggleSettingSpecifier("backwards", Boolean.FALSE));
+		results.add(new BasicToggleSettingSpecifier("includePhaseMeasurements", Boolean.FALSE));
 
 		return results;
 	}
@@ -266,6 +276,16 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	}
 
 	/**
+	 * Get the source ID to use for returned datum.
+	 * 
+	 * @return the source ID
+	 * @since 2.1
+	 */
+	public String getSourceId() {
+		return sourceId;
+	}
+
+	/**
 	 * Set the source ID to use for returned datum.
 	 * 
 	 * @param sourceId
@@ -276,6 +296,16 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	}
 
 	/**
+	 * Get the "backwards" current direction flag.
+	 * 
+	 * @return {@literal true} to swap energy delivered and received values
+	 * @since 2.1
+	 */
+	public boolean isBackwards() {
+		return backwards;
+	}
+
+	/**
 	 * Toggle the "backwards" current direction flag.
 	 * 
 	 * @param backwards
@@ -283,6 +313,17 @@ public class PM5100DatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	 */
 	public void setBackwards(boolean backwards) {
 		this.backwards = backwards;
+	}
+
+	/**
+	 * Get the inclusion toggle of phase measurement properties in collected
+	 * datum.
+	 * 
+	 * @return {@literal true} to collect phase measurements
+	 * @since 2.1
+	 */
+	public boolean isIncludePhaseMeasurements() {
+		return includePhaseMeasurements;
 	}
 
 	/**

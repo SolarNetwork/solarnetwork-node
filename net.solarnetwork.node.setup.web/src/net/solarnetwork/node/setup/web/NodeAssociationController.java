@@ -320,6 +320,13 @@ public class NodeAssociationController extends BaseSetupController {
 		}
 	}
 
+	/**
+	 * Restore from backup.
+	 * 
+	 * @param model
+	 *        the model
+	 * @return the result view name
+	 */
 	@RequestMapping(value = "/restore", method = RequestMethod.GET)
 	public String restoreFromBackup(ModelMap model) {
 		final SettingsService settingsService = settingsServiceTracker.service();
@@ -349,6 +356,13 @@ public class NodeAssociationController extends BaseSetupController {
 		return PAGE_IMPORT_FROM_BACKUP;
 	}
 
+	/**
+	 * Configure settings.
+	 * 
+	 * @param cmd
+	 *        the settings to configure
+	 * @return the result
+	 */
 	@RequestMapping(value = "/configure", method = RequestMethod.POST)
 	@ResponseBody
 	public Response<Object> configure(SettingsCommand cmd) {
@@ -359,6 +373,15 @@ public class NodeAssociationController extends BaseSetupController {
 		return Response.response(null);
 	}
 
+	/**
+	 * Choose a backup to restore.
+	 * 
+	 * @param key
+	 *        the backup key
+	 * @param request
+	 *        the request
+	 * @return the result view name
+	 */
 	@RequestMapping(value = "/chooseBackup", method = RequestMethod.POST)
 	public String chooseBackup(@RequestParam("backup") String key, HttpServletRequest request) {
 		final BackupManager backupManager = backupManagerTracker.service();
@@ -373,6 +396,17 @@ public class NodeAssociationController extends BaseSetupController {
 		return "redirect:/associate";
 	}
 
+	/**
+	 * Import a backup.
+	 * 
+	 * @param file
+	 *        the backup to import
+	 * @param request
+	 *        the request
+	 * @return the result view name
+	 * @throws IOException
+	 *         if an IO error occurs
+	 */
 	@RequestMapping(value = "/importBackup", method = RequestMethod.POST)
 	public String importBackup(@RequestParam("file") MultipartFile file, HttpServletRequest request)
 			throws IOException {
@@ -407,6 +441,17 @@ public class NodeAssociationController extends BaseSetupController {
 
 	}
 
+	/**
+	 * View an imported backup.
+	 * 
+	 * @param locale
+	 *        the locale
+	 * @param request
+	 *        the request
+	 * @return the result
+	 * @throws IOException
+	 *         if an IO error occurs
+	 */
 	@RequestMapping(value = "/importedBackup", method = RequestMethod.GET)
 	@ResponseBody
 	public Response<BackupInfo> importedBackup(Locale locale, HttpServletRequest request)
@@ -432,6 +477,17 @@ public class NodeAssociationController extends BaseSetupController {
 		}
 	}
 
+	/**
+	 * Restore a backup.
+	 * 
+	 * @param options
+	 *        the options
+	 * @param locale
+	 *        the locale
+	 * @param request
+	 *        the request
+	 * @return the result
+	 */
 	@RequestMapping(value = "/restoreBackup", method = RequestMethod.POST)
 	@ResponseBody
 	public Response<?> restoreBackup(BackupOptions options, Locale locale, HttpServletRequest request) {
@@ -459,14 +515,32 @@ public class NodeAssociationController extends BaseSetupController {
 				messageSource.getMessage("node.setup.restore.success", null, locale), null);
 	}
 
+	/**
+	 * Set the PKI service.
+	 * 
+	 * @param pkiService
+	 *        the service to set
+	 */
 	public void setPkiService(PKIService pkiService) {
 		this.pkiService = pkiService;
 	}
 
+	/**
+	 * Set the backup manager service.
+	 * 
+	 * @param backupManagerTracker
+	 *        the service to set
+	 */
 	public void setBackupManagerTracker(OptionalService<BackupManager> backupManagerTracker) {
 		this.backupManagerTracker = backupManagerTracker;
 	}
 
+	/**
+	 * Set the network URLs.
+	 * 
+	 * @param networkURLs
+	 *        the network URLs to set
+	 */
 	public void setNetworkURLs(Map<String, String> networkURLs) {
 		this.networkURLs = networkURLs;
 	}

@@ -31,32 +31,46 @@ package net.solarnetwork.node.hw.ae.inverter.tx;
  */
 public enum AE250TxGridFault implements AE250TxFault {
 
+	/** Fast AC voltage low, phase A. */
 	AcFastUnderVoltA(0, "Fast AC voltage low, phase A."),
 
+	/** Fast AC voltage low, phase B. */
 	AcFastUnderVoltB(1, "Fast AC voltage low, phase B."),
 
+	/** Fast AC voltage low, phase C. */
 	AcFastUnderVoltC(2, "Fast AC voltage low, phase C."),
 
+	/** Slow AC voltage low, phase A. */
 	AcSlowUnderVoltA(3, "Slow AC voltage low, phase A."),
 
+	/** Slow AC voltage low, phase B. */
 	AcSlowUnderVoltB(4, "Slow AC voltage low, phase B."),
 
+	/** Slow AC voltage low, phase C. */
 	AcSlowUnderVoltC(5, "Slow AC voltage low, phase C."),
 
+	/** Fast AC voltage high, phase A. */
 	AcFastOverVoltA(6, "Fast AC voltage high, phase A."),
 
+	/** Fast AC voltage high, phase B. */
 	AcFastOverVoltB(7, "Fast AC voltage high, phase B."),
 
+	/** Fast AC voltage high, phase C. */
 	AcFastOverVoltC(8, "Fast AC voltage high, phase C."),
 
+	/** Slow AC voltage high, phase A. */
 	AcSlowOverVoltA(9, "Slow AC voltage high, phase A."),
 
+	/** Slow AC voltage high, phase B. */
 	AcSlowOverVoltB(10, "Slow AC voltage high, phase B."),
 
+	/** Slow AC voltage high, phase C. */
 	AcSlowOverVoltC(11, "Slow AC voltage high, phase C."),
 
+	/** Low frequency fault. */
 	AcUnderFreq(12, "Low frequency fault."),
 
+	/** High frequency fault. */
 	AcOverFreq(13, "High frequency fault."),
 
 	;

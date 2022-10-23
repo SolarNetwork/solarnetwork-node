@@ -29,7 +29,7 @@ import net.solarnetwork.node.domain.DcEnergyDataAccessor;
  * API for reading CSI 50KTL-CT inverter series data.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface PVITLDataAccessor extends DcEnergyDataAccessor, AcEnergyDataAccessor {
 
@@ -97,6 +97,22 @@ public interface PVITLDataAccessor extends DcEnergyDataAccessor, AcEnergyDataAcc
 	Long getActiveEnergyDeliveredToday();
 
 	/**
+	 * Get the DC current.
+	 * 
+	 * @return the current, in A
+	 * @since 1.1
+	 */
+	Float getDcCurrent();
+
+	/**
+	 * Get the PV 1 string current.
+	 * 
+	 * @return the current for PV string 1, in A
+	 * @since 1.1
+	 */
+	Float getPv1Current();
+
+	/**
 	 * Get the PV 1 string voltage.
 	 * 
 	 * @return the voltage for PV string 1
@@ -109,6 +125,14 @@ public interface PVITLDataAccessor extends DcEnergyDataAccessor, AcEnergyDataAcc
 	 * @return the power for PV string 1
 	 */
 	Integer getPv1Power();
+
+	/**
+	 * Get the PV 2 string current.
+	 * 
+	 * @return the current for PV string 2, in A
+	 * @since 1.1
+	 */
+	Float getPv2Current();
 
 	/**
 	 * Get the PV 2 string voltage.

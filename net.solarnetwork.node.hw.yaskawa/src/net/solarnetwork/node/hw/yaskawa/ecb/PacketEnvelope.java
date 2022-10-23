@@ -30,9 +30,13 @@ package net.solarnetwork.node.hw.yaskawa.ecb;
  */
 public enum PacketEnvelope {
 
+	/** Start. */
 	Start((byte) 0x02),
 
-	End((byte) 0x03);
+	/** End. */
+	End((byte) 0x03),
+
+	;
 
 	private final byte code;
 

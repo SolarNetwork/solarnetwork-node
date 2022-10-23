@@ -31,16 +31,22 @@ package net.solarnetwork.node.hw.ae.inverter.tx;
  */
 public enum AE250TxMainFault implements AE250TxFault {
 
+	/** Drive. */
 	Drive(0, "Drive"),
 
+	/** Voltage. */
 	Voltage(1, "Voltage"),
 
+	/** Grid. */
 	Grid(2, "Grid"),
 
+	/** Temperature. */
 	Temperature(3, "Temperature"),
 
+	/** System. */
 	System(4, "System"),
 
+	/** Latching. */
 	Latching(15, "Latching"),
 
 	;

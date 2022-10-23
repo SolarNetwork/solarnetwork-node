@@ -38,9 +38,22 @@ public class MBusDataRecord {
 	private Object value = null;
 	private int multiplierExponent = 0;
 
+	/**
+	 * Constructor.
+	 */
 	public MBusDataRecord() {
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param description
+	 *        the description
+	 * @param value
+	 *        the value
+	 * @param multiplierExponent
+	 *        the exponent
+	 */
 	public MBusDataRecord(MBusDataDescription description, Double value, int multiplierExponent) {
 		this.description = description;
 		this.type = MBusDataType.Double;
@@ -48,6 +61,18 @@ public class MBusDataRecord {
 		this.multiplierExponent = multiplierExponent;
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param description
+	 *        the description
+	 * @param type
+	 *        the type
+	 * @param value
+	 *        the value
+	 * @param multiplierExponent
+	 *        the exponent
+	 */
 	public MBusDataRecord(MBusDataDescription description, MBusDataType type, Long value,
 			int multiplierExponent) {
 		this.description = description;
@@ -56,18 +81,40 @@ public class MBusDataRecord {
 		this.multiplierExponent = multiplierExponent;
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param description
+	 *        the description
+	 * @param date
+	 *        the value
+	 */
 	public MBusDataRecord(MBusDataDescription description, Instant date) {
 		this.description = description;
 		this.type = MBusDataType.Date;
 		this.value = date;
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param description
+	 *        the description
+	 * @param value
+	 *        the value
+	 */
 	public MBusDataRecord(MBusDataDescription description, String value) {
 		this.description = description;
 		this.type = MBusDataType.String;
 		this.value = new String(value);
 	}
 
+	/**
+	 * Copy constructor.
+	 * 
+	 * @param record
+	 *        the record to copy
+	 */
 	public MBusDataRecord(MBusDataRecord record) {
 		this.description = record.description;
 		this.type = record.type;
@@ -93,34 +140,82 @@ public class MBusDataRecord {
 		this.multiplierExponent = record.multiplierExponent;
 	}
 
+	/**
+	 * Get the description.
+	 * 
+	 * @return the description
+	 */
 	public MBusDataDescription getDescription() {
 		return description;
 	}
 
+	/**
+	 * Get the data type.
+	 * 
+	 * @return the data type
+	 */
 	public MBusDataType getType() {
 		return type;
 	}
 
+	/**
+	 * Get the value as a double.
+	 * 
+	 * @return the double value
+	 * @throws ClassCastException
+	 *         if {@code value} is not a double
+	 */
 	public Double getDoubleValue() {
 		return (Double) value;
 	}
 
+	/**
+	 * Get the value as a date.
+	 * 
+	 * @return the date value
+	 * @throws ClassCastException
+	 *         if {@code value} is not a date
+	 */
 	public Instant getDateValue() {
 		return (Instant) value;
 	}
 
+	/**
+	 * Get the value as a long.
+	 * 
+	 * @return the long value
+	 * @throws ClassCastException
+	 *         if {@code value} is not a long
+	 */
 	public Long getLongValue() {
 		return (Long) value;
 	}
 
+	/**
+	 * Get the value as a string.
+	 * 
+	 * @return the string value
+	 * @throws ClassCastException
+	 *         if {@code value} is not a string
+	 */
 	public String getStringValue() {
-		return new String((String) value);
+		return (String) value;
 	}
 
+	/**
+	 * Get the exponent.
+	 * 
+	 * @return the exponent
+	 */
 	public int getMultiplierExponent() {
 		return multiplierExponent;
 	}
 
+	/**
+	 * Get the double value, scaled.
+	 * 
+	 * @return the scaled double value
+	 */
 	public Double getScaledValue() {
 		switch (type) {
 			case Double:

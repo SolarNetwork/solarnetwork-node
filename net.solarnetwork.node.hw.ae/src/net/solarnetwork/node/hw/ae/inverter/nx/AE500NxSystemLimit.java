@@ -33,29 +33,53 @@ import net.solarnetwork.domain.Bitmaskable;
  */
 public enum AE500NxSystemLimit implements Bitmaskable {
 
+	/**
+	 * The unit is reducing power because the output alternating current limit
+	 * has been exceeded.
+	 */
 	Iac(8, "The unit is reducing power because the output alternating current limit has been exceeded."),
 
+	/**
+	 * The unit is reducing power because the PV array direct current limit has
+	 * been exceeded.
+	 */
 	PvCurrent(
 			16,
 			"The unit is reducing power because the PV array direct current limit has been exceeded."),
 
+	/**
+	 * The unit is reducing output power because the AC power limit has been
+	 * exceeded.
+	 */
 	Pac(17, "The unit is reducing output power because the AC power limit has been exceeded."),
 
+	/** The MPPT is limited due to excessive DC voltage. */
 	VdcHigh(18, "The MPPT is limited due to excessive DC voltage."),
 
+	/** The MPPT is limited due to insufficient DC voltage. */
 	VdcLow(19, "The MPPT is limited due to insufficient DC voltage."),
 
+	/** The unit is consuming reactive power to limit current harmonics. */
 	Headroom(20, "The unit is consuming reactive power to limit current harmonics."),
 
+	/** The unit is reducing power due to excessive coolant temperature. */
 	CoolantTemp(21, "The unit is reducing power due to excessive coolant temperature."),
 
+	/** The unit is inhibiting PWM switching due to excessive AC current. */
 	IacInhibit(22, "The unit is inhibiting PWM switching due to excessive AC current."),
 
+	/**
+	 * The unit is inhibiting PWM switching due to excessive bus capacitor
+	 * voltage slew rate.
+	 */
 	BusSlewInhibit(
 			23,
 			"The unit is inhibiting PWM switching due to excessive bus capacitor voltage slew rate."),
 
-	MaxPowerInhibit(24, "The unit is inhibiting PWM switching due to excessive power.");
+	/** The unit is inhibiting PWM switching due to excessive power. */
+	MaxPowerInhibit(24, "The unit is inhibiting PWM switching due to excessive power."),
+
+	;
 
 	private final int bit;
 	private final String description;

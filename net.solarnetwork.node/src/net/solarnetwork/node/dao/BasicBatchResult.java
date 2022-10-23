@@ -33,12 +33,18 @@ import net.solarnetwork.node.dao.BatchableDao.BatchResult;
 public class BasicBatchResult implements BatchResult {
 
 	private int numProcessed = 0;
-	
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param numProcessed
+	 *        the number of items processed
+	 */
 	public BasicBatchResult(int numProcessed) {
 		super();
 		this.numProcessed = numProcessed;
 	}
-	
+
 	@Override
 	public int numProcessed() {
 		return numProcessed;

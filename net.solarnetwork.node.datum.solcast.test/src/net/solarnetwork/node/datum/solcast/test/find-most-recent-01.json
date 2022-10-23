@@ -1,0 +1,34 @@
+{
+  "estimated_actuals": [
+    {
+      "ghi": 970,
+      "ebh": 869,
+      "dni": 976,
+      "dhi": 101,
+      "air_temp": 10,
+      "cloud_opacity": 0,
+      "period_end": "2022-10-14T01:30:00.0000000Z",
+      "period": "PT30M"
+    },
+    {
+      "ghi": 941,
+      "ebh": 836,
+      "dni": 959,
+      "dhi": 106,
+      "air_temp": 11,
+      "cloud_opacity": 0,
+      "period_end": "2022-10-14T01:00:00.0000000Z",
+      "period": "PT30M"
+    },
+    {
+      "ghi": 885,
+      "ebh": 759,
+      "dni": 907,
+      "dhi": 126,
+      "air_temp": 12,
+      "cloud_opacity": 1,
+      "period_end": "2022-10-14T00:30:00.0000000Z",
+      "period": "PT30M"
+    }
+  ]
+}

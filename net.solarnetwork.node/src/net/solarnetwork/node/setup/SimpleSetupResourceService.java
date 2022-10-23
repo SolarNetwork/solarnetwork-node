@@ -60,10 +60,21 @@ public class SimpleSetupResourceService implements SetupResourceService {
 		return result;
 	}
 
+	/**
+	 * Get the setup resource providers.
+	 * 
+	 * @return the providers
+	 */
 	public Collection<SetupResourceProvider> getSetupResourceProviders() {
 		return setupResourceProviders;
 	}
 
+	/**
+	 * Set the setup resource providers.
+	 * 
+	 * @param setupResourceProviders
+	 *        the providers to set
+	 */
 	public void setSetupResourceProviders(Collection<SetupResourceProvider> setupResourceProviders) {
 		this.setupResourceProviders = setupResourceProviders;
 	}

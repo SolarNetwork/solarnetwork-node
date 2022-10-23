@@ -36,34 +36,78 @@ public class UserProfile {
 	private String password;
 	private String passwordAgain;
 
+	/**
+	 * Get the username.
+	 * 
+	 * @return the username
+	 */
 	public String getUsername() {
 		return username;
 	}
 
+	/**
+	 * Set the username.
+	 * 
+	 * @param username
+	 *        the username to set
+	 */
 	public void setUsername(String username) {
 		this.username = username;
 	}
 
+	/**
+	 * Get the old password.
+	 * 
+	 * @return the old password
+	 */
 	public String getOldPassword() {
 		return oldPassword;
 	}
 
+	/**
+	 * Set the old password.
+	 * 
+	 * @param oldPassword
+	 *        the old password to set
+	 */
 	public void setOldPassword(String oldPassword) {
 		this.oldPassword = oldPassword;
 	}
 
+	/**
+	 * Get the password.
+	 * 
+	 * @return the password
+	 */
 	public String getPassword() {
 		return password;
 	}
 
+	/**
+	 * Set the password.
+	 * 
+	 * @param password
+	 *        the password to set
+	 */
 	public void setPassword(String password) {
 		this.password = password;
 	}
 
+	/**
+	 * Get the password again.
+	 * 
+	 * @return the password again
+	 */
 	public String getPasswordAgain() {
 		return passwordAgain;
 	}
 
+	/**
+	 * Set the password again.
+	 * 
+	 * @param passwordAgain
+	 *        the password again
+	 */
 	public void setPasswordAgain(String passwordAgain) {
 		this.passwordAgain = passwordAgain;
 	}

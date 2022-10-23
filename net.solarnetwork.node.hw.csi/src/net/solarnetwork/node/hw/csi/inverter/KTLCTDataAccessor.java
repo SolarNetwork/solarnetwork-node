@@ -31,7 +31,7 @@ import net.solarnetwork.node.domain.DcEnergyDataAccessor;
  * API for reading CSI 50KTL-CT inverter series data.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public interface KTLCTDataAccessor extends DcEnergyDataAccessor, AcEnergyDataAccessor {
 
@@ -178,6 +178,14 @@ public interface KTLCTDataAccessor extends DcEnergyDataAccessor, AcEnergyDataAcc
 	Float getPv3Current();
 
 	/**
+	 * Get the DC current, in A.
+	 * 
+	 * @return the DC current
+	 * @since 2.1
+	 */
+	Float getDcCurrent();
+
+	/**
 	 * Get the device operating state.
 	 * 
 	 * @return the state
@@ -193,5 +201,13 @@ public interface KTLCTDataAccessor extends DcEnergyDataAccessor, AcEnergyDataAcc
 	 * @since 1.2
 	 */
 	Float getOutputPowerLimitPercent();
+
+	/**
+	 * Get the inverter efficiency rating, as a percentage from 0-1.
+	 * 
+	 * @return the efficiency rating
+	 * @since 2.1
+	 */
+	Float getEfficiency();
 
 }

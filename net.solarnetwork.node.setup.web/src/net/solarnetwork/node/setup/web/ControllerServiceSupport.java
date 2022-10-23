@@ -53,6 +53,11 @@ public class ControllerServiceSupport {
 	@Autowired
 	private IdentityService identityService;
 
+	/**
+	 * Get the system service.
+	 * 
+	 * @return the service
+	 */
 	@ModelAttribute(value = SYSTEM_SERVICE_ATTRIBUTE)
 	public SystemService systemService() {
 		final SystemService sysService = (systemService != null ? systemService.service() : null);

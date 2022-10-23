@@ -55,6 +55,7 @@ import net.solarnetwork.util.CachedResult;
 public class UserMetadataService extends JsonHttpClientSupport
 		implements MetadataService, SettingSpecifierProvider, SettingsChangeObserver {
 
+	/** The the user metadata path. */
 	public static final String USER_METADATA_PATH = "/api/v1/sec/users/meta";
 
 	/** The {@code cacheSeconds} property default value. */
@@ -67,6 +68,12 @@ public class UserMetadataService extends JsonHttpClientSupport
 
 	private CachedResult<GeneralDatumMetadata> cachedMetadata;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param setupService
+	 *        the setup service
+	 */
 	public UserMetadataService(OptionalService<SetupService> setupService) {
 		super();
 		this.setupService = setupService;

@@ -49,6 +49,7 @@ import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * {@link DatumDataSource} implementation for {@link AcDcEnergyDatum} with the
@@ -56,12 +57,20 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * 
  * @author matt
  * @author maxieduncan
- * @version 2.0
+ * @version 2.2
  */
 public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTData>
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider, InstructionHandler {
 
-	private String sourceId = "CSI";
+	/**
+	 * The {@code sampleCacheMs} property default value.
+	 * 
+	 * @since 2.2
+	 */
+	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000L;
+
+	private String sourceId;
+	private boolean includePhaseMeasurements = false;
 
 	/**
 	 * Default constructor.
@@ -78,6 +87,7 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 	 */
 	public KTLDatumDataSource(KTLCTData sample) {
 		super(sample);
+		setSampleCacheMs(DEFAULT_SAMPLE_CACHE_MS);
 	}
 
 	@Override
@@ -109,7 +119,11 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 			if ( currSample == null ) {
 				return null;
 			}
-			return new KTLDatum(currSample, sourceId);
+			KTLDatum d = new KTLDatum(currSample, sourceId);
+			if ( this.includePhaseMeasurements ) {
+				d.populatePhaseMeasurementProperties(currSample);
+			}
+			return d;
 		} catch ( IOException e ) {
 			log.error("Communication problem reading source {} from KTL device {}: {}", sourceId,
 					modbusDeviceName(), e.getMessage());
@@ -210,10 +224,10 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 		results.addAll(getIdentifiableSettingSpecifiers());
 		results.addAll(getModbusNetworkSettingSpecifiers());
 
-		KTLDatumDataSource defaults = new KTLDatumDataSource();
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
-				String.valueOf(defaults.getSampleCacheMs())));
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
+				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));
+		results.add(new BasicToggleSettingSpecifier("includePhaseMeasurements", false));
 
 		results.addAll(getDeviceInfoMetadataSettingSpecifiers());
 
@@ -248,6 +262,16 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 	}
 
 	/**
+	 * Get the source ID.
+	 * 
+	 * @return the source ID
+	 * @since 2.2
+	 */
+	public String getSourceId() {
+		return sourceId;
+	}
+
+	/**
 	 * Set the source ID to use for returned datum.
 	 * 
 	 * @param sourceId
@@ -255,6 +279,28 @@ public class KTLDatumDataSource extends ModbusDataDatumDataSourceSupport<KTLCTDa
 	 */
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
+	}
+
+	/**
+	 * Get the inclusion toggle of phase measurement properties in collected
+	 * datum.
+	 * 
+	 * @return {@literal true} to collect phase measurements
+	 * @since 2.2
+	 */
+	public boolean isIncludePhaseMeasurements() {
+		return includePhaseMeasurements;
+	}
+
+	/**
+	 * Toggle the inclusion of phase measurement properties in collected datum.
+	 * 
+	 * @param includePhaseMeasurements
+	 *        {@literal true} to collect phase measurements
+	 * @since 2.1
+	 */
+	public void setIncludePhaseMeasurements(boolean includePhaseMeasurements) {
+		this.includePhaseMeasurements = includePhaseMeasurements;
 	}
 
 }

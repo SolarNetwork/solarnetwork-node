@@ -32,7 +32,7 @@ import net.solarnetwork.node.domain.DcEnergyDataAccessor;
  * API for reading AE 500NX data.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.1
  */
 public interface AE500NxDataAccessor extends DcEnergyDataAccessor, AcEnergyDataAccessor {
@@ -50,6 +50,45 @@ public interface AE500NxDataAccessor extends DcEnergyDataAccessor, AcEnergyDataA
 	 * @return the version
 	 */
 	String getFirmwareVersion();
+
+	/**
+	 * Get the ambient temperature.
+	 * 
+	 * @return the temperature, in degrees Celsius
+	 * @since 1.1
+	 */
+	Float getAmbientTemperature();
+
+	/**
+	 * Get the cabinet temperature.
+	 * 
+	 * @return the temperature, in degrees Celsius
+	 * @since 1.1
+	 */
+	Float getCabinetTemperature();
+
+	/**
+	 * Get the coolant temperature.
+	 * 
+	 * @return the temperature, in degrees Celsius
+	 * @since 1.1
+	 */
+	Float getCoolantTemperature();
+
+	/**
+	 * Get the line reactor temperature.
+	 * 
+	 * @return the temperature, in degrees Celsius
+	 * @since 1.1
+	 */
+	Float getReactorTemperature();
+
+	/**
+	 * Get the DC current.
+	 * 
+	 * @return the DC current, in amperes
+	 */
+	Float getDcCurrent();
 
 	/**
 	 * Get the system status.

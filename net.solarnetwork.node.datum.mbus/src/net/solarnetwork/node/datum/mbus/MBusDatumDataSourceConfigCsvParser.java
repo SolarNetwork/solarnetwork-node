@@ -1,0 +1,145 @@
+/* ==================================================================
+ * MBusDatumDataSourceConfigCsvParser.java - 30/09/2022 12:01:56 pm
+ * 
+ * Copyright 2022 SolarNetwork.net Dev Team
+ * 
+ * This program is free software; you can redistribute it and/or 
+ * modify it under the terms of the GNU General Public License as 
+ * published by the Free Software Foundation; either version 2 of 
+ * the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License 
+ * along with this program; if not, write to the Free Software 
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ * 02111-1307 USA
+ * ==================================================================
+ */
+
+package net.solarnetwork.node.datum.mbus;
+
+import static net.solarnetwork.node.datum.mbus.MBusCsvColumn.ADDRESS;
+import static net.solarnetwork.node.datum.mbus.MBusCsvColumn.DATA_DESCRIPTION;
+import static net.solarnetwork.node.datum.mbus.MBusCsvColumn.DATA_TYPE;
+import static net.solarnetwork.node.datum.mbus.MBusCsvColumn.DECIMAL_SCALE;
+import static net.solarnetwork.node.datum.mbus.MBusCsvColumn.MULTIPLIER;
+import static net.solarnetwork.node.datum.mbus.MBusCsvColumn.NETWORK_NAME;
+import static net.solarnetwork.node.datum.mbus.MBusCsvColumn.PROP_NAME;
+import static net.solarnetwork.node.datum.mbus.MBusCsvColumn.PROP_TYPE;
+import static net.solarnetwork.node.datum.mbus.MBusCsvColumn.SAMPLE_CACHE;
+import static net.solarnetwork.node.datum.mbus.MBusCsvColumn.SCHEDULE;
+import static net.solarnetwork.node.datum.mbus.MBusCsvColumn.SERVICE_GROUP;
+import static net.solarnetwork.node.datum.mbus.MBusCsvColumn.SERVICE_NAME;
+import static net.solarnetwork.node.datum.mbus.MBusCsvColumn.SOURCE_ID;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
+import org.springframework.context.MessageSource;
+import org.supercsv.io.ICsvListReader;
+
+/**
+ * Parse CSV data into {@link MBusDatumDataSourceConfig} instances.
+ * 
+ * @author matt
+ * @version 1.0
+ * @since 1.1
+ */
+public class MBusDatumDataSourceConfigCsvParser extends BaseDatumDataSourceConfigCsvParser {
+
+	private final List<MBusDatumDataSourceConfig> results;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param results
+	 *        the list to add the parsed results to
+	 * @param messageSource
+	 *        the message source
+	 * @param messages
+	 *        the list of output messages to add messages to
+	 */
+	public MBusDatumDataSourceConfigCsvParser(List<MBusDatumDataSourceConfig> results,
+			MessageSource messageSource, List<String> messages) {
+		super(messageSource, messages);
+		this.results = requireNonNullArgument(results, "results");
+	}
+
+	/**
+	 * Parse CSV.
+	 * 
+	 * @param csv
+	 *        the CSV to parse
+	 * @throws IOException
+	 *         if any IO error occurs
+	 */
+	public void parse(ICsvListReader csv) throws IOException {
+		if ( csv == null ) {
+			return;
+		}
+		@SuppressWarnings("unused")
+		final String[] headerRow = csv.getHeader(true);
+		List<String> row = null;
+		MBusDatumDataSourceConfig config = null;
+		while ( (row = csv.read()) != null ) {
+			if ( row.isEmpty() ) {
+				continue;
+			}
+			final int rowLen = row.size();
+			final int rowNum = csv.getRowNumber();
+			final String key = rowKeyValue(row, results, config);
+			if ( key == null || key.startsWith("#") ) {
+				// either a comment line, or empty key but no active configuration
+				continue;
+			}
+			if ( config == null || (key != null && !key.equals(config.getKey())) ) {
+				// starting new config
+				config = new MBusDatumDataSourceConfig();
+				results.add(config);
+				config.setKey(key);
+				popoulateBaseConfig(row, rowLen, rowNum, config);
+				config.setAddress(parseIntegerValue(row, rowLen, rowNum, ADDRESS.getCode()));
+				config.setSampleCacheMs(parseLongValue(row, rowLen, rowNum, SAMPLE_CACHE.getCode()));
+			}
+
+			MBusPropertyConfig propConfig = parseMBusPropertyConfig(row, rowLen, rowNum);
+			if ( propConfig.isEmpty() ) {
+				continue;
+			}
+			if ( propConfig.isValid() ) {
+				config.getPropertyConfigs().add(propConfig);
+			} else if ( propConfig.getName() != null ) {
+				messages.add(messageSource.getMessage("message.invalidPropertyConfig",
+						new Object[] { rowNum }, "Invalid property configuration.",
+						Locale.getDefault()));
+			}
+		}
+	}
+
+	private void popoulateBaseConfig(List<String> row, int rowLen, int rowNum,
+			BaseDatumDataSourceConfig config) {
+		config.setServiceName(parseStringValue(row, rowLen, rowNum, SERVICE_NAME.getCode()));
+		config.setServiceGroup(parseStringValue(row, rowLen, rowNum, SERVICE_GROUP.getCode()));
+		config.setSourceId(parseStringValue(row, rowLen, rowNum, SOURCE_ID.getCode()));
+		config.setSchedule(parseStringValue(row, rowLen, rowNum, SCHEDULE.getCode()));
+		config.setNetworkName(parseStringValue(row, rowLen, rowNum, NETWORK_NAME.getCode()));
+	}
+
+	private MBusPropertyConfig parseMBusPropertyConfig(List<String> row, final int rowLen,
+			final int rowNum) {
+		MBusPropertyConfig propConfig = new MBusPropertyConfig();
+		propConfig.setName(parseStringValue(row, rowLen, rowNum, PROP_NAME.getCode()));
+		propConfig.setPropertyType(parseDatumSamplesTypeValue(row, rowLen, rowNum, PROP_TYPE.getCode()));
+		propConfig.setDataType(parseMBusDataTypeValue(row, rowLen, rowNum, DATA_TYPE.getCode()));
+		propConfig.setDataDescription(
+				parseMBusDataDescriptionValue(row, rowLen, rowNum, DATA_DESCRIPTION.getCode()));
+		propConfig.setUnitMultiplier(parseBigDecimalValue(row, rowLen, rowNum, MULTIPLIER.getCode()));
+		propConfig.setDecimalScale(parseIntegerValue(row, rowLen, rowNum, DECIMAL_SCALE.getCode()));
+		return propConfig;
+	}
+
+}

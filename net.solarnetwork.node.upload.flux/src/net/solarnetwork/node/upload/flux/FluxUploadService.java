@@ -50,6 +50,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+import java.util.stream.Collectors;
 import org.apache.commons.codec.binary.Hex;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
@@ -72,8 +73,10 @@ import net.solarnetwork.common.mqtt.dao.MqttMessageEntity;
 import net.solarnetwork.dao.BasicBatchOptions;
 import net.solarnetwork.dao.BatchableDao;
 import net.solarnetwork.dao.BatchableDao.BatchCallbackResult;
+import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.service.OperationalModesService;
@@ -97,7 +100,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class FluxUploadService extends BaseMqttConnectionService implements EventHandler,
 		Consumer<NodeDatum>, SettingSpecifierProvider, SettingsChangeObserver, MqttConnectionObserver {
@@ -149,6 +152,27 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	 * @since 1.14
 	 */
 	public static final boolean DEFAULT_PUBLISH_RETAINED = true;
+
+	/**
+	 * A source ID for log messages posted as datum.
+	 * 
+	 * @since 2.4
+	 */
+	public static final String LOG_SOURCE_ID = "log";
+
+	/**
+	 * A source ID prefix for log messages posted as datum.
+	 * 
+	 * @since 2.4
+	 */
+	public static final String LOG_SOURCE_ID_PREFIX = LOG_SOURCE_ID + "/";
+
+	/**
+	 * The EventAdmin topic for log events.
+	 * 
+	 * @since 2.4
+	 */
+	public static final String EVENT_ADMIN_LOG_TOPIC = "net/solarnetwork/Log";
 
 	private final ConcurrentMap<String, Long> SOURCE_CAPTURE_TIMES = new ConcurrentHashMap<>(16, 0.9f,
 			2);
@@ -366,9 +390,15 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	@Override
 	public void handleEvent(Event event) {
 		final String topic = event.getTopic();
-		if ( !OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED.equals(topic) ) {
-			return;
+		if ( OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED.equals(topic) ) {
+			handleEventOpModesChanged(event);
+		} else if ( EVENT_ADMIN_LOG_TOPIC.equals(topic) ) {
+			handleEventLog(event);
 		}
+
+	}
+
+	private void handleEventOpModesChanged(Event event) {
 		final String requiredMode = this.requiredOperationalMode;
 		if ( requiredMode == null || requiredMode.isEmpty() ) {
 			return;
@@ -408,16 +438,59 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		}
 	}
 
+	private void handleEventLog(Event event) {
+		Object ts = event.getProperty("ts");
+		Object name = event.getProperty("name");
+		Object level = event.getProperty("level");
+		Object msg = event.getProperty("msg");
+		if ( ts instanceof Long && name != null && level != null && msg != null ) {
+			DatumSamples s = new DatumSamples();
+
+			Object priority = event.getProperty("priority");
+			if ( priority instanceof Integer ) {
+				s.putInstantaneousSampleValue("priority", (Integer) priority);
+			}
+			s.putStatusSampleValue("level", level);
+			s.putStatusSampleValue("msg", msg);
+			s.putStatusSampleValue("exMsg", event.getProperty("exMsg"));
+			Object st = event.getProperty("exSt");
+			if ( st instanceof String[] ) {
+				String stString = Arrays.stream((String[]) st).collect(Collectors.joining("\n"));
+				s.putStatusSampleValue("exSt", stString);
+			}
+
+			String sourceId = LOG_SOURCE_ID_PREFIX + name.toString().replace('.', '/');
+			SimpleDatum d = SimpleDatum.nodeDatum(sourceId, Instant.ofEpochMilli((Long) ts), s);
+			Executor e = this.executor;
+			if ( e != null ) {
+				e.execute(() -> {
+					acceptInternal(d);
+				});
+			} else {
+				acceptInternal(d);
+			}
+		}
+	}
+
 	@Override
 	public void accept(NodeDatum datum) {
-		if ( datum == null || datum.getSourceId() == null ) {
+		if ( datum == null || datum.getSourceId() == null
+				|| datum.getSourceId().equalsIgnoreCase(LOG_SOURCE_ID)
+				|| datum.getSourceId().startsWith(LOG_SOURCE_ID_PREFIX) ) {
 			return;
 		}
+		acceptInternal(datum);
+	}
+
+	private void acceptInternal(NodeDatum datum) {
 		final String requiredMode = this.requiredOperationalMode;
 		final OperationalModesService modeService = this.opModesService;
 		if ( requiredMode != null && !requiredMode.isEmpty()
 				&& (modeService == null || !modeService.isOperationalModeActive(requiredMode)) ) {
-			log.trace("Not posting to SolarFlux because operational mode [{}] not active", requiredMode);
+			if ( log.isTraceEnabled() && canLogForDatum(datum.getSourceId()) ) {
+				log.trace("Not posting to SolarFlux because operational mode [{}] not active",
+						requiredMode);
+			}
 			return;
 		}
 		final FluxFilterConfig[] activeFilters = activeFilters(getFilters(), datum.getSourceId());
@@ -482,6 +555,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		if ( sourceId.isEmpty() ) {
 			return;
 		}
+		final boolean canLog = canLogForDatum(sourceId);
 		final MqttMessageDao dao = service(mqttMessageDao);
 		final boolean retained = isPublishRetained();
 		MqttMessage msgToPersist = null;
@@ -500,16 +574,20 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 					}
 					JsonNode jsonData = objectMapper.valueToTree(data);
 					payload = objectMapper.writeValueAsBytes(jsonData);
-					log.trace("Publishing to MQTT topic {} JSON:\n{}", topic, jsonData);
+					if ( canLog ) {
+						log.trace("Publishing to MQTT topic {} JSON:\n{}", topic, jsonData);
+					}
 				}
 				msg = new BasicMqttMessage(topic, retained, getPublishQos(), payload);
 				if ( conn != null && conn.isEstablished() ) {
-					if ( log.isTraceEnabled() ) {
+					if ( canLog && log.isTraceEnabled() ) {
 						log.trace("Publishing to MQTT topic {}\n{}", topic,
 								Hex.encodeHexString(payload));
 					}
 					conn.publish(msg).get(getMqttConfig().getConnectTimeoutSeconds(), TimeUnit.SECONDS);
-					log.debug("Published to MQTT topic {}: {}", topic, data);
+					if ( canLog ) {
+						log.debug("Published to MQTT topic {}: {}", topic, data);
+					}
 					if ( mqttMessageDaoRequired && !mqttMessageDaoDiscovered ) {
 						tryPublishCachedMessages(conn);
 					}
@@ -522,12 +600,16 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 					root = root.getCause();
 				}
 				String message = (root instanceof TimeoutException ? "timeout" : root.getMessage());
-				log.warn("Error publishing to MQTT topic {} datum {} @ {}: {}", topic, data,
-						getMqttConfig().getServerUri(), message);
+				if ( canLog ) {
+					log.warn("Error publishing to MQTT topic {} datum {} @ {}: {}", topic, data,
+							getMqttConfig().getServerUri(), message);
+				}
 				if ( root instanceof IllegalArgumentException ) {
-					log.error(
-							"Discarding MQTT topic {} datum {} @ {} because of invalid data (illegal character in source ID?): {}",
-							topic, data, getMqttConfig().getServerUri(), message);
+					if ( canLog ) {
+						log.error(
+								"Discarding MQTT topic {} datum {} @ {} because of invalid data (illegal character in source ID?): {}",
+								topic, data, getMqttConfig().getServerUri(), message);
+					}
 				} else if ( dao != null ) {
 					msgToPersist = msg;
 				}
@@ -536,14 +618,20 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		if ( msgToPersist != null ) {
 			String dest = getMqttConfig().getServerUriValue();
 			if ( dest != null ) {
-				log.debug("Locally persisting MQTT message to {} on topic {}", dest,
-						msgToPersist.getTopic());
+				if ( canLog ) {
+					log.debug("Locally persisting MQTT message to {} on topic {}", dest,
+							msgToPersist.getTopic());
+				}
 				BasicMqttMessageEntity entity = new BasicMqttMessageEntity(null, Instant.now(), dest,
 						msgToPersist.getTopic(), false, msgToPersist.getQosLevel(),
 						msgToPersist.getPayload());
 				dao.save(entity);
 			}
 		}
+	}
+
+	private static boolean canLogForDatum(String sourceId) {
+		return !(LOG_SOURCE_ID.equalsIgnoreCase(sourceId) || sourceId.startsWith(LOG_SOURCE_ID_PREFIX));
 	}
 
 	private ObjectEncoder encoderForSourceId(FluxFilterConfig[] activeFilters, String sourceId) {

@@ -68,10 +68,20 @@ public class MBusSecondaryAddress {
 		}
 	}
 
+	/**
+	 * Get the raw bytes.
+	 * 
+	 * @return the bytes
+	 */
 	public byte[] getBytes() {
 		return address;
 	}
 
+	/**
+	 * Test if the address is valid.
+	 * 
+	 * @return {@literal true} if the address is not invalid
+	 */
 	public boolean isValid() {
 		return !Arrays.equals(address, INVALID_ADDRESS);
 	}

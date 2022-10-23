@@ -39,10 +39,19 @@ import org.supercsv.util.CsvContext;
  */
 public class JdbcFmtBytes extends CellProcessorAdaptor implements CellProcessor {
 
+	/**
+	 * Constructor.
+	 */
 	public JdbcFmtBytes() {
 		super();
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param next
+	 *        the next processor
+	 */
 	public JdbcFmtBytes(StringCellProcessor next) {
 		super(next);
 	}

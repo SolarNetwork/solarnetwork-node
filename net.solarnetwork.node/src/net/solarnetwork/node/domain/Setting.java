@@ -42,10 +42,15 @@ import java.util.Set;
  */
 public class Setting {
 
+	/**
+	 * An enumeration of setting flags.
+	 */
 	public enum SettingFlag {
 
+		/** Ignore the modification date. */
 		IgnoreModificationDate(0),
 
+		/** The setting is "volatile" and should not be persisted. */
 		Volatile(1);
 
 		private final int key;
@@ -192,42 +197,97 @@ public class Setting {
 		return true;
 	}
 
+	/**
+	 * Get the key.
+	 * 
+	 * @return the key
+	 */
 	public String getKey() {
 		return key;
 	}
 
+	/**
+	 * Set the key.
+	 * 
+	 * @param key
+	 *        the key to set
+	 */
 	public void setKey(String key) {
 		this.key = key;
 	}
 
+	/**
+	 * Get the type.
+	 * 
+	 * @return the type
+	 */
 	public String getType() {
 		return type;
 	}
 
+	/**
+	 * Set the type.
+	 * 
+	 * @param type
+	 *        the type to set
+	 */
 	public void setType(String type) {
 		this.type = type;
 	}
 
+	/**
+	 * Get the value.
+	 * 
+	 * @return the value
+	 */
 	public String getValue() {
 		return value;
 	}
 
+	/**
+	 * Set the value.
+	 * 
+	 * @param value
+	 *        the value to set
+	 */
 	public void setValue(String value) {
 		this.value = value;
 	}
 
+	/**
+	 * Get the flags.
+	 * 
+	 * @return the flags
+	 */
 	public Set<SettingFlag> getFlags() {
 		return flags;
 	}
 
+	/**
+	 * Set the flags.
+	 * 
+	 * @param flags
+	 *        the flags to set
+	 */
 	public void setFlags(Set<SettingFlag> flags) {
 		this.flags = flags;
 	}
 
+	/**
+	 * Get the modification date.
+	 * 
+	 * @return the date
+	 */
 	public Date getModified() {
 		return modified;
 	}
 
+	/**
+	 * Set the modification date.
+	 * 
+	 * @param modified
+	 *        the date to set
+	 */
 	public void setModified(Date modified) {
 		this.modified = modified;
 	}

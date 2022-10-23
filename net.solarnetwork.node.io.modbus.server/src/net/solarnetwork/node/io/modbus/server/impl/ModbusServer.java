@@ -72,6 +72,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.StringUtils;
@@ -81,7 +82,7 @@ import net.wimpi.modbus.io.ModbusTCPTransport;
  * Modbus TCP server service.
  * 
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class ModbusServer extends BaseIdentifiable
 		implements SettingSpecifierProvider, SettingsChangeObserver, EventHandler, ThreadFactory {
@@ -121,6 +122,7 @@ public class ModbusServer extends BaseIdentifiable
 	private long requestThrottle = DEFAULT_REQUEST_THROTTLE;
 	private TaskScheduler taskScheduler;
 	private UnitConfig[] unitConfigs;
+	private boolean allowWrites;
 
 	private ScheduledFuture<?> startupFuture;
 	private ServerThread serverThread;
@@ -310,7 +312,7 @@ public class ModbusServer extends BaseIdentifiable
 						ModbusConnectionHandler handler = new ModbusConnectionHandler(
 								new ModbusTCPTransport(in), registers,
 								String.format("TCP %s:%d %d", addr, port, in.getLocalPort()), in,
-								requestThrottle);
+								requestThrottle, allowWrites);
 						clients.add(handler);
 						serverExecutor.execute(handler);
 					} catch ( SocketTimeoutException e ) {
@@ -510,6 +512,7 @@ public class ModbusServer extends BaseIdentifiable
 		result.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(DEFAULT_PORT)));
 		result.add(new BasicTextFieldSettingSpecifier("requestThrottle",
 				String.valueOf(DEFAULT_REQUEST_THROTTLE)));
+		result.add(new BasicToggleSettingSpecifier("allowWrites", false));
 
 		UnitConfig[] blockConfs = getUnitConfigs();
 		List<UnitConfig> blockConfsList = (blockConfs != null ? Arrays.asList(blockConfs)
@@ -750,6 +753,29 @@ public class ModbusServer extends BaseIdentifiable
 	 */
 	public void setRequestThrottle(long requestThrottle) {
 		this.requestThrottle = requestThrottle;
+	}
+
+	/**
+	 * Get the toggle value to allow Modbus writes.
+	 * 
+	 * @return {@literal true} to allow Modbus clients to write to holding/coil
+	 *         registers
+	 * @since 2.4
+	 */
+	public boolean isAllowWrites() {
+		return allowWrites;
+	}
+
+	/**
+	 * Toggle allowing Modbus writes.
+	 * 
+	 * @param allowWrites
+	 *        {@literal true} to allow Modbus clients to write to holding/coil
+	 *        registers
+	 * @since 2.4
+	 */
+	public void setAllowWrites(boolean allowWrites) {
+		this.allowWrites = allowWrites;
 	}
 
 }

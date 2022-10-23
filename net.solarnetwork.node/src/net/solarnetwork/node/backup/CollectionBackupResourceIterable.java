@@ -27,7 +27,7 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * Simple implemenation of {@link BackupResourceIterable} that uses a
+ * Simple implementation of {@link BackupResourceIterable} that uses a
  * collection.
  * 
  * @author matt
@@ -37,6 +37,12 @@ public class CollectionBackupResourceIterable implements BackupResourceIterable 
 
 	private final Collection<BackupResource> collection;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param collection
+	 *        the collection to wrrap
+	 */
 	public CollectionBackupResourceIterable(Collection<BackupResource> collection) {
 		super();
 		this.collection = collection;

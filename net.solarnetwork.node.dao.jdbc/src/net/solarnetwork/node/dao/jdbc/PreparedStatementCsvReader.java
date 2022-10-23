@@ -46,11 +46,31 @@ import org.supercsv.prefs.CsvPreference;
 public class PreparedStatementCsvReader extends AbstractCsvReader
 		implements JdbcPreparedStatementCsvReader {
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param tokenizer
+	 *        the tokenizer
+	 * @param preferences
+	 *        the preferences
+	 * @throws SQLException
+	 *         if any SQL error occurs
+	 */
 	public PreparedStatementCsvReader(ITokenizer tokenizer, CsvPreference preferences)
 			throws SQLException {
 		super(tokenizer, preferences);
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param reader
+	 *        the reader
+	 * @param preferences
+	 *        the preferences
+	 * @throws SQLException
+	 *         if any SQL error occurs
+	 */
 	public PreparedStatementCsvReader(Reader reader, CsvPreference preferences) throws SQLException {
 		super(reader, preferences);
 	}

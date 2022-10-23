@@ -243,10 +243,21 @@ public abstract class BaseJdbcBatchableDao<T extends Entity<K>, K> extends BaseJ
 		return new BasicBatchResult(rowCount.intValue());
 	}
 
+	/**
+	 * Get the transaction template.
+	 * 
+	 * @return the template
+	 */
 	public TransactionTemplate getTransactionTemplate() {
 		return transactionTemplate;
 	}
 
+	/**
+	 * Set the transaction template.
+	 * 
+	 * @param transactionTemplate
+	 *        the template to set
+	 */
 	public void setTransactionTemplate(TransactionTemplate transactionTemplate) {
 		this.transactionTemplate = transactionTemplate;
 	}

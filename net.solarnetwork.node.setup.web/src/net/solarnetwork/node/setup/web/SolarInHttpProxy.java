@@ -64,6 +64,14 @@ public class SolarInHttpProxy extends HttpClientSupport {
 	private Set<String> proxyHeadersIgnore = new LinkedHashSet<String>(
 			Arrays.asList(DEFAULT_PROXY_HEADERS_IGNORE));
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param identityService
+	 *        the identity service
+	 * @param sslService
+	 *        the SSL service
+	 */
 	@Autowired
 	public SolarInHttpProxy(@Qualifier("identityService") IdentityService identityService,
 			@Qualifier("sslService") OptionalService<SSLService> sslService) {

@@ -28,6 +28,7 @@ import java.util.SortedSet;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
 import net.solarnetwork.node.hw.ae.inverter.tx.AE250TxDataAccessor;
 import net.solarnetwork.node.hw.ae.inverter.tx.AE250TxFault;
@@ -38,12 +39,13 @@ import net.solarnetwork.node.hw.ae.inverter.tx.AE250TxWarning;
  * Datum for the AE 250TX inverter.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class AE250TxDatum extends SimpleAcDcEnergyDatum {
 
 	private static final long serialVersionUID = -6794780558933937702L;
 
+	/** Sample data. */
 	private final AE250TxDataAccessor data;
 
 	/**
@@ -64,6 +66,8 @@ public class AE250TxDatum extends SimpleAcDcEnergyDatum {
 		setFrequency(data.getFrequency());
 		setVoltage(data.getVoltage());
 		setCurrent(data.getCurrent());
+		setPvVoltage(data.getPvVoltage());
+		setDcCurrent(data.getDcCurrent());
 		setDcVoltage(data.getDcVoltage());
 		setDcPower(data.getDcPower());
 		setWatts(data.getActivePower());
@@ -99,6 +103,28 @@ public class AE250TxDatum extends SimpleAcDcEnergyDatum {
 	 */
 	public AE250TxDataAccessor getData() {
 		return data;
+	}
+
+	/**
+	 * Get the PV voltage.
+	 * 
+	 * @return the voltage
+	 * @since 2.1
+	 */
+	public Float getPvVoltage() {
+		return asSampleOperations().getSampleFloat(DatumSamplesType.Instantaneous, "pvVoltage");
+	}
+
+	/**
+	 * Set the PV voltage.
+	 * 
+	 * @param pvVoltage
+	 *        the voltage
+	 * @since 2.1
+	 */
+	public void setPvVoltage(Float pvVoltage) {
+		asMutableSampleOperations().putSampleValue(DatumSamplesType.Instantaneous, "pvVoltage",
+				pvVoltage);
 	}
 
 }

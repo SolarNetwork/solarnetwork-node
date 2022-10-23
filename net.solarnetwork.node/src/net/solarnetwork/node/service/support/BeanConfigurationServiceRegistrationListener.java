@@ -87,22 +87,6 @@ import net.solarnetwork.node.service.support.BeanConfigurationServiceRegistratio
  * &lt;/bean&gt;
  * </pre>
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>serviceClass</dt>
- * <dd>The type of service to create when
- * {@link #onBind(BeanConfiguration, Map)} is called.</dd>
- * 
- * <dt>serviceInterfaces</dt>
- * <dd>An array of interface names to register the OSGi service as.</dd>
- * 
- * <dt>serviceProperties</dt>
- * <dd>An optional Map of properties to register the OSGi service with.</dd>
- * </dl>
- * 
  * @author matt
  * @version 2.0
  */
@@ -193,8 +177,19 @@ public class BeanConfigurationServiceRegistrationListener
 		removeRegisteredService(config, properties);
 	}
 
+	/**
+	 * A registered service for bean configurations.
+	 */
 	public static class BeanConfigurationRegisteredService extends RegisteredService<BeanConfiguration> {
 
+		/**
+		 * Constructor.
+		 * 
+		 * @param config
+		 *        the configuration
+		 * @param properties
+		 *        the properties
+		 */
 		public BeanConfigurationRegisteredService(BeanConfiguration config, Map<String, ?> properties) {
 			super(config, properties);
 		}
@@ -214,26 +209,61 @@ public class BeanConfigurationServiceRegistrationListener
 		}
 	}
 
+	/**
+	 * Get the type of service to create when
+	 * {@link #onBind(BeanConfiguration, Map)} is called.
+	 * 
+	 * @return the type of service
+	 */
 	public Class<?> getServiceClass() {
 		return serviceClass;
 	}
 
+	/**
+	 * Set the type of service to create when
+	 * {@link #onBind(BeanConfiguration, Map)} is called.
+	 * 
+	 * @param serviceClass
+	 *        the type of service
+	 */
 	public void setServiceClass(Class<?> serviceClass) {
 		this.serviceClass = serviceClass;
 	}
 
+	/**
+	 * Get the array of interface names to register the OSGi service as.
+	 * 
+	 * @return the interfaces to adopt
+	 */
 	public String[] getServiceInterfaces() {
 		return serviceInterfaces;
 	}
 
+	/**
+	 * Set the array of interface names to register the OSGi service as.
+	 * 
+	 * @param serviceInterfaces
+	 *        the interfaces to adopt
+	 */
 	public void setServiceInterfaces(String[] serviceInterfaces) {
 		this.serviceInterfaces = serviceInterfaces;
 	}
 
+	/**
+	 * Get an optional Map of properties to register the OSGi service with.
+	 * 
+	 * @return the optional properties
+	 */
 	public Map<String, Object> getServiceProperties() {
 		return serviceProperties;
 	}
 
+	/**
+	 * Set an optional Map of properties to register the OSGi service with.
+	 * 
+	 * @param serviceProperties
+	 *        the optional properties
+	 */
 	public void setServiceProperties(Map<String, Object> serviceProperties) {
 		this.serviceProperties = serviceProperties;
 	}

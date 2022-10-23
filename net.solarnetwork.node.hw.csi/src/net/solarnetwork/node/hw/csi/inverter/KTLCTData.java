@@ -24,6 +24,7 @@ package net.solarnetwork.node.hw.csi.inverter;
 
 import static net.solarnetwork.util.StringUtils.commaDelimitedStringFromCollection;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -37,13 +38,14 @@ import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusReference;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
+import net.solarnetwork.util.NumberUtils;
 
 /**
  * Implementation for accessing SI-60KTL-CT data.
  * 
  * @author maxieduncan
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 
@@ -82,6 +84,11 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 		super(other);
 	}
 
+	/**
+	 * Get a snapshot (copy).
+	 * 
+	 * @return the copy
+	 */
 	public KTLCTData getSnapshot() {
 		return new KTLCTData(this);
 	}
@@ -243,7 +250,10 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 
 	@Override
 	public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
-		throw new UnsupportedOperationException();
+		if ( phase == AcPhase.Total ) {
+			return this;
+		}
+		return new PhaseDataAccessor(phase);
 	}
 
 	@Override
@@ -268,7 +278,12 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 
 	@Override
 	public Float getVoltage() {
-		return getLineVoltage();
+		Number a = getNumber(KTLCTRegister.InverterVoltagePhaseA);
+		Number b = getNumber(KTLCTRegister.InverterVoltagePhaseB);
+		Number c = getNumber(KTLCTRegister.InverterVoltagePhaseC);
+		return (a != null && b != null && c != null
+				? (a.floatValue() + b.floatValue() + c.floatValue()) / 30.0f
+				: null);
 	}
 
 	@Override
@@ -316,7 +331,7 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 
 	@Override
 	public Integer getReactivePower() {
-		return null;
+		return getHectoValueAsInteger(KTLCTRegister.InverterReactivePowerTotal);
 	}
 
 	@Override
@@ -330,8 +345,43 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 	}
 
 	@Override
+	public Float getDcCurrent() {
+		float total = 0;
+		Float f = getPv1Current();
+		if ( f != null ) {
+			total += f.floatValue();
+		}
+		Float f2 = getPv1Current();
+		if ( f2 != null ) {
+			total += f2.floatValue();
+		}
+		Float f3 = getPv1Current();
+		if ( f3 != null ) {
+			total += f3.floatValue();
+		}
+		return total;
+	}
+
+	@Override
 	public Float getDcVoltage() {
-		return getPv1Voltage();
+		int count = 0;
+		float total = 0;
+		Float f = getPv1Voltage();
+		if ( f != null ) {
+			total += f.floatValue();
+			count++;
+		}
+		Float f2 = getPv2Voltage();
+		if ( f2 != null ) {
+			total += f2.floatValue();
+			count++;
+		}
+		Float f3 = getPv3Voltage();
+		if ( f3 != null ) {
+			total += f3.floatValue();
+			count++;
+		}
+		return (count > 0 ? total / count : null);
 	}
 
 	@Override
@@ -533,6 +583,365 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 				return true;
 			}
 		});
+	}
+
+	@Override
+	public Float getEfficiency() {
+		Number n = getNumber(KTLCTRegister.InverterEfficiency);
+		n = NumberUtils.scaled(n, -4);
+		return (n != null ? n.floatValue() : null);
+	}
+
+	private class PhaseDataAccessor implements KTLCTDataAccessor {
+
+		private final AcPhase phase;
+
+		private PhaseDataAccessor(AcPhase phase) {
+			super();
+			this.phase = phase;
+		}
+
+		@Override
+		public Instant getDataTimestamp() {
+			return KTLCTData.this.getDataTimestamp();
+		}
+
+		@Override
+		public AcEnergyDataAccessor accessorForPhase(AcPhase phase) {
+			return KTLCTData.this.accessorForPhase(phase);
+		}
+
+		@Override
+		public Float getFrequency() {
+			return KTLCTData.this.getFrequency();
+		}
+
+		@Override
+		public Float getCurrent() {
+			switch (phase) {
+				case PhaseA:
+					return getCentiValueAsFloat(KTLCTRegister.InverterCurrentPhaseA);
+
+				case PhaseB:
+					return getCentiValueAsFloat(KTLCTRegister.InverterCurrentPhaseB);
+
+				case PhaseC:
+					return getCentiValueAsFloat(KTLCTRegister.InverterCurrentPhaseC);
+
+				default:
+					return KTLCTData.this.getCurrent();
+			}
+		}
+
+		@Override
+		public Float getVoltage() {
+			switch (phase) {
+				case PhaseA:
+					return getCentiValueAsFloat(KTLCTRegister.InverterVoltagePhaseA);
+
+				case PhaseB:
+					return getCentiValueAsFloat(KTLCTRegister.InverterVoltagePhaseB);
+
+				case PhaseC:
+					return getCentiValueAsFloat(KTLCTRegister.InverterVoltagePhaseC);
+
+				default:
+					return KTLCTData.this.getVoltage();
+			}
+		}
+
+		@Override
+		public Float getPowerFactor() {
+			Number n;
+			switch (phase) {
+				case PhaseA:
+					n = getNumber(KTLCTRegister.InverterPowerFactorPhaseA);
+					return (n != null ? n.floatValue() / 100.0f : null);
+
+				case PhaseB:
+					n = getNumber(KTLCTRegister.InverterPowerFactorPhaseB);
+					return (n != null ? n.floatValue() / 100.0f : null);
+
+				case PhaseC:
+					n = getNumber(KTLCTRegister.InverterPowerFactorPhaseC);
+					return (n != null ? n.floatValue() / 100.0f : null);
+
+				default:
+					return KTLCTData.this.getPowerFactor();
+			}
+		}
+
+		@Override
+		public Integer getActivePower() {
+			switch (phase) {
+				case PhaseA:
+					return getHectoValueAsInteger(KTLCTRegister.InverterActivePowerPhaseA);
+
+				case PhaseB:
+					return getHectoValueAsInteger(KTLCTRegister.InverterActivePowerPhaseB);
+
+				case PhaseC:
+					return getHectoValueAsInteger(KTLCTRegister.InverterActivePowerPhaseC);
+
+				default:
+					return KTLCTData.this.getActivePower();
+			}
+		}
+
+		@Override
+		public Integer getApparentPower() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return KTLCTData.this.getApparentPower();
+			}
+		}
+
+		@Override
+		public Integer getReactivePower() {
+			switch (phase) {
+				case PhaseA:
+					return getHectoValueAsInteger(KTLCTRegister.InverterReactivePowerPhaseA);
+
+				case PhaseB:
+					return getHectoValueAsInteger(KTLCTRegister.InverterReactivePowerPhaseB);
+
+				case PhaseC:
+					return getHectoValueAsInteger(KTLCTRegister.InverterReactivePowerPhaseC);
+
+				default:
+					return KTLCTData.this.getReactivePower();
+			}
+		}
+
+		@Override
+		public Float getDcCurrent() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return KTLCTData.this.getDcCurrent();
+			}
+		}
+
+		@Override
+		public Float getDcVoltage() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return KTLCTData.this.getDcVoltage();
+			}
+		}
+
+		@Override
+		public Integer getDcPower() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return KTLCTData.this.getDcPower();
+			}
+		}
+
+		@Override
+		public Float getTransformerTemperature() {
+			return KTLCTData.this.getTransformerTemperature();
+		}
+
+		@Override
+		public Float getNeutralCurrent() {
+			return KTLCTData.this.getNeutralCurrent();
+		}
+
+		@Override
+		public Float getLineVoltage() {
+			switch (phase) {
+				case PhaseA:
+					return getCentiValueAsFloat(KTLCTRegister.InverterVoltageLineLinePhaseAPhaseB);
+
+				case PhaseB:
+					return getCentiValueAsFloat(KTLCTRegister.InverterVoltageLineLinePhaseBPhaseC);
+
+				case PhaseC:
+					return getCentiValueAsFloat(KTLCTRegister.InverterVoltageLineLinePhaseCPhaseA);
+
+				default:
+					return KTLCTData.this.getLineVoltage();
+			}
+		}
+
+		@Override
+		public Long getActiveEnergyDelivered() {
+			switch (phase) {
+				case PhaseA:
+				case PhaseB:
+				case PhaseC:
+					return null;
+
+				default:
+					return KTLCTData.this.getActiveEnergyDelivered();
+			}
+		}
+
+		@Override
+		public Long getActiveEnergyReceived() {
+			return null;
+		}
+
+		@Override
+		public Long getApparentEnergyDelivered() {
+			return null;
+		}
+
+		@Override
+		public Long getApparentEnergyReceived() {
+			return null;
+		}
+
+		@Override
+		public Long getReactiveEnergyDelivered() {
+			return null;
+		}
+
+		@Override
+		public Long getReactiveEnergyReceived() {
+			return null;
+		}
+
+		@Override
+		public Map<String, Object> getDeviceInfo() {
+			return KTLCTData.this.getDeviceInfo();
+		}
+
+		@Override
+		public AcEnergyDataAccessor reversed() {
+			return KTLCTData.this.reversed();
+		}
+
+		@Override
+		public KTLCTInverterType getInverterType() {
+			return KTLCTData.this.getInverterType();
+		}
+
+		@Override
+		public KTLCTInverterWorkMode getWorkMode() {
+			return KTLCTData.this.getWorkMode();
+		}
+
+		@Override
+		public Set<KTLCTWarn> getWarnings() {
+			return KTLCTData.this.getWarnings();
+		}
+
+		@Override
+		public Set<KTLCTFault0> getFaults0() {
+			return KTLCTData.this.getFaults0();
+		}
+
+		@Override
+		public Set<KTLCTFault1> getFaults1() {
+			return KTLCTData.this.getFaults1();
+		}
+
+		@Override
+		public Set<KTLCTFault2> getFaults2() {
+			return KTLCTData.this.getFaults2();
+		}
+
+		@Override
+		public Set<KTLCTPermanentFault> getPermanentFaults() {
+			return KTLCTData.this.getPermanentFaults();
+		}
+
+		@Override
+		public String getModelName() {
+			return KTLCTData.this.getModelName();
+		}
+
+		@Override
+		public String getSerialNumber() {
+			return KTLCTData.this.getSerialNumber();
+		}
+
+		@Override
+		public KTLCTFirmwareVersion getFirmwareVersion() {
+			return KTLCTData.this.getFirmwareVersion();
+		}
+
+		@Override
+		public Float getModuleTemperature() {
+			return KTLCTData.this.getModuleTemperature();
+		}
+
+		@Override
+		public Float getInternalTemperature() {
+			return KTLCTData.this.getInternalTemperature();
+		}
+
+		@Override
+		public Long getActiveEnergyDeliveredToday() {
+			return KTLCTData.this.getActiveEnergyDeliveredToday();
+		}
+
+		@Override
+		public Float getPv1Voltage() {
+			return KTLCTData.this.getPv1Voltage();
+		}
+
+		@Override
+		public Float getPv1Current() {
+			return KTLCTData.this.getPv1Current();
+		}
+
+		@Override
+		public Float getPv2Voltage() {
+			return KTLCTData.this.getPv2Voltage();
+		}
+
+		@Override
+		public Float getPv2Current() {
+			return KTLCTData.this.getPv2Current();
+		}
+
+		@Override
+		public Float getPv3Voltage() {
+			return KTLCTData.this.getPv3Voltage();
+		}
+
+		@Override
+		public Float getPv3Current() {
+			return KTLCTData.this.getPv3Current();
+		}
+
+		@Override
+		public DeviceOperatingState getDeviceOperatingState() {
+			return KTLCTData.this.getDeviceOperatingState();
+		}
+
+		@Override
+		public Float getOutputPowerLimitPercent() {
+			return KTLCTData.this.getOutputPowerLimitPercent();
+		}
+
+		@Override
+		public Float getEfficiency() {
+			return KTLCTData.this.getEfficiency();
+		}
+
 	}
 
 }

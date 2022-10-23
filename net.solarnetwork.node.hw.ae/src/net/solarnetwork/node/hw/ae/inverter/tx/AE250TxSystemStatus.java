@@ -33,27 +33,40 @@ import net.solarnetwork.domain.CodedValue;
  */
 public enum AE250TxSystemStatus implements CodedValue {
 
+	/** Sleep state. */
 	Sleep(0, "Sleep state"),
 
+	/** Startup delay. */
 	StartupDelay(1, "Startup delay"),
 
+	/** AC precharge. */
 	AcPrecharge(2, "AC precharge"),
 
+	/** DC precharge. */
 	DcPrecharge(3, "DC precharge"),
 
+	/** Idle. */
 	Idle(4, "Idle"),
 
+	/** Power track. */
 	PowerTrack(5, "Power track"),
 
+	/** Fault. */
 	Fault(9, "Fault"),
 
+	/** Initialization. */
 	Initialization(10, "Initialization"),
 
+	/** Disabled. */
 	Disabled(11, "Disabled"),
 
+	/** Latching fault. */
 	LatchingFault(12, "Latching fault"),
 
-	CoolDown(13, "Cool down");
+	/** Cool down. */
+	CoolDown(13, "Cool down"),
+
+	;
 
 	private final int code;
 	private final String description;

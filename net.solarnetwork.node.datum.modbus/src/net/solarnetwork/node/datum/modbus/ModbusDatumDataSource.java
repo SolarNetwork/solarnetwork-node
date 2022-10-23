@@ -97,6 +97,9 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	private final ModbusData sample;
 
+	/**
+	 * Constructor.
+	 */
 	public ModbusDatumDataSource() {
 		super();
 		sample = new ModbusData();

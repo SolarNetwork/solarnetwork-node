@@ -66,19 +66,6 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * {@link BackupService} implementation that copies files to another location in
  * the file system.
  * 
- * <p>
- * The configurable properties of this class are:
- * </p>
- * 
- * <dl class="class-properties">
- * <dt>backupDir</dt>
- * <dd>The directory to backup to.</dd>
- * 
- * <dt>additionalBackupCount</dt>
- * <dd>The number of additional backups to maintain. If greater than zero, then
- * this service will maintain this many copies of past backups.
- * </dl>
- * 
  * @author matt
  * @version 2.0
  */
@@ -118,6 +105,12 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 		return messageSource;
 	}
 
+	/**
+	 * Set the message source.
+	 * 
+	 * @param messageSource
+	 *        the message source to set
+	 */
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
@@ -348,8 +341,8 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	 * Get all available backup files, ordered in desending backup order (newest
 	 * to oldest).
 	 * 
-	 * @return ordered array of backup files, or {@literal null} if directory does
-	 *         not exist
+	 * @return ordered array of backup files, or {@literal null} if directory
+	 *         does not exist
 	 */
 	private File[] getAvailableBackupFiles() {
 		File[] archives = backupDir.listFiles(new ArchiveFilter(nodeIdForArchiveFileName()));
@@ -489,26 +482,64 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 		}
 	}
 
+	/**
+	 * Get the directory to backup to.
+	 * 
+	 * @return the backup directory
+	 */
 	public File getBackupDir() {
 		return backupDir;
 	}
 
+	/**
+	 * Set the directory to backup to.
+	 * 
+	 * @param backupDir
+	 *        the directory to use
+	 */
 	public void setBackupDir(File backupDir) {
 		this.backupDir = backupDir;
 	}
 
+	/**
+	 * Get the number of additional backups to maintain.
+	 * 
+	 * @return the additional backup count
+	 */
 	public int getAdditionalBackupCount() {
 		return additionalBackupCount;
 	}
 
+	/**
+	 * Set the number of additional backups to maintain.
+	 * 
+	 * <p>
+	 * If greater than zero, then this service will maintain this many copies of
+	 * past backups.
+	 * </p>
+	 * 
+	 * @param additionalBackupCount
+	 *        the additional backup count to use
+	 */
 	public void setAdditionalBackupCount(int additionalBackupCount) {
 		this.additionalBackupCount = additionalBackupCount;
 	}
 
+	/**
+	 * Get the identity service.
+	 * 
+	 * @return the service
+	 */
 	public OptionalService<IdentityService> getIdentityService() {
 		return identityService;
 	}
 
+	/**
+	 * Set the identity service.
+	 * 
+	 * @param identityService
+	 *        the service to use
+	 */
 	public void setIdentityService(OptionalService<IdentityService> identityService) {
 		this.identityService = identityService;
 	}

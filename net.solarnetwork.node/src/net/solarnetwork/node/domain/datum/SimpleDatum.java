@@ -41,7 +41,8 @@ public class SimpleDatum extends GeneralDatum implements NodeDatum, MutableNodeD
 
 	private static final long serialVersionUID = 6865265065461341282L;
 
-	private Instant uploaded = null;
+	/** The uploaded date. */
+	private Instant uploaded;
 
 	/**
 	 * Create a node datum.
@@ -172,6 +173,12 @@ public class SimpleDatum extends GeneralDatum implements NodeDatum, MutableNodeD
 		return uploaded;
 	}
 
+	/**
+	 * Set the uploaded date.
+	 * 
+	 * @param uploaded
+	 *        the date to set
+	 */
 	public void setUploaded(Instant uploaded) {
 		this.uploaded = uploaded;
 	}

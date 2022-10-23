@@ -24,14 +24,18 @@ package net.solarnetwork.node.job.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import java.util.Collections;
+import java.util.List;
 import org.junit.Test;
 import org.springframework.beans.BeanWrapper;
 import org.springframework.beans.PropertyAccessorFactory;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.job.DatumDataSourcePollManagedJob;
+import net.solarnetwork.node.job.JobService;
 import net.solarnetwork.node.job.SimpleManagedJob;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
 
 /**
  * Test cases for the {@link SimpleManagedJob} class.
@@ -66,6 +70,35 @@ public class SimpleManagedJobTests {
 
 	}
 
+	private static final class TestJob extends BaseIdentifiable implements JobService {
+
+		private String someProperty;
+
+		@Override
+		public String getSettingUid() {
+			return "test.job";
+		}
+
+		@Override
+		public List<SettingSpecifier> getSettingSpecifiers() {
+			return Collections.emptyList();
+		}
+
+		@Override
+		public void executeJobService() throws Exception {
+			//  nothing			
+		}
+
+		public String getSomeProperty() {
+			return someProperty;
+		}
+
+		@SuppressWarnings("unused")
+		public void setSomeProperty(String someProperty) {
+			this.someProperty = someProperty;
+		}
+	}
+
 	@Test
 	public void legacyPropertyPopulation() {
 		// GIVEN
@@ -86,10 +119,25 @@ public class SimpleManagedJobTests {
 		// THEN
 		assertThat("Set the schedule based on legacy property name", managedJob.getSchedule(),
 				is(schedule));
-		assertThat("Set the DataSource UID based on legacy job property path", ds.getUid(),
-				is(uid));
+		assertThat("Set the DataSource UID based on legacy job property path", ds.getUid(), is(uid));
 		assertThat("Set the DataSource someProperty based on legacy job property path",
 				ds.getSomeProperty(), is(someProperty));
+	}
+
+	@Test
+	public void legacyPropertyPopulation_directJobService() {
+		// GIVEN
+		TestJob job = new TestJob();
+		SimpleManagedJob managedJob = new SimpleManagedJob(job);
+
+		// WHEN
+		final String someProperty = "Foobar";
+		BeanWrapper bean = PropertyAccessorFactory.forBeanPropertyAccess(managedJob);
+		bean.setPropertyValue("jobDetail.jobDataMap['someProperty']", someProperty);
+
+		// THEN
+		assertThat("Set the job someProperty based on legacy job property path", job.getSomeProperty(),
+				is(someProperty));
 	}
 
 	@Test

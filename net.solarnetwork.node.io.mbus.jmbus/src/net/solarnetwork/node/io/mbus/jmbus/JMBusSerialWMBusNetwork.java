@@ -44,6 +44,9 @@ public class JMBusSerialWMBusNetwork extends JMBusWMBusNetwork implements Settin
 	private JMBusSerialParameters serialParams = getDefaultSerialParametersInstance();
 	private JMBusWirelessParameters wirelessParams = getDefaultWirelessParametersInstance();
 
+	/**
+	 * Constructor.
+	 */
 	public JMBusSerialWMBusNetwork() {
 		super();
 		setUid("M-Bus (Wireless) Port");
@@ -114,18 +117,40 @@ public class JMBusSerialWMBusNetwork extends JMBusWMBusNetwork implements Settin
 
 	// Accessors
 
+	/**
+	 * Get the serial parameters.
+	 * 
+	 * @return the parameters
+	 */
 	public JMBusSerialParameters getSerialParams() {
 		return serialParams;
 	}
 
+	/**
+	 * Set the serial parameters.
+	 * 
+	 * @param serialParams
+	 *        the parameters to set
+	 */
 	public void setSerialParams(JMBusSerialParameters serialParams) {
 		this.serialParams = serialParams;
 	}
 
+	/**
+	 * Get the wirelesss parameters.
+	 * 
+	 * @return the wireless parameters
+	 */
 	public JMBusWirelessParameters getWirelessParams() {
 		return wirelessParams;
 	}
 
+	/**
+	 * Set the wireless parameters.
+	 * 
+	 * @param wirelessParams
+	 *        the wireless parameters to set
+	 */
 	public void setWirelessParams(JMBusWirelessParameters wirelessParams) {
 		this.wirelessParams = wirelessParams;
 	}

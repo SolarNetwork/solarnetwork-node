@@ -47,6 +47,9 @@ public class JMBusSerialMBusNetwork extends JMBusMBusNetwork implements SettingS
 
 	private JMBusSerialParameters serialParams = getDefaultSerialParametersInstance();
 
+	/**
+	 * Constructor.
+	 */
 	public JMBusSerialMBusNetwork() {
 		super();
 		setUid("M-Bus Port");
@@ -104,10 +107,21 @@ public class JMBusSerialMBusNetwork extends JMBusMBusNetwork implements SettingS
 
 	// Accessors
 
+	/**
+	 * Get the serial parameters.
+	 * 
+	 * @return the parameters
+	 */
 	public JMBusSerialParameters getSerialParams() {
 		return serialParams;
 	}
 
+	/**
+	 * Set the serial parameters.
+	 * 
+	 * @param serialParams
+	 *        the parameters to set
+	 */
 	public void setSerialParams(JMBusSerialParameters serialParams) {
 		this.serialParams = serialParams;
 	}

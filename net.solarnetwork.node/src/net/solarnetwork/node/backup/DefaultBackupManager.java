@@ -513,6 +513,12 @@ public class DefaultBackupManager implements BackupManager {
 		this.resourceProviders = resourceProviders;
 	}
 
+	/**
+	 * Set the executor service to use for tasks.
+	 * 
+	 * @param executorService
+	 *        the service to use
+	 */
 	public void setExecutorService(ExecutorService executorService) {
 		this.executorService = executorService;
 	}

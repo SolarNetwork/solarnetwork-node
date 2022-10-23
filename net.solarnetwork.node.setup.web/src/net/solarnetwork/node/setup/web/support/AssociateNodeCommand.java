@@ -33,18 +33,40 @@ public class AssociateNodeCommand {
 	private String verificationCode;
 	private String keystorePassword;
 
+	/**
+	 * Get the verification code.
+	 * 
+	 * @return the code
+	 */
 	public String getVerificationCode() {
 		return verificationCode;
 	}
 
+	/**
+	 * Set the verification code.
+	 * 
+	 * @param associationCode
+	 *        the code to set
+	 */
 	public void setVerificationCode(String associationCode) {
 		this.verificationCode = associationCode;
 	}
 
+	/**
+	 * Get the keystore password.
+	 * 
+	 * @return the password
+	 */
 	public String getKeystorePassword() {
 		return keystorePassword;
 	}
 
+	/**
+	 * Set the keystore password.
+	 * 
+	 * @param keystorePassword
+	 *        the password to set
+	 */
 	public void setKeystorePassword(String keystorePassword) {
 		this.keystorePassword = keystorePassword;
 	}

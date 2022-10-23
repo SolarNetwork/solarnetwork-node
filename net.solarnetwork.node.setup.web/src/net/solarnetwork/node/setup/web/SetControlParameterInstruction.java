@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.setup.web;
 
-
 /**
  * Bean for a SetControlParameter instruction.
  * 
@@ -34,18 +33,40 @@ public class SetControlParameterInstruction {
 	private String controlId;
 	private String parameterValue;
 
+	/**
+	 * Get the control ID.
+	 * 
+	 * @return the control ID
+	 */
 	public String getControlId() {
 		return controlId;
 	}
 
+	/**
+	 * Set the control ID.
+	 * 
+	 * @param controlId
+	 *        the control ID to set
+	 */
 	public void setControlId(String controlId) {
 		this.controlId = controlId;
 	}
 
+	/**
+	 * Get the parameter value.
+	 * 
+	 * @return the parameter value
+	 */
 	public String getParameterValue() {
 		return parameterValue;
 	}
 
+	/**
+	 * Set the parameter value.
+	 * 
+	 * @param parameterValue
+	 *        the parameter value to set
+	 */
 	public void setParameterValue(String parameterValue) {
 		this.parameterValue = parameterValue;
 	}

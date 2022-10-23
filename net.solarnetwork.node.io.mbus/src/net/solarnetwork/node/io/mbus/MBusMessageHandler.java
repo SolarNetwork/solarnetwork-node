@@ -31,6 +31,12 @@ package net.solarnetwork.node.io.mbus;
  */
 public interface MBusMessageHandler {
 
-	public void handleMessage(MBusMessage message);
+	/**
+	 * Handle the message.
+	 * 
+	 * @param message
+	 *        the message to handle
+	 */
+	void handleMessage(MBusMessage message);
 
 }

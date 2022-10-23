@@ -110,12 +110,17 @@ public class KTLDatumDataSourceTests {
 		final Map<Integer, Integer> data2 = parseDataDataRegisters(getClass(), "test-data-01-B.txt");
 		expect(modbusConnection.readWords(ReadHoldingRegister, 4096, 2)).andReturn(toShortArray(data2));
 
+		final Map<Integer, Integer> data3 = parseDataDataRegisters(getClass(), "test-data-01-D.txt");
+		expect(modbusConnection.readWords(ReadInputRegister, 33027, 15)).andReturn(toShortArray(data3));
+
 		// then re-read data
 
-		final Map<Integer, Integer> data3 = parseDataDataRegisters(getClass(), "test-data-01-C.txt");
-		expect(modbusConnection.readWords(ReadInputRegister, 22, 37)).andReturn(toShortArray(data3));
+		final Map<Integer, Integer> data4 = parseDataDataRegisters(getClass(), "test-data-01-C.txt");
+		expect(modbusConnection.readWords(ReadInputRegister, 22, 37)).andReturn(toShortArray(data4));
 
 		expect(modbusConnection.readWords(ReadHoldingRegister, 4096, 2)).andReturn(toShortArray(data2));
+
+		expect(modbusConnection.readWords(ReadInputRegister, 33027, 15)).andReturn(toShortArray(data3));
 
 		// WHEN
 		replayAll();

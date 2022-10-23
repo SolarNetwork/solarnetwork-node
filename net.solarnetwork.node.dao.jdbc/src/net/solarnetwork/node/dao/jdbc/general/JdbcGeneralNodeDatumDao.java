@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.dao.jdbc.general;
 
+import static java.lang.String.format;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -49,6 +50,7 @@ import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesContainer;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.node.dao.DatumDao;
 import net.solarnetwork.node.dao.jdbc.AbstractJdbcDao;
@@ -68,13 +70,16 @@ import net.solarnetwork.util.StatCounter;
  * {@link NodeDatum} domain objects.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 		implements DatumDao, SettingSpecifierProvider, PingTest {
 
 	/** The default tables version. */
-	public static final int DEFAULT_TABLES_VERSION = 4;
+	public static final int DEFAULT_TABLES_VERSION = 5;
+
+	/** The maximum allowed length of a datum samples when encoded as JSON. */
+	public static final int MAX_SAMPLES_JSON_LENGTH = 8192;
 
 	/** The table name for datum. */
 	public static final String TABLE_GENERAL_NODE_DATUM = "sn_general_node_datum";
@@ -96,15 +101,42 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	 */
 	public static final int DEFAULT_MAX_COUNT_PING_FAIL = 10000;
 
+	/** The SQL resource to insert. */
 	public static final String SQL_RESOURCE_INSERT = "insert";
+
+	/** The SQL resource to delete old uploaded rows. */
 	public static final String SQL_RESOURCE_DELETE_OLD = "delete-old";
+
+	/** The SQL resource to find rows needing upload. */
 	public static final String SQL_RESOURCE_FIND_FOR_UPLOAD = "find-upload";
+
+	/** The SQL resource to fetch by primary key. */
 	public static final String SQL_RESOURCE_FIND_FOR_PRIMARY_KEY = "find-pk";
+
+	/** The SQL resource to update the upload date. */
 	public static final String SQL_RESOURCE_UPDATE_UPLOADED = "update-upload";
+
+	/** The SQL resource to update data. */
 	public static final String SQL_RESOURCE_UPDATE_DATA = "update-data";
+
+	/** The SQL resource to count. */
 	public static final String SQL_RESOURCE_COUNT = "count";
 
-	public final StatCounter stats;
+	/**
+	 * A source ID for log messages posted as datum.
+	 * 
+	 * @since 2.2
+	 */
+	public static final String LOG_SOURCE_ID = "log";
+
+	/**
+	 * A source ID prefix for log messages posted as datum.
+	 * 
+	 * @since 2.2
+	 */
+	public static final String LOG_SOURCE_ID_PREFIX = LOG_SOURCE_ID + "/";
+
+	private final StatCounter stats;
 	private ObjectMapper objectMapper;
 	private int maxFetchForUpload = DEFAULT_MAX_FETCH_FOR_UPLOAD;
 	private boolean ignoreMockData = true;
@@ -200,12 +232,38 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 	}
 
 	private String jsonForSamples(NodeDatum datum) {
+		DatumSamples s = ((DatumSamplesContainer) datum).getSamples();
 		String json;
 		try {
-			json = objectMapper.writeValueAsString(((DatumSamplesContainer) datum).getSamples());
+			json = objectMapper.writeValueAsString(s);
 		} catch ( IOException e ) {
 			log.error("Error serializing DatumSamples into JSON: {}", e.getMessage());
 			json = "{}";
+		}
+		int len = (json != null ? json.length() : 0);
+		if ( len > MAX_SAMPLES_JSON_LENGTH ) {
+			// try to remove all status properties and replace with error message
+			DatumSamples s2 = new DatumSamples(s);
+			if ( s2.getStatus() != null && !s2.getStatus().isEmpty() ) {
+				if ( s2.hasSampleValue(DatumSamplesType.Status, "exSt") ) {
+					s2.putStatusSampleValue("exSt", null);
+				} else {
+					s2.getStatus().clear();
+					s2.putStatusSampleValue("error",
+							format("Datum must be less than %d characters, but is %d",
+									MAX_SAMPLES_JSON_LENGTH, len));
+				}
+			}
+			try {
+				json = objectMapper.writeValueAsString(s2);
+			} catch ( IOException e ) {
+				log.error("Error serializing DatumSamples into JSON: {}", e.getMessage());
+				json = "{}";
+			}
+		}
+		len = (json != null ? json.length() : 0);
+		if ( len > MAX_SAMPLES_JSON_LENGTH ) {
+			json = "{}"; // fallback
 		}
 		return json;
 	}
@@ -228,10 +286,21 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 		ps.setString(++col, json);
 	}
 
+	/**
+	 * Get the object mapper.
+	 * 
+	 * @return the mapper
+	 */
 	public ObjectMapper getObjectMapper() {
 		return objectMapper;
 	}
 
+	/**
+	 * Set the object mapper.
+	 * 
+	 * @param objectMapper
+	 *        the mapper to set
+	 */
 	public void setObjectMapper(ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
 	}
@@ -395,7 +464,8 @@ public class JdbcGeneralNodeDatumDao extends AbstractJdbcDao<NodeDatum>
 			return;
 		}
 		insertDomainObject(datum, getSqlResource(SQL_RESOURCE_INSERT));
-		if ( log.isInfoEnabled() ) {
+		if ( !(LOG_SOURCE_ID.equalsIgnoreCase(datum.getSourceId())
+				|| datum.getSourceId().startsWith(LOG_SOURCE_ID_PREFIX)) ) {
 			log.info("Persisted datum locally: {}", datum);
 		}
 		stats.incrementAndGet(DatumDaoStat.DatumStored);

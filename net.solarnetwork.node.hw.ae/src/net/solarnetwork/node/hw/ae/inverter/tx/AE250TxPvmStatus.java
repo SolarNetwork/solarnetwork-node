@@ -33,20 +33,30 @@ import net.solarnetwork.domain.CodedValue;
  */
 public enum AE250TxPvmStatus implements CodedValue {
 
+	/** Rebooting. */
 	Rebooting(0, "Rebooting."),
 
+	/** Unable to communicate with inverter. */
 	InverterCommFault(1, "Unable to communicate with inverter."),
 
+	/** Web post fault. */
 	WebPostFault(2, "Web post fault."),
 
+	/** DNS server fault. */
 	DnsServerFault(3, "DNS server fault."),
 
+	/**
+	 * Real time clock error, the battery is dead or cannot synchronize with
+	 * network time server.
+	 */
 	ClockError(
 			4,
 			"Real time clock error, the battery is dead or cannot synchronize with network time server."),
 
+	/** Incompatible or incorrect revision of communications firmware. */
 	WrongFirmware(5, "Incompatible or incorrect revision of communications firmware."),
 
+	/** Failed reading the Modbus address switches. */
 	ModbusAddressError(6, "Failed reading the Modbus address switches."),
 
 	;

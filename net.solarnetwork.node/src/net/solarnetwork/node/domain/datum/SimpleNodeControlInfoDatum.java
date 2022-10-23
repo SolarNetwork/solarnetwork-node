@@ -55,6 +55,7 @@ public class SimpleNodeControlInfoDatum extends SimpleDatum implements NodeContr
 
 	private static final String[] DATUM_TYPES = new String[] { NodeControlInfo.class.getName() };
 
+	/** The node control info. */
 	private final NodeControlInfo info;
 
 	/**

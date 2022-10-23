@@ -162,9 +162,9 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	 * 
 	 * <p>
 	 * If the httpMethod equals {@code POST} then the connection's
-	 * {@code doOutput} property will be set to {@literal true}, otherwise it will
-	 * be set to {@literal false}. The {@code doInput} property is always set to
-	 * {@literal true}.
+	 * {@code doOutput} property will be set to {@literal true}, otherwise it
+	 * will be set to {@literal false}. The {@code doInput} property is always
+	 * set to {@literal true}.
 	 * </p>
 	 * 
 	 * <p>
@@ -428,26 +428,59 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 		return FileCopyUtils.copyToString(getUnicodeReaderFromURLConnection(conn));
 	}
 
+	/**
+	 * Set the connection timeout.
+	 * 
+	 * @param connectionTimeout
+	 *        the connection timeout
+	 */
 	public void setConnectionTimeout(int connectionTimeout) {
 		this.connectionTimeout = connectionTimeout;
 	}
 
+	/**
+	 * Get the connection timeout.
+	 * 
+	 * @return the connection timeout
+	 */
 	public int getConnectionTimeout() {
 		return connectionTimeout;
 	}
 
+	/**
+	 * Get the identity service.
+	 * 
+	 * @return the service
+	 */
 	public IdentityService getIdentityService() {
 		return identityService;
 	}
 
+	/**
+	 * Set the identity service.
+	 * 
+	 * @param identityService
+	 *        the service to use
+	 */
 	public void setIdentityService(IdentityService identityService) {
 		this.identityService = identityService;
 	}
 
+	/**
+	 * Get the SSL service.
+	 * 
+	 * @return the SSL service
+	 */
 	public OptionalService<SSLService> getSslService() {
 		return sslService;
 	}
 
+	/**
+	 * Set the SSL service.
+	 * 
+	 * @param sslService
+	 *        the service to use
+	 */
 	public void setSslService(OptionalService<SSLService> sslService) {
 		this.sslService = sslService;
 	}

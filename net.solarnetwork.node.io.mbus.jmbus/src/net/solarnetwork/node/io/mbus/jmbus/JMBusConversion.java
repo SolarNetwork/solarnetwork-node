@@ -72,6 +72,13 @@ public class JMBusConversion {
 		return new MBusSecondaryAddress(address.asByteArray());
 	}
 
+	/**
+	 * Create a data instance from variable data.
+	 * 
+	 * @param vds
+	 *        the variable data
+	 * @return the new data
+	 */
 	public static MBusData from(VariableDataStructure vds) {
 		try {
 			final MBusData data = new MBusData(Instant.now());

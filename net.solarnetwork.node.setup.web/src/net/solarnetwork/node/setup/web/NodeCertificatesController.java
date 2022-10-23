@@ -159,6 +159,13 @@ public class NodeCertificatesController extends BaseSetupController {
 		return "redirect:/a/certs";
 	}
 
+	/**
+	 * Renew the certificate.
+	 * 
+	 * @param password
+	 *        the password of the certificate keystore
+	 * @return the result
+	 */
 	@RequestMapping(value = "/renew", method = RequestMethod.POST)
 	@ResponseBody
 	public Object renewCertificate(@RequestParam("password") String password) {

@@ -55,12 +55,21 @@ import net.solarnetwork.util.StringUtils;
 public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider {
 
+	/**
+	 * The setting UID used by this service.
+	 * 
+	 * @since 1.1
+	 */
+	public static final String SETTING_UID = "net.solarnetwork.node.datum.mbus.wireless";
+
 	private String sourceId;
 	private MBusPropertyConfig[] propConfigs;
 
+	/**
+	 * Constructor.
+	 */
 	public WMBusDatumDataSource() {
 		super();
-		sourceId = "wmbus";
 	}
 
 	/**
@@ -225,7 +234,7 @@ public class WMBusDatumDataSource extends WMBusDeviceDatumDataSourceSupport
 
 	@Override
 	public String getSettingUid() {
-		return "net.solarnetwork.node.datum.mbus.wireless";
+		return SETTING_UID;
 	}
 
 	@Override

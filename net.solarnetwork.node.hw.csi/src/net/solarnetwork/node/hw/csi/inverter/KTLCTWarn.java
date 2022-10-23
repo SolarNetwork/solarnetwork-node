@@ -33,37 +33,55 @@ import net.solarnetwork.domain.Bitmaskable;
  */
 public enum KTLCTWarn implements Bitmaskable {
 
+	/** Warn0010. */
 	Warn0010(0),
 
+	/** Warn0020. */
 	Warn0020(1),
 
+	/** CommErr. */
 	CommErr(2),
 
+	/** Warn0030. */
 	Warn0030(3),
 
+	/** Warn0040. */
 	Warn0040(4),
 
+	/** Warn0050. */
 	Warn0050(5),
 
+	/** Warn0060. */
 	Warn0060(6),
 
+	/** Warn0070. */
 	Warn0070(7),
 
+	/** Warn0080. */
 	Warn0080(8),
 
+	/** Warn0090. */
 	Warn0090(9),
 
+	/** Warn0100. */
 	Warn0100(10),
 
+	/** Warn0110. */
 	Warn0110(11),
 
+	/** Warn0120. */
 	Warn0120(12),
 
+	/** Warn0130. */
 	Warn0130(13),
 
+	/** Warn0140. */
 	Warn0140(14),
 
-	Warn0150(15);
+	/** Warn0150. */
+	Warn0150(15),
+
+	;
 
 	private final int code;
 

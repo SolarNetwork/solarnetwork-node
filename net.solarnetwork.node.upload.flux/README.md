@@ -48,6 +48,31 @@ Here's an example datum message, expressed as JSON:
 }
 ```
 
+## EventAdmin log datum stream
+
+The [`EventAdmin` Appender][eaa] is supported, and log events are turned into a datum stream and 
+published to SolarFlux. The log timestamps are used as the datum timestamps.
+
+### Log datum stream source ID mapping
+
+The source ID assigned to log events is `log/` with the log name appended. Period characters (`.`)
+in the log name are replaced with slash characters (`/`). For example, a log name
+`net.solarnetwork.node.datum.modbus.ModbusDatumDataSource` will be turned into the source ID
+`log/net/solarnetwork/node/datum/modbus/ModbusDatumDataSource`.
+
+### Log datum stream properties
+
+The datum stream consists of the following properties:
+
+| Property | Class. | Type | Description |
+|:---------|:-------|:-----|:------------|
+| `level`    | `s` | String  | The log level name, e.g. `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`, or `FATAL`. |
+| `priority` | `i` | Integer | The log level priority (lower values have more priority), e.g. `600`, `500`, `400`, `300`, `200`, or `100`. |
+| `name`     | `s` | String  | The log name. |
+| `msg`      | `s` | String  | The log message . |
+| `exMsg`    | `s` | String  | An exception message, if an exception was included. |
+| `exSt`     | `s` | String  | A newline-delimited list of stack trace element values, if an exception was included. |
+
 
 # Overall settings
 
@@ -151,6 +176,7 @@ points to consider:
    setting.
 
 [cbor]: http://cbor.io/
+[eaa]: https://github.com/SolarNetwork/solarnetwork-common/tree/develop/net.solarnetwork.common.log4j2#eventadmin-appender
 [mqtt-topic-aliases]: https://www.hivemq.com/blog/mqtt5-essentials-part10-topic-alias/
 [protobuf-io]: ../net.solarnetwork.node.io.protobuf#protobuf-datum-encoderdecoder
 [solarflux]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarFlux-API

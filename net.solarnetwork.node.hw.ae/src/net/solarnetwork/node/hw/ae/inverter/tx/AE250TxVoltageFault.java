@@ -31,30 +31,43 @@ package net.solarnetwork.node.hw.ae.inverter.tx;
  */
 public enum AE250TxVoltageFault implements AE250TxFault {
 
+	/** Peak AC voltage high, phase A. */
 	VacOverPeakA(0, "Peak AC voltage high, phase A."),
 
+	/** Peak AC voltage high, phase B. */
 	VacOverPeakB(1, "Peak AC voltage high, phase B."),
 
+	/** Peak AC voltage high, phase C. */
 	VacOverPeakC(2, "Peak AC voltage high, phase C."),
 
+	/** Control PLL fault. */
 	PllFault(3, "Control PLL fault."),
 
+	/** AC voltages unbalanced. */
 	AcUnbalancedFault(4, "AC voltages unbalanced."),
 
+	/** DC voltage high. */
 	DcOverVoltage(5, "DC voltage high."),
 
+	/** +5V power supply fault. */
 	PowerSupplyP5(6, "+5V power supply fault."),
 
+	/** +15V power supply fault. */
 	PowerSupply1P5(7, "+15V power supply fault."),
 
+	/** -15V power supply fault. */
 	PowerSupplyM15(8, "-15V power supply fault."),
 
+	/** 10V power supply fault. */
 	PowerSupply10(9, "10V power supply fault."),
 
+	/** 24V power supply fault. */
 	PowerSupply24(10, "24V power supply fault."),
 
+	/** DC precharge fault. */
 	DcPrecharage(11, "DC precharge fault."),
 
+	/** PV input and DC bus voltage delta. */
 	PvDcDelta(12, "PV input and DC bus voltage delta."),
 
 	;

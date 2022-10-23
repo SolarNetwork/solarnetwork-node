@@ -65,8 +65,7 @@ import net.solarnetwork.util.ByteUtils;
 import net.solarnetwork.util.StringUtils;
 
 /**
- * Service that can configure {@link ModbusDatumDataSource} instances via CSV
- * resources.
+ * Service that can configure {@link ModbusServer} instances via CSV resources.
  * 
  * @author matt
  * @version 1.0

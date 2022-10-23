@@ -87,7 +87,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * {@link UploadService} using MQTT.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class MqttUploadService extends BaseMqttConnectionService
 		implements UploadService, MqttMessageHandler, MqttConnectionObserver, SettingSpecifierProvider {
@@ -113,6 +113,20 @@ public class MqttUploadService extends BaseMqttConnectionService
 	 * @since 1.4
 	 */
 	public static final MqttVersion DEFAULT_MQTT_VERSION = MqttVersion.Mqtt5;
+
+	/**
+	 * A source ID for log messages posted as datum.
+	 * 
+	 * @since 2.1
+	 */
+	public static final String LOG_SOURCE_ID = "log";
+
+	/**
+	 * A source ID prefix for log messages posted as datum.
+	 * 
+	 * @since 2.1
+	 */
+	public static final String LOG_SOURCE_ID_PREFIX = LOG_SOURCE_ID + "/";
 
 	private final ObjectMapper objectMapper;
 	private final IdentityService identityService;
@@ -294,9 +308,11 @@ public class MqttUploadService extends BaseMqttConnectionService
 									messageData = objectMapper.writeValueAsBytes(streamDatum);
 								}
 							} catch ( IllegalArgumentException e ) {
-								log.debug(
-										"Unable to post datum as stream datum, falling back to general datum: "
-												+ e.getMessage());
+								if ( canLogForDatum(datum) ) {
+									log.debug(
+											"Unable to post datum as stream datum, falling back to general datum: "
+													+ e.getMessage());
+								}
 							}
 						}
 					}
@@ -332,28 +348,38 @@ public class MqttUploadService extends BaseMqttConnectionService
 								kind == ObjectDatumKind.Location ? SolarInCountStat.LocationDatumPosted
 										: SolarInCountStat.NodeDatumPosted);
 						postDatumUploadedEvent(datum, jsonData);
-						log.info("Uploaded datum via MQTT: {}", datum);
+						if ( canLogForDatum(datum) ) {
+							log.info("Uploaded datum via MQTT: {}", datum);
+						}
 					}
 					return DigestUtils.md5DigestAsHex(String.format("%tQ;%s;%d;%s", datum.getTimestamp(),
 							datum.getSourceId(), objectId, kind).getBytes());
 				} catch ( IOException | InterruptedException | ExecutionException
 						| TimeoutException e ) {
-					Throwable root = e;
-					while ( root.getCause() != null ) {
-						root = root.getCause();
-					}
-					String msg = (root instanceof TimeoutException ? "timeout" : root.getMessage());
-					if ( log.isDebugEnabled() ) {
-						log.warn("Error posting datum {} via MQTT @ {}, falling back to batch mode",
-								datum, getMqttConfig().getServerUri(), e);
-					} else {
-						log.warn("Error posting datum {} via MQTT @ {}, falling back to batch mode: {}",
-								datum, getMqttConfig().getServerUri(), msg);
+					if ( canLogForDatum(datum) ) {
+						Throwable root = e;
+						while ( root.getCause() != null ) {
+							root = root.getCause();
+						}
+						String msg = (root instanceof TimeoutException ? "timeout" : root.getMessage());
+						if ( log.isDebugEnabled() ) {
+							log.warn("Error posting datum {} via MQTT @ {}, falling back to batch mode",
+									datum, getMqttConfig().getServerUri(), e);
+						} else {
+							log.warn(
+									"Error posting datum {} via MQTT @ {}, falling back to batch mode: {}",
+									datum, getMqttConfig().getServerUri(), msg);
+						}
 					}
 				}
 			}
 		}
 		return null;
+	}
+
+	private static boolean canLogForDatum(NodeDatum datum) {
+		return !(LOG_SOURCE_ID.equalsIgnoreCase(datum.getSourceId())
+				|| datum.getSourceId().startsWith(LOG_SOURCE_ID_PREFIX));
 	}
 
 	// post DATUM_UPLOADED events; but with the (possibly transformed) uploaded data so we show just

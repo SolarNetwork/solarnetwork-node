@@ -124,26 +124,59 @@ public class SettingsCommand implements SettingsUpdates {
 		return getValues();
 	}
 
+	/**
+	 * Get the values.
+	 * 
+	 * @return the values
+	 */
 	public List<SettingValueBean> getValues() {
 		return values;
 	}
 
+	/**
+	 * Set the values.
+	 * 
+	 * @param values
+	 *        the values to set
+	 */
 	public void setValues(List<SettingValueBean> values) {
 		this.values = values;
 	}
 
+	/**
+	 * Get the provider key.
+	 * 
+	 * @return the provider key
+	 */
 	public String getProviderKey() {
 		return providerKey;
 	}
 
+	/**
+	 * Set the provider key.
+	 * 
+	 * @param providerKey
+	 *        the provider key
+	 */
 	public void setProviderKey(String providerKey) {
 		this.providerKey = providerKey;
 	}
 
+	/**
+	 * Get the instance key.
+	 * 
+	 * @return the instance key
+	 */
 	public String getInstanceKey() {
 		return instanceKey;
 	}
 
+	/**
+	 * Set the instance key.
+	 * 
+	 * @param instanceKey
+	 *        the instance key to set
+	 */
 	public void setInstanceKey(String instanceKey) {
 		this.instanceKey = instanceKey;
 	}

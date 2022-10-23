@@ -40,20 +40,26 @@ import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * {@link DatumDataSource} for the AE 250TX series inverter.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE250TxData>
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
-	/** The {@code sourceId} property default value. */
-	public static final String DEFAULT_SOURCE_ID = "AE 250TX";
+	/**
+	 * The {@code sampleCacheMs} property default value.
+	 * 
+	 * @since 2.1
+	 */
+	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000L;
 
-	private String sourceId = DEFAULT_SOURCE_ID;
+	private String sourceId;
+	private boolean includePhaseMeasurements;
 
 	/**
 	 * Default constructor.
@@ -103,7 +109,11 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 			if ( currSample == null ) {
 				return null;
 			}
-			return new AE250TxDatum(currSample, sourceId);
+			AE250TxDatum d = new AE250TxDatum(currSample, sourceId);
+			if ( this.includePhaseMeasurements ) {
+				d.populatePhaseMeasurementProperties(currSample);
+			}
+			return d;
 		} catch ( IOException e ) {
 			log.error("Communication problem reading source {} from AE 250TX device {}: {}", sourceId,
 					modbusDeviceName(), e.getMessage());
@@ -140,12 +150,12 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(getSample()), true));
 
 		results.addAll(getIdentifiableSettingSpecifiers());
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", DEFAULT_SOURCE_ID));
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));
 		results.addAll(getModbusNetworkSettingSpecifiers());
 
-		AE250TxDatumDataSource defaults = new AE250TxDatumDataSource();
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
-				String.valueOf(defaults.getSampleCacheMs())));
+				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
+		results.add(new BasicToggleSettingSpecifier("includePhaseMeasurements", false));
 
 		results.addAll(getDeviceInfoMetadataSettingSpecifiers());
 
@@ -174,6 +184,16 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 	}
 
 	/**
+	 * Get the source ID.
+	 * 
+	 * @return the source ID
+	 * @since 2.1
+	 */
+	public String getSourceId() {
+		return sourceId;
+	}
+
+	/**
 	 * Set the source ID to use for returned datum.
 	 * 
 	 * @param sourceId
@@ -181,6 +201,28 @@ public class AE250TxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE2
 	 */
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;
+	}
+
+	/**
+	 * Get the inclusion toggle of phase measurement properties in collected
+	 * datum.
+	 * 
+	 * @return {@literal true} to collect phase measurements
+	 * @since 2.1
+	 */
+	public boolean isIncludePhaseMeasurements() {
+		return includePhaseMeasurements;
+	}
+
+	/**
+	 * Toggle the inclusion of phase measurement properties in collected datum.
+	 * 
+	 * @param includePhaseMeasurements
+	 *        {@literal true} to collect phase measurements
+	 * @since 2.1
+	 */
+	public void setIncludePhaseMeasurements(boolean includePhaseMeasurements) {
+		this.includePhaseMeasurements = includePhaseMeasurements;
 	}
 
 }

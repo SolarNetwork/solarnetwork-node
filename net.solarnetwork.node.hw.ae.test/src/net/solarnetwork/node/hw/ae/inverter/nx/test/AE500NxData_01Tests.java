@@ -26,6 +26,7 @@ import static net.solarnetwork.node.test.DataUtils.parseModbusHexRegisterLines;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 import java.io.BufferedReader;
@@ -124,6 +125,11 @@ public class AE500NxData_01Tests {
 	}
 
 	@Test
+	public void dcCurrent() {
+		assertThat("DC current", data.getDcCurrent(), equalTo(68.6f));
+	}
+
+	@Test
 	public void activeEnergyDelivered() {
 		assertThat("Active energy delivered", data.getActiveEnergyDelivered(), equalTo(209385220L));
 	}
@@ -196,6 +202,26 @@ public class AE500NxData_01Tests {
 	@Test
 	public void voltage() {
 		assertThat("Voltage", data.getVoltage(), equalTo(-2.6f));
+	}
+
+	@Test
+	public void tempAmbient() {
+		assertThat("Temp ambient", data.getAmbientTemperature(), is(equalTo(12.9f)));
+	}
+
+	@Test
+	public void tempCabinet() {
+		assertThat("Temp cabinet", data.getCabinetTemperature(), is(equalTo(20.0f)));
+	}
+
+	@Test
+	public void tempCoolant() {
+		assertThat("Temp coolant", data.getCoolantTemperature(), is(equalTo(18.3f)));
+	}
+
+	@Test
+	public void tempReactor() {
+		assertThat("Temp reactor", data.getReactorTemperature(), is(equalTo(29.1f)));
 	}
 
 }

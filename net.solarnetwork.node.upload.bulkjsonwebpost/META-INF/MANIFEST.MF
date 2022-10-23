@@ -4,7 +4,7 @@ Bundle-Name: SolarIn/HTTP Upload Service
 Bundle-SymbolicName: net.solarnetwork.node.upload.bulkjsonwebpost
 Automatic-Module-Name: net.solarnetwork.node.upload.bulkjsonwebpost
 Bundle-Description: Upload locally cached data periodically to SolarIn via HTTP using JSON.
-Bundle-Version: 2.0.2
+Bundle-Version: 2.0.3
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 

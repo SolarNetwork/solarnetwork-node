@@ -77,6 +77,7 @@
 			<beans:entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
 				<beans:array value-type="java.lang.String">
 					<beans:value>#{T(net.solarnetwork.node.service.OperationalModesService).EVENT_TOPIC_OPERATIONAL_MODES_CHANGED}</beans:value>
+					<beans:value>net/solarnetwork/Log</beans:value>
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>

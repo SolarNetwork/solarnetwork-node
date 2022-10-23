@@ -33,37 +33,55 @@ import net.solarnetwork.domain.Bitmaskable;
  */
 public enum KTLCTFault2 implements Bitmaskable {
 
+	/** Protect0200. */
 	Protect0200(0),
 
+	/** Protect0210. */
 	Protect0210(1),
 
+	/** Protect0220. */
 	Protect0220(2),
 
+	/** PV2Reverse. */
 	PV2Reverse(3),
 
+	/** Protect0240. */
 	Protect0240(4),
 
+	/** PV2VoltageOver. */
 	PV2VoltageOver(5),
 
+	/** Protect0260. */
 	Protect0260(6),
 
+	/** Protect0230. */
 	Protect0230(7),
 
+	/** GFDIErr. */
 	GFDIErr(8),
 
+	/** PV1Reverse. */
 	PV1Reverse(9),
 
+	/** PV1VoltageOver. */
 	PV1VoltageOver(10),
 
+	/** PV3Reverse. */
 	PV3Reverse(11),
 
+	/** PV3VoltageOver. */
 	PV3VoltageOver(12),
 
+	/** Protect0300. */
 	Protect0300(13),
 
+	/** Protect0290. */
 	Protect0290(14),
 
-	EmergencyStp(15);
+	/** EmergencyStp. */
+	EmergencyStp(15),
+
+	;
 
 	private final int code;
 

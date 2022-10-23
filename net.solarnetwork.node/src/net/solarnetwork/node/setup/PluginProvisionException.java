@@ -33,14 +33,34 @@ public class PluginProvisionException extends RuntimeException {
 
 	private static final long serialVersionUID = -2847282484880397704L;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param message
+	 *        the message
+	 * @param cause
+	 *        the cause
+	 */
 	public PluginProvisionException(String message, Throwable cause) {
 		super(message, cause);
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param message
+	 *        the message
+	 */
 	public PluginProvisionException(String message) {
 		super(message);
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param cause
+	 *        the cause
+	 */
 	public PluginProvisionException(Throwable cause) {
 		super(cause);
 	}

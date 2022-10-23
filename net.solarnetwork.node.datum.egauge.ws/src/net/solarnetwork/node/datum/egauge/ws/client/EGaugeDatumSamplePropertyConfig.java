@@ -36,12 +36,25 @@ import net.solarnetwork.service.support.ExpressionServiceExpression;
  */
 public class EGaugeDatumSamplePropertyConfig extends DatumSamplePropertyConfig<EGaugePropertyConfig> {
 
+	/**
+	 * Default constructor.
+	 */
 	public EGaugeDatumSamplePropertyConfig() {
 		super();
 		setPropertyType(DatumSamplesType.Instantaneous);
 		setConfig(new EGaugePropertyConfig());
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param propertyKey
+	 *        the property key
+	 * @param propertyType
+	 *        the property type
+	 * @param propertyConfig
+	 *        the property configuration
+	 */
 	public EGaugeDatumSamplePropertyConfig(String propertyKey, DatumSamplesType propertyType,
 			EGaugePropertyConfig propertyConfig) {
 		super(propertyKey, propertyType, propertyConfig);

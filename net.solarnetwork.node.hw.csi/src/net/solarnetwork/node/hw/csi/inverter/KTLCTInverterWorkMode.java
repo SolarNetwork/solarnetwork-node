@@ -32,15 +32,22 @@ import net.solarnetwork.domain.DeviceOperatingState;
  */
 public enum KTLCTInverterWorkMode {
 
+	/** Fault. */
 	Fault(0x8000, "Fault"),
 
+	/** Check. */
 	Check(0x4000, "Check"),
 
+	/** Standby. */
 	Standby(0x2000, "Standby"),
 
+	/** Running. */
 	Running(0x1000, "Running"),
 
-	Derate(0x0800, "Derate");
+	/** Derate. */
+	Derate(0x0800, "Derate"),
+
+	;
 
 	private final int code;
 	private final String description;

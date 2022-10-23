@@ -33,12 +33,13 @@ import net.solarnetwork.node.hw.yaskawa.mb.inverter.PVITLDataAccessor;
  * samples.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class PVITLDatum extends SimpleAcDcEnergyDatum {
 
 	private static final long serialVersionUID = -6059283981724116296L;
 
+	/** The sample. */
 	private final PVITLDataAccessor sample;
 
 	/**
@@ -56,18 +57,28 @@ public class PVITLDatum extends SimpleAcDcEnergyDatum {
 	}
 
 	private void populateMeasurements(PVITLDataAccessor data) {
-		setDcPower(data.getDcPower());
+		setDcCurrent(data.getDcCurrent());
 		setDcVoltage(data.getDcVoltage());
+		setDcPower(data.getDcPower());
 		setVoltage(data.getVoltage());
 		setWattHourReading(data.getActiveEnergyDelivered());
 		setWatts(data.getActivePower());
+		setApparentPower(data.getApparentPower());
+		setPowerFactor(data.getPowerFactor());
+
+		getSamples().putInstantaneousSampleValue("temp", data.getInternalTemperature());
+		getSamples().putInstantaneousSampleValue("temp_heatSink", data.getModuleTemperature());
 
 		getSamples().putInstantaneousSampleValue(AcEnergyDatum.FREQUENCY_KEY, data.getFrequency());
 		getSamples().putInstantaneousSampleValue(AcEnergyDatum.CURRENT_KEY, data.getCurrent());
 
+		getSamples().putInstantaneousSampleValue(DcEnergyDatum.DC_CURRENT_KEY + "1",
+				data.getPv1Current());
 		getSamples().putInstantaneousSampleValue(DcEnergyDatum.DC_VOLTAGE_KEY + "1",
 				data.getPv1Voltage());
 		getSamples().putInstantaneousSampleValue(DcEnergyDatum.DC_POWER_KEY + "1", data.getPv1Power());
+		getSamples().putInstantaneousSampleValue(DcEnergyDatum.DC_CURRENT_KEY + "2",
+				data.getPv2Current());
 		getSamples().putInstantaneousSampleValue(DcEnergyDatum.DC_VOLTAGE_KEY + "2",
 				data.getPv2Voltage());
 		getSamples().putInstantaneousSampleValue(DcEnergyDatum.DC_POWER_KEY + "2", data.getPv2Power());

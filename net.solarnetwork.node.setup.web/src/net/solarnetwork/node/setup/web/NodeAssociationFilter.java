@@ -77,6 +77,12 @@ public class NodeAssociationFilter extends GenericFilterBean implements Filter {
 		}
 	}
 
+	/**
+	 * Set the identity service.
+	 * 
+	 * @param identityService
+	 *        the identity service to set
+	 */
 	public void setIdentityService(IdentityService identityService) {
 		this.identityService = identityService;
 	}

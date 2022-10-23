@@ -33,37 +33,55 @@ import net.solarnetwork.domain.Bitmaskable;
  */
 public enum KTLCTPermanentFault implements Bitmaskable {
 
+	/** Fault0130. */
 	Fault0130(0),
 
+	/** Fault0120. */
 	Fault0120(1),
 
+	/** Fault0110. */
 	Fault0110(2),
 
+	/** Fault0100. */
 	Fault0100(3),
 
+	/** Fault0090. */
 	Fault0090(4),
 
+	/** Fault0080. */
 	Fault0080(5),
 
+	/** Fault0070. */
 	Fault0070(6),
 
+	/** Fault0060. */
 	Fault0060(7),
 
+	/** Fault0050. */
 	Fault0050(8),
 
+	/** Fault0040. */
 	Fault0040(9),
 
+	/** Fault0030. */
 	Fault0030(10),
 
+	/** Fault0020. */
 	Fault0020(11),
 
+	/** Fault0010. */
 	Fault0010(12),
 
+	/** Fault0140. */
 	Fault0140(13),
 
+	/** Fault0150. */
 	Fault0150(14),
 
-	Fault0160(15);
+	/** Fault0160. */
+	Fault0160(15),
+
+	;
 
 	private final int code;
 

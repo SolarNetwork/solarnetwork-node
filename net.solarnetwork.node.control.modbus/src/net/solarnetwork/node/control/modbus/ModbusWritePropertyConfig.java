@@ -22,14 +22,19 @@
 
 package net.solarnetwork.node.control.modbus;
 
+import static java.lang.String.format;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.solarnetwork.domain.NodeControlPropertyType;
+import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
+import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
@@ -38,7 +43,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * Configuration for a single control property to be set via Modbus.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ModbusWritePropertyConfig {
 
@@ -48,24 +53,42 @@ public class ModbusWritePropertyConfig {
 	/** The default value for the {@code controlPropertyType} property. */
 	public static final NodeControlPropertyType DEFAULT_CONTROL_PROPERTY_TYPE = NodeControlPropertyType.Boolean;
 
+	/** The {@code dataType} property default value */
 	public static final ModbusDataType DEFAULT_DATA_TYPE = ModbusDataType.Boolean;
 
+	/** The {@code function} property default value */
 	public static final ModbusWriteFunction DEFAULT_FUNCTION = ModbusWriteFunction.WriteCoil;
 
+	/** The {@code unitMultiplier} property default value. */
 	public static final BigDecimal DEFAULT_UNIT_MULTIPLIER = BigDecimal.ONE;
 
+	/** The {@code wordLength} property default value. */
 	public static final int DEFAULT_WORD_LENGTH = 0;
 
+	/** The {@code decimalScale} property default value. */
 	public static final int DEFAULT_DECIMAL_SCALE = 0;
 
-	private int address;
+	/**
+	 * A setting type pattern for a property configuration element.
+	 * 
+	 * <p>
+	 * The pattern has two capture groups: the property configuration index and
+	 * the property setting name.
+	 * </p>
+	 * 
+	 * @since 2.1
+	 */
+	public static final Pattern PROP_SETTING_PATTERN = Pattern
+			.compile(Pattern.quote("propConfigs[").concat("(\\d+)\\]\\.(.*)"));
+
+	private Integer address;
 	private NodeControlPropertyType controlPropertyType;
 	private String controlId;
 	private ModbusWriteFunction function;
 	private ModbusDataType dataType;
-	private int wordLength;
+	private Integer wordLength;
 	private BigDecimal unitMultiplier;
-	private int decimalScale;
+	private Integer decimalScale;
 
 	/**
 	 * Default constructor.
@@ -168,6 +191,17 @@ public class ModbusWritePropertyConfig {
 	}
 
 	/**
+	 * Test if this configuration is empty.
+	 * 
+	 * @return {@literal true} if all properties are null
+	 * @since 2.1
+	 */
+	public boolean isEmpty() {
+		return (dataType == null && decimalScale == null && function == null && unitMultiplier == null
+				&& wordLength == null && controlPropertyType == null && address == null);
+	}
+
+	/**
 	 * Test if this instance has a valid configuration.
 	 * 
 	 * <p>
@@ -182,6 +216,145 @@ public class ModbusWritePropertyConfig {
 				&& dataType != null && function != null;
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("ModbusWritePropertyConfig{address=");
+		builder.append(address);
+		builder.append(", ");
+		if ( controlPropertyType != null ) {
+			builder.append("controlPropertyType=");
+			builder.append(controlPropertyType);
+			builder.append(", ");
+		}
+		if ( controlId != null ) {
+			builder.append("controlId=");
+			builder.append(controlId);
+			builder.append(", ");
+		}
+		if ( function != null ) {
+			builder.append("function=");
+			builder.append(function);
+			builder.append(", ");
+		}
+		if ( dataType != null ) {
+			builder.append("dataType=");
+			builder.append(dataType);
+			builder.append(", ");
+		}
+		builder.append("wordLength=");
+		builder.append(wordLength);
+		builder.append(", ");
+		if ( unitMultiplier != null ) {
+			builder.append("unitMultiplier=");
+			builder.append(unitMultiplier);
+			builder.append(", ");
+		}
+		builder.append("decimalScale=");
+		builder.append(decimalScale);
+		builder.append("}");
+		return builder.toString();
+	}
+
+	/**
+	 * Generate a list of setting values.
+	 * 
+	 * @param providerId
+	 *        the setting provider ID
+	 * @param instanceId
+	 *        the factory instance ID
+	 * @param i
+	 *        the property index
+	 * @return the settings
+	 * @since 2.1
+	 */
+	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, int i) {
+		List<SettingValueBean> settings = new ArrayList<>(8);
+		addSetting(settings, providerId, instanceId, i, "controlId", getControlId());
+		addSetting(settings, providerId, instanceId, i, "controlPropertyTypeKey",
+				getControlPropertyTypeKey());
+		addSetting(settings, providerId, instanceId, i, "address", getAddress());
+		addSetting(settings, providerId, instanceId, i, "functionCode", getFunctionCode());
+		addSetting(settings, providerId, instanceId, i, "dataTypeKey", getDataTypeKey());
+		addSetting(settings, providerId, instanceId, i, "wordLength", getWordLength());
+		addSetting(settings, providerId, instanceId, i, "unitMultiplier", getUnitMultiplier());
+		addSetting(settings, providerId, instanceId, i, "decimalScale", getDecimalScale());
+		return settings;
+	}
+
+	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
+			int i, String key, Object val) {
+		if ( val == null ) {
+			return;
+		}
+		settings.add(new SettingValueBean(providerId, instanceId, format("propConfigs[%d].%s", i, key),
+				val.toString()));
+	}
+
+	/**
+	 * Populate a setting as a property configuration value, if possible.
+	 * 
+	 * @param config
+	 *        the overall configuration
+	 * @param setting
+	 *        the setting to try to handle
+	 * @return {@literal true} if the setting was handled as a property
+	 *         configuration value
+	 * @since 2.1
+	 */
+	public static boolean populateFromSetting(ModbusControlConfig config, Setting setting) {
+		Matcher m = PROP_SETTING_PATTERN.matcher(setting.getType());
+		if ( !m.matches() ) {
+			return false;
+		}
+		int idx = Integer.parseInt(m.group(1));
+		String name = m.group(2);
+		List<ModbusWritePropertyConfig> propConfigs = config.getPropertyConfigs();
+		if ( !(idx < propConfigs.size()) ) {
+			propConfigs.add(idx, new ModbusWritePropertyConfig());
+		}
+		ModbusWritePropertyConfig propConfig = propConfigs.get(idx);
+		String val = setting.getValue();
+		if ( val != null && !val.isEmpty() ) {
+			switch (name) {
+				case "controlId":
+					propConfig.setControlId(val);
+					break;
+				case "controlPropertyTypeKey":
+					propConfig.setControlPropertyTypeKey(val);
+					break;
+				case "address":
+					propConfig.setAddress(Integer.valueOf(val));
+					break;
+				case "functionCode":
+					propConfig.setFunctionCode(val);
+					break;
+				case "dataTypeKey":
+					propConfig.setDataTypeKey(val);
+					break;
+				case "wordLength":
+					propConfig.setWordLength(Integer.valueOf(val));
+					break;
+				case "unitMultiplier":
+					propConfig.setUnitMultiplier(new BigDecimal(val));
+					break;
+				case "decimalScale":
+					propConfig.setDecimalScale(Integer.valueOf(val));
+					break;
+				default:
+					// ignore
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Get the settings to configure an instance of this class.
+	 * 
+	 * @param prefix
+	 *        the settings prefix to use
+	 * @return the settings
+	 */
 	public static List<SettingSpecifier> settings(String prefix) {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>();
 
@@ -409,7 +582,7 @@ public class ModbusWritePropertyConfig {
 	 * 
 	 * @return the register count to read
 	 */
-	public int getWordLength() {
+	public Integer getWordLength() {
 		return wordLength;
 	}
 
@@ -423,10 +596,7 @@ public class ModbusWritePropertyConfig {
 	 * @param wordLength
 	 *        the register count to read
 	 */
-	public void setWordLength(int wordLength) {
-		if ( wordLength < 1 ) {
-			return;
-		}
+	public void setWordLength(Integer wordLength) {
 		this.wordLength = wordLength;
 	}
 
@@ -435,7 +605,7 @@ public class ModbusWritePropertyConfig {
 	 * 
 	 * @return the register address
 	 */
-	public int getAddress() {
+	public Integer getAddress() {
 		return address;
 	}
 
@@ -445,7 +615,7 @@ public class ModbusWritePropertyConfig {
 	 * @param address
 	 *        the register address to set
 	 */
-	public void setAddress(int address) {
+	public void setAddress(Integer address) {
 		this.address = address;
 	}
 
@@ -481,7 +651,7 @@ public class ModbusWritePropertyConfig {
 	 * 
 	 * @return the decimal scale
 	 */
-	public int getDecimalScale() {
+	public Integer getDecimalScale() {
 		return decimalScale;
 	}
 
@@ -498,7 +668,7 @@ public class ModbusWritePropertyConfig {
 	 * @param decimalScale
 	 *        the scale to set, or {@literal -1} to disable rounding completely
 	 */
-	public void setDecimalScale(int decimalScale) {
+	public void setDecimalScale(Integer decimalScale) {
 		this.decimalScale = decimalScale;
 	}
 

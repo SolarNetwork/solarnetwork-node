@@ -61,27 +61,51 @@ import net.solarnetwork.web.domain.Response;
 @RequestMapping("/a/plugins")
 public class PluginController {
 
+	/**
+	 * Plugin details.
+	 */
 	public static class PluginDetails {
 
 		private final List<Plugin> availablePlugins;
 		private final List<Plugin> installedPlugins;
 
+		/**
+		 * Constructor.
+		 */
 		public PluginDetails() {
 			super();
 			this.availablePlugins = Collections.emptyList();
 			this.installedPlugins = Collections.emptyList();
 		}
 
+		/**
+		 * Constructor.
+		 * 
+		 * @param availablePlugins
+		 *        the available plugins
+		 * @param installedPlugins
+		 *        the installed plugins
+		 */
 		public PluginDetails(List<Plugin> availablePlugins, List<Plugin> installedPlugins) {
 			super();
 			this.availablePlugins = availablePlugins;
 			this.installedPlugins = installedPlugins;
 		}
 
+		/**
+		 * Get the available plugins.
+		 * 
+		 * @return the available plugins
+		 */
 		public List<Plugin> getAvailablePlugins() {
 			return availablePlugins;
 		}
 
+		/**
+		 * Get the installed plugins.
+		 * 
+		 * @return the installed plugins
+		 */
 		public List<Plugin> getInstalledPlugins() {
 			return installedPlugins;
 		}
@@ -98,10 +122,21 @@ public class PluginController {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
+	/** An unknown provision key. */
 	public static final String ERROR_UNKNOWN_PROVISION_ID = "unknown.provisionID";
 
+	/** A failed provision key. */
 	public static final String FAILED_PROVISION = "failed.provision";
 
+	/**
+	 * Handle an {@link IllegalArgumentException}.
+	 * 
+	 * @param e
+	 *        the exception
+	 * @param locale
+	 *        the locale
+	 * @return the result
+	 */
 	@ExceptionHandler(IllegalArgumentException.class)
 	@ResponseBody
 	public Response<Object> unknownProvisionID(IllegalArgumentException e, Locale locale) {
@@ -109,6 +144,15 @@ public class PluginController {
 				messageSource.getMessage("plugins.error.unknown-provisionID", null, locale), null);
 	}
 
+	/**
+	 * Handle an {@link PluginProvisionException}.
+	 * 
+	 * @param e
+	 *        the exception
+	 * @param locale
+	 *        the locale
+	 * @return the result
+	 */
 	@ExceptionHandler(PluginProvisionException.class)
 	@ResponseBody
 	public Response<Object> provisioningException(PluginProvisionException e, Locale locale) {
@@ -117,11 +161,27 @@ public class PluginController {
 				e.getMessage());
 	}
 
+	/**
+	 * List plugins.
+	 * 
+	 * @return the plugins list view name
+	 */
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String home() {
 		return "plugins/list";
 	}
 
+	/**
+	 * Get the provision status.
+	 * 
+	 * @param provisionID
+	 *        the provision task ID
+	 * @param knownProgress
+	 *        the known progress
+	 * @param locale
+	 *        the locale
+	 * @return the result
+	 */
 	@RequestMapping(value = "/provisionStatus", method = RequestMethod.GET)
 	@ResponseBody
 	public Response<PluginProvisionStatus> status(@RequestParam(value = "id") final String provisionID,
@@ -168,6 +228,17 @@ public class PluginController {
 		return new PluginDetails(available, installed);
 	}
 
+	/**
+	 * List plugins.
+	 * 
+	 * @param filter
+	 *        the filter
+	 * @param latestOnly
+	 *        {@literal true} to show only the latest version of all plugins
+	 * @param locale
+	 *        the locale
+	 * @return the result
+	 */
 	@RequestMapping(value = "/list", method = RequestMethod.GET)
 	@ResponseBody
 	public Response<PluginDetails> list(
@@ -177,6 +248,11 @@ public class PluginController {
 		return response(pluginDetails(filter, latestOnly, locale));
 	}
 
+	/**
+	 * Refresh the plugin list.
+	 * 
+	 * @return the result
+	 */
 	@RequestMapping(value = "/refresh", method = RequestMethod.GET)
 	@ResponseBody
 	public Response<Boolean> refresh() {
@@ -188,6 +264,15 @@ public class PluginController {
 		return response(Boolean.TRUE);
 	}
 
+	/**
+	 * Install a plugin.
+	 * 
+	 * @param uid
+	 *        the UID of the plugin to install
+	 * @param locale
+	 *        the locale
+	 * @return the result
+	 */
 	@RequestMapping(value = "/install", method = RequestMethod.GET)
 	@ResponseBody
 	public Response<PluginProvisionStatus> previewInstall(
@@ -276,6 +361,15 @@ public class PluginController {
 		return response(service.previewInstallPlugins(upgradableUids, locale));
 	}
 
+	/**
+	 * Remove a plugin.
+	 * 
+	 * @param uid
+	 *        the UID of the plugin to remove
+	 * @param locale
+	 *        the locale
+	 * @return the result
+	 */
 	@RequestMapping(value = "/remove", method = RequestMethod.POST)
 	@ResponseBody
 	public Response<PluginProvisionStatus> remove(@RequestParam(value = "uid") final String uid,
@@ -288,14 +382,32 @@ public class PluginController {
 		return response(service.removePlugins(uids, locale));
 	}
 
+	/**
+	 * Set the plugin service.
+	 * 
+	 * @param pluginService
+	 *        the plugin service
+	 */
 	public void setPluginService(OptionalService<PluginService> pluginService) {
 		this.pluginService = pluginService;
 	}
 
+	/**
+	 * Set the status poll timeout.
+	 * 
+	 * @param statusPollTimeoutMs
+	 *        the timeout, in milliseconds
+	 */
 	public void setStatusPollTimeoutMs(long statusPollTimeoutMs) {
 		this.statusPollTimeoutMs = statusPollTimeoutMs;
 	}
 
+	/**
+	 * Set the message source.
+	 * 
+	 * @param messageSource
+	 *        the message source to set
+	 */
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}

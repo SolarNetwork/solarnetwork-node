@@ -39,7 +39,7 @@ import net.solarnetwork.util.IntRangeSet;
  * Enumeration of Modbus register mappings for the CSI 50KTL-CT series inverter.
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public enum KTLCTRegister implements ModbusReference {
 
@@ -120,6 +120,45 @@ public enum KTLCTRegister implements ModbusReference {
 
 	/** Transformer temperature, in 0.1 C. */
 	InverterTransformerTemperature(0x2E, Int16),
+
+	/** Active power, phase A, in 0.1 kW (100 W). */
+	InverterActivePowerPhaseA(0x8103, UInt16),
+
+	/** Active power, phase B, in 0.1 kW (100 W). */
+	InverterActivePowerPhaseB(0x8104, UInt16),
+
+	/** Active power, phase C, in 0.1 kW (100 W). */
+	InverterActivePowerPhaseC(0x8105, UInt16),
+
+	/** Reactive power, phase A, in 0.1 KVar (100 Var). */
+	InverterReactivePowerPhaseA(0x8107, UInt16),
+
+	/** Reactive power, phase B, in 0.1 KVar (100 Var). */
+	InverterReactivePowerPhaseB(0x8108, UInt16),
+
+	/** Reactive power, phase C, in 0.1 KVar (100 Var). */
+	InverterReactivePowerPhaseC(0x8109, UInt16),
+
+	/** Reactive power, phase C, in 0.1 KVar (100 Var). */
+	InverterReactivePowerTotal(0x810A, UInt16),
+
+	/** Power factor phase A from 0 - 1, in 0.01 increment. */
+	InverterPowerFactorPhaseA(0x8103, UInt16),
+
+	/** Power factor phase B from 0 - 1, in 0.01 increment. */
+	InverterPowerFactorPhaseB(0x8108, UInt16),
+
+	/** Power factor phase C from 0 - 1, in 0.01 increment. */
+	InverterPowerFactorPhaseC(0x8109, UInt16),
+
+	/** Output voltage phase A, in 0.1 V. */
+	InverterVoltagePhaseA(0x810F, UInt16),
+
+	/** Output voltage phase B, in 0.1 V. */
+	InverterVoltagePhaseB(0x8110, UInt16),
+
+	/** Output voltage phase C, in 0.1 V. */
+	InverterVoltagePhaseC(0x8111, UInt16),
 
 	/** Status mode code, see {@link KTLCTInverterWorkMode}. */
 	StatusMode(0x2F, UInt16),
