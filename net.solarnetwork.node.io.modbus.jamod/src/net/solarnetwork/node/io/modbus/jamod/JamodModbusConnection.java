@@ -43,10 +43,30 @@ public class JamodModbusConnection extends AbstractModbusConnection implements M
 	private final SerialConnection connection;
 	private final String name;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @param unitId
+	 *        the unit ID
+	 */
 	public JamodModbusConnection(SerialConnection conn, int unitId) {
 		this(conn, unitId, true, "UNKNOWN");
 	}
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @param unitId
+	 *        the unit ID
+	 * @param headless
+	 *        {@literal true} if headless
+	 * @param name
+	 *        the display name
+	 */
 	public JamodModbusConnection(SerialConnection conn, int unitId, boolean headless, String name) {
 		super(unitId, headless);
 		this.connection = conn;
