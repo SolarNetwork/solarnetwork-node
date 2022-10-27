@@ -441,7 +441,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 						});
 						expressionRegisterSet = null; // so don't handle later
 					}
-					log.debug("Reading modbus {} register ranges: {}", getUnitId(), addressRangeSet);
+					log.debug("Reading modbus {} {} register ranges: {}", getUnitId(), function,
+							addressRangeSet);
 					Iterable<IntRange> ranges = addressRangeSet.ranges();
 					for ( IntRange range : ranges ) {
 						for ( int start = range.getMin(),
