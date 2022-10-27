@@ -22,7 +22,6 @@
 
 package net.solarnetwork.node.control.modbus;
 
-import static net.solarnetwork.node.io.modbus.ModbusDataUtils.shortArrayForBitSet;
 import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -70,6 +69,8 @@ import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.ByteUtils;
 import net.solarnetwork.util.Half;
+import net.solarnetwork.util.IntRange;
+import net.solarnetwork.util.IntRangeSet;
 import net.solarnetwork.util.NumberUtils;
 import net.solarnetwork.util.StringUtils;
 
@@ -77,7 +78,7 @@ import net.solarnetwork.util.StringUtils;
  * Read and write a Modbus "coil" or "holding" type register.
  * 
  * @author matt
- * @version 3.1
+ * @version 3.2
  */
 public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
@@ -95,14 +96,23 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 	 */
 	public static final String SETTING_UID = "net.solarnetwork.node.control.modbus";
 
+	/**
+	 * The {@code maxReadWordCount} property default value.
+	 * 
+	 * @since 3.2
+	 */
+	public static final int DEFAULT_MAX_READ_WORD_COUNT = 64;
+
 	private ModbusWritePropertyConfig[] propConfigs;
 	private OptionalService<EventAdmin> eventAdmin;
+	private int maxReadWordCount;
 
 	/**
 	 * Constructor.
 	 */
 	public ModbusControl() {
 		super(new ModbusData());
+		maxReadWordCount = DEFAULT_MAX_READ_WORD_COUNT;
 	}
 
 	private SimpleNodeControlInfoDatum currentValue(ModbusWritePropertyConfig config)
@@ -356,6 +366,45 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 		return null;
 	}
 
+	private static Map<ModbusReadFunction, List<ModbusWritePropertyConfig>> getReadFunctionSets(
+			ModbusWritePropertyConfig[] configs) {
+		if ( configs == null ) {
+			return Collections.emptyMap();
+		}
+		Map<ModbusReadFunction, List<ModbusWritePropertyConfig>> confsByFunction = new LinkedHashMap<>(
+				configs.length);
+		for ( ModbusWritePropertyConfig config : configs ) {
+			if ( !config.isValid() ) {
+				continue;
+			}
+			confsByFunction.computeIfAbsent((ModbusReadFunction) config.getFunction().oppositeFunction(),
+					k -> new ArrayList<>(4)).add(config);
+		}
+		return confsByFunction;
+	}
+
+	private static IntRangeSet getRegisterAddressSet(List<ModbusWritePropertyConfig> configs) {
+		IntRangeSet set = new IntRangeSet();
+		if ( configs != null ) {
+			for ( ModbusWritePropertyConfig config : configs ) {
+				int len = config.getDataType().getWordLength();
+				if ( len == -1 ) {
+					len = config.getWordLength();
+				}
+				set.addRange(config.getAddress(), config.getAddress() + len - 1);
+			}
+		}
+		return set;
+	}
+
+	private static short[] shortArrayForBitSet(BitSet set, int start, int count) {
+		short[] result = new short[count];
+		for ( int i = 0; i < count; i++ ) {
+			result[i] = set.get(start + i) ? (short) 1 : (short) 0;
+		}
+		return result;
+	}
+
 	@Override
 	protected synchronized void refreshDeviceData(ModbusConnection conn, ModbusData sample)
 			throws IOException {
@@ -366,41 +415,54 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 
 				@Override
 				public boolean updateModbusData(MutableModbusData m) throws IOException {
-					for ( ModbusWritePropertyConfig config : configs ) {
-						if ( !config.isValid() ) {
-							continue;
-						}
-						ModbusReadFunction readFunction = (ModbusReadFunction) config.getFunction()
-								.oppositeFunction();
-						int start = config.getAddress();
-						int len = config.getDataType().getWordLength();
-						if ( len == -1 ) {
-							len = config.getWordLength();
-						}
-						switch (readFunction) {
-							case ReadCoil:
-								m.saveDataArray(
-										shortArrayForBitSet(conn.readDiscreetValues(start, len), len),
-										start);
-								break;
+					final int maxReadLen = maxReadWordCount;
+					Map<ModbusReadFunction, List<ModbusWritePropertyConfig>> functionMap = getReadFunctionSets(
+							propConfigs);
+					for ( Map.Entry<ModbusReadFunction, List<ModbusWritePropertyConfig>> me : functionMap
+							.entrySet() ) {
+						ModbusReadFunction function = me.getKey();
+						List<ModbusWritePropertyConfig> configs = me.getValue();
+						// try to read from device as few times as possible by combining ranges of addresses
+						// into single calls, but limited to at most maxReadWordCount addresses at a time
+						// because some devices have trouble returning large word counts
+						IntRangeSet addressRangeSet = getRegisterAddressSet(configs);
+						log.debug("Reading modbus {} register ranges: {}", getUnitId(), addressRangeSet);
+						Iterable<IntRange> ranges = addressRangeSet.ranges();
+						for ( IntRange range : ranges ) {
+							for ( int start = range.getMin(),
+									stop = start + range.length(); start < stop; ) {
+								int len = Math.min(range.length(), maxReadLen);
+								switch (function) {
+									case ReadCoil:
+										m.saveDataArray(shortArrayForBitSet(
+												conn.readDiscreetValues(start, len), start, len), start);
+										break;
 
-							case ReadDiscreteInput:
-								m.saveDataArray(shortArrayForBitSet(
-										conn.readInputDiscreteValues(start, len), len), start);
-								break;
+									case ReadDiscreteInput:
+										m.saveDataArray(shortArrayForBitSet(
+												conn.readInputDiscreteValues(start, len), start, len),
+												start);
+										break;
 
-							case ReadHoldingRegister:
-								m.saveDataArray(conn.readWordsUnsigned(
-										ModbusReadFunction.ReadHoldingRegister, start, len), start);
-								break;
+									case ReadHoldingRegister:
+										m.saveDataArray(
+												conn.readWords(ModbusReadFunction.ReadHoldingRegister,
+														start, len),
+												start);
+										break;
 
-							case ReadInputRegister:
-								m.saveDataArray(conn.readWordsUnsigned(
-										ModbusReadFunction.ReadInputRegister, start, len), start);
-								break;
+									case ReadInputRegister:
+										m.saveDataArray(
+												conn.readWords(ModbusReadFunction.ReadInputRegister,
+														start, len),
+												start);
+										break;
+								}
+								start += len;
+							}
 						}
 					}
-					return false; // this means the data is never cached
+					return true;
 				}
 			});
 		}
@@ -585,6 +647,8 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(defaults.getSampleCacheMs())));
+		results.add(new BasicTextFieldSettingSpecifier("maxReadWordCount",
+				String.valueOf(DEFAULT_MAX_READ_WORD_COUNT)));
 
 		ModbusWritePropertyConfig[] confs = getPropConfigs();
 		List<ModbusWritePropertyConfig> confsList = (confs != null ? Arrays.asList(confs)
@@ -666,6 +730,38 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 	public void setPropConfigsCount(int count) {
 		this.propConfigs = ArrayUtils.arrayWithLength(this.propConfigs, count,
 				ModbusWritePropertyConfig.class, null);
+	}
+
+	/**
+	 * Get the maximum number of Modbus registers to read in any single read
+	 * operation.
+	 * 
+	 * @return the max read word count; defaults to
+	 *         {@link #DEFAULT_MAX_READ_WORD_COUNT}
+	 * @since 3.2
+	 */
+	public int getMaxReadWordCount() {
+		return this.maxReadWordCount;
+	}
+
+	/**
+	 * Set the maximum number of Modbus registers to read in any single read
+	 * operation.
+	 * 
+	 * <p>
+	 * Some modbus devices do not handle large read ranges. This setting can be
+	 * used to limit the number of registers read at one time.
+	 * </p>
+	 * 
+	 * @param maxReadWordCount
+	 *        the maximum word count
+	 * @since 3.2
+	 */
+	public void setMaxReadWordCount(int maxReadWordCount) {
+		if ( maxReadWordCount < 1 ) {
+			return;
+		}
+		this.maxReadWordCount = maxReadWordCount;
 	}
 
 }
