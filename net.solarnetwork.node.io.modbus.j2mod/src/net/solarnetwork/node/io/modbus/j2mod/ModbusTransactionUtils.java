@@ -440,14 +440,12 @@ public class ModbusTransactionUtils {
 			int len = values.length;
 			Register[] regs = new Register[len];
 			for ( int i = 0; i < len; i += 1 ) {
-				regs[i] = new SimpleRegister();
-				regs[i].setValue(values[i]);
+				regs[i] = new SimpleRegister(values[i]);
 			}
 			req.setRegisters(regs);
 		} else if ( request instanceof WriteSingleRegisterRequest ) {
 			WriteSingleRegisterRequest req = (WriteSingleRegisterRequest) request;
-			Register reg = new SimpleRegister();
-			reg.setValue(values[0]);
+			Register reg = new SimpleRegister(values[0]);
 			req.setRegister(reg);
 		} else {
 			throw new UnsupportedOperationException("Funciton " + function + " not supported");
