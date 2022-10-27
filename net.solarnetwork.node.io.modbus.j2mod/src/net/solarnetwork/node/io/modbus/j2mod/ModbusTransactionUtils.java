@@ -89,7 +89,9 @@ public class ModbusTransactionUtils {
 		BitSet result = new BitSet(count);
 		ReadCoilsRequest req = new ReadCoilsRequest(address, count);
 		req.setUnitID(unitId);
-		req.setHeadless();
+		if ( headless ) {
+			req.setHeadless();
+		}
 		trans.setRequest(req);
 		try {
 			trans.execute();
@@ -221,7 +223,9 @@ public class ModbusTransactionUtils {
 		BitSet result = new BitSet(count);
 		ReadInputDiscretesRequest req = new ReadInputDiscretesRequest(address, count);
 		req.setUnitID(unitId);
-		req.setHeadless();
+		if ( headless ) {
+			req.setHeadless();
+		}
 		trans.setRequest(req);
 		try {
 			trans.execute();
