@@ -36,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.IntConsumer;
+import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.domain.datum.MutableNodeDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
@@ -68,7 +69,7 @@ import net.solarnetwork.util.StringUtils;
  * Generic Modbus device datum data source.
  * 
  * @author matt
- * @version 3.1
+ * @version 3.2
  */
 public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider, ModbusConnectionAction<ModbusData>,
@@ -222,6 +223,12 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 					break;
 			}
 
+			if ( propVal instanceof Boolean && (conf.getPropertyType() == DatumSamplesType.Instantaneous
+					|| conf.getPropertyType() == DatumSamplesType.Instantaneous) ) {
+				// convert Boolean to 0/1
+				propVal = ((Boolean) propVal).booleanValue() ? 1 : 0;
+			}
+
 			if ( propVal instanceof Number ) {
 				if ( conf.getUnitMultiplier() != null ) {
 					propVal = applyUnitMultiplier((Number) propVal, conf.getUnitMultiplier());
@@ -236,9 +243,8 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 					case Accumulating:
 					case Instantaneous:
 						if ( !(propVal instanceof Number) ) {
-							log.warn(
-									"Cannot set datum accumulating property {} to non-number value [{}]",
-									conf.getPropertyKey(), propVal);
+							log.warn("Cannot set datum {} property {} to non-number value [{}]",
+									conf.getPropertyType(), conf.getPropertyKey(), propVal);
 							continue;
 						}
 
