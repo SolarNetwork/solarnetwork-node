@@ -1,0 +1,693 @@
+/* ==================================================================
+ * Bacnet4jBacnetNetwork.java - 1/11/2022 6:13:09 pm
+ * 
+ * Copyright 2022 SolarNetwork.net Dev Team
+ * 
+ * This program is free software; you can redistribute it and/or 
+ * modify it under the terms of the GNU General Public License as 
+ * published by the Free Software Foundation; either version 2 of 
+ * the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful, 
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of 
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License 
+ * along with this program; if not, write to the Free Software 
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ * 02111-1307 USA
+ * ==================================================================
+ */
+
+package net.solarnetwork.node.io.bacnet.bacnet4j;
+
+import static java.lang.Integer.toUnsignedLong;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.TaskScheduler;
+import com.serotonin.bacnet4j.LocalDevice;
+import com.serotonin.bacnet4j.RemoteDevice;
+import com.serotonin.bacnet4j.RemoteObject;
+import com.serotonin.bacnet4j.event.DeviceEventListener;
+import com.serotonin.bacnet4j.exception.BACnetException;
+import com.serotonin.bacnet4j.npdu.Network;
+import com.serotonin.bacnet4j.obj.BACnetObject;
+import com.serotonin.bacnet4j.service.Service;
+import com.serotonin.bacnet4j.service.confirmed.SubscribeCOVPropertyMultipleRequest.CovSubscriptionSpecification.CovReference;
+import com.serotonin.bacnet4j.transport.DefaultTransport;
+import com.serotonin.bacnet4j.transport.Transport;
+import com.serotonin.bacnet4j.type.Encodable;
+import com.serotonin.bacnet4j.type.constructed.Address;
+import com.serotonin.bacnet4j.type.constructed.Choice;
+import com.serotonin.bacnet4j.type.constructed.DateTime;
+import com.serotonin.bacnet4j.type.constructed.PropertyReference;
+import com.serotonin.bacnet4j.type.constructed.PropertyValue;
+import com.serotonin.bacnet4j.type.constructed.SequenceOf;
+import com.serotonin.bacnet4j.type.constructed.ServicesSupported;
+import com.serotonin.bacnet4j.type.constructed.TimeStamp;
+import com.serotonin.bacnet4j.type.enumerated.EventState;
+import com.serotonin.bacnet4j.type.enumerated.EventType;
+import com.serotonin.bacnet4j.type.enumerated.MessagePriority;
+import com.serotonin.bacnet4j.type.enumerated.NotifyType;
+import com.serotonin.bacnet4j.type.enumerated.ObjectType;
+import com.serotonin.bacnet4j.type.enumerated.PropertyIdentifier;
+import com.serotonin.bacnet4j.type.error.ErrorClassAndCode;
+import com.serotonin.bacnet4j.type.notificationParameters.NotificationParameters;
+import com.serotonin.bacnet4j.type.primitive.Boolean;
+import com.serotonin.bacnet4j.type.primitive.CharacterString;
+import com.serotonin.bacnet4j.type.primitive.ObjectIdentifier;
+import com.serotonin.bacnet4j.type.primitive.Real;
+import com.serotonin.bacnet4j.type.primitive.Unsigned32;
+import com.serotonin.bacnet4j.type.primitive.UnsignedInteger;
+import com.serotonin.bacnet4j.util.DeviceObjectPropertyReferences;
+import com.serotonin.bacnet4j.util.DeviceObjectPropertyValues;
+import com.serotonin.bacnet4j.util.PropertyUtils;
+import net.solarnetwork.node.io.bacnet.BacnetConnection;
+import net.solarnetwork.node.io.bacnet.BacnetDeviceObjectPropertyCovRef;
+import net.solarnetwork.node.io.bacnet.BacnetDeviceObjectPropertyRef;
+import net.solarnetwork.node.io.bacnet.BacnetNetwork;
+import net.solarnetwork.service.RemoteServiceException;
+import net.solarnetwork.service.ServiceLifecycleObserver;
+import net.solarnetwork.service.support.BasicIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+
+/**
+ * Base implementation of {@link BacnetNetwork} for other implementations to
+ * extend.
+ * 
+ * <p>
+ * This implementation is designed to work with connections that are kept open
+ * for long periods of time. Each connection returned from
+ * {@link #createConnection()} will be tracked internally, and if the
+ * {@link #configurationChanged(Map)} method is called any open connections will
+ * be automatically closed, so that clients using the connection can re-open the
+ * connection with the new configuration.
+ * </p>
+ * 
+ * @author matt
+ * @version 1.0
+ */
+public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
+		implements BacnetNetwork, Bacnet4jNetworkOps, DeviceEventListener, SettingSpecifierProvider,
+		SettingsChangeObserver, ServiceLifecycleObserver {
+
+	/** The {@code deviceId} default value. */
+	public static final int DEFAULT_DEVICE_ID = 1;
+
+	/** The {@code startupDelay} property default value. */
+	public static final long DEFAULT_STARTUP_DELAY = 5000L;
+
+	/**
+	 * The period at which to manage subscription re-subscribe tasks, in
+	 * milliseconds.
+	 */
+	private static final long SUBSCRIPTION_CHECK_PERIOD = 15_000L;
+
+	/** The subscription lifetime to use, in seconds. */
+	private static final UnsignedInteger SUBSCRIPTION_LIFETIME = new Unsigned32(300);
+
+	private final AtomicInteger connectionCounter = new AtomicInteger(0);
+	private final AtomicInteger subscriptionCounter = new AtomicInteger(0);
+	private final ConcurrentMap<Integer, Bacnet4jBacnetConnection> connections = new ConcurrentHashMap<>(
+			8, 0.9f, 2);
+	private final ConcurrentMap<Integer, CovSubscription> covSubscriptions = new ConcurrentHashMap<>(8,
+			0.9f, 2);
+
+	/** A class-level logger. */
+	protected final Logger log = LoggerFactory.getLogger(getClass());
+
+	private TaskScheduler taskScheduler;
+	private int deviceId = DEFAULT_DEVICE_ID;
+	private int timeout = Transport.DEFAULT_TIMEOUT;
+	private int segmentTimeout = Transport.DEFAULT_SEG_TIMEOUT;
+	private int segmentWindow = Transport.DEFAULT_SEG_WINDOW;
+	private int retries = Transport.DEFAULT_RETRIES;
+	private long startupDelay = DEFAULT_STARTUP_DELAY;
+	private String applicationSoftwareVersion;
+
+	private Future<?> startupFuture;
+	private ScheduledFuture<?> subscriptionFuture;
+
+	/** The local BACnet device. */
+	private LocalDevice localDevice;
+
+	@Override
+	public void serviceDidStartup() {
+		configurationChanged(null);
+	}
+
+	@Override
+	public synchronized void serviceDidShutdown() {
+		if ( startupFuture != null ) {
+			startupFuture.cancel(true);
+			startupFuture = null;
+		}
+		if ( subscriptionFuture != null ) {
+			subscriptionFuture.cancel(true);
+			subscriptionFuture = null;
+		}
+		closeAllConnections();
+		if ( localDevice != null ) {
+			localDevice.getEventHandler().removeListener(this);
+			localDevice.terminate();
+		}
+	}
+
+	@Override
+	public synchronized void configurationChanged(Map<String, Object> properties) {
+		final Future<?> f = this.startupFuture;
+		serviceDidShutdown();
+		Runnable task = () -> {
+			synchronized ( AbstractBacnet4jBacnetNetwork.this ) {
+				localDevice();
+			}
+		};
+		final TaskScheduler scheduler = getTaskScheduler();
+		if ( scheduler != null ) {
+			if ( f == null ) {
+				log.info("Initializing BACnet network {} in {}ms", getNetworkDescription(),
+						startupDelay);
+			}
+			startupFuture = scheduler.schedule(task,
+					new Date(System.currentTimeMillis() + startupDelay));
+		} else {
+			task.run();
+		}
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		List<SettingSpecifier> results = basicIdentifiableSettings();
+		results.add(new BasicTextFieldSettingSpecifier("deviceId", String.valueOf(DEFAULT_DEVICE_ID)));
+		results.add(new BasicTextFieldSettingSpecifier("timeout",
+				String.valueOf(Transport.DEFAULT_TIMEOUT)));
+		results.add(new BasicTextFieldSettingSpecifier("segmentWindow",
+				String.valueOf(Transport.DEFAULT_SEG_WINDOW)));
+		results.add(new BasicTextFieldSettingSpecifier("segmentTimeout",
+				String.valueOf(Transport.DEFAULT_SEG_TIMEOUT)));
+		results.add(new BasicTextFieldSettingSpecifier("retries",
+				String.valueOf(Transport.DEFAULT_RETRIES)));
+		return results;
+	}
+
+	@Override
+	public synchronized BacnetConnection createConnection() {
+		final LocalDevice device = localDevice();
+		if ( device == null ) {
+			return null;
+		}
+		final Integer id = connectionCounter.incrementAndGet();
+		final Bacnet4jBacnetConnection conn = new Bacnet4jBacnetConnection(id, this, device);
+		connections.put(id, conn);
+		return conn;
+	}
+
+	private synchronized LocalDevice localDevice() {
+		if ( localDevice == null ) {
+			localDevice = createLocalDevice();
+		}
+		if ( localDevice != null ) {
+			if ( !localDevice.isInitialized() ) {
+				try {
+					localDevice.initialize();
+				} catch ( Exception e ) {
+					log.error("Error initializing BACnet network {}: {}", getNetworkDescription(),
+							e.toString());
+				}
+			}
+		}
+		return localDevice;
+	}
+
+	private LocalDevice createLocalDevice() {
+		Network network = createNetwork();
+		if ( network == null ) {
+			return null;
+		}
+
+		Transport transport = new DefaultTransport(network);
+		transport.setTimeout(timeout);
+		transport.setSegTimeout(segmentTimeout);
+		transport.setSegWindow(segmentWindow);
+		transport.setRetries(retries);
+
+		LocalDevice device = new LocalDevice(deviceId, transport);
+		device.writePropertyInternal(PropertyIdentifier.objectName,
+				new CharacterString("SolarNode device " + deviceId));
+		device.writePropertyInternal(PropertyIdentifier.modelName, new CharacterString("SolarNode"));
+		device.writePropertyInternal(PropertyIdentifier.vendorName, new CharacterString("SolarNetwork"));
+		if ( applicationSoftwareVersion != null ) {
+			device.writePropertyInternal(PropertyIdentifier.applicationSoftwareVersion,
+					new CharacterString(applicationSoftwareVersion));
+		}
+		device.getEventHandler().addListener(this);
+		return device;
+	}
+
+	/**
+	 * Create a new network instance.
+	 * 
+	 * @return the network, or {@literal null} if the network cannot be created
+	 *         (i.e. from lack of configuration)
+	 */
+	protected abstract Network createNetwork();
+
+	private void closeAllConnections() {
+		for ( BacnetConnection conn : connections.values() ) {
+			if ( !conn.isClosed() ) {
+				try {
+					log.info("Closing BACnet connection {} after network configuration change.", conn);
+					conn.close();
+				} catch ( Exception e ) {
+					// ignore
+				}
+			}
+		}
+	}
+
+	@Override
+	public String toString() {
+		return getClass().getSimpleName() + "{" + getNetworkDescription() + '}';
+	}
+
+	/**
+	 * Get a description of this network.
+	 * 
+	 * <p>
+	 * This implementation simply calls {@code toString()} on this object.
+	 * Extending classes may want to provide something more meaningful.
+	 * </p>
+	 * 
+	 * @return a description of this network
+	 */
+	@Override
+	public String getNetworkDescription() {
+		return this.toString();
+	}
+
+	@Override
+	public void releaseConnection(BacnetConnection conn) {
+		if ( conn instanceof Bacnet4jBacnetConnection ) {
+			Bacnet4jBacnetConnection c = (Bacnet4jBacnetConnection) conn;
+			connections.remove(c.getId());
+		}
+	}
+
+	@Override
+	public int nextSubscriptionId() {
+		return subscriptionCounter.incrementAndGet();
+	}
+
+	private UnsignedInteger subscriptionLifetime() {
+		return SUBSCRIPTION_LIFETIME; // TODO: setting?
+	}
+
+	@Override
+	public void covSubscribe(int subscriptionId, Collection<BacnetDeviceObjectPropertyRef> refs,
+			int maxDelay) {
+		final CovSubscription subscription = covSubscriptions.computeIfAbsent(subscriptionId,
+				k -> new CovSubscription(subscriptionId, localDevice, this, subscriptionLifetime()));
+		final UnsignedInteger lifetime = subscriptionLifetime();
+		final Map<Integer, Map<ObjectIdentifier, List<CovReference>>> devRefMap = deviceReferenceMap(
+				refs);
+		synchronized ( subscription ) {
+			try {
+				// first unsubscribe to any existing subscriptions
+				subscription.unsubscribe(timeout);
+
+				// then (re)subscribe
+				subscription.reset();
+				subscription.expireAt(Instant.now().plusSeconds(lifetime.longValue()));
+				subscription.getRefs().addAll(refs);
+				subscription.getDevRefMap().putAll(devRefMap);
+
+				for ( Entry<Integer, Map<ObjectIdentifier, List<CovReference>>> devEntry : devRefMap
+						.entrySet() ) {
+					final Integer deviceId = devEntry.getKey();
+					RemoteDevice dev = localDevice.getRemoteDeviceBlocking(deviceId, timeout);
+					ServicesSupported ss = deviceServicesSupported(dev);
+					log.debug("Got device {} services supported: {}", deviceId, ss);
+					CovSubscriptionType subType = null;
+					if ( ss.isSubscribeCovPropertyMultiple() ) {
+						subType = CovSubscriptionType.SubscribeProperties;
+						subscription.subscribeCovPropertyMultiple(dev, devEntry.getValue());
+					} else if ( ss.isSubscribeCovProperty() ) {
+						subType = CovSubscriptionType.SubscribeProperty;
+						Set<ObjectIdentifier> fallbackCovObjIds = new LinkedHashSet<>(8);
+						for ( Entry<ObjectIdentifier, List<CovReference>> objEntry : devEntry.getValue()
+								.entrySet() ) {
+							ObjectIdentifier objId = objEntry.getKey();
+							for ( CovReference cov : objEntry.getValue() ) {
+								if ( cov.getCovIncrement() == null ) {
+									// can't subscribe to property without an increment; fall back to whole-object COV
+									fallbackCovObjIds.add(objId);
+									continue;
+								}
+								subscription.subscribeCovProperty(dev, objId, cov);
+							}
+						}
+						if ( !fallbackCovObjIds.isEmpty() && ss.isSubscribeCov() ) {
+							// for refs where CovIncrement not provided, fall back to whole-object COV
+							if ( fallbackCovObjIds.equals(devEntry.getValue().keySet()) ) {
+								subType = CovSubscriptionType.SubscribeObject;
+							}
+							for ( ObjectIdentifier objId : fallbackCovObjIds ) {
+								subscription.subscribeCov(dev, objId);
+							}
+						}
+					} else if ( ss.isSubscribeCov() ) {
+						subType = CovSubscriptionType.SubscribeObject;
+						for ( ObjectIdentifier objId : devEntry.getValue().keySet() ) {
+							subscription.subscribeCov(dev, objId);
+						}
+					} else if ( ss.isReadPropertyMultiple() ) {
+						// have to poll for values :-(
+						subType = CovSubscriptionType.PollProperties;
+					} else if ( ss.isReadProperty() ) {
+						// have to poll for values individually :-( :-( :-(
+						subType = CovSubscriptionType.PollProperty;
+					} else {
+						throw new RemoteServiceException(String.format(
+								"BACnet device %d does not support mandatory read-property service.",
+								deviceId));
+					}
+					subscription.getDeviceSubscriptionTypes().put(deviceId, subType);
+				}
+			} catch ( BACnetException ex ) {
+				throw new RemoteServiceException(
+						String.format("Error subscribing to properties COV with subscription ID %d",
+								subscriptionId),
+						ex);
+			}
+		}
+		synchronized ( this ) {
+			if ( subscriptionFuture == null ) {
+				subscriptionFuture = taskScheduler.scheduleAtFixedRate(new SubscriptionResubscriber(),
+						SUBSCRIPTION_CHECK_PERIOD);
+			}
+		}
+	}
+
+	private Map<Integer, Map<ObjectIdentifier, List<CovReference>>> deviceReferenceMap(
+			Collection<BacnetDeviceObjectPropertyRef> refs) {
+		Map<Integer, Map<ObjectIdentifier, List<CovReference>>> devRefMap = new LinkedHashMap<>(
+				refs.size());
+		for ( BacnetDeviceObjectPropertyRef ref : refs ) {
+			Map<ObjectIdentifier, List<CovReference>> refMap = devRefMap
+					.computeIfAbsent(ref.getDeviceId(), k -> new LinkedHashMap<>(8));
+			List<CovReference> l = refMap.computeIfAbsent(
+					new ObjectIdentifier(ref.getObjectType(), ref.getObjectNumber()),
+					k -> new ArrayList<>(8));
+			Real covIncrement = null;
+			if ( ref instanceof BacnetDeviceObjectPropertyCovRef ) {
+				BacnetDeviceObjectPropertyCovRef covRef = (BacnetDeviceObjectPropertyCovRef) ref;
+				if ( covRef.getCovIncrement() != null ) {
+					covIncrement = new Real(covRef.getCovIncrement());
+				}
+			}
+			l.add(new CovReference(new PropertyReference(PropertyIdentifier.forId(ref.getPropertyId()),
+					(ref.hasPropertyIndex() ? new UnsignedInteger(toUnsignedLong(ref.getPropertyIndex()))
+							: null)),
+					covIncrement, Boolean.FALSE));
+		}
+		return devRefMap;
+	}
+
+	private ServicesSupported deviceServicesSupported(RemoteDevice dev) {
+		final int deviceId = dev.getInstanceNumber();
+		final ObjectIdentifier objId = new ObjectIdentifier(ObjectType.device, deviceId);
+		DeviceObjectPropertyReferences servicesSupported = new DeviceObjectPropertyReferences();
+		servicesSupported.add(deviceId, objId, PropertyIdentifier.protocolServicesSupported);
+		DeviceObjectPropertyValues vals = PropertyUtils.readProperties(localDevice, servicesSupported,
+				null, timeout);
+		Encodable propVal = vals.get(deviceId, objId, PropertyIdentifier.protocolServicesSupported);
+		if ( propVal instanceof ServicesSupported ) {
+			ServicesSupported supported = (ServicesSupported) propVal;
+			return supported;
+		} else if ( propVal instanceof ErrorClassAndCode ) {
+			ErrorClassAndCode err = (ErrorClassAndCode) propVal;
+			String msg = String.format("Error getting device %d services supported: %s", deviceId, err);
+			log.error(msg);
+			throw new RemoteServiceException(msg);
+		}
+		String msg = String.format("Error getting device %d services supported: %s", deviceId, propVal);
+		log.error(msg);
+		throw new RemoteServiceException(msg);
+	}
+
+	private boolean shouldResubscribe(CovSubscription subscription) {
+		Instant expires = subscription.getExpires();
+		return expires == null || Instant.now().plusMillis(SUBSCRIPTION_CHECK_PERIOD)
+				.isAfter(subscription.getExpires());
+	}
+
+	private final class SubscriptionResubscriber implements Runnable {
+
+		@Override
+		public void run() {
+			for ( CovSubscription subscription : covSubscriptions.values() ) {
+				synchronized ( subscription ) {
+					if ( shouldResubscribe(subscription) ) {
+						try {
+							subscription.resubscribe(timeout);
+						} catch ( Exception e ) {
+							log.error("Error managing COV re-subscriptions: {}", e.toString(), e);
+						}
+					}
+				}
+			}
+		}
+
+	}
+
+	@Override
+	public void listenerException(Throwable e) {
+		log.error("BACnet [{}] listener exception: {}", getNetworkDescription(), e.toString(), e);
+	}
+
+	@Override
+	public void iAmReceived(RemoteDevice d) {
+		// nothing here
+	}
+
+	@Override
+	public boolean allowPropertyWrite(Address from, BACnetObject obj, PropertyValue pv) {
+		return false;
+	}
+
+	@Override
+	public void propertyWritten(Address from, BACnetObject obj, PropertyValue pv) {
+		// nothing here
+	}
+
+	@Override
+	public void iHaveReceived(RemoteDevice d, RemoteObject o) {
+		// nothing here
+	}
+
+	@Override
+	public void covNotificationReceived(UnsignedInteger subscriberProcessIdentifier,
+			ObjectIdentifier initiatingDeviceIdentifier, ObjectIdentifier monitoredObjectIdentifier,
+			UnsignedInteger timeRemaining, SequenceOf<PropertyValue> listOfValues) {
+		log.debug("COV notification received for subscription {} object {} remaining time {}: {}",
+				subscriberProcessIdentifier, monitoredObjectIdentifier, timeRemaining, listOfValues);
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void eventNotificationReceived(UnsignedInteger processIdentifier,
+			ObjectIdentifier initiatingDeviceIdentifier, ObjectIdentifier eventObjectIdentifier,
+			TimeStamp timeStamp, UnsignedInteger notificationClass, UnsignedInteger priority,
+			EventType eventType, CharacterString messageText, NotifyType notifyType, Boolean ackRequired,
+			EventState fromState, EventState toState, NotificationParameters eventValues) {
+		// nothing here
+	}
+
+	@Override
+	public void textMessageReceived(ObjectIdentifier textMessageSourceDevice, Choice messageClass,
+			MessagePriority messagePriority, CharacterString message) {
+		// nothing here
+	}
+
+	@Override
+	public void synchronizeTime(Address from, DateTime dateTime, boolean utc) {
+		// nothing here
+	}
+
+	@Override
+	public void requestReceived(Address from, Service service) {
+		// nothing here
+	}
+
+	/**
+	 * Get the task scheduler.
+	 * 
+	 * @return the task scheduler
+	 */
+	public TaskScheduler getTaskScheduler() {
+		return taskScheduler;
+	}
+
+	/**
+	 * Set the task scheduler.
+	 * 
+	 * @param taskScheduler
+	 *        the task scheduler to set
+	 */
+	public void setTaskScheduler(TaskScheduler taskScheduler) {
+		this.taskScheduler = taskScheduler;
+	}
+
+	/**
+	 * Set the network timeout.
+	 * 
+	 * @return the timeout, in milliseconds
+	 */
+	public int getTimeout() {
+		return timeout;
+	}
+
+	/**
+	 * Set the network timeout.
+	 * 
+	 * @param timeout
+	 *        the timeout to set, in milliseconds
+	 */
+	public void setTimeout(int timeout) {
+		this.timeout = timeout;
+	}
+
+	/**
+	 * Get the network segment timeout.
+	 * 
+	 * @return the segment timeout, in milliseconds
+	 */
+	public int getSegmentTimeout() {
+		return segmentTimeout;
+	}
+
+	/**
+	 * Set the network segment timeout.
+	 * 
+	 * @param segmentTimeout
+	 *        the segment timeout to set, in milliseconds
+	 */
+	public void setSegmentTimeout(int segmentTimeout) {
+		this.segmentTimeout = segmentTimeout;
+	}
+
+	/**
+	 * Get the network segment window.
+	 * 
+	 * @return the segment window
+	 */
+	public int getSegmentWindow() {
+		return segmentWindow;
+	}
+
+	/**
+	 * Set the network segment window.
+	 * 
+	 * @param segmentWindow
+	 *        the segment window to set
+	 */
+	public void setSegmentWindow(int segmentWindow) {
+		this.segmentWindow = segmentWindow;
+	}
+
+	/**
+	 * Get the network retry count.
+	 * 
+	 * @return the retries
+	 */
+	public int getRetries() {
+		return retries;
+	}
+
+	/**
+	 * Set the network retry count.
+	 * 
+	 * @param retries
+	 *        the retries to set
+	 */
+	public void setRetries(int retries) {
+		this.retries = retries;
+	}
+
+	/**
+	 * Get the device ID.
+	 * 
+	 * @return the device ID
+	 */
+	public int getDeviceId() {
+		return deviceId;
+	}
+
+	/**
+	 * Set the device ID to use.
+	 * 
+	 * @param deviceId
+	 *        the device ID to set
+	 */
+	public void setDeviceId(int deviceId) {
+		this.deviceId = deviceId;
+	}
+
+	/**
+	 * Get the startup delay.
+	 * 
+	 * @return the startup delay, in milliseconds
+	 */
+	public long getStartupDelay() {
+		return startupDelay;
+	}
+
+	/**
+	 * Set the startup delay.
+	 * 
+	 * @param startupDelay
+	 *        the startup delay to set, in milliseconds
+	 */
+	public void setStartupDelay(long startupDelay) {
+		this.startupDelay = startupDelay;
+	}
+
+	/**
+	 * Get the application software version.
+	 * 
+	 * @return the application software version
+	 */
+	public String getApplicationSoftwareVersion() {
+		return applicationSoftwareVersion;
+	}
+
+	/**
+	 * Set the application software version.
+	 * 
+	 * @param applicationSoftwareVersion
+	 *        the application software version to set
+	 */
+	public void setApplicationSoftwareVersion(String applicationSoftwareVersion) {
+		this.applicationSoftwareVersion = applicationSoftwareVersion;
+	}
+
+}
