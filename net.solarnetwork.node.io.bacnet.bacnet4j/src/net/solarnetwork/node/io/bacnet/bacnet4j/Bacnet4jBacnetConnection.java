@@ -25,7 +25,10 @@ package net.solarnetwork.node.io.bacnet.bacnet4j;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import com.serotonin.bacnet4j.LocalDevice;
 import net.solarnetwork.node.io.bacnet.BacnetConnection;
 import net.solarnetwork.node.io.bacnet.BacnetDeviceObjectPropertyRef;
@@ -42,6 +45,7 @@ public class Bacnet4jBacnetConnection implements BacnetConnection {
 	private final Bacnet4jNetworkOps networkOps;
 	private final LocalDevice localDevice;
 	private boolean closed;
+	private final Set<Integer> subscriptions = new HashSet<>();
 
 	/**
 	 * Constructor.
@@ -74,6 +78,12 @@ public class Bacnet4jBacnetConnection implements BacnetConnection {
 	@Override
 	public void close() throws IOException {
 		this.closed = true;
+		synchronized ( subscriptions ) {
+			for ( Integer subscriptionId : subscriptions ) {
+				covUnsubscribe(subscriptionId);
+			}
+			subscriptions.clear();
+		}
 		networkOps.releaseConnection(this);
 	}
 
@@ -113,13 +123,21 @@ public class Bacnet4jBacnetConnection implements BacnetConnection {
 	public int covSubscribe(Collection<BacnetDeviceObjectPropertyRef> refs, int maxDelay) {
 		int subId = networkOps.nextSubscriptionId();
 		networkOps.covSubscribe(subId, refs, maxDelay);
+		synchronized ( subscriptions ) {
+			subscriptions.add(subId);
+		}
 		return subId;
 	}
 
 	@Override
 	public void covUnsubscribe(int subscriptionId) {
-		// TODO Auto-generated method stub
+		networkOps.covUnsubscribe(subscriptionId);
+	}
 
+	@Override
+	public Map<BacnetDeviceObjectPropertyRef, ?> propertyValues(
+			Collection<BacnetDeviceObjectPropertyRef> refs) {
+		return networkOps.propertyValues(refs);
 	}
 
 	/**

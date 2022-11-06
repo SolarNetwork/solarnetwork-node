@@ -30,7 +30,7 @@ import com.serotonin.bacnet4j.service.confirmed.SubscribeCOVPropertyRequest;
 import com.serotonin.bacnet4j.service.confirmed.SubscribeCOVRequest;
 import com.serotonin.bacnet4j.type.constructed.PropertyReference;
 import com.serotonin.bacnet4j.type.primitive.ObjectIdentifier;
-import com.serotonin.bacnet4j.type.primitive.Unsigned32;
+import com.serotonin.bacnet4j.type.primitive.UnsignedInteger;
 
 /**
  * A identifier for a COV subscription.
@@ -41,7 +41,7 @@ import com.serotonin.bacnet4j.type.primitive.Unsigned32;
 public class CovSubscriptionIdentifier {
 
 	private final CovSubscriptionType subType;
-	private final Unsigned32 subId;
+	private final UnsignedInteger subId;
 	private final ConfirmedRequestService req;
 	private final ObjectIdentifier objId;
 	private final PropertyReference propRef;
@@ -55,7 +55,7 @@ public class CovSubscriptionIdentifier {
 	 *        the request
 	 * @return the new instance
 	 */
-	public static CovSubscriptionIdentifier propertiesSubscription(Unsigned32 subId,
+	public static CovSubscriptionIdentifier propertiesSubscription(UnsignedInteger subId,
 			SubscribeCOVPropertyMultipleRequest req) {
 		return new CovSubscriptionIdentifier(CovSubscriptionType.SubscribeProperties, subId, req, null,
 				null);
@@ -70,7 +70,7 @@ public class CovSubscriptionIdentifier {
 	 *        the request
 	 * @return the new instance
 	 */
-	public static CovSubscriptionIdentifier propertySubscription(Unsigned32 subId,
+	public static CovSubscriptionIdentifier propertySubscription(UnsignedInteger subId,
 			SubscribeCOVPropertyRequest req) {
 		return new CovSubscriptionIdentifier(CovSubscriptionType.SubscribeProperty, subId, req,
 				req.getMonitoredObjectIdentifier(), req.getMonitoredPropertyIdentifier());
@@ -85,13 +85,13 @@ public class CovSubscriptionIdentifier {
 	 *        the request
 	 * @return the new instance
 	 */
-	public static CovSubscriptionIdentifier objectSubscription(Unsigned32 subId,
+	public static CovSubscriptionIdentifier objectSubscription(UnsignedInteger subId,
 			SubscribeCOVRequest req) {
 		return new CovSubscriptionIdentifier(CovSubscriptionType.SubscribeObject, subId, req,
 				req.getMonitoredObjectIdentifier(), null);
 	}
 
-	private CovSubscriptionIdentifier(CovSubscriptionType subType, Unsigned32 subId,
+	private CovSubscriptionIdentifier(CovSubscriptionType subType, UnsignedInteger subId,
 			ConfirmedRequestService req, ObjectIdentifier objId, PropertyReference propRef) {
 		super();
 		this.subType = requireNonNullArgument(subType, "subType");
@@ -154,7 +154,7 @@ public class CovSubscriptionIdentifier {
 	 * 
 	 * @return the COV subscription ID
 	 */
-	public Unsigned32 getSubId() {
+	public UnsignedInteger getSubId() {
 		return subId;
 	}
 

@@ -23,9 +23,11 @@
 package net.solarnetwork.node.io.bacnet.bacnet4j;
 
 import static java.lang.Integer.toUnsignedLong;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -44,6 +46,9 @@ import org.springframework.scheduling.TaskScheduler;
 import com.serotonin.bacnet4j.LocalDevice;
 import com.serotonin.bacnet4j.RemoteDevice;
 import com.serotonin.bacnet4j.RemoteObject;
+import com.serotonin.bacnet4j.cache.CachePolicies;
+import com.serotonin.bacnet4j.cache.RemoteEntityCachePolicy;
+import com.serotonin.bacnet4j.cache.RemoteEntityCachePolicy.TimedExpiry;
 import com.serotonin.bacnet4j.event.DeviceEventListener;
 import com.serotonin.bacnet4j.exception.BACnetException;
 import com.serotonin.bacnet4j.npdu.Network;
@@ -73,7 +78,6 @@ import com.serotonin.bacnet4j.type.primitive.Boolean;
 import com.serotonin.bacnet4j.type.primitive.CharacterString;
 import com.serotonin.bacnet4j.type.primitive.ObjectIdentifier;
 import com.serotonin.bacnet4j.type.primitive.Real;
-import com.serotonin.bacnet4j.type.primitive.Unsigned32;
 import com.serotonin.bacnet4j.type.primitive.UnsignedInteger;
 import com.serotonin.bacnet4j.util.DeviceObjectPropertyReferences;
 import com.serotonin.bacnet4j.util.DeviceObjectPropertyValues;
@@ -123,14 +127,22 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 	private static final long SUBSCRIPTION_CHECK_PERIOD = 15_000L;
 
 	/** The subscription lifetime to use, in seconds. */
-	private static final UnsignedInteger SUBSCRIPTION_LIFETIME = new Unsigned32(300);
+	private static final UnsignedInteger SUBSCRIPTION_LIFETIME = new UnsignedInteger(120);
 
 	private final AtomicInteger connectionCounter = new AtomicInteger(0);
 	private final AtomicInteger subscriptionCounter = new AtomicInteger(0);
+
+	// a mapping of internal connection IDs to associated connection instances
 	private final ConcurrentMap<Integer, Bacnet4jBacnetConnection> connections = new ConcurrentHashMap<>(
 			8, 0.9f, 2);
+
+	// a mapping of internal subscription IDs to associated subscription instances
 	private final ConcurrentMap<Integer, CovSubscription> covSubscriptions = new ConcurrentHashMap<>(8,
 			0.9f, 2);
+
+	// a mapping of BACnet subscription process identifiers to associated internal subscription instances
+	private final ConcurrentMap<Integer, CovSubscription> bacnetCovSubscriptions = new ConcurrentHashMap<>(
+			8, 0.9f, 2);
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -170,6 +182,9 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 			localDevice.getEventHandler().removeListener(this);
 			localDevice.terminate();
 		}
+		connections.clear();
+		covSubscriptions.clear();
+		bacnetCovSubscriptions.clear();
 	}
 
 	@Override
@@ -207,6 +222,26 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 		results.add(new BasicTextFieldSettingSpecifier("retries",
 				String.valueOf(Transport.DEFAULT_RETRIES)));
 		return results;
+	}
+
+	@Override
+	public void setCachePolicy(Collection<BacnetDeviceObjectPropertyRef> refs, long cacheMs) {
+		if ( refs == null || refs.isEmpty() ) {
+			return;
+		}
+		LocalDevice device = localDevice();
+		if ( device == null ) {
+			return;
+		}
+		CachePolicies policies = localDevice.getCachePolicies();
+		RemoteEntityCachePolicy policy = (cacheMs < 1 ? RemoteEntityCachePolicy.NEVER_CACHE
+				: cacheMs == Long.MAX_VALUE ? RemoteEntityCachePolicy.NEVER_EXPIRE
+						: new TimedExpiry(Duration.ofMillis(cacheMs)));
+		for ( BacnetDeviceObjectPropertyRef ref : refs ) {
+			policies.putPropertyPolicy(ref.getDeviceId(),
+					new ObjectIdentifier(ref.getObjectType(), ref.getObjectNumber()),
+					PropertyIdentifier.forId(ref.getPropertyId()), policy);
+		}
 	}
 
 	@Override
@@ -335,6 +370,12 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 				subscription.unsubscribe(timeout);
 
 				// then (re)subscribe
+				for ( Set<CovSubscriptionIdentifier> idents : subscription.getDeviceSubscriptionIds()
+						.values() ) {
+					for ( CovSubscriptionIdentifier ident : idents ) {
+						bacnetCovSubscriptions.remove(ident.getSubId().intValue());
+					}
+				}
 				subscription.reset();
 				subscription.expireAt(Instant.now().plusSeconds(lifetime.longValue()));
 				subscription.getRefs().addAll(refs);
@@ -398,6 +439,12 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 								subscriptionId),
 						ex);
 			}
+			for ( Set<CovSubscriptionIdentifier> idents : subscription.getDeviceSubscriptionIds()
+					.values() ) {
+				for ( CovSubscriptionIdentifier ident : idents ) {
+					bacnetCovSubscriptions.put(ident.getSubId().intValue(), subscription);
+				}
+			}
 		}
 		synchronized ( this ) {
 			if ( subscriptionFuture == null ) {
@@ -405,6 +452,58 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 						SUBSCRIPTION_CHECK_PERIOD);
 			}
 		}
+	}
+
+	@Override
+	public void covUnsubscribe(int subscriptionId) {
+		CovSubscription sub = covSubscriptions.remove(subscriptionId);
+		if ( sub != null ) {
+			try {
+				sub.unsubscribe(timeout);
+			} catch ( BACnetException e ) {
+				log.warn("Error unsubscribing COV subscription {}: {}", subscriptionId, e.toString(), e);
+			}
+		}
+	}
+
+	@Override
+	public Map<BacnetDeviceObjectPropertyRef, ?> propertyValues(
+			Collection<BacnetDeviceObjectPropertyRef> refs) {
+		if ( refs == null || refs.isEmpty() ) {
+			return Collections.emptyMap();
+		}
+
+		DeviceObjectPropertyReferences q = new DeviceObjectPropertyReferences();
+		for ( BacnetDeviceObjectPropertyRef ref : refs ) {
+			if ( ref.hasPropertyIndex() ) {
+				q.addIndex(ref.getDeviceId(), ObjectType.forId(ref.getObjectType()),
+						ref.getObjectNumber(), PropertyIdentifier.forId(ref.getPropertyId()),
+						ref.getPropertyIndex());
+			} else {
+				q.add(ref.getDeviceId(), ObjectType.forId(ref.getObjectType()), ref.getObjectNumber(),
+						PropertyIdentifier.forId(ref.getPropertyId()));
+			}
+		}
+		final Map<BacnetDeviceObjectPropertyRef, Object> result = new LinkedHashMap<>(refs.size());
+		DeviceObjectPropertyValues values = PropertyUtils.readProperties(localDevice, q,
+				(double progress, int deviceId, ObjectIdentifier oid, PropertyIdentifier pid,
+						UnsignedInteger pin, Encodable value) -> {
+					log.trace("{}% progress reading {} properties", progress / 100.0, refs.size());
+					return false;
+				}, timeout);
+		for ( BacnetDeviceObjectPropertyRef ref : refs ) {
+			Encodable val = null;
+			if ( ref.hasPropertyIndex() ) {
+				val = values.getIndex(ref.getDeviceId(), ObjectType.forId(ref.getObjectType()),
+						ref.getObjectNumber(), PropertyIdentifier.forId(ref.getPropertyId()),
+						ref.getPropertyIndex());
+			} else {
+				val = values.get(ref.getDeviceId(), ObjectType.forId(ref.getObjectType()),
+						ref.getObjectNumber(), PropertyIdentifier.forId(ref.getPropertyId()));
+			}
+			result.put(ref, val);
+		}
+		return result;
 	}
 
 	private Map<Integer, Map<ObjectIdentifier, List<CovReference>>> deviceReferenceMap(
@@ -508,9 +607,31 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 	public void covNotificationReceived(UnsignedInteger subscriberProcessIdentifier,
 			ObjectIdentifier initiatingDeviceIdentifier, ObjectIdentifier monitoredObjectIdentifier,
 			UnsignedInteger timeRemaining, SequenceOf<PropertyValue> listOfValues) {
-		log.debug("COV notification received for subscription {} object {} remaining time {}: {}",
+		log.trace("COV notification received for subscription {} object {} remaining time {}: {}",
 				subscriberProcessIdentifier, monitoredObjectIdentifier, timeRemaining, listOfValues);
-		// TODO Auto-generated method stub
+		final int subscriptionId = subscriberProcessIdentifier.intValue();
+		final CovSubscription subscription = bacnetCovSubscriptions.get(subscriptionId);
+		if ( subscription != null ) {
+			for ( PropertyValue val : listOfValues ) {
+				UnsignedInteger propArrayIndex = null;
+				Set<CovSubscriptionIdentifier> idents = subscription.getDeviceSubscriptionIds()
+						.get(initiatingDeviceIdentifier.getInstanceNumber());
+				for ( CovSubscriptionIdentifier ident : idents ) {
+					if ( subscriberProcessIdentifier.equals(ident.getSubId())
+							&& monitoredObjectIdentifier.equals(ident.getObjId()) ) {
+						if ( ident.getSubType() == CovSubscriptionType.SubscribeProperty
+								&& val.getPropertyIdentifier()
+										.equals(ident.getPropRef().getPropertyIdentifier()) ) {
+							propArrayIndex = ident.getPropRef().getPropertyArrayIndex();
+						}
+						break;
+					}
+				}
+				localDevice.setCachedRemoteProperty(initiatingDeviceIdentifier.getInstanceNumber(),
+						monitoredObjectIdentifier, val.getPropertyIdentifier(), propArrayIndex,
+						val.getValue());
+			}
+		}
 	}
 
 	@Override

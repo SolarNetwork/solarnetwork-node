@@ -32,6 +32,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledFuture;
+import java.util.stream.Collectors;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.io.bacnet.BacnetConnection;
@@ -66,15 +67,19 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 	/** The {@code reconnectDelay} property default value. */
 	public static final long DEFAULT_RECONNECT_DELAY = 10_000L;
 
+	/** The {@code sampleCacheMs} property default value. */
+	public static final long DEFAULT_SAMPLE_CACHE_MS = 5_000L;
+
 	private final OptionalService<BacnetNetwork> bacnetNetwork;
 	private String sourceId;
-	private long sampleCacheMs;
+	private long sampleCacheMs = DEFAULT_SAMPLE_CACHE_MS;
 	private BacnetDeviceConfig[] deviceConfigs;
 
 	private BacnetConnection connection;
 	private ScheduledFuture<?> connectionCheckFuture;
 	private long connectionCheckFrequency = DEFAULT_CONNECTION_CHECK_FREQUENCY;
 	private long reconnectDelay = DEFAULT_RECONNECT_DELAY;
+	private List<BacnetDeviceObjectPropertyRef> propertyRefs;
 
 	/**
 	 * Constructor.
@@ -106,6 +111,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 	public synchronized void configurationChanged(Map<String, Object> properties) {
 		rescheduleConnectionCheck();
 		closeConnection();
+		propertyRefs = null;
 	}
 
 	@Override
@@ -118,6 +124,8 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 		List<SettingSpecifier> results = basicIdentifiableSettings();
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));
 		results.add(new BasicTextFieldSettingSpecifier("bacnetNetworkUid", null));
+		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
+				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
 
 		BacnetDeviceConfig[] confs = getDeviceConfigs();
 		List<BacnetDeviceConfig> confsList = (confs != null ? Arrays.asList(confs)
@@ -157,9 +165,10 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 		BacnetConnection conn = network.createConnection();
 		if ( conn != null ) {
 			log.info("BACnet connection created for {}", networkUid);
-			List<BacnetDeviceObjectPropertyRef> props = propertyRefs();
-			if ( !props.isEmpty() ) {
-				conn.covSubscribe(props, 5); // TODO maxDelay setting
+			List<BacnetDeviceObjectPropertyRef> refs = propertyRefs();
+			if ( !refs.isEmpty() ) {
+				network.setCachePolicy(refs, sampleCacheMs);
+				conn.covSubscribe(refs, 5); // TODO maxDelay setting
 			}
 			connection = conn;
 		}
@@ -169,7 +178,6 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 	protected synchronized void closeConnection() {
 		if ( connection != null ) {
 			log.info("BACnet connection closed for {}", getBacnetNetworkUid());
-			// TODO: unsubscribe
 			try {
 				connection.close();
 			} catch ( IOException e ) {
@@ -219,10 +227,15 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	}
 
-	private List<BacnetDeviceObjectPropertyRef> propertyRefs() {
+	private synchronized List<BacnetDeviceObjectPropertyRef> propertyRefs() {
+		if ( propertyRefs != null ) {
+			return propertyRefs;
+		}
 		final BacnetDeviceConfig[] deviceConfs = getDeviceConfigs();
 		if ( deviceConfs == null || deviceConfs.length < 1 ) {
-			return Collections.emptyList();
+			List<BacnetDeviceObjectPropertyRef> results = Collections.emptyList();
+			propertyRefs = results;
+			return results;
 		}
 		List<BacnetDeviceObjectPropertyRef> results = new ArrayList<>();
 		for ( BacnetDeviceConfig deviceConf : deviceConfs ) {
@@ -236,6 +249,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 				results.add(propConf.toRef(deviceConf.getDeviceId()));
 			}
 		}
+		propertyRefs = results;
 		return results;
 	}
 
@@ -255,8 +269,14 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 			return null;
 		}
 		try (BacnetConnection conn = network.createConnection()) {
-			// TODO: something
 			log.debug("Working with BacnetConnection {}", conn);
+			Map<BacnetDeviceObjectPropertyRef, ?> values = conn.propertyValues(propertyRefs());
+			if ( log.isDebugEnabled() ) {
+				log.debug("Got property values: {}",
+						values.entrySet().stream()
+								.map(e -> String.format("%s: %s", e.getKey(), e.getValue()))
+								.collect(Collectors.joining("\n  ", "\n  ", "")));
+			}
 		} catch ( IOException e ) {
 			log.warn("Communication error collecting source {} from BACnet network {}", sourceId,
 					network);

@@ -25,6 +25,7 @@ package net.solarnetwork.node.io.bacnet;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * High level BACnet connection API.
@@ -86,8 +87,18 @@ public interface BacnetConnection extends Closeable {
 	 * Unsubscribe to unconfirmed change-of-value property notifications.
 	 * 
 	 * @param subscriptionId
-	 *        the subscription ID to unsubscribe from
+	 *        the subscription ID to unsubscribe from, as previously returned
+	 *        from {@link #covSubscribe(Collection, int)}
 	 */
 	void covUnsubscribe(int subscriptionId);
+
+	/**
+	 * Read property values.
+	 * 
+	 * @param refs
+	 *        the property values to read
+	 * @return the values
+	 */
+	Map<BacnetDeviceObjectPropertyRef, ?> propertyValues(Collection<BacnetDeviceObjectPropertyRef> refs);
 
 }

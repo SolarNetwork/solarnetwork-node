@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.bacnet.bacnet4j;
 
 import java.util.Collection;
+import java.util.Map;
 import net.solarnetwork.node.io.bacnet.BacnetConnection;
 import net.solarnetwork.node.io.bacnet.BacnetDeviceObjectPropertyRef;
 
@@ -61,11 +62,30 @@ public interface Bacnet4jNetworkOps {
 	void covSubscribe(int subscriptionId, Collection<BacnetDeviceObjectPropertyRef> refs, int maxDelay);
 
 	/**
+	 * Unregister a subscription for unconfirmed property change-of-value
+	 * events.
+	 * 
+	 * @param subscriptionId
+	 *        the subscription ID to unregister
+	 */
+	void covUnsubscribe(int subscriptionId);
+
+	/**
 	 * Release a connection.
 	 * 
 	 * @param conn
 	 *        the connection to release
 	 */
 	void releaseConnection(BacnetConnection conn);
+
+	/**
+	 * Read a set of property values.
+	 * 
+	 * @param refs
+	 *        the property references to read
+	 * @return the associated values, never {@literal null}
+	 */
+	public Map<BacnetDeviceObjectPropertyRef, ?> propertyValues(
+			Collection<BacnetDeviceObjectPropertyRef> refs);
 
 }

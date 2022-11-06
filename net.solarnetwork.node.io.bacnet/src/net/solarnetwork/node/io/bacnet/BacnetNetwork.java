@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.bacnet;
 
+import java.util.Collection;
 import net.solarnetwork.service.Identifiable;
 
 /**
@@ -41,6 +42,16 @@ import net.solarnetwork.service.Identifiable;
  * @version 1.0
  */
 public interface BacnetNetwork extends Identifiable {
+
+	/**
+	 * Set the property cache policy for a set of properties.
+	 * 
+	 * @param refs
+	 *        the references
+	 * @param cacheMs
+	 *        the maximum length of time to cache the property values
+	 */
+	void setCachePolicy(Collection<BacnetDeviceObjectPropertyRef> refs, long cacheMs);
 
 	/**
 	 * Create a connection to a specific BACnet.

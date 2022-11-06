@@ -112,7 +112,8 @@ public class CovSubscription {
 			for ( CovSubscriptionIdentifier subIdent : subTypeEntry.getValue() ) {
 				if ( subIdent.getSubType() == CovSubscriptionType.SubscribeProperties ) {
 					SubscribeCOVPropertyMultipleRequest req = new SubscribeCOVPropertyMultipleRequest(
-							subIdent.getSubId(), Boolean.FALSE, null, null, new SequenceOf<>(0));
+							new Unsigned32(subIdent.getSubId().bigIntegerValue()), Boolean.FALSE, null,
+							null, new SequenceOf<>(0));
 					ServiceFuture f = localDevice.send(dev, req);
 					f.get();
 					log.info("Un-subscription {} on device {} properties successful", id, deviceId);
@@ -147,7 +148,7 @@ public class CovSubscription {
 	 */
 	public void subscribeCov(final RemoteDevice dev, final ObjectIdentifier objId)
 			throws BACnetException {
-		Unsigned32 subId = new Unsigned32(
+		UnsignedInteger subId = new UnsignedInteger(
 				BigInteger.valueOf(toUnsignedLong(networkOps.nextSubscriptionId())));
 		SubscribeCOVRequest req = new SubscribeCOVRequest(subId, objId, Boolean.FALSE, lifetime);
 		ServiceFuture f = localDevice.send(dev, req);
@@ -172,7 +173,7 @@ public class CovSubscription {
 	 */
 	public void subscribeCovProperty(final RemoteDevice dev, final ObjectIdentifier objId,
 			CovReference cov) throws BACnetException {
-		Unsigned32 subId = new Unsigned32(
+		UnsignedInteger subId = new UnsignedInteger(
 				BigInteger.valueOf(toUnsignedLong(networkOps.nextSubscriptionId())));
 		SubscribeCOVPropertyRequest req = new SubscribeCOVPropertyRequest(subId, objId, Boolean.FALSE,
 				lifetime, cov.getMonitoredProperty(), cov.getCovIncrement());
@@ -197,13 +198,14 @@ public class CovSubscription {
 	 */
 	public void subscribeCovPropertyMultiple(final RemoteDevice dev,
 			Map<ObjectIdentifier, List<CovReference>> covMapping) throws BACnetException {
-		Unsigned32 subId = new Unsigned32(BigInteger.valueOf(toUnsignedLong(id)));
+		UnsignedInteger subId = new UnsignedInteger(BigInteger.valueOf(toUnsignedLong(id)));
 		UnsignedInteger maxNotificationDelay = new UnsignedInteger(5);
 		List<CovSubscriptionSpecification> specs = covMapping.entrySet().stream().map(e -> {
 			return new CovSubscriptionSpecification(e.getKey(), new SequenceOf<>(e.getValue()));
 		}).collect(Collectors.toList());
-		SubscribeCOVPropertyMultipleRequest req = new SubscribeCOVPropertyMultipleRequest(subId,
-				Boolean.FALSE, lifetime, maxNotificationDelay, new SequenceOf<>(specs));
+		SubscribeCOVPropertyMultipleRequest req = new SubscribeCOVPropertyMultipleRequest(
+				new Unsigned32(subId.bigIntegerValue()), Boolean.FALSE, lifetime, maxNotificationDelay,
+				new SequenceOf<>(specs));
 		ServiceFuture f = localDevice.send(dev, req);
 		f.get();
 		log.info("Subscription {} on device {} properties successful", id, dev.getInstanceNumber());
@@ -229,7 +231,8 @@ public class CovSubscription {
 			for ( CovSubscriptionIdentifier subIdent : subTypeEntry.getValue() ) {
 				if ( subIdent.getSubType() == CovSubscriptionType.SubscribeProperties ) {
 					SubscribeCOVPropertyMultipleRequest req = new SubscribeCOVPropertyMultipleRequest(
-							subIdent.getSubId(), Boolean.FALSE, lifetime, null, new SequenceOf<>(0));
+							new Unsigned32(subIdent.getSubId().bigIntegerValue()), Boolean.FALSE,
+							lifetime, null, new SequenceOf<>(0));
 					ServiceFuture f = localDevice.send(dev, req);
 					f.get();
 					log.info("Re-subscription {} on device {} properties successful", id, deviceId);
