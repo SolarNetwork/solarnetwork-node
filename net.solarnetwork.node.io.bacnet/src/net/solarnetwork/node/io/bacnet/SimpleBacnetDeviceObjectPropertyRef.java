@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.io.bacnet;
 
+import static net.solarnetwork.domain.CodedValue.forCodeValue;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -121,6 +122,43 @@ public class SimpleBacnetDeviceObjectPropertyRef implements BacnetDeviceObjectPr
 		return deviceId == other.deviceId && objectNumber == other.objectNumber
 				&& objectType == other.objectType && propertyId == other.propertyId
 				&& propertyIndex == other.propertyIndex;
+	}
+
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("BACnetRef{device=");
+		builder.append(deviceId);
+		builder.append(", objectType=");
+		try {
+			BacnetObjectType objType = forCodeValue(objectType, BacnetObjectType.class, null);
+			if ( objType != null ) {
+				builder.append(objType);
+			} else {
+				builder.append(objectType);
+			}
+		} catch ( IllegalArgumentException e ) {
+			builder.append(objectType);
+		}
+		builder.append(", objectNumber=");
+		builder.append(objectNumber);
+		builder.append(", propertyType=");
+		try {
+			BacnetPropertyType propType = forCodeValue(propertyId, BacnetPropertyType.class, null);
+			if ( propType != null ) {
+				builder.append(propType);
+			} else {
+				builder.append(propertyId);
+			}
+		} catch ( IllegalArgumentException e ) {
+			builder.append(propertyId);
+		}
+		if ( hasPropertyIndex() ) {
+			builder.append(", propertyIndex=");
+			builder.append(propertyIndex);
+		}
+		builder.append("}");
+		return builder.toString();
 	}
 
 	@Override

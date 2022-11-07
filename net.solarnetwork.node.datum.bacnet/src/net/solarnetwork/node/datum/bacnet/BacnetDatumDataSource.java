@@ -24,21 +24,30 @@ package net.solarnetwork.node.datum.bacnet;
 
 import static net.solarnetwork.service.OptionalService.service;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Collectors;
 import org.springframework.scheduling.TaskScheduler;
+import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.NodeDatum;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.io.bacnet.BacnetConnection;
+import net.solarnetwork.node.io.bacnet.BacnetCovHandler;
 import net.solarnetwork.node.io.bacnet.BacnetDeviceObjectPropertyRef;
 import net.solarnetwork.node.io.bacnet.BacnetNetwork;
 import net.solarnetwork.node.service.DatumDataSource;
+import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.support.DatumDataSourceSupport;
 import net.solarnetwork.service.FilterableService;
 import net.solarnetwork.service.OptionalService;
@@ -47,6 +56,7 @@ import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
@@ -59,7 +69,7 @@ import net.solarnetwork.util.ObjectUtils;
  * @version 1.0
  */
 public class BacnetDatumDataSource extends DatumDataSourceSupport implements DatumDataSource,
-		SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver {
+		SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver, BacnetCovHandler {
 
 	/** The {@code connectionCheckFrequency} property default value. */
 	public static final long DEFAULT_CONNECTION_CHECK_FREQUENCY = 60_000L;
@@ -70,16 +80,20 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 	/** The {@code sampleCacheMs} property default value. */
 	public static final long DEFAULT_SAMPLE_CACHE_MS = 5_000L;
 
+	/** The {@code datumMode} property default value. */
+	public static final BacnetDatumMode DEFAULT_DATUM_MODE = BacnetDatumMode.PollOnly;
+
 	private final OptionalService<BacnetNetwork> bacnetNetwork;
 	private String sourceId;
 	private long sampleCacheMs = DEFAULT_SAMPLE_CACHE_MS;
+	private BacnetDatumMode datumMode = DEFAULT_DATUM_MODE;
 	private BacnetDeviceConfig[] deviceConfigs;
 
 	private BacnetConnection connection;
 	private ScheduledFuture<?> connectionCheckFuture;
 	private long connectionCheckFrequency = DEFAULT_CONNECTION_CHECK_FREQUENCY;
 	private long reconnectDelay = DEFAULT_RECONNECT_DELAY;
-	private List<BacnetDeviceObjectPropertyRef> propertyRefs;
+	private Map<BacnetDeviceObjectPropertyRef, BacnetPropertyConfig> propertyRefs;
 
 	/**
 	 * Constructor.
@@ -127,6 +141,17 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
 
+		// drop-down menu for propertyTypeKey
+		BasicMultiValueSettingSpecifier datumModeSpec = new BasicMultiValueSettingSpecifier(
+				"datumModeValue", DEFAULT_DATUM_MODE.name());
+		Map<String, String> datumModeTitles = new LinkedHashMap<>(4);
+		for ( BacnetDatumMode e : BacnetDatumMode.values() ) {
+			datumModeTitles.put(e.name(), getMessageSource().getMessage("BacnetDatumMode." + e.name(),
+					null, e.name(), Locale.getDefault()));
+		}
+		datumModeSpec.setValueTitles(datumModeTitles);
+		results.add(datumModeSpec);
+
 		BacnetDeviceConfig[] confs = getDeviceConfigs();
 		List<BacnetDeviceConfig> confsList = (confs != null ? Arrays.asList(confs)
 				: Collections.emptyList());
@@ -165,7 +190,8 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 		BacnetConnection conn = network.createConnection();
 		if ( conn != null ) {
 			log.info("BACnet connection created for {}", networkUid);
-			List<BacnetDeviceObjectPropertyRef> refs = propertyRefs();
+			conn.addCovHandler(this);
+			Set<BacnetDeviceObjectPropertyRef> refs = propertyRefs().keySet();
 			if ( !refs.isEmpty() ) {
 				network.setCachePolicy(refs, sampleCacheMs);
 				conn.covSubscribe(refs, 5); // TODO maxDelay setting
@@ -227,17 +253,17 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	}
 
-	private synchronized List<BacnetDeviceObjectPropertyRef> propertyRefs() {
+	private synchronized Map<BacnetDeviceObjectPropertyRef, BacnetPropertyConfig> propertyRefs() {
 		if ( propertyRefs != null ) {
 			return propertyRefs;
 		}
 		final BacnetDeviceConfig[] deviceConfs = getDeviceConfigs();
 		if ( deviceConfs == null || deviceConfs.length < 1 ) {
-			List<BacnetDeviceObjectPropertyRef> results = Collections.emptyList();
+			Map<BacnetDeviceObjectPropertyRef, BacnetPropertyConfig> results = Collections.emptyMap();
 			propertyRefs = results;
 			return results;
 		}
-		List<BacnetDeviceObjectPropertyRef> results = new ArrayList<>();
+		Map<BacnetDeviceObjectPropertyRef, BacnetPropertyConfig> results = new HashMap<>();
 		for ( BacnetDeviceConfig deviceConf : deviceConfs ) {
 			if ( !deviceConf.isValid() ) {
 				continue;
@@ -246,7 +272,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 				if ( !propConf.isValid() ) {
 					continue;
 				}
-				results.add(propConf.toRef(deviceConf.getDeviceId()));
+				results.put(propConf.toRef(deviceConf.getDeviceId()), propConf);
 			}
 		}
 		propertyRefs = results;
@@ -260,6 +286,9 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	@Override
 	public NodeDatum readCurrentDatum() {
+		if ( datumMode == BacnetDatumMode.EventOnly ) {
+			return null;
+		}
 		final String sourceId = resolvePlaceholders(getSourceId());
 		if ( sourceId == null || sourceId.isEmpty() ) {
 			return null;
@@ -270,19 +299,72 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 		}
 		try (BacnetConnection conn = network.createConnection()) {
 			log.debug("Working with BacnetConnection {}", conn);
-			Map<BacnetDeviceObjectPropertyRef, ?> values = conn.propertyValues(propertyRefs());
+			Map<BacnetDeviceObjectPropertyRef, BacnetPropertyConfig> refs = propertyRefs();
+			Map<BacnetDeviceObjectPropertyRef, ?> values = conn.propertyValues(refs.keySet());
 			if ( log.isDebugEnabled() ) {
 				log.debug("Got property values: {}",
 						values.entrySet().stream()
 								.map(e -> String.format("%s: %s", e.getKey(), e.getValue()))
 								.collect(Collectors.joining("\n  ", "\n  ", "")));
 			}
+			return createDatum(sourceId, refs, values);
 		} catch ( IOException e ) {
 			log.warn("Communication error collecting source {} from BACnet network {}", sourceId,
 					network);
 		}
-		// TODO
 		return null;
+	}
+
+	private NodeDatum createDatum(final String sourceId,
+			Map<BacnetDeviceObjectPropertyRef, BacnetPropertyConfig> refs,
+			Map<BacnetDeviceObjectPropertyRef, ?> values) {
+		DatumSamples s = new DatumSamples();
+		for ( Entry<BacnetDeviceObjectPropertyRef, BacnetPropertyConfig> e : refs.entrySet() ) {
+			BacnetPropertyConfig conf = e.getValue();
+			if ( !conf.isValid() ) {
+				continue;
+			}
+			Object val = values.get(e.getKey());
+			if ( val == null ) {
+				continue;
+			}
+			switch (conf.getPropertyType()) {
+				case Accumulating:
+				case Instantaneous:
+					if ( val instanceof Number ) {
+						s.putSampleValue(conf.getPropertyType(), conf.getPropertyKey(),
+								conf.applyTransformations((Number) val));
+					} else {
+						log.warn(
+								"Cannot use BACnet {} non-number property value [{}] for source [{}] property [{}]",
+								e.getKey(), val, sourceId, conf.getPropertyKey());
+					}
+					break;
+
+				case Status:
+					s.putStatusSampleValue(conf.getPropertyKey(), val.toString());
+					break;
+
+				case Tag:
+					s.addTag(val.toString());
+					break;
+			}
+		}
+		return (s.isEmpty() ? null : SimpleDatum.nodeDatum(sourceId, Instant.now(), s));
+	}
+
+	@Override
+	public void accept(Integer subscriptionId, Map<BacnetDeviceObjectPropertyRef, ?> updates) {
+		final String sourceId = resolvePlaceholders(getSourceId());
+		if ( sourceId == null || sourceId.isEmpty() ) {
+			return;
+		}
+		NodeDatum datum = createDatum(sourceId, propertyRefs(), updates);
+		final BacnetDatumMode mode = getDatumMode();
+		DatumQueue q = service(getDatumQueue());
+		if ( q != null ) {
+			q.offer(datum, mode != BacnetDatumMode.PollOnly);
+		}
 	}
 
 	/**
@@ -437,4 +519,54 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 		this.deviceConfigs = ArrayUtils.arrayWithLength(this.deviceConfigs, count,
 				BacnetDeviceConfig.class, null);
 	}
+
+	/**
+	 * Get the datum mode.
+	 * 
+	 * @return the datum mode, never {@literal null}; defaults to
+	 *         {@link #DEFAULT_DATUM_MODE}
+	 */
+	public BacnetDatumMode getDatumMode() {
+		return datumMode;
+	}
+
+	/**
+	 * Set the datum mode.
+	 * 
+	 * @param datumMode
+	 *        the datum mode to set; if {@literal null} then
+	 *        {@link #DEFAULT_DATUM_MODE} will be used
+	 */
+	public void setDatumMode(BacnetDatumMode datumMode) {
+		if ( datumMode == null ) {
+			datumMode = DEFAULT_DATUM_MODE;
+		}
+		this.datumMode = datumMode;
+	}
+
+	/**
+	 * Get the datum mode as a string value.
+	 * 
+	 * @return the datum mode value
+	 */
+	public String getDatumModeValue() {
+		return getDatumMode().toString();
+	}
+
+	/**
+	 * Set the datum mode as a string value.
+	 * 
+	 * @param value
+	 *        the value to set
+	 */
+	public void setDatumModeValue(String value) {
+		BacnetDatumMode mode = null;
+		try {
+			mode = BacnetDatumMode.valueOf(value);
+		} catch ( Exception e ) {
+			log.warn("Unsupported BacnetDatumMode value [{}]", value);
+		}
+		setDatumMode(mode);
+	}
+
 }

@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import net.solarnetwork.domain.BitDataType;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.datum.NumberDatumSamplePropertyConfig;
 import net.solarnetwork.node.io.bacnet.BacnetDeviceObjectPropertyRef;
@@ -52,7 +51,6 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	private Integer objectType;
 	private Integer objectNumber;
-	private BitDataType dataType;
 	private Float covIncrement;
 
 	/**
@@ -105,17 +103,6 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 		}
 		propTypeSpec.setValueTitles(propTypeTitles);
 		results.add(propTypeSpec);
-
-		// drop-down menu for dataType
-		BasicMultiValueSettingSpecifier dataTypeSpec = new BasicMultiValueSettingSpecifier(
-				prefix + "dataTypeKey", "");
-		Map<String, String> dataTypeTitles = new LinkedHashMap<>(3);
-		dataTypeTitles.put("", "");
-		for ( BitDataType e : BitDataType.values() ) {
-			dataTypeTitles.put(e.getKey(), e.getDescription());
-		}
-		dataTypeSpec.setValueTitles(dataTypeTitles);
-		results.add(dataTypeSpec);
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "slope", DEFAULT_SLOPE.toString()));
 		results.add(
@@ -234,50 +221,6 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 */
 	public void setPropertyId(Integer propertyId) {
 		setConfig(propertyId);
-	}
-
-	/**
-	 * Get the data type.
-	 * 
-	 * @return the type, never {@literal null}; defaults to
-	 *         {@link #DEFAULT_DATA_TYPE}
-	 */
-	public BitDataType getDataType() {
-		return dataType;
-	}
-
-	/**
-	 * Set the data type.
-	 * 
-	 * @param dataType
-	 *        the type to set
-	 */
-	public void setDataType(BitDataType dataType) {
-		this.dataType = dataType;
-	}
-
-	/**
-	 * Get the data type as a key value.
-	 * 
-	 * @return the type as a key
-	 */
-	public String getDataTypeKey() {
-		BitDataType type = getDataType();
-		return (type != null ? type.getKey() : null);
-	}
-
-	/**
-	 * Set the data type as a string value.
-	 * 
-	 * @param key
-	 *        the type to set
-	 */
-	public void setDataTypeKey(String key) {
-		try {
-			setDataType(BitDataType.forKey(key));
-		} catch ( IllegalArgumentException e ) {
-			setDataType(null);
-		}
 	}
 
 	/**

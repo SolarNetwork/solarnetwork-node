@@ -124,6 +124,7 @@
 							<property name="placeholderService" ref="placeholderService"/>
 							<property name="taskScheduler" ref="taskScheduler"/>
 							<property name="expressionServices" ref="expressionServices"/>
+							<property name="datumQueue" ref="datumQueue"/>
 						</bean>
 					</property>
 				</bean>

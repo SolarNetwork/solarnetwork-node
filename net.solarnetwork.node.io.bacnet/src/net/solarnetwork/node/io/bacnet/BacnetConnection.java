@@ -26,6 +26,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * High level BACnet connection API.
@@ -73,12 +74,36 @@ public interface BacnetConnection extends Closeable {
 	boolean isClosed();
 
 	/**
+	 * Add a handler to receive change-of-value property notifications.
+	 * 
+	 * <p>
+	 * The handler will be passed the subscription ID and any associated
+	 * property updates.
+	 * </p>
+	 * 
+	 * @param handler
+	 *        the handler to add
+	 */
+	void addCovHandler(BacnetCovHandler handler);
+
+	/**
+	 * Remove a handler previously registered with
+	 * {@link #addCovHandler(Consumer)}.
+	 * 
+	 * @param handler
+	 *        the handler to remove
+	 */
+	void removeCovHandler(BacnetCovHandler handler);
+
+	/**
 	 * Subscribe to unconfirmed change-of-value property notifications.
 	 * 
 	 * @param refs
 	 *        the device object properties to subscribe to
 	 * @param maxDelay
 	 *        the maximum delay, in seconds, for changes to be published within
+	 * @param handler
+	 *        the consumer of the subscription updates
 	 * @return the unique subscription ID
 	 */
 	int covSubscribe(Collection<BacnetDeviceObjectPropertyRef> refs, int maxDelay);

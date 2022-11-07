@@ -10,6 +10,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
  com.serotonin.bacnet4j;version="[6.0,7.0)",
  com.serotonin.bacnet4j.cache;version="[6.0,7.0)",
+ com.serotonin.bacnet4j.enums;version="[6.0,7.0)",
  com.serotonin.bacnet4j.event;version="[6.0,7.0)",
  com.serotonin.bacnet4j.exception;version="[6.0,7.0)",
  com.serotonin.bacnet4j.npdu;version="[6.0,7.0)",
@@ -27,6 +28,7 @@ Import-Package:
  com.serotonin.bacnet4j.type.notificationParameters;version="[6.0,7.0)",
  com.serotonin.bacnet4j.type.primitive;version="[6.0,7.0)",
  com.serotonin.bacnet4j.util;version="[6.0,7.0)",
+ net.solarnetwork.domain;version="[2.3,3.0)",
  net.solarnetwork.node.io.bacnet;version="[1.0,2.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.1,2.0)",

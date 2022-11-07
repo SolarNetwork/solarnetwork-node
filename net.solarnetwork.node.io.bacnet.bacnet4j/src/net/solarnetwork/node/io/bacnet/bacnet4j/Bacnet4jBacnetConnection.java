@@ -31,6 +31,7 @@ import java.util.Objects;
 import java.util.Set;
 import com.serotonin.bacnet4j.LocalDevice;
 import net.solarnetwork.node.io.bacnet.BacnetConnection;
+import net.solarnetwork.node.io.bacnet.BacnetCovHandler;
 import net.solarnetwork.node.io.bacnet.BacnetDeviceObjectPropertyRef;
 
 /**
@@ -39,13 +40,14 @@ import net.solarnetwork.node.io.bacnet.BacnetDeviceObjectPropertyRef;
  * @author matt
  * @version 1.0
  */
-public class Bacnet4jBacnetConnection implements BacnetConnection {
+public class Bacnet4jBacnetConnection implements BacnetConnection, BacnetCovHandler {
 
 	private final Integer id;
 	private final Bacnet4jNetworkOps networkOps;
 	private final LocalDevice localDevice;
 	private boolean closed;
 	private final Set<Integer> subscriptions = new HashSet<>();
+	private final Set<BacnetCovHandler> covHandlers = new HashSet<>();
 
 	/**
 	 * Constructor.
@@ -85,6 +87,8 @@ public class Bacnet4jBacnetConnection implements BacnetConnection {
 			subscriptions.clear();
 		}
 		networkOps.releaseConnection(this);
+		covHandlers.clear();
+		networkOps.removeCovHandler(this);
 	}
 
 	@Override
@@ -120,6 +124,20 @@ public class Bacnet4jBacnetConnection implements BacnetConnection {
 	}
 
 	@Override
+	public void addCovHandler(BacnetCovHandler handler) {
+		if ( covHandlers.add(handler) ) {
+			networkOps.addCovHandler(this);
+		}
+	}
+
+	@Override
+	public void removeCovHandler(BacnetCovHandler handler) {
+		if ( covHandlers.remove(handler) && covHandlers.isEmpty() ) {
+			networkOps.addCovHandler(this);
+		}
+	}
+
+	@Override
 	public int covSubscribe(Collection<BacnetDeviceObjectPropertyRef> refs, int maxDelay) {
 		int subId = networkOps.nextSubscriptionId();
 		networkOps.covSubscribe(subId, refs, maxDelay);
@@ -138,6 +156,15 @@ public class Bacnet4jBacnetConnection implements BacnetConnection {
 	public Map<BacnetDeviceObjectPropertyRef, ?> propertyValues(
 			Collection<BacnetDeviceObjectPropertyRef> refs) {
 		return networkOps.propertyValues(refs);
+	}
+
+	@Override
+	public void accept(Integer subscriptionId, Map<BacnetDeviceObjectPropertyRef, ?> updates) {
+		if ( subscriptions.contains(subscriptionId) ) {
+			for ( BacnetCovHandler handler : covHandlers ) {
+				handler.accept(subscriptionId, updates);
+			}
+		}
 	}
 
 	/**

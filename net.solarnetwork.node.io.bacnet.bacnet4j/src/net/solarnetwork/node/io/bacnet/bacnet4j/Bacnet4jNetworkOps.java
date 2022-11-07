@@ -24,7 +24,9 @@ package net.solarnetwork.node.io.bacnet.bacnet4j;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.function.Consumer;
 import net.solarnetwork.node.io.bacnet.BacnetConnection;
+import net.solarnetwork.node.io.bacnet.BacnetCovHandler;
 import net.solarnetwork.node.io.bacnet.BacnetDeviceObjectPropertyRef;
 
 /**
@@ -48,6 +50,23 @@ public interface Bacnet4jNetworkOps {
 	 * @return a unique subscription ID
 	 */
 	int nextSubscriptionId();
+
+	/**
+	 * Add a handler to receive change-of-value property notifications.
+	 * 
+	 * @param handler
+	 *        the handler to add
+	 */
+	void addCovHandler(BacnetCovHandler handler);
+
+	/**
+	 * Remove a handler previously registered with
+	 * {@link #addCovHandler(Consumer)}.
+	 * 
+	 * @param handler
+	 *        the handler to remove
+	 */
+	void removeCovHandler(BacnetCovHandler handler);
 
 	/**
 	 * Register a subscription for unconfirmed property change-of-value events.

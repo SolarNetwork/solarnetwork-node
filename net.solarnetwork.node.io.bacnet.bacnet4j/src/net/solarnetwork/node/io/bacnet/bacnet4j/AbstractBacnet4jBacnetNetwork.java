@@ -37,6 +37,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -83,9 +84,11 @@ import com.serotonin.bacnet4j.util.DeviceObjectPropertyReferences;
 import com.serotonin.bacnet4j.util.DeviceObjectPropertyValues;
 import com.serotonin.bacnet4j.util.PropertyUtils;
 import net.solarnetwork.node.io.bacnet.BacnetConnection;
+import net.solarnetwork.node.io.bacnet.BacnetCovHandler;
 import net.solarnetwork.node.io.bacnet.BacnetDeviceObjectPropertyCovRef;
 import net.solarnetwork.node.io.bacnet.BacnetDeviceObjectPropertyRef;
 import net.solarnetwork.node.io.bacnet.BacnetNetwork;
+import net.solarnetwork.node.io.bacnet.SimpleBacnetDeviceObjectPropertyRef;
 import net.solarnetwork.service.RemoteServiceException;
 import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.service.support.BasicIdentifiable;
@@ -143,6 +146,9 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 	// a mapping of BACnet subscription process identifiers to associated internal subscription instances
 	private final ConcurrentMap<Integer, CovSubscription> bacnetCovSubscriptions = new ConcurrentHashMap<>(
 			8, 0.9f, 2);
+
+	// a list of BACnet COV handlers
+	private final Set<BacnetCovHandler> covHandlers = new CopyOnWriteArraySet<>();
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -467,6 +473,16 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 	}
 
 	@Override
+	public void addCovHandler(BacnetCovHandler handler) {
+		covHandlers.add(handler);
+	}
+
+	@Override
+	public void removeCovHandler(BacnetCovHandler handler) {
+		covHandlers.remove(handler);
+	}
+
+	@Override
 	public Map<BacnetDeviceObjectPropertyRef, ?> propertyValues(
 			Collection<BacnetDeviceObjectPropertyRef> refs) {
 		if ( refs == null || refs.isEmpty() ) {
@@ -501,9 +517,21 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 				val = values.get(ref.getDeviceId(), ObjectType.forId(ref.getObjectType()),
 						ref.getObjectNumber(), PropertyIdentifier.forId(ref.getPropertyId()));
 			}
-			result.put(ref, val);
+			Object value = decodeEncodable(val);
+			result.put(ref, value);
 		}
 		return result;
+	}
+
+	private Object decodeEncodable(Encodable val) {
+		Object value = BacnetPropertyUtils.numberValue(val);
+		if ( value == null ) {
+			value = BacnetPropertyUtils.bitSetValue(val);
+			if ( value == null ) {
+				value = BacnetPropertyUtils.stringValue(val);
+			}
+		}
+		return value;
 	}
 
 	private Map<Integer, Map<ObjectIdentifier, List<CovReference>>> deviceReferenceMap(
@@ -612,6 +640,7 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 		final int subscriptionId = subscriberProcessIdentifier.intValue();
 		final CovSubscription subscription = bacnetCovSubscriptions.get(subscriptionId);
 		if ( subscription != null ) {
+			Map<BacnetDeviceObjectPropertyRef, Object> updates = new LinkedHashMap<>(8);
 			for ( PropertyValue val : listOfValues ) {
 				UnsignedInteger propArrayIndex = null;
 				Set<CovSubscriptionIdentifier> idents = subscription.getDeviceSubscriptionIds()
@@ -627,9 +656,21 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 						break;
 					}
 				}
+				updates.put(
+						new SimpleBacnetDeviceObjectPropertyRef(
+								initiatingDeviceIdentifier.getInstanceNumber(),
+								monitoredObjectIdentifier.getObjectType().intValue(),
+								monitoredObjectIdentifier.getInstanceNumber(),
+								val.getPropertyIdentifier().intValue(),
+								propArrayIndex != null ? propArrayIndex.intValue()
+										: BacnetDeviceObjectPropertyRef.NOT_INDEXED),
+						decodeEncodable(val.getValue()));
 				localDevice.setCachedRemoteProperty(initiatingDeviceIdentifier.getInstanceNumber(),
 						monitoredObjectIdentifier, val.getPropertyIdentifier(), propArrayIndex,
 						val.getValue());
+			}
+			for ( BacnetCovHandler handler : covHandlers ) {
+				handler.accept(subscription.getId(), updates);
 			}
 		}
 	}
