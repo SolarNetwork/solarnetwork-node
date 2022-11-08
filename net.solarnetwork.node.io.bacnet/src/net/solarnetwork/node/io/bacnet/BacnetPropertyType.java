@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.bacnet;
 
 import net.solarnetwork.domain.CodedValue;
+import net.solarnetwork.util.ObjectUtils;
 
 /**
  * Enumeration of BACnet property identifiers.
@@ -1473,6 +1474,7 @@ public enum BacnetPropertyType implements CodedValue {
 	 * @see CodedValue#forCodeValue(int, Class, Enum)
 	 */
 	public static BacnetPropertyType forKey(String value) {
+		ObjectUtils.requireNonNullArgument(value, "value");
 		try {
 			int code = Integer.parseInt(value);
 			BacnetPropertyType result = CodedValue.forCodeValue(code, BacnetPropertyType.class, null);
@@ -1483,7 +1485,17 @@ public enum BacnetPropertyType implements CodedValue {
 					String.format("Unsupported BacnetPropertyType value [%s]", value));
 		} catch ( NumberFormatException e ) {
 			// ignore and try by name
-			return BacnetPropertyType.valueOf(value);
+			try {
+				return BacnetPropertyType.valueOf(value);
+			} catch ( IllegalArgumentException e2 ) {
+				try {
+					// ignore and try by name with train-case
+					return BacnetPropertyType.valueOf(BacnetUtils.trainToCamelCase(value));
+				} catch ( IllegalArgumentException e3 ) {
+					throw new IllegalArgumentException(
+							String.format("Unsupported BacnetPropertyType value [%s]", value));
+				}
+			}
 		}
 	}
 

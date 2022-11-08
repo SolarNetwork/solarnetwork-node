@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.bacnet;
 
 import net.solarnetwork.domain.CodedValue;
+import net.solarnetwork.util.ObjectUtils;
 
 /**
  * Enumeration of BACnet object types.
@@ -259,6 +260,7 @@ public enum BacnetObjectType implements CodedValue {
 	 * @see CodedValue#forCodeValue(int, Class, Enum)
 	 */
 	public static BacnetObjectType forKey(String value) {
+		ObjectUtils.requireNonNullArgument(value, "value");
 		try {
 			int code = Integer.parseInt(value);
 			BacnetObjectType result = CodedValue.forCodeValue(code, BacnetObjectType.class, null);
@@ -269,7 +271,17 @@ public enum BacnetObjectType implements CodedValue {
 					String.format("Unsupported BacnetObjectType value [%s]", value));
 		} catch ( NumberFormatException e ) {
 			// ignore and try by name
-			return BacnetObjectType.valueOf(value);
+			try {
+				return BacnetObjectType.valueOf(value);
+			} catch ( IllegalArgumentException e2 ) {
+				try {
+					// ignore and try by name with train-case
+					return BacnetObjectType.valueOf(BacnetUtils.trainToCamelCase(value));
+				} catch ( IllegalArgumentException e3 ) {
+					throw new IllegalArgumentException(
+							String.format("Unsupported BacnetObjectType value [%s]", value));
+				}
+			}
 		}
 	}
 

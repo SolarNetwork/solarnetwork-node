@@ -11,4 +11,5 @@ Export-Package:
  net.solarnetwork.node.io.bacnet;version="1.0.0"
 Import-Package: 
  net.solarnetwork.domain;version="[2.3,3.0)",
- net.solarnetwork.service;version="[1.0,2.0)"
+ net.solarnetwork.service;version="[1.0,2.0)",
+ net.solarnetwork.util;version="[2.5,3.0)"

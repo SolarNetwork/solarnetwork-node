@@ -26,9 +26,13 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import net.solarnetwork.domain.CodedValue;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.datum.NumberDatumSamplePropertyConfig;
 import net.solarnetwork.node.io.bacnet.BacnetDeviceObjectPropertyRef;
+import net.solarnetwork.node.io.bacnet.BacnetObjectType;
 import net.solarnetwork.node.io.bacnet.BacnetPropertyType;
 import net.solarnetwork.node.io.bacnet.SimpleBacnetDeviceObjectPropertyCovRef;
 import net.solarnetwork.node.io.bacnet.SimpleBacnetDeviceObjectPropertyRef;
@@ -48,6 +52,8 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * @version 1.0
  */
 public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Integer> {
+
+	private static final Logger log = LoggerFactory.getLogger(BacnetPropertyConfig.class);
 
 	private Integer objectType;
 	private Integer objectNumber;
@@ -87,9 +93,9 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 			prefix = "";
 		}
 		List<SettingSpecifier> results = new ArrayList<>(8);
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "objectType", null));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "objectTypeValue", null));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "objectNumber", null));
-		results.add(new BasicTextFieldSettingSpecifier(prefix + "propertyId", null));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "propertyIdValue", null));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "covIncrement", null));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "propertyKey", null));
 
@@ -105,8 +111,6 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 		results.add(propTypeSpec);
 
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "slope", DEFAULT_SLOPE.toString()));
-		results.add(
-				new BasicTextFieldSettingSpecifier(prefix + "intercept", DEFAULT_INTERCEPT.toString()));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "decimalScale",
 				String.valueOf(DEFAULT_DECIMAL_SCALE)));
 
@@ -180,6 +184,40 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	}
 
 	/**
+	 * Get the object type as a string value.
+	 * 
+	 * @return the object type enumeration name if supported, else the
+	 *         configured object type as a string
+	 */
+	public String getObjectTypeValue() {
+		Integer type = getObjectType();
+		if ( type == null ) {
+			return null;
+		}
+		BacnetObjectType e = CodedValue.forCodeValue(type.intValue(), BacnetObjectType.class, null);
+		return (e != null ? e.name() : type.toString());
+	}
+
+	/**
+	 * Set the object type as a string value.
+	 * 
+	 * <p>
+	 * The value can be an object type code, enumeration name, or train-case
+	 * enumeration name.
+	 * </p>
+	 * 
+	 * @param value
+	 *        the value to set
+	 */
+	public void setObjectTypeValue(String value) {
+		try {
+			setObjectType(BacnetObjectType.forKey(value).getCode());
+		} catch ( IllegalArgumentException e ) {
+			log.error("Unsupported BACnet object type [{}]", value);
+		}
+	}
+
+	/**
 	 * Get the object (instance) number.
 	 * 
 	 * @return the object number
@@ -221,6 +259,40 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 */
 	public void setPropertyId(Integer propertyId) {
 		setConfig(propertyId);
+	}
+
+	/**
+	 * Get the property ID as a string value.
+	 * 
+	 * @return the property type enumeration name if supported, else the
+	 *         configured object type as a string
+	 */
+	public String getPropertyIdValue() {
+		Integer type = getPropertyId();
+		if ( type == null ) {
+			return null;
+		}
+		BacnetPropertyType e = CodedValue.forCodeValue(type.intValue(), BacnetPropertyType.class, null);
+		return (e != null ? e.name() : type.toString());
+	}
+
+	/**
+	 * Set the property ID as a string value.
+	 * 
+	 * <p>
+	 * The value can be an property ID code, enumeration name, or train-case
+	 * enumeration name.
+	 * </p>
+	 * 
+	 * @param value
+	 *        the value to set
+	 */
+	public void setPropertyIdValue(String value) {
+		try {
+			setPropertyId(BacnetPropertyType.forKey(value).getCode());
+		} catch ( IllegalArgumentException e ) {
+			log.error("Unsupported BACnet property type [{}]", value);
+		}
 	}
 
 	/**
