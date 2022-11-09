@@ -38,8 +38,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.serotonin.bacnet4j.LocalDevice;
 import com.serotonin.bacnet4j.RemoteDevice;
+import com.serotonin.bacnet4j.ResponseConsumer;
 import com.serotonin.bacnet4j.ServiceFuture;
+import com.serotonin.bacnet4j.apdu.AckAPDU;
 import com.serotonin.bacnet4j.exception.BACnetException;
+import com.serotonin.bacnet4j.service.acknowledgement.AcknowledgementService;
 import com.serotonin.bacnet4j.service.confirmed.SubscribeCOVPropertyMultipleRequest;
 import com.serotonin.bacnet4j.service.confirmed.SubscribeCOVPropertyMultipleRequest.CovSubscriptionSpecification;
 import com.serotonin.bacnet4j.service.confirmed.SubscribeCOVPropertyMultipleRequest.CovSubscriptionSpecification.CovReference;
@@ -114,23 +117,76 @@ public class CovSubscription {
 					SubscribeCOVPropertyMultipleRequest req = new SubscribeCOVPropertyMultipleRequest(
 							new Unsigned32(subIdent.getSubId().bigIntegerValue()), Boolean.FALSE, null,
 							null, new SequenceOf<>(0));
-					ServiceFuture f = localDevice.send(dev, req);
-					f.get();
-					log.info("Un-subscription {} on device {} properties successful", id, deviceId);
+					localDevice.send(dev, req, new ResponseConsumer() {
+
+						@Override
+						public void success(AcknowledgementService ack) {
+							log.info("Un-subscription {} on device {} properties successful", id,
+									deviceId);
+						}
+
+						@Override
+						public void fail(AckAPDU ack) {
+							log.warn("Un-subscription {} on device {} properties failed: {}", id,
+									deviceId, ack);
+						}
+
+						@Override
+						public void ex(BACnetException e) {
+							log.info("Un-subscription {} on device {} properties threw exception", id,
+									deviceId, e);
+						}
+
+					});
 				} else if ( subIdent.getReq() instanceof SubscribeCOVPropertyRequest ) {
 					SubscribeCOVPropertyRequest req = new SubscribeCOVPropertyRequest(
 							(SubscribeCOVPropertyRequest) subIdent.getReq());
-					ServiceFuture f = localDevice.send(dev, req);
-					f.get();
-					log.info("Un-subscription {} on device {} object {} property {} successful", id,
-							deviceId, subIdent.getObjId(), subIdent.getPropRef());
+					localDevice.send(dev, req, new ResponseConsumer() {
+
+						@Override
+						public void success(AcknowledgementService ack) {
+							log.info("Un-subscription {} on device {} object {} property {} successful",
+									id, deviceId, subIdent.getObjId(), subIdent.getPropRef());
+						}
+
+						@Override
+						public void fail(AckAPDU ack) {
+							log.warn("Un-subscription {} on device {} object {} property {} failed: {}",
+									id, deviceId, subIdent.getObjId(), subIdent.getPropRef(), ack);
+						}
+
+						@Override
+						public void ex(BACnetException e) {
+							log.warn(
+									"Un-subscription {} on device {} object {} property {} threw exception",
+									id, deviceId, subIdent.getObjId(), subIdent.getPropRef(), e);
+						}
+
+					});
 				} else if ( subIdent.getReq() instanceof SubscribeCOVRequest ) {
 					SubscribeCOVRequest req = new SubscribeCOVRequest(
 							(SubscribeCOVRequest) subIdent.getReq());
-					ServiceFuture f = localDevice.send(dev, req);
-					f.get();
-					log.info("Un-subscription {} on device {} object {} successful", id, deviceId,
-							subIdent.getObjId());
+					localDevice.send(dev, req, new ResponseConsumer() {
+
+						@Override
+						public void success(AcknowledgementService ack) {
+							log.info("Un-subscription {} on device {} object {} successful", id,
+									deviceId, subIdent.getObjId());
+						}
+
+						@Override
+						public void fail(AckAPDU ack) {
+							log.warn("Un-subscription {} on device {} object {} failed: {}", id,
+									deviceId, subIdent.getObjId(), ack);
+						}
+
+						@Override
+						public void ex(BACnetException e) {
+							log.warn("Un-subscription {} on device {} object {} threw exception", id,
+									deviceId, subIdent.getObjId(), e);
+						}
+
+					});
 				}
 			}
 		}

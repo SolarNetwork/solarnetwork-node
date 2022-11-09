@@ -1490,7 +1490,7 @@ public enum BacnetPropertyType implements CodedValue {
 			} catch ( IllegalArgumentException e2 ) {
 				try {
 					// ignore and try by name with train-case
-					return BacnetPropertyType.valueOf(BacnetUtils.trainToCamelCase(value));
+					return BacnetPropertyType.valueOf(BacnetUtils.kebabToCamelCase(value));
 				} catch ( IllegalArgumentException e3 ) {
 					throw new IllegalArgumentException(
 							String.format("Unsupported BacnetPropertyType value [%s]", value));

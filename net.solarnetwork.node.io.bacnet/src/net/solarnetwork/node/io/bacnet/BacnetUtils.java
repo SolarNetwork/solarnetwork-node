@@ -35,21 +35,57 @@ public final class BacnetUtils {
 	}
 
 	/**
-	 * Convert a train-case-string into a CamelCaseString.
+	 * Convert a CamelCaseString into a kebab-case-string.
 	 * 
 	 * @param value
 	 *        the value to convert
 	 * @return the converted value
 	 */
-	public static String trainToCamelCase(String value) {
+	public static String camelToKebabCase(String value) {
 		if ( value == null || value.isEmpty() ) {
 			return value;
 		}
-		int idx = value.indexOf('-');
-		if ( idx < 0 ) {
+		StringBuilder buf = new StringBuilder();
+		for ( int i = 0, len = value.length(); i < len; i++ ) {
+			char c = value.charAt(i);
+			if ( Character.isUpperCase(c) ) {
+				if ( i > 0 ) {
+					buf.append('-');
+				}
+				buf.append(Character.toLowerCase(c));
+			} else {
+				buf.append(c);
+			}
+
+		}
+		return buf.toString();
+	}
+
+	/**
+	 * Convert a kebab-case-string into a CamelCaseString.
+	 * 
+	 * @param value
+	 *        the value to convert
+	 * @return the converted value
+	 */
+	public static String kebabToCamelCase(String value) {
+		if ( value == null || value.isEmpty() ) {
 			return value;
 		}
-		int len = value.length();
+		final int len = value.length();
+		int idx = value.indexOf('-');
+		if ( idx < 0 ) {
+			char c = value.charAt(0);
+			if ( Character.isUpperCase(c) ) {
+				return value;
+			}
+			StringBuilder buf = new StringBuilder(len);
+			buf.append(Character.toUpperCase(c));
+			if ( len > 1 ) {
+				buf.append(value.substring(1));
+			}
+			return buf.toString();
+		}
 		StringBuilder buf = new StringBuilder(len);
 		int prev = 0;
 		do {

@@ -276,7 +276,7 @@ public enum BacnetObjectType implements CodedValue {
 			} catch ( IllegalArgumentException e2 ) {
 				try {
 					// ignore and try by name with train-case
-					return BacnetObjectType.valueOf(BacnetUtils.trainToCamelCase(value));
+					return BacnetObjectType.valueOf(BacnetUtils.kebabToCamelCase(value));
 				} catch ( IllegalArgumentException e3 ) {
 					throw new IllegalArgumentException(
 							String.format("Unsupported BacnetObjectType value [%s]", value));

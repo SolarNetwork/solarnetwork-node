@@ -22,23 +22,32 @@
 
 package net.solarnetwork.node.datum.bacnet;
 
+import static java.lang.String.format;
+import static net.solarnetwork.node.datum.bacnet.BacnetDatumDataSourceConfig.JOB_SERVICE_SETTING_PREFIX;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.domain.CodedValue;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.domain.datum.NumberDatumSamplePropertyConfig;
+import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.io.bacnet.BacnetDeviceObjectPropertyRef;
 import net.solarnetwork.node.io.bacnet.BacnetObjectType;
 import net.solarnetwork.node.io.bacnet.BacnetPropertyType;
+import net.solarnetwork.node.io.bacnet.BacnetUtils;
 import net.solarnetwork.node.io.bacnet.SimpleBacnetDeviceObjectPropertyCovRef;
 import net.solarnetwork.node.io.bacnet.SimpleBacnetDeviceObjectPropertyRef;
+import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.util.ArrayUtils;
 
 /**
  * Configuration for a single datum property to be set via a BACnet property.
@@ -52,6 +61,18 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * @version 1.0
  */
 public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Integer> {
+
+	/**
+	 * A setting type pattern for a property configuration element.
+	 * 
+	 * <p>
+	 * The pattern has two capture groups: the device configuration index and
+	 * the property setting name.
+	 * </p>
+	 */
+	public static final Pattern PROP_SETTING_PATTERN = Pattern
+			.compile(Pattern.quote(JOB_SERVICE_SETTING_PREFIX.concat("deviceConfigs[")).concat("\\d+")
+					.concat(Pattern.quote("].propConfigs[")).concat("(\\d+)]\\.(.*)"));
 
 	private static final Logger log = LoggerFactory.getLogger(BacnetPropertyConfig.class);
 
@@ -118,6 +139,17 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	}
 
 	/**
+	 * Test if this configuration is empty.
+	 * 
+	 * @return {@literal true} if all properties are null
+	 */
+	public boolean isEmpty() {
+		return (objectType == null && objectNumber == null && getPropertyId() == null
+				&& covIncrement == null && getSlope() == null && getPropertyType() == null
+				&& getPropertyKey() == null && getConfig() == null);
+	}
+
+	/**
 	 * Test if this instance represents a valid configuration.
 	 * 
 	 * <p>
@@ -165,6 +197,105 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	}
 
 	/**
+	 * Populate a setting as a property configuration value, if possible.
+	 * 
+	 * @param config
+	 *        the device configuration
+	 * @param setting
+	 *        the setting to try to handle
+	 * @return {@literal true} if the setting was handled as a property
+	 *         configuration value
+	 */
+	public static boolean populateFromSetting(BacnetDeviceConfig config, Setting setting) {
+		Matcher m = PROP_SETTING_PATTERN.matcher(setting.getType());
+		if ( !m.matches() ) {
+			return false;
+		}
+		int idx = Integer.parseInt(m.group(1));
+		String name = m.group(2);
+		BacnetPropertyConfig[] propConfigs = config.getPropConfigs();
+		if ( propConfigs == null || idx >= propConfigs.length ) {
+			propConfigs = ArrayUtils.arrayWithLength(propConfigs, idx + 1, BacnetPropertyConfig.class,
+					null);
+			config.setPropConfigs(propConfigs);
+		}
+		BacnetPropertyConfig propConfig = propConfigs[idx];
+		String val = setting.getValue();
+		if ( val != null && !val.isEmpty() ) {
+			switch (name) {
+				case "objectTypeValue":
+					propConfig.setObjectTypeValue(val);
+					break;
+				case "objectNumber":
+					propConfig.setObjectNumber(Integer.valueOf(val));
+					break;
+				case "propertyIdValue":
+					propConfig.setPropertyIdValue(val);
+					break;
+				case "covIncrement":
+					propConfig.setCovIncrement(Float.valueOf(val));
+					break;
+				case "propertyKey":
+					propConfig.setPropertyKey(val);
+					break;
+				case "propertyTypeKey":
+					propConfig.setPropertyTypeKey(val);
+					break;
+				case "slope":
+					propConfig.setSlope(new BigDecimal(val));
+					break;
+				case "decimalScale":
+					propConfig.setDecimalScale(Integer.valueOf(val));
+					break;
+				default:
+					// ignore
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Generate a list of setting values.
+	 * 
+	 * @param providerId
+	 *        the setting provider ID
+	 * @param instanceId
+	 *        the factory instance ID
+	 * @param deviceIndex
+	 *        the device configuration index
+	 * @param i
+	 *        the property index
+	 * @return the settings
+	 */
+	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, int deviceIndex,
+			int i) {
+		List<SettingValueBean> settings = new ArrayList<>(8);
+		addSetting(settings, providerId, instanceId, deviceIndex, i, "objectTypeValue",
+				getObjectTypeValue());
+		addSetting(settings, providerId, instanceId, deviceIndex, i, "objectNumber", getObjectNumber());
+		addSetting(settings, providerId, instanceId, deviceIndex, i, "propertyIdValue",
+				getPropertyIdValue());
+		addSetting(settings, providerId, instanceId, deviceIndex, i, "covIncrement", getCovIncrement());
+		addSetting(settings, providerId, instanceId, deviceIndex, i, "propertyKey", getPropertyKey());
+		addSetting(settings, providerId, instanceId, deviceIndex, i, "propertyTypeKey",
+				getPropertyTypeKey());
+		addSetting(settings, providerId, instanceId, deviceIndex, i, "slope", getSlope());
+		addSetting(settings, providerId, instanceId, deviceIndex, i, "decimalScale", getDecimalScale());
+		return settings;
+	}
+
+	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
+			int deviceIndex, int i, String key, Object val) {
+		if ( val == null ) {
+			return;
+		}
+		settings.add(new SettingValueBean(providerId, instanceId,
+				BacnetDatumDataSourceConfig.JOB_SERVICE_SETTING_PREFIX
+						.concat(format("deviceConfigs[%d].propConfigs[%d].%s", deviceIndex, i, key)),
+				val.toString()));
+	}
+
+	/**
 	 * Get the object type.
 	 * 
 	 * @return the object type
@@ -195,7 +326,7 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 			return null;
 		}
 		BacnetObjectType e = CodedValue.forCodeValue(type.intValue(), BacnetObjectType.class, null);
-		return (e != null ? e.name() : type.toString());
+		return (e != null ? BacnetUtils.camelToKebabCase(e.name()) : type.toString());
 	}
 
 	/**
@@ -210,6 +341,10 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 *        the value to set
 	 */
 	public void setObjectTypeValue(String value) {
+		if ( value == null ) {
+			setObjectType(null);
+			return;
+		}
 		try {
 			setObjectType(BacnetObjectType.forKey(value).getCode());
 		} catch ( IllegalArgumentException e ) {
@@ -273,7 +408,7 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 			return null;
 		}
 		BacnetPropertyType e = CodedValue.forCodeValue(type.intValue(), BacnetPropertyType.class, null);
-		return (e != null ? e.name() : type.toString());
+		return (e != null ? BacnetUtils.camelToKebabCase(e.name()) : type.toString());
 	}
 
 	/**

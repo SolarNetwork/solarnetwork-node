@@ -9,6 +9,7 @@ Automatic-Module-Name: net.solarnetwork.node.io.bacnet.bacnet4j
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
  com.serotonin.bacnet4j;version="[6.0,7.0)",
+ com.serotonin.bacnet4j.apdu;version="[6.0,7.0)",
  com.serotonin.bacnet4j.cache;version="[6.0,7.0)",
  com.serotonin.bacnet4j.enums;version="[6.0,7.0)",
  com.serotonin.bacnet4j.event;version="[6.0,7.0)",

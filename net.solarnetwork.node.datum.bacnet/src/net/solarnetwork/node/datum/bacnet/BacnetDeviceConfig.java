@@ -22,11 +22,17 @@
 
 package net.solarnetwork.node.datum.bacnet;
 
+import static java.lang.String.format;
+import static net.solarnetwork.node.datum.bacnet.BacnetDatumDataSourceConfig.JOB_SERVICE_SETTING_PREFIX;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import net.solarnetwork.node.domain.Setting;
+import net.solarnetwork.node.settings.SettingValueBean;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
@@ -40,6 +46,17 @@ import net.solarnetwork.util.ArrayUtils;
  * @version 1.0
  */
 public class BacnetDeviceConfig {
+
+	/**
+	 * A setting type pattern for a device configuration element.
+	 * 
+	 * <p>
+	 * The pattern has two capture groups: the device configuration index and
+	 * the device setting name.
+	 * </p>
+	 */
+	public static final Pattern PROP_SETTING_PATTERN = Pattern.compile(Pattern
+			.quote(JOB_SERVICE_SETTING_PREFIX.concat("deviceConfigs[")).concat("(\\d+)\\]\\.(.*)"));
 
 	private Integer deviceId;
 	private BacnetPropertyConfig[] propConfigs;
@@ -99,6 +116,78 @@ public class BacnetDeviceConfig {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Populate a setting as a device configuration value, if possible.
+	 * 
+	 * @param config
+	 *        the overall configuration
+	 * @param setting
+	 *        the setting to try to handle
+	 * @return {@literal true} if the setting was handled as a device
+	 *         configuration value
+	 */
+	public static boolean populateFromSetting(BacnetDatumDataSourceConfig config, Setting setting) {
+		Matcher m = PROP_SETTING_PATTERN.matcher(setting.getType());
+		if ( !m.matches() ) {
+			return false;
+		}
+		int idx = Integer.parseInt(m.group(1));
+		String name = m.group(2);
+		List<BacnetDeviceConfig> deviceConfigs = config.getDeviceConfigs();
+		if ( !(idx < deviceConfigs.size()) ) {
+			deviceConfigs.add(idx, new BacnetDeviceConfig());
+		}
+		BacnetDeviceConfig deviceConfig = deviceConfigs.get(idx);
+		if ( BacnetPropertyConfig.populateFromSetting(deviceConfig, setting) ) {
+			return true;
+		}
+		String val = setting.getValue();
+		if ( val != null && !val.isEmpty() ) {
+			switch (name) {
+				case "deviceId":
+					deviceConfig.setDeviceId(Integer.valueOf(val));
+					break;
+				default:
+					// ignore
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Generate a list of setting values.
+	 * 
+	 * @param providerId
+	 *        the setting provider ID
+	 * @param instanceId
+	 *        the factory instance ID
+	 * @param i
+	 *        the device index
+	 * @return the settings
+	 */
+	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, final int i) {
+		List<SettingValueBean> settings = new ArrayList<>(8);
+		addSetting(settings, providerId, instanceId, i, "deviceId", getDeviceId());
+		if ( propConfigs != null ) {
+			for ( int propIdx = 0, len = propConfigs.length; propIdx < len; propIdx++ ) {
+				settings.addAll(
+						propConfigs[propIdx].toSettingValues(providerId, instanceId, i, propIdx));
+			}
+		}
+		return settings;
+	}
+
+	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
+			int i, String key, Object val) {
+		if ( val == null ) {
+			return;
+		}
+		settings.add(new SettingValueBean(providerId, instanceId,
+				BacnetDatumDataSourceConfig.JOB_SERVICE_SETTING_PREFIX
+						.concat(format("deviceConfigs[%d].%s", i, key)),
+				val.toString()));
 	}
 
 	/**
@@ -163,6 +252,23 @@ public class BacnetDeviceConfig {
 	public void setPropConfigsCount(int count) {
 		this.propConfigs = ArrayUtils.arrayWithLength(this.propConfigs, count,
 				BacnetPropertyConfig.class, null);
+	}
+
+	/**
+	 * Add a new property configuration.
+	 * 
+	 * @param config
+	 *        the configuration to add
+	 */
+	public void addPropConfig(BacnetPropertyConfig config) {
+		BacnetPropertyConfig[] configs = new BacnetPropertyConfig[propConfigs != null
+				? propConfigs.length + 1
+				: 1];
+		if ( propConfigs != null ) {
+			System.arraycopy(propConfigs, 0, configs, 0, propConfigs.length);
+		}
+		configs[configs.length - 1] = config;
+		setPropConfigs(configs);
 	}
 
 }

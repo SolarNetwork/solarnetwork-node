@@ -71,6 +71,9 @@ import net.solarnetwork.util.ObjectUtils;
 public class BacnetDatumDataSource extends DatumDataSourceSupport implements DatumDataSource,
 		SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver, BacnetCovHandler {
 
+	/** The setting UID used by this service. */
+	public static final String SETTING_UID = "net.solarnetwork.node.datum.bacnet";
+
 	/** The {@code connectionCheckFrequency} property default value. */
 	public static final long DEFAULT_CONNECTION_CHECK_FREQUENCY = 60_000L;
 
@@ -130,7 +133,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 
 	@Override
 	public String getSettingUid() {
-		return "net.solarnetwork.node.datum.bacnet";
+		return SETTING_UID;
 	}
 
 	@Override
@@ -297,7 +300,8 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 		if ( network == null ) {
 			return null;
 		}
-		try (BacnetConnection conn = network.createConnection()) {
+		BacnetConnection conn = connection();
+		if ( conn != null ) {
 			log.debug("Working with BacnetConnection {}", conn);
 			Map<BacnetDeviceObjectPropertyRef, BacnetPropertyConfig> refs = propertyRefs();
 			Map<BacnetDeviceObjectPropertyRef, ?> values = conn.propertyValues(refs.keySet());
@@ -308,9 +312,6 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 								.collect(Collectors.joining("\n  ", "\n  ", "")));
 			}
 			return createDatum(sourceId, refs, values);
-		} catch ( IOException e ) {
-			log.warn("Communication error collecting source {} from BACnet network {}", sourceId,
-					network);
 		}
 		return null;
 	}

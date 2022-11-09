@@ -85,6 +85,27 @@
 
 	<!-- Published Services -->
 
+	<service>
+		<interfaces>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
+			<value>net.solarnetwork.node.settings.SettingResourceHandler</value>
+		</interfaces>
+		<bean class="net.solarnetwork.node.datum.bacnet.BacnetCsvConfigurer">
+			<argument ref="settingsService"/>
+			<argument ref="identityService"/>
+			<property name="messageSource">
+				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+					<property name="basenames">
+						<list>
+							<value>net.solarnetwork.node.datum.bacnet.BacnetCsvConfigurer</value>
+							<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+						</list>
+					</property>
+				</bean>
+			</property>
+		</bean>
+	</service>
+
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="BACnet device"/>
