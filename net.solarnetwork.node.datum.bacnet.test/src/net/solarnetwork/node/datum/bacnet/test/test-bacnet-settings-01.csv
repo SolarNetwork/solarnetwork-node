@@ -1,0 +1,21 @@
+key,type,value,flags,modified
+net.solarnetwork.node.datum.bacnet.P1,schedule,0 * * * * *,0,2022-11-05 13:51:46
+net.solarnetwork.node.datum.bacnet.P1,jobService.datumDataSource.sourceId,/test/bacnet,0,2022-11-05 13:51:46
+net.solarnetwork.node.datum.bacnet.P1,jobService.datumDataSource.bacnetNetworkUid,BACnet/IP,0,2022-11-05 13:51:46
+net.solarnetwork.node.datum.bacnet.P1,jobService.datumDataSource.serviceName,My Service,0,2022-11-05 13:51:46
+net.solarnetwork.node.datum.bacnet.P1,jobService.datumDataSource.serviceGroup,My Group,0,2022-11-05 13:51:46
+net.solarnetwork.node.datum.bacnet.P1,jobService.datumDataSource.deviceConfigs[0].deviceId,3637469,0,2022-11-04 17:43:53
+net.solarnetwork.node.datum.bacnet.P1,jobService.datumDataSource.deviceConfigs[0].propConfigs[0].decimalScale,1,0,2022-11-04 17:47:28
+net.solarnetwork.node.datum.bacnet.P1,jobService.datumDataSource.deviceConfigs[0].propConfigs[0].objectNumber,0,0,2022-11-04 17:47:28
+net.solarnetwork.node.datum.bacnet.P1,jobService.datumDataSource.deviceConfigs[0].propConfigs[0].objectTypeValue,0,0,2022-11-05 13:58:18
+net.solarnetwork.node.datum.bacnet.P1,jobService.datumDataSource.deviceConfigs[0].propConfigs[0].propertyIdValue,85,0,2022-11-04 17:47:28
+net.solarnetwork.node.datum.bacnet.P1,jobService.datumDataSource.deviceConfigs[0].propConfigs[0].propertyKey,temp,0,2022-11-07 16:44:16
+net.solarnetwork.node.datum.bacnet.P1,jobService.datumDataSource.deviceConfigs[0].propConfigs[0].propertyTypeKey,i,0,2022-11-04 17:47:28
+net.solarnetwork.node.datum.bacnet.P1,jobService.datumDataSource.deviceConfigs[0].propConfigs[1].objectNumber,1,0,2022-11-07 16:44:16
+net.solarnetwork.node.datum.bacnet.P1,jobService.datumDataSource.deviceConfigs[0].propConfigs[1].objectTypeValue,0,0,2022-11-07 16:44:16
+net.solarnetwork.node.datum.bacnet.P1,jobService.datumDataSource.deviceConfigs[0].propConfigs[1].propertyKey,tempWater,0,2022-11-07 16:44:16
+net.solarnetwork.node.datum.bacnet.P1,jobService.datumDataSource.deviceConfigs[0].propConfigs[1].propertyTypeKey,i,0,2022-11-07 16:44:16
+net.solarnetwork.node.datum.bacnet.P1,jobService.datumDataSource.deviceConfigs[0].propConfigs[2].objectNumber,2,0,2022-11-07 16:44:54
+net.solarnetwork.node.datum.bacnet.P1,jobService.datumDataSource.deviceConfigs[0].propConfigs[2].objectTypeValue,0,0,2022-11-07 16:44:54
+net.solarnetwork.node.datum.bacnet.P1,jobService.datumDataSource.deviceConfigs[0].propConfigs[2].propertyKey,tempOutdoor,0,2022-11-07 16:44:54
+net.solarnetwork.node.datum.bacnet.P1,jobService.datumDataSource.deviceConfigs[0].propConfigs[2].propertyTypeKey,i,0,2022-11-07 16:44:54
