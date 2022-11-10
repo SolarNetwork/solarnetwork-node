@@ -104,7 +104,16 @@ public interface Bacnet4jNetworkOps {
 	 *        the property references to read
 	 * @return the associated values, never {@literal null}
 	 */
-	public Map<BacnetDeviceObjectPropertyRef, ?> propertyValues(
-			Collection<BacnetDeviceObjectPropertyRef> refs);
+	Map<BacnetDeviceObjectPropertyRef, ?> propertyValues(Collection<BacnetDeviceObjectPropertyRef> refs);
 
+	/**
+	 * Write a set of property values.
+	 * 
+	 * @param values
+	 *        the property values to write
+	 * @return a mapping of property references to a boolean status if the write
+	 *         to that property was successful
+	 */
+	Map<BacnetDeviceObjectPropertyRef, Boolean> updatePropertyValues(
+			Map<BacnetDeviceObjectPropertyRef, ?> values);
 }

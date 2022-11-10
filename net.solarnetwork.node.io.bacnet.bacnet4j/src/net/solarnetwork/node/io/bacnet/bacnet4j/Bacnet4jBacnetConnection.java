@@ -159,6 +159,11 @@ public class Bacnet4jBacnetConnection implements BacnetConnection, BacnetCovHand
 	}
 
 	@Override
+	public void updatePropertyValues(Map<BacnetDeviceObjectPropertyRef, ?> values) {
+		networkOps.updatePropertyValues(values);
+	}
+
+	@Override
 	public void accept(Integer subscriptionId, Map<BacnetDeviceObjectPropertyRef, ?> updates) {
 		if ( subscriptions.contains(subscriptionId) ) {
 			for ( BacnetCovHandler handler : covHandlers ) {

@@ -126,4 +126,12 @@ public interface BacnetConnection extends Closeable {
 	 */
 	Map<BacnetDeviceObjectPropertyRef, ?> propertyValues(Collection<BacnetDeviceObjectPropertyRef> refs);
 
+	/**
+	 * Write property values.
+	 * 
+	 * @param values
+	 *        the property values to write
+	 */
+	void updatePropertyValues(Map<BacnetDeviceObjectPropertyRef, ?> values);
+
 }

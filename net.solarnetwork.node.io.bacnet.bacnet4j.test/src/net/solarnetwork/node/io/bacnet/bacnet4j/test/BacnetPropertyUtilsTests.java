@@ -27,11 +27,13 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import java.math.BigInteger;
+import java.util.BitSet;
 import org.junit.Test;
 import com.serotonin.bacnet4j.enums.Month;
 import com.serotonin.bacnet4j.type.constructed.ServicesSupported;
 import com.serotonin.bacnet4j.type.enumerated.DoorStatus;
 import com.serotonin.bacnet4j.type.enumerated.ObjectType;
+import com.serotonin.bacnet4j.type.primitive.BitString;
 import com.serotonin.bacnet4j.type.primitive.Date;
 import com.serotonin.bacnet4j.type.primitive.Null;
 import com.serotonin.bacnet4j.type.primitive.ObjectIdentifier;
@@ -217,6 +219,36 @@ public class BacnetPropertyUtilsTests {
 		final OctetString val = new OctetString(new byte[] { 1, 2, 3, 4 });
 		assertThat("ObjectIdentifier parsed", BacnetPropertyUtils.stringValue(val),
 				is(equalTo("1.2.3.4")));
+	}
+
+	@Test
+	public void bitStringValue_bitSet() {
+		final BitSet input = new BitSet(12);
+		input.set(2);
+		input.set(6);
+		input.set(10);
+		input.set(11);
+		final BitString output = BacnetPropertyUtils.bitStringValue(input);
+		assertThat("BitSet converted to BitString", output, is(equalTo(new BitString(new boolean[] {
+				// @formatter:off
+				false, false, true, false,
+				false, false, true, false,
+				false, false, true, true
+				// @formatter:on
+		}))));
+	}
+
+	@Test
+	public void bitStringValue_bigInteger() {
+		final BigInteger input = new BigInteger("111100000001", 2);
+		final BitString output = BacnetPropertyUtils.bitStringValue(input);
+		assertThat("BigInteger converted to BitString", output, is(equalTo(new BitString(new boolean[] {
+				// @formatter:off
+				true, false, false, false,
+				false, false, false, false,
+				true, true, true, true
+				// @formatter:on
+		}))));
 	}
 
 }

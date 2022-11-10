@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -67,6 +68,7 @@ import com.serotonin.bacnet4j.type.constructed.PropertyValue;
 import com.serotonin.bacnet4j.type.constructed.SequenceOf;
 import com.serotonin.bacnet4j.type.constructed.ServicesSupported;
 import com.serotonin.bacnet4j.type.constructed.TimeStamp;
+import com.serotonin.bacnet4j.type.constructed.WriteAccessSpecification;
 import com.serotonin.bacnet4j.type.enumerated.EventState;
 import com.serotonin.bacnet4j.type.enumerated.EventType;
 import com.serotonin.bacnet4j.type.enumerated.MessagePriority;
@@ -83,6 +85,7 @@ import com.serotonin.bacnet4j.type.primitive.UnsignedInteger;
 import com.serotonin.bacnet4j.util.DeviceObjectPropertyReferences;
 import com.serotonin.bacnet4j.util.DeviceObjectPropertyValues;
 import com.serotonin.bacnet4j.util.PropertyUtils;
+import com.serotonin.bacnet4j.util.RequestUtils;
 import net.solarnetwork.node.io.bacnet.BacnetConnection;
 import net.solarnetwork.node.io.bacnet.BacnetCovHandler;
 import net.solarnetwork.node.io.bacnet.BacnetDeviceObjectPropertyCovRef;
@@ -519,6 +522,76 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 			}
 			Object value = decodeEncodable(val);
 			result.put(ref, value);
+		}
+		return result;
+	}
+
+	@Override
+	public Map<BacnetDeviceObjectPropertyRef, java.lang.Boolean> updatePropertyValues(
+			Map<BacnetDeviceObjectPropertyRef, ?> values) {
+		if ( values == null || values.isEmpty() ) {
+			return Collections.emptyMap();
+		}
+
+		// group updates by device ID
+		final Map<Integer, Map<BacnetDeviceObjectPropertyRef, Object>> deviceValues = new HashMap<>(
+				values.size());
+		for ( Entry<BacnetDeviceObjectPropertyRef, ?> e : values.entrySet() ) {
+			final Integer deviceId = e.getKey().getDeviceId();
+			deviceValues.computeIfAbsent(deviceId, k -> new HashMap<>(8)).put(e.getKey(), e.getValue());
+		}
+		final Map<BacnetDeviceObjectPropertyRef, java.lang.Boolean> result = new LinkedHashMap<>(
+				values.size());
+		try {
+			for ( Entry<Integer, Map<BacnetDeviceObjectPropertyRef, Object>> deviceEntry : deviceValues
+					.entrySet() ) {
+				final Integer deviceId = deviceEntry.getKey();
+				final Map<BacnetDeviceObjectPropertyRef, Object> vals = deviceEntry.getValue();
+				final List<WriteAccessSpecification> specs = new ArrayList<>(vals.size());
+				for ( Entry<BacnetDeviceObjectPropertyRef, Object> e : vals.entrySet() ) {
+					BacnetDeviceObjectPropertyRef ref = e.getKey();
+					Encodable enc = BacnetPropertyUtils.encodeValue(ref, e.getValue());
+					if ( enc == null ) {
+						log.warn("Unsupported write property type for {} : {}", ref, e.getValue());
+						result.put(ref, false);
+						continue;
+					}
+					PropertyValue val;
+					if ( ref.hasPropertyIndex() ) {
+						val = new PropertyValue(PropertyIdentifier.forId(ref.getPropertyId()),
+								new UnsignedInteger(Integer.toUnsignedLong(ref.getPropertyIndex())), enc,
+								null);
+					} else {
+						val = new PropertyValue(PropertyIdentifier.forId(ref.getPropertyId()), enc);
+					}
+					WriteAccessSpecification spec = new WriteAccessSpecification(
+							new ObjectIdentifier(ref.getObjectType(), ref.getObjectNumber()),
+							new SequenceOf<>(val));
+					specs.add(spec);
+				}
+				RemoteDevice dev = localDevice.getRemoteDeviceBlocking(deviceId, timeout);
+				ServicesSupported ss = deviceServicesSupported(dev);
+				log.debug("Got device {} services supported: {}", deviceId, ss);
+				if ( ss.isWritePropertyMultiple() || ss.isWriteProperty() ) {
+					RequestUtils.writeProperties(localDevice, dev, specs);
+				} else {
+					for ( Entry<BacnetDeviceObjectPropertyRef, Object> e : vals.entrySet() ) {
+						log.error(
+								"BACnet device {} does not support write-property or write-property-multiple services, cannot set control value {} to {}",
+								deviceId, e.getKey(), e.getValue());
+						result.put(e.getKey(), false);
+					}
+				}
+			}
+			for ( BacnetDeviceObjectPropertyRef ref : values.keySet() ) {
+				result.putIfAbsent(ref, true);
+			}
+		} catch ( BACnetException e ) {
+			log.error("Error writing properties {}: {}", values, e.toString());
+			// TODO: extract which properties failed; for now report that all failed
+			for ( BacnetDeviceObjectPropertyRef ref : values.keySet() ) {
+				result.put(ref, false);
+			}
 		}
 		return result;
 	}
