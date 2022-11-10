@@ -423,6 +423,10 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 	 *        the value to set
 	 */
 	public void setPropertyIdValue(String value) {
+		if ( value == null ) {
+			setPropertyId(null);
+			return;
+		}
 		try {
 			setPropertyId(BacnetPropertyType.forKey(value).getCode());
 		} catch ( IllegalArgumentException e ) {
