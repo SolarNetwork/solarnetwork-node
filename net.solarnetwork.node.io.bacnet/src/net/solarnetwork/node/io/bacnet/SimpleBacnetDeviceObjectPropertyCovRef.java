@@ -33,15 +33,22 @@ public class SimpleBacnetDeviceObjectPropertyCovRef extends SimpleBacnetDeviceOb
 
 	private static final long serialVersionUID = -4571065509693135606L;
 
+	/** The change-of-value increment. */
 	private final Float covIncrement;
 
 	/**
 	 * Constructor.
 	 * 
 	 * @param deviceId
+	 *        the device ID
 	 * @param objectType
+	 *        the object type
 	 * @param objectNumber
+	 *        the object number
 	 * @param propertyId
+	 *        the property ID
+	 * @param covIncrement
+	 *        the change-of-value increment
 	 */
 	public SimpleBacnetDeviceObjectPropertyCovRef(int deviceId, int objectType, int objectNumber,
 			int propertyId, Float covIncrement) {
@@ -63,6 +70,7 @@ public class SimpleBacnetDeviceObjectPropertyCovRef extends SimpleBacnetDeviceOb
 	 * @param propertyIndex
 	 *        the property index
 	 * @param covIncrement
+	 *        the change-of-value increment
 	 */
 	public SimpleBacnetDeviceObjectPropertyCovRef(int deviceId, int objectType, int objectNumber,
 			int propertyId, int propertyIndex, Float covIncrement) {

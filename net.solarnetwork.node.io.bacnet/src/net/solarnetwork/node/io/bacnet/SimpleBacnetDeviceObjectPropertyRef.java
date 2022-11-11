@@ -37,10 +37,19 @@ public class SimpleBacnetDeviceObjectPropertyRef implements BacnetDeviceObjectPr
 
 	private static final long serialVersionUID = -2337176762098262203L;
 
+	/** The device ID. */
 	private final int deviceId;
+
+	/** The object type ID. */
 	private final int objectType;
+
+	/** The object instance number. */
 	private final int objectNumber;
+
+	/** The property identifier. */
 	private final int propertyId;
+
+	/** The property index, for list properties. */
 	private final int propertyIndex;
 
 	/**
