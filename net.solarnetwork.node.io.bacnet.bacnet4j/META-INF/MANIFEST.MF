@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: BACnet Communication Support (BACnet4J)
+Bundle-Name: BACnet Communication (BACnet4J)
 Bundle-SymbolicName: net.solarnetwork.node.io.bacnet.bacnet4j
 Bundle-Description: SolarNode BACnet API implementation using the BACnet4J framework.
 Bundle-Version: 1.0.0
