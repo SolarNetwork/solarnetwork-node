@@ -1,15 +1,10 @@
 # SolarNode BACnet Device Datum Source
 
 This project provides SolarNode plugin that can collect arbitrary data from BACnet enabled devices.
-This is an advanced plugin that requires specific low-level knowledge of the device you want to
-collect data from.
+This is an advanced plugin that requires knowledge of BACnet and the BACnet configuration of the
+devices you want to collect data from.
 
 ![settings](docs/solarnode-bacnet-device-settings.png)
-
-# Install
-
-The plugin can be installed via the **Plugins** page on your SolarNode. It appears under the
-**Datum** category as **BACnet Datum Source**.
 
 # Use
 
