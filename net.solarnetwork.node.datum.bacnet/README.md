@@ -6,6 +6,21 @@ devices you want to collect data from.
 
 ![settings](docs/solarnode-bacnet-device-settings.png)
 
+
+# SolarNodeOS port considerations
+
+By default SolarNodeOS has a built-in firewall enabled that will not allow access to arbitrary IP
+ports. If using BACnet/IP, the port the BACnet network runs on (the standard port is `47808`) must
+be opened in the SolarNodeOS firewall, which by default is `nftables` and configured via the
+`/etc/nftables.conf` file. To open port `47808`, you'd add the following lines, after the existing
+ones that open ports 80 and 8080:
+
+```
+# Allows BACnet
+add rule ip filter INPUT udp dport 47808 accept
+```
+
+
 # Use
 
 Once installed, a new **BACnet Device** component will appear on the **Settings** page on your
