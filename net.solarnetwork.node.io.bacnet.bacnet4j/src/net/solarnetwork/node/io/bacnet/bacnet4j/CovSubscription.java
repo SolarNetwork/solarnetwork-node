@@ -75,6 +75,18 @@ public class CovSubscription {
 	private final Map<Integer, Map<ObjectIdentifier, List<CovReference>>> devRefMap;
 	private Instant expires;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param id
+	 *        the local subscription process identifier
+	 * @param localDevice
+	 *        the local device
+	 * @param networkOps
+	 *        the network operations
+	 * @param lifetime
+	 *        the subscription lifetime
+	 */
 	public CovSubscription(int id, LocalDevice localDevice, Bacnet4jNetworkOps networkOps,
 			UnsignedInteger lifetime) {
 		super();

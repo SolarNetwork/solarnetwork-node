@@ -51,6 +51,9 @@ public class Bacnet4jIpBacnetNetwork extends AbstractBacnet4jBacnetNetwork {
 	private int port = IpNetwork.DEFAULT_PORT;
 	private int networkNumber = Address.LOCAL_NETWORK;
 
+	/**
+	 * Constructor.
+	 */
 	public Bacnet4jIpBacnetNetwork() {
 		super();
 		setDisplayName("BACnet/IP");

@@ -24,7 +24,6 @@ package net.solarnetwork.node.io.bacnet.bacnet4j;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.function.Consumer;
 import net.solarnetwork.node.io.bacnet.BacnetConnection;
 import net.solarnetwork.node.io.bacnet.BacnetCovHandler;
 import net.solarnetwork.node.io.bacnet.BacnetDeviceObjectPropertyRef;
@@ -61,7 +60,7 @@ public interface Bacnet4jNetworkOps {
 
 	/**
 	 * Remove a handler previously registered with
-	 * {@link #addCovHandler(Consumer)}.
+	 * {@link #addCovHandler(BacnetCovHandler)}.
 	 * 
 	 * @param handler
 	 *        the handler to remove

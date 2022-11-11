@@ -240,7 +240,7 @@ public final class BacnetPropertyUtils {
 	 * <dt>character-string</dt>
 	 * <dd>returned as-is</dd>
 	 * <dt>octet-string</dt>
-	 * <dd>returned in dotted-decimal form</dt>
+	 * <dd>returned in dotted-decimal form</dd>
 	 * <dt><em>number</em></dt>
 	 * <dd>any type supported by {@link #numberValue(Encodable)} will be
 	 * returned as a base-10 string representation</dd>
