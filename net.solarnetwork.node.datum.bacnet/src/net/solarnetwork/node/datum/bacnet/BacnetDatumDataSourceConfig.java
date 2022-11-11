@@ -294,8 +294,8 @@ public class BacnetDatumDataSourceConfig {
 	 * @param bacnetNetworkName
 	 *        the bacnetNetworkName to set
 	 */
-	public void setBacnetNetworkName(String modbusNetworkName) {
-		this.bacnetNetworkName = modbusNetworkName;
+	public void setBacnetNetworkName(String bacnetNetworkName) {
+		this.bacnetNetworkName = bacnetNetworkName;
 	}
 
 	/**
@@ -313,8 +313,8 @@ public class BacnetDatumDataSourceConfig {
 	 * @param datumMode
 	 *        the datum mode to set
 	 */
-	public void setDatumMode(BacnetDatumMode persistMode) {
-		this.datumMode = persistMode;
+	public void setDatumMode(BacnetDatumMode datumMode) {
+		this.datumMode = datumMode;
 	}
 
 	/**

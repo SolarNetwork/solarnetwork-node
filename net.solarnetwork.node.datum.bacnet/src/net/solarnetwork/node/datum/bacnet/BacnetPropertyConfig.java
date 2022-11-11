@@ -385,8 +385,9 @@ public class BacnetPropertyConfig extends NumberDatumSamplePropertyConfig<Intege
 
 	/**
 	 * Set the BACnet property ID.
+	 * 
 	 * <p>
-	 * This is an alias for {@link #setConfig(Integer)}.
+	 * This is an alias for {@link #setConfig(Object)}.
 	 * </p>
 	 * 
 	 * @param propertyId

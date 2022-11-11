@@ -211,7 +211,7 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 		return conn;
 	}
 
-	protected synchronized void closeConnection() {
+	private synchronized void closeConnection() {
 		if ( connection != null ) {
 			log.info("BACnet connection closed for {}", getBacnetNetworkUid());
 			try {
