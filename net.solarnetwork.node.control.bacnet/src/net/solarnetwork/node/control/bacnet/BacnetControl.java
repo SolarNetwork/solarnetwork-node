@@ -150,6 +150,7 @@ public class BacnetControl extends BaseIdentifiable implements SettingSpecifierP
 		SimpleNodeControlInfoDatum result = null;
 		try (BacnetConnection conn = connection()) {
 			if ( conn != null ) {
+				conn.open();
 				values = conn.propertyValues(propertyRefs().keySet());
 				// read the control's current status
 				log.debug("Reading {} value", controlId);

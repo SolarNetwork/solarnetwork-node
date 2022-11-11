@@ -51,6 +51,7 @@ import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.support.DatumDataSourceSupport;
 import net.solarnetwork.service.FilterableService;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.RemoteServiceException;
 import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -193,13 +194,19 @@ public class BacnetDatumDataSource extends DatumDataSourceSupport implements Dat
 		BacnetConnection conn = network.createConnection();
 		if ( conn != null ) {
 			log.info("BACnet connection created for {}", networkUid);
-			conn.addCovHandler(this);
-			Set<BacnetDeviceObjectPropertyRef> refs = propertyRefs().keySet();
-			if ( !refs.isEmpty() ) {
-				network.setCachePolicy(refs, sampleCacheMs);
-				conn.covSubscribe(refs, 5); // TODO maxDelay setting
+			try {
+				conn.open();
+				conn.addCovHandler(this);
+				Set<BacnetDeviceObjectPropertyRef> refs = propertyRefs().keySet();
+				if ( !refs.isEmpty() ) {
+					network.setCachePolicy(refs, sampleCacheMs);
+					conn.covSubscribe(refs, 5); // TODO maxDelay setting
+				}
+				connection = conn;
+			} catch ( IOException e ) {
+				throw new RemoteServiceException(String.format(
+						"Error communicating with BACnet network %s: %s", network, e.getMessage()), e);
 			}
-			connection = conn;
 		}
 		return conn;
 	}
