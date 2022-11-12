@@ -78,7 +78,7 @@ import net.solarnetwork.util.StringUtils;
  * Read and write a Modbus "coil" or "holding" type register.
  * 
  * @author matt
- * @version 3.2
+ * @version 3.3
  */
 public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
@@ -119,10 +119,16 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 			throws IOException {
 		ModbusData currSample = getCurrentSample();
 		Object value = extractControlValue(config, currSample);
+		if ( value == null ) {
+			return null;
+		}
 		return newSimpleNodeControlInfoDatum(config, value);
 	}
 
 	private Object extractControlValue(ModbusWritePropertyConfig config, ModbusData currSample) {
+		if ( currSample == null ) {
+			return null;
+		}
 		Object propVal = null;
 		switch (config.getDataType()) {
 			case Boolean:
