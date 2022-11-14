@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Modbus Communication Support (Jamod)
 Bundle-Description: SolarNode Modbus API implementation using the Jamod framework.
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.jamod
-Bundle-Version: 2.0.1
+Bundle-Version: 2.0.2
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.jamod
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8

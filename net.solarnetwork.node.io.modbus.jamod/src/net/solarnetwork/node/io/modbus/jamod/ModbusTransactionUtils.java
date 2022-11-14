@@ -318,18 +318,14 @@ public class ModbusTransactionUtils {
 	public static ModbusRequest modbusWriteRequest(final ModbusWriteFunction function, final int unitId,
 			final boolean headless, final int address, final int count) {
 		ModbusRequest req;
-		switch (function) {
-			case WriteHoldingRegister:
-				req = new WriteSingleRegisterRequest(address, null);
-				break;
-
-			case WriteMultipleHoldingRegisters:
-				req = new WriteMultipleRegistersRequest(address, null);
-				break;
-
-			default:
-				throw new UnsupportedOperationException("Function " + function + " is not supported");
-
+		if ( function == ModbusWriteFunction.WriteMultipleHoldingRegisters || count > 1 ) {
+			WriteMultipleRegistersRequest wreq = new WriteMultipleRegistersRequest();
+			wreq.setReference(address);
+			req = wreq;
+		} else if ( function == ModbusWriteFunction.WriteHoldingRegister ) {
+			req = new WriteSingleRegisterRequest(address, null);
+		} else {
+			throw new UnsupportedOperationException("Function " + function + " is not supported");
 		}
 		if ( headless ) {
 			req.setHeadless();
