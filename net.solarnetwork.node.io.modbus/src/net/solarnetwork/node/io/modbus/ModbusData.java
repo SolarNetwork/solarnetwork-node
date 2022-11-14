@@ -88,6 +88,24 @@ public class ModbusData implements DataAccessor {
 		}
 	}
 
+	/**
+	 * Get the number of registers with a set value.
+	 * 
+	 * @return the number of set registers
+	 */
+	public int size() {
+		return dataRegisters.size();
+	}
+
+	/**
+	 * Test if the register data is empty.
+	 * 
+	 * @return {@literal true} if no registers have been set
+	 */
+	public boolean isEmpty() {
+		return dataRegisters.isEmpty();
+	}
+
 	@Override
 	public Instant getDataTimestamp() {
 		return dataTimestamp > 0 ? Instant.ofEpochMilli(dataTimestamp) : null;
