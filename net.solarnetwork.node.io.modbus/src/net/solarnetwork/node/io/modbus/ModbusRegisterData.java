@@ -127,6 +127,38 @@ public class ModbusRegisterData {
 		this.inputs = other.inputs.copy();
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("ModbusRegisterData{coilsTimestamp=");
+		builder.append(coilsTimestamp);
+		builder.append(", ");
+		if ( coils != null ) {
+			builder.append("coils=");
+			builder.append(coils);
+			builder.append(", ");
+		}
+		builder.append("discretesTimestamp=");
+		builder.append(discretesTimestamp);
+		builder.append(", ");
+		if ( discretes != null ) {
+			builder.append("discretes=");
+			builder.append(discretes);
+			builder.append(", ");
+		}
+		if ( inputs != null ) {
+			builder.append("inputs=");
+			builder.append(inputs);
+			builder.append(", ");
+		}
+		if ( holdings != null ) {
+			builder.append("holdings=");
+			builder.append(holdings);
+		}
+		builder.append("}");
+		return builder.toString();
+	}
+
 	/**
 	 * Create a copy of this object.
 	 * 
