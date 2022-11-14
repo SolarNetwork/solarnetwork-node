@@ -49,6 +49,12 @@ public abstract class ModbusDataDatumDataSourceSupport<T extends ModbusData & Da
 	private final T sample;
 	private long sampleCacheMs = 5000;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param data
+	 *        the data
+	 */
 	public ModbusDataDatumDataSourceSupport(T data) {
 		super();
 		this.sample = data;

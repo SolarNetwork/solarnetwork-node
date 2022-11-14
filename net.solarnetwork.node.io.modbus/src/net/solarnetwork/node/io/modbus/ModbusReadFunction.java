@@ -36,12 +36,16 @@ package net.solarnetwork.node.io.modbus;
  */
 public enum ModbusReadFunction implements ModbusFunction {
 
+	/** Read coil. */
 	ReadCoil(1),
 
+	/** Read discreet input. */
 	ReadDiscreteInput(2),
 
+	/** Read holding register. */
 	ReadHoldingRegister(3),
 
+	/** Read input register. */
 	ReadInputRegister(4);
 
 	private int code;

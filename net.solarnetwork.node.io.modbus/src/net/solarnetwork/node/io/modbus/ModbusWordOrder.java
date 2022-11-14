@@ -31,8 +31,10 @@ package net.solarnetwork.node.io.modbus;
  */
 public enum ModbusWordOrder {
 
+	/** Most to least word order (high 16 bits followed by low 16 bits). */
 	MostToLeastSignificant('m'),
 
+	/** Least to most word order (low 16 bits followed by high 16 bits). */
 	LeastToMostSignificant('l');
 
 	private final char key;

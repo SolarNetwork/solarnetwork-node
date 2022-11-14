@@ -36,12 +36,16 @@ package net.solarnetwork.node.io.modbus;
  */
 public enum ModbusWriteFunction implements ModbusFunction {
 
+	/** Write a coil register. */
 	WriteCoil(5),
 
+	/** Write a holding register. */
 	WriteHoldingRegister(6),
 
+	/** Write multiple coils. */
 	WriteMultipleCoils(15),
 
+	/** Write multiple holding. */
 	WriteMultipleHoldingRegisters(16);
 
 	private int code;
