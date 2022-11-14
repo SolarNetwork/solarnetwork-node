@@ -379,8 +379,7 @@ public class ModbusControl extends ModbusDeviceSupport
 	}
 
 	private synchronized void refreshDeviceData() {
-		final long ts = sampleDate.get();
-		if ( ts + sampleCacheMs > System.currentTimeMillis() ) {
+		if ( !isCachedSampleExpired() ) {
 			return;
 		}
 		ModbusNetwork network = service(getModbusNetwork());
@@ -401,6 +400,11 @@ public class ModbusControl extends ModbusDeviceSupport
 		} catch ( IOException e ) {
 			log.warn("Communcation problem with {}: {}", getUid(), e.getMessage());
 		}
+	}
+
+	private boolean isCachedSampleExpired() {
+		final long ts = sampleDate.get();
+		return ts + sampleCacheMs < System.currentTimeMillis();
 	}
 
 	private synchronized void refreshDeviceData(ModbusConnection conn) throws IOException {
