@@ -31,27 +31,29 @@ package net.solarnetwork.node.io.modbus;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 2.5
  */
 public enum ModbusWriteFunction implements ModbusFunction {
 
 	/** Write a coil register. */
-	WriteCoil(5),
+	WriteCoil(5, ModbusRegisterBlockType.Coil),
 
 	/** Write a holding register. */
-	WriteHoldingRegister(6),
+	WriteHoldingRegister(6, ModbusRegisterBlockType.Holding),
 
 	/** Write multiple coils. */
-	WriteMultipleCoils(15),
+	WriteMultipleCoils(15, ModbusRegisterBlockType.Coil),
 
 	/** Write multiple holding. */
-	WriteMultipleHoldingRegisters(16);
+	WriteMultipleHoldingRegisters(16, ModbusRegisterBlockType.Holding);
 
-	private int code;
+	private final int code;
+	private final ModbusRegisterBlockType blockType;
 
-	private ModbusWriteFunction(int code) {
+	private ModbusWriteFunction(int code, ModbusRegisterBlockType blockType) {
 		this.code = code;
+		this.blockType = blockType;
 	}
 
 	@Override
@@ -101,6 +103,11 @@ public enum ModbusWriteFunction implements ModbusFunction {
 			default:
 				return null;
 		}
+	}
+
+	@Override
+	public ModbusRegisterBlockType blockType() {
+		return blockType;
 	}
 
 }

@@ -26,7 +26,7 @@ package net.solarnetwork.node.io.modbus;
  * API for a modbus function.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 2.5
  */
 public interface ModbusFunction {
@@ -64,6 +64,14 @@ public interface ModbusFunction {
 	 * @return the function, or {@literal null} if not applicable
 	 */
 	ModbusFunction oppositeFunction();
+
+	/**
+	 * Get the register block type related to this function.
+	 * 
+	 * @return the block type
+	 * @since 2.1
+	 */
+	ModbusRegisterBlockType blockType();
 
 	/**
 	 * Get a {@link ModbusFunction} for a code value.

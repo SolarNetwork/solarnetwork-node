@@ -1,5 +1,5 @@
 /* ==================================================================
- * RegisterBlockType.java - 17/09/2020 4:07:04 PM
+ * ModbusRegisterBlockType.java - 17/09/2020 4:07:04 PM
  * 
  * Copyright 2020 SolarNetwork.net Dev Team
  * 
@@ -31,29 +31,31 @@ import net.solarnetwork.domain.CodedValue;
  * @version 1.0
  * @since 4.2
  */
-public enum RegisterBlockType implements CodedValue {
+public enum ModbusRegisterBlockType implements CodedValue {
 
 	/** Coil (toggle) type. */
-	Coil(1, 1, false),
+	Coil(1, 1, true, false),
 
 	/** Discrete (input) type. */
-	Discrete(2, 1, true),
+	Discrete(2, 1, true, true),
 
 	/** Holding (output) type. */
-	Holding(3, 16, false),
+	Holding(3, 16, false, false),
 
 	/** Input type. */
-	Input(4, 16, true),
+	Input(4, 16, false, true),
 
 	;
 
 	private final int code;
 	private final int bitCount;
+	private final boolean bitType;
 	private final boolean readOnly;
 
-	private RegisterBlockType(int code, int bitCount, boolean readOnly) {
+	private ModbusRegisterBlockType(int code, int bitCount, boolean bitType, boolean readOnly) {
 		this.code = code;
 		this.bitCount = bitCount;
+		this.bitType = bitType;
 		this.readOnly = readOnly;
 	}
 
@@ -81,15 +83,24 @@ public enum RegisterBlockType implements CodedValue {
 	}
 
 	/**
+	 * Get the "bit type-ness" of this register block type.
+	 * 
+	 * @return {@literal true} if this is a coil or discrete register block
+	 */
+	public boolean isBitType() {
+		return bitType;
+	}
+
+	/**
 	 * Get an enumeration instance for a code value.
 	 * 
 	 * @param code
-	 *        the code value to get the enumeration fo
+	 *        the code value to get the enumeration for
 	 * @return the enumeration
 	 * @throws IllegalArgumentException
 	 *         if {@literal code} is not a valid value
 	 */
-	public static RegisterBlockType forCode(int code) {
+	public static ModbusRegisterBlockType forCode(int code) {
 		switch (code) {
 			case 1:
 				return Coil;
@@ -105,7 +116,7 @@ public enum RegisterBlockType implements CodedValue {
 
 			default:
 				throw new IllegalArgumentException(
-						"RegisterBlockType code [" + code + "] not supported.");
+						"ModbusRegisterBlockType code [" + code + "] not supported.");
 		}
 	}
 

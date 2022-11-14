@@ -24,8 +24,10 @@ package net.solarnetwork.node.io.modbus;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
@@ -35,7 +37,7 @@ import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
  * Data for a Modbus register set.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.0
  * @since 4.2
  */
 public class ModbusRegisterData {
@@ -43,9 +45,29 @@ public class ModbusRegisterData {
 	private static final Logger log = LoggerFactory.getLogger(ModbusRegisterData.class);
 
 	private final BitSet coils;
+	private long coilsTimestamp;
 	private final BitSet discretes;
+	private long discretesTimestamp;
 	private final ModbusData inputs;
 	private final ModbusData holdings;
+
+	/**
+	 * API for performing updates to a bit register block.
+	 */
+	public static interface ModbusBitsUpdateAction {
+
+		/**
+		 * Perform updates to the data.
+		 * 
+		 * @param bits
+		 *        the bits to update
+		 * @return {@literal true} if {@code dataTimestamp} should be updated to
+		 *         the current time
+		 * @throws IOException
+		 *         if any communication error occurs
+		 */
+		public boolean updateModbusBits(BitSet bits) throws IOException;
+	}
 
 	/**
 	 * Constructor.
@@ -77,6 +99,132 @@ public class ModbusRegisterData {
 		this.discretes = discretes != null ? discretes : new BitSet();
 		this.holdings = holdings != null ? holdings : new ModbusData();
 		this.inputs = inputs != null ? inputs : new ModbusData();
+		this.coilsTimestamp = 0;
+		this.discretesTimestamp = 0;
+	}
+
+	/**
+	 * Get the data timestamp (last update time) for a given data block.
+	 * 
+	 * @param blockType
+	 *        the block type
+	 * @return the update timestamp, or {@literal null} if never updated
+	 */
+	public Instant getDataTimestamp(ModbusRegisterBlockType blockType) {
+		long ts = 0;
+		switch (blockType) {
+			case Coil:
+				synchronized ( coils ) {
+					ts = coilsTimestamp;
+				}
+				break;
+
+			case Discrete:
+				synchronized ( discretes ) {
+					ts = discretesTimestamp;
+				}
+				break;
+
+			case Holding:
+				return holdings.getDataTimestamp();
+
+			case Input:
+				return inputs.getDataTimestamp();
+		}
+
+		return ts > 0 ? Instant.ofEpochMilli(ts) : null;
+	}
+
+	/**
+	 * Force a data timestamp to be expired.
+	 * 
+	 * <p>
+	 * Calling this method will reset the data timestamp to zero, effectively
+	 * expiring the data.
+	 * </p>
+	 * 
+	 * @param blockType
+	 *        the type of register block to expire
+	 */
+	public final void expire(ModbusRegisterBlockType blockType) {
+		switch (blockType) {
+			case Coil:
+				synchronized ( coils ) {
+					coilsTimestamp = 0;
+				}
+				break;
+
+			case Discrete:
+				synchronized ( discretes ) {
+					discretesTimestamp = 0;
+				}
+				break;
+
+			case Holding:
+				holdings.expire();
+
+			case Input:
+				inputs.expire();
+		}
+	}
+
+	/**
+	 * Test if a block of data was updated before a specific date.
+	 * 
+	 * @param blockType
+	 *        the type of register block to compare the data timestamp against
+	 * @param date
+	 *        the date to compare
+	 * @return {@literal true} if the block's data timestamp is older than
+	 *         {@code date}
+	 */
+	public final boolean isOlderThan(ModbusRegisterBlockType blockType, long date) {
+		long ts = 0;
+		Instant inst = null;
+		switch (blockType) {
+			case Coil:
+				synchronized ( coils ) {
+					ts = coilsTimestamp;
+				}
+				break;
+
+			case Discrete:
+				synchronized ( discretes ) {
+					ts = discretesTimestamp;
+				}
+				break;
+
+			case Holding:
+				inst = holdings.getDataTimestamp();
+
+			case Input:
+				inst = inputs.getDataTimestamp();
+		}
+
+		if ( inst != null ) {
+			return inst.toEpochMilli() < date;
+		}
+		return ts < date;
+	}
+
+	/**
+	 * Get the word order.
+	 * 
+	 * @return the word order
+	 */
+	public ModbusWordOrder getWordOrder() {
+		return holdings.getWordOrder();
+	}
+
+	/**
+	 * Set the word order.
+	 * 
+	 * @param order
+	 *        the word order
+	 */
+	public void setWordOrder(ModbusWordOrder order) {
+		holdings.setWordOrder(order);
+		inputs.setWordOrder(order);
 	}
 
 	/**
@@ -92,7 +240,7 @@ public class ModbusRegisterData {
 	 * @throws IllegalArgumentException
 	 *         if {@code blockType} is not valid
 	 */
-	public void writeBit(RegisterBlockType blockType, int address, boolean value) {
+	public void writeBit(ModbusRegisterBlockType blockType, int address, boolean value) {
 		switch (blockType) {
 			case Coil:
 				writeCoil(address, value);
@@ -104,6 +252,36 @@ public class ModbusRegisterData {
 
 			default:
 				throw new IllegalArgumentException("Cannot write bit value to block type " + blockType);
+		}
+	}
+
+	/**
+	 * Write a set of bits to a coil or discrete block type.
+	 * 
+	 * @param blockType
+	 *        the block type, must be either {@literal Coil} or
+	 *        {@literal Discrete}
+	 * @param address
+	 *        the address to write to
+	 * @param count
+	 *        the number of bits to update
+	 * @param set
+	 *        the bit values
+	 * @throws IllegalArgumentException
+	 *         if {@code blockType} is not valid
+	 */
+	public void writeBits(ModbusRegisterBlockType blockType, int address, int count, BitSet set) {
+		switch (blockType) {
+			case Coil:
+				writeCoils(address, count, set);
+				break;
+
+			case Discrete:
+				writeDiscretes(address, count, set);
+				break;
+
+			default:
+				throw new IllegalArgumentException("Cannot write bit values to block type " + blockType);
 		}
 	}
 
@@ -125,9 +303,23 @@ public class ModbusRegisterData {
 	 * @throws IllegalArgumentException
 	 *         if {@code blockType} is not valid
 	 */
-	public void writeValue(RegisterBlockType blockType, ModbusDataType dataType, int address, int count,
-			Object value) {
+	public void writeValue(ModbusRegisterBlockType blockType, ModbusDataType dataType, int address,
+			int count, Object value) {
 		short[] dataValue = encodeValue(dataType, address, count, value);
+		writeRegisters(blockType, address, dataValue);
+	}
+
+	/**
+	 * Write to a set of registers.
+	 * 
+	 * @param blockType
+	 *        the block type to update
+	 * @param address
+	 *        the starting register address to write to
+	 * @param dataValue
+	 *        the register values to write
+	 */
+	public void writeRegisters(ModbusRegisterBlockType blockType, int address, short[] dataValue) {
 		if ( dataValue == null || dataValue.length < 1 ) {
 			return;
 		}
@@ -154,7 +346,8 @@ public class ModbusRegisterData {
 		switch (dataType) {
 			case Bytes:
 				if ( value instanceof byte[] ) {
-					result = limitLength(ModbusDataUtils.encodeBytes((byte[]) value), count);
+					result = limitLength(ModbusDataUtils.encodeBytes((byte[]) value, getWordOrder()),
+							count);
 				}
 				break;
 
@@ -167,7 +360,7 @@ public class ModbusRegisterData {
 					} else {
 						strBytes = value.toString().getBytes("UTF-8");
 					}
-					result = limitLength(ModbusDataUtils.encodeBytes(strBytes), count);
+					result = limitLength(ModbusDataUtils.encodeBytes(strBytes, getWordOrder()), count);
 				} catch ( UnsupportedEncodingException e ) {
 					// should not get here
 				}
@@ -175,7 +368,7 @@ public class ModbusRegisterData {
 
 			default:
 				if ( value instanceof Number ) {
-					result = ModbusDataUtils.encodeNumber(dataType, (Number) value);
+					result = ModbusDataUtils.encodeNumber(dataType, (Number) value, getWordOrder());
 				}
 		}
 		return result;
@@ -263,6 +456,11 @@ public class ModbusRegisterData {
 	private void writeBit(int address, boolean value, BitSet set) {
 		synchronized ( set ) {
 			set.set(address, value);
+			if ( set == coils ) {
+				coilsTimestamp = System.currentTimeMillis();
+			} else {
+				discretesTimestamp = System.currentTimeMillis();
+			}
 		}
 	}
 
@@ -270,6 +468,11 @@ public class ModbusRegisterData {
 		synchronized ( set ) {
 			for ( int i = 0; i < count; i++ ) {
 				set.set(address + i, set.get(i));
+			}
+			if ( set == coils ) {
+				coilsTimestamp = System.currentTimeMillis();
+			} else {
+				discretesTimestamp = System.currentTimeMillis();
 			}
 		}
 	}
@@ -316,6 +519,64 @@ public class ModbusRegisterData {
 	 */
 	public byte[] readInputs(int address, int count) {
 		return readBytes(address, count, inputs);
+	}
+
+	/**
+	 * Perform a thread-safe read action on a register block.
+	 * 
+	 * @param <T>
+	 *        the result type
+	 * @param blockType
+	 *        the block type, must be {@code Holding} or {@code Input}
+	 * @param action
+	 *        the action to perform
+	 * @return the action result
+	 */
+	public <T> T readRegisters(ModbusRegisterBlockType blockType, Function<ModbusData, T> action) {
+		ModbusData data = null;
+		switch (blockType) {
+			case Holding:
+				data = holdings.copy();
+				break;
+
+			case Input:
+				data = inputs.copy();
+				break;
+
+			default:
+				throw new IllegalArgumentException("Cannot read value from block type " + blockType);
+		}
+		return action.apply(data);
+	}
+
+	/**
+	 * Perform a thread-safe read action on a register block.
+	 * 
+	 * @param <T>
+	 *        the result type
+	 * @param blockType
+	 *        the block type, must be {@code Coil} or {@code Discrete}
+	 * @param action
+	 *        the action to perform
+	 * @return the action result
+	 */
+	public <T> T readBits(ModbusRegisterBlockType blockType, Function<BitSet, T> action) {
+		BitSet data = null;
+		switch (blockType) {
+			case Coil:
+				data = coils;
+				break;
+
+			case Discrete:
+				data = discretes;
+				break;
+
+			default:
+				throw new IllegalArgumentException("Cannot read bits from block type " + blockType);
+		}
+		synchronized ( data ) {
+			return action.apply(data);
+		}
 	}
 
 	/**
@@ -398,6 +659,77 @@ public class ModbusRegisterData {
 		} catch ( IOException e ) {
 			// should not get here
 			log.error("Error writing register {} data: {}", address, Arrays.toString(values), e);
+		}
+	}
+
+	/**
+	 * Perform a set of updates to saved register data.
+	 * 
+	 * @param blockType
+	 *        the register block type to perform updates on; must be
+	 *        {@code Holding} or {@code Input}
+	 * @param action
+	 *        the callback to perform the updates on
+	 * @return this updated data
+	 * @throws IOException
+	 *         if any communication error occurs
+	 */
+	public final ModbusData performRegisterUpdates(ModbusRegisterBlockType blockType,
+			ModbusDataUpdateAction action) throws IOException {
+		ModbusData d;
+		switch (blockType) {
+			case Holding:
+				d = holdings;
+				break;
+
+			case Input:
+				d = inputs;
+				break;
+
+			default:
+				throw new IllegalArgumentException(
+						"Cannot perform register updates to block type " + blockType);
+		}
+		return d.performUpdates(action);
+	}
+
+	/**
+	 * Perform a set of updates to saved register data.
+	 * 
+	 * @param blockType
+	 *        the register block type to perform updates on; must be
+	 *        {@code Coil} or {@code Discrete}
+	 * @param action
+	 *        the callback to perform the updates on; return {@literal true} to
+	 *        update the associated data timestamp
+	 * @throws IOException
+	 *         if any communication error occurs
+	 */
+	public final void performBitUpdates(ModbusRegisterBlockType blockType, ModbusBitsUpdateAction action)
+			throws IOException {
+		BitSet bits;
+		switch (blockType) {
+			case Coil:
+				bits = coils;
+				break;
+
+			case Discrete:
+				bits = discretes;
+				break;
+
+			default:
+				throw new IllegalArgumentException(
+						"Cannot perform bit updates to block type " + blockType);
+		}
+		synchronized ( bits ) {
+			boolean result = action.updateModbusBits(bits);
+			if ( result ) {
+				if ( blockType == ModbusRegisterBlockType.Coil ) {
+					coilsTimestamp = System.currentTimeMillis();
+				} else {
+					discretesTimestamp = System.currentTimeMillis();
+				}
+			}
 		}
 	}
 
