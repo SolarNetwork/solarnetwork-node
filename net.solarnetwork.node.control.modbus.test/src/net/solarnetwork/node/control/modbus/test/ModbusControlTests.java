@@ -45,6 +45,9 @@ import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
+import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.node.io.modbus.ModbusWordOrder;
+import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
 import net.solarnetwork.node.reactor.BasicInstruction;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
@@ -165,7 +168,7 @@ public class ModbusControlTests {
 				NodeControlPropertyType.Boolean, ModbusDataType.Boolean, 123);
 		control.setPropConfigs(new ModbusWritePropertyConfig[] { config });
 
-		expect(modbus.performAction(EasyMock.eq(UNIT_ID), anyAction(Boolean.class)))
+		expect(modbus.performAction(EasyMock.eq(UNIT_ID), anyAction(Void.class)))
 				.andDelegateTo(new AbstractModbusNetwork() {
 
 					@Override
@@ -176,7 +179,7 @@ public class ModbusControlTests {
 
 				});
 		BitSet resultBitSet = new BitSet();
-		resultBitSet.set(0, true);
+		resultBitSet.set(123, true);
 		expect(conn.readDiscreetValues(config.getAddress(), 1)).andReturn(resultBitSet);
 
 		// WHEN
@@ -195,7 +198,7 @@ public class ModbusControlTests {
 				NodeControlPropertyType.Boolean, ModbusDataType.Boolean, 123);
 		control.setPropConfigs(new ModbusWritePropertyConfig[] { config });
 
-		expect(modbus.performAction(EasyMock.eq(UNIT_ID), anyAction(Boolean.class)))
+		expect(modbus.performAction(EasyMock.eq(UNIT_ID), anyAction(Void.class)))
 				.andDelegateTo(new AbstractModbusNetwork() {
 
 					@Override
@@ -215,6 +218,140 @@ public class ModbusControlTests {
 		// THEN
 		assertThat("Info should be returned", info, is(notNullValue()));
 		assertThat("Value should be 'false'", info.getValue(), is(equalTo("false")));
+	}
+
+	@Test
+	public void writeHolding_float_leastToMostWordOrder() throws IOException {
+		// GIVEN
+		ModbusWritePropertyConfig config = new ModbusWritePropertyConfig(TEST_CONTROL_ID,
+				NodeControlPropertyType.Float, ModbusDataType.Float32, 123);
+		config.setFunction(ModbusWriteFunction.WriteHoldingRegister);
+		control.setPropConfigs(new ModbusWritePropertyConfig[] { config });
+		control.setWordOrder(ModbusWordOrder.LeastToMostSignificant);
+
+		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER,
+				Instant.now(), Instruction.LOCAL_INSTRUCTION_ID, null);
+		instr.addParameter(TEST_CONTROL_ID, "45000.0");
+
+		expect(modbus.performAction(eq(UNIT_ID), anyAction(Boolean.class)))
+				.andDelegateTo(new AbstractModbusNetwork() {
+
+					@Override
+					public <T> T performAction(int unitId, ModbusConnectionAction<T> action)
+							throws IOException {
+						return action.doWithConnection(conn);
+					}
+
+				});
+		conn.writeWords(eq(config.getFunction()), eq(config.getAddress()),
+				aryEq(new short[] { (short) 0xC800, (short) 0x472F }));
+
+		// WHEN
+		replayAll();
+		InstructionStatus status = control.processInstruction(instr);
+
+		// THEN
+		assertThat("Instruction should be processed", status.getInstructionState(),
+				is(InstructionState.Completed));
+	}
+
+	@Test
+	public void writeHolding_float_mostToLeastWordOrder() throws IOException {
+		// GIVEN
+		ModbusWritePropertyConfig config = new ModbusWritePropertyConfig(TEST_CONTROL_ID,
+				NodeControlPropertyType.Float, ModbusDataType.Float32, 123);
+		config.setFunction(ModbusWriteFunction.WriteHoldingRegister);
+		control.setPropConfigs(new ModbusWritePropertyConfig[] { config });
+		control.setWordOrder(ModbusWordOrder.MostToLeastSignificant);
+
+		BasicInstruction instr = new BasicInstruction(InstructionHandler.TOPIC_SET_CONTROL_PARAMETER,
+				Instant.now(), Instruction.LOCAL_INSTRUCTION_ID, null);
+		instr.addParameter(TEST_CONTROL_ID, "45000.0");
+
+		expect(modbus.performAction(eq(UNIT_ID), anyAction(Boolean.class)))
+				.andDelegateTo(new AbstractModbusNetwork() {
+
+					@Override
+					public <T> T performAction(int unitId, ModbusConnectionAction<T> action)
+							throws IOException {
+						return action.doWithConnection(conn);
+					}
+
+				});
+		conn.writeWords(eq(config.getFunction()), eq(config.getAddress()),
+				aryEq(new short[] { (short) 0x472F, (short) 0xC800 }));
+
+		// WHEN
+		replayAll();
+		InstructionStatus status = control.processInstruction(instr);
+
+		// THEN
+		assertThat("Instruction should be processed", status.getInstructionState(),
+				is(InstructionState.Completed));
+	}
+
+	@Test
+	public void readHolding_float_mostToLeastWordOrder() throws IOException {
+		// GIVEN
+		ModbusWritePropertyConfig config = new ModbusWritePropertyConfig(TEST_CONTROL_ID,
+				NodeControlPropertyType.Float, ModbusDataType.Float32, 123);
+		config.setFunction(ModbusWriteFunction.WriteHoldingRegister);
+		control.setPropConfigs(new ModbusWritePropertyConfig[] { config });
+		control.setWordOrder(ModbusWordOrder.MostToLeastSignificant);
+
+		expect(modbus.performAction(eq(UNIT_ID), anyAction(Void.class)))
+				.andDelegateTo(new AbstractModbusNetwork() {
+
+					@Override
+					public <T> T performAction(int unitId, ModbusConnectionAction<T> action)
+							throws IOException {
+						return action.doWithConnection(conn);
+					}
+
+				});
+		final short[] data = new short[] { (short) 0x472F, (short) 0xC800 };
+		expect(conn.readWords(ModbusReadFunction.ReadHoldingRegister, config.getAddress(), 2))
+				.andReturn(data);
+
+		// WHEN
+		replayAll();
+		NodeControlInfo info = control.getCurrentControlInfo(TEST_CONTROL_ID);
+
+		// THEN
+		assertThat("Info should be returned", info, is(notNullValue()));
+		assertThat("Value should be '45000'", info.getValue(), is(equalTo("45000")));
+	}
+
+	@Test
+	public void readHolding_float_leastToMostWordOrder() throws IOException {
+		// GIVEN
+		ModbusWritePropertyConfig config = new ModbusWritePropertyConfig(TEST_CONTROL_ID,
+				NodeControlPropertyType.Float, ModbusDataType.Float32, 123);
+		config.setFunction(ModbusWriteFunction.WriteHoldingRegister);
+		control.setPropConfigs(new ModbusWritePropertyConfig[] { config });
+		control.setWordOrder(ModbusWordOrder.LeastToMostSignificant);
+
+		expect(modbus.performAction(eq(UNIT_ID), anyAction(Void.class)))
+				.andDelegateTo(new AbstractModbusNetwork() {
+
+					@Override
+					public <T> T performAction(int unitId, ModbusConnectionAction<T> action)
+							throws IOException {
+						return action.doWithConnection(conn);
+					}
+
+				});
+		final short[] data = new short[] { (short) 0xC800, (short) 0x472F };
+		expect(conn.readWords(ModbusReadFunction.ReadHoldingRegister, config.getAddress(), 2))
+				.andReturn(data);
+
+		// WHEN
+		replayAll();
+		NodeControlInfo info = control.getCurrentControlInfo(TEST_CONTROL_ID);
+
+		// THEN
+		assertThat("Info should be returned", info, is(notNullValue()));
+		assertThat("Value should be '45000'", info.getValue(), is(equalTo("45000")));
 	}
 
 }

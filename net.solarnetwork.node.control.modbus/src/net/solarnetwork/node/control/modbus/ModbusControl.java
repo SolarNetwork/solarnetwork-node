@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.control.modbus;
 
+import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -37,6 +38,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
@@ -46,13 +48,16 @@ import net.solarnetwork.domain.NodeControlInfo;
 import net.solarnetwork.node.domain.datum.SimpleNodeControlInfoDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
-import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusData.ModbusDataUpdateAction;
 import net.solarnetwork.node.io.modbus.ModbusData.MutableModbusData;
 import net.solarnetwork.node.io.modbus.ModbusDataUtils;
+import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
+import net.solarnetwork.node.io.modbus.ModbusRegisterBlockType;
+import net.solarnetwork.node.io.modbus.ModbusRegisterData;
+import net.solarnetwork.node.io.modbus.ModbusWordOrder;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
-import net.solarnetwork.node.io.modbus.support.ModbusDataDeviceSupport;
+import net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
@@ -63,6 +68,7 @@ import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
+import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
@@ -78,9 +84,9 @@ import net.solarnetwork.util.StringUtils;
  * Read and write a Modbus "coil" or "holding" type register.
  * 
  * @author matt
- * @version 3.3
+ * @version 3.4
  */
-public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
+public class ModbusControl extends ModbusDeviceSupport
 		implements SettingSpecifierProvider, NodeControlProvider, InstructionHandler {
 
 	/** The default value for the {@code address} property. */
@@ -103,6 +109,23 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 	 */
 	public static final int DEFAULT_MAX_READ_WORD_COUNT = 64;
 
+	/**
+	 * The {@code wordOrder} property default value.
+	 * 
+	 * @since 3.4
+	 */
+	public static final ModbusWordOrder DEFAULT_WORD_ORDER = ModbusWordOrder.MostToLeastSignificant;
+
+	/**
+	 * The default value for the {@code sampleCacheMs} property.
+	 * 
+	 * @since 3.4
+	 */
+	public static final long DEFAULT_SAMPLE_CACHE_MS = 5000L;
+
+	private final AtomicLong sampleDate = new AtomicLong(0);
+	private final ModbusRegisterData data;
+	private long sampleCacheMs = DEFAULT_SAMPLE_CACHE_MS;
 	private ModbusWritePropertyConfig[] propConfigs;
 	private OptionalService<EventAdmin> eventAdmin;
 	private int maxReadWordCount;
@@ -111,79 +134,23 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 	 * Constructor.
 	 */
 	public ModbusControl() {
-		super(new ModbusData());
-		maxReadWordCount = DEFAULT_MAX_READ_WORD_COUNT;
+		super();
+		this.data = new ModbusRegisterData();
+		this.maxReadWordCount = DEFAULT_MAX_READ_WORD_COUNT;
 	}
 
-	private SimpleNodeControlInfoDatum currentValue(ModbusWritePropertyConfig config)
+	private SimpleNodeControlInfoDatum currentDatumValue(ModbusWritePropertyConfig config)
 			throws IOException {
-		ModbusData currSample = getCurrentSample();
-		Object value = extractControlValue(config, currSample);
+		refreshDeviceData();
+		Object value = currentValue(config);
 		if ( value == null ) {
 			return null;
 		}
 		return newSimpleNodeControlInfoDatum(config, value);
 	}
 
-	private Object extractControlValue(ModbusWritePropertyConfig config, ModbusData currSample) {
-		if ( currSample == null ) {
-			return null;
-		}
-		Object propVal = null;
-		switch (config.getDataType()) {
-			case Boolean:
-				propVal = currSample.getBoolean(config.getAddress());
-				break;
-
-			case Bytes:
-				// can't set on control currently
-				break;
-
-			case Float16:
-				propVal = currSample.getFloat16(config.getAddress());
-				break;
-
-			case Float32:
-				propVal = currSample.getFloat32(config.getAddress());
-				break;
-
-			case Float64:
-				propVal = currSample.getFloat64(config.getAddress());
-				break;
-
-			case Int16:
-				propVal = currSample.getInt16(config.getAddress());
-				break;
-
-			case UInt16:
-				propVal = currSample.getUnsignedInt16(config.getAddress());
-				break;
-
-			case Int32:
-				propVal = currSample.getInt32(config.getAddress());
-				break;
-
-			case UInt32:
-				propVal = currSample.getUnsignedInt32(config.getAddress());
-				break;
-
-			case Int64:
-				propVal = currSample.getInt64(config.getAddress());
-				break;
-
-			case UInt64:
-				propVal = currSample.getUnsignedInt64(config.getAddress());
-				break;
-
-			case StringAscii:
-				propVal = currSample.getAsciiString(config.getAddress(), config.getWordLength(), true);
-				break;
-
-			case StringUtf8:
-				propVal = currSample.getUtf8String(config.getAddress(), config.getWordLength(), true);
-				break;
-		}
-
+	private Object currentValue(ModbusWritePropertyConfig config) {
+		Object propVal = currentRawValue(config);
 		if ( propVal instanceof Number ) {
 			if ( config.getUnitMultiplier() != null ) {
 				propVal = applyUnitMultiplier((Number) propVal, config.getUnitMultiplier());
@@ -193,6 +160,19 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 			}
 		}
 		return propVal;
+	}
+
+	private Object currentRawValue(ModbusWritePropertyConfig config) {
+		final ModbusRegisterBlockType blockType = config.getFunction().blockType();
+		switch (blockType) {
+			case Coil:
+			case Discrete:
+				return data.readBits(blockType, bits -> bits.get(config.getAddress()));
+
+			default:
+				return data.readRegisters(blockType, d -> d.getValue(config.getDataType(),
+						config.getAddress(), config.getWordLength()));
+		}
 	}
 
 	private Number applyDecimalScale(Number value, int decimalScale) {
@@ -222,11 +202,6 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 		return v.divide(multiplier);
 	}
 
-	@Override
-	protected void refreshDeviceInfo(ModbusConnection connection, ModbusData sample) throws IOException {
-		// nothing to do		
-	}
-
 	/**
 	 * Set the modbus register to a true/false value.
 	 * 
@@ -241,14 +216,14 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 			final Object desiredValue) throws IOException {
 		log.info("Setting {} value to {}", config.getControlId(), desiredValue);
 		final ModbusWriteFunction function = config.getFunction();
+		final ModbusWordOrder wordOrder = data.getHoldings().getWordOrder();
 		final Integer address = config.getAddress();
 
 		return performAction(new ModbusConnectionAction<Boolean>() {
 
 			@Override
 			public Boolean doWithConnection(ModbusConnection conn) throws IOException {
-				if ( function == ModbusWriteFunction.WriteCoil
-						|| function == ModbusWriteFunction.WriteMultipleCoils ) {
+				if ( function == ModbusWriteFunction.WriteCoil ) {
 					final BitSet bits = new BitSet(1);
 					bits.set(0, desiredValue != null && ((Boolean) desiredValue).booleanValue());
 					conn.writeDiscreetValues(new int[] { address }, bits);
@@ -268,7 +243,7 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 						break;
 
 					case Bytes:
-						dataToWrite = ModbusDataUtils.encodeBytes((byte[]) desiredValue);
+						dataToWrite = ModbusDataUtils.encodeBytes((byte[]) desiredValue, wordOrder);
 						break;
 
 					case Boolean:
@@ -293,8 +268,8 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 							normalizedValue = applyReverseUnitMultiplier(normalizedValue,
 									config.getUnitMultiplier());
 						}
-						dataToWrite = ModbusDataUtils.encodeNumber(config.getDataType(),
-								normalizedValue);
+						dataToWrite = ModbusDataUtils.encodeNumber(config.getDataType(), normalizedValue,
+								wordOrder);
 					}
 						break;
 
@@ -403,74 +378,82 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 		return set;
 	}
 
-	private static short[] shortArrayForBitSet(BitSet set, int start, int count) {
-		short[] result = new short[count];
-		for ( int i = 0; i < count; i++ ) {
-			result[i] = set.get(start + i) ? (short) 1 : (short) 0;
+	private synchronized void refreshDeviceData() {
+		final long ts = sampleDate.get();
+		if ( ts > System.currentTimeMillis() ) {
+			return;
 		}
-		return result;
-	}
-
-	@Override
-	protected synchronized void refreshDeviceData(ModbusConnection conn, ModbusData sample)
-			throws IOException {
-		ModbusWritePropertyConfig[] configs = getPropConfigs();
-		if ( configs != null && configs.length > 0 ) {
-
-			sample.performUpdates(new ModbusDataUpdateAction() {
+		ModbusNetwork network = service(getModbusNetwork());
+		if ( network == null ) {
+			return;
+		}
+		try {
+			network.performAction(getUnitId(), new ModbusConnectionAction<Void>() {
 
 				@Override
-				public boolean updateModbusData(MutableModbusData m) throws IOException {
-					final int maxReadLen = maxReadWordCount;
-					Map<ModbusReadFunction, List<ModbusWritePropertyConfig>> functionMap = getReadFunctionSets(
-							propConfigs);
-					for ( Map.Entry<ModbusReadFunction, List<ModbusWritePropertyConfig>> me : functionMap
-							.entrySet() ) {
-						ModbusReadFunction function = me.getKey();
-						List<ModbusWritePropertyConfig> configs = me.getValue();
-						// try to read from device as few times as possible by combining ranges of addresses
-						// into single calls, but limited to at most maxReadWordCount addresses at a time
-						// because some devices have trouble returning large word counts
-						IntRangeSet addressRangeSet = getRegisterAddressSet(configs);
-						log.debug("Reading modbus {} register ranges: {}", getUnitId(), addressRangeSet);
-						Iterable<IntRange> ranges = addressRangeSet.ranges();
+				public Void doWithConnection(ModbusConnection conn) throws IOException {
+					refreshDeviceData(conn);
+					return null;
+				}
+
+			});
+		} catch ( IOException e ) {
+			log.warn("Communcation problem with {}: {}", getUid(), e.getMessage());
+		}
+	}
+
+	private synchronized void refreshDeviceData(ModbusConnection conn) throws IOException {
+		final int maxReadLen = maxReadWordCount;
+		Map<ModbusReadFunction, List<ModbusWritePropertyConfig>> functionMap = getReadFunctionSets(
+				propConfigs);
+		for ( Map.Entry<ModbusReadFunction, List<ModbusWritePropertyConfig>> me : functionMap
+				.entrySet() ) {
+			ModbusReadFunction function = me.getKey();
+			ModbusRegisterBlockType blockType = function.blockType();
+
+			List<ModbusWritePropertyConfig> configs = me.getValue();
+
+			// try to read from device as few times as possible by combining ranges of addresses
+			// into single calls, but limited to at most maxReadWordCount addresses at a time
+			// because some devices have trouble returning large word counts
+			IntRangeSet addressRangeSet = getRegisterAddressSet(configs);
+			log.debug("Reading modbus {} register ranges: {}", getUnitId(), addressRangeSet);
+			Iterable<IntRange> ranges = addressRangeSet.ranges();
+
+			if ( blockType.isBitType() ) {
+				data.performBitUpdates(function.blockType(), bits -> {
+					boolean updated = false;
+					for ( IntRange range : ranges ) {
+						for ( int start = range.getMin(),
+								stop = start + range.length(); start < stop; ) {
+							int len = Math.min(range.length(), maxReadLen);
+							BitSet updates = conn.readDiscreetValues(start, len);
+							bits.clear(start, start + len);
+							bits.or(updates);
+							updated = true;
+							start += len;
+						}
+					}
+					return updated;
+				});
+			} else {
+				data.performRegisterUpdates(function.blockType(), new ModbusDataUpdateAction() {
+
+					@Override
+					public boolean updateModbusData(MutableModbusData m) throws IOException {
 						for ( IntRange range : ranges ) {
 							for ( int start = range.getMin(),
 									stop = start + range.length(); start < stop; ) {
 								int len = Math.min(range.length(), maxReadLen);
-								switch (function) {
-									case ReadCoil:
-										m.saveDataArray(shortArrayForBitSet(
-												conn.readDiscreetValues(start, len), start, len), start);
-										break;
-
-									case ReadDiscreteInput:
-										m.saveDataArray(shortArrayForBitSet(
-												conn.readInputDiscreteValues(start, len), start, len),
-												start);
-										break;
-
-									case ReadHoldingRegister:
-										m.saveDataArray(
-												conn.readWords(ModbusReadFunction.ReadHoldingRegister,
-														start, len),
-												start);
-										break;
-
-									case ReadInputRegister:
-										m.saveDataArray(
-												conn.readWords(ModbusReadFunction.ReadInputRegister,
-														start, len),
-												start);
-										break;
-								}
+								short[] data = conn.readWords(function, start, len);
+								m.saveDataArray(data, start);
 								start += len;
 							}
 						}
+						return true;
 					}
-					return true;
-				}
-			});
+				});
+			}
 		}
 	}
 
@@ -509,7 +492,7 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 		log.debug("Reading {} status", controlId);
 		SimpleNodeControlInfoDatum result = null;
 		try {
-			result = currentValue(config);
+			result = currentDatumValue(config);
 		} catch ( Exception e ) {
 			log.error("Error reading {} status: {}", controlId, e.getMessage());
 		}
@@ -575,7 +558,7 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 						config.getControlId(), e.getMessage());
 			}
 			if ( success ) {
-				getSample().expire();
+				sampleDate.set(0); // expire cached data
 				postControlEvent(newSimpleNodeControlInfoDatum(config, desiredValue),
 						NodeControlProvider.EVENT_TOPIC_CONTROL_INFO_CHANGED);
 				return InstructionUtils.createStatus(instruction, InstructionState.Completed);
@@ -597,9 +580,9 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 		return "Modbus Control";
 	}
 
-	private String getSampleMessage(ModbusData sample) {
+	private String getSampleMessage() {
 		ModbusWritePropertyConfig[] configs = getPropConfigs();
-		if ( sample.getDataTimestamp() == null || configs == null || configs.length < 1 ) {
+		if ( configs == null || configs.length < 1 ) {
 			return "N/A";
 		}
 
@@ -608,7 +591,7 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 			if ( !config.isValid() ) {
 				continue;
 			}
-			Object value = extractControlValue(config, sample);
+			Object value = currentValue(config);
 			data.put(config.getControlId(), value != null ? value.toString() : "N/A");
 		}
 		if ( data.isEmpty() ) {
@@ -617,7 +600,10 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 
 		StringBuilder buf = new StringBuilder();
 		buf.append(StringUtils.delimitedStringFromMap(data));
-		buf.append("; sampled at ").append(formatForLocalDisplay(sample.getDataTimestamp()));
+		long ts = sampleDate.get();
+		if ( ts > 0 ) {
+			buf.append("; sampled at ").append(formatForLocalDisplay(Instant.ofEpochMilli(ts)));
+		}
 		return buf.toString();
 	}
 
@@ -642,8 +628,7 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
 
 		// get current value
-		results.add(
-				new BasicTitleSettingSpecifier("sample", getSampleMessage(getSample().copy()), true));
+		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(), true));
 
 		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
 		results.add(new BasicTextFieldSettingSpecifier("groupUid", defaults.getGroupUid()));
@@ -655,6 +640,16 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 				String.valueOf(defaults.getSampleCacheMs())));
 		results.add(new BasicTextFieldSettingSpecifier("maxReadWordCount",
 				String.valueOf(DEFAULT_MAX_READ_WORD_COUNT)));
+
+		// drop-down menu for word order
+		BasicMultiValueSettingSpecifier wordOrderSpec = new BasicMultiValueSettingSpecifier(
+				"wordOrderKey", String.valueOf(DEFAULT_WORD_ORDER.getKey()));
+		Map<String, String> wordOrderTitles = new LinkedHashMap<String, String>(2);
+		for ( ModbusWordOrder e : ModbusWordOrder.values() ) {
+			wordOrderTitles.put(String.valueOf(e.getKey()), e.toDisplayString());
+		}
+		wordOrderSpec.setValueTitles(wordOrderTitles);
+		results.add(wordOrderSpec);
 
 		ModbusWritePropertyConfig[] confs = getPropConfigs();
 		List<ModbusWritePropertyConfig> confsList = (confs != null ? Arrays.asList(confs)
@@ -768,6 +763,86 @@ public class ModbusControl extends ModbusDataDeviceSupport<ModbusData>
 			return;
 		}
 		this.maxReadWordCount = maxReadWordCount;
+	}
+
+	/**
+	 * Get the word order.
+	 * 
+	 * @return the word order
+	 * @since 3.4
+	 */
+	public ModbusWordOrder getWordOrder() {
+		return data.getHoldings().getWordOrder();
+	}
+
+	/**
+	 * Set the word order.
+	 * 
+	 * @param wordOrder
+	 *        the order to set; {@literal null} will be ignored
+	 * @since 3.4
+	 */
+	public void setWordOrder(ModbusWordOrder wordOrder) {
+		if ( wordOrder == null ) {
+			return;
+		}
+		data.getHoldings().setWordOrder(wordOrder);
+		data.getInputs().setWordOrder(wordOrder);
+	}
+
+	/**
+	 * Get the word order as a key value.
+	 * 
+	 * @return the word order as a key; if {@link #getWordOrder()} is
+	 *         {@literal null} then
+	 *         {@link ModbusWordOrder#MostToLeastSignificant} will be returned
+	 * @since 3.4
+	 */
+	public char getWordOrderKey() {
+		ModbusWordOrder order = getWordOrder();
+		if ( order == null ) {
+			order = ModbusWordOrder.MostToLeastSignificant;
+		}
+		return order.getKey();
+	}
+
+	/**
+	 * Set the word order as a key value.
+	 * 
+	 * @param key
+	 *        the word order key to set; if {@code key} is not valid then
+	 *        {@link ModbusWordOrder#MostToLeastSignificant} will be set
+	 * @since 3.4
+	 */
+	public void setWordOrderKey(char key) {
+		ModbusWordOrder order;
+		try {
+			order = ModbusWordOrder.forKey(key);
+		} catch ( IllegalArgumentException e ) {
+			order = ModbusWordOrder.MostToLeastSignificant;
+		}
+		setWordOrder(order);
+	}
+
+	/**
+	 * Get the sample cache maximum age, in milliseconds.
+	 * 
+	 * @return the cache milliseconds
+	 * @since 3.4
+	 */
+	public long getSampleCacheMs() {
+		return sampleCacheMs;
+	}
+
+	/**
+	 * Set the sample cache maximum age, in milliseconds.
+	 * 
+	 * @param sampleCacheMs
+	 *        the cache milliseconds
+	 * @since 3.4
+	 */
+	public void setSampleCacheMs(long sampleCacheMs) {
+		this.sampleCacheMs = sampleCacheMs;
 	}
 
 }
