@@ -1163,4 +1163,14 @@ public class ModbusData implements DataAccessor {
 		return data.unsignedMap();
 	}
 
+	/**
+	 * Get direct access to all modbus registers.
+	 * 
+	 * @return the data map, never {@literal null}
+	 * @since 3.1
+	 */
+	public final IntShortMap dataRegisters() {
+		return dataRegisters;
+	}
+
 }

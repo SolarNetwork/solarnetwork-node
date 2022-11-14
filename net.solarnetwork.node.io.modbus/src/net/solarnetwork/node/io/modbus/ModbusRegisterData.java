@@ -104,6 +104,79 @@ public class ModbusRegisterData {
 	}
 
 	/**
+	 * Copy constructor.
+	 * 
+	 * <p>
+	 * This method provides a thread-safe way to get a copy of the current data.
+	 * </p>
+	 * 
+	 * @param other
+	 *        the object to copy
+	 */
+	public ModbusRegisterData(ModbusRegisterData other) {
+		super();
+		synchronized ( other.coils ) {
+			this.coils = (BitSet) other.coils.clone();
+			this.coilsTimestamp = other.coilsTimestamp;
+		}
+		synchronized ( other.discretes ) {
+			this.discretes = (BitSet) other.discretes.clone();
+			this.discretesTimestamp = other.discretesTimestamp;
+		}
+		this.holdings = other.holdings.copy();
+		this.inputs = other.inputs.copy();
+	}
+
+	/**
+	 * Create a copy of this object.
+	 * 
+	 * <p>
+	 * This method provides a thread-safe way to get a copy of the current data.
+	 * </p>
+	 * 
+	 * @return the new instance
+	 * @see #ModbusRegisterData(ModbusRegisterData)
+	 */
+	public ModbusRegisterData copy() {
+		return new ModbusRegisterData(this);
+	}
+
+	/**
+	 * Test if the registers are all empty.
+	 * 
+	 * @return {@literal true} if no registers or bits have been set
+	 */
+	public boolean isEmpty() {
+		synchronized ( coils ) {
+			if ( !coils.isEmpty() ) {
+				return false;
+			}
+		}
+		synchronized ( discretes ) {
+			if ( !discretes.isEmpty() ) {
+				return false;
+			}
+		}
+		if ( !holdings.isEmpty() ) {
+			return false;
+		}
+		if ( !inputs.isEmpty() ) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Test if there is holding or input register data.
+	 * 
+	 * @return {@literal true} if either holding or input registers have been
+	 *         set
+	 */
+	public boolean hasRegisterData() {
+		return !(holdings.isEmpty() && inputs.isEmpty());
+	}
+
+	/**
 	 * Get the data timestamp (last update time) for a given data block.
 	 * 
 	 * @param blockType
