@@ -964,6 +964,25 @@ public class ModbusData implements DataAccessor {
 
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("ModbusData{dataTimestamp=");
+		builder.append(dataTimestamp);
+		builder.append(", ");
+		if ( wordOrder != null ) {
+			builder.append("wordOrder=");
+			builder.append(wordOrder);
+			builder.append(", ");
+		}
+		if ( dataRegisters != null ) {
+			builder.append("dataRegisters=");
+			builder.append(dataRegisters);
+		}
+		builder.append("}");
+		return builder.toString();
+	}
+
 	/**
 	 * Get a string of data values, useful for debugging.
 	 * 
