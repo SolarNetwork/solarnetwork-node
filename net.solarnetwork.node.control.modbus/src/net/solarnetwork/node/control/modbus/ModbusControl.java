@@ -380,7 +380,7 @@ public class ModbusControl extends ModbusDeviceSupport
 
 	private synchronized void refreshDeviceData() {
 		final long ts = sampleDate.get();
-		if ( ts > System.currentTimeMillis() ) {
+		if ( ts + sampleCacheMs > System.currentTimeMillis() ) {
 			return;
 		}
 		ModbusNetwork network = service(getModbusNetwork());
@@ -393,6 +393,7 @@ public class ModbusControl extends ModbusDeviceSupport
 				@Override
 				public Void doWithConnection(ModbusConnection conn) throws IOException {
 					refreshDeviceData(conn);
+					sampleDate.set(System.currentTimeMillis());
 					return null;
 				}
 
