@@ -1487,26 +1487,62 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		return null;
 	}
 
+	/**
+	 * Set the configuration admin service.
+	 * 
+	 * @param configurationAdmin
+	 *        the service to set
+	 */
 	public void setConfigurationAdmin(ConfigurationAdmin configurationAdmin) {
 		this.configurationAdmin = configurationAdmin;
 	}
 
+	/**
+	 * Set the setting DAO.
+	 * 
+	 * @param settingDao
+	 *        the DAO to set
+	 */
 	public void setSettingDao(SettingDao settingDao) {
 		this.settingDao = settingDao;
 	}
 
+	/**
+	 * Set the transaction template.
+	 * 
+	 * @param transactionTemplate
+	 *        the template to set
+	 */
 	public void setTransactionTemplate(TransactionTemplate transactionTemplate) {
 		this.transactionTemplate = transactionTemplate;
 	}
 
+	/**
+	 * Set the backup destination path.
+	 * 
+	 * @param backupDestinationPath
+	 *        the path to set
+	 */
 	public void setBackupDestinationPath(String backupDestinationPath) {
 		this.backupDestinationPath = backupDestinationPath;
 	}
 
+	/**
+	 * Set the backup maximum count.
+	 * 
+	 * @param backupMaxCount
+	 *        the count
+	 */
 	public void setBackupMaxCount(int backupMaxCount) {
 		this.backupMaxCount = backupMaxCount;
 	}
 
+	/**
+	 * Set the message source.
+	 * 
+	 * @param messageSource
+	 *        the message source
+	 */
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}

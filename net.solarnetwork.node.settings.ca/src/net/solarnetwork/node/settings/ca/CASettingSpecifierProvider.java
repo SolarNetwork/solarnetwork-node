@@ -39,6 +39,14 @@ public class CASettingSpecifierProvider implements SettingSpecifierProvider {
 	private String pid;
 	private SettingSpecifierProvider delegate;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param delegate
+	 *        the delegate
+	 * @param pid
+	 *        the PID
+	 */
 	public CASettingSpecifierProvider(SettingSpecifierProvider delegate, String pid) {
 		super();
 		this.delegate = delegate;
@@ -65,10 +73,20 @@ public class CASettingSpecifierProvider implements SettingSpecifierProvider {
 		return delegate.getDisplayName();
 	}
 
+	/**
+	 * Get the PID.
+	 * 
+	 * @return the PID
+	 */
 	public String getPid() {
 		return pid;
 	}
 
+	/**
+	 * Get the delegate.
+	 * 
+	 * @return the delegate
+	 */
 	public SettingSpecifierProvider getDelegate() {
 		return delegate;
 	}
