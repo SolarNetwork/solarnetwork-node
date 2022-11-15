@@ -915,6 +915,31 @@ $(document).ready(function() {
 			instanceUid: button.dataset.instanceKey
 		});
 	});
+	
+	// instance carousel support
+	
+	function loadComponentInstanceContainer(container) {
+		if ( !(container) ) {
+			return;
+		}
+		if ( container && container.size() > 0 && !container.hasClass('loaded') ) {
+			var url = container.data('target')
+				+'?uid=' + encodeURIComponent(container.data('factoryUid'))
+				+'&key=' + encodeURIComponent(container.data('instanceKey'));
+			console.log('Loading component instance: ' +url);
+			container.addClass('loaded');
+			container.load(url);
+		}
+	}
+
+	function loadComponentInstance(instanceKey) {
+		if ( !instanceKey ) {
+			return;
+		}
+		var container = $('.instance-content[data-instance-key="'+instanceKey+'"]');
+		loadComponentInstanceContainer(container);
+	}
+	
 	$('#settings.carousel .carousel-indicators li').on('click', function(event) {
 		var instanceKey = this.dataset.instanceKey;
 		if ( !instanceKey ) {
@@ -922,10 +947,14 @@ $(document).ready(function() {
 		}
 		console.log('Carousel click to instance: ' +instanceKey);
 		document.location.hash = encodeURIComponent(instanceKey);
+		loadComponentInstance(instanceKey);
 	});
 	if ( document.location.hash ) {
+		var instanceKey = decodeURIComponent(document.location.hash.substring(1));
 		$('#settings.carousel .carousel-indicators li[data-instance-key="'
-			+decodeURIComponent(document.location.hash.substring(1))+'"]').click();
+			+ instanceKey + '"]').click();
+	} else {
+		loadComponentInstanceContainer($('.instance-content').first());
 	}
 	setupBackups();
 });

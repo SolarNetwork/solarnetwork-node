@@ -75,7 +75,11 @@
 						${' '}
 						${instance.key}
 					</legend>
-
+					<div class="instance-content"
+						data-target="<setup:url value='/a/settings/manage'/>"
+						data-factory-uid="${factory.factoryUid}"
+						data-instance-key="${instance.key}"></div>
+<%--
 					<c:catch var="providerException">
 						<c:forEach items="${provider.settingSpecifiers}" var="setting" varStatus="settingStatus">
 							<c:set var="setting" value="${setting}" scope="request"/>
@@ -90,6 +94,8 @@
 							</fmt:message>
 						</div>
 					</c:if>
+--%>
+
 					<div class="control-group">
 						<div class="controls">
 							<button type="button" class="btn btn-danger delete-factory-instance"

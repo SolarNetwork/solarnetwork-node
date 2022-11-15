@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -77,9 +78,9 @@ import net.solarnetwork.node.settings.SettingResourceHandler;
 import net.solarnetwork.node.settings.SettingsBackup;
 import net.solarnetwork.node.settings.SettingsCommand;
 import net.solarnetwork.node.settings.SettingsService;
-import net.solarnetwork.node.settings.support.FactoryInstanceIdComparator;
 import net.solarnetwork.node.settings.support.SettingSpecifierProviderFactoryMessageComparator;
 import net.solarnetwork.node.settings.support.SettingSpecifierProviderMessageComparator;
+import net.solarnetwork.node.setup.web.support.IteratorStatus;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.node.setup.web.support.SettingResourceInfo;
 import net.solarnetwork.node.setup.web.support.SortByNodeAndDate;
@@ -88,6 +89,7 @@ import net.solarnetwork.settings.FactorySettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProviderFactory;
 import net.solarnetwork.util.SearchFilter;
+import net.solarnetwork.util.StringNaturalSortComparator;
 import net.solarnetwork.web.domain.Response;
 import net.solarnetwork.web.support.MultipartFileResource;
 
@@ -281,7 +283,8 @@ public class SettingsController {
 	 *        the request
 	 * @return the manage factory view name
 	 */
-	@RequestMapping(value = { "/manage", "/filters/manage" }, method = RequestMethod.GET)
+	@RequestMapping(value = { "/manage",
+			"/filters/manage" }, method = RequestMethod.GET, params = "!key")
 	public String settingsList(@RequestParam(value = "uid", required = true) String factoryUid,
 			ModelMap model, HttpServletRequest req) {
 		final SettingsService service = service(settingsServiceTracker);
@@ -291,7 +294,7 @@ public class SettingsController {
 			if ( providers != null && !providers.isEmpty() ) {
 				// sort map keys numerically
 				String[] instanceIds = providers.keySet().toArray(new String[providers.size()]);
-				Arrays.sort(instanceIds, FactoryInstanceIdComparator.INSTANCE);
+				Arrays.sort(instanceIds, StringNaturalSortComparator.CASE_INSENSITIVE_NATURAL_SORT);
 				Map<String, FactorySettingSpecifierProvider> orderedProviders = new LinkedHashMap<>();
 				for ( String id : instanceIds ) {
 					orderedProviders.put(id, providers.get(id));
@@ -305,6 +308,54 @@ public class SettingsController {
 		}
 		return (req.getRequestURI().contains("/filters/") ? "filters-factory-settings-list"
 				: "factory-settings-list");
+	}
+
+	/**
+	 * Manage a specific settings factory.
+	 * 
+	 * @param factoryUid
+	 *        the UID of the factory to manage
+	 * @param instanceKey
+	 *        the factory instance key
+	 * @param model
+	 *        the model
+	 * @param req
+	 *        the request
+	 * @return the manage factory view name
+	 */
+	@RequestMapping(value = { "/manage", "/filters/manage" }, method = RequestMethod.GET)
+	public String settingsInstance(@RequestParam(value = "uid", required = true) String factoryUid,
+			@RequestParam(value = "key", required = true) String instanceKey, ModelMap model,
+			HttpServletRequest req) {
+		final SettingsService service = service(settingsServiceTracker);
+		if ( service != null ) {
+			Map<String, FactorySettingSpecifierProvider> providers = service
+					.getProvidersForFactory(factoryUid);
+			if ( providers != null && providers.containsKey(instanceKey) ) {
+				// sort map keys numerically
+				String[] instanceIds = providers.keySet().toArray(new String[providers.size()]);
+				Arrays.sort(instanceIds, StringNaturalSortComparator.CASE_INSENSITIVE_NATURAL_SORT);
+				FactorySettingSpecifierProvider provider = providers.get(instanceKey);
+				for ( int i = 0, len = instanceIds.length; i < len; i++ ) {
+					if ( instanceKey.equals(instanceIds[i]) ) {
+						model.put("instance",
+								new SimpleImmutableEntry<String, FactorySettingSpecifierProvider>(
+										instanceKey, provider));
+						model.put("provider", provider);
+						model.put("instanceId", provider.getFactoryInstanceUID());
+						model.put("instanceStatus",
+								IteratorStatus.status(instanceIds.length, i, provider));
+						break;
+					}
+				}
+				model.put(KEY_PROVIDERS, Collections.singletonMap(instanceKey, provider));
+			} else {
+				model.put(KEY_PROVIDERS, Collections.emptyMap());
+			}
+			model.put(KEY_PROVIDER_FACTORY, service.getProviderFactory(factoryUid));
+			model.put(KEY_SETTINGS_SERVICE, service);
+		}
+		return "factory-settings-instance";
 	}
 
 	/**
