@@ -76,26 +76,13 @@
 						${instance.key}
 					</legend>
 					<div class="instance-content"
-						data-target="<setup:url value='/a/settings/manage'/>"
-						data-factory-uid="${factory.factoryUid}"
-						data-instance-key="${instance.key}"></div>
-<%--
-					<c:catch var="providerException">
-						<c:forEach items="${provider.settingSpecifiers}" var="setting" varStatus="settingStatus">
-							<c:set var="setting" value="${setting}" scope="request"/>
-							<c:set var="settingId" value="m${instanceStatus.index}s0i${settingStatus.index}" scope="request"/>
-							<c:import url="/WEB-INF/jsp/a/settings/setting-control.jsp"/>
-						</c:forEach>
-					</c:catch>
-					<c:if test="${not empty providerException}">
-						<div class="alert alert-warning">
-							<fmt:message key="settings.error.provider.exception">
-								<fmt:param value="${providerException.cause.message}"/>
-							</fmt:message>
-						</div>
-					</c:if>
---%>
-
+							data-target="<setup:url value='/a/settings/manage'/>"
+							data-factory-uid="${factory.factoryUid}"
+							data-instance-key="${instance.key}">
+					    <div class="progress progress-striped active">
+					      <div class="bar" style="width: 100%;"></div>
+					    </div>
+					</div>
 					<div class="control-group">
 						<div class="controls">
 							<button type="button" class="btn btn-danger delete-factory-instance"
