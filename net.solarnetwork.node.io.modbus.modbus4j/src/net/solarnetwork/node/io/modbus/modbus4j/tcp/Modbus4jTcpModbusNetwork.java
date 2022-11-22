@@ -67,6 +67,7 @@ public class Modbus4jTcpModbusNetwork extends AbstractModbusNetwork
 	 */
 	public Modbus4jTcpModbusNetwork() {
 		super();
+		setDisplayName("Modbus TCP");
 		setUid(null);
 	}
 
