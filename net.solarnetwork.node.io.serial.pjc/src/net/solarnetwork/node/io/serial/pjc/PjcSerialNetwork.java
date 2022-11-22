@@ -229,6 +229,11 @@ public class PjcSerialNetwork extends BasicIdentifiable
 		return getDefaultSettingSpecifiers();
 	}
 
+	/**
+	 * Get the default settings specifiers.
+	 * 
+	 * @return the specifiers
+	 */
 	public static List<SettingSpecifier> getDefaultSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<>(20);
 		results.addAll(basicIdentifiableSettings("", DEFAULT_UID, null));
@@ -246,6 +251,12 @@ public class PjcSerialNetwork extends BasicIdentifiable
 		return results;
 	}
 
+	/**
+	 * Set the serial parameters.
+	 * 
+	 * @param serialParams
+	 *        the parameters
+	 */
 	public void setSerialParams(SerialPortBeanParameters serialParams) {
 		this.serialParams = serialParams;
 	}
@@ -255,18 +266,40 @@ public class PjcSerialNetwork extends BasicIdentifiable
 		return serialParams;
 	}
 
+	/**
+	 * Set the timeout value.
+	 * 
+	 * @return the timeout
+	 */
 	public long getTimeout() {
 		return timeout;
 	}
 
-	public TimeUnit getUnit() {
-		return unit;
-	}
-
+	/**
+	 * Set the timeout value.
+	 * 
+	 * @param timeout
+	 *        the timeout
+	 */
 	public void setTimeout(long timeout) {
 		this.timeout = timeout;
 	}
 
+	/**
+	 * Get the time unit.
+	 * 
+	 * @return the time unit
+	 */
+	public TimeUnit getUnit() {
+		return unit;
+	}
+
+	/**
+	 * Set the time unit.
+	 * 
+	 * @param unit
+	 *        the time unit
+	 */
 	public void setUnit(TimeUnit unit) {
 		this.unit = unit;
 	}
