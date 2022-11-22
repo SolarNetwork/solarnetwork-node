@@ -423,7 +423,6 @@ public class J2ModTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 	 * 
 	 * @return the number of seconds; defaults to
 	 *         {@link #DEFAULT_KEEP_OPEN_SECONDS}
-	 * @since 1.1
 	 */
 	public int getKeepOpenSeconds() {
 		return keepOpenSeconds;
@@ -436,7 +435,6 @@ public class J2ModTcpModbusNetwork extends AbstractModbusNetwork implements Sett
 	 * @param keepOpenSeconds
 	 *        the number of seconds, or anything less than {@literal 1} to not
 	 *        keep connections open
-	 * @since 1.1
 	 */
 	public void setKeepOpenSeconds(int keepOpenSeconds) {
 		this.keepOpenSeconds = keepOpenSeconds;
