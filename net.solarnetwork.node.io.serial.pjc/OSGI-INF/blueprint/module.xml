@@ -39,18 +39,18 @@
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
 			<property name="displayName" value="Serial port"/>
-			<property name="factoryUid" value="net.solarnetwork.node.io.serial.pjc"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.serial"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
 	
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.serial.pjc" autowire-on-update="true">
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.serial" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.io.serial.SerialNetwork</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
-			<beans:entry key="settingPid" value="net.solarnetwork.node.io.serial.pjc"/>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.io.serial"/>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.io.serial.pjc.PjcSerialNetwork" destroy-method="shutdown">
 			<property name="messageSource" ref="messageSource"/>
