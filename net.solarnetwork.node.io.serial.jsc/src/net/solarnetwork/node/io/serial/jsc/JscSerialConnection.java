@@ -87,7 +87,10 @@ public class JscSerialConnection implements SerialConnection {
 			try {
 				serialPort = SerialPort.getCommPort(serialParams.getSerialPort());
 				setupSerialPortParameters(serialPort);
-				serialPort.openPort();
+				if ( !serialPort.openPort() ) {
+					throw new IOException(
+							"Serial port " + serialParams.getSerialPort() + " failed to open");
+				}
 			} catch ( RuntimeException e ) {
 				try {
 					close();
