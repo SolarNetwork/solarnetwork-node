@@ -844,6 +844,24 @@ function loadComponentInstance(instanceKey) {
 	var container = $('.instance-content[data-instance-key="'+instanceKey+'"]');
 	loadComponentInstanceContainer(container);
 }
+
+function selectInitialComponentInstance() {
+	var selected = false;
+	var componentContent = $('.instance-content');
+	
+	if ( componentContent.size() > 1 && document.location.hash ) {
+		var instanceKey = decodeURIComponent(document.location.hash.substring(1));
+		var instanceTab = $('#settings.carousel .carousel-indicators li[data-instance-key="'
+			+ instanceKey + '"]');
+		if ( instanceTab.size() > 0 ) {
+			instanceTab.first().click();
+			selected = true;
+		}
+	}
+	if ( !selected && componentContent.size() > 0 ) {
+		loadComponentInstanceContainer(componentContent.first());
+	}
+}
 	
 $(document).ready(function() {
 	setupComponentSettings($());
@@ -956,13 +974,8 @@ $(document).ready(function() {
 		document.location.hash = encodeURIComponent(instanceKey);
 		loadComponentInstance(instanceKey);
 	});
-	if ( document.location.hash ) {
-		var instanceKey = decodeURIComponent(document.location.hash.substring(1));
-		$('#settings.carousel .carousel-indicators li[data-instance-key="'
-			+ instanceKey + '"]').click();
-	} else {
-		loadComponentInstanceContainer($('.instance-content').first());
-	}
+	
+	selectInitialComponentInstance();
 	setupBackups();
 });
 
