@@ -74,16 +74,17 @@ public class Modbus4jCachedModbusConnection extends Modbus4jModbusConnection imp
 	public void open() throws IOException, LockTimeoutException {
 		synchronized ( controller ) {
 			super.open();
-			if ( keepOpenTimeoutThread == null || !keepOpenTimeoutThread.isAlive() ) {
+			if ( keepOpenSeconds > 0 && keepOpenTimeoutThread == null
+					|| !keepOpenTimeoutThread.isAlive() ) {
 				activity();
 				keepOpenTimeoutThread = new Thread(this,
 						format("Modbus TCP Expiry %s", describer.get()));
 				keepOpenTimeoutThread.setDaemon(true);
 				keepOpenTimeoutThread.start();
-			}
-			if ( log.isInfoEnabled() ) {
-				log.info("Opened Modbus TCP connection {}; keep for {}s", describer.get(),
-						keepOpenSeconds);
+				if ( log.isInfoEnabled() ) {
+					log.info("Opened Modbus TCP connection {}; keep for {}s", describer.get(),
+							keepOpenSeconds);
+				}
 			}
 		}
 	}
@@ -91,7 +92,7 @@ public class Modbus4jCachedModbusConnection extends Modbus4jModbusConnection imp
 	@Override
 	public void close() {
 		synchronized ( controller ) {
-			if ( keepOpenExpiry != null && keepOpenExpiry.get() < System.currentTimeMillis() ) {
+			if ( keepOpenSeconds < 1 || keepOpenExpiry.get() < System.currentTimeMillis() ) {
 				doClose();
 			}
 		}
@@ -100,7 +101,7 @@ public class Modbus4jCachedModbusConnection extends Modbus4jModbusConnection imp
 	private void doClose() {
 		if ( controller.isInitialized() ) {
 			controller.destroy();
-			if ( log.isInfoEnabled() ) {
+			if ( keepOpenSeconds > 0 && log.isInfoEnabled() ) {
 				log.info("Closed Modbus TCP connection {}", describer.get());
 			}
 		}
