@@ -62,8 +62,6 @@ public class Modbus4jCachedModbusConnection extends Modbus4jModbusConnection imp
 	 *        a function that returns a description of the connection
 	 * @param keepOpenSeconds
 	 *        the number of seconds to keep the connection open
-	 * @param cache
-	 *        the cache that holds a reference to this connection
 	 */
 	public Modbus4jCachedModbusConnection(int unitId, boolean headless, ModbusMaster controller,
 			Supplier<String> describer, int keepOpenSeconds) {

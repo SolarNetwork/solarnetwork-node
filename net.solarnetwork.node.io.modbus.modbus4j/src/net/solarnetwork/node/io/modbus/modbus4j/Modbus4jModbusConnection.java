@@ -68,7 +68,10 @@ public class Modbus4jModbusConnection extends AbstractModbusConnection implement
 
 	private static final Logger log = LoggerFactory.getLogger(Modbus4jModbusConnection.class);
 
+	/** The Modbus controller. */
 	protected final ModbusMaster controller;
+
+	/** Function that describes this network connection. */
 	protected final Supplier<String> describer;
 
 	/**
@@ -281,6 +284,8 @@ public class Modbus4jModbusConnection extends AbstractModbusConnection implement
 	 *        the address to start writing to
 	 * @param count
 	 *        the number of Modbus 16-bit registers to read
+	 * @param values
+	 *        the register values to write
 	 * @return a newly created request instance
 	 * @throws UnsupportedOperationException
 	 *         if the function is not supported
