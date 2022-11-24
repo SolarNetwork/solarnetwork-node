@@ -72,7 +72,7 @@ import net.solarnetwork.util.StringUtils;
  * Generic Modbus device datum data source.
  * 
  * @author matt
- * @version 3.3
+ * @version 3.4
  */
 public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider, ModbusConnectionAction<Void>,
@@ -151,7 +151,10 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	}
 
 	private NodeDatum readCurrentDatum(Map<String, Object> xformProps) {
-		refreshDeviceData();
+		boolean refreshed = refreshDeviceData();
+		if ( !refreshed ) {
+			return null;
+		}
 		long ts = sampleDate.get();
 		if ( ts < 1 ) {
 			return null;
@@ -477,16 +480,17 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		return result;
 	}
 
-	private synchronized void refreshDeviceData() {
+	private synchronized boolean refreshDeviceData() {
 		if ( !isCachedSampleExpired() ) {
-			return;
+			return true;
 		}
 		ModbusNetwork network = service(getModbusNetwork());
 		if ( network == null ) {
-			return;
+			return false;
 		}
 		try {
 			network.performAction(getUnitId(), this);
+			return true;
 		} catch ( IOException e ) {
 			Throwable t = e;
 			while ( t.getCause() != null ) {
@@ -495,6 +499,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 			log.debug("Error reading from Modbus device {}", modbusDeviceName(), t);
 			log.error("Communication problem reading source {} from Modbus device {}: {}",
 					resolvePlaceholders(this.sourceId), modbusDeviceName(), t.getMessage());
+			return false;
 		}
 	}
 
