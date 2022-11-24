@@ -24,12 +24,9 @@ package net.solarnetwork.node.io.modbus.modbus4j.jsc;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import com.serotonin.modbus4j.serial.rtu.RtuMaster;
-import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
-import net.solarnetwork.node.io.modbus.modbus4j.Modbus4jModbusConnection;
-import net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork;
+import net.solarnetwork.node.io.modbus.modbus4j.AbstractModbus4jModbusNetwork;
 import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -43,7 +40,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * @author matt
  * @version 1.0
  */
-public class Modbus4jJscSerialModbusNetwork extends AbstractModbusNetwork
+public class Modbus4jJscSerialModbusNetwork extends AbstractModbus4jModbusNetwork<RtuMaster>
 		implements SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver {
 
 	private static final SerialParameters DEFAULT_SERIAL_PARAMS;
@@ -53,42 +50,17 @@ public class Modbus4jJscSerialModbusNetwork extends AbstractModbusNetwork
 
 	private final SerialParameters serialParams;
 
-	private RtuMaster controller;
-
 	/**
 	 * Constructor.
 	 */
 	public Modbus4jJscSerialModbusNetwork() {
 		super();
 		setDisplayName("Modbus port");
-		setUid(null);
 		this.serialParams = DEFAULT_SERIAL_PARAMS.clone();
 	}
 
 	@Override
-	public void serviceDidStartup() {
-		configurationChanged(null);
-	}
-
-	@Override
-	public synchronized void serviceDidShutdown() {
-		if ( controller != null ) {
-			controller.destroy();
-			controller = null;
-		}
-	}
-
-	@Override
-	public synchronized void configurationChanged(Map<String, Object> properties) {
-		if ( controller != null ) {
-			controller.destroy();
-		}
-		if ( isConfigured() ) {
-			controller = new RtuMaster(new JscModbusSerialPort(serialParams));
-		}
-	}
-
-	private boolean isConfigured() {
+	protected boolean isConfigured() {
 		String portName = serialParams.getSerialPort();
 		return (portName != null && !portName.isEmpty());
 	}
@@ -96,14 +68,21 @@ public class Modbus4jJscSerialModbusNetwork extends AbstractModbusNetwork
 	// ModbusNetwork
 
 	@Override
-	protected String getNetworkDescription() {
-		return serialParams.getSerialPort();
+	protected RtuMaster createController() {
+		return new RtuMaster(new JscModbusSerialPort(serialParams));
 	}
 
 	@Override
-	public ModbusConnection createConnection(int unitId) {
-		return createLockingConnection(new Modbus4jModbusConnection(unitId, isHeadless(), controller,
-				this::getNetworkDescription));
+	protected void configureController(RtuMaster controller) {
+		super.configureController(controller);
+		if ( serialParams.getReceiveTimeout() > 0 ) {
+			controller.setTimeout(serialParams.getReceiveTimeout());
+		}
+	}
+
+	@Override
+	protected String getNetworkDescription() {
+		return serialParams.getSerialPort();
 	}
 
 	// SettingSpecifierProvider
@@ -119,7 +98,9 @@ public class Modbus4jJscSerialModbusNetwork extends AbstractModbusNetwork
 		results.add(new BasicTextFieldSettingSpecifier("uid", null));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.portName",
 				DEFAULT_SERIAL_PARAMS.getPortName()));
-		results.addAll(getBaseSettingSpecifiers());
+
+		results.addAll(baseModbus4jModbusNetworkSettings(DEFAULT_RETRIES, DEFAULT_KEEP_OPEN_SECONDS));
+
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.baudRate",
 				String.valueOf(DEFAULT_SERIAL_PARAMS.getBaudRate())));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.databits",
@@ -130,7 +111,6 @@ public class Modbus4jJscSerialModbusNetwork extends AbstractModbusNetwork
 				DEFAULT_SERIAL_PARAMS.getParityString()));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.receiveTimeout",
 				String.valueOf(DEFAULT_SERIAL_PARAMS.getReceiveTimeout())));
-
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.flowControlInString",
 				DEFAULT_SERIAL_PARAMS.getFlowControlInString()));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.flowControlOutString",

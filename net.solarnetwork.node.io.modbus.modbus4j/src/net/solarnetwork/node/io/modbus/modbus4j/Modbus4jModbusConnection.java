@@ -141,8 +141,8 @@ public class Modbus4jModbusConnection extends AbstractModbusConnection implement
 			}
 			return new BitSet();
 		} catch ( ModbusTransportException e ) {
-			throw new IOException(String.format("Error reading %d coil values from %d @ %s", count,
-					address, describer.get()));
+			throw new IOException(String.format("Error reading %d coil values from %d @ %s: %s", count,
+					address, describer.get(), e.toString()), e);
 		}
 	}
 
@@ -181,8 +181,8 @@ public class Modbus4jModbusConnection extends AbstractModbusConnection implement
 							((WriteCoilResponse) res).isWriteValue(), addresses[i], describer.get());
 				}
 			} catch ( ModbusTransportException e ) {
-				throw new IOException(String.format("Error writing %d coil values from %d @ %s", 1,
-						addresses[i], describer.get()));
+				throw new IOException(String.format("Error writing %d coil values from %d @ %s: %s", 1,
+						addresses[i], describer.get(), e.toString()), e);
 			}
 		}
 	}
@@ -219,8 +219,10 @@ public class Modbus4jModbusConnection extends AbstractModbusConnection implement
 			}
 			return new BitSet();
 		} catch ( ModbusTransportException e ) {
-			throw new IOException(String.format("Error reading %d discrete input values from %d @ %s",
-					count, address, describer.get()));
+			throw new IOException(
+					String.format("Error reading %d discrete input values from %d @ %s: %s", count,
+							address, describer.get(), e.toString()),
+					e);
 		}
 	}
 
@@ -342,8 +344,8 @@ public class Modbus4jModbusConnection extends AbstractModbusConnection implement
 			}
 			return null;
 		} catch ( ModbusTransportException e ) {
-			throw new IOException(String.format("Error reading %d %s values from %d @ %s", count,
-					function.blockType(), address, describer.get()));
+			throw new IOException(String.format("Error reading %d %s values from %d @ %s: %s", count,
+					function.blockType(), address, describer.get(), e.toString()), e);
 		}
 	}
 
@@ -405,8 +407,8 @@ public class Modbus4jModbusConnection extends AbstractModbusConnection implement
 						address, describer.get(), ByteUtils.encodeHexString(data, 0, data.length, true));
 			}
 		} catch ( ModbusTransportException e ) {
-			throw new IOException(String.format("Error writing %d %s values from %d @ %s", values.length,
-					function.blockType(), address, describer.get()));
+			throw new IOException(String.format("Error writing %d %s values from %d @ %s: %s",
+					values.length, function.blockType(), address, describer.get(), e.toString()), e);
 		}
 	}
 
@@ -433,8 +435,8 @@ public class Modbus4jModbusConnection extends AbstractModbusConnection implement
 			}
 			return null;
 		} catch ( ModbusTransportException e ) {
-			throw new IOException(String.format("Error reading %d %s values from %d @ %s", count,
-					function.blockType(), address, describer.get()));
+			throw new IOException(String.format("Error reading %d %s values from %d @ %s: %s", count,
+					function.blockType(), address, describer.get(), e.toString()), e);
 		}
 	}
 

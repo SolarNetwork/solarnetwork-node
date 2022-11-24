@@ -77,12 +77,11 @@ public class Modbus4jCachedModbusConnection extends Modbus4jModbusConnection imp
 			if ( keepOpenSeconds > 0 && keepOpenTimeoutThread == null
 					|| !keepOpenTimeoutThread.isAlive() ) {
 				activity();
-				keepOpenTimeoutThread = new Thread(this,
-						format("Modbus TCP Expiry %s", describer.get()));
+				keepOpenTimeoutThread = new Thread(this, format("Modbus Expiry %s", describer.get()));
 				keepOpenTimeoutThread.setDaemon(true);
 				keepOpenTimeoutThread.start();
 				if ( log.isInfoEnabled() ) {
-					log.info("Opened Modbus TCP connection {}; keep for {}s", describer.get(),
+					log.info("Opened Modbus connection {}; keep for {}s", describer.get(),
 							keepOpenSeconds);
 				}
 			}
@@ -98,17 +97,26 @@ public class Modbus4jCachedModbusConnection extends Modbus4jModbusConnection imp
 		}
 	}
 
+	/**
+	 * Force the cached connection to be closed.
+	 */
+	public void forceClose() {
+		synchronized ( controller ) {
+			doClose();
+		}
+	}
+
 	private void doClose() {
 		if ( controller.isInitialized() ) {
 			controller.destroy();
 			if ( keepOpenSeconds > 0 && log.isInfoEnabled() ) {
-				log.info("Closed Modbus TCP connection {}", describer.get());
+				log.info("Closed Modbus connection {}", describer.get());
 			}
 		}
 	}
 
 	private void activity() {
-		log.trace("Extending Modbus TCP connection {} expiry to {} seconds from now", describer.get(),
+		log.trace("Extending Modbus connection {} expiry to {} seconds from now", describer.get(),
 				keepOpenSeconds);
 		keepOpenExpiry.set(System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(keepOpenSeconds));
 	}

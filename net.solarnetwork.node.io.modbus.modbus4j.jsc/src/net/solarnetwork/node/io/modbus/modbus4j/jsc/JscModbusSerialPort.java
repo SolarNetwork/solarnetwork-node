@@ -25,14 +25,18 @@ package net.solarnetwork.node.io.modbus.modbus4j.jsc;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fazecast.jSerialComm.SerialPort;
+import com.fazecast.jSerialComm.SerialPortInvalidPortException;
 import com.serotonin.modbus4j.serial.SerialPortWrapper;
 import net.solarnetwork.node.service.support.SerialPortBeanParameters;
+import net.solarnetwork.util.ObjectUtils;
 
 /**
- * PJC implementation of {@link SerialPortWrapper}.
+ * JSC implementation of {@link SerialPortWrapper}.
  * 
  * @author matt
  * @version 1.0
@@ -51,10 +55,12 @@ public class JscModbusSerialPort implements SerialPortWrapper {
 	 * 
 	 * @param serialParams
 	 *        the parameters
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
 	 */
 	public JscModbusSerialPort(SerialPortBeanParameters serialParams) {
 		super();
-		this.serialParams = serialParams;
+		this.serialParams = ObjectUtils.requireNonNullArgument(serialParams, "serialParams");
 	}
 
 	@Override
@@ -67,6 +73,20 @@ public class JscModbusSerialPort implements SerialPortWrapper {
 					throw new IOException(
 							"Serial port " + serialParams.getSerialPort() + " failed to open");
 				}
+			} catch ( SerialPortInvalidPortException e ) {
+				try {
+					SerialPort[] ports = SerialPort.getCommPorts();
+					if ( ports != null ) {
+						log.warn("Invalid serial port [{}]; known ports are: [{}]",
+								serialParams.getSerialPort(),
+								Arrays.stream(ports).map(p -> p.getSystemPortName())
+										.collect(Collectors.joining(",\n\t", "\n\t", "\n")));
+					}
+				} catch ( Exception e2 ) {
+					log.warn("Invalid serial port [{}]; failed to get list of available ports: {}",
+							serialParams.getSerialPort(), e2.toString());
+				}
+				throw new IOException("Invalid serial port " + serialParams.getSerialPort());
 			} catch ( RuntimeException e ) {
 				try {
 					close();
@@ -99,15 +119,20 @@ public class JscModbusSerialPort implements SerialPortWrapper {
 				serialParams.getStopBits(), serialParams.getParity());
 
 		if ( serialParams.getFlowControl() >= 0 ) {
-			log.debug("Setting flow control to {}", serialParams.getFlowControl());
+			log.trace("Setting flow control to {}", serialParams.getFlowControl());
 			serialPort.setFlowControl(serialParams.getFlowControl());
 		}
 
 		if ( serialParams.getRtsFlag() >= 0 ) {
 			boolean mode = serialParams.getRtsFlag() > 0 ? true : false;
-			log.debug("Setting RTS to {}", mode);
+			log.trace("Setting RTS to {}", mode);
 			serialPort.setRs485ModeParameters(mode, mode, 0, 0);
 		}
+
+		// The InputStreamListener used by StreamTransport, along with the WaitingRoom design,
+		// requires a non-blocking IO configuration here so the various wait()/notify() calls
+		// work as expected
+		serialPort.setComPortTimeouts(SerialPort.TIMEOUT_NONBLOCKING, 0, 0);
 	}
 
 	@Override
@@ -117,28 +142,28 @@ public class JscModbusSerialPort implements SerialPortWrapper {
 		}
 		try {
 			if ( in != null ) {
-				log.debug("Closing serial port {} InputStream", this.serialPort);
+				log.trace("Closing serial port {} InputStream", serialParams.getSerialPort());
 				try {
 					in.close();
 				} catch ( IOException e ) {
 					// ignore this
-					log.warn("Exception closing serial port {} input stream: {}", this.serialPort,
-							e.getMessage());
+					log.warn("Exception closing serial port {} input stream: {}",
+							serialParams.getSerialPort(), e.getMessage());
 				}
 			}
 			if ( out != null ) {
-				log.debug("Closing serial port {} OutputStream", this.serialPort);
+				log.trace("Closing serial port {} OutputStream", serialParams.getSerialPort());
 				try {
 					out.close();
 				} catch ( IOException e ) {
 					// ignore this
-					log.warn("Exception closing serial port {} output stream: {}", this.serialPort,
-							e.getMessage());
+					log.warn("Exception closing serial port {} output stream: {}",
+							serialParams.getSerialPort(), e.getMessage());
 				}
 			}
-			log.debug("Closing serial port {}", this.serialPort);
+			log.debug("Closing serial port {}", serialParams.getSerialPort());
 			serialPort.closePort();
-			log.trace("Serial port {} closed", this.serialPort);
+			log.trace("Serial port {} closed", serialParams.getSerialPort());
 		} finally {
 			in = null;
 			out = null;
@@ -158,7 +183,8 @@ public class JscModbusSerialPort implements SerialPortWrapper {
 			in = serialPort.getInputStream();
 			return in;
 		} catch ( Exception e ) {
-			throw new RuntimeException("Error opening serial input stream", e);
+			throw new RuntimeException(
+					"Error opening serial input stream on " + serialParams.getSerialPort(), e);
 		}
 	}
 
@@ -174,7 +200,8 @@ public class JscModbusSerialPort implements SerialPortWrapper {
 			out = serialPort.getOutputStream();
 			return out;
 		} catch ( Exception e ) {
-			throw new RuntimeException("Error opening serial output stream", e);
+			throw new RuntimeException(
+					"Error opening serial output stream on " + serialParams.getSerialPort(), e);
 		}
 	}
 

@@ -17,6 +17,7 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.io.modbus.modbus4j.tcp.Modbus4jTcpModbusNetwork</value>
+				<value>net.solarnetwork.node.io.modbus.modbus4j.AbstractModbus4jModbusNetwork</value>
 				<value>net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>

@@ -24,19 +24,12 @@ package net.solarnetwork.node.io.modbus.modbus4j.tcp;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import com.serotonin.modbus4j.base.ModbusUtils;
 import com.serotonin.modbus4j.ip.IpParameters;
 import com.serotonin.modbus4j.ip.tcp.TcpMaster;
-import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
-import net.solarnetwork.node.io.modbus.modbus4j.Modbus4jCachedModbusConnection;
-import net.solarnetwork.node.io.modbus.modbus4j.Modbus4jModbusConnection;
-import net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork;
-import net.solarnetwork.service.ServiceLifecycleObserver;
+import net.solarnetwork.node.io.modbus.modbus4j.AbstractModbus4jModbusNetwork;
 import net.solarnetwork.settings.SettingSpecifier;
-import net.solarnetwork.settings.SettingSpecifierProvider;
-import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
@@ -46,8 +39,7 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
  * @author matt
  * @version 1.0
  */
-public class Modbus4jTcpModbusNetwork extends AbstractModbusNetwork
-		implements SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver {
+public class Modbus4jTcpModbusNetwork extends AbstractModbus4jModbusNetwork<TcpMaster> {
 
 	/** The {@code keepOpenSeconds} property default value. */
 	public static final int DEFAULT_KEEP_OPEN_SECONDS = 90;
@@ -56,11 +48,7 @@ public class Modbus4jTcpModbusNetwork extends AbstractModbusNetwork
 	public static final boolean DEFAULT_SOCKET_KEEP_ALIVE = true;
 
 	private final IpParameters ipParameters = new IpParameters();
-	private int keepOpenSeconds = DEFAULT_KEEP_OPEN_SECONDS;
 	private boolean socketKeepAlive = DEFAULT_SOCKET_KEEP_ALIVE;
-
-	private TcpMaster controller;
-	private ModbusConnection cachedConnection;
 
 	/**
 	 * Default constructor.
@@ -68,7 +56,6 @@ public class Modbus4jTcpModbusNetwork extends AbstractModbusNetwork
 	public Modbus4jTcpModbusNetwork() {
 		super();
 		setDisplayName("Modbus TCP");
-		setUid(null);
 	}
 
 	@Override
@@ -77,53 +64,14 @@ public class Modbus4jTcpModbusNetwork extends AbstractModbusNetwork
 	}
 
 	@Override
-	public void serviceDidStartup() {
-		configurationChanged(null);
-	}
-
-	@Override
-	public synchronized void serviceDidShutdown() {
-		if ( controller != null ) {
-			controller.destroy();
-			controller = null;
-		}
-	}
-
-	@Override
-	public synchronized void configurationChanged(Map<String, Object> properties) {
-		if ( controller != null ) {
-			controller.destroy();
-		}
-		if ( isConfigured() ) {
-			controller = new TcpMaster(ipParameters, socketKeepAlive, true, false,
-					ipParameters.getLingerTime());
-		}
-	}
-
-	// ModbusNetwork
-
-	@Override
-	public synchronized ModbusConnection createConnection(int unitId) {
-		if ( !isConfigured() || controller == null ) {
-			return null;
-		}
-
-		if ( keepOpenSeconds > 0 ) {
-			if ( cachedConnection == null ) {
-				cachedConnection = new Modbus4jCachedModbusConnection(unitId, isHeadless(), controller,
-						this::getNetworkDescription, keepOpenSeconds);
-			}
-
-			return createLockingConnection(cachedConnection);
-		}
-
-		return createLockingConnection(new Modbus4jModbusConnection(unitId, isHeadless(), controller,
-				this::getNetworkDescription));
-	}
-
-	private boolean isConfigured() {
+	protected boolean isConfigured() {
 		String host = getHost();
 		return (host != null && !host.isEmpty());
+	}
+
+	@Override
+	protected TcpMaster createController() {
+		return new TcpMaster(ipParameters, socketKeepAlive, true, false, ipParameters.getLingerTime());
 	}
 
 	// SettingSpecifierProvider
@@ -144,7 +92,9 @@ public class Modbus4jTcpModbusNetwork extends AbstractModbusNetwork
 		results.add(new BasicTextFieldSettingSpecifier("uid", null));
 		results.add(new BasicTextFieldSettingSpecifier("host", null));
 		results.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(ModbusUtils.TCP_PORT)));
-		results.addAll(getBaseSettingSpecifiers());
+
+		results.addAll(baseModbus4jModbusNetworkSettings(DEFAULT_RETRIES, DEFAULT_KEEP_OPEN_SECONDS));
+
 		results.add(new BasicTextFieldSettingSpecifier("socketLinger",
 				ipParameters.getLingerTime() != null ? ipParameters.getLingerTime().toString() : null));
 		results.add(new BasicToggleSettingSpecifier("socketKeepAlive", DEFAULT_SOCKET_KEEP_ALIVE));
@@ -231,26 +181,4 @@ public class Modbus4jTcpModbusNetwork extends AbstractModbusNetwork
 		this.socketKeepAlive = keepAlive;
 	}
 
-	/**
-	 * Get the number of seconds to keep the TCP connection open, for repeated
-	 * transaction use.
-	 * 
-	 * @return the number of seconds; defaults to
-	 *         {@link #DEFAULT_KEEP_OPEN_SECONDS}
-	 */
-	public int getKeepOpenSeconds() {
-		return keepOpenSeconds;
-	}
-
-	/**
-	 * Set the number of seconds to keep the TCP connection open, for repeated
-	 * transaction use.
-	 * 
-	 * @param keepOpenSeconds
-	 *        the number of seconds, or anything less than {@literal 1} to not
-	 *        keep connections open
-	 */
-	public void setKeepOpenSeconds(int keepOpenSeconds) {
-		this.keepOpenSeconds = keepOpenSeconds;
-	}
 }

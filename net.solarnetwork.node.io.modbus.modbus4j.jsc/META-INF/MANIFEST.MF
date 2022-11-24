@@ -13,6 +13,7 @@ Import-Package:
  com.serotonin.modbus4j.msg;version="[3.1,4.0)",
  com.serotonin.modbus4j.serial;version="[3.1,4.0)",
  com.serotonin.modbus4j.serial.rtu;version="[3.1,4.0)",
+ com.serotonin.modbus4j.sero.messaging;version="[3.1,4.0)",
  net.solarnetwork.node.io.modbus;version="[4.0,5.0)",
  net.solarnetwork.node.io.modbus.modbus4j;version="[1.0,2.0)",
  net.solarnetwork.node.io.modbus.support;version="[4.0,5.0)",
