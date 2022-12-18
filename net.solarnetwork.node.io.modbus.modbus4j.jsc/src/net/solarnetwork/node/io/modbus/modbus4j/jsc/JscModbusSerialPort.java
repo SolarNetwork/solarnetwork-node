@@ -180,7 +180,7 @@ public class JscModbusSerialPort implements SerialPortWrapper {
 			if ( !isOpen() ) {
 				open();
 			}
-			in = serialPort.getInputStream();
+			in = serialPort.getInputStreamWithSuppressedTimeoutExceptions();
 			return in;
 		} catch ( Exception e ) {
 			throw new RuntimeException(
