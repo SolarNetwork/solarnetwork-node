@@ -426,7 +426,7 @@ public class ModbusControl extends ModbusDeviceSupport
 			Iterable<IntRange> ranges = addressRangeSet.ranges();
 
 			if ( blockType.isBitType() ) {
-				data.performBitUpdates(function.blockType(), bits -> {
+				data.performBitUpdates(blockType, bits -> {
 					boolean updated = false;
 					for ( IntRange range : ranges ) {
 						for ( int start = range.getMin(),
@@ -442,7 +442,7 @@ public class ModbusControl extends ModbusDeviceSupport
 					return updated;
 				});
 			} else {
-				data.performRegisterUpdates(function.blockType(), new ModbusDataUpdateAction() {
+				data.performRegisterUpdates(blockType, new ModbusDataUpdateAction() {
 
 					@Override
 					public boolean updateModbusData(MutableModbusData m) throws IOException {
