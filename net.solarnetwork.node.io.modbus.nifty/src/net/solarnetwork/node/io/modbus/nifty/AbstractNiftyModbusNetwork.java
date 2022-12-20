@@ -226,6 +226,8 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 		List<SettingSpecifier> results = new ArrayList<>(1);
 		results.add(
 				new BasicTextFieldSettingSpecifier("keepOpenSeconds", String.valueOf(keepOpenSeconds)));
+		results.add(new BasicTextFieldSettingSpecifier("eventLoopGroupMaxThreadCount",
+				String.valueOf(DEFAULT_EVENT_LOOP_MAX_THREAD_COUNT)));
 		results.add(new BasicToggleSettingSpecifier("wireLogging", Boolean.FALSE));
 		return results;
 	}

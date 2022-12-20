@@ -24,5 +24,7 @@
 		<dependency org="org.springframework" name="spring-context" rev="4.3.23.RELEASE"/>
 		<dependency org="org.springframework" name="spring-context-support" rev="4.3.23.RELEASE"/>
 		<dependency org="org.springframework" name="spring-core" rev="4.3.23.RELEASE"/>
+		
+		<exclude org="io.netty" artifact="netty-transport-native-.*" matcher="regexp"/>
 	</dependencies>
 </ivy-module>
