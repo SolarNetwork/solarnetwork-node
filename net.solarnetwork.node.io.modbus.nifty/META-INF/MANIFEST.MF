@@ -7,6 +7,9 @@ Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.nifty
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
+Export-Package: 
+ net.solarnetwork.node.io.modbus.nifty;version="0.1.0",
+ net.solarnetwork.node.io.modbus.nifty.tcp;version="0.1.0"
 Import-Package: 
  io.netty.channel;version="[4.1,5.0)",
  io.netty.channel.nio;version="[4.1,5.0)",

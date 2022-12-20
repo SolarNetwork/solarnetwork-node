@@ -24,9 +24,6 @@ package net.solarnetwork.node.io.modbus.nifty.tcp;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -45,52 +42,18 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * @author matt
  * @version 1.0
  */
-public class NiftyTcpModbusNetwork extends AbstractNiftyModbusNetwork implements ThreadFactory {
+public class NiftyTcpModbusNetwork extends AbstractNiftyModbusNetwork<NettyTcpModbusClientConfig> {
 
 	/** The {@code keepOpenSeconds} property default value. */
 	public static final int DEFAULT_KEEP_OPEN_SECONDS = 90;
-
-	/** The {@code eventLoopGroupMaxThreadCount} property default value. */
-	public static final int DEFAULT_EVENT_LOOP_MAX_THREAD_COUNT = 4;
-
-	private static final AtomicInteger THREAD_COUNT = new AtomicInteger(0);
-
-	private final NettyTcpModbusClientConfig config = new NettyTcpModbusClientConfig();
-
-	private EventLoopGroup eventLoopGroup;
-	private int eventLoopGroupMaxThreadCount;
 
 	/**
 	 * Default constructor.
 	 */
 	public NiftyTcpModbusNetwork() {
-		super();
-		setDisplayName("Modbus TCP");
-		setKeepOpenSeconds(DEFAULT_KEEP_OPEN_SECONDS);
+		super(new NettyTcpModbusClientConfig());
 		config.setAutoReconnect(false);
-	}
-
-	@Override
-	public synchronized void configurationChanged(Map<String, Object> properties) {
-		if ( eventLoopGroup != null ) {
-			eventLoopGroup.shutdownGracefully();
-			eventLoopGroup = null;
-		}
-		super.configurationChanged(properties);
-	}
-
-	@Override
-	public synchronized void serviceDidShutdown() {
-		super.serviceDidShutdown();
-		if ( eventLoopGroup != null ) {
-			eventLoopGroup.shutdownGracefully();
-			eventLoopGroup = null;
-		}
-	}
-
-	@Override
-	protected String getNetworkDescription() {
-		return String.format("%s:%d", config.getHost(), config.getPort());
+		setDisplayName("Modbus TCP");
 	}
 
 	@Override
@@ -101,24 +64,15 @@ public class NiftyTcpModbusNetwork extends AbstractNiftyModbusNetwork implements
 
 	@Override
 	protected synchronized ModbusClient createController() {
-		if ( eventLoopGroup == null ) {
-			eventLoopGroup = new NioEventLoopGroup(eventLoopGroupMaxThreadCount, this);
-		}
-		TcpNettyModbusClient controller = new TcpNettyModbusClient(config, eventLoopGroup,
-				NioSocketChannel.class);
+		EventLoopGroup g = getOrCreateEventLoopGroup(() -> {
+			return new NioEventLoopGroup(getEventLoopGroupMaxThreadCount(), NiftyTcpModbusNetwork.this);
+		});
+		TcpNettyModbusClient controller = new TcpNettyModbusClient(config, g, NioSocketChannel.class);
 		controller.setWireLogging(isWireLogging());
 		return controller;
 	}
 
 	// SettingSpecifierProvider
-
-	@Override
-	public Thread newThread(Runnable r) {
-		Thread t = new Thread(r,
-				"TcpModbusClient-" + getHost() + ":" + getPort() + "-" + THREAD_COUNT.incrementAndGet());
-		t.setDaemon(true);
-		return t;
-	}
 
 	@Override
 	public String getSettingUid() {
@@ -183,26 +137,6 @@ public class NiftyTcpModbusNetwork extends AbstractNiftyModbusNetwork implements
 	 */
 	public void setPort(int port) {
 		config.setPort(port);
-	}
-
-	/**
-	 * Get the event loop group maximum thread count.
-	 * 
-	 * @return the maximum thread count; defaults to
-	 *         {@link #DEFAULT_EVENT_LOOP_MAX_THREAD_COUNT}
-	 */
-	public int getEventLoopGroupMaxThreadCount() {
-		return eventLoopGroupMaxThreadCount;
-	}
-
-	/**
-	 * Set the event loop group maximum thread count.
-	 * 
-	 * @param eventLoopGroupMaxThreadCount
-	 *        the maximum thread count to set
-	 */
-	public void setEventLoopGroupMaxThreadCount(int eventLoopGroupMaxThreadCount) {
-		this.eventLoopGroupMaxThreadCount = eventLoopGroupMaxThreadCount;
 	}
 
 }

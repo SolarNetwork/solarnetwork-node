@@ -25,7 +25,12 @@ package net.solarnetwork.node.io.modbus.nifty;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
+import io.netty.channel.EventLoopGroup;
 import net.solarnetwork.io.modbus.ModbusClient;
+import net.solarnetwork.io.modbus.ModbusClientConfig;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork;
@@ -35,6 +40,7 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
+import net.solarnetwork.util.ObjectUtils;
 
 /**
  * Base class for Nifty Modbus implementations of {@link ModbusNetwork}.
@@ -42,15 +48,26 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
  * @author matt
  * @version 1.0
  */
-public abstract class AbstractNiftyModbusNetwork extends AbstractModbusNetwork
-		implements SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver {
+public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
+		extends AbstractModbusNetwork implements SettingSpecifierProvider, SettingsChangeObserver,
+		ServiceLifecycleObserver, ThreadFactory {
 
 	/** The {@code keepOpenSeconds} property default value. */
 	public static final int DEFAULT_KEEP_OPEN_SECONDS = 0;
 
+	/** The {@code eventLoopGroupMaxThreadCount} property default value. */
+	public static final int DEFAULT_EVENT_LOOP_MAX_THREAD_COUNT = 4;
+
+	private static final AtomicInteger THREAD_COUNT = new AtomicInteger(0);
+
+	/** The client configuration. */
+	protected final C config;
+
 	/** The Modbus client. */
 	protected ModbusClient controller;
 
+	private EventLoopGroup eventLoopGroup;
+	private int eventLoopGroupMaxThreadCount;
 	private int keepOpenSeconds = DEFAULT_KEEP_OPEN_SECONDS;
 	private boolean wireLogging = false;
 
@@ -58,10 +75,17 @@ public abstract class AbstractNiftyModbusNetwork extends AbstractModbusNetwork
 
 	/**
 	 * Constructor.
+	 * 
+	 * @param config
+	 *        the configuration
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
 	 */
-	public AbstractNiftyModbusNetwork() {
+	public AbstractNiftyModbusNetwork(C config) {
 		super();
+		this.config = ObjectUtils.requireNonNullArgument(config, "config");
 		setUid(null);
+		setEventLoopGroupMaxThreadCount(DEFAULT_EVENT_LOOP_MAX_THREAD_COUNT);
 	}
 
 	@Override
@@ -78,11 +102,19 @@ public abstract class AbstractNiftyModbusNetwork extends AbstractModbusNetwork
 		if ( cachedConnection != null ) {
 			cachedConnection.forceClose();
 		}
+		if ( eventLoopGroup != null ) {
+			eventLoopGroup.shutdownGracefully();
+			eventLoopGroup = null;
+		}
 	}
 
 	@Override
 	public synchronized void configurationChanged(Map<String, Object> properties) {
 		try {
+			if ( eventLoopGroup != null ) {
+				eventLoopGroup.shutdownGracefully();
+				eventLoopGroup = null;
+			}
 			if ( cachedConnection != null ) {
 				cachedConnection.forceClose();
 				cachedConnection = null;
@@ -98,6 +130,36 @@ public abstract class AbstractNiftyModbusNetwork extends AbstractModbusNetwork
 		} catch ( Exception e ) {
 			log.error("Error applying configuration change: {}", e.toString(), e);
 		}
+	}
+
+	@Override
+	protected String getNetworkDescription() {
+		return config.getDescription();
+	}
+
+	/**
+	 * Get the event loop group.
+	 * 
+	 * @return the event loop group, or {@literal null}
+	 */
+	protected EventLoopGroup eventLoopGroup() {
+		return eventLoopGroup;
+	}
+
+	/**
+	 * Get the event loop group, creating it if it does not already exist.
+	 * 
+	 * @param factory
+	 *        the factory for creating a new event loop group
+	 */
+	protected synchronized EventLoopGroup getOrCreateEventLoopGroup(Supplier<EventLoopGroup> factory) {
+		EventLoopGroup g = eventLoopGroup();
+		if ( g != null ) {
+			return g;
+		}
+		g = factory.get();
+		this.eventLoopGroup = g;
+		return g;
 	}
 
 	/**
@@ -142,6 +204,14 @@ public abstract class AbstractNiftyModbusNetwork extends AbstractModbusNetwork
 
 		return createLockingConnection(new NiftyModbusConnection(unitId, isHeadless(), controller,
 				this::getNetworkDescription));
+	}
+
+	@Override
+	public Thread newThread(Runnable r) {
+		Thread t = new Thread(r,
+				"ModbusClient-" + config.getDescription() + "-" + THREAD_COUNT.incrementAndGet());
+		t.setDaemon(true);
+		return t;
 	}
 
 	/**
@@ -208,6 +278,26 @@ public abstract class AbstractNiftyModbusNetwork extends AbstractModbusNetwork
 	 */
 	public void setWireLogging(boolean wireLogging) {
 		this.wireLogging = wireLogging;
+	}
+
+	/**
+	 * Get the event loop group maximum thread count.
+	 * 
+	 * @return the maximum thread count; defaults to
+	 *         {@link #DEFAULT_EVENT_LOOP_MAX_THREAD_COUNT}
+	 */
+	public int getEventLoopGroupMaxThreadCount() {
+		return eventLoopGroupMaxThreadCount;
+	}
+
+	/**
+	 * Set the event loop group maximum thread count.
+	 * 
+	 * @param eventLoopGroupMaxThreadCount
+	 *        the maximum thread count to set
+	 */
+	public void setEventLoopGroupMaxThreadCount(int eventLoopGroupMaxThreadCount) {
+		this.eventLoopGroupMaxThreadCount = eventLoopGroupMaxThreadCount;
 	}
 
 }
