@@ -151,6 +151,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 	 * 
 	 * @param factory
 	 *        the factory for creating a new event loop group
+	 * @return the event loop group, never {@literal null}
 	 */
 	protected synchronized EventLoopGroup getOrCreateEventLoopGroup(Supplier<EventLoopGroup> factory) {
 		EventLoopGroup g = eventLoopGroup();
