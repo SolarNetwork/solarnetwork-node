@@ -186,6 +186,9 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 		ModbusConnection conn = null;
 		try {
 			conn = createConnection(unitId);
+			if ( conn == null ) {
+				return null;
+			}
 			conn.open();
 			return action.doWithConnection(conn);
 		} catch ( RuntimeException e ) {
