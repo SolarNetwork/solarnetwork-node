@@ -24,17 +24,15 @@ package net.solarnetwork.node.io.modbus.nifty.jsc;
 
 import java.util.ArrayList;
 import java.util.List;
+import io.netty.channel.EventLoopGroup;
 import net.solarnetwork.io.modbus.ModbusClient;
 import net.solarnetwork.io.modbus.rtu.jsc.JscSerialPortProvider;
 import net.solarnetwork.io.modbus.rtu.netty.NettyRtuModbusClientConfig;
 import net.solarnetwork.io.modbus.rtu.netty.RtuNettyModbusClient;
-import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.nifty.AbstractNiftyModbusNetwork;
-import net.solarnetwork.node.io.modbus.nifty.NiftyModbusConnection;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
-import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 
 /**
  * Nifty Modbus implementation of {@link ModbusNetwork} using a serial RTU
@@ -63,19 +61,15 @@ public class NiftyJscSerialModbusNetwork extends AbstractNiftyModbusNetwork<Nett
 
 	@Override
 	protected ModbusClient createController() {
-		RtuNettyModbusClient controller = new RtuNettyModbusClient(config, new JscSerialPortProvider());
+		@SuppressWarnings("deprecation")
+		EventLoopGroup g = getOrCreateEventLoopGroup(() -> {
+			return new io.netty.channel.oio.OioEventLoopGroup(getEventLoopGroupMaxThreadCount(),
+					NiftyJscSerialModbusNetwork.this);
+		});
+		RtuNettyModbusClient controller = new RtuNettyModbusClient(config, g,
+				new JscSerialPortProvider());
 		controller.setWireLogging(isWireLogging());
 		return controller;
-	}
-
-	@Override
-	public synchronized ModbusConnection createConnection(int unitId) {
-		if ( !isConfigured() ) {
-			return null;
-		}
-		ModbusClient controller = createController();
-		return createLockingConnection(new NiftyModbusConnection(unitId, isHeadless(), controller,
-				this::getNetworkDescription));
 	}
 
 	// SettingSpecifierProvider
@@ -104,7 +98,7 @@ public class NiftyJscSerialModbusNetwork extends AbstractNiftyModbusNetwork<Nett
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.flowControlInString", "none"));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.flowControlOutString", "none"));
 
-		results.add(new BasicToggleSettingSpecifier("wireLogging", Boolean.FALSE));
+		results.addAll(baseNiftyModbusNetworkSettings(DEFAULT_KEEP_OPEN_SECONDS));
 
 		return results;
 	}
