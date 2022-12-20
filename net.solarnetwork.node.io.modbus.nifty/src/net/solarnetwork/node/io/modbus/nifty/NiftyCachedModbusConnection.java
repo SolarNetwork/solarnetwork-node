@@ -162,45 +162,49 @@ public class NiftyCachedModbusConnection extends NiftyModbusConnection implement
 
 	@Override
 	public BitSet readDiscreetValues(int address, int count) throws IOException {
+		BitSet result = super.readDiscreetValues(address, count);
 		activity();
-		return super.readDiscreetValues(address, count);
+		return result;
 	}
 
 	@Override
 	public void writeDiscreetValues(int[] addresses, BitSet bits) throws IOException {
-		activity();
 		super.writeDiscreetValues(addresses, bits);
+		activity();
 	}
 
 	@Override
 	public BitSet readInputDiscreteValues(int address, int count) throws IOException {
+		BitSet result = super.readInputDiscreteValues(address, count);
 		activity();
-		return super.readInputDiscreteValues(address, count);
+		return result;
 	}
 
 	@Override
 	public short[] readWords(ModbusReadFunction function, int address, int count) throws IOException {
+		short[] result = super.readWords(function, address, count);
 		activity();
-		return super.readWords(function, address, count);
+		return result;
 	}
 
 	@Override
 	public void writeWords(ModbusWriteFunction function, int address, short[] values)
 			throws IOException {
-		activity();
 		super.writeWords(function, address, values);
+		activity();
 	}
 
 	@Override
 	public byte[] readBytes(ModbusReadFunction function, int address, int count) throws IOException {
+		byte[] result = super.readBytes(function, address, count);
 		activity();
-		return super.readBytes(function, address, count);
+		return result;
 	}
 
 	@Override
 	public void writeBytes(ModbusWriteFunction function, int address, byte[] values) throws IOException {
-		activity();
 		super.writeBytes(function, address, values);
+		activity();
 	}
 
 }
