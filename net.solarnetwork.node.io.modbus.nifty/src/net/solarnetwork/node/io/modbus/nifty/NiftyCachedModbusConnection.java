@@ -31,6 +31,8 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.io.modbus.ModbusClient;
+import net.solarnetwork.io.modbus.ModbusClientConfig;
+import net.solarnetwork.io.modbus.ModbusClientConnectionObserver;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
 import net.solarnetwork.node.service.LockTimeoutException;
@@ -42,7 +44,8 @@ import net.solarnetwork.node.service.LockTimeoutException;
  * @author matt
  * @version 1.0
  */
-public class NiftyCachedModbusConnection extends NiftyModbusConnection implements Runnable {
+public class NiftyCachedModbusConnection extends NiftyModbusConnection
+		implements Runnable, ModbusClientConnectionObserver {
 
 	private static final Logger log = LoggerFactory.getLogger(NiftyCachedModbusConnection.class);
 
@@ -157,6 +160,21 @@ public class NiftyCachedModbusConnection extends NiftyModbusConnection implement
 		} catch ( InterruptedException e ) {
 			// end
 			log.debug("Interrupted.");
+		}
+	}
+
+	@Override
+	public void connectionOpened(ModbusClient client, ModbusClientConfig config) {
+		// nothing
+	}
+
+	@Override
+	public void connectionClosed(ModbusClient client, ModbusClientConfig config, Throwable exception,
+			boolean willReconnect) {
+		if ( controller.isStarted() ) {
+			// client closed connection, so close on our side as well
+			log.debug("Connection to {} closed by server", describer.get());
+			doClose();
 		}
 	}
 

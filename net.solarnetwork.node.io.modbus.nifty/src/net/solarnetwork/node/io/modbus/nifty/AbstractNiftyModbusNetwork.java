@@ -100,12 +100,15 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	@Override
 	public synchronized void serviceDidShutdown() {
+		if ( cachedConnection != null ) {
+			if ( controller != null ) {
+				controller.setConnectionObserver(null);
+			}
+			cachedConnection.forceClose();
+		}
 		if ( controller != null ) {
 			controller.stop();
 			controller = null;
-		}
-		if ( cachedConnection != null ) {
-			cachedConnection.forceClose();
 		}
 		if ( eventLoopGroup != null ) {
 			eventLoopGroup.shutdownGracefully();
@@ -121,6 +124,9 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 				eventLoopGroup = null;
 			}
 			if ( cachedConnection != null ) {
+				if ( controller != null ) {
+					controller.setConnectionObserver(null);
+				}
 				cachedConnection.forceClose();
 				cachedConnection = null;
 			}
@@ -203,6 +209,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 			if ( cachedConnection == null ) {
 				cachedConnection = new NiftyCachedModbusConnection(unitId, isHeadless(), controller,
 						this::getNetworkDescription, keepOpenSeconds);
+				controller.setConnectionObserver(cachedConnection);
 			}
 
 			return createLockingConnection(cachedConnection);
