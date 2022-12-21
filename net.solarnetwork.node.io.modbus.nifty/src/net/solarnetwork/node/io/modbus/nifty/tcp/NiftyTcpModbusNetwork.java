@@ -44,9 +44,6 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  */
 public class NiftyTcpModbusNetwork extends AbstractNiftyModbusNetwork<NettyTcpModbusClientConfig> {
 
-	/** The {@code keepOpenSeconds} property default value. */
-	public static final int DEFAULT_KEEP_OPEN_SECONDS = 90;
-
 	/**
 	 * Default constructor.
 	 */

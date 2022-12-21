@@ -54,7 +54,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 		ServiceLifecycleObserver, ThreadFactory {
 
 	/** The {@code keepOpenSeconds} property default value. */
-	public static final int DEFAULT_KEEP_OPEN_SECONDS = 0;
+	public static final int DEFAULT_KEEP_OPEN_SECONDS = 90;
 
 	/** The {@code eventLoopGroupMaxThreadCount} property default value. */
 	public static final int DEFAULT_EVENT_LOOP_MAX_THREAD_COUNT = 4;
