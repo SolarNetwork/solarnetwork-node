@@ -26,22 +26,15 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.util.FileSystemUtils;
-import org.springframework.util.StringUtils;
-import net.solarnetwork.dao.jdbc.SQLExceptionHandler;
 import net.solarnetwork.node.backup.Backup;
 import net.solarnetwork.node.backup.BackupManager;
 import net.solarnetwork.node.backup.BackupService;
@@ -52,18 +45,15 @@ import net.solarnetwork.service.OptionalService;
  * Recover from connection exceptions by restoring from backup.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
-public class RestoreFromBackupSQLExceptionHandler implements SQLExceptionHandler {
+public class RestoreFromBackupSQLExceptionHandler extends AbstractSQLExceptionHandler {
 
 	private final int minimumExceptionCount;
 	private final BundleContext bundleContext;
 	private int restoreDelaySeconds = 15;
 	private String backupResourceProviderFilter;
-	private List<Pattern> sqlStatePatterns;
 	private OptionalService<IdentityService> identityService;
-
-	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final AtomicInteger exceptionCount = new AtomicInteger(0);
 	private final AtomicBoolean restoreScheduled = new AtomicBoolean(false);
@@ -90,30 +80,17 @@ public class RestoreFromBackupSQLExceptionHandler implements SQLExceptionHandler
 
 	@Override
 	public void handleConnectionException(Connection conn, SQLException e) {
-		SQLException root = e;
-		while ( root.getNextException() != null ) {
-			root = root.getNextException();
-		}
-		String state = root.getSQLState();
-		if ( state == null ) {
+		SQLException root = exceptionMatchingSqlStatePattern(e);
+		if ( root == null ) {
 			return;
 		}
-		List<Pattern> statePatterns = sqlStatePatterns;
-		if ( statePatterns == null || statePatterns.isEmpty() ) {
+		log.error("Recovery triggering error {} on database connection: {}", root.getSQLState(),
+				e.getMessage());
+		final int count = exceptionCount.incrementAndGet();
+		if ( count < minimumExceptionCount ) {
 			return;
 		}
-		for ( Pattern pat : statePatterns ) {
-			if ( pat.matcher(state).matches() ) {
-				log.error("Recovery triggering error {} on database connection: {}", state,
-						e.getMessage());
-				final int count = exceptionCount.incrementAndGet();
-				if ( count < minimumExceptionCount ) {
-					return;
-				}
-				scheduleRestoreFromBackup(count);
-				return;
-			}
-		}
+		scheduleRestoreFromBackup(count);
 	}
 
 	private File getDbDir() {
@@ -260,38 +237,6 @@ public class RestoreFromBackupSQLExceptionHandler implements SQLExceptionHandler
 	 */
 	public void setBackupResourceProviderFilter(String backupResourceProviderFilter) {
 		this.backupResourceProviderFilter = backupResourceProviderFilter;
-	}
-
-	/**
-	 * Set a list of regular expressions that should trigger a restore from
-	 * backup.
-	 * 
-	 * @param sqlStatePatterns
-	 *        The regular expressions that should trigger a restore from backup.
-	 */
-	public void setSqlStatePatterns(List<Pattern> sqlStatePatterns) {
-		this.sqlStatePatterns = sqlStatePatterns;
-	}
-
-	/**
-	 * Set a comma-delimited list of regular expressions that should trigger a
-	 * restore from backup.
-	 * 
-	 * @param regexes
-	 *        A comma-delimited list of regular expressions that should trigger
-	 *        a restore from backup.
-	 * @see #setSqlStatePatterns(List)
-	 */
-	public void setSqlStateRegex(String regexes) {
-		List<Pattern> pats = null;
-		String[] list = StringUtils.delimitedListToStringArray(regexes, ",");
-		if ( regexes != null && list.length > 0 ) {
-			pats = new ArrayList<Pattern>();
-			for ( String regex : list ) {
-				pats.add(Pattern.compile(regex));
-			}
-		}
-		setSqlStatePatterns(pats);
 	}
 
 	/**
