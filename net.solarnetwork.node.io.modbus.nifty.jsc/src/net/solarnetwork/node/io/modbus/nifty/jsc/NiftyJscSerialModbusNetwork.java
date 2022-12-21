@@ -69,6 +69,7 @@ public class NiftyJscSerialModbusNetwork extends AbstractNiftyModbusNetwork<Nett
 		RtuNettyModbusClient controller = new RtuNettyModbusClient(config, g,
 				new JscSerialPortProvider());
 		controller.setWireLogging(isWireLogging());
+		controller.setReplyTimeout(getReplyTimeout());
 		return controller;
 	}
 

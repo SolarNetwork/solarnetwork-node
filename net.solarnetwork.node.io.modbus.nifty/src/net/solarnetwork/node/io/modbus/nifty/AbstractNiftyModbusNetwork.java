@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import io.netty.channel.EventLoopGroup;
@@ -58,6 +59,9 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 	/** The {@code eventLoopGroupMaxThreadCount} property default value. */
 	public static final int DEFAULT_EVENT_LOOP_MAX_THREAD_COUNT = 4;
 
+	/** The {@code replyTimeout} property default value. */
+	public static final long DEFAULT_REPLY_TIMEOUT = TimeUnit.SECONDS.toMillis(15);
+
 	private static final AtomicInteger THREAD_COUNT = new AtomicInteger(0);
 
 	/** The client configuration. */
@@ -69,6 +73,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 	private EventLoopGroup eventLoopGroup;
 	private int eventLoopGroupMaxThreadCount;
 	private int keepOpenSeconds = DEFAULT_KEEP_OPEN_SECONDS;
+	private long replyTimeout = DEFAULT_REPLY_TIMEOUT;
 	private boolean wireLogging = false;
 
 	private NiftyCachedModbusConnection cachedConnection;
@@ -226,6 +231,8 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 		List<SettingSpecifier> results = new ArrayList<>(1);
 		results.add(
 				new BasicTextFieldSettingSpecifier("keepOpenSeconds", String.valueOf(keepOpenSeconds)));
+		results.add(new BasicTextFieldSettingSpecifier("replyTimeout",
+				String.valueOf(DEFAULT_REPLY_TIMEOUT)));
 		results.add(new BasicTextFieldSettingSpecifier("eventLoopGroupMaxThreadCount",
 				String.valueOf(DEFAULT_EVENT_LOOP_MAX_THREAD_COUNT)));
 		results.add(new BasicToggleSettingSpecifier("wireLogging", Boolean.FALSE));
@@ -301,6 +308,25 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 	 */
 	public void setEventLoopGroupMaxThreadCount(int eventLoopGroupMaxThreadCount) {
 		this.eventLoopGroupMaxThreadCount = eventLoopGroupMaxThreadCount;
+	}
+
+	/**
+	 * Get the message reply timeout.
+	 * 
+	 * @return the reply timeout, in milliseconds; defaults to
+	 */
+	public long getReplyTimeout() {
+		return replyTimeout;
+	}
+
+	/**
+	 * Set the message reply timeout.
+	 * 
+	 * @param replyTimeout
+	 *        the reply timeout to set, in milliseconds
+	 */
+	public void setReplyTimeout(long replyTimeout) {
+		this.replyTimeout = replyTimeout;
 	}
 
 }

@@ -69,6 +69,7 @@ public class NiftyTcpModbusNetwork extends AbstractNiftyModbusNetwork<NettyTcpMo
 		});
 		TcpNettyModbusClient controller = new TcpNettyModbusClient(config, g, NioSocketChannel.class);
 		controller.setWireLogging(isWireLogging());
+		controller.setReplyTimeout(getReplyTimeout());
 		return controller;
 	}
 
