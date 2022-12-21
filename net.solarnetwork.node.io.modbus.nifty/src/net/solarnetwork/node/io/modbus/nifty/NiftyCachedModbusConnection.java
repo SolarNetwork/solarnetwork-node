@@ -159,7 +159,6 @@ public class NiftyCachedModbusConnection extends NiftyModbusConnection
 			}
 		} catch ( InterruptedException e ) {
 			// end
-			log.debug("Interrupted.");
 		}
 	}
 
