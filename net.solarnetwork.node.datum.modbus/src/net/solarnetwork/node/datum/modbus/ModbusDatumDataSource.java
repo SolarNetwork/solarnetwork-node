@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.IntConsumer;
 import net.solarnetwork.domain.datum.DatumSamplesType;
@@ -72,7 +73,7 @@ import net.solarnetwork.util.StringUtils;
  * Generic Modbus device datum data source.
  * 
  * @author matt
- * @version 3.4
+ * @version 3.5
  */
 public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider, ModbusConnectionAction<Void>,
@@ -409,6 +410,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 						for ( int start = range.getMin(),
 								stop = start + range.length(); start < stop; ) {
 							int len = Math.min(range.length(), maxReadLen);
+							@SuppressWarnings("deprecation")
 							BitSet updates = conn.readDiscreetValues(start, len);
 							bits.clear(start, start + len);
 							bits.or(updates);
@@ -496,9 +498,17 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 			while ( t.getCause() != null ) {
 				t = t.getCause();
 			}
+			String message;
+			if ( t instanceof TimeoutException ) {
+				message = "timeout";
+			} else if ( t.getMessage() != null ) {
+				message = t.getMessage();
+			} else {
+				message = t.toString();
+			}
 			log.debug("Error reading from Modbus device {}", modbusDeviceName(), t);
 			log.error("Communication problem reading source {} from Modbus device {}: {}",
-					resolvePlaceholders(this.sourceId), modbusDeviceName(), t.getMessage());
+					resolvePlaceholders(this.sourceId), modbusDeviceName(), message);
 			return false;
 		}
 	}
