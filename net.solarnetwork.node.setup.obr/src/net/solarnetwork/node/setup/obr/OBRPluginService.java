@@ -90,6 +90,7 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 
 	private static final String PREVIEW_PROVISION_ID = "preview";
 
+	/** The {@code restrictingSymbolicNameFilters} property default value. */
 	public static final String[] DEFAULT_RESTRICTING_SYMBOLIC_NAME_FILTER = { "net.solarnetwork.node" };
 
 	private static final String[] DEFAULT_EXCLUSION_SYMBOLIC_NAME_FILTERS = { ".mock", ".test",
@@ -645,6 +646,11 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 		this.repositories = repositories;
 	}
 
+	/**
+	 * Get the restricting symbol name filter.
+	 * 
+	 * @return the filter
+	 */
 	public String getRestrictingSymbolicNameFilter() {
 		if ( this.restrictingSymbolicNameFilters == null ) {
 			return null;
@@ -692,6 +698,12 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 		this.exclusionSymbolicNameFilters = exclusionSymbolicNameFilters;
 	}
 
+	/**
+	 * Set the download path.
+	 * 
+	 * @param downloadPath
+	 *        the path to set
+	 */
 	public void setDownloadPath(String downloadPath) {
 		this.downloadPath = downloadPath;
 	}

@@ -507,18 +507,39 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 		}
 	}
 
+	/**
+	 * Get the status.
+	 * 
+	 * @return the status
+	 */
 	public OBRPluginProvisionStatus getStatus() {
 		return status;
 	}
 
+	/**
+	 * Get the status future.
+	 * 
+	 * @return the future
+	 */
 	Future<OBRPluginProvisionStatus> getFuture() {
 		return future;
 	}
 
+	/**
+	 * Set the status future.
+	 * 
+	 * @param future
+	 *        the future to set
+	 */
 	void setFuture(Future<OBRPluginProvisionStatus> future) {
 		this.future = future;
 	}
 
+	/**
+	 * Get the directory.
+	 * 
+	 * @return the directory
+	 */
 	public File getDirectory() {
 		return directory;
 	}

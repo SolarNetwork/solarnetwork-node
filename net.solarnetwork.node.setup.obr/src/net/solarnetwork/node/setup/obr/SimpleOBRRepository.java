@@ -64,6 +64,12 @@ public class SimpleOBRRepository implements OBRRepository {
 		return url;
 	}
 
+	/**
+	 * Set the URL.
+	 * 
+	 * @param url
+	 *        the URL to set
+	 */
 	public void setURL(URL url) {
 		this.url = url;
 	}
@@ -90,6 +96,12 @@ public class SimpleOBRRepository implements OBRRepository {
 		return results;
 	}
 
+	/**
+	 * Set the message source.
+	 * 
+	 * @param messageSource
+	 *        the message source to set
+	 */
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}

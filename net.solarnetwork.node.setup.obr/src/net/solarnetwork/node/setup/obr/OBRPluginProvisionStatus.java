@@ -225,42 +225,99 @@ public class OBRPluginProvisionStatus implements PluginProvisionStatus {
 		return pluginsToRemove;
 	}
 
+	/**
+	 * Get the plugins that have been installed.
+	 * 
+	 * @return the installed plugins
+	 */
 	public Set<Plugin> getPluginsInstalled() {
 		return pluginsInstalled;
 	}
 
+	/**
+	 * Get the plugins that have been removed.
+	 * 
+	 * @return the removed plugins
+	 */
 	public Set<Plugin> getPluginsRemoved() {
 		return pluginsRemoved;
 	}
 
+	/**
+	 * Set a status message.
+	 * 
+	 * @param statusMessage
+	 *        the message to set
+	 */
 	public void setStatusMessage(String statusMessage) {
 		this.statusMessage = statusMessage;
 	}
 
+	/**
+	 * Set the overall download size.
+	 * 
+	 * @param overallDownloadSize
+	 *        the download size, in bytes
+	 */
 	public void setOverallDownloadSize(Long overallDownloadSize) {
 		this.overallDownloadSize = overallDownloadSize;
 	}
 
+	/**
+	 * Set the overall downloaded size.
+	 * 
+	 * @param overallDownloadedSize
+	 *        the downloaded size, in bytes
+	 */
 	public void setOverallDownloadedSize(Long overallDownloadedSize) {
 		this.overallDownloadedSize = overallDownloadedSize;
 	}
 
+	/**
+	 * Set the list of plugins to install.
+	 * 
+	 * @param pluginsToInstall
+	 *        the plugins to install
+	 */
 	public void setPluginsToInstall(List<Plugin> pluginsToInstall) {
 		this.pluginsToInstall = pluginsToInstall;
 	}
 
+	/**
+	 * Set the list of plugins to remove.
+	 * 
+	 * @param pluginsToRemove
+	 *        the plugins to remove
+	 */
 	public void setPluginsToRemove(List<Plugin> pluginsToRemove) {
 		this.pluginsToRemove = pluginsToRemove;
 	}
 
+	/**
+	 * Get the backup creation date.
+	 * 
+	 * @return the backup creation date, as a millisecond epoch value
+	 */
 	public long getCreationDate() {
 		return creationDate;
 	}
 
+	/**
+	 * Get the backup complete flag.
+	 * 
+	 * @return {@literal true} if the backup is complete, or {@literal null} if
+	 *         not known
+	 */
 	public Boolean getBackupComplete() {
 		return backupComplete;
 	}
 
+	/**
+	 * Set the backup complete flag.
+	 * 
+	 * @param backupComplete
+	 *        {@literal true} if the backup is complete
+	 */
 	public void setBackupComplete(Boolean backupComplete) {
 		this.backupComplete = backupComplete;
 	}
