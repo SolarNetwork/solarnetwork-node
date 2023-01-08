@@ -31,6 +31,8 @@ import java.io.Reader;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
@@ -56,7 +58,7 @@ import net.solarnetwork.service.SSLService;
  * Supporting methods for HTTP client operations.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public abstract class HttpClientSupport extends BaseIdentifiable {
@@ -229,12 +231,17 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	 *        opened
 	 * @return the URLConnection
 	 * @throws IOException
-	 *         if any IO error occurs
+	 *         if any IO error occurs or {@code url} is invalid
 	 * @since 1.5
 	 */
 	protected URLConnection getURLConnection(String url, String httpMethod, String accept,
 			Consumer<URLConnection> connectionCustomizer) throws IOException {
-		URL connUrl = new URL(url);
+		URL connUrl;
+		try {
+			connUrl = new URI(url).toURL();
+		} catch ( URISyntaxException e ) {
+			throw new IOException("Malformed URL [" + url + "]", e);
+		}
 		URLConnection conn = connUrl.openConnection();
 		if ( conn instanceof HttpURLConnection ) {
 			HttpURLConnection hConn = (HttpURLConnection) conn;

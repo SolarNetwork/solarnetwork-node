@@ -43,7 +43,7 @@ import net.solarnetwork.node.service.LockTimeoutException;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 3.3
  */
 public class LockingModbusConnection implements ModbusConnection {
@@ -166,16 +166,19 @@ public class LockingModbusConnection implements ModbusConnection {
 		}
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public BitSet readDiscreetValues(int address, int count) throws IOException {
 		return delegate.readDiscreetValues(address, count);
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public BitSet readDiscreetValues(int[] addresses, int count) throws IOException {
 		return delegate.readDiscreetValues(addresses, count);
 	}
 
+	@SuppressWarnings("deprecation")
 	@Override
 	public void writeDiscreetValues(int[] addresses, BitSet bits) throws IOException {
 		delegate.writeDiscreetValues(addresses, bits);

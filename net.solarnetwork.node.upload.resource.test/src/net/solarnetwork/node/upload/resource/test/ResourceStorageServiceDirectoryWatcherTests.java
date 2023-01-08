@@ -32,6 +32,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 import java.io.IOException;
+import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -164,7 +165,7 @@ public class ResourceStorageServiceDirectoryWatcherTests {
 					}
 				});
 
-		URL storageUrl = new URL("http://example.com/file.txt");
+		URL storageUrl = new URI("http://example.com/file.txt").toURL();
 		expect(storageService.resourceStorageUrl(capture(pathCaptor))).andReturn(storageUrl);
 
 		Capture<NodeDatum> datumCaptor = Capture.newInstance();

@@ -36,6 +36,14 @@ public abstract class AbstractModbusConnection {
 	private long retryDelayMs = 0;
 	private boolean retryReconnect = false;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param unitId
+	 *        the unit ID
+	 * @param headless
+	 *        {@literal true} for headless mode
+	 */
 	public AbstractModbusConnection(int unitId, boolean headless) {
 		super();
 		this.unitId = unitId;

@@ -130,10 +130,21 @@ public class JamodSerialModbusNetwork extends AbstractModbusNetwork implements S
 
 	// Accessors
 
+	/**
+	 * Get the serial parameters.
+	 * 
+	 * @return the parameters
+	 */
 	public SerialParametersBean getSerialParams() {
 		return serialParams;
 	}
 
+	/**
+	 * Set the serial parameters.
+	 * 
+	 * @param serialParams
+	 *        the serial parameters to set
+	 */
 	public void setSerialParams(SerialParametersBean serialParams) {
 		this.serialParams = serialParams;
 	}

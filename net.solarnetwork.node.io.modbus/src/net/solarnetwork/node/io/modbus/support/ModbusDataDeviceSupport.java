@@ -55,6 +55,12 @@ public abstract class ModbusDataDeviceSupport<T extends ModbusData & DataAccesso
 	private final T sample;
 	private long sampleCacheMs = DEFAULT_SAMPLE_CACHE_MS;
 
+	/**
+	 * Constructor.
+	 * 
+	 * @param data
+	 *        the data
+	 */
 	public ModbusDataDeviceSupport(T data) {
 		super();
 		this.sample = data;

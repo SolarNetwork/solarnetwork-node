@@ -3,6 +3,7 @@
 <meta name="base-path" content="${fn:endsWith(basePath, '/') 
 	? fn:substring(basePath, 0, fn:length(basePath) - 1) 
 	: basePath}" />
+<link rel="icon" type="image/png" href="<setup:url value='/img/favicon.png'/>">
 <pack:style context="${basePath}">
 	/css/bootstrap.css
 	/css/bootstrap-responsive.css

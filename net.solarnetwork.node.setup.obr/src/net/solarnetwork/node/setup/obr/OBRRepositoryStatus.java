@@ -36,26 +36,59 @@ public class OBRRepositoryStatus {
 	private boolean configured = false;
 	private Exception exception = null;
 
+	/**
+	 * Get the configured flag.
+	 * 
+	 * @return {@literal true} if the repository is configured
+	 */
 	public boolean isConfigured() {
 		return configured;
 	}
 
+	/**
+	 * Set the configured flag.
+	 * 
+	 * @param configured
+	 *        {@literal true} if the repository is configured
+	 */
 	public void setConfigured(boolean configured) {
 		this.configured = configured;
 	}
 
+	/**
+	 * Get the exception.
+	 * 
+	 * @return an exception
+	 */
 	public Exception getException() {
 		return exception;
 	}
 
+	/**
+	 * Set the exception.
+	 * 
+	 * @param exception
+	 *        the exception
+	 */
 	public void setException(Exception exception) {
 		this.exception = exception;
 	}
 
+	/**
+	 * Get the repository URL.
+	 * 
+	 * @return the repository URL
+	 */
 	public URL getRepositoryURL() {
 		return repositoryURL;
 	}
 
+	/**
+	 * Set the repository URL.
+	 * 
+	 * @param repositoryURL
+	 *        the URL to set
+	 */
 	public void setRepositoryURL(URL repositoryURL) {
 		this.repositoryURL = repositoryURL;
 	}

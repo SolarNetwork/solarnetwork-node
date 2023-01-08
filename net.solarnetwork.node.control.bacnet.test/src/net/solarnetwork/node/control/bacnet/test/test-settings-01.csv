@@ -1,0 +1,27 @@
+key,type,value,flags,modified
+net.solarnetwork.node.control.bacnet.Therm,serviceName,Thermostat,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,serviceGroup,HVAC,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,bacnetNetworkUid,BACnet/IP,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,sampleCacheMs,5000,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[0].controlId,therm/setpoint/1,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[0].controlPropertyTypeKey,f,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[0].deviceId,3637469,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[0].objectTypeValue,analog-value,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[0].objectNumber,0,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[0].propertyIdValue,present-value,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[0].unitMultiplier,1,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[0].decimalScale,2,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[1].controlId,therm/setpoint/2,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[1].controlPropertyTypeKey,f,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[1].deviceId,3637469,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[1].objectTypeValue,analog-value,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[1].objectNumber,1,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[1].propertyIdValue,present-value,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[1].unitMultiplier,1,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[1].decimalScale,2,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[2].controlId,therm/away,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[2].controlPropertyTypeKey,b,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[2].deviceId,3637469,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[2].objectTypeValue,binary-value,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[2].objectNumber,0,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[2].propertyIdValue,present-value,0,2022-10-11 08:52:00

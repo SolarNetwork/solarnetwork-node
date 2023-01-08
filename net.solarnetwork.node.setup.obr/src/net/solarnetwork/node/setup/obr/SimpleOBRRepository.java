@@ -23,6 +23,8 @@
 package net.solarnetwork.node.setup.obr;
 
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,7 +36,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * Simple implementation of {@link OBRRepository}.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class SimpleOBRRepository implements OBRRepository {
 
@@ -47,8 +49,8 @@ public class SimpleOBRRepository implements OBRRepository {
 
 	private static URL defaultUrl() {
 		try {
-			return new URL(DEFAULT_URL);
-		} catch ( MalformedURLException e ) {
+			return new URI(DEFAULT_URL).toURL();
+		} catch ( MalformedURLException | URISyntaxException e ) {
 			// no way, dude
 			return null;
 		}
@@ -62,6 +64,12 @@ public class SimpleOBRRepository implements OBRRepository {
 		return url;
 	}
 
+	/**
+	 * Set the URL.
+	 * 
+	 * @param url
+	 *        the URL to set
+	 */
 	public void setURL(URL url) {
 		this.url = url;
 	}
@@ -88,6 +96,12 @@ public class SimpleOBRRepository implements OBRRepository {
 		return results;
 	}
 
+	/**
+	 * Set the message source.
+	 * 
+	 * @param messageSource
+	 *        the message source to set
+	 */
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}

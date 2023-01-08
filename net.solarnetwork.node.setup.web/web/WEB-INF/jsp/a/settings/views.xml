@@ -28,5 +28,7 @@
 		<put-attribute name="navloc" value="filters-component" type="string"/>
 		<put-attribute name="body" value="/WEB-INF/jsp/a/settings/factory-list.jsp" />
 	</definition>
-		
+	
+	<definition name="factory-settings-instance" template="/WEB-INF/jsp/a/settings/instance.jsp" />
+	
 </tiles-definitions>

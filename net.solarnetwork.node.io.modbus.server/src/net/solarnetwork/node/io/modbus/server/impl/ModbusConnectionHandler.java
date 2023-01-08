@@ -295,7 +295,7 @@ public class ModbusConnectionHandler implements Runnable, Closeable {
 
 	private ModbusResponse writeRegister(WriteSingleRegisterRequest req) {
 		registerData(req).writeHolding(req.getReference(), req.getRegister().toShort());
-		return new WriteSingleRegisterResponse(req.getReference(), req.getRegister().getValue());
+		return new WriteSingleRegisterResponse(req);
 	}
 
 	private ModbusResponse writeRegisters(WriteMultipleRegistersRequest req) {

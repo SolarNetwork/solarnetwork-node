@@ -57,7 +57,7 @@ import net.wimpi.modbus.util.BitVector;
  * Utility methods for Modbus actions.
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class ModbusTransactionUtils {
 
@@ -89,7 +89,9 @@ public class ModbusTransactionUtils {
 		BitSet result = new BitSet(count);
 		ReadCoilsRequest req = new ReadCoilsRequest(address, count);
 		req.setUnitID(unitId);
-		req.setHeadless();
+		if ( headless ) {
+			req.setHeadless();
+		}
 		trans.setRequest(req);
 		try {
 			trans.execute();
@@ -221,7 +223,9 @@ public class ModbusTransactionUtils {
 		BitSet result = new BitSet(count);
 		ReadInputDiscretesRequest req = new ReadInputDiscretesRequest(address, count);
 		req.setUnitID(unitId);
-		req.setHeadless();
+		if ( headless ) {
+			req.setHeadless();
+		}
 		trans.setRequest(req);
 		try {
 			trans.execute();
@@ -314,18 +318,14 @@ public class ModbusTransactionUtils {
 	public static ModbusRequest modbusWriteRequest(final ModbusWriteFunction function, final int unitId,
 			final boolean headless, final int address, final int count) {
 		ModbusRequest req;
-		switch (function) {
-			case WriteHoldingRegister:
-				req = new WriteSingleRegisterRequest(address, null);
-				break;
-
-			case WriteMultipleHoldingRegisters:
-				req = new WriteMultipleRegistersRequest(address, null);
-				break;
-
-			default:
-				throw new UnsupportedOperationException("Function " + function + " is not supported");
-
+		if ( function == ModbusWriteFunction.WriteMultipleHoldingRegisters || count > 1 ) {
+			WriteMultipleRegistersRequest wreq = new WriteMultipleRegistersRequest();
+			wreq.setReference(address);
+			req = wreq;
+		} else if ( function == ModbusWriteFunction.WriteHoldingRegister ) {
+			req = new WriteSingleRegisterRequest(address, null);
+		} else {
+			throw new UnsupportedOperationException("Function " + function + " is not supported");
 		}
 		if ( headless ) {
 			req.setHeadless();
@@ -677,8 +677,8 @@ public class ModbusTransactionUtils {
 	 * @param count
 	 *        the number of Modbus 16-bit registers to read
 	 * @param trim
-	 *        if {@literal true} then remove leading/trailing whitespace from the
-	 *        resulting string
+	 *        if {@literal true} then remove leading/trailing whitespace from
+	 *        the resulting string
 	 * @param charset
 	 *        the character set to interpret the bytes as
 	 * @return String from interpreting raw bytes as a string

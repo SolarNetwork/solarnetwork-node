@@ -1,0 +1,9 @@
+Instance ID,Service Name,Service Group,Source ID,Schedule,Connection,Persist Mode,Sample Cache,Device ID,Object Type,Object Number,Property ID,COV Increment,Property,Property Type,Multiplier,Decimal Scale
+"# Rows whose first cell starts with ""#"" are ignored.",,,,,,,,,,,,,,,,
+"# Devices are uniquely defined by the Instance ID column. Rows that omit an Instance ID value will assume the first value found in previous rows, searching backwards.  Columns B-H are device-wide and need only be defined once, with the Instance ID.",,,,,,,,,,,,,,,,
+# The values shown below are the defaults SolarNode will use if nothing is configured in that cell.,,,,,,,,,,,,,,,,
+Therm,Thermometer,,therm/1,0 * * * * *,BACnet/IP,Polling only,5000,3637469,analog-input,0,present-value,,temp,Instantaneous,1,5
+,,,,,,,,3637469,analog-input,1,present-value,,tempWater,Instantaneous,1,5
+,,,,,,,,3637469,analog-input,2,present-value,,tempOutdoor,Instantaneous,1,5
+Meter,,,meter/1,0 * * * * *,BACnet/IP,Polling only,5000,112821,analog-input,0,present-value,,watts,Instantaneous,1,0
+,,,,,,,,112821,accumulator,0,present-value,,wattHours,Accumulating,1,0

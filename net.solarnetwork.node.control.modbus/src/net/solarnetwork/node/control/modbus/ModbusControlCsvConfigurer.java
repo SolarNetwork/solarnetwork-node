@@ -67,7 +67,7 @@ import net.solarnetwork.util.StringUtils;
  * Service that can configure {@link ModbusControl} instances via CSV resources.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ModbusControlCsvConfigurer extends BasicIdentifiable
 		implements SettingSpecifierProvider, SettingResourceHandler {
@@ -163,8 +163,8 @@ public class ModbusControlCsvConfigurer extends BasicIdentifiable
 						IdentityService service = OptionalService.service(identityService);
 						Long nodeId = (service != null ? service.getNodeId() : null);
 						return (nodeId != null
-								? String.format("modbus-device-config-solarnode-%d.csv", nodeId)
-								: "modbus-device-config.csv");
+								? String.format("modbus-control-config-solarnode-%d.csv", nodeId)
+								: "modbus-control-config.csv");
 					}
 
 				})

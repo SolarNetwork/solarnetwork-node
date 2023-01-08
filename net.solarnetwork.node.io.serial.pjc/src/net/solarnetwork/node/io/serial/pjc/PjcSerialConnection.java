@@ -568,6 +568,11 @@ public class PjcSerialConnection implements SerialConnection, SerialPortEventLis
 		return buf.toString();
 	}
 
+	/**
+	 * Get the serial port.
+	 * 
+	 * @return the serial port
+	 */
 	public SerialPort getSerialPort() {
 		return serialPort;
 	}

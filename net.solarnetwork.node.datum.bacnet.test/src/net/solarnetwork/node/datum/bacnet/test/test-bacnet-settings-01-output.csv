@@ -1,0 +1,4 @@
+Instance ID,Service Name,Service Group,Source ID,Schedule,Connection,Persist Mode,Sample Cache,Device ID,Object Type,Object Number,Property ID,COV Increment,Property,Property Type,Multiplier,Decimal Scale
+1,My Service,My Group,/test/bacnet,0 * * * * *,BACnet/IP,,,3637469,analog-input,0,present-value,,temp,Instantaneous,1,1
+,,,,,,,,,analog-input,1,,,tempWater,Instantaneous,1,5
+,,,,,,,,,analog-input,2,,,tempOutdoor,Instantaneous,1,5

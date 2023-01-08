@@ -269,7 +269,7 @@ public class ModbusControlConfigCsvParser {
 				if ( lc.contains("coil") ) {
 					return ModbusWriteFunction.WriteCoil;
 				} else if ( lc.contains("holding") ) {
-					return ModbusWriteFunction.WriteHoldingRegister;
+					return ModbusWriteFunction.WriteMultipleHoldingRegisters;
 				}
 				messages.add(messageSource.getMessage("message.functionFormatError",
 						new Object[] { s, rowNum, colNum }, "Malformed Modbus function value.",

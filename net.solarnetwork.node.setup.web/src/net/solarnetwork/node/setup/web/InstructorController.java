@@ -50,7 +50,7 @@ import net.solarnetwork.service.OptionalService;
  * Controller to act as a local Instructor to the local node.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 @ServiceAwareController
 @RequestMapping("/a/controls")
@@ -81,6 +81,7 @@ public class InstructorController {
 		for ( NodeControlProvider provider : providers ) {
 			providerIds.addAll(provider.getAvailableControlIds());
 		}
+		Collections.sort(providerIds);
 		model.put(KEY_CONTROL_IDS, providerIds);
 		return "control/list";
 	}

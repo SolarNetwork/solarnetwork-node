@@ -31,23 +31,29 @@ package net.solarnetwork.node.io.modbus;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 2.5
  */
 public enum ModbusReadFunction implements ModbusFunction {
 
-	ReadCoil(1),
+	/** Read coil. */
+	ReadCoil(1, ModbusRegisterBlockType.Coil),
 
-	ReadDiscreteInput(2),
+	/** Read discreet input. */
+	ReadDiscreteInput(2, ModbusRegisterBlockType.Discrete),
 
-	ReadHoldingRegister(3),
+	/** Read holding register. */
+	ReadHoldingRegister(3, ModbusRegisterBlockType.Holding),
 
-	ReadInputRegister(4);
+	/** Read input register. */
+	ReadInputRegister(4, ModbusRegisterBlockType.Input);
 
-	private int code;
+	private final int code;
+	private final ModbusRegisterBlockType blockType;
 
-	private ModbusReadFunction(int code) {
+	private ModbusReadFunction(int code, ModbusRegisterBlockType blockType) {
 		this.code = code;
+		this.blockType = blockType;
 	}
 
 	@Override
@@ -95,6 +101,11 @@ public enum ModbusReadFunction implements ModbusFunction {
 			default:
 				return null;
 		}
+	}
+
+	@Override
+	public ModbusRegisterBlockType blockType() {
+		return blockType;
 	}
 
 }

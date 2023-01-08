@@ -773,9 +773,99 @@ function uploadSettingResource(url, provider, instance, setting, dataKey, dataVa
 	xhr.send(form);
 }
 
-$(document).ready(function() {
-	$('.help-popover').popover();
+function setupComponentSettings(container) {
+	container.find('.help-popover').popover();
 
+	container.find('.setting-resource-upload').on('click', function() {
+		var me = $(this);
+		var id = me.data('key'),
+			field = $('#'+id),
+			url = me.data('action'),
+			provider = me.data('provider'),
+			instance = me.data('instance'),
+			setting = me.data('setting');
+		if ( field.size() < 1 ) {
+			return;
+		}
+		var el = field.get(0),
+			val;
+		if ( el.files ) {
+			// input[type=file]
+			if ( el.files.length > 0 ) {
+				uploadSettingResource(url, provider, instance, setting, "file", el.files);
+			}
+		} else {
+			// textarea
+			val = field.val();
+			if ( val.length > 0 ) {
+				uploadSettingResource(url, provider, instance, setting, "data", val);
+			}
+		}
+	});
+	container.find('a.settings-resource-export').on('click', function(event) {
+		event.preventDefault();
+		var identSel = $(this).prevAll('select.settings-resource-ident').get(0);
+		if ( identSel ) {
+			var identOpt = identSel.selectedOptions[0];
+			if ( identOpt ) {
+				var href = this.href;
+				var query = 'handlerKey='+ encodeURIComponent(identOpt.dataset['handler'])
+					+ '&key=' + encodeURIComponent(identOpt.dataset['key']);
+				document.location = href+'?'+query;
+			}
+		}
+		return false;
+	});
+}
+
+// instance carousel support
+
+function loadComponentInstanceContainer(container) {
+	if ( !(container) ) {
+		return;
+	}
+	if ( container && container.size() > 0 && !container.hasClass('loaded') ) {
+		var url = container.data('target')
+			+'?uid=' + encodeURIComponent(container.data('factoryUid'))
+			+'&key=' + encodeURIComponent(container.data('instanceKey'));
+		console.log('Loading component instance: ' +url);
+		container.addClass('loaded');
+		container.load(url, function() {
+			setupComponentSettings(container);
+			$('body').trigger('sn.settings.component.loaded', [container]);
+		});
+	}
+}
+
+function loadComponentInstance(instanceKey) {
+	if ( !instanceKey ) {
+		return;
+	}
+	var container = $('.instance-content[data-instance-key="'+instanceKey+'"]');
+	loadComponentInstanceContainer(container);
+}
+
+function selectInitialComponentInstance() {
+	var selected = false;
+	var componentContent = $('.instance-content');
+	
+	if ( componentContent.size() > 1 && document.location.hash ) {
+		var instanceKey = decodeURIComponent(document.location.hash.substring(1));
+		var instanceTab = $('#settings.carousel .carousel-indicators li[data-instance-key="'
+			+ instanceKey + '"]');
+		if ( instanceTab.size() > 0 ) {
+			instanceTab.first().click();
+			selected = true;
+		}
+	}
+	if ( !selected && componentContent.size() > 0 ) {
+		loadComponentInstanceContainer(componentContent.first());
+	}
+}
+	
+$(document).ready(function() {
+	setupComponentSettings($());
+	
 	$('.lookup-modal table.search-results').on('click', 'tr', function() {
 		var me = $(this);
 		var form = me.closest('form');
@@ -814,46 +904,7 @@ $(document).ready(function() {
 		}
 		modal.modal('hide');
 	});
-	$('.setting-resource-upload').on('click', function() {
-		var me = $(this);
-		var id = me.data('key'),
-			field = $('#'+id),
-			url = me.data('action'),
-			provider = me.data('provider'),
-			instance = me.data('instance'),
-			setting = me.data('setting');
-		if ( field.size() < 1 ) {
-			return;
-		}
-		var el = field.get(0),
-			val;
-		if ( el.files ) {
-			// input[type=file]
-			if ( el.files.length > 0 ) {
-				uploadSettingResource(url, provider, instance, setting, "file", el.files);
-			}
-		} else {
-			// textarea
-			val = field.val();
-			if ( val.length > 0 ) {
-				uploadSettingResource(url, provider, instance, setting, "data", val);
-			}
-		}
-	});
-	$('a.settings-resource-export').on('click', function(event) {
-		event.preventDefault();
-		var identSel = $(this).prevAll('select.settings-resource-ident').get(0);
-		if ( identSel ) {
-			var identOpt = identSel.selectedOptions[0];
-			if ( identOpt ) {
-				var href = this.href;
-				var query = 'handlerKey='+ encodeURIComponent(identOpt.dataset['handler'])
-					+ '&key=' + encodeURIComponent(identOpt.dataset['key']);
-				document.location = href+'?'+query;
-			}
-		}
-		return false;
-	});
+	
 	$('#add-component-instance-modal').ajaxForm({
 		dataType: 'json',
 		beforeSubmit: function(formData, jqForm, options) {
@@ -861,7 +912,6 @@ $(document).ready(function() {
 			return true;
 		},
 		success: function(json, status, xhr, form) {
-			var modal = $('#add-component-instance-modal');
 			if ( json && json.success === true ) {
 				if ( json.data ) {
 					document.location.hash = encodeURIComponent(json.data);
@@ -885,7 +935,6 @@ $(document).ready(function() {
 			return true;
 		},
 		success: function(json, status, xhr, form) {
-			var modal = $('#remove-all-component-instance-modal');
 			if ( json && json.success === true ) {
 				delayedReload();
 			} else {
@@ -915,6 +964,7 @@ $(document).ready(function() {
 			instanceUid: button.dataset.instanceKey
 		});
 	});
+	
 	$('#settings.carousel .carousel-indicators li').on('click', function(event) {
 		var instanceKey = this.dataset.instanceKey;
 		if ( !instanceKey ) {
@@ -922,11 +972,10 @@ $(document).ready(function() {
 		}
 		console.log('Carousel click to instance: ' +instanceKey);
 		document.location.hash = encodeURIComponent(instanceKey);
+		loadComponentInstance(instanceKey);
 	});
-	if ( document.location.hash ) {
-		$('#settings.carousel .carousel-indicators li[data-instance-key="'
-			+decodeURIComponent(document.location.hash.substring(1))+'"]').click();
-	}
+	
+	selectInitialComponentInstance();
 	setupBackups();
 });
 

@@ -271,7 +271,7 @@ public class ModbusRegisterData {
 	private void writeBits(int address, int count, BitSet values, BitSet set) {
 		synchronized ( set ) {
 			for ( int i = 0; i < count; i++ ) {
-				set.set(address + i, set.get(i));
+				set.set(address + i, values.get(i));
 			}
 		}
 	}

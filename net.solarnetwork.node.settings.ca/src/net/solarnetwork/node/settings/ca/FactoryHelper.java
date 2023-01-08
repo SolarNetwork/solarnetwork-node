@@ -36,11 +36,11 @@ import org.springframework.context.MessageSource;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import net.solarnetwork.node.settings.ExtendedSettingSpecifierProviderFactory;
 import net.solarnetwork.node.settings.SettingResourceHandler;
-import net.solarnetwork.node.settings.support.FactoryInstanceIdComparator;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProviderFactory;
 import net.solarnetwork.util.MapPathMatcher;
 import net.solarnetwork.util.SearchFilter;
+import net.solarnetwork.util.StringNaturalSortComparator;
 
 /**
  * Helper class for managing factory providers.
@@ -128,7 +128,7 @@ public final class FactoryHelper implements ExtendedSettingSpecifierProviderFact
 		} else if ( keys.size() == 1 ) {
 			return Collections.singleton(keys.iterator().next());
 		}
-		Set<String> result = new TreeSet<>(FactoryInstanceIdComparator.INSTANCE);
+		Set<String> result = new TreeSet<>(StringNaturalSortComparator.CASE_INSENSITIVE_NATURAL_SORT);
 		result.addAll(keys);
 		return result;
 	}

@@ -1,0 +1,3 @@
+Instance ID,Service Name,Service Group,Connection,Sample Cache,Control ID,Property Type,Device ID,Object Type,Object Number,Property ID,Multiplier,Decimal Scale
+-,,,BACnet/IP,5000,control/1,,,,,,,
+-,,,BACnet/IP,5000,control/2,,,,,,,

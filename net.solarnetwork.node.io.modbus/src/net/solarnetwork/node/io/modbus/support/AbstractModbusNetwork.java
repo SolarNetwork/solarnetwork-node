@@ -46,7 +46,7 @@ import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
  * Abstract implementation of {@link ModbusNetwork}.
  * 
  * @author matt
- * @version 3.0
+ * @version 3.1
  * @since 2.4
  */
 public abstract class AbstractModbusNetwork extends BasicIdentifiable implements ModbusNetwork {
@@ -186,6 +186,9 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 		ModbusConnection conn = null;
 		try {
 			conn = createConnection(unitId);
+			if ( conn == null ) {
+				return null;
+			}
 			conn.open();
 			return action.doWithConnection(conn);
 		} catch ( RuntimeException e ) {
@@ -311,26 +314,13 @@ public abstract class AbstractModbusNetwork extends BasicIdentifiable implements
 	 * @return the base settings
 	 */
 	protected List<SettingSpecifier> getBaseSettingSpecifiers() {
-		AbstractModbusNetwork defaults;
-		try {
-			defaults = getClass().newInstance();
-		} catch ( Exception e ) {
-			defaults = new AbstractModbusNetwork() {
-
-				@Override
-				public ModbusConnection createConnection(int unitId) {
-					return null;
-				}
-			};
-		}
-
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(5);
-		results.add(new BasicToggleSettingSpecifier("headless", defaults.headless));
-		results.add(new BasicTextFieldSettingSpecifier("timeout", String.valueOf(defaults.timeout)));
-		results.add(new BasicTextFieldSettingSpecifier("retries", String.valueOf(defaults.retries)));
-		results.add(
-				new BasicTextFieldSettingSpecifier("retryDelay", String.valueOf(defaults.retryDelay)));
-		results.add(new BasicToggleSettingSpecifier("retryReconnect", defaults.retryReconnect));
+		results.add(new BasicToggleSettingSpecifier("headless", DEFAULT_HEADLESS));
+		results.add(new BasicTextFieldSettingSpecifier("timeout", String.valueOf(DEFAULT_TIMEOUT_SECS)));
+		results.add(new BasicTextFieldSettingSpecifier("retries", String.valueOf(DEFAULT_RETRIES)));
+		results.add(new BasicTextFieldSettingSpecifier("retryDelay",
+				String.valueOf(DEFAULT_RETRY_DELAY_MILLIS)));
+		results.add(new BasicToggleSettingSpecifier("retryReconnect", DEFAULT_RETRY_RECONNECT));
 		return results;
 	}
 
