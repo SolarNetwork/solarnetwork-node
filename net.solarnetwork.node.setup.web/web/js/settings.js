@@ -864,7 +864,7 @@ function selectInitialComponentInstance() {
 }
 	
 $(document).ready(function() {
-	setupComponentSettings($());
+	setupComponentSettings($('body'));
 	
 	$('.lookup-modal table.search-results').on('click', 'tr', function() {
 		var me = $(this);
