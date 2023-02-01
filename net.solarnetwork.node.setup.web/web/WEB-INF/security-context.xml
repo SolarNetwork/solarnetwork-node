@@ -10,6 +10,9 @@
 
 	<http security="none" pattern="/hello"/>
 	
+	<!-- Support OCPP namespace explicitly. -->
+	<http security="none" pattern="/ocpp/**"/>
+
 	<!-- Configure Spring Security -->
 	<http auto-config="true" use-expressions="true">
 		<headers>
