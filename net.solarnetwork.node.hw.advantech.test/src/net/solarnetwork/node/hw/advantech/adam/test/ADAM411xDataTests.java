@@ -247,4 +247,44 @@ public class ADAM411xDataTests {
 		}
 	}
 
+	@Test
+	public void adam4117_58_02() {
+		ADAM411xData data = getDataInstance("test-4117-58-02.txt");
+		assertThat("Model", data.getModelName(), equalTo("4117"));
+		assertThat("Firmware revision", data.getFirmwareRevision(), equalTo("A104"));
+		assertThat("Enabled channels", data.getEnabledChannelNumbers(),
+				contains(0, 1, 2, 3, 4, 5, 6, 7));
+		InputRangeType[] expectedTypes = new InputRangeType[] {
+				// @formatter:off
+				InputRangeType.ZeroToOneHundredFiftyMilliVolts,
+				InputRangeType.ZeroToOneHundredFiftyMilliVolts,
+				InputRangeType.ZeroToOneHundredFiftyMilliVolts,
+				InputRangeType.ZeroToOneHundredFiftyMilliVolts,
+				InputRangeType.ZeroToOneHundredFiftyMilliVolts,
+				InputRangeType.ZeroToOneHundredFiftyMilliVolts,
+				InputRangeType.ZeroToOneHundredFiftyMilliVolts,
+				InputRangeType.ZeroToOneHundredFiftyMilliVolts,
+				// @formatter:on
+		};
+		for ( int i = 0; i < 8; i++ ) {
+			assertThat("Channel " + i + " type", data.getChannelType(i), equalTo(expectedTypes[i]));
+		}
+		BigDecimal[] expected = new BigDecimal[] {
+				// @formatter:off
+				new BigDecimal("0.00216"), // 944; ((944 / 65535) * (150 - 0)) / 1000
+				new BigDecimal("0.00245"), // 1072;((1072 / 65535) * (150 - 0)) / 1000
+				new BigDecimal("0.00256"), // 1118; ((1118 / 65535) * (150 - 0)) / 1000
+				new BigDecimal("0.00000"),
+				new BigDecimal("0.00000"),
+				new BigDecimal("0.00000"),
+				new BigDecimal("0.00000"),
+				new BigDecimal("0.00000"),
+				// @formatter:on
+		};
+		for ( int i = 0; i < expected.length; i++ ) {
+			BigDecimal val = data.getChannelValue(i).setScale(5, RoundingMode.HALF_UP);
+			assertThat("Channel " + i + " value", val, equalTo(expected[i]));
+		}
+	}
+
 }
