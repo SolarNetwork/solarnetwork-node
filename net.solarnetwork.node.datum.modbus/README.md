@@ -4,7 +4,7 @@ This project provides SolarNode plugin that can collect arbitrary data from
 Modbus enabled devices. This is an advanced plugin that requires specific
 low-level knowledge of the device you want to collect data from.
 
-![settings](docs/solarnode-modbus-device-settings.png)
+<img title="Modbus Device Datum Source settings" src="docs/solarnode-modbus-device-settings.png" width="621">
 
 # Install
 
@@ -23,7 +23,7 @@ This plugin also provides a **Modbus Device CSV Configurer** component will appe
 settings page. This component lets you upload a Modbus CSV Configuration file to configure all
 Modbus Device components, without having to use the settings form.
 
-![CSV Configurer settings](docs/solarnode-modbus-device-csv-configurer.png)
+<img title="CSV Configurer settings" src="docs/solarnode-modbus-device-csv-configurer.png" width="762">
 
 ## Modbus CSV Configuration Format
 
@@ -40,7 +40,7 @@ Here's an example screen shot of a configuration in a spreadsheet application. I
 Spreadsheet applications generally allows you to export the sheet in the CSV format, which can
 then be loaded into SolarNode via the CSV Configurer.
 
-![CSV Configuration example](docs/solarnode-modbus-device-csv-configuration-example-sheet.png)
+<img title="CSV Configuration example" src="docs/solarnode-modbus-device-csv-configuration-example-sheet.png" width="1597">
 
 ### Instance identifiers
 
@@ -53,7 +53,7 @@ empty.
 Here's an example of how 3 custom instance IDs `Meter`, `Pyranometer`, and `Weather` appear in the
 SolarNode UI:
 
-![Modbus Device instance names](docs/solarnode-modbus-device-named-component-instances.png)
+<img title="Modbus Device instance names" src="docs/solarnode-modbus-device-named-component-instances.png" width="748">
 
 ### CSV column definition
 
@@ -152,7 +152,7 @@ Each device configuration contains the following overall settings:
 Since version **3.1**, metadata settings allow you to add datum source metadata to the configured
 datum stream.
 
-![Metadata settings](docs/solarnode-modbus-device-metadata-settings.png)
+<img title="Metadata settings" src="docs/solarnode-modbus-device-metadata-settings.png" width="537">
 
 Each metadata configuration contains the following settings:
 
@@ -168,7 +168,7 @@ You must configure settings for each datum property you want to collect from eac
 configure as many property settings as you like, using the <kbd>+</kbd> and <kbd>-</kbd> buttons to
 add/remove property configurations.
 
-![Property settings](docs/solarnode-modbus-device-property-settings.png)
+<img title="Property settings" src="docs/solarnode-modbus-device-property-settings.png" width="607">
 
 Each property configuration contains the following settings:
 
@@ -220,12 +220,12 @@ Since version **1.5** properties can be defined using [expressions][expr]. Expre
 configure datum properties that are dynamically calculated from other properties or raw Modbus
 register values.
 
-![expressions-config](docs/solarnode-modbus-device-expression-settings.png)
+<img title="Expressions configuration" src="docs/solarnode-modbus-device-expression-settings.png" width="735">
 
 ### Expression root object
 
 The root object is a `DatumExpressionRoot` that lets you treat all datum properties as expression
-variables directly. See the [SolarNode Expressions][sn-expressions] guide for more information. In 
+variables directly. See the [SolarNode Expressions][sn-expressions] guide for more information. In
 addition, the following properties are available:
 
 | Property | Type | Description |

@@ -4,7 +4,7 @@ This project provides SolarNode plugin that can collect arbitrary data from BACn
 This is an advanced plugin that requires knowledge of BACnet and the BACnet configuration of the
 devices you want to collect data from.
 
-![settings](docs/solarnode-bacnet-device-settings.png)
+<img title="BACnet Device Datum Source settings" src="docs/solarnode-bacnet-device-settings.png" width="525">
 
 
 # SolarNodeOS port considerations
@@ -44,7 +44,7 @@ This plugin provides a **BACnet Device CSV Configurer** component will appear on
 page. This component lets you upload a BACnet CSV Configuration file to configure all BACnet Device
 components, without having to use the component settings form.
 
-![CSV Configurer settings](docs/solarnode-bacnet-device-csv-configurer.png)
+<img title="CSV Configurer" src="docs/solarnode-bacnet-device-csv-configurer.png" width="680">
 
 ## BACnet CSV Configuration Format
 
@@ -61,7 +61,9 @@ Here's an example screen shot of a configuration in a spreadsheet application. I
 Spreadsheet applications generally allows you to export the sheet in the CSV format, which can
 then be loaded into SolarNode via the CSV Configurer.
 
-![CSV Configuration example](docs/solarnode-bacnet-device-csv-configuration-example-sheet.png)
+<img title="CSV Configuration example" src="docs/solarnode-bacnet-device-csv-configuration-example-sheet.png" width="1704">
+
+![]()
 
 ### Instance identifiers
 
@@ -73,11 +75,11 @@ empty.
 
 Here's an example of how 2 custom instance IDs `Meter` and `Therm` appear in the SolarNode UI:
 
-![BACnet Device instance names](docs/solarnode-bacnet-device-named-component-instances.png)
+<img title="BACnet Device instance names" src="docs/solarnode-bacnet-device-named-component-instances.png" width="742">
 
 ### CSV column definition
 
-The following table defines all the CSV columns used by BACnet Device CSV Configuration. Columns 
+The following table defines all the CSV columns used by BACnet Device CSV Configuration. Columns
 **A - H** apply to the **entire BACnet Device configuration**, and only the values from the row that
 defines a new Instance ID will be used to configure the device. Thus you can omit the values from
 these columns when defining more than one property for a given instance.
@@ -162,7 +164,7 @@ You must configure settings for each BACnet device you want to collect data from
 configure as many device settings as you like, using the <kbd>+</kbd> and <kbd>-</kbd> buttons to
 add/remove configurations.
 
-![Device settings](docs/solarnode-bacnet-device-device-settings.png)
+<img title="Device settings" src="docs/solarnode-bacnet-device-device-settings.png" width="499">
 
 Each device configuration contains the following settings:
 
@@ -177,7 +179,7 @@ You must configure settings for each datum property you want to collect from a g
 configure as many property settings as you like, using the <kbd>+</kbd> and <kbd>-</kbd> buttons to
 add/remove configurations.
 
-![Property settings](docs/solarnode-bacnet-device-property-settings.png)
+<img title="Property settings" src="docs/solarnode-bacnet-device-property-settings.png" width="501">
 
 Each property configuration contains the following settings:
 
