@@ -209,8 +209,19 @@ desired value, like this:
 
 ## SolarNetwork control
 
-The [SolarUser Instruction API](https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API#queue-instruction)
-can be used to change the control from anywhere in the world, by requesting the
-SolarNode to perform a [`SetControlParameter`](https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#setcontrolparameter)
-instruction and passing a single instruction parameter named the **Control ID** you
-configured for the control and the desired value as the parameter value.
+The [SolarUser Instruction API][instr-api] can be used to change the control from anywhere in the
+world, by requesting the SolarNode to perform a [`SetControlParameter`][SetControlParameter]
+instruction and passing a single instruction parameter named the **Control ID** you configured for
+the control and the desired value as the parameter value.
+
+For example, to set the `test/float` control to `29.0` an HTTP `POST` like this would update the
+value:
+
+```
+POST /solaruser/api/v1/sec/instr/add/SetControlParameter
+
+{"nodeId":123,"params":{"test/float":"29.0"}}
+```
+
+[instr-api]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API#queue-instruction
+[SetControlParameter]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#setcontrolparameter
