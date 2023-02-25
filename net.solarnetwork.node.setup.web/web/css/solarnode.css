@@ -280,6 +280,10 @@ div.plugin .desc {
 	margin-bottom: 0;
 }
 
+.clickable {
+	cursor: pointer;
+}
+
 .menu-list > * {
 	cursor: pointer;
 }

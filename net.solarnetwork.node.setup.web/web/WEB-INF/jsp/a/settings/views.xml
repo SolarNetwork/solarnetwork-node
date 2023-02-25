@@ -31,4 +31,9 @@
 	
 	<definition name="factory-settings-instance" template="/WEB-INF/jsp/a/settings/instance.jsp" />
 	
+	<definition name="logging" extends="settings">
+		<put-attribute name="navloc" value="logging" type="string"/>
+		<put-attribute name="body" value="/WEB-INF/jsp/a/settings/logging.jsp" />
+	</definition>
+		
 </tiles-definitions>
