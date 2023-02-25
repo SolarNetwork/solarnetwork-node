@@ -44,6 +44,7 @@ $(document).ready(function loggingManagement() {
 			$(this.elements['logger']).val(logger).prop('readonly', true);
 			$(this.elements['level']).val(level.toLowerCase());
 		}
+		$(this).find('.create').toggleClass('hidden', !!editItemEl);
 	})
 	.on('shown', function() {
 		$('#logging-logger-levels-logger').focus();

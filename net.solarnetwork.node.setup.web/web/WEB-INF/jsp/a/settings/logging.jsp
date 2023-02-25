@@ -54,8 +54,8 @@
 		</select>
 		<span class="help-block"><fmt:message key="logging.levels.level.caption"/></span>
 
-		<p><fmt:message key="logging.levels.edit.loggers.intro"/></p>
-		<select class="input-block-level" name="loggers" readonly size="10" id="logging-loggers">
+		<p class="create"><fmt:message key="logging.levels.edit.loggers.intro"/></p>
+		<select class="create input-block-level" name="loggers" readonly size="10" id="logging-loggers">
 			<option value="trace"><fmt:message key="logging.levels.TRACE.label"/></option>
 			<option value="debug"><fmt:message key="logging.levels.DEBUG.label"/></option>
 			<option value="info" selected><fmt:message key="logging.levels.INFO.label"/></option>
