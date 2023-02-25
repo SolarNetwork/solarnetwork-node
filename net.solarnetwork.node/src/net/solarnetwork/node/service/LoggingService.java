@@ -22,7 +22,9 @@
 
 package net.solarnetwork.node.service;
 
+import java.util.Collection;
 import java.util.Locale;
+import java.util.Map;
 import net.solarnetwork.util.ObjectUtils;
 
 /**
@@ -103,4 +105,34 @@ public interface LoggingService {
 	/** The instruction parameter for a {@link LoggingService.Level} name. */
 	String PARAM_LOGGER_LEVEL = "level";
 
+	/**
+	 * Get a collection of all known loggers.
+	 * 
+	 * <p>
+	 * This represents the list of active loggers in the system.
+	 * </p>
+	 * 
+	 * @return the loggers, never {@literal null}
+	 */
+	Collection<String> loggers();
+
+	/**
+	 * Get all available logger levels.
+	 * 
+	 * <p>
+	 * This represents the current runtime configuration of logger levels, which
+	 * may be lost if the application is restarted.
+	 * </p>
+	 * 
+	 * @return the current logger levels, never {@literal null}
+	 */
+	Map<String, Level> loggerLevels();
+
+	/**
+	 * Adjust logger levels.
+	 * 
+	 * @param levels
+	 *        a mapping of logger names to desired levels
+	 */
+	void changeLevels(Map<String, Level> levels);
 }

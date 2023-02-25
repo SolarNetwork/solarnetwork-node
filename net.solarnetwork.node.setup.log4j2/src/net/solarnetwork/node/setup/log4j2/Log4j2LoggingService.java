@@ -22,7 +22,13 @@
 
 package net.solarnetwork.node.setup.log4j2;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
@@ -48,12 +54,68 @@ public class Log4j2LoggingService implements LoggingService, InstructionHandler 
 	private static final Logger log = LoggerFactory.getLogger(Log4j2LoggingService.class);
 
 	@Override
+	public synchronized Collection<String> loggers() {
+		final org.apache.logging.log4j.spi.LoggerContext ctxSpi = LogManager.getContext(true);
+		if ( !(ctxSpi instanceof org.apache.logging.log4j.core.LoggerContext) ) {
+			return Collections.emptyList();
+		}
+		@SuppressWarnings("resource")
+		final LoggerContext ctx = (LoggerContext) ctxSpi;
+		final List<String> result = new ArrayList<>(32);
+		Collection<org.apache.logging.log4j.core.Logger> loggers = ctx.getLoggers();
+		for ( org.apache.logging.log4j.core.Logger logger : loggers ) {
+			result.add(logger.getName());
+		}
+		Collections.sort(result);
+		return result;
+	}
+
+	@Override
+	public synchronized Map<String, Level> loggerLevels() {
+		final org.apache.logging.log4j.spi.LoggerContext ctxSpi = LogManager.getContext(true);
+		if ( !(ctxSpi instanceof org.apache.logging.log4j.core.LoggerContext) ) {
+			return Collections.emptyMap();
+		}
+		@SuppressWarnings("resource")
+		final LoggerContext ctx = (LoggerContext) ctxSpi;
+		final Configuration config = ctx.getConfiguration();
+
+		final Map<String, Level> result = new LinkedHashMap<>(32);
+
+		for ( Entry<String, LoggerConfig> e : config.getLoggers().entrySet() ) {
+			result.put(e.getKey(), level(e.getValue().getLevel()));
+		}
+
+		return result;
+	}
+
+	@Override
+	public synchronized void changeLevels(Map<String, Level> levels) {
+		if ( levels == null || levels.isEmpty() ) {
+			return;
+		}
+		final org.apache.logging.log4j.spi.LoggerContext ctxSpi = LogManager.getContext(true);
+		if ( !(ctxSpi instanceof org.apache.logging.log4j.core.LoggerContext) ) {
+			return;
+		}
+
+		@SuppressWarnings("resource")
+		final LoggerContext ctx = (LoggerContext) ctxSpi;
+		final Configuration config = ctx.getConfiguration();
+
+		for ( Entry<String, Level> e : levels.entrySet() ) {
+			setLogLevel(e.getKey(), e.getValue(), config);
+		}
+		ctx.updateLoggers();
+	}
+
+	@Override
 	public boolean handlesTopic(String topic) {
 		return TOPIC_UPDATE_LOGGER.equalsIgnoreCase(topic);
 	}
 
 	@Override
-	public InstructionStatus processInstruction(Instruction instruction) {
+	public synchronized InstructionStatus processInstruction(Instruction instruction) {
 		if ( instruction == null || !handlesTopic(instruction.getTopic()) ) {
 			return null;
 		}
@@ -82,32 +144,36 @@ public class Log4j2LoggingService implements LoggingService, InstructionHandler 
 		@SuppressWarnings("resource")
 		final LoggerContext ctx = (LoggerContext) ctxSpi;
 		final Configuration config = ctx.getConfiguration();
-		final org.apache.logging.log4j.Level log4jLevel = levelValue(level);
 
 		for ( String loggerNameList : loggerNames ) {
 			for ( String loggerName : StringUtils.commaDelimitedStringToSet(loggerNameList) ) {
-				if ( level == LoggingService.Level.INHERIT ) {
-					// remove logger
-					log.info("Configuring logger [{}] to inherit level", loggerName);
-					config.removeLogger(loggerName);
-				} else {
-					// set logger level
-					log.info("Adjusting logger [{}] to level [{}]", loggerName, log4jLevel);
-					LoggerConfig logConfig = config.getLoggerConfig(loggerName);
-					if ( logConfig.getName().equals(loggerName) ) {
-						logConfig.setLevel(log4jLevel);
-					} else {
-						// specific logger configuration not found, so create now
-						logConfig = new LoggerConfig(loggerName, log4jLevel, true);
-						config.addLogger(loggerName, logConfig);
-					}
-				}
+				setLogLevel(loggerName, level, config);
 			}
 		}
 
 		ctx.updateLoggers();
 
 		return InstructionUtils.createStatus(instruction, InstructionState.Completed);
+	}
+
+	private void setLogLevel(String loggerName, LoggingService.Level level, final Configuration config) {
+		if ( level == LoggingService.Level.INHERIT ) {
+			// remove logger
+			log.info("Configuring logger [{}] to inherit level", loggerName);
+			config.removeLogger(loggerName);
+		} else {
+			// set logger level
+			final org.apache.logging.log4j.Level log4jLevel = levelValue(level);
+			log.info("Adjusting logger [{}] to level [{}]", loggerName, log4jLevel);
+			LoggerConfig logConfig = config.getLoggerConfig(loggerName);
+			if ( logConfig.getName().equals(loggerName) ) {
+				logConfig.setLevel(log4jLevel);
+			} else {
+				// specific logger configuration not found, so create now
+				logConfig = new LoggerConfig(loggerName, log4jLevel, true);
+				config.addLogger(loggerName, logConfig);
+			}
+		}
 	}
 
 	private static final org.apache.logging.log4j.Level levelValue(Level level) {
@@ -132,6 +198,22 @@ public class Log4j2LoggingService implements LoggingService, InstructionHandler 
 
 			default:
 				return org.apache.logging.log4j.Level.OFF;
+		}
+	}
+
+	private static final Level level(org.apache.logging.log4j.Level level) {
+		if ( level.isLessSpecificThan(org.apache.logging.log4j.Level.TRACE) ) {
+			return Level.TRACE;
+		} else if ( level.isLessSpecificThan(org.apache.logging.log4j.Level.DEBUG) ) {
+			return Level.DEBUG;
+		} else if ( level.isLessSpecificThan(org.apache.logging.log4j.Level.INFO) ) {
+			return Level.INFO;
+		} else if ( level.isLessSpecificThan(org.apache.logging.log4j.Level.WARN) ) {
+			return Level.WARN;
+		} else if ( level.isLessSpecificThan(org.apache.logging.log4j.Level.ALL) ) {
+			return Level.ERROR;
+		} else {
+			return Level.OFF;
 		}
 	}
 

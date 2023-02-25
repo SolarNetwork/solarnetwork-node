@@ -23,6 +23,7 @@
 				<ul class="dropdown-menu">
 					<li ${navloc == 'settings' ? 'class="active"' : ''}><a href="<setup:url value='/a/settings'/>"><fmt:message key='link.settings'/></a></li>
 					<li ${navloc == 'filters' ? 'class="active"' : ''}><a href="<setup:url value='/a/settings/filters'/>"><fmt:message key='link.filters'/></a></li>
+					<li ${navloc == 'logging' ? 'class="active"' : ''}><a href="<setup:url value='/a/logging'/>"><fmt:message key='link.logging'/></a></li>
 				</ul>
 			</li>
 			
