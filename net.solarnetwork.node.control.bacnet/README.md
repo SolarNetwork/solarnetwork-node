@@ -4,7 +4,7 @@ This project provides SolarNode plugin that can be used to set BACnet object pro
 as numbers or strings, via the SolarNode Control API. This is an advanced plugin that requires
 knowledge of BACnet and the BACnet configuration of the components you want to control.
 
-![settings](docs/solarnode-bacnet-control-settings.png)
+<img title="BACnet Control settings" src="docs/solarnode-bacnet-control-settings.png" width="518">
 
 
 # SolarNodeOS port considerations
@@ -40,7 +40,7 @@ This plugin provides a **BACnet Control CSV Configurer** component will appear o
 page. This component lets you upload a BACnet Control CSV Configuration file to configure all BACnet
 Control components, without having to use the component settings form.
 
-![CSV Configurer settings](docs/solarnode-bacnet-control-csv-configurer-settings.png)
+<img title="CSV Configurer settings" src="docs/solarnode-bacnet-control-csv-configurer-settings.png" width="582">
 
 ## BACnet Control CSV Configuration Format
 
@@ -57,7 +57,7 @@ Here's an example screen shot of a configuration in a spreadsheet application. I
 Spreadsheet applications generally allows you to export the sheet in the CSV format, which can
 then be loaded into SolarNode via the CSV Configurer.
 
-![CSV Configuration example](docs/solarnode-bacnet-control-csv-configurer-example.png)
+<img title="CSV Configuration example" src="docs/solarnode-bacnet-control-csv-configurer-example.png" width="1305">
 
 ### Instance identifiers
 
@@ -69,7 +69,7 @@ empty.
 
 Here is an example of how 2 custom instance IDs `Relay` and `Term` appear in the SolarNode UI:
 
-![BACnet Control instance names](docs/solarnode-bacnet-control-instance-keys.png)
+<img title="BACnet Control instance names" src="docs/solarnode-bacnet-control-instance-keys.png" width="735">
 
 ### CSV column definition
 
@@ -147,7 +147,7 @@ You must configure settings for each BACnet object property you want to expose a
 control. You can configure as many property settings as you like, using the <kbd>+</kbd> and
 <kbd>-</kbd> buttons to add/remove configurations.
 
-![Property settings](docs/solarnode-bacnet-control-property-settings.png)
+<img title="Property settings" src="docs/solarnode-bacnet-control-property-settings.png" width="505">
 
 Each property configuration contains the following settings:
 
@@ -195,7 +195,7 @@ You can set a control value using the SolarNode GUI once the device is configure
 **Controls** page, then tap the **Manage** button for the control ID of the switch you want to
 toggle. You'll see a form where you can enter the desired value, like this:
 
-![SolarNode Controls UI](docs/solarnode-bacnet-control-ui.png)
+<img title="SolarNode Controls UI" src="docs/solarnode-bacnet-control-ui.png" width="739">
 
 ## SolarNetwork control
 

@@ -42,6 +42,7 @@
 	/js/new-node.js
 	/js/plugins.js
 	/js/datum-charts.js
+	/js/logging.js
 </pack:script>
 <sec:authorize access="!hasRole('ROLE_USER')">
 	<setup:resources type="application/javascript"/>

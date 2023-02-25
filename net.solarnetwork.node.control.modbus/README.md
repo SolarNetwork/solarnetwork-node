@@ -3,7 +3,7 @@
 This project provides SolarNode plugin that can be used to set arbitrary
 Modbus register values, such as numbers or strings.
 
-![settings](docs/solarnode-modbus-control-settings.png)
+<img title="Modbus Control settings" src="docs/solarnode-modbus-control-settings.png" width="754">
 
 # Install
 
@@ -35,7 +35,7 @@ This plugin also provides a **Modbus Control CSV Configurer** component will app
 settings page. This component lets you upload a Modbus Control CSV Configuration file to configure
 all Modbus Control components, without having to use the settings form.
 
-![CSV Configurer settings](docs/solarnode-modbus-control-csv-configurer-settings.png)
+<img title="CSV Configurer settings" src="docs/solarnode-modbus-control-csv-configurer-settings.png" width="686">
 
 ## Modbus Control CSV Configuration Format
 
@@ -52,7 +52,7 @@ Here's an example screen shot of a configuration in a spreadsheet application. I
 Spreadsheet applications generally allows you to export the sheet in the CSV format, which can
 then be loaded into SolarNode via the CSV Configurer.
 
-![CSV Configuration example](docs/solarnode-modbus-control-csv-configurer-example.png)
+<img title="CSV Configuration example" src="docs/solarnode-modbus-control-csv-configurer-example.png" width="1295">
 
 ### Instance identifiers
 
@@ -65,7 +65,7 @@ empty.
 Here's an example of how 3 custom instance IDs `Relay`, `PLC`, and `Inverter` appear in the
 SolarNode UI:
 
-![Modbus Control instance names](docs/solarnode-modbus-control-instance-keys.png)
+<img title="Modbus Control instance names" src="docs/solarnode-modbus-control-instance-keys.png" width="744">
 
 ### CSV column definition
 
@@ -205,12 +205,23 @@ Visit the **Controls** page, then tap the **Manage** button for the control ID
 of the switch you want to toggle. You'll see a form where you can enter the
 desired value, like this:
 
-![settings](docs/solarnode-modbus-control.png)
+<img title="SolarNode Control UI" src="docs/solarnode-modbus-control.png" width="742">
 
 ## SolarNetwork control
 
-The [SolarUser Instruction API](https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API#queue-instruction)
-can be used to change the control from anywhere in the world, by requesting the
-SolarNode to perform a [`SetControlParameter`](https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#setcontrolparameter)
-instruction and passing a single instruction parameter named the **Control ID** you
-configured for the control and the desired value as the parameter value.
+The [SolarUser Instruction API][instr-api] can be used to change the control from anywhere in the
+world, by requesting the SolarNode to perform a [`SetControlParameter`][SetControlParameter]
+instruction and passing a single instruction parameter named the **Control ID** you configured for
+the control and the desired value as the parameter value.
+
+For example, to set the `test/float` control to `29.0` an HTTP `POST` like this would update the
+value:
+
+```
+POST /solaruser/api/v1/sec/instr/add/SetControlParameter
+
+{"nodeId":123,"params":{"test/float":"29.0"}}
+```
+
+[instr-api]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API#queue-instruction
+[SetControlParameter]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarUser-API-enumerated-types#setcontrolparameter
