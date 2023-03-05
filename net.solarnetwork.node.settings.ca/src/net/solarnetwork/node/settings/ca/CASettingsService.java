@@ -1171,6 +1171,38 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		}
 	}
 
+	@Override
+	public void removeSettingResources(String handlerKey, String instanceKey, String settingKey,
+			Iterable<Resource> resources) throws IOException {
+		if ( resources == null ) {
+			return;
+		}
+
+		Path rsrcDir = getSettingResourcePersistencePath(handlerKey, instanceKey, settingKey);
+		if ( !Files.exists(rsrcDir) ) {
+			return;
+		}
+
+		int i = 1;
+		for ( Resource r : resources ) {
+			String name = r.getFilename();
+			if ( name == null ) {
+				name = String.valueOf(i);
+			}
+			Path out = rsrcDir.resolve(name);
+			try {
+				if ( Files.exists(out) ) {
+					Files.deleteIfExists(out);
+					log.info("Removed setting resource {}", out);
+				}
+				i++;
+			} catch ( IOException e ) {
+				throw new RuntimeException(
+						"Error removing setting resource " + out + ": " + e.getMessage());
+			}
+		}
+	}
+
 	private Path getSettingResourcePersistencePath(final String handlerKey, final String instanceKey,
 			final String settingKey) {
 		Path rsrcDir = SettingsService.settingResourceDirectory().resolve(handlerKey);
