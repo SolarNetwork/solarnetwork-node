@@ -133,7 +133,7 @@ import net.solarnetwork.util.SearchFilter;
  * {@link SettingDao} to persist changes between application restarts.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class CASettingsService implements SettingsService, BackupResourceProvider, InstructionHandler {
 
