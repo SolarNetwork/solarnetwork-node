@@ -22,10 +22,10 @@
 
 package net.solarnetwork.node.metadata.json;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singleton;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -67,7 +67,7 @@ import net.solarnetwork.util.CachedResult;
  * </p>
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class JsonDatumMetadataService extends JsonHttpClientSupport implements DatumMetadataService,
 		SettingResourceHandler, SettingSpecifierProvider, SettingsChangeObserver, Runnable {
@@ -87,8 +87,6 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	 * @since 1.7
 	 */
 	public static final int DEFATUL_DATUM_STREAM_METADATA_CACHE_SECONDS = 86400;
-
-	private static final Charset UTF8 = Charset.forName("UTF-8");
 
 	private String baseUrl = "/api/v1/sec/datum/meta";
 
@@ -262,7 +260,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 		private synchronized void persistMetadataLocally(final GeneralDatumMetadata meta,
 				final long timestamp) {
 			try {
-				final String sourceKey = DigestUtils.md5DigestAsHex(sourceId.getBytes(UTF8));
+				final String sourceKey = DigestUtils.md5DigestAsHex(sourceId.getBytes(UTF_8));
 				byte[] json = getObjectMapper().writeValueAsBytes(meta);
 				ByteArrayResource r = new ByteArrayResource(json, sourceId + " metadata");
 				settingsService.importSettingResources(getSettingUid(), null, sourceKey, singleton(r));
@@ -408,7 +406,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	}
 
 	private GeneralDatumMetadata loadPersistedMetadata(String sourceId) {
-		final String sourceKey = DigestUtils.md5DigestAsHex(sourceId.getBytes(UTF8));
+		final String sourceKey = DigestUtils.md5DigestAsHex(sourceId.getBytes(UTF_8));
 		try {
 			Iterable<Resource> resources = settingsService.getSettingResources(getSettingUid(), null,
 					sourceKey);
