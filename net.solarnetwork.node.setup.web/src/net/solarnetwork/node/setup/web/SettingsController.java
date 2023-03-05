@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -97,7 +99,7 @@ import net.solarnetwork.web.support.MultipartFileResource;
  * Web controller for the settings UI.
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -487,10 +489,17 @@ public class SettingsController {
 	public void exportSettings(@RequestParam(required = false, value = "backup") String backupKey,
 			HttpServletResponse response) throws IOException {
 		final SettingsService service = service(settingsServiceTracker);
+		final Long nodeId = identityService.getNodeId();
 		if ( service != null ) {
 			response.setContentType(MediaType.TEXT_PLAIN.toString());
-			response.setHeader("Content-Disposition", "attachment; filename=settings"
-					+ (backupKey == null ? "" : "_" + backupKey) + ".txt");
+			response.setHeader("Content-Disposition",
+					"attachment; filename=solarnode-settings" + (nodeId == null ? "" : "-" + nodeId)
+							+ "_"
+							+ (backupKey == null
+									? (DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss")
+											.format(ZonedDateTime.now()))
+									: backupKey)
+							+ ".txt");
 			if ( backupKey != null ) {
 				Reader r = service.getReaderForBackup(new SettingsBackup(backupKey, null));
 				if ( r != null ) {
