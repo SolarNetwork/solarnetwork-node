@@ -491,7 +491,7 @@ public class SettingsController {
 		final SettingsService service = service(settingsServiceTracker);
 		final Long nodeId = identityService.getNodeId();
 		if ( service != null ) {
-			response.setContentType(MediaType.TEXT_PLAIN.toString());
+			response.setContentType("text/csv;charset=UTF-8");
 			response.setHeader("Content-Disposition",
 					"attachment; filename=solarnode-settings" + (nodeId == null ? "" : "-" + nodeId)
 							+ "_"
@@ -499,7 +499,7 @@ public class SettingsController {
 									? (DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmmss")
 											.format(ZonedDateTime.now()))
 									: backupKey)
-							+ ".txt");
+							+ ".csv");
 			if ( backupKey != null ) {
 				Reader r = service.getReaderForBackup(new SettingsBackup(backupKey, null));
 				if ( r != null ) {
