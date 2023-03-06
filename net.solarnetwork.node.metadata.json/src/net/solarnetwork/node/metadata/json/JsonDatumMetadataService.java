@@ -22,10 +22,10 @@
 
 package net.solarnetwork.node.metadata.json;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singleton;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -41,11 +41,16 @@ import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.util.DigestUtils;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
 import net.solarnetwork.domain.datum.ObjectDatumStreamMetadata;
 import net.solarnetwork.domain.datum.ObjectDatumStreamMetadataId;
 import net.solarnetwork.node.dao.SettingDao;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.DatumMetadataService;
 import net.solarnetwork.node.service.support.JsonHttpClientSupport;
 import net.solarnetwork.node.settings.SettingResourceHandler;
@@ -56,6 +61,7 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.util.CachedResult;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * JSON based web service implementation of {@link DatumMetadataService}.
@@ -67,10 +73,11 @@ import net.solarnetwork.util.CachedResult;
  * </p>
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
-public class JsonDatumMetadataService extends JsonHttpClientSupport implements DatumMetadataService,
-		SettingResourceHandler, SettingSpecifierProvider, SettingsChangeObserver, Runnable {
+public class JsonDatumMetadataService extends JsonHttpClientSupport
+		implements DatumMetadataService, SettingResourceHandler, SettingSpecifierProvider,
+		SettingsChangeObserver, InstructionHandler, Runnable {
 
 	/** The settings key for source metadata. */
 	public static final String SETTING_KEY_SOURCE_META = "JsonDatumMetadataService.sourceMeta";
@@ -88,7 +95,24 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	 */
 	public static final int DEFATUL_DATUM_STREAM_METADATA_CACHE_SECONDS = 86400;
 
-	private static final Charset UTF8 = Charset.forName("UTF-8");
+	/**
+	 * The instruction topic to clear locally cached datum source metadata.
+	 * 
+	 * @since 2.3
+	 */
+	public static final String DATUM_SOURCE_METADATA_CACHE_CLEAR_TOPIC = "DatumSourceMetadataClearCache";
+
+	/**
+	 * The instruction parameter for an optional comma-delimited list of source
+	 * IDs.
+	 * 
+	 * <p>
+	 * If not provided, then "all available" source IDs is assumed.
+	 * </p>
+	 * 
+	 * @since 2.3
+	 */
+	public static final String SOURCE_IDS_PARAM = "sourceIds";
 
 	private String baseUrl = "/api/v1/sec/datum/meta";
 
@@ -161,6 +185,35 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 	 */
 	public CachedMetadata createCachedMetadata(String sourceId, GeneralDatumMetadata meta) {
 		return new CachedMetadata(sourceId, meta);
+	}
+
+	@Override
+	public boolean handlesTopic(String topic) {
+		return DATUM_SOURCE_METADATA_CACHE_CLEAR_TOPIC.equalsIgnoreCase(topic);
+	}
+
+	@Override
+	public InstructionStatus processInstruction(Instruction instruction) {
+		if ( instruction == null || !handlesTopic(instruction.getTopic()) ) {
+			return null;
+		}
+		final String sourceIds = instruction.getParameterValue(SOURCE_IDS_PARAM);
+		if ( sourceIds == null || sourceIds.isEmpty() ) {
+			return InstructionUtils.createStatus(instruction, InstructionState.Declined, InstructionUtils
+					.createErrorResultParameters("No sourceIds parameter provided,", "JDMS.0001"));
+		}
+		final Set<String> sources = StringUtils.commaDelimitedStringToSet(sourceIds);
+		for ( String sourceId : sources ) {
+			CachedMetadata m = sourceMetadata.remove(sourceId);
+			if ( m != null ) {
+				synchronized ( m ) {
+					removePersistedMetadata(sourceId);
+				}
+			} else {
+				removePersistedMetadata(sourceId);
+			}
+		}
+		return InstructionUtils.createStatus(instruction, InstructionState.Completed);
 	}
 
 	/**
@@ -262,7 +315,7 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 		private synchronized void persistMetadataLocally(final GeneralDatumMetadata meta,
 				final long timestamp) {
 			try {
-				final String sourceKey = DigestUtils.md5DigestAsHex(sourceId.getBytes(UTF8));
+				final String sourceKey = DigestUtils.md5DigestAsHex(sourceId.getBytes(UTF_8));
 				byte[] json = getObjectMapper().writeValueAsBytes(meta);
 				ByteArrayResource r = new ByteArrayResource(json, sourceId + " metadata");
 				settingsService.importSettingResources(getSettingUid(), null, sourceKey, singleton(r));
@@ -407,8 +460,18 @@ public class JsonDatumMetadataService extends JsonHttpClientSupport implements D
 		}
 	}
 
+	private void removePersistedMetadata(String sourceId) {
+		final String sourceKey = DigestUtils.md5DigestAsHex(sourceId.getBytes(UTF_8));
+		final Resource r = new ByteArrayResource(new byte[0], sourceId + " metadata");
+		try {
+			settingsService.removeSettingResources(getSettingUid(), null, sourceKey, singleton(r));
+		} catch ( IOException e ) {
+			log.debug("Error loading cached metadata for source {}: {}", sourceId, e.getMessage());
+		}
+	}
+
 	private GeneralDatumMetadata loadPersistedMetadata(String sourceId) {
-		final String sourceKey = DigestUtils.md5DigestAsHex(sourceId.getBytes(UTF8));
+		final String sourceKey = DigestUtils.md5DigestAsHex(sourceId.getBytes(UTF_8));
 		try {
 			Iterable<Resource> resources = settingsService.getSettingResources(getSettingUid(), null,
 					sourceKey);

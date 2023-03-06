@@ -15,6 +15,11 @@
 		<argument ref="settingDao"/>
 		<argument ref="identityService"/>
 		<argument ref="passwordEncoder"/>
+		<property name="messageSource">
+			<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+				<property name="basename" value="net.solarnetwork.node.setup.security.SettingsUserService"/>
+			</bean>
+		</property>
 	</bean>
 
 	<!-- Published Services -->
@@ -28,6 +33,7 @@
 	<service ref="settingsUserService">
 		<interfaces>
 			<value>net.solarnetwork.node.setup.UserService</value>
+			<value>net.solarnetwork.node.backup.BackupResourceProvider</value>
 			<value>org.springframework.security.core.userdetails.UserDetailsService</value>
 		</interfaces>
 		<service-properties>

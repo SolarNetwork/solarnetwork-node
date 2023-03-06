@@ -22,14 +22,30 @@
 
 package net.solarnetwork.node.setup.security;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -43,6 +59,16 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.util.FileCopyUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import net.solarnetwork.codec.JsonUtils;
+import net.solarnetwork.node.backup.BackupResource;
+import net.solarnetwork.node.backup.BackupResourceInfo;
+import net.solarnetwork.node.backup.BackupResourceProvider;
+import net.solarnetwork.node.backup.BackupResourceProviderInfo;
+import net.solarnetwork.node.backup.ResourceBackupResource;
+import net.solarnetwork.node.backup.SimpleBackupResourceInfo;
+import net.solarnetwork.node.backup.SimpleBackupResourceProviderInfo;
 import net.solarnetwork.node.dao.BasicBatchOptions;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallbackResult;
@@ -57,17 +83,36 @@ import net.solarnetwork.node.setup.UserService;
  * {@link UserDetailsService} that uses {@link SettingDao} for users and roles.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
-public class SettingsUserService implements UserService, UserDetailsService {
+public class SettingsUserService implements UserService, UserDetailsService, BackupResourceProvider {
 
+	/** The setting type for a user record. */
 	public static final String SETTING_TYPE_USER = "solarnode.user";
+
+	/** The setting type for a role record. */
 	public static final String SETTING_TYPE_ROLE = "solarnode.role";
+
+	/** The authority name grated to users. */
 	public static final String GRANTED_AUTH_USER = "ROLE_USER";
+
+	/**
+	 * The default value for the {@code usersFilePath} property.
+	 * 
+	 * @since 2.2
+	 */
+	public static final String DEFAULT_USERS_FILE_PATH = "conf/users.json";
+
+	private static final String BACKUP_RESOURCE_NAME_USERS_FILE = "users.json";
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final SettingDao settingDao;
 	private final IdentityService identityService;
 	private final PasswordEncoder passwordEncoder;
+	private final ObjectMapper objectMapper;
+	private String usersFilePath = DEFAULT_USERS_FILE_PATH;
+	private MessageSource messageSource;
 
 	/**
 	 * Constructor.
@@ -85,52 +130,133 @@ public class SettingsUserService implements UserService, UserDetailsService {
 		this.settingDao = settingDao;
 		this.identityService = identityService;
 		this.passwordEncoder = passwordEncoder;
+		this.objectMapper = JsonUtils.newObjectMapper();
 	}
 
 	@Override
-	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-		UserDetails result = null;
-		String password = settingDao.getSetting(username, SETTING_TYPE_USER);
-		if ( password == null && identityService != null && passwordEncoder != null
-				&& !someUserExists() ) {
-			// for backwards-compat with nodes created before user auth, provide a default
-			Long nodeId = identityService.getNodeId();
-			if ( nodeId != null && nodeId.toString().equalsIgnoreCase(username) ) {
-				password = passwordEncoder.encode("solar");
-				GrantedAuthority auth = new SimpleGrantedAuthority(GRANTED_AUTH_USER);
-				result = new User(username, password, Collections.singleton(auth));
-			}
-		} else if ( password != null ) {
-			Collection<GrantedAuthority> auths;
-			String role = settingDao.getSetting(username, SETTING_TYPE_ROLE);
-			if ( role != null ) {
-				GrantedAuthority auth = new SimpleGrantedAuthority(role);
-				auths = Collections.singleton(auth);
-			} else {
-				auths = Collections.emptySet();
-			}
-			result = new User(username, password, auths);
+	public synchronized UserDetails loadUserByUsername(String username)
+			throws UsernameNotFoundException {
+		// first look in users file
+		Map<String, UserEntity> users = loadUsersFile();
+		UserDetails result = loadUserByUsername(username, users);
+		if ( result != null && !users.containsKey(username)
+				&& settingDao.getSetting(username, SETTING_TYPE_USER) != null ) {
+			// migrate settings user to users file
+			final long now = System.currentTimeMillis();
+			users.put(username, new UserEntity(now, now, username, result.getPassword(), result
+					.getAuthorities().stream().map(a -> a.getAuthority()).collect(Collectors.toSet())));
+			saveUsersFile(users);
+			// clean up and remove user credentials from settings
+			settingDao.deleteSetting(username, SETTING_TYPE_USER);
+			settingDao.deleteSetting(username, SETTING_TYPE_ROLE);
 		}
+		return result;
+	}
+
+	private UserDetails loadUserByUsername(String username, Map<String, UserEntity> users)
+			throws UsernameNotFoundException {
+		UserDetails result = null;
+
+		UserEntity user = users.get(username);
+		if ( user != null ) {
+			result = new User(username, user.getPassword(), user.getRoles().stream()
+					.map(r -> new SimpleGrantedAuthority(r)).collect(Collectors.toList()));
+		} else {
+			// next try user setting
+			String password = settingDao.getSetting(username, SETTING_TYPE_USER);
+			if ( password == null && identityService != null && passwordEncoder != null
+					&& !someUserExists(users) ) {
+				// for backwards-compat with nodes created before user auth, provide a default
+				Long nodeId = identityService.getNodeId();
+				if ( nodeId != null && nodeId.toString().equalsIgnoreCase(username) ) {
+					password = passwordEncoder.encode("solar");
+					GrantedAuthority auth = new SimpleGrantedAuthority(GRANTED_AUTH_USER);
+					result = new User(username, password, Collections.singleton(auth));
+				}
+			} else if ( password != null ) {
+				Collection<GrantedAuthority> auths;
+				String role = settingDao.getSetting(username, SETTING_TYPE_ROLE);
+				if ( role != null ) {
+					GrantedAuthority auth = new SimpleGrantedAuthority(role);
+					auths = Collections.singleton(auth);
+				} else {
+					auths = Collections.emptySet();
+				}
+				result = new User(username, password, auths);
+			}
+		}
+
 		if ( result == null ) {
 			throw new UsernameNotFoundException(username);
 		}
 		return result;
 	}
 
+	private synchronized Map<String, UserEntity> loadUsersFile() {
+		final File usersFile = new File(usersFilePath);
+		final Map<String, UserEntity> result = new LinkedHashMap<>(4);
+		if ( usersFile.canRead() ) {
+			try {
+				UserEntity[] users = objectMapper.readValue(usersFile, UserEntity[].class);
+				for ( UserEntity user : users ) {
+					result.put(user.getUsername(), user);
+				}
+			} catch ( IOException e ) {
+				log.warn("Error reading users data from {}: {}", usersFilePath, e.getMessage());
+			}
+		}
+		return result;
+	}
+
+	private synchronized void saveUsersFile(Map<String, UserEntity> users) {
+		Path usersFile = Paths.get(usersFilePath);
+		try {
+			Path usersFileDir = usersFile.getParent();
+			if ( !Files.isDirectory(usersFileDir) ) {
+				Files.createDirectories(usersFileDir);
+			}
+			if ( users == null || users.isEmpty() ) {
+				Files.deleteIfExists(usersFile);
+			} else {
+				objectMapper.writeValue(usersFile.toFile(), users.values());
+				try {
+					Files.setPosixFilePermissions(usersFile,
+							EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE));
+				} catch ( UnsupportedOperationException e ) {
+					// too bad, just ignore
+				}
+			}
+		} catch ( IOException e ) {
+			log.error("Error saving users data to {}: {}", usersFilePath, e.getMessage(), e);
+		}
+	}
+
 	/**
 	 * Test if some user exists.
 	 * 
 	 * <p>
-	 * This implementation returns {@literal true} only if a
-	 * {@link #SETTING_TYPE_ROLE} record with a value of
-	 * {@link #GRANTED_AUTH_USER} exists along with a {@link #SETTING_TYPE_USER}
-	 * for the same key.
+	 * This implementation returns {@literal true} only if either:
 	 * </p>
+	 * <ol>
+	 * <li>a user is found in {@code usersFilePath} with a
+	 * {@link #GRANTED_AUTH_USER} role</li>
+	 * <li>a {@link #SETTING_TYPE_ROLE} record with a value of
+	 * {@link #GRANTED_AUTH_USER} exists along with a {@link #SETTING_TYPE_USER}
+	 * for the same key</li>
+	 * </ol>
 	 * 
 	 * {@inheritDoc}
 	 */
 	@Override
 	public boolean someUserExists() {
+		return someUserExists(loadUsersFile());
+	}
+
+	private boolean someUserExists(final Map<String, UserEntity> users) {
+		if ( users.values().stream().filter(u -> u.getRoles().contains(GRANTED_AUTH_USER)).findAny()
+				.isPresent() ) {
+			return true;
+		}
 		final AtomicBoolean result = new AtomicBoolean(false);
 		final Map<String, Boolean> userMap = new HashMap<>(2);
 		settingDao.batchProcess(new BatchCallback<Setting>() {
@@ -182,15 +308,24 @@ public class SettingsUserService implements UserService, UserDetailsService {
 	@Override
 	public void changePassword(final String existingPassword, final String newPassword,
 			final String newPasswordAgain) {
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		UserDetails activeUser = (auth == null ? null : (UserDetails) auth.getPrincipal());
+		if ( newPassword == null || newPasswordAgain == null || !newPassword.equals(newPasswordAgain) ) {
+			throw new IllegalArgumentException(
+					"New password not provided or does not match repeated password.");
+		}
+		final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		final UserDetails activeUser = (auth == null ? null : (UserDetails) auth.getPrincipal());
 		if ( activeUser == null ) {
 			throw new InsufficientAuthenticationException("Active user not found.");
 		}
-		UserDetails dbUser = loadUserByUsername(activeUser.getUsername());
+
+		final Map<String, UserEntity> users = loadUsersFile();
+		final UserDetails dbUser = loadUserByUsername(activeUser.getUsername(), users);
 		if ( dbUser == null ) {
 			throw new UsernameNotFoundException("User not found");
 		}
+
+		final boolean userFromUsersFile = users.containsKey(activeUser.getUsername());
+
 		if ( passwordEncoder != null ) {
 			if ( !passwordEncoder.matches(existingPassword, dbUser.getPassword()) ) {
 				throw new BadCredentialsException("Existing password does not match.");
@@ -198,67 +333,87 @@ public class SettingsUserService implements UserService, UserDetailsService {
 		} else if ( !existingPassword.equals(dbUser.getPassword()) ) {
 			throw new BadCredentialsException("Existing password does not match.");
 		}
-		if ( newPassword == null || newPasswordAgain == null || !newPassword.equals(newPasswordAgain) ) {
-			throw new IllegalArgumentException(
-					"New password not provided or does not match repeated password.");
-		}
+
 		String password;
 		if ( passwordEncoder != null ) {
 			password = passwordEncoder.encode(newPassword);
 		} else {
 			password = newPassword;
 		}
-		settingDao.storeSetting(dbUser.getUsername(), SETTING_TYPE_USER, password);
-		settingDao.storeSetting(dbUser.getUsername(), SETTING_TYPE_ROLE, GRANTED_AUTH_USER);
+
+		users.compute(dbUser.getUsername(), (k, v) -> {
+			if ( v != null ) {
+				return v.withPassword(password);
+			}
+			final long now = System.currentTimeMillis();
+			return new UserEntity(now, now, dbUser.getUsername(), password,
+					Collections.singleton(GRANTED_AUTH_USER));
+		});
+
+		saveUsersFile(users);
+
+		if ( !userFromUsersFile ) {
+			// clean up and remove user credentials from settings
+			settingDao.deleteSetting(dbUser.getUsername(), SETTING_TYPE_USER);
+			settingDao.deleteSetting(dbUser.getUsername(), SETTING_TYPE_ROLE);
+		}
 	}
 
 	@Override
 	public void changeUsername(final String newUsername, final String newUsernameAgain) {
-		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-		UserDetails activeUser = (auth == null ? null : (UserDetails) auth.getPrincipal());
-		if ( activeUser == null ) {
-			throw new InsufficientAuthenticationException("Active user not found.");
-		}
-		final UserDetails dbUser = loadUserByUsername(activeUser.getUsername());
-		if ( dbUser == null ) {
-			throw new UsernameNotFoundException("User not found");
-		}
 		if ( newUsername == null || newUsernameAgain == null || !newUsername.equals(newUsernameAgain) ) {
 			throw new IllegalArgumentException(
 					"New username not provided or does not match repeated username.");
 		}
-		final AtomicBoolean updatedUsername = new AtomicBoolean(false);
-		final AtomicBoolean updatedRole = new AtomicBoolean(false);
-		settingDao.batchProcess(new BatchCallback<Setting>() {
 
-			@Override
-			public BatchCallbackResult handle(Setting domainObject) {
-				if ( domainObject.getType().equals(SETTING_TYPE_USER)
-						&& domainObject.getKey().equals(dbUser.getUsername()) ) {
-					updatedUsername.set(true);
-					domainObject.setKey(newUsername);
-					return (updatedRole.get() ? BatchCallbackResult.UPDATE_STOP
-							: BatchCallbackResult.UPDATE);
-				} else if ( domainObject.getType().equals(SETTING_TYPE_ROLE)
-						&& domainObject.getKey().equals(dbUser.getUsername()) ) {
-					updatedRole.set(true);
-					domainObject.setKey(newUsername);
-					return (updatedUsername.get() ? BatchCallbackResult.UPDATE_STOP
-							: BatchCallbackResult.UPDATE);
-				}
-				return BatchCallbackResult.CONTINUE;
-			}
-		}, new BasicBatchOptions("UpdateUser", BasicBatchOptions.DEFAULT_BATCH_SIZE, true, null));
-		if ( !updatedUsername.get() ) {
-			// no username exists, treat as a legacy node whose password was "solar"
-			UserProfile newProfile = new UserProfile();
-			newProfile.setUsername(newUsername);
-			newProfile.setPassword("solar");
-			newProfile.setPasswordAgain("solar");
-			storeUserProfile(newProfile);
+		final Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+		final UserDetails activeUser = (auth == null ? null : (UserDetails) auth.getPrincipal());
+		if ( activeUser == null ) {
+			throw new InsufficientAuthenticationException("Active user not found.");
 		}
 
-		// update active user details to new usenrame
+		final Map<String, UserEntity> users = loadUsersFile();
+		final UserDetails dbUser = loadUserByUsername(activeUser.getUsername(), users);
+		if ( dbUser == null ) {
+			throw new UsernameNotFoundException("User not found");
+		}
+
+		final UserEntity userFromUsersFile = users.remove(activeUser.getUsername());
+		if ( userFromUsersFile != null ) {
+			users.put(newUsername, userFromUsersFile.withUsername(newUsername));
+		} else {
+			final AtomicBoolean updatedUsername = new AtomicBoolean(false);
+			final AtomicBoolean updatedRole = new AtomicBoolean(false);
+			settingDao.batchProcess(new BatchCallback<Setting>() {
+
+				@Override
+				public BatchCallbackResult handle(Setting domainObject) {
+					if ( domainObject.getType().equals(SETTING_TYPE_USER)
+							&& domainObject.getKey().equals(dbUser.getUsername()) ) {
+						updatedUsername.set(true);
+						return (updatedRole.get() ? BatchCallbackResult.UPDATE_STOP
+								: BatchCallbackResult.DELETE);
+					} else if ( domainObject.getType().equals(SETTING_TYPE_ROLE)
+							&& domainObject.getKey().equals(dbUser.getUsername()) ) {
+						updatedRole.set(true);
+						return (updatedUsername.get() ? BatchCallbackResult.UPDATE_STOP
+								: BatchCallbackResult.DELETE);
+					}
+					return BatchCallbackResult.CONTINUE;
+				}
+			}, new BasicBatchOptions("UpdateUser", BasicBatchOptions.DEFAULT_BATCH_SIZE, true, null));
+			if ( !updatedUsername.get() ) {
+				// no username exists, treat as a legacy node whose password was "solar"
+				UserProfile newProfile = new UserProfile();
+				newProfile.setUsername(newUsername);
+				newProfile.setPassword("solar");
+				newProfile.setPasswordAgain("solar");
+				storeUserProfile(newProfile, users);
+			}
+		}
+		saveUsersFile(users);
+
+		// update active user details to new username
 		User newUser = new User(newUsername, "",
 				Collections.singleton(new SimpleGrantedAuthority(GRANTED_AUTH_USER)));
 		UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
@@ -268,6 +423,10 @@ public class SettingsUserService implements UserService, UserDetailsService {
 
 	@Override
 	public void storeUserProfile(UserProfile profile) {
+		storeUserProfile(profile, loadUsersFile());
+	}
+
+	private void storeUserProfile(UserProfile profile, Map<String, UserEntity> users) {
 		if ( profile.getUsername() == null || profile.getPassword() == null
 				|| !profile.getPassword().equals(profile.getPasswordAgain()) ) {
 			throw new IllegalArgumentException(
@@ -312,6 +471,89 @@ public class SettingsUserService implements UserService, UserDetailsService {
 		return null;
 	}
 
+	/*-
+	 * BackupResourceProvider implementation
+	 */
+
+	@Override
+	public String getKey() {
+		return "net.solarnetwork.node.setup.security.SettingsUserService";
+	}
+
+	@Override
+	public Iterable<BackupResource> getBackupResources() {
+		File file = new File(usersFilePath);
+		if ( !(file.isFile() && file.canRead()) ) {
+			return Collections.emptyList();
+		}
+		List<BackupResource> result = new ArrayList<>(1);
+		result.add(new ResourceBackupResource(new FileSystemResource(file),
+				BACKUP_RESOURCE_NAME_USERS_FILE, getKey()));
+		return result;
+	}
+
+	@Override
+	public boolean restoreBackupResource(BackupResource resource) {
+		if ( resource != null
+				&& BACKUP_RESOURCE_NAME_USERS_FILE.equalsIgnoreCase(resource.getBackupPath()) ) {
+			final File destFile = new File(usersFilePath);
+			final File destDir = destFile.getParentFile();
+			if ( !destDir.isDirectory() ) {
+				if ( !destDir.mkdirs() ) {
+					log.warn("Error creating users database directory {}", destDir.getAbsolutePath());
+					return false;
+				}
+			}
+			synchronized ( this ) {
+				File tmpFile = null;
+				try {
+					tmpFile = File.createTempFile(".users-", ".json", destDir);
+					FileCopyUtils.copy(resource.getInputStream(), new FileOutputStream(tmpFile));
+					tmpFile.setLastModified(resource.getModificationDate());
+					if ( destFile.exists() ) {
+						destFile.delete();
+					}
+					return tmpFile.renameTo(destFile);
+				} catch ( IOException e ) {
+					log.error("IO error restoring user database resource {}: {}",
+							destFile.getAbsolutePath(), e.getMessage());
+					return false;
+				} finally {
+					if ( tmpFile != null && tmpFile.exists() ) {
+						tmpFile.delete();
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	@Override
+	public BackupResourceProviderInfo providerInfo(Locale locale) {
+		String name = "User Database Provider";
+		String desc = "Backs up the SolarNode user database.";
+		MessageSource ms = messageSource;
+		if ( ms != null ) {
+			name = ms.getMessage("title", null, name, locale);
+			desc = ms.getMessage("desc", null, desc, locale);
+		}
+		return new SimpleBackupResourceProviderInfo(getKey(), name, desc);
+	}
+
+	@Override
+	public BackupResourceInfo resourceInfo(BackupResource resource, Locale locale) {
+		String desc = "Node login user information.";
+		MessageSource ms = messageSource;
+		if ( ms != null ) {
+			desc = ms.getMessage("users.desc", null, desc, locale);
+		}
+		return new SimpleBackupResourceInfo(resource.getProviderKey(), resource.getBackupPath(), desc);
+	}
+
+	/*-
+	 * Accessors
+	 */
+
 	/**
 	 * Get the configured {@link SettingDao}.
 	 * 
@@ -328,6 +570,39 @@ public class SettingsUserService implements UserService, UserDetailsService {
 	 */
 	public PasswordEncoder getPasswordEncoder() {
 		return passwordEncoder;
+	}
+
+	/**
+	 * Get the users file path.
+	 * 
+	 * @return the users file path
+	 * @since 2.2
+	 */
+	public String getUsersFilePath() {
+		return usersFilePath;
+	}
+
+	/**
+	 * Set the users file path.
+	 * 
+	 * @param usersFilePath
+	 *        the users file path to set
+	 * @since 2.2
+	 */
+	public void setUsersFilePath(String usersFilePath) {
+		this.usersFilePath = (usersFilePath == null || usersFilePath.isEmpty() ? DEFAULT_USERS_FILE_PATH
+				: usersFilePath);
+	}
+
+	/**
+	 * Set a message source for backup localized messages.
+	 * 
+	 * @param messageSource
+	 *        the message source
+	 * @since 2.2
+	 */
+	public void setMessageSource(MessageSource messageSource) {
+		this.messageSource = messageSource;
 	}
 
 }

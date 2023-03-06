@@ -43,6 +43,7 @@
 	
 	<service>
 		<interfaces>
+			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
 			<value>net.solarnetwork.node.service.DatumMetadataService</value>
 			<value>net.solarnetwork.node.settings.SettingResourceHandler</value>
 			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>

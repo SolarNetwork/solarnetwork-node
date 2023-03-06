@@ -37,8 +37,10 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -70,6 +72,7 @@ import org.springframework.util.DigestUtils;
 import org.springframework.util.FileCopyUtils;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import net.solarnetwork.codec.ObjectMapperFactoryBean;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.datum.BasicObjectDatumStreamMetadata;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.domain.datum.ObjectDatumKind;
@@ -78,6 +81,9 @@ import net.solarnetwork.domain.datum.ObjectDatumStreamMetadataId;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.metadata.json.JsonDatumMetadataService;
 import net.solarnetwork.node.metadata.json.JsonDatumMetadataService.CachedMetadata;
+import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.settings.SettingsService;
 import net.solarnetwork.util.CachedResult;
@@ -86,7 +92,7 @@ import net.solarnetwork.util.CachedResult;
  * Test cases for the {@link JsonDatumMetadataService} class.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 
@@ -788,6 +794,72 @@ public class JsonDatumMetadataServiceTests extends AbstractHttpClientTests {
 		// THEN
 		assertThat("Set contains loaded source IDs", result,
 				containsInAnyOrder(TEST_SOUCE_ID, sourceId2));
+	}
+
+	@Test
+	public void clearSourceCache_oneSource() throws IOException {
+		// GIVEN
+		Instruction instr = InstructionUtils.createLocalInstruction(
+				JsonDatumMetadataService.DATUM_SOURCE_METADATA_CACHE_CLEAR_TOPIC,
+				JsonDatumMetadataService.SOURCE_IDS_PARAM, TEST_SOUCE_ID);
+
+		final String settingKey = DigestUtils
+				.md5DigestAsHex(TEST_SOUCE_ID.getBytes(StandardCharsets.UTF_8));
+		Capture<Iterable<Resource>> resourcesCaptor = Capture.newInstance();
+		settingsService.removeSettingResources(eq(service.getSettingUid()), isNull(), eq(settingKey),
+				capture(resourcesCaptor));
+
+		// WHEN
+		replayAll();
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		assertThat("Instruction status returned", result, is(notNullValue()));
+		assertThat("Instruction handled", result.getInstructionState(),
+				is(equalTo(InstructionState.Completed)));
+
+		Iterable<Resource> savedResources = resourcesCaptor.getValue();
+		List<Resource> rsrcs = StreamSupport.stream(savedResources.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Removed single resource", rsrcs, hasSize(1));
+	}
+
+	@Test
+	public void clearSourceCache_multiSource() throws IOException {
+		// GIVEN
+		final String sourceId2 = UUID.randomUUID().toString();
+		Instruction instr = InstructionUtils.createLocalInstruction(
+				JsonDatumMetadataService.DATUM_SOURCE_METADATA_CACHE_CLEAR_TOPIC,
+				JsonDatumMetadataService.SOURCE_IDS_PARAM, TEST_SOUCE_ID + "," + sourceId2);
+
+		final String settingKey1 = DigestUtils
+				.md5DigestAsHex(TEST_SOUCE_ID.getBytes(StandardCharsets.UTF_8));
+		Capture<Iterable<Resource>> resourcesCaptor1 = Capture.newInstance();
+		settingsService.removeSettingResources(eq(service.getSettingUid()), isNull(), eq(settingKey1),
+				capture(resourcesCaptor1));
+
+		final String settingKey2 = DigestUtils
+				.md5DigestAsHex(sourceId2.getBytes(StandardCharsets.UTF_8));
+		Capture<Iterable<Resource>> resourcesCaptor2 = Capture.newInstance();
+		settingsService.removeSettingResources(eq(service.getSettingUid()), isNull(), eq(settingKey2),
+				capture(resourcesCaptor2));
+
+		// WHEN
+		replayAll();
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		assertThat("Instruction status returned", result, is(notNullValue()));
+		assertThat("Instruction handled", result.getInstructionState(),
+				is(equalTo(InstructionState.Completed)));
+
+		List<Resource> rsrcs = StreamSupport.stream(resourcesCaptor1.getValue().spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Removed single resource 1", rsrcs, hasSize(1));
+
+		rsrcs = StreamSupport.stream(resourcesCaptor2.getValue().spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Removed single resource 2", rsrcs, hasSize(1));
 	}
 
 }

@@ -180,6 +180,41 @@ public class CASettingsServiceTests {
 	}
 
 	@Test
+	public void removeResource() throws IOException {
+		// GIVEN
+		final String handlerKey = UUID.randomUUID().toString();
+		final String settingKey = "foobar";
+		SettingResourceHandler handler = EasyMock.createMock(SettingResourceHandler.class);
+		mocks.add(handler);
+
+		expect(handler.getSettingUid()).andReturn(handlerKey).anyTimes();
+
+		Capture<Iterable<Resource>> resourceCaptor = Capture.newInstance();
+		expect(handler.applySettingResources(eq(settingKey), capture(resourceCaptor)))
+				.andReturn(new SettingsCommand());
+
+		// WHEN
+		replayAll();
+		service.onBindHandler(handler, null);
+
+		UrlResource r = new UrlResource(getClass().getResource("test-resource-01.txt"));
+		service.importSettingResources(handlerKey, null, settingKey, singleton(r));
+		service.removeSettingResources(handlerKey, null, settingKey, singleton(r));
+
+		// THEN
+		Path expectedResourcePath = tmpDir
+				.resolve(Paths.get(SettingsService.DEFAULT_SETTING_RESOURCE_DIR, handlerKey, settingKey,
+						"test-resource-01.txt"));
+		assertThat("Resource path no longer exists", Files.exists(expectedResourcePath), equalTo(false));
+
+		List<Resource> appliedResources = stream(resourceCaptor.getValue().spliterator(), false)
+				.collect(toList());
+		assertThat("Applied resource same as imported", appliedResources, hasSize(1));
+		assertThat("Applied resource has expexcted path", appliedResources.get(0).getFile(),
+				equalTo(expectedResourcePath.toFile()));
+	}
+
+	@Test
 	public void importResourceWithUpdatesToOtherProvider() throws IOException {
 		// GIVEN
 		final String handlerKey = UUID.randomUUID().toString();

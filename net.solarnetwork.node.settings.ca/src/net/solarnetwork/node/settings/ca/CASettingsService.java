@@ -133,7 +133,7 @@ import net.solarnetwork.util.SearchFilter;
  * {@link SettingDao} to persist changes between application restarts.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class CASettingsService implements SettingsService, BackupResourceProvider, InstructionHandler {
 
@@ -1168,6 +1168,38 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		List<SettingsCommand> groupedUpdates = orderedUpdateGroups(updates, handlerKey, instanceKey);
 		for ( SettingsCommand cmd : groupedUpdates ) {
 			applySettingsUpdates(cmd, cmd.getProviderKey(), cmd.getInstanceKey(), false);
+		}
+	}
+
+	@Override
+	public void removeSettingResources(String handlerKey, String instanceKey, String settingKey,
+			Iterable<Resource> resources) throws IOException {
+		if ( resources == null ) {
+			return;
+		}
+
+		Path rsrcDir = getSettingResourcePersistencePath(handlerKey, instanceKey, settingKey);
+		if ( !Files.exists(rsrcDir) ) {
+			return;
+		}
+
+		int i = 1;
+		for ( Resource r : resources ) {
+			String name = r.getFilename();
+			if ( name == null ) {
+				name = String.valueOf(i);
+			}
+			Path out = rsrcDir.resolve(name);
+			try {
+				if ( Files.exists(out) ) {
+					Files.deleteIfExists(out);
+					log.info("Removed setting resource {}", out);
+				}
+				i++;
+			} catch ( IOException e ) {
+				throw new RuntimeException(
+						"Error removing setting resource " + out + ": " + e.getMessage());
+			}
 		}
 	}
 

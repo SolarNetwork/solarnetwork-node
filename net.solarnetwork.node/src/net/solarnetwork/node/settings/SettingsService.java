@@ -44,7 +44,7 @@ import net.solarnetwork.util.SearchFilter;
  * Service API for settings.
  * 
  * @author matt
- * @version 2.2
+ * @version 2.3
  * @since 2.0
  */
 public interface SettingsService {
@@ -355,6 +355,29 @@ public interface SettingsService {
 	 * @since 1.4
 	 */
 	void importSettingResources(String handlerKey, String instanceKey, String settingKey,
+			Iterable<Resource> resources) throws IOException;
+
+	/**
+	 * Remove setting resources.
+	 * 
+	 * <p>
+	 * The persisted setting resources will be removed by this service.
+	 * </p>
+	 * 
+	 * @param handlerKey
+	 *        the ID if the {@link SettingResourceHandler} to remove from
+	 * @param instanceKey
+	 *        if {@code handlerKey} is a factory, the ID of the instance to
+	 *        remove the resources for, otherwise {@literal null}
+	 * @param settingKey
+	 *        the setting ID to remove the resources for
+	 * @param resources
+	 *        the resources to remove
+	 * @throws IOException
+	 *         if any IO error occurs
+	 * @since 2.3
+	 */
+	void removeSettingResources(String handlerKey, String instanceKey, String settingKey,
 			Iterable<Resource> resources) throws IOException;
 
 	/**
