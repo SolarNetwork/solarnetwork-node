@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Modbus Communication Support (Jamod)
 Bundle-Description: SolarNode Modbus API implementation using the Jamod framework.
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.jamod
-Bundle-Version: 2.0.2
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.jamod
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -27,11 +27,11 @@ Import-Package:
  org.joda.time;version="[2.4,3.0)",
  org.joda.time.base;version="[2.4,3.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.asm;version="[4.3,5.0)",
- org.springframework.beans;version="[4.3,5.0)",
- org.springframework.beans.factory;version="[4.3,5.0)",
- org.springframework.context;version="[4.3,5.0)",
- org.springframework.context.support;version="[4.3,5.0)",
- org.springframework.core;version="[4.3,5.0)",
- org.springframework.core.io;version="[4.3,5.0)",
- org.springframework.expression;version="[4.3,5.0)"
+ org.springframework.asm;version="[5.3,6.0)",
+ org.springframework.beans;version="[5.3,6.0)",
+ org.springframework.beans.factory;version="[5.3,6.0)",
+ org.springframework.context;version="[5.3,6.0)",
+ org.springframework.context.support;version="[5.3,6.0)",
+ org.springframework.core;version="[5.3,6.0)",
+ org.springframework.core.io;version="[5.3,6.0)",
+ org.springframework.expression;version="[5.3,6.0)"

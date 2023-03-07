@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: H2 Database Storage Support
 Bundle-SymbolicName: net.solarnetwork.node.dao.jdbc.h2
 Bundle-Description: Provides automated maintenance tasks for the H2 database.
-Bundle-Version: 1.1.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.dao.jdbc.h2
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -22,12 +22,12 @@ Import-Package:
  org.h2;version="[2.1,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.beans;version="[4.3,5.0)",
- org.springframework.context;version="[4.3,5.0)",
- org.springframework.context.support;version="[4.3,5.0)",
- org.springframework.core;version="[4.3,5.0)",
- org.springframework.core.io;version="[4.3,5.0)",
- org.springframework.dao;version="[4.3,5.0)",
- org.springframework.jdbc.core;version="[4.3,5.0)",
- org.springframework.scheduling;version="[4.3,5.0)",
- org.springframework.scheduling.concurrent;version="[4.3,5.0)"
+ org.springframework.beans;version="[5.3,6.0)",
+ org.springframework.context;version="[5.3,6.0)",
+ org.springframework.context.support;version="[5.3,6.0)",
+ org.springframework.core;version="[5.3,6.0)",
+ org.springframework.core.io;version="[5.3,6.0)",
+ org.springframework.dao;version="[5.3,6.0)",
+ org.springframework.jdbc.core;version="[5.3,6.0)",
+ org.springframework.scheduling;version="[5.3,6.0)",
+ org.springframework.scheduling.concurrent;version="[5.3,6.0)"

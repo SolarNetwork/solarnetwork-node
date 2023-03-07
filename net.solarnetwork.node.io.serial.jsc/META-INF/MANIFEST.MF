@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Serial Communication Support (JSC)
 Bundle-Description: SolarNode serial communication API implementation using the jSerialComm framework.
 Bundle-SymbolicName: net.solarnetwork.node.io.serial.jsc
-Bundle-Version: 1.0.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.serial.jsc
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -25,7 +25,7 @@ Import-Package:
  org.apache.commons.codec.binary;version="[1.4,2.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.context;version="[4.3,5.0)",
- org.springframework.context.support;version="[4.3,5.0)",
- org.springframework.scheduling.concurrent;version="[4.3,5.0)",
- org.springframework.util;version="[4.3,5.0)"
+ org.springframework.context;version="[5.3,6.0)",
+ org.springframework.context.support;version="[5.3,6.0)",
+ org.springframework.scheduling.concurrent;version="[5.3,6.0)",
+ org.springframework.util;version="[5.3,6.0)"

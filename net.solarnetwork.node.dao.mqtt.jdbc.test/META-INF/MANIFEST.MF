@@ -2,9 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: MQTT Persistence (JDBC) Tests
 Bundle-SymbolicName: net.solarnetwork.node.dao.mqtt.jdbc.test
-Bundle-Version: 2.0.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.dao.mqtt.jdbc;bundle-version="[2.0,3.0)"
+Fragment-Host: net.solarnetwork.node.dao.mqtt.jdbc;bundle-version="[3.0,4.0)"
 Automatic-Module-Name: net.solarnetwork.node.dao.mqtt.jdbc.test
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
@@ -14,10 +14,10 @@ Import-Package:
  org.hamcrest;version="[1.1,2.0)",
  org.junit;version="[4.5,5.0)",
  org.junit.runner;version="[4.5,5.0)",
- org.springframework.jdbc.datasource.embedded;version="[4.3,5.0)",
- org.springframework.test.annotation;version="[4.3,5.0)",
- org.springframework.test.context;version="[4.3,5.0)",
- org.springframework.test.context.jdbc;version="[4.3,5.0)",
- org.springframework.test.context.junit4;version="[4.3,5.0)",
- org.springframework.test.context.support;version="[4.3,5.0)",
- org.springframework.test.context.transaction;version="[4.3,5.0)"
+ org.springframework.jdbc.datasource.embedded;version="[5.3,6.0)",
+ org.springframework.test.annotation;version="[5.3,6.0)",
+ org.springframework.test.context;version="[5.3,6.0)",
+ org.springframework.test.context.jdbc;version="[5.3,6.0)",
+ org.springframework.test.context.junit4;version="[5.3,6.0)",
+ org.springframework.test.context.support;version="[5.3,6.0)",
+ org.springframework.test.context.transaction;version="[5.3,6.0)"

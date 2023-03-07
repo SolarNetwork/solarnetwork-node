@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Operational Mode Controller
 Bundle-Description: Respond to operational mode changes by executing changes in other controls.
 Bundle-SymbolicName: net.solarnetwork.node.control.opmode
-Bundle-Version: 2.0.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.control.opmode
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -24,7 +24,7 @@ Import-Package:
  net.solarnetwork.util;version="[2.0,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.beans.factory;version="[4.2,5.0)",
- org.springframework.context;version="[4.2,5.0)",
- org.springframework.context.support;version="[4.2,5.0)",
- org.springframework.core.task;version="[4.2,5.0)"
+ org.springframework.beans.factory;version="[5.3,6.0)",
+ org.springframework.context;version="[5.3,6.0)",
+ org.springframework.context.support;version="[5.3,6.0)",
+ org.springframework.core.task;version="[5.3,6.0)"

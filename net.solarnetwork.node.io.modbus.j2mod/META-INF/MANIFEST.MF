@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Modbus Communication Support (j2mod)
 Bundle-Description: SolarNode Modbus API implementation using the j2mod framework.
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.j2mod
-Bundle-Version: 1.0.0
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.io.modbus.j2mod
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -24,5 +24,5 @@ Import-Package:
  net.solarnetwork.settings.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.4,3.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.context;version="[4.3,5.0)",
- org.springframework.context.support;version="[4.3,5.0)"
+ org.springframework.context;version="[5.3,6.0)",
+ org.springframework.context.support;version="[5.3,6.0)"
