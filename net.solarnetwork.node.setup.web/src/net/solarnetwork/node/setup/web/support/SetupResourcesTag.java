@@ -25,7 +25,6 @@ package net.solarnetwork.node.setup.web.support;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -52,7 +51,7 @@ import net.solarnetwork.node.setup.SetupResourceService;
  * added as well, as will any {@code id} attribute.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class SetupResourcesTag extends HtmlEscapingAwareTag implements DynamicAttributes {
 
@@ -173,7 +172,7 @@ public class SetupResourcesTag extends HtmlEscapingAwareTag implements DynamicAt
 				try {
 					url = getRequestContext().getContextUrl(
 							baseUrl + UriUtils.encodePathSegment(rsrc.getResourceUID(), "UTF-8"));
-				} catch ( UnsupportedEncodingException e ) {
+				} catch ( IllegalArgumentException e ) {
 					// should not be here ever
 				}
 

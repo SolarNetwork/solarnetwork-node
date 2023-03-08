@@ -4,7 +4,7 @@ Bundle-Name: Mock RFID Control
 Bundle-Description: Mock control to simulate RFID scanning.
 Bundle-SymbolicName: net.solarnetwork.node.hw.rfid.mock
 Automatic-Module-Name: net.solarnetwork.node.hw.rfid.mock
-Bundle-Version: 2.0.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
@@ -20,5 +20,5 @@ Import-Package:
  net.solarnetwork.settings.support;version="[2.0,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.context;version="[4.3,5.0)",
- org.springframework.context.support;version="[4.3,5.0)"
+ org.springframework.context;version="[5.3,6.0)",
+ org.springframework.context.support;version="[5.3,6.0)"

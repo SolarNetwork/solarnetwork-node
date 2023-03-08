@@ -80,7 +80,7 @@ public class JsonSolcastClientTests extends AbstractHttpClientTests {
 					throws Exception {
 				assertThat("Request method", request.getMethod(), is(equalTo("GET")));
 				assertThat("Request path", request.getPathInfo(),
-						is(equalTo("/world_radiation/estimated_actuals")));
+						is(equalTo("/data/live/radiation_and_weather")));
 				assertThat("API key", request.getHeader("Authorization"),
 						is(equalTo("Bearer " + TEST_API_KEY)));
 				assertThat("Latitude param", request.getParameter("latitude"),

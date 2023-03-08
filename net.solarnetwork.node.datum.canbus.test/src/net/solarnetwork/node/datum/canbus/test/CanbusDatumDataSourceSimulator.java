@@ -272,6 +272,12 @@ public class CanbusDatumDataSourceSimulator {
 			return null;
 		}
 
+		@Override
+		public void removeSettingResources(String handlerKey, String instanceKey, String settingKey,
+				Iterable<Resource> resources) throws IOException {
+			// ignore
+		}
+
 	}
 
 	private static final class InternalMetadataService implements DatumMetadataService {

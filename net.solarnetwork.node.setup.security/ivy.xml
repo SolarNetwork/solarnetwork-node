@@ -14,10 +14,10 @@
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
 		<dependency org="commons-codec" name="commons-codec" rev="1.11"/>
-	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[2.0,)"/>
+	    <dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[3.0,)"/>
 		<dependency org="org.osgi" name="org.osgi.core" rev="5.0.0"/>
     	<dependency org="org.slf4j" name="slf4j-api" rev="1.7.32"/>
-		<dependency org="org.springframework" name="spring-context-support" rev="4.3.23.RELEASE"/>
-		<dependency org="org.springframework.security" name="spring-security-core" rev="4.2.4.RELEASE"/>
+		<dependency org="org.springframework" name="spring-context-support" rev="5.3.24"/>
+		<dependency org="org.springframework.security" name="spring-security-core" rev="5.8.1"/>
 	</dependencies>
 </ivy-module>

@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Elkor WattsOn Meter Data Source
 Bundle-SymbolicName: net.solarnetwork.node.datum.elkor.wattson
 Bundle-Description: Collect data from Electro Elkor WattsOn series meter devices.
-Bundle-Version: 2.0.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.elkor.wattson
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -26,7 +26,7 @@ Import-Package:
  net.solarnetwork.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.beans;version="[4.3,5.0)",
- org.springframework.context;version="[4.3,5.0)",
- org.springframework.context.support;version="[4.3,5.0)",
- org.springframework.core;version="[4.3,5.0)"
+ org.springframework.beans;version="[5.3,6.0)",
+ org.springframework.context;version="[5.3,6.0)",
+ org.springframework.context.support;version="[5.3,6.0)",
+ org.springframework.core;version="[5.3,6.0)"

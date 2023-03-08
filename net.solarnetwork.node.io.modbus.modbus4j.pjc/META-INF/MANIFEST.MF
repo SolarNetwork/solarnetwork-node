@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name:  Modbus Communication Support - Serial (modbus4j PJC)
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.modbus4j.pjc
-Bundle-Version: 1.0.0
+Bundle-Version: 2.0.0
 Automatic-Module-Name: net.solarnetwork.node.io.modbus4j.pjc
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
@@ -26,6 +26,6 @@ Import-Package:
  net.solarnetwork.settings.support;version="[2.0,3.0)",
  net.solarnetwork.util;version="[2.4,3.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.context;version="[4.3,5.0)",
- org.springframework.context.support;version="[4.3,5.0)",
+ org.springframework.context;version="[5.3,6.0)",
+ org.springframework.context.support;version="[5.3,6.0)",
  purejavacomm;version="[1.0,2.0)"

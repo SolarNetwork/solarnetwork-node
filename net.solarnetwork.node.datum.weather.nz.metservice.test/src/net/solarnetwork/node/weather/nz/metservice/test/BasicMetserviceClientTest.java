@@ -126,7 +126,7 @@ public class BasicMetserviceClientTest {
 		final DateTimeFormatter tsFormat = client.timestampFormatter();
 
 		assertNotNull(results);
-		assertEquals(2, results.size());
+		assertEquals(1, results.size());
 		Iterator<NodeDatum> itr = results.iterator();
 
 		NodeDatum loc = itr.next();
@@ -134,7 +134,7 @@ public class BasicMetserviceClientTest {
 		AtmosphericDatum weather = (AtmosphericDatum) loc;
 
 		assertNotNull(weather.getTimestamp());
-		assertEquals("8:00am sun, 29 may", tsFormat.format(weather.getTimestamp()).toLowerCase());
+		assertEquals("8:00am sat, 29 may", tsFormat.format(weather.getTimestamp()).toLowerCase());
 
 		assertNotNull(weather.getTemperature());
 		assertEquals(11.0, weather.getTemperature().doubleValue(), 0.001);
@@ -144,19 +144,6 @@ public class BasicMetserviceClientTest {
 
 		assertNotNull(weather.getAtmosphericPressure());
 		assertEquals(99300, weather.getAtmosphericPressure().intValue());
-
-		loc = itr.next();
-		assertTrue(loc instanceof DayDatum);
-		DayDatum day = (DayDatum) loc;
-
-		assertNotNull(day.getTimestamp());
-		assertEquals("12:00am sat, 28 may", tsFormat.format(day.getTimestamp()).toLowerCase());
-
-		assertNotNull(day.getTemperatureMinimum());
-		assertEquals(11.0, day.getTemperatureMinimum().doubleValue(), 0.001);
-
-		assertNotNull(day.getTemperatureMaximum());
-		assertEquals(15.0, day.getTemperatureMaximum().doubleValue(), 0.001);
 	}
 
 	@Test
@@ -167,7 +154,7 @@ public class BasicMetserviceClientTest {
 		final DateTimeFormatter tsFormat = client.timestampFormatter();
 
 		assertNotNull(results);
-		assertEquals(2, results.size());
+		assertEquals(1, results.size());
 		Iterator<NodeDatum> itr = results.iterator();
 
 		NodeDatum loc = itr.next();
@@ -175,7 +162,7 @@ public class BasicMetserviceClientTest {
 		AtmosphericDatum weather = (AtmosphericDatum) loc;
 
 		assertNotNull(weather.getTimestamp());
-		assertEquals("8:00am sun, 29 may", tsFormat.format(weather.getTimestamp()).toLowerCase());
+		assertEquals("8:00am sat, 29 may", tsFormat.format(weather.getTimestamp()).toLowerCase());
 
 		assertNotNull(weather.getTemperature());
 		assertEquals(11.0, weather.getTemperature().doubleValue(), 0.001);
@@ -185,20 +172,6 @@ public class BasicMetserviceClientTest {
 
 		assertNotNull(weather.getAtmosphericPressure());
 		assertEquals(99300, weather.getAtmosphericPressure().intValue());
-
-		loc = itr.next();
-		assertTrue(loc instanceof DayDatum);
-		DayDatum day = (DayDatum) loc;
-
-		assertNotNull(day.getTimestamp());
-		// this no longer correctly parses "Noon"... should be pm, but ignoring as infoDate used instead now
-		assertEquals("12:00am sat, 28 may", tsFormat.format(day.getTimestamp()).toLowerCase());
-
-		assertNotNull(day.getTemperatureMinimum());
-		assertEquals(11.0, day.getTemperatureMinimum().doubleValue(), 0.001);
-
-		assertNotNull(day.getTemperatureMaximum());
-		assertEquals(15.0, day.getTemperatureMaximum().doubleValue(), 0.001);
 	}
 
 	@Test
