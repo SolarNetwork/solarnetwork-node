@@ -4,7 +4,7 @@ Bundle-Name: S3 Backup
 Bundle-SymbolicName: net.solarnetwork.node.backup.s3
 Bundle-Description: SolarNode cloud backup provider using Amazon S3.
 Automatic-Module-Name: net.solarnetwork.node.backup.s3
-Bundle-Version: 2.1.0
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
@@ -26,7 +26,7 @@ Import-Package:
  org.apache.commons.codec.binary;version="[1.7,2.0)",
  org.apache.commons.codec.digest;version="[1.7,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.context;version="[4.2,5.0)",
- org.springframework.context.support;version="[4.2,5.0)",
- org.springframework.core.io;version="[4.2,5.0)",
- org.springframework.util;version="[4.2,5.0)"
+ org.springframework.context;version="[5.3,6.0)",
+ org.springframework.context.support;version="[5.3,6.0)",
+ org.springframework.core.io;version="[5.3,6.0)",
+ org.springframework.util;version="[5.3,6.0)"

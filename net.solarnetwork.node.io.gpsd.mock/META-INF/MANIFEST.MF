@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Mock GPSd Communication Support
 Bundle-Description: A mock implementation of a GPSd server for testing purposes.
 Bundle-SymbolicName: net.solarnetwork.node.io.gpsd.mock
-Bundle-Version: 2.0.1
+Bundle-Version: 3.0.0
 Automatic-Module-Name: net.solarnetwork.node.io.gpsd.mock
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
@@ -17,9 +17,9 @@ Import-Package:
  net.solarnetwork.settings.support;version="[2.0,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.context;version="[4.3,5.0)",
- org.springframework.context.support;version="[4.3,5.0)",
- org.springframework.core;version="[4.3,5.0)",
- org.springframework.scheduling;version="[4.3,5.0)",
- org.springframework.scheduling.concurrent;version="[4.3,5.0)",
- org.springframework.util;version="[4.3,5.0)"
+ org.springframework.context;version="[5.3,6.0)",
+ org.springframework.context.support;version="[5.3,6.0)",
+ org.springframework.core;version="[5.3,6.0)",
+ org.springframework.scheduling;version="[5.3,6.0)",
+ org.springframework.scheduling.concurrent;version="[5.3,6.0)",
+ org.springframework.util;version="[5.3,6.0)"

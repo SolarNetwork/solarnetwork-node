@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Datum Stream Reactor
 Bundle-Description: Monitor a datum stream and manage a control value in response.
 Bundle-SymbolicName: net.solarnetwork.node.control.datumreactor
-Bundle-Version: 1.0.1
+Bundle-Version: 2.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.control.datumreactor
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -24,8 +24,8 @@ Import-Package:
  net.solarnetwork.util;version="[2.3,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.beans;version="[4.3,5.0)",
- org.springframework.context;version="[4.3,5.0)",
- org.springframework.context.support;version="[4.3,5.0)",
- org.springframework.core;version="[4.3,5.0)",
- org.springframework.expression;version="[4.3,5.0)"
+ org.springframework.beans;version="[5.3,6.0)",
+ org.springframework.context;version="[5.3,6.0)",
+ org.springframework.context.support;version="[5.3,6.0)",
+ org.springframework.core;version="[5.3,6.0)",
+ org.springframework.expression;version="[5.3,6.0)"

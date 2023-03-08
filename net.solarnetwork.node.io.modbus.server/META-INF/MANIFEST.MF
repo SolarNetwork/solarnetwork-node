@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Modbus Server (TCP)
 Bundle-Description: Expose a Modbus TCP server for integration with other systems.
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.server
-Bundle-Version: 2.3.1
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.server
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -32,16 +32,16 @@ Import-Package:
  net.wimpi.modbus.util;version="[1.2,2.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.asm;version="[4.3,5.0)",
- org.springframework.beans;version="[4.3,5.0)",
- org.springframework.beans.factory;version="[4.3,5.0)",
- org.springframework.context;version="[4.3,5.0)",
- org.springframework.context.support;version="[4.3,5.0)",
- org.springframework.core;version="[4.3,5.0)",
- org.springframework.core.io;version="[4.3,5.0)",
- org.springframework.core.task;version="[4.3,5.0)",
- org.springframework.scheduling;version="[4.3,5.0)",
- org.springframework.scheduling.concurrent;version="[4.3,5.0)",
+ org.springframework.asm;version="[5.3,6.0)",
+ org.springframework.beans;version="[5.3,6.0)",
+ org.springframework.beans.factory;version="[5.3,6.0)",
+ org.springframework.context;version="[5.3,6.0)",
+ org.springframework.context.support;version="[5.3,6.0)",
+ org.springframework.core;version="[5.3,6.0)",
+ org.springframework.core.io;version="[5.3,6.0)",
+ org.springframework.core.task;version="[5.3,6.0)",
+ org.springframework.scheduling;version="[5.3,6.0)",
+ org.springframework.scheduling.concurrent;version="[5.3,6.0)",
  org.supercsv.io;version="[2.0,3.0)",
  org.supercsv.prefs;version="[2.0,3.0)",
  org.supercsv.util;version="[2.0,3.0)"

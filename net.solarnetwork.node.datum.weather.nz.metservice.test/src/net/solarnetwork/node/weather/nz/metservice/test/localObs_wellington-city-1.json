@@ -5,6 +5,7 @@
 "threeHour":{
   "clothingLayers":"3",
   "dateTime":"8:00am Sun, 29 May",
+  "dateTimeISO" : "2021-05-29T08:00:00+12:00",
   "humidity":"90",
   "pressure":993,
   "rainfall":"0.0",

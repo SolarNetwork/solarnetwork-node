@@ -4,7 +4,7 @@ Bundle-Name: Reactor Database Storage
 Bundle-SymbolicName: net.solarnetwork.node.reactor.dao.jdbc
 Automatic-Module-Name: net.solarnetwork.node.reactor.dao.jdbc
 Bundle-Description: Database storage cache for SolarNet instruction requests.
-Bundle-Version: 2.0.2
+Bundle-Version: 3.0.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
@@ -25,18 +25,18 @@ Import-Package:
  org.osgi.framework;version="[1.7,2.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.aop;version="[4.3,5.0)",
- org.springframework.aop.framework;version="[4.3,5.0)",
- org.springframework.beans.factory;version="[4.3,5.0)",
- org.springframework.context;version="[4.3,5.0)",
- org.springframework.context.support;version="[4.3,5.0)",
- org.springframework.core;version="[4.3,5.0)",
- org.springframework.core.io;version="[4.3,5.0)",
- org.springframework.dao;version="[4.3,5.0)",
- org.springframework.dao.support;version="[4.3,5.0)",
- org.springframework.jdbc.core;version="[4.3,5.0)",
- org.springframework.jdbc.core.simple;version="[4.3,5.0)",
- org.springframework.jdbc.core.support;version="[4.3,5.0)",
- org.springframework.jdbc.support;version="[4.3,5.0)",
- org.springframework.transaction;version="[4.3,5.0)",
- org.springframework.transaction.annotation;version="[4.3,5.0)"
+ org.springframework.aop;version="[5.3,6.0)",
+ org.springframework.aop.framework;version="[5.3,6.0)",
+ org.springframework.beans.factory;version="[5.3,6.0)",
+ org.springframework.context;version="[5.3,6.0)",
+ org.springframework.context.support;version="[5.3,6.0)",
+ org.springframework.core;version="[5.3,6.0)",
+ org.springframework.core.io;version="[5.3,6.0)",
+ org.springframework.dao;version="[5.3,6.0)",
+ org.springframework.dao.support;version="[5.3,6.0)",
+ org.springframework.jdbc.core;version="[5.3,6.0)",
+ org.springframework.jdbc.core.simple;version="[5.3,6.0)",
+ org.springframework.jdbc.core.support;version="[5.3,6.0)",
+ org.springframework.jdbc.support;version="[5.3,6.0)",
+ org.springframework.transaction;version="[5.3,6.0)",
+ org.springframework.transaction.annotation;version="[5.3,6.0)"

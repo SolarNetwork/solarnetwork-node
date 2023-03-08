@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: ESI Facility Integration
 Bundle-Description: Components to integrate with a SolarNetwork ESI Facility.
 Bundle-SymbolicName: net.solarnetwork.node.control.esi
-Bundle-Version: 0.2.0
+Bundle-Version: 0.3.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.control.esi
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -28,6 +28,6 @@ Import-Package:
  net.solarnetwork.util;version="[2.0,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.context;version="[4.3,5.0)",
- org.springframework.context.support;version="[4.3,5.0)",
- org.springframework.core;version="[4.3,5.0)"
+ org.springframework.context;version="[5.3,6.0)",
+ org.springframework.context.support;version="[5.3,6.0)",
+ org.springframework.core;version="[5.3,6.0)"

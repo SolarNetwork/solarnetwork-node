@@ -4,7 +4,7 @@ Bundle-Name: Node Unit Test Support
 Bundle-Description: Testing support for SolarNode plugins.
 Bundle-SymbolicName: net.solarnetwork.node.test
 Automatic-Module-Name: net.solarnetwork.node.test
-Bundle-Version: 1.15.0
+Bundle-Version: 1.16.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: 
@@ -27,28 +27,28 @@ Import-Package:
  org.junit.runner;version="[4.5,5.0)",
  org.osgi.service.jdbc;version="[1.0,2.0)",
  org.slf4j;version="[1.7,2.0)",
- org.springframework.aop;version="[4.3,5.0)",
- org.springframework.asm;version="[4.3,5.0)",
- org.springframework.beans;version="[4.3,5.0)",
- org.springframework.beans.factory;version="[4.3,5.0)",
- org.springframework.context;version="[4.3,5.0)",
- org.springframework.core;version="[4.3,5.0)",
- org.springframework.core.io;version="[4.3,5.0)",
- org.springframework.core.task;version="[4.3,5.0)",
- org.springframework.core.task.support;version="[4.3,5.0)",
- org.springframework.dao;version="[4.3,5.0)",
- org.springframework.expression;version="[4.3,5.0)",
+ org.springframework.aop;version="[5.3,6.0)",
+ org.springframework.asm;version="[5.3,6.0)",
+ org.springframework.beans;version="[5.3,6.0)",
+ org.springframework.beans.factory;version="[5.3,6.0)",
+ org.springframework.context;version="[5.3,6.0)",
+ org.springframework.core;version="[5.3,6.0)",
+ org.springframework.core.io;version="[5.3,6.0)",
+ org.springframework.core.task;version="[5.3,6.0)",
+ org.springframework.core.task.support;version="[5.3,6.0)",
+ org.springframework.dao;version="[5.3,6.0)",
+ org.springframework.expression;version="[5.3,6.0)",
  org.springframework.jdbc.core;version="4.2.6.RELEASE",
- org.springframework.jdbc.core.simple;version="[4.3,5.0)",
- org.springframework.jdbc.datasource;version="[4.3,5.0)",
- org.springframework.jdbc.datasource.embedded;version="[4.3,5.0)",
- org.springframework.jdbc.datasource.init;version="[4.3,5.0)",
- org.springframework.test.annotation;version="[4.3,5.0)",
- org.springframework.test.context;version="[4.3,5.0)",
- org.springframework.test.context.junit4;version="[4.3,5.0)",
- org.springframework.test.context.support;version="[4.3,5.0)",
- org.springframework.test.context.transaction;version="[4.3,5.0)",
- org.springframework.transaction;version="[4.3,5.0)",
- org.springframework.transaction.annotation;version="[4.3,5.0)",
- org.springframework.transaction.support;version="[4.3,5.0)",
- org.springframework.util;version="[4.3,5.0)"
+ org.springframework.jdbc.core.simple;version="[5.3,6.0)",
+ org.springframework.jdbc.datasource;version="[5.3,6.0)",
+ org.springframework.jdbc.datasource.embedded;version="[5.3,6.0)",
+ org.springframework.jdbc.datasource.init;version="[5.3,6.0)",
+ org.springframework.test.annotation;version="[5.3,6.0)",
+ org.springframework.test.context;version="[5.3,6.0)",
+ org.springframework.test.context.junit4;version="[5.3,6.0)",
+ org.springframework.test.context.support;version="[5.3,6.0)",
+ org.springframework.test.context.transaction;version="[5.3,6.0)",
+ org.springframework.transaction;version="[5.3,6.0)",
+ org.springframework.transaction.annotation;version="[5.3,6.0)",
+ org.springframework.transaction.support;version="[5.3,6.0)",
+ org.springframework.util;version="[5.3,6.0)"
