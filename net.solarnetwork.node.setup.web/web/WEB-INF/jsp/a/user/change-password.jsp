@@ -9,7 +9,7 @@
 </section>
 
 <setup:url value="/a/user/change-password" var="action"/>
-<form:form commandName="user" cssClass="form-horizontal" id="change-password-form" action="${action}" method="post" >
+<form:form modelAttribute="user" cssClass="form-horizontal" id="change-password-form" action="${action}" method="post" >
 	<fieldset>
 		<div class="control-group">
 			<label class="control-label" for="old-password"><fmt:message key="user.oldPassword.label"/></label>
