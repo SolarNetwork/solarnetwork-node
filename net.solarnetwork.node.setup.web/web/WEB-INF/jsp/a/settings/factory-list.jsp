@@ -269,6 +269,53 @@ $(function() {
 		</button>
 	</div>
 </form>
+<form class="modal dynamic hide fade lookup-modal sn-loc-lookup-modal co2-lookup-modal"
+		action="<setup:url value='/api/v1/sec/location'/>" method="get">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal">&times;</button>
+		<h3><fmt:message key='lookup.co2.title'/></h3>
+	</div>
+	<div class="modal-body">
+		<p><fmt:message key='lookup.co2.intro'/></p>
+		<div class="form-inline">
+			<input type="hidden" name="tags" value="co2"/>
+			<input type="text" class="span4" maxlength="64" name="query" placeholder="<fmt:message key='lookup.co2.search.placeholder'/>"/>
+			<button type="submit" class="btn btn-primary ladda-button expand-right" data-loading-text="<fmt:message key='lookup.searching.label'/>">
+				<fmt:message key='lookup.action.search'/>
+			</button>
+		</div>
+
+		<table class="table table-striped table-hover hidden search-results">
+			<thead>
+				<tr>
+					<th><fmt:message key='lookup.co2.sourceName'/></th>
+					<th><fmt:message key='lookup.co2.locationName'/></th>
+					<th><fmt:message key='lookup.co2.country'/></th>
+					<th><fmt:message key='lookup.co2.region'/></th>
+				</tr>
+				<tr class="template">
+					<td data-tprop="sourceId"></td>
+					<td data-tprop="m.name"></td>
+					<td data-tprop="location.country"></td>
+					<td data-tprop="location.region"></td>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+
+		<label id="co2-lookup-selected-label" class="hidden">
+			<fmt:message key='lookup.selected.label'/>
+			<span id="co2-lookup-selected-container"></span>
+		</label>
+	</div>
+	<div class="modal-footer">
+		<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
+		<button type="button" class="btn btn-primary choose" disabled="disabled">
+			<fmt:message key="lookup.action.choose"/>
+		</button>
+	</div>
+</form>
 <form id="add-component-instance-modal" class="modal dynamic hide fade" data-backdrop="static" action="<setup:url value='/a/settings/manage/add'/>" method="post">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal">&times;</button>
