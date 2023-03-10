@@ -34,5 +34,4 @@ Import-Package:
  org.springframework.beans.propertyeditors;version="[5.3,6.0)",
  org.springframework.context;version="[5.3,6.0)",
  org.springframework.context.support;version="[5.3,6.0)",
- org.springframework.util;version="[5.3,6.0)",
- org.springframework.web.util;version="[5.3,6.0)"
+ org.springframework.util;version="[5.3,6.0)"
