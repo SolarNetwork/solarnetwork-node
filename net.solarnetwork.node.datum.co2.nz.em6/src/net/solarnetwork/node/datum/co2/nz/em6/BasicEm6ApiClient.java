@@ -52,7 +52,7 @@ import net.solarnetwork.util.NumberUtils;
  * 
  * <p>
  * Note the {@link NodeDatum} returned by this source will be of type
- * {@link net.solarnetwork.domain.datum.ObjectDatumKind.Location} and will
+ * {@link net.solarnetwork.domain.datum.ObjectDatumKind#Location} and will
  * <b>not</b> have a location ID or source ID assigned.
  * </p>
  * 
