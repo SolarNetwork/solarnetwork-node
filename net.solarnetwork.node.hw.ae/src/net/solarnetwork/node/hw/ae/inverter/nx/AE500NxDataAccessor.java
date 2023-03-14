@@ -22,17 +22,20 @@
 
 package net.solarnetwork.node.hw.ae.inverter.nx;
 
+import java.util.BitSet;
+import java.util.Collections;
 import java.util.Set;
 import java.util.SortedSet;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.domain.DcEnergyDataAccessor;
+import net.solarnetwork.node.hw.sunspec.ModelEvent;
 
 /**
  * API for reading AE 500NX data.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.1
  */
 public interface AE500NxDataAccessor extends DcEnergyDataAccessor, AcEnergyDataAccessor {
@@ -124,5 +127,33 @@ public interface AE500NxDataAccessor extends DcEnergyDataAccessor, AcEnergyDataA
 	 * @return the device operating state
 	 */
 	DeviceOperatingState getDeviceOperatingState();
+
+	/**
+	 * Get the faults converted to SunSpec-compatible events.
+	 * 
+	 * @return the events, never {@literal null}
+	 * @since 1.2
+	 */
+	default Set<ModelEvent> getEvents() {
+		return Collections.emptySet();
+	}
+
+	/**
+	 * Get an optional vendor-specific bit set of event codes.
+	 * 
+	 * <p>
+	 * Note that all SunSpec "vendor event" fields are presented as a single bit
+	 * set, with each 32-bit event group offset by 32. For example if a model
+	 * defines {@code EvtVnd1} and {@code EvtVnd2} 32-bit properties, there are
+	 * 64 possible bits where {@code EvtVnd1}'s first bit would be index
+	 * {@code 0} and {@code EvtVnd2}'s first bit would be index {@code 32}.
+	 * </p>
+	 * 
+	 * @return the vendor events, or {@literal null} if not supported or known
+	 * @since 1.2
+	 */
+	default BitSet getVendorEvents() {
+		return null;
+	}
 
 }
