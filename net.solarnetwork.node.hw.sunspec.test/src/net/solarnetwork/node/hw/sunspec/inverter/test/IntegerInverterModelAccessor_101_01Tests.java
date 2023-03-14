@@ -25,13 +25,17 @@ package net.solarnetwork.node.hw.sunspec.inverter.test;
 import static net.solarnetwork.domain.AcPhase.PhaseA;
 import static net.solarnetwork.domain.AcPhase.PhaseB;
 import static net.solarnetwork.domain.AcPhase.PhaseC;
+import static net.solarnetwork.util.NumberUtils.bitSetForBigInteger;
 import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
+import java.math.BigInteger;
+import java.util.BitSet;
 import java.util.Set;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -251,6 +255,22 @@ public class IntegerInverterModelAccessor_101_01Tests {
 		InverterModelAccessor model = getTestDataInstance().findTypedModel(InverterModelAccessor.class);
 		Set<ModelEvent> events = model.getEvents();
 		assertThat("No events", events, hasSize(0));
+	}
+
+	@Test
+	public void vendorOperatingState() {
+		InverterModelAccessor model = getTestDataInstance().findTypedModel(InverterModelAccessor.class);
+		Integer state = model.getVendorOperatingState();
+		assertThat("Vendor operating state", state, is(equalTo(4)));
+	}
+
+	@Test
+	public void vendorEvents() {
+		InverterModelAccessor model = getTestDataInstance().findTypedModel(InverterModelAccessor.class);
+		BitSet events = model.getVendorEvents();
+
+		BigInteger expected = new BigInteger("00070008000500060003000400010002", 16);
+		assertThat("No vendor events", events, is(equalTo(bitSetForBigInteger(expected))));
 	}
 
 }
