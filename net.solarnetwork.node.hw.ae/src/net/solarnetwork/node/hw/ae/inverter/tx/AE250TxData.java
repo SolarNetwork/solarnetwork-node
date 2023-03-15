@@ -27,15 +27,21 @@ import static net.solarnetwork.domain.CodedValue.forCodeValue;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.BitSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.Bitmaskable;
 import net.solarnetwork.domain.DeviceOperatingState;
+import net.solarnetwork.domain.GroupedBitmaskable;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.domain.DataAccessor;
+import net.solarnetwork.node.hw.sunspec.ModelEvent;
+import net.solarnetwork.node.hw.sunspec.inverter.InverterModelEvent;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -46,7 +52,7 @@ import net.solarnetwork.util.NumberUtils;
  * Data object for the AE 250TX series inverter.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 
@@ -421,6 +427,72 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 		return null;
 	}
 
+	@Override
+	public Set<ModelEvent> getEvents() {
+		SortedSet<AE250TxFault> faults = getFaults();
+		Set<ModelEvent> events = new LinkedHashSet<>(16);
+		if ( !faults.isEmpty() ) {
+			if ( faults.contains(AE250TxVoltageFault.DcVoltageHigh) ) {
+				events.add(InverterModelEvent.DcOverVoltage);
+			}
+			if ( faults.contains(AE250TxGridFault.AcFastUnderVoltA)
+					|| faults.contains(AE250TxGridFault.AcFastUnderVoltB)
+					|| faults.contains(AE250TxGridFault.AcFastUnderVoltC)
+					|| faults.contains(AE250TxGridFault.AcSlowUnderVoltA)
+					|| faults.contains(AE250TxGridFault.AcSlowUnderVoltB)
+					|| faults.contains(AE250TxGridFault.AcSlowUnderVoltC) ) {
+				events.add(InverterModelEvent.AcUnderVoltage);
+			}
+			if ( faults.contains(AE250TxGridFault.AcFastOverVoltA)
+					|| faults.contains(AE250TxGridFault.AcFastOverVoltB)
+					|| faults.contains(AE250TxGridFault.AcFastOverVoltC)
+					|| faults.contains(AE250TxGridFault.AcSlowOverVoltA)
+					|| faults.contains(AE250TxGridFault.AcSlowOverVoltB)
+					|| faults.contains(AE250TxGridFault.AcSlowOverVoltC) ) {
+				events.add(InverterModelEvent.AcOverVoltage);
+			}
+			if ( faults.contains(AE250TxGridFault.AcUnderFreq) ) {
+				events.add(InverterModelEvent.UnderFrequency);
+			}
+			if ( faults.contains(AE250TxGridFault.AcOverFreq) ) {
+				events.add(InverterModelEvent.OverFrequency);
+			}
+			if ( faults.contains(AE250TxMainFault.Temperature)
+					|| faults.contains(AE250TxTemperatureFault.HeatsinkTempA1)
+					|| faults.contains(AE250TxTemperatureFault.HeatsinkTempA2)
+					|| faults.contains(AE250TxTemperatureFault.HeatsinkTempB1)
+					|| faults.contains(AE250TxTemperatureFault.HeatsinkTempB2)
+					|| faults.contains(AE250TxTemperatureFault.HeatsinkTempC1)
+					|| faults.contains(AE250TxTemperatureFault.HeatsinkTempC2)
+					|| faults.contains(AE250TxTemperatureFault.BoardTempHigh)
+					|| faults.contains(AE250TxTemperatureFault.MagTempHigh)
+					|| faults.contains(AE250TxTemperatureFault.IpmTempHigh)
+					|| faults.contains(AE250TxTemperatureFault.InductorTempHigh) ) {
+				events.add(InverterModelEvent.OverTemperature);
+			}
+		}
+		if ( faults.contains(AE250TxTemperatureFault.DriveTempLow)
+				|| faults.contains(AE250TxTemperatureFault.AmbientTempLow)
+				|| faults.contains(AE250TxTemperatureFault.MagTempLow) ) {
+			events.add(InverterModelEvent.UnderTemperature);
+		}
+		if ( faults.contains(AE250TxSystemFault.Ground) ) {
+			events.add(InverterModelEvent.GroundFault);
+		}
+		if ( faults.contains(AE250TxSystemFault.AcContactor) ) {
+			events.add(InverterModelEvent.AcDisconnect);
+		}
+		if ( faults.contains(AE250TxSystemFault.DcContactor) ) {
+			events.add(InverterModelEvent.DcDisconnect);
+		}
+		return events;
+	}
+
+	@Override
+	public BitSet getVendorEvents() {
+		return GroupedBitmaskable.overallBitmaskValue(getFaults());
+	}
+
 	private class PhaseDataAccessor implements AE250TxDataAccessor {
 
 		private final AcPhase phase;
@@ -720,6 +792,16 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 		@Override
 		public SortedSet<AE250TxWarning> getWarnings() {
 			return AE250TxData.this.getWarnings();
+		}
+
+		@Override
+		public Set<ModelEvent> getEvents() {
+			return AE250TxData.this.getEvents();
+		}
+
+		@Override
+		public BitSet getVendorEvents() {
+			return AE250TxData.this.getVendorEvents();
 		}
 
 	}

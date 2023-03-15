@@ -26,28 +26,28 @@ package net.solarnetwork.node.hw.ae.inverter.tx;
  * AE250TX main faults.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.2
  */
 public enum AE250TxMainFault implements AE250TxFault {
 
 	/** Drive. */
-	Drive(0, "Drive"),
+	Drive(0, "A general Drive type fault has occurred"),
 
 	/** Voltage. */
-	Voltage(1, "Voltage"),
+	Voltage(1, "A general Voltage type fault has occurred"),
 
 	/** Grid. */
-	Grid(2, "Grid"),
+	Grid(2, "A general Grid type fault has occurred"),
 
 	/** Temperature. */
-	Temperature(3, "Temperature"),
+	Temperature(3, "A general Temperature type fault has occurred"),
 
 	/** System. */
-	System(4, "System"),
+	System(4, " A general System type fault has occurred"),
 
 	/** Latching. */
-	Latching(15, "Latching"),
+	Latching(15, " A general Latching type fault has occurred"),
 
 	;
 
@@ -67,6 +67,11 @@ public enum AE250TxMainFault implements AE250TxFault {
 	@Override
 	public String getDescription() {
 		return description;
+	}
+
+	@Override
+	public int getGroupIndex() {
+		return 0;
 	}
 
 }

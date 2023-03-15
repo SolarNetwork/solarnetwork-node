@@ -22,16 +22,16 @@
 
 package net.solarnetwork.node.hw.ae.inverter.tx;
 
-import net.solarnetwork.domain.Bitmaskable;
+import net.solarnetwork.domain.GroupedBitmaskable;
 
 /**
  * API for AE250Tx faults.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.2
  */
-public interface AE250TxFault extends Bitmaskable {
+public interface AE250TxFault extends GroupedBitmaskable {
 
 	/**
 	 * Get a description.
@@ -39,5 +39,10 @@ public interface AE250TxFault extends Bitmaskable {
 	 * @return the description
 	 */
 	String getDescription();
+
+	@Override
+	default int getGroupSize() {
+		return 16;
+	}
 
 }

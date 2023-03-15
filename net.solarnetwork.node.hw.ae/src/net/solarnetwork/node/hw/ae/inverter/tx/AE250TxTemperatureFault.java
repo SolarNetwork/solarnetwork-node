@@ -26,7 +26,7 @@ package net.solarnetwork.node.hw.ae.inverter.tx;
  * AE250TX temperature faults.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.2
  */
 public enum AE250TxTemperatureFault implements AE250TxFault {
@@ -88,6 +88,11 @@ public enum AE250TxTemperatureFault implements AE250TxFault {
 	@Override
 	public String getDescription() {
 		return description;
+	}
+
+	@Override
+	public int getGroupIndex() {
+		return 4;
 	}
 
 }
