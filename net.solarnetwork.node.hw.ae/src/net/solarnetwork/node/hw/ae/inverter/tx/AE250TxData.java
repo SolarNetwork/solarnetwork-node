@@ -457,8 +457,7 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 			if ( faults.contains(AE250TxGridFault.AcOverFreq) ) {
 				events.add(InverterModelEvent.OverFrequency);
 			}
-			if ( faults.contains(AE250TxMainFault.Temperature)
-					|| faults.contains(AE250TxTemperatureFault.HeatsinkTempA1)
+			if ( faults.contains(AE250TxTemperatureFault.HeatsinkTempA1)
 					|| faults.contains(AE250TxTemperatureFault.HeatsinkTempA2)
 					|| faults.contains(AE250TxTemperatureFault.HeatsinkTempB1)
 					|| faults.contains(AE250TxTemperatureFault.HeatsinkTempB2)
