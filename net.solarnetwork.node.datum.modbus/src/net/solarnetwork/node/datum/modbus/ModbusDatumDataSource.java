@@ -410,10 +410,12 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 						for ( int start = range.getMin(),
 								stop = start + range.length(); start < stop; ) {
 							int len = Math.min(range.length(), maxReadLen);
+							int max = start + len;
 							@SuppressWarnings("deprecation")
 							BitSet updates = conn.readDiscreetValues(start, len);
-							bits.clear(start, start + len);
-							bits.or(updates);
+							for ( int i = start, u = 0; i < max; i++, u++ ) {
+								bits.set(i, updates.get(u));
+							}
 							updated = true;
 							start += len;
 						}
