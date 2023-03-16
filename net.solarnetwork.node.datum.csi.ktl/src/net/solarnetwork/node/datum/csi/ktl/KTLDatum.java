@@ -25,6 +25,8 @@ package net.solarnetwork.node.datum.csi.ktl;
 import static net.solarnetwork.domain.Bitmaskable.bitmaskValue;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
+import java.math.BigInteger;
+import java.util.BitSet;
 import java.util.Set;
 import net.solarnetwork.domain.Bitmaskable;
 import net.solarnetwork.domain.DeviceOperatingState;
@@ -35,6 +37,8 @@ import net.solarnetwork.node.domain.datum.DcEnergyDatum;
 import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
 import net.solarnetwork.node.hw.csi.inverter.KTLCTDataAccessor;
 import net.solarnetwork.node.hw.csi.inverter.KTLCTInverterWorkMode;
+import net.solarnetwork.node.hw.sunspec.ModelEvent;
+import net.solarnetwork.util.NumberUtils;
 
 /**
  * Extension of {@link SimpleAcDcEnergyDatum} with additional properties
@@ -42,7 +46,7 @@ import net.solarnetwork.node.hw.csi.inverter.KTLCTInverterWorkMode;
  *
  * @author matt
  * @author maxieduncan
- * @version 2.1
+ * @version 2.2
  */
 public class KTLDatum extends SimpleAcDcEnergyDatum {
 
@@ -128,6 +132,23 @@ public class KTLDatum extends SimpleAcDcEnergyDatum {
 		ops.putSampleValue(Instantaneous, "temp_heatSink", data.getModuleTemperature());
 		ops.putSampleValue(Instantaneous, "temp_transformer", data.getTransformerTemperature());
 		ops.putSampleValue(Instantaneous, "efficiency", data.getEfficiency());
+
+		// SunSpec compatibility
+
+		Set<ModelEvent> events = data.getEvents();
+		if ( events != null && !events.isEmpty() ) {
+			long b = ModelEvent.bitField32Value(data.getEvents());
+			asMutableSampleOperations().putSampleValue(Status, "events", b);
+		}
+
+		BitSet vendorEvents = data.getVendorEvents();
+		if ( events != null && !events.isEmpty() ) {
+			BigInteger v = NumberUtils.bigIntegerForBitSet(vendorEvents);
+			if ( v != null ) {
+				asMutableSampleOperations().putSampleValue(Status, "vendorEvents",
+						"0x" + v.toString(16));
+			}
+		}
 	}
 
 	/**
