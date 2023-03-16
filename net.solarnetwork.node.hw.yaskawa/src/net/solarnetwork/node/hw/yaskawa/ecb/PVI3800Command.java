@@ -43,7 +43,7 @@ public enum PVI3800Command implements Command {
 	MeterReadTemperatureHeatsink(3, 2, 2),
 
 	/** Read the lifetime total energy export, as UInt64 Wh. */
-	MeterReadLifetimeTotalEnergy(24, 1, 8),
+	MeterReadLifetimeTotalEnergy(25, 1, 8),
 
 	/** Read the PV1 voltage, as UInt16 V. */
 	MeterReadPv1Voltage(28, 1, 2),
