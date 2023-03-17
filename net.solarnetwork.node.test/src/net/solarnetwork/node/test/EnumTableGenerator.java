@@ -26,6 +26,8 @@ import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import net.solarnetwork.domain.Bitmaskable;
@@ -56,7 +58,8 @@ public class EnumTableGenerator {
 	private final List<Method> descriptionMethods = new ArrayList<>(4);
 	private final PrintStream out;
 
-	private final List<String[]> rows = new ArrayList<>(16);
+	private final List<Row> rows = new ArrayList<>(16);
+	private boolean withoutGroups;
 
 	/**
 	 * Constructor.
@@ -67,6 +70,18 @@ public class EnumTableGenerator {
 	public EnumTableGenerator(PrintStream out) {
 		super();
 		this.out = Objects.requireNonNull(out);
+	}
+
+	private static final class Row {
+
+		private final int index;
+		private final String[] data;
+
+		private Row(int index, String[] data) {
+			super();
+			this.index = index;
+			this.data = data;
+		}
 	}
 
 	/**
@@ -90,7 +105,7 @@ public class EnumTableGenerator {
 	}
 
 	private int index(Enum<?> e) {
-		if ( e instanceof GroupedBitmaskable ) {
+		if ( !withoutGroups && e instanceof GroupedBitmaskable ) {
 			return ((GroupedBitmaskable) e).getOverallIndex();
 		} else if ( e instanceof Bitmaskable ) {
 			return ((Bitmaskable) e).bitmaskBitOffset();
@@ -127,8 +142,9 @@ public class EnumTableGenerator {
 			for ( int i = 0, len = enums.length; i < len; i++ ) {
 				final String[] row = new String[3];
 				final Enum<?> e = enums[i];
+				final int idx = index(e);
 
-				row[0] = Integer.toString(index(e));
+				row[0] = Integer.toString(idx);
 				int w = row[0].length();
 				if ( w > widths[0] ) {
 					widths[i] = w;
@@ -146,9 +162,22 @@ public class EnumTableGenerator {
 					widths[2] = w;
 				}
 
-				rows.add(row);
+				rows.add(new Row(idx, row));
 			}
 		}
+
+		// sort
+		Collections.sort(rows, new Comparator<Row>() {
+
+			@Override
+			public int compare(Row o1, Row o2) {
+				int result = Integer.compare(o1.index, o2.index);
+				if ( result != 0 ) {
+					return result;
+				}
+				return o1.data[2].compareTo(o2.data[2]);
+			}
+		});
 
 		// print header
 		String fmt = "| %-" + widths[0] + "s | %-" + widths[1] + "s | %-" + widths[2] + "s |";
@@ -163,9 +192,19 @@ public class EnumTableGenerator {
 		out.println('|');
 
 		// print rows
-		for ( String[] row : rows ) {
-			out.println(String.format(fmt, (Object[]) row));
+		for ( Row row : rows ) {
+			out.println(String.format(fmt, (Object[]) row.data));
 		}
+	}
+
+	/**
+	 * Turn off grouped bitmask support.
+	 * 
+	 * @param withoutGroups
+	 *        {@literal true} to ignore grouped bitmasks
+	 */
+	public void setWithoutGroups(boolean withoutGroups) {
+		this.withoutGroups = withoutGroups;
 	}
 
 	/**
@@ -179,20 +218,26 @@ public class EnumTableGenerator {
 			System.exit(1);
 		}
 		final EnumTableGenerator gen = new EnumTableGenerator(System.out);
-		for ( String className : args ) {
+		for ( String arg : args ) {
+			if ( "--nogroups".equals(arg) ) {
+				gen.setWithoutGroups(true);
+			}
+			if ( arg.startsWith("--") ) {
+				continue;
+			}
 			try {
 				@SuppressWarnings({ "rawtypes", "unchecked" })
-				Class<? extends Enum<?>> enumClass = (Class) Class.forName(className);
+				Class<? extends Enum<?>> enumClass = (Class) Class.forName(arg);
 				Object[] enums = enumClass.getEnumConstants();
 				if ( enums == null ) {
-					System.err.println("Class [" + className + "] is not an enum.");
+					System.err.println("Class [" + arg + "] is not an enum.");
 					continue;
 				}
 				gen.add(enumClass);
 			} catch ( ClassNotFoundException e ) {
-				System.err.println("Class [" + className + "] not found.");
+				System.err.println("Class [" + arg + "] not found.");
 			} catch ( ClassCastException e ) {
-				System.err.println("Class [" + className + "] is not an enum.");
+				System.err.println("Class [" + arg + "] is not an enum.");
 				continue;
 			}
 		}
