@@ -95,7 +95,7 @@ public class BasicDatumPopulatorActionTests {
 	public void populate() throws IOException {
 		// GIVEN
 		expectMessage(PVI3800Command.MeterReadAcCombinedActivePower, "020601044704002a42bb03");
-		expectMessage(PVI3800Command.MeterReadLifetimeTotalEnergy, "0206010a1801000000000030ab8026ad03");
+		expectMessage(PVI3800Command.MeterReadLifetimeTotalEnergy, "0206010a1901000000000030ab80776803");
 		expectMessage(PVI3800Command.MeterReadAcCombinedFrequency, "0206010447021771ecb103");
 		expectMessage(PVI3800Command.MeterReadAcCombinedCurrent, "0206010447030012f2a803");
 		expectMessage(PVI3800Command.MeterReadAcCombinedVoltage, "02060104470100e4d32e03");
@@ -115,6 +115,18 @@ public class BasicDatumPopulatorActionTests {
 		expectMessage(PVI3800Command.MeterReadPv3Voltage, "020601042C0101A50eaa03");
 		expectMessage(PVI3800Command.MeterReadPv3Current, "020601042C02002Ebf5d03");
 		expectMessage(PVI3800Command.MeterReadPv3Power, "020601042C0500288e9e03");
+
+		expectMessage(PVI3800Command.MeterReadPv1Status, "020601061A0100000004b25503");
+		expectMessage(PVI3800Command.MeterReadPv2Status, "02060106220100000006372c03");
+		expectMessage(PVI3800Command.MeterReadPv3Status, "020601062A0100000007f7a403");
+
+		expectMessage(PVI3800Command.MeterReadPv1IsoStatus, "020601061A0200000002765703");
+		expectMessage(PVI3800Command.MeterReadPv2IsoStatus, "02060106220200000004f2ed03");
+		expectMessage(PVI3800Command.MeterReadPv3IsoStatus, "020601062A0200000008f3a003");
+
+		expectMessage(PVI3800Command.MeterReadAc1Status, "02060106320100000001747e03");
+		expectMessage(PVI3800Command.MeterReadAc2Status, "02060106390100000010b50903");
+		expectMessage(PVI3800Command.MeterReadAc3Status, "02060106400100000400bdac03");
 
 		// WHEN
 		replayAll();
@@ -155,6 +167,41 @@ public class BasicDatumPopulatorActionTests {
 		assertThat("PV current", result.getDcCurrent(), is(equalTo(4.6f * 3)));
 		assertThat("PV power", result.getDcPower(), is(equalTo(112 + 40 + 40)));
 
-	}
+		assertThat("PV status 1",
+				result.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "status_pv1"),
+				is(equalTo(0x4)));
+		assertThat("PV status 2",
+				result.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "status_pv2"),
+				is(equalTo(0x6)));
+		assertThat("PV status 3",
+				result.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "status_pv3"),
+				is(equalTo(0x7)));
 
+		assertThat("PV ISO status 1",
+				result.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "status_pvIso1"),
+				is(equalTo(0x2)));
+		assertThat("PV ISO status 2",
+				result.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "status_pvIso2"),
+				is(equalTo(0x4)));
+		assertThat("PV ISO status 3",
+				result.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "status_pvIso3"),
+				is(equalTo(0x8)));
+
+		assertThat("AC status 1",
+				result.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "status_ac1"),
+				is(equalTo(0x1)));
+		assertThat("AC status 2",
+				result.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "status_ac2"),
+				is(equalTo(0x10)));
+		assertThat("AC status 3",
+				result.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "status_ac3"),
+				is(equalTo(0x400)));
+
+		assertThat("Events",
+				result.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "events"),
+				is(equalTo(0x501))); // 0, 8, 11 
+		assertThat("Vendor events",
+				result.asSampleOperations().getSampleString(DatumSamplesType.Status, "vendorEvents"),
+				is(equalTo("0x4110000000e00000007")));
+	}
 }
