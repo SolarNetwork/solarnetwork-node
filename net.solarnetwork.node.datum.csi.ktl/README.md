@@ -14,8 +14,6 @@ The plugin can be installed via the **Plugins** page on your SolarNode. It appea
 
 This datum generates a [datum stream][datum] with the following properties:
 
-
-
 | Property | Class | Units | Description |
 |:---------|:------|:------|:------------|
 | `ambientTemp`      | `i` | C | Ambient temperature |
