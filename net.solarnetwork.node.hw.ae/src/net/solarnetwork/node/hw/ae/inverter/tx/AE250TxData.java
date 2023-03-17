@@ -469,20 +469,20 @@ public class AE250TxData extends ModbusData implements AE250TxDataAccessor {
 					|| faults.contains(AE250TxTemperatureFault.InductorTempHigh) ) {
 				events.add(InverterModelEvent.OverTemperature);
 			}
-		}
-		if ( faults.contains(AE250TxTemperatureFault.DriveTempLow)
-				|| faults.contains(AE250TxTemperatureFault.AmbientTempLow)
-				|| faults.contains(AE250TxTemperatureFault.MagTempLow) ) {
-			events.add(InverterModelEvent.UnderTemperature);
-		}
-		if ( faults.contains(AE250TxSystemFault.Ground) ) {
-			events.add(InverterModelEvent.GroundFault);
-		}
-		if ( faults.contains(AE250TxSystemFault.AcContactor) ) {
-			events.add(InverterModelEvent.AcDisconnect);
-		}
-		if ( faults.contains(AE250TxSystemFault.DcContactor) ) {
-			events.add(InverterModelEvent.DcDisconnect);
+			if ( faults.contains(AE250TxTemperatureFault.DriveTempLow)
+					|| faults.contains(AE250TxTemperatureFault.AmbientTempLow)
+					|| faults.contains(AE250TxTemperatureFault.MagTempLow) ) {
+				events.add(InverterModelEvent.UnderTemperature);
+			}
+			if ( faults.contains(AE250TxSystemFault.Ground) ) {
+				events.add(InverterModelEvent.GroundFault);
+			}
+			if ( faults.contains(AE250TxSystemFault.AcContactor) ) {
+				events.add(InverterModelEvent.AcDisconnect);
+			}
+			if ( faults.contains(AE250TxSystemFault.DcContactor) ) {
+				events.add(InverterModelEvent.DcDisconnect);
+			}
 		}
 		return events;
 	}
