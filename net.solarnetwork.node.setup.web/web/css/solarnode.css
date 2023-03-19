@@ -464,3 +464,7 @@ div.plugin .desc {
 .action-bar button + button {
 	margin-left: 1em;
 }
+
+#opmodes-active td:last-of-type {
+	text-align: right;
+}
