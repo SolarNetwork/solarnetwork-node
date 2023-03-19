@@ -399,7 +399,7 @@ div.plugin .desc {
 .chart path.domain {
 	fill: none;
 	stroke: #000;
-	stroke-width 1px;
+	stroke-width: 1px;
 }
 
 /* carousel */
