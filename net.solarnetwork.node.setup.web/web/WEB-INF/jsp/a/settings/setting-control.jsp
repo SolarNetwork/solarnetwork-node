@@ -99,7 +99,7 @@
 								<button type="button" class=" help-popover help-icon" tabindex="-1"
 										data-content="${fn:escapeXml(help)}"
 										data-html="true">
-									<i class="fa fa-question-circle-o" aria-hidden="true"></i>
+									<i class="far fa-question-circle" aria-hidden="true"></i>
 								</button>
 							</c:if>
 							<br/>
@@ -285,7 +285,7 @@
 					<button type="button" class=" help-popover help-icon" tabindex="-1"
 							data-content="${fn:escapeXml(help)}"
 							data-html="true">
-						<i class="fa fa-question-circle-o" aria-hidden="true"></i>
+						<i class="far fa-question-circle" aria-hidden="true"></i>
 					</button>
 				</c:if>
 
@@ -330,10 +330,10 @@
 				<c:if test="${setting.dynamic}">
 					<div class="btn-group btn-group-sm" role="group">
 						<button type="button" class="btn btn-small btn-default group-item-remove">
-							<i class="icon-minus"></i>
+							<i class="fas fa-minus"></i>
 						</button>
 						<button type="button" class="btn btn-small btn-default group-item-add">
-							<i class="icon-plus"></i>
+							<i class="fas fa-plus"></i>
 						</button>
 					</div>
 					<c:set var="help">
@@ -343,7 +343,7 @@
 						<button type="button" class=" help-popover help-icon" tabindex="-1"
 								data-content="${fn:escapeXml(help)}"
 								data-html="true">
-							<i class="fa fa-question-circle-o" aria-hidden="true"></i>
+							<i class="far fa-question-circle" aria-hidden="true"></i>
 						</button>
 					</c:if>
 					<input type="hidden" name="${settingId}Count" id="${settingId}" value="${fn:length(setting.groupSettings)}" />

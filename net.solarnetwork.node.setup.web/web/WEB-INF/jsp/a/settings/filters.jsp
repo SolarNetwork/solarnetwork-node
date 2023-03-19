@@ -8,7 +8,7 @@
 	<section id="global">
 		<h2>
 			<a id="global-section" href="#global-section"
-				class="anchor" aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>			
+				class="anchor" aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>			
 			<fmt:message key="filters.global.title"/>
 		</h2>
 		<p><fmt:message key="filters.global.intro"/></p>
@@ -29,7 +29,7 @@
 						<td><strong><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></strong></td>
 						<td>
 							<a class="btn" href="<setup:url value='/a/settings/filters/manage?uid=${factory.factoryUid}'/>">
-								<i class="icon-edit icon-large"></i> 
+								<i class="far fa-pen-to-square"></i> 
 								<fmt:message key="settings.factory.manage.label"/>
 							</a>
 						</td>
@@ -49,7 +49,7 @@
 							<a id="${provider.settingUid}" 
 								class="anchor" 
 								href="#${provider.settingUid}"
-								aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>
+								aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>
 							<setup:message key="title" messageSource="${provider.messageSource}" text="${provider.displayName}"/>
 						</legend>
 						<c:set var="providerDescription">
@@ -100,7 +100,7 @@
 	<section id="user">
 		<h2>
 			<a id="user-section" href="#user-section"
-				class="anchor" aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>			
+				class="anchor" aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>			
 			<fmt:message key="filters.user.title"/>
 		</h2>
 		<p><fmt:message key="filters.user.intro"/></p>
@@ -119,7 +119,7 @@
 					<td><strong><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></strong></td>
 					<td>
 						<a class="btn" href="<setup:url value='/a/settings/filters/manage?uid=${factory.factoryUid}'/>">
-							<i class="icon-edit icon-large"></i> 
+							<i class="far fa-pen-to-square"></i> 
 							<fmt:message key="settings.factory.manage.label"/>
 						</a>
 					</td>

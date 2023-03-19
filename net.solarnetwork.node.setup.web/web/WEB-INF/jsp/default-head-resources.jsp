@@ -10,7 +10,9 @@
 	/css/ladda.css
 	/css/solarnode.css
 	/css/fonts.css
-	/css/font-awesome.css
+	/css/fontawesome.css
+	/css/regular.css
+	/css/solid.css
 </pack:style>
 <sec:authorize access="!hasRole('ROLE_USER')">
 	<setup:resources type="text/css"/>
@@ -43,6 +45,7 @@
 	/js/plugins.js
 	/js/datum-charts.js
 	/js/logging.js
+	/js/opmodes.js
 </pack:script>
 <sec:authorize access="!hasRole('ROLE_USER')">
 	<setup:resources type="application/javascript"/>

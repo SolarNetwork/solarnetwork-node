@@ -19,14 +19,14 @@
 	<div class="row action-bar">
 		<div class="span2">
 			<a href="<setup:url value='${navloc == "filters-component" ? "/a/settings/filters" : "/a/settings"}'/>" class="btn">
-				<i class="icon-arrow-left"></i>
+				<i class="fas fa-arrow-left"></i>
 				<fmt:message key="back.label"/>
 			</a>
 		</div>
 		<div class="span10 text-right">
 			<c:if test="${fn:length(providers) > 0}">
 				<button type="button" class="btn btn-default" data-toggle="modal" data-target="#remove-all-component-instance-modal">
-					<i class="icon-trash"></i>
+					<i class="far fa-trash-can"></i>
 					<fmt:message key='settings.factory.removeall.label'>
 						<fmt:param>${fn:length(providers)}</fmt:param>
 						<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
@@ -34,7 +34,7 @@
 				</button>
 			</c:if>
 			<button type="button" class="btn btn-primary" id="add" data-toggle="modal" data-target="#add-component-instance-modal">
-				<i class="icon-plus icon-white"></i>
+				<i class="fas fa-plus"></i>
 				<fmt:message key='settings.factory.add'>
 					<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
 				</fmt:message>
@@ -70,7 +70,7 @@
 						<a id="${instance.key}"
 							class="anchor"
 							href="#${instance.key}"
-							aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>
+							aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>
 						<setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/>
 						${' '}
 						${instance.key}
