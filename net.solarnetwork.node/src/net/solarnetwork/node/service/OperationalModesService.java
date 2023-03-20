@@ -23,15 +23,21 @@
 package net.solarnetwork.node.service;
 
 import java.time.Instant;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 import org.osgi.service.event.Event;
 import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.util.ObjectUtils;
 
 /**
  * API for operational mode management.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 1.62
  */
 public interface OperationalModesService {
@@ -117,6 +123,20 @@ public interface OperationalModesService {
 	 * @return the active operational modes, never {@literal null}
 	 */
 	Set<String> activeOperationalModes();
+
+	/**
+	 * Get the set of active operational modes with expirations.
+	 * 
+	 * <p>
+	 * This method returns only the operational modes that are both active and
+	 * have an expiration configured (that is still in the future).
+	 * </p>
+	 * 
+	 * @return the active operational modes that have expiration dates, never
+	 *         {@literal null}
+	 * @since 2.1
+	 */
+	Map<String, Long> activeOperationalModesWithExpirations();
 
 	/**
 	 * Enable a set of operational modes.
@@ -207,6 +227,133 @@ public interface OperationalModesService {
 		} catch ( NumberFormatException e ) {
 			return null;
 		}
+	}
+
+	/**
+	 * Registered operational mode information.
+	 * 
+	 * @version 1.0
+	 * @since 2.1
+	 */
+	final class OperationalModeInfo {
+
+		private final String name;
+		private final Set<String> tags;
+
+		/**
+		 * Constructor.
+		 * 
+		 * @param name
+		 *        the name
+		 * @throws IllegalArgumentException
+		 *         if {@code name} is {@literal null}
+		 */
+		public OperationalModeInfo(String name) {
+			this(name, null);
+		}
+
+		/**
+		 * Constructor.
+		 * 
+		 * @param name
+		 *        the name
+		 * @param tags
+		 *        the tags
+		 * @throws IllegalArgumentException
+		 *         if {@code name} is {@literal null}
+		 */
+		public OperationalModeInfo(String name, Set<String> tags) {
+			super();
+			this.name = ObjectUtils.requireNonNullArgument(name, "name");
+			this.tags = (tags != null ? tags : Collections.emptySet());
+		}
+
+		/**
+		 * Get the operational mode name.
+		 * 
+		 * @return the name
+		 */
+		public String getName() {
+			return name;
+		}
+
+		/**
+		 * Get the optional operational mode tags.
+		 * 
+		 * @return the tags
+		 */
+		public Set<String> getTags() {
+			return tags;
+		}
+
+	}
+
+	/**
+	 * Register operational mode information for "well known" modes.
+	 * 
+	 * @param info
+	 *        the information to register
+	 * @return a unique registration ID
+	 * @since 2.1
+	 */
+	UUID registerOperationalModeInfo(OperationalModeInfo info);
+
+	/**
+	 * Get all registered operational mode information.
+	 * 
+	 * @return all registered operational mode information
+	 * @since 2.1
+	 */
+	Stream<OperationalModeInfo> registeredOperationalModes();
+
+	/**
+	 * Unregister previously registered operational mode information.
+	 * 
+	 * @param registrationId
+	 *        the registration ID, previously returned from
+	 *        {@link #registerOperationalModeInfo(OperationalModeInfo)}
+	 * @return {@literal true} if the registration ID was found,
+	 *         {@literal false} otherwise
+	 * @since 2.1
+	 */
+	boolean unregisterOperationalModeInfo(UUID registrationId);
+
+	/**
+	 * An operational mode information predicate to match on a name prefix.
+	 * 
+	 * @param prefix
+	 *        the prefix to match
+	 * @return the predicate
+	 * @since 2.1
+	 */
+	static Predicate<OperationalModeInfo> withPrefix(String prefix) {
+		return (e) -> e.name.startsWith(prefix);
+	}
+
+	/**
+	 * An operational mode information predicate to match on a tag.
+	 * 
+	 * @param tag
+	 *        the tag to match
+	 * @return the predicate
+	 * @since 2.1
+	 */
+	static Predicate<OperationalModeInfo> withTag(String tag) {
+		return (e) -> e.tags != null && e.tags.contains(tag);
+	}
+
+	/**
+	 * An operational mode information predicate to match on a tag.
+	 * 
+	 * @param prefix
+	 *        the prefix to match
+	 * @param tag
+	 *        the tag to match
+	 * @return the predicate
+	 * @since 2.1
+	 */
+	static Predicate<OperationalModeInfo> withPrefixAndTag(String prefix, String tag) {
+		return (e) -> e.name.startsWith(prefix) && e.tags != null && e.tags.contains(tag);
 	}
 
 }

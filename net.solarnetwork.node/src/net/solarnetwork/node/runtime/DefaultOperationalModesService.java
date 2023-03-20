@@ -24,6 +24,7 @@ package net.solarnetwork.node.runtime;
 
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import static net.solarnetwork.util.StringUtils.commaDelimitedStringFromCollection;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -39,11 +40,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
 import org.slf4j.Logger;
@@ -73,7 +76,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * Default implementation of {@link OperationalModesService}.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class DefaultOperationalModesService extends BaseIdentifiable implements OperationalModesService,
 		InstructionHandler, SettingSpecifierProvider, ServiceLifecycleObserver {
@@ -109,6 +112,7 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 	}
 
 	private final ConcurrentMap<String, Long> activeModes;
+	private final ConcurrentMap<UUID, OperationalModeInfo> registeredModes;
 	private final OptionalService<SettingDao> settingDao;
 	private final OptionalService<EventAdmin> eventAdmin;
 	private long startupDelay = DEFAULT_STARTUP_DELAY;
@@ -151,15 +155,32 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 	 */
 	public DefaultOperationalModesService(ConcurrentMap<String, Long> modeCache,
 			OptionalService<SettingDao> settingDao, OptionalService<EventAdmin> eventAdmin) {
+		this(modeCache, new ConcurrentHashMap<>(8, 0.9f, 2), settingDao, eventAdmin);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param modeCache
+	 *        the cache to use for active mode tracking
+	 * @param registeredModes
+	 *        the map to use for registered mode tracking
+	 * @param settingDao
+	 *        the setting DAO to persist operational mode changes with
+	 * @param eventAdmin
+	 *        the event service to post notifications with
+	 * @throws IllegalArgumentException
+	 *         if {@code modeCache} or {@code registeredModes} or
+	 *         {@code settingDao} is {@literal null}
+	 * @since 2.2
+	 */
+	public DefaultOperationalModesService(ConcurrentMap<String, Long> modeCache,
+			ConcurrentMap<UUID, OperationalModeInfo> registeredModes,
+			OptionalService<SettingDao> settingDao, OptionalService<EventAdmin> eventAdmin) {
 		super();
-		if ( modeCache == null ) {
-			throw new IllegalArgumentException("The modeCache argument must not be null.");
-		}
-		this.activeModes = modeCache;
-		if ( settingDao == null ) {
-			throw new IllegalArgumentException("The settingDao argument must not be null.");
-		}
-		this.settingDao = settingDao;
+		this.activeModes = requireNonNullArgument(modeCache, "modeCache");
+		this.registeredModes = requireNonNullArgument(registeredModes, "registeredModes");
+		this.settingDao = requireNonNullArgument(settingDao, "settingDao");
 		this.eventAdmin = eventAdmin;
 	}
 
@@ -169,6 +190,14 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 
 			@Override
 			public void run() {
+				if ( settingDao.service() == null ) {
+					// wait for settings service to appear
+					synchronized ( DefaultOperationalModesService.this ) {
+						startupScheduledFuture = taskScheduler.schedule(this,
+								new Date(System.currentTimeMillis() + startupDelay));
+					}
+					return;
+				}
 				// post current modes, i.e. shift from "default" to whatever is active
 				final Set<String> modes = initActiveModes();
 				synchronized ( DefaultOperationalModesService.this ) {
@@ -397,6 +426,15 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 		}).map(Map.Entry::getKey).collect(Collectors.toSet());
 	}
 
+	@Override
+	public Map<String, Long> activeOperationalModesWithExpirations() {
+		final long now = System.currentTimeMillis();
+		return activeModes.entrySet().stream().filter(e -> {
+			Long exp = e.getValue();
+			return (!NO_EXPIRATION.equals(exp) && exp.longValue() > now);
+		}).collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
+	}
+
 	private Long modeExpiration(SettingDao dao, String mode) {
 		if ( dao == null ) {
 			return null;
@@ -526,6 +564,23 @@ public class DefaultOperationalModesService extends BaseIdentifiable implements 
 				txManager.commit(tx);
 			}
 		}
+	}
+
+	@Override
+	public UUID registerOperationalModeInfo(OperationalModeInfo info) {
+		UUID id = UUID.randomUUID();
+		registeredModes.put(id, info);
+		return id;
+	}
+
+	@Override
+	public Stream<OperationalModeInfo> registeredOperationalModes() {
+		return registeredModes.values().stream();
+	}
+
+	@Override
+	public boolean unregisterOperationalModeInfo(UUID registrationId) {
+		return registeredModes.remove(registrationId) != null;
 	}
 
 	private void postOperationalModesChangedEvent(Set<String> activeModes) {
