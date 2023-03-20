@@ -33,10 +33,13 @@ import static net.solarnetwork.io.modbus.netty.msg.RegistersModbusMessage.writeH
 import static net.solarnetwork.io.modbus.netty.msg.RegistersModbusMessage.writeHoldingsRequest;
 import static net.solarnetwork.node.io.modbus.ModbusDataUtils.shortArray;
 import static net.solarnetwork.node.io.modbus.ModbusDataUtils.unsignedIntArray;
+import static net.solarnetwork.node.io.modbus.nifty.AbstractNiftyModbusNetwork.PUBLISH_MODBUS_CLI_COMMANDS_TOPIC;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -44,24 +47,44 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.messaging.MessagingException;
+import org.springframework.messaging.simp.SimpMessageSendingOperations;
+import net.solarnetwork.io.modbus.AddressedModbusMessage;
 import net.solarnetwork.io.modbus.BitsModbusMessage;
 import net.solarnetwork.io.modbus.ModbusClient;
+import net.solarnetwork.io.modbus.ModbusClientConfig;
 import net.solarnetwork.io.modbus.ModbusMessage;
 import net.solarnetwork.io.modbus.RegistersModbusMessage;
+import net.solarnetwork.io.modbus.rtu.RtuModbusClientConfig;
+import net.solarnetwork.io.modbus.serial.SerialParity;
+import net.solarnetwork.io.modbus.serial.SerialStopBits;
+import net.solarnetwork.io.modbus.tcp.TcpModbusClientConfig;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusDataUtils;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWriteFunction;
 import net.solarnetwork.node.io.modbus.support.AbstractModbusConnection;
 import net.solarnetwork.node.service.LockTimeoutException;
+import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.util.ByteUtils;
 import net.solarnetwork.util.ObjectUtils;
+import net.solarnetwork.util.StringUtils;
 
 /**
  * Nifty Modbus implementation of {@link ModbusConnection}.
  * 
+ * <p>
+ * This class has support for generating {@code mbpoll} commands from Modbus
+ * messages. The {@code publishCliCommandMessages} property must be enabled for
+ * this to occur. Then {@code mbpoll} commands will be logged at the
+ * {@code DEBUG} level on the {@code net.solarnetwork.node.cli.modbus} logger.
+ * If the {@code messageSendingOps} property is configured as well, then those
+ * commands will be published to the
+ * {@link AbstractNiftyModbusNetwork#PUBLISH_MODBUS_CLI_COMMANDS_TOPIC} topic.
+ * </p>
+ * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class NiftyModbusConnection extends AbstractModbusConnection implements ModbusConnection {
 
@@ -69,6 +92,8 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 	public static final long DEFAULT_CONNECT_TIMEOUT = 10_000L;
 
 	private static final Logger log = LoggerFactory.getLogger(NiftyModbusConnection.class);
+
+	private static final Logger logCli = LoggerFactory.getLogger("net.solarnetwork.node.cli.modbus");
 
 	/** The Modbus client. */
 	protected final ModbusClient controller;
@@ -78,6 +103,15 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 
 	/** The connection timeout, in milliseconds. */
 	private long connectTimeout = DEFAULT_CONNECT_TIMEOUT;
+
+	/** Toggle the publishing of CLI command messages. */
+	private boolean publishCliCommandMessages;
+
+	/**
+	 * The optional message sending operations, for publishing CLI command
+	 * messages.
+	 */
+	private OptionalService<SimpMessageSendingOperations> messageSendingOps;
 
 	/**
 	 * Constructor.
@@ -127,6 +161,11 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 		}
 		try {
 			BitsModbusMessage req = readCoilsRequest(getUnitId(), address, count);
+
+			if ( publishCliCommandMessages ) {
+				publishCliCommand(req);
+			}
+
 			ModbusMessage res = controller.send(req);
 			if ( res.isException() ) {
 				throw new IOException(
@@ -144,6 +183,25 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 		} catch ( Exception e ) {
 			throw new IOException(String.format("Error reading %d discrete values from %d @ %s: %s",
 					count, address, describer.get(), e.toString()), e);
+		}
+	}
+
+	private void publishCliCommand(ModbusMessage req) {
+		final SimpMessageSendingOperations ops = OptionalService.service(this.messageSendingOps);
+		if ( logCli.isDebugEnabled() || ops != null ) {
+			List<String> cmd = mbpollCommand(req);
+			if ( cmd != null ) {
+				if ( logCli.isDebugEnabled() ) {
+					logCli.debug(StringUtils.delimitedStringFromCollection(cmd, " "));
+				}
+				if ( ops != null ) {
+					try {
+						ops.convertAndSend(PUBLISH_MODBUS_CLI_COMMANDS_TOPIC, cmd);
+					} catch ( MessagingException e ) {
+						log.warn("Unable to post CLI command: {}", e);
+					}
+				}
+			}
 		}
 	}
 
@@ -192,6 +250,11 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 		}
 		try {
 			BitsModbusMessage req = readDiscretesRequest(getUnitId(), address, count);
+
+			if ( publishCliCommandMessages ) {
+				publishCliCommand(req);
+			}
+
 			ModbusMessage res = controller.send(req);
 			if ( res.isException() ) {
 				throw new IOException(String.format(
@@ -307,6 +370,11 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 		}
 		try {
 			ModbusMessage req = modbusReadRequest(function, getUnitId(), address, count);
+
+			if ( publishCliCommandMessages ) {
+				publishCliCommand(req);
+			}
+
 			ModbusMessage res = controller.send(req);
 			if ( res.isException() ) {
 				throw new IOException(
@@ -380,6 +448,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 					throw new UnsupportedOperationException(
 							"Function " + function + " is not supported");
 			}
+
 			ModbusMessage res = controller.send(req);
 			if ( res.isException() ) {
 				throw new IOException(String.format(
@@ -397,6 +466,110 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 		}
 	}
 
+	/**
+	 * Generate a CLI command for a {@link ModbusMessage} using {@code mbpoll}.
+	 * 
+	 * @param req
+	 *        the Modbus message to translate into a {@code mbpoll} command
+	 * @return the command, or {@literal null} if one cannot be generated
+	 * @see <a href="https://github.com/epsilonrt/mbpoll">epsilonrt/mbpoll</a>
+	 */
+	private List<String> mbpollCommand(ModbusMessage req) {
+		final AddressedModbusMessage addReq = req.unwrap(AddressedModbusMessage.class);
+		if ( addReq == null ) {
+			log.warn("Unable to generate Modbus CLI command for unsupported request {}", req);
+			return null;
+		}
+		final List<String> cmd = new ArrayList<>(32);
+		final ModbusClientConfig config = controller.getClientConfig();
+		if ( config == null ) {
+			return null;
+		}
+		cmd.add("mbpoll");
+		cmd.add("-q");
+		cmd.add("-0");
+		cmd.add("-1");
+		if ( config instanceof TcpModbusClientConfig ) {
+			TcpModbusClientConfig tcpConfig = (TcpModbusClientConfig) config;
+			if ( tcpConfig.getPort() != TcpModbusClientConfig.DEFAULT_PORT ) {
+				cmd.add("-p");
+				cmd.add(Integer.toString(tcpConfig.getPort()));
+			}
+		} else if ( config instanceof RtuModbusClientConfig ) {
+			RtuModbusClientConfig rtu = (RtuModbusClientConfig) config;
+			cmd.add("-m");
+			cmd.add("rtu");
+			cmd.add("-b");
+			cmd.add(Integer.toString(rtu.getSerialParameters().getBaudRate()));
+			int v = rtu.getSerialParameters().getDataBits();
+			if ( v != 8 ) {
+				cmd.add("-d");
+				cmd.add(Integer.toString(v));
+			}
+			SerialStopBits sb = rtu.getSerialParameters().getStopBits();
+			if ( sb != SerialStopBits.Two ) {
+				cmd.add("-s");
+				cmd.add(Integer.toString(sb.getCode()));
+			}
+			SerialParity p = rtu.getSerialParameters().getParity();
+			if ( p != SerialParity.Even ) {
+				cmd.add("-P");
+				if ( p == SerialParity.Odd ) {
+					cmd.add("odd");
+				} else {
+					cmd.add("none");
+				}
+			}
+		} else {
+			log.warn("Unable to generate Modbus CLI command for unsupported ModbusClientConfig: {}",
+					config.getClass());
+			return null;
+		}
+		cmd.add("-a");
+		cmd.add(Integer.toString(req.getUnitId()));
+		cmd.add("-o");
+		cmd.add("5");
+		cmd.add("-t");
+		switch (req.getFunction().blockType()) {
+			case Coil:
+				cmd.add("0");
+				break;
+
+			case Discrete:
+				cmd.add("1");
+				break;
+
+			case Input:
+				cmd.add("3:hex");
+				break;
+
+			case Holding:
+				cmd.add("4:hex");
+				break;
+
+			default:
+				log.warn("Unable to generate Modbus CLI command for unsupported block type {}",
+						req.getFunction().blockType());
+				return null;
+		}
+		cmd.add("-r");
+		cmd.add(Integer.toString(addReq.getAddress()));
+		if ( addReq.getCount() > 1 ) {
+			cmd.add("-c");
+			cmd.add(Integer.toString(addReq.getCount()));
+		}
+
+		if ( config instanceof TcpModbusClientConfig ) {
+			TcpModbusClientConfig tcpConfig = (TcpModbusClientConfig) config;
+			cmd.add(tcpConfig.getHost());
+		} else if ( config instanceof RtuModbusClientConfig ) {
+			RtuModbusClientConfig rtu = (RtuModbusClientConfig) config;
+			cmd.add(rtu.getName());
+		}
+
+		return cmd;
+	}
+
 	@Override
 	public void writeWords(ModbusWriteFunction function, int address, int[] values) throws IOException {
 		writeWords(function, address, shortArray(values));
@@ -409,6 +582,11 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 		}
 		try {
 			ModbusMessage req = modbusReadRequest(function, getUnitId(), address, count);
+
+			if ( publishCliCommandMessages ) {
+				publishCliCommand(req);
+			}
+
 			ModbusMessage res = controller.send(req);
 			if ( res.isException() ) {
 				throw new IOException(
@@ -479,6 +657,51 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 	 */
 	public void setConnectTimeout(long connectTimeout) {
 		this.connectTimeout = connectTimeout;
+	}
+
+	/**
+	 * Get the "publish CLI command messages" setting.
+	 * 
+	 * @return {@link true} to publish CLI command messages
+	 * @since 1.1
+	 */
+	public boolean isPublishCliCommandMessages() {
+		return publishCliCommandMessages;
+	}
+
+	/**
+	 * Set the "publish CLI command messages" setting.
+	 * 
+	 * @param publishCliCommandMessages
+	 *        {@link true} to publish CLI command messages; requires the
+	 *        {@link #setMessageSendingOps(OptionalService)} property also be
+	 *        configured
+	 * @since 1.1
+	 */
+	public void setPublishCliCommandMessages(boolean publishCliCommandMessages) {
+		this.publishCliCommandMessages = publishCliCommandMessages;
+	}
+
+	/**
+	 * Get the message sending operations.
+	 * 
+	 * @return the message sending operations
+	 * @since 1.1
+	 */
+	public OptionalService<SimpMessageSendingOperations> getMessageSendingOps() {
+		return messageSendingOps;
+	}
+
+	/**
+	 * Set the message sending operations.
+	 * 
+	 * @param messageSendingOps
+	 *        the message sending operations to set; required by the
+	 *        {@link #setPublishCliCommandMessages(boolean)} setting
+	 * @since 1.1
+	 */
+	public void setMessageSendingOps(OptionalService<SimpMessageSendingOperations> messageSendingOps) {
+		this.messageSendingOps = messageSendingOps;
 	}
 
 }

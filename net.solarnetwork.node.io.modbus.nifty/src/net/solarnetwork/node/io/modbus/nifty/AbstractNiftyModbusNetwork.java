@@ -22,19 +22,29 @@
 
 package net.solarnetwork.node.io.modbus.nifty;
 
+import static java.util.Collections.singleton;
+import static net.solarnetwork.service.OptionalService.service;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
+import org.osgi.service.event.Event;
+import org.osgi.service.event.EventHandler;
+import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import io.netty.channel.EventLoopGroup;
 import net.solarnetwork.io.modbus.ModbusClient;
 import net.solarnetwork.io.modbus.ModbusClientConfig;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork;
+import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.node.service.OperationalModesService.OperationalModeInfo;
+import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -47,11 +57,11 @@ import net.solarnetwork.util.ObjectUtils;
  * Base class for Nifty Modbus implementations of {@link ModbusNetwork}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 		extends AbstractModbusNetwork implements SettingSpecifierProvider, SettingsChangeObserver,
-		ServiceLifecycleObserver, ThreadFactory {
+		ServiceLifecycleObserver, ThreadFactory, EventHandler {
 
 	/** The {@code keepOpenSeconds} property default value. */
 	public static final int DEFAULT_KEEP_OPEN_SECONDS = 90;
@@ -61,6 +71,32 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	/** The {@code replyTimeout} property default value. */
 	public static final long DEFAULT_REPLY_TIMEOUT = TimeUnit.SECONDS.toMillis(15);
+
+	/**
+	 * An operational mode to enable publishing Modbus CLI commands.
+	 * 
+	 * <p>
+	 * If this mode is enabled, it overrides whatever value the
+	 * {@code publishCliCommandMessages} setting has.
+	 * </p>
+	 * 
+	 * @since 1.1
+	 */
+	public static final String PUBLISH_MODBUS_CLI_COMMANDS_MODE = "cli-commands/modbus";
+
+	/**
+	 * An operational mode tag for Modbus CLI commands.
+	 * 
+	 * @since 1.1
+	 */
+	public static final String CLI_COMMANDS_MODE_MODBUS_TAG = "modbus";
+
+	/**
+	 * A message topic for Modbus CLI commands to be published to.
+	 * 
+	 * @since 1.1
+	 */
+	public static final String PUBLISH_MODBUS_CLI_COMMANDS_TOPIC = "/topic/cli/modbus";
 
 	private static final AtomicInteger THREAD_COUNT = new AtomicInteger(0);
 
@@ -76,6 +112,12 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 	private long replyTimeout = DEFAULT_REPLY_TIMEOUT;
 	private boolean wireLogging = false;
 
+	private OptionalService<OperationalModesService> opModesService;
+	private boolean publishCliCommandsMode;
+	private boolean publishCliCommandMessages;
+	private OptionalService<SimpMessageSendingOperations> messageSendingOps;
+
+	private UUID opModeRegistrationId;
 	private NiftyCachedModbusConnection cachedConnection;
 
 	/**
@@ -94,18 +136,28 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 	}
 
 	@Override
-	public void serviceDidStartup() {
+	public synchronized void serviceDidStartup() {
+		OperationalModesService opModesService = service(this.opModesService);
+		if ( opModesService != null ) {
+			this.opModeRegistrationId = opModesService.registerOperationalModeInfo(
+					new OperationalModeInfo(PUBLISH_MODBUS_CLI_COMMANDS_MODE,
+							singleton(CLI_COMMANDS_MODE_MODBUS_TAG)));
+			this.publishCliCommandsMode = opModesService
+					.isOperationalModeActive(PUBLISH_MODBUS_CLI_COMMANDS_MODE);
+		}
 		configurationChanged(null);
 	}
 
 	@Override
 	public synchronized void serviceDidShutdown() {
-		if ( cachedConnection != null ) {
-			if ( controller != null ) {
-				controller.setConnectionObserver(null);
+		if ( opModeRegistrationId != null ) {
+			OperationalModesService opModesService = service(this.opModesService);
+			if ( opModesService != null ) {
+				opModesService.unregisterOperationalModeInfo(opModeRegistrationId);
 			}
-			cachedConnection.forceClose();
+			this.opModeRegistrationId = null;
 		}
+		closeCachedConnection();
 		if ( controller != null ) {
 			controller.stop();
 			controller = null;
@@ -123,13 +175,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 				eventLoopGroup.shutdownGracefully();
 				eventLoopGroup = null;
 			}
-			if ( cachedConnection != null ) {
-				if ( controller != null ) {
-					controller.setConnectionObserver(null);
-				}
-				cachedConnection.forceClose();
-				cachedConnection = null;
-			}
+			closeCachedConnection();
 			if ( controller != null ) {
 				controller.stop();
 				controller = null;
@@ -140,6 +186,31 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 			}
 		} catch ( Exception e ) {
 			log.error("Error applying configuration change: {}", e.toString(), e);
+		}
+	}
+
+	private synchronized void closeCachedConnection() {
+		if ( cachedConnection != null ) {
+			if ( controller != null ) {
+				controller.setConnectionObserver(null);
+			}
+			cachedConnection.forceClose();
+			cachedConnection = null;
+		}
+	}
+
+	@Override
+	public void handleEvent(Event event) {
+		if ( !OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED.equals(event.getTopic()) ) {
+			return;
+		}
+		Object modes = event.getProperty(OperationalModesService.EVENT_PARAM_ACTIVE_OPERATIONAL_MODES);
+		if ( modes instanceof Collection<?> ) {
+			boolean cliModeActive = ((Collection<?>) modes).contains(PUBLISH_MODBUS_CLI_COMMANDS_MODE);
+			if ( cliModeActive != this.publishCliCommandsMode ) {
+				this.publishCliCommandsMode = cliModeActive;
+				closeCachedConnection();
+			}
 		}
 	}
 
@@ -212,11 +283,19 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 				controller.setConnectionObserver(cachedConnection);
 			}
 
-			return createLockingConnection(cachedConnection);
+			NiftyModbusConnection conn = cachedConnection.connection(unitId);
+			conn.setPublishCliCommandMessages(
+					this.publishCliCommandMessages || this.publishCliCommandsMode);
+			conn.setMessageSendingOps(messageSendingOps);
+
+			return createLockingConnection(conn);
 		}
 
-		return createLockingConnection(new NiftyModbusConnection(unitId, isHeadless(), controller,
-				this::getNetworkDescription));
+		NiftyModbusConnection conn = new NiftyModbusConnection(unitId, isHeadless(), controller,
+				this::getNetworkDescription);
+		conn.setPublishCliCommandMessages(this.publishCliCommandMessages || this.publishCliCommandsMode);
+		conn.setMessageSendingOps(messageSendingOps);
+		return createLockingConnection(conn);
 	}
 
 	@Override
@@ -243,6 +322,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 		results.add(new BasicTextFieldSettingSpecifier("eventLoopGroupMaxThreadCount",
 				String.valueOf(DEFAULT_EVENT_LOOP_MAX_THREAD_COUNT)));
 		results.add(new BasicToggleSettingSpecifier("wireLogging", Boolean.FALSE));
+		results.add(new BasicToggleSettingSpecifier("publishCliCommandMessages", Boolean.FALSE));
 		return results;
 	}
 
@@ -334,6 +414,66 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 	 */
 	public void setReplyTimeout(long replyTimeout) {
 		this.replyTimeout = replyTimeout;
+	}
+
+	/**
+	 * @return the opModesService
+	 */
+	public OptionalService<OperationalModesService> getOpModesService() {
+		return opModesService;
+	}
+
+	/**
+	 * @param opModesService
+	 *        the opModesService to set
+	 */
+	public void setOpModesService(OptionalService<OperationalModesService> opModesService) {
+		this.opModesService = opModesService;
+	}
+
+	/**
+	 * Get the "publish CLI command messages" setting.
+	 * 
+	 * @return {@link true} to publish CLI command messages
+	 * @since 1.1
+	 */
+	public boolean isPublishCliCommandMessages() {
+		return publishCliCommandMessages;
+	}
+
+	/**
+	 * Set the "publish CLI command messages" setting.
+	 * 
+	 * @param publishCliCommandMessages
+	 *        {@link true} to publish CLI command messages; requires the
+	 *        {@link #setMessageSendingOps(OptionalService)} property also be
+	 *        configured
+	 * @since 1.1
+	 */
+	public void setPublishCliCommandMessages(boolean publishCliCommandMessages) {
+		this.publishCliCommandMessages = publishCliCommandMessages;
+	}
+
+	/**
+	 * Get the message sending operations.
+	 * 
+	 * @return the message sending operations
+	 * @since 1.1
+	 */
+	public OptionalService<SimpMessageSendingOperations> getMessageSendingOps() {
+		return messageSendingOps;
+	}
+
+	/**
+	 * Set the message sending operations.
+	 * 
+	 * @param messageSendingOps
+	 *        the message sending operations to set; required by the
+	 *        {@link #setPublishCliCommandMessages(boolean)} setting
+	 * @since 1.1
+	 */
+	public void setMessageSendingOps(OptionalService<SimpMessageSendingOperations> messageSendingOps) {
+		this.messageSendingOps = messageSendingOps;
 	}
 
 }
