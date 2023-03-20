@@ -207,7 +207,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 		if ( keepOpenSeconds > 0 ) {
 			if ( cachedConnection == null ) {
-				cachedConnection = new NiftyCachedModbusConnection(unitId, isHeadless(), controller,
+				cachedConnection = new NiftyCachedModbusConnection(isHeadless(), controller,
 						this::getNetworkDescription, keepOpenSeconds);
 				controller.setConnectionObserver(cachedConnection);
 			}
