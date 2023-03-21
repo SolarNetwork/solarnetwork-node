@@ -662,7 +662,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 	/**
 	 * Get the "publish CLI command messages" setting.
 	 * 
-	 * @return {@link true} to publish CLI command messages
+	 * @return {@literal true} to publish CLI command messages
 	 * @since 1.1
 	 */
 	public boolean isPublishCliCommandMessages() {
@@ -673,7 +673,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 	 * Set the "publish CLI command messages" setting.
 	 * 
 	 * @param publishCliCommandMessages
-	 *        {@link true} to publish CLI command messages; requires the
+	 *        {@literal true} to publish CLI command messages; requires the
 	 *        {@link #setMessageSendingOps(OptionalService)} property also be
 	 *        configured
 	 * @since 1.1

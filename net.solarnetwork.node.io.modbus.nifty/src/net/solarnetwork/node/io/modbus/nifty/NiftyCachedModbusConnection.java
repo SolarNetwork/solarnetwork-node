@@ -86,8 +86,6 @@ public class NiftyCachedModbusConnection implements Runnable, ModbusClientConnec
 	 * 
 	 * @param unitId
 	 *        the unit ID
-	 * @param headless
-	 *        the headless flag
 	 * @return the connection
 	 */
 	public NiftyModbusConnection connection(int unitId) {
