@@ -23,6 +23,7 @@
 package net.solarnetwork.node.hw.sunspec.inverter;
 
 import java.time.Instant;
+import java.util.BitSet;
 import java.util.Map;
 import java.util.Set;
 import net.solarnetwork.domain.AcPhase;
@@ -35,7 +36,7 @@ import net.solarnetwork.node.hw.sunspec.OperatingState;
  * 
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.1
  */
 public class ReversedInverterModelAccessor implements InverterModelAccessor {
@@ -224,8 +225,18 @@ public class ReversedInverterModelAccessor implements InverterModelAccessor {
 	}
 
 	@Override
+	public Integer getVendorOperatingState() {
+		return delegate.getVendorOperatingState();
+	}
+
+	@Override
 	public Set<ModelEvent> getEvents() {
 		return delegate.getEvents();
+	}
+
+	@Override
+	public BitSet getVendorEvents() {
+		return delegate.getVendorEvents();
 	}
 
 }

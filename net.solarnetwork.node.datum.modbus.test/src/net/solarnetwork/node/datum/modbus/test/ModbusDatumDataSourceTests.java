@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collections;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
@@ -59,6 +60,7 @@ import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
 import net.solarnetwork.node.io.modbus.ModbusData;
+import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 import net.solarnetwork.node.io.modbus.ModbusWordOrder;
@@ -85,6 +87,8 @@ public class ModbusDatumDataSourceTests {
 	private static final String TEST_SINT16_PROP_NAME = "sint16";
 	private static final String TEST_INT32_PROP_NAME = "i32";
 	private static final String TEST_INT64_PROP_NAME = "i64";
+	private static final String TEST_BIT_PROP_NAME = "b";
+	private static final String TEST_BIT2_PROP_NAME = "b2";
 
 	private ModbusNetwork modbusNetwork;
 	private ModbusConnection modbusConnection;
@@ -630,4 +634,54 @@ public class ModbusDatumDataSourceTests {
 		assertThat("raw-add value", datum.asSampleOperations().getSampleLong(Instantaneous, "raw-add"),
 				equalTo(0x3330L + ((0x3340 << 16) | 0x3341)));
 	}
+
+	@SuppressWarnings("deprecation")
+	@Test
+	public void readDatumWithCoils() throws IOException {
+		// GIVEN
+		ModbusPropertyConfig propConfig = new ModbusPropertyConfig();
+		propConfig.setPropertyKey(TEST_BIT_PROP_NAME);
+		propConfig.setAddress(100);
+		propConfig.setFunction(ModbusReadFunction.ReadCoil);
+		propConfig.setDataType(ModbusDataType.Boolean);
+		propConfig.setPropertyType(Status);
+		ModbusPropertyConfig propConfig2 = new ModbusPropertyConfig();
+		propConfig2.setPropertyKey(TEST_BIT2_PROP_NAME);
+		propConfig2.setAddress(101);
+		propConfig2.setFunction(ModbusReadFunction.ReadCoil);
+		propConfig2.setDataType(ModbusDataType.Boolean);
+		propConfig2.setPropertyType(Status);
+		dataSource.setPropConfigs(new ModbusPropertyConfig[] { propConfig, propConfig2 });
+
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = Capture.newInstance();
+		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
+				.andAnswer(new IAnswer<ModbusData>() {
+
+					@Override
+					public ModbusData answer() throws Throwable {
+						ModbusConnectionAction<ModbusData> action = connActionCapture.getValue();
+						return action.doWithConnection(modbusConnection);
+					}
+				});
+
+		final BitSet rawBits = new BitSet();
+		rawBits.set(1);
+		expect(modbusConnection.readDiscreetValues(100, 2)).andReturn(rawBits);
+
+		replayAll();
+
+		// WHEN
+		NodeDatum datum = dataSource.readCurrentDatum();
+
+		// THEN
+		assertThat("Datum returned", datum, notNullValue());
+		assertThat("Created", datum.getTimestamp(), notNullValue());
+		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
+		assertThat("Coil value", datum.asSampleOperations().getSampleString(Status, TEST_BIT_PROP_NAME),
+				equalTo(Boolean.FALSE.toString()));
+		assertThat("Coil value 2",
+				datum.asSampleOperations().getSampleString(Status, TEST_BIT2_PROP_NAME),
+				equalTo(Boolean.TRUE.toString()));
+	}
+
 }

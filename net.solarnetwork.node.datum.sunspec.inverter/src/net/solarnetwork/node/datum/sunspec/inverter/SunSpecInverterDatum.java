@@ -22,6 +22,9 @@
 
 package net.solarnetwork.node.datum.sunspec.inverter;
 
+import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
+import java.math.BigInteger;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -38,12 +41,13 @@ import net.solarnetwork.node.hw.sunspec.inverter.InverterModelEvent;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterMpptExtensionModelAccessor;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterMpptExtensionModelAccessor.DcModule;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterOperatingState;
+import net.solarnetwork.util.NumberUtils;
 
 /**
  * Datum for a SunSpec compatible inverter.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class SunSpecInverterDatum extends SimpleAcDcEnergyDatum {
 
@@ -58,6 +62,13 @@ public class SunSpecInverterDatum extends SimpleAcDcEnergyDatum {
 	 * The status sample key for {@link #getEvents()} values.
 	 */
 	public static final String EVENTS_KEY = "events";
+
+	/**
+	 * The status sample key for {@link #getVendorEvents()} values.
+	 * 
+	 * @since 2.1
+	 */
+	public static final String VENDOR_EVENTS_KEY = "vendorEvents";
 
 	/** The model data. */
 	private final InverterModelAccessor data;
@@ -105,6 +116,7 @@ public class SunSpecInverterDatum extends SimpleAcDcEnergyDatum {
 		getSamples().putInstantaneousSampleValue("temp_other", data.getOtherTemperature());
 
 		setEvents(data.getEvents());
+		setVendorEvents(data.getVendorEvents());
 	}
 
 	private String modulePropertyName(String baseName, Integer moduleId) {
@@ -226,9 +238,9 @@ public class SunSpecInverterDatum extends SimpleAcDcEnergyDatum {
 	}
 
 	/**
-	 * Get the operating state.
+	 * Get the events.
 	 * 
-	 * @return the operating state, or {@literal null}
+	 * @return the events, or {@literal null}
 	 */
 	@JsonIgnore
 	@SerializeIgnore
@@ -254,6 +266,40 @@ public class SunSpecInverterDatum extends SimpleAcDcEnergyDatum {
 	public void setEvents(Set<ModelEvent> events) {
 		long bitmask = ModelEvent.bitField32Value(events);
 		getSamples().putStatusSampleValue(EVENTS_KEY, bitmask);
+	}
+
+	/**
+	 * Get the vendor events.
+	 * 
+	 * @return the events, or {@literal null}
+	 * @since 2.1
+	 */
+	@JsonIgnore
+	@SerializeIgnore
+	public BitSet getVendorEvents() {
+		String ve = getSamples().getStatusSampleString(VENDOR_EVENTS_KEY);
+		if ( ve != null ) {
+			BigInteger bi = new BigInteger(ve, 16);
+			return NumberUtils.bitSetForBigInteger(bi);
+		}
+		return null;
+	}
+
+	/**
+	 * Set the vendor events.
+	 * 
+	 * @param events
+	 *        the vendor events
+	 * @since 2.1
+	 */
+	public void setVendorEvents(BitSet events) {
+		if ( events != null && events.length() > 0 ) {
+			BigInteger v = NumberUtils.bigIntegerForBitSet(events);
+			if ( v != null ) {
+				asMutableSampleOperations().putSampleValue(Status, VENDOR_EVENTS_KEY,
+						"0x" + v.toString(16));
+			}
+		}
 	}
 
 }

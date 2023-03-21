@@ -43,6 +43,13 @@ public class SimpleSetupResourceProvider implements SetupResourceProvider {
 	private Locale defaultLocale = Locale.US;
 	private List<SetupResource> resources;
 
+	/**
+	 * Default constructor.
+	 */
+	public SimpleSetupResourceProvider() {
+		super();
+	}
+
 	@Override
 	public SetupResource getSetupResource(String resourceUID, Locale locale) {
 		if ( resources == null ) {

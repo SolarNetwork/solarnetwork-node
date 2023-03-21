@@ -36,4 +36,9 @@
 		<put-attribute name="body" value="/WEB-INF/jsp/a/settings/logging.jsp" />
 	</definition>
 		
+	<definition name="opmodes" extends="settings">
+		<put-attribute name="navloc" value="opmodes" type="string"/>
+		<put-attribute name="body" value="/WEB-INF/jsp/a/settings/opmodes.jsp" />
+	</definition>
+		
 </tiles-definitions>

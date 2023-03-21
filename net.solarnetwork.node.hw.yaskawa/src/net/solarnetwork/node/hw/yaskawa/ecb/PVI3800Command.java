@@ -26,7 +26,7 @@ package net.solarnetwork.node.hw.yaskawa.ecb;
  * Enumeration of command + subcommands.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public enum PVI3800Command implements Command {
 
@@ -43,7 +43,13 @@ public enum PVI3800Command implements Command {
 	MeterReadTemperatureHeatsink(3, 2, 2),
 
 	/** Read the lifetime total energy export, as UInt64 Wh. */
-	MeterReadLifetimeTotalEnergy(24, 1, 8),
+	MeterReadLifetimeTotalEnergy(25, 1, 8),
+
+	/** Read the PV1 status bit set of {@link PvStatus}. */
+	MeterReadPv1Status(26, 1, 4),
+
+	/** Read the PV1 ISO status bit set of {@link PvIsoStatus}. */
+	MeterReadPv1IsoStatus(26, 2, 4),
 
 	/** Read the PV1 voltage, as UInt16 V. */
 	MeterReadPv1Voltage(28, 1, 2),
@@ -54,6 +60,12 @@ public enum PVI3800Command implements Command {
 	/** Read the PV1 power, as UInt16 W. */
 	MeterReadPv1Power(28, 5, 2),
 
+	/** Read the PV2 status bit set of {@link PvStatus}. */
+	MeterReadPv2Status(34, 1, 4),
+
+	/** Read the PV2 ISO status bit set of {@link PvIsoStatus}. */
+	MeterReadPv2IsoStatus(34, 2, 4),
+
 	/** Read the PV2 voltage, as UInt16 V. */
 	MeterReadPv2Voltage(36, 1, 2),
 
@@ -63,6 +75,12 @@ public enum PVI3800Command implements Command {
 	/** Read the PV2 power, as UInt16 W. */
 	MeterReadPv2Power(36, 5, 2),
 
+	/** Read the PV3 status bit set of {@link PvStatus}. */
+	MeterReadPv3Status(42, 1, 4),
+
+	/** Read the PV3 ISO status bit set of {@link PvIsoStatus}. */
+	MeterReadPv3IsoStatus(42, 2, 4),
+
 	/** Read the PV3 voltage, as UInt16 V. */
 	MeterReadPv3Voltage(44, 1, 2),
 
@@ -71,6 +89,15 @@ public enum PVI3800Command implements Command {
 
 	/** Read the PV3 power, as UInt16 W. */
 	MeterReadPv3Power(44, 5, 2),
+
+	/** Read the AC1 status bit set of {@link AcStatus}. */
+	MeterReadAc1Status(50, 1, 4),
+
+	/** Read the AC2 status bit set of {@link AcStatus}. */
+	MeterReadAc2Status(57, 1, 4),
+
+	/** Read the AC3 status bit set of {@link AcStatus}. */
+	MeterReadAc3Status(64, 1, 4),
 
 	/** Read the AC voltage total, as UInt16 V. */
 	MeterReadAcCombinedVoltage(71, 1, 2),

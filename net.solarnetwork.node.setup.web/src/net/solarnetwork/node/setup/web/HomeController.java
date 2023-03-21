@@ -48,6 +48,13 @@ public class HomeController {
 	private OptionalService<SystemService> systemService;
 
 	/**
+	 * Default controller.
+	 */
+	public HomeController() {
+		super();
+	}
+
+	/**
 	 * Setup the home view.
 	 * 
 	 * @return the view name

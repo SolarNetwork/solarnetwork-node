@@ -66,6 +66,13 @@ public class DefaultPlatformService implements PlatformService {
 				new CustomizableThreadFactory("PlatformService-Main-"));
 	}
 
+	/**
+	 * Default constructor.
+	 */
+	public DefaultPlatformService() {
+		super();
+	}
+
 	@Override
 	public PlatformState activePlatformState() {
 		return PlatformState.values()[activeState.get()];

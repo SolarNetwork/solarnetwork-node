@@ -37,6 +37,10 @@ import net.solarnetwork.domain.GroupedBitmaskable;
  */
 public final class AE500NxUtils {
 
+	private AE500NxUtils() {
+		// not available
+	}
+
 	/**
 	 * Get an overall set of faults from 3 fault group data values.
 	 * 

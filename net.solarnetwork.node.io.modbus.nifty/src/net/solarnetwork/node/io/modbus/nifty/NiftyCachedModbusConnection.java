@@ -23,6 +23,7 @@
 package net.solarnetwork.node.io.modbus.nifty;
 
 import static java.lang.String.format;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.util.BitSet;
 import java.util.concurrent.TimeUnit;
@@ -42,12 +43,15 @@ import net.solarnetwork.node.service.LockTimeoutException;
  * connection after a length of time of no activity.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public class NiftyCachedModbusConnection extends NiftyModbusConnection
-		implements Runnable, ModbusClientConnectionObserver {
+public class NiftyCachedModbusConnection implements Runnable, ModbusClientConnectionObserver {
 
 	private static final Logger log = LoggerFactory.getLogger(NiftyCachedModbusConnection.class);
+
+	private final boolean headless;
+	private final ModbusClient controller;
+	private final Supplier<String> describer;
 
 	private final int keepOpenSeconds;
 	private final AtomicLong keepOpenExpiry;
@@ -56,8 +60,8 @@ public class NiftyCachedModbusConnection extends NiftyModbusConnection
 	private Thread keepOpenTimeoutThread;
 
 	/**
-	 * @param unitId
-	 *        the unit ID
+	 * Constructor.
+	 * 
 	 * @param headless
 	 *        the headless flag
 	 * @param controller
@@ -67,45 +71,117 @@ public class NiftyCachedModbusConnection extends NiftyModbusConnection
 	 * @param keepOpenSeconds
 	 *        the number of seconds to keep the connection open
 	 */
-	public NiftyCachedModbusConnection(int unitId, boolean headless, ModbusClient controller,
+	public NiftyCachedModbusConnection(boolean headless, ModbusClient controller,
 			Supplier<String> describer, int keepOpenSeconds) {
-		super(unitId, headless, controller, describer);
+		super();
+		this.headless = headless;
+		this.controller = requireNonNullArgument(controller, "controller");
+		this.describer = requireNonNullArgument(describer, "describer");
 		this.keepOpenSeconds = keepOpenSeconds;
 		this.keepOpenExpiry = new AtomicLong(0);
 	}
 
-	@Override
-	public void open() throws IOException, LockTimeoutException {
-		openThrewException = false;
-		try {
-			super.open();
-		} catch ( IOException | LockTimeoutException e ) {
-			openThrewException = true;
-			throw e;
-		} catch ( RuntimeException e ) {
-			openThrewException = true;
-			throw e;
-		} catch ( Exception e ) {
-			openThrewException = true;
-			throw new RuntimeException(e);
-		}
-		if ( keepOpenSeconds > 0 && keepOpenTimeoutThread == null || !keepOpenTimeoutThread.isAlive() ) {
-			activity();
-			keepOpenTimeoutThread = new Thread(this, format("Modbus Expiry %s", describer.get()));
-			keepOpenTimeoutThread.setDaemon(true);
-			keepOpenTimeoutThread.start();
-			if ( log.isInfoEnabled() ) {
-				log.info("Opened Modbus connection {}; keep for {}s", describer.get(), keepOpenSeconds);
-			}
-		}
-	}
+	/**
+	 * Create a connection.
+	 * 
+	 * @param unitId
+	 *        the unit ID
+	 * @return the connection
+	 */
+	public NiftyModbusConnection connection(int unitId) {
+		final Supplier<String> unitDescriber = () -> describer.get() + "#" + unitId;
+		return new NiftyModbusConnection(unitId, headless, controller, unitDescriber) {
 
-	@Override
-	public void close() {
-		if ( openThrewException || keepOpenSeconds < 1
-				|| keepOpenExpiry.get() < System.currentTimeMillis() ) {
-			doClose();
-		}
+			@Override
+			public void open() throws IOException, LockTimeoutException {
+				synchronized ( NiftyCachedModbusConnection.this ) {
+					openThrewException = false;
+					try {
+						super.open();
+					} catch ( IOException | LockTimeoutException e ) {
+						openThrewException = true;
+						throw e;
+					} catch ( RuntimeException e ) {
+						openThrewException = true;
+						throw e;
+					} catch ( Exception e ) {
+						openThrewException = true;
+						throw new RuntimeException(e);
+					}
+					if ( keepOpenSeconds > 0 && keepOpenTimeoutThread == null
+							|| !keepOpenTimeoutThread.isAlive() ) {
+						activity();
+						keepOpenTimeoutThread = new Thread(NiftyCachedModbusConnection.this,
+								format("Modbus Expiry %s", describer.get()));
+						keepOpenTimeoutThread.setDaemon(true);
+						keepOpenTimeoutThread.start();
+						if ( log.isInfoEnabled() ) {
+							log.info("Opened Modbus connection {}; keep for {}s",
+									NiftyCachedModbusConnection.this.describer.get(), keepOpenSeconds);
+						}
+					}
+				}
+			}
+
+			@Override
+			public void close() {
+				if ( openThrewException || keepOpenSeconds < 1
+						|| keepOpenExpiry.get() < System.currentTimeMillis() ) {
+					doClose();
+				}
+			}
+
+			@Override
+			public BitSet readDiscreetValues(int address, int count) throws IOException {
+				BitSet result = super.readDiscreetValues(address, count);
+				activity();
+				return result;
+			}
+
+			@Override
+			public void writeDiscreetValues(int[] addresses, BitSet bits) throws IOException {
+				super.writeDiscreetValues(addresses, bits);
+				activity();
+			}
+
+			@Override
+			public BitSet readInputDiscreteValues(int address, int count) throws IOException {
+				BitSet result = super.readInputDiscreteValues(address, count);
+				activity();
+				return result;
+			}
+
+			@Override
+			public short[] readWords(ModbusReadFunction function, int address, int count)
+					throws IOException {
+				short[] result = super.readWords(function, address, count);
+				activity();
+				return result;
+			}
+
+			@Override
+			public void writeWords(ModbusWriteFunction function, int address, short[] values)
+					throws IOException {
+				super.writeWords(function, address, values);
+				activity();
+			}
+
+			@Override
+			public byte[] readBytes(ModbusReadFunction function, int address, int count)
+					throws IOException {
+				byte[] result = super.readBytes(function, address, count);
+				activity();
+				return result;
+			}
+
+			@Override
+			public void writeBytes(ModbusWriteFunction function, int address, byte[] values)
+					throws IOException {
+				super.writeBytes(function, address, values);
+				activity();
+			}
+
+		};
 	}
 
 	/**
@@ -175,53 +251,6 @@ public class NiftyCachedModbusConnection extends NiftyModbusConnection
 			log.debug("Connection to {} closed by server", describer.get());
 			doClose();
 		}
-	}
-
-	@Override
-	public BitSet readDiscreetValues(int address, int count) throws IOException {
-		BitSet result = super.readDiscreetValues(address, count);
-		activity();
-		return result;
-	}
-
-	@Override
-	public void writeDiscreetValues(int[] addresses, BitSet bits) throws IOException {
-		super.writeDiscreetValues(addresses, bits);
-		activity();
-	}
-
-	@Override
-	public BitSet readInputDiscreteValues(int address, int count) throws IOException {
-		BitSet result = super.readInputDiscreteValues(address, count);
-		activity();
-		return result;
-	}
-
-	@Override
-	public short[] readWords(ModbusReadFunction function, int address, int count) throws IOException {
-		short[] result = super.readWords(function, address, count);
-		activity();
-		return result;
-	}
-
-	@Override
-	public void writeWords(ModbusWriteFunction function, int address, short[] values)
-			throws IOException {
-		super.writeWords(function, address, values);
-		activity();
-	}
-
-	@Override
-	public byte[] readBytes(ModbusReadFunction function, int address, int count) throws IOException {
-		byte[] result = super.readBytes(function, address, count);
-		activity();
-		return result;
-	}
-
-	@Override
-	public void writeBytes(ModbusWriteFunction function, int address, byte[] values) throws IOException {
-		super.writeBytes(function, address, values);
-		activity();
 	}
 
 }

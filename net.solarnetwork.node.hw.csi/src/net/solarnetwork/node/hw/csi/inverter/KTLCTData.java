@@ -25,14 +25,21 @@ package net.solarnetwork.node.hw.csi.inverter;
 import static net.solarnetwork.util.StringUtils.commaDelimitedStringFromCollection;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.BitSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.Bitmaskable;
 import net.solarnetwork.domain.DeviceOperatingState;
+import net.solarnetwork.domain.GroupedBitmaskable;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.domain.DataAccessor;
+import net.solarnetwork.node.hw.sunspec.ModelEvent;
+import net.solarnetwork.node.hw.sunspec.inverter.InverterModelEvent;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -476,6 +483,24 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 	}
 
 	@Override
+	public SortedSet<KTLCTFault> getFaults() {
+		SortedSet<KTLCTFault> result = new TreeSet<>(GroupedBitmaskable.SORT_BY_OVERALL_INDEX);
+		Set<KTLCTFault0> faults0 = getFaults0();
+		if ( faults0 != null ) {
+			result.addAll(faults0);
+		}
+		Set<KTLCTFault1> faults1 = getFaults1();
+		if ( faults1 != null ) {
+			result.addAll(faults1);
+		}
+		Set<KTLCTFault2> faults2 = getFaults2();
+		if ( faults2 != null ) {
+			result.addAll(faults2);
+		}
+		return result;
+	}
+
+	@Override
 	public Float getModuleTemperature() {
 		return getCentiValueAsFloat(KTLCTRegister.InverterModuleTemperature);
 	}
@@ -590,6 +615,53 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 		Number n = getNumber(KTLCTRegister.InverterEfficiency);
 		n = NumberUtils.scaled(n, -4);
 		return (n != null ? n.floatValue() : null);
+	}
+
+	@Override
+	public Set<ModelEvent> getEvents() {
+		SortedSet<KTLCTFault> faults = getFaults();
+		Set<ModelEvent> events = new LinkedHashSet<>(16);
+		if ( !faults.isEmpty() ) {
+			if ( faults.contains(KTLCTFault0.PVVoltageOver) ) {
+				events.add(InverterModelEvent.DcOverVoltage);
+			}
+			if ( faults.contains(KTLCTFault0.GridVoltageOutsideLimit07)
+					|| faults.contains(KTLCTFault0.GridVoltageOutsideLimit08)
+					|| faults.contains(KTLCTFault1.GridVoltageOutsideLimit09) ) {
+				events.add(InverterModelEvent.AcOverVoltage);
+			}
+			if ( faults.contains(KTLCTFault0.GridFrequencyOutsideLimit) ) {
+				events.add(InverterModelEvent.OverFrequency);
+			}
+			if ( faults.contains(KTLCTFault0.GridVoltageOutsideLimit11) ) {
+				events.add(InverterModelEvent.UnderFrequency);
+			}
+			if ( faults.contains(KTLCTFault0.Protect0020) ) {
+				events.add(InverterModelEvent.AcDisconnect);
+			}
+			if ( faults.contains(KTLCTFault0.TempOver) ) {
+				events.add(InverterModelEvent.OverTemperature);
+			}
+			if ( faults.contains(KTLCTFault1.Protect0110) ) {
+				events.add(InverterModelEvent.DcOverVoltage);
+			}
+		}
+		if ( faults.contains(KTLCTFault2.Protect0210) ) {
+			events.add(InverterModelEvent.HwTestFailure);
+		}
+		if ( faults.contains(KTLCTFault2.PV1VoltageOver) || faults.contains(KTLCTFault2.PV2VoltageOver)
+				|| faults.contains(KTLCTFault2.PV3VoltageOver) ) {
+			events.add(InverterModelEvent.DcOverVoltage);
+		}
+		if ( faults.contains(KTLCTFault2.EmergencyStp) ) {
+			events.add(InverterModelEvent.ManualShutdown);
+		}
+		return events;
+	}
+
+	@Override
+	public BitSet getVendorEvents() {
+		return GroupedBitmaskable.overallBitmaskValue(getFaults());
 	}
 
 	private class PhaseDataAccessor implements KTLCTDataAccessor {
@@ -848,6 +920,11 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 		}
 
 		@Override
+		public SortedSet<KTLCTFault> getFaults() {
+			return KTLCTData.this.getFaults();
+		}
+
+		@Override
 		public Set<KTLCTFault0> getFaults0() {
 			return KTLCTData.this.getFaults0();
 		}
@@ -940,6 +1017,16 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 		@Override
 		public Float getEfficiency() {
 			return KTLCTData.this.getEfficiency();
+		}
+
+		@Override
+		public Set<ModelEvent> getEvents() {
+			return KTLCTData.this.getEvents();
+		}
+
+		@Override
+		public BitSet getVendorEvents() {
+			return KTLCTData.this.getVendorEvents();
 		}
 
 	}

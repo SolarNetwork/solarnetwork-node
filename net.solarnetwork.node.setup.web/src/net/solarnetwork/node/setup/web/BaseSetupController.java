@@ -50,6 +50,13 @@ public class BaseSetupController {
 	private BundleContext bundleContext;
 
 	/**
+	 * Default constructor.
+	 */
+	public BaseSetupController() {
+		super();
+	}
+
+	/**
 	 * Shutdown SolarNode in the near future.
 	 * 
 	 * This can be used during the setup process, when restoring backups for

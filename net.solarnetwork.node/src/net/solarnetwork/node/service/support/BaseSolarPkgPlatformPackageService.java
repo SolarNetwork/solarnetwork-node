@@ -181,6 +181,13 @@ public abstract class BaseSolarPkgPlatformPackageService extends BasePlatformPac
 	private String command = DEFAULT_COMMAND;
 
 	/**
+	 * Default constructor.
+	 */
+	public BaseSolarPkgPlatformPackageService() {
+		super();
+	}
+
+	/**
 	 * Get an OS command to run, based on the configured {@code command}
 	 * program, an action verb, and optional arguments.
 	 * 

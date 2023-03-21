@@ -143,6 +143,13 @@ public class SettingsController {
 	private MessageSource messageSource;
 
 	/**
+	 * Default constructor.
+	 */
+	public SettingsController() {
+		super();
+	}
+
+	/**
 	 * List settings.
 	 * 
 	 * @param model

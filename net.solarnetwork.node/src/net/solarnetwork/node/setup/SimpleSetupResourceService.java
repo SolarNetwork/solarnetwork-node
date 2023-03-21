@@ -37,6 +37,13 @@ public class SimpleSetupResourceService implements SetupResourceService {
 
 	private Collection<SetupResourceProvider> setupResourceProviders;
 
+	/**
+	 * Default constructor.
+	 */
+	public SimpleSetupResourceService() {
+		super();
+	}
+
 	@Override
 	public SetupResource getSetupResource(String resourceUID, Locale locale) {
 		for ( SetupResourceProvider provider : getSetupResourceProviders() ) {

@@ -26,7 +26,7 @@ package net.solarnetwork.node.hw.ae.inverter.tx;
  * AE250TX voltage faults.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.2
  */
 public enum AE250TxVoltageFault implements AE250TxFault {
@@ -47,7 +47,7 @@ public enum AE250TxVoltageFault implements AE250TxFault {
 	AcUnbalancedFault(4, "AC voltages unbalanced."),
 
 	/** DC voltage high. */
-	DcOverVoltage(5, "DC voltage high."),
+	DcVoltageHigh(5, "DC voltage high."),
 
 	/** +5V power supply fault. */
 	PowerSupplyP5(6, "+5V power supply fault."),
@@ -88,6 +88,11 @@ public enum AE250TxVoltageFault implements AE250TxFault {
 	@Override
 	public String getDescription() {
 		return description;
+	}
+
+	@Override
+	public int getGroupIndex() {
+		return 2;
 	}
 
 }

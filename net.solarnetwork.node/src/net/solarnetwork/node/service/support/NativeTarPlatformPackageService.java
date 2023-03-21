@@ -78,6 +78,13 @@ public class NativeTarPlatformPackageService extends BasePlatformPackageService 
 
 	private List<String> tarCommand = DEFAULT_TAR_COMMAND;
 
+	/**
+	 * Default constructor.
+	 */
+	public NativeTarPlatformPackageService() {
+		super();
+	}
+
 	@Override
 	public boolean handlesPackage(String archiveFileName) {
 		return archiveFileName != null && TARBALL_PAT.matcher(archiveFileName).find();

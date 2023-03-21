@@ -54,6 +54,13 @@ public class ExceptionSupportFilter extends GenericFilterBean implements Filter 
 
 	private static final Logger log = LoggerFactory.getLogger(ExceptionSupportFilter.class);
 
+	/**
+	 * Default constructor.
+	 */
+	public ExceptionSupportFilter() {
+		super();
+	}
+
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 			throws IOException, ServletException {

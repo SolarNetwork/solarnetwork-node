@@ -11,6 +11,19 @@
 		http://www.springframework.org/schema/beans
 		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
 	
+	<bean id="opModesService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.OperationalModesService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
+	
+	<bean id="messageSendingOps" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="org.springframework.messaging.simp.SimpMessageSendingOperations"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<!-- TCP Modbus Network -->
 	
 	<bean id="messageSourceTcp" class="org.springframework.context.support.ResourceBundleMessageSource">
@@ -37,13 +50,21 @@
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.io.modbus.ModbusNetwork</beans:value>
 			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>org.osgi.service.event.EventHandler</beans:value>
 		</osgix:interfaces>
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.solarnetwork.node.io.modbus.tcp"/>
+			<beans:entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
+				<beans:array value-type="java.lang.String">
+					<beans:value>#{T(net.solarnetwork.node.service.OperationalModesService).EVENT_TOPIC_OPERATIONAL_MODES_CHANGED}</beans:value>
+				</beans:array>
+			</beans:entry>
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.io.modbus.nifty.tcp.NiftyTcpModbusNetwork"
 				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 			<property name="messageSource" ref="messageSourceTcp"/>
+			<property name="opModesService" ref="opModesService"/>
+			<property name="messageSendingOps" ref="messageSendingOps"/>
 		</bean>
 	</osgix:managed-service-factory>
 	

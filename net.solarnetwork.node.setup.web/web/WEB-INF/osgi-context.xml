@@ -34,6 +34,8 @@
 	
 	<osgi:reference id="platformService" interface="net.solarnetwork.node.service.PlatformService"/>
 
+	<osgi:reference id="opModesService" interface="net.solarnetwork.node.service.OperationalModesService"/>
+
 	<osgi:reference id="settingDao" interface="net.solarnetwork.node.dao.SettingDao"/>	
 	
 	<osgi:reference id="setupService" interface="net.solarnetwork.node.setup.SetupService" availability="optional"/>

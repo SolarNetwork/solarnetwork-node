@@ -33,6 +33,13 @@ public class PriceLocation extends SimpleDatumLocation {
 	private String currency;
 	private String unit;
 
+	/**
+	 * Default constructor.
+	 */
+	public PriceLocation() {
+		super();
+	}
+
 	@Override
 	public String toString() {
 		return "PriceDatum{locationId=" + getLocationId() + ",currency=" + this.currency + ",unit="

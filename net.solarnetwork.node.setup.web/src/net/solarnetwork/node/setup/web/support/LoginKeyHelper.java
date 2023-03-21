@@ -85,6 +85,13 @@ public class LoginKeyHelper {
 
 	}
 
+	/**
+	 * Default constructor.
+	 */
+	public LoginKeyHelper() {
+		super();
+	}
+
 	private Secret secret() {
 		return SECRET.updateAndGet(curr -> {
 			if ( curr == null || curr.expireDate < System.currentTimeMillis() ) {

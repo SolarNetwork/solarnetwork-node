@@ -144,6 +144,13 @@ public class NodeAssociationController extends BaseSetupController {
 	private OptionalServiceCollection<SettingSpecifierProvider> settingProviders;
 
 	/**
+	 * Default constructor.
+	 */
+	public NodeAssociationController() {
+		super();
+	}
+
+	/**
 	 * Node association entry point.
 	 * 
 	 * @param model

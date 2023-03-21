@@ -41,6 +41,13 @@ public class SerialPortBeanParameters extends SerialPortBean {
 	private long maxWait = 0;
 
 	/**
+	 * Default constructor.
+	 */
+	public SerialPortBeanParameters() {
+		super();
+	}
+
+	/**
 	 * Get a list of setting specifiers for this bean.
 	 * 
 	 * @param prefix

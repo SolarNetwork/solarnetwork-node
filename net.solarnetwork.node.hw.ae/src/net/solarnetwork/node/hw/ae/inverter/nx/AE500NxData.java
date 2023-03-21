@@ -25,14 +25,19 @@ package net.solarnetwork.node.hw.ae.inverter.nx;
 import static net.solarnetwork.domain.Bitmaskable.setForBitmask;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.BitSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.DeviceOperatingState;
+import net.solarnetwork.domain.GroupedBitmaskable;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.domain.DataAccessor;
+import net.solarnetwork.node.hw.sunspec.ModelEvent;
+import net.solarnetwork.node.hw.sunspec.inverter.InverterModelEvent;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -44,7 +49,7 @@ import net.solarnetwork.util.NumberUtils;
  * Data object for the AE 500NX series inverter.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  * @since 2.1
  */
 public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
@@ -352,6 +357,53 @@ public class AE500NxData extends ModbusData implements AE500NxDataAccessor {
 			return DeviceOperatingState.Shutdown;
 		}
 		return DeviceOperatingState.Normal;
+	}
+
+	@Override
+	public Set<ModelEvent> getEvents() {
+		SortedSet<AE500NxFault> faults = getFaults();
+		Set<ModelEvent> events = new LinkedHashSet<>(16);
+		if ( !faults.isEmpty() ) {
+			if ( faults.contains(AE500NxFault1.CoolantTemp) || faults.contains(AE500NxFault1.ReactorTemp)
+					|| faults.contains(AE500NxFault2.AmbientTemp)
+					|| faults.contains(AE500NxFault2.CabinetTemp) ) {
+				events.add(InverterModelEvent.OverTemperature);
+			}
+			if ( faults.contains(AE500NxFault1.DspWatchdog) ) {
+				events.add(InverterModelEvent.HwTestFailure);
+			}
+			if ( faults.contains(AE500NxFault1.BusHigh) ) {
+				events.add(InverterModelEvent.DcOverVoltage);
+			}
+			if ( faults.contains(AE500NxFault1.AcVolt) ) {
+				// do not know if over/under so just use over
+				events.add(InverterModelEvent.AcOverVoltage);
+			}
+			if ( faults.contains(AE500NxFault1.AcContactor) ) {
+				events.add(InverterModelEvent.AcDisconnect);
+			}
+			if ( faults.contains(AE500NxFault1.FrequencyLow) ) {
+				events.add(InverterModelEvent.UnderFrequency);
+			}
+			if ( faults.contains(AE500NxFault1.FrequencyHigh) ) {
+				events.add(InverterModelEvent.OverFrequency);
+			}
+			if ( faults.contains(AE500NxFault1.GroundCurrent) ) {
+				events.add(InverterModelEvent.GroundFault);
+			}
+			if ( faults.contains(AE500NxFault2.DcContactor) ) {
+				events.add(InverterModelEvent.DcDisconnect);
+			}
+			if ( faults.contains(AE500NxFault2.StopButton) ) {
+				events.add(InverterModelEvent.ManualShutdown);
+			}
+		}
+		return events;
+	}
+
+	@Override
+	public BitSet getVendorEvents() {
+		return GroupedBitmaskable.overallBitmaskValue(getFaults());
 	}
 
 }

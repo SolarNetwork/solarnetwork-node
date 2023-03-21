@@ -22,6 +22,7 @@
 
 package net.solarnetwork.node.hw.sunspec.inverter;
 
+import java.util.BitSet;
 import java.util.Set;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
@@ -33,7 +34,7 @@ import net.solarnetwork.node.hw.sunspec.OperatingState;
  * API for accessing inverter model data.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public interface InverterModelAccessor extends ModelAccessor, AcEnergyDataAccessor {
 
@@ -157,11 +158,40 @@ public interface InverterModelAccessor extends ModelAccessor, AcEnergyDataAccess
 	OperatingState getOperatingState();
 
 	/**
+	 * Get an optional vendor-specific operating state value.
+	 * 
+	 * @return the vendor operating state value, or {@literal null} if not
+	 *         supported or known
+	 * @since 2.2
+	 */
+	default Integer getVendorOperatingState() {
+		return null;
+	}
+
+	/**
 	 * Get the active events.
 	 * 
 	 * @return the events, never {@literal null}
 	 */
 	Set<ModelEvent> getEvents();
+
+	/**
+	 * Get an optional vendor-specific bit set of event codes.
+	 * 
+	 * <p>
+	 * Note that all SunSpec "vendor event" fields are presented as a single bit
+	 * set, with each 32-bit event group offset by 32. For example if a model
+	 * defines {@code EvtVnd1} and {@code EvtVnd2} 32-bit properties, there are
+	 * 64 possible bits where {@code EvtVnd1}'s first bit would be index
+	 * {@code 0} and {@code EvtVnd2}'s first bit would be index {@code 32}.
+	 * </p>
+	 * 
+	 * @return the vendor events, or {@literal null} if not supported or known
+	 * @since 2.2
+	 */
+	default BitSet getVendorEvents() {
+		return null;
+	}
 
 	/**
 	 * Get an accessor for phase-specific measurements.

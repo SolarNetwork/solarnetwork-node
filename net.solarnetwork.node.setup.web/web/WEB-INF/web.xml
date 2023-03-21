@@ -122,6 +122,7 @@
 	    <url-pattern>/img/*</url-pattern>
 	    <url-pattern>/js/*</url-pattern>
 	    <url-pattern>/js-lib/*</url-pattern>
+	    <url-pattern>/webfonts/*</url-pattern>
 	</servlet-mapping>
 
 	<servlet-mapping>

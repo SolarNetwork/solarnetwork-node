@@ -32,7 +32,7 @@ import net.solarnetwork.node.settings.SettingValueBean;
  * Overall configuration for a Modbus data source.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 3.1
  */
 public class ModbusDatumDataSourceConfig {
@@ -50,6 +50,13 @@ public class ModbusDatumDataSourceConfig {
 	private ModbusWordOrder wordOrder;
 	private final List<ModbusPropertyConfig> propertyConfigs = new ArrayList<>(8);
 	private final List<ExpressionConfig> expressionConfigs = new ArrayList<>(8);
+
+	/**
+	 * Constructor.
+	 */
+	public ModbusDatumDataSourceConfig() {
+		super();
+	}
 
 	/**
 	 * Generate a list of setting values from this instance.

@@ -8,7 +8,7 @@
 	<section id="factories">
 		<h2>
 			<a id="components-section" href="#components-section"
-				class="anchor" aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>			
+				class="anchor" aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>			
 			<fmt:message key="settings.factories.title"/>
 		</h2>
 		<p><fmt:message key="settings.factories.intro"/></p>	
@@ -27,7 +27,7 @@
 					<td><strong><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></strong></td>
 					<td>
 						<a class="btn" href="<setup:url value='/a/settings/manage?uid=${factory.factoryUid}'/>">
-							<i class="icon-edit icon-large"></i> 
+							<i class="far fa-pen-to-square"></i> 
 							<fmt:message key="settings.factory.manage.label"/>
 						</a>
 					</td>
@@ -42,7 +42,7 @@
 	<section id="settings">
 		<h2>
 			<a id="settings-section" href="#settings-section"
-				class="anchor" aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>			
+				class="anchor" aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>			
 			<fmt:message key="settings.providers.title"/>
 		</h2>
 		<p><fmt:message key="settings.providers.intro"/></p>	
@@ -56,7 +56,7 @@
 						<a id="${provider.settingUid}" 
 							class="anchor" 
 							href="#${provider.settingUid}"
-							aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>
+							aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>
 						<setup:message key="title" messageSource="${provider.messageSource}" text="${provider.displayName}"/>
 					</legend>
 					<c:set var="providerDescription">
@@ -121,7 +121,7 @@
 <section>
 	<h2>
 		<a id="backup-section" href="#backup-section"
-			class="anchor" aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>			
+			class="anchor" aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>			
 		<fmt:message key="backup.title"/>
 	</h2>
 	<p><fmt:message key="backup.intro"/></p>
@@ -154,7 +154,7 @@
  					<button type="button" class="help-popover help-icon" tabindex="-1"
 							data-content="<fmt:message key='backup.now.caption'/>"
 							data-html="true">
-						<i class="fa fa-question-circle-o" aria-hidden="true"></i>
+						<i class="far fa-question-circle" aria-hidden="true"></i>
 					</button>
 					<sec:csrfInput/>
 				</form>
@@ -189,7 +189,7 @@
 					<button type="button" class="help-popover help-icon" tabindex="-1"
 							data-content="<fmt:message key='backup.backups.info'/>"
 							data-html="true">
-						<i class="fa fa-question-circle-o" aria-hidden="true"></i>
+						<i class="far fa-question-circle" aria-hidden="true"></i>
 					</button>
 					<sec:csrfInput/>
 				</form>
@@ -205,7 +205,7 @@
 					<button type="button" class="help-popover help-icon" tabindex="-1"
 							data-content="<fmt:message key='backup.import.info'/>"
 							data-html="true">
-						<i class="fa fa-question-circle-o" aria-hidden="true"></i>
+						<i class="far fa-question-circle" aria-hidden="true"></i>
 					</button>
 					<sec:csrfInput/>
 				</form>
@@ -218,7 +218,7 @@
 <section>
 	<h2>
 		<a id="settings-backup-section" href="#settings-backup-section"
-			class="anchor" aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>			
+			class="anchor" aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>			
 		<fmt:message key="settings.io.title"/>
 	</h2>
 	<p><fmt:message key="settings.io.intro"/></p>
@@ -279,7 +279,7 @@
 										<button type="button" class="help-popover help-icon" tabindex="-1"
 												data-content="<fmt:message key='settings.autobackup.info'/>"
 												data-html="true">
-											<i class="fa fa-question-circle-o" aria-hidden="true"></i>
+											<i class="far fa-question-circle" aria-hidden="true"></i>
 										</button>
 									</c:if>
 								</li>

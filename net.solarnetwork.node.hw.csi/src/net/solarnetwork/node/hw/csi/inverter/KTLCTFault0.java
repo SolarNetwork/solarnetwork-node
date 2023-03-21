@@ -22,71 +22,71 @@
 
 package net.solarnetwork.node.hw.csi.inverter;
 
-import net.solarnetwork.domain.Bitmaskable;
-
 /**
  * Bitmask enumeration of fault 0 codes.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.4
  */
-public enum KTLCTFault0 implements Bitmaskable {
+public enum KTLCTFault0 implements KTLCTFault {
 
 	/** Protect0090. */
-	Protect0090(0),
+	Protect0090(0, "BUS sum high"),
 
 	/** Protect0080. */
-	Protect0080(1),
+	Protect0080(1, "Protect0080"),
 
 	/** Protect0070. */
-	Protect0070(2),
+	Protect0070(2, "BUS difference is high"),
 
 	/** Protect0060. */
-	Protect0060(3),
+	Protect0060(3, "Bus Soft start time out"),
 
 	/** Protect0050. */
-	Protect0050(4),
+	Protect0050(4, "Inverter Soft start time out"),
 
 	/** PVVoltageOver. */
-	PVVoltageOver(5),
+	PVVoltageOver(5, "PV voltage over limit"),
 
 	/** Protect0040. */
-	Protect0040(6),
+	Protect0040(6, "PV1 High current"),
 
 	/** GridVoltageOutsideLimit07. */
-	GridVoltageOutsideLimit07(7),
+	GridVoltageOutsideLimit07(7, "Grid line voltage over limit"),
 
 	/** GridVoltageOutsideLimit08. */
-	GridVoltageOutsideLimit08(8),
+	GridVoltageOutsideLimit08(8, "Grid phase voltage over limit"),
 
 	/** Protect0030. */
-	Protect0030(9),
+	Protect0030(9, "Inverter current too high"),
 
 	/** GridFrequencyOutsideLimit. */
-	GridFrequencyOutsideLimit(10),
+	GridFrequencyOutsideLimit(10, "High frequency of power grid"),
 
 	/** GridVoltageOutsideLimit11. */
-	GridVoltageOutsideLimit11(11),
+	GridVoltageOutsideLimit11(11, "Low frequency of power grid"),
 
 	/** GridVoltageOutsideLimit12. */
-	GridVoltageOutsideLimit12(12),
+	GridVoltageOutsideLimit12(12, "Out of phase"),
 
 	/** Protect0020. */
-	Protect0020(13),
+	Protect0020(13, "Grid connected relay protection"),
 
 	/** TempOver. */
-	TempOver(14),
+	TempOver(14, "Over temperature protection"),
 
 	/** Protect0010. */
-	Protect0010(15),
+	Protect0010(15, "Inverter current bias"),
 
 	;
 
 	private final int code;
+	private final String description;
 
-	private KTLCTFault0(int code) {
+	private KTLCTFault0(int code, String description) {
 		this.code = code;
+		this.description = description;
 	}
 
 	/**
@@ -101,6 +101,16 @@ public enum KTLCTFault0 implements Bitmaskable {
 	@Override
 	public int bitmaskBitOffset() {
 		return code;
+	}
+
+	@Override
+	public int getGroupIndex() {
+		return 0;
+	}
+
+	@Override
+	public String getDescription() {
+		return description;
 	}
 
 	/**

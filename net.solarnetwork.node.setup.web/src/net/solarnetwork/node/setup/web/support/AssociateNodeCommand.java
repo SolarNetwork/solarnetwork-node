@@ -34,6 +34,13 @@ public class AssociateNodeCommand {
 	private String keystorePassword;
 
 	/**
+	 * Default constructor.
+	 */
+	public AssociateNodeCommand() {
+		super();
+	}
+
+	/**
 	 * Get the verification code.
 	 * 
 	 * @return the code

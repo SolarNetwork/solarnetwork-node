@@ -26,7 +26,7 @@ package net.solarnetwork.node.hw.ae.inverter.tx;
  * AE250TX drive faults.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.2
  */
 public enum AE250TxDriveFault implements AE250TxFault {
@@ -59,19 +59,19 @@ public enum AE250TxDriveFault implements AE250TxFault {
 	HwOverCurrentC(8, "Peak over-current, phase C."),
 
 	/** RMS over-current, phase A. */
-	RmsOverCurrentA(6, "RMS over-current, phase A."),
+	RmsOverCurrentA(9, "RMS over-current, phase A."),
 
 	/** RMS over-current, phase B. */
-	RmsOverCurrentB(7, "RMS over-current, phase B."),
+	RmsOverCurrentB(10, "RMS over-current, phase B."),
 
 	/** RMS over-current, phase C. */
-	RmsOverCurrentC(8, "RMS over-current, phase C."),
+	RmsOverCurrentC(11, "RMS over-current, phase C."),
 
 	/** DC volts over range. */
-	DcOverVoltage(7, "DC volts over range."),
+	DcOverVoltage(12, "DC volts over range."),
 
 	/** DC volts under range. */
-	DcUnderVoltage(8, "DC volts under range."),
+	DcUnderVoltage(13, "DC volts under range."),
 
 	;
 
@@ -91,6 +91,11 @@ public enum AE250TxDriveFault implements AE250TxFault {
 	@Override
 	public String getDescription() {
 		return description;
+	}
+
+	@Override
+	public int getGroupIndex() {
+		return 1;
 	}
 
 }

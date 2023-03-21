@@ -89,6 +89,13 @@ public class DefaultBackupManager implements BackupManager {
 	}
 
 	/**
+	 * Default constructor.
+	 */
+	public DefaultBackupManager() {
+		super();
+	}
+
+	/**
 	 * Initialize after all properties set.
 	 */
 	public void init() {

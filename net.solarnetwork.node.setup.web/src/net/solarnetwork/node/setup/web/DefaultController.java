@@ -36,6 +36,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 public class DefaultController {
 
 	/**
+	 * Default constructor.
+	 */
+	public DefaultController() {
+		super();
+	}
+
+	/**
 	 * Get the hello view.
 	 * 
 	 * @param principal

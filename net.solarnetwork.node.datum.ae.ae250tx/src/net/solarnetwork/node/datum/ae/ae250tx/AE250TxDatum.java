@@ -24,6 +24,9 @@ package net.solarnetwork.node.datum.ae.ae250tx;
 
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import static net.solarnetwork.util.StringUtils.commaDelimitedStringFromCollection;
+import java.math.BigInteger;
+import java.util.BitSet;
+import java.util.Set;
 import java.util.SortedSet;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.domain.datum.Datum;
@@ -34,12 +37,14 @@ import net.solarnetwork.node.hw.ae.inverter.tx.AE250TxDataAccessor;
 import net.solarnetwork.node.hw.ae.inverter.tx.AE250TxFault;
 import net.solarnetwork.node.hw.ae.inverter.tx.AE250TxSystemStatus;
 import net.solarnetwork.node.hw.ae.inverter.tx.AE250TxWarning;
+import net.solarnetwork.node.hw.sunspec.ModelEvent;
+import net.solarnetwork.util.NumberUtils;
 
 /**
  * Datum for the AE 250TX inverter.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class AE250TxDatum extends SimpleAcDcEnergyDatum {
 
@@ -93,6 +98,23 @@ public class AE250TxDatum extends SimpleAcDcEnergyDatum {
 		if ( warnings != null && !warnings.isEmpty() ) {
 			asMutableSampleOperations().putSampleValue(Status, "warnings",
 					commaDelimitedStringFromCollection(warnings));
+		}
+
+		// SunSpec compatibility
+
+		Set<ModelEvent> events = data.getEvents();
+		if ( events != null && !events.isEmpty() ) {
+			long bitmask = ModelEvent.bitField32Value(data.getEvents());
+			asMutableSampleOperations().putSampleValue(Status, "events", bitmask);
+		}
+
+		BitSet vendorEvents = data.getVendorEvents();
+		if ( events != null && !events.isEmpty() ) {
+			BigInteger v = NumberUtils.bigIntegerForBitSet(vendorEvents);
+			if ( v != null ) {
+				asMutableSampleOperations().putSampleValue(Status, "vendorEvents",
+						"0x" + v.toString(16));
+			}
 		}
 	}
 

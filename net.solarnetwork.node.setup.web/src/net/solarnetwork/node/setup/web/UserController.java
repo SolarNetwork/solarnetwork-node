@@ -47,6 +47,13 @@ public class UserController extends BaseSetupWebServiceController {
 	private UserService userService;
 
 	/**
+	 * Default constructor.
+	 */
+	public UserController() {
+		super();
+	}
+
+	/**
 	 * Render the change password form.
 	 * 
 	 * @param oldPassword

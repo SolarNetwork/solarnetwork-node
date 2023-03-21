@@ -29,6 +29,8 @@ import org.springframework.context.MessageSource;
 /**
  * Abstract {@link Comparator} for comparing two resolved messages.
  * 
+ * @param <T>
+ *        the comparison type
  * @author matt
  * @version 1.0
  * @since 1.74
@@ -106,6 +108,8 @@ public abstract class MessageSourceMessageComparator<T> implements Comparator<T>
 	}
 
 	/**
+	 * Get the locale.
+	 * 
 	 * @return the locale
 	 */
 	public Locale getLocale() {
@@ -113,6 +117,8 @@ public abstract class MessageSourceMessageComparator<T> implements Comparator<T>
 	}
 
 	/**
+	 * Get the message key.
+	 * 
 	 * @return the messageKey
 	 */
 	public String getMessageKey() {

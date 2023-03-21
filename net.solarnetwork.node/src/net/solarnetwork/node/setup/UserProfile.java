@@ -37,6 +37,13 @@ public class UserProfile {
 	private String passwordAgain;
 
 	/**
+	 * Default constructor.
+	 */
+	public UserProfile() {
+		super();
+	}
+
+	/**
 	 * Get the username.
 	 * 
 	 * @return the username

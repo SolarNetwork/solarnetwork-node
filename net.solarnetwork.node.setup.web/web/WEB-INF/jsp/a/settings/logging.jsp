@@ -10,7 +10,7 @@
 	<h2>
 		<fmt:message key="logging.levels.title"/>
 		<button type="button" class="btn btn-small btn-primary pull-right" data-toggle="modal" data-target="#edit-logger-level-modal">
-			<i class="icon-plus icon-white"></i>
+			<i class="fas fa-plus"></i>
 		</button>
 	</h2>
 	<table class="table table-condensed table-hover" id="logging-levels">

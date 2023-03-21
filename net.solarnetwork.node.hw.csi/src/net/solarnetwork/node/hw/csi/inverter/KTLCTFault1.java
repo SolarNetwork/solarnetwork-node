@@ -22,71 +22,71 @@
 
 package net.solarnetwork.node.hw.csi.inverter;
 
-import net.solarnetwork.domain.Bitmaskable;
-
 /**
  * Bitmask enumeration of fault 1 codes.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.4
  */
-public enum KTLCTFault1 implements Bitmaskable {
+public enum KTLCTFault1 implements KTLCTFault {
 
 	/** Protect0190. */
-	Protect0190(0),
+	Protect0190(0, "Protect0190"),
 
 	/** Protect0180. */
-	Protect0180(1),
+	Protect0180(1, "DCI current bias"),
 
 	/** Protect0170. */
-	Protect0170(2),
+	Protect0170(2, "DCI High current"),
 
 	/** IsolationErr. */
-	IsolationErr(3),
+	IsolationErr(3, "Insulation impedance is too low"),
 
 	/** GFCIErr. */
-	GFCIErr(4),
+	GFCIErr(4, "Leakage current is too high"),
 
 	/** Protect0160. */
-	Protect0160(5),
+	Protect0160(5, "Frequency selective anomaly"),
 
 	/** PVReverse. */
-	PVReverse(6),
+	PVReverse(6, "PV reverse"),
 
 	/** Protect0150. */
-	Protect0150(7),
+	Protect0150(7, "MCU Protect"),
 
 	/** Protect0140. */
-	Protect0140(8),
+	Protect0140(8, "Inverter hardware over current"),
 
 	/** GridVoltageOutsideLimit09. */
-	GridVoltageOutsideLimit09(9),
+	GridVoltageOutsideLimit09(9, "Unbalanced grid voltage"),
 
 	/** Protect0270. */
-	Protect0270(10),
+	Protect0270(10, "Protect0270"),
 
 	/** Protect0130. */
-	Protect0130(11),
+	Protect0130(11, "Inverter current imbalance"),
 
 	/** Protect0120. */
-	Protect0120(12),
+	Protect0120(12, "Power module protection"),
 
 	/** ACContErr. */
-	ACContErr(13),
+	ACContErr(13, "AC cont error"),
 
 	/** Protect0110. */
-	Protect0110(14),
+	Protect0110(14, "Bus hardware over voltage"),
 
 	/** Protect0100. */
-	Protect0100(15),
+	Protect0100(15, "Leakage current sensor fault"),
 
 	;
 
 	private final int code;
+	private final String description;
 
-	private KTLCTFault1(int code) {
+	private KTLCTFault1(int code, String description) {
 		this.code = code;
+		this.description = description;
 	}
 
 	/**
@@ -101,6 +101,16 @@ public enum KTLCTFault1 implements Bitmaskable {
 	@Override
 	public int bitmaskBitOffset() {
 		return code;
+	}
+
+	@Override
+	public int getGroupIndex() {
+		return 1;
+	}
+
+	@Override
+	public String getDescription() {
+		return description;
 	}
 
 	/**

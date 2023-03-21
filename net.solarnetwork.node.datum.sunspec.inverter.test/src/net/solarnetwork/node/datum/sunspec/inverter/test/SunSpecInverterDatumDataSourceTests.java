@@ -171,8 +171,11 @@ public class SunSpecInverterDatumDataSourceTests {
 		assertThat("Datum sunsOpState",
 				d.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "sunsOpState"),
 				equalTo(InverterOperatingState.Mppt.getCode()));
-		assertThat("Datum eve ts",
+		assertThat("Datum events",
 				d.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "events"), equalTo(0));
+		assertThat("Datum vendor events",
+				d.asSampleOperations().getSampleString(DatumSamplesType.Status, "vendorEvents"),
+				is(equalTo("0x70008000500060003000400010002")));
 	}
 
 	@Test
@@ -229,8 +232,11 @@ public class SunSpecInverterDatumDataSourceTests {
 		assertThat("Datum sunsOpState",
 				d.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "sunsOpState"),
 				equalTo(InverterOperatingState.Mppt.getCode()));
-		assertThat("Datum eve ts",
+		assertThat("Datum events",
 				d.asSampleOperations().getSampleInteger(DatumSamplesType.Status, "events"), equalTo(0));
+		assertThat("Datum vendor events",
+				d.asSampleOperations().getSampleString(DatumSamplesType.Status, "vendorEvents"),
+				is(equalTo("0x70008000500060003000400010002")));
 
 		DatumSamplesOperations ops = d.asSampleOperations();
 		assertThat("Datum voltage phase A",

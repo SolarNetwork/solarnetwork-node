@@ -64,6 +64,13 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	private OptionalServiceCollection<ExpressionService> expressionServices;
 
 	/**
+	 * Default constructor.
+	 */
+	public BaseIdentifiable() {
+		super();
+	}
+
+	/**
 	 * Get settings for the configurable properties of
 	 * {@link BasicIdentifiable}.
 	 * 

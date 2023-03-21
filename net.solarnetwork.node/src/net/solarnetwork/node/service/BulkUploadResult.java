@@ -29,8 +29,8 @@ import net.solarnetwork.node.domain.datum.NodeDatum;
  * 
  * <p>
  * The {@code id} value represents the remote ID received from the server for
- * the given {@code datum}. This value can be stored in {@link NodeDatum} objects as
- * a receipt for the upload transaction.
+ * the given {@code datum}. This value can be stored in {@link NodeDatum}
+ * objects as a receipt for the upload transaction.
  * </p>
  * 
  * @author matt
@@ -55,6 +55,8 @@ public class BulkUploadResult {
 	}
 
 	/**
+	 * Get the datum.
+	 * 
 	 * @return the datum
 	 */
 	public NodeDatum getDatum() {
@@ -62,6 +64,8 @@ public class BulkUploadResult {
 	}
 
 	/**
+	 * Get the ID.
+	 * 
 	 * @return the id
 	 */
 	public String getId() {

@@ -96,6 +96,13 @@ public class DatumDataSourceSupport extends BaseIdentifiable {
 	private ScheduledFuture<?> subSampleFuture;
 
 	/**
+	 * Default constructor.
+	 */
+	public DatumDataSourceSupport() {
+		super();
+	}
+
+	/**
 	 * Clear the source metadata cache.
 	 * 
 	 * <p>

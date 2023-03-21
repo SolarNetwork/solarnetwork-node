@@ -22,8 +22,6 @@
 
 package net.solarnetwork.node.hw.csi.inverter;
 
-import net.solarnetwork.domain.Bitmaskable;
-
 /**
  * Bitmask enumeration of warning codes.
  * 
@@ -31,62 +29,64 @@ import net.solarnetwork.domain.Bitmaskable;
  * @version 1.0
  * @since 1.4
  */
-public enum KTLCTWarn implements Bitmaskable {
+public enum KTLCTWarn implements KTLCTFault {
 
 	/** Warn0010. */
-	Warn0010(0),
+	Warn0010(0, "External fan alarm"),
 
 	/** Warn0020. */
-	Warn0020(1),
+	Warn0020(1, "Internal fan alarm"),
 
 	/** CommErr. */
-	CommErr(2),
+	CommErr(2, "Comm error"),
 
 	/** Warn0030. */
-	Warn0030(3),
+	Warn0030(3, "EEPROM fault"),
 
 	/** Warn0040. */
-	Warn0040(4),
+	Warn0040(4, "DC side lightning protection exception"),
 
 	/** Warn0050. */
-	Warn0050(5),
+	Warn0050(5, "Temperature sensor anomaly"),
 
 	/** Warn0060. */
-	Warn0060(6),
+	Warn0060(6, "Warn0060"),
 
 	/** Warn0070. */
-	Warn0070(7),
+	Warn0070(7, "AC side MOV anomaly"),
 
 	/** Warn0080. */
-	Warn0080(8),
+	Warn0080(8, "Warn0080"),
 
 	/** Warn0090. */
-	Warn0090(9),
+	Warn0090(9, "Warn0090"),
 
 	/** Warn0100. */
-	Warn0100(10),
+	Warn0100(10, "Warn0100"),
 
 	/** Warn0110. */
-	Warn0110(11),
+	Warn0110(11, "Warn0110"),
 
 	/** Warn0120. */
-	Warn0120(12),
+	Warn0120(12, "Warn0120"),
 
 	/** Warn0130. */
-	Warn0130(13),
+	Warn0130(13, "Warn0130"),
 
 	/** Warn0140. */
-	Warn0140(14),
+	Warn0140(14, "Warn0140"),
 
 	/** Warn0150. */
-	Warn0150(15),
+	Warn0150(15, "Warn0150"),
 
 	;
 
 	private final int code;
+	private final String description;
 
-	private KTLCTWarn(int code) {
+	private KTLCTWarn(int code, String description) {
 		this.code = code;
+		this.description = description;
 	}
 
 	/**
@@ -101,6 +101,16 @@ public enum KTLCTWarn implements Bitmaskable {
 	@Override
 	public int bitmaskBitOffset() {
 		return code;
+	}
+
+	@Override
+	public int getGroupIndex() {
+		return 0;
+	}
+
+	@Override
+	public String getDescription() {
+		return description;
 	}
 
 	/**

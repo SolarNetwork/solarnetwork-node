@@ -74,6 +74,13 @@ public abstract class BackupServiceSupport implements BackupService {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
+	 * Default constructor.
+	 */
+	public BackupServiceSupport() {
+		super();
+	}
+
+	/**
 	 * Get a directory to use for local backup data.
 	 * 
 	 * @return a directory to use for local backup data

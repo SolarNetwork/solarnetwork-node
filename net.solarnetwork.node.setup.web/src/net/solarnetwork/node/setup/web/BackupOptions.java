@@ -39,6 +39,13 @@ public class BackupOptions {
 	private String[] providers;
 
 	/**
+	 * Default constructor.
+	 */
+	public BackupOptions() {
+		super();
+	}
+
+	/**
 	 * Get a property map suitable for passing into various
 	 * {@link BackupManager} methods.
 	 * 
@@ -78,8 +85,8 @@ public class BackupOptions {
 	 * {@link net.solarnetwork.node.backup.BackupResourceProvider} keys to limit
 	 * the backup to.
 	 * 
-	 * @return The list of provider keys to limit the backup to, or {@literal null}
-	 *         for all providers.
+	 * @return The list of provider keys to limit the backup to, or
+	 *         {@literal null} for all providers.
 	 */
 	public String[] getProviders() {
 		return providers;
@@ -91,8 +98,8 @@ public class BackupOptions {
 	 * the backup to.
 	 * 
 	 * @param providers
-	 *        The list of provider keys to limit the backup to, or {@literal null}
-	 *        for all providers.
+	 *        The list of provider keys to limit the backup to, or
+	 *        {@literal null} for all providers.
 	 */
 	public void setProviders(String[] providers) {
 		this.providers = providers;

@@ -67,6 +67,13 @@ public class BackupController extends BaseSetupController {
 	private MessageSource messageSource;
 
 	/**
+	 * Default constructor.
+	 */
+	public BackupController() {
+		super();
+	}
+
+	/**
 	 * Get a list of all available backups from the active backup service.
 	 * 
 	 * @return All avaialble backups.

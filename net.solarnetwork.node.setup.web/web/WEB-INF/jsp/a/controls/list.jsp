@@ -15,7 +15,7 @@
 					<td><strong>${controlId}</strong></td>
 					<td>
 						<a class="btn" href="<setup:url value='/a/controls/manage?id=${controlId}'/>">
-							<i class="icon-edit icon-large"></i> 
+							<i class="far fa-pen-to-square"></i> 
 							<fmt:message key="controls.manage.label"/>
 						</a>
 					</td>

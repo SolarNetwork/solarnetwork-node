@@ -26,6 +26,7 @@ import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import java.math.BigInteger;
 import java.util.BitSet;
+import java.util.Set;
 import net.solarnetwork.domain.Bitmaskable;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.domain.GroupedBitmaskable;
@@ -33,6 +34,7 @@ import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
 import net.solarnetwork.node.hw.ae.inverter.nx.AE500NxDataAccessor;
+import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.util.NumberUtils;
 
 /**
@@ -89,7 +91,7 @@ public class AE500NxDatum extends SimpleAcDcEnergyDatum {
 		}
 
 		BitSet faults = GroupedBitmaskable.overallBitmaskValue(data.getFaults());
-		if ( faults != null && faults.cardinality() > 0 ) {
+		if ( faults != null && !faults.isEmpty() ) {
 			BigInteger v = NumberUtils.bigIntegerForBitSet(faults);
 			if ( v != null ) {
 				asMutableSampleOperations().putSampleValue(Status, "faults", "0x" + v.toString(16));
@@ -97,7 +99,7 @@ public class AE500NxDatum extends SimpleAcDcEnergyDatum {
 		}
 
 		BitSet warnings = GroupedBitmaskable.overallBitmaskValue(data.getWarnings());
-		if ( warnings != null && warnings.cardinality() > 0 ) {
+		if ( warnings != null && !warnings.isEmpty() ) {
 			BigInteger v = NumberUtils.bigIntegerForBitSet(warnings);
 			if ( v != null ) {
 				asMutableSampleOperations().putSampleValue(Status, "warnings", "0x" + v.toString(16));
@@ -107,6 +109,23 @@ public class AE500NxDatum extends SimpleAcDcEnergyDatum {
 		int limits = Bitmaskable.bitmaskValue(data.getSystemLimits());
 		if ( limits > 0 ) {
 			asMutableSampleOperations().putSampleValue(Status, "limits", limits);
+		}
+
+		// SunSpec compatibility
+
+		Set<ModelEvent> events = data.getEvents();
+		if ( events != null && !events.isEmpty() ) {
+			long bitmask = ModelEvent.bitField32Value(data.getEvents());
+			asMutableSampleOperations().putSampleValue(Status, "events", bitmask);
+		}
+
+		BitSet vendorEvents = data.getVendorEvents();
+		if ( events != null && !events.isEmpty() ) {
+			BigInteger v = NumberUtils.bigIntegerForBitSet(vendorEvents);
+			if ( v != null ) {
+				asMutableSampleOperations().putSampleValue(Status, "vendorEvents",
+						"0x" + v.toString(16));
+			}
 		}
 	}
 

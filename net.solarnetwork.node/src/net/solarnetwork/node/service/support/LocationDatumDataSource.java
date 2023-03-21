@@ -95,6 +95,13 @@ public class LocationDatumDataSource
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
+	/**
+	 * Default constructor.
+	 */
+	public LocationDatumDataSource() {
+		super();
+	}
+
 	@Override
 	public Class<? extends NodeDatum> getDatumType() {
 		return delegate.getDatumType();

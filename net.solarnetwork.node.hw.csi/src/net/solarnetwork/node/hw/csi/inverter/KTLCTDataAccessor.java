@@ -22,16 +22,20 @@
 
 package net.solarnetwork.node.hw.csi.inverter;
 
+import java.util.BitSet;
+import java.util.Collections;
 import java.util.Set;
+import java.util.SortedSet;
 import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.domain.DcEnergyDataAccessor;
+import net.solarnetwork.node.hw.sunspec.ModelEvent;
 
 /**
  * API for reading CSI 50KTL-CT inverter series data.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public interface KTLCTDataAccessor extends DcEnergyDataAccessor, AcEnergyDataAccessor {
 
@@ -56,6 +60,14 @@ public interface KTLCTDataAccessor extends DcEnergyDataAccessor, AcEnergyDataAcc
 	 * @return the warnings
 	 */
 	Set<KTLCTWarn> getWarnings();
+
+	/**
+	 * Get the complete set of active faults, sorted by fault number.
+	 * 
+	 * @return the active faults
+	 * @since 2.2
+	 */
+	SortedSet<KTLCTFault> getFaults();
 
 	/**
 	 * Get the fault 0 set.
@@ -209,5 +221,33 @@ public interface KTLCTDataAccessor extends DcEnergyDataAccessor, AcEnergyDataAcc
 	 * @since 2.1
 	 */
 	Float getEfficiency();
+
+	/**
+	 * Get the faults converted to SunSpec-compatible events.
+	 * 
+	 * @return the events, never {@literal null}
+	 * @since 2.2
+	 */
+	default Set<ModelEvent> getEvents() {
+		return Collections.emptySet();
+	}
+
+	/**
+	 * Get an optional vendor-specific bit set of event codes.
+	 * 
+	 * <p>
+	 * Note that all SunSpec "vendor event" fields are presented as a single bit
+	 * set, with each 32-bit event group offset by 32. For example if a model
+	 * defines {@code EvtVnd1} and {@code EvtVnd2} 32-bit properties, there are
+	 * 64 possible bits where {@code EvtVnd1}'s first bit would be index
+	 * {@code 0} and {@code EvtVnd2}'s first bit would be index {@code 32}.
+	 * </p>
+	 * 
+	 * @return the vendor events, or {@literal null} if not supported or known
+	 * @since 2.2
+	 */
+	default BitSet getVendorEvents() {
+		return null;
+	}
 
 }

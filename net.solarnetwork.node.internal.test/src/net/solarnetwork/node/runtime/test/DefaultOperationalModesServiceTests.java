@@ -26,6 +26,9 @@ import static java.lang.String.format;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
+import static net.solarnetwork.node.service.OperationalModesService.withPrefix;
+import static net.solarnetwork.node.service.OperationalModesService.withPrefixAndTag;
+import static net.solarnetwork.node.service.OperationalModesService.withTag;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
 import static org.easymock.EasyMock.expect;
@@ -48,8 +51,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.After;
@@ -65,13 +71,14 @@ import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.runtime.DefaultOperationalModesService;
 import net.solarnetwork.node.service.OperationalModesService;
+import net.solarnetwork.node.service.OperationalModesService.OperationalModeInfo;
 import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test cases for the {@link DefaultOperationalModesService} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class DefaultOperationalModesServiceTests {
 
@@ -80,6 +87,7 @@ public class DefaultOperationalModesServiceTests {
 	private PlatformTransactionManager txManager;
 	private DefaultOperationalModesService service;
 	private ConcurrentMap<String, Long> activeModeCache;
+	private ConcurrentMap<UUID, OperationalModeInfo> registeredMap;
 
 	@Before
 	public void setup() {
@@ -87,7 +95,8 @@ public class DefaultOperationalModesServiceTests {
 		settingDao = EasyMock.createMock(SettingDao.class);
 		txManager = EasyMock.createMock(PlatformTransactionManager.class);
 		activeModeCache = new ConcurrentHashMap<>(8, 0.9f, 1);
-		service = new DefaultOperationalModesService(activeModeCache,
+		registeredMap = new ConcurrentHashMap<>(8, 0.9f, 1);
+		service = new DefaultOperationalModesService(activeModeCache, registeredMap,
 				new StaticOptionalService<>(settingDao), new StaticOptionalService<>(eventAdmin));
 	}
 
@@ -340,6 +349,69 @@ public class DefaultOperationalModesServiceTests {
 
 		// THEN
 		assertThat("Mode is expired", result, is(equalTo(false)));
+	}
+
+	@Test
+	public void expiringMap_empty() {
+		// GIVEN
+
+		// WHEN
+		replayAll();
+		Map<String, Long> result = service.activeOperationalModesWithExpirations();
+
+		// THEN
+		assertThat("Non-null result", result, is(notNullValue()));
+		assertThat("Empty result", result.keySet(), hasSize(0));
+	}
+
+	@Test
+	public void expiringMap_noneExpiring() {
+		// GIVEN
+		activeModeCache.put("test", DefaultOperationalModesService.NO_EXPIRATION);
+
+		// WHEN
+		replayAll();
+		Map<String, Long> result = service.activeOperationalModesWithExpirations();
+
+		// THEN
+		assertThat("Non-null result", result, is(notNullValue()));
+		assertThat("Empty result", result.keySet(), hasSize(0));
+	}
+
+	@Test
+	public void expiringMap_someExpiring() {
+		// GIVEN
+		final Long future = Instant.now().plusSeconds(60).toEpochMilli();
+		activeModeCache.put("test", DefaultOperationalModesService.NO_EXPIRATION);
+		activeModeCache.put("future", future);
+
+		// WHEN
+		replayAll();
+		Map<String, Long> result = service.activeOperationalModesWithExpirations();
+
+		// THEN
+		assertThat("Non-null result", result, is(notNullValue()));
+		assertThat("One result", result.keySet(), hasSize(1));
+		assertThat("Expected result", result, hasEntry("future", future));
+	}
+
+	@Test
+	public void expiringMap_someExpiringSomeExpired() {
+		// GIVEN
+		final Long past = Instant.now().minusSeconds(60).toEpochMilli();
+		final Long future = Instant.now().plusSeconds(60).toEpochMilli();
+		activeModeCache.put("test", DefaultOperationalModesService.NO_EXPIRATION);
+		activeModeCache.put("past", past);
+		activeModeCache.put("future", future);
+
+		// WHEN
+		replayAll();
+		Map<String, Long> result = service.activeOperationalModesWithExpirations();
+
+		// THEN
+		assertThat("Non-null result", result, is(notNullValue()));
+		assertThat("One result", result.keySet(), hasSize(1));
+		assertThat("Expected result is only future", result, hasEntry("future", future));
 	}
 
 	@Test
@@ -869,6 +941,141 @@ public class DefaultOperationalModesServiceTests {
 				is(equalTo(false)));
 		assertThat("Service reports mode state", service.isOperationalModeActive("bar"),
 				is(equalTo(true)));
+	}
+
+	@Test
+	public void registerInfo() {
+		// GIVEN
+		OperationalModeInfo info = new OperationalModeInfo("foo");
+
+		// WHEN
+		replayAll();
+		UUID id = service.registerOperationalModeInfo(info);
+
+		// THEN
+		assertThat("ID returned", id, is(notNullValue()));
+		assertThat("Info saved", registeredMap, hasEntry(id, info));
+	}
+
+	@Test
+	public void unregisterInfo() {
+		// GIVEN
+		UUID id = UUID.randomUUID();
+		OperationalModeInfo info = new OperationalModeInfo("foo");
+		registeredMap.put(id, info);
+
+		// WHEN
+		replayAll();
+		boolean removed = service.unregisterOperationalModeInfo(id);
+
+		// THEN
+		assertThat("Was removed", removed, is(equalTo(true)));
+		assertThat("Info removed", registeredMap.keySet(), hasSize(0));
+	}
+
+	@Test
+	public void unregisterInfo_notKnown() {
+		// GIVEN
+		UUID id = UUID.randomUUID();
+		OperationalModeInfo info = new OperationalModeInfo("foo");
+		registeredMap.put(id, info);
+
+		// WHEN
+		replayAll();
+		boolean removed = service.unregisterOperationalModeInfo(UUID.randomUUID());
+
+		// THEN
+		assertThat("Was not removed", removed, is(equalTo(false)));
+		assertThat("Info still remains", registeredMap, hasEntry(id, info));
+	}
+
+	@Test
+	public void registered() {
+		UUID id = UUID.randomUUID();
+		OperationalModeInfo info = new OperationalModeInfo("foo");
+		registeredMap.put(id, info);
+
+		UUID id2 = UUID.randomUUID();
+		OperationalModeInfo info2 = new OperationalModeInfo("bar");
+		registeredMap.put(id2, info2);
+
+		// WHEN
+		replayAll();
+		Stream<OperationalModeInfo> infos = service.registeredOperationalModes();
+
+		// THEN
+		assertThat("Stream returned", infos, is(notNullValue()));
+		List<OperationalModeInfo> l = infos.collect(Collectors.toList());
+		assertThat("Infos returned", l, containsInAnyOrder(info, info2));
+	}
+
+	@Test
+	public void registered_filterByPrefix() {
+		UUID id = UUID.randomUUID();
+		OperationalModeInfo info = new OperationalModeInfo("foo/1");
+		registeredMap.put(id, info);
+
+		UUID id2 = UUID.randomUUID();
+		OperationalModeInfo info2 = new OperationalModeInfo("foo/2");
+		registeredMap.put(id2, info2);
+
+		UUID id3 = UUID.randomUUID();
+		OperationalModeInfo info3 = new OperationalModeInfo("bar/1");
+		registeredMap.put(id3, info3);
+
+		// WHEN
+		replayAll();
+		List<OperationalModeInfo> infos = service.registeredOperationalModes().filter(withPrefix("foo/"))
+				.collect(Collectors.toList());
+
+		// THEN
+		assertThat("Infos with matching prefix returned", infos, containsInAnyOrder(info, info2));
+	}
+
+	@Test
+	public void registered_filterByTag() {
+		UUID id = UUID.randomUUID();
+		OperationalModeInfo info = new OperationalModeInfo("foo/1", singleton("t1"));
+		registeredMap.put(id, info);
+
+		UUID id2 = UUID.randomUUID();
+		OperationalModeInfo info2 = new OperationalModeInfo("foo/2");
+		registeredMap.put(id2, info2);
+
+		UUID id3 = UUID.randomUUID();
+		OperationalModeInfo info3 = new OperationalModeInfo("bar/1", singleton("t2"));
+		registeredMap.put(id3, info3);
+
+		// WHEN
+		replayAll();
+		List<OperationalModeInfo> infos = service.registeredOperationalModes().filter(withTag("t1"))
+				.collect(Collectors.toList());
+
+		// THEN
+		assertThat("Infos with matching prefix returned", infos, containsInAnyOrder(info));
+	}
+
+	@Test
+	public void registered_filterByPrefixAndTag() {
+		UUID id = UUID.randomUUID();
+		OperationalModeInfo info = new OperationalModeInfo("foo/1", singleton("t1"));
+		registeredMap.put(id, info);
+
+		UUID id2 = UUID.randomUUID();
+		OperationalModeInfo info2 = new OperationalModeInfo("foo/2");
+		registeredMap.put(id2, info2);
+
+		UUID id3 = UUID.randomUUID();
+		OperationalModeInfo info3 = new OperationalModeInfo("bar/1", singleton("t2"));
+		registeredMap.put(id3, info3);
+
+		// WHEN
+		replayAll();
+		List<OperationalModeInfo> infos = service.registeredOperationalModes()
+				.filter(withPrefixAndTag("foo/", "t1")).collect(Collectors.toList());
+
+		// THEN
+		assertThat("Infos with matching prefix returned", infos, containsInAnyOrder(info));
 	}
 
 }

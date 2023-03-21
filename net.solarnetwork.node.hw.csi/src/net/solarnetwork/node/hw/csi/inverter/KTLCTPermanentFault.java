@@ -22,8 +22,6 @@
 
 package net.solarnetwork.node.hw.csi.inverter;
 
-import net.solarnetwork.domain.Bitmaskable;
-
 /**
  * Bitmask enumeration of permanent fault codes.
  * 
@@ -31,62 +29,64 @@ import net.solarnetwork.domain.Bitmaskable;
  * @version 1.0
  * @since 1.4
  */
-public enum KTLCTPermanentFault implements Bitmaskable {
+public enum KTLCTPermanentFault implements KTLCTFault {
 
 	/** Fault0130. */
-	Fault0130(0),
+	Fault0130(0, "Bus sum high fault"),
 
 	/** Fault0120. */
-	Fault0120(1),
+	Fault0120(1, "3.3V voltage low"),
 
 	/** Fault0110. */
-	Fault0110(2),
+	Fault0110(2, "Bus differential high fault"),
 
 	/** Fault0100. */
-	Fault0100(3),
+	Fault0100(3, "Relay fault"),
 
 	/** Fault0090. */
-	Fault0090(4),
+	Fault0090(4, "Steady state GFCI fault"),
 
 	/** Fault0080. */
-	Fault0080(5),
+	Fault0080(5, "Bst hardware overcurrent fault"),
 
 	/** Fault0070. */
-	Fault0070(6),
+	Fault0070(6, "DCI too high fault"),
 
 	/** Fault0060. */
-	Fault0060(7),
+	Fault0060(7, "Bus hardware overvoltage fault"),
 
 	/** Fault0050. */
-	Fault0050(8),
+	Fault0050(8, "Inverter hardware overcurrent fault"),
 
 	/** Fault0040. */
-	Fault0040(9),
+	Fault0040(9, "Permanent fault of driver source"),
 
 	/** Fault0030. */
-	Fault0030(10),
+	Fault0030(10, "Fault0030"),
 
 	/** Fault0020. */
-	Fault0020(11),
+	Fault0020(11, "Fault0020"),
 
 	/** Fault0010. */
-	Fault0010(12),
+	Fault0010(12, "Permanent fault of power module"),
 
 	/** Fault0140. */
-	Fault0140(13),
+	Fault0140(13, "Internal hardware failure"),
 
 	/** Fault0150. */
-	Fault0150(14),
+	Fault0150(14, "Open loop self detection failure"),
 
 	/** Fault0160. */
-	Fault0160(15),
+	Fault0160(15, "Control board voltage and drive power failure"),
 
 	;
 
 	private final int code;
+	private final String description;
 
-	private KTLCTPermanentFault(int code) {
+	private KTLCTPermanentFault(int code, String description) {
 		this.code = code;
+		this.description = description;
 	}
 
 	/**
@@ -101,6 +101,16 @@ public enum KTLCTPermanentFault implements Bitmaskable {
 	@Override
 	public int bitmaskBitOffset() {
 		return code;
+	}
+
+	@Override
+	public int getGroupIndex() {
+		return 0;
+	}
+
+	@Override
+	public String getDescription() {
+		return description;
 	}
 
 	/**

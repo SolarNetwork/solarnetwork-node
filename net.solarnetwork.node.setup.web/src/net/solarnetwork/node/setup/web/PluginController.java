@@ -129,6 +129,13 @@ public class PluginController {
 	public static final String FAILED_PROVISION = "failed.provision";
 
 	/**
+	 * Default constructor.
+	 */
+	public PluginController() {
+		super();
+	}
+
+	/**
 	 * Handle an {@link IllegalArgumentException}.
 	 * 
 	 * @param e

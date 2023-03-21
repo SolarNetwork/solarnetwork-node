@@ -22,13 +22,13 @@
 
 package net.solarnetwork.node.setup.web;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -45,13 +45,23 @@ import net.solarnetwork.node.setup.SetupResourceService;
  * Controller for serving setup resources.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 @Controller
 public class SetupResourceController extends BaseSetupWebServiceController {
 
-	@Autowired
-	private SetupResourceService resourceService;
+	private final SetupResourceService resourceService;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param resourceService
+	 *        the setup resource service
+	 */
+	public SetupResourceController(SetupResourceService resourceService) {
+		super();
+		this.resourceService = requireNonNullArgument(resourceService, "resourceService");
+	}
 
 	/**
 	 * Setup a resource.

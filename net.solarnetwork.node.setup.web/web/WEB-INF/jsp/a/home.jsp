@@ -9,7 +9,7 @@
 <section id="external-node-links" class="hide">
 	<h2>
 		<a id="links" href="#links"
-			class="anchor" aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>			
+			class="anchor" aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>			
 		<fmt:message key="home.external-links.title"/>
 	</h2>	
 	<p><fmt:message key="home.external-links.intro"/></p>
@@ -38,7 +38,7 @@
 <section id="datum-activity-charts" class="hide">
 	<h2>
 		<a id="charts" href="#charts"
-			class="anchor" aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>			
+			class="anchor" aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>			
 		<fmt:message key="datum.charts.title"/>
 	</h2>
 	<div id="datum-activity-charts-container"></div>
@@ -48,7 +48,7 @@
 <section id="datum-activity-seenprops" class="hide">
 	<h2>
 		<a id="datum-props" href="#datum-props"
-			class="anchor" aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>			
+			class="anchor" aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>			
 		<fmt:message key="datum.activity.seenprops.title"/>
 	</h2>	
 	<p><fmt:message key="datum.activity.seenprops.intro"/></p>
@@ -78,7 +78,7 @@
 <section id="datum-activity" class="hide">
 	<h2>
 		<a id="datum-activity" href="#datum-activity"
-			class="anchor" aria-hidden="true"><i class="fa fa-link" aria-hidden="true"></i></a>			
+			class="anchor" aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>			
 		<fmt:message key="datum.activity.title"/>
 	</h2>	
 	<p><fmt:message key="datum.activity.intro"/></p>

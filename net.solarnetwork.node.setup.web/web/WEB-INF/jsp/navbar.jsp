@@ -15,7 +15,11 @@
 			</li>
 			<li ${navloc == 'cert' ? 'class="active"' : ''}><a href="<setup:url value='/a/certs'/>"><fmt:message key='link.cert'/></a></li>
 			
-			<li class="dropdown${navloc == 'settings' or navloc == 'settings-component' or navloc == 'filters' or navloc == 'filters-component' ? ' active' : ''}">
+			<li class="dropdown${navloc == 'settings'
+					or navloc == 'settings-component'
+					or navloc == 'filters'
+					or navloc == 'filters-component'
+					or navloc == 'opmodes' ? ' active' : ''}">
 				<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
 					<fmt:message key='link.settings'/>
 					<b class="caret"></b>
@@ -24,10 +28,21 @@
 					<li ${navloc == 'settings' ? 'class="active"' : ''}><a href="<setup:url value='/a/settings'/>"><fmt:message key='link.settings'/></a></li>
 					<li ${navloc == 'filters' ? 'class="active"' : ''}><a href="<setup:url value='/a/settings/filters'/>"><fmt:message key='link.filters'/></a></li>
 					<li ${navloc == 'logging' ? 'class="active"' : ''}><a href="<setup:url value='/a/logging'/>"><fmt:message key='link.logging'/></a></li>
+					<li ${navloc == 'opmodes' ? 'class="active"' : ''}><a href="<setup:url value='/a/opmodes'/>"><fmt:message key='link.opmodes'/></a></li>
 				</ul>
 			</li>
 			
-			<li ${navloc == 'controls' ? 'class="active"' : ''}><a href="<setup:url value='/a/controls'/>"><fmt:message key='link.controls'/></a></li>
+			<li class="dropdown${navloc == 'cli-console' or navloc == 'controls' ? ' active' : ''}">
+				<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+					<fmt:message key='link.tools'/>
+					<b class="caret"></b>
+				</a>
+				<ul class="dropdown-menu">
+					<li ${navloc == 'controls' ? 'class="active"' : ''}><a href="<setup:url value='/a/controls'/>"><fmt:message key='link.controls'/></a></li>
+					<li ${navloc == 'cli-console' ? 'class="active"' : ''}><a href="<setup:url value='/a/cli-console'/>"><fmt:message key='link.cli-console'/></a></li>
+				</ul>
+			</li>
+			
 			<li ${navloc == 'plugins' ? 'class="active"' : ''}><a id="link-plugins" href="<setup:url value='/a/plugins'/>"><fmt:message key='link.plugins'/></a></li>
  		</ul>
 		<sec:authorize access="hasRole('ROLE_USER')">

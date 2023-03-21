@@ -28,62 +28,65 @@ import net.solarnetwork.node.service.BeanConfiguration;
 /**
  * Basic implementation of {@link BeanConfiguration}.
  * 
- * <p>The configurable properties of this class are:</p>
- * 
- * <dl class="class-properties">
- *   <dt>attributes</dt>
- *   <dd>A Map of attributes for the configuration.</dd>
- *   
- *   <dt>configuration</dt>
- *   <dd>A Map of bean property values.</dd>
- *   
- *   <dt>ordering</dt>
- *   <dd>An ordering value. Defaults to {@link #DEFAULT_ORDERING}.</dd>
- * </dl>
- * 
  * @author matt
- * @version $Id$
+ * @version 1.0
  */
 public class BasicBeanConfiguration implements BeanConfiguration {
-	
+
 	/** The default value for the {@code ordering} property. */
 	public static final Integer DEFAULT_ORDERING = Integer.valueOf(0);
-	
+
 	private Map<String, Object> configuration;
 	private Map<String, Object> attributes;
 	private Integer ordering = DEFAULT_ORDERING;
 
+	/**
+	 * Default constructor.
+	 */
+	public BasicBeanConfiguration() {
+		super();
+	}
+
+	@Override
 	public Map<String, Object> getAttributes() {
 		return attributes;
 	}
 
+	@Override
 	public Map<String, Object> getConfiguration() {
 		return configuration;
 	}
 
 	/**
-	 * @param configuration the configuration to set
+	 * Set the configuration.
+	 * 
+	 * @param configuration
+	 *        the configuration to set
 	 */
 	public void setConfiguration(Map<String, Object> configuration) {
 		this.configuration = configuration;
 	}
 
 	/**
-	 * @param attributes the attributes to set
+	 * Set the attributes.
+	 * 
+	 * @param attributes
+	 *        the attributes to set
 	 */
 	public void setAttributes(Map<String, Object> attributes) {
 		this.attributes = attributes;
 	}
 
-	/**
-	 * @return the ordering
-	 */
+	@Override
 	public Integer getOrdering() {
 		return ordering;
 	}
 
 	/**
-	 * @param ordering the ordering to set
+	 * Set the ordering.
+	 * 
+	 * @param ordering
+	 *        the ordering to set
 	 */
 	public void setOrdering(Integer ordering) {
 		this.ordering = ordering;
