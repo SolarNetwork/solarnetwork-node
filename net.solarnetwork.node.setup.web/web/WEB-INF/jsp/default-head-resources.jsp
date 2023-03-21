@@ -46,6 +46,7 @@
 	/js/datum-charts.js
 	/js/logging.js
 	/js/opmodes.js
+	/js/cli-console.js
 </pack:script>
 <sec:authorize access="!hasRole('ROLE_USER')">
 	<setup:resources type="application/javascript"/>

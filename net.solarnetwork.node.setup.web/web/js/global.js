@@ -426,6 +426,38 @@ SolarNode.GlobalProgress = (function() {
 	});
 }());
 
+/**
+ * Copy a copyable element value.
+ * 
+ * @param {jQuery} copyable the copyable element
+ */
+SolarNode.copyElementValue = function(copyable) {
+	if ( copyable.length ) {
+		if ( document.body.createTextRange ) {
+	        const range = document.body.createTextRange();
+	        range.moveToElementText(copyable[0]);
+	        range.select();
+	    } else if ( window.getSelection ) {
+	        const selection = window.getSelection();
+	        const range = document.createRange();
+	        range.selectNodeContents(copyable[0]);
+	        selection.removeAllRanges();
+	        selection.addRange(range);
+	    } else {
+	        return false;
+	    }
+		try {
+			const result = document.execCommand('copy');
+			if ( window.getSelection ) {
+				window.getSelection().removeAllRanges();
+			}
+			return result;
+		} catch ( err ) {
+			return false;
+		}
+	}
+}
+
 $(document).ready(function() {
 	$('body').on('hidden', '.modal.dynamic', function () {
 		$(this).removeData('modal');

@@ -72,6 +72,7 @@ legend {
 	-webkit-transition: opacity 0.2s ease-in-out 0.1s;
 	-moz-transition: opacity 0.2s ease-in-out 0.1s;
 	-ms-transition: opacity 0.2s ease-in-out 0.1s;
+	transition: opacity 0.2s ease-in-out 0.1s;
 }
 
 legend .anchor {
@@ -467,4 +468,51 @@ div.plugin .desc {
 
 #opmodes-active td:last-of-type {
 	text-align: right;
+}
+
+.well button.copy {
+	position: relative;
+	line-height: 20px;
+	padding: 0;
+	cursor: pointer;
+	background: transparent;
+	border: 0;
+	-webkit-appearance: none;
+	appearance: none;
+	float: right;
+	font-size: 20px;
+	font-weight: bold;
+	line-height: 20px;
+	color: #000000;
+	text-shadow: 0 1px 0 #ffffff;
+	opacity: 0.2;
+}
+
+button.close + button.copy {
+	margin-right: 1rem;
+}
+
+.cmd {
+	font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
+	font-size: 12px;
+	white-space: pre-wrap;
+}
+
+@-webkit-keyframes yellow-fade-gray {   
+   0% {background: #fef0a3;}
+   100% {background: #f5f5f5;}
+}
+
+@keyframes yellow-fade-gray {
+   0% {background: #fef0a3;}
+   100% {background: #f5f5f5;}
+}
+
+.brief-showcase-gray {
+   -webkit-animation: yellow-fade-gray 2s ease-in 1;
+   animation: yellow-fade-gray 2s ease-in 1;
+}
+
+.text-right > button + button {
+	margin-left: 0.5rem;
 }
