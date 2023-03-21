@@ -34,6 +34,13 @@ public class InstructionParameter {
 	private String value;
 
 	/**
+	 * Default constructor.
+	 */
+	public InstructionParameter() {
+		super();
+	}
+
+	/**
 	 * Get the name.
 	 * 
 	 * @return the name

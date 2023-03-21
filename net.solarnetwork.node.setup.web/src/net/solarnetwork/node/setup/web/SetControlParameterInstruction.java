@@ -34,6 +34,13 @@ public class SetControlParameterInstruction {
 	private String parameterValue;
 
 	/**
+	 * Default constructor.
+	 */
+	public SetControlParameterInstruction() {
+		super();
+	}
+
+	/**
 	 * Get the control ID.
 	 * 
 	 * @return the control ID

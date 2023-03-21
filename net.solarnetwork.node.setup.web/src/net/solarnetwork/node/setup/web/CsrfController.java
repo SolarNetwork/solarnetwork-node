@@ -36,6 +36,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class CsrfController {
 
 	/**
+	 * Default constructor.
+	 */
+	public CsrfController() {
+		super();
+	}
+
+	/**
 	 * Get the CSRF token.
 	 * 
 	 * @param token

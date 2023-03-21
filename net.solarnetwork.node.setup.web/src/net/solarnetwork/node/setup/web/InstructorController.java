@@ -69,6 +69,13 @@ public class InstructorController {
 	private OptionalService<InstructionExecutionService> instructionService;
 
 	/**
+	 * Default constructor.
+	 */
+	public InstructorController() {
+		super();
+	}
+
+	/**
 	 * List controls.
 	 * 
 	 * @param model

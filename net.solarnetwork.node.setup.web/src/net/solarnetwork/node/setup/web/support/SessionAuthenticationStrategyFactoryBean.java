@@ -45,6 +45,13 @@ public class SessionAuthenticationStrategyFactoryBean
 
 	private BeanFactory beanFactory;
 
+	/**
+	 * Default constructor.
+	 */
+	public SessionAuthenticationStrategyFactoryBean() {
+		super();
+	}
+
 	@Override
 	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
 		this.beanFactory = beanFactory;

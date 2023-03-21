@@ -57,8 +57,8 @@ public class CliConsoleController {
 	/**
 	 * Constructor.
 	 * 
-	 * @param loggingService
-	 *        the logging service
+	 * @param opModesService
+	 *        the operational modes service
 	 */
 	public CliConsoleController(OperationalModesService opModesService) {
 		super();

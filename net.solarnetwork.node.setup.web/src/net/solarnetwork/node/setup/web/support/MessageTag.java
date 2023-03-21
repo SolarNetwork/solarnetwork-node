@@ -57,6 +57,13 @@ public class MessageTag extends TagSupport {
 
 	private static final Pattern IndexKeysPattern = Pattern.compile("\\[\\d+\\]");
 
+	/**
+	 * Default constructor.
+	 */
+	public MessageTag() {
+		super();
+	}
+
 	@Override
 	public int doEndTag() throws JspException {
 		String msg = null;

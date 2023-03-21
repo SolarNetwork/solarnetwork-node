@@ -52,6 +52,13 @@ public class SettingValueTag extends TagSupport {
 	/** The escape XML toggle. */
 	private boolean escapeXml = true;
 
+	/**
+	 * Default constructor.
+	 */
+	public SettingValueTag() {
+		super();
+	}
+
 	@Override
 	public int doEndTag() throws JspException {
 		assert service != null;

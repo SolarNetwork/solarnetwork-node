@@ -51,6 +51,13 @@ public class NodeAssociationFilter extends GenericFilterBean implements Filter {
 	@Autowired
 	private IdentityService identityService;
 
+	/**
+	 * Default constructor.
+	 */
+	public NodeAssociationFilter() {
+		super();
+	}
+
 	@Override
 	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
 			throws IOException, ServletException {

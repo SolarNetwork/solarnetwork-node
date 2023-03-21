@@ -43,6 +43,13 @@ public class ForwardedPathUrlTag extends UrlTag {
 
 	private static final long serialVersionUID = 5059647940462361128L;
 
+	/**
+	 * Default constructor.
+	 */
+	public ForwardedPathUrlTag() {
+		super();
+	}
+
 	@Override
 	public int doStartTagInternal() throws JspException {
 		int result = super.doStartTagInternal();

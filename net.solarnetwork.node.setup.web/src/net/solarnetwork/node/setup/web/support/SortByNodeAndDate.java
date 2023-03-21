@@ -38,6 +38,13 @@ public class SortByNodeAndDate implements Comparator<Backup> {
 	public static final SortByNodeAndDate DEFAULT = new SortByNodeAndDate();
 
 	/**
+	 * Default constructor.
+	 */
+	public SortByNodeAndDate() {
+		super();
+	}
+
+	/**
 	 * Compare two backups.
 	 * 
 	 * <p>

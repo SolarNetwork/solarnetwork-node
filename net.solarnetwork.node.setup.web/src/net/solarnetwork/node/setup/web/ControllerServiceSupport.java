@@ -54,6 +54,13 @@ public class ControllerServiceSupport {
 	private IdentityService identityService;
 
 	/**
+	 * Default constructor.
+	 */
+	public ControllerServiceSupport() {
+		super();
+	}
+
+	/**
 	 * Get the system service.
 	 * 
 	 * @return the service

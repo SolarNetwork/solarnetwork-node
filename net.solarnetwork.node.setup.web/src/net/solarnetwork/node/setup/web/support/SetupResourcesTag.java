@@ -87,6 +87,13 @@ public class SetupResourcesTag extends HtmlEscapingAwareTag implements DynamicAt
 	/** The dynamic attributes. */
 	private Map<String, Object> dynamicAttributes;
 
+	/**
+	 * Default constructor.
+	 */
+	public SetupResourcesTag() {
+		super();
+	}
+
 	@Override
 	public void setDynamicAttribute(String uri, String localName, Object value) throws JspException {
 		// we accept all data- attributes and id

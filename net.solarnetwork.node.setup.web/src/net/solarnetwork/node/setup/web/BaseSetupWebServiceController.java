@@ -43,12 +43,17 @@ public class BaseSetupWebServiceController {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
+	 * Default constructor.
+	 */
+	public BaseSetupWebServiceController() {
+		super();
+	}
+
+	/**
 	 * Handle an {@link AuthenticationException}.
 	 * 
 	 * @param e
 	 *        the exception
-	 * @param response
-	 *        the response
 	 * @return an error response object
 	 */
 	@ExceptionHandler(AuthenticationException.class)
@@ -65,8 +70,6 @@ public class BaseSetupWebServiceController {
 	 * 
 	 * @param e
 	 *        the exception
-	 * @param response
-	 *        the response
 	 * @return an error response object
 	 * @since 1.3
 	 */
@@ -84,8 +87,6 @@ public class BaseSetupWebServiceController {
 	 * 
 	 * @param e
 	 *        the exception
-	 * @param response
-	 *        the response
 	 * @return an error response object
 	 */
 	@ExceptionHandler(RuntimeException.class)

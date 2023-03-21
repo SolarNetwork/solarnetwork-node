@@ -22,13 +22,13 @@
 
 package net.solarnetwork.node.setup.web;
 
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -47,14 +47,24 @@ import net.solarnetwork.node.setup.web.support.ServiceAwareController;
  * Controller for node certificate management.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 @ServiceAwareController
 @RequestMapping("/a/certs")
 public class NodeCertificatesController extends BaseSetupController {
 
-	@Autowired
-	private PKIService pkiService;
+	private final PKIService pkiService;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param pkiService
+	 *        the PKI service
+	 */
+	public NodeCertificatesController(PKIService pkiService) {
+		super();
+		this.pkiService = requireNonNullArgument(pkiService, "pkiService");
+	}
 
 	/**
 	 * View the main certs page.
