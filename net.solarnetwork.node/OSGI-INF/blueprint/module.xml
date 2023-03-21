@@ -352,6 +352,7 @@
 		</service-properties>
 		<bean class="net.solarnetwork.node.runtime.EventMessageBridge">
 			<argument ref="messageSendingOperations"/>
+			<argument ref="executorService"/>
 		</bean>
 	</service>
 

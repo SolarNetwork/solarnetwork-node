@@ -25,6 +25,7 @@ package net.solarnetwork.node.runtime;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
 import org.slf4j.Logger;
@@ -41,13 +42,14 @@ import net.solarnetwork.node.service.NodeControlProvider;
 import net.solarnetwork.node.service.PlatformService;
 import net.solarnetwork.node.service.UploadService;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.util.ObjectUtils;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * Bridge between OSGi EventAdmin events and a Spring Messaging.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class EventMessageBridge implements EventHandler {
 
@@ -65,6 +67,8 @@ public class EventMessageBridge implements EventHandler {
 	public static final String PUBLIC_MESSAGE_TOPIC_PREFIX = "/pub/topic/";
 
 	private final OptionalService<SimpMessageSendingOperations> messageSendingOps;
+	private final Executor executor;
+
 	private Map<String, String> topicMapping;
 	private Map<String, String> publicTopicMapping;
 
@@ -91,10 +95,30 @@ public class EventMessageBridge implements EventHandler {
 	 * 
 	 * @param messageSendingOps
 	 *        the optional message sending service to use
+	 * @throws IllegalArgumentException
+	 *         if {@code messageSendingOps} is {@literal null}
 	 */
 	public EventMessageBridge(OptionalService<SimpMessageSendingOperations> messageSendingOps) {
+		this(messageSendingOps, null);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param messageSendingOps
+	 *        the optional message sending service to use
+	 * @param executor
+	 *        the optional executor to use
+	 * @throws IllegalArgumentException
+	 *         if {@code messageSendingOps} is {@literal null}
+	 * @since 2.1
+	 */
+	public EventMessageBridge(OptionalService<SimpMessageSendingOperations> messageSendingOps,
+			Executor executor) {
 		super();
-		this.messageSendingOps = messageSendingOps;
+		this.messageSendingOps = ObjectUtils.requireNonNullArgument(messageSendingOps,
+				"messageSendingOps");
+		this.executor = executor;
 		topicMapping = defaultTopicMapping();
 		publicTopicMapping = defaultPublicTopicMapping();
 	}
@@ -107,7 +131,11 @@ public class EventMessageBridge implements EventHandler {
 			return;
 		}
 		log.debug("Posting event {} to message topic {} with data {}", event.getTopic(), topic, data);
-		postMessage(topic, data);
+		if ( executor != null ) {
+			executor.execute(() -> postMessage(topic, data));
+		} else {
+			postMessage(topic, data);
+		}
 	}
 
 	private String messageTopicForEvent(Event event, Map<String, ?> data) {
