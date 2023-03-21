@@ -23,9 +23,9 @@
 package net.solarnetwork.node.io.modbus.nifty;
 
 import static java.util.Collections.singleton;
+import static net.solarnetwork.node.service.OperationalModesService.hasActiveOperationalMode;
 import static net.solarnetwork.service.OptionalService.service;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -204,13 +204,10 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 		if ( !OperationalModesService.EVENT_TOPIC_OPERATIONAL_MODES_CHANGED.equals(event.getTopic()) ) {
 			return;
 		}
-		Object modes = event.getProperty(OperationalModesService.EVENT_PARAM_ACTIVE_OPERATIONAL_MODES);
-		if ( modes instanceof Collection<?> ) {
-			boolean cliModeActive = ((Collection<?>) modes).contains(PUBLISH_MODBUS_CLI_COMMANDS_MODE);
-			if ( cliModeActive != this.publishCliCommandsMode ) {
-				this.publishCliCommandsMode = cliModeActive;
-				closeCachedConnection();
-			}
+		boolean cliModeActive = hasActiveOperationalMode(event, PUBLISH_MODBUS_CLI_COMMANDS_MODE);
+		if ( cliModeActive != this.publishCliCommandsMode ) {
+			this.publishCliCommandsMode = cliModeActive;
+			closeCachedConnection();
 		}
 	}
 
