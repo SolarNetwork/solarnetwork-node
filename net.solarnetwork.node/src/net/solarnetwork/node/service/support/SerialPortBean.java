@@ -56,6 +56,13 @@ public class SerialPortBean implements Cloneable {
 	private int rtsFlag = 0;
 
 	/**
+	 * Default constructor.
+	 */
+	public SerialPortBean() {
+		super();
+	}
+
+	/**
 	 * Get a list of setting specifiers for this bean.
 	 * 
 	 * @param prefix

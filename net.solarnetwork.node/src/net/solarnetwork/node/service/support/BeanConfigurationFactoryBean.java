@@ -46,8 +46,8 @@ import net.solarnetwork.node.service.BeanConfiguration;
  * configure properties of any created object.</dd>
  * 
  * <dt>singleton</dt>
- * <dd>If {@literal true} (the default) then only ever create one object instance.
- * Otherwise a new object instance will be created each time
+ * <dd>If {@literal true} (the default) then only ever create one object
+ * instance. Otherwise a new object instance will be created each time
  * {@link #getObject()} is called.</dd>
  * 
  * <dt>staticProperties</dt>
@@ -72,6 +72,13 @@ public class BeanConfigurationFactoryBean<T> implements FactoryBean<T> {
 	private T singletonObject = null;
 
 	private final Object monitor = new Object();
+
+	/**
+	 * Default constructor.
+	 */
+	public BeanConfigurationFactoryBean() {
+		super();
+	}
 
 	@Override
 	public T getObject() throws Exception {
@@ -107,6 +114,8 @@ public class BeanConfigurationFactoryBean<T> implements FactoryBean<T> {
 	}
 
 	/**
+	 * Get the configuration.
+	 * 
 	 * @return the config
 	 */
 	public BeanConfiguration getConfig() {
@@ -114,6 +123,8 @@ public class BeanConfigurationFactoryBean<T> implements FactoryBean<T> {
 	}
 
 	/**
+	 * Set the configuration.
+	 * 
 	 * @param config
 	 *        the config to set
 	 */
@@ -122,6 +133,8 @@ public class BeanConfigurationFactoryBean<T> implements FactoryBean<T> {
 	}
 
 	/**
+	 * Get the bean class.
+	 * 
 	 * @return the beanClass
 	 */
 	public Class<?> getBeanClass() {
@@ -129,6 +142,8 @@ public class BeanConfigurationFactoryBean<T> implements FactoryBean<T> {
 	}
 
 	/**
+	 * Set the bean class.
+	 * 
 	 * @param beanClass
 	 *        the beanClass to set
 	 */
@@ -137,6 +152,8 @@ public class BeanConfigurationFactoryBean<T> implements FactoryBean<T> {
 	}
 
 	/**
+	 * Get the singleton flag.
+	 * 
 	 * @param singleton
 	 *        the singleton to set
 	 */
@@ -145,6 +162,8 @@ public class BeanConfigurationFactoryBean<T> implements FactoryBean<T> {
 	}
 
 	/**
+	 * Get the static properties.
+	 * 
 	 * @return the staticProperties
 	 */
 	public Map<String, ?> getStaticProperties() {
@@ -152,6 +171,8 @@ public class BeanConfigurationFactoryBean<T> implements FactoryBean<T> {
 	}
 
 	/**
+	 * Set the static properties.
+	 * 
 	 * @param staticProperties
 	 *        the staticProperties to set
 	 */

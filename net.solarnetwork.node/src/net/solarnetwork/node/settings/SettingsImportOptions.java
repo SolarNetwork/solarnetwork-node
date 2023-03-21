@@ -33,6 +33,13 @@ public class SettingsImportOptions {
 	private boolean addOnly;
 
 	/**
+	 * Default constructor.
+	 */
+	public SettingsImportOptions() {
+		super();
+	}
+
+	/**
 	 * Get the "add only" flag.
 	 * 
 	 * @return the flag

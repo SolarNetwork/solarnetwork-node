@@ -46,6 +46,10 @@ public class JobUtils {
 
 	private static final Logger log = LoggerFactory.getLogger(JobUtils.class);
 
+	private JobUtils() {
+		// not available
+	}
+
 	/**
 	 * Create a trigger from a schedule expression.
 	 * 

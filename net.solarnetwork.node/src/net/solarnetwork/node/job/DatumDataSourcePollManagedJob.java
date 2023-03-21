@@ -76,6 +76,13 @@ public class DatumDataSourcePollManagedJob extends BaseIdentifiable
 	private OptionalService<DatumQueue> datumQueue = null;
 	private OptionalService<DatumMetadataService> datumMetadataService = null;
 
+	/**
+	 * Default constructor.
+	 */
+	public DatumDataSourcePollManagedJob() {
+		super();
+	}
+
 	@Override
 	public void executeJobService() throws Exception {
 		try {

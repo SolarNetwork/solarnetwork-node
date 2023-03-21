@@ -39,6 +39,13 @@ public class SimpleDatumLocation implements DatumLocation {
 	private String sourceName;
 	private GeneralLocationSourceMetadata sourceMetadata;
 
+	/**
+	 * Default constructor.
+	 */
+	public SimpleDatumLocation() {
+		super();
+	}
+
 	@Override
 	public Long getLocationId() {
 		return locationId;

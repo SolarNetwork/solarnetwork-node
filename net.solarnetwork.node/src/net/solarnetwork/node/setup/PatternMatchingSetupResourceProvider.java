@@ -72,6 +72,13 @@ public class PatternMatchingSetupResourceProvider
 	private static final Logger LOG = LoggerFactory
 			.getLogger(PatternMatchingSetupResourceProvider.class);
 
+	/**
+	 * Default constructor.
+	 */
+	public PatternMatchingSetupResourceProvider() {
+		super();
+	}
+
 	@Override
 	public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
 		if ( resourcePatternResolver == null ) {

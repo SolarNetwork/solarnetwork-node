@@ -36,6 +36,13 @@ public class SimpleServiceProviderConfiguration implements ServiceProvider.Servi
 	private String[] interfaces;
 	private Map<String, Object> properties;
 
+	/**
+	 * Default constructor.
+	 */
+	public SimpleServiceProviderConfiguration() {
+		super();
+	}
+
 	@Override
 	public Object getService() {
 		return service;

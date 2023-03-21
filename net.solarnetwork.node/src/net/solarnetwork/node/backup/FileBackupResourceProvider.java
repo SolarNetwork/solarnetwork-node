@@ -60,6 +60,13 @@ public class FileBackupResourceProvider implements BackupResourceProvider {
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
+	/**
+	 * Default constructor.
+	 */
+	public FileBackupResourceProvider() {
+		super();
+	}
+
 	@Override
 	public String getKey() {
 		return FileBackupResourceProvider.class.getName();

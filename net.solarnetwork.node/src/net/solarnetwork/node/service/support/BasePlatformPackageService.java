@@ -46,6 +46,13 @@ public abstract class BasePlatformPackageService implements PlatformPackageServi
 	protected Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
+	 * Default constructor.
+	 */
+	public BasePlatformPackageService() {
+		super();
+	}
+
+	/**
 	 * Perform the extraction task, using the configured
 	 * {@link AsyncTaskExecutor} if available.
 	 * 

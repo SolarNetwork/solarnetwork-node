@@ -48,4 +48,7 @@ public final class SetupSettings {
 	/** The confirmation code supplied by the SolarNetwork server. */
 	public static final String KEY_CONFIRMATION_CODE = "solarnode.solarnet.confirmation";
 
+	private SetupSettings() {
+		// not available
+	}
 }

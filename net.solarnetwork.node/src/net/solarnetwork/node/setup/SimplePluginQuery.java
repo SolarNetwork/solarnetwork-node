@@ -33,6 +33,13 @@ public class SimplePluginQuery implements PluginQuery {
 	private boolean latestVersionOnly = true;
 	private String simpleQuery = null;
 
+	/**
+	 * Default constructor.
+	 */
+	public SimplePluginQuery() {
+		super();
+	}
+
 	@Override
 	public boolean isLatestVersionOnly() {
 		return latestVersionOnly;

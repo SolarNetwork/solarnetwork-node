@@ -45,7 +45,8 @@ import net.solarnetwork.service.RemoteServiceException;
  * 
  * <dl class="class-properties">
  * <dt>compress</dt>
- * <dd>Flag to compress the HTTP body content, defaults to {@literal false}.</dd>
+ * <dd>Flag to compress the HTTP body content, defaults to
+ * {@literal false}.</dd>
  * 
  * <dt>objectMapper</dt>
  * <dd>The {@link ObjectMapper} to marshall/unmarshall objects to/from JSON
@@ -62,6 +63,13 @@ public abstract class JsonHttpClientSupport extends HttpClientSupport {
 
 	private ObjectMapper objectMapper;
 	private boolean compress = false;
+
+	/**
+	 * Default constructor.
+	 */
+	public JsonHttpClientSupport() {
+		super();
+	}
 
 	/**
 	 * Perform a JSON HTTP request.

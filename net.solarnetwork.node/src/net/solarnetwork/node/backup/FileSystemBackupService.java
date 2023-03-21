@@ -90,6 +90,13 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	private int additionalBackupCount = 1;
 	private BackupStatus status = Configured;
 
+	/**
+	 * Default constructor.
+	 */
+	public FileSystemBackupService() {
+		super();
+	}
+
 	@Override
 	public String getSettingUid() {
 		return getClass().getName();

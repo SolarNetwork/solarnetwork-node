@@ -86,6 +86,13 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	/**
+	 * Default constructor.
+	 */
+	public HttpClientSupport() {
+		super();
+	}
+
+	/**
 	 * Get an InputStream from a URLConnection response, handling compression.
 	 * 
 	 * <p>

@@ -36,6 +36,13 @@ public class FactoryInstanceIdComparator implements Comparator<String> {
 	/** A static instance that can be used for sorting. */
 	public static final FactoryInstanceIdComparator INSTANCE = new FactoryInstanceIdComparator();
 
+	/**
+	 * Default constructor.
+	 */
+	public FactoryInstanceIdComparator() {
+		super();
+	}
+
 	@Override
 	public int compare(String o1, String o2) {
 		if ( o1 == o2 ) {

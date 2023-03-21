@@ -88,6 +88,13 @@ public class XmlServiceSupport extends HttpClientSupport {
 	private OptionalService<EventAdmin> eventAdmin;
 
 	/**
+	 * Default constructor.
+	 */
+	public XmlServiceSupport() {
+		super();
+	}
+
+	/**
 	 * Initialize this class after properties are set.
 	 */
 	public void init() {
