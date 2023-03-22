@@ -28,15 +28,15 @@ This datum generates a [datum stream][datum] with the following properties:
 | `dcVoltage2`       | `i` | V | DC module 2 voltage |
 | `current`          | `i` | A | AC current total, sum of phase A, B, C |
 | `events`           | `s` | bit set | Base-10 bit set of [SunSpec-compatible event codes](#sunspec-event-codes) |
-| `fault0`           | `s` | bit set | Base-10 bit set of [Fault codes](#fault-codes) (0-15) |
-| `fault1`           | `s` | bit set | Base-10 bit set of [Fault codes](#fault-codes) (16-31, offset -16) |
-| `fault2`           | `s` | bit set | Base-10 bit set of [Fault codes](#fault-codes) (32-47, offset -32) |
-| `fault3`           | `s` | bit set | Base-10 bit set of [Fault codes](#fault-codes) (48-63, offset -48) |
-| `fault4`           | `s` | bit set | Base-10 bit set of [Fault codes](#fault-codes) (64-79, offset -64) |
+| `fault0`           | `s` | bit set | Base-10 bit set of [Fault codes](#fault-codes) (16-31, offset -16) |
+| `fault1`           | `s` | bit set | Base-10 bit set of [Fault codes](#fault-codes) (32-47, offset -32) |
+| `fault2`           | `s` | bit set | Base-10 bit set of [Fault codes](#fault-codes) (48-63, offset -48) |
+| `fault3`           | `s` | bit set | Base-10 bit set of [Fault codes](#fault-codes) (64-79, offset -64) |
+| `fault4`           | `s` | bit set | Base-10 bit set of [Fault codes](#fault-codes) (80-95, offset -80) |
 | `frequency`        | `i` | Hz | AC frequency |
 | `opState`          | `s` | enum | [Device Operating State][opstate] code |
 | `opStates`         | `s` | enum | [Inverter state](#inverter-state) code |
-| `permFault`        | `s` | bit set | Base-10 bit set of [Permanent fault codes](#permanent-fault-codes) |
+| `permFault`        | `s` | bit set | Base-10 bit set of [Fault codes](#fault-codes) (0-15) |
 | `powerFactor`      | `i` | PF | Decimal 0 - 1 |
 | `temp`             | `i` | C | Internal temperature |
 | `temp_heatSink`    | `i` | C | Heatsink temperature |
