@@ -57,6 +57,9 @@ public abstract class ConfigurableOwmClientService extends DatumDataSourceSuppor
 	/** A map to be used for caching datum data. */
 	protected final ConcurrentMap<String, NodeDatum> datumCache;
 
+	/**
+	 * Constructor.
+	 */
 	public ConfigurableOwmClientService() {
 		super();
 		datumCache = new ConcurrentHashMap<>(4);
