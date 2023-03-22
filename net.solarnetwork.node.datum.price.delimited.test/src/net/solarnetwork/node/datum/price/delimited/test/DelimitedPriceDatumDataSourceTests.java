@@ -73,4 +73,25 @@ public class DelimitedPriceDatumDataSourceTests {
 				equalTo(formatter.parse("26/09/2017 13:40:30", Instant::from)));
 	}
 
+	@Test
+	public void parseLastRow_2() throws IOException {
+		// GIVEN
+		URL csvFile = new ClassPathResource("NZE-energy-prices-02.csv", getClass()).getURL();
+		String url = new URL(csvFile, "NZE-{stationId}-02.csv").toString();
+		dataSource.setUrl(url);
+		dataSource.setStationId("energy-prices");
+
+		// WHEN
+		PriceDatum datum = dataSource.readCurrentDatum();
+
+		// THEN
+		assertThat("Datum provided", datum, notNullValue());
+		assertThat("Price parsed", datum.getPrice(), equalTo(new BigDecimal("169.31")));
+
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dataSource.getDateFormat())
+				.withZone(ZoneId.of(dataSource.getTimeZoneId()));
+		assertThat("Timestamp", datum.getTimestamp(),
+				equalTo(formatter.parse("23/03/2023 10:44:59", Instant::from)));
+	}
+
 }
