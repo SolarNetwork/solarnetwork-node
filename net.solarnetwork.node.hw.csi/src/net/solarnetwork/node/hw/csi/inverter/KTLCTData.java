@@ -645,16 +645,17 @@ public class KTLCTData extends ModbusData implements KTLCTDataAccessor {
 			if ( faults.contains(KTLCTFault1.Protect0110) ) {
 				events.add(InverterModelEvent.DcOverVoltage);
 			}
-		}
-		if ( faults.contains(KTLCTFault2.Protect0210) ) {
-			events.add(InverterModelEvent.HwTestFailure);
-		}
-		if ( faults.contains(KTLCTFault2.PV1VoltageOver) || faults.contains(KTLCTFault2.PV2VoltageOver)
-				|| faults.contains(KTLCTFault2.PV3VoltageOver) ) {
-			events.add(InverterModelEvent.DcOverVoltage);
-		}
-		if ( faults.contains(KTLCTFault2.EmergencyStp) ) {
-			events.add(InverterModelEvent.ManualShutdown);
+			if ( faults.contains(KTLCTFault2.Protect0210) ) {
+				events.add(InverterModelEvent.HwTestFailure);
+			}
+			if ( faults.contains(KTLCTFault2.PV1VoltageOver)
+					|| faults.contains(KTLCTFault2.PV2VoltageOver)
+					|| faults.contains(KTLCTFault2.PV3VoltageOver) ) {
+				events.add(InverterModelEvent.DcOverVoltage);
+			}
+			if ( faults.contains(KTLCTFault2.EmergencyStp) ) {
+				events.add(InverterModelEvent.ManualShutdown);
+			}
 		}
 		return events;
 	}
