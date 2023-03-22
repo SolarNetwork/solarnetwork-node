@@ -100,11 +100,11 @@ public class PVITLDatum extends SimpleAcDcEnergyDatum {
 		DeviceOperatingState state = DeviceOperatingState.Unknown;
 		PVITLInverterState invState = data.getOperatingState();
 		if ( invState != null ) {
-			ops.putSampleValue(Status, Datum.OP_STATES, invState.getCode());
 			state = invState.asDeviceOperatingState();
 		}
 		if ( state != DeviceOperatingState.Normal ) {
 			ops.putSampleValue(Status, Datum.OP_STATE, state.getCode());
+			ops.putSampleValue(Status, Datum.OP_STATES, invState.getCode());
 		}
 
 		Set<? extends Bitmaskable> bitmask = null;
