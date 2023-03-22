@@ -10,7 +10,7 @@ Automatic-Module-Name: net.solarnetwork.node.hw.yaskawa
 Main-Class: net.solarnetwork.node.hw.yaskawa.ecb.app.Cmdline
 Export-Package: 
  net.solarnetwork.node.hw.yaskawa.ecb;version="3.1.0",
- net.solarnetwork.node.hw.yaskawa.mb.inverter;version="3.1.0"
+ net.solarnetwork.node.hw.yaskawa.mb.inverter;version="3.2.0"
 Import-Package: 
  net.solarnetwork.domain;version="[2.0,3.0)",
  net.solarnetwork.domain.datum;version="[2.0,3.0)",

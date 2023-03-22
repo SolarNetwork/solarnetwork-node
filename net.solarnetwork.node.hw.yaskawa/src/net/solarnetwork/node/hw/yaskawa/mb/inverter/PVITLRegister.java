@@ -39,7 +39,7 @@ import net.solarnetwork.util.IntRangeSet;
  * Enumeration of Modbus register mappings for the CSI 50KTL-CT series inverter.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public enum PVITLRegister implements ModbusReference {
 
@@ -107,7 +107,58 @@ public enum PVITLRegister implements ModbusReference {
 	InverterInternalTemperature(0x2D, UInt16),
 
 	/** Status mode code, see {@link PVITLInverterState}. */
-	StatusMode(0x2F, UInt16);
+	StatusMode(0x2F, UInt16),
+
+	/**
+	 * Permanent fault bit set, see {@link PVITLPermanentFault}.
+	 * 
+	 * @since 2.2
+	 */
+	StatusPermanentFault(0x34, UInt16),
+
+	/**
+	 * Warning bit set, see {@link PVITLWarning}.
+	 * 
+	 * @since 2.2
+	 */
+	StatusWarning(0x35, UInt16),
+
+	/**
+	 * Fault 0 bit set, see {@link PVITLFault0}.
+	 * 
+	 * @since 2.2
+	 */
+	StatusFault0(0x36, UInt16),
+
+	/**
+	 * Fault 1 bit set, see {@link PVITLFault1}.
+	 * 
+	 * @since 2.2
+	 */
+	StatusFault1(0x37, UInt16),
+
+	/**
+	 * Fault 2 bit set, see {@link PVITLFault2}.
+	 * 
+	 * @since 2.2
+	 */
+	StatusFault2(0x38, UInt16),
+
+	/**
+	 * Fault 3 bit set, see {@link PVITLFault3}.
+	 * 
+	 * @since 2.2
+	 */
+	StatusFault3(0x39, UInt16),
+
+	/**
+	 * Fault 4 bit set, see {@link PVITLFault4}.
+	 * 
+	 * @since 2.2
+	 */
+	StatusFault4(0x3A, UInt16),
+
+	;
 
 	private static final IntRangeSet CONFIG_REGISTER_ADDRESS_SET = createAddressSet(PVITLRegister.class,
 			new HashSet<>(asList("Info", "Config"))).immutableCopy();

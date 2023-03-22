@@ -22,18 +22,30 @@
 
 package net.solarnetwork.node.datum.yaskawa.pvitl;
 
+import static net.solarnetwork.domain.Bitmaskable.bitmaskValue;
+import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
+import java.math.BigInteger;
+import java.util.BitSet;
+import java.util.Set;
+import net.solarnetwork.domain.Bitmaskable;
+import net.solarnetwork.domain.DeviceOperatingState;
+import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.MutableDatumSamplesOperations;
 import net.solarnetwork.node.domain.datum.AcEnergyDatum;
 import net.solarnetwork.node.domain.datum.DcEnergyDatum;
 import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
+import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.yaskawa.mb.inverter.PVITLDataAccessor;
+import net.solarnetwork.node.hw.yaskawa.mb.inverter.PVITLInverterState;
+import net.solarnetwork.util.NumberUtils;
 
 /**
  * Extension of {@link SimpleAcDcEnergyDatum} for use with PVI-TL inverter
  * samples.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class PVITLDatum extends SimpleAcDcEnergyDatum {
 
@@ -82,6 +94,72 @@ public class PVITLDatum extends SimpleAcDcEnergyDatum {
 		getSamples().putInstantaneousSampleValue(DcEnergyDatum.DC_VOLTAGE_KEY + "2",
 				data.getPv2Voltage());
 		getSamples().putInstantaneousSampleValue(DcEnergyDatum.DC_POWER_KEY + "2", data.getPv2Power());
+
+		final MutableDatumSamplesOperations ops = asMutableSampleOperations();
+
+		DeviceOperatingState state = DeviceOperatingState.Unknown;
+		PVITLInverterState invState = data.getOperatingState();
+		if ( invState != null ) {
+			ops.putSampleValue(Status, Datum.OP_STATES, invState.getCode());
+			state = invState.asDeviceOperatingState();
+		}
+		if ( state != DeviceOperatingState.Normal ) {
+			ops.putSampleValue(Status, Datum.OP_STATE, state.getCode());
+		}
+
+		Set<? extends Bitmaskable> bitmask = null;
+
+		bitmask = data.getPermanentFaults();
+		if ( bitmask != null && !bitmask.isEmpty() ) {
+			ops.putSampleValue(Status, "permFault", bitmaskValue(bitmask));
+		}
+
+		bitmask = data.getWarnings();
+		if ( bitmask != null && !bitmask.isEmpty() ) {
+			ops.putSampleValue(Status, "warn", bitmaskValue(bitmask));
+		}
+
+		bitmask = data.getFaults0();
+		if ( bitmask != null && !bitmask.isEmpty() ) {
+			ops.putSampleValue(Status, "fault0", bitmaskValue(bitmask));
+		}
+
+		bitmask = data.getFaults1();
+		if ( bitmask != null && !bitmask.isEmpty() ) {
+			ops.putSampleValue(Status, "fault1", bitmaskValue(bitmask));
+		}
+
+		bitmask = data.getFaults2();
+		if ( bitmask != null && !bitmask.isEmpty() ) {
+			ops.putSampleValue(Status, "fault2", bitmaskValue(bitmask));
+		}
+
+		bitmask = data.getFaults4();
+		if ( bitmask != null && !bitmask.isEmpty() ) {
+			ops.putSampleValue(Status, "fault3", bitmaskValue(bitmask));
+		}
+
+		bitmask = data.getFaults3();
+		if ( bitmask != null && !bitmask.isEmpty() ) {
+			ops.putSampleValue(Status, "fault4", bitmaskValue(bitmask));
+		}
+
+		// SunSpec compatibility
+
+		Set<ModelEvent> events = data.getEvents();
+		if ( events != null && !events.isEmpty() ) {
+			long b = ModelEvent.bitField32Value(data.getEvents());
+			asMutableSampleOperations().putSampleValue(Status, "events", b);
+		}
+
+		BitSet vendorEvents = data.getVendorEvents();
+		if ( events != null && !events.isEmpty() ) {
+			BigInteger v = NumberUtils.bigIntegerForBitSet(vendorEvents);
+			if ( v != null ) {
+				asMutableSampleOperations().putSampleValue(Status, "vendorEvents",
+						"0x" + v.toString(16));
+			}
+		}
 	}
 
 	/**

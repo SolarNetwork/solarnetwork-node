@@ -24,11 +24,20 @@ package net.solarnetwork.node.hw.yaskawa.mb.inverter;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.BitSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import net.solarnetwork.domain.AcPhase;
+import net.solarnetwork.domain.Bitmaskable;
+import net.solarnetwork.domain.GroupedBitmaskable;
 import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.domain.DataAccessor;
+import net.solarnetwork.node.hw.sunspec.ModelEvent;
+import net.solarnetwork.node.hw.sunspec.inverter.InverterModelEvent;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
@@ -38,7 +47,7 @@ import net.solarnetwork.node.io.modbus.ModbusReference;
  * Implementation for accessing PVI-14TL series data.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class PVITLData extends ModbusData implements PVITLDataAccessor {
 
@@ -402,6 +411,120 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 		return getCentiValueAsFloat(PVITLRegister.InverterInternalTemperature);
 	}
 
+	@Override
+	public Set<PVITLPermanentFault> getPermanentFaults() {
+		Number n = getNumber(PVITLRegister.StatusPermanentFault);
+		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), PVITLPermanentFault.class) : null);
+	}
+
+	@Override
+	public Set<PVITLWarning> getWarnings() {
+		Number n = getNumber(PVITLRegister.StatusWarning);
+		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), PVITLWarning.class) : null);
+	}
+
+	@Override
+	public SortedSet<PVITLFault> getFaults() {
+		SortedSet<PVITLFault> result = new TreeSet<>(GroupedBitmaskable.SORT_BY_OVERALL_INDEX);
+		Set<PVITLPermanentFault> permFaults = getPermanentFaults();
+		if ( permFaults != null ) {
+			result.addAll(permFaults);
+		}
+		Set<PVITLFault0> faults0 = getFaults0();
+		if ( faults0 != null ) {
+			result.addAll(faults0);
+		}
+		Set<PVITLFault1> faults1 = getFaults1();
+		if ( faults1 != null ) {
+			result.addAll(faults1);
+		}
+		Set<PVITLFault2> faults2 = getFaults2();
+		if ( faults2 != null ) {
+			result.addAll(faults2);
+		}
+		Set<PVITLFault3> faults3 = getFaults3();
+		if ( faults3 != null ) {
+			result.addAll(faults3);
+		}
+		Set<PVITLFault4> faults4 = getFaults4();
+		if ( faults4 != null ) {
+			result.addAll(faults4);
+		}
+		return result;
+	}
+
+	@Override
+	public Set<PVITLFault0> getFaults0() {
+		Number n = getNumber(PVITLRegister.StatusFault0);
+		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), PVITLFault0.class) : null);
+	}
+
+	@Override
+	public Set<PVITLFault1> getFaults1() {
+		Number n = getNumber(PVITLRegister.StatusFault0);
+		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), PVITLFault1.class) : null);
+	}
+
+	@Override
+	public Set<PVITLFault2> getFaults2() {
+		Number n = getNumber(PVITLRegister.StatusFault0);
+		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), PVITLFault2.class) : null);
+	}
+
+	@Override
+	public Set<PVITLFault3> getFaults3() {
+		Number n = getNumber(PVITLRegister.StatusFault0);
+		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), PVITLFault3.class) : null);
+	}
+
+	@Override
+	public Set<PVITLFault4> getFaults4() {
+		Number n = getNumber(PVITLRegister.StatusFault0);
+		return (n != null ? Bitmaskable.setForBitmask(n.intValue(), PVITLFault4.class) : null);
+	}
+
+	@Override
+	public Set<ModelEvent> getEvents() {
+		SortedSet<PVITLFault> faults = getFaults();
+		Set<ModelEvent> events = new LinkedHashSet<>(16);
+		if ( !faults.isEmpty() ) {
+			if ( faults.contains(PVITLPermanentFault.PermanentBusOverVoltage)
+					|| faults.contains(PVITLFault0.BusOverVoltage)
+					|| faults.contains(PVITLFault2.Pv1OverVoltage)
+					|| faults.contains(PVITLFault2.Pv2OverVoltage) ) {
+				events.add(InverterModelEvent.DcOverVoltage);
+			}
+			if ( faults.contains(PVITLPermanentFault.PermanentGridRelay)
+					|| faults.contains(PVITLFault0.LossOfMain) ) {
+				events.add(InverterModelEvent.GridDisconnect);
+			}
+			if ( faults.contains(PVITLFault0.OverTemperature) ) {
+				events.add(InverterModelEvent.OverTemperature);
+			}
+			if ( faults.contains(PVITLFault0.GridOverFrequency) ) {
+				events.add(InverterModelEvent.OverFrequency);
+			}
+			if ( faults.contains(PVITLFault0.GridUnderFrequency) ) {
+				events.add(InverterModelEvent.UnderFrequency);
+			}
+			if ( faults.contains(PVITLFault0.GridLineVoltage)
+					|| faults.contains(PVITLFault0.GridPhaseVoltage) ) {
+				events.add(InverterModelEvent.AcOverVoltage);
+			}
+			if ( faults.contains(PVITLPermanentFault.PermanentInverterOpenLoopSelfTest)
+					|| faults.contains(PVITLFault2.InverterOpenLoopSelfTest)
+					|| faults.contains(PVITLFault4.ArcBoard) ) {
+				events.add(InverterModelEvent.HwTestFailure);
+			}
+		}
+		return events;
+	}
+
+	@Override
+	public BitSet getVendorEvents() {
+		return GroupedBitmaskable.overallBitmaskValue(getFaults());
+	}
+
 	private class PhaseDataAccessor implements PVITLDataAccessor {
 
 		private final AcPhase phase;
@@ -713,6 +836,56 @@ public class PVITLData extends ModbusData implements PVITLDataAccessor {
 				default:
 					return PVITLData.this.getPv2Power();
 			}
+		}
+
+		@Override
+		public Set<PVITLPermanentFault> getPermanentFaults() {
+			return PVITLData.this.getPermanentFaults();
+		}
+
+		@Override
+		public Set<PVITLWarning> getWarnings() {
+			return PVITLData.this.getWarnings();
+		}
+
+		@Override
+		public SortedSet<PVITLFault> getFaults() {
+			return PVITLData.this.getFaults();
+		}
+
+		@Override
+		public Set<PVITLFault0> getFaults0() {
+			return PVITLData.this.getFaults0();
+		}
+
+		@Override
+		public Set<PVITLFault1> getFaults1() {
+			return PVITLData.this.getFaults1();
+		}
+
+		@Override
+		public Set<PVITLFault2> getFaults2() {
+			return PVITLData.this.getFaults2();
+		}
+
+		@Override
+		public Set<PVITLFault3> getFaults3() {
+			return PVITLData.this.getFaults3();
+		}
+
+		@Override
+		public Set<PVITLFault4> getFaults4() {
+			return PVITLData.this.getFaults4();
+		}
+
+		@Override
+		public Set<ModelEvent> getEvents() {
+			return PVITLData.this.getEvents();
+		}
+
+		@Override
+		public BitSet getVendorEvents() {
+			return PVITLData.this.getVendorEvents();
 		}
 
 	}
