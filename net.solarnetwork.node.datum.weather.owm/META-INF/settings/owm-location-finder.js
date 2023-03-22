@@ -2,7 +2,7 @@
 
 SolarNode.OpenWeatherMap = {};
 
-$(function() {
+$(document).ready(function() {
 	var modal = $('#owm-location-lookup-modal'),
 		modalBody = modal.find('.modal-body'),
 		form = modal.get(0),
@@ -10,7 +10,7 @@ $(function() {
 		templateRow = modal.find('tr.template'),
 		searchBtn = modal.find('button[type=submit]'),
 		chooseBtn = modal.find('button.choose');
-
+	
 	var activeContainer;
 
 	function offsetSettingId(settingId, offset) {
@@ -136,40 +136,50 @@ $(function() {
 		return $(el).parents('.setup-resource-container');
 	}
 
-	$('button.owm-loc-search-open').on('click', function() {
-		var container = owmContainer(this);
+	function setupOwmIntegration(container) {
+		// activate OWM location search modal
+		container.find('button.owm-loc-search-open').on('click', function() {
+			var c = owmContainer(this);
+	
+			// stash for when selection is made
+			activeContainer = c;
+	
+			modalBody.find('.alert').remove();
+			modal.data('params', c.data()).modal('show');
+		});
+		
+		// lookup OWM location name for display
+		container.find('.owm-loc-id').text(function(i, el) {
+			var me = this,
+				container = owmContainer(this),
+				apiKey = container.data().apikey,
+				locId = container.data().lid,
+				url ='https://api.openweathermap.org/data/2.5/weather?id=' +encodeURIComponent(locId)
+					+'&units=metric'
+					+'&appid=' +encodeURIComponent(apiKey);
+			if ( apiKey && locId ) {
+				$.getJSON(url, function(json) {
+					showLocationNameResult(json, me);
+				});
+			}
+			return locId;
+		});
+		
+		// hook into location change, to pick up time zone population
+		container.find('.sn-loc-lookup-modal button.choose').on('click', function() {
+			var me = $(this);
+			var currParams = me.data('params');
+			var l = me.data('locationMeta');
+			var tzTextField = timeZoneSettingTextField(currParams);
+			if ( tzTextField && l && l.location && l.location.timeZoneId ) {
+				tzTextField.val(l.location.timeZoneId).trigger('change');
+			}
+		});
+	}
+	
+	$('body').on('sn.settings.component.loaded', function(event, container) {
+		setupOwmIntegration(container);
+	});	
 
-		// stash for when selection is made
-		activeContainer = container;
-
-		modalBody.find('.alert').remove();
-		modal.data('params', container.data()).modal('show');
-	});
-
-	$('.owm-loc-id').text(function(i, el) {
-		var me = this,
-			container = owmContainer(this),
-			apiKey = container.data().apikey,
-			locId = container.data().lid,
-			url ='https://api.openweathermap.org/data/2.5/weather?id=' +encodeURIComponent(locId)
-				+'&units=metric'
-				+'&appid=' +encodeURIComponent(apiKey);
-		if ( apiKey && locId ) {
-			$.getJSON(url, function(json) {
-				showLocationNameResult(json, me);
-			});
-		}
-		return locId;
-	});
-
-	// hook into location change, to pick up time zone population
-	$('.sn-loc-lookup-modal button.choose').on('click', function() {
-		var me = $(this);
-		var currParams = me.data('params');
-		var l = me.data('locationMeta');
-		var tzTextField = timeZoneSettingTextField(currParams);
-		if ( tzTextField && l && l.location && l.location.timeZoneId ) {
-			tzTextField.val(l.location.timeZoneId).trigger('change');
-		}
-	});
+	setupOwmIntegration($());
 });

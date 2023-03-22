@@ -22,13 +22,16 @@
 
 package net.solarnetwork.node.hw.yaskawa.mb.inverter;
 
+import net.solarnetwork.domain.CodedValue;
+import net.solarnetwork.domain.DeviceOperatingState;
+
 /**
  * Enumeration of inverter states.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
-public enum PVITLInverterState {
+public enum PVITLInverterState implements CodedValue {
 
 	/** Fault. */
 	Fault(0x8000, "Fault"),
@@ -55,11 +58,7 @@ public enum PVITLInverterState {
 		this.description = description;
 	}
 
-	/**
-	 * Get the type value encoding.
-	 * 
-	 * @return the code
-	 */
+	@Override
 	public int getCode() {
 		return code;
 	}
@@ -71,6 +70,31 @@ public enum PVITLInverterState {
 	 */
 	public String getDescription() {
 		return description;
+	}
+
+	/**
+	 * Get a device operating state for this inverter state.
+	 * 
+	 * @return the device operating state
+	 * @since 1.1
+	 */
+	public DeviceOperatingState asDeviceOperatingState() {
+		switch (this) {
+			case Check:
+				return DeviceOperatingState.Starting;
+
+			case Derate:
+				return DeviceOperatingState.Override;
+
+			case Fault:
+				return DeviceOperatingState.Fault;
+
+			case Standby:
+				return DeviceOperatingState.Standby;
+
+			default:
+				return DeviceOperatingState.Normal;
+		}
 	}
 
 	/**

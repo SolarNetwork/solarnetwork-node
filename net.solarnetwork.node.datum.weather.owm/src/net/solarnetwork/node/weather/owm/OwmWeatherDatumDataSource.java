@@ -40,7 +40,7 @@ import net.solarnetwork.settings.support.BasicMultiValueSettingSpecifier;
  * {@link DatumDataSource}.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class OwmWeatherDatumDataSource extends ConfigurableOwmClientService
 		implements SettingSpecifierProvider, DatumDataSource, MultiDatumDataSource {
@@ -114,6 +114,16 @@ public class OwmWeatherDatumDataSource extends ConfigurableOwmClientService
 	}
 
 	/**
+	 * Get the data collection mode.
+	 * 
+	 * @return the mode (never {@literal null}
+	 * @since 2.1
+	 */
+	public DataCollectionMode getDataCollectionMode() {
+		return dataCollectionMode;
+	}
+
+	/**
 	 * Set the data collection mode.
 	 * 
 	 * @param dataCollectionMode
@@ -121,7 +131,18 @@ public class OwmWeatherDatumDataSource extends ConfigurableOwmClientService
 	 * @since 1.1
 	 */
 	public void setDataCollectionMode(DataCollectionMode dataCollectionMode) {
-		this.dataCollectionMode = dataCollectionMode;
+		this.dataCollectionMode = dataCollectionMode != null ? dataCollectionMode
+				: DataCollectionMode.Mixed;
+	}
+
+	/**
+	 * Get the data collection mode as a key value.
+	 * 
+	 * @return the {@link DataCollectionMode#getKey()} value
+	 * @since 2.1
+	 */
+	public int getDataCollectionModeKey() {
+		return getDataCollectionMode().getKey();
 	}
 
 	/**
