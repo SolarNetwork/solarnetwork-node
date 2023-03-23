@@ -119,7 +119,7 @@ Each device configuration contains the following overall settings:
 | Max Read Length    | The maximum number of Modbus registers to request at once. |
 | Word Order         | For multi-register data types, the ordering to use when combining them. |
 | Datum Filter Service | The **service name** of a datum filter to apply. |
-| Sub-sample Frequency | If configured, the frequency at which samples should be collected from the device, in milliseconds. Set to `0` (or empty) to disable. Typically this would be combined with a **Datum Filter Service** to transform the sub-samples.
+| Sub-sample Frequency | If configured, the frequency at which samples should be collected from the device, in milliseconds. Set to `0` (or empty) to disable. Typically this would be combined with a **Datum Filter Service** to transform the sub-samples. See the [Sub-sampling](#sub-sampling) section for more information. |
 
 ## Overall device settings notes
 
@@ -259,7 +259,48 @@ Then here are some example expressions and the results they would produce:
 | `sample.getFloat32(regs[200])` | `1974.1974` | Returns registers **200** and **201** as a IEEE-754 32-bit floating point: `0x44f6c651`. |
 | `props['bigFloat'] - regs[0]` | `19677432.1974` | Returns difference of register **0** (`0xfc1e`) from datum property `bigFloat` (`0x4172d3d163288ce7`). |
 
+# Sub-sampling
+
+The **Sub-sample Frequency** setting allows you to configure the datum source to generate datum
+(referred to as a _sample_ here) at a higher rate than the normal **Schedule** dictates. This would
+typically be combined with the **Datum Filter Service** setting, to enable filtering the sub-sample
+datum into some sort of aggregate at the "normal" sample rate.
+
+For example, you might want to collect datum at a rate of **once per minute** but achieve better
+accuracy in each property value by capturing several values per minute and only saving the average
+of those captured values in SolarNetwork.
+
+> **Note** that this type of average sub-sampling can be achieved more simply by just configuring
+> the **Schedule** of this (or any datum source) to the desired "sub-sample" rate and adding a
+> [Downsample Filter][DownsampleFilter] with an appropriate **Count** value to reduce the frequency
+> to your desired "normal" rate.
+
+Here is an example of the settings you would configure to do this, with a sub-sample rate of
+**once per second**:
+
+| Setting | Value | Description |
+|:--------|:------|:------------|
+| **Schedule** | `60000` | Capture "normal" datum once per **minute** |
+| **Sub-sample Frequency** | `1000` | Capture "sub-sample" datum once per **second** |
+| **Datum Filter Service** | `My Sub-Sample Downsample Filter` | The service name of the filter to apply. |
+
+In this example, **My Sub-Sample Throttle Filter** is a [Downsample Filter][DownsampleFilter]
+configured with these settings:
+
+| Setting | Value | Description |
+|:--------|:------|:------------|
+| **Service Name** | `My Sub-Sample Downsample Filter` | Same service name used also in the Modbus Device settings |
+| **Sample Count** | `60` | Aggregate 60 samples into 1 output, because we expect 60 samples per minute |
+
+## Sub-sample filter properties
+
+The configured **Datum Filter Service** will be passed every datum captured, both sub-samples and
+"normal" samples. Each sub-sample datum will be passed a special `subsample=true` parameter,
+however, so the filter "knows" which datum are sub-samples and which are "normal" samples.
+
+
 [expr]: https://github.com/SolarNetwork/solarnetwork/wiki/Expression-Languages
+[DownsampleFilter]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node.datum.filter.standard/README-Downsample.md
 [ExpressionRoot]: https://github.com/SolarNetwork/solarnetwork-node/tree/develop/net.solarnetwork.node.datum.modbus/src/net/solarnetwork/node/datum/modbus/ExpressionRoot.java
 [GeneralNodeDatum]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node/src/net/solarnetwork/node/domain/GeneralNodeDatum.java
 [ModbusData]: https://github.com/SolarNetwork/solarnetwork-node/blob/develop/net.solarnetwork.node.io.modbus/src/net/solarnetwork/node/io/modbus/ModbusData.java
