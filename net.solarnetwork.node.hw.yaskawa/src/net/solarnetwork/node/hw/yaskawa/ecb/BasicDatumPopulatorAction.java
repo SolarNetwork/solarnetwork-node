@@ -57,7 +57,7 @@ import net.solarnetwork.util.NumberUtils;
  * {@link SimpleAcDcEnergyDatum} object.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class BasicDatumPopulatorAction implements SerialConnectionAction<AcDcEnergyDatum> {
 
@@ -327,7 +327,9 @@ public class BasicDatumPopulatorAction implements SerialConnectionAction<AcDcEne
 		Packet p = sendForPacket(conn, cmd);
 		if ( p != null ) {
 			int n = ByteBuffer.wrap(p.getBody()).getInt();
-			d.putSampleValue(DatumSamplesType.Status, propName, Integer.toString(n));
+			if ( n > 0 ) {
+				d.putSampleValue(DatumSamplesType.Status, propName, Integer.toString(n));
+			}
 			return Bitmaskable.setForBitmask(n, enumClass);
 		}
 		return Collections.emptySet();
