@@ -159,11 +159,15 @@ public class InstructionExecutionJob extends BaseIdentifiable implements JobServ
 	}
 
 	private boolean isExpired(Instruction instruction, InstructionStatus status) {
-		if ( maximumIncompleteHours > 0
-				&& (status.getInstructionState() == InstructionState.Received
-						|| status.getInstructionState() == InstructionState.Executing)
-				&& ChronoUnit.HOURS.between(instruction.getInstructionDate(),
-						Instant.now()) > maximumIncompleteHours ) {
+		if ( maximumIncompleteHours < 1 || !(status.getInstructionState() == InstructionState.Received
+				|| status.getInstructionState() == InstructionState.Executing) ) {
+			return false;
+		}
+		Instant date = instruction.getExecutionDate();
+		if ( date == null ) {
+			date = instruction.getInstructionDate();
+		}
+		if ( ChronoUnit.HOURS.between(date, Instant.now()) > maximumIncompleteHours ) {
 			return true;
 		}
 		return false;

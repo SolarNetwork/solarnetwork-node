@@ -2,6 +2,7 @@ CREATE TABLE solarnode.sn_instruction (
 	id					BIGINT NOT NULL,
 	instructor_id		VARCHAR(255) NOT NULL,
 	created				TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+	execute_at			TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	topic				VARCHAR(255) NOT NULL,
 	CONSTRAINT sn_instruction_pkey PRIMARY KEY (id, instructor_id)
 );
@@ -34,4 +35,4 @@ CREATE TABLE solarnode.sn_instruction_status (
 );
 
 INSERT INTO solarnode.sn_settings (skey, svalue) 
-VALUES ('solarnode.sn_instruction.version', '3');
+VALUES ('solarnode.sn_instruction.version', '4');

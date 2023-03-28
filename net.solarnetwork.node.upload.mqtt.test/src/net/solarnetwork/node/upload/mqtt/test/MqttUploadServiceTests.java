@@ -34,6 +34,8 @@ import java.io.InputStreamReader;
 import java.net.URI;
 import java.security.Principal;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -43,6 +45,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
+import org.easymock.IAnswer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -80,6 +83,7 @@ import net.solarnetwork.node.reactor.BasicInstructionStatus;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.reactor.ReactorService;
 import net.solarnetwork.node.service.DatumMetadataService;
 import net.solarnetwork.node.service.IdentityService;
@@ -770,6 +774,94 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 		JSONAssert.assertEquals("Instruction Completed ack payload",
 				"{\"instructionId\":" + inputInstruction.getId() + ",\"state\":\"Completed\"}",
 				session.getPublishPayloadStringAtIndex(2), false);
+	}
+
+	@Test
+	public void processInstruction_futureExecutionDate() throws Exception {
+		// GIVEN
+		TestingMqttMessageHandler messageHandler = new TestingMqttMessageHandler();
+		MqttConnection solarNetClient = createMqttClient("solarnet", messageHandler);
+
+		// use future execution date
+		final Instant executeDate = Instant.now().truncatedTo(ChronoUnit.MINUTES).plus(1,
+				ChronoUnit.HOURS);
+
+		// parse instructions
+		String testInstructions = getStringResource("instructions-02.json").replace("{ExecutionDate}",
+				DateTimeFormatter.ISO_INSTANT.format(executeDate));
+		List<Instruction> instructions = parseInstructions(testInstructions);
+		assert instructions.size() == 1;
+		final Instruction inputInstruction = instructions.get(0);
+
+		// process as Received state
+		Capture<Instruction> processInstructionCaptor = Capture.newInstance();
+		expect(reactorService.processInstruction(capture(processInstructionCaptor)))
+				.andAnswer(new IAnswer<InstructionStatus>() {
+
+					@Override
+					public InstructionStatus answer() throws Throwable {
+						Instruction instr = processInstructionCaptor.getValue();
+						return InstructionUtils.createStatus(instr, InstructionState.Received);
+					}
+				});
+
+		// persist Received state
+		Capture<Instruction> storeInstructionCaptor = Capture.newInstance();
+		reactorService.storeInstruction(capture(storeInstructionCaptor));
+
+		// persist Received ask state
+		Capture<Instruction> storeReceivedInstructionAckCaptor = Capture.newInstance();
+		reactorService.storeInstruction(capture(storeReceivedInstructionAckCaptor));
+
+		replayAll();
+
+		// WHEN
+		Thread.sleep(1000); // allow time for subscription to take
+
+		String instrTopic = instructionTopic(nodeId);
+		solarNetClient.publish(new BasicMqttMessage(instrTopic, false, MqttQos.AtLeastOnce,
+				testInstructions.getBytes("UTF-8"))).get(MQTT_TIMEOUT, TimeUnit.SECONDS);
+
+		Thread.sleep(2000); // allow time for messages to process
+
+		stopMqttServer(); // shut down server
+
+		// THEN
+
+		// should have stored Received status
+		Instruction storeInstruction = storeInstructionCaptor.getValue();
+		assertThat("Store instruction ID", storeInstruction.getId(), equalTo(inputInstruction.getId()));
+		assertThat("Store instruction instructorId", storeInstruction.getInstructorId(),
+				equalTo(TEST_SOLARIN_BASE_URL));
+		assertThat("Store instruction state", storeInstruction.getInstructionState(),
+				equalTo(InstructionState.Received));
+
+		// should have stored Received ack status
+		Instruction completedInstructionAck = storeReceivedInstructionAckCaptor.getValue();
+		assertThat("Received instruction has ID", completedInstructionAck.getId(),
+				equalTo(inputInstruction.getId()));
+		assertThat("Received instruction instructorId", completedInstructionAck.getInstructorId(),
+				equalTo(TEST_SOLARIN_BASE_URL));
+		assertThat("Received instruction state", completedInstructionAck.getInstructionState(),
+				equalTo(InstructionState.Received));
+		assertThat("Received instruction ack state",
+				completedInstructionAck.getStatus().getAcknowledgedInstructionState(),
+				equalTo(InstructionState.Received));
+
+		// should have published acknowledgement on datum topic
+		TestingInterceptHandler session = getTestingInterceptHandler();
+		assertThat("Published instruction and acks", session.publishMessages, hasSize(2));
+
+		InterceptPublishMessage pubMsg = session.publishMessages.get(0);
+		assertThat("Instruction client ID", pubMsg.getClientID(), equalTo("solarnet"));
+		assertThat("Instruction topic", pubMsg.getTopicName(), equalTo(instructionTopic(nodeId)));
+
+		pubMsg = session.publishMessages.get(1);
+		assertThat("Instruction ack client ID", pubMsg.getClientID(), equalTo(nodeId.toString()));
+		assertThat("Instruction topic", pubMsg.getTopicName(), equalTo(datumTopic(nodeId)));
+		JSONAssert.assertEquals("Instruction Received ack payload",
+				"{\"instructionId\":" + inputInstruction.getId() + ",\"state\":\"Received\"}",
+				session.getPublishPayloadStringAtIndex(1), false);
 	}
 
 	/*- Following test not working after switch to Netty client; haven't found a way

@@ -22,6 +22,11 @@
 
 package net.solarnetwork.node.reactor;
 
+import java.time.DateTimeException;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+
 /**
  * API for a single, immutable instruction with associated parameters.
  * 
@@ -37,7 +42,7 @@ package net.solarnetwork.node.reactor;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public interface Instruction extends net.solarnetwork.domain.Instruction {
 
@@ -46,6 +51,20 @@ public interface Instruction extends net.solarnetwork.domain.Instruction {
 	 * {@link #getInstructorId()}.
 	 */
 	String LOCAL_INSTRUCTION_ID = "LOCAL";
+
+	/**
+	 * The name of an instruction parameter that represents the desired
+	 * execution date for the instruction.
+	 * 
+	 * <p>
+	 * The parameter value can be either a {@code long} epoch millisecond value
+	 * or an ISO 8601 instant.
+	 * </p>
+	 * 
+	 * @since 2.1
+	 * @see java.time.format.DateTimeFormatter#ISO_INSTANT
+	 */
+	String EXECUTION_DATE_PARAM = "ExecutionDate";
 
 	/**
 	 * Get an identifier for this instruction.
@@ -76,5 +95,37 @@ public interface Instruction extends net.solarnetwork.domain.Instruction {
 	 */
 	@Override
 	InstructionStatus getStatus();
+
+	/**
+	 * Get the instruction execution date, if available.
+	 * 
+	 * <p>
+	 * This method looks for the {@link #EXECUTION_DATE_PARAM} parameter and
+	 * tries to parse that as a date. The parameter value can be either a
+	 * {@code long} epoch millisecond value or an ISO 8601 instant.
+	 * </p>
+	 * 
+	 * @return the instruction execution date, or {@literal null} if one is not
+	 *         available or cannot be parsed
+	 * @see java.time.format.DateTimeFormatter#ISO_INSTANT
+	 * @since 2.1
+	 */
+	default Instant getExecutionDate() {
+		final String val = getParameterValue(EXECUTION_DATE_PARAM);
+		if ( val == null ) {
+			return null;
+		}
+		Instant result = null;
+		try {
+			result = Instant.ofEpochMilli(Long.parseLong(val));
+		} catch ( NumberFormatException | DateTimeException e ) {
+			try {
+				result = DateTimeFormatter.ISO_INSTANT.parse(val, Instant::from);
+			} catch ( DateTimeParseException e2 ) {
+				// ignore and bail
+			}
+		}
+		return result;
+	}
 
 }

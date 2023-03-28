@@ -25,6 +25,7 @@ package net.solarnetwork.node.dao.jdbc.reactor.test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -33,17 +34,23 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.util.FileCopyUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.codec.JsonUtils;
@@ -59,7 +66,7 @@ import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
  * Test case for the {@link JdbcInstructionDao} class.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 
@@ -98,6 +105,42 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 
 		dao.storeInstruction(instr);
 		lastDatum = dao.getInstruction(instr.getId(), instr.getInstructorId());
+	}
+
+	private List<Map<String, Object>> listInstructions() {
+		return new JdbcTemplate(dataSource).queryForList("select * from solarnode.sn_instruction")
+				.stream().map(m -> {
+					Map<String, Object> lcm = new LinkedHashMap<>(m.size());
+					for ( Entry<String, Object> e : m.entrySet() ) {
+						lcm.put(e.getKey().toLowerCase(), e.getValue());
+					}
+					return lcm;
+				}).collect(Collectors.toList());
+	}
+
+	@Test
+	public void storeNew_withExecuteDate() {
+		final Instant executeDate = Instant.now().truncatedTo(ChronoUnit.MINUTES).plus(1,
+				ChronoUnit.HOURS);
+		final String executeDateStr = DateTimeFormatter.ISO_INSTANT.format(executeDate);
+		BasicInstruction instr = new BasicInstruction(
+				Math.abs(UUID.randomUUID().getMostSignificantBits()), TEST_TOPIC, Instant.now(),
+				TEST_INSTRUCTOR, null);
+		instr.addParameter(Instruction.EXECUTION_DATE_PARAM, executeDateStr);
+
+		for ( int i = 0; i < 2; i++ ) {
+			instr.addParameter(String.format("%s %d", TEST_PARAM_KEY, i),
+					String.format("%s %d %s", TEST_PARAM_KEY, i, TEST_PARAM_VALUE));
+		}
+
+		dao.storeInstruction(instr);
+		lastDatum = dao.getInstruction(instr.getId(), instr.getInstructorId());
+
+		// verify date stored
+		List<Map<String, Object>> rows = listInstructions();
+		assertThat("Row stored", rows, hasSize(1));
+		assertThat("Execution date stored", rows.get(0),
+				hasEntry("execute_at", Timestamp.from(executeDate)));
 	}
 
 	private String stringResource(String resource) {
@@ -172,6 +215,33 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 		assertNotNull(results);
 		assertEquals(1, results.size());
 		assertEquals(lastDatum.getId(), results.get(0).getId());
+	}
+
+	@Test
+	public void findByState_withoutFutureInstructions() {
+		// GIVEN
+		storeNew();
+		Instruction instr = lastDatum;
+
+		final Instant executeDate = Instant.now().truncatedTo(ChronoUnit.MINUTES).plus(1,
+				ChronoUnit.HOURS);
+		final String executeDateStr = DateTimeFormatter.ISO_INSTANT.format(executeDate);
+		BasicInstruction instr2 = new BasicInstruction(
+				Math.abs(UUID.randomUUID().getMostSignificantBits()), TEST_TOPIC, Instant.now(),
+				TEST_INSTRUCTOR, null);
+		instr2.addParameter(Instruction.EXECUTION_DATE_PARAM, executeDateStr);
+		dao.storeInstruction(instr2);
+
+		// WHEN
+		List<Instruction> results = dao.findInstructionsForState(InstructionState.Received);
+
+		// THEN
+		List<Map<String, Object>> rows = listInstructions();
+		assertThat("Two instruction rows exist", rows, hasSize(2));
+
+		assertThat("One instruction returned becauase future instruction omitted", results, hasSize(1));
+		assertThat("Non-future instruction returned", results.get(0).getId(),
+				is(equalTo(instr.getId())));
 	}
 
 	@Test
