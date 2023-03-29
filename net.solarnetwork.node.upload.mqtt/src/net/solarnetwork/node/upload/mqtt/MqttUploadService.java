@@ -528,7 +528,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 						// execution didn't happen, so pass to deferred executor
 						status = reactor.processInstruction(instr);
 						if ( futureExecution ) {
-							log.info("Future instruction {} {} saved as {} state for execution @ {}",
+							log.info("Deferred instruction {} {} saved as {} state for execution @ {}",
 									instr.getId(), instr.getTopic(), status.getInstructionState(),
 									executeAt);
 						}

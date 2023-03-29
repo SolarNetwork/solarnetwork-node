@@ -218,7 +218,7 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 	}
 
 	@Test
-	public void findByState_withoutFutureInstructions() {
+	public void findByState_withoutDeferredInstructions() {
 		// GIVEN
 		storeNew();
 		Instruction instr = lastDatum;
@@ -239,9 +239,9 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 		List<Map<String, Object>> rows = listInstructions();
 		assertThat("Two instruction rows exist", rows, hasSize(2));
 
-		assertThat("One instruction returned becauase future instruction omitted", results, hasSize(1));
-		assertThat("Non-future instruction returned", results.get(0).getId(),
-				is(equalTo(instr.getId())));
+		assertThat("One instruction returned becauase deferred instruction omitted", results,
+				hasSize(1));
+		assertThat("Immediate instruction returned", results.get(0).getId(), is(equalTo(instr.getId())));
 	}
 
 	@Test
