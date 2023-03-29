@@ -22,8 +22,17 @@
 
 package net.solarnetwork.node.reactor.simple.test;
 
+import static org.easymock.EasyMock.capture;
+import static org.easymock.EasyMock.eq;
+import static org.easymock.EasyMock.expect;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import java.security.SecureRandom;
 import java.time.Instant;
+import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
@@ -32,6 +41,8 @@ import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.reactor.BasicInstruction;
 import net.solarnetwork.node.reactor.BasicInstructionStatus;
 import net.solarnetwork.node.reactor.InstructionDao;
+import net.solarnetwork.node.reactor.InstructionHandler;
+import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.simple.SimpleReactorService;
 
 /**
@@ -95,6 +106,75 @@ public class SimpleReactorServiceTests {
 		service.storeInstruction(instr);
 
 		// THEN
+	}
+
+	@Test
+	public void cancel_notFound() {
+		// GIVEN
+		Long oldInstrId = new SecureRandom().nextLong();
+
+		Long instrId = new SecureRandom().nextLong();
+		BasicInstructionStatus status = new BasicInstructionStatus(instrId, InstructionState.Executing,
+				Instant.now());
+		BasicInstruction instr = new BasicInstruction(instrId,
+				InstructionHandler.TOPIC_CANCEL_INSTRUCTION, Instant.now().minusSeconds(1),
+				TEST_INSTRUCTOR_ID, status);
+		instr.addParameter(InstructionHandler.PARAM_ID, oldInstrId.toString());
+
+		// get instruction to cancel based on this instruction's "id" parameter
+		expect(instructionDao.getInstruction(oldInstrId, TEST_INSTRUCTOR_ID)).andReturn(null);
+
+		// WHEN
+		replayAll();
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		assertThat("Result provided", result, is(notNullValue()));
+		assertThat("State is Declined", result.getInstructionState(),
+				is(equalTo(InstructionState.Declined)));
+	}
+
+	@Test
+	public void cancel() {
+		// GIVEN
+		Long oldInstrId = new SecureRandom().nextLong();
+		BasicInstructionStatus oldInstrStatus = new BasicInstructionStatus(oldInstrId,
+				InstructionState.Received, Instant.now());
+		BasicInstruction oldInstr = new BasicInstruction(oldInstrId,
+				InstructionHandler.TOPIC_SET_CONTROL_PARAMETER, Instant.now().minusSeconds(1),
+				TEST_INSTRUCTOR_ID, oldInstrStatus);
+
+		Long instrId = new SecureRandom().nextLong();
+		BasicInstructionStatus status = new BasicInstructionStatus(instrId, InstructionState.Executing,
+				Instant.now());
+		BasicInstruction instr = new BasicInstruction(instrId,
+				InstructionHandler.TOPIC_CANCEL_INSTRUCTION, Instant.now().minusSeconds(1),
+				TEST_INSTRUCTOR_ID, status);
+		instr.addParameter(InstructionHandler.PARAM_ID, oldInstrId.toString());
+
+		// get instruction to cancel based on this instruction's "id" parameter
+		expect(instructionDao.getInstruction(oldInstrId, TEST_INSTRUCTOR_ID)).andReturn(oldInstr);
+
+		// update that instruction's state to Declined
+		Capture<InstructionStatus> declineInstructionStatusCaptor = Capture.newInstance();
+		expect(instructionDao.compareAndStoreInstructionStatus(eq(oldInstrId), eq(TEST_INSTRUCTOR_ID),
+				eq(oldInstrStatus.getInstructionState()), capture(declineInstructionStatusCaptor)))
+						.andReturn(true);
+
+		// WHEN
+		replayAll();
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		assertThat("Result provided", result, is(notNullValue()));
+		assertThat("State is Completed", result.getInstructionState(),
+				is(equalTo(InstructionState.Completed)));
+
+		InstructionStatus declineInstructionStatus = declineInstructionStatusCaptor.getValue();
+		assertThat("Old instruction state set to Declined",
+				declineInstructionStatus.getInstructionState(), is(equalTo(InstructionState.Declined)));
+		assertThat("Old instruction message provided", declineInstructionStatus.getResultParameters(),
+				hasEntry(equalTo(InstructionHandler.PARAM_MESSAGE), notNullValue()));
 	}
 
 }

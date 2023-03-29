@@ -126,7 +126,7 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 		BasicInstruction instr = new BasicInstruction(
 				Math.abs(UUID.randomUUID().getMostSignificantBits()), TEST_TOPIC, Instant.now(),
 				TEST_INSTRUCTOR, null);
-		instr.addParameter(Instruction.EXECUTION_DATE_PARAM, executeDateStr);
+		instr.addParameter(Instruction.PARAM_EXECUTION_DATE, executeDateStr);
 
 		for ( int i = 0; i < 2; i++ ) {
 			instr.addParameter(String.format("%s %d", TEST_PARAM_KEY, i),
@@ -229,7 +229,7 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 		BasicInstruction instr2 = new BasicInstruction(
 				Math.abs(UUID.randomUUID().getMostSignificantBits()), TEST_TOPIC, Instant.now(),
 				TEST_INSTRUCTOR, null);
-		instr2.addParameter(Instruction.EXECUTION_DATE_PARAM, executeDateStr);
+		instr2.addParameter(Instruction.PARAM_EXECUTION_DATE, executeDateStr);
 		dao.storeInstruction(instr2);
 
 		// WHEN

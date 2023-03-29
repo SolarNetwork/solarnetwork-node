@@ -787,7 +787,7 @@ public class MqttUploadServiceTests extends MqttServerSupport {
 				ChronoUnit.HOURS);
 
 		// parse instructions
-		String testInstructions = getStringResource("instructions-02.json").replace("{ExecutionDate}",
+		String testInstructions = getStringResource("instructions-02.json").replace("{executionDate}",
 				DateTimeFormatter.ISO_INSTANT.format(executeDate));
 		List<Instruction> instructions = parseInstructions(testInstructions);
 		assert instructions.size() == 1;

@@ -44,7 +44,19 @@
 	
 	<!-- Published Services -->
 
-	<service interface="net.solarnetwork.node.reactor.ReactorService" ranking="1" ref="simpleReactorService"/>
+	<service ranking="1" ref="simpleReactorService">
+		<interfaces>
+			<value>net.solarnetwork.node.reactor.ReactorService</value>
+			<value>net.solarnetwork.node.reactor.InstructionHandler</value>
+		</interfaces>
+		<service-properties>
+			<entry key="instruction">
+				<array value-type="java.lang.String">
+					<value>#{T(net.solarnetwork.node.reactor.InstructionHandler).TOPIC_CANCEL_INSTRUCTION}</value>
+				</array>
+			</entry>
+		</service-properties>
+	</service>
 
 	<service interface="net.solarnetwork.node.reactor.InstructionExecutionService" ref="instructionExecutionService"/>
 

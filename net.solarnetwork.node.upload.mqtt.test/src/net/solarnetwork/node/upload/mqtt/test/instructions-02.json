@@ -12,8 +12,8 @@
 					"value": "1"					
 				},
 				{
-					"name": "ExecutionDate",
-					"value": "{ExecutionDate}"
+					"name": "executionDate",
+					"value": "{executionDate}"
 				}
 			],
 			"nodeId": 123

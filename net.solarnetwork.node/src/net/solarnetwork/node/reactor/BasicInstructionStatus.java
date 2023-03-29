@@ -30,7 +30,7 @@ import java.util.Map;
  * Basic implementation of {@link InstructionStatus}.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class BasicInstructionStatus extends net.solarnetwork.domain.BasicInstructionStatus
 		implements InstructionStatus, Serializable {
@@ -110,6 +110,7 @@ public class BasicInstructionStatus extends net.solarnetwork.domain.BasicInstruc
 		if ( acknowledgedInstructionState != null ) {
 			builder.append("acknowledgedInstructionState=");
 			builder.append(acknowledgedInstructionState);
+			builder.append(", ");
 		}
 		if ( getStatusDate() != null ) {
 			builder.append("statusDate=");

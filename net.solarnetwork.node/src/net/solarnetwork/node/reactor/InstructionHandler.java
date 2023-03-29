@@ -26,7 +26,7 @@ package net.solarnetwork.node.reactor;
  * API to be implemented by a service that can handle instructions.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public interface InstructionHandler {
 
@@ -176,6 +176,33 @@ public interface InstructionHandler {
 	 * @since 1.5
 	 */
 	String PARAM_MESSAGE = "message";
+
+	/**
+	 * The instruction topic to cancel an instruction.
+	 * 
+	 * <p>
+	 * A {@link #PARAM_ID} parameter must be provided that specifies the
+	 * instruction ID to cancel. The instruction, if not already complete, will
+	 * be changed to the {@code Declined} state and a result message will be
+	 * added.
+	 * </p>
+	 * 
+	 * @since 2.1
+	 */
+	String TOPIC_CANCEL_INSTRUCTION = "CancelInstruction";
+
+	/**
+	 * An instruction parameter for an identifier.
+	 * 
+	 * <p>
+	 * The nature of this parameter depends on the topic it is associated with.
+	 * Generally it is meant to refer to a unique identifier associated with the
+	 * topic.
+	 * </p>
+	 * 
+	 * @since 2.1
+	 */
+	String PARAM_ID = "id";
 
 	/**
 	 * Test if a topic is handled by this handler.

@@ -64,7 +64,7 @@ public interface Instruction extends net.solarnetwork.domain.Instruction {
 	 * @since 2.1
 	 * @see java.time.format.DateTimeFormatter#ISO_INSTANT
 	 */
-	String EXECUTION_DATE_PARAM = "ExecutionDate";
+	String PARAM_EXECUTION_DATE = "executionDate";
 
 	/**
 	 * Get an identifier for this instruction.
@@ -100,7 +100,7 @@ public interface Instruction extends net.solarnetwork.domain.Instruction {
 	 * Get the instruction execution date, if available.
 	 * 
 	 * <p>
-	 * This method looks for the {@link #EXECUTION_DATE_PARAM} parameter and
+	 * This method looks for the {@link #PARAM_EXECUTION_DATE} parameter and
 	 * tries to parse that as a date. The parameter value can be either a
 	 * {@code long} epoch millisecond value or an ISO 8601 instant.
 	 * </p>
@@ -111,7 +111,7 @@ public interface Instruction extends net.solarnetwork.domain.Instruction {
 	 * @since 2.1
 	 */
 	default Instant getExecutionDate() {
-		final String val = getParameterValue(EXECUTION_DATE_PARAM);
+		final String val = getParameterValue(PARAM_EXECUTION_DATE);
 		if ( val == null ) {
 			return null;
 		}

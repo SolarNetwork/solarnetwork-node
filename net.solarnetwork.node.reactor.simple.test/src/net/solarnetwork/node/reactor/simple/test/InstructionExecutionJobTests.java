@@ -187,7 +187,7 @@ public class InstructionExecutionJobTests {
 				new BasicInstructionStatus(1L, Received, ts));
 
 		// but execution date is not expired
-		instr.addParameter(Instruction.EXECUTION_DATE_PARAM,
+		instr.addParameter(Instruction.PARAM_EXECUTION_DATE,
 				DateTimeFormatter.ISO_INSTANT.format(now.truncatedTo(ChronoUnit.MINUTES)));
 
 		expect(instructionDao.findInstructionsForState(Received))
@@ -308,7 +308,7 @@ public class InstructionExecutionJobTests {
 				new BasicInstructionStatus(1L, Executing, ts));
 
 		// but execution date is not expired
-		instr.addParameter(Instruction.EXECUTION_DATE_PARAM,
+		instr.addParameter(Instruction.PARAM_EXECUTION_DATE,
 				DateTimeFormatter.ISO_INSTANT.format(now.truncatedTo(ChronoUnit.MINUTES)));
 
 		expect(instructionDao.findInstructionsForState(Executing))
@@ -330,7 +330,7 @@ public class InstructionExecutionJobTests {
 				new BasicInstructionStatus(1L, Executing, ts));
 
 		// but execution date is not expired
-		instr.addParameter(Instruction.EXECUTION_DATE_PARAM,
+		instr.addParameter(Instruction.PARAM_EXECUTION_DATE,
 				DateTimeFormatter.ISO_INSTANT.format(now.truncatedTo(ChronoUnit.MINUTES)));
 
 		expect(instructionDao.findInstructionsForState(Received))
