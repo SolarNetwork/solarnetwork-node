@@ -9,7 +9,7 @@ Once installed, a new **Split Datum Filter** component will appear on the
 **Settings > Datum Filter** page on your SolarNode. Click on the **Manage** button to configure
 filters.
 
-<img alt="Unchanged filter settings" src="docs/solarnode-split-filter-settings.png" width="714">
+<img alt="Split filter settings" src="docs/solarnode-split-filter-settings.png" width="714">
 
 In the example screen shot shown above, the `/power/meter/1` datum stream is split into two datum
 streams: `/meter/1/power` and `/meter/1/energy`. Properties with names containing `current`,
