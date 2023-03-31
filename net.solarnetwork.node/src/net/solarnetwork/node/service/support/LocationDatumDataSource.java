@@ -25,6 +25,7 @@ package net.solarnetwork.node.service.support;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,9 +44,12 @@ import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
 import net.solarnetwork.node.settings.support.BasicLocationLookupSettingSpecifier;
 import net.solarnetwork.service.OptionalService;
-import net.solarnetwork.settings.KeyedSettingSpecifier;
+import net.solarnetwork.service.ServiceLifecycleObserver;
+import net.solarnetwork.settings.MappableSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.support.PrefixedMessageSource;
 
 /**
@@ -64,11 +68,11 @@ import net.solarnetwork.support.PrefixedMessageSource;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
-public class LocationDatumDataSource
-		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
+public class LocationDatumDataSource implements DatumDataSource, MultiDatumDataSource,
+		SettingSpecifierProvider, SettingsChangeObserver, ServiceLifecycleObserver {
 
 	/** Default value for the {@code locationIdPropertyName} property. */
 	public static final String DEFAULT_LOCATION_ID_PROP_NAME = "locationId";
@@ -89,6 +93,7 @@ public class LocationDatumDataSource
 	private Long locationId = null;
 	private String sourceId = null;
 	private Set<String> datumClassNameIgnore;
+	private boolean includeLocationTypeSetting;
 
 	private DatumLocation location = null;
 	private MessageSource messageSource;
@@ -100,6 +105,66 @@ public class LocationDatumDataSource
 	 */
 	public LocationDatumDataSource() {
 		super();
+	}
+
+	/**
+	 * Handle service startup.
+	 * 
+	 * <p>
+	 * This method will delegate to the configured {@code delegate} if that also
+	 * implements {@link ServiceLifecycleObserver}.
+	 * </p>
+	 * 
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void serviceDidStartup() {
+		ServiceLifecycleObserver delegate = serviceLifecycleObserver();
+		if ( delegate != null ) {
+			delegate.serviceDidStartup();
+		}
+	}
+
+	/**
+	 * Handle service shutdown.
+	 * 
+	 * <p>
+	 * This method will delegate to the configured {@code delegate} if that also
+	 * implements {@link ServiceLifecycleObserver}.
+	 * </p>
+	 * 
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void serviceDidShutdown() {
+		ServiceLifecycleObserver delegate = serviceLifecycleObserver();
+		if ( delegate != null ) {
+			delegate.serviceDidShutdown();
+		}
+	}
+
+	/**
+	 * Handle configuration changes.
+	 * 
+	 * <p>
+	 * This method will delegate to the configured {@code delegate} if that also
+	 * implements {@link SettingsChangeObserver}.
+	 * </p>
+	 * 
+	 * {@inheritDoc}
+	 */
+	@Override
+	public void configurationChanged(Map<String, Object> properties) {
+		if ( delegate instanceof SettingsChangeObserver ) {
+			((SettingsChangeObserver) delegate).configurationChanged(properties);
+		}
+	}
+
+	private ServiceLifecycleObserver serviceLifecycleObserver() {
+		if ( delegate instanceof ServiceLifecycleObserver ) {
+			return (ServiceLifecycleObserver) delegate;
+		}
+		return null;
 	}
 
 	@Override
@@ -241,13 +306,16 @@ public class LocationDatumDataSource
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>();
 		result.add(getLocationSettingSpecifier());
+		if ( includeLocationTypeSetting ) {
+			result.add(new BasicTextFieldSettingSpecifier("locationType", DatumLocation.PRICE_TYPE));
+		}
 		if ( delegate instanceof SettingSpecifierProvider ) {
 			List<SettingSpecifier> delegateResult = ((SettingSpecifierProvider) delegate)
 					.getSettingSpecifiers();
 			if ( delegateResult != null ) {
 				for ( SettingSpecifier spec : delegateResult ) {
-					if ( spec instanceof KeyedSettingSpecifier<?> ) {
-						KeyedSettingSpecifier<?> keyedSpec = (KeyedSettingSpecifier<?>) spec;
+					if ( spec instanceof MappableSpecifier ) {
+						MappableSpecifier keyedSpec = (MappableSpecifier) spec;
 						result.add(keyedSpec.mappedTo("delegate."));
 					} else {
 						result.add(spec);
@@ -563,6 +631,29 @@ public class LocationDatumDataSource
 	 */
 	public void setSourceIdPropertyName(String sourceIdPropertyName) {
 		this.sourceIdPropertyName = sourceIdPropertyName;
+	}
+
+	/**
+	 * Get the flag to include a location type setting.
+	 * 
+	 * @return {@literal true} to include a {@code locationType} setting in
+	 *         {@link #getSettingSpecifiers()}
+	 * @since 1.1
+	 */
+	public boolean isIncludeLocationTypeSetting() {
+		return includeLocationTypeSetting;
+	}
+
+	/**
+	 * Set the flag to include a location type setting.
+	 * 
+	 * @param includeLocationTypeSetting
+	 *        {@literal true} to include a {@code locationType} setting in
+	 *        {@link #getSettingSpecifiers()}
+	 * @since 1.1
+	 */
+	public void setIncludeLocationTypeSetting(boolean includeLocationTypeSetting) {
+		this.includeLocationTypeSetting = includeLocationTypeSetting;
 	}
 
 }

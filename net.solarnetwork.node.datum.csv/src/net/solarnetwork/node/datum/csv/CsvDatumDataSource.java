@@ -49,9 +49,11 @@ import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.io.UrlUtils;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
+import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.node.service.support.DatumDataSourceSupport;
 import net.solarnetwork.service.RemoteServiceException;
+import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
@@ -61,6 +63,7 @@ import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
 import net.solarnetwork.util.CachedResult;
 import net.solarnetwork.util.LimitedSizeDeque;
+import net.solarnetwork.util.ObjectUtils;
 import net.solarnetwork.util.StringUtils;
 
 /**
@@ -70,7 +73,11 @@ import net.solarnetwork.util.StringUtils;
  * @version 1.0
  */
 public class CsvDatumDataSource extends DatumDataSourceSupport
-		implements MultiDatumDataSource, SettingSpecifierProvider, SettingsChangeObserver {
+		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider,
+		SettingsChangeObserver, ServiceLifecycleObserver {
+
+	/** The default value for the {@code settingUid} property. */
+	public static final String DEFAULT_SETTING_UID = "net.solarnetwork.node.datum.csv";
 
 	/** The default value for the {@code connectionTimeout} property. */
 	public static final int DEFAULT_CONNECTION_TIMEOUT = 15000;
@@ -93,8 +100,11 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 	/** The {@code sampleCacheMs} property default value. */
 	public static final long DEFAULT_SAMPLE_CACHE_MS = 55_000L;
 
+	private final String settingUid;
+
 	private String sourceId;
 	private String sourceIdColumn;
+	private boolean includeSourceIdSetting;
 	private String url;
 	private Charset charset;
 	private int connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
@@ -116,11 +126,37 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Constructor.
+	 * 
+	 * <p>
+	 * The {@link #DEFAULT_SETTING_UID} will be used.
+	 * </p>
 	 */
 	public CsvDatumDataSource() {
+		this(DEFAULT_SETTING_UID);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param settingUid
+	 *        the setting UID to use
+	 */
+	public CsvDatumDataSource(String settingUid) {
 		super();
+		this.settingUid = ObjectUtils.requireNonNullArgument(settingUid, "settingUid");
 		setDisplayName("CSV");
 		setCharset(null); // apply default
+		this.includeSourceIdSetting = true;
+	}
+
+	@Override
+	public void serviceDidStartup() {
+		configurationChanged(null);
+	}
+
+	@Override
+	public void serviceDidShutdown() {
+		// nothing
 	}
 
 	@Override
@@ -143,6 +179,17 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 		}
 		this.sourceIdColumnIndexes = CsvDatumDataSourceUtils.columnIndexes(sourceIdColumn);
 		this.dateTimeColumnIndexes = CsvDatumDataSourceUtils.columnIndexes(dateTimeColumn);
+	}
+
+	@Override
+	public Class<? extends NodeDatum> getDatumType() {
+		return NodeDatum.class;
+	}
+
+	@Override
+	public NodeDatum readCurrentDatum() {
+		Collection<NodeDatum> result = readMultipleDatum();
+		return (result != null ? result.stream().findFirst().orElse(null) : null);
 	}
 
 	@Override
@@ -389,21 +436,25 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	@Override
 	public String getSettingUid() {
-		return "net.solarnetwork.node.datum.csv";
+		return settingUid;
 	}
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> result = new ArrayList<SettingSpecifier>();
 		result.addAll(getIdentifiableSettingSpecifiers());
-		result.add(new BasicTextFieldSettingSpecifier("sourceId", null));
+		if ( includeSourceIdSetting ) {
+			result.add(new BasicTextFieldSettingSpecifier("sourceId", null));
+		}
 		result.add(new BasicTextFieldSettingSpecifier("url", null));
 		result.add(new BasicTextFieldSettingSpecifier("charsetName", StandardCharsets.UTF_8.name()));
 		result.add(new BasicTextFieldSettingSpecifier("connectionTimeout",
 				String.valueOf(DEFAULT_CONNECTION_TIMEOUT)));
 		result.add(new BasicTextFieldSettingSpecifier("skipRows", String.valueOf(DEFAULT_SKIP_ROWS)));
 		result.add(new BasicTextFieldSettingSpecifier("keepRows", String.valueOf(DEFAULT_KEEP_ROWS)));
-		result.add(new BasicTextFieldSettingSpecifier("sourceIdColumn", null));
+		if ( includeSourceIdSetting ) {
+			result.add(new BasicTextFieldSettingSpecifier("sourceIdColumn", null));
+		}
 		result.add(new BasicTextFieldSettingSpecifier("urlDateFormat", DEFAULT_URL_DATE_FORMAT));
 		result.add(new BasicTextFieldSettingSpecifier("dateTimeColumn", null));
 		result.add(new BasicTextFieldSettingSpecifier("dateFormat", DEFAULT_DATE_FORMAT));
@@ -471,6 +522,32 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 	 */
 	public void setSourceIdColumn(String sourceIdColumn) {
 		this.sourceIdColumn = sourceIdColumn;
+	}
+
+	/**
+	 * Get the flag to include a source ID setting.
+	 * 
+	 * @return {@literal true} to include a source ID setting in
+	 *         {@link #getSettingSpecifiers()}
+	 */
+	public boolean isIncludeSourceIdSetting() {
+		return includeSourceIdSetting;
+	}
+
+	/**
+	 * Set the flag to include a source ID setting.
+	 * <p>
+	 * This can be disabled if this data source is proxied behind a
+	 * {@link net.solarnetwork.node.service.support.LocationDatumDataSource},
+	 * for example.
+	 * </p>
+	 * 
+	 * @param includeSourceIdSetting
+	 *        {@literal true} to include a source ID setting in
+	 *        {@link #getSettingSpecifiers()}
+	 */
+	public void setIncludeSourceIdSetting(boolean includeSourceIdSetting) {
+		this.includeSourceIdSetting = includeSourceIdSetting;
 	}
 
 	/**

@@ -46,6 +46,12 @@
 		<property name="sticky" value="true"/>
 	</bean>	
 	
+	<bean id="locationService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.LocationService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
@@ -103,7 +109,7 @@
 	
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
-			<property name="displayName" value="Csv device"/>
+			<property name="displayName" value="CSV Resource"/>
 			<property name="factoryUid" value="net.solarnetwork.node.datum.csv"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
@@ -126,11 +132,12 @@
 							<property name="messageSource" ref="jobMessageSource"/>
 							<property name="datumService" ref="datumService"/>
 							<property name="placeholderService" ref="placeholderService"/>
+							<property name="includeSourceIdSetting" value="true"/>
 						</bean>
 					</property>
 				</bean>
 			</argument>
-			<argument value="0 * * * * ?"/>
+			<argument value="0 * * * * *"/>
 			<property name="serviceProviderConfigurations">
 				<map>
 					<entry key="datumDataSource">
@@ -149,6 +156,72 @@
 					</entry>
 				</map>
 			</property>
+		</bean>
+	</osgix:managed-service-factory>
+
+	<!-- Location datum source -->
+
+	<bean id="locMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.datum.csv.CsvLocationDatumDataSource</value>
+				<value>net.solarnetwork.node.service.support.LocationDatumDataSource</value>
+			</list>
+		</property>
+		<property name="parentMessageSource" ref="messageSource"/>
+	</bean>
+	
+	<bean id="locJobMessageSource" class="net.solarnetwork.support.PrefixedMessageSource">
+		<property name="prefix" value="multiDatumDataSource."/>
+		<property name="delegate">
+			<bean class="net.solarnetwork.support.PrefixedMessageSource">
+				<property name="prefix" value="delegate."/>
+				<property name="delegate" ref="locMessageSource"/>
+			</bean>
+		</property>
+	</bean>
+
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="CSV Location Resource"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.csv.loc"/>
+			<property name="messageSource" ref="locMessageSource"/>
+		</bean>
+	</service>
+
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.csv.loc"
+			autowire-on-update="true" update-method="configurationChanged">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.job.ManagedJob</beans:value>
+		</osgix:interfaces>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob" 
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<argument>
+				<bean class="net.solarnetwork.node.job.DatumDataSourcePollManagedJob">
+					<property name="datumMetadataService" ref="datumMetadataService"/>
+					<property name="datumQueue" ref="datumQueue"/>
+					<property name="multiDatumDataSource">
+						<bean class="net.solarnetwork.node.service.support.LocationDatumDataSource">
+							<property name="messageSource" ref="locJobMessageSource"/>
+							<property name="delegate">
+								<bean class="net.solarnetwork.node.datum.csv.CsvDatumDataSource">
+									<argument value="net.solarnetwork.node.datum.csv.loc"/>
+									<property name="datumMetadataService" ref="datumMetadataService"/>
+									<property name="messageSource" ref="locMessageSource"/>
+									<property name="datumService" ref="datumService"/>
+									<property name="placeholderService" ref="placeholderService"/>
+									<property name="sourceId" value="csv-location"/>
+									<property name="includeSourceIdSetting" value="false"/>
+								</bean>
+							</property>
+							<property name="locationService" ref="locationService"/>
+							<property name="requireLocationService" value="true"/>
+							<property name="includeLocationTypeSetting" value="true"/>
+						</bean>
+					</property>
+				</bean>
+			</argument>
+			<argument value="0 * * * * *"/>
 		</bean>
 	</osgix:managed-service-factory>
 
