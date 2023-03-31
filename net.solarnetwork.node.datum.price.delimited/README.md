@@ -3,7 +3,7 @@
 This project provides SolarNode plugin that can collect price data from URLs returning a delimited
 data set, such as CSV.
 
-<img title="Modbus Device Datum Source settings" src="docs/solarnode-delimited-price-settings.png" width="602">
+<img title="Delimited Price Datum Source settings" src="docs/solarnode-delimited-price-settings.png" width="602">
 
 # Install
 
