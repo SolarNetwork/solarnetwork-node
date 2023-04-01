@@ -39,6 +39,33 @@ more complex example of `1,F-H,3` would include columns 1, 6, 7, 8, and 3. The o
 references are preserved when joining the columns together with a ` ` (space) character.
 
 
+# CSV Configurer
+
+This plugin also provides **CSV Resource CSV Configurer** and **CSV Location Resource CSV
+Configurer** components; these will appear on the main settings page. These component let you upload
+a CSV Configuration file to configure all CVS [Location] Resource components, without having to use
+the settings form.
+
+<img title="CSV Resource Configurer settings" src="docs/solarnode-csv-resource-csv-configurer.png" width="2213">
+
+## CSV Resource CSV Configuration Format
+
+The CSV Resource CSV Configurer uses the column structure detailed
+[below](#csv-resource-csv-column-definition), with each row representing an individual datum
+property to read from the CSV data. A header row is required. Comment lines are allowed, just start
+the line with a `#` character (i.e. the first cell value). The entire comment line will be ignored.
+
+Here's an example screen shot of a configuration in a spreadsheet application. It is for two devices:
+
+ 1. Resource `Carpark` with 3 datum properties: `occupied`, `evFree`, and `evChargePower`
+ 2. Resource `Airport` with 2 datum properties: `watts` and `wattHours`
+
+Spreadsheet applications generally allows you to export the sheet in the CSV format, which can
+then be loaded into SolarNode via the CSV Resource CSV Configurer.
+
+<img title="CSV Resource CSV Configuration example" src="docs/solarnode-csv-resource-csv-configuration-example-sheet.png" width="1597">
+
+
 # CSV Resource
 
 The CSV Resource component collects CSV data as a **node** datum stream. See [CSV Location

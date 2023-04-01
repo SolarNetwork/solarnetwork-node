@@ -41,12 +41,18 @@ public class CsvDatumDataSourceConfig {
 	/** The setting prefix for data source settings. */
 	public static final String JOB_SERVICE_SETTING_PREFIX = "jobService.multiDatumDataSource.";
 
+	/** The setting prefix for data source settings. */
+	public static final String LOCATION_JOB_SERVICE_SETTING_PREFIX = "jobService.multiDatumDataSource.delegate.";
+
+	private final boolean locationMode;
 	private String key;
 	private String schedule;
 	private String serviceName;
 	private String serviceGroup;
 	private String sourceId;
 	private String sourceIdColumn;
+	private String locationKey;
+	private String locationType;
 	private String url;
 	private String charsetName;
 	private Integer connectionTimeout;
@@ -55,16 +61,20 @@ public class CsvDatumDataSourceConfig {
 	private String dateFormat;
 	private String urlDateFormat;
 	private String timeZoneId;
-	private String dateTimeColumns;
+	private String dateTimeColumn;
 	private Long sampleCacheMs;
 
 	private final List<CsvPropertyConfig> propertyConfigs = new ArrayList<>(8);
 
 	/**
 	 * Constructor.
+	 * 
+	 * @param locationMode
+	 *        {@literal true} to work with location datum configuration
 	 */
-	public CsvDatumDataSourceConfig() {
+	public CsvDatumDataSourceConfig(boolean locationMode) {
 		super();
+		this.locationMode = locationMode;
 	}
 
 	/**
@@ -79,24 +89,30 @@ public class CsvDatumDataSourceConfig {
 		if ( schedule != null ) {
 			settings.add(new SettingValueBean(providerId, key, "schedule", schedule));
 		}
-		addSetting(settings, providerId, key, "serviceName", serviceName);
-		addSetting(settings, providerId, key, "serviceGroup", serviceGroup);
-		addSetting(settings, providerId, key, "sourceId", sourceId);
-		addSetting(settings, providerId, key, "sourceIdColumn", sourceIdColumn);
-		addSetting(settings, providerId, key, "url", url);
-		addSetting(settings, providerId, key, "charsetName", charsetName);
-		addSetting(settings, providerId, key, "connectionTimeout", connectionTimeout);
-		addSetting(settings, providerId, key, "skipRows", skipRows);
-		addSetting(settings, providerId, key, "keepRows", keepRows);
-		addSetting(settings, providerId, key, "dateFormat", dateFormat);
-		addSetting(settings, providerId, key, "urlDateFormat", urlDateFormat);
-		addSetting(settings, providerId, key, "timeZoneId", timeZoneId);
-		addSetting(settings, providerId, key, "dateTimeColumns", dateTimeColumns);
-		addSetting(settings, providerId, key, "sampleCacheMs", sampleCacheMs);
+		addSetting(locationMode, settings, providerId, key, "serviceName", serviceName);
+		addSetting(locationMode, settings, providerId, key, "serviceGroup", serviceGroup);
+		if ( locationMode ) {
+			addSetting(false, settings, providerId, key, "locationKey", locationKey);
+			addSetting(false, settings, providerId, key, "locationType", locationType);
+		} else {
+			addSetting(locationMode, settings, providerId, key, "sourceId", sourceId);
+			addSetting(locationMode, settings, providerId, key, "sourceIdColumn", sourceIdColumn);
+		}
+		addSetting(locationMode, settings, providerId, key, "url", url);
+		addSetting(locationMode, settings, providerId, key, "charsetName", charsetName);
+		addSetting(locationMode, settings, providerId, key, "connectionTimeout", connectionTimeout);
+		addSetting(locationMode, settings, providerId, key, "skipRows", skipRows);
+		addSetting(locationMode, settings, providerId, key, "keepRows", keepRows);
+		addSetting(locationMode, settings, providerId, key, "dateFormat", dateFormat);
+		addSetting(locationMode, settings, providerId, key, "urlDateFormat", urlDateFormat);
+		addSetting(locationMode, settings, providerId, key, "dateColumn", dateTimeColumn);
+		addSetting(locationMode, settings, providerId, key, "timeZoneId", timeZoneId);
+		addSetting(locationMode, settings, providerId, key, "dateTimeColumn", dateTimeColumn);
+		addSetting(locationMode, settings, providerId, key, "sampleCacheMs", sampleCacheMs);
 
 		int i = 0;
 		for ( CsvPropertyConfig propConfig : propertyConfigs ) {
-			settings.addAll(propConfig.toSettingValues(providerId, key, i++));
+			settings.addAll(propConfig.toSettingValues(locationMode, providerId, key, i++));
 		}
 		return settings;
 	}
@@ -113,7 +129,14 @@ public class CsvDatumDataSourceConfig {
 		if ( CsvPropertyConfig.populateFromSetting(this, setting) ) {
 			return true;
 		}
+		final String prefix = locationMode ? LOCATION_JOB_SERVICE_SETTING_PREFIX
+				: JOB_SERVICE_SETTING_PREFIX;
 		String type = setting.getType();
+		if ( type.startsWith(prefix) ) {
+			type = type.substring(prefix.length());
+		} else if ( locationMode && type.startsWith(JOB_SERVICE_SETTING_PREFIX) ) {
+			type = type.substring(JOB_SERVICE_SETTING_PREFIX.length());
+		}
 		String val = setting.getValue();
 		if ( val != null && !val.isEmpty() ) {
 			switch (type) {
@@ -128,6 +151,15 @@ public class CsvDatumDataSourceConfig {
 					break;
 				case "sourceIdColumn":
 					setSourceIdColumn(val);
+					break;
+				case "schedule":
+					setSchedule(val);
+					break;
+				case "locationKey":
+					setLocationKey(val);
+					break;
+				case "locationType":
+					setLocationType(val);
 					break;
 				case "url":
 					setUrl(val);
@@ -168,11 +200,14 @@ public class CsvDatumDataSourceConfig {
 				case "urlDateFormat":
 					setUrlDateFormat(val);
 					break;
+				case "dateColumn":
+					setDateTimeColumn(val);
+					break;
 				case "timeZoneId":
 					setTimeZoneId(val);
 					break;
-				case "dateTimeColumns":
-					setDateTimeColumns(val);
+				case "dateTimeColumn":
+					setDateTimeColumn(val);
 					break;
 				case "sampleCacheMs":
 					setSampleCacheMs(Long.valueOf(val));
@@ -180,22 +215,25 @@ public class CsvDatumDataSourceConfig {
 				default:
 					return false;
 			}
+			return true;
 		}
 		return false;
 	}
 
-	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
-			String key, Object val) {
+	private static void addSetting(boolean locationPrefix, List<SettingValueBean> settings,
+			String providerId, String instanceId, String key, Object val) {
 		if ( val == null ) {
 			return;
 		}
-		settings.add(new SettingValueBean(providerId, instanceId, key, val.toString()));
+		String fullKey = (locationPrefix ? LOCATION_JOB_SERVICE_SETTING_PREFIX
+				: JOB_SERVICE_SETTING_PREFIX).concat(key);
+		settings.add(new SettingValueBean(providerId, instanceId, fullKey, val.toString()));
 	}
 
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("BacnetControlConfig{");
+		builder.append("CsvDatumDataSourceConfig{");
 		if ( key != null ) {
 			builder.append("key=");
 			builder.append(key);
@@ -216,20 +254,31 @@ public class CsvDatumDataSourceConfig {
 			builder.append(schedule);
 			builder.append(", ");
 		}
-		if ( sourceId != null ) {
-			builder.append("sourceId=");
-			builder.append(sourceId);
+		if ( locationKey != null ) {
+			builder.append("locationKey=");
+			builder.append(locationKey);
 			builder.append(", ");
-		}
-		if ( sourceIdColumn != null ) {
-			builder.append("sourceIdColumn=");
-			builder.append(sourceIdColumn);
-			builder.append(", ");
-		}
-		if ( sourceIdColumn != null ) {
-			builder.append("sourceIdColumn=");
-			builder.append(sourceIdColumn);
-			builder.append(", ");
+			if ( locationType != null ) {
+				builder.append("locationType=");
+				builder.append(locationType);
+				builder.append(", ");
+			}
+		} else {
+			if ( sourceId != null ) {
+				builder.append("sourceId=");
+				builder.append(sourceId);
+				builder.append(", ");
+			}
+			if ( sourceIdColumn != null ) {
+				builder.append("sourceIdColumn=");
+				builder.append(sourceIdColumn);
+				builder.append(", ");
+			}
+			if ( sourceIdColumn != null ) {
+				builder.append("sourceIdColumn=");
+				builder.append(sourceIdColumn);
+				builder.append(", ");
+			}
 		}
 		if ( url != null ) {
 			builder.append("url=");
@@ -271,9 +320,9 @@ public class CsvDatumDataSourceConfig {
 			builder.append(timeZoneId);
 			builder.append(", ");
 		}
-		if ( dateTimeColumns != null ) {
-			builder.append("dateTimeColumns=");
-			builder.append(dateTimeColumns);
+		if ( dateTimeColumn != null ) {
+			builder.append("dateTimeColumn=");
+			builder.append(dateTimeColumn);
 			builder.append(", ");
 		}
 		if ( sampleCacheMs != null ) {
@@ -287,6 +336,15 @@ public class CsvDatumDataSourceConfig {
 		}
 		builder.append("}");
 		return builder.toString();
+	}
+
+	/**
+	 * Get the location mode flag.
+	 * 
+	 * @return the location mode flag
+	 */
+	public boolean isLocationMode() {
+		return locationMode;
 	}
 
 	/**
@@ -401,6 +459,44 @@ public class CsvDatumDataSourceConfig {
 	 */
 	public void setSourceIdColumn(String sourceIdColumn) {
 		this.sourceIdColumn = sourceIdColumn;
+	}
+
+	/**
+	 * Get the location key.
+	 * 
+	 * @return the location key
+	 */
+	public String getLocationKey() {
+		return locationKey;
+	}
+
+	/**
+	 * Set the location key.
+	 * 
+	 * @param locationKey
+	 *        the location key to set
+	 */
+	public void setLocationKey(String locationKey) {
+		this.locationKey = locationKey;
+	}
+
+	/**
+	 * Get the location type.
+	 * 
+	 * @return the location type
+	 */
+	public String getLocationType() {
+		return locationType;
+	}
+
+	/**
+	 * Set the location type.
+	 * 
+	 * @param locationType
+	 *        the location type to set
+	 */
+	public void setLocationType(String locationType) {
+		this.locationType = locationType;
 	}
 
 	/**
@@ -526,21 +622,21 @@ public class CsvDatumDataSourceConfig {
 	 * time stamp value.
 	 * </p>
 	 * 
-	 * @return the date time columns
+	 * @return the date time column
 	 */
-	public String getDateTimeColumns() {
-		return dateTimeColumns;
+	public String getDateTimeColumn() {
+		return dateTimeColumn;
 	}
 
 	/**
 	 * Set the comma-delimited set of {@literal 1}- or {@literal A}-based column
 	 * references to use as the time stamp value for datum.
 	 * 
-	 * @param dateTimeColumns
+	 * @param dateTimeColumn
 	 *        the column indexes to use for time stamps
 	 */
-	public void setDateTimeColumns(String dateTimeColumns) {
-		this.dateTimeColumns = dateTimeColumns;
+	public void setDateTimeColumn(String dateTimeColumn) {
+		this.dateTimeColumn = dateTimeColumn;
 	}
 
 	/**

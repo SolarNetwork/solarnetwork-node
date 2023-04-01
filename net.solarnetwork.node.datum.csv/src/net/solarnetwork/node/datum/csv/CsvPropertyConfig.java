@@ -24,6 +24,7 @@ package net.solarnetwork.node.datum.csv;
 
 import static java.lang.String.format;
 import static net.solarnetwork.node.datum.csv.CsvDatumDataSourceConfig.JOB_SERVICE_SETTING_PREFIX;
+import static net.solarnetwork.node.datum.csv.CsvDatumDataSourceConfig.LOCATION_JOB_SERVICE_SETTING_PREFIX;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -60,6 +61,18 @@ public class CsvPropertyConfig extends NumberDatumSamplePropertyConfig<String> {
 	 */
 	public static final Pattern PROP_SETTING_PATTERN = Pattern.compile(
 			Pattern.quote(JOB_SERVICE_SETTING_PREFIX.concat("propConfigs[")).concat("(\\d+)\\]\\.(.*)"));
+
+	/**
+	 * A setting type pattern for a property configuration element.
+	 * 
+	 * <p>
+	 * The pattern has two capture groups: the property configuration index and
+	 * the property setting name.
+	 * </p>
+	 */
+	public static final Pattern LOCATION_PROP_SETTING_PATTERN = Pattern
+			.compile(Pattern.quote(LOCATION_JOB_SERVICE_SETTING_PREFIX.concat("propConfigs["))
+					.concat("(\\d+)\\]\\.(.*)"));
 
 	/**
 	 * Constructor.
@@ -131,7 +144,7 @@ public class CsvPropertyConfig extends NumberDatumSamplePropertyConfig<String> {
 	 * 
 	 * <p>
 	 * This only verifies that the configuration is complete, not that actual
-	 * BACnet device properties exist for the configured values.
+	 * component properties exist for the configured values.
 	 * </p>
 	 * 
 	 * @return {@literal true} if this instance represents a valid configuration
@@ -161,7 +174,8 @@ public class CsvPropertyConfig extends NumberDatumSamplePropertyConfig<String> {
 	 *         configuration value
 	 */
 	public static boolean populateFromSetting(CsvDatumDataSourceConfig config, Setting setting) {
-		Matcher m = PROP_SETTING_PATTERN.matcher(setting.getType());
+		Matcher m = (config.isLocationMode() ? LOCATION_PROP_SETTING_PATTERN : PROP_SETTING_PATTERN)
+				.matcher(setting.getType());
 		if ( !m.matches() ) {
 			return false;
 		}
@@ -203,6 +217,8 @@ public class CsvPropertyConfig extends NumberDatumSamplePropertyConfig<String> {
 	/**
 	 * Generate a list of setting values.
 	 * 
+	 * @param locationMode
+	 *        {@literal true} to generate location datum source settings
 	 * @param providerId
 	 *        the setting provider ID
 	 * @param instanceId
@@ -211,26 +227,27 @@ public class CsvPropertyConfig extends NumberDatumSamplePropertyConfig<String> {
 	 *        the property index
 	 * @return the settings
 	 */
-	public List<SettingValueBean> toSettingValues(String providerId, String instanceId, int i) {
+	public List<SettingValueBean> toSettingValues(boolean locationMode, String providerId,
+			String instanceId, int i) {
 		List<SettingValueBean> settings = new ArrayList<>(8);
-		addSetting(settings, providerId, instanceId, i, "column", getColumn());
-		addSetting(settings, providerId, instanceId, i, "propertyKey", getPropertyKey());
-		addSetting(settings, providerId, instanceId, i, "propertyTypeKey", getPropertyTypeKey());
-		addSetting(settings, providerId, instanceId, i, "slope", getSlope());
-		addSetting(settings, providerId, instanceId, i, "intercept", getIntercept());
-		addSetting(settings, providerId, instanceId, i, "decimalScale", getDecimalScale());
+		addSetting(locationMode, settings, providerId, instanceId, i, "column", getColumn());
+		addSetting(locationMode, settings, providerId, instanceId, i, "propertyKey", getPropertyKey());
+		addSetting(locationMode, settings, providerId, instanceId, i, "propertyTypeKey",
+				getPropertyTypeKey());
+		addSetting(locationMode, settings, providerId, instanceId, i, "slope", getSlope());
+		addSetting(locationMode, settings, providerId, instanceId, i, "intercept", getIntercept());
+		addSetting(locationMode, settings, providerId, instanceId, i, "decimalScale", getDecimalScale());
 		return settings;
 	}
 
-	private static void addSetting(List<SettingValueBean> settings, String providerId, String instanceId,
-			int i, String key, Object val) {
+	private static void addSetting(boolean locationMode, List<SettingValueBean> settings,
+			String providerId, String instanceId, int i, String key, Object val) {
 		if ( val == null ) {
 			return;
 		}
-		settings.add(new SettingValueBean(providerId, instanceId,
-				CsvDatumDataSourceConfig.JOB_SERVICE_SETTING_PREFIX
-						.concat(format("propConfigs[%d].%s", i, key)),
-				val.toString()));
+		String fullKey = (locationMode ? LOCATION_JOB_SERVICE_SETTING_PREFIX
+				: JOB_SERVICE_SETTING_PREFIX).concat(format("propConfigs[%d].%s", i, key));
+		settings.add(new SettingValueBean(providerId, instanceId, fullKey, val.toString()));
 	}
 
 	@Override

@@ -84,20 +84,21 @@
 
 	<!-- Published Services -->
 
-	<!--  TODO
 	<service>
 		<interfaces>
 			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 			<value>net.solarnetwork.node.settings.SettingResourceHandler</value>
 		</interfaces>
-		<bean class="net.solarnetwork.node.datum.csv.CsvCsvConfigurer">
+		<bean class="net.solarnetwork.node.datum.csv.CsvDatumDataSourceCsvConfigurer">
+			<argument value="false"/>
 			<argument ref="settingsService"/>
 			<argument ref="identityService"/>
+			<argument value="net.solarnetwork.node.datum.csv"/>
 			<property name="messageSource">
 				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
 					<property name="basenames">
 						<list>
-							<value>net.solarnetwork.node.datum.csv.CsvCsvConfigurer</value>
+							<value>net.solarnetwork.node.datum.csv.CsvDatumDataSourceCsvConfigurer</value>
 							<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 						</list>
 					</property>
@@ -105,7 +106,6 @@
 			</property>
 		</bean>
 	</service>
-	-->
 	
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
@@ -161,6 +161,30 @@
 
 	<!-- Location datum source -->
 
+	<service>
+		<interfaces>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
+			<value>net.solarnetwork.node.settings.SettingResourceHandler</value>
+		</interfaces>
+		<bean class="net.solarnetwork.node.datum.csv.CsvDatumDataSourceCsvConfigurer">
+			<argument value="true"/>
+			<argument ref="settingsService"/>
+			<argument ref="identityService"/>
+			<argument value="net.solarnetwork.node.datum.csv.loc"/>
+			<property name="messageSource">
+				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+					<property name="basenames">
+						<list>
+							<value>net.solarnetwork.node.datum.csv.CsvLocationDatumDataSourceCsvConfigurer</value>
+							<value>net.solarnetwork.node.datum.csv.CsvDatumDataSourceCsvConfigurer</value>
+							<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+						</list>
+					</property>
+				</bean>
+			</property>
+		</bean>
+	</service>
+	
 	<bean id="locMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
