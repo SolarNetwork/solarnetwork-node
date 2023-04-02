@@ -3,7 +3,7 @@
 This project provides SolarNode plugin that can collect data from URLs returning
 comma-separated-value (CSV) data, either as a node or location datum stream.
 
-<img title="CSV Resource Datum Source settings" src="docs/solarnode-csv-settings.png" width="604">
+<img title="CSV Resource Datum Source settings" src="docs/solarnode-csv-resource-settings.png" width="604">
 
 # Install
 
@@ -167,7 +167,7 @@ You must configure settings for each datum property you want to collect from eac
 configure as many property settings as you like, using the <kbd>+</kbd> and <kbd>-</kbd> buttons to
 add/remove property configurations.
 
-<img title="CVS Resource Property settings" src="docs/solarnode-csv-property-settings.png" width="547">
+<img title="CVS Resource Property settings" src="docs/solarnode-csv-resource-property-settings.png" width="547">
 
 Each CSV Resource property configuration contains the following settings:
 
@@ -186,7 +186,7 @@ Each CSV Resource property configuration contains the following settings:
 The CSV Location Resource component collects CSV data as a **location** datum stream. See [CSV
 Resource](#csv-resource) if you need to collect a **node** datum stream.
 
-<img title="CSV Location Resource Datum Source settings" src="docs/solarnode-csv-location-settings.png" width="626">
+<img title="CSV Location Resource Datum Source settings" src="docs/solarnode-csv-location-resource-settings.png" width="626">
 
 ## CSV Location Resource Configurer
 
