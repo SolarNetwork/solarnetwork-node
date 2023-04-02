@@ -108,6 +108,8 @@ public class CsvDatumDataSourceConfigCsvWriter {
 			row[CsvLocationDatumDataSourceCsvColumn.LOCATION_TYPE.getCode()] = config.getLocationType();
 			row[CsvLocationDatumDataSourceCsvColumn.SCHEDULE.getCode()] = config.getSchedule();
 			row[CsvLocationDatumDataSourceCsvColumn.URL.getCode()] = config.getUrl();
+			row[CsvLocationDatumDataSourceCsvColumn.HTTP_CUSTOMIZER.getCode()] = config
+					.getHttpCustomizer();
 			row[CsvLocationDatumDataSourceCsvColumn.ENCODING.getCode()] = config.getCharsetName();
 			row[CsvLocationDatumDataSourceCsvColumn.TIMEOUT
 					.getCode()] = config.getConnectionTimeout() != null
@@ -136,6 +138,7 @@ public class CsvDatumDataSourceConfigCsvWriter {
 			row[CsvDatumDataSourceCsvColumn.SOURCE_ID_COLUMN.getCode()] = config.getSourceIdColumn();
 			row[CsvDatumDataSourceCsvColumn.SCHEDULE.getCode()] = config.getSchedule();
 			row[CsvDatumDataSourceCsvColumn.URL.getCode()] = config.getUrl();
+			row[CsvDatumDataSourceCsvColumn.HTTP_CUSTOMIZER.getCode()] = config.getHttpCustomizer();
 			row[CsvDatumDataSourceCsvColumn.ENCODING.getCode()] = config.getCharsetName();
 			row[CsvDatumDataSourceCsvColumn.TIMEOUT.getCode()] = config.getConnectionTimeout() != null
 					? config.getConnectionTimeout().toString()

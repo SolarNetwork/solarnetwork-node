@@ -136,6 +136,8 @@ public class CsvDatumDataSourceConfigCsvParser {
 		config.setSchedule(
 				parseStringValue(row, rowLen, rowNum, CsvDatumDataSourceCsvColumn.SCHEDULE.getCode()));
 		config.setUrl(parseStringValue(row, rowLen, rowNum, CsvDatumDataSourceCsvColumn.URL.getCode()));
+		config.setHttpCustomizer(parseStringValue(row, rowLen, rowNum,
+				CsvDatumDataSourceCsvColumn.HTTP_CUSTOMIZER.getCode()));
 		config.setCharsetName(
 				parseStringValue(row, rowLen, rowNum, CsvDatumDataSourceCsvColumn.ENCODING.getCode()));
 		config.setConnectionTimeout(
@@ -170,6 +172,8 @@ public class CsvDatumDataSourceConfigCsvParser {
 				CsvLocationDatumDataSourceCsvColumn.SCHEDULE.getCode()));
 		config.setUrl(parseStringValue(row, rowLen, rowNum,
 				CsvLocationDatumDataSourceCsvColumn.URL.getCode()));
+		config.setHttpCustomizer(parseStringValue(row, rowLen, rowNum,
+				CsvLocationDatumDataSourceCsvColumn.HTTP_CUSTOMIZER.getCode()));
 		config.setCharsetName(parseStringValue(row, rowLen, rowNum,
 				CsvLocationDatumDataSourceCsvColumn.ENCODING.getCode()));
 		config.setConnectionTimeout(parseIntegerValue(row, rowLen, rowNum,

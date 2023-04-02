@@ -54,6 +54,7 @@ public class CsvDatumDataSourceConfig {
 	private String locationKey;
 	private String locationType;
 	private String url;
+	private String httpCustomizer;
 	private String charsetName;
 	private Integer connectionTimeout;
 	private Integer skipRows;
@@ -99,6 +100,7 @@ public class CsvDatumDataSourceConfig {
 			addSetting(locationMode, settings, providerId, key, "sourceIdColumn", sourceIdColumn);
 		}
 		addSetting(locationMode, settings, providerId, key, "url", url);
+		addSetting(locationMode, settings, providerId, key, "httpRequestCustomizerUid", httpCustomizer);
 		addSetting(locationMode, settings, providerId, key, "charsetName", charsetName);
 		addSetting(locationMode, settings, providerId, key, "connectionTimeout", connectionTimeout);
 		addSetting(locationMode, settings, providerId, key, "skipRows", skipRows);
@@ -163,6 +165,9 @@ public class CsvDatumDataSourceConfig {
 					break;
 				case "url":
 					setUrl(val);
+					break;
+				case "httpCustomizer":
+					setHttpCustomizer(val);
 					break;
 				case "charsetName":
 					setCharsetName(val);
@@ -283,6 +288,11 @@ public class CsvDatumDataSourceConfig {
 		if ( url != null ) {
 			builder.append("url=");
 			builder.append(url);
+			builder.append(", ");
+		}
+		if ( httpCustomizer != null ) {
+			builder.append("httpCustomizer=");
+			builder.append(httpCustomizer);
 			builder.append(", ");
 		}
 		if ( charsetName != null ) {
@@ -526,6 +536,27 @@ public class CsvDatumDataSourceConfig {
 	 */
 	public void setUrl(String url) {
 		this.url = url;
+	}
+
+	/**
+	 * Get the {@link net.solarnetwork.web.service.HttpRequestCustomizerService}
+	 * UID.
+	 * 
+	 * @return the UID
+	 */
+	public String getHttpCustomizer() {
+		return httpCustomizer;
+	}
+
+	/**
+	 * Set the {@link net.solarnetwork.web.service.HttpRequestCustomizerService}
+	 * UID.
+	 * 
+	 * @param httpCustomizer
+	 *        the UID to set
+	 */
+	public void setHttpCustomizer(String httpCustomizer) {
+		this.httpCustomizer = httpCustomizer;
 	}
 
 	/**

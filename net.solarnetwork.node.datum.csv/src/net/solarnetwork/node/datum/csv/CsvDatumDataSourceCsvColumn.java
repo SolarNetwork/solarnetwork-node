@@ -56,50 +56,53 @@ public enum CsvDatumDataSourceCsvColumn implements CodedValue {
 	/** The URL template. */
 	URL(6, "URL"),
 
+	/** The HTTP customizer service UID. */
+	HTTP_CUSTOMIZER(7, "Customizer"),
+
 	/** The character encoding. */
-	ENCODING(7, "Encoding"),
+	ENCODING(8, "Encoding"),
 
 	/** The network timeout. */
-	TIMEOUT(8, "Timeout"),
+	TIMEOUT(9, "Timeout"),
 
 	/** The number of rows to skip. */
-	SKIP_ROWS(9, "Skip Rows"),
+	SKIP_ROWS(10, "Skip Rows"),
 
 	/** The number of rows to keep. */
-	KEEP_ROWS(10, "Keep Rows"),
+	KEEP_ROWS(11, "Keep Rows"),
 
 	/** The URL date format. */
-	URL_DATE_FORMAT(11, "URL Date Format"),
+	URL_DATE_FORMAT(12, "URL Date Format"),
 
 	/** The datum timestamp column. */
-	DATE_COLUMN(12, "Date Column"),
+	DATE_COLUMN(13, "Date Column"),
 
 	/** The CSV date format. */
-	DATE_FORMAT(13, "Date Format"),
+	DATE_FORMAT(14, "Date Format"),
 
 	/** The time zone to use when parsing/formatting dates. */
-	TIME_ZONE(14, "Time Zone"),
+	TIME_ZONE(15, "Time Zone"),
 
 	/** The sample cache time. */
-	SAMPLE_CACHE(15, "Sample Cache"),
+	SAMPLE_CACHE(16, "Sample Cache"),
 
 	/** The CSV column. */
-	COLUMN(16, "Column"),
+	COLUMN(17, "Column"),
 
 	/** The datum property name. */
-	PROP_NAME(17, "Property"),
+	PROP_NAME(18, "Property"),
 
 	/** The datum property type. */
-	PROP_TYPE(18, "Property Type"),
+	PROP_TYPE(19, "Property Type"),
 
 	/** A property value multiplier. */
-	MULTIPLIER(19, "Multiplier"),
+	MULTIPLIER(20, "Multiplier"),
 
 	/** A property value offset. */
-	OFFSET(20, "Offset"),
+	OFFSET(21, "Offset"),
 
 	/** A property value decimal scale. */
-	DECIMAL_SCALE(21, "Decimal Scale"),
+	DECIMAL_SCALE(22, "Decimal Scale"),
 
 	;
 
@@ -116,8 +119,8 @@ public enum CsvDatumDataSourceCsvColumn implements CodedValue {
 	 */
 	public static final Set<CsvDatumDataSourceCsvColumn> COMPONENT_WIDE_COLUMNS = Collections
 			.unmodifiableSet(EnumSet.of(INSTANCE_ID, SERVICE_NAME, SERVICE_GROUP, SOURCE_ID,
-					SOURCE_ID_COLUMN, SCHEDULE, URL, ENCODING, TIMEOUT, SKIP_ROWS, KEEP_ROWS,
-					URL_DATE_FORMAT, DATE_COLUMN, DATE_FORMAT, TIME_ZONE, SAMPLE_CACHE));
+					SOURCE_ID_COLUMN, SCHEDULE, URL, HTTP_CUSTOMIZER, ENCODING, TIMEOUT, SKIP_ROWS,
+					KEEP_ROWS, URL_DATE_FORMAT, DATE_COLUMN, DATE_FORMAT, TIME_ZONE, SAMPLE_CACHE));
 
 	@Override
 	public int getCode() {
