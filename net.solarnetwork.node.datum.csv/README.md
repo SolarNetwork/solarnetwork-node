@@ -44,7 +44,7 @@ references are preserved when joining the columns together with a ` ` (space) ch
 This plugin also provides [**CSV Resource CSV Configurer**](#csv-resource-configurer) and [**CSV
 Location Resource CSV Configurer**](#csv-location-resource-configurer) components; these will appear
 on the main settings page. These components let you upload a CSV Configuration file to configure all
-CVS [Location] Resource components, without having to use the settings form.
+CSV [Location] Resource components, without having to use the settings form.
 
 
 # CSV Resource
@@ -167,7 +167,7 @@ You must configure settings for each datum property you want to collect from eac
 configure as many property settings as you like, using the <kbd>+</kbd> and <kbd>-</kbd> buttons to
 add/remove property configurations.
 
-<img title="CVS Resource Property settings" src="docs/solarnode-csv-resource-property-settings.png" width="547">
+<img title="CSV Resource Property settings" src="docs/solarnode-csv-resource-property-settings.png" width="547">
 
 Each CSV Resource property configuration contains the following settings:
 
