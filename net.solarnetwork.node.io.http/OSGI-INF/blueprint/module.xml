@@ -16,6 +16,15 @@
 	
 	<reference-list id="httpReqCustomizers" interface="net.solarnetwork.web.service.HttpRequestCustomizerService" availability="optional"/>
 	
+	<service interface="org.springframework.http.client.ClientHttpRequestFactory">
+		<service-properties>
+			<entry key="function" value="node"/>
+		</service-properties>
+		<bean class="org.springframework.http.client.HttpComponentsClientHttpRequestFactory">
+			<property name="readTimeout" value="60000"/>
+		</bean>
+	</service>
+	
 	<!-- HTTP Request Customizer Chain -->
 	
 	<bean id="httpReqCustChainMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
