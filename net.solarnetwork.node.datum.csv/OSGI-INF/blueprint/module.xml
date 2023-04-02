@@ -52,6 +52,12 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="httpRequestFactory" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="org.springframework.http.client.ClientHttpRequestFactory"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
@@ -133,6 +139,15 @@
 							<property name="datumService" ref="datumService"/>
 							<property name="placeholderService" ref="placeholderService"/>
 							<property name="includeSourceIdSetting" value="true"/>
+							<property name="httpRequestFactory" ref="httpRequestFactory"/>
+							<property name="httpRequestCustomizer">
+								<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+									<argument ref="bundleContext"/>
+									<property name="serviceClassName" value="net.solarnetwork.web.service.HttpRequestCustomizerService"/>
+									<property name="sticky" value="true"/>
+									<property name="requirePropertyFilter" value="true"/>
+								</bean>
+							</property>
 						</bean>
 					</property>
 				</bean>
@@ -236,6 +251,15 @@
 									<property name="placeholderService" ref="placeholderService"/>
 									<property name="sourceId" value="csv-location"/>
 									<property name="includeSourceIdSetting" value="false"/>
+									<property name="httpRequestFactory" ref="httpRequestFactory"/>
+									<property name="httpRequestCustomizer">
+										<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+											<argument ref="bundleContext"/>
+											<property name="serviceClassName" value="net.solarnetwork.web.service.HttpRequestCustomizerService"/>
+											<property name="sticky" value="true"/>
+											<property name="requirePropertyFilter" value="true"/>
+										</bean>
+									</property>
 								</bean>
 							</property>
 							<property name="locationService" ref="locationService"/>

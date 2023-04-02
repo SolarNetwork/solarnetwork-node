@@ -82,6 +82,7 @@ Each CSV Resource configuration contains the following settings:
 | Service Group      | A group name to associate this data source with. |
 | Source ID          | The SolarNetwork unique source ID to assign to datum collected from this device. |
 | URL                | The URL of the CSV resource to fetch. The following parameters are allowed: `{date}` the current date, formatted using the **URL Date Format** setting. |
+| HTTP Customizer    | The **Service Name** of a HTTP Request Customizer service to apply to HTTP requests. This can be used to supply authentication credentials. |
 | Character Encoding | The text encoding of the CSV resource, as a [](http://www.ietf.org/rfc/rfc2278.txt) value. For example `UTF-8`, `US-ASCII`, `ISO-LATIN-1`. |
 | Timeout            | A network timeout, in milliseconds. |
 | Skip Rows          | The number of CSV rows to skip. This is useful for skipping a "header" row. If negative, then return rows from the end of the data. For example `-1` would return the last row. |

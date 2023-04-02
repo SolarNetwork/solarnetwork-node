@@ -22,11 +22,14 @@
 
 package net.solarnetwork.node.datum.csv;
 
+import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.util.NumberUtils.narrow;
 import static net.solarnetwork.util.StringUtils.numberValue;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -37,11 +40,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.client.ClientHttpRequest;
+import org.springframework.http.client.ClientHttpRequestFactory;
 import org.supercsv.io.CsvListReader;
 import org.supercsv.io.ICsvListReader;
 import org.supercsv.prefs.CsvPreference;
@@ -51,7 +58,10 @@ import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.MultiDatumDataSource;
+import net.solarnetwork.node.service.PlaceholderService;
 import net.solarnetwork.node.service.support.DatumDataSourceSupport;
+import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.OptionalService.OptionalFilterableService;
 import net.solarnetwork.service.RemoteServiceException;
 import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.SettingSpecifier;
@@ -65,6 +75,7 @@ import net.solarnetwork.util.CachedResult;
 import net.solarnetwork.util.LimitedSizeDeque;
 import net.solarnetwork.util.ObjectUtils;
 import net.solarnetwork.util.StringUtils;
+import net.solarnetwork.web.service.HttpRequestCustomizerService;
 
 /**
  * Read data from a CSV-formatted resource and generate one or more datum.
@@ -116,6 +127,8 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 	private String dateTimeColumn;
 	private long sampleCacheMs = DEFAULT_SAMPLE_CACHE_MS;
 	private CsvPropertyConfig[] propConfigs;
+	private OptionalService<ClientHttpRequestFactory> httpRequestFactory;
+	private OptionalFilterableService<HttpRequestCustomizerService> httpRequestCustomizer;
 
 	private DateTimeFormatter dateFormatter;
 	private DateTimeFormatter urlDateFormatter;
@@ -373,6 +386,28 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 		return false;
 	}
 
+	private InputStream fetchCsvResource(final String theUrl) throws IOException {
+		ClientHttpRequestFactory reqFactory = service(httpRequestFactory);
+		if ( reqFactory == null || !theUrl.startsWith("http") ) {
+			return UrlUtils.getInputStreamFromURLConnection(
+					UrlUtils.getURLConnection(theUrl, "GET", "text/*", connectionTimeout, null));
+		}
+		ClientHttpRequest req = reqFactory.createRequest(URI.create(theUrl), HttpMethod.GET);
+		HttpRequestCustomizerService cust = service(httpRequestCustomizer);
+		if ( cust != null ) {
+			PlaceholderService phs = service(getPlaceholderService());
+			Map<String, Object> parameters;
+			if ( phs != null ) {
+				parameters = new HashMap<>();
+				phs.copyPlaceholders(parameters);
+			} else {
+				parameters = Collections.emptyMap();
+			}
+			cust.customize(req, null, parameters);
+		}
+		return req.execute().getBody();
+	}
+
 	private Collection<List<String>> readDataRows(final String theUrl, final Charset charset,
 			final int skipRows, final int keepRows) {
 		if ( log.isDebugEnabled() ) {
@@ -381,10 +416,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 		Collection<List<String>> rowBuffer = null;
 
-		try (Reader in = new InputStreamReader(
-				UrlUtils.getInputStreamFromURLConnection(
-						UrlUtils.getURLConnection(theUrl, "GET", "text/*", connectionTimeout, null)),
-				charset);
+		try (Reader in = new InputStreamReader(fetchCsvResource(theUrl), charset);
 				ICsvListReader csv = new CsvListReader(in, CsvPreference.STANDARD_PREFERENCE)) {
 
 			int skipCount = skipRows;
@@ -447,6 +479,7 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 			result.add(new BasicTextFieldSettingSpecifier("sourceId", null));
 		}
 		result.add(new BasicTextFieldSettingSpecifier("url", null));
+		result.add(new BasicTextFieldSettingSpecifier("httpRequestCustomizerUid", null));
 		result.add(new BasicTextFieldSettingSpecifier("charsetName", StandardCharsets.UTF_8.name()));
 		result.add(new BasicTextFieldSettingSpecifier("connectionTimeout",
 				String.valueOf(DEFAULT_CONNECTION_TIMEOUT)));
@@ -497,6 +530,11 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the source ID to use for returned datum.
+	 * 
+	 * <p>
+	 * If {@link #getPlaceholderService()} is configured then placeholder values
+	 * will be resolved in the configured {@code sourceId}.
+	 * </p>
 	 * 
 	 * @param sourceId
 	 *        the source ID to use
@@ -842,6 +880,75 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 	public void setPropConfigsCount(int count) {
 		this.propConfigs = ArrayUtils.arrayWithLength(this.propConfigs, count, CsvPropertyConfig.class,
 				null);
+	}
+
+	/**
+	 * Get the optional HTTP request factory.
+	 * 
+	 * @return the factory
+	 */
+	public OptionalService<ClientHttpRequestFactory> getHttpRequestFactory() {
+		return httpRequestFactory;
+	}
+
+	/**
+	 * Set the optional HTTP request factory.
+	 * 
+	 * @param httpRequestFactory
+	 *        the factory to set
+	 */
+	public void setHttpRequestFactory(OptionalService<ClientHttpRequestFactory> httpRequestFactory) {
+		this.httpRequestFactory = httpRequestFactory;
+	}
+
+	/**
+	 * An optional HTTP request customizer service.
+	 * 
+	 * @return the service
+	 */
+	public OptionalFilterableService<HttpRequestCustomizerService> getHttpRequestCustomizer() {
+		return httpRequestCustomizer;
+	}
+
+	/**
+	 * An optional HTTP request customizer service.
+	 * 
+	 * <p>
+	 * If a {@link #getPlaceholderService()} is configured, all placeholder
+	 * values will be provided to the customizer as parameters to the
+	 * {@link HttpRequestCustomizerService#customize(org.springframework.http.HttpRequest, net.solarnetwork.util.ByteList, Map)}
+	 * method.
+	 * </p>
+	 * 
+	 * @param httpRequestCustomizer
+	 *        the service to set
+	 */
+	public void setHttpRequestCustomizer(
+			OptionalFilterableService<HttpRequestCustomizerService> httpRequestCustomizer) {
+		this.httpRequestCustomizer = httpRequestCustomizer;
+	}
+
+	/**
+	 * Get the UID of the {@code HttpRequestCustomizerService} service to use.
+	 * 
+	 * @return the service UID
+	 */
+	public String getHttpRequestCustomizerUid() {
+		final OptionalFilterableService<HttpRequestCustomizerService> s = getHttpRequestCustomizer();
+		return (s != null ? s.getPropertyValue(UID_PROPERTY) : null);
+	}
+
+	/**
+	 * Set the UID of the {@code HttpRequestCustomizerService} service to use.
+	 * 
+	 * @param uid
+	 *        the service UID to set
+	 */
+	public void setHttpRequestCustomizerUid(String uid) {
+		final OptionalFilterableService<HttpRequestCustomizerService> s = getHttpRequestCustomizer();
+		if ( s != null ) {
+			s.setPropertyFilter(UID_PROPERTY, uid);
+		}
 	}
 
 }
