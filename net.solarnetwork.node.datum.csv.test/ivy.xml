@@ -13,6 +13,8 @@
 		<dependency org="javax.servlet" name="javax.servlet-api" rev="3.1.0" />
 		<dependency org="org.mortbay.jetty" name="jetty" rev="6.1.26"/>
 		<dependency org="org.mortbay.jetty" name="jetty-util" rev="6.1.26"/>
+		<dependency org="org.apache.httpcomponents" name="httpclient" rev="4.5.14"/>
+		
 		<exclude module="commons-logging"/>
 		<exclude module="com.springsource.slf4j.api"/>
     </dependencies>
