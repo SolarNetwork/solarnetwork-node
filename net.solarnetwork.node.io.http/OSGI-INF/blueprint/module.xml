@@ -16,6 +16,12 @@
 	
 	<reference-list id="httpReqCustomizers" interface="net.solarnetwork.web.service.HttpRequestCustomizerService" availability="optional"/>
 	
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
 	<service interface="org.springframework.http.client.ClientHttpRequestFactory">
 		<service-properties>
 			<entry key="function" value="node"/>
@@ -65,6 +71,7 @@
 	<bean id="httpReqCustBasicAuthMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
+				<value>net.solarnetwork.node.io.http.req.BasicAuthHttpRequestCustomizerService</value>
 				<value>net.solarnetwork.web.service.support.BasicAuthHttpRequestCustomizerService</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
@@ -88,9 +95,10 @@
 		<osgix:service-properties>
 			<beans:entry key="settingPid" value="net.s10k.http.customizer.auth.basic"/>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.web.service.support.BasicAuthHttpRequestCustomizerService" 
+		<bean class="net.solarnetwork.node.io.http.req.BasicAuthHttpRequestCustomizerService" 
 				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 			<property name="messageSource" ref="httpReqCustBasicAuthMessageSource"/>
+			<property name="placeholderService" ref="placeholderService"/>
 		</bean>
 	</osgix:managed-service-factory>
 	
