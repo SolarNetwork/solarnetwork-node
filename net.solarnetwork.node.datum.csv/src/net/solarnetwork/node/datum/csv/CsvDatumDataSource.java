@@ -71,6 +71,7 @@ import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.ByteList;
 import net.solarnetwork.util.CachedResult;
 import net.solarnetwork.util.LimitedSizeDeque;
 import net.solarnetwork.util.ObjectUtils;
@@ -403,7 +404,8 @@ public class CsvDatumDataSource extends DatumDataSourceSupport
 			} else {
 				parameters = Collections.emptyMap();
 			}
-			cust.customize(req, null, parameters);
+			ByteList body = new ByteList();
+			req = cust.apply(reqFactory, req, body, parameters);
 		}
 		return req.execute().getBody();
 	}

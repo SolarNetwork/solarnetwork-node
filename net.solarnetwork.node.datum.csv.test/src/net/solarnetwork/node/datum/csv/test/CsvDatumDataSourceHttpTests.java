@@ -32,12 +32,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -45,14 +48,21 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpRequest;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.client.support.HttpRequestWrapper;
+import org.springframework.web.util.UriComponentsBuilder;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.datum.csv.CsvDatumDataSource;
 import net.solarnetwork.node.datum.csv.CsvPropertyConfig;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.PlaceholderService;
 import net.solarnetwork.service.StaticOptionalService;
+import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.test.Assertion;
+import net.solarnetwork.util.ByteList;
+import net.solarnetwork.web.service.HttpRequestCustomizerService;
+import net.solarnetwork.web.service.support.AbstractHttpRequestCustomizerService;
 import net.solarnetwork.web.service.support.BasicAuthHttpRequestCustomizerService;
 
 /**
@@ -351,6 +361,103 @@ public class CsvDatumDataSourceHttpTests extends AbstractHttpClientTests {
 				is(equalTo(formatter.parse("23/03/2023 10:54:48", Instant::from))));
 
 		verify(placeholderService);
+	}
+
+	@Test
+	public void httpRequestCustomizer_wrappedRequest() {
+		// GIVEN
+		dataSource.setUrl(getHttpServerBaseUrl() + "/test-01.csv?date={date}");
+		dataSource.setSkipRows(1);
+		dataSource.setKeepRows(1);
+		dataSource.setSourceId(TEST_SOURCE_ID);
+		dataSource.setDateTimeColumn("G");
+		dataSource.setUrlDateFormat("yyyy-MM-dd");
+		dataSource.setHttpRequestFactory(
+				new StaticOptionalService<>(new HttpComponentsClientHttpRequestFactory()));
+
+		HttpRequestCustomizerService cust = new AbstractHttpRequestCustomizerService() {
+
+			@Override
+			public void configurationChanged(Map<String, Object> properties) {
+				// nothing
+			}
+
+			@Override
+			public String getSettingUid() {
+				return "test";
+			}
+
+			@Override
+			public List<SettingSpecifier> getSettingSpecifiers() {
+				return Collections.emptyList();
+			}
+
+			@Override
+			public HttpRequest customize(HttpRequest request, ByteList body, Map<String, ?> parameters) {
+				return new HttpRequestWrapper(request) {
+
+					@Override
+					public URI getURI() {
+						// change URI
+						// @formatter:off
+						return UriComponentsBuilder.fromUri(super.getURI())
+								.replacePath("/test-02.csv")
+								.queryParam("foo", "bar")
+								.build().encode().toUri();
+						// @formatter:on
+					}
+
+				};
+			}
+		};
+		dataSource.setHttpRequestCustomizer(new StaticOptionalService<>(cust));
+
+		// @formatter:off
+		dataSource.setPropConfigs(new CsvPropertyConfig[] {
+				new CsvPropertyConfig("stationId", DatumSamplesType.Status, "A"),
+				new CsvPropertyConfig("price", DatumSamplesType.Instantaneous, "D"),
+		});
+		// @formatter:on
+		dataSource.configurationChanged(null);
+
+		final String urlQueryDate = DateTimeFormatter.ofPattern(dataSource.getUrlDateFormat())
+				.withZone(ZoneId.systemDefault()).format(Instant.now());
+		TestHttpHandler handler = new TestHttpHandler() {
+
+			@Override
+			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+					throws Exception {
+				assertThat("Request method", request.getMethod(), is(equalTo("GET")));
+				assertThat("Request path", request.getPathInfo(), is(equalTo("/test-02.csv")));
+				assertThat("Date query parameter", request.getParameter("date"),
+						is(equalTo(urlQueryDate)));
+				assertThat("Foo query parameter", request.getParameter("foo"), is(equalTo("bar")));
+				respondWithCsvResource(response, "test-01.csv");
+				response.flushBuffer();
+				return true;
+			}
+
+		};
+		getHttpServer().addHandler(handler);
+
+		// WHEN
+		Collection<NodeDatum> result = dataSource.readMultipleDatum();
+
+		assertThat("One datum returned", result, hasSize(1));
+		NodeDatum d = result.stream().findFirst().get();
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dataSource.getDateFormat())
+				.withZone(ZoneId.of(dataSource.getTimeZoneId()));
+
+		// THEN
+		assertThat("Source ID set", d.getSourceId(), is(equalTo(TEST_SOURCE_ID)));
+		assertThat("Station ID parsed",
+				d.asSampleOperations().getSampleString(DatumSamplesType.Status, "stationId"),
+				is(equalTo("OTA2201")));
+		assertThat("Price parsed",
+				d.asSampleOperations().getSampleFloat(DatumSamplesType.Instantaneous, "price"),
+				is(equalTo(158.87f)));
+		assertThat("Timestamp", d.getTimestamp(),
+				is(equalTo(formatter.parse("23/03/2023 10:54:48", Instant::from))));
 	}
 
 }
