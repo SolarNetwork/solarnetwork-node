@@ -48,9 +48,12 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpRequest;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.http.client.support.HttpRequestWrapper;
+import org.springframework.util.StreamUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.datum.csv.CsvDatumDataSource;
@@ -364,7 +367,7 @@ public class CsvDatumDataSourceHttpTests extends AbstractHttpClientTests {
 	}
 
 	@Test
-	public void httpRequestCustomizer_wrappedRequest() {
+	public void httpRequestCustomizer_changeUri() {
 		// GIVEN
 		dataSource.setUrl(getHttpServerBaseUrl() + "/test-01.csv?date={date}");
 		dataSource.setSkipRows(1);
@@ -432,6 +435,104 @@ public class CsvDatumDataSourceHttpTests extends AbstractHttpClientTests {
 				assertThat("Date query parameter", request.getParameter("date"),
 						is(equalTo(urlQueryDate)));
 				assertThat("Foo query parameter", request.getParameter("foo"), is(equalTo("bar")));
+				respondWithCsvResource(response, "test-01.csv");
+				response.flushBuffer();
+				return true;
+			}
+
+		};
+		getHttpServer().addHandler(handler);
+
+		// WHEN
+		Collection<NodeDatum> result = dataSource.readMultipleDatum();
+
+		assertThat("One datum returned", result, hasSize(1));
+		NodeDatum d = result.stream().findFirst().get();
+		DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dataSource.getDateFormat())
+				.withZone(ZoneId.of(dataSource.getTimeZoneId()));
+
+		// THEN
+		assertThat("Source ID set", d.getSourceId(), is(equalTo(TEST_SOURCE_ID)));
+		assertThat("Station ID parsed",
+				d.asSampleOperations().getSampleString(DatumSamplesType.Status, "stationId"),
+				is(equalTo("OTA2201")));
+		assertThat("Price parsed",
+				d.asSampleOperations().getSampleFloat(DatumSamplesType.Instantaneous, "price"),
+				is(equalTo(158.87f)));
+		assertThat("Timestamp", d.getTimestamp(),
+				is(equalTo(formatter.parse("23/03/2023 10:54:48", Instant::from))));
+	}
+
+	@Test
+	public void httpRequestCustomizer_changeToPostWithBody() {
+		// GIVEN
+		dataSource.setUrl(getHttpServerBaseUrl() + "/test-01.csv?date={date}");
+		dataSource.setSkipRows(1);
+		dataSource.setKeepRows(1);
+		dataSource.setSourceId(TEST_SOURCE_ID);
+		dataSource.setDateTimeColumn("G");
+		dataSource.setUrlDateFormat("yyyy-MM-dd");
+		dataSource.setHttpRequestFactory(
+				new StaticOptionalService<>(new HttpComponentsClientHttpRequestFactory()));
+
+		HttpRequestCustomizerService cust = new AbstractHttpRequestCustomizerService() {
+
+			@Override
+			public void configurationChanged(Map<String, Object> properties) {
+				// nothing
+			}
+
+			@Override
+			public String getSettingUid() {
+				return "test";
+			}
+
+			@Override
+			public List<SettingSpecifier> getSettingSpecifiers() {
+				return Collections.emptyList();
+			}
+
+			@Override
+			public HttpRequest customize(HttpRequest request, ByteList body, Map<String, ?> parameters) {
+				request.getHeaders().setContentType(MediaType.TEXT_PLAIN);
+				body.clear();
+				body.addAll("Hello, world.".getBytes(StandardCharsets.US_ASCII));
+				return new HttpRequestWrapper(request) {
+
+					@Override
+					public HttpMethod getMethod() {
+						return HttpMethod.POST;
+					}
+
+				};
+			}
+		};
+		dataSource.setHttpRequestCustomizer(new StaticOptionalService<>(cust));
+
+		// @formatter:off
+		dataSource.setPropConfigs(new CsvPropertyConfig[] {
+				new CsvPropertyConfig("stationId", DatumSamplesType.Status, "A"),
+				new CsvPropertyConfig("price", DatumSamplesType.Instantaneous, "D"),
+		});
+		// @formatter:on
+		dataSource.configurationChanged(null);
+
+		final String urlQueryDate = DateTimeFormatter.ofPattern(dataSource.getUrlDateFormat())
+				.withZone(ZoneId.systemDefault()).format(Instant.now());
+		TestHttpHandler handler = new TestHttpHandler() {
+
+			@Override
+			protected boolean handleInternal(HttpServletRequest request, HttpServletResponse response)
+					throws Exception {
+				assertThat("Request method", request.getMethod(), is(equalTo("POST")));
+				assertThat("Request path", request.getPathInfo(), is(equalTo("/test-01.csv")));
+				assertThat("Date query parameter", request.getParameter("date"),
+						is(equalTo(urlQueryDate)));
+
+				String body = StreamUtils.copyToString(request.getInputStream(),
+						StandardCharsets.US_ASCII);
+				assertThat("Body provided", body, is(equalTo("Hello, world.")));
+
 				respondWithCsvResource(response, "test-01.csv");
 				response.flushBuffer();
 				return true;
