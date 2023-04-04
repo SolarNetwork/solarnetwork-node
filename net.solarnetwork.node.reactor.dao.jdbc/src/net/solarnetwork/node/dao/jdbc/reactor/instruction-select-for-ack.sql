@@ -5,5 +5,5 @@ SELECT
 FROM solarnode.sn_instruction i
 INNER JOIN solarnode.sn_instruction_status s ON s.instruction_id = i.id AND s.instructor_id = i.instructor_id
 LEFT OUTER JOIN solarnode.sn_instruction_param p ON p.instruction_id = i.id AND p.instructor_id = i.instructor_id
-WHERE s.state <> s.ack_state OR s.ack_state IS NULL
+WHERE i.instructor_id <> ? AND (s.state <> s.ack_state OR s.ack_state IS NULL)
 ORDER BY i.instructor_id ASC, i.id ASC, p.pos ASC

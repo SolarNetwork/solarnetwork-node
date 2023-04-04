@@ -60,6 +60,7 @@ import net.solarnetwork.node.dao.jdbc.reactor.JdbcInstructionDao;
 import net.solarnetwork.node.reactor.BasicInstruction;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 
 /**
@@ -93,10 +94,12 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 		lastDatum = null;
 	}
 
-	@Test
-	public void storeNew() {
-		BasicInstruction instr = new BasicInstruction(TEST_ID, TEST_TOPIC, Instant.now(),
-				TEST_INSTRUCTOR, null);
+	private Instruction storeNew(Instant date) {
+		return storeNew(TEST_ID, TEST_INSTRUCTOR, date);
+	}
+
+	private Instruction storeNew(Long id, String instructorId, Instant date) {
+		BasicInstruction instr = new BasicInstruction(id, TEST_TOPIC, date, instructorId, null);
 
 		for ( int i = 0; i < 2; i++ ) {
 			instr.addParameter(String.format("%s %d", TEST_PARAM_KEY, i),
@@ -104,7 +107,12 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 		}
 
 		dao.storeInstruction(instr);
-		lastDatum = dao.getInstruction(instr.getId(), instr.getInstructorId());
+		return dao.getInstruction(instr.getId(), instr.getInstructorId());
+	}
+
+	@Test
+	public void storeNew() {
+		lastDatum = storeNew(Instant.now());
 	}
 
 	private List<Map<String, Object>> listInstructions() {
@@ -181,6 +189,19 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 
 		dao.storeInstruction(instr);
 		dao.storeInstruction(instr);
+	}
+
+	@Test
+	public void storeLocal() {
+		// GIVEN
+		Instruction instr = InstructionUtils.createSetControlValueLocalInstruction("/test/control", "1");
+
+		// WHEN
+		dao.storeInstruction(instr);
+		Instruction result = dao.getInstruction(instr.getId(), instr.getInstructorId());
+
+		// THEN
+		assertThat("Instruction persisted", result, is(notNullValue()));
 	}
 
 	@Test
@@ -332,6 +353,56 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 	}
 
 	@Test
+	public void findForAck_localOnly() {
+		// GIVEN
+		final String controlId = UUID.randomUUID().toString();
+		final String controlVal = UUID.randomUUID().toString();
+		Instruction instr = InstructionUtils.createSetControlValueLocalInstruction(controlId,
+				controlVal);
+		dao.storeInstruction(instr);
+		instr = dao.getInstruction(instr.getId(), instr.getInstructorId());
+
+		// WHEN
+		List<Instruction> results = dao.findInstructionsForAcknowledgement();
+		assertThat("Results empty because local instruction ignored", results, hasSize(0));
+
+		// update ack now for second search
+		InstructionStatus newStatus = instr.getStatus()
+				.newCopyWithAcknowledgedState(instr.getStatus().getInstructionState());
+		dao.storeInstructionStatus(instr.getId(), instr.getInstructorId(), newStatus);
+
+		results = dao.findInstructionsForAcknowledgement();
+		assertThat("Result still not found", results, hasSize(0));
+	}
+
+	@Test
+	public void findForAck_localIgnored() {
+		// GIVEN
+		final String controlId = UUID.randomUUID().toString();
+		final String controlVal = UUID.randomUUID().toString();
+		Instruction instr = InstructionUtils.createSetControlValueLocalInstruction(controlId,
+				controlVal);
+		dao.storeInstruction(instr);
+		instr = dao.getInstruction(instr.getId(), instr.getInstructorId());
+
+		// now store non-local instruction
+		storeNew();
+
+		// WHEN
+		List<Instruction> results = dao.findInstructionsForAcknowledgement();
+		assertThat("Result provided (local ignored)", results, hasSize(1));
+		assertEquals(lastDatum.getId(), results.get(0).getId());
+
+		// update ack now for second search
+		InstructionStatus newStatus = lastDatum.getStatus()
+				.newCopyWithAcknowledgedState(lastDatum.getStatus().getInstructionState());
+		dao.storeInstructionStatus(lastDatum.getId(), lastDatum.getInstructorId(), newStatus);
+
+		results = dao.findInstructionsForAcknowledgement();
+		assertThat("Result no longer found because acknowledged", results, hasSize(0));
+	}
+
+	@Test
 	public void compareAndSetStatus() {
 		storeNew();
 		InstructionStatus execStatus = lastDatum.getStatus()
@@ -358,6 +429,90 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 		assertThat("State", instr.getStatus().getInstructionState(), equalTo(InstructionState.Received));
 		assertThat("Acknoledged state", instr.getStatus().getAcknowledgedInstructionState(),
 				is(nullValue()));
+	}
+
+	@Test
+	public void deleteHandledOlderThan_ackComplete() {
+		// GIVEN
+		Instruction instr = storeNew(Instant.now().minus(2, ChronoUnit.HOURS));
+
+		// update to Complete + acknowledged Complete
+		InstructionStatus doneStatus = instr.getStatus().newCopyWithState(InstructionState.Completed)
+				.newCopyWithAcknowledgedState(InstructionState.Completed);
+		dao.storeInstructionStatus(instr.getId(), instr.getInstructorId(), doneStatus);
+
+		// WHEN
+		int result = dao.deleteHandledInstructionsOlderThan(1);
+
+		// THEN
+		assertThat("One instruction deleted because older than 1 hour and acknowledged Complete", result,
+				is(equalTo(1)));
+
+		List<Map<String, Object>> rows = listInstructions();
+		assertThat("No rows exist", rows, hasSize(0));
+	}
+
+	@Test
+	public void deleteHandledOlderThan_ackDeclined() {
+		// GIVEN
+		Instruction instr = storeNew(Instant.now().minus(2, ChronoUnit.HOURS));
+
+		// update to Complete + acknowledged Complete
+		InstructionStatus doneStatus = instr.getStatus().newCopyWithState(InstructionState.Declined)
+				.newCopyWithAcknowledgedState(InstructionState.Declined);
+		dao.storeInstructionStatus(instr.getId(), instr.getInstructorId(), doneStatus);
+
+		// WHEN
+		int result = dao.deleteHandledInstructionsOlderThan(1);
+
+		// THEN
+		assertThat("One instruction deleted because older than 1 hour and acknowledged Declined", result,
+				is(equalTo(1)));
+
+		List<Map<String, Object>> rows = listInstructions();
+		assertThat("No rows exist", rows, hasSize(0));
+	}
+
+	@Test
+	public void deleteHandledOlderThan_complete() {
+		// GIVEN
+		Instruction instr = storeNew(Instant.now().minus(2, ChronoUnit.HOURS));
+
+		// update to Complete + acknowledged Received
+		InstructionStatus doneStatus = instr.getStatus().newCopyWithState(InstructionState.Completed)
+				.newCopyWithAcknowledgedState(InstructionState.Received);
+		dao.storeInstructionStatus(instr.getId(), instr.getInstructorId(), doneStatus);
+
+		// WHEN
+		int result = dao.deleteHandledInstructionsOlderThan(1);
+
+		// THEN
+		assertThat("No instruction deleted because acknowledged state != state", result, is(equalTo(0)));
+
+		List<Map<String, Object>> rows = listInstructions();
+		assertThat("Rows still exists", rows, hasSize(1));
+	}
+
+	@Test
+	public void deleteHandledOlderThan_local_complete() {
+		// GIVEN
+		Instruction instr = InstructionUtils.createSetControlValueLocalInstruction("foo", "bar");
+		instr = storeNew(instr.getId(), instr.getInstructorId(),
+				Instant.now().minus(2, ChronoUnit.HOURS));
+
+		// update to Complete without any ack
+		InstructionStatus doneStatus = instr.getStatus().newCopyWithState(InstructionState.Completed);
+		dao.storeInstructionStatus(instr.getId(), instr.getInstructorId(), doneStatus);
+
+		// WHEN
+		int result = dao.deleteHandledInstructionsOlderThan(1);
+
+		// THEN
+		assertThat("One instruction deleted because older than 1 hour and Complete and local", result,
+				is(equalTo(1)));
+
+		List<Map<String, Object>> rows = listInstructions();
+		assertThat("No rows exist", rows, hasSize(0));
 	}
 
 }

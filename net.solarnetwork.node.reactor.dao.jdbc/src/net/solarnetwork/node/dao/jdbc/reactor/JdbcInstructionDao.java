@@ -122,8 +122,8 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 	public static final String RESOURCE_SQL_SELECT_INSTRUCTION_FOR_STATE = "select-for-state";
 
 	/**
-	 * The classpath Resource for the SQL template for selecting Instruction by
-	 * state.
+	 * The classpath Resource for the SQL template for selecting Instruction
+	 * ready for acknowledgement.
 	 */
 	public static final String RESOURCE_SQL_SELECT_INSTRUCTION_FOR_ACKNOWEDGEMENT = "select-for-ack";
 
@@ -355,7 +355,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 							throws SQLException, DataAccessException {
 						return extractInstructions(rs);
 					}
-				});
+				}, Instruction.LOCAL_INSTRUCTION_ID);
 	}
 
 	@Override
@@ -371,6 +371,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 				Calendar c = Calendar.getInstance();
 				c.add(Calendar.HOUR, -hours);
 				ps.setTimestamp(1, new Timestamp(c.getTimeInMillis()), c);
+				ps.setString(2, Instruction.LOCAL_INSTRUCTION_ID);
 				return ps;
 			}
 		});

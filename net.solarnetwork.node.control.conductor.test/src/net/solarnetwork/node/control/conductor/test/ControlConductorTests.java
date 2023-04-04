@@ -172,11 +172,11 @@ public class ControlConductorTests {
 			assertThat(format("Task %d instruction is Signal", i), instr.getTopic(),
 					is(equalTo(InstructionHandler.TOPIC_SIGNAL)));
 			assertThat(format("Task %d instruction param parent instructor ID", i),
-					instr.getParameterValue(ControlConductor.PARAM_PARENT_INSTRUCTOR_ID),
+					instr.getParameterValue(Instruction.PARAM_PARENT_INSTRUCTOR_ID),
 					is(equalTo(Instruction.LOCAL_INSTRUCTION_ID)));
 			assertThat(format("Task %d instruction param parent instruction ID", i),
-					instr.getParameterValue(ControlConductor.PARAM_PARENT_INSTRUCTION_ID),
-					is(equalTo(Instruction.LOCAL_INSTRUCTION_ID)));
+					instr.getParameterValue(Instruction.PARAM_PARENT_INSTRUCTION_ID),
+					is(equalTo(orchestrate.getId().toString())));
 		}
 
 		Instruction signal = savedInstructions.get(0);

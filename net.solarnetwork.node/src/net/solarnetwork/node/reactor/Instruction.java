@@ -42,7 +42,7 @@ import java.time.format.DateTimeParseException;
  * </p>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public interface Instruction extends net.solarnetwork.domain.Instruction {
 
@@ -65,6 +65,30 @@ public interface Instruction extends net.solarnetwork.domain.Instruction {
 	 * @see java.time.format.DateTimeFormatter#ISO_INSTANT
 	 */
 	String PARAM_EXECUTION_DATE = "executionDate";
+
+	/**
+	 * The task instruction parameter for a "parent" instruction ID.
+	 * 
+	 * <p>
+	 * This parameter can be used to track instructions created by other
+	 * instructions.
+	 * </p>
+	 * 
+	 * @since 2.2
+	 */
+	String PARAM_PARENT_INSTRUCTION_ID = "parentInstructionId";
+
+	/**
+	 * The task instruction parameter for the "parent" instructor ID.
+	 * 
+	 * <p>
+	 * This parameter can be used to track instructions created by other
+	 * instructions.
+	 * </p>
+	 * 
+	 * @since 2.2
+	 */
+	String PARAM_PARENT_INSTRUCTOR_ID = "parentInstructorId";
 
 	/**
 	 * Get an identifier for this instruction.
@@ -126,6 +150,17 @@ public interface Instruction extends net.solarnetwork.domain.Instruction {
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * Test if this instruction is a local instruction.
+	 * 
+	 * @return {@literal true} if {@link #getInstructorId()} is
+	 *         {@link #LOCAL_INSTRUCTION_ID}
+	 * @since 2.2
+	 */
+	default boolean isLocal() {
+		return LOCAL_INSTRUCTION_ID.equals(getInstructorId());
 	}
 
 }

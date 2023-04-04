@@ -66,18 +66,6 @@ public class ControlConductor extends BaseIdentifiable
 	/** The instruction topic to orchestrate a set of controls. */
 	public static final String TOPIC_ORCHESTRATE_CONTROLS = "OrchestrateControls";
 
-	/**
-	 * The task instruction parameter for the original OrchestrateControls
-	 * instructor ID.
-	 */
-	public static final String PARAM_PARENT_INSTRUCTOR_ID = "parentInstructorId";
-
-	/**
-	 * The task instruction parameter for the original OrchestrateControls
-	 * instruction ID.
-	 */
-	public static final String PARAM_PARENT_INSTRUCTION_ID = "parentInstructionId";
-
 	private final OptionalService<ReactorService> reactorService;
 	private OptionalService<DatumService> datumService;
 	private ControlTaskConfig[] taskConfigs;
@@ -154,8 +142,10 @@ public class ControlConductor extends BaseIdentifiable
 
 			Map<String, String> taskInstructionParams = new HashMap<>(8);
 			taskInstructionParams.putAll(instructionParams);
-			taskInstructionParams.put(PARAM_PARENT_INSTRUCTION_ID, instruction.getIdentifier());
-			taskInstructionParams.put(PARAM_PARENT_INSTRUCTOR_ID, instruction.getInstructorId());
+			taskInstructionParams.put(Instruction.PARAM_PARENT_INSTRUCTION_ID,
+					instruction.getIdentifier());
+			taskInstructionParams.put(Instruction.PARAM_PARENT_INSTRUCTOR_ID,
+					instruction.getInstructorId());
 			taskInstructionParams.put(Instruction.PARAM_EXECUTION_DATE,
 					String.valueOf(taskDate.toEpochMilli()));
 			taskInstructionParams.put(getUid(), String.valueOf(taskIndex));
