@@ -32,7 +32,7 @@ import net.solarnetwork.node.domain.datum.NodeDatum;
  * API for a service that supports node-wide datum information.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.89
  */
 public interface DatumService {
@@ -152,6 +152,52 @@ public interface DatumService {
 	 * @return the datum, or {@literal null} if no such datum is available
 	 */
 	<T extends NodeDatum> T offset(String sourceId, Instant timestamp, int offset, Class<T> type);
+
+	/**
+	 * Get an set of datum offset from the latest available datum of a given
+	 * type.
+	 * 
+	 * @param <T>
+	 *        the type of datum to get
+	 * @param sourceId
+	 *        the source ID of the datum to find
+	 * @param offset
+	 *        the offset from {@code timestamp}, {@literal 0} being the latest
+	 *        and {@literal 1} the next later, and so on
+	 * @param count
+	 *        the maximum number of datum to return, starting from
+	 *        {@code offset} and iterating over earlier datum
+	 * @param type
+	 *        the type of datum to filter the results by, or {@literal null} to
+	 *        accept all datum
+	 * @return the matching datum, never {@literal null}
+	 * @since 1.2
+	 */
+	<T extends NodeDatum> Collection<T> slice(String sourceId, int offset, int count, Class<T> type);
+
+	/**
+	 * Get a set of datum offset from a given timestamp.
+	 * 
+	 * @param <T>
+	 *        the type of datum to get
+	 * @param sourceId
+	 *        the source ID of the datum to find
+	 * @param timestamp
+	 *        the timestamp to reference
+	 * @param offset
+	 *        the offset from {@code timestamp}, {@literal 0} being the latest
+	 *        and {@literal 1} the next later, and so on
+	 * @param count
+	 *        the maximum number of datum to return, starting from
+	 *        {@code offset} and iterating over earlier datum
+	 * @param type
+	 *        the type of datum to filter the results by, or {@literal null} to
+	 *        accept all datum
+	 * @return the matching datum, never {@literal null}
+	 * @since 1.2
+	 */
+	<T extends NodeDatum> Collection<T> slice(String sourceId, Instant timestamp, int offset, int count,
+			Class<T> type);
 
 	/**
 	 * Get the metadata for a given datum stream.

@@ -55,7 +55,7 @@ import net.solarnetwork.util.CircularFifoQueue;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 1.89
  */
 public class DatumHistory {
@@ -350,6 +350,99 @@ public class DatumHistory {
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * Get a slice of a source ID's history.
+	 * 
+	 * @param sourceId
+	 *        the source ID to find
+	 * @param offset
+	 *        the offset from the latest, {@literal 0} being the latest and
+	 *        {@literal 1} the next later, and so on
+	 * @param count
+	 *        the maximum number of datum to return, starting from
+	 *        {@code offset} and iterating over earlier datum; the actual number
+	 *        returned will be limited by the configuration of this instance as
+	 *        well as the number of datum that have been captured
+	 * @return the history, ordered from oldest to newest
+	 * @since 1.2
+	 */
+	public Iterable<NodeDatum> slice(String sourceId, int offset, int count) {
+		final Queue<NodeDatum> q = raw.get(sourceId);
+		log.debug("Queue [{}]: {}", sourceId, q);
+		if ( q == null ) {
+			return null;
+		}
+		return new Iterable<NodeDatum>() {
+
+			@Override
+			public Iterator<NodeDatum> iterator() {
+				final List<NodeDatum> datum = new ArrayList<>(count);
+				synchronized ( q ) {
+					final int size = q.size();
+					final int max = size - offset;
+					int idx = Math.max(max - count, 0);
+					while ( idx < max ) {
+						NodeDatum d = ((CircularFifoQueue<NodeDatum>) q).get(idx);
+						datum.add(d);
+						idx++;
+					}
+				}
+				return datum.iterator();
+			}
+		};
+	}
+
+	/**
+	 * Get a slice of a source ID's history.
+	 * 
+	 * @param sourceId
+	 *        the source ID to find
+	 * @param timestamp
+	 *        the timestamp to offset from
+	 * @param offset
+	 *        the offset from the latest, {@literal 0} being the latest and
+	 *        {@literal 1} the next later, and so on
+	 * @param count
+	 *        the maximum number of datum to return, starting from
+	 *        {@code offset} and iterating over earlier datum; the actual number
+	 *        returned will be limited by the configuration of this instance as
+	 *        well as the number of datum that have been captured
+	 * @return the history, ordered from oldest to newest
+	 * @since 1.2
+	 */
+	public Iterable<NodeDatum> slice(String sourceId, Instant timestamp, int offset, int count) {
+		final Queue<NodeDatum> q = raw.get(sourceId);
+		log.debug("Queue [{}]: {}", sourceId, q);
+		if ( q == null ) {
+			return null;
+		}
+		return new Iterable<NodeDatum>() {
+
+			@Override
+			public Iterator<NodeDatum> iterator() {
+				final List<NodeDatum> datum = new ArrayList<>(count);
+				synchronized ( q ) {
+					int idx = q.size();
+					while ( --idx >= 0 ) {
+						NodeDatum d = ((CircularFifoQueue<NodeDatum>) q).get(idx);
+						if ( d.getTimestamp().compareTo(timestamp) <= 0 ) {
+							// found reference, so return offset from here
+							final int max = idx - offset + 1;
+							idx = Math.max(max - count, 0);
+							while ( idx < max ) {
+								d = ((CircularFifoQueue<NodeDatum>) q).get(idx);
+								datum.add(d);
+								idx++;
+							}
+							break;
+						}
+					}
+				}
+				return datum.iterator();
+			}
+		};
 	}
 
 	/**

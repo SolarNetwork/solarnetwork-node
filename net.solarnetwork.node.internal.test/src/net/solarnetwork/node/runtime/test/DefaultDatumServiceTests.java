@@ -26,6 +26,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static org.easymock.EasyMock.expect;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -66,7 +67,7 @@ import net.solarnetwork.service.StaticOptionalService;
  * Test cases for the {@link DefaultDatumService} class.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class DefaultDatumServiceTests {
 
@@ -236,6 +237,43 @@ public class DefaultDatumServiceTests {
 	}
 
 	@Test
+	public void slice() {
+		// GIVEN
+		populateDatum();
+		final String sourceId = "test.0";
+		final List<NodeDatum> stream = population.get(sourceId);
+
+		// WHEN
+		replayAll();
+		List<NodeDatum> result = StreamSupport
+				.stream(service.slice(sourceId, 0, 3, NodeDatum.class).spliterator(), false)
+				.collect(Collectors.toList());
+
+		// THEN
+		NodeDatum[] expected = stream.subList(2, 5).toArray(new NodeDatum[3]);
+		assertThat("Slice returned", result, contains(expected));
+	}
+
+	@Test
+	public void slice_timeOffset() {
+		// GIVEN
+		populateDatum();
+		final String sourceId = "test.0";
+		final List<NodeDatum> stream = population.get(sourceId);
+
+		// WHEN
+		replayAll();
+		List<NodeDatum> result = StreamSupport
+				.stream(service.slice(sourceId, stream.get(2).getTimestamp(), 0, 3, NodeDatum.class)
+						.spliterator(), false)
+				.collect(Collectors.toList());
+
+		// THEN
+		NodeDatum[] expected = stream.subList(0, 3).toArray(new NodeDatum[3]);
+		assertThat("Slice returned", result, contains(expected));
+	}
+
+	@Test
 	public void metaForSource_missing() {
 		// GIVEN
 		final String sourceId = "test.source";
@@ -319,4 +357,5 @@ public class DefaultDatumServiceTests {
 		assertThat("Matches returned when source IDs match", result,
 				containsInAnyOrder(sameInstance(meta1), sameInstance(meta2)));
 	}
+
 }
