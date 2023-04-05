@@ -24,6 +24,7 @@ package net.solarnetwork.node.reactor.simple;
 
 import static net.solarnetwork.node.reactor.InstructionUtils.createErrorResultParameters;
 import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Propagation;
@@ -125,6 +126,23 @@ public class SimpleReactorService implements ReactorService, InstructionHandler 
 		}
 		log.info("Cancelled instruction {} because of {} instruction {}", instructionId,
 				instruction.getTopic(), instruction.getId());
+
+		// also cancel any available children
+		List<Instruction> children = instructionDao.findInstructionsForStateAndParent(
+				InstructionState.Received, instr.getInstructorId(), instructionId);
+		for ( Instruction child : children ) {
+			updated = instructionDao.compareAndStoreInstructionStatus(child.getId(),
+					child.getInstructorId(), InstructionState.Received,
+					InstructionUtils.createStatus(instruction, InstructionState.Declined,
+							createErrorResultParameters(String.format(
+									"Instruction cancelled by %s Instruction %d on parent instruction %d",
+									instruction.getTopic(), instruction.getId(), instr.getId()), null)));
+			if ( updated ) {
+				log.info("Cancelled instruction {} because of {} instruction {} on parent instruction",
+						instructionId, instruction.getTopic(), instruction.getId(), instr.getId());
+			}
+		}
+
 		return createStatus(instruction, InstructionState.Completed);
 	}
 

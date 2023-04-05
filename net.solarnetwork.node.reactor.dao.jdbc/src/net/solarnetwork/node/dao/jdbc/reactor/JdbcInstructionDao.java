@@ -122,6 +122,14 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 	public static final String RESOURCE_SQL_SELECT_INSTRUCTION_FOR_STATE = "select-for-state";
 
 	/**
+	 * The classpath Resource for the SQL template for selecting Instruction by
+	 * state and two parameter values.
+	 * 
+	 * @since 2.1
+	 */
+	public static final String RESOURCE_SQL_SELECT_INSTRUCTION_FOR_STATE_AND_2_PARAMS = "select-for-state-two-params";
+
+	/**
 	 * The classpath Resource for the SQL template for selecting Instruction
 	 * ready for acknowledgement.
 	 */
@@ -341,6 +349,24 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 						return extractInstructions(rs);
 					}
 				}, state.toString());
+	}
+
+	@Override
+	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
+	public List<Instruction> findInstructionsForStateAndParent(InstructionState state,
+			String parentInstructorId, Long parentInstructionId) {
+		return getJdbcTemplate().query(
+				getSqlResource(RESOURCE_SQL_SELECT_INSTRUCTION_FOR_STATE_AND_2_PARAMS),
+				new ResultSetExtractor<List<Instruction>>() {
+
+					@Override
+					public List<Instruction> extractData(ResultSet rs)
+							throws SQLException, DataAccessException {
+						return extractInstructions(rs);
+					}
+				}, Instruction.PARAM_PARENT_INSTRUCTOR_ID, parentInstructorId,
+				Instruction.PARAM_PARENT_INSTRUCTION_ID, parentInstructionId.toString(),
+				state.toString());
 	}
 
 	@Override

@@ -24,6 +24,7 @@ package net.solarnetwork.node.dao.jdbc.reactor.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
@@ -38,6 +39,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -117,6 +119,17 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 
 	private List<Map<String, Object>> listInstructions() {
 		return new JdbcTemplate(dataSource).queryForList("select * from solarnode.sn_instruction")
+				.stream().map(m -> {
+					Map<String, Object> lcm = new LinkedHashMap<>(m.size());
+					for ( Entry<String, Object> e : m.entrySet() ) {
+						lcm.put(e.getKey().toLowerCase(), e.getValue());
+					}
+					return lcm;
+				}).collect(Collectors.toList());
+	}
+
+	private List<Map<String, Object>> listInstructionParams() {
+		return new JdbcTemplate(dataSource).queryForList("select * from solarnode.sn_instruction_param")
 				.stream().map(m -> {
 					Map<String, Object> lcm = new LinkedHashMap<>(m.size());
 					for ( Entry<String, Object> e : m.entrySet() ) {
@@ -263,6 +276,45 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 		assertThat("One instruction returned becauase deferred instruction omitted", results,
 				hasSize(1));
 		assertThat("Immediate instruction returned", results.get(0).getId(), is(equalTo(instr.getId())));
+	}
+
+	@Test
+	public void findByStateAndParent() {
+		// GIVEN
+
+		// store a parent instruction
+		storeNew();
+
+		// store several children
+		final int count = 3;
+		final List<Instruction> instructions = new ArrayList<>(count);
+		for ( int i = 0; i < count; i++ ) {
+			BasicInstruction instr = new BasicInstruction(UUID.randomUUID().getMostSignificantBits(),
+					TEST_TOPIC, Instant.now(), TEST_INSTRUCTOR, null);
+			instr.addParameter(Instruction.PARAM_PARENT_INSTRUCTOR_ID, lastDatum.getInstructorId());
+			instr.addParameter(Instruction.PARAM_PARENT_INSTRUCTION_ID, lastDatum.getId().toString());
+			for ( int j = 0; j < 2; j++ ) {
+				instr.addParameter(String.format("%s %d", TEST_PARAM_KEY, j),
+						String.format("%s %d %s", TEST_PARAM_KEY, j, TEST_PARAM_VALUE));
+			}
+			dao.storeInstruction(instr);
+			instructions.add(dao.getInstruction(instr.getId(), instr.getInstructorId()));
+		}
+
+		log.debug("Instruction params: [{}]", listInstructionParams().stream().map(Object::toString)
+				.collect(Collectors.joining("\n  , ", "\n    ", "\n")));
+
+		// WHEN
+		List<Instruction> results = dao.findInstructionsForStateAndParent(InstructionState.Received,
+				lastDatum.getInstructorId(), lastDatum.getId());
+
+		// THEN
+		assertThat("All children returned", results, hasSize(3));
+
+		Long[] expectedChildIds = instructions.stream().map(Instruction::getId).toArray(Long[]::new);
+		Set<Long> childIds = results.stream().map(Instruction::getId).collect(Collectors.toSet());
+		assertThat("All children accounted for", childIds,
+				containsInAnyOrder((Object[]) expectedChildIds));
 	}
 
 	@Test

@@ -29,7 +29,7 @@ import net.solarnetwork.domain.InstructionStatus.InstructionState;
  * DAO API for Instructor entities.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public interface InstructionDao {
 
@@ -97,6 +97,22 @@ public interface InstructionDao {
 	 * @return the found instructions, or empty list if none available
 	 */
 	List<Instruction> findInstructionsForState(InstructionState state);
+
+	/**
+	 * Find all instructions in a given state that also have a parameters for a
+	 * given parent instruction.
+	 * 
+	 * @param state
+	 *        the instruction state
+	 * @param parentInstructorId
+	 *        the parent instructor ID
+	 * @param parentInstructionId
+	 *        the parent instruction ID
+	 * @return the found instructions, or empty list if none available
+	 * @since 2.1
+	 */
+	List<Instruction> findInstructionsForStateAndParent(InstructionState state,
+			String parentInstructorId, Long parentInstructionId);
 
 	/**
 	 * Find all instructions needing acknowledgement.
