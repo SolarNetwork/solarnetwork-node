@@ -132,10 +132,34 @@ public interface Instruction extends net.solarnetwork.domain.Instruction {
 	 * @return the instruction execution date, or {@literal null} if one is not
 	 *         available or cannot be parsed
 	 * @see java.time.format.DateTimeFormatter#ISO_INSTANT
+	 * @see #timestampParameterValue(String)
 	 * @since 2.1
 	 */
 	default Instant getExecutionDate() {
-		final String val = getParameterValue(PARAM_EXECUTION_DATE);
+		return timestampParameterValue(PARAM_EXECUTION_DATE);
+	}
+
+	/**
+	 * Get a date parameter value, if available.
+	 * 
+	 * <p>
+	 * This method supports the same date format as described in the
+	 * {@link #PARAM_EXECUTION_DATE} parameter: the parameter value can be
+	 * either a {@code long} epoch millisecond value or an ISO 8601 instant.
+	 * </p>
+	 * 
+	 * @param parameterName
+	 *        the name of the parameter to parse as a timestamp
+	 * @return the parameter value parsed as a timestamp, or {@literal null} if
+	 *         one is not available or cannot be parsed
+	 * @see java.time.format.DateTimeFormatter#ISO_INSTANT
+	 * @since 2.2
+	 */
+	default Instant timestampParameterValue(String parameterName) {
+		if ( parameterName == null ) {
+			return null;
+		}
+		final String val = getParameterValue(parameterName);
 		if ( val == null ) {
 			return null;
 		}

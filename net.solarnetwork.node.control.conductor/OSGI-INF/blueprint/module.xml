@@ -26,6 +26,12 @@
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.service.ExpressionService"/>
 	</bean>
+	
+	<bean id="instructionService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionExecutionService"/>
+		<property name="sticky" value="true"/>
+	</bean>
 
 	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
@@ -91,6 +97,7 @@
 		</osgix:service-properties>
 		<bean class="net.solarnetwork.node.control.conductor.ControlConductor">
 			<argument ref="reactorService"/>
+			<argument ref="instructionService"/>
 			<property name="messageSource" ref="messageSource"/>
 			<property name="datumService" ref="datumService"/>
 			<property name="expressionServices" ref="expressionServices"/>

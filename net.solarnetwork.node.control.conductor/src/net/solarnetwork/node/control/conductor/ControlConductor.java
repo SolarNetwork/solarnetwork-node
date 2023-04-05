@@ -39,6 +39,7 @@ import java.util.Map;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.node.domain.ExpressionRoot;
 import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
@@ -66,7 +67,18 @@ public class ControlConductor extends BaseIdentifiable
 	/** The instruction topic to orchestrate a set of controls. */
 	public static final String TOPIC_ORCHESTRATE_CONTROLS = "OrchestrateControls";
 
+	/**
+	 * The instruction parameter for the date to orchestrate the controls at.
+	 * 
+	 * <p>
+	 * The format of this parameter is the same as
+	 * {@link Instruction#PARAM_EXECUTION_DATE}.
+	 * </p>
+	 */
+	public static final String PARAM_ORCHESTRATE_DATE = "date";
+
 	private final OptionalService<ReactorService> reactorService;
+	private final OptionalService<InstructionExecutionService> instructionService;
 	private OptionalService<DatumService> datumService;
 	private ControlTaskConfig[] taskConfigs;
 
@@ -75,12 +87,16 @@ public class ControlConductor extends BaseIdentifiable
 	 * 
 	 * @param reactorService
 	 *        the reactor service
+	 * @param instructionService
+	 *        the instruction execution service
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public ControlConductor(OptionalService<ReactorService> reactorService) {
+	public ControlConductor(OptionalService<ReactorService> reactorService,
+			OptionalService<InstructionExecutionService> instructionService) {
 		super();
 		this.reactorService = requireNonNullArgument(reactorService, "reactorService");
+		this.instructionService = requireNonNullArgument(instructionService, "instructionService");
 	}
 
 	@Override
@@ -150,10 +166,6 @@ public class ControlConductor extends BaseIdentifiable
 					String.valueOf(taskDate.toEpochMilli()));
 			taskInstructionParams.put(getUid(), String.valueOf(taskIndex));
 
-			log.info("Scheduling {} instruction on behalf of {} instruction [{}] task [{}.{}] @ {}",
-					TOPIC_SIGNAL, instruction.getTopic(), instruction.getIdentifier(), getUid(),
-					taskIndex, taskDate);
-
 			Instruction taskInstr = InstructionUtils.createLocalInstruction(TOPIC_SIGNAL,
 					taskInstructionParams);
 			taskInstructions.add(taskInstr);
@@ -165,7 +177,14 @@ public class ControlConductor extends BaseIdentifiable
 					format("No ReactorService avaialble to schedule the control tasks.", taskIndex),
 					"CC.0004"));
 		}
+
+		taskIndex = 0;
 		for ( Instruction taskInstruction : taskInstructions ) {
+			taskIndex += 1;
+			log.info("Scheduling {} instruction on behalf of {} instruction [{}] task [{}.{}] @ {}",
+					TOPIC_SIGNAL, instruction.getTopic(), instruction.getIdentifier(), getUid(),
+					taskIndex, taskInstruction.getExecutionDate());
+
 			rs.storeInstruction(taskInstruction);
 		}
 
@@ -219,11 +238,13 @@ public class ControlConductor extends BaseIdentifiable
 					"CC.0008"));
 		}
 
-		final ReactorService rs = OptionalService.service(reactorService);
-		if ( rs == null ) {
-			return createStatus(instruction, InstructionState.Declined, createErrorResultParameters(
-					format("No ReactorService avaialble to execute the task [%s].", taskIdentifier),
-					"CC.0009"));
+		final InstructionExecutionService ies = OptionalService.service(instructionService);
+		if ( ies == null ) {
+			return createStatus(instruction, InstructionState.Declined,
+					createErrorResultParameters(
+							format("No InstructionExecutionService avaialble to execute task [%s].",
+									taskIdentifier),
+							"CC.0009"));
 		}
 
 		log.info("Executing {} instruction for orchestrated task [{}] to set control [{}] to [{}]",
@@ -231,7 +252,7 @@ public class ControlConductor extends BaseIdentifiable
 
 		Instruction setControlValueInstr = InstructionUtils
 				.createSetControlValueLocalInstruction(controlId, controlValue);
-		InstructionStatus status = rs.processInstruction(setControlValueInstr);
+		InstructionStatus status = ies.executeInstruction(setControlValueInstr);
 		if ( status == null ) {
 			return createStatus(instruction, InstructionState.Declined,
 					createErrorResultParameters(
@@ -244,7 +265,7 @@ public class ControlConductor extends BaseIdentifiable
 	}
 
 	private Instant orchestrateDate(Instruction instruction) {
-		Instant start = instruction.getExecutionDate();
+		Instant start = instruction.timestampParameterValue(PARAM_ORCHESTRATE_DATE);
 		if ( start == null ) {
 			start = instruction.getInstructionDate();
 			if ( start == null ) {

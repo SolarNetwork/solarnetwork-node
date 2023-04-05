@@ -57,6 +57,7 @@ import net.solarnetwork.common.expr.spel.SpelExpressionService;
 import net.solarnetwork.node.control.conductor.ControlConductor;
 import net.solarnetwork.node.control.conductor.ControlTaskConfig;
 import net.solarnetwork.node.reactor.Instruction;
+import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
@@ -78,6 +79,7 @@ import net.solarnetwork.test.Assertion;
 public class ControlConductorTests {
 
 	private ReactorService reactorService;
+	private InstructionExecutionService instructionService;
 	private DatumService datumService;
 	private PlaceholderService placeholderService;
 	private ControlConductor conductor;
@@ -85,10 +87,12 @@ public class ControlConductorTests {
 	@Before
 	public void setup() {
 		reactorService = EasyMock.createMock(ReactorService.class);
+		instructionService = EasyMock.createMock(InstructionExecutionService.class);
 		datumService = EasyMock.createMock(DatumService.class);
 		placeholderService = EasyMock.createMock(PlaceholderService.class);
 
-		conductor = new ControlConductor(new StaticOptionalService<>(reactorService));
+		conductor = new ControlConductor(new StaticOptionalService<>(reactorService),
+				new StaticOptionalService<>(instructionService));
 		conductor.setDatumService(new StaticOptionalService<>(datumService));
 		conductor.setPlaceholderService(new StaticOptionalService<>(placeholderService));
 		conductor.setExpressionServices(spelExpressionServices());
@@ -96,12 +100,12 @@ public class ControlConductorTests {
 	}
 
 	private void replayAll() {
-		EasyMock.replay(reactorService, datumService, placeholderService);
+		EasyMock.replay(reactorService, instructionService, datumService, placeholderService);
 	}
 
 	@After
 	public void teardown() {
-		EasyMock.verify(reactorService, datumService, placeholderService);
+		EasyMock.verify(reactorService, instructionService, datumService, placeholderService);
 	}
 
 	private static OptionalServiceCollection<ExpressionService> spelExpressionServices() {
@@ -130,7 +134,7 @@ public class ControlConductorTests {
 		final String execDateIso = DateTimeFormatter.ISO_INSTANT.format(execDate);
 		final Map<String, String> orchestrateParams = new HashMap<>(4);
 		orchestrateParams.put(InstructionHandler.PARAM_SERVICE, conductor.getUid());
-		orchestrateParams.put(Instruction.PARAM_EXECUTION_DATE, execDateIso);
+		orchestrateParams.put(ControlConductor.PARAM_ORCHESTRATE_DATE, execDateIso);
 		orchestrateParams.put("mode", "3");
 		orchestrateParams.put("duration", "PT1H");
 
@@ -213,7 +217,7 @@ public class ControlConductorTests {
 		final String execDateIso = DateTimeFormatter.ISO_INSTANT.format(execDate);
 
 		final Map<String, String> signalParams = new HashMap<>(4);
-		signalParams.put(Instruction.PARAM_EXECUTION_DATE, execDateIso);
+		signalParams.put(ControlConductor.PARAM_ORCHESTRATE_DATE, execDateIso);
 		signalParams.put("mode", "a");
 		signalParams.put("duration", "PT1H");
 		signalParams.put(conductor.getUid(), "1");
@@ -243,7 +247,7 @@ public class ControlConductorTests {
 
 		// process task execution instruction
 		Capture<Instruction> savedInstructionsCaptor = Capture.newInstance();
-		expect(reactorService.processInstruction(capture(savedInstructionsCaptor)))
+		expect(instructionService.executeInstruction(capture(savedInstructionsCaptor)))
 				.andAnswer(new IAnswer<InstructionStatus>() {
 
 					@Override
