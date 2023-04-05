@@ -45,6 +45,7 @@ import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.reactor.ReactorService;
 import net.solarnetwork.node.service.DatumService;
+import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.node.service.PlaceholderService;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.service.OptionalService;
@@ -80,6 +81,7 @@ public class ControlConductor extends BaseIdentifiable
 	private final OptionalService<ReactorService> reactorService;
 	private final OptionalService<InstructionExecutionService> instructionService;
 	private OptionalService<DatumService> datumService;
+	private OptionalService<OperationalModesService> opModesService;
 	private ControlTaskConfig[] taskConfigs;
 
 	/**
@@ -227,7 +229,8 @@ public class ControlConductor extends BaseIdentifiable
 			ExpressionServiceExpression expr = taskConfig
 					.valueExpression(services(getExpressionServices()));
 			if ( expr != null ) {
-				ExpressionRoot root = new ExpressionRoot(null, null, instrParams, service(datumService));
+				ExpressionRoot root = new ExpressionRoot(null, null, instrParams, service(datumService),
+						service(opModesService));
 				controlValue = expr.getService().evaluateExpression(expr.getExpression(), null, root,
 						null, Object.class);
 			}
@@ -366,6 +369,25 @@ public class ControlConductor extends BaseIdentifiable
 	 */
 	public void setDatumService(OptionalService<DatumService> datumService) {
 		this.datumService = datumService;
+	}
+
+	/**
+	 * Get the operational modes service.
+	 * 
+	 * @return the opModesService
+	 */
+	public OptionalService<OperationalModesService> getOpModesService() {
+		return opModesService;
+	}
+
+	/**
+	 * Set the operational modes service.
+	 * 
+	 * @param opModesService
+	 *        the opModesService to set
+	 */
+	public void setOpModesService(OptionalService<OperationalModesService> opModesService) {
+		this.opModesService = opModesService;
 	}
 
 }

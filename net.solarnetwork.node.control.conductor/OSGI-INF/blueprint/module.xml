@@ -33,6 +33,12 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="opModesService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.OperationalModesService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<argument ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
@@ -101,6 +107,7 @@
 			<property name="messageSource" ref="messageSource"/>
 			<property name="datumService" ref="datumService"/>
 			<property name="expressionServices" ref="expressionServices"/>
+			<property name="opModesService" ref="opModesService"/>
 			<property name="placeholderService" ref="placeholderService"/>
 		</bean>
 	</osgix:managed-service-factory>
