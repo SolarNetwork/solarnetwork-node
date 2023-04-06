@@ -41,6 +41,9 @@ placeholder for use in any configured task **Control**, **Offset**, and **Value*
 **Value** is configured as an expression, then the parameters will be available directly within the
 expression.
 
+> :point_up: The [README-Example](./README-Example.md) document gives a detailed technical example
+> of using the `OrchestrateControls` instruction.
+
 # Overall settings
 
 Each component configuration contains the following settings:
