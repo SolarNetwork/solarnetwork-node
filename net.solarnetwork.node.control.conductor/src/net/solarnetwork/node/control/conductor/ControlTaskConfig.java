@@ -26,7 +26,6 @@ import static net.solarnetwork.node.service.support.ExpressionConfig.expressionR
 import static net.solarnetwork.service.ExpressionService.getGeneralExpressionReferenceLink;
 import java.time.Duration;
 import java.time.Instant;
-import java.time.Period;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -179,7 +178,8 @@ public class ControlTaskConfig {
 	 *        optional parameters to pass to the placeholder service
 	 * @return the execution time for this task, or {@literal null} if
 	 *         {@code start} is {@literal null} or {@code executionOffset}
-	 *         cannot be parsed as a millisecond or {@link Period} based offset
+	 *         cannot be parsed as a millisecond or {@link Duration} based
+	 *         offset
 	 */
 	public Instant executionTime(Instant start, PlaceholderService placeholderService,
 			Map<String, ?> parameters) {
@@ -193,12 +193,6 @@ public class ControlTaskConfig {
 			long ms = Long.parseLong(offset);
 			return start.plusMillis(ms);
 		} catch ( NumberFormatException e ) {
-			// ignore
-		}
-		try {
-			Period p = Period.parse(offset);
-			return start.plus(p);
-		} catch ( DateTimeParseException e ) {
 			// ignore
 		}
 		try {
@@ -278,7 +272,7 @@ public class ControlTaskConfig {
 	 *        the offset to set; can be an ISO 8601 period (for example
 	 *        {@literal PT1H} or an integer millisecond value, both supporting a
 	 *        {@code -} prefix for negation
-	 * @see Period#parse(CharSequence)
+	 * @see Duration#parse(CharSequence)
 	 */
 	public void setExecutionOffset(String executionOffset) {
 		this.executionOffset = executionOffset;
