@@ -15,7 +15,7 @@ A Control Conductor component named **HVAC DR** is configured with 3 tasks, that
  3. **X minutes after** the orchestration date, as defined by a `duration` parameter in the
     `OrchestrateControls` instruction, set the `hvac/1/mode` to `0`
 
- <img alt="Control Conductor settings" src="docs/solarnode-control-conductor-settings.png" width="618">
+ <img alt="Control Conductor settings" src="docs/solarnode-control-conductor-settings-example.png" width="618">
 
 Here is a concrete example of issuing an `OrchestrateControls` instruction, using the above
 configuration:
