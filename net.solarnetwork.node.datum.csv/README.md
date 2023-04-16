@@ -69,7 +69,7 @@ Here's an example screen shot of a configuration in a spreadsheet application. I
  1. Resource `Carpark` with 3 datum properties: `occupied`, `evFree`, and `evChargePower`
  2. Resource `Airport` with 2 datum properties: `watts` and `wattHours`
 
-Spreadsheet applications generally allows you to export the sheet in the CSV format, which can
+Spreadsheet applications generally allow you to export sheets in the CSV format, which can
 then be loaded into SolarNode via the CSV Resource CSV Configurer.
 
 <img title="CSV Resource CSV Configuration example" src="docs/solarnode-csv-resource-csv-configuration-example-sheet.png" width="2290">
