@@ -68,7 +68,7 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider {
@@ -83,7 +83,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 	public static final String DEFAULT_DATE_FORMAT = "dd/MM/yyyy HH:mm:ss";
 
 	/** The default value for the {@code url} property. */
-	public static final String DEFAULT_URL = "https://www2.electricityinfo.co.nz/download/prices?search_form%5Brun_types%5D%5B%5D=I&search_form%5Bmarket_types%5D%5B%5D=E&search_form%5Bnodes%5D%5B%5D={stationId}&search_form%5Bdate_from%5D={date}&search_form%5Btp_from%5D=1&search_form%5Bdate_to%5D={date}&search_form%5Btp_to%5D=48&search_form%5Btp_roll_back%5D=2&search_form%5Btp_roll_fwd%5D=1";
+	public static final String DEFAULT_URL = "https://www2.electricityinfo.co.nz/download/prices?search_form%5Brun_types%5D%5B%5D=D&search_form%5Bmarket_types%5D%5B%5D=E&search_form%5Bnodes%5D%5B%5D={stationId}&search_form%5Bdate_from%5D={date}&search_form%5Btp_from%5D=1&search_form%5Bdate_to%5D={date}&search_form%5Btp_to%5D=48&search_form%5Btp_roll_back%5D=0&search_form%5Btp_roll_fwd%5D=1";
 
 	/** The default value for the {@code priceColumn} property. */
 	public static final int DEFAULT_PRICE_COLUMN = 3;

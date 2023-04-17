@@ -60,7 +60,7 @@ import net.solarnetwork.util.StringUtils;
  * </p>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class DefaultDatumService
 		implements DatumService, EventHandler, InstructionHandler, Consumer<NodeDatum> {
@@ -166,6 +166,32 @@ public class DefaultDatumService
 			Class<T> type) {
 		NodeDatum result = history.offset(sourceId, timestamp, offset);
 		return (result != null && type.isAssignableFrom(result.getClass()) ? (T) result : null);
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T extends NodeDatum> Collection<T> slice(String sourceId, int offset, int count,
+			Class<T> type) {
+		List<T> result = new ArrayList<>(history.getConfig().getRawCount());
+		for ( NodeDatum d : history.slice(sourceId, offset, count) ) {
+			if ( type == null || type.isAssignableFrom(d.getClass()) ) {
+				result.add((T)d);
+			}
+		}
+		return result;
+	}
+
+	@SuppressWarnings("unchecked")
+	@Override
+	public <T extends NodeDatum> Collection<T> slice(String sourceId, Instant timestamp, int offset,
+			int count, Class<T> type) {
+		List<T> result = new ArrayList<>(history.getConfig().getRawCount());
+		for ( NodeDatum d : history.slice(sourceId, timestamp, offset, count) ) {
+			if ( type == null || type.isAssignableFrom(d.getClass()) ) {
+				result.add((T)d);
+			}
+		}
+		return result;
 	}
 
 	@Override

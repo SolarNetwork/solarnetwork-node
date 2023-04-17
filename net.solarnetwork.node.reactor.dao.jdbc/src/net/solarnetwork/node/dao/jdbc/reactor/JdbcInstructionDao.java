@@ -55,12 +55,12 @@ import net.solarnetwork.node.reactor.InstructionStatus;
  * JDBC implementation of {@link JdbcInstructionDao}.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements InstructionDao {
 
 	/** The default tables version. */
-	public static final int DEFAULT_TABLES_VERSION = 3;
+	public static final int DEFAULT_TABLES_VERSION = 4;
 
 	/** The table name for {@link Instruction} data. */
 	public static final String TABLE_INSTRUCTION = "sn_instruction";
@@ -123,7 +123,15 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 
 	/**
 	 * The classpath Resource for the SQL template for selecting Instruction by
-	 * state.
+	 * state and two parameter values.
+	 * 
+	 * @since 2.1
+	 */
+	public static final String RESOURCE_SQL_SELECT_INSTRUCTION_FOR_STATE_AND_2_PARAMS = "select-for-state-two-params";
+
+	/**
+	 * The classpath Resource for the SQL template for selecting Instruction
+	 * ready for acknowledgement.
 	 */
 	public static final String RESOURCE_SQL_SELECT_INSTRUCTION_FOR_ACKNOWEDGEMENT = "select-for-ack";
 
@@ -222,13 +230,16 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 		ps.setString(col++, instruction.getInstructorId());
 		ps.setTimestamp(col++, Timestamp.from(instruction.getInstructionDate()));
 		ps.setString(col++, instruction.getTopic());
+
+		Instant executeAt = instruction.getExecutionDate();
+		ps.setTimestamp(col++, Timestamp.from(executeAt != null ? executeAt : Instant.now()));
 	}
 
 	@Override
 	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
 	public Instruction getInstruction(Long instructionId, String instructorId) {
 		return getJdbcTemplate().query(getSqlResource(RESOURCE_SQL_SELECT_INSTRUCTION_FOR_ID),
-				new Object[] { instructionId, instructorId }, new ResultSetExtractor<Instruction>() {
+				new ResultSetExtractor<Instruction>() {
 
 					@Override
 					public Instruction extractData(ResultSet rs)
@@ -239,7 +250,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 						}
 						return null;
 					}
-				});
+				}, instructionId, instructorId);
 	}
 
 	private List<Instruction> extractInstructions(ResultSet rs) throws SQLException {
@@ -330,14 +341,32 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
 	public List<Instruction> findInstructionsForState(InstructionState state) {
 		return getJdbcTemplate().query(getSqlResource(RESOURCE_SQL_SELECT_INSTRUCTION_FOR_STATE),
-				new Object[] { state.toString() }, new ResultSetExtractor<List<Instruction>>() {
+				new ResultSetExtractor<List<Instruction>>() {
 
 					@Override
 					public List<Instruction> extractData(ResultSet rs)
 							throws SQLException, DataAccessException {
 						return extractInstructions(rs);
 					}
-				});
+				}, state.toString());
+	}
+
+	@Override
+	@Transactional(readOnly = true, propagation = Propagation.REQUIRED)
+	public List<Instruction> findInstructionsForStateAndParent(InstructionState state,
+			String parentInstructorId, Long parentInstructionId) {
+		return getJdbcTemplate().query(
+				getSqlResource(RESOURCE_SQL_SELECT_INSTRUCTION_FOR_STATE_AND_2_PARAMS),
+				new ResultSetExtractor<List<Instruction>>() {
+
+					@Override
+					public List<Instruction> extractData(ResultSet rs)
+							throws SQLException, DataAccessException {
+						return extractInstructions(rs);
+					}
+				}, Instruction.PARAM_PARENT_INSTRUCTOR_ID, parentInstructorId,
+				Instruction.PARAM_PARENT_INSTRUCTION_ID, parentInstructionId.toString(),
+				state.toString());
 	}
 
 	@Override
@@ -352,7 +381,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 							throws SQLException, DataAccessException {
 						return extractInstructions(rs);
 					}
-				});
+				}, Instruction.LOCAL_INSTRUCTION_ID);
 	}
 
 	@Override
@@ -368,6 +397,7 @@ public class JdbcInstructionDao extends AbstractJdbcDao<Instruction> implements 
 				Calendar c = Calendar.getInstance();
 				c.add(Calendar.HOUR, -hours);
 				ps.setTimestamp(1, new Timestamp(c.getTimeInMillis()), c);
+				ps.setString(2, Instruction.LOCAL_INSTRUCTION_ID);
 				return ps;
 			}
 		});

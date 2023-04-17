@@ -53,7 +53,7 @@ import net.solarnetwork.node.service.OperationalModesService;
  * </p>
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  * @since 1.79
  */
 public class ExpressionRoot extends DatumSamplesExpressionRoot {
@@ -550,6 +550,81 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 			return null;
 		}
 		return new ExpressionRoot(d, null, null, datumService, opModesService);
+	}
+
+	/**
+	 * Get a set of available datum for a given source ID, as
+	 * {@link DatumExpressionRoot} instances.
+	 * 
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 * 
+	 * @param sourceId
+	 *        the source ID to extract a slice from
+	 * @param offset
+	 *        the offset from {@code timestamp}, {@literal 0} being the latest
+	 *        and {@literal 1} the next later, and so on
+	 * @param count
+	 *        the maximum number of datum to return, starting from
+	 *        {@code offset} and iterating over earlier datum
+	 * @return the matching datum, never {@literal null}
+	 * @since 2.2
+	 */
+	public Collection<DatumExpressionRoot> slice(String sourceId, int offset, int count) {
+		if ( datumService == null || sourceId == null ) {
+			return Collections.emptyList();
+		}
+		Collection<NodeDatum> found = datumService.slice(sourceId, offset, count, null);
+		if ( found == null || found.isEmpty() ) {
+			return Collections.singleton(this);
+		}
+		List<DatumExpressionRoot> result = new ArrayList<>(found.size());
+		result.add(this);
+		for ( NodeDatum d : found ) {
+			result.add(new ExpressionRoot(d, null, null, datumService, opModesService));
+		}
+		return result;
+	}
+
+	/**
+	 * Get a set of available datum offset from a given timestamp, for a given
+	 * source ID, as {@link DatumExpressionRoot} instances.
+	 * 
+	 * <p>
+	 * Note a non-null {@link DatumService} instance must have been provided to
+	 * the constructor of this instance for this method to work.
+	 * </p>
+	 * 
+	 * @param sourceId
+	 *        the source ID to extract a slice from
+	 * @param timestamp
+	 *        the timestamp to reference
+	 * @param offset
+	 *        the offset from {@code timestamp}, {@literal 0} being the latest
+	 *        and {@literal 1} the next later, and so on
+	 * @param count
+	 *        the maximum number of datum to return, starting from
+	 *        {@code offset} and iterating over earlier datum
+	 * @return the matching datum, never {@literal null}
+	 * @since 2.2
+	 */
+	public Collection<DatumExpressionRoot> slice(String sourceId, Instant timestamp, int offset,
+			int count) {
+		if ( datumService == null || sourceId == null ) {
+			return Collections.emptyList();
+		}
+		Collection<NodeDatum> found = datumService.slice(sourceId, offset, count, null);
+		if ( found == null || found.isEmpty() ) {
+			return Collections.singleton(this);
+		}
+		List<DatumExpressionRoot> result = new ArrayList<>(found.size());
+		result.add(this);
+		for ( NodeDatum d : found ) {
+			result.add(new ExpressionRoot(d, null, null, datumService, opModesService));
+		}
+		return result;
 	}
 
 	/**

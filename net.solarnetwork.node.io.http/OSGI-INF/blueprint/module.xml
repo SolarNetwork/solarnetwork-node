@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+	
+	<reference-list id="httpReqCustomizers" interface="net.solarnetwork.web.service.HttpRequestCustomizerService" availability="optional"/>
+	
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
+	<service interface="org.springframework.http.client.ClientHttpRequestFactory">
+		<service-properties>
+			<entry key="function" value="node"/>
+		</service-properties>
+		<bean class="org.springframework.http.client.HttpComponentsClientHttpRequestFactory">
+			<property name="readTimeout" value="60000"/>
+		</bean>
+	</service>
+	
+	<!-- HTTP Request Customizer Chain -->
+	
+	<bean id="httpReqCustChainMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.web.service.support.ChainHttpRequestCustomizerService</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</list>
+		</property>
+	</bean>
+	
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="HTTP Request Customizer Chain"/>
+			<property name="factoryUid" value="net.s10k.http.customizer.chain"/>
+			<property name="messageSource" ref="httpReqCustChainMessageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.s10k.http.customizer.chain" 
+			autowire-on-update="true" update-method="configurationChanged">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.web.service.HttpRequestCustomizerService</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.s10k.http.customizer.chain"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.web.service.support.ChainHttpRequestCustomizerService" 
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<argument ref="httpReqCustomizers"/>
+			<property name="messageSource" ref="httpReqCustChainMessageSource"/>
+		</bean>
+	</osgix:managed-service-factory>
+	
+	<!-- HTTP Request Customizer: Basic Authorization -->
+	
+	<bean id="httpReqCustBasicAuthMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.io.http.req.BasicAuthHttpRequestCustomizerService</value>
+				<value>net.solarnetwork.web.service.support.BasicAuthHttpRequestCustomizerService</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</list>
+		</property>
+	</bean>
+	
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="HTTP Request Customizer Chain"/>
+			<property name="factoryUid" value="net.s10k.http.customizer.auth.basic"/>
+			<property name="messageSource" ref="httpReqCustBasicAuthMessageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.s10k.http.customizer.auth.basic" 
+			autowire-on-update="true" update-method="configurationChanged">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.web.service.HttpRequestCustomizerService</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.s10k.http.customizer.auth.basic"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.io.http.req.BasicAuthHttpRequestCustomizerService" 
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<property name="messageSource" ref="httpReqCustBasicAuthMessageSource"/>
+			<property name="placeholderService" ref="placeholderService"/>
+		</bean>
+	</osgix:managed-service-factory>
+	
+</blueprint>

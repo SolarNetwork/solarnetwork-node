@@ -22,6 +22,11 @@
 
 package net.solarnetwork.node.reactor;
 
+import java.time.DateTimeException;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+
 /**
  * API for a single, immutable instruction with associated parameters.
  * 
@@ -37,7 +42,7 @@ package net.solarnetwork.node.reactor;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.2
  */
 public interface Instruction extends net.solarnetwork.domain.Instruction {
 
@@ -46,6 +51,44 @@ public interface Instruction extends net.solarnetwork.domain.Instruction {
 	 * {@link #getInstructorId()}.
 	 */
 	String LOCAL_INSTRUCTION_ID = "LOCAL";
+
+	/**
+	 * The name of an instruction parameter that represents the desired
+	 * execution date for the instruction.
+	 * 
+	 * <p>
+	 * The parameter value can be either a {@code long} epoch millisecond value
+	 * or an ISO 8601 instant.
+	 * </p>
+	 * 
+	 * @since 2.1
+	 * @see java.time.format.DateTimeFormatter#ISO_INSTANT
+	 */
+	String PARAM_EXECUTION_DATE = "executionDate";
+
+	/**
+	 * The task instruction parameter for a "parent" instruction ID.
+	 * 
+	 * <p>
+	 * This parameter can be used to track instructions created by other
+	 * instructions.
+	 * </p>
+	 * 
+	 * @since 2.2
+	 */
+	String PARAM_PARENT_INSTRUCTION_ID = "parentInstructionId";
+
+	/**
+	 * The task instruction parameter for the "parent" instructor ID.
+	 * 
+	 * <p>
+	 * This parameter can be used to track instructions created by other
+	 * instructions.
+	 * </p>
+	 * 
+	 * @since 2.2
+	 */
+	String PARAM_PARENT_INSTRUCTOR_ID = "parentInstructorId";
 
 	/**
 	 * Get an identifier for this instruction.
@@ -76,5 +119,72 @@ public interface Instruction extends net.solarnetwork.domain.Instruction {
 	 */
 	@Override
 	InstructionStatus getStatus();
+
+	/**
+	 * Get the instruction execution date, if available.
+	 * 
+	 * <p>
+	 * This method looks for the {@link #PARAM_EXECUTION_DATE} parameter and
+	 * tries to parse that as a date. The parameter value can be either a
+	 * {@code long} epoch millisecond value or an ISO 8601 instant.
+	 * </p>
+	 * 
+	 * @return the instruction execution date, or {@literal null} if one is not
+	 *         available or cannot be parsed
+	 * @see java.time.format.DateTimeFormatter#ISO_INSTANT
+	 * @see #timestampParameterValue(String)
+	 * @since 2.1
+	 */
+	default Instant getExecutionDate() {
+		return timestampParameterValue(PARAM_EXECUTION_DATE);
+	}
+
+	/**
+	 * Get a date parameter value, if available.
+	 * 
+	 * <p>
+	 * This method supports the same date format as described in the
+	 * {@link #PARAM_EXECUTION_DATE} parameter: the parameter value can be
+	 * either a {@code long} epoch millisecond value or an ISO 8601 instant.
+	 * </p>
+	 * 
+	 * @param parameterName
+	 *        the name of the parameter to parse as a timestamp
+	 * @return the parameter value parsed as a timestamp, or {@literal null} if
+	 *         one is not available or cannot be parsed
+	 * @see java.time.format.DateTimeFormatter#ISO_INSTANT
+	 * @since 2.2
+	 */
+	default Instant timestampParameterValue(String parameterName) {
+		if ( parameterName == null ) {
+			return null;
+		}
+		final String val = getParameterValue(parameterName);
+		if ( val == null ) {
+			return null;
+		}
+		Instant result = null;
+		try {
+			result = Instant.ofEpochMilli(Long.parseLong(val));
+		} catch ( NumberFormatException | DateTimeException e ) {
+			try {
+				result = DateTimeFormatter.ISO_INSTANT.parse(val, Instant::from);
+			} catch ( DateTimeParseException e2 ) {
+				// ignore and bail
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Test if this instruction is a local instruction.
+	 * 
+	 * @return {@literal true} if {@link #getInstructorId()} is
+	 *         {@link #LOCAL_INSTRUCTION_ID}
+	 * @since 2.2
+	 */
+	default boolean isLocal() {
+		return LOCAL_INSTRUCTION_ID.equals(getInstructorId());
+	}
 
 }

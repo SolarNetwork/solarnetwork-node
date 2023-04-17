@@ -24,6 +24,7 @@ package net.solarnetwork.node.runtime.test;
 
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -289,6 +290,304 @@ public class DatumHistoryTests {
 					fail("Unknown source: " + sourceId);
 			}
 		}
+	}
+
+	@Test
+	public void slice_head() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		String sourceId = "test";
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		final int captureCount = 3;
+		for ( int i = 0; i < captureCount; i++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(sourceId, start.plusSeconds(i),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		final int count = 2;
+		Iterable<NodeDatum> slice = h.slice(sourceId, 0, count);
+
+		// THEN
+		List<NodeDatum> datum = StreamSupport.stream(slice.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Expected count", datum.size(), is(equalTo(count)));
+		for ( int i = 0; i < count; i++ ) {
+			assertThat(String.format("Expected datum %d returned", i), datum.get(i).getTimestamp(),
+					is(equalTo(start.plusSeconds(captureCount - count + i))));
+		}
+	}
+
+	@Test
+	public void slice_head_countLimitedByCapture() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		String sourceId = "test";
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		final int captureCount = 2;
+		for ( int i = 0; i < captureCount; i++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(sourceId, start.plusSeconds(i),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		//final int count = 2;
+		Iterable<NodeDatum> slice = h.slice(sourceId, 0, 5);
+
+		// THEN
+		List<NodeDatum> datum = StreamSupport.stream(slice.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Expected count limited by capture count", datum.size(), is(equalTo(captureCount)));
+		for ( int i = 0; i < captureCount; i++ ) {
+			assertThat(String.format("Expected datum %d returned", i), datum.get(i).getTimestamp(),
+					is(equalTo(start.plusSeconds(i))));
+		}
+	}
+
+	@Test
+	public void slice_head_countLimitedByConfig() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		String sourceId = "test";
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		final int captureCount = 4;
+		for ( int i = 0; i < captureCount; i++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(sourceId, start.plusSeconds(i),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		Iterable<NodeDatum> slice = h.slice(sourceId, 0, 5);
+
+		// THEN
+		List<NodeDatum> datum = StreamSupport.stream(slice.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Expected count limited by config count", datum.size(),
+				is(equalTo(TINY_CONFIG.getRawCount())));
+		for ( int i = 0; i < TINY_CONFIG.getRawCount(); i++ ) {
+			assertThat(String.format("Expected datum %d returned", i), datum.get(i).getTimestamp(),
+					is(equalTo(start.plusSeconds(i + (captureCount - TINY_CONFIG.getRawCount())))));
+		}
+	}
+
+	@Test
+	public void slice_offset() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		String sourceId = "test";
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		final int captureCount = 3;
+		for ( int i = 0; i < captureCount; i++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(sourceId, start.plusSeconds(i),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		final int offset = 1;
+		final int count = 2;
+		Iterable<NodeDatum> slice = h.slice(sourceId, offset, count);
+
+		// THEN
+		List<NodeDatum> datum = StreamSupport.stream(slice.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Expected count", datum.size(), is(equalTo(count)));
+		for ( int i = 0; i < count; i++ ) {
+			assertThat(String.format("Expected datum %d returned", i), datum.get(i).getTimestamp(),
+					is(equalTo(start.plusSeconds(captureCount - offset - count + i))));
+		}
+	}
+
+	@Test
+	public void slice_offsetLimitedByCapture() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		String sourceId = "test";
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		final int captureCount = 2;
+		for ( int i = 0; i < captureCount; i++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(sourceId, start.plusSeconds(i),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		final int offset = 1;
+		Iterable<NodeDatum> slice = h.slice(sourceId, offset, 10);
+
+		// THEN
+		List<NodeDatum> datum = StreamSupport.stream(slice.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Expected count", datum.size(), is(equalTo(1)));
+		assertThat("Expected datum returned", datum.get(0).getTimestamp(),
+				is(equalTo(start.plusSeconds(captureCount - offset - 1))));
+	}
+
+	@Test
+	public void slice_offsetLimitedByConfig() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		String sourceId = "test";
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		final int captureCount = TINY_CONFIG.getRawCount() + 1;
+		for ( int i = 0; i < captureCount; i++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(sourceId, start.plusSeconds(i),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		final int offset = 1;
+		Iterable<NodeDatum> slice = h.slice(sourceId, offset, 10);
+
+		// THEN
+		List<NodeDatum> datum = StreamSupport.stream(slice.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Expected count limited by config count", datum.size(),
+				is(equalTo(TINY_CONFIG.getRawCount() - offset)));
+		for ( int i = 0; i < TINY_CONFIG.getRawCount() - offset; i++ ) {
+			assertThat(String.format("Expected datum %d returned", i), datum.get(i).getTimestamp(),
+					is(equalTo(start
+							.plusSeconds(i + (captureCount - offset - TINY_CONFIG.getRawCount() + 1)))));
+		}
+	}
+
+	@Test
+	public void slice_offsetTime_head() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		String sourceId = "test";
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		final int captureCount = 3;
+		for ( int i = 0; i < captureCount; i++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(sourceId, start.plusSeconds(i),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		final int count = 2;
+		Iterable<NodeDatum> slice = h.slice(sourceId, start.plusSeconds(captureCount - 1), 0, count);
+
+		// THEN
+		List<NodeDatum> datum = StreamSupport.stream(slice.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Expected count", datum.size(), is(equalTo(count)));
+		for ( int i = 0; i < count; i++ ) {
+			assertThat(String.format("Expected datum %d returned", i), datum.get(i).getTimestamp(),
+					is(equalTo(start.plusSeconds(captureCount - count + i))));
+		}
+	}
+
+	@Test
+	public void slice_offsetTime_offset() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		String sourceId = "test";
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		final int captureCount = 3;
+		for ( int i = 0; i < captureCount; i++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(sourceId, start.plusSeconds(i),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		final int count = 2;
+		Iterable<NodeDatum> slice = h.slice(sourceId, start.plusSeconds(1), 0, count);
+
+		// THEN
+		List<NodeDatum> datum = StreamSupport.stream(slice.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Expected count", datum.size(), is(equalTo(count)));
+		for ( int i = 0; i < count; i++ ) {
+			assertThat(String.format("Expected datum %d returned", i), datum.get(i).getTimestamp(),
+					is(equalTo(start.plusSeconds(i))));
+		}
+	}
+
+	@Test
+	public void slice_offsetTime_offset_offset() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		String sourceId = "test";
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		final int captureCount = 3;
+		for ( int i = 0; i < captureCount; i++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(sourceId, start.plusSeconds(i),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		final int count = 2;
+		Iterable<NodeDatum> slice = h.slice(sourceId, start.plusSeconds(1), 1, count);
+
+		// THEN
+		List<NodeDatum> datum = StreamSupport.stream(slice.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Expected count", datum.size(), is(equalTo(1)));
+		assertThat("Expected datum returned", datum.get(0).getTimestamp(), is(equalTo(start)));
+	}
+
+	@Test
+	public void slice_offsetTime_offsetTooFar_offset() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		String sourceId = "test";
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		final int captureCount = 3;
+		for ( int i = 0; i < captureCount; i++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(sourceId, start.plusSeconds(i),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		final int count = 2;
+		Iterable<NodeDatum> slice = h.slice(sourceId, start.minusSeconds(1), 0, count);
+
+		// THEN
+		List<NodeDatum> datum = StreamSupport.stream(slice.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Expected count", datum.size(), is(equalTo(0)));
+	}
+
+	@Test
+	public void slice_offsetTime_offset_offsetTooFar() {
+		// GIVEN
+		DatumHistory h = new DatumHistory(TINY_CONFIG, raw);
+
+		String sourceId = "test";
+		Instant start = Instant.now().truncatedTo(ChronoUnit.HOURS);
+		final int captureCount = 3;
+		for ( int i = 0; i < captureCount; i++ ) {
+			SimpleDatum datum = SimpleDatum.nodeDatum(sourceId, start.plusSeconds(i),
+					new DatumSamples());
+			h.add(datum);
+		}
+
+		// WHEN
+		final int count = 2;
+		Iterable<NodeDatum> slice = h.slice(sourceId, start.plusSeconds(1), 2, count);
+
+		// THEN
+		List<NodeDatum> datum = StreamSupport.stream(slice.spliterator(), false)
+				.collect(Collectors.toList());
+		assertThat("Expected count", datum.size(), is(equalTo(0)));
 	}
 
 }

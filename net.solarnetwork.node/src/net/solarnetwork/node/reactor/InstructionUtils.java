@@ -26,6 +26,7 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 
 /**
@@ -39,6 +40,32 @@ public final class InstructionUtils {
 
 	private InstructionUtils() {
 		// can't create me
+	}
+
+	// inner class to lazy-init LOCAL_ID with system time seed
+	private static class LocalId {
+
+		private static final AtomicLong LOCAL_ID = initLocalId();
+
+		private static AtomicLong initLocalId() {
+			return new AtomicLong(System.currentTimeMillis());
+		}
+	}
+
+	/**
+	 * Generate a new local ID.
+	 * 
+	 * <p>
+	 * Local IDs are sequentially generated, but seeded by the current date when
+	 * this method is first invoked. This is to help reduce the risk of
+	 * generating duplicate IDs across JVM restarts, but is dependent on the
+	 * system clock to achieve that.
+	 * </p>
+	 * 
+	 * @return a new local ID
+	 */
+	private static Long localId() {
+		return LocalId.LOCAL_ID.getAndIncrement();
 	}
 
 	/**
@@ -94,6 +121,11 @@ public final class InstructionUtils {
 	/**
 	 * Create a new local instruction with an optional parameter.
 	 * 
+	 * <p>
+	 * The returned {@link Instruction#getInstructorId()} value will be
+	 * {@link Instruction#LOCAL_INSTRUCTION_ID}.
+	 * </p>
+	 * 
 	 * @param topic
 	 *        the instruction topic
 	 * @param params
@@ -101,7 +133,7 @@ public final class InstructionUtils {
 	 * @return the new instruction, never {@literal null}
 	 */
 	public static Instruction createLocalInstruction(String topic, Map<String, String> params) {
-		BasicInstruction instr = new BasicInstruction(null, topic, Instant.now(),
+		BasicInstruction instr = new BasicInstruction(localId(), topic, Instant.now(),
 				Instruction.LOCAL_INSTRUCTION_ID, null);
 		if ( params != null ) {
 			for ( Entry<String, String> me : params.entrySet() ) {
@@ -114,6 +146,11 @@ public final class InstructionUtils {
 	/**
 	 * Create a new local instruction with an optional parameter.
 	 * 
+	 * <p>
+	 * The returned {@link Instruction#getInstructorId()} value will be
+	 * {@link Instruction#LOCAL_INSTRUCTION_ID}.
+	 * </p>
+	 * 
 	 * @param topic
 	 *        the instruction topic
 	 * @param paramName
@@ -124,7 +161,7 @@ public final class InstructionUtils {
 	 * @return the new instruction, never {@literal null}
 	 */
 	public static Instruction createLocalInstruction(String topic, String paramName, String paramValue) {
-		BasicInstruction instr = new BasicInstruction(null, topic, Instant.now(),
+		BasicInstruction instr = new BasicInstruction(localId(), topic, Instant.now(),
 				Instruction.LOCAL_INSTRUCTION_ID, null);
 		if ( paramName != null && paramValue != null ) {
 			instr.addParameter(paramName, paramValue);
@@ -134,6 +171,11 @@ public final class InstructionUtils {
 
 	/**
 	 * Create a new local instruction for
+	 * 
+	 * <p>
+	 * The returned {@link Instruction#getInstructorId()} value will be
+	 * {@link Instruction#LOCAL_INSTRUCTION_ID}.
+	 * </p>
 	 * 
 	 * @param controlId
 	 *        the ID of the control to set the control value to

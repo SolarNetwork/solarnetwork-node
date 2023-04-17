@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+	<!-- References -->
+
+	<bean id="datumService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="expressionServices" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.service.ExpressionService"/>
+	</bean>
+	
+	<bean id="instructionService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionExecutionService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="opModesService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.OperationalModesService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="reactorService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.reactor.ReactorService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<!-- Services -->
+
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.control.conductor.ControlConductor</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</list>
+		</property>
+		<property name="parentMessageSource">
+			<bean class="net.solarnetwork.support.PrefixedMessageSource">
+				<property name="prefix" value="taskConfigsItem."/>
+				<property name="delegate">
+					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+						<property name="basenames">
+							<list>
+								<value>net.solarnetwork.node.control.conductor.ControlTaskConfig</value>
+							</list>
+						</property>
+					</bean>
+				</property>
+			</bean>	
+  		</property>
+	</bean>
+
+
+	<!-- Published Services -->
+	
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Control Conductor"/>
+			<property name="factoryUid" value="net.solarnetwork.node.control.conductor"/>
+			<property name="messageSource" ref="messageSource"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.control.conductor"
+			autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.reactor.InstructionHandler</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.control.conductor"/>
+			<beans:entry key="instruction">
+				<beans:list>
+					<beans:value>OrchestrateControls</beans:value>
+				</beans:list>
+			</beans:entry>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.control.conductor.ControlConductor">
+			<argument ref="reactorService"/>
+			<argument ref="instructionService"/>
+			<property name="messageSource" ref="messageSource"/>
+			<property name="datumService" ref="datumService"/>
+			<property name="expressionServices" ref="expressionServices"/>
+			<property name="opModesService" ref="opModesService"/>
+			<property name="placeholderService" ref="placeholderService"/>
+		</bean>
+	</osgix:managed-service-factory>
+	
+</blueprint>

@@ -24,7 +24,9 @@ package net.solarnetwork.node.dao.jdbc.reactor.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -33,17 +35,24 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.util.FileCopyUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.codec.JsonUtils;
@@ -53,13 +62,14 @@ import net.solarnetwork.node.dao.jdbc.reactor.JdbcInstructionDao;
 import net.solarnetwork.node.reactor.BasicInstruction;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
+import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.test.AbstractNodeTransactionalTest;
 
 /**
  * Test case for the {@link JdbcInstructionDao} class.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 
@@ -86,10 +96,58 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 		lastDatum = null;
 	}
 
+	private Instruction storeNew(Instant date) {
+		return storeNew(TEST_ID, TEST_INSTRUCTOR, date);
+	}
+
+	private Instruction storeNew(Long id, String instructorId, Instant date) {
+		BasicInstruction instr = new BasicInstruction(id, TEST_TOPIC, date, instructorId, null);
+
+		for ( int i = 0; i < 2; i++ ) {
+			instr.addParameter(String.format("%s %d", TEST_PARAM_KEY, i),
+					String.format("%s %d %s", TEST_PARAM_KEY, i, TEST_PARAM_VALUE));
+		}
+
+		dao.storeInstruction(instr);
+		return dao.getInstruction(instr.getId(), instr.getInstructorId());
+	}
+
 	@Test
 	public void storeNew() {
-		BasicInstruction instr = new BasicInstruction(TEST_ID, TEST_TOPIC, Instant.now(),
+		lastDatum = storeNew(Instant.now());
+	}
+
+	private List<Map<String, Object>> listInstructions() {
+		return new JdbcTemplate(dataSource).queryForList("select * from solarnode.sn_instruction")
+				.stream().map(m -> {
+					Map<String, Object> lcm = new LinkedHashMap<>(m.size());
+					for ( Entry<String, Object> e : m.entrySet() ) {
+						lcm.put(e.getKey().toLowerCase(), e.getValue());
+					}
+					return lcm;
+				}).collect(Collectors.toList());
+	}
+
+	private List<Map<String, Object>> listInstructionParams() {
+		return new JdbcTemplate(dataSource).queryForList("select * from solarnode.sn_instruction_param")
+				.stream().map(m -> {
+					Map<String, Object> lcm = new LinkedHashMap<>(m.size());
+					for ( Entry<String, Object> e : m.entrySet() ) {
+						lcm.put(e.getKey().toLowerCase(), e.getValue());
+					}
+					return lcm;
+				}).collect(Collectors.toList());
+	}
+
+	@Test
+	public void storeNew_withExecuteDate() {
+		final Instant executeDate = Instant.now().truncatedTo(ChronoUnit.MINUTES).plus(1,
+				ChronoUnit.HOURS);
+		final String executeDateStr = DateTimeFormatter.ISO_INSTANT.format(executeDate);
+		BasicInstruction instr = new BasicInstruction(
+				Math.abs(UUID.randomUUID().getMostSignificantBits()), TEST_TOPIC, Instant.now(),
 				TEST_INSTRUCTOR, null);
+		instr.addParameter(Instruction.PARAM_EXECUTION_DATE, executeDateStr);
 
 		for ( int i = 0; i < 2; i++ ) {
 			instr.addParameter(String.format("%s %d", TEST_PARAM_KEY, i),
@@ -98,6 +156,12 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 
 		dao.storeInstruction(instr);
 		lastDatum = dao.getInstruction(instr.getId(), instr.getInstructorId());
+
+		// verify date stored
+		List<Map<String, Object>> rows = listInstructions();
+		assertThat("Row stored", rows, hasSize(1));
+		assertThat("Execution date stored", rows.get(0),
+				hasEntry("execute_at", Timestamp.from(executeDate)));
 	}
 
 	private String stringResource(String resource) {
@@ -141,6 +205,19 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 	}
 
 	@Test
+	public void storeLocal() {
+		// GIVEN
+		Instruction instr = InstructionUtils.createSetControlValueLocalInstruction("/test/control", "1");
+
+		// WHEN
+		dao.storeInstruction(instr);
+		Instruction result = dao.getInstruction(instr.getId(), instr.getInstructorId());
+
+		// THEN
+		assertThat("Instruction persisted", result, is(notNullValue()));
+	}
+
+	@Test
 	public void getByPrimaryKey() {
 		storeNew();
 		assertThat("Retrieved by primary key", lastDatum, is(notNullValue()));
@@ -172,6 +249,72 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 		assertNotNull(results);
 		assertEquals(1, results.size());
 		assertEquals(lastDatum.getId(), results.get(0).getId());
+	}
+
+	@Test
+	public void findByState_withoutDeferredInstructions() {
+		// GIVEN
+		storeNew();
+		Instruction instr = lastDatum;
+
+		final Instant executeDate = Instant.now().truncatedTo(ChronoUnit.MINUTES).plus(1,
+				ChronoUnit.HOURS);
+		final String executeDateStr = DateTimeFormatter.ISO_INSTANT.format(executeDate);
+		BasicInstruction instr2 = new BasicInstruction(
+				Math.abs(UUID.randomUUID().getMostSignificantBits()), TEST_TOPIC, Instant.now(),
+				TEST_INSTRUCTOR, null);
+		instr2.addParameter(Instruction.PARAM_EXECUTION_DATE, executeDateStr);
+		dao.storeInstruction(instr2);
+
+		// WHEN
+		List<Instruction> results = dao.findInstructionsForState(InstructionState.Received);
+
+		// THEN
+		List<Map<String, Object>> rows = listInstructions();
+		assertThat("Two instruction rows exist", rows, hasSize(2));
+
+		assertThat("One instruction returned becauase deferred instruction omitted", results,
+				hasSize(1));
+		assertThat("Immediate instruction returned", results.get(0).getId(), is(equalTo(instr.getId())));
+	}
+
+	@Test
+	public void findByStateAndParent() {
+		// GIVEN
+
+		// store a parent instruction
+		storeNew();
+
+		// store several children
+		final int count = 3;
+		final List<Instruction> instructions = new ArrayList<>(count);
+		for ( int i = 0; i < count; i++ ) {
+			BasicInstruction instr = new BasicInstruction(UUID.randomUUID().getMostSignificantBits(),
+					TEST_TOPIC, Instant.now(), TEST_INSTRUCTOR, null);
+			instr.addParameter(Instruction.PARAM_PARENT_INSTRUCTOR_ID, lastDatum.getInstructorId());
+			instr.addParameter(Instruction.PARAM_PARENT_INSTRUCTION_ID, lastDatum.getId().toString());
+			for ( int j = 0; j < 2; j++ ) {
+				instr.addParameter(String.format("%s %d", TEST_PARAM_KEY, j),
+						String.format("%s %d %s", TEST_PARAM_KEY, j, TEST_PARAM_VALUE));
+			}
+			dao.storeInstruction(instr);
+			instructions.add(dao.getInstruction(instr.getId(), instr.getInstructorId()));
+		}
+
+		log.debug("Instruction params: [{}]", listInstructionParams().stream().map(Object::toString)
+				.collect(Collectors.joining("\n  , ", "\n    ", "\n")));
+
+		// WHEN
+		List<Instruction> results = dao.findInstructionsForStateAndParent(InstructionState.Received,
+				lastDatum.getInstructorId(), lastDatum.getId());
+
+		// THEN
+		assertThat("All children returned", results, hasSize(3));
+
+		Long[] expectedChildIds = instructions.stream().map(Instruction::getId).toArray(Long[]::new);
+		Set<Long> childIds = results.stream().map(Instruction::getId).collect(Collectors.toSet());
+		assertThat("All children accounted for", childIds,
+				containsInAnyOrder((Object[]) expectedChildIds));
 	}
 
 	@Test
@@ -262,6 +405,56 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 	}
 
 	@Test
+	public void findForAck_localOnly() {
+		// GIVEN
+		final String controlId = UUID.randomUUID().toString();
+		final String controlVal = UUID.randomUUID().toString();
+		Instruction instr = InstructionUtils.createSetControlValueLocalInstruction(controlId,
+				controlVal);
+		dao.storeInstruction(instr);
+		instr = dao.getInstruction(instr.getId(), instr.getInstructorId());
+
+		// WHEN
+		List<Instruction> results = dao.findInstructionsForAcknowledgement();
+		assertThat("Results empty because local instruction ignored", results, hasSize(0));
+
+		// update ack now for second search
+		InstructionStatus newStatus = instr.getStatus()
+				.newCopyWithAcknowledgedState(instr.getStatus().getInstructionState());
+		dao.storeInstructionStatus(instr.getId(), instr.getInstructorId(), newStatus);
+
+		results = dao.findInstructionsForAcknowledgement();
+		assertThat("Result still not found", results, hasSize(0));
+	}
+
+	@Test
+	public void findForAck_localIgnored() {
+		// GIVEN
+		final String controlId = UUID.randomUUID().toString();
+		final String controlVal = UUID.randomUUID().toString();
+		Instruction instr = InstructionUtils.createSetControlValueLocalInstruction(controlId,
+				controlVal);
+		dao.storeInstruction(instr);
+		instr = dao.getInstruction(instr.getId(), instr.getInstructorId());
+
+		// now store non-local instruction
+		storeNew();
+
+		// WHEN
+		List<Instruction> results = dao.findInstructionsForAcknowledgement();
+		assertThat("Result provided (local ignored)", results, hasSize(1));
+		assertEquals(lastDatum.getId(), results.get(0).getId());
+
+		// update ack now for second search
+		InstructionStatus newStatus = lastDatum.getStatus()
+				.newCopyWithAcknowledgedState(lastDatum.getStatus().getInstructionState());
+		dao.storeInstructionStatus(lastDatum.getId(), lastDatum.getInstructorId(), newStatus);
+
+		results = dao.findInstructionsForAcknowledgement();
+		assertThat("Result no longer found because acknowledged", results, hasSize(0));
+	}
+
+	@Test
 	public void compareAndSetStatus() {
 		storeNew();
 		InstructionStatus execStatus = lastDatum.getStatus()
@@ -288,6 +481,90 @@ public class JdbcInstructionDaoTests extends AbstractNodeTransactionalTest {
 		assertThat("State", instr.getStatus().getInstructionState(), equalTo(InstructionState.Received));
 		assertThat("Acknoledged state", instr.getStatus().getAcknowledgedInstructionState(),
 				is(nullValue()));
+	}
+
+	@Test
+	public void deleteHandledOlderThan_ackComplete() {
+		// GIVEN
+		Instruction instr = storeNew(Instant.now().minus(2, ChronoUnit.HOURS));
+
+		// update to Complete + acknowledged Complete
+		InstructionStatus doneStatus = instr.getStatus().newCopyWithState(InstructionState.Completed)
+				.newCopyWithAcknowledgedState(InstructionState.Completed);
+		dao.storeInstructionStatus(instr.getId(), instr.getInstructorId(), doneStatus);
+
+		// WHEN
+		int result = dao.deleteHandledInstructionsOlderThan(1);
+
+		// THEN
+		assertThat("One instruction deleted because older than 1 hour and acknowledged Complete", result,
+				is(equalTo(1)));
+
+		List<Map<String, Object>> rows = listInstructions();
+		assertThat("No rows exist", rows, hasSize(0));
+	}
+
+	@Test
+	public void deleteHandledOlderThan_ackDeclined() {
+		// GIVEN
+		Instruction instr = storeNew(Instant.now().minus(2, ChronoUnit.HOURS));
+
+		// update to Complete + acknowledged Complete
+		InstructionStatus doneStatus = instr.getStatus().newCopyWithState(InstructionState.Declined)
+				.newCopyWithAcknowledgedState(InstructionState.Declined);
+		dao.storeInstructionStatus(instr.getId(), instr.getInstructorId(), doneStatus);
+
+		// WHEN
+		int result = dao.deleteHandledInstructionsOlderThan(1);
+
+		// THEN
+		assertThat("One instruction deleted because older than 1 hour and acknowledged Declined", result,
+				is(equalTo(1)));
+
+		List<Map<String, Object>> rows = listInstructions();
+		assertThat("No rows exist", rows, hasSize(0));
+	}
+
+	@Test
+	public void deleteHandledOlderThan_complete() {
+		// GIVEN
+		Instruction instr = storeNew(Instant.now().minus(2, ChronoUnit.HOURS));
+
+		// update to Complete + acknowledged Received
+		InstructionStatus doneStatus = instr.getStatus().newCopyWithState(InstructionState.Completed)
+				.newCopyWithAcknowledgedState(InstructionState.Received);
+		dao.storeInstructionStatus(instr.getId(), instr.getInstructorId(), doneStatus);
+
+		// WHEN
+		int result = dao.deleteHandledInstructionsOlderThan(1);
+
+		// THEN
+		assertThat("No instruction deleted because acknowledged state != state", result, is(equalTo(0)));
+
+		List<Map<String, Object>> rows = listInstructions();
+		assertThat("Rows still exists", rows, hasSize(1));
+	}
+
+	@Test
+	public void deleteHandledOlderThan_local_complete() {
+		// GIVEN
+		Instruction instr = InstructionUtils.createSetControlValueLocalInstruction("foo", "bar");
+		instr = storeNew(instr.getId(), instr.getInstructorId(),
+				Instant.now().minus(2, ChronoUnit.HOURS));
+
+		// update to Complete without any ack
+		InstructionStatus doneStatus = instr.getStatus().newCopyWithState(InstructionState.Completed);
+		dao.storeInstructionStatus(instr.getId(), instr.getInstructorId(), doneStatus);
+
+		// WHEN
+		int result = dao.deleteHandledInstructionsOlderThan(1);
+
+		// THEN
+		assertThat("One instruction deleted because older than 1 hour and Complete and local", result,
+				is(equalTo(1)));
+
+		List<Map<String, Object>> rows = listInstructions();
+		assertThat("No rows exist", rows, hasSize(0));
 	}
 
 }

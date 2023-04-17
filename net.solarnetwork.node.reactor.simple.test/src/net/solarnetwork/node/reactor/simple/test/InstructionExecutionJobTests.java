@@ -35,6 +35,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import org.easymock.EasyMock;
@@ -43,6 +44,7 @@ import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.node.reactor.BasicInstruction;
 import net.solarnetwork.node.reactor.BasicInstructionStatus;
+import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionDao;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
@@ -175,6 +177,56 @@ public class InstructionExecutionJobTests {
 	}
 
 	@Test
+	public void noHandler_notExpiredFromExecutionDate() throws Exception {
+		// GIVEN
+		// instruction is older than maximumIncompleteHours
+		final Instant now = Instant.now();
+		Instant ts = now.truncatedTo(ChronoUnit.HOURS).minus(job.getMaximumIncompleteHours() + 1,
+				ChronoUnit.HOURS);
+		BasicInstruction instr = new BasicInstruction(1L, "foo", ts, TEST_INSTRUCTOR_ID,
+				new BasicInstructionStatus(1L, Received, ts));
+
+		// but execution date is not expired
+		instr.addParameter(Instruction.PARAM_EXECUTION_DATE,
+				DateTimeFormatter.ISO_INSTANT.format(now.truncatedTo(ChronoUnit.MINUTES)));
+
+		expect(instructionDao.findInstructionsForState(Received))
+				.andReturn(Collections.singletonList(instr));
+
+		// update to Executing
+		expect(instructionDao.compareAndStoreInstructionStatus(eq(instr.getId()),
+				eq(instr.getInstructorId()), eq(Received),
+				assertWith(new Assertion<InstructionStatus>() {
+
+					@Override
+					public void check(InstructionStatus status) throws Throwable {
+						assertThat("Status provided", status, is(notNullValue()));
+						assertThat("State is Executing", status.getInstructionState(), is(Executing));
+					}
+				}))).andReturn(true);
+
+		expect(instructionExecutionService.executeInstruction(instr)).andReturn(null);
+
+		// jump back to Received
+		expect(instructionDao.compareAndStoreInstructionStatus(eq(instr.getId()),
+				eq(instr.getInstructorId()), eq(Executing),
+				assertWith(new Assertion<InstructionStatus>() {
+
+					@Override
+					public void check(InstructionStatus status) throws Throwable {
+						assertThat("Status provided", status, is(notNullValue()));
+						assertThat("State is Receieved", status.getInstructionState(), is(Received));
+					}
+				}))).andReturn(true);
+
+		expect(instructionDao.findInstructionsForState(Executing)).andReturn(Collections.emptyList());
+
+		// WHEN
+		replayAll();
+		job.executeJobService();
+	}
+
+	@Test
 	public void handled_completed() throws Exception {
 		// GIVEN
 		BasicInstruction instr = new BasicInstruction(1L, "foo", Instant.now(), TEST_INSTRUCTOR_ID,
@@ -241,7 +293,73 @@ public class InstructionExecutionJobTests {
 		// WHEN
 		replayAll();
 		job.executeJobService();
+	}
 
+	@Test
+	public void executing_notExpiredFromExecutionDate() throws Exception {
+		// GIVEN
+		expect(instructionDao.findInstructionsForState(Received)).andReturn(Collections.emptyList());
+
+		// instruction date is older than maximumIncompleteHours
+		final Instant now = Instant.now();
+		Instant ts = now.truncatedTo(ChronoUnit.HOURS).minus(job.getMaximumIncompleteHours() + 1,
+				ChronoUnit.HOURS);
+		BasicInstruction instr = new BasicInstruction(1L, "foo", ts, TEST_INSTRUCTOR_ID,
+				new BasicInstructionStatus(1L, Executing, ts));
+
+		// but execution date is not expired
+		instr.addParameter(Instruction.PARAM_EXECUTION_DATE,
+				DateTimeFormatter.ISO_INSTANT.format(now.truncatedTo(ChronoUnit.MINUTES)));
+
+		expect(instructionDao.findInstructionsForState(Executing))
+				.andReturn(Collections.singletonList(instr));
+
+		// WHEN
+		replayAll();
+		job.executeJobService();
+	}
+
+	@Test
+	public void received_notExpiredFromExecutionDate() throws Exception {
+		// GIVEN
+		// instruction date is older than maximumIncompleteHours
+		final Instant now = Instant.now();
+		Instant ts = now.truncatedTo(ChronoUnit.HOURS).minus(job.getMaximumIncompleteHours() + 1,
+				ChronoUnit.HOURS);
+		BasicInstruction instr = new BasicInstruction(1L, "foo", ts, TEST_INSTRUCTOR_ID,
+				new BasicInstructionStatus(1L, Executing, ts));
+
+		// but execution date is not expired
+		instr.addParameter(Instruction.PARAM_EXECUTION_DATE,
+				DateTimeFormatter.ISO_INSTANT.format(now.truncatedTo(ChronoUnit.MINUTES)));
+
+		expect(instructionDao.findInstructionsForState(Received))
+				.andReturn(Collections.singletonList(instr));
+
+		// update to Executing
+		expect(instructionDao.compareAndStoreInstructionStatus(eq(instr.getId()),
+				eq(instr.getInstructorId()), eq(Received),
+				assertWith(new Assertion<InstructionStatus>() {
+
+					@Override
+					public void check(InstructionStatus status) throws Throwable {
+						assertThat("Status provided", status, is(notNullValue()));
+						assertThat("State is Executing", status.getInstructionState(), is(Executing));
+					}
+				}))).andReturn(true);
+
+		InstructionStatus handledStatus = InstructionUtils.createStatus(instr, Completed);
+		expect(instructionExecutionService.executeInstruction(instr)).andReturn(handledStatus);
+
+		// update to handled status
+		expect(instructionDao.compareAndStoreInstructionStatus(eq(instr.getId()),
+				eq(instr.getInstructorId()), eq(Executing), same(handledStatus))).andReturn(true);
+
+		expect(instructionDao.findInstructionsForState(Executing)).andReturn(Collections.emptyList());
+
+		// WHEN
+		replayAll();
+		job.executeJobService();
 	}
 
 }

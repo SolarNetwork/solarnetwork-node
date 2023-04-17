@@ -87,7 +87,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * {@link UploadService} using MQTT.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class MqttUploadService extends BaseMqttConnectionService
 		implements UploadService, MqttMessageHandler, MqttConnectionObserver, SettingSpecifierProvider {
@@ -499,8 +499,13 @@ public class MqttUploadService extends BaseMqttConnectionService
 					}
 					getMqttStats().incrementAndGet(SolarInCountStat.InstructionsReceived);
 
+					// check for future execution date
+					final Instant executeAt = instr.getExecutionDate();
+					final boolean futureExecution = (executeAt != null
+							&& executeAt.isAfter(Instant.now()));
+
 					InstructionStatus status = null;
-					if ( executor != null ) {
+					if ( executor != null && !futureExecution ) {
 						// save with Executing state immediately, to prevent reactor job from picking up
 						status = new BasicInstructionStatus(instr.getId(), InstructionState.Executing,
 								Instant.now());
@@ -522,6 +527,11 @@ public class MqttUploadService extends BaseMqttConnectionService
 					} else {
 						// execution didn't happen, so pass to deferred executor
 						status = reactor.processInstruction(instr);
+						if ( futureExecution ) {
+							log.info("Deferred instruction {} {} saved as {} state for execution @ {}",
+									instr.getId(), instr.getTopic(), status.getInstructionState(),
+									executeAt);
+						}
 					}
 					if ( status == null ) {
 						// deferred executor didn't handle, so decline
