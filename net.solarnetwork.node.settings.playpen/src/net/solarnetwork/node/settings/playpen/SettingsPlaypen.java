@@ -25,7 +25,7 @@ package net.solarnetwork.node.settings.playpen;
 import static java.util.Arrays.asList;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -192,32 +192,18 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 				Collections.singletonMap("foo", "bar")));
 
 		// basic dynamic list of strings
-		Collection<String> listStrings = getListString();
+		List<String> listStrings = getListString();
 		BasicGroupSettingSpecifier listStringGroup = SettingUtils.dynamicListSettingSpecifier(
-				"listString", listStrings, new SettingUtils.KeyedListCallback<String>() {
-
-					@Override
-					public Collection<SettingSpecifier> mapListSettingKey(String value, int index,
-							String key) {
-						return Collections.<SettingSpecifier> singletonList(
-								new BasicTextFieldSettingSpecifier(key, ""));
-					}
-				});
+				"listString", listStrings, (String value, int index, String key) -> Collections
+						.singletonList(new BasicTextFieldSettingSpecifier(key, "")));
 		results.add(listStringGroup);
 
 		// dynamic list of objects
 		Collection<ComplexListItem> listComplexes = getListComplex();
 		BasicGroupSettingSpecifier listComplexGroup = SettingUtils.dynamicListSettingSpecifier(
-				"listComplex", listComplexes, new SettingUtils.KeyedListCallback<ComplexListItem>() {
-
-					@Override
-					public Collection<SettingSpecifier> mapListSettingKey(ComplexListItem value,
-							int index, String key) {
-						BasicGroupSettingSpecifier personGroup = new BasicGroupSettingSpecifier(
-								value.settings(key + "."));
-						return Collections.<SettingSpecifier> singletonList(personGroup);
-					}
-				});
+				"listComplex", listComplexes,
+				(ComplexListItem value, int index, String key) -> Collections
+						.singletonList(new BasicGroupSettingSpecifier(value.settings(key + "."))));
 		results.add(listComplexGroup);
 
 		return results;
@@ -346,15 +332,15 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 		}
 		if ( RESOURCE_KEY_TEXT_AREA.equals(settingKey) ) {
 			for ( Resource r : resources ) {
-				String s = FileCopyUtils.copyToString(
-						new InputStreamReader(r.getInputStream(), Charset.forName("UTF-8")));
+				String s = FileCopyUtils
+						.copyToString(new InputStreamReader(r.getInputStream(), StandardCharsets.UTF_8));
 				return new SettingsCommand(
 						Arrays.asList(new SettingValueBean(RESOURCE_KEY_TEXT_AREA + "Content", s)));
 			}
 		} else if ( RESOURCE_KEY_FILE.equals(settingKey) ) {
 			for ( Resource r : resources ) {
-				String s = FileCopyUtils.copyToString(
-						new InputStreamReader(r.getInputStream(), Charset.forName("UTF-8")));
+				String s = FileCopyUtils
+						.copyToString(new InputStreamReader(r.getInputStream(), StandardCharsets.UTF_8));
 				return new SettingsCommand(
 						Arrays.asList(new SettingValueBean(RESOURCE_KEY_FILE + "Content", s)));
 			}
@@ -363,8 +349,8 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 			SettingsCommand updates = new SettingsCommand(null,
 					asList(Pattern.compile("textFilesContent\\[.*")));
 			for ( Resource r : resources ) {
-				String s = FileCopyUtils.copyToString(
-						new InputStreamReader(r.getInputStream(), Charset.forName("UTF-8")));
+				String s = FileCopyUtils
+						.copyToString(new InputStreamReader(r.getInputStream(), StandardCharsets.UTF_8));
 				updates.getValues().add(new SettingValueBean(
 						String.format("%sContent[%d]", RESOURCE_KEY_TEXT_FILES, i), s));
 				i++;
