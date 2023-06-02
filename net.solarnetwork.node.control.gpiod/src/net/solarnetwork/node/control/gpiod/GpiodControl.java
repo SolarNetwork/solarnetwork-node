@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -386,9 +387,19 @@ public class GpiodControl extends BaseIdentifiable implements NodeControlProvide
 		if ( propConfigs == null || propConfigs.length < 1 ) {
 			return null;
 		}
-		GpiodPropertyConfig[] valid = Arrays.stream(propConfigs)
-				.filter(c -> c.isValid() && c.getGpioDirection() == GpioDirection.Input)
-				.toArray(GpiodPropertyConfig[]::new);
+		Map<Integer, GpiodPropertyConfig> addressMap = new HashMap<>(propConfigs.length);
+		GpiodPropertyConfig[] valid = Arrays.stream(propConfigs).filter(c -> {
+			GpiodPropertyConfig addressConflict = addressMap.get(c.getAddress());
+			if ( addressConflict != null ) {
+				log.error(
+						"GPIO device [{}] address {} already configured on control [{}]; cannot configure control [{}] to use that address as well",
+						gpioDevice, c.getAddress(), resolvePlaceholders(addressConflict.getControlId()),
+						resolvePlaceholders(c.getControlId()));
+				return false;
+			}
+			addressMap.put(c.getAddress(), c);
+			return c.isValid() && c.getGpioDirection() == GpioDirection.Input;
+		}).toArray(GpiodPropertyConfig[]::new);
 		if ( valid.length < 1 ) {
 			return null;
 		}
