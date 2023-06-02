@@ -39,6 +39,14 @@ configuration contains the following settings:
 | GPIO Direction        | The I/O direction of the GPIO address. |
 | GPIO Edge Mode        | When to report changes in digital IO lines. See [GPIO Edge Mode](#gpio-edge-mode). |
 
+> :warning: A **GPIO Address** can only be configured on a **single** control configuration. An
+> `ERROR` log will be generated if you configure more than one control configuration with the same
+> GPIO Address value.
+>
+> Similarly, a **Control ID** can only be configured on a **single** control configuration. An
+> `ERROR` log will be generated if you configure more than one control configuration with the same
+> Control ID value.
+
 ## GPIO Edge Mode
 
 The **GPIO Edge Mode** setting allows you to configure when to capture changes in digital **input**
