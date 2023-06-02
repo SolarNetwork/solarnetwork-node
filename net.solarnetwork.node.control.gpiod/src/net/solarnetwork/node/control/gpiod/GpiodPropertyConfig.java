@@ -57,6 +57,9 @@ public class GpiodPropertyConfig extends NumberDatumSamplePropertyConfig<Integer
 	/** The {@code gpioEdgeMode} property default value. */
 	public static final GpioEdgeDetectionMode DEFAULT_GPIO_EDGE_MODE = GpioEdgeDetectionMode.RisingAndFalling;
 
+	/** The default value for the {@code propertyType} property. */
+	public static final DatumSamplesType DEFAULT_PROPERTY_TYPE = DatumSamplesType.Status;
+
 	/**
 	 * Get settings suitable for configuring an instance of this class.
 	 * 
@@ -145,6 +148,7 @@ public class GpiodPropertyConfig extends NumberDatumSamplePropertyConfig<Integer
 		super();
 		setGpioDirection(DEFAULT_GPIO_DIRECTION);
 		setGpioEdgeMode(DEFAULT_GPIO_EDGE_MODE);
+		setPropertyType(DEFAULT_PROPERTY_TYPE);
 	}
 
 	/**
