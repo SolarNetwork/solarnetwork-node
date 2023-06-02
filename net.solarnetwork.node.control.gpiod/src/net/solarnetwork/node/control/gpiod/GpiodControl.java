@@ -388,16 +388,30 @@ public class GpiodControl extends BaseIdentifiable implements NodeControlProvide
 			return null;
 		}
 		Map<Integer, GpiodPropertyConfig> addressMap = new HashMap<>(propConfigs.length);
+		Map<String, GpiodPropertyConfig> controlMap = new HashMap<>(propConfigs.length);
 		GpiodPropertyConfig[] valid = Arrays.stream(propConfigs).filter(c -> {
-			GpiodPropertyConfig addressConflict = addressMap.get(c.getAddress());
-			if ( addressConflict != null ) {
+			// check for duplicate GPIO address values
+			GpiodPropertyConfig conflict = addressMap.get(c.getAddress());
+			if ( conflict != null ) {
 				log.error(
 						"GPIO device [{}] address {} already configured on control [{}]; cannot configure control [{}] to use that address as well",
-						gpioDevice, c.getAddress(), resolvePlaceholders(addressConflict.getControlId()),
+						gpioDevice, c.getAddress(), resolvePlaceholders(conflict.getControlId()),
 						resolvePlaceholders(c.getControlId()));
 				return false;
 			}
 			addressMap.put(c.getAddress(), c);
+
+			// check for duplicate control ID values
+			String controlId = c.getControlId();
+			if ( controlId != null )
+				conflict = controlMap.get(c.getControlId());
+			if ( conflict != null ) {
+				log.error("GPIO device [{}] control ID [{}] already configured on another control",
+						gpioDevice, controlId);
+				return false;
+			}
+			controlMap.put(controlId, c);
+
 			return c.isValid() && c.getGpioDirection() == GpioDirection.Input;
 		}).toArray(GpiodPropertyConfig[]::new);
 		if ( valid.length < 1 ) {
