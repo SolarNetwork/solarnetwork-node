@@ -1,8 +1,8 @@
 # SolarNode GPIO Control
 
-This SolarNode plugin provides a component that can read and write to Linux [gpiod][gpiod] lines,
-which are **digital** input/output (GPIO) connections widely available on SolarNode devices
-like the Raspberry Pi.
+This SolarNode plugin provides a component that can read and write to Linux GPIO character devices,
+which are **digital** input/output (GPIO) connections widely available on SolarNode devices like the
+Raspberry Pi.
 
 To turn the GPIO lines into a datum stream you can use the [Control Event Datum
 Logger](../net.solarnetwork.node.datum.control/) plugin.
