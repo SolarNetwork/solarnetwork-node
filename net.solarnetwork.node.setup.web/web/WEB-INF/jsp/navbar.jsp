@@ -2,7 +2,7 @@
 <div class="navbar">
 	<div class="navbar-inner">
 		<a class="brand" href="<setup:url value='/'/>">
-			<img src="<setup:url value='/img/logo-node.svg'/>" alt="<fmt:message key='app.name'/>" width="159" height="30"/>	
+			<img src="<setup:url value='/img/logo-node.svg'/>" alt="<fmt:message key='app.name'/>" width="143" height="28"/>	
 		</a>
 		<ul class="nav">
 			<li ${navloc == 'home' ? 'class="active"' : ''}>
