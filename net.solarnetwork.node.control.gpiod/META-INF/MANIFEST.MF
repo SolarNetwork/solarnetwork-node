@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: Gpiod Datum Source
-Bundle-Description: Collect data from input GPIO ports.
+Bundle-Name: GPIO Device Control
+Bundle-Description: Read and write digital IO on Linux GPIO devices.
 Bundle-SymbolicName: net.solarnetwork.node.control.gpiod
 Bundle-Version: 1.0.0
 Bundle-Vendor: SolarNetwork
