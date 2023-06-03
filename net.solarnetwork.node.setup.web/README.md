@@ -3,12 +3,14 @@
 This project contains an OSGi JEE web application bundle that provides a
 web-based UI for administering and configuring the SolarNode application.
 
+See the [SolarNode Handbook][handbook] for detailed information.
+
 ## Association
 
 When SolarNode first starts on a new device, the device must be associated with
 the SolarNetwork service it will post data to.
 
-![associate](docs/solarnode-associate.png)
+<img alt="SolarNode invitation form" src="docs/solarnode-associate@2x.png" width="852">
 
 An invitation must be generated [on SolarNetwork][solarnetwork-my-nodes] first,
 and then pasted on the SolarNode initial screen. The association process will
@@ -27,8 +29,7 @@ configured individually. For example you might have two different PM3200 power
 meters you'd like to collect data from, so you could configure to PM3200
 components.
 
-![controls](docs/solarnode-settings.png)
-
+<img alt="SolarNode Settings" src="docs/solarnode-settings@2x.png" width="837">
 
 ## Controls
 
@@ -36,17 +37,8 @@ SolarNode plugins can expose <i>controls</i> which respond to actions, such as
 a switch that can be toggled on and off. All available controls will appear
 on the **Controls** page.
 
-![controls](docs/solarnode-controls.png)
+<img alt="SolarNode Controls" src="docs/solarnode-controls@2x.png" width="805">
 
 
-## Plugins
-
-SolarNode is highly configurable via plugins. The **Plugins** page allows users
-to add, update, and remove plugins. SolarNode locates the available plugins to
-manage via the [Online Bundle Repository (OBR)][plugin-obr] plugin.
-
-![plugins](docs/solarnode-plugins.png)
-
-
- [solarnetwork-my-nodes]: https://data.solarnetwork.net/solaruser/u/sec/my-nodes
- [plugin-obr]: https://github.com/SolarNetwork/solarnetwork-node/tree/master/net.solarnetwork.node.setup.obr
+[handbook]: https://solarnetwork.github.io/solarnode-handbook/
+[solarnetwork-my-nodes]: https://data.solarnetwork.net/solaruser/u/sec/my-nodes
