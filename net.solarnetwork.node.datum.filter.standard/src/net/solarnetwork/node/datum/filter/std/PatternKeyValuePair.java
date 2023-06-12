@@ -41,6 +41,7 @@ public class PatternKeyValuePair extends KeyValuePair {
 
 	private static final long serialVersionUID = -6339149657049288089L;
 
+	/** The key regular expression. */
 	private Pattern keyPattern;
 
 	/**

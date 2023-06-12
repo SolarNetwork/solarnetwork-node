@@ -24,7 +24,6 @@ package net.solarnetwork.node.datum.filter.control;
 
 import java.util.ArrayList;
 import java.util.List;
-import net.solarnetwork.domain.NodeControlPropertyType;
 import net.solarnetwork.node.service.support.ExpressionConfig;
 import net.solarnetwork.service.ExpressionService;
 import net.solarnetwork.settings.SettingSpecifier;
@@ -37,8 +36,6 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * @version 1.0
  */
 public class ControlConfig extends ExpressionConfig {
-
-	public static final NodeControlPropertyType DEFAULT_CONTROL_TYPE = NodeControlPropertyType.Boolean;
 
 	private String controlId;
 
@@ -54,6 +51,8 @@ public class ControlConfig extends ExpressionConfig {
 	 * 
 	 * @param prefix
 	 *        a setting key prefix to use
+	 * @param expressionServices
+	 *        the available expression services
 	 * @return the settings, never {@literal null}
 	 */
 	public static List<SettingSpecifier> settings(String prefix,

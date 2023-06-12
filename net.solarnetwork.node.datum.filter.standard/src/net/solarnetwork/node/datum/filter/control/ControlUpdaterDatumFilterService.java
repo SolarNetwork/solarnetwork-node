@@ -242,11 +242,11 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 	}
 
 	/**
-	 * Adjust the number of configured {@code ControlTransformConfig} elements.
+	 * Adjust the number of configured {@code ControlConfig} elements.
 	 * 
 	 * <p>
-	 * Any newly added element values will be set to new
-	 * {@link ControlTransformConfig} instances.
+	 * Any newly added element values will be set to new {@link ControlConfig}
+	 * instances.
 	 * </p>
 	 * 
 	 * @param count

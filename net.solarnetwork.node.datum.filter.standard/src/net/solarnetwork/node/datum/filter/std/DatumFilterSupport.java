@@ -59,6 +59,9 @@ public class DatumFilterSupport extends BaseDatumFilterSupport implements Settin
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
+	/**
+	 * Constructor.
+	 */
 	public DatumFilterSupport() {
 		super();
 		setUid(DEFAULT_UID);
