@@ -49,6 +49,11 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="instructionExecutionService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.reactor.InstructionExecutionService"/>
+		<property name="sticky" value="true"/>
+	</bean>
 	<!--
 	 !!! SimpleFilterSamplesTransformer (property filter) - global filter
 	 -->
@@ -713,6 +718,71 @@
 		<bean class="net.solarnetwork.node.datum.filter.std.UnchangedDatumFilterService">
 			<property name="expressionServices" ref="expressionServices"/>
 			<property name="messageSource" ref="unchangedMessageSource"/>
+			<property name="datumService" ref="datumService"/>
+			<property name="opModesService" ref="opModesService"/>
+			<property name="placeholderService" ref="placeholderService"/>
+		</bean>
+	</osgix:managed-service-factory>
+
+	<!--
+	 !!! Control Updater Filter Service
+	 -->
+
+	<bean id="controlUpdaterMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<array>
+				<value>net.solarnetwork.node.datum.filter.control.ControlUpdaterDatumFilterService</value>
+				<value>net.solarnetwork.node.service.support.BaseDatumFilterSupport</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</array>
+		</property>
+		<property name="parentMessageSource">
+			<bean class="net.solarnetwork.support.PrefixedMessageSource">
+				<property name="prefix" value="controlConfigsItem."/>
+				<property name="delegate">
+					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+						<property name="basename" value="net.solarnetwork.node.datum.filter.control.ControlConfig"/>
+					</bean>
+				</property>
+			</bean>
+		</property>
+	</bean>
+
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<service-properties>
+			<entry key="role">
+				<array value-type="java.lang.String">
+					<value>user</value>
+					<value>datum-filter</value>
+				</array>
+			</entry>
+		</service-properties>
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Control Updater Filter"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.filter.control.update"/>
+			<property name="messageSource" ref="controlUpdaterMessageSource"/>
+		</bean>
+	</service>
+
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.filter.control.update"
+			autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.service.DatumFilterService</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.datum.filter.control.update"/>
+			<beans:entry key="role">
+				<beans:array value-type="java.lang.String">
+					<beans:value>user</beans:value>
+					<beans:value>datum-filter</beans:value>
+				</beans:array>
+			</beans:entry>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.datum.filter.control.ControlUpdaterDatumFilterService">
+			<argument ref="instructionExecutionService"/>
+			<property name="expressionServices" ref="expressionServices"/>
+			<property name="messageSource" ref="controlUpdaterMessageSource"/>
 			<property name="datumService" ref="datumService"/>
 			<property name="opModesService" ref="opModesService"/>
 			<property name="placeholderService" ref="placeholderService"/>
