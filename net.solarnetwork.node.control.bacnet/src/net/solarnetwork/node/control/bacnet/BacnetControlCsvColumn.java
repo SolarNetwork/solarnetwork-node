@@ -28,7 +28,7 @@ import net.solarnetwork.domain.CodedValue;
  * The defined column order for BACnet Control CSV.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public enum BacnetControlCsvColumn implements CodedValue {
 
@@ -65,11 +65,14 @@ public enum BacnetControlCsvColumn implements CodedValue {
 	/** The BACnet property ID (type). */
 	PROPERTY_ID(10, "Property ID"),
 
+	/** The BACnet priority. */
+	PRIORITY(11, "Priority"),
+
 	/** The unit multiplier. */
-	MULTIPLIER(11, "Multiplier"),
+	MULTIPLIER(12, "Multiplier"),
 
 	/** The decimal scale. */
-	DECIMAL_SCALE(12, "Decimal Scale"),
+	DECIMAL_SCALE(13, "Decimal Scale"),
 
 	;
 

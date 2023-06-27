@@ -30,12 +30,12 @@ import java.util.Objects;
  * Simple implementation of {@link BacnetDeviceObjectPropertyRef}.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SimpleBacnetDeviceObjectPropertyRef implements BacnetDeviceObjectPropertyRef, Serializable,
 		Comparable<BacnetDeviceObjectPropertyRef> {
 
-	private static final long serialVersionUID = -2337176762098262203L;
+	private static final long serialVersionUID = 5528795423604252975L;
 
 	/** The device ID. */
 	private final int deviceId;
@@ -52,8 +52,16 @@ public class SimpleBacnetDeviceObjectPropertyRef implements BacnetDeviceObjectPr
 	/** The property index, for list properties. */
 	private final int propertyIndex;
 
+	/** The priority, e.g. for write operations. */
+	private final int priority;
+
 	/**
 	 * Constructor.
+	 * 
+	 * <p>
+	 * The {@link BacnetDeviceObjectPropertyRef#NOT_INDEXED} and
+	 * {@link BacnetDeviceObjectPropertyRef#NO_PRIORITY} values will be used.
+	 * </p>
 	 * 
 	 * @param deviceId
 	 *        the device ID
@@ -72,6 +80,10 @@ public class SimpleBacnetDeviceObjectPropertyRef implements BacnetDeviceObjectPr
 	/**
 	 * Constructor.
 	 * 
+	 * <p>
+	 * The {@link BacnetDeviceObjectPropertyRef#NO_PRIORITY} will be used.
+	 * </p>
+	 * 
 	 * @param deviceId
 	 *        the device ID
 	 * @param objectType
@@ -85,12 +97,35 @@ public class SimpleBacnetDeviceObjectPropertyRef implements BacnetDeviceObjectPr
 	 */
 	public SimpleBacnetDeviceObjectPropertyRef(int deviceId, int objectType, int objectNumber,
 			int propertyId, int propertyIndex) {
+		this(deviceId, objectType, objectNumber, propertyId, propertyIndex, NO_PRIORITY);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param deviceId
+	 *        the device ID
+	 * @param objectType
+	 *        the object type
+	 * @param objectNumber
+	 *        the object number
+	 * @param propertyId
+	 *        the property ID
+	 * @param propertyIndex
+	 *        the property index
+	 * @param priority
+	 *        the priority
+	 * @since 1.1
+	 */
+	public SimpleBacnetDeviceObjectPropertyRef(int deviceId, int objectType, int objectNumber,
+			int propertyId, int propertyIndex, int priority) {
 		super();
 		this.deviceId = deviceId;
 		this.objectType = objectType;
 		this.objectNumber = objectNumber;
 		this.propertyId = propertyId;
 		this.propertyIndex = propertyIndex;
+		this.priority = priority;
 	}
 
 	@Override
@@ -111,12 +146,16 @@ public class SimpleBacnetDeviceObjectPropertyRef implements BacnetDeviceObjectPr
 		if ( c != 0 ) {
 			return c;
 		}
-		return Integer.compare(propertyIndex, o.getPropertyIndex());
+		c = Integer.compare(propertyIndex, o.getPropertyIndex());
+		if ( c != 0 ) {
+			return c;
+		}
+		return Integer.compare(priority, o.getPriority());
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(deviceId, objectNumber, objectType, propertyId, propertyIndex);
+		return Objects.hash(deviceId, objectNumber, objectType, propertyId, propertyIndex, priority);
 	}
 
 	@Override
@@ -130,7 +169,7 @@ public class SimpleBacnetDeviceObjectPropertyRef implements BacnetDeviceObjectPr
 		SimpleBacnetDeviceObjectPropertyRef other = (SimpleBacnetDeviceObjectPropertyRef) obj;
 		return deviceId == other.deviceId && objectNumber == other.objectNumber
 				&& objectType == other.objectType && propertyId == other.propertyId
-				&& propertyIndex == other.propertyIndex;
+				&& propertyIndex == other.propertyIndex && priority == other.priority;
 	}
 
 	@Override
@@ -166,6 +205,10 @@ public class SimpleBacnetDeviceObjectPropertyRef implements BacnetDeviceObjectPr
 			builder.append(", propertyIndex=");
 			builder.append(propertyIndex);
 		}
+		if ( hasPriority() ) {
+			builder.append(", priority=");
+			builder.append(priority);
+		}
 		builder.append("}");
 		return builder.toString();
 	}
@@ -193,6 +236,11 @@ public class SimpleBacnetDeviceObjectPropertyRef implements BacnetDeviceObjectPr
 	@Override
 	public int getPropertyIndex() {
 		return propertyIndex;
+	}
+
+	@Override
+	public int getPriority() {
+		return priority;
 	}
 
 }

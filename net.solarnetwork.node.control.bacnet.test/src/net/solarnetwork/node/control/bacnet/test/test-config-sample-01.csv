@@ -1,11 +1,11 @@
-Instance ID,Service Name,Service Group,Connection,Sample Cache,Control ID,Property Type,Device ID,Object Type,Object Number,Property ID,Multiplier,Decimal Scale
-"# Rows whose first cell starts with ""#"" are ignored.",,,,,,,,,,,,
-"# Components are uniquely defined by the Instance ID column. Rows that omit an Instance ID value will assume the first value found in previous rows, searching backwards.  Columns B-E are component-wide and need only be defined once, with the Instance ID.",,,,,,,,,,,,
-Therm,Thermostat,HVAC,BACnet/IP,5000,,,,,,,,
-# The next 2 rows define floating point controls for two setpoint values on the thermostat control,,,,,,,,,,,,
-,,,,,therm/setpoint/1,Float,3637469,analog-value,0,present-value,1,2
-,,,,,therm/setpoint/2,Float,3637469,analog-value,1,present-value,1,2
-"# The next row defines a boolean control to control the ""away"" mode of the thermostat",,,,,,,,,,,,
-,,,,,therm/away,Boolean,3637469,binary-value,0,present-value,,
-# Next a new component is started with a new Instance ID. Note how the first control can also be defined on this row.,,,,,,,,,,,,
-Relay,,,BACnet/IP,5000,switch/1,Boolean,112821,binary-value,0,present-value,,
+Instance ID,Service Name,Service Group,Connection,Sample Cache,Control ID,Property Type,Device ID,Object Type,Object Number,Property ID,Priority,Multiplier,Decimal Scale
+"# Rows whose first cell starts with ""#"" are ignored.",,,,,,,,,,,,,
+"# Components are uniquely defined by the Instance ID column. Rows that omit an Instance ID value will assume the first value found in previous rows, searching backwards.  Columns B-E are component-wide and need only be defined once, with the Instance ID.",,,,,,,,,,,,,
+Therm,Thermostat,HVAC,BACnet/IP,5000,,,,,,,,,
+# The next 2 rows define floating point controls for two setpoint values on the thermostat control,,,,,,,,,,,,,
+,,,,,therm/setpoint/1,Float,3637469,analog-value,0,present-value,8,1,2
+,,,,,therm/setpoint/2,Float,3637469,analog-value,1,present-value,16,1,2
+"# The next row defines a boolean control to control the ""away"" mode of the thermostat",,,,,,,,,,,,,
+,,,,,therm/away,Boolean,3637469,binary-value,0,present-value,,,
+# Next a new component is started with a new Instance ID. Note how the first control can also be defined on this row.,,,,,,,,,,,,,
+Relay,,,BACnet/IP,5000,switch/1,Boolean,112821,binary-value,0,present-value,,,

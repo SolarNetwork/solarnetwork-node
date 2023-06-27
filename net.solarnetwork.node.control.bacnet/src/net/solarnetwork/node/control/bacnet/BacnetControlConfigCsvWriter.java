@@ -34,7 +34,7 @@ import net.solarnetwork.util.ObjectUtils;
  * Generate BACnet Control configuration CSV from settings.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class BacnetControlConfigCsvWriter {
 
@@ -105,6 +105,9 @@ public class BacnetControlConfigCsvWriter {
 					? propConfig.getObjectNumber().toString()
 					: null);
 			row[BacnetControlCsvColumn.PROPERTY_ID.getCode()] = propConfig.getPropertyIdValue();
+			row[BacnetControlCsvColumn.PRIORITY.getCode()] = (propConfig.getPriority() != null
+					? propConfig.getPriority().toString()
+					: null);
 			row[BacnetControlCsvColumn.MULTIPLIER.getCode()] = (propConfig.getUnitMultiplier() != null
 					? propConfig.getUnitMultiplier().toPlainString()
 					: null);

@@ -49,7 +49,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * Configuration for a single control property to be set via BACnet.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class BacnetWritePropertyConfig {
 
@@ -81,6 +81,7 @@ public class BacnetWritePropertyConfig {
 	private Integer objectType;
 	private Integer objectNumber;
 	private Integer propertyId;
+	private Integer priority;
 	private BigDecimal unitMultiplier = DEFAULT_UNIT_MULTIPLIER;
 	private Integer decimalScale = DEFAULT_DECIMAL_SCALE;
 
@@ -111,6 +112,7 @@ public class BacnetWritePropertyConfig {
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "objectTypeValue", null));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "objectNumber", null));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "propertyIdValue", null));
+		results.add(new BasicTextFieldSettingSpecifier(prefix + "priority", null));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "unitMultiplier",
 				DEFAULT_UNIT_MULTIPLIER.toPlainString()));
 		results.add(new BasicTextFieldSettingSpecifier(prefix + "decimalScale",
@@ -157,7 +159,10 @@ public class BacnetWritePropertyConfig {
 		}
 		final Integer propId = getPropertyId();
 		final int pid = (propId != null ? propId.intValue() : BacnetPropertyType.PresentValue.getCode());
-		return new SimpleBacnetDeviceObjectPropertyRef(deviceId, objectType, objectNumber, pid);
+		final Integer prio = getPriority();
+		return new SimpleBacnetDeviceObjectPropertyRef(deviceId, objectType, objectNumber, pid,
+				BacnetDeviceObjectPropertyRef.NOT_INDEXED,
+				prio != null ? prio.intValue() : BacnetDeviceObjectPropertyRef.NO_PRIORITY);
 	}
 
 	/**
@@ -203,6 +208,9 @@ public class BacnetWritePropertyConfig {
 				case "propertyIdValue":
 					propConfig.setPropertyIdValue(val);
 					break;
+				case "priority":
+					propConfig.setPriority(Integer.valueOf(val));
+					break;
 				case "unitMultiplier":
 					propConfig.setUnitMultiplier(new BigDecimal(val));
 					break;
@@ -236,6 +244,7 @@ public class BacnetWritePropertyConfig {
 		addSetting(settings, providerId, instanceId, i, "objectTypeValue", getObjectTypeValue());
 		addSetting(settings, providerId, instanceId, i, "objectNumber", getObjectNumber());
 		addSetting(settings, providerId, instanceId, i, "propertyIdValue", getPropertyIdValue());
+		addSetting(settings, providerId, instanceId, i, "priority", getPriority());
 		addSetting(settings, providerId, instanceId, i, "unitMultiplier", getUnitMultiplier());
 		addSetting(settings, providerId, instanceId, i, "decimalScale", getDecimalScale());
 		return settings;
@@ -282,6 +291,11 @@ public class BacnetWritePropertyConfig {
 		if ( propertyId != null ) {
 			builder.append("propertyId=");
 			builder.append(propertyId);
+			builder.append(", ");
+		}
+		if ( priority != null ) {
+			builder.append("priority=");
+			builder.append(priority);
 			builder.append(", ");
 		}
 		if ( unitMultiplier != null ) {
@@ -529,6 +543,28 @@ public class BacnetWritePropertyConfig {
 		} catch ( IllegalArgumentException e ) {
 			log.error("Unsupported BACnet property type [{}]", value);
 		}
+	}
+
+	/**
+	 * Get the write priority.
+	 * 
+	 * @return the priority, a value between 1-16 with 1 being the highest
+	 *         priority
+	 */
+	public Integer getPriority() {
+		return priority;
+	}
+
+	/**
+	 * Set the write priority.
+	 * 
+	 * @param priority
+	 *        the priority to set: must be a value between 1-16 with 1 being the
+	 *        highest priority, or {@literal null} to use the default priority
+	 *        (16)
+	 */
+	public void setPriority(Integer priority) {
+		this.priority = priority;
 	}
 
 	/**
