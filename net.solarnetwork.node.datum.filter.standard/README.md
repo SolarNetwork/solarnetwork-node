@@ -18,8 +18,7 @@ The plugin can be installed via the **Plugins** page on your SolarNode. It appea
 **Datum** category as **Datum Filters (Standard)**. For more information, see the individual
 documentation:
 
- * [Property Datum Filter](README-Property.md) - to remove unwanted datum properties
- * [Throttle Datum Filter](README-Throttle.md) - to restrict the frequency of posting datum
+ * [Control Updater Datum Filter](README-ControlUpdater.md) - update control values with expressions
  * [Downsample Datum Filter](README-Downsample.md) - to reduce the frequency of datum properties
    using an average
  * [Expression Datum Filter](README-Expression.md) - generate dynamic datum properties by evaluating
@@ -30,8 +29,10 @@ documentation:
    modes
  * [Parameter Expression Datum Filter](README-Parameter.md) - generate dynamic filter parameters
    by evaluating expressions against existing datum properties
+ * [Property Datum Filter](README-Property.md) - to remove unwanted datum properties
  * [Split Datum Filter](README-Split.md) - split the properties of a datum stream into multiple
    datum streams
+ * [Throttle Datum Filter](README-Throttle.md) - to restrict the frequency of posting datum
  * [Unchanged Datum Filter](README-Unchanged.md) - discard unchanged datum within a stream
  * [Virtual Meter Datum Filter](README-VirtualMeter.md) - derive accumulating meter-style reading
    datum properties out of other datum properties

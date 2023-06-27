@@ -71,7 +71,6 @@
 	<bean id="httpReqCustBasicAuthMessageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.io.http.req.BasicAuthHttpRequestCustomizerService</value>
 				<value>net.solarnetwork.web.service.support.BasicAuthHttpRequestCustomizerService</value>
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>

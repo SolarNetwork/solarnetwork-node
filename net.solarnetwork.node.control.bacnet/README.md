@@ -57,7 +57,7 @@ Here's an example screen shot of a configuration in a spreadsheet application. I
 Spreadsheet applications generally allows you to export the sheet in the CSV format, which can
 then be loaded into SolarNode via the CSV Configurer.
 
-<img title="CSV Configuration example" src="docs/solarnode-bacnet-control-csv-configurer-example.png" width="1305">
+<img title="CSV Configuration example" src="docs/solarnode-bacnet-control-csv-configurer-example.png" width="1377">
 
 ### Instance identifiers
 
@@ -92,11 +92,12 @@ individual datum property.
 | `F` | **Control ID** | string |  | The node-unique identifier for the control. |
 | `G` | **Property Type** | enum | `Boolean` |  The type of control property to use. Must be one of `Boolean`, `Float`, `Integer`, `Percent`, or `String`, and can be shortened to just `b`, `f`, `i`, `p`, or `s`. |
 | `H` | **Device ID** | integer |  | The BACnet device ID to update. |
-| `I` | **Object Type** | string |  | The BACnet object type to update. Can be specified as a name, like <code>analog-value</code> or <code>AnalogValue</code>, or the associated integer code, like <code>2</code>. |
+| `I` | **Object Type** | string |  | The BACnet object type to update. Can be specified as a name, like `analog-value` or `AnalogValue`, or the associated integer code, like `2`. |
 | `J` | **Object Number** | integer |  | The BACnet object type instance number to update. |
-| `K` | **Property ID** | string | `present-value` | The BACnet object property identifier to update. Can be specified as a name, like <code>present-value</code> or <code>PresentValue</code>, or the associated integer code, like <code>85</code>. |
-| `L` | **Multiplier** | decimal | `1` | For numeric data types, a multiplier to apply to the BACnet value to normalize it into a standard unit. |
-| `M` | **Decimal Scale** | integer | `0` | For numeric data types, a maximum number of decimal places to round decimal numbers to, or `-1` to not do any rounding. |
+| `K` | **Property ID** | string | `present-value` |The BACnet object property identifier to update. Can be specified as a name, like `present-value` or `PresentValue`, or the associated integer code, like `85`. |
+| `L` | **Priority** | integer |  | The BACnet write operation priority. Can be any value between `1` and `16`, with `1` being the highest priority. If not specified `16` will be assumed. |
+| `M` | **Multiplier** | decimal | `1` | For numeric data types, a multiplier to apply to the BACnet value to normalize it into a standard unit. |
+| `N` | **Decimal Scale** | integer | `0` | For numeric data types, a maximum number of decimal places to round decimal numbers to, or `-1` to not do any rounding. |
 
 ## Example CSV
 
@@ -105,10 +106,10 @@ removed for brevity):
 
 ```csv
 Instance ID,Service Name,Service Group,Connection,Sample Cache,Control ID,Property Type,Device ID,Object Type,Object Number,Property ID,Multiplier,Decimal Scale
-Therm,Thermostat,HVAC,BACnet/IP,5000,therm/setpoint/1,Float,3637469,analog-value,0,present-value,1,2
-,,,,,therm/setpoint/2,Float,3637469,analog-value,1,present-value,1,2
-,,,,,therm/away,Boolean,3637469,binary-value,0,present-value,,
-Relay,,,BACnet/IP,5000,switch/1,Boolean,112821,binary-value,0,present-value,,
+Therm,Thermostat,HVAC,BACnet/IP,5000,therm/setpoint/1,Float,3637469,analog-value,0,present-value,8,1,2
+,,,,,therm/setpoint/2,Float,3637469,analog-value,1,present-value,16,1,2
+,,,,,therm/away,Boolean,3637469,binary-value,0,present-value,,,
+Relay,,,BACnet/IP,5000,switch/1,Boolean,112821,binary-value,0,present-value,,,
 ```
 
 # Overall settings
@@ -147,7 +148,7 @@ You must configure settings for each BACnet object property you want to expose a
 control. You can configure as many property settings as you like, using the <kbd>+</kbd> and
 <kbd>-</kbd> buttons to add/remove configurations.
 
-<img title="Property settings" src="docs/solarnode-bacnet-control-property-settings.png" width="505">
+<img title="Property settings" src="docs/solarnode-bacnet-control-property-settings.png" width="644">
 
 Each property configuration contains the following settings:
 
@@ -155,9 +156,10 @@ Each property configuration contains the following settings:
 |:----------------|:--------|:------------|
 | Control ID      |  | A unique name to associate this control configuration with. |
 | Property Type   | `Boolean` | The SolarNode control property type. Must be one of `Boolean`, `Float`, `Integer`, `Percent`, or `String`. |
-| Object Type     |  | The BACnet object type to update. Can be specified as a name, like <code>analog-value</code> or <code>AnalogValue</code>, or the associated integer code, like <code>2</code>. |
+| Object Type     |  | The BACnet object type to update. Can be specified as a name, like `analog-value` or `AnalogValue`, or the associated integer code, like `2`. |
 | Object Number   |  | The BACnet object type instance number to update. |
-| Property ID     | `present-value` | The BACnet object property identifier to update. Can be specified as a name, like <code>present-value</code> or <code>PresentValue</code>, or the associated integer code, like <code>85</code>. |
+| Property ID     | `present-value` | The BACnet object property identifier to update. Can be specified as a name, like `present-value` or `PresentValue`, or the associated integer code, like `85`. |
+| Priority        | `priority` | The BACnet write operation priority. Can be any value between `1` and `16`, with `1` being the highest priority. If not specified `16` will be assumed. |
 | Multiplier      | `1` | For numeric data types, a multiplier to apply to the BACnet property value to normalize it into a standard unit. |
 | Decimal Scale   | `5` | For numeric data types, a maximum number of decimal places to round decimal numbers to, or `-1` to not do any rounding. |
 

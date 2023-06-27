@@ -28,12 +28,15 @@ import net.solarnetwork.domain.CodedValue;
  * A reference to a device object property.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public interface BacnetDeviceObjectPropertyRef {
 
 	/** Represents a "not indexed" property index value. */
 	int NOT_INDEXED = -1;
+
+	/** The default priority value. */
+	int NO_PRIORITY = 0;
 
 	/**
 	 * Get the device ID.
@@ -71,6 +74,25 @@ public interface BacnetDeviceObjectPropertyRef {
 	 * @return the property ID
 	 */
 	int getPropertyId();
+
+	/**
+	 * Get the priority, for example for write operations.
+	 * 
+	 * @return the priority; this implementation returns {@link #NO_PRIORITY}
+	 * @since 1.1
+	 */
+	default int getPriority() {
+		return NO_PRIORITY;
+	}
+
+	/**
+	 * Test if a valid priority it present.
+	 * 
+	 * @return {@literal true} if a valid priority is present
+	 */
+	default boolean hasPriority() {
+		return getPriority() >= 1 && getPriority() <= 16;
+	}
 
 	/**
 	 * Get the property array index.

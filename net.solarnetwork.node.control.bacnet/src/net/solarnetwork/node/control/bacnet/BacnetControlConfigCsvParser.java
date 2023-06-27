@@ -30,6 +30,7 @@ import static net.solarnetwork.node.control.bacnet.BacnetControlCsvColumn.MULTIP
 import static net.solarnetwork.node.control.bacnet.BacnetControlCsvColumn.NETWORK_NAME;
 import static net.solarnetwork.node.control.bacnet.BacnetControlCsvColumn.OBJECT_NUMBER;
 import static net.solarnetwork.node.control.bacnet.BacnetControlCsvColumn.OBJECT_TYPE;
+import static net.solarnetwork.node.control.bacnet.BacnetControlCsvColumn.PRIORITY;
 import static net.solarnetwork.node.control.bacnet.BacnetControlCsvColumn.PROPERTY_ID;
 import static net.solarnetwork.node.control.bacnet.BacnetControlCsvColumn.PROP_TYPE;
 import static net.solarnetwork.node.control.bacnet.BacnetControlCsvColumn.SAMPLE_CACHE;
@@ -48,7 +49,7 @@ import net.solarnetwork.domain.NodeControlPropertyType;
  * Parse CSV data into {@link BacnetControlConfig} instances.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class BacnetControlConfigCsvParser {
 
@@ -121,6 +122,7 @@ public class BacnetControlConfigCsvParser {
 			propConfig.setObjectTypeValue(parseStringValue(row, rowLen, rowNum, OBJECT_TYPE.getCode()));
 			propConfig.setObjectNumber(parseIntegerValue(row, rowLen, rowNum, OBJECT_NUMBER.getCode()));
 			propConfig.setPropertyIdValue(parseStringValue(row, rowLen, rowNum, PROPERTY_ID.getCode()));
+			propConfig.setPriority(parseIntegerValue(row, rowLen, rowNum, PRIORITY.getCode()));
 			propConfig
 					.setUnitMultiplier(parseBigDecimalValue(row, rowLen, rowNum, MULTIPLIER.getCode()));
 			propConfig.setDecimalScale(parseIntegerValue(row, rowLen, rowNum, DECIMAL_SCALE.getCode()));

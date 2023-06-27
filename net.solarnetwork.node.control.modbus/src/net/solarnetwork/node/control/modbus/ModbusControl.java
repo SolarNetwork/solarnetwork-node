@@ -226,7 +226,7 @@ public class ModbusControl extends ModbusDeviceSupport
 				if ( function == ModbusWriteFunction.WriteCoil ) {
 					final BitSet bits = new BitSet(1);
 					bits.set(0, desiredValue != null && ((Boolean) desiredValue).booleanValue());
-					conn.writeDiscreetValues(new int[] { address }, bits);
+					conn.writeDiscreteValues(new int[] { address }, bits);
 					return true;
 				}
 
@@ -432,7 +432,7 @@ public class ModbusControl extends ModbusDeviceSupport
 						for ( int start = range.getMin(),
 								stop = start + range.length(); start < stop; ) {
 							int len = Math.min(range.length(), maxReadLen);
-							BitSet updates = conn.readDiscreetValues(start, len);
+							BitSet updates = conn.readDiscreteValues(start, len);
 							bits.clear(start, start + len);
 							bits.or(updates);
 							updated = true;

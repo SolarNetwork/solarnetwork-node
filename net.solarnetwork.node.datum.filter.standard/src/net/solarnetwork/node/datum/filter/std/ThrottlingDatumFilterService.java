@@ -57,6 +57,9 @@ public class ThrottlingDatumFilterService extends DatumFilterSupport
 	private int frequencySeconds;
 	private String settingUid = DEFAULT_SETTING_UID;
 
+	/**
+	 * Constructor.
+	 */
 	public ThrottlingDatumFilterService() {
 		super();
 		setFrequencySeconds(DEFAULT_FREQUENCY_SECONDS);

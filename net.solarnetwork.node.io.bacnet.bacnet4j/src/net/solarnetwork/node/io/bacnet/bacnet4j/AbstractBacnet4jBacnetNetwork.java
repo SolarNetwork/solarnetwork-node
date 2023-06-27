@@ -556,14 +556,11 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 						result.put(ref, false);
 						continue;
 					}
-					PropertyValue val;
-					if ( ref.hasPropertyIndex() ) {
-						val = new PropertyValue(PropertyIdentifier.forId(ref.getPropertyId()),
-								new UnsignedInteger(Integer.toUnsignedLong(ref.getPropertyIndex())), enc,
-								null);
-					} else {
-						val = new PropertyValue(PropertyIdentifier.forId(ref.getPropertyId()), enc);
-					}
+					PropertyValue val = new PropertyValue(PropertyIdentifier.forId(ref.getPropertyId()),
+							ref.hasPropertyIndex()
+									? new UnsignedInteger(Integer.toUnsignedLong(ref.getPropertyIndex()))
+									: null,
+							enc, ref.hasPriority() ? new UnsignedInteger(ref.getPriority()) : null);
 					WriteAccessSpecification spec = new WriteAccessSpecification(
 							new ObjectIdentifier(ref.getObjectType(), ref.getObjectNumber()),
 							new SequenceOf<>(val));
@@ -736,7 +733,9 @@ public abstract class AbstractBacnet4jBacnetNetwork extends BasicIdentifiable
 								monitoredObjectIdentifier.getInstanceNumber(),
 								val.getPropertyIdentifier().intValue(),
 								propArrayIndex != null ? propArrayIndex.intValue()
-										: BacnetDeviceObjectPropertyRef.NOT_INDEXED),
+										: BacnetDeviceObjectPropertyRef.NOT_INDEXED,
+								val.getPriority() != null ? val.getPriority().intValue()
+										: BacnetDeviceObjectPropertyRef.NO_PRIORITY),
 						decodeEncodable(val.getValue()));
 				localDevice.setCachedRemoteProperty(initiatingDeviceIdentifier.getInstanceNumber(),
 						monitoredObjectIdentifier, val.getPropertyIdentifier(), propArrayIndex,

@@ -9,6 +9,7 @@ net.solarnetwork.node.control.bacnet.Therm,propConfigs[0].deviceId,3637469,0,202
 net.solarnetwork.node.control.bacnet.Therm,propConfigs[0].objectTypeValue,analog-value,0,2022-10-11 08:52:00
 net.solarnetwork.node.control.bacnet.Therm,propConfigs[0].objectNumber,0,0,2022-10-11 08:52:00
 net.solarnetwork.node.control.bacnet.Therm,propConfigs[0].propertyIdValue,present-value,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[0].priority,8,0,2022-10-11 08:52:00
 net.solarnetwork.node.control.bacnet.Therm,propConfigs[0].unitMultiplier,1,0,2022-10-11 08:52:00
 net.solarnetwork.node.control.bacnet.Therm,propConfigs[0].decimalScale,2,0,2022-10-11 08:52:00
 net.solarnetwork.node.control.bacnet.Therm,propConfigs[1].controlId,therm/setpoint/2,0,2022-10-11 08:52:00
@@ -17,6 +18,7 @@ net.solarnetwork.node.control.bacnet.Therm,propConfigs[1].deviceId,3637469,0,202
 net.solarnetwork.node.control.bacnet.Therm,propConfigs[1].objectTypeValue,analog-value,0,2022-10-11 08:52:00
 net.solarnetwork.node.control.bacnet.Therm,propConfigs[1].objectNumber,1,0,2022-10-11 08:52:00
 net.solarnetwork.node.control.bacnet.Therm,propConfigs[1].propertyIdValue,present-value,0,2022-10-11 08:52:00
+net.solarnetwork.node.control.bacnet.Therm,propConfigs[1].priority,16,0,2022-10-11 08:52:00
 net.solarnetwork.node.control.bacnet.Therm,propConfigs[1].unitMultiplier,1,0,2022-10-11 08:52:00
 net.solarnetwork.node.control.bacnet.Therm,propConfigs[1].decimalScale,2,0,2022-10-11 08:52:00
 net.solarnetwork.node.control.bacnet.Therm,propConfigs[2].controlId,therm/away,0,2022-10-11 08:52:00
