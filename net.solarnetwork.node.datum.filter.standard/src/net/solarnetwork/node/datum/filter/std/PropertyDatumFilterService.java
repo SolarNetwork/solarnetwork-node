@@ -46,6 +46,7 @@ import net.solarnetwork.settings.SettingsChangeObserver;
 import net.solarnetwork.settings.support.BasicGroupSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
+import net.solarnetwork.util.ArrayUtils;
 
 /**
  * {@link DatumFilterService} that can filter out sample properties based on
@@ -58,7 +59,7 @@ import net.solarnetwork.settings.support.SettingUtils;
  * </p>
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.0
  */
 public class PropertyDatumFilterService extends DatumFilterSupport
@@ -299,23 +300,8 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 	 *        The desired number of {@code propIncludes} elements.
 	 */
 	public void setPropIncludesCount(int count) {
-		if ( count < 0 ) {
-			count = 0;
-		}
-		PropertyFilterConfig[] incs = this.propIncludes;
-		int lCount = (incs == null ? 0 : incs.length);
-		if ( lCount != count ) {
-			PropertyFilterConfig[] newIncs = new PropertyFilterConfig[count];
-			if ( incs != null ) {
-				System.arraycopy(incs, 0, newIncs, 0, Math.min(count, incs.length));
-			}
-			for ( int i = 0; i < count; i++ ) {
-				if ( newIncs[i] == null ) {
-					newIncs[i] = new PropertyFilterConfig();
-				}
-			}
-			this.propIncludes = newIncs;
-		}
+		this.propIncludes = ArrayUtils.arrayWithLength(this.propIncludes, count,
+				PropertyFilterConfig.class, PropertyFilterConfig::new);
 	}
 
 	/**
@@ -355,18 +341,7 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 	 *        The desired number of {@code excludes} elements.
 	 */
 	public void setExcludesCount(int count) {
-		if ( count < 0 ) {
-			count = 0;
-		}
-		String[] pats = this.excludes;
-		int lCount = (pats == null ? 0 : pats.length);
-		if ( lCount != count ) {
-			String[] newPats = new String[count];
-			if ( pats != null ) {
-				System.arraycopy(pats, 0, newPats, 0, Math.min(count, pats.length));
-			}
-			this.excludes = newPats;
-		}
+		this.excludes = ArrayUtils.arrayWithLength(this.excludes, count, String.class, () -> null);
 	}
 
 	/**
