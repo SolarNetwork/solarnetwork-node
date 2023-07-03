@@ -20,7 +20,7 @@ Each filter configuration contains the following overall settings:
 | Service Group      | An optional service group name to assign.                         |
 | Source ID          | The source ID(s) to filter.                                       |
 | Required Mode      | If configured, an [operational mode](https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Operational-Modes) that must be active for this filter to be applied. |
-| Required Tag       | Only apply the filter on datum with the given tag. A tag may be prefixed with <code>!</code> to invert the logic so that the filter only applies to datum **without** the given tag. Multiple tags can be defined using a `,` delimiter, in which case **at least one** of the configured tags must match to apply the filter. |
+| Required Tag       | Only apply the filter on datum with the given tag. A tag may be prefixed with `!` to invert the logic so that the filter only applies to datum **without** the given tag. Multiple tags can be defined using a `,` delimiter, in which case **at least one** of the configured tags must match to apply the filter. |
 | Default Unchanged Max Seconds | When greater than `0` then the maximum number of seconds to discard unchanged properties within a single datum stream (source ID). |
 | Property Configurations | A list of [property settings](#property-settings). |
 
@@ -38,11 +38,13 @@ Each filter configuration contains the following overall settings:
 
 <img alt="Unchanged Property filter property settings" src="docs/solarnode-unchanged-property-filter-property-settings@2x.png" width="675">
 
+Use the <kbd>+</kbd> and <kbd>-</kbd> buttons to add/remove Property configurations.
+
 Each property configuration contains the following settings:
 
 | Setting            | Description                                                       |
 |:-------------------|:------------------------------------------------------------------|
 | Property           | A regular expression [pattern][regex] to match against datum property names. All matching properties will be filtered. |
-| Unchanged Max Seconds | When greater than `0` then the maximum number of seconds to discard unchanged properties within a single datum stream (source ID). This can be used to override the filter-wide <b>Default Unchanged Max Seconds</b> setting, or left blank to use the default value. |
+| Unchanged Max Seconds | When greater than `0` then the maximum number of seconds to discard unchanged properties within a single datum stream (source ID). This can be used to override the filter-wide **Default Unchanged Max Seconds** setting, or left blank to use the default value. |
 
-[regex]: https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/regex/Pattern.html#sum
+[regex]: https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/regex/Pattern.html
