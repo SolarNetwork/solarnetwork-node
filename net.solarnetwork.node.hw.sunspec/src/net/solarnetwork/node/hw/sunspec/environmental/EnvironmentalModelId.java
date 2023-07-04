@@ -38,7 +38,7 @@ public enum EnvironmentalModelId implements ModelId {
 	Irradiance(302, "Irradiance", IrradianceModelAccessor.class),
 
 	/** Back of module temperature. */
-	BackOfModuleTemperature(303, "Back of module temperature", null /* TODO */),
+	BackOfModuleTemperature(303, "Back of module temperature", BomTemperatureModelAccessor.class),
 
 	/** Inclinometer. */
 	Inclinometer(304, "Inclinometer", null /* TODO */),
