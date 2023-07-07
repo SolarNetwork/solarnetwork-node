@@ -84,7 +84,7 @@ public class BomTemperatureModelAccessorImpl_303_01Tests {
 		BomTemperatureModelAccessor model = getTestDataInstance()
 				.findTypedModel(BomTemperatureModelAccessor.class);
 		List<Float> temps = model.getBackOfModuleTemperatures();
-		assertThat("5 temps returned", temps, hasSize(3));
+		assertThat("3 temps returned", temps, hasSize(3));
 		for ( int i = 0; i < 3; i++ ) {
 			assertThat(String.format("Temp %d", i + 1), temps.get(i), equalTo(23.4f + (0.1f * i)));
 		}
