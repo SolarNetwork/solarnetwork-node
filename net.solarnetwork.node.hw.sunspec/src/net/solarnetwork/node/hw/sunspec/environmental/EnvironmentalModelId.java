@@ -41,7 +41,7 @@ public enum EnvironmentalModelId implements ModelId {
 	BackOfModuleTemperature(303, "Back of module temperature", BomTemperatureModelAccessor.class),
 
 	/** Inclinometer. */
-	Inclinometer(304, "Inclinometer", null /* TODO */),
+	Inclinometer(304, "Inclinometer", InclinometerModelAccessor.class),
 
 	/** Global positioning system. */
 	GPS(305, "GPS", null /* TODO */),
