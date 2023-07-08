@@ -44,7 +44,7 @@ public enum EnvironmentalModelId implements ModelId {
 	Inclinometer(304, "Inclinometer", InclinometerModelAccessor.class),
 
 	/** Global positioning system. */
-	GPS(305, "GPS", null /* TODO */),
+	GPS(305, "GPS", GpsModelAccessor.class),
 
 	/** Reference point. */
 	ReferencePoint(306, "Reference Point", null /* TODO */),
