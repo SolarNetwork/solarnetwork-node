@@ -30,8 +30,13 @@ import net.solarnetwork.node.io.modbus.ModbusDataType;
 import net.solarnetwork.node.io.modbus.ModbusReadFunction;
 
 /**
- * Enumeration of Modbus register mappings for SunSpec compliant mini weather
- * model 308.
+ * Enumeration of Modbus register mappings for SunSpec compliant mini
+ * meteorological model 308.
+ * 
+ * <p>
+ * Note that all register addresses are encoded as an offset from the block
+ * address of the model block.
+ * </p>
  * 
  * @author matt
  * @version 1.0
@@ -45,8 +50,8 @@ public enum MiniMeteorologicalModelRegister implements SunspecModbusReference {
 	/** Back-of-module temperature, in degrees Celsius. */
 	TemperatureBOM(1, Int16),
 
-	/** Air temperature, in degrees Celsius. */
-	TemperatureAir(2, Int16),
+	/** Ambient temperature, in degrees Celsius. */
+	TemperatureAmbient(2, Int16),
 
 	/** Wind speed, in m/s. */
 	WindSpeed(3, UInt16),

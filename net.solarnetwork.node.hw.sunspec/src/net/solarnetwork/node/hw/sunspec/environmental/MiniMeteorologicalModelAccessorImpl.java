@@ -36,7 +36,7 @@ import net.solarnetwork.node.hw.sunspec.ModelId;
 public class MiniMeteorologicalModelAccessorImpl extends BaseModelAccessor
 		implements MiniMeteorologicalModelAccessor {
 
-	/** The irradiance model fixed block length. */
+	/** The model fixed block length. */
 	public static final int FIXED_BLOCK_LENGTH = 4;
 
 	/**
@@ -79,24 +79,24 @@ public class MiniMeteorologicalModelAccessorImpl extends BaseModelAccessor
 
 	@Override
 	public Integer getGlobalHorizontalIrradiance() {
-		return getIntegerValue(MiniMeteorologicalModelRegister.IrradianceGH, getBlockAddress());
+		return getIntegerValue(MiniMeteorologicalModelRegister.IrradianceGH);
 	}
 
 	@Override
 	public Float getBackOfModuleTemperature() {
-		Float f = getFloatValue(MiniMeteorologicalModelRegister.TemperatureBOM, getBlockAddress());
-		return (f != null ? f.floatValue() / 10f : null);
+		Number n = getValue(MiniMeteorologicalModelRegister.TemperatureBOM);
+		return (n != null ? n.floatValue() / 10f : null);
 	}
 
 	@Override
 	public Float getAmbientTemperature() {
-		Float f = getFloatValue(MiniMeteorologicalModelRegister.TemperatureAir, getBlockAddress());
-		return (f != null ? f.floatValue() / 10f : null);
+		Number n = getValue(MiniMeteorologicalModelRegister.TemperatureAmbient);
+		return (n != null ? n.floatValue() / 10f : null);
 	}
 
 	@Override
 	public Integer getWindSpeed() {
-		return getIntegerValue(MiniMeteorologicalModelRegister.WindSpeed, getBlockAddress());
+		return getIntegerValue(MiniMeteorologicalModelRegister.WindSpeed);
 	}
 
 }

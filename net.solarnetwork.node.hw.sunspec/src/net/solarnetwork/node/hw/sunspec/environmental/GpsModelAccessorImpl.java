@@ -109,19 +109,17 @@ public class GpsModelAccessorImpl extends BaseModelAccessor implements GpsModelA
 
 	@Override
 	public BigDecimal getLatitude() {
-		return NumberUtils.scaled(getIntegerValue(GpsModelRegister.Latitude, getBlockAddress()),
-				COORDINATES_SCALE);
+		return NumberUtils.scaled(getValue(GpsModelRegister.Latitude), COORDINATES_SCALE);
 	}
 
 	@Override
 	public BigDecimal getLongitude() {
-		return NumberUtils.scaled(getIntegerValue(GpsModelRegister.Longitude, getBlockAddress()),
-				COORDINATES_SCALE);
+		return NumberUtils.scaled(getValue(GpsModelRegister.Longitude), COORDINATES_SCALE);
 	}
 
 	@Override
 	public Integer getAltitude() {
-		return getIntegerValue(GpsModelRegister.Altitude, getBlockAddress());
+		return getIntegerValue(GpsModelRegister.Altitude);
 	}
 
 }

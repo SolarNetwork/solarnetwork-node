@@ -32,6 +32,11 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  * Enumeration of Modbus register mappings for SunSpec compliant inclinometer
  * model 304.
  * 
+ * <p>
+ * Note that all register addresses are encoded as an offset from the block
+ * address of the model block.
+ * </p>
+ * 
  * @author matt
  * @version 1.0
  * @since 4.2

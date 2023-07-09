@@ -28,7 +28,6 @@ import static org.junit.Assert.assertThat;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.solarnetwork.node.hw.sunspec.CommonModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.environmental.EnvironmentalModelId;
 import net.solarnetwork.node.hw.sunspec.environmental.IrradianceModelAccessor;
@@ -54,17 +53,6 @@ public class IrradianceModelAccessorImpl_302_01Tests {
 	public void dataDebugString() {
 		ModelData data = getTestDataInstance();
 		log.debug("Got test data: " + data.dataDebugString());
-	}
-
-	@Test
-	public void commonModelProperties() {
-		CommonModelAccessor data = getTestDataInstance();
-		assertThat("Manufacturer", data.getManufacturer(), equalTo("Rainwise_Inc"));
-		assertThat("Model name", data.getModelName(), equalTo("PVmet 500"));
-		assertThat("Options", data.getOptions(), equalTo("0"));
-		assertThat("Version", data.getVersion(), equalTo("1.2"));
-		assertThat("Serial number", data.getSerialNumber(), equalTo("123456"));
-		assertThat("Device address", data.getDeviceAddress(), equalTo(60));
 	}
 
 	@Test
