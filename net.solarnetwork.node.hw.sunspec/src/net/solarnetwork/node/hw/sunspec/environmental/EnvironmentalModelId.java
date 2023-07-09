@@ -53,7 +53,7 @@ public enum EnvironmentalModelId implements ModelId {
 	BaseMeteorolgical(307, "Base meteorolgical", null /* TODO */),
 
 	/** Mini meteorolgical. */
-	MiniMeteorolgical(308, "Mini meteorolgical", null /* TODO */),
+	MiniMeteorolgical(308, "Mini meteorolgical", MiniMeteorologicalModelAccessor.class),
 
 	;
 
