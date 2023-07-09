@@ -196,7 +196,12 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 
 	@Override
 	public ModelData modelData() {
-		return getSample();
+		try {
+			return getCurrentSample();
+		} catch ( IOException e ) {
+			log.warn("Communication problem reading model data: {}", e.toString());
+			return null;
+		}
 	}
 
 	@Override
