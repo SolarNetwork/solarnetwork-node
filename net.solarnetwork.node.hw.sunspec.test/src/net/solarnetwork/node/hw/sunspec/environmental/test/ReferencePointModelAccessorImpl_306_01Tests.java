@@ -1,5 +1,5 @@
 /* ==================================================================
- * BomTemperatureModelAccessorImpl_303_01Tests.java - 5/07/2023 10:43:25 am
+ * ReferencePointModelAccessorImpl_306_01Tests.java - 9/07/2023 4:53:29 pm
  * 
  * Copyright 2023 SolarNetwork.net Dev Team
  * 
@@ -33,24 +33,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.environmental.EnvironmentalModelId;
-import net.solarnetwork.node.hw.sunspec.environmental.Incline;
-import net.solarnetwork.node.hw.sunspec.environmental.InclinometerModelAccessor;
-import net.solarnetwork.node.hw.sunspec.environmental.InclinometerModelAccessorImpl;
+import net.solarnetwork.node.hw.sunspec.environmental.ReferencePoint;
+import net.solarnetwork.node.hw.sunspec.environmental.ReferencePointModelAccessor;
+import net.solarnetwork.node.hw.sunspec.environmental.ReferencePointModelAccessorImpl;
 import net.solarnetwork.node.hw.sunspec.test.ModelDataUtils;
 
 /**
- * Test cases for the {@link InclinometerModelAccessorImpl} class.
+ * Test cases for the {@link ReferencePointModelAccessorImpl} class.
  * 
  * @author matt
  * @version 1.0
  */
-public class InclinometerModelAccessorImpl_304_01Tests {
+public class ReferencePointModelAccessorImpl_306_01Tests {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(InclinometerModelAccessorImpl_304_01Tests.class);
 
 	private ModelData getTestDataInstance() {
-		return ModelDataUtils.getModelDataInstance(getClass(), "test-data-304-01.txt");
+		return ModelDataUtils.getModelDataInstance(getClass(), "test-data-306-01.txt");
 	}
 
 	@Test
@@ -62,38 +62,40 @@ public class InclinometerModelAccessorImpl_304_01Tests {
 	@Test
 	public void findTypedModel() {
 		ModelData data = getTestDataInstance();
-		InclinometerModelAccessor accessor = data.findTypedModel(InclinometerModelAccessor.class);
-		assertThat(accessor, instanceOf(InclinometerModelAccessorImpl.class));
+		ReferencePointModelAccessor accessor = data.findTypedModel(ReferencePointModelAccessor.class);
+		assertThat(accessor, instanceOf(ReferencePointModelAccessorImpl.class));
 	}
 
 	@Test
 	public void block() {
-		InclinometerModelAccessor model = getTestDataInstance()
-				.findTypedModel(InclinometerModelAccessor.class);
+		ReferencePointModelAccessor model = getTestDataInstance()
+				.findTypedModel(ReferencePointModelAccessor.class);
 		assertThat("Model base address", model.getBaseAddress(), equalTo(70));
 		assertThat("Model block address", model.getBlockAddress(), equalTo(72));
-		assertThat("Model ID", model.getModelId(), equalTo(EnvironmentalModelId.Inclinometer));
+		assertThat("Model ID", model.getModelId(), equalTo(EnvironmentalModelId.ReferencePoint));
 		assertThat("Model fixed length", model.getFixedBlockLength(), equalTo(0));
 		assertThat("Model repeating instance length", model.getRepeatingBlockInstanceLength(),
-				equalTo(6));
-		assertThat("Model length", model.getModelLength(), equalTo(12));
+				equalTo(7));
+		assertThat("Model length", model.getModelLength(), equalTo(14));
 		assertThat("Model length", model.getRepeatingBlockInstanceCount(), equalTo(2));
 	}
 
 	@Test
 	public void data() {
-		InclinometerModelAccessor model = getTestDataInstance()
-				.findTypedModel(InclinometerModelAccessor.class);
-		List<Incline> inclines = model.getInclines();
-		assertThat("2 inclines returned", inclines, hasSize(2));
-		Incline inc = inclines.get(0);
-		assertThat("Incline 1 x", inc.getInclineX(), is(equalTo(245.82f)));
-		assertThat("Incline 1 y", inc.getInclineY(), is(equalTo(10.82f)));
-		assertThat("Incline 1 z", inc.getInclineZ(), is(equalTo(735.98f)));
-		inc = inclines.get(1);
-		assertThat("Incline 2 x", inc.getInclineX(), is(equalTo(12.0f)));
-		assertThat("Incline 2 y", inc.getInclineY(), is(equalTo(11.82f)));
-		assertThat("Incline 2 z", inc.getInclineZ(), is(equalTo(3.02f)));
+		ReferencePointModelAccessor model = getTestDataInstance()
+				.findTypedModel(ReferencePointModelAccessor.class);
+		List<ReferencePoint> points = model.getReferencePoints();
+		assertThat("2 reference points returned", points, hasSize(2));
+		ReferencePoint p = points.get(0);
+		assertThat("ReferencePoint 1 irradiance", p.getIrradiance(), is(equalTo(12345)));
+		assertThat("ReferencePoint 1 current", p.getCurrent(), is(equalTo(1.23f)));
+		assertThat("ReferencePoint 1 voltage", p.getVoltage(), is(equalTo(2.34f)));
+		assertThat("ReferencePoint 1 temperature", p.getTemperature(), is(equalTo(34.5f)));
+		p = points.get(1);
+		assertThat("ReferencePoint 2 irradiance", p.getIrradiance(), is(equalTo(23456)));
+		assertThat("ReferencePoint 2 current", p.getCurrent(), is(equalTo(-2.34f)));
+		assertThat("ReferencePoint 2 voltage", p.getVoltage(), is(equalTo(-3.45f)));
+		assertThat("ReferencePoint 2 temperature", p.getTemperature(), is(equalTo(-45.6f)));
 	}
 
 }

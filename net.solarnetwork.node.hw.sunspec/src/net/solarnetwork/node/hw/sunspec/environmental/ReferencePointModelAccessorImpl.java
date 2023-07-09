@@ -1,5 +1,5 @@
 /* ==================================================================
- * InclinometerModelAccessorImpl.java - 8/07/2023 8:30:24 am
+ * ReferencePointModelAccessorImpl.java - 9/07/2023 4:36:56 pm
  * 
  * Copyright 2023 SolarNetwork.net Dev Team
  * 
@@ -29,17 +29,17 @@ import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelId;
 
 /**
- * Implementatino of {@link InclinometerModelAccessor}.
+ * Implementation of {@link ReferencePointModelAccessor}.
  * 
  * @author matt
  * @version 1.0
  * @since 4.2
  */
-public class InclinometerModelAccessorImpl extends BaseModelAccessor
-		implements InclinometerModelAccessor {
+public class ReferencePointModelAccessorImpl extends BaseModelAccessor
+		implements ReferencePointModelAccessor {
 
 	/** The model repeating block length. */
-	public static final int REPEATING_BLOCK_LENGTH = 6;
+	public static final int REPEATING_BLOCK_LENGTH = 7;
 
 	/**
 	 * Constructor.
@@ -51,7 +51,7 @@ public class InclinometerModelAccessorImpl extends BaseModelAccessor
 	 * @param modelId
 	 *        the model ID
 	 */
-	public InclinometerModelAccessorImpl(ModelData data, int baseAddress, ModelId modelId) {
+	public ReferencePointModelAccessorImpl(ModelData data, int baseAddress, ModelId modelId) {
 		super(data, baseAddress, modelId);
 	}
 
@@ -70,7 +70,7 @@ public class InclinometerModelAccessorImpl extends BaseModelAccessor
 	 * @param modelId
 	 *        the model ID
 	 */
-	public InclinometerModelAccessorImpl(ModelData data, int baseAddress, int modelId) {
+	public ReferencePointModelAccessorImpl(ModelData data, int baseAddress, int modelId) {
 		this(data, baseAddress, EnvironmentalModelId.forId(modelId));
 	}
 
@@ -85,20 +85,20 @@ public class InclinometerModelAccessorImpl extends BaseModelAccessor
 	}
 
 	@Override
-	public List<Incline> getInclines() {
+	public List<ReferencePoint> getReferencePoints() {
 		final int count = getModelLength();
 		final int baseAddr = getBlockAddress();
-		final List<Incline> inclines = new ArrayList<>(count);
-		final int propCount = InclinometerModelRegister.values().length;
+		final List<ReferencePoint> points = new ArrayList<>(count);
+		final int propCount = ReferencePointModelRegister.values().length;
 		final Integer[] data = new Integer[propCount];
 		for ( int i = 0; i < count; i += REPEATING_BLOCK_LENGTH ) {
 			final int blockAddr = baseAddr + i;
 			for ( int j = 0; j < propCount; j++ ) {
-				data[j] = getIntegerValue(InclinometerModelRegister.values()[j], blockAddr);
+				data[j] = getIntegerValue(ReferencePointModelRegister.values()[j], blockAddr);
 			}
-			inclines.add(new Incline(data));
+			points.add(new ReferencePoint(data));
 		}
-		return inclines;
+		return points;
 	}
 
 }

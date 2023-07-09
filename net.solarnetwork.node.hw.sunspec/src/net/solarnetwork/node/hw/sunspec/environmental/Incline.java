@@ -31,9 +31,9 @@ package net.solarnetwork.node.hw.sunspec.environmental;
  */
 public class Incline {
 
-	private final Double x;
-	private final Double y;
-	private final Double z;
+	private final Float x;
+	private final Float y;
+	private final Float z;
 
 	/**
 	 * Constructor.
@@ -45,7 +45,7 @@ public class Incline {
 	 * @param z
 	 *        the z-axis inclination, in degrees
 	 */
-	public Incline(Double x, Double y, Double z) {
+	public Incline(Float x, Float y, Float z) {
 		super();
 		this.x = x;
 		this.y = y;
@@ -56,14 +56,14 @@ public class Incline {
 	 * Constructor.
 	 * 
 	 * @param data
-	 *        an array of inclination data, in x, y, z order; the array values
-	 *        are copied
+	 *        an array of raw inclination data, in x, y, z order; the array
+	 *        values are copied and adjusted to scale
 	 */
-	public Incline(Double[] data) {
+	public Incline(Integer[] data) {
 		super();
-		this.x = (data != null && data.length > 0 ? data[0] : null);
-		this.y = (data != null && data.length > 1 ? data[1] : null);
-		this.z = (data != null && data.length > 2 ? data[2] : null);
+		this.x = (data != null && data.length > 0 ? (data[0].floatValue() / 100f) : null);
+		this.y = (data != null && data.length > 1 ? (data[1].floatValue() / 100f) : null);
+		this.z = (data != null && data.length > 2 ? (data[2].floatValue() / 100f) : null);
 	}
 
 	/**
@@ -71,7 +71,7 @@ public class Incline {
 	 * 
 	 * @return the inclination
 	 */
-	public Double getInclineX() {
+	public Float getInclineX() {
 		return x;
 	}
 
@@ -80,7 +80,7 @@ public class Incline {
 	 * 
 	 * @return the inclination
 	 */
-	public Double getInclineY() {
+	public Float getInclineY() {
 		return y;
 	}
 
@@ -89,7 +89,7 @@ public class Incline {
 	 * 
 	 * @return the inclination
 	 */
-	public Double getInclineZ() {
+	public Float getInclineZ() {
 		return z;
 	}
 

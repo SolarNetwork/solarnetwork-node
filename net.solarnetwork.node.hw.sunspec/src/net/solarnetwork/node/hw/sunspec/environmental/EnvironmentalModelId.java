@@ -47,7 +47,7 @@ public enum EnvironmentalModelId implements ModelId {
 	GPS(305, "GPS", GpsModelAccessor.class),
 
 	/** Reference point. */
-	ReferencePoint(306, "Reference Point", null /* TODO */),
+	ReferencePoint(306, "Reference Point", ReferencePointModelAccessor.class),
 
 	/** Base meteorolgical. */
 	BaseMeteorolgical(307, "Base meteorolgical", null /* TODO */),
