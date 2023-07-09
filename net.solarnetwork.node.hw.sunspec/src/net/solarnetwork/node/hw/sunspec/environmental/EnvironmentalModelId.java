@@ -50,7 +50,7 @@ public enum EnvironmentalModelId implements ModelId {
 	ReferencePoint(306, "Reference Point", ReferencePointModelAccessor.class),
 
 	/** Base meteorolgical. */
-	BaseMeteorolgical(307, "Base meteorolgical", null /* TODO */),
+	BaseMeteorolgical(307, "Base meteorolgical", MeteorologicalModelAccessor.class),
 
 	/** Mini meteorolgical. */
 	MiniMeteorolgical(308, "Mini meteorolgical", MiniMeteorologicalModelAccessor.class),
