@@ -50,5 +50,7 @@ Float currentPhaseC = model.accessorForPhase(PhaseC).getCurrent();
 | 304 | net.solarnetwork.node.hw.sunspec.environmental.InclinometerModelAccessor |
 | 305 | net.solarnetwork.node.hw.sunspec.environmental.GpsModelAccessor |
 | 306 | net.solarnetwork.node.hw.sunspec.environmental.ReferencePointModelAccessor |
+| 307 | net.solarnetwork.node.hw.sunspec.environmental.MeteorologicalModelAccessor |
+| 308 | net.solarnetwork.node.hw.sunspec.environmental.MiniMeteorologicalModelAccessor |
 | 401, 403 | net.solarnetwork.node.hw.sunspec.combiner.StringCombinerModelAccessor |
 | 402, 404 | net.solarnetwork.node.hw.sunspec.combiner.StringCombinerAdvancedModelAccessor |
