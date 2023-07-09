@@ -99,6 +99,7 @@
 								<list>
 									<value>net.solarnetwork.node.service.DatumDataSource</value>
 									<value>net.solarnetwork.node.service.MultiDatumDataSource</value>
+									<value>net.solarnetwork.node.hw.sunspec.ModelDataProvider</value>
 								</list>
 							</property>
 							<property name="properties">

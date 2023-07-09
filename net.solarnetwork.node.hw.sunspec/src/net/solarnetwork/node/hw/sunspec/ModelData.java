@@ -43,7 +43,7 @@ import net.solarnetwork.util.IntRange;
  * Base object for model data.
  * 
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class ModelData extends ModbusData implements CommonModelAccessor {
 
@@ -177,7 +177,8 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 		if ( model != null ) {
 			String version = data.getVersion();
 			if ( version != null ) {
-				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, String.format("%s (version %s)", model, version));
+				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL,
+						String.format("%s (version %s)", model, version));
 			} else {
 				result.put(DataAccessor.INFO_KEY_DEVICE_MODEL, model.toString());
 			}
@@ -446,6 +447,39 @@ public class ModelData extends ModbusData implements CommonModelAccessor {
 	 *         if any communication error occurs
 	 */
 	public void readModelData(final ModbusConnection conn, final List<ModelAccessor> accessors)
+			throws IOException {
+		if ( accessors == null ) {
+			return;
+		}
+		performUpdates(new ModbusDataUpdateAction() {
+
+			@Override
+			public boolean updateModbusData(MutableModbusData m) throws IOException {
+				for ( ModelAccessor accessor : accessors ) {
+					updateData(conn, m, accessor.getAddressRanges(maxReadWordsCount));
+				}
+				return true;
+			}
+		});
+	}
+
+	/**
+	 * Read the model properties from the device for specific models.
+	 * 
+	 * <p>
+	 * This method will iterate over the provided {@link ModelAccessor}
+	 * instances and read the data necessary for each of their properties.
+	 * </p>
+	 * 
+	 * @param conn
+	 *        the connection
+	 * @param accessors
+	 *        the models to read data for
+	 * @since 2.4
+	 * @throws IOException
+	 *         if any communication error occurs
+	 */
+	public void readModelData(final ModbusConnection conn, final ModelAccessor... accessors)
 			throws IOException {
 		if ( accessors == null ) {
 			return;
