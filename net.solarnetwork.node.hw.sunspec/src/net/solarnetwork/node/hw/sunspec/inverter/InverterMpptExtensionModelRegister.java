@@ -95,7 +95,7 @@ public enum InverterMpptExtensionModelRegister implements SunspecModbusReference
 	/** Module timestamp, in seconds. */
 	ModuleTimestamp(14, UInt32),
 
-	/** Module temperature, in degrees celsius. */
+	/** Module temperature, in degrees Celsius. */
 	ModuleTemperature(16, Int16),
 
 	/** Module operating state, see {@link InverterOperatingState}. */

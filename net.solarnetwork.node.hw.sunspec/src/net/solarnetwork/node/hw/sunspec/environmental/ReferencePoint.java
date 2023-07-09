@@ -46,7 +46,7 @@ public class ReferencePoint {
 	 * @param voltage
 	 *        the voltage, in volts
 	 * @param temperature
-	 *        the temperature, in degrees celsius
+	 *        the temperature, in degrees Celsius
 	 */
 	public ReferencePoint(Integer irradiance, Float current, Float voltage, Float temperature) {
 		super();
@@ -100,7 +100,7 @@ public class ReferencePoint {
 	}
 
 	/**
-	 * Get the temperature, in degrees celsius
+	 * Get the temperature, in degrees Celsius
 	 * 
 	 * @return the temperature
 	 */

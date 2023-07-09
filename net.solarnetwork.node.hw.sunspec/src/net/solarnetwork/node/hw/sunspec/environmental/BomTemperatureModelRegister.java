@@ -22,7 +22,7 @@
 
 package net.solarnetwork.node.hw.sunspec.environmental;
 
-import static net.solarnetwork.node.io.modbus.ModbusDataType.UInt16;
+import static net.solarnetwork.node.io.modbus.ModbusDataType.Int16;
 import net.solarnetwork.node.hw.sunspec.DataClassification;
 import net.solarnetwork.node.hw.sunspec.SunspecModbusReference;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
@@ -43,8 +43,8 @@ import net.solarnetwork.node.io.modbus.ModbusReadFunction;
  */
 public enum BomTemperatureModelRegister implements SunspecModbusReference {
 
-	/** Temperature, back of module. */
-	TemperatureBOM(0, UInt16),
+	/** Temperature, back of module, in degrees Celsius. */
+	TemperatureBOM(0, Int16),
 
 	;
 

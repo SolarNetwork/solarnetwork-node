@@ -92,7 +92,7 @@ public interface InverterMpptExtensionModelAccessor extends ModelAccessor {
 		Long getDataTimestamp();
 
 		/**
-		 * Get the temperature of the module, in degrees celsius.
+		 * Get the temperature of the module, in degrees Celsius.
 		 * 
 		 * @return the temperature
 		 */

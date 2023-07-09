@@ -53,7 +53,7 @@ public enum ReferencePointModelRegister implements SunspecModbusReference {
 	/** Voltage measurement at reference point, in volts. */
 	Voltage(3, Int32),
 
-	/** Temperature measurement at reference point, in degrees celsius. */
+	/** Temperature measurement at reference point, in degrees Celsius. */
 	Temperature(5, Int32),
 
 	;
