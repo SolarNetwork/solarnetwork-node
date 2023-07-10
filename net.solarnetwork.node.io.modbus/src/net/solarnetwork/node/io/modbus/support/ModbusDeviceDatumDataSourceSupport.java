@@ -71,6 +71,10 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 * Get setting specifiers for the {@literal unitId} and
 	 * {@literal modbusNetwork.propertyFilters['uid']} properties.
 	 * 
+	 * @param uid
+	 *        the Modbus Network UID property filter default value to use
+	 * @param unitId
+	 *        the unit ID default value to use
 	 * @return list of setting specifiers
 	 * @since 3.1
 	 */
