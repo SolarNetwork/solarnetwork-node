@@ -1,5 +1,5 @@
 /* ==================================================================
- * SunSpecMeterDatum.java - 23/05/2018 6:46:30 AM
+ * MeterDatum.java - 23/05/2018 6:46:30 AM
  * 
  * Copyright 2018 SolarNetwork.net Dev Team
  * 
@@ -20,20 +20,20 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.sunspec.meter;
+package net.solarnetwork.node.hw.sunspec.meter;
 
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
-import net.solarnetwork.node.hw.sunspec.meter.MeterModelAccessor;
 
 /**
  * Datum for a SunSpec compatible meter.
  * 
  * @author matt
- * @version 2.0
+ * @version 1.0
+ * @since 4.2
  */
-public class SunSpecMeterDatum extends SimpleAcDcEnergyDatum {
+public class MeterDatum extends SimpleAcDcEnergyDatum {
 
 	private static final long serialVersionUID = 7595473211731769270L;
 
@@ -56,7 +56,7 @@ public class SunSpecMeterDatum extends SimpleAcDcEnergyDatum {
 	 *        energy will be captured as {@code wattHours} and <i>delivered</i>
 	 *        energy as {@code wattHoursReverse})
 	 */
-	public SunSpecMeterDatum(MeterModelAccessor data, String sourceId, AcPhase phase,
+	public MeterDatum(MeterModelAccessor data, String sourceId, AcPhase phase,
 			boolean backwards) {
 		super(sourceId, data.getDataTimestamp(), new DatumSamples());
 		this.data = data;

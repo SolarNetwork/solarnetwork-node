@@ -1,5 +1,5 @@
 /* ==================================================================
- * SunSpecInverterDatum.java - 9/10/2018 10:15:56 AM
+ * InverterDatum.java - 9/10/2018 10:15:56 AM
  * 
  * Copyright 2018 SolarNetwork.net Dev Team
  * 
@@ -20,7 +20,7 @@
  * ==================================================================
  */
 
-package net.solarnetwork.node.datum.sunspec.inverter;
+package net.solarnetwork.node.hw.sunspec.inverter;
 
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import java.math.BigInteger;
@@ -36,20 +36,17 @@ import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.OperatingState;
-import net.solarnetwork.node.hw.sunspec.inverter.InverterModelAccessor;
-import net.solarnetwork.node.hw.sunspec.inverter.InverterModelEvent;
-import net.solarnetwork.node.hw.sunspec.inverter.InverterMpptExtensionModelAccessor;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterMpptExtensionModelAccessor.DcModule;
-import net.solarnetwork.node.hw.sunspec.inverter.InverterOperatingState;
 import net.solarnetwork.util.NumberUtils;
 
 /**
  * Datum for a SunSpec compatible inverter.
  * 
  * @author matt
- * @version 2.1
+ * @version 1.0
+ * @since 4.2
  */
-public class SunSpecInverterDatum extends SimpleAcDcEnergyDatum {
+public class InverterDatum extends SimpleAcDcEnergyDatum {
 
 	private static final long serialVersionUID = -7099916188917660111L;
 
@@ -65,8 +62,6 @@ public class SunSpecInverterDatum extends SimpleAcDcEnergyDatum {
 
 	/**
 	 * The status sample key for {@link #getVendorEvents()} values.
-	 * 
-	 * @since 2.1
 	 */
 	public static final String VENDOR_EVENTS_KEY = "vendorEvents";
 
@@ -83,7 +78,7 @@ public class SunSpecInverterDatum extends SimpleAcDcEnergyDatum {
 	 * @param phase
 	 *        the phase to associate with the data
 	 */
-	public SunSpecInverterDatum(InverterModelAccessor data, String sourceId, AcPhase phase) {
+	public InverterDatum(InverterModelAccessor data, String sourceId, AcPhase phase) {
 		super(sourceId, data.getDataTimestamp(), new DatumSamples());
 		this.data = data;
 		populateMeasurements(data, phase);
@@ -129,7 +124,6 @@ public class SunSpecInverterDatum extends SimpleAcDcEnergyDatum {
 	 * 
 	 * @param mppt
 	 *        the MPPT accessor
-	 * @since 1.1
 	 */
 	public void populateDcModulesProperties(InverterMpptExtensionModelAccessor mppt) {
 		List<DcModule> modules = (mppt != null ? mppt.getDcModules() : null);
@@ -272,7 +266,6 @@ public class SunSpecInverterDatum extends SimpleAcDcEnergyDatum {
 	 * Get the vendor events.
 	 * 
 	 * @return the events, or {@literal null}
-	 * @since 2.1
 	 */
 	@JsonIgnore
 	@SerializeIgnore
@@ -290,7 +283,6 @@ public class SunSpecInverterDatum extends SimpleAcDcEnergyDatum {
 	 * 
 	 * @param events
 	 *        the vendor events
-	 * @since 2.1
 	 */
 	public void setVendorEvents(BitSet events) {
 		if ( events != null && events.length() > 0 ) {

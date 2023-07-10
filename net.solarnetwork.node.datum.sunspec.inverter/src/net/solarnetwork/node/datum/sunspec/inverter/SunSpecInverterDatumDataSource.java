@@ -37,6 +37,7 @@ import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelEvent;
 import net.solarnetwork.node.hw.sunspec.OperatingState;
+import net.solarnetwork.node.hw.sunspec.inverter.InverterDatum;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterModelAccessor;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterModelId;
 import net.solarnetwork.node.hw.sunspec.inverter.InverterMpptExtensionModelAccessor;
@@ -54,7 +55,7 @@ import net.solarnetwork.util.StringUtils;
  * {@link DatumDataSource} for a SunSpec compatible inverter.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
@@ -78,7 +79,6 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 	 */
 	public SunSpecInverterDatumDataSource(AtomicReference<ModelData> sample) {
 		super(sample);
-		setSourceId("SunSpec-Inverter");
 	}
 
 	@Override
@@ -126,7 +126,7 @@ public class SunSpecInverterDatumDataSource extends SunSpecDeviceDatumDataSource
 				// ignore this
 			}
 		}
-		SunSpecInverterDatum d = new SunSpecInverterDatum(data, sourceId, AcPhase.Total);
+		InverterDatum d = new InverterDatum(data, sourceId, AcPhase.Total);
 		Set<Integer> secondaryModelIds = getSecondaryModelIds();
 		if ( secondaryModelIds != null
 				&& secondaryModelIds.contains(InverterModelId.MultipleMpptInverterExtension.getId()) ) {

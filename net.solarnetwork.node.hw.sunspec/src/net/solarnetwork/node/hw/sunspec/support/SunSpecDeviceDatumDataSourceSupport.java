@@ -64,7 +64,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	private final AtomicReference<ModelData> sample;
 
 	private long sampleCacheMs = 5000;
-	private String sourceId = "SunSpec-Device";
+	private String sourceId = null;
 	private Integer baseAddress = null;
 	private Set<Integer> secondaryModelIds;
 
@@ -149,7 +149,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 			if ( log.isTraceEnabled() && currSample != null ) {
 				log.trace(currSample.dataDebugString());
 			}
-			log.debug("Read SunSpec inverter data: {}", currSample);
+			log.debug("Read SunSpec data: {}", currSample);
 		}
 		return (currSample != null ? currSample.getSnapshot() : null);
 	}
@@ -340,13 +340,14 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 				true));
 
 		results.addAll(getIdentifiableSettingSpecifiers());
-		results.addAll(getModbusNetworkSettingSpecifiers());
+		results.addAll(modbusNetworkSettingSpecifiers(null, DEFAULT_UNIT_ID));
 
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(defaults.getSampleCacheMs())));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
 
-		results.add(new BasicTextFieldSettingSpecifier("secondaryModelIdsValue", ""));
+		results.add(new BasicTextFieldSettingSpecifier("secondaryModelIdsValue",
+				defaults.getSecondaryModelIdsValue()));
 		results.add(new BasicTextFieldSettingSpecifier("baseAddress", ""));
 
 		results.addAll(getDeviceInfoMetadataSettingSpecifiers());
