@@ -35,7 +35,7 @@
 	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
-				<value>net.solarnetwork.node.datum.sunspec.environmental.SunSpecEnvironmentalDatumDataSource</value>
+				<value>net.solarnetwork.node.datum.sunspec.environmental.SunSpecMeteorologicalDatumDataSource</value>
 				<value>net.solarnetwork.node.hw.sunspec.support.SunSpecDeviceDatumDataSourceSupport</value>
 				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
 				<value>net.solarnetwork.node.service.support.DatumDataSourceSupport</value>
@@ -53,13 +53,13 @@
 	
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
 		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
-			<property name="displayName" value="SunSpec Environmental"/>
-			<property name="factoryUid" value="net.solarnetwork.node.datum.sunspec.enviro"/>
+			<property name="displayName" value="SunSpec Meteorological"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.sunspec.met"/>
 			<property name="messageSource" ref="messageSource"/>
 		</bean>
 	</service>
 	
-	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.sunspec.enviro" autowire-on-update="true">
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.sunspec.met" autowire-on-update="true">
 		<osgix:interfaces>
 			<beans:value>net.solarnetwork.node.job.ManagedJob</beans:value>
 		</osgix:interfaces>
@@ -70,7 +70,7 @@
 					<property name="datumMetadataService" ref="datumMetadataService"/>
 					<property name="datumQueue" ref="datumQueue"/>
 					<property name="multiDatumDataSource">
-						<bean class="net.solarnetwork.node.datum.sunspec.environmental.SunSpecEnvironmentalDatumDataSource">
+						<bean class="net.solarnetwork.node.datum.sunspec.environmental.SunSpecMeteorologicalDatumDataSource">
 							<property name="messageSource" ref="jobMessageSource"/>
 							<property name="placeholderService" ref="placeholderService"/>
 							<property name="datumMetadataService" ref="datumMetadataService"/>

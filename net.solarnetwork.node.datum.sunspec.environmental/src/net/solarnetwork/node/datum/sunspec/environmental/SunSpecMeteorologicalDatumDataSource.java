@@ -1,5 +1,5 @@
 /* ==================================================================
- * SunSpecEnvironmentalDatumDataSource.java - 10/07/2023 2:39:45 pm
+ * SunSpecMeteorologicalDatumDataSource.java - 10/07/2023 2:39:45 pm
  * 
  * Copyright 2023 SolarNetwork.net Dev Team
  * 
@@ -49,13 +49,13 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
  * @author matt
  * @version 1.0
  */
-public class SunSpecEnvironmentalDatumDataSource extends SunSpecDeviceDatumDataSourceSupport
+public class SunSpecMeteorologicalDatumDataSource extends SunSpecDeviceDatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	/**
 	 * Constructor.
 	 */
-	public SunSpecEnvironmentalDatumDataSource() {
+	public SunSpecMeteorologicalDatumDataSource() {
 		this(new AtomicReference<>());
 	}
 
@@ -65,7 +65,7 @@ public class SunSpecEnvironmentalDatumDataSource extends SunSpecDeviceDatumDataS
 	 * @param sample
 	 *        the sample data to use
 	 */
-	public SunSpecEnvironmentalDatumDataSource(AtomicReference<ModelData> sample) {
+	public SunSpecMeteorologicalDatumDataSource(AtomicReference<ModelData> sample) {
 		super(sample);
 		// @formatter:off
 		setSecondaryModelIds(new TreeSet<>(Arrays.asList(
@@ -82,7 +82,7 @@ public class SunSpecEnvironmentalDatumDataSource extends SunSpecDeviceDatumDataS
 
 	@Override
 	protected SunSpecDeviceDatumDataSourceSupport getSettingsDefaultInstance() {
-		return new SunSpecEnvironmentalDatumDataSource();
+		return new SunSpecMeteorologicalDatumDataSource();
 	}
 
 	@Override
@@ -126,12 +126,12 @@ public class SunSpecEnvironmentalDatumDataSource extends SunSpecDeviceDatumDataS
 
 	@Override
 	public String getSettingUid() {
-		return "net.solarnetwork.node.datum.sunspec.enviro";
+		return "net.solarnetwork.node.datum.sunspec.met";
 	}
 
 	@Override
 	public String getDisplayName() {
-		return "SunSpec Environmental";
+		return "SunSpec Meteorological";
 	}
 
 	@Override
