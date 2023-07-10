@@ -101,7 +101,7 @@ public interface StringCombinerModelAccessor extends ModelAccessor {
 	Float getDCVoltage();
 
 	/**
-	 * Get the temperature of the combiner, in degrees celsius.
+	 * Get the temperature of the combiner, in degrees Celsius.
 	 * 
 	 * @return the temperature
 	 */

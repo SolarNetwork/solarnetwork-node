@@ -45,7 +45,7 @@ import net.solarnetwork.util.StringUtils;
  * {@link DatumDataSource} implementations.
  * 
  * @author matt
- * @version 3.0
+ * @version 3.1
  */
 public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSourceSupport {
 
@@ -64,10 +64,24 @@ public abstract class ModbusDeviceDatumDataSourceSupport extends DatumDataSource
 	 * @since 1.1
 	 */
 	protected List<SettingSpecifier> getModbusNetworkSettingSpecifiers() {
+		return modbusNetworkSettingSpecifiers("Modbus Port", DEFAULT_UNIT_ID);
+	}
+
+	/**
+	 * Get setting specifiers for the {@literal unitId} and
+	 * {@literal modbusNetwork.propertyFilters['uid']} properties.
+	 * 
+	 * @param uid
+	 *        the Modbus Network UID property filter default value to use
+	 * @param unitId
+	 *        the unit ID default value to use
+	 * @return list of setting specifiers
+	 * @since 3.1
+	 */
+	public static List<SettingSpecifier> modbusNetworkSettingSpecifiers(String uid, int unitId) {
 		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(16);
-		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['uid']",
-				"Modbus Port"));
-		results.add(new BasicTextFieldSettingSpecifier("unitId", "1"));
+		results.add(new BasicTextFieldSettingSpecifier("modbusNetwork.propertyFilters['uid']", uid));
+		results.add(new BasicTextFieldSettingSpecifier("unitId", String.valueOf(unitId)));
 		return results;
 	}
 

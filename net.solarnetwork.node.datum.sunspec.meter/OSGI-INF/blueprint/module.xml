@@ -79,11 +79,7 @@
 									<argument ref="bundleContext"/>
 									<property name="serviceClassName" 
 										value="net.solarnetwork.node.io.modbus.ModbusNetwork"/>
-									<property name="propertyFilters">
-										<map>
-											<entry key="uid" value="Modbus Port"/>
-										</map>
-									</property>
+									<property name="requirePropertyFilter" value="true"/>
 								</bean>	
 							</property>
 						</bean>
@@ -99,6 +95,7 @@
 								<list>
 									<value>net.solarnetwork.node.service.DatumDataSource</value>
 									<value>net.solarnetwork.node.service.MultiDatumDataSource</value>
+									<value>net.solarnetwork.node.hw.sunspec.ModelDataProvider</value>
 								</list>
 							</property>
 							<property name="properties">

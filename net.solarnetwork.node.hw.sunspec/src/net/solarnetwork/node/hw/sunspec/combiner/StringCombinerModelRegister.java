@@ -83,7 +83,7 @@ public enum StringCombinerModelRegister implements SunspecModbusReference {
 	/** Output voltage, in volts. */
 	DcVoltage(12, UInt16),
 
-	/** Internal operating temperature, in degrees celsius. */
+	/** Internal operating temperature, in degrees Celsius. */
 	Temperature(13, Int16),
 
 	/** Current scale factor, as *10^X. */

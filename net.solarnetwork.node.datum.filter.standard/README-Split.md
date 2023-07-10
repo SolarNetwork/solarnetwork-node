@@ -51,4 +51,4 @@ Each property source mapping configuration contains the following settings:
 > be copied to **all** the datum streams of the associated source IDs.
 
 [placeholders]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarNode-Placeholders
-[regex]: https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/regex/Pattern.html#sum
+[regex]: https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/regex/Pattern.html

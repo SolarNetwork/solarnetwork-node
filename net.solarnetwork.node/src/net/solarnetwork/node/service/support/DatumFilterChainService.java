@@ -47,13 +47,13 @@ import net.solarnetwork.util.WeakValueConcurrentHashMap;
  * 
  * <p>
  * If a {@code staticService} is configured then it will be applied
- * <em>first</em>. Then the {@code transformuids} will be iterated over and the
+ * <em>first</em>. Then the {@code transformUids} will be iterated over and the
  * first matching service found for each value in {@code transformServices} will
  * be applied.
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 2.0
  */
 public class DatumFilterChainService extends BaseDatumFilterSupport
@@ -158,6 +158,7 @@ public class DatumFilterChainService extends BaseDatumFilterSupport
 		if ( configurableUid ) {
 			result.addAll(baseIdentifiableSettings(""));
 			result.add(new BasicTextFieldSettingSpecifier("requiredOperationalMode", null));
+			result.add(new BasicTextFieldSettingSpecifier("requiredTag", null));
 		}
 
 		populateStatusSettings(result);

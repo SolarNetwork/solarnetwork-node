@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ctx="http://www.springframework.org/schema/context"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+		http://www.springframework.org/schema/context
+		http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+
+	<bean id="datumMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumMetadataService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+		
+	<bean id="datumQueue" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.DatumQueue"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<bean id="placeholderService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlaceholderService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+		
+	<!-- Meteorological Data Source -->
+	
+	<bean id="messageSourceMet" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.datum.sunspec.environmental.SunSpecMeteorologicalDatumDataSource</value>
+				<value>net.solarnetwork.node.hw.sunspec.support.SunSpecDeviceDatumDataSourceSupport</value>
+				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.node.service.support.DatumDataSourceSupport</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="jobMessageSourceMet" class="net.solarnetwork.support.PrefixedMessageSource">
+		<property name="prefix" value="multiDatumDataSource."/>
+		<property name="delegate" ref="messageSourceMet"/>
+	</bean>	
+	
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="SunSpec Meteorological"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.sunspec.met"/>
+			<property name="messageSource" ref="messageSourceMet"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.sunspec.met" autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.job.ManagedJob</beans:value>
+		</osgix:interfaces>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob" 
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<argument>
+				<bean class="net.solarnetwork.node.job.DatumDataSourcePollManagedJob">
+					<property name="datumMetadataService" ref="datumMetadataService"/>
+					<property name="datumQueue" ref="datumQueue"/>
+					<property name="multiDatumDataSource">
+						<bean class="net.solarnetwork.node.datum.sunspec.environmental.SunSpecMeteorologicalDatumDataSource">
+							<property name="messageSource" ref="jobMessageSourceMet"/>
+							<property name="placeholderService" ref="placeholderService"/>
+							<property name="datumMetadataService" ref="datumMetadataService"/>
+							<property name="modbusNetwork">
+								<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+									<argument ref="bundleContext"/>
+									<property name="serviceClassName" 
+										value="net.solarnetwork.node.io.modbus.ModbusNetwork"/>
+									<property name="requirePropertyFilter" value="true"/>
+								</bean>	
+							</property>
+						</bean>
+					</property>
+				</bean>
+			</argument>
+			<argument value="0 * * * * ?"/>
+			<property name="serviceProviderConfigurations">
+				<map>
+					<entry key="multiDatumDataSource">
+						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
+							<property name="interfaces">
+								<list>
+									<value>net.solarnetwork.node.service.DatumDataSource</value>
+									<value>net.solarnetwork.node.service.MultiDatumDataSource</value>
+									<value>net.solarnetwork.node.hw.sunspec.ModelDataProvider</value>
+								</list>
+							</property>
+							<property name="properties">
+								<map>
+									<entry key="datumClassName" value="net.solarnetwork.node.domain.datum.AtmosphericDatum"/>
+								</map>
+							</property>
+						</bean>
+					</entry>
+				</map>
+			</property>
+		</bean>
+	</osgix:managed-service-factory>
+
+	<!-- Positional Data Source -->
+	
+	<bean id="messageSourcePos" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.datum.sunspec.environmental.SunSpecPositionalDatumDataSource</value>
+				<value>net.solarnetwork.node.hw.sunspec.support.SunSpecDeviceDatumDataSourceSupport</value>
+				<value>net.solarnetwork.node.io.modbus.support.ModbusDeviceSupport</value>
+				<value>net.solarnetwork.node.service.support.DatumDataSourceSupport</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="jobMessageSourcePos" class="net.solarnetwork.support.PrefixedMessageSource">
+		<property name="prefix" value="multiDatumDataSource."/>
+		<property name="delegate" ref="messageSourcePos"/>
+	</bean>	
+	
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="SunSpec Positional"/>
+			<property name="factoryUid" value="net.solarnetwork.node.datum.sunspec.pos"/>
+			<property name="messageSource" ref="messageSourcePos"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.datum.sunspec.pos" autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.job.ManagedJob</beans:value>
+		</osgix:interfaces>
+		<bean class="net.solarnetwork.node.job.SimpleManagedJob" 
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<argument>
+				<bean class="net.solarnetwork.node.job.DatumDataSourcePollManagedJob">
+					<property name="datumMetadataService" ref="datumMetadataService"/>
+					<property name="datumQueue" ref="datumQueue"/>
+					<property name="multiDatumDataSource">
+						<bean class="net.solarnetwork.node.datum.sunspec.environmental.SunSpecPositionalDatumDataSource">
+							<property name="messageSource" ref="jobMessageSourcePos"/>
+							<property name="placeholderService" ref="placeholderService"/>
+							<property name="datumMetadataService" ref="datumMetadataService"/>
+							<property name="modbusNetwork">
+								<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+									<argument ref="bundleContext"/>
+									<property name="serviceClassName" 
+										value="net.solarnetwork.node.io.modbus.ModbusNetwork"/>
+									<property name="requirePropertyFilter" value="true"/>
+								</bean>	
+							</property>
+						</bean>
+					</property>
+				</bean>
+			</argument>
+			<argument value="0 * * * * ?"/>
+			<property name="serviceProviderConfigurations">
+				<map>
+					<entry key="multiDatumDataSource">
+						<bean class="net.solarnetwork.node.job.SimpleServiceProviderConfiguration">
+							<property name="interfaces">
+								<list>
+									<value>net.solarnetwork.node.service.DatumDataSource</value>
+									<value>net.solarnetwork.node.service.MultiDatumDataSource</value>
+									<value>net.solarnetwork.node.hw.sunspec.ModelDataProvider</value>
+								</list>
+							</property>
+							<property name="properties">
+								<map>
+									<entry key="datumClassName" value="net.solarnetwork.node.domain.datum.NodeDatum"/>
+								</map>
+							</property>
+						</bean>
+					</entry>
+				</map>
+			</property>
+		</bean>
+	</osgix:managed-service-factory>
+
+</blueprint>

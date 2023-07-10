@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: SunSpec Power Meter Data Source
 Bundle-SymbolicName: net.solarnetwork.node.datum.sunspec.meter
 Bundle-Description: Collect data from SunSpec compatible Modbus power meters.
-Bundle-Version: 4.0.0
+Bundle-Version: 4.1.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.datum.sunspec.meter
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -13,9 +13,9 @@ Import-Package:
  net.solarnetwork.domain.datum;version="[2.0,3.0)",
  net.solarnetwork.node.domain;version="[2.0,3.0)",
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
- net.solarnetwork.node.hw.sunspec;version="[3.0,4.0)",
- net.solarnetwork.node.hw.sunspec.meter;version="[3.0,4.0)",
- net.solarnetwork.node.hw.sunspec.support;version="[3.0,4.0)",
+ net.solarnetwork.node.hw.sunspec;version="[3.1,4.0)",
+ net.solarnetwork.node.hw.sunspec.meter;version="[3.1,4.0)",
+ net.solarnetwork.node.hw.sunspec.support;version="[3.1,4.0)",
  net.solarnetwork.node.io.modbus;version="[4.0,5.0)",
  net.solarnetwork.node.io.modbus.support;version="[4.0,5.0)",
  net.solarnetwork.node.job;version="[2.0,3.0)",

@@ -25,7 +25,10 @@ package net.solarnetwork.node.test.internal;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Enumeration;
+import java.util.zip.DeflaterOutputStream;
+import java.util.zip.GZIPOutputStream;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -101,7 +104,7 @@ public abstract class TestHttpHandler extends AbstractHandler {
 	protected void respondWithContent(HttpServletResponse response, String contentType, byte[] data)
 			throws IOException {
 		response.setContentType(contentType);
-		FileCopyUtils.copy(data, response.getOutputStream());
+		FileCopyUtils.copy(data, outputStream(response));
 	}
 
 	protected void respondWithResource(HttpServletResponse response, String resource, String contentType)
@@ -112,7 +115,18 @@ public abstract class TestHttpHandler extends AbstractHandler {
 			throw new FileNotFoundException(
 					"Resource [" + resource + "] not found from class " + getClass().getName());
 		}
-		FileCopyUtils.copy(in, response.getOutputStream());
+		FileCopyUtils.copy(in, outputStream(response));
+	}
+
+	private OutputStream outputStream(HttpServletResponse response) throws IOException {
+		OutputStream out = response.getOutputStream();
+		String enc = response.getHeader("Content-Encoding");
+		if ( "gzip".equals(enc) ) {
+			out = new GZIPOutputStream(out);
+		} else if ( "deflate".equals(enc) ) {
+			out = new DeflaterOutputStream(out);
+		}
+		return out;
 	}
 
 	/**

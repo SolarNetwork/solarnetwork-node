@@ -39,9 +39,12 @@ import net.solarnetwork.node.hw.sunspec.GenericModelId;
 import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
 import net.solarnetwork.node.hw.sunspec.ModelDataFactory;
+import net.solarnetwork.node.hw.sunspec.ModelDataProvider;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusConnectionAction;
+import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.ModbusDeviceDatumDataSourceSupport;
+import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
@@ -52,15 +55,16 @@ import net.solarnetwork.util.StringUtils;
  * implementations for SunSpec devices.
  *
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 1.1
  */
-public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDatumDataSourceSupport {
+public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDatumDataSourceSupport
+		implements ModelDataProvider {
 
 	private final AtomicReference<ModelData> sample;
 
 	private long sampleCacheMs = 5000;
-	private String sourceId = "SunSpec-Device";
+	private String sourceId = null;
 	private Integer baseAddress = null;
 	private Set<Integer> secondaryModelIds;
 
@@ -145,7 +149,7 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 			if ( log.isTraceEnabled() && currSample != null ) {
 				log.trace(currSample.dataDebugString());
 			}
-			log.debug("Read SunSpec inverter data: {}", currSample);
+			log.debug("Read SunSpec data: {}", currSample);
 		}
 		return (currSample != null ? currSample.getSnapshot() : null);
 	}
@@ -186,8 +190,27 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 	 *
 	 * @return the cached model data, or {@literal null}
 	 */
-	public ModelData getSample() {
+	public final ModelData getSample() {
 		return sample.get();
+	}
+
+	@Override
+	public ModelData modelData() {
+		try {
+			return getCurrentSample();
+		} catch ( IOException e ) {
+			log.warn("Communication problem reading model data: {}", e.toString());
+			return null;
+		}
+	}
+
+	@Override
+	public ModbusConnection modelDataModbusConnection() {
+		ModbusNetwork network = OptionalService.service(getModbusNetwork());
+		if ( network == null ) {
+			return null;
+		}
+		return network.createConnection(getUnitId());
 	}
 
 	/**
@@ -317,13 +340,14 @@ public abstract class SunSpecDeviceDatumDataSourceSupport extends ModbusDeviceDa
 				true));
 
 		results.addAll(getIdentifiableSettingSpecifiers());
-		results.addAll(getModbusNetworkSettingSpecifiers());
+		results.addAll(modbusNetworkSettingSpecifiers(null, DEFAULT_UNIT_ID));
 
 		results.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
 				String.valueOf(defaults.getSampleCacheMs())));
 		results.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
 
-		results.add(new BasicTextFieldSettingSpecifier("secondaryModelIdsValue", ""));
+		results.add(new BasicTextFieldSettingSpecifier("secondaryModelIdsValue",
+				defaults.getSecondaryModelIdsValue()));
 		results.add(new BasicTextFieldSettingSpecifier("baseAddress", ""));
 
 		results.addAll(getDeviceInfoMetadataSettingSpecifiers());
