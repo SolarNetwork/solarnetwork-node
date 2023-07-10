@@ -23,32 +23,19 @@
 package net.solarnetwork.node.service.support;
 
 import static net.solarnetwork.security.AuthorizationUtils.AUTHORIZATION_DATE_HEADER_FORMATTER;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
 import java.io.Reader;
-import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.net.URLEncoder;
 import java.time.Instant;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.zip.DeflaterInputStream;
-import java.util.zip.GZIPInputStream;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLSocketFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.FileCopyUtils;
-import net.solarnetwork.io.UnicodeReader;
+import net.solarnetwork.io.UrlUtils;
 import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.security.Snws2AuthorizationBuilder;
 import net.solarnetwork.service.OptionalService;
@@ -58,7 +45,7 @@ import net.solarnetwork.service.SSLService;
  * Supporting methods for HTTP client operations.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.0
  */
 public abstract class HttpClientSupport extends BaseIdentifiable {
@@ -107,25 +94,7 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	 *         if any IO error occurs
 	 */
 	protected InputStream getInputStreamFromURLConnection(URLConnection conn) throws IOException {
-		String enc = conn.getContentEncoding();
-		String type = conn.getContentType();
-
-		if ( conn instanceof HttpURLConnection ) {
-			HttpURLConnection httpConn = (HttpURLConnection) conn;
-			if ( httpConn.getResponseCode() < 200 || httpConn.getResponseCode() > 299 ) {
-				log.info("Non-200 HTTP response from {}: {}", conn.getURL(), httpConn.getResponseCode());
-			}
-		}
-
-		log.trace("Got content type [{}] encoded as [{}]", type, enc);
-
-		InputStream is = conn.getInputStream();
-		if ( "gzip".equalsIgnoreCase(enc) ) {
-			is = new GZIPInputStream(is);
-		} else if ( "deflate".equalsIgnoreCase("enc") ) {
-			is = new DeflaterInputStream(is);
-		}
-		return is;
+		return UrlUtils.getInputStreamFromURLConnection(conn);
 	}
 
 	/**
@@ -143,7 +112,7 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	 *         if an IO error occurs
 	 */
 	protected Reader getUnicodeReaderFromURLConnection(URLConnection conn) throws IOException {
-		return new BufferedReader(new UnicodeReader(getInputStreamFromURLConnection(conn), null));
+		return UrlUtils.getUnicodeReaderFromURLConnection(conn);
 	}
 
 	/**
@@ -243,33 +212,8 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	 */
 	protected URLConnection getURLConnection(String url, String httpMethod, String accept,
 			Consumer<URLConnection> connectionCustomizer) throws IOException {
-		URL connUrl;
-		try {
-			connUrl = new URI(url).toURL();
-		} catch ( URISyntaxException e ) {
-			throw new IOException("Malformed URL [" + url + "]", e);
-		}
-		URLConnection conn = connUrl.openConnection();
-		if ( conn instanceof HttpURLConnection ) {
-			HttpURLConnection hConn = (HttpURLConnection) conn;
-			hConn.setRequestMethod(httpMethod);
-		}
-		if ( sslService != null && conn instanceof HttpsURLConnection ) {
-			SSLService service = sslService.service();
-			if ( service != null ) {
-				SSLSocketFactory factory = service.getSSLSocketFactory();
-				if ( factory != null ) {
-					HttpsURLConnection hConn = (HttpsURLConnection) conn;
-					hConn.setSSLSocketFactory(factory);
-				}
-			}
-		}
-		conn.setRequestProperty("Accept", accept);
-		conn.setRequestProperty("Accept-Encoding", "gzip,deflate");
-		conn.setDoInput(true);
-		conn.setDoOutput(HTTP_METHOD_POST.equalsIgnoreCase(httpMethod));
-		conn.setConnectTimeout(this.connectionTimeout);
-		conn.setReadTimeout(connectionTimeout);
+		URLConnection conn = UrlUtils.getURLConnection(url, httpMethod, accept, connectionTimeout,
+				OptionalService.service(sslService));
 		if ( connectionCustomizer != null ) {
 			connectionCustomizer.accept(conn);
 		}
@@ -333,19 +277,7 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	 *        the parameter value
 	 */
 	protected void appendXWWWFormURLEncodedValue(StringBuilder buf, String key, Object value) {
-		if ( value == null ) {
-			return;
-		}
-		if ( buf.length() > 0 ) {
-			buf.append('&');
-		}
-		try {
-			buf.append(URLEncoder.encode(key, "UTF-8")).append('=')
-					.append(URLEncoder.encode(value.toString(), "UTF-8"));
-		} catch ( UnsupportedEncodingException e ) {
-			// should not get here ever
-			throw new RuntimeException(e);
-		}
+		UrlUtils.appendURLEncodedValue(buf, key, value);
 	}
 
 	/**
@@ -358,32 +290,7 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	 * @return the encoded data, or an empty string if nothing to encode
 	 */
 	protected String xWWWFormURLEncoded(Map<String, ?> data) {
-		if ( data == null || data.size() < 0 ) {
-			return "";
-		}
-		StringBuilder buf = new StringBuilder();
-		for ( Map.Entry<String, ?> me : data.entrySet() ) {
-			String key;
-			try {
-				key = URLEncoder.encode(me.getKey(), "UTF-8");
-			} catch ( UnsupportedEncodingException e ) {
-				// should not get here ever
-				throw new RuntimeException(e);
-			}
-			Object val = me.getValue();
-			if ( val instanceof Collection<?> ) {
-				for ( Object colVal : (Collection<?>) val ) {
-					appendXWWWFormURLEncodedValue(buf, key, colVal);
-				}
-			} else if ( val.getClass().isArray() ) {
-				for ( Object arrayVal : (Object[]) val ) {
-					appendXWWWFormURLEncodedValue(buf, key, arrayVal);
-				}
-			} else {
-				appendXWWWFormURLEncodedValue(buf, key, val);
-			}
-		}
-		return buf.toString();
+		return UrlUtils.urlEncoded(data);
 	}
 
 	/**
@@ -404,21 +311,8 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	 */
 	protected URLConnection postXWWWFormURLEncodedData(String url, String accept, Map<String, ?> data)
 			throws IOException {
-		URLConnection conn = getURLConnection(url, HTTP_METHOD_POST, accept);
-		conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-		String body = xWWWFormURLEncoded(data);
-		log.trace("Encoded HTTP POST data {} for {} as {}", data, url, body);
-		OutputStreamWriter out = new OutputStreamWriter(conn.getOutputStream(), "UTF-8");
-		FileCopyUtils.copy(new StringReader(body), out);
-		if ( conn instanceof HttpURLConnection ) {
-			HttpURLConnection http = (HttpURLConnection) conn;
-			int status = http.getResponseCode();
-			if ( status < 200 || status > 299 ) {
-				throw new RuntimeException("HTTP result status not in the 200-299 range: "
-						+ http.getResponseCode() + " " + http.getResponseMessage());
-			}
-		}
-		return conn;
+		return UrlUtils.postXWWWFormURLEncodedData(log, url, accept, data, connectionTimeout,
+				OptionalService.service(sslService));
 	}
 
 	/**
