@@ -46,7 +46,7 @@ public interface InclinometerModelAccessor extends ModelAccessor {
 	 * 
 	 * @return the first available incline, or {@literal null}
 	 */
-	default Incline getBackOfModuleTemperature() {
+	default Incline getIncline() {
 		List<Incline> temps = getInclines();
 		return (temps != null && !temps.isEmpty() ? temps.get(0) : null);
 	}

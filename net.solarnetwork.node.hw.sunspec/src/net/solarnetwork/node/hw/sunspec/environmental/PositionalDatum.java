@@ -1,5 +1,5 @@
 /* ==================================================================
- * PositionDatum.java - 10/07/2023 3:43:08 pm
+ * PositionalDatum.java - 10/07/2023 3:43:08 pm
  * 
  * Copyright 2023 SolarNetwork.net Dev Team
  * 
@@ -42,7 +42,7 @@ import net.solarnetwork.node.hw.sunspec.ModelData;
  * @version 1.0
  * @since 4.2
  */
-public class PositionDatum extends SimpleDatum {
+public class PositionalDatum extends SimpleDatum {
 
 	private static final long serialVersionUID = -8632975478821479926L;
 
@@ -78,7 +78,7 @@ public class PositionDatum extends SimpleDatum {
 	 * @param sourceId
 	 *        the source ID
 	 */
-	public PositionDatum(ModelData data, String sourceId) {
+	public PositionalDatum(ModelData data, String sourceId) {
 		super(DatumId.nodeId(null, sourceId, dataTimestamp(data)), new DatumSamples());
 		this.data = data;
 		populateMeasurements(data.findTypedModel(GpsModelAccessor.class));
@@ -99,7 +99,7 @@ public class PositionDatum extends SimpleDatum {
 	 * @param sourceId
 	 *        the source ID
 	 */
-	public PositionDatum(GpsModelAccessor data, String sourceId) {
+	public PositionalDatum(GpsModelAccessor data, String sourceId) {
 		super(DatumId.nodeId(null, sourceId, data.getGpsTimestamp()), new DatumSamples());
 		this.data = data;
 		populateMeasurements(data);
@@ -113,7 +113,7 @@ public class PositionDatum extends SimpleDatum {
 	 * @param sourceId
 	 *        the source ID
 	 */
-	public PositionDatum(InclinometerModelAccessor data, String sourceId) {
+	public PositionalDatum(InclinometerModelAccessor data, String sourceId) {
 		super(DatumId.nodeId(null, sourceId, data.getDataTimestamp()), new DatumSamples());
 		this.data = data;
 		populateMeasurements(data);

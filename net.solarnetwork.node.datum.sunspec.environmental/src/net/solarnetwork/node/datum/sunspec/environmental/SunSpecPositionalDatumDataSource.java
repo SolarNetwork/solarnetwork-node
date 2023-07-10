@@ -1,5 +1,5 @@
 /* ==================================================================
- * SunSpecMeteorologicalDatumDataSource.java - 10/07/2023 2:39:45 pm
+ * SunSpecPositionalDatumDataSource.java - 11/07/2023 6:54:44 am
  * 
  * Copyright 2023 SolarNetwork.net Dev Team
  * 
@@ -23,39 +23,35 @@
 package net.solarnetwork.node.datum.sunspec.environmental;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicReference;
-import net.solarnetwork.node.domain.datum.AtmosphericDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.hw.sunspec.ModelAccessor;
 import net.solarnetwork.node.hw.sunspec.ModelData;
-import net.solarnetwork.node.hw.sunspec.environmental.BomTemperatureModelAccessor;
 import net.solarnetwork.node.hw.sunspec.environmental.EnvironmentalModelId;
-import net.solarnetwork.node.hw.sunspec.environmental.IrradianceModelAccessor;
-import net.solarnetwork.node.hw.sunspec.environmental.MeteorologicalDatum;
-import net.solarnetwork.node.hw.sunspec.environmental.MeteorologicalModelAccessor;
-import net.solarnetwork.node.hw.sunspec.environmental.MiniMeteorologicalModelAccessor;
+import net.solarnetwork.node.hw.sunspec.environmental.GpsModelAccessor;
+import net.solarnetwork.node.hw.sunspec.environmental.Incline;
+import net.solarnetwork.node.hw.sunspec.environmental.InclinometerModelAccessor;
+import net.solarnetwork.node.hw.sunspec.environmental.PositionalDatum;
 import net.solarnetwork.node.hw.sunspec.support.SunSpecDeviceDatumDataSourceSupport;
 import net.solarnetwork.node.service.DatumDataSource;
 import net.solarnetwork.node.service.MultiDatumDataSource;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 
 /**
- * {@link DatumDataSource} for a SunSpec compatible meteorological devices.
+ * {@link DatumDataSource} for a SunSpec compatible positional devices.
  * 
  * @author matt
  * @version 1.0
  */
-public class SunSpecMeteorologicalDatumDataSource extends SunSpecDeviceDatumDataSourceSupport
+public class SunSpecPositionalDatumDataSource extends SunSpecDeviceDatumDataSourceSupport
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
 	/**
 	 * Constructor.
 	 */
-	public SunSpecMeteorologicalDatumDataSource() {
+	public SunSpecPositionalDatumDataSource() {
 		this(new AtomicReference<>());
 	}
 
@@ -65,33 +61,28 @@ public class SunSpecMeteorologicalDatumDataSource extends SunSpecDeviceDatumData
 	 * @param sample
 	 *        the sample data to use
 	 */
-	public SunSpecMeteorologicalDatumDataSource(AtomicReference<ModelData> sample) {
+	public SunSpecPositionalDatumDataSource(AtomicReference<ModelData> sample) {
 		super(sample);
-		// @formatter:off
-		setSecondaryModelIds(new TreeSet<>(Arrays.asList(
-				EnvironmentalModelId.MiniMeteorolgical.getId(),
-				EnvironmentalModelId.Irradiance.getId(),
-				EnvironmentalModelId.BackOfModuleTemperature.getId())));
-		// @formatter:on
+		setSecondaryModelIds(Collections.singleton(EnvironmentalModelId.Inclinometer.getId()));
 	}
 
 	@Override
 	protected Class<? extends ModelAccessor> getPrimaryModelAccessorType() {
-		return MeteorologicalModelAccessor.class;
+		return GpsModelAccessor.class;
 	}
 
 	@Override
 	protected SunSpecDeviceDatumDataSourceSupport getSettingsDefaultInstance() {
-		return new SunSpecMeteorologicalDatumDataSource();
+		return new SunSpecPositionalDatumDataSource();
 	}
 
 	@Override
 	public Class<? extends NodeDatum> getDatumType() {
-		return AtmosphericDatum.class;
+		return NodeDatum.class;
 	}
 
 	@Override
-	public MeteorologicalDatum readCurrentDatum() {
+	public PositionalDatum readCurrentDatum() {
 		final String sourceId = resolvePlaceholders(getSourceId());
 		final ModelData currSample;
 		try {
@@ -104,7 +95,7 @@ public class SunSpecMeteorologicalDatumDataSource extends SunSpecDeviceDatumData
 		if ( currSample == null ) {
 			return null;
 		}
-		return new MeteorologicalDatum(currSample, sourceId);
+		return new PositionalDatum(currSample, sourceId);
 	}
 
 	@Override
@@ -114,7 +105,7 @@ public class SunSpecMeteorologicalDatumDataSource extends SunSpecDeviceDatumData
 
 	@Override
 	public Collection<NodeDatum> readMultipleDatum() {
-		MeteorologicalDatum datum = readCurrentDatum();
+		PositionalDatum datum = readCurrentDatum();
 		if ( datum != null ) {
 			return Collections.singletonList(datum);
 		}
@@ -125,12 +116,12 @@ public class SunSpecMeteorologicalDatumDataSource extends SunSpecDeviceDatumData
 
 	@Override
 	public String getSettingUid() {
-		return "net.solarnetwork.node.datum.sunspec.met";
+		return "net.solarnetwork.node.datum.sunspec.pos";
 	}
 
 	@Override
 	public String getDisplayName() {
-		return "SunSpec Meteorological";
+		return "SunSpec Positional";
 	}
 
 	@Override
@@ -142,42 +133,26 @@ public class SunSpecMeteorologicalDatumDataSource extends SunSpecDeviceDatumData
 	protected String getSampleMessage(ModelData sample) {
 		StringBuilder buf = new StringBuilder();
 		try {
-			MeteorologicalModelAccessor met = (sample != null
-					? sample.findTypedModel(MeteorologicalModelAccessor.class)
+			GpsModelAccessor gps = (sample != null ? sample.findTypedModel(GpsModelAccessor.class)
 					: null);
-			if ( met != null ) {
-				buf.append("temp: ").append(met.getAmbientTemperature());
-				buf.append(", atm: ").append(met.getAtmosphericPressure());
+			if ( gps != null ) {
+				buf.append("lat: ").append(gps.getLatitude());
+				buf.append(", lon: ").append(gps.getLongitude());
+				buf.append(", el: ").append(gps.getAltitude());
 			}
 
-			MiniMeteorologicalModelAccessor mini = (sample != null
-					? sample.findTypedModel(MiniMeteorologicalModelAccessor.class)
+			InclinometerModelAccessor incl = (sample != null
+					? sample.findTypedModel(InclinometerModelAccessor.class)
 					: null);
-			if ( mini != null ) {
-				if ( buf.length() > 0 ) {
-					buf.append(", ");
+			if ( incl != null ) {
+				Incline in = incl.getIncline();
+				if ( in != null ) {
+					if ( buf.length() > 0 ) {
+						buf.append(", ");
+					}
+					buf.append("incline: (").append(in.getInclineX()).append(",")
+							.append(in.getInclineY()).append(",").append(in.getInclineZ()).append(")");
 				}
-				buf.append("temp: ").append(mini.getAmbientTemperature());
-			}
-
-			IrradianceModelAccessor irr = (sample != null
-					? sample.findTypedModel(IrradianceModelAccessor.class)
-					: null);
-			if ( irr != null ) {
-				if ( buf.length() > 0 ) {
-					buf.append(", ");
-				}
-				buf.append("ghi: ").append(irr.getGlobalHorizontalIrradiance());
-			}
-
-			BomTemperatureModelAccessor bom = (sample != null
-					? sample.findTypedModel(BomTemperatureModelAccessor.class)
-					: null);
-			if ( irr != null ) {
-				if ( buf.length() > 0 ) {
-					buf.append(", ");
-				}
-				buf.append("bom: ").append(bom.getBackOfModuleTemperature());
 			}
 		} catch ( RuntimeException e ) {
 			return "Unexpected error: " + e.getMessage();
