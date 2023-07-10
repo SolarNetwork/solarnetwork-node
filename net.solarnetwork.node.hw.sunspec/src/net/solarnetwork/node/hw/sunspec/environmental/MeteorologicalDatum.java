@@ -91,6 +91,7 @@ public class MeteorologicalDatum extends SimpleAtmosphericDatum {
 	 */
 	public static final String OTHER_IRRADIANCE_KEY = "irradianceOT";
 
+	/** The primary model source data. */
 	private final ModelAccessor data;
 
 	/**

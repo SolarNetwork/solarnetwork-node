@@ -55,6 +55,7 @@ public class PositionalDatum extends SimpleDatum {
 	/** An instantaneous sample key for {@link #getInclineZ()} values. */
 	public static final String INCLINATION_Z_KEY = "inclineZ";
 
+	/** The primary model source data. */
 	private final ModelAccessor data;
 
 	/**

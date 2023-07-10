@@ -37,6 +37,7 @@ public class MeterDatum extends SimpleAcDcEnergyDatum {
 
 	private static final long serialVersionUID = 7595473211731769270L;
 
+	/** The primary model source data. */
 	private final MeterModelAccessor data;
 
 	/**
@@ -56,8 +57,7 @@ public class MeterDatum extends SimpleAcDcEnergyDatum {
 	 *        energy will be captured as {@code wattHours} and <i>delivered</i>
 	 *        energy as {@code wattHoursReverse})
 	 */
-	public MeterDatum(MeterModelAccessor data, String sourceId, AcPhase phase,
-			boolean backwards) {
+	public MeterDatum(MeterModelAccessor data, String sourceId, AcPhase phase, boolean backwards) {
 		super(sourceId, data.getDataTimestamp(), new DatumSamples());
 		this.data = data;
 		MeterModelAccessor phaseData = data.accessorForPhase(phase);
