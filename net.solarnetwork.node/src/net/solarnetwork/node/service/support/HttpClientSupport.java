@@ -94,7 +94,7 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	 *         if any IO error occurs
 	 */
 	protected InputStream getInputStreamFromURLConnection(URLConnection conn) throws IOException {
-		return UrlUtils.getInputStreamFromURLConnection(conn);
+		return UrlUtils.getInputStreamFromURLConnection(log, conn);
 	}
 
 	/**
@@ -112,7 +112,7 @@ public abstract class HttpClientSupport extends BaseIdentifiable {
 	 *         if an IO error occurs
 	 */
 	protected Reader getUnicodeReaderFromURLConnection(URLConnection conn) throws IOException {
-		return UrlUtils.getUnicodeReaderFromURLConnection(conn);
+		return UrlUtils.getUnicodeReaderFromURLConnection(log, conn);
 	}
 
 	/**
