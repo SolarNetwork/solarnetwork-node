@@ -34,6 +34,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -103,10 +104,11 @@ public class DefaultDatumServiceTests {
 	private Map<String, NodeDatum> populateDatum(final int count, String sourceIdTemplate) {
 		population = new LinkedMultiValueMap<>();
 		Map<String, NodeDatum> all = new LinkedHashMap<>();
+		final Instant start = Instant.now().truncatedTo(ChronoUnit.MINUTES);
 		for ( int i = 0; i < count; i++ ) {
 			for ( int j = 0; j < 11; j++ ) {
 				SimpleDatum datum = SimpleDatum.nodeDatum(String.format(sourceIdTemplate, j),
-						Instant.now(), new DatumSamples());
+						start.plusMillis(j), new DatumSamples());
 				all.put(datum.getSourceId(), datum);
 				population.add(datum.getSourceId(), datum);
 
