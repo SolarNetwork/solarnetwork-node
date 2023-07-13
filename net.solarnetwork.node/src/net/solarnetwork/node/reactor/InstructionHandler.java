@@ -26,7 +26,7 @@ package net.solarnetwork.node.reactor;
  * API to be implemented by a service that can handle instructions.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public interface InstructionHandler {
 
@@ -101,7 +101,7 @@ public interface InstructionHandler {
 	String TOPIC_SIGNAL = "Signal";
 
 	/**
-	 * The instruction topic for system configuration.
+	 * The instruction topic for applying system configuration.
 	 * 
 	 * <p>
 	 * A {@link #PARAM_SERVICE} parameter must be provided that specifies the
@@ -110,6 +110,8 @@ public interface InstructionHandler {
 	 * </p>
 	 * 
 	 * @since 1.5
+	 * @see #TOPIC_SYSTEM_CONFIGURATION for obtaining system configuration
+	 *      values
 	 */
 	String TOPIC_SYSTEM_CONFIGURE = "SystemConfigure";
 
@@ -203,6 +205,20 @@ public interface InstructionHandler {
 	 * @since 2.1
 	 */
 	String PARAM_ID = "id";
+
+	/**
+	 * The instruction topic for obtaining system configuration.
+	 * 
+	 * <p>
+	 * A {@link #PARAM_SERVICE} parameter must be provided that specifies the
+	 * system service to get the configuration for. Each service may define
+	 * additional parameters that can be configured.
+	 * </p>
+	 * 
+	 * @since 2.2
+	 * @see #TOPIC_SYSTEM_CONFIGURE for applying system configuration updates
+	 */
+	String TOPIC_SYSTEM_CONFIGURATION = "SystemConfiguration";
 
 	/**
 	 * Test if a topic is handled by this handler.

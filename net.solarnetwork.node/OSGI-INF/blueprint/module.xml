@@ -87,6 +87,9 @@
 		</reference-listener>
 	</reference-list>
 
+	<reference-list id="nodeControlProviders" availability="optional"
+		interface="net.solarnetwork.node.service.NodeControlProvider"/>
+
 	<!-- Provide a centralized ObjectMapper for JSON processing. -->
 	<service interface="net.solarnetwork.service.ObjectMapperService">
 		<service-properties>
@@ -572,6 +575,22 @@
 	 -->
 	<service interface="net.solarnetwork.node.dao.TransientSettingDao">
 		<bean class="net.solarnetwork.node.dao.DefaultTransientSettingDao"/>
+	</service>
+	
+	<!-- 
+		Controls Service
+	 -->
+	<service interface="net.solarnetwork.node.reactor.InstructionHandler">
+		<service-properties>
+			<entry key="instruction">
+				<list>
+					<value>SystemConfiguration</value>
+				</list>
+			</entry>
+		</service-properties>
+		<bean class="net.solarnetwork.node.runtime.SimpleNodeControlsService">
+			<argument ref="nodeControlProviders"/>
+		</bean>
 	</service>
 
 </blueprint>
