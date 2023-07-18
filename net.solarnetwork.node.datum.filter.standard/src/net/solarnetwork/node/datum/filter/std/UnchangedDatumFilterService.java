@@ -23,13 +23,20 @@
 package net.solarnetwork.node.datum.filter.std;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.service.support.BaseDatumFilterSupport;
 import net.solarnetwork.service.DatumFilterService;
 import net.solarnetwork.settings.SettingSpecifier;
@@ -41,7 +48,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * range.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.1
  */
 public class UnchangedDatumFilterService extends BaseDatumFilterSupport
@@ -53,6 +60,7 @@ public class UnchangedDatumFilterService extends BaseDatumFilterSupport
 	private final ConcurrentMap<String, SeenSample> seenSamples = new ConcurrentHashMap<>(8, 0.9f, 2);
 
 	private int unchangedPublishMaxSeconds = DEFAULT_UNCHANGED_PUBLISH_MAX_SECONDS;
+	private Pattern propertyIncludePattern;
 
 	/**
 	 * Constructor.
@@ -90,7 +98,83 @@ public class UnchangedDatumFilterService extends BaseDatumFilterSupport
 					: Instant.now());
 			return ((unchangedPublishMaxSeconds < 1
 					|| timestamp.plusSeconds(unchangedPublishMaxSeconds).isAfter(datumTimestamp))
-					&& !samples.differsFrom(sample));
+					&& sampleEquals(samples));
+		}
+
+		private boolean sampleEquals(DatumSamplesOperations samples) {
+			final Pattern p = getPropertyIncludePattern();
+			if ( p == null ) {
+				return !samples.differsFrom(sample);
+			}
+			final Set<String> seen = new HashSet<>(8);
+			boolean equal = propertiesEqual(p, seen,
+					samples.getSampleData(DatumSamplesType.Instantaneous),
+					sample.getSampleData(DatumSamplesType.Instantaneous));
+			if ( !equal ) {
+				return false;
+			}
+			equal = propertiesEqual(p, seen, samples.getSampleData(DatumSamplesType.Accumulating),
+					sample.getSampleData(DatumSamplesType.Accumulating));
+			if ( !equal ) {
+				return false;
+			}
+			return propertiesEqual(p, seen, samples.getSampleData(DatumSamplesType.Status),
+					sample.getSampleData(DatumSamplesType.Status));
+		}
+
+		private boolean propertiesEqual(final Pattern p, Set<String> seen, Map<String, ?> l,
+				Map<String, ?> r) {
+			if ( l != null ) {
+				for ( Entry<String, ?> e : l.entrySet() ) {
+					String k = e.getKey();
+					if ( k == null ) {
+						continue;
+					}
+					if ( seen.contains(k) ) {
+						continue;
+					}
+					if ( p.matcher(k).find() ) {
+						Object vl = e.getValue();
+						if ( r == null ) {
+							if ( vl != null ) {
+								return false;
+							}
+							continue;
+						}
+						Object vr = r.get(k);
+						if ( !Objects.equals(vl, vr) ) {
+							return false;
+						}
+					}
+					seen.add(k);
+				}
+			}
+			if ( r != null ) {
+				for ( Entry<String, ?> e : r.entrySet() ) {
+					String k = e.getKey();
+					if ( k == null ) {
+						continue;
+					}
+					if ( seen.contains(k) ) {
+						continue;
+					}
+					if ( p.matcher(k).find() ) {
+						Object vr = e.getValue();
+						if ( l == null ) {
+							if ( vr != null ) {
+								return false;
+							}
+							continue;
+						}
+						Object vl = l.get(k);
+						if ( !Objects.equals(vl, vr) ) {
+							return false;
+						}
+					}
+					seen.add(k);
+				}
+			}
+			return true;
 		}
 	}
 
@@ -133,6 +217,7 @@ public class UnchangedDatumFilterService extends BaseDatumFilterSupport
 
 		result.add(new BasicTextFieldSettingSpecifier("unchangedPublishMaxSeconds",
 				String.valueOf(DEFAULT_UNCHANGED_PUBLISH_MAX_SECONDS)));
+		result.add(new BasicTextFieldSettingSpecifier("propertyIncludePatternValue", null));
 
 		return result;
 	}
@@ -156,6 +241,66 @@ public class UnchangedDatumFilterService extends BaseDatumFilterSupport
 	 */
 	public void setUnchangedPublishMaxSeconds(int unchangedPublishMaxSeconds) {
 		this.unchangedPublishMaxSeconds = unchangedPublishMaxSeconds;
+	}
+
+	/**
+	 * Get the property include pattern.
+	 * 
+	 * @return a regular expression to restrict the examined properties
+	 * @since 1.1
+	 */
+	public Pattern getPropertyIncludePattern() {
+		return propertyIncludePattern;
+	}
+
+	/**
+	 * Set the property include pattern.
+	 * 
+	 * <p>
+	 * This expression restricts the properties examined by this filter for
+	 * difference. Only the properties that match this expression will be
+	 * considered when determining if a sample differs from the previous sample.
+	 * This can be useful when sampling data at a high frequency but you are
+	 * only interested in one or two specific properties change.
+	 * </p>
+	 * 
+	 * @param propertyIncludePattern
+	 *        a regular expression to restrict the examined properties
+	 * @since 1.1
+	 */
+	public void setPropertyIncludePattern(Pattern propertyIncludePattern) {
+		this.propertyIncludePattern = propertyIncludePattern;
+	}
+
+	/**
+	 * Get the property include pattern, as a string.
+	 * 
+	 * @return a regular expression to restrict the examined properties
+	 * @see #getPropertyIncludePattern()
+	 * @since 1.1
+	 */
+	public String getPropertyIncludePatternValue() {
+		final Pattern p = getPropertyIncludePattern();
+		return (p != null ? p.pattern() : null);
+	}
+
+	/**
+	 * Set the property include pattern, as a string.
+	 * 
+	 * @param propertyIncludePatternValue
+	 *        a regular expression to restrict the examined properties
+	 * @see #setPropertyIncludePattern(Pattern)
+	 * @since 1.1
+	 */
+	public void setPropertyIncludePatternValue(String propertyIncludePatternValue) {
+		Pattern p = null;
+		try {
+			p = Pattern.compile(propertyIncludePatternValue);
+		} catch ( PatternSyntaxException e ) {
+			log.warn("Invalid property include pattern [{}], ignoring: {}", propertyIncludePatternValue,
+					e.getMessage());
+		}
+		setPropertyIncludePattern(p);
 	}
 
 }
