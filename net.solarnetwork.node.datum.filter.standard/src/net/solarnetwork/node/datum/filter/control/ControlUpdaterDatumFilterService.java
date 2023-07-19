@@ -24,11 +24,11 @@ package net.solarnetwork.node.datum.filter.control;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.springframework.expression.ExpressionException;
@@ -58,7 +58,7 @@ import net.solarnetwork.util.ObjectUtils;
  * Transform service that sets a control value based on an expression result.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
@@ -188,6 +188,15 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
+		return settingSpecifiers(false);
+	}
+
+	@Override
+	public List<SettingSpecifier> templateSettingSpecifiers() {
+		return settingSpecifiers(true);
+	}
+
+	private List<SettingSpecifier> settingSpecifiers(final boolean template) {
 		List<SettingSpecifier> result = baseIdentifiableSettings("");
 		populateBaseSampleTransformSupportSettings(result);
 		populateStatusSettings(result);
@@ -195,8 +204,8 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 		Iterable<ExpressionService> exprServices = services(getExpressionServices());
 
 		ControlConfig[] controlConfs = getControlConfigs();
-		List<ExpressionConfig> controlConfsList = (controlConfs != null ? asList(controlConfs)
-				: emptyList());
+		List<ExpressionConfig> controlConfsList = (template ? singletonList(new ControlConfig())
+				: (controlConfs != null ? asList(controlConfs) : emptyList()));
 		result.add(SettingUtils.dynamicListSettingSpecifier("controlConfigs", controlConfsList,
 				new SettingUtils.KeyedListCallback<ExpressionConfig>() {
 
@@ -205,7 +214,7 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 							int index, String key) {
 						SettingSpecifier configGroup = new BasicGroupSettingSpecifier(
 								ControlConfig.settings(key + ".", exprServices));
-						return Collections.singletonList(configGroup);
+						return singletonList(configGroup);
 					}
 				}));
 

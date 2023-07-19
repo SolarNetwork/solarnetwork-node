@@ -22,14 +22,15 @@
 
 package net.solarnetwork.node.datum.filter.std;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import static net.solarnetwork.util.StringUtils.patterns;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -59,7 +60,7 @@ import net.solarnetwork.util.ArrayUtils;
  * </p>
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 2.0
  */
 public class PropertyDatumFilterService extends DatumFilterSupport
@@ -223,13 +224,22 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
+		return settingSpecifiers(false);
+	}
+
+	@Override
+	public List<SettingSpecifier> templateSettingSpecifiers() {
+		return settingSpecifiers(true);
+	}
+
+	private List<SettingSpecifier> settingSpecifiers(final boolean template) {
 		List<SettingSpecifier> results = baseIdentifiableSettings();
 		populateBaseSampleTransformSupportSettings(results);
 		populateStatusSettings(results);
 
 		PropertyFilterConfig[] incs = getPropIncludes();
-		List<PropertyFilterConfig> incsList = (incs != null ? Arrays.asList(incs)
-				: Collections.<PropertyFilterConfig> emptyList());
+		List<PropertyFilterConfig> incsList = (template ? singletonList(new PropertyFilterConfig())
+				: (incs != null ? asList(incs) : emptyList()));
 		results.add(SettingUtils.dynamicListSettingSpecifier("propIncludes", incsList,
 				new SettingUtils.KeyedListCallback<PropertyFilterConfig>() {
 
@@ -238,21 +248,20 @@ public class PropertyDatumFilterService extends DatumFilterSupport
 							int index, String key) {
 						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
 								PropertyFilterConfig.settings(key + "."));
-						return Collections.<SettingSpecifier> singletonList(configGroup);
+						return singletonList(configGroup);
 					}
 				}));
 
 		String[] excs = getExcludes();
-		List<String> listStrings = (excs != null ? Arrays.asList(excs)
-				: Collections.<String> emptyList());
+		List<String> listStrings = (template ? singletonList("")
+				: (excs != null ? asList(excs) : emptyList()));
 		results.add(SettingUtils.dynamicListSettingSpecifier("excludes", listStrings,
 				new SettingUtils.KeyedListCallback<String>() {
 
 					@Override
 					public Collection<SettingSpecifier> mapListSettingKey(String value, int index,
 							String key) {
-						return Collections.<SettingSpecifier> singletonList(
-								new BasicTextFieldSettingSpecifier(key, ""));
+						return singletonList(new BasicTextFieldSettingSpecifier(key, ""));
 					}
 				}));
 

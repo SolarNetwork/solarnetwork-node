@@ -24,10 +24,10 @@ package net.solarnetwork.node.datum.filter.expr;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import net.solarnetwork.domain.datum.Datum;
@@ -49,7 +49,7 @@ import net.solarnetwork.util.ArrayUtils;
  * on the output samples.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.0
  */
 public class ExpressionDatumFilterService extends BaseDatumFilterSupport
@@ -81,6 +81,15 @@ public class ExpressionDatumFilterService extends BaseDatumFilterSupport
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
+		return settingSpecifiers(false);
+	}
+
+	@Override
+	public List<SettingSpecifier> templateSettingSpecifiers() {
+		return settingSpecifiers(true);
+	}
+
+	private List<SettingSpecifier> settingSpecifiers(final boolean template) {
 		List<SettingSpecifier> result = baseIdentifiableSettings("");
 		populateBaseSampleTransformSupportSettings(result);
 		populateStatusSettings(result);
@@ -88,7 +97,8 @@ public class ExpressionDatumFilterService extends BaseDatumFilterSupport
 		Iterable<ExpressionService> exprServices = services(getExpressionServices());
 		if ( exprServices != null ) {
 			ExpressionTransformConfig[] exprConfs = getExpressionConfigs();
-			List<ExpressionConfig> exprConfsList = (exprConfs != null ? asList(exprConfs) : emptyList());
+			List<ExpressionConfig> exprConfsList = (template ? singletonList(new ExpressionConfig())
+					: (exprConfs != null ? asList(exprConfs) : emptyList()));
 			result.add(SettingUtils.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
 					new SettingUtils.KeyedListCallback<ExpressionConfig>() {
 
@@ -98,7 +108,7 @@ public class ExpressionDatumFilterService extends BaseDatumFilterSupport
 							SettingSpecifier configGroup = new BasicGroupSettingSpecifier(
 									ExpressionConfig.settings(ExpressionDatumFilterService.class,
 											key + ".", exprServices));
-							return Collections.singletonList(configGroup);
+							return singletonList(configGroup);
 						}
 					}));
 		}

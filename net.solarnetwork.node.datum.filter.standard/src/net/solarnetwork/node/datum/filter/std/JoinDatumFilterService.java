@@ -56,7 +56,7 @@ import net.solarnetwork.util.StringUtils;
  * Datum filter service that joins multiple datum into a new datum stream.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class JoinDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
@@ -181,6 +181,15 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
+		return settingSpecifiers(false);
+	}
+
+	@Override
+	public List<SettingSpecifier> templateSettingSpecifiers() {
+		return settingSpecifiers(true);
+	}
+
+	private List<SettingSpecifier> settingSpecifiers(final boolean template) {
 		List<SettingSpecifier> result = baseIdentifiableSettings("");
 		populateBaseSampleTransformSupportSettings(result);
 		populateStatusSettings(result);
@@ -193,8 +202,9 @@ public class JoinDatumFilterService extends BaseDatumFilterSupport
 		result.add(new BasicToggleSettingSpecifier("swallowInput", DEFAULT_SWALLOW_INPUT));
 
 		PatternKeyValuePair[] mappingConfs = getPropertySourceMappings();
-		List<PatternKeyValuePair> mappingConfList = (mappingConfs != null ? asList(mappingConfs)
-				: emptyList());
+		List<PatternKeyValuePair> mappingConfList = (template
+				? Collections.singletonList(new PatternKeyValuePair())
+				: (mappingConfs != null ? asList(mappingConfs) : emptyList()));
 		result.add(SettingUtils.dynamicListSettingSpecifier("propertySourceMappings", mappingConfList,
 				new SettingUtils.KeyedListCallback<PatternKeyValuePair>() {
 
