@@ -86,39 +86,40 @@ import net.solarnetwork.util.ObjectUtils;
  * parameter.
  * </p>
  * 
- * <table cellspacing="0" cellpadding="4" border="1">
- * <thead>
- * <tr>
+ * <table style="border: 1px solid #ccc; min-width: 50%;">
+ * <caption>How the {@code uid} and {@code id} parameters control the result
+ * format.</caption> <thead>
+ * <tr style="background-color: #ccc;">
  * <th>uid</th>
  * <th>id</th>
  * <th>Operation</th>
  * </tr>
  * </thead> <tbody>
  * <tr>
- * <td><kbd>*</kbd></th>
+ * <td><kbd>*</kbd></td>
  * <td></td>
- * <td><a href="#list-providers">List providers</td>
+ * <td><a href="#list-providers">List providers</a></td>
  * </tr>
  * <tr>
- * <td><i>{settingUid}</i></th>
+ * <td><i>{settingUid}</i></td>
  * <td></td>
- * <td><a href="#list-settings">List settings</td>
+ * <td><a href="#list-settings">List settings</a></td>
  * </tr>
  * <tr>
- * <td><kbd>*</kbd></th>
- * <td><kbd>*</kbd></th>
- * <td><a href="#list-factories">List factories</td>
+ * <td><kbd>*</kbd></td>
+ * <td><kbd>*</kbd></td>
+ * <td><a href="#list-factories">List factories</a></td>
  * </tr>
  * <tr>
- * <td><i>{factoryUid}</i></th>
- * <td><kbd>*</kbd></th>
- * <td><a href="#list-factory-instances">List factory instances</td>
+ * <td><i>{factoryUid}</i></td>
+ * <td><kbd>*</kbd></td>
+ * <td><a href="#list-factory-instances">List factory instances</a></td>
  * </tr>
  * <tr>
- * <td><i>{factoryUid}</i></th>
- * <td><i>{instanceId}</i></th>
+ * <td><i>{factoryUid}</i></td>
+ * <td><i>{instanceId}</i></td>
  * <td><a href="#list-factory-instance-settings">List factory instance
- * settings</td>
+ * settings</a></td>
  * </tr>
  * </tbody>
  * </table>
