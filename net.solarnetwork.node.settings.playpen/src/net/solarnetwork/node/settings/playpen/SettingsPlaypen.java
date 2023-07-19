@@ -23,6 +23,7 @@
 package net.solarnetwork.node.settings.playpen;
 
 import static java.util.Arrays.asList;
+import static java.util.Collections.singletonList;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -134,6 +135,15 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
+		return settingSpecifiers(false);
+	}
+
+	@Override
+	public List<SettingSpecifier> templateSettingSpecifiers() {
+		return settingSpecifiers(true);
+	}
+
+	private List<SettingSpecifier> settingSpecifiers(final boolean template) {
 		List<SettingSpecifier> results = new ArrayList<>();
 
 		results.add(new BasicTextFieldSettingSpecifier("string", DEFAULT_STRING));
@@ -192,14 +202,15 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 				Collections.singletonMap("foo", "bar")));
 
 		// basic dynamic list of strings
-		List<String> listStrings = getListString();
+		List<String> listStrings = (template ? singletonList("") : getListString());
 		BasicGroupSettingSpecifier listStringGroup = SettingUtils.dynamicListSettingSpecifier(
 				"listString", listStrings, (String value, int index, String key) -> Collections
 						.singletonList(new BasicTextFieldSettingSpecifier(key, "")));
 		results.add(listStringGroup);
 
 		// dynamic list of objects
-		Collection<ComplexListItem> listComplexes = getListComplex();
+		Collection<ComplexListItem> listComplexes = (template ? singletonList(new ComplexListItem())
+				: getListComplex());
 		BasicGroupSettingSpecifier listComplexGroup = SettingUtils.dynamicListSettingSpecifier(
 				"listComplex", listComplexes,
 				(ComplexListItem value, int index, String key) -> Collections
