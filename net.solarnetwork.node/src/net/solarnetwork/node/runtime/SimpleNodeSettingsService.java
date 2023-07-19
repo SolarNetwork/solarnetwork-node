@@ -187,6 +187,33 @@ import net.solarnetwork.util.ObjectUtils;
  * in the <a href="#list-settings">list settings</a> section.
  * </p>
  * 
+ * <h2>Specification mode</h2>
+ * 
+ * <p>
+ * By passing a {@code spec} parameter value of {@literal true}, then instead of
+ * returning component setting values, setting specification objects will be
+ * returned instead. At a minimum, each specification object has a {@code type}
+ * property that is the setting type. Other specifications provide more
+ * properties, as listed below.
+ * </p>
+ * 
+ * <h3>Group specification</h3>
+ * 
+ * <p>
+ * A group specification has the type
+ * {@literal net.solarnetwork.settings.GroupSettingSpecifier}. It will include a
+ * {@code dynamic} boolean property, where {@literal true} represents a dynamic
+ * list of specifications. The {@code groupSettings} property will be an array
+ * of nested specification objects that make up the group.
+ * </p>
+ * 
+ * <h3>Other specifications</h3>
+ * 
+ * <p>
+ * Most specifications provide a {@code key} property representing the setting
+ * key for that specification.
+ * </p>
+ * 
  * @author matt
  * @version 1.0
  * @since 3.3
