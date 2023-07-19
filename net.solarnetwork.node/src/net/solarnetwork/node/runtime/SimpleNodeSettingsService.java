@@ -63,11 +63,7 @@ import net.solarnetwork.settings.KeyedSettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProviderFactory;
-import net.solarnetwork.settings.SliderSettingSpecifier;
-import net.solarnetwork.settings.TextAreaSettingSpecifier;
-import net.solarnetwork.settings.TextFieldSettingSpecifier;
-import net.solarnetwork.settings.TitleSettingSpecifier;
-import net.solarnetwork.settings.ToggleSettingSpecifier;
+import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ObjectUtils;
 
 /**
@@ -504,42 +500,7 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 
 	private List<Map<String, Object>> resultSpecification(SettingsService service,
 			SettingSpecifierProvider provider) {
-		List<SettingSpecifier> specs = provider.templateSettingSpecifiers();
-		List<Map<String, Object>> resultSettings = new ArrayList<>(specs.size());
-		for ( SettingSpecifier spec : specs ) {
-			generateResultSpecification(resultSettings, spec);
-		}
-		return resultSettings;
-	}
-
-	private void generateResultSpecification(List<Map<String, Object>> resultSettings,
-			SettingSpecifier spec) {
-		if ( spec instanceof GroupSettingSpecifier ) {
-			GroupSettingSpecifier group = (GroupSettingSpecifier) spec;
-			Map<String, Object> props = new LinkedHashMap<>(2);
-			props.put("type", group.getType());
-			props.put("dynamic", group.isDynamic());
-			List<Map<String, Object>> nested = new ArrayList<>(8);
-			for ( SettingSpecifier groupSpec : group.getGroupSettings() ) {
-				generateResultSpecification(nested, groupSpec);
-			}
-			props.put("groupSettings", nested);
-			resultSettings.add(props);
-		} else if ( spec instanceof KeyedSettingSpecifier<?> ) {
-			KeyedSettingSpecifier<?> keyedSpec = (KeyedSettingSpecifier<?>) spec;
-			if ( keyedSpec.isTransient() ) {
-				return;
-			}
-			Map<String, Object> props = new LinkedHashMap<>(8);
-			props.put("key", keyedSpec.getKey());
-			props.put("type", spec.getType());
-
-			Object defaultValue = keyedSpec.getDefaultValue();
-			if ( defaultValue != null ) {
-				if ( !((defaultValue instanceof String) && ((String) defaultValue).isEmpty()) ) {
-					props.put("defaultValue", keyedSpec.getDefaultValue());
-				}
-			}
+		return SettingUtils.templateSpecification(provider, (spec, props) -> {
 			if ( spec instanceof FileSettingSpecifier ) {
 				FileSettingSpecifier file = (FileSettingSpecifier) spec;
 				props.put("acceptableFileTypeSpecifiers", file.getAcceptableFileTypeSpecifiers());
@@ -549,43 +510,11 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 			} else if ( spec instanceof LocationLookupSettingSpecifier ) {
 				LocationLookupSettingSpecifier look = (LocationLookupSettingSpecifier) spec;
 				props.put("locationTypeKey", look.getLocationTypeKey());
-			} else if ( spec instanceof SliderSettingSpecifier ) {
-				SliderSettingSpecifier slider = (SliderSettingSpecifier) spec;
-				props.put("minimumValue", slider.getMinimumValue());
-				props.put("maximumValue", slider.getMaximumValue());
-				props.put("step", slider.getStep());
-			} else if ( spec instanceof TextAreaSettingSpecifier ) {
-				TextAreaSettingSpecifier area = (TextAreaSettingSpecifier) spec;
-				if ( area.isDirect() ) {
-					props.put("direct", area.isDirect());
-				}
-			} else if ( spec instanceof TitleSettingSpecifier ) {
-				TitleSettingSpecifier title = (TitleSettingSpecifier) spec;
-				if ( title.isMarkup() ) {
-					props.put("markup", title.isMarkup());
-				}
-				if ( title.getValueTitles() != null ) {
-					props.put("valueTitles", title.getValueTitles());
-				}
-				if ( spec instanceof TextFieldSettingSpecifier ) {
-					TextFieldSettingSpecifier text = (TextFieldSettingSpecifier) spec;
-					if ( text.isSecureTextEntry() ) {
-						props.put("secureTextEntry", text.isSecureTextEntry());
-					}
-				}
-			} else if ( spec instanceof ToggleSettingSpecifier ) {
-				ToggleSettingSpecifier toggle = (ToggleSettingSpecifier) spec;
-				props.put("falseValue", toggle.getFalseValue());
-				props.put("trueValue", toggle.getTrueValue());
+			} else if ( spec instanceof SetupResourceSettingSpecifier ) {
+				SetupResourceSettingSpecifier setup = (SetupResourceSettingSpecifier) spec;
+				props.put("setupResourceProperties", setup.getSetupResourceProperties());
 			}
-			resultSettings.add(props);
-		} else if ( spec instanceof SetupResourceSettingSpecifier ) {
-			SetupResourceSettingSpecifier setup = (SetupResourceSettingSpecifier) spec;
-			Map<String, Object> props = new LinkedHashMap<>(2);
-			props.put("type", setup.getType());
-			props.put("setupResourceProperties", setup.getSetupResourceProperties());
-			resultSettings.add(props);
-		}
+		});
 	}
 
 }
