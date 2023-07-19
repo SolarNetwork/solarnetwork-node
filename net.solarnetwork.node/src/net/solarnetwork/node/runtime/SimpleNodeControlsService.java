@@ -44,6 +44,7 @@ import net.solarnetwork.node.service.support.BaseIdentifiable;
  * 
  * @author matt
  * @version 1.0
+ * @since 3.3
  */
 public class SimpleNodeControlsService extends BaseIdentifiable implements InstructionHandler {
 
@@ -63,6 +64,8 @@ public class SimpleNodeControlsService extends BaseIdentifiable implements Instr
 	 * 
 	 * @param providers
 	 *        the control providers
+	 * @throws IllegalArgumentException
+	 *         if any argument is null
 	 */
 	public SimpleNodeControlsService(Collection<NodeControlProvider> providers) {
 		super();
