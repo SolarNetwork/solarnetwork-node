@@ -28,7 +28,13 @@ import static net.solarnetwork.domain.InstructionStatus.InstructionState.Decline
 import static net.solarnetwork.node.reactor.InstructionUtils.createErrorResultParameters;
 import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
 import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.StringUtils.parseBoolean;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -37,6 +43,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.zip.GZIPOutputStream;
+import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.node.domain.Setting;
 import net.solarnetwork.node.reactor.Instruction;
@@ -44,7 +52,10 @@ import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.node.settings.ExtendedSettingSpecifierProviderFactory;
+import net.solarnetwork.node.settings.FileSettingSpecifier;
+import net.solarnetwork.node.settings.LocationLookupSettingSpecifier;
 import net.solarnetwork.node.settings.SettingsService;
+import net.solarnetwork.node.settings.SetupResourceSettingSpecifier;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.settings.FactorySettingSpecifierProvider;
 import net.solarnetwork.settings.GroupSettingSpecifier;
@@ -52,6 +63,11 @@ import net.solarnetwork.settings.KeyedSettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingSpecifierProviderFactory;
+import net.solarnetwork.settings.SliderSettingSpecifier;
+import net.solarnetwork.settings.TextAreaSettingSpecifier;
+import net.solarnetwork.settings.TextFieldSettingSpecifier;
+import net.solarnetwork.settings.TitleSettingSpecifier;
+import net.solarnetwork.settings.ToggleSettingSpecifier;
 import net.solarnetwork.util.ObjectUtils;
 
 /**
@@ -197,6 +213,26 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 	public static final String PARAM_INSTANCE_ID = "id";
 
 	/**
+	 * An optional instruction parameter containing a boolean flag that, when
+	 * {@literal true}, means setting specifications should be returned instead
+	 * of setting values.
+	 */
+	public static final String PARAM_SPECIFICATION = "spec";
+
+	/**
+	 * An optional instruction parameter containing a boolean flag that, when
+	 * {@literal true}, means the result JSON should be gzip-compressed and
+	 * encoded into a Base64 string representation.
+	 * 
+	 * <p>
+	 * Note that only successful results will be compressed. If the compressed
+	 * result is larger than the uncompressed JSON, the uncompressed JSON will
+	 * be returned instead.
+	 * </p>
+	 */
+	public static final String PARAM_COMPRESSED = "compress";
+
+	/**
 	 * A special {@link #PARAM_SETTING_UID} or {@link #PARAM_INSTANCE_ID} value
 	 * that signals to return the list of available IDs.
 	 */
@@ -277,13 +313,35 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 				createErrorResultParameters("Required parameter [uid] missing.", "SNS.00000"));
 	}
 
+	private String jsonResult(Instruction instruction, Object obj, String defaultJson) {
+		String json = JsonUtils.getJSONString(obj, defaultJson);
+		if ( json == null || (defaultJson != null && defaultJson.equals(json)) ) {
+			return json;
+		}
+		boolean compress = parseBoolean(instruction.getParameterValue(PARAM_COMPRESSED));
+		if ( !compress ) {
+			return json;
+		}
+
+		try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				GZIPOutputStream gzip = new GZIPOutputStream(baos);
+				OutputStreamWriter out = new OutputStreamWriter(gzip, StandardCharsets.UTF_8)) {
+			FileCopyUtils.copy(json, out);
+			String b64 = Base64.getEncoder().encodeToString(baos.toByteArray());
+			return b64.length() > json.length() ? json : b64;
+		} catch ( IOException e ) {
+			// ignore and return uncompressed
+			return json;
+		}
+	}
+
 	private InstructionStatus generateFactoryInstanceList(Instruction instruction,
 			SettingSpecifierProviderFactory f) {
 		if ( f instanceof ExtendedSettingSpecifierProviderFactory ) {
 			ExtendedSettingSpecifierProviderFactory ef = (ExtendedSettingSpecifierProviderFactory) f;
 			Set<String> instanceIds = ef.getSettingSpecifierProviderInstanceIds();
 			return createStatus(instruction, Completed,
-					singletonMap(PARAM_SERVICE_RESULT, JsonUtils.getJSONString(instanceIds, "[]")));
+					singletonMap(PARAM_SERVICE_RESULT, jsonResult(instruction, instanceIds, "[]")));
 		} else {
 			return createStatus(instruction, Declined,
 					createErrorResultParameters("Factory instances not discoverable.", "SNS.00003"));
@@ -299,9 +357,12 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 			return createStatus(instruction, Declined, createErrorResultParameters(
 					"Factory instance provider not available.", "SNS.00004"));
 		}
-		List<Map<String, Object>> result = resultSettings(service, provider);
+		List<Map<String, Object>> result = parseBoolean(
+				instruction.getParameterValue(PARAM_SPECIFICATION))
+						? resultSpecification(service, provider)
+						: resultSettings(service, provider);
 		return createStatus(instruction, Completed,
-				singletonMap(PARAM_SERVICE_RESULT, JsonUtils.getJSONString(result, "[]")));
+				singletonMap(PARAM_SERVICE_RESULT, jsonResult(instruction, result, "[]")));
 	}
 
 	private InstructionStatus generateProviderSettingsList(Instruction instruction,
@@ -312,9 +373,12 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 			return createStatus(instruction, Declined,
 					createErrorResultParameters("Provider not available.", "SNS.00005"));
 		}
-		List<Map<String, Object>> result = resultSettings(service, provider);
+		List<Map<String, Object>> result = parseBoolean(
+				instruction.getParameterValue(PARAM_SPECIFICATION))
+						? resultSpecification(service, provider)
+						: resultSettings(service, provider);
 		return createStatus(instruction, Completed,
-				singletonMap(PARAM_SERVICE_RESULT, JsonUtils.getJSONString(result, "[]")));
+				singletonMap(PARAM_SERVICE_RESULT, jsonResult(instruction, result, "[]")));
 	}
 
 	private InstructionStatus generateFactoryList(Instruction instruction,
@@ -332,7 +396,7 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 			results.add(props);
 		}
 		return createStatus(instruction, Completed,
-				singletonMap(PARAM_SERVICE_RESULT, JsonUtils.getJSONString(results, "[]")));
+				singletonMap(PARAM_SERVICE_RESULT, jsonResult(instruction, results, "[]")));
 	}
 
 	private InstructionStatus generateProviderList(Instruction instruction, SettingsService service) {
@@ -349,7 +413,7 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 			results.add(props);
 		}
 		return createStatus(instruction, Completed,
-				singletonMap(PARAM_SERVICE_RESULT, JsonUtils.getJSONString(results, "[]")));
+				singletonMap(PARAM_SERVICE_RESULT, jsonResult(instruction, results, "[]")));
 	}
 
 	private List<Map<String, Object>> resultSettings(SettingsService service,
@@ -408,6 +472,92 @@ public class SimpleNodeSettingsService extends BaseIdentifiable implements Instr
 			value = REDACTED_VALUE;
 		}
 		return value;
+	}
+
+	private List<Map<String, Object>> resultSpecification(SettingsService service,
+			SettingSpecifierProvider provider) {
+		List<SettingSpecifier> specs = provider.templateSettingSpecifiers();
+		List<Map<String, Object>> resultSettings = new ArrayList<>(specs.size());
+		for ( SettingSpecifier spec : specs ) {
+			generateResultSpecification(resultSettings, spec);
+		}
+		return resultSettings;
+	}
+
+	private void generateResultSpecification(List<Map<String, Object>> resultSettings,
+			SettingSpecifier spec) {
+		if ( spec instanceof GroupSettingSpecifier ) {
+			GroupSettingSpecifier group = (GroupSettingSpecifier) spec;
+			Map<String, Object> props = new LinkedHashMap<>(2);
+			props.put("type", group.getType());
+			props.put("dynamic", group.isDynamic());
+			List<Map<String, Object>> nested = new ArrayList<>(8);
+			for ( SettingSpecifier groupSpec : group.getGroupSettings() ) {
+				generateResultSpecification(nested, groupSpec);
+			}
+			props.put("groupSettings", nested);
+			resultSettings.add(props);
+		} else if ( spec instanceof KeyedSettingSpecifier<?> ) {
+			KeyedSettingSpecifier<?> keyedSpec = (KeyedSettingSpecifier<?>) spec;
+			if ( keyedSpec.isTransient() ) {
+				return;
+			}
+			Map<String, Object> props = new LinkedHashMap<>(8);
+			props.put("key", keyedSpec.getKey());
+			props.put("type", spec.getType());
+
+			Object defaultValue = keyedSpec.getDefaultValue();
+			if ( defaultValue != null ) {
+				if ( !((defaultValue instanceof String) && ((String) defaultValue).isEmpty()) ) {
+					props.put("defaultValue", keyedSpec.getDefaultValue());
+				}
+			}
+			if ( spec instanceof FileSettingSpecifier ) {
+				FileSettingSpecifier file = (FileSettingSpecifier) spec;
+				props.put("acceptableFileTypeSpecifiers", file.getAcceptableFileTypeSpecifiers());
+				if ( file.isMultiple() ) {
+					props.put("multiple", file.isMultiple());
+				}
+			} else if ( spec instanceof LocationLookupSettingSpecifier ) {
+				LocationLookupSettingSpecifier look = (LocationLookupSettingSpecifier) spec;
+				props.put("locationTypeKey", look.getLocationTypeKey());
+			} else if ( spec instanceof SliderSettingSpecifier ) {
+				SliderSettingSpecifier slider = (SliderSettingSpecifier) spec;
+				props.put("minimumValue", slider.getMinimumValue());
+				props.put("maximumValue", slider.getMaximumValue());
+				props.put("step", slider.getStep());
+			} else if ( spec instanceof TextAreaSettingSpecifier ) {
+				TextAreaSettingSpecifier area = (TextAreaSettingSpecifier) spec;
+				if ( area.isDirect() ) {
+					props.put("direct", area.isDirect());
+				}
+			} else if ( spec instanceof TitleSettingSpecifier ) {
+				TitleSettingSpecifier title = (TitleSettingSpecifier) spec;
+				if ( title.isMarkup() ) {
+					props.put("markup", title.isMarkup());
+				}
+				if ( title.getValueTitles() != null ) {
+					props.put("valueTitles", title.getValueTitles());
+				}
+				if ( spec instanceof TextFieldSettingSpecifier ) {
+					TextFieldSettingSpecifier text = (TextFieldSettingSpecifier) spec;
+					if ( text.isSecureTextEntry() ) {
+						props.put("secureTextEntry", text.isSecureTextEntry());
+					}
+				}
+			} else if ( spec instanceof ToggleSettingSpecifier ) {
+				ToggleSettingSpecifier toggle = (ToggleSettingSpecifier) spec;
+				props.put("falseValue", toggle.getFalseValue());
+				props.put("trueValue", toggle.getTrueValue());
+			}
+			resultSettings.add(props);
+		} else if ( spec instanceof SetupResourceSettingSpecifier ) {
+			SetupResourceSettingSpecifier setup = (SetupResourceSettingSpecifier) spec;
+			Map<String, Object> props = new LinkedHashMap<>(2);
+			props.put("type", setup.getType());
+			props.put("setupResourceProperties", setup.getSetupResourceProperties());
+			resultSettings.add(props);
+		}
 	}
 
 }
