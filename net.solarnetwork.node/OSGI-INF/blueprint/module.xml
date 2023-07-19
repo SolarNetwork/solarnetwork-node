@@ -52,6 +52,12 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="settingsService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.settings.SettingsService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<reference-list id="managedJobs" interface="net.solarnetwork.node.job.ManagedJob" availability="optional">
 		<reference-listener bind-method="registerJob" unbind-method="unregisterJob" ref="managedJobsListener"/>
 	</reference-list>
@@ -578,7 +584,7 @@
 	</service>
 	
 	<!-- 
-		Controls Service
+		Node Controls Service
 	 -->
 	<service interface="net.solarnetwork.node.reactor.InstructionHandler">
 		<service-properties>
@@ -590,6 +596,22 @@
 		</service-properties>
 		<bean class="net.solarnetwork.node.runtime.SimpleNodeControlsService">
 			<argument ref="nodeControlProviders"/>
+		</bean>
+	</service>
+
+	<!-- 
+		Node Settings Service
+	 -->
+	<service interface="net.solarnetwork.node.reactor.InstructionHandler">
+		<service-properties>
+			<entry key="instruction">
+				<list>
+					<value>SystemConfiguration</value>
+				</list>
+			</entry>
+		</service-properties>
+		<bean class="net.solarnetwork.node.runtime.SimpleNodeSettingsService">
+			<argument ref="settingsService"/>
 		</bean>
 	</service>
 
