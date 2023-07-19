@@ -32,7 +32,7 @@ import net.solarnetwork.settings.SettingSpecifierProvider;
  * ConfigurationAdmin.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class CASettingSpecifierProvider implements SettingSpecifierProvider {
 
@@ -61,6 +61,11 @@ public class CASettingSpecifierProvider implements SettingSpecifierProvider {
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		return delegate.getSettingSpecifiers();
+	}
+
+	@Override
+	public List<SettingSpecifier> templateSettingSpecifiers() {
+		return delegate.templateSettingSpecifiers();
 	}
 
 	@Override
