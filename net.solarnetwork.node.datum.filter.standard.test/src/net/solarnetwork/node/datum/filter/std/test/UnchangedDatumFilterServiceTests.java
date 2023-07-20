@@ -48,6 +48,8 @@ public class UnchangedDatumFilterServiceTests {
 	private static final String SOURCE_ID_2 = "S_2";
 	private static final String PROP_1 = "watts";
 	private static final String PROP_2 = "amps";
+	private static final String PROP_3 = "state";
+	private static final String PROP_4 = "status";
 	private static final int UNCHANGED_SECS = 10;
 
 	private UnchangedDatumFilterService xform;
@@ -223,6 +225,207 @@ public class UnchangedDatumFilterServiceTests {
 		assertThat("Third datum within 2nd time period with same property value filtered", result3,
 				is(nullValue()));
 		assertThat("Forth datum after 2nd time period and same property value filtered", result4,
+				is(nullValue()));
+	}
+
+	private void configurePropertyPattern() {
+		xform.setPropertyIncludePatternValue("^s");
+	}
+
+	@Test
+	public void firstDatum_pat() {
+		// GIVEN
+		configurePropertyPattern();
+		SimpleDatum d = createTestDatum(Instant.now(), SOURCE_ID_1, PROP_1, 1);
+		d.putSampleValue(DatumSamplesType.Status, PROP_3, "a");
+
+		// WHEN
+		DatumSamplesOperations result = xform.filter(d, d.getSamples(), null);
+
+		// THEN
+		assertThat("First datum not filtered", result, is(sameInstance(d.getSamples())));
+	}
+
+	@Test
+	public void changed_pat_otherPropAdded() {
+		// GIVEN
+		configurePropertyPattern();
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		SimpleDatum d = createTestDatum(start, SOURCE_ID_1, PROP_1, 1);
+		d.putSampleValue(DatumSamplesType.Status, PROP_3, "a");
+		SimpleDatum d2 = createTestDatum(start.plusSeconds(1), SOURCE_ID_1, PROP_1, 1);
+		d2.putSampleValue(DatumSamplesType.Status, PROP_3, "a");
+		d2.putSampleValue(DatumSamplesType.Accumulating, PROP_2, 1);
+		SimpleDatum d3 = d2.copyWithId(
+				nodeId(d2.getObjectId(), d2.getSourceId(), d2.getTimestamp().plusSeconds(1)));
+
+		// WHEN
+		DatumSamplesOperations result1 = xform.filter(d, d.getSamples(), null);
+		DatumSamplesOperations result2 = xform.filter(d2, d2.getSamples(), null);
+		DatumSamplesOperations result3 = xform.filter(d3, d3.getSamples(), null);
+
+		// THEN
+		assertThat("First datum not filtered", result1, is(sameInstance(d.getSamples())));
+		assertThat("Second datum within 1st time period and added non-managed property value filtered",
+				result2, is(nullValue()));
+		assertThat("Third datum within 2nd time period with same property value filtered", result3,
+				is(nullValue()));
+	}
+
+	@Test
+	public void changed_pat_otherPropChanged() {
+		// GIVEN
+		configurePropertyPattern();
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		SimpleDatum d = createTestDatum(start, SOURCE_ID_1, PROP_1, 1);
+		d.putSampleValue(DatumSamplesType.Status, PROP_3, "a");
+		SimpleDatum d2 = createTestDatum(start.plusSeconds(1), SOURCE_ID_1, PROP_1, 1);
+		d2.putSampleValue(DatumSamplesType.Status, PROP_3, "a");
+		d2.putSampleValue(DatumSamplesType.Accumulating, PROP_1, 2);
+		SimpleDatum d3 = d2.copyWithId(
+				nodeId(d2.getObjectId(), d2.getSourceId(), d2.getTimestamp().plusSeconds(1)));
+
+		// WHEN
+		DatumSamplesOperations result1 = xform.filter(d, d.getSamples(), null);
+		DatumSamplesOperations result2 = xform.filter(d2, d2.getSamples(), null);
+		DatumSamplesOperations result3 = xform.filter(d3, d3.getSamples(), null);
+
+		// THEN
+		assertThat("First datum not filtered", result1, is(sameInstance(d.getSamples())));
+		assertThat("Second datum within 1st time period and changed non-managed property value filtered",
+				result2, is(nullValue()));
+		assertThat("Third datum within 2nd time period with same property value filtered", result3,
+				is(nullValue()));
+	}
+
+	@Test
+	public void changed_pat_propAdded() {
+		// GIVEN
+		configurePropertyPattern();
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		SimpleDatum d = createTestDatum(start, SOURCE_ID_1, PROP_1, 1);
+		SimpleDatum d2 = createTestDatum(start.plusSeconds(1), SOURCE_ID_1, PROP_1, 1);
+		d2.putSampleValue(DatumSamplesType.Status, PROP_3, "a");
+		SimpleDatum d3 = d2.copyWithId(
+				nodeId(d2.getObjectId(), d2.getSourceId(), d2.getTimestamp().plusSeconds(1)));
+
+		// WHEN
+		DatumSamplesOperations result1 = xform.filter(d, d.getSamples(), null);
+		DatumSamplesOperations result2 = xform.filter(d2, d2.getSamples(), null);
+		DatumSamplesOperations result3 = xform.filter(d3, d3.getSamples(), null);
+
+		// THEN
+		assertThat("First datum not filtered", result1, is(sameInstance(d.getSamples())));
+		assertThat("Second datum within 1st time period but added managed property value, not filtered",
+				result2, is(sameInstance(d2.getSamples())));
+		assertThat("Third datum within 2nd time period with same property value filtered", result3,
+				is(nullValue()));
+	}
+
+	@Test
+	public void changed_pat_propRemoved() {
+		// GIVEN
+		configurePropertyPattern();
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		SimpleDatum d = createTestDatum(start, SOURCE_ID_1, PROP_1, 1);
+		d.putSampleValue(DatumSamplesType.Status, PROP_3, "a");
+		SimpleDatum d2 = createTestDatum(start.plusSeconds(1), SOURCE_ID_1, PROP_1, 1);
+		SimpleDatum d3 = d2.copyWithId(
+				nodeId(d2.getObjectId(), d2.getSourceId(), d2.getTimestamp().plusSeconds(1)));
+
+		// WHEN
+		DatumSamplesOperations result1 = xform.filter(d, d.getSamples(), null);
+		DatumSamplesOperations result2 = xform.filter(d2, d2.getSamples(), null);
+		DatumSamplesOperations result3 = xform.filter(d3, d3.getSamples(), null);
+
+		// THEN
+		assertThat("First datum not filtered", result1, is(sameInstance(d.getSamples())));
+		assertThat(
+				"Second datum within 1st time period but removed managed property value, not filtered",
+				result2, is(sameInstance(d2.getSamples())));
+		assertThat("Third datum within 2nd time period with same property value filtered", result3,
+				is(nullValue()));
+	}
+
+	@Test
+	public void changed_pat_propChanged() {
+		// GIVEN
+		configurePropertyPattern();
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		SimpleDatum d = createTestDatum(start, SOURCE_ID_1, PROP_1, 1);
+		d.putSampleValue(DatumSamplesType.Status, PROP_3, "a");
+		SimpleDatum d2 = createTestDatum(start.plusSeconds(1), SOURCE_ID_1, PROP_1, 1);
+		d2.putSampleValue(DatumSamplesType.Status, PROP_3, "b");
+		SimpleDatum d3 = d2.copyWithId(
+				nodeId(d2.getObjectId(), d2.getSourceId(), d2.getTimestamp().plusSeconds(1)));
+
+		// WHEN
+		DatumSamplesOperations result1 = xform.filter(d, d.getSamples(), null);
+		DatumSamplesOperations result2 = xform.filter(d2, d2.getSamples(), null);
+		DatumSamplesOperations result3 = xform.filter(d3, d3.getSamples(), null);
+
+		// THEN
+		assertThat("First datum not filtered", result1, is(sameInstance(d.getSamples())));
+		assertThat(
+				"Second datum within 1st time period but changed managed property value, not filtered",
+				result2, is(sameInstance(d2.getSamples())));
+		assertThat("Third datum within 2nd time period with same property value filtered", result3,
+				is(nullValue()));
+	}
+
+	@Test
+	public void changed_pat_propChanged_multi() {
+		// GIVEN
+		configurePropertyPattern();
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		SimpleDatum d = createTestDatum(start, SOURCE_ID_1, PROP_1, 1);
+		d.putSampleValue(DatumSamplesType.Status, PROP_3, "a");
+		d.putSampleValue(DatumSamplesType.Status, PROP_4, "A");
+		SimpleDatum d2 = createTestDatum(start.plusSeconds(1), SOURCE_ID_1, PROP_1, 1);
+		d2.putSampleValue(DatumSamplesType.Status, PROP_3, "a");
+		d2.putSampleValue(DatumSamplesType.Status, PROP_4, "B");
+		SimpleDatum d3 = d2.copyWithId(
+				nodeId(d2.getObjectId(), d2.getSourceId(), d2.getTimestamp().plusSeconds(1)));
+
+		// WHEN
+		DatumSamplesOperations result1 = xform.filter(d, d.getSamples(), null);
+		DatumSamplesOperations result2 = xform.filter(d2, d2.getSamples(), null);
+		DatumSamplesOperations result3 = xform.filter(d3, d3.getSamples(), null);
+
+		// THEN
+		assertThat("First datum not filtered", result1, is(sameInstance(d.getSamples())));
+		assertThat(
+				"Second datum within 1st time period but changed managed property value, not filtered",
+				result2, is(sameInstance(d2.getSamples())));
+		assertThat("Third datum within 2nd time period with same property value filtered", result3,
+				is(nullValue()));
+	}
+
+	@Test
+	public void changed_pat_propNotChanged_multi_otherPropChanged() {
+		// GIVEN
+		configurePropertyPattern();
+		Instant start = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+		SimpleDatum d = createTestDatum(start, SOURCE_ID_1, PROP_1, 1);
+		d.putSampleValue(DatumSamplesType.Status, PROP_3, "a");
+		d.putSampleValue(DatumSamplesType.Status, PROP_4, "A");
+		SimpleDatum d2 = createTestDatum(start.plusSeconds(1), SOURCE_ID_1, PROP_1, 2);
+		d2.putSampleValue(DatumSamplesType.Status, PROP_3, "a");
+		d2.putSampleValue(DatumSamplesType.Status, PROP_4, "A");
+		SimpleDatum d3 = d2.copyWithId(
+				nodeId(d2.getObjectId(), d2.getSourceId(), d2.getTimestamp().plusSeconds(1)));
+
+		// WHEN
+		DatumSamplesOperations result1 = xform.filter(d, d.getSamples(), null);
+		DatumSamplesOperations result2 = xform.filter(d2, d2.getSamples(), null);
+		DatumSamplesOperations result3 = xform.filter(d3, d3.getSamples(), null);
+
+		// THEN
+		assertThat("First datum not filtered", result1, is(sameInstance(d.getSamples())));
+		assertThat(
+				"Second datum within 1st time period but changed managed property value, not filtered",
+				result2, is(nullValue()));
+		assertThat("Third datum within 2nd time period with same property value filtered", result3,
 				is(nullValue()));
 	}
 

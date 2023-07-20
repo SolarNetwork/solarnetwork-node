@@ -24,8 +24,8 @@ package net.solarnetwork.node.datum.filter.std;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +51,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Datum filter service that splits datum into multiple new datum streams.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SplitDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
@@ -139,6 +139,15 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
+		return settingSpecifiers(false);
+	}
+
+	@Override
+	public List<SettingSpecifier> templateSettingSpecifiers() {
+		return settingSpecifiers(true);
+	}
+
+	private List<SettingSpecifier> settingSpecifiers(final boolean template) {
 		List<SettingSpecifier> result = baseIdentifiableSettings("");
 		populateBaseSampleTransformSupportSettings(result);
 		populateStatusSettings(result);
@@ -146,8 +155,8 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 		result.add(new BasicToggleSettingSpecifier("swallowInput", DEFAULT_SWALLOW_INPUT));
 
 		PatternKeyValuePair[] mappingConfs = getPropertySourceMappings();
-		List<PatternKeyValuePair> mappingConfList = (mappingConfs != null ? asList(mappingConfs)
-				: emptyList());
+		List<PatternKeyValuePair> mappingConfList = (template ? singletonList(new PatternKeyValuePair())
+				: (mappingConfs != null ? asList(mappingConfs) : emptyList()));
 		result.add(SettingUtils.dynamicListSettingSpecifier("propertySourceMappings", mappingConfList,
 				new SettingUtils.KeyedListCallback<PatternKeyValuePair>() {
 
@@ -156,7 +165,7 @@ public class SplitDatumFilterService extends BaseDatumFilterSupport
 							int index, String key) {
 						SettingSpecifier configGroup = new BasicGroupSettingSpecifier(
 								PatternKeyValuePair.settings(key + "."));
-						return Collections.singletonList(configGroup);
+						return singletonList(configGroup);
 					}
 				}));
 

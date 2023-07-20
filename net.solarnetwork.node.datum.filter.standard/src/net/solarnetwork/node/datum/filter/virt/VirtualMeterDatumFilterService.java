@@ -63,7 +63,7 @@ import net.solarnetwork.util.ArrayUtils;
  * derived from another property.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  * @since 1.4
  */
 public class VirtualMeterDatumFilterService extends DatumFilterSupport
@@ -122,6 +122,15 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
+		return settingSpecifiers(false);
+	}
+
+	@Override
+	public List<SettingSpecifier> templateSettingSpecifiers() {
+		return settingSpecifiers(true);
+	}
+
+	private List<SettingSpecifier> settingSpecifiers(final boolean template) {
 		List<SettingSpecifier> results = baseIdentifiableSettings();
 
 		results.add(0, new BasicTitleSettingSpecifier("status", statusValue()));
@@ -129,8 +138,8 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 		populateStatusSettings(results);
 
 		VirtualMeterConfig[] meterConfs = getVirtualMeterConfigs();
-		List<VirtualMeterConfig> meterConfsList = (meterConfs != null ? asList(meterConfs)
-				: emptyList());
+		List<VirtualMeterConfig> meterConfsList = (template ? singletonList(new VirtualMeterConfig())
+				: (meterConfs != null ? asList(meterConfs) : emptyList()));
 		results.add(SettingUtils.dynamicListSettingSpecifier("virtualMeterConfigs", meterConfsList,
 				new SettingUtils.KeyedListCallback<VirtualMeterConfig>() {
 
@@ -146,7 +155,8 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 		Iterable<ExpressionService> exprServices = services(getExpressionServices());
 		if ( exprServices != null ) {
 			VirtualMeterExpressionConfig[] exprConfs = getExpressionConfigs();
-			List<ExpressionConfig> exprConfsList = (exprConfs != null ? asList(exprConfs) : emptyList());
+			List<ExpressionConfig> exprConfsList = (template ? singletonList(new ExpressionConfig())
+					: (exprConfs != null ? asList(exprConfs) : emptyList()));
 			results.add(SettingUtils.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
 					new SettingUtils.KeyedListCallback<ExpressionConfig>() {
 

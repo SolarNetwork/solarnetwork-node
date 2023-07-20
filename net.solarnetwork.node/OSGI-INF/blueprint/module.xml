@@ -52,6 +52,12 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="settingsService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.settings.SettingsService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<reference-list id="managedJobs" interface="net.solarnetwork.node.job.ManagedJob" availability="optional">
 		<reference-listener bind-method="registerJob" unbind-method="unregisterJob" ref="managedJobsListener"/>
 	</reference-list>
@@ -86,6 +92,9 @@
 			<bean class="net.solarnetwork.service.CloseableServiceTracker"/>
 		</reference-listener>
 	</reference-list>
+
+	<reference-list id="nodeControlProviders" availability="optional"
+		interface="net.solarnetwork.node.service.NodeControlProvider"/>
 
 	<!-- Provide a centralized ObjectMapper for JSON processing. -->
 	<service interface="net.solarnetwork.service.ObjectMapperService">
@@ -572,6 +581,38 @@
 	 -->
 	<service interface="net.solarnetwork.node.dao.TransientSettingDao">
 		<bean class="net.solarnetwork.node.dao.DefaultTransientSettingDao"/>
+	</service>
+	
+	<!-- 
+		Node Controls Service
+	 -->
+	<service interface="net.solarnetwork.node.reactor.InstructionHandler">
+		<service-properties>
+			<entry key="instruction">
+				<list>
+					<value>SystemConfiguration</value>
+				</list>
+			</entry>
+		</service-properties>
+		<bean class="net.solarnetwork.node.runtime.SimpleNodeControlsService">
+			<argument ref="nodeControlProviders"/>
+		</bean>
+	</service>
+
+	<!-- 
+		Node Settings Service
+	 -->
+	<service interface="net.solarnetwork.node.reactor.InstructionHandler">
+		<service-properties>
+			<entry key="instruction">
+				<list>
+					<value>SystemConfiguration</value>
+				</list>
+			</entry>
+		</service-properties>
+		<bean class="net.solarnetwork.node.runtime.SimpleNodeSettingsService">
+			<argument ref="settingsService"/>
+		</bean>
 	</service>
 
 </blueprint>

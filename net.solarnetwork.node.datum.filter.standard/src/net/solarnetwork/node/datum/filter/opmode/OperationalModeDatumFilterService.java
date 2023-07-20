@@ -25,11 +25,11 @@ package net.solarnetwork.node.datum.filter.opmode;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -56,7 +56,7 @@ import net.solarnetwork.util.ArrayUtils;
  * the mode as a datum property.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.0
  */
 public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
@@ -194,6 +194,15 @@ public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
+		return settingSpecifiers(false);
+	}
+
+	@Override
+	public List<SettingSpecifier> templateSettingSpecifiers() {
+		return settingSpecifiers(true);
+	}
+
+	private List<SettingSpecifier> settingSpecifiers(final boolean template) {
 		List<SettingSpecifier> result = baseIdentifiableSettings("");
 		populateBaseSampleTransformSupportSettings(result);
 		populateStatusSettings(result);
@@ -201,8 +210,9 @@ public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
 		Iterable<ExpressionService> exprServices = services(getExpressionServices());
 		if ( exprServices != null ) {
 			OperationalModeTransformConfig[] exprConfs = getExpressionConfigs();
-			List<OperationalModeTransformConfig> exprConfsList = (exprConfs != null ? asList(exprConfs)
-					: emptyList());
+			List<OperationalModeTransformConfig> exprConfsList = (template
+					? singletonList(new OperationalModeTransformConfig())
+					: (exprConfs != null ? asList(exprConfs) : emptyList()));
 			result.add(SettingUtils.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
 					new SettingUtils.KeyedListCallback<OperationalModeTransformConfig>() {
 
@@ -211,7 +221,7 @@ public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
 								OperationalModeTransformConfig value, int index, String key) {
 							SettingSpecifier configGroup = new BasicGroupSettingSpecifier(
 									OperationalModeTransformConfig.settings(key + ".", exprServices));
-							return Collections.singletonList(configGroup);
+							return singletonList(configGroup);
 						}
 					}));
 		}

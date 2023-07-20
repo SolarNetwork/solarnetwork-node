@@ -24,11 +24,11 @@ package net.solarnetwork.node.datum.filter.param;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
 import java.util.AbstractMap;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,7 +54,7 @@ import net.solarnetwork.util.ArrayUtils;
  * on the active transform parameters.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.1
  */
 public class ParameterDatumFilterService extends BaseDatumFilterSupport
@@ -135,6 +135,15 @@ public class ParameterDatumFilterService extends BaseDatumFilterSupport
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
+		return settingSpecifiers(false);
+	}
+
+	@Override
+	public List<SettingSpecifier> templateSettingSpecifiers() {
+		return settingSpecifiers(true);
+	}
+
+	private List<SettingSpecifier> settingSpecifiers(final boolean template) {
 		List<SettingSpecifier> result = baseIdentifiableSettings("");
 		populateBaseSampleTransformSupportSettings(result);
 		populateStatusSettings(result);
@@ -142,7 +151,8 @@ public class ParameterDatumFilterService extends BaseDatumFilterSupport
 		Iterable<ExpressionService> exprServices = services(getExpressionServices());
 		if ( exprServices != null ) {
 			ExpressionConfig[] exprConfs = getExpressionConfigs();
-			List<ExpressionConfig> exprConfsList = (exprConfs != null ? asList(exprConfs) : emptyList());
+			List<ExpressionConfig> exprConfsList = (template ? singletonList(new ExpressionConfig())
+					: (exprConfs != null ? asList(exprConfs) : emptyList()));
 			result.add(SettingUtils.dynamicListSettingSpecifier("expressionConfigs", exprConfsList,
 					new SettingUtils.KeyedListCallback<ExpressionConfig>() {
 
@@ -158,7 +168,7 @@ public class ParameterDatumFilterService extends BaseDatumFilterSupport
 												.endsWith(".datumPropertyTypeKey"));
 							}).collect(Collectors.toList());
 							SettingSpecifier configGroup = new BasicGroupSettingSpecifier(exprSettings);
-							return Collections.singletonList(configGroup);
+							return singletonList(configGroup);
 						}
 					}));
 		}

@@ -58,7 +58,7 @@ import net.solarnetwork.service.StaticOptionalService;
  * Test cases for the {@link ModbusControl} class.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ModbusControlTests {
 
@@ -117,7 +117,7 @@ public class ModbusControlTests {
 				});
 		BitSet expectedBitSet = new BitSet();
 		expectedBitSet.set(0, true);
-		conn.writeDiscreetValues(aryEq(new int[] { config.getAddress() }), eq(expectedBitSet));
+		conn.writeDiscreteValues(aryEq(new int[] { config.getAddress() }), eq(expectedBitSet));
 
 		// WHEN
 		replayAll();
@@ -150,7 +150,7 @@ public class ModbusControlTests {
 
 				});
 		BitSet expectedBitSet = new BitSet();
-		conn.writeDiscreetValues(aryEq(new int[] { config.getAddress() }), eq(expectedBitSet));
+		conn.writeDiscreteValues(aryEq(new int[] { config.getAddress() }), eq(expectedBitSet));
 
 		// WHEN
 		replayAll();
@@ -180,7 +180,7 @@ public class ModbusControlTests {
 				});
 		BitSet resultBitSet = new BitSet();
 		resultBitSet.set(123, true);
-		expect(conn.readDiscreetValues(config.getAddress(), 1)).andReturn(resultBitSet);
+		expect(conn.readDiscreteValues(config.getAddress(), 1)).andReturn(resultBitSet);
 
 		// WHEN
 		replayAll();
@@ -209,7 +209,7 @@ public class ModbusControlTests {
 
 				});
 		BitSet resultBitSet = new BitSet();
-		expect(conn.readDiscreetValues(config.getAddress(), 1)).andReturn(resultBitSet);
+		expect(conn.readDiscreteValues(config.getAddress(), 1)).andReturn(resultBitSet);
 
 		// WHEN
 		replayAll();

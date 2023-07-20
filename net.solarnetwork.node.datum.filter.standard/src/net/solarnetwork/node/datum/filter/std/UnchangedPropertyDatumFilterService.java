@@ -22,11 +22,12 @@
 
 package net.solarnetwork.node.datum.filter.std;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -52,7 +53,7 @@ import net.solarnetwork.util.ArrayUtils;
  * maximum time range.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.4
  */
 public class UnchangedPropertyDatumFilterService extends DatumFilterSupport
@@ -232,6 +233,15 @@ public class UnchangedPropertyDatumFilterService extends DatumFilterSupport
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
+		return settingSpecifiers(false);
+	}
+
+	@Override
+	public List<SettingSpecifier> templateSettingSpecifiers() {
+		return settingSpecifiers(true);
+	}
+
+	private List<SettingSpecifier> settingSpecifiers(final boolean template) {
 		List<SettingSpecifier> result = baseIdentifiableSettings("");
 		populateBaseSampleTransformSupportSettings(result);
 		populateStatusSettings(result);
@@ -241,8 +251,8 @@ public class UnchangedPropertyDatumFilterService extends DatumFilterSupport
 		result.add(new BasicToggleSettingSpecifier("preserveEmptyDatum", Boolean.FALSE));
 
 		PropertyFilterConfig[] configs = getPropConfigs();
-		List<PropertyFilterConfig> configList = (configs != null ? Arrays.asList(configs)
-				: Collections.emptyList());
+		List<PropertyFilterConfig> configList = (template ? singletonList(new PropertyFilterConfig())
+				: (configs != null ? asList(configs) : emptyList()));
 		result.add(SettingUtils.dynamicListSettingSpecifier("propConfigs", configList,
 				new SettingUtils.KeyedListCallback<PropertyFilterConfig>() {
 
@@ -251,7 +261,7 @@ public class UnchangedPropertyDatumFilterService extends DatumFilterSupport
 							int index, String key) {
 						BasicGroupSettingSpecifier configGroup = new BasicGroupSettingSpecifier(
 								PropertyFilterConfig.settings(key + "."));
-						return Collections.singletonList(configGroup);
+						return singletonList(configGroup);
 					}
 				}));
 		return result;
