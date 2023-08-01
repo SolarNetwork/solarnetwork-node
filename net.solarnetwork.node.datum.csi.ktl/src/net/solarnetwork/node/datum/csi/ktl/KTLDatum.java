@@ -33,6 +33,7 @@ import net.solarnetwork.domain.DeviceOperatingState;
 import net.solarnetwork.domain.datum.Datum;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.MutableDatumSamplesOperations;
+import net.solarnetwork.node.domain.AcEnergyDataAccessor;
 import net.solarnetwork.node.domain.datum.DcEnergyDatum;
 import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
 import net.solarnetwork.node.hw.csi.inverter.KTLCTDataAccessor;
@@ -46,7 +47,7 @@ import net.solarnetwork.util.NumberUtils;
  *
  * @author matt
  * @author maxieduncan
- * @version 2.2
+ * @version 2.3
  */
 public class KTLDatum extends SimpleAcDcEnergyDatum {
 
@@ -99,7 +100,7 @@ public class KTLDatum extends SimpleAcDcEnergyDatum {
 		}
 
 		// verify in Running/Derate work mode, else invalid data might be collected
-		if ( !(state == DeviceOperatingState.Normal || state == DeviceOperatingState.Override) ) {
+		if ( !isNormalState(state) ) {
 			ops.putSampleValue(Status, Datum.OP_STATE, state.getCode());
 			return;
 		}
@@ -149,6 +150,24 @@ public class KTLDatum extends SimpleAcDcEnergyDatum {
 						"0x" + v.toString(16));
 			}
 		}
+	}
+
+	private boolean isNormalState(DeviceOperatingState state) {
+		return state == DeviceOperatingState.Normal || state == DeviceOperatingState.Override;
+	}
+
+	@Override
+	public void populatePhaseMeasurementProperties(AcEnergyDataAccessor data) {
+		// verify in Running/Derate work mode, else invalid data might be collected
+		if ( data instanceof KTLCTDataAccessor ) {
+			KTLCTInverterWorkMode workMode = ((KTLCTDataAccessor) data).getWorkMode();
+			DeviceOperatingState state = workMode != null ? workMode.asDeviceOperatingState()
+					: DeviceOperatingState.Unknown;
+			if ( !isNormalState(state) ) {
+				return;
+			}
+		}
+		super.populatePhaseMeasurementProperties(data);
 	}
 
 	/**
