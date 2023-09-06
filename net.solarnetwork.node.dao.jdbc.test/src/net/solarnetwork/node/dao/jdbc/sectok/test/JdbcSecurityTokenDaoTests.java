@@ -33,6 +33,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Collection;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.core.io.ClassPathResource;
@@ -162,8 +163,16 @@ public class JdbcSecurityTokenDaoTests extends AbstractNodeTest {
 		SecurityToken obj3 = createTestSecurityToken("b");
 		obj3 = dao.get(dao.save(obj3));
 
+		// WHEN
 		Collection<SecurityToken> results = dao.getAll(null);
+
+		// THEN
 		assertThat("Results found in order", results, contains(obj1, obj3, obj2));
+		assertThat("All token secrets are null", results.stream().map(t -> {
+			String[] holder = new String[1];
+			t.copySecret(s -> holder[0] = s);
+			return holder[0];
+		}).collect(Collectors.toList()), contains((String) null, null, null));
 	}
 
 }

@@ -59,7 +59,11 @@ public class SecurityTokenRowMapper implements RowMapper<SecurityToken> {
 		String tokenSecret = rs.getString(3);
 		String name = rs.getString(4);
 		String description = rs.getString(5);
-		return new SecurityToken(tokenId, created, tokenSecret, name, description);
+		SecurityToken token = new SecurityToken(tokenId, created, tokenSecret, name, description);
+		if ( tokenSecret.isEmpty() ) {
+			token = token.copyWithoutSecret(null, null);
+		}
+		return token;
 	}
 
 }
