@@ -28,6 +28,12 @@ import net.solarnetwork.node.domain.SecurityToken;
 /**
  * DAO API for {@link SecurityToken} entities.
  * 
+ * <p>
+ * Note that a token's ID and secret are immutable once created, and the
+ * {@link #save(SecurityToken)} method can only update a token's other
+ * properties like name and description.
+ * </p>
+ * 
  * @author matt
  * @version 1.0
  * @since 3.4

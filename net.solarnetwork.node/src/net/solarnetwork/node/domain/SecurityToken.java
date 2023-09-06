@@ -24,7 +24,9 @@ package net.solarnetwork.node.domain;
 
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.time.Instant;
+import java.util.Date;
 import java.util.function.Consumer;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import net.solarnetwork.dao.BasicStringEntity;
 import net.solarnetwork.security.AbstractAuthorizationBuilder;
@@ -40,6 +42,7 @@ import net.solarnetwork.security.AbstractAuthorizationBuilder;
  * @version 1.0
  * @since 3.4
  */
+@JsonIgnoreProperties({ "createdDate" })
 @JsonPropertyOrder({ "tokenId", "created", "name", "description" })
 public class SecurityToken extends BasicStringEntity {
 
@@ -92,8 +95,43 @@ public class SecurityToken extends BasicStringEntity {
 		this.description = description;
 	}
 
+	/**
+	 * Create a token from just the detail properties.
+	 * 
+	 * @param tokenId
+	 *        the token ID
+	 * @param name
+	 *        the name
+	 * @param description
+	 *        the description
+	 * @return the token instance
+	 */
+	public static SecurityToken tokenDetails(String tokenId, String name, String description) {
+		return new SecurityToken(tokenId, null, name, description);
+	}
+
+	/**
+	 * Create a token from just the detail properties.
+	 * 
+	 * @param name
+	 *        the name
+	 * @param description
+	 *        the description
+	 * @return the token instance
+	 */
+	public static SecurityToken tokenDetails(String name, String description) {
+		return new SecurityToken(null, name, description);
+	}
+
 	private SecurityToken(String tokenId, Instant created, String name, String description) {
 		super(requireNonNullArgument(tokenId, "tokenId"), created);
+		this.tokenSecret = null;
+		this.name = name;
+		this.description = description;
+	}
+
+	private SecurityToken(String tokenId, String name, String description) {
+		super(tokenId, null);
 		this.tokenSecret = null;
 		this.name = name;
 		this.description = description;
@@ -156,6 +194,16 @@ public class SecurityToken extends BasicStringEntity {
 		}
 		builder.append("}");
 		return builder.toString();
+	}
+
+	/**
+	 * Get the created date as a {@link Date} instance.
+	 * 
+	 * @return the date
+	 */
+	public Date getCreatedDate() {
+		Instant ts = getCreated();
+		return (ts != null ? Date.from(ts) : null);
 	}
 
 	/**

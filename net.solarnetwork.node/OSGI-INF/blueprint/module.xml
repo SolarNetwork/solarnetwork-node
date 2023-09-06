@@ -614,5 +614,20 @@
 			<argument ref="settingsService"/>
 		</bean>
 	</service>
+	
+	<!-- 
+		Security Token Service
+	 -->
+	<service interface="net.solarnetwork.node.service.SecurityTokenService">
+		<bean class="net.solarnetwork.node.runtime.DefaultSecurityTokenService">
+			<argument>
+				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+					<argument ref="bundleContext"/>
+					<property name="serviceClassName" value="net.solarnetwork.node.dao.SecurityTokenDao"/>
+					<property name="sticky" value="true"/>
+				</bean>
+			</argument>
+		</bean>
+	</service>
 
 </blueprint>

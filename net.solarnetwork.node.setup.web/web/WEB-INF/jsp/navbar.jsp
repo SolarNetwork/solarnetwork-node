@@ -47,7 +47,7 @@
  		</ul>
 		<sec:authorize access="hasRole('ROLE_USER')">
 			<ul class="nav pull-right">
-				<li class="dropdown">
+				<li class="dropdown${navloc == 'sectoks' or navloc == 'user' ? ' active' : ''}">
 					<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
 						<span class="active-user-display">
 							<fmt:message key='nav.label.principal'>
@@ -57,6 +57,7 @@
 						<b class="caret"></b>
 					</a>
 					<ul class="dropdown-menu">
+						<li><a href="<setup:url value='/a/security-tokens'/>"><fmt:message key="link.sectoks"/></a></li>
 						<li><a href="<setup:url value='/a/user/change-password'/>"><fmt:message key="link.change-password"/></a></li>
 						<li><a href="<setup:url value='/a/user/change-username'/>"><fmt:message key="link.change-username"/></a></li>
 						<li><a class="logout" href="#"><fmt:message key='link.logout'/></a></li>

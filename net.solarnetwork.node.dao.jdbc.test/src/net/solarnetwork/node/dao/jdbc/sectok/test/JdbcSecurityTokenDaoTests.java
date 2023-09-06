@@ -27,6 +27,7 @@ import static java.util.UUID.randomUUID;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import java.io.IOException;
 import java.time.Instant;
@@ -173,6 +174,20 @@ public class JdbcSecurityTokenDaoTests extends AbstractNodeTest {
 			t.copySecret(s -> holder[0] = s);
 			return holder[0];
 		}).collect(Collectors.toList()), contains((String) null, null, null));
+	}
+
+	@Test
+	public void delete() {
+		// GIVEN
+		insert();
+
+		// WHEN
+		SecurityToken input = SecurityToken.tokenDetails(last.getId(), null, null);
+		dao.delete(input);
+
+		// THEN
+		Collection<SecurityToken> all = dao.getAll(null);
+		assertThat("Token deleted from table", all, hasSize(0));
 	}
 
 }
