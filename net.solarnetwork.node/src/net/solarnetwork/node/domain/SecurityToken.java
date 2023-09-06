@@ -144,6 +144,20 @@ public class SecurityToken extends BasicStringEntity {
 		dest.accept(tokenSecret);
 	}
 
+	@Override
+	public String toString() {
+		StringBuilder builder = new StringBuilder();
+		builder.append("SecurityToken{");
+		builder.append("id=");
+		builder.append(getId());
+		if ( name != null ) {
+			builder.append(", name=");
+			builder.append(name);
+		}
+		builder.append("}");
+		return builder.toString();
+	}
+
 	/**
 	 * Get the name.
 	 * 
