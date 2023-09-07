@@ -29,6 +29,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
+import java.util.UUID;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
@@ -101,6 +102,21 @@ public class DefaultSecurityTokenServiceTests {
 				is(equalTo(result.getValue())));
 
 		last = entity;
+	}
+
+	@Test
+	public void getToken() {
+		// GIVEN
+		final String tokenId = UUID.randomUUID().toString();
+		final SecurityToken token = SecurityToken.tokenDetails(tokenId, null, null);
+		expect(securityTokenDao.get(tokenId)).andReturn(token);
+
+		// WHEN
+		replayAll();
+		SecurityToken result = service.tokenForId(tokenId);
+
+		// THEN
+		assertThat("Token returned from DAO", result, is(sameInstance(token)));
 	}
 
 	@Test

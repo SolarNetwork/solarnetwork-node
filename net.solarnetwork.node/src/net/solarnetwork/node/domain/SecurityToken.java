@@ -26,6 +26,7 @@ import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.time.Instant;
 import java.util.Date;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import net.solarnetwork.dao.BasicStringEntity;
@@ -180,6 +181,19 @@ public class SecurityToken extends BasicStringEntity {
 	 */
 	public void copySecret(Consumer<String> dest) {
 		dest.accept(tokenSecret);
+	}
+
+	/**
+	 * Apply the secret to a function.
+	 * 
+	 * @param <T>
+	 *        the function return type
+	 * @param dest
+	 *        the function to apply
+	 * @return the function result
+	 */
+	public <T> T applySecret(Function<String, T> dest) {
+		return dest.apply(tokenSecret);
 	}
 
 	@Override

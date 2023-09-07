@@ -47,6 +47,15 @@ public interface SecurityTokenService {
 	Collection<SecurityToken> getAvailableTokens();
 
 	/**
+	 * Get a security token for a given ID.
+	 * 
+	 * @param tokenId
+	 *        the token ID
+	 * @return the token, or {@literal null} if not found
+	 */
+	SecurityToken tokenForId(String tokenId);
+
+	/**
 	 * Create a new token.
 	 * 
 	 * <p>

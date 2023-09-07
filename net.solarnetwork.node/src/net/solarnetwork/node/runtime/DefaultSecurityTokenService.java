@@ -106,6 +106,11 @@ public class DefaultSecurityTokenService extends BaseIdentifiable implements Sec
 	}
 
 	@Override
+	public SecurityToken tokenForId(String tokenId) {
+		return dao().get(requireNonNullArgument(tokenId, "tokenId"));
+	}
+
+	@Override
 	public KeyValuePair createToken(SecurityToken details) {
 		final SecurityTokenDao dao = dao();
 		final String tokenId = generateRandomToken(TOKEN_ID_LEN);
