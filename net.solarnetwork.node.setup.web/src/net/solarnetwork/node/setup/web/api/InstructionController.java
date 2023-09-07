@@ -39,6 +39,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import net.solarnetwork.domain.Instruction;
+import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.reactor.BasicInstruction;
 import net.solarnetwork.node.reactor.InstructionDao;
@@ -201,12 +202,13 @@ public class InstructionController {
 		return success(result.isEmpty() ? null : result);
 	}
 
-	private Instruction findOne(Long instructionId, String source) {
+	private net.solarnetwork.node.reactor.Instruction findOne(Long instructionId, String source) {
 		final InstructionDao dao = dao();
 		if ( source != null ) {
 			return dao.getInstruction(instructionId, source);
 		}
-		Instruction result = dao.getInstruction(instructionId, solarInSource());
+		net.solarnetwork.node.reactor.Instruction result = dao.getInstruction(instructionId,
+				solarInSource());
 		if ( result != null ) {
 			return result;
 		}
@@ -214,7 +216,7 @@ public class InstructionController {
 	}
 
 	private InstructionDao dao() {
-		InstructionDao dao = OptionalService.service(instructionDao);
+		InstructionDao dao = service(instructionDao);
 		if ( dao != null ) {
 			return dao;
 		}
@@ -223,6 +225,59 @@ public class InstructionController {
 
 	private String solarInSource() {
 		return identityService.getSolarInBaseUrl();
+	}
+
+	/**
+	 * Update the state of an existing instruction.
+	 * 
+	 * @param instructionId
+	 *        the ID of the instruction to update
+	 * @param source
+	 *        the optional instructor ID, or {@literal null} to look for SolarIn
+	 *        and local instructions
+	 * @param state
+	 *        the desired state
+	 * @return the response
+	 */
+	@PostMapping(value = "/updateState", params = "!ids")
+	public Result<Void> updateInstructionState(@RequestParam("id") Long instructionId,
+			@RequestParam(value = "source", required = false) String source,
+			@RequestParam("state") InstructionState state) {
+		doUpdateState(instructionId, source, state);
+		return success();
+	}
+
+	/**
+	 * Update the state of an existing instruction.
+	 * 
+	 * @param instructionIds
+	 *        the IDs of the instructions to update
+	 * @param source
+	 *        the optional instructor ID, or {@literal null} to look for SolarIn
+	 *        and local instructions
+	 * @param state
+	 *        the desired state
+	 * @return the response
+	 */
+	@PostMapping(value = "/updateState", params = "ids")
+	public Result<Void> updateInstructionStates(@RequestParam("ids") Set<Long> instructionIds,
+			@RequestParam(value = "source", required = false) String source,
+			@RequestParam("state") InstructionState state) {
+		for ( Long instructionId : instructionIds ) {
+			doUpdateState(instructionId, source, state);
+		}
+		return success();
+	}
+
+	private void doUpdateState(Long instructionId, String source, InstructionState state) {
+		final InstructionDao dao = dao();
+		final net.solarnetwork.node.reactor.Instruction instr = findOne(instructionId, source);
+		if ( instr == null ) {
+			return;
+		}
+		InstructionStatus status = InstructionUtils.createStatus(instr, state);
+		dao.compareAndStoreInstructionStatus(instr.getId(), instr.getInstructorId(),
+				instr.getInstructionState(), status);
 	}
 
 	/**
