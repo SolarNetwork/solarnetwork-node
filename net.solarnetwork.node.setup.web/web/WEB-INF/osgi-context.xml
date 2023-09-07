@@ -131,4 +131,10 @@
 		<property name="sticky" value="true"/>
 	</bean>
 	
+	<bean id="reactorService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<constructor-arg ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.reactor.ReactorService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 </beans>
