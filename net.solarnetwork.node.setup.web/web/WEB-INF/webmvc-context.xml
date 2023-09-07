@@ -46,9 +46,13 @@
 	</mvc:cors>
 
 	<bean id="loginKeyHelper" class="net.solarnetwork.node.setup.web.support.LoginKeyHelper"/>
+	
+	<bean id="webObjectMapperService" class="net.solarnetwork.node.setup.web.support.ObjectMapperCustomizer">
+		<constructor-arg ref="objectMapperService"/>
+	</bean>
 
 	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper"
-		factory-bean="objectMapperService" factory-method="getObjectMapper"/>
+		factory-bean="webObjectMapperService" factory-method="getObjectMapper"/>
 
 	<bean class="org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter" />
 

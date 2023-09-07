@@ -24,20 +24,29 @@ package net.solarnetwork.node.setup.web.api;
 
 import static net.solarnetwork.domain.Result.error;
 import static net.solarnetwork.domain.Result.success;
+import static net.solarnetwork.node.reactor.Instruction.LOCAL_INSTRUCTION_ID;
 import static net.solarnetwork.service.OptionalService.service;
+import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import javax.annotation.Resource;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import net.solarnetwork.domain.Instruction;
 import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.reactor.BasicInstruction;
+import net.solarnetwork.node.reactor.InstructionDao;
 import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.reactor.ReactorService;
+import net.solarnetwork.node.service.IdentityService;
 import net.solarnetwork.node.setup.web.support.GlobalExceptionRestController;
 import net.solarnetwork.service.OptionalService;
 
@@ -58,11 +67,20 @@ public class InstructionController {
 	@Resource(name = "reactorService")
 	private OptionalService<ReactorService> reactorService;
 
+	@Resource(name = "instructionDao")
+	private OptionalService<InstructionDao> instructionDao;
+
+	private final IdentityService identityService;
+
 	/**
 	 * Constructor.
+	 * 
+	 * @param identityService
+	 *        the identity service
 	 */
-	public InstructionController() {
+	public InstructionController(IdentityService identityService) {
 		super();
+		this.identityService = requireNonNullArgument(identityService, "identityService");
 	}
 
 	/**
@@ -145,6 +163,69 @@ public class InstructionController {
 	}
 
 	/**
+	 * View a single instruction, based on its primary key.
+	 * 
+	 * @param instructionId
+	 *        the ID of the instruction to view
+	 * @param source
+	 *        the optional instructor ID, or {@literal null} to look for SolarIn
+	 *        and local instructions
+	 * @return the instruction
+	 */
+	@GetMapping(value = "/view", params = "!ids")
+	public Result<Instruction> viewInstruction(@RequestParam("id") Long instructionId,
+			@RequestParam(value = "source", required = false) String source) {
+		return success(findOne(instructionId, source));
+	}
+
+	/**
+	 * View a set of instructions, based on their primary keys.
+	 * 
+	 * @param instructionIds
+	 *        the IDs of the instructions to view
+	 * @param source
+	 *        the optional instructor ID, or {@literal null} to look for SolarIn
+	 *        and local instructions
+	 * @return the instructions
+	 */
+	@GetMapping(value = "/view", params = "ids")
+	public Result<List<Instruction>> viewInstructions(@RequestParam("ids") Set<Long> instructionIds,
+			@RequestParam(value = "source", required = false) String source) {
+		List<Instruction> result = new ArrayList<>(instructionIds.size());
+		for ( Long id : instructionIds ) {
+			Instruction inst = findOne(id, source);
+			if ( inst != null ) {
+				result.add(inst);
+			}
+		}
+		return success(result.isEmpty() ? null : result);
+	}
+
+	private Instruction findOne(Long instructionId, String source) {
+		final InstructionDao dao = dao();
+		if ( source != null ) {
+			return dao.getInstruction(instructionId, source);
+		}
+		Instruction result = dao.getInstruction(instructionId, solarInSource());
+		if ( result != null ) {
+			return result;
+		}
+		return dao.getInstruction(instructionId, LOCAL_INSTRUCTION_ID);
+	}
+
+	private InstructionDao dao() {
+		InstructionDao dao = OptionalService.service(instructionDao);
+		if ( dao != null ) {
+			return dao;
+		}
+		throw new UnsupportedOperationException("Instruction DAO not available.");
+	}
+
+	private String solarInSource() {
+		return identityService.getSolarInBaseUrl();
+	}
+
+	/**
 	 * Set the instruction service.
 	 * 
 	 * @param instructionService
@@ -162,6 +243,16 @@ public class InstructionController {
 	 */
 	public void setReactorService(OptionalService<ReactorService> reactorService) {
 		this.reactorService = reactorService;
+	}
+
+	/**
+	 * Set the instruction DAO.
+	 * 
+	 * @param instructionDao
+	 *        the DAO to set
+	 */
+	public void setInstructionDao(OptionalService<InstructionDao> instructionDao) {
+		this.instructionDao = instructionDao;
 	}
 
 }
