@@ -31,7 +31,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import net.solarnetwork.domain.Instruction;
 import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.reactor.BasicInstruction;
@@ -39,6 +38,7 @@ import net.solarnetwork.node.reactor.InstructionExecutionService;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.reactor.ReactorService;
+import net.solarnetwork.node.setup.web.support.GlobalExceptionRestController;
 import net.solarnetwork.service.OptionalService;
 
 /**
@@ -48,7 +48,7 @@ import net.solarnetwork.service.OptionalService;
  * @version 1.0
  * @since 3.3
  */
-@RestController
+@GlobalExceptionRestController
 @RequestMapping("/api/v1/sec/instr")
 public class InstructionController {
 

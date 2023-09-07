@@ -27,10 +27,10 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
 import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.domain.SecurityActor;
 import net.solarnetwork.node.domain.SecurityToken;
+import net.solarnetwork.node.setup.web.support.GlobalExceptionRestController;
 import net.solarnetwork.web.domain.Response;
 
 /**
@@ -40,7 +40,7 @@ import net.solarnetwork.web.domain.Response;
  * @version 1.0
  * @since 3.3
  */
-@RestController
+@GlobalExceptionRestController
 @RequestMapping("/api/v1/sec")
 public class IdentityController {
 
