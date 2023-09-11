@@ -130,6 +130,7 @@ public class InstructionController {
 
 		BasicInstruction procInstr = new BasicInstruction(null, topic, localInstr.getInstructionDate(),
 				topic, localInstr.getStatus());
+		BasicInstruction.copyParameters(localInstr, procInstr);
 		return doHandleInstruction(procInstr);
 	}
 
