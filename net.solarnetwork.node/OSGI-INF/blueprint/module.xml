@@ -629,5 +629,27 @@
 			</argument>
 		</bean>
 	</service>
+	
+	<!-- 
+		Datum JSON ObjectCodec - designed for SolarFlux upload support
+	-->
+	<service>
+		<interfaces>
+			<value>net.solarnetwork.codec.ObjectCodec</value>
+			<value>net.solarnetwork.codec.ObjectEncoder</value>
+			<value>net.solarnetwork.codec.ObjectDecoder</value>
+		</interfaces>
+		<service-properties>
+			<entry key="function">
+				<list>
+					<value>node</value>
+					<value>datum</value>
+				</list>
+			</entry>
+			<entry key="objectType" value="java.util.Map"/>
+			<entry key="encoding" value="json"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.runtime.JsonDatumObjectCodec"/>
+	</service>
 
 </blueprint>
