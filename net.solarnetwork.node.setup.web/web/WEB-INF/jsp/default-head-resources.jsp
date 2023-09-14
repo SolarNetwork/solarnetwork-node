@@ -47,6 +47,7 @@
 	/js/logging.js
 	/js/opmodes.js
 	/js/cli-console.js
+	/js/sectoks.js
 </pack:script>
 <sec:authorize access="!hasRole('ROLE_USER')">
 	<setup:resources type="application/javascript"/>

@@ -33,7 +33,7 @@ import net.solarnetwork.domain.InstructionStatus.InstructionState;
  * Utilities for dealing with common Instruction patterns.
  * 
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.0
  */
 public final class InstructionUtils {
@@ -208,6 +208,19 @@ public final class InstructionUtils {
 			result.put(InstructionStatus.ERROR_CODE_RESULT_PARAM, code);
 		}
 		return result;
+	}
+
+	/**
+	 * Create a local instruction from another instruction.
+	 * 
+	 * @param instr
+	 *        the instruction
+	 * @return the new instruction with a local ID assigned
+	 * @since 1.2
+	 */
+	public static Instruction localInstructionFrom(net.solarnetwork.domain.Instruction instr) {
+		return new BasicInstruction(BasicInstruction.from(instr, Instruction.LOCAL_INSTRUCTION_ID),
+				localId(), null);
 	}
 
 }

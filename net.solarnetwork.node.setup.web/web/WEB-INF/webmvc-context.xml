@@ -21,21 +21,18 @@
 	<!-- Combine all /WEB-INF/**/messages.properties into a single message source. -->
 	<bean id="messageSource" class="net.solarnetwork.web.support.PatternMatchingResourceBundleMessagesSource"
 		p:cacheSeconds="-1" p:basename="WEB-INF/**/messages"/>
-	
+
 	<ctx:annotation-config/>
 	<ctx:component-scan base-package="net.solarnetwork.node.setup.web"/>
 
 	<mvc:annotation-driven>
 		<mvc:async-support default-timeout="30000" task-executor="taskExecutor"/>
 		<mvc:message-converters register-defaults="true">
-			<bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
-				<property name="prefixJson" value="false" />
-				<property name="supportedMediaTypes" value="application/json" />
-				<property name="objectMapper" ref="objectMapper"/>
-		    </bean>
+			<ref bean="mappingJackson2HttpMessageConverter"/>
+			<ref bean="simpleCsvHttpMessageConverter"/>
 		</mvc:message-converters>
 		<mvc:argument-resolvers>
-    		<bean class="org.springframework.security.web.method.annotation.CsrfTokenArgumentResolver"/>
+			<bean class="org.springframework.security.web.method.annotation.CsrfTokenArgumentResolver"/>
 		</mvc:argument-resolvers>
 	</mvc:annotation-driven>
 
@@ -47,27 +44,31 @@
 			allow-credentials="false"
 			max-age="86400"/>
 	</mvc:cors>
-	
+
 	<bean id="loginKeyHelper" class="net.solarnetwork.node.setup.web.support.LoginKeyHelper"/>
 	
-	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper" 
-		factory-bean="objectMapperService" factory-method="getObjectMapper"/>
-	
+	<bean id="webObjectMapperService" class="net.solarnetwork.node.setup.web.support.ObjectMapperCustomizer">
+		<constructor-arg ref="objectMapperService"/>
+	</bean>
+
+	<bean id="objectMapper" class="com.fasterxml.jackson.databind.ObjectMapper"
+		factory-bean="webObjectMapperService" factory-method="getObjectMapper"/>
+
 	<bean class="org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter" />
 
 	<!-- Dispatch view-only requests, e.g. login -->
 	<bean class="org.springframework.web.servlet.handler.SimpleUrlHandlerMapping">
 		<property name="order" value="2" />
-        <property name="mappings">
-            <props>
-                <prop key="/**/*.do">urlViewController</prop>
-            </props>
-        </property>
+		<property name="mappings">
+			<props>
+				<prop key="/**/*.do">urlViewController</prop>
+			</props>
+		</property>
 	</bean>
 
-    <bean id="urlViewController" class="org.springframework.web.servlet.mvc.UrlFilenameViewController"/>
-	
-	<!-- Resolves logical view names returned by Controllers to Tiles; 
+	<bean id="urlViewController" class="org.springframework.web.servlet.mvc.UrlFilenameViewController"/>
+
+	<!-- Resolves logical view names returned by Controllers to Tiles;
 		a view name to resolve is treated as the name of a tiles definition -->
 	<bean id="tilesViewResolver" class="org.springframework.web.servlet.view.UrlBasedViewResolver">
 		<property name="viewClass" value="org.springframework.web.servlet.view.tiles3.TilesView"/>
@@ -77,7 +78,7 @@
 	<bean id="beanNameViewResolver" class="org.springframework.web.servlet.view.BeanNameViewResolver">
 		<property name="order" value="2"/>
 	</bean>
-	
+
 	<!-- Configures the Tiles layout system -->
 	<bean id="tilesConfigurer" class="org.springframework.web.servlet.view.tiles3.TilesConfigurer">
 		<property name="definitions">
@@ -87,9 +88,35 @@
 			</list>
 		</property>
 	</bean>
-	
+
 	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
 		<property name="maxUploadSize" value="10000000"/>
 	</bean>
-	
+
+	<!-- Message converters defined at top-level to share between mvc:message-converters AND exceptionHandlerExceptionResolver -->
+	<bean id="mappingJackson2HttpMessageConverter" class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+		<property name="prefixJson" value="false" />
+		<property name="supportedMediaTypes" value="application/json" />
+		<property name="objectMapper" ref="objectMapper"/>
+	</bean>
+	<bean id="simpleCsvHttpMessageConverter" class="net.solarnetwork.web.support.SimpleCsvHttpMessageConverter">
+		<property name="propertySerializerRegistrar" ref="propertySerializerRegistrar"/>
+	</bean>
+
+	<!-- Explicit exception resolver so can refer to this in security-context.xml -->
+	<bean id="exceptionHandlerExceptionResolver"
+		class="org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver">
+		<property name="messageConverters">
+			<list>
+				<ref bean="mappingJackson2HttpMessageConverter"/>
+				<ref bean="simpleCsvHttpMessageConverter"/>
+				<bean class="org.springframework.http.converter.ByteArrayHttpMessageConverter"/>
+				<bean class="org.springframework.http.converter.StringHttpMessageConverter">
+					<property name="writeAcceptCharset" value="false"/>
+				</bean>
+				<bean class="org.springframework.http.converter.support.AllEncompassingFormHttpMessageConverter"/>
+			</list>
+		</property>
+	</bean>
+
 </beans>
