@@ -81,6 +81,14 @@ export DEBIAN_FRONTEND=noninteractive
 
 pkg_list_files () {
 	local pkg="$1"
+
+	# assume dpkg -c output lines look like:
+	#
+	# drwxr-xr-x 0/0               0 2019-05-20 18:33 ./usr/share/solarnode/bin/
+	# -rwxr-xr-x 0/0            2167 2019-05-20 18:29 ./usr/share/solarnode/bin/solarstat.sh
+	#
+	# We thus extract the 6th field, omitting paths that end in '/' and stripping the leading '.'
+	
 	dpkg -c "$pkg" |awk '$6 !~ "/$" {print substr($6,2)}'
 }
 
@@ -91,13 +99,6 @@ pkg_install_file () {
 		echo "Must provide path to package to install."  1>&2
 		exit 1
 	fi
-	
-	# assume dpkg -c output lines look like:
-	#
-	# drwxr-xr-x 0/0               0 2019-05-20 18:33 ./usr/share/solarnode/bin/
-	# -rwxr-xr-x 0/0            2167 2019-05-20 18:29 ./usr/share/solarnode/bin/solarstat.sh
-	#
-	# We thus extract the 6th field, omitting paths that end in '/' and stripping the leading '.'
 	
 	sudo dpkg -i --force-confdef --force-confold "$pkg" >/dev/null </dev/null \
 		&& pkg_list_files "$pkg"
