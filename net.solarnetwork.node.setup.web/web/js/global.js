@@ -89,7 +89,7 @@ var SolarNode = {
 			 if ( title ) {
 				 $('<strong/>').append(title).appendTo(alert);
 				 if ( message ) {
-					 $(' ').appendTo(alert);
+					 $('<span/>').append(' ').appendTo(alert);
 				 }
 			 }
 			 if ( message ) {

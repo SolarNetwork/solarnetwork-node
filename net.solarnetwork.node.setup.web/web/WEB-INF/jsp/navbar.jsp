@@ -4,17 +4,22 @@
 		<a class="brand" href="<setup:url value='/'/>">
 			<img src="<setup:url value='/img/logo-node.svg'/>" alt="<fmt:message key='app.name'/>" width="143" height="28"/>	
 		</a>
-		<ul class="nav">
-			<li ${navloc == 'home' ? 'class="active"' : ''}>
-				<sec:authorize access="!hasRole('ROLE_USER')">
-					<a href="<setup:url value='/hello'/>"><fmt:message key='link.home'/></a>
-				</sec:authorize>
-				<sec:authorize access="hasRole('ROLE_USER')">
-					<a href="<setup:url value='/a/home.do'/>"><fmt:message key='link.home'/></a>
-				</sec:authorize>
+		<sec:authorize access="isAuthenticated()" var="isLoggedIn"/>
+		<ul class="nav pull-right">
+			<li ${navloc == 'home' and isLoggedIn ? 'class="active"' : ''}>
+				<a href="<setup:url value='/a/home.do'/>">
+					<c:choose>
+						<c:when test="${isLoggedIn}">
+							<fmt:message key='link.home'/>
+						</c:when>
+						<c:otherwise>
+							<fmt:message key='link.login'/>
+						</c:otherwise>
+					</c:choose>
+				</a>
 			</li>
-			<li ${navloc == 'cert' ? 'class="active"' : ''}><a href="<setup:url value='/a/certs'/>"><fmt:message key='link.cert'/></a></li>
 			
+			<sec:authorize access="hasRole('ROLE_USER')">
 			<li class="dropdown${navloc == 'settings'
 					or navloc == 'settings-component'
 					or navloc == 'filters'
@@ -32,6 +37,18 @@
 				</ul>
 			</li>
 			
+			<li class="dropdown${navloc == 'cert' or navloc == 'plugins' or navloc == 'packages' ? ' active' : ''}">
+				<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+					<fmt:message key='link.system'/>
+					<b class="caret"></b>
+				</a>
+				<ul class="dropdown-menu">
+					<li ${navloc == 'cert' ? 'class="active"' : ''}><a href="<setup:url value='/a/certs'/>"><fmt:message key='link.cert'/></a></li>
+					<li ${navloc == 'packages' ? 'class="active"' : ''}><a id="link-packages" href="<setup:url value='/a/packages'/>"><fmt:message key='link.packages'/></a></li>
+					<li ${navloc == 'plugins' ? 'class="active"' : ''}><a id="link-plugins" href="<setup:url value='/a/plugins'/>"><fmt:message key='link.plugins'/></a></li>
+				</ul>
+			</li>
+			
 			<li class="dropdown${navloc == 'cli-console' or navloc == 'controls' ? ' active' : ''}">
 				<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
 					<fmt:message key='link.tools'/>
@@ -42,11 +59,6 @@
 					<li ${navloc == 'cli-console' ? 'class="active"' : ''}><a href="<setup:url value='/a/cli-console'/>"><fmt:message key='link.cli-console'/></a></li>
 				</ul>
 			</li>
-			
-			<li ${navloc == 'plugins' ? 'class="active"' : ''}><a id="link-plugins" href="<setup:url value='/a/plugins'/>"><fmt:message key='link.plugins'/></a></li>
- 		</ul>
-		<sec:authorize access="hasRole('ROLE_USER')">
-			<ul class="nav pull-right">
 				<li class="dropdown${navloc == 'sectoks' or navloc == 'user' ? ' active' : ''}">
 					<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
 						<span class="active-user-display">
@@ -69,7 +81,9 @@
 						</c:if>
 					</ul>
 				</li>
+			</sec:authorize>
 			</ul>
+		<sec:authorize access="hasRole('ROLE_USER')">
 			<form id="logout-form" method="post" action="<setup:url value='/logout'/>">
 				<sec:csrfInput/>
 			</form>

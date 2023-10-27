@@ -78,6 +78,12 @@
 		<property name="sticky" value="true"/>
 	</bean>
 	
+	<bean id="platformPackageService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<constructor-arg ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.PlatformPackageService"/>
+		<property name="sticky" value="false"/>
+	</bean>	
+	
 	<bean id="systemService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">		
 		<constructor-arg ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.SystemService"/>

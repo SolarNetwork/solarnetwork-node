@@ -42,6 +42,7 @@
 	/js/login.js
 	/js/settings.js
 	/js/new-node.js
+	/js/packages.js
 	/js/plugins.js
 	/js/datum-charts.js
 	/js/logging.js
