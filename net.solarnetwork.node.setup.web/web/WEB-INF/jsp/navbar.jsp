@@ -44,8 +44,16 @@
 				</a>
 				<ul class="dropdown-menu">
 					<li ${navloc == 'cert' ? 'class="active"' : ''}><a href="<setup:url value='/a/certs'/>"><fmt:message key='link.cert'/></a></li>
-					<li ${navloc == 'packages' ? 'class="active"' : ''}><a id="link-packages" href="<setup:url value='/a/packages'/>"><fmt:message key='link.packages'/></a></li>
+					<c:if test="${not empty platformPackageService}">
+						<li ${navloc == 'packages' ? 'class="active"' : ''}><a id="link-packages" href="<setup:url value='/a/packages'/>"><fmt:message key='link.packages'/></a></li>
+					</c:if>
 					<li ${navloc == 'plugins' ? 'class="active"' : ''}><a id="link-plugins" href="<setup:url value='/a/plugins'/>"><fmt:message key='link.plugins'/></a></li>
+					<c:if test="${not empty systemService}">
+						<li role="separator" class="divider"></li>
+						<li><a class="restart" href="#"><fmt:message key='link.restart'/></a></li>
+						<li role="separator" class="divider"></li>
+						<li><a class="reset" href="#"><fmt:message key='link.reset'/></a></li>
+					</c:if>
 				</ul>
 			</li>
 			
@@ -73,12 +81,6 @@
 						<li><a href="<setup:url value='/a/user/change-password'/>"><fmt:message key="link.change-password"/></a></li>
 						<li><a href="<setup:url value='/a/user/change-username'/>"><fmt:message key="link.change-username"/></a></li>
 						<li><a class="logout" href="#"><fmt:message key='link.logout'/></a></li>
-						<c:if test="${not empty systemService}">
-							<li role="separator" class="divider"></li>
-							<li><a class="restart" href="#"><fmt:message key='link.restart'/></a></li>
-							<li role="separator" class="divider"></li>
-							<li><a class="reset" href="#"><fmt:message key='link.reset'/></a></li>
-						</c:if>
 					</ul>
 				</li>
 			</sec:authorize>

@@ -22,10 +22,10 @@
 
 package net.solarnetwork.node.setup.web;
 
+import static net.solarnetwork.domain.Result.error;
 import static net.solarnetwork.domain.Result.success;
 import java.util.Collections;
 import java.util.Locale;
-import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import javax.annotation.Resource;
 import org.slf4j.Logger;
@@ -39,6 +39,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.service.PlatformPackageService;
 import net.solarnetwork.node.service.PlatformPackageService.PlatformPackage;
+import net.solarnetwork.node.service.PlatformPackageService.PlatformPackageResult;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.service.OptionalService;
 
@@ -59,12 +60,13 @@ public class PackageController {
 
 		private final Iterable<PlatformPackage> installedPackages;
 		private final Iterable<PlatformPackage> availablePackages;
+		private final Iterable<PlatformPackage> upgradablePackages;
 
 		/**
 		 * Constructor.
 		 */
 		public PackageDetails() {
-			this(Collections.emptyList(), Collections.emptyList());
+			this(Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
 		}
 
 		/**
@@ -74,30 +76,43 @@ public class PackageController {
 		 *        the installed packages
 		 * @param availablePackages
 		 *        the available packages
+		 * @param upgradablePackages
+		 *        the upgradable packages
 		 */
 		public PackageDetails(Iterable<PlatformPackage> installedPackages,
-				Iterable<PlatformPackage> availablePackages) {
+				Iterable<PlatformPackage> availablePackages,
+				Iterable<PlatformPackage> upgradablePackages) {
 			super();
 			this.availablePackages = availablePackages;
 			this.installedPackages = installedPackages;
+			this.upgradablePackages = upgradablePackages;
 		}
 
 		/**
-		 * Get the installed plugins.
+		 * Get the installed packages.
 		 * 
-		 * @return the installed plugins
+		 * @return the installed packages
 		 */
 		public Iterable<PlatformPackage> getInstalledPackages() {
 			return installedPackages;
 		}
 
 		/**
-		 * Get the available plugins.
+		 * Get the available packages.
 		 * 
-		 * @return the available plugins
+		 * @return the available packages
 		 */
 		public Iterable<PlatformPackage> getAvailablePackages() {
 			return availablePackages;
+		}
+
+		/**
+		 * Get the upgradable packages.
+		 * 
+		 * @return the upgradable packages
+		 */
+		public Iterable<PlatformPackage> getUpgradablePackages() {
+			return upgradablePackages;
 		}
 
 	}
@@ -127,34 +142,138 @@ public class PackageController {
 		return "packages/list";
 	}
 
+	private UnsupportedOperationException serviceNotAvailable(Locale locale) {
+		return new UnsupportedOperationException(messageSource.getMessage("packages.serviceNotAvailable",
+				null, "PlatformPackageService not available", locale));
+	}
+
 	/**
 	 * List plugins.
 	 * 
 	 * @param filter
-	 *        the filter
-	 * @param latestOnly
-	 *        {@literal true} to show only the latest version of all plugins
+	 *        an optional filter to filter packages by name
 	 * @param locale
-	 *        the locale
+	 *        the desired locale
 	 * @return the result
 	 */
 	@RequestMapping(value = "/list", method = RequestMethod.GET)
 	@ResponseBody
-	public Callable<Result<PackageDetails>> list(
-			@RequestParam(value = "filter", required = false) final String filter, final Locale locale) {
-		return () -> {
-			PlatformPackageService service = OptionalService.service(platformPackageService);
-			if ( service != null ) {
-				Future<Iterable<PlatformPackage>> avail = service.listNamedPackages(filter,
-						Boolean.FALSE);
-				Future<Iterable<PlatformPackage>> inst = service.listNamedPackages(filter, Boolean.TRUE);
-				return success(new PackageDetails(inst.get(), avail.get()));
+	public Result<PackageDetails> list(
+			@RequestParam(value = "filter", required = false) final String filter, Locale locale) {
+		PlatformPackageService service = OptionalService.service(platformPackageService);
+		if ( service != null ) {
+			Future<Iterable<PlatformPackage>> avail = service.listNamedPackages(filter, Boolean.FALSE);
+			Future<Iterable<PlatformPackage>> inst = service.listNamedPackages(filter, Boolean.TRUE);
+			Future<Iterable<PlatformPackage>> upgr = service.listUpgradableNamedPackages();
+			try {
+				return success(new PackageDetails(inst.get(), avail.get(), upgr.get()));
+			} catch ( Exception e ) {
+				Throwable t = e.getCause();
+				return error("WPC.0001", messageSource.getMessage("packages.list.exception",
+						new Object[] { t.getMessage() }, "Error listing packages: {0}", locale));
 			}
-			throw new UnsupportedOperationException("PlatformPackageService not available");
-		};
+		}
+		throw serviceNotAvailable(locale);
 	}
 
-	//private Function<T, R>
+	/**
+	 * List plugins.
+	 * 
+	 * @param filter
+	 *        an optional filter to filter packages by name
+	 * @param locale
+	 *        the desired locale
+	 * @return the result
+	 */
+	@RequestMapping(value = "/upgrade", method = RequestMethod.POST)
+	@ResponseBody
+	public Result<PlatformPackageResult<Void>> upgrade(Locale locale) {
+		PlatformPackageService service = OptionalService.service(platformPackageService);
+		if ( service != null ) {
+			Future<PlatformPackageResult<Void>> result = service
+					.upgradeNamedPackages((avoid, amountComplete) -> {
+						log.info("{}% complete upgrading packages", (int) (amountComplete * 100));
+					}, null);
+			try {
+				return success(result.get());
+			} catch ( Exception e ) {
+				Throwable t = e.getCause();
+				return error("WPC.0001", messageSource.getMessage("packages.upgrade.exception",
+						new Object[] { t.getMessage() }, "Error upgrading packages: {0}", locale));
+			}
+		}
+		throw serviceNotAvailable(locale);
+	}
+
+	/**
+	 * Install a package.
+	 * 
+	 * @param name
+	 *        the name of the package to install
+	 * @param locale
+	 *        the desired locale
+	 * @return the result
+	 */
+	@RequestMapping(value = "/install", method = RequestMethod.POST)
+	@ResponseBody
+	public Result<PlatformPackageResult<Void>> install(@RequestParam("name") String name,
+			Locale locale) {
+		if ( name == null || name.trim().isEmpty() ) {
+			throw new IllegalArgumentException("The name argument is required.");
+		}
+		PlatformPackageService service = OptionalService.service(platformPackageService);
+		if ( service != null ) {
+			Future<PlatformPackageResult<Void>> result = service.installNamedPackage(name, null, null,
+					(avoid, amountComplete) -> {
+						log.info("{}% complete installing package {}", (int) (amountComplete * 100),
+								name);
+					}, null);
+			try {
+				return success(result.get());
+			} catch ( Exception e ) {
+				Throwable t = e.getCause();
+				return error("WPC.0001",
+						messageSource.getMessage("package.install.exception",
+								new Object[] { name, t.getMessage() },
+								"Error installing package {0}: {1}", locale));
+			}
+		}
+		throw serviceNotAvailable(locale);
+	}
+
+	/**
+	 * Remove a package.
+	 * 
+	 * @param name
+	 *        the name of the package to install
+	 * @param locale
+	 *        the desired locale
+	 * @return the result
+	 */
+	@RequestMapping(value = "/remove", method = RequestMethod.POST)
+	@ResponseBody
+	public Result<PlatformPackageResult<Void>> remove(@RequestParam("name") String name, Locale locale) {
+		if ( name == null || name.trim().isEmpty() ) {
+			throw new IllegalArgumentException("The name argument is required.");
+		}
+		PlatformPackageService service = OptionalService.service(platformPackageService);
+		if ( service != null ) {
+			Future<PlatformPackageResult<Void>> result = service.removeNamedPackage(name,
+					(avoid, amountComplete) -> {
+						log.info("{}% complete removing package {}", (int) (amountComplete * 100), name);
+					}, null);
+			try {
+				return success(result.get());
+			} catch ( Exception e ) {
+				Throwable t = e.getCause();
+				return error("WPC.0001",
+						messageSource.getMessage("package.remove.exception",
+								new Object[] { name, t.getMessage() }, "Error removing package {0}: {1}",
+								locale));
+			}
+		}
+		throw serviceNotAvailable(locale);
+	}
 
 	/**
 	 * Set the message source.

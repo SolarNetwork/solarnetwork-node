@@ -81,7 +81,8 @@
 	<bean id="platformPackageService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 		<constructor-arg ref="bundleContext"/>
 		<property name="serviceClassName" value="net.solarnetwork.node.service.PlatformPackageService"/>
-		<property name="sticky" value="false"/>
+		<property name="sticky" value="true"/>
+		<property name="serviceFilter" value="(!(function=tar))"/>
 	</bean>	
 	
 	<bean id="systemService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">		

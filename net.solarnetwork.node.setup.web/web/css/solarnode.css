@@ -49,6 +49,14 @@ td dl {
 	text-align: right;
 }
 
+.row-list > .row {
+	cursor: pointer;
+}
+
+.row-list > .row:nth-of-type(even) {
+	background-color: #fafafa;
+}
+
 section.intro {
 	margin-bottom: 1rem;
 }
@@ -73,6 +81,11 @@ legend {
 	-moz-transition: opacity 0.2s ease-in-out 0.1s;
 	-ms-transition: opacity 0.2s ease-in-out 0.1s;
 	transition: opacity 0.2s ease-in-out 0.1s;
+}
+
+.hbox {
+	display: flex;
+	flex-direction: row;
 }
 
 legend .anchor {

@@ -16,11 +16,17 @@ $(document).ready(function packageManagement() {
 	/** @type Map<string, PlatformPackage> */
 	const available = new Map();
 	
+	/** @type Map<string, PlatformPackage> */
+	const upgradable = new Map();
+	
+		/** @type Map<string, string> */
+	const morePackagesTemplate = $('#more-packages').children();
+
 	if ( !$('#packages').length ) {
 		return;
 	}
 	
-	const installedSection = $('#package-installed');
+	const installedSection = $('#packages-installed');
 	const installedContainer = installedSection.find('.list-content');
 	const installedTemplate = installedSection.find('.row.template');
 	const installedFilter = $('#installedSearchFilter');
@@ -30,15 +36,44 @@ $(document).ready(function packageManagement() {
 	const availableTemplate = availableSection.find('.row.template');
 	const availableFilter = $('#availableSearchFilter');
 
+	const upgradableSection = $('#packages-upgradable');
+	const upgradableContainer = upgradableSection.find('.list-content');
+	const upgradableTemplate = upgradableSection.find('.row.template');
+
+	const removeModal = $('#package-remove-modal');
+	const installModal = $('#package-install-modal');
+	const upgradeModal = $('#packages-upgrade-modal');
+	
 	// A timer for keyup filter search
 	let installedFilterTimer = undefined;
 	
 	// A timer for keyup filter search
 	let availableFilterTimer = undefined;
-	
+		
 	function toggleLoading(on) {
-		$('.init').toggleClass('hide', !on);
-		$('.ready').toggleClass('hide', on);
+		$('.init').toggleClass('hidden', !on);
+		$('.ready').toggleClass('hidden', on);
+	}
+	
+	/**
+	 * Toggle the visibility of before/after and success/error elements.
+	 * 
+	 * @param {jQuery} container - the element to operate on
+	 * @param {boolean} before - true if before, false if after
+	 * @param {boolean} [success] - if provided and before is false, toggle success/error elements
+	 */
+	function toggleBeforeAfter(container, before, success) {
+		container.find('.before').toggleClass('hidden', !before);
+		container.find('.after').toggleClass('hidden', before);
+		if ( !before && success !== undefined ) {
+			container.find('.success').toggleClass('hidden', !success);
+			container.find('.error').toggleClass('hidden', success);
+		}
+	}
+	
+	function populatePackageTemplateProperties(container, p) {
+		container.find('[data-tprop=name]').text(p.name);
+		container.find('[data-tprop=version]').text(p.version);
 	}
 	
 	/**
@@ -46,18 +81,21 @@ $(document).ready(function packageManagement() {
 	 * 
 	 * @param {PlatformPackage} p - the package to render
 	 * @param {jQuery} template - the template
-	 * @param {jQuery} container - the destination container
+	 * @param {jQuery} [container] - the destination container, or undefined to just test filter
 	 * @param {string} [filter] - optional filter
+	 * @returns {boolean} true if the package was rendered, false if filtered out
 	 */
 	function renderPackage(p, template, container, filter) {
 		if (!!filter && !p.lcName.includes(filter)) {
-			return;
+			return false;
 		}
-		const row = template.clone(true).removeClass('template');
-		row.data('item', p);
-		row.find('[data-tprop=name]').text(p.name);
-		row.find('[data-tprop=version]').text(p.version);
-		container.append(row);
+		if ( container ) {
+			const row = template.clone(true).removeClass('template');
+			row.data('item', p);
+			populatePackageTemplateProperties(row, p);
+			container.append(row);
+		}
+		return true;
 	}
 	
 	/**
@@ -66,45 +104,186 @@ $(document).ready(function packageManagement() {
 	 * @param {jQuery} template - the template
 	 * @param {jQuery} container - the destination container
 	 * @param {string} [filter] - optional filter
-	 * @param {Map<string, PlatformPackage>} data - all possible packages
+	 * @param {Iterable<PlatformPackage>} packages - all possible packages
+	 * @param {Map<string, PlatformPackage} mapping - map of package name to associated package
 	 */
-	function renderPackages(template, container, filter, data) {
+	function renderPackages(template, container, filter, packages, mapping) {
 		container.empty();
-		const c = $('<div>');
-		for ( const p of data.values() ) {
-			renderPackage(p, template, c, filter);
+		const c = $('<div class="row-list">');
+		const max = 250;
+		let shownCount = 0;
+		let matchCount = 0;
+		for ( const p of packages ) {
+			if ( mapping ) {
+				p.lcName = p.name.toLowerCase();
+				mapping.set(p.name, p);
+			}
+			if (renderPackage(p, template, shownCount < max ? c : undefined, filter)) {
+				matchCount += 1;
+				if ( shownCount < max ) {
+					shownCount += 1;
+				}
+			}
+		}
+		if ( shownCount === max && matchCount > max ) {
+			const more = morePackagesTemplate.clone(true);
+			more.find('.count').text(matchCount - shownCount);
+			c.append(more);
 		}
 		container.append(c);
 	}
 	
-	/** INIT */
+	function reRenderPackages() {
+		renderPackages(installedTemplate, installedContainer, installedFilter.val().toLowerCase(), installed.values());
+		renderPackages(availableTemplate, availableContainer, availableFilter.val().toLowerCase(), available.values());
+		renderPackages(upgradableTemplate, upgradableContainer, undefined, upgradable.values());
+	}
 	
-	$.getJSON(SolarNode.context.path('/a/packages/list'), function(data) {
-		$('.init').addClass('hide');
-		if ( data === undefined || data.success !== true || data.data === undefined ) {
-			// TODO: l10n
-			SolarNode.warn('Error!', 'An error occured loading package information.');
+	function handlePackageClick(event) {
+		event.preventDefault();
+		const btn = $(event.target);
+		const item = btn.closest('.row').data('item');
+		const name = item ? item.name : undefined;
+		if ( !name ) {
 			return;
 		}
-		if ( Array.isArray(data.data.installedPackages) ) {
-			const c = $('<div>');
-			for ( const p of data.data.installedPackages ) {
-				p.lcName = p.name.toLowerCase();
+		console.debug('Click on package %s', item.name);
+		const modal = installedContainer.has(btn).length ? removeModal : installModal;
+		modal.data('item', item);
+		modal.modal('show');
+	}
+	
+	/** Install package modal. */
+	installModal.ajaxForm({
+		dataType: 'json',
+		beforeSubmit: function() {
+			SolarNode.showLoading(installModal.find('button[type=submit]'));
+			return true;
+		},
+		success: function(json) {
+			SolarNode.hideLoading(installModal.find('button[type=submit]'));
+			if ( json && json.success === true && json.data && json.data.success ) {
+				toggleBeforeAfter(installModal, false, true);
+				const p = installModal.data('item');
+				p.installed = true;
+				available.delete(p.name);
+				if ( upgradable.has(p.name) ) {
+					upgradable.delete(p.name);
+					if ( upgradable.size < 1 ) {
+						upgradableSection.addClass('hidden');
+					}
+				}
 				installed.set(p.name, p);
-				renderPackage(p, installedTemplate, c, installedFilter.val().toLowerCase());
+				setTimeout(reRenderPackages, 50);
+			} else {
+				const msg = json.data && json.data.message ? json.data.message : json.message;
+				installModal.find('.error-message').text(msg);
+				toggleBeforeAfter(installModal, false, false);
 			}
-			installedContainer.append(c);
+		},
+		error: function(xhr) {
+			const msg = SolarNode.extractResponseErrorMessage(xhr);
+			installModal.find('.error-message').text(msg);
+			toggleBeforeAfter(installModal, false, false);
+			SolarNode.hideLoading(installModal.find('button[type=submit]'));
 		}
-		if ( Array.isArray(data.data.availablePackages) ) {
-			const c = $('<div>');
-			for ( const p of data.data.availablePackages ) {
-				p.lcName = p.name.toLowerCase();
-				available.set(p.name, p);
-				renderPackage(p, availableTemplate, c, availableFilter.val().toLowerCase());
+	})
+	.on('show', function() {
+		const p = installModal.data('item');
+		populatePackageTemplateProperties(installModal.find('.modal-body'), p);
+		installModal.find('input[name=name]').val(p.name);
+	})
+	.on('hidden', function() {
+		toggleBeforeAfter(installModal, true);
+		this.reset();
+	});
+	
+	/** Remove package modal. */
+	removeModal.ajaxForm({
+		dataType: 'json',
+		beforeSubmit: function() {
+			SolarNode.showLoading(removeModal.find('button[type=submit]'));
+			return true;
+		},
+		success: function(json) {
+			if ( json && json.success === true && json.data && json.data.success ) {
+				toggleBeforeAfter(removeModal, false, true);
+				const p = removeModal.data('item');
+				p.installed = false;
+				installed.delete(p.name);
+				if ( upgradable.has(p.name) ) {
+					available.set(p.name, upgradable.get(p.name));
+					upgradable.delete(p.name);
+					if ( upgradable.size < 1 ) {
+						upgradableSection.addClass('hidden');
+					}
+				} else {
+					available.set(p.name, p);
+				}
+				setTimeout(reRenderPackages, 50);
+			} else {
+				const msg = json.data && json.data.message ? json.data.message : json.message;
+				removeModal.find('.error-message').text(msg);
+				toggleBeforeAfter(removeModal, false, false);
 			}
-			availableContainer.append(c);
+			SolarNode.hideLoading(removeModal.find('button[type=submit]'));
+		},
+		error: function(xhr) {
+			const msg = SolarNode.extractResponseErrorMessage(xhr);
+			removeModal.find('.error-message').text(msg);
+			toggleBeforeAfter(removeModal, false, false);
+			SolarNode.hideLoading(removeModal.find('button[type=submit]'));
 		}
-		toggleLoading(false);
+	})
+	.on('show', function() {
+		const p = removeModal.data('item');
+		populatePackageTemplateProperties(removeModal.find('.modal-body'), p);
+		removeModal.find('input[name=name]').val(p.name);
+	})
+	.on('hidden', function() {
+		toggleBeforeAfter(removeModal, true);
+		this.reset();
+	});
+	
+	/** Upgrade all package modal. */
+	upgradeModal.ajaxForm({
+		dataType: 'json',
+		beforeSubmit: function() {
+			SolarNode.showLoading(upgradeModal.find('button[type=submit]'));
+			return true;
+		},
+		success: function(json) {
+			if ( json && json.success === true && json.data && json.data.success ) {
+				toggleBeforeAfter(upgradeModal, false, true);
+				for ( const [n, p] of upgradable ) {
+					installed.set(n, p);
+				}
+				upgradable.clear();
+				upgradableSection.addClass('hidden');
+				setTimeout(reRenderPackages, 50);
+			} else {
+				const msg = json.data && json.data.message ? json.data.message : json.message;
+				upgradeModal.find('.error-message').text(msg);
+				toggleBeforeAfter(upgradeModal, false, false);
+			}
+			SolarNode.hideLoading(upgradeModal.find('button[type=submit]'));
+		},
+		error: function(xhr) {
+			const msg = SolarNode.extractResponseErrorMessage(xhr);
+			upgradeModal.find('.error-message').text(msg);
+			toggleBeforeAfter(upgradeModal, false, false);
+			SolarNode.hideLoading(upgradeModal.find('button[type=submit]'));
+		}
+	})
+	.on('hidden', function() {
+		toggleBeforeAfter(upgradeModal, true);
+		this.reset();
+	});
+	
+	$('form.packages button.restart').on('click', (event) => {
+		event.preventDefault();
+		$(event.target.form).modal('hide');
+		$('#restart-modal').modal('show');
 	});
 	
 	installedFilter.on('keyup', (event) => {
@@ -113,9 +292,11 @@ $(document).ready(function packageManagement() {
 		}
 		const filter = event.target.value;
 		installedFilterTimer = setTimeout(() => {
-			renderPackages(installedTemplate, installedContainer, filter.toLowerCase(), installed);
+			renderPackages(installedTemplate, installedContainer, filter.toLowerCase(), installed.values());
 		}, 500);
 	});
+	
+	installedContainer.on('click', handlePackageClick);
 	
 	availableFilter.on('keyup', (event) => {
 		if (availableFilterTimer) {
@@ -123,7 +304,36 @@ $(document).ready(function packageManagement() {
 		}
 		const filter = event.target.value;
 		availableFilterTimer = setTimeout(() => {
-			renderPackages(availableTemplate, availableContainer, filter.toLowerCase(), available);
+			renderPackages(availableTemplate, availableContainer, filter.toLowerCase(), available.values());
 		}, 500);
+	});
+	
+	availableContainer.on('click', handlePackageClick);
+	
+	upgradableContainer.on('click', handlePackageClick);
+
+	/** Initialize data */
+	$.getJSON(SolarNode.context.path('/a/packages/list'), function(data) {
+		$('.init').addClass('hidden');
+		if ( data === undefined || data.success !== true || data.data === undefined ) {
+			SolarNode.warn('Error!', 'An error occured loading package information.');
+			return;
+		}
+		if ( Array.isArray(data.data.installedPackages) ) {
+			renderPackages(installedTemplate, installedContainer, installedFilter.val().toLowerCase(),
+					data.data.installedPackages, installed);
+		}
+		if ( Array.isArray(data.data.availablePackages) ) {
+			renderPackages(availableTemplate, availableContainer, availableFilter.val().toLowerCase(),
+					data.data.availablePackages, available);
+		}
+		if ( Array.isArray(data.data.upgradablePackages) ) {
+			renderPackages(upgradableTemplate, upgradableContainer, undefined,
+					data.data.upgradablePackages, upgradable);
+			if ( upgradable.size ) {
+				upgradableSection.removeClass('hidden');
+			}
+		}
+		toggleLoading(false);
 	});
 });
