@@ -5,19 +5,19 @@ Bundle-SymbolicName: net.solarnetwork.node
 Automatic-Module-Name: net.solarnetwork.node
 Bundle-Description: The core of the SolarNode framework that provides basic 
  infrastructure for all of the SolarNode application.
-Bundle-Version: 3.3.0
+Bundle-Version: 3.5.0
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: 
  net.solarnetwork.node;version="2.0.0",
  net.solarnetwork.node.backup;version="2.0.0",
- net.solarnetwork.node.dao;version="2.1.0",
- net.solarnetwork.node.domain;version="2.2.0",
+ net.solarnetwork.node.dao;version="2.2.0",
+ net.solarnetwork.node.domain;version="2.3.0",
  net.solarnetwork.node.domain.datum;version="1.2.0",
  net.solarnetwork.node.job;version="2.0.2",
- net.solarnetwork.node.reactor;version="2.3.0",
- net.solarnetwork.node.service;version="1.6.0",
- net.solarnetwork.node.service.support;version="1.3.2",
+ net.solarnetwork.node.reactor;version="2.4.0",
+ net.solarnetwork.node.service;version="1.8.0",
+ net.solarnetwork.node.service.support;version="1.4.0",
  net.solarnetwork.node.settings;version="2.4.0",
  net.solarnetwork.node.settings.support;version="2.0.0",
  net.solarnetwork.node.setup;version="1.13.0"
@@ -38,6 +38,7 @@ Import-Package:
  javax.xml.xpath,
  net.solarnetwork.codec;version="[2.0,3.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
+ net.solarnetwork.dao;version="[2.1,3.0)",
  net.solarnetwork.domain;version="[2.0,3.0)",
  net.solarnetwork.domain.datum;version="[2.6,3.0)",
  net.solarnetwork.io;version="[2.2.0,3.0)",
@@ -78,6 +79,10 @@ Import-Package:
  org.springframework.scheduling;version="[5.3,6.0)",
  org.springframework.scheduling.concurrent;version="[5.3,6.0)",
  org.springframework.scheduling.support;version="[5.3,6.0)",
+ org.springframework.security.core;version="[5.8,6.0)",
+ org.springframework.security.core.authority;version="[5.8,6.0)",
+ org.springframework.security.core.context;version="[5.8,6.0)",
+ org.springframework.security.core.userdetails;version="[5.8,6.0)",
  org.springframework.transaction;version="[5.3,6.0)",
  org.springframework.transaction.support;version="[5.3,6.0)",
  org.springframework.util;version="[5.3,6.0)",

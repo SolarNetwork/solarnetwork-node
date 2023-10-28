@@ -33,14 +33,14 @@ import java.util.Map.Entry;
  * Basic implementation of {@link Instruction}.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 		implements Instruction, Serializable {
 
 	private static final long serialVersionUID = 3391977559465548659L;
 
-	/** The instrucctor ID. */
+	/** The instructor ID. */
 	private final String instructorId;
 
 	/**
@@ -59,13 +59,29 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 		}
 		BasicInstruction result = new BasicInstruction(instr.getId(), instr.getTopic(),
 				instr.getInstructionDate(), instructorId, null);
+		copyParameters(instr, result);
+		return result;
+	}
+
+	/**
+	 * Copy the parameters from one instruction to another.
+	 * 
+	 * @param instr
+	 *        the input instruction to copy from
+	 * @param dest
+	 *        the destination instruction to copy to
+	 * @since 2.1
+	 */
+	public static void copyParameters(net.solarnetwork.domain.Instruction instr, BasicInstruction dest) {
+		if ( instr == null || dest == null ) {
+			return;
+		}
 		for ( String paramName : instr.getParameterNames() ) {
 			String[] paramValues = instr.getAllParameterValues(paramName);
 			if ( paramValues != null ) {
-				result.putParameters(paramName, Arrays.asList(paramValues));
+				dest.putParameters(paramName, Arrays.asList(paramValues));
 			}
 		}
-		return result;
 	}
 
 	/**

@@ -1,4 +1,4 @@
-var SolarNode = {
+const SolarNode = {
 	
 	/**
 	 * Namespace for classes. 
@@ -89,7 +89,7 @@ var SolarNode = {
 			 if ( title ) {
 				 $('<strong/>').append(title).appendTo(alert);
 				 if ( message ) {
-					 $(' ').appendTo(alert);
+					 $('<span/>').append(' ').appendTo(alert);
 				 }
 			 }
 			 if ( message ) {
@@ -302,11 +302,11 @@ SolarNode.isAuthenticated = function() {
 }
 
 SolarNode.showLoading = function(button) {
-	SolarNode.showSpinner(button, true);
+	return SolarNode.showSpinner(button, true);
 };
 
 SolarNode.hideLoading = function(button) {
-	SolarNode.hideSpinner(button, true);
+	return SolarNode.hideSpinner(button, true);
 };
 
 SolarNode.showSpinner = function(button, showLoading) {
@@ -319,6 +319,7 @@ SolarNode.showSpinner = function(button, showLoading) {
 		button.data('ladda', ladda);
 		ladda.start();
 	}
+	return button;
 };
 
 SolarNode.hideSpinner = function(button, hideLoading) {
@@ -330,6 +331,7 @@ SolarNode.hideSpinner = function(button, hideLoading) {
 		ladda.stop();
 		button.removeData('ladda');
 	}
+	return button;
 };
 
 /**
@@ -359,6 +361,26 @@ SolarNode.extractJSONPath = function(root, path) {
 		return child;
 	}
 	return SolarNode.extractJSONPath(child, path.slice(1));
+};
+
+/**
+ * Extract an error message from an XHR response.
+ * 
+ * @param {jqXHR} xhr - the jQuery XHR
+ * @returns {string} the message
+ */
+SolarNode.extractResponseErrorMessage = function(xhr) {
+	let msg = '';
+	try {
+		const json = $.parseJSON(xhr.responseText);
+		msg = json.message;
+	} catch (e) {
+		// ignore continue
+	}
+	if ( !msg ) {
+		msg = 'Server error: ' +xhr.status;
+	}
+	return msg;
 };
 
 SolarNode.tryGotoURL = function(destURL) {

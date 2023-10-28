@@ -42,11 +42,13 @@
 	/js/login.js
 	/js/settings.js
 	/js/new-node.js
+	/js/packages.js
 	/js/plugins.js
 	/js/datum-charts.js
 	/js/logging.js
 	/js/opmodes.js
 	/js/cli-console.js
+	/js/sectoks.js
 </pack:script>
 <sec:authorize access="!hasRole('ROLE_USER')">
 	<setup:resources type="application/javascript"/>

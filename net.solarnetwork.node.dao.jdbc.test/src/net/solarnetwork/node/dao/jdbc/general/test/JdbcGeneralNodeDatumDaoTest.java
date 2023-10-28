@@ -63,7 +63,7 @@ import net.solarnetwork.service.StaticOptionalService;
  * Test cases for the {@link JdbcGeneralNodeDatumDao} class.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
@@ -369,8 +369,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
 		String jdata = jdbcTemplate.queryForObject(
 				"select jdata from solarnode.sn_general_node_datum where created = ? and source_id = ?",
-				new Object[] { Timestamp.from(datum.getTimestamp()), datum.getSourceId() },
-				String.class);
+				String.class, Timestamp.from(datum.getTimestamp()), datum.getSourceId());
 		assertThat("jdata", jdata,
 				equalTo("{\"i\":{\"watts\":231},\"a\":{\"watt_hours\":4123},\"t\":[\"foo\"]}"));
 
@@ -403,8 +402,7 @@ public class JdbcGeneralNodeDatumDaoTest extends AbstractNodeTransactionalTest {
 
 		String jdata = jdbcTemplate.queryForObject(
 				"select jdata from solarnode.sn_general_node_datum where created = ? and source_id = ?",
-				new Object[] { Timestamp.from(datum.getTimestamp()), datum.getSourceId() },
-				String.class);
+				String.class, Timestamp.from(datum.getTimestamp()), datum.getSourceId());
 		assertThat("jdata", jdata, equalTo("{\"i\":{\"watts\":231},\"a\":{\"watt_hours\":4123}}"));
 
 		List<NodeDatum> local = dao.getDatumNotUploaded("test");

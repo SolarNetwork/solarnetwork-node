@@ -37,7 +37,7 @@ import net.solarnetwork.service.ProgressListener;
  * </p>
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 1.68
  */
 public interface PlatformPackageService {
@@ -161,6 +161,14 @@ public interface PlatformPackageService {
 	 * @return the matching packages, never {@literal null}
 	 */
 	Future<Iterable<PlatformPackage>> listNamedPackages(String nameFilter, Boolean installedFilter);
+
+	/**
+	 * List upgradable named packages.
+	 * 
+	 * @return the upgradable packages, never {@literal null}
+	 * @since 2.1
+	 */
+	Future<Iterable<PlatformPackage>> listUpgradableNamedPackages();
 
 	/**
 	 * Refresh named packages.

@@ -45,7 +45,7 @@ import net.solarnetwork.service.ProgressListener;
  * native {@code tar} program.
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public class NativeTarPlatformPackageService extends BasePlatformPackageService {
@@ -174,6 +174,13 @@ public class NativeTarPlatformPackageService extends BasePlatformPackageService 
 	@Override
 	public Future<Iterable<PlatformPackage>> listNamedPackages(String nameFilter,
 			Boolean installedFilter) {
+		CompletableFuture<Iterable<PlatformPackage>> f = new CompletableFuture<>();
+		f.complete(Collections.emptyList());
+		return f;
+	}
+
+	@Override
+	public Future<Iterable<PlatformPackage>> listUpgradableNamedPackages() {
 		CompletableFuture<Iterable<PlatformPackage>> f = new CompletableFuture<>();
 		f.complete(Collections.emptyList());
 		return f;

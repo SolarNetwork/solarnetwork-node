@@ -28,4 +28,18 @@
 		<property name="keepAliveSeconds" value="120"/>
 	</bean>
 	
+	<bean id="propertySerializerRegistrar" class="net.solarnetwork.codec.PropertySerializerRegistrar">
+		<property name="classSerializers">
+			<map>
+				<entry key="sun.util.calendar.ZoneInfo">
+					<bean class="net.solarnetwork.codec.TimeZonePropertySerializer"/>
+				</entry>
+				
+				<entry key="org.springframework.validation.BeanPropertyBindingResult">
+					<bean class="net.solarnetwork.codec.BindingResultSerializer"/>
+				</entry>
+			</map>
+		</property>
+	</bean>
+
 </beans>

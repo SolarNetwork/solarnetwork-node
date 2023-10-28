@@ -31,6 +31,8 @@
 		<beans:prop key="JdbcGeneralNodeDatumDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/general/derby-generalnodedatum-init.sql</beans:prop>
 		<beans:prop key="JdbcGeneralNodeDatumDao.sqlResourcePrefix">derby-generalnodedatum</beans:prop>
 		<beans:prop key="JdbcSettingDao.sqlResourcePrefix">derby-settings</beans:prop>
+		<beans:prop key="JdbcSecurityTokenDao.initSqlResource">classpath:/net/solarnetwork/node/dao/jdbc/sectok/derby-sectok-init.sql</beans:prop>
+		<beans:prop key="JdbcSecurityTokenDao.sqlResourcePrefix">derby-sectok</beans:prop>
 		<beans:prop key="job.generalNodeDatumCleaner.cron">35 0 0/2 ? * *</beans:prop>
 		<beans:prop key="job.generalNodeDatumCleaner.uploadedTrimHours">4</beans:prop>
 		<beans:prop key="job.generalNodeDatumTrimmer.cron">35 0 1/2 ? * *</beans:prop>
@@ -95,6 +97,13 @@
 			<entry key="datumClassName" value="net.solarnetwork.node.domain.datum.NodeDatum" />
 			<entry key="mode" value="direct" />
 		</service-properties>
+	</service>
+
+	<service ref="securityTokenDao" ranking="1" depends-on="databaseSetup">
+		<interfaces>
+			<value>net.solarnetwork.node.dao.SecurityTokenDao</value>
+			<value>net.solarnetwork.node.dao.jdbc.JdbcDao</value>
+		</interfaces>
 	</service>
 
 	<!-- Supporting Services -->
@@ -167,6 +176,40 @@
 		<property name="basenames" value="net.solarnetwork.node.dao.jdbc.general.JOBS" />
 	</bean>
 	
+	<!-- Security Token DAO -->
+
+	<bean id="securityTokenDao"
+		class="net.solarnetwork.node.dao.jdbc.sectok.JdbcSecurityTokenDao"
+		init-method="init">
+		<property name="dataSource" ref="dataSource" />
+		<property name="eventAdmin" ref="eventAdmin" />
+		<property name="initSqlResource" value="${JdbcSecurityTokenDao.initSqlResource}" />
+		<property name="sqlResourcePrefix" value="${JdbcSecurityTokenDao.sqlResourcePrefix}" />
+	</bean>
+	
+	<service interface="net.solarnetwork.node.backup.BackupResourceProvider">
+		<bean class="net.solarnetwork.node.dao.jdbc.JdbcTableBackupResourceProvider">
+			<argument value="net.solarnetwork.node.dao.jdbc.sectok.JdbcSecurityTokenDao"/>
+			<argument ref="jdbcTemplate"/>
+			<argument>
+				<bean class="org.springframework.transaction.support.TransactionTemplate">
+					<argument ref="txManager"/>
+				</bean>
+			</argument>
+			<argument ref="taskExecutor"/>
+			<property name="tableNames">
+				<list>
+					<value>SOLARNODE.SN_SECTOK</value>
+				</list>
+			</property>
+			<property name="messageSource">
+				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+					<property name="basename" value="net.solarnetwork.node.dao.jdbc.sectok.JdbcTableBackupResourceProvider"/>
+				</bean>
+			</property>
+		</bean>
+	</service>
+
 	<!-- General Node Datum -->
 
 	<bean id="generalNodeDatumDao"
@@ -224,11 +267,7 @@
 
 	<service interface="net.solarnetwork.node.backup.BackupResourceProvider">
 		<bean class="net.solarnetwork.node.dao.jdbc.JdbcTableBackupResourceProvider">
-			<argument>
-				<bean class="org.springframework.jdbc.core.JdbcTemplate">
-					<property name="dataSource" ref="dataSource"/>
-				</bean>
-			</argument>
+			<argument ref="jdbcTemplate"/>
 			<argument>
 				<bean class="org.springframework.transaction.support.TransactionTemplate">
 					<argument ref="txManager"/>

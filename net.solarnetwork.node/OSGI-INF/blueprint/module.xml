@@ -263,6 +263,9 @@
 
 	<!-- Platform package service -->
 	<service interface="net.solarnetwork.node.service.PlatformPackageService">
+		<service-properties>
+			<entry key="function" value="tar"/>
+		</service-properties>
 		<bean class="net.solarnetwork.node.service.support.NativeTarPlatformPackageService">
 			<property name="taskExecutor">
 				<bean class="net.solarnetwork.service.StaticOptionalService">
@@ -613,6 +616,43 @@
 		<bean class="net.solarnetwork.node.runtime.SimpleNodeSettingsService">
 			<argument ref="settingsService"/>
 		</bean>
+	</service>
+	
+	<!-- 
+		Security Token Service
+	 -->
+	<service interface="net.solarnetwork.node.service.SecurityTokenService">
+		<bean class="net.solarnetwork.node.runtime.DefaultSecurityTokenService">
+			<argument>
+				<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+					<argument ref="bundleContext"/>
+					<property name="serviceClassName" value="net.solarnetwork.node.dao.SecurityTokenDao"/>
+					<property name="sticky" value="true"/>
+				</bean>
+			</argument>
+		</bean>
+	</service>
+	
+	<!-- 
+		Datum JSON ObjectCodec - designed for SolarFlux upload support
+	-->
+	<service>
+		<interfaces>
+			<value>net.solarnetwork.codec.ObjectCodec</value>
+			<value>net.solarnetwork.codec.ObjectEncoder</value>
+			<value>net.solarnetwork.codec.ObjectDecoder</value>
+		</interfaces>
+		<service-properties>
+			<entry key="function">
+				<list>
+					<value>node</value>
+					<value>datum</value>
+				</list>
+			</entry>
+			<entry key="objectType" value="java.util.Map"/>
+			<entry key="encoding" value="json"/>
+		</service-properties>
+		<bean class="net.solarnetwork.node.runtime.JsonDatumObjectCodec"/>
 	</service>
 
 </blueprint>

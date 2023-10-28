@@ -22,11 +22,13 @@
 
 package net.solarnetwork.node.setup.web;
 
+import static net.solarnetwork.service.OptionalService.service;
 import javax.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import net.solarnetwork.node.service.IdentityService;
+import net.solarnetwork.node.service.PlatformPackageService;
 import net.solarnetwork.node.service.SystemService;
 import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.service.OptionalService;
@@ -35,7 +37,7 @@ import net.solarnetwork.service.OptionalService;
  * Add global services to all MVC controllers.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 1.23
  */
 @ControllerAdvice(annotations = { ServiceAwareController.class })
@@ -47,8 +49,18 @@ public class ControllerServiceSupport {
 	/** The model attribute name for the {@code IdentityService}. */
 	public static final String IDENTITY_SERVICE_ATTRIBUTE = "identityService";
 
+	/**
+	 * The model attribute name for the {@code PlatformPackageService}.
+	 * 
+	 * @since 2.1
+	 */
+	public static final String PLATFORM_PACKAGE_SERVICE_ATTRIBUTE = "platformPackageService";
+
 	@Resource(name = "systemService")
 	private OptionalService<SystemService> systemService;
+
+	@Resource(name = "platformPackageService")
+	private OptionalService<PlatformPackageService> platformPackageService;
 
 	@Autowired
 	private IdentityService identityService;
@@ -67,19 +79,29 @@ public class ControllerServiceSupport {
 	 */
 	@ModelAttribute(value = SYSTEM_SERVICE_ATTRIBUTE)
 	public SystemService systemService() {
-		final SystemService sysService = (systemService != null ? systemService.service() : null);
-		return sysService;
+		return service(systemService);
 	}
 
 	/**
 	 * The {@link IdentityService}.
 	 * 
-	 * @return the identity service
+	 * @return the service
 	 * @since 1.1
 	 */
 	@ModelAttribute(value = IDENTITY_SERVICE_ATTRIBUTE)
 	public IdentityService identityService() {
 		return identityService;
+	}
+
+	/**
+	 * The {@link PlatformPackageService}.
+	 * 
+	 * @return the service
+	 * @since 2.1
+	 */
+	@ModelAttribute(value = PLATFORM_PACKAGE_SERVICE_ATTRIBUTE)
+	public PlatformPackageService platformPackageService() {
+		return service(platformPackageService);
 	}
 
 }
