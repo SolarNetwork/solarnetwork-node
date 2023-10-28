@@ -44,6 +44,8 @@ $(document).ready(function packageManagement() {
 	const installModal = $('#package-install-modal');
 	const upgradeModal = $('#packages-upgrade-modal');
 	
+	const refreshButton = $('#packages-refresh');
+	
 	// A timer for keyup filter search
 	let installedFilterTimer = undefined;
 	
@@ -153,6 +155,41 @@ $(document).ready(function packageManagement() {
 		modal.modal('show');
 	}
 	
+	/**
+	 * Handle a package list response.
+	 * 
+	 * @param {Object} data - the response
+	 * @param {boolean} data.success - true if the request was processed
+	 * @param {Object} [data.data] - the package data object
+	 * @param {Array<PlatformPackage>} [data.data.installedPackages] - the installed package list
+	 * @param {Array<PlatformPackage>} [data.data.availablePackages] - the available package list
+	 * @param {Array<PlatformPackage>} [data.data.upgradablePackages] - the upgradable package list
+	 */
+	function handlePackageListResponse(data) {
+		if ( data === undefined || data.success !== true || data.data === undefined ) {
+			SolarNode.warn('Error!', 'An error occured loading package information.');
+			return;
+		}
+		installed.clear();
+		available.clear();
+		upgradable.clear();
+		if ( Array.isArray(data.data.installedPackages) ) {
+			renderPackages(installedTemplate, installedContainer, installedFilter.val().toLowerCase(),
+					data.data.installedPackages, installed);
+		}
+		if ( Array.isArray(data.data.availablePackages) ) {
+			renderPackages(availableTemplate, availableContainer, availableFilter.val().toLowerCase(),
+					data.data.availablePackages, available);
+		}
+		if ( Array.isArray(data.data.upgradablePackages) ) {
+			renderPackages(upgradableTemplate, upgradableContainer, undefined,
+					data.data.upgradablePackages, upgradable);
+			if ( upgradable.size ) {
+				upgradableSection.removeClass('hidden');
+			}
+		}
+	}
+
 	/** Install package modal. */
 	installModal.ajaxForm({
 		dataType: 'json',
@@ -311,29 +348,22 @@ $(document).ready(function packageManagement() {
 	availableContainer.on('click', handlePackageClick);
 	
 	upgradableContainer.on('click', handlePackageClick);
-
-	/** Initialize data */
-	$.getJSON(SolarNode.context.path('/a/packages/list'), function(data) {
+	
+	// Refresh package list
+	refreshButton.on('click', () => {
+		SolarNode.showLoading(refreshButton);
+		$.getJSON(SolarNode.context.path('/a/packages/refresh'), (data) => {
+			handlePackageListResponse(data);
+		}).always(() => {
+			SolarNode.hideLoading(refreshButton);
+		});
+	});
+	
+	// Initialize package list
+	$.getJSON(SolarNode.context.path('/a/packages/list'), (data) => {
 		$('.init').addClass('hidden');
-		if ( data === undefined || data.success !== true || data.data === undefined ) {
-			SolarNode.warn('Error!', 'An error occured loading package information.');
-			return;
-		}
-		if ( Array.isArray(data.data.installedPackages) ) {
-			renderPackages(installedTemplate, installedContainer, installedFilter.val().toLowerCase(),
-					data.data.installedPackages, installed);
-		}
-		if ( Array.isArray(data.data.availablePackages) ) {
-			renderPackages(availableTemplate, availableContainer, availableFilter.val().toLowerCase(),
-					data.data.availablePackages, available);
-		}
-		if ( Array.isArray(data.data.upgradablePackages) ) {
-			renderPackages(upgradableTemplate, upgradableContainer, undefined,
-					data.data.upgradablePackages, upgradable);
-			if ( upgradable.size ) {
-				upgradableSection.removeClass('hidden');
-			}
-		}
+		handlePackageListResponse(data);
+	}).always(() => {
 		toggleLoading(false);
 	});
 });

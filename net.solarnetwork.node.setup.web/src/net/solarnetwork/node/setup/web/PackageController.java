@@ -54,7 +54,7 @@ import net.solarnetwork.service.OptionalService;
 public class PackageController {
 
 	/**
-	 * Plugin details.
+	 * Package details.
 	 */
 	public static class PackageDetails {
 
@@ -148,7 +148,31 @@ public class PackageController {
 	}
 
 	/**
-	 * List plugins.
+	 * Refresh available packages.
+	 * 
+	 * @param locale
+	 *        the desired locale
+	 * @return the result
+	 */
+	@RequestMapping(value = "/refresh", method = RequestMethod.GET)
+	@ResponseBody
+	public Result<PackageDetails> refreshAvailablePackages(Locale locale) {
+		PlatformPackageService service = OptionalService.service(platformPackageService);
+		if ( service != null ) {
+			try {
+				service.refreshNamedPackages().get();
+			} catch ( Exception e ) {
+				Throwable t = e.getCause();
+				return error("WPC.0001", messageSource.getMessage("packages.refresh.exception",
+						new Object[] { t.getMessage() }, "Error refreshing packages: {0}", locale));
+			}
+			return list(null, locale);
+		}
+		throw serviceNotAvailable(locale);
+	}
+
+	/**
+	 * List packages.
 	 * 
 	 * @param filter
 	 *        an optional filter to filter packages by name
@@ -169,7 +193,7 @@ public class PackageController {
 				return success(new PackageDetails(inst.get(), avail.get(), upgr.get()));
 			} catch ( Exception e ) {
 				Throwable t = e.getCause();
-				return error("WPC.0001", messageSource.getMessage("packages.list.exception",
+				return error("WPC.0002", messageSource.getMessage("packages.list.exception",
 						new Object[] { t.getMessage() }, "Error listing packages: {0}", locale));
 			}
 		}
@@ -177,7 +201,7 @@ public class PackageController {
 	}
 
 	/**
-	 * List plugins.
+	 * Upgrade all packages.
 	 * 
 	 * @param locale
 	 *        the desired locale
@@ -196,7 +220,7 @@ public class PackageController {
 				return success(result.get());
 			} catch ( Exception e ) {
 				Throwable t = e.getCause();
-				return error("WPC.0001", messageSource.getMessage("packages.upgrade.exception",
+				return error("WPC.0003", messageSource.getMessage("packages.upgrade.exception",
 						new Object[] { t.getMessage() }, "Error upgrading packages: {0}", locale));
 			}
 		}
@@ -230,7 +254,7 @@ public class PackageController {
 				return success(result.get());
 			} catch ( Exception e ) {
 				Throwable t = e.getCause();
-				return error("WPC.0001",
+				return error("WPC.0004",
 						messageSource.getMessage("package.install.exception",
 								new Object[] { name, t.getMessage() },
 								"Error installing package {0}: {1}", locale));
@@ -264,7 +288,7 @@ public class PackageController {
 				return success(result.get());
 			} catch ( Exception e ) {
 				Throwable t = e.getCause();
-				return error("WPC.0001",
+				return error("WPC.0005",
 						messageSource.getMessage("package.remove.exception",
 								new Object[] { name, t.getMessage() }, "Error removing package {0}: {1}",
 								locale));

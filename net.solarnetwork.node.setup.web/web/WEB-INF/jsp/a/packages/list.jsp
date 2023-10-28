@@ -5,6 +5,10 @@
 <fmt:message key="package.unremovable.message" var="msgUnremovable"/>
 
 <section class="intro clearfix">
+	<button id="packages-refresh" class="btn btn-primary ladda-button expand-right pull-right"
+		data-loading-text="<fmt:message key='packages.refreshing.message'/>">
+		<fmt:message key="packages.refresh.link"/>
+	</button>
 	<p><fmt:message key="packages.intro"/></p>
 </section>
 <div class="init">
