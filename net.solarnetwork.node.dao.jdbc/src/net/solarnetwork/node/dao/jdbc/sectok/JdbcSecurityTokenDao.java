@@ -73,7 +73,7 @@ public class JdbcSecurityTokenDao extends BaseJdbcGenericDao<SecurityToken, Stri
 		ps.setObject(3, obj.getId());
 	}
 
-	protected void setUpdateStatementValues(SecurityToken obj, PreparedStatement ps, int offset)
+	private void setUpdateStatementValues(SecurityToken obj, PreparedStatement ps, int offset)
 			throws SQLException {
 		ps.setString(1 + offset, obj.getName());
 		ps.setString(2 + offset, obj.getDescription());
