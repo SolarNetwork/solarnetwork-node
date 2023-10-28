@@ -44,7 +44,6 @@ import net.solarnetwork.node.reactor.Instruction;
  * serializes the same as {@code parameters}. This class thus uses
  * {@code parameters} to maintain compatibility with SolarUser.
  * </p>
- * </p>
  * 
  * @author matt
  * @version 1.0

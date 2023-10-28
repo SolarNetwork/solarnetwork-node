@@ -51,6 +51,8 @@ public class IdentityController {
 	 * This is a convenient way to verify the credentials of a user.
 	 * </p>
 	 * 
+	 * @param principal
+	 *        the user principal
 	 * @return a response that details who the authenticated caller is
 	 */
 	@GetMapping("/whoami")

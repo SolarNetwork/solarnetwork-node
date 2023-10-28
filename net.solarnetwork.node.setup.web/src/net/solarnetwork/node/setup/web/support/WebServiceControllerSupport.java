@@ -304,7 +304,7 @@ public final class WebServiceControllerSupport {
 	}
 
 	/**
-	 * Handle a general {@Link DateTimeException}.
+	 * Handle a general {@link DateTimeException}.
 	 * 
 	 * @param e
 	 *        the exception
@@ -355,6 +355,8 @@ public final class WebServiceControllerSupport {
 	 *        the request
 	 * @param locale
 	 *        the locale
+	 * @param servletRequest
+	 *        the servlet request
 	 * @return an error response object
 	 */
 	@ExceptionHandler(DataIntegrityViolationException.class)
@@ -483,6 +485,8 @@ public final class WebServiceControllerSupport {
 	 *        the exception
 	 * @param request
 	 *        the request
+	 * @param locale
+	 *        the locale
 	 * @return an error response object
 	 */
 	@ExceptionHandler(ConstraintViolationException.class)

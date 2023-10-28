@@ -179,8 +179,6 @@ public class PackageController {
 	/**
 	 * List plugins.
 	 * 
-	 * @param filter
-	 *        an optional filter to filter packages by name
 	 * @param locale
 	 *        the desired locale
 	 * @return the result
