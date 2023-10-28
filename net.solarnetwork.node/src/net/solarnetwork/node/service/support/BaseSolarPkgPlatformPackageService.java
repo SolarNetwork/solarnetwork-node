@@ -88,6 +88,10 @@ import net.solarnetwork.service.ProgressListener;
  * matching this name (including wildcards) will be listed. The output is a CSV
  * table of columns: <code>name, version, installed</code>. The
  * <code>installed</code> column contains ({@literal true} in all cases.</dd>
+ * <dt><code>list-upgradable</code></dt>
+ * <dd>List upgradable packages. The output is a CSV table of columns:
+ * <code>name, version, installed</code>. The <code>installed</code> column
+ * contains ({@literal false} in all cases.</dd>
  * <dt><code>refresh</code></dt>
  * <dd>Refresh the available packages from remote repositories.</dd>
  * <dt><code>remove</code> <i>name</i></dt>
@@ -98,7 +102,7 @@ import net.solarnetwork.service.ProgressListener;
  * </dl>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.0
  */
 public abstract class BaseSolarPkgPlatformPackageService extends BasePlatformPackageService {
@@ -133,6 +137,9 @@ public abstract class BaseSolarPkgPlatformPackageService extends BasePlatformPac
 
 		/** List installed packages. */
 		ListInstalled("list-installed"),
+
+		/** List upgradable packages. */
+		ListUpgradable("list-upgradable"),
 
 		/** Refresh local package cache. */
 		Refresh("refresh"),
@@ -314,6 +321,30 @@ public abstract class BaseSolarPkgPlatformPackageService extends BasePlatformPac
 				Action action = installedFilter == null ? Action.List
 						: installedFilter == true ? Action.ListInstalled : Action.ListAvailable;
 				List<String> cmd = pkgCommand(action, nameFilter);
+				List<String> csv = executeCommand(cmd);
+				if ( csv == null || csv.isEmpty() ) {
+					return Collections.emptyList();
+				}
+				List<PlatformPackage> results = new ArrayList<>(csv.size());
+				for ( String row : csv ) {
+					String[] cols = StringUtils.commaDelimitedListToStringArray(row);
+					if ( cols != null && cols.length > 2 ) {
+						results.add(new BasicPlatformPackage(cols[0], cols[1], parseBoolean(cols[2])));
+					}
+				}
+				return results;
+			}
+		};
+		return performTask(task);
+	}
+
+	@Override
+	public Future<Iterable<PlatformPackage>> listUpgradableNamedPackages() {
+		Callable<Iterable<PlatformPackage>> task = new Callable<Iterable<PlatformPackage>>() {
+
+			@Override
+			public Iterable<PlatformPackage> call() throws Exception {
+				List<String> cmd = pkgCommand(Action.ListUpgradable);
 				List<String> csv = executeCommand(cmd);
 				if ( csv == null || csv.isEmpty() ) {
 					return Collections.emptyList();

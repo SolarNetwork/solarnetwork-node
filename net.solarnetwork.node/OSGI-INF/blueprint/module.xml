@@ -263,6 +263,9 @@
 
 	<!-- Platform package service -->
 	<service interface="net.solarnetwork.node.service.PlatformPackageService">
+		<service-properties>
+			<entry key="function" value="tar"/>
+		</service-properties>
 		<bean class="net.solarnetwork.node.service.support.NativeTarPlatformPackageService">
 			<property name="taskExecutor">
 				<bean class="net.solarnetwork.service.StaticOptionalService">
