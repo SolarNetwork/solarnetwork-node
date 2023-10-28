@@ -122,7 +122,7 @@ public class DefaultSecurityTokenService extends BaseIdentifiable implements Sec
 		return new KeyValuePair(tokenId, tokenSecret);
 	}
 
-	public String generateRandomToken(final int length) {
+	private String generateRandomToken(final int length) {
 		char[] data = new char[length];
 		for ( int i = 0; i < length; i++ ) {
 			data[i] = TOKEN_ALPHABET[rng.nextInt(TOKEN_ALPHABET.length)];

@@ -30,8 +30,8 @@ import net.solarnetwork.node.domain.SecurityToken;
  * 
  * <p>
  * Note that a token's ID and secret are immutable once created, and the
- * {@link #save(SecurityToken)} method can only update a token's other
- * properties like name and description.
+ * {@link GenericDao#save(net.solarnetwork.dao.Entity)} method can only update a
+ * token's other properties like name and description.
  * </p>
  * 
  * @author matt

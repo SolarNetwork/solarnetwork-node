@@ -32,7 +32,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 
 /**
- * {@link SecurityUser} implementation for authenticated tokens.
+ * {@link SecurityActor} implementation for authenticated tokens.
  * 
  * @author matt
  * @version 1.0
@@ -42,6 +42,7 @@ public class AuthenticatedToken extends User implements SecurityActor {
 
 	private static final long serialVersionUID = -3282529010625928648L;
 
+	/** The token. */
 	private final SecurityToken token;
 
 	/**
