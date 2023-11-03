@@ -199,8 +199,8 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 	private static Map<String, String> defaultXpathMap() {
 		Map<String, String> result = new LinkedHashMap<String, String>(10);
 		result.put("outputPower", "//OutputPower");
-		result.put("voltage", "//OutputVoltage");
-		result.put("DCVoltage", "//InputVoltage");
+		result.put("outputVoltage", "//OutputVoltage");
+		result.put("inputVoltage", "//InputVoltage");
 		result.put("energyLifetime", "//EnergyLifetime");
 		return result;
 	}
