@@ -424,10 +424,21 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 		this.sample = datum;
 	}
 
+	/**
+	 * Get the first available URL.
+	 * 
+	 * @return the first URL
+	 */
 	public String getUrl() {
 		return (urls == null || urls.length < 1 ? null : urls[0]);
 	}
 
+	/**
+	 * Set the first URL.
+	 * 
+	 * @param url
+	 *        the URL
+	 */
 	public void setUrl(String url) {
 		if ( urls == null || urls.length < 1 ) {
 			urls = new String[] { url };
@@ -436,6 +447,11 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 		}
 	}
 
+	/**
+	 * Get the URLs.
+	 * 
+	 * @return the URLs
+	 */
 	public String[] getUrls() {
 		return urls;
 	}
@@ -471,6 +487,11 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 		setUrls(set.toArray(new String[set.size()]));
 	}
 
+	/**
+	 * Get the XPath mapping.
+	 * 
+	 * @return the mapping
+	 */
 	public Map<String, XPathExpression> getXpathMapping() {
 		return xpathMapping;
 	}
@@ -512,6 +533,12 @@ public class EnaSolarXMLDatumDataSource extends DatumDataSourceSupport
 		validationCache.clear();
 	}
 
+	/**
+	 * Set the sample cache, in milliseconds.
+	 * 
+	 * @param sampleCacheMs
+	 *        the cache milliseconds
+	 */
 	public void setSampleCacheMs(long sampleCacheMs) {
 		this.sampleCacheMs = sampleCacheMs;
 	}

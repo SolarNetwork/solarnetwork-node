@@ -44,6 +44,7 @@ public class EnaSolarPowerDatum extends SimpleAcDcEnergyDatum {
 
 	private static final Logger log = LoggerFactory.getLogger(EnaSolarPowerDatum.class);
 
+	/** The daily resetting total mode toggle. */
 	private boolean usingDailyResettingTotal = false;
 
 	/**
