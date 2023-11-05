@@ -359,11 +359,11 @@ public class TempestUdpDatumDataSourceTests {
 		assertThat("Battery populated",
 				d.asSampleOperations().getSampleFloat(Instantaneous, "batteryVoltage"),
 				is(equalTo(3.46f)));
-		assertThat("Interval", d.asSampleOperations().getSampleInteger(Status, "interval"),
-				is(equalTo(1)));
+		assertThat("Interval populated as seconds",
+				d.asSampleOperations().getSampleInteger(Instantaneous, "duration"), is(equalTo(60)));
 		assertThat("Expected properties populated", d.asSimpleMap().keySet(),
 				containsInAnyOrder("_DatumType", "_DatumTypes", "created", "sourceId", "atm", "temp",
-						"humidity", "strikes", "avgStrikeDistance", "batteryVoltage", "interval"));
+						"humidity", "strikes", "avgStrikeDistance", "batteryVoltage", "duration"));
 	}
 
 	@Test
@@ -406,8 +406,8 @@ public class TempestUdpDatumDataSourceTests {
 		assertThat("Battery populated",
 				d.asSampleOperations().getSampleFloat(Instantaneous, "batteryVoltage"),
 				is(equalTo(3.12f)));
-		assertThat("Interval populated", d.asSampleOperations().getSampleInteger(Status, "interval"),
-				is(equalTo(1)));
+		assertThat("Interval populated as seconds",
+				d.asSampleOperations().getSampleInteger(Instantaneous, "duration"), is(equalTo(60)));
 		assertThat("Irradiance populated",
 				d.asSampleOperations().getSampleInteger(Instantaneous, "irradiance"), is(equalTo(130)));
 		assertThat("Day rain populated",
@@ -415,11 +415,11 @@ public class TempestUdpDatumDataSourceTests {
 		assertThat("Precip type populated",
 				d.asSampleOperations().getSampleInteger(Status, "precipType"), is(equalTo(1)));
 		assertThat("Wind sample interval populated",
-				d.asSampleOperations().getSampleInteger(Status, "windInterval"), is(equalTo(3)));
+				d.asSampleOperations().getSampleInteger(Instantaneous, "windDuration"), is(equalTo(3)));
 		assertThat("Expected properties populated", d.asSimpleMap().keySet(),
 				containsInAnyOrder("_DatumType", "_DatumTypes", "created", "sourceId", "lux", "uvIndex",
 						"rain", "wspeed_lull", "wspeed", "wspeed_gust", "wdir", "batteryVoltage",
-						"interval", "irradiance", "rain_day", "precipType", "windInterval"));
+						"duration", "irradiance", "rain_day", "precipType", "windDuration"));
 	}
 
 	@Test
@@ -455,7 +455,7 @@ public class TempestUdpDatumDataSourceTests {
 		assertThat("Wind direction populated",
 				d.asSampleOperations().getSampleInteger(Instantaneous, "wdir"), is(equalTo(144)));
 		assertThat("Wind sample interval populated",
-				d.asSampleOperations().getSampleInteger(Status, "windInterval"), is(equalTo(6)));
+				d.asSampleOperations().getSampleInteger(Instantaneous, "windDuration"), is(equalTo(6)));
 
 		assertThat("Air pressure populated as pascals",
 				d.asSampleOperations().getSampleInteger(Instantaneous, "atm"), is(equalTo(101757)));
@@ -484,13 +484,13 @@ public class TempestUdpDatumDataSourceTests {
 		assertThat("Battery populated",
 				d.asSampleOperations().getSampleFloat(Instantaneous, "batteryVoltage"),
 				is(equalTo(2.41f)));
-		assertThat("Interval populated", d.asSampleOperations().getSampleInteger(Status, "interval"),
-				is(equalTo(1)));
+		assertThat("Interval populated as seconds",
+				d.asSampleOperations().getSampleInteger(Instantaneous, "duration"), is(equalTo(60)));
 		assertThat("Expected properties populated", d.asSimpleMap().keySet(),
 				containsInAnyOrder("_DatumType", "_DatumTypes", "created", "sourceId", "wspeed_lull",
 						"wspeed", "wspeed_gust", "wdir", "atm", "temp", "humidity", "lux", "uvIndex",
 						"irradiance", "rain", "avgStrikeDistance", "strikes", "batteryVoltage",
-						"windInterval", "precipType", "interval"));
+						"windDuration", "precipType", "duration"));
 	}
 
 }

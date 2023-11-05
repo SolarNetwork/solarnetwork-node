@@ -1,8 +1,8 @@
 # SolarNode WeatherFlow Tempest Datum Source
 
-This project provides SolarNode plugin that collects atmospheric data from
+This project provides a SolarNode plugin that collects atmospheric data from
 [WeatherFlow Tempest][tempest] stations into datum streams, by listening for
-the status messages broadcast via UDP on the local network.
+the status messages broadcast by the station via UDP on the local network.
 
 <img alt="Tempest settings UI" src="docs/solarnode-tempest-settings@2x.png" width="740">
 
