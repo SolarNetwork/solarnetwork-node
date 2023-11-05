@@ -615,7 +615,7 @@ public class TempestUdpDatumDataSource extends DatumDataSourceSupport implements
 
 			el = array.path(7);
 			if ( el.isNumber() ) {
-				d.putSampleValue(Status, "interval", el.asInt());
+				d.putSampleValue(Instantaneous, "duration", el.asInt() * 60);
 			}
 
 			if ( !d.isEmpty() ) {
@@ -693,7 +693,7 @@ public class TempestUdpDatumDataSource extends DatumDataSourceSupport implements
 
 			el = array.path(9);
 			if ( el.isNumber() ) {
-				d.putSampleValue(Status, "interval", el.asInt());
+				d.putSampleValue(Instantaneous, "duration", el.asInt() * 60);
 			}
 
 			el = array.path(10);
@@ -713,7 +713,7 @@ public class TempestUdpDatumDataSource extends DatumDataSourceSupport implements
 
 			el = array.path(13);
 			if ( el.canConvertToInt() ) {
-				d.putSampleValue(Status, "windInterval", el.asInt());
+				d.putSampleValue(Instantaneous, "windDuration", el.asInt());
 			}
 
 			if ( !d.isEmpty() ) {
@@ -771,7 +771,7 @@ public class TempestUdpDatumDataSource extends DatumDataSourceSupport implements
 
 			el = array.path(5);
 			if ( el.canConvertToInt() ) {
-				d.putSampleValue(Status, "windInterval", el.asInt());
+				d.putSampleValue(Instantaneous, "windDuration", el.asInt());
 			}
 
 			el = array.path(6);
@@ -838,7 +838,7 @@ public class TempestUdpDatumDataSource extends DatumDataSourceSupport implements
 
 			el = array.path(17);
 			if ( el.isNumber() ) {
-				d.putSampleValue(Status, "interval", el.asInt());
+				d.putSampleValue(Instantaneous, "duration", el.asInt() * 60);
 			}
 			if ( !d.isEmpty() ) {
 				offerDatum(d);
