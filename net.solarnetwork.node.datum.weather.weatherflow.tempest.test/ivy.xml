@@ -1,0 +1,16 @@
+<ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven">
+    <info organisation="net.solarnetwork.node.test" module="${bundle.name}">
+    	<extends organisation="net.solarnetwork.node"
+    		module="${bundle.name}" revision="[1.0,2)"
+    		location="../${test.bundle.name}/ivy.xml"/>
+    </info>
+	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(runtime)">
+		<!-- Testing -->
+		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[1.16,)"/>
+
+		<!-- Testing support -->
+		<dependency org="javax.servlet" name="javax.servlet-api" rev="3.1.0" />
+		<exclude module="commons-logging"/>
+		<exclude module="com.springsource.slf4j.api"/>
+    </dependencies>
+</ivy-module>
