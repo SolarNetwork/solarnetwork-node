@@ -48,6 +48,7 @@ import net.solarnetwork.service.OptionalService;
  * 
  * @author matt
  * @version 1.0
+ * @since 3.4
  */
 @ServiceAwareController
 @RequestMapping("/a/packages")
@@ -267,7 +268,7 @@ public class PackageController {
 	 * Remove a package.
 	 * 
 	 * @param name
-	 *        the name of the package to install
+	 *        the name of the package to remove
 	 * @param locale
 	 *        the desired locale
 	 * @return the result

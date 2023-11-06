@@ -22,12 +22,15 @@
 
 package net.solarnetwork.node.service;
 
+import java.net.InetAddress;
+import org.springframework.util.MultiValueMap;
+
 /**
  * API for node system services, such as restarting, rebooting, or making system
  * configuration changes.
  * 
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 1.47
  */
 public interface SystemService {
@@ -92,5 +95,31 @@ public interface SystemService {
 	 * @since 1.2
 	 */
 	void reset(boolean applicationOnly);
+
+	/**
+	 * Get the available host aliases.
+	 * 
+	 * @return the host aliases, never {@literal null}
+	 * @since 1.3
+	 */
+	MultiValueMap<InetAddress, String> hostAliases();
+
+	/**
+	 * Add a host alias.
+	 * 
+	 * @param alias
+	 *        the hostname to add
+	 * @param address
+	 *        the host address
+	 */
+	void addHostAlias(String alias, InetAddress address);
+
+	/**
+	 * Remove a host alias.
+	 * 
+	 * @param alias
+	 *        the alias to remove
+	 */
+	void removeHostAlias(String alias);
 
 }
