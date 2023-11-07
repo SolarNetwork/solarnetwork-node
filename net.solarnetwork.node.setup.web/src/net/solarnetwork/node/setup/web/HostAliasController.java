@@ -133,7 +133,7 @@ public class HostAliasController {
 		}
 
 		SystemService service = systemService(locale);
-		// TODO: service.addHostAlias(name, addr);
+		service.addHostAlias(name, addr);
 
 		return success(new KeyValuePair(name, addr.getHostAddress()));
 	}
@@ -154,7 +154,7 @@ public class HostAliasController {
 			throw new IllegalArgumentException("The name argument is required.");
 		}
 		SystemService service = systemService(locale);
-		// TODO: service.removeHostAlias(name);
+		service.removeHostAlias(name);
 		return success();
 	}
 }
