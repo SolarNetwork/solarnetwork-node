@@ -195,6 +195,9 @@ public class TempestUdpDatumDataSource extends DatumDataSourceSupport implements
 			startupFuture = null;
 		}
 		stop();
+		if ( sourceId == null || sourceId.isEmpty() ) {
+			return;
+		}
 		final TaskScheduler scheduler = getTaskScheduler();
 		if ( scheduler != null ) {
 			log.info("Starting Tempest UDP listener for source [{}] in {}s", sourceId,
