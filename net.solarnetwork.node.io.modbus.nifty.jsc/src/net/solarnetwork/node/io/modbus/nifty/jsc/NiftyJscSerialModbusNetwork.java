@@ -24,7 +24,9 @@ package net.solarnetwork.node.io.modbus.nifty.jsc;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import io.netty.channel.EventLoopGroup;
+import io.netty.util.concurrent.Future;
 import net.solarnetwork.io.modbus.ModbusClient;
 import net.solarnetwork.io.modbus.rtu.jsc.JscSerialPortProvider;
 import net.solarnetwork.io.modbus.rtu.netty.NettyRtuModbusClientConfig;
@@ -61,16 +63,48 @@ public class NiftyJscSerialModbusNetwork extends AbstractNiftyModbusNetwork<Nett
 
 	@Override
 	protected ModbusClient createController() {
-		@SuppressWarnings("deprecation")
 		EventLoopGroup g = getOrCreateEventLoopGroup(() -> {
-			return new io.netty.channel.oio.OioEventLoopGroup(getEventLoopGroupMaxThreadCount(),
-					NiftyJscSerialModbusNetwork.this);
+			return new InternalEventLoopGroup();
 		});
 		RtuNettyModbusClient controller = new RtuNettyModbusClient(config, g,
 				new JscSerialPortProvider());
 		controller.setWireLogging(isWireLogging());
 		controller.setReplyTimeout(getReplyTimeout());
 		return controller;
+	}
+
+	@SuppressWarnings("deprecation")
+	private class InternalEventLoopGroup extends io.netty.channel.oio.OioEventLoopGroup {
+
+		private volatile boolean shutDown;
+
+		private InternalEventLoopGroup() {
+			super(getEventLoopGroupMaxThreadCount(), NiftyJscSerialModbusNetwork.this);
+		}
+
+		@Override
+		public Future<?> shutdownGracefully(long quietPeriod, long timeout, TimeUnit unit) {
+			shutDown = true;
+			return super.shutdownGracefully(quietPeriod, timeout, unit);
+		}
+
+		@Override
+		public void shutdown() {
+			shutDown = true;
+			super.shutdown();
+		}
+
+		@Override
+		public boolean isShuttingDown() {
+			return super.isShuttingDown() && shutDown;
+		}
+
+		@Override
+		public List<Runnable> shutdownNow() {
+			shutDown = true;
+			return super.shutdownNow();
+		}
+
 	}
 
 	// SettingSpecifierProvider
