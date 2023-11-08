@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: Modbus Communication Support - Serial (Nifty Modbus JSC)
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.nifty.jsc
-Bundle-Version: 2.1.0
+Bundle-Version: 2.1.1
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.nifty.jsc
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
