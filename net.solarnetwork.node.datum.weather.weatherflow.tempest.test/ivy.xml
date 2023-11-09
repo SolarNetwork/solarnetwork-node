@@ -9,7 +9,6 @@
 		<dependency org="net.solarnetwork.node.test" name="net.solarnetwork.node.test" rev="[1.16,)"/>
 
 		<!-- Testing support -->
-		<dependency org="javax.servlet" name="javax.servlet-api" rev="3.1.0" />
 		<exclude module="commons-logging"/>
 		<exclude module="com.springsource.slf4j.api"/>
     </dependencies>
