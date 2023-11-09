@@ -30,17 +30,17 @@ along with a unique suffix. They also share some general properties, including:
 
 | Property | Classification | Units | Notes |
 |:---------|:---------------|:------|:------|
-| `watts`             | Instantaneous | W | |
+| `watts`             | Instantaneous | W   | |
 | `reactivePower`     | Instantaneous | VAR | |
-| `apparentPower`     | Instantaneous | VA | |
-| `frequency`         | Instantaneous | Hz | |
-| `wattHours`         | Accumulating  | Wh | |
-| `wattHoursReverse`  | Accumulating  | Wh | |
-| `voltage`           | Instantaneous | V | |
-| `current`           | Instantaneous | A | |
-| `current_a`         | Instantaneous | A | |
-| `current_b`         | Instantaneous | A | |
-| `current_c`         | Instantaneous | A | |
+| `apparentPower`     | Instantaneous | VA  | |
+| `frequency`         | Instantaneous | Hz  | |
+| `wattHours`         | Accumulating  | Wh  | |
+| `wattHoursReverse`  | Accumulating  | Wh  | |
+| `voltage`           | Instantaneous | V   | |
+| `current`           | Instantaneous | A   | |
+| `current_a`         | Instantaneous | A   | |
+| `current_b`         | Instantaneous | A   | |
+| `current_c`         | Instantaneous | A   | |
 
 
 ## Battery
@@ -50,7 +50,7 @@ to the general properties listed above, the following additional properties are 
 
 | Property | Classification | Units | Notes |
 |:---------|:---------------|:------|:------|
-| `soc`             | Instantaneous | % | Percentage from 0-100 |
+| `soc`               | Instantaneous | %  | Percentage from 0-100 |
 | `capacityWattHours` | Instantaneous | Wh | Nominal capacity. |
 | `availWattHours`    | Instantaneous | Wh | Nominal available energy. |
 | `gridConnected`     | Status        |    | `1` if connected to the grid, `0` otherwise. |
