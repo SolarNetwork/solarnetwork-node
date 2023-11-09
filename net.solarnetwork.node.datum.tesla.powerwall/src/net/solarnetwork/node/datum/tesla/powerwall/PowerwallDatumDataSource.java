@@ -142,7 +142,7 @@ public class PowerwallDatumDataSource extends DatumDataSourceSupport implements 
 	public Collection<NodeDatum> readMultipleDatum() {
 		final PowerwallOperations ops = this.ops;
 		if ( ops != null ) {
-			return ops.metersAggregates(sourceId);
+			return ops.datum(sourceId);
 		}
 		return Collections.emptyList();
 	}

@@ -58,6 +58,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.domain.AcPhase;
 import net.solarnetwork.domain.datum.DatumSamples;
+import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.domain.datum.EnergyStorageDatum;
 import net.solarnetwork.node.domain.datum.AcDcEnergyDatum;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleAcDcEnergyDatum;
@@ -175,6 +177,48 @@ public class PowerwallOperations implements Closeable {
 		return json;
 	}
 
+	public JsonNode systemStatus() {
+		URI uri = baseUri().path("/api/system_status").build().toUri();
+		JsonNode json = getJson(uri);
+		log.debug("Got system_status response: {}", json);
+		return json;
+	}
+
+	public JsonNode systemStatusSoe() {
+		URI uri = baseUri().path("/api/system_status/soe").build().toUri();
+		JsonNode json = getJson(uri);
+		log.debug("Got system_status/soe response: {}", json);
+		return json;
+	}
+
+	private void populateBatteryDatum(SimpleAcDcEnergyDatum d) {
+		JsonNode node = systemStatusSoe().path("percentage");
+		if ( node.isNumber() ) {
+			d.putSampleValue(DatumSamplesType.Instantaneous,
+					EnergyStorageDatum.STATE_OF_CHARGE_PERCENTAGE_KEY, node.floatValue());
+		}
+
+		JsonNode status = systemStatus();
+		node = status.path("nominal_full_pack_energy");
+		if ( node.isNumber() ) {
+			d.putSampleValue(DatumSamplesType.Instantaneous, EnergyStorageDatum.CAPACITY_WATT_HOURS_KEY,
+					node.intValue());
+		}
+
+		node = status.path("nominal_energy_remaining");
+		if ( node.isNumber() ) {
+			d.putSampleValue(DatumSamplesType.Instantaneous, EnergyStorageDatum.AVAILABLE_WATT_HOURS_KEY,
+					node.intValue());
+		}
+
+		node = status.path("system_island_state");
+		if ( node.isTextual() ) {
+			String state = node.textValue();
+			d.putSampleValue(DatumSamplesType.Status, "gridConnected",
+					state.toLowerCase().contains("gridconnected") ? 1 : 0);
+		}
+	}
+
 	/**
 	 * Read the meter aggregate API and return datum.
 	 * 
@@ -183,7 +227,7 @@ public class PowerwallOperations implements Closeable {
 	 *        this class will be appended
 	 * @return the datum, never {@literal null}
 	 */
-	public Collection<NodeDatum> metersAggregates(String sourceId) {
+	public Collection<NodeDatum> datum(String sourceId) {
 		JsonNode root = metersAggregates();
 		List<NodeDatum> result = new ArrayList<>(3);
 
@@ -191,8 +235,9 @@ public class PowerwallOperations implements Closeable {
 
 		node = root.path("battery");
 		if ( node.isObject() ) {
-			AcDcEnergyDatum d = extractDatum(node, sourceId + getBatterySuffix(), false);
+			SimpleAcDcEnergyDatum d = extractDatum(node, sourceId + getBatterySuffix(), false);
 			if ( d != null ) {
+				populateBatteryDatum(d);
 				result.add(d);
 			}
 		}

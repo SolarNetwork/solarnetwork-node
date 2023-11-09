@@ -45,7 +45,15 @@ along with a unique suffix. They also share some general properties, including:
 
 ## Battery
 
-The **battery** data will be published on the Source ID value appended with `/battery`.
+The **battery** data will be published on the Source ID value appended with `/battery`. In addition
+to the general properties listed above, the following additional properties are included:
+
+| Property | Classification | Units | Notes |
+|:---------|:---------------|:------|:------|
+| `soc`             | Instantaneous | % | Percentage from 0-100 |
+| `capacityWattHours` | Instantaneous | Wh | Nominal capacity. |
+| `availWattHours`    | Instantaneous | Wh | Nominal available energy. |
+| `gridConnected`     | Status        |    | `1` if connected to the grid, `0` otherwise. |
 
 ## Load
 
