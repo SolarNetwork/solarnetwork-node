@@ -1,0 +1,14 @@
+<project basedir=".">
+
+	<property name="unittest" value="true"/>
+	<property name="bundle.deps" value="true"/>
+	<dirset id="bundle.deps" dir="${basedir}/..">
+		<include name="net.solarnetwork.node.datum.tesla.powerwall"/>
+	</dirset>
+	
+	<property name="dir.env.input" value="../net.solarnetwork.node.test"/>
+
+	<property name="dir.osgi.base" value="${basedir}/../../solarnetwork-build/solarnetwork-osgi-lib"/>	
+	<import file="${dir.osgi.base}/lib-build.xml"/>
+	
+</project>

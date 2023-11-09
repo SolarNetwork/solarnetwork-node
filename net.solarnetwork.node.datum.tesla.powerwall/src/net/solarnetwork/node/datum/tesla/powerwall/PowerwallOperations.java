@@ -87,6 +87,7 @@ public class PowerwallOperations implements Closeable {
 
 	private static final Logger log = LoggerFactory.getLogger(PowerwallOperations.class);
 
+	private final boolean useTls;
 	private final String hostName;
 	private final int port;
 	private String username;
@@ -119,7 +120,32 @@ public class PowerwallOperations implements Closeable {
 	 */
 	public PowerwallOperations(String hostName, String username, String password,
 			RequestConfig requestConfig, ObjectMapper mapper) {
+		this(true, hostName, username, password, requestConfig, mapper);
+	}
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param useTls
+	 *        {@literal true} to use TLS (HTTPS)
+	 * @param hostName
+	 *        the host name that is required; can include a port after a
+	 *        {@literal :} delimiter
+	 * @param username
+	 *        the username
+	 * @param password
+	 *        the password
+	 * @param requestConfig
+	 *        the HTTP request configuration to use
+	 * @param mapper
+	 *        the JSON mapper to use
+	 * @throws IllegalArgumentException
+	 *         if any argument is {@literal null}
+	 */
+	public PowerwallOperations(boolean useTls, String hostName, String username, String password,
+			RequestConfig requestConfig, ObjectMapper mapper) {
 		super();
+		this.useTls = useTls;
 		final String[] hostComponents = requireNonNullArgument(hostName, "hostName").split(":", 2);
 		this.hostName = hostComponents[0].toLowerCase();
 		this.port = hostComponents.length > 1 ? Integer.parseInt(hostComponents[1]) : 443;
@@ -157,7 +183,7 @@ public class PowerwallOperations implements Closeable {
 	private UriComponentsBuilder baseUri() {
 		// @formatter:off
 		return UriComponentsBuilder.newInstance()
-				.scheme("https")
+				.scheme(useTls ? "https" : "http")
 				.host(hostName)
 				.port(port);
 		// @formatter:on
