@@ -36,6 +36,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
@@ -491,6 +492,75 @@ public class TempestUdpDatumDataSourceTests {
 						"wspeed", "wspeed_gust", "wdir", "atm", "temp", "humidity", "lux", "uvIndex",
 						"irradiance", "rain", "avgStrikeDistance", "strikes", "batteryVoltage",
 						"windDuration", "precipType", "duration"));
+	}
+
+	@Test
+	public void processObsSt_02() throws IOException {
+		// GIVEN
+		final String msgJson = textResource("obs-st-02.json");
+
+		// datum generated
+		Capture<NodeDatum> datumCaptor = Capture.newInstance();
+		expect(datumQueue.offer(capture(datumCaptor))).andReturn(true);
+
+		// WHEN
+		replayAll();
+		dataSource.processJsonMessage(msgJson);
+
+		// THEN
+		DeviceInfo info = dataSource.deviceInfo();
+		assertThat("Info generated for hub SN", info, is(notNullValue()));
+		assertThat("Device serial populated", info.getSerialNumber(), is(equalTo("Hub: HB-00046392")));
+
+		NodeDatum d = datumCaptor.getValue();
+		assertThat("Datum generated from observation", d, is(notNullValue()));
+		assertThat("Source ID used", d.getSourceId(), is(equalTo(dataSource.getSourceId())));
+		assertThat("Timestamp from event", d.getTimestamp(),
+				is(equalTo(Instant.ofEpochSecond(1699483554))));
+
+		assertThat("Wind speed (lull) populated",
+				d.asSampleOperations().getSampleFloat(Instantaneous, "wspeed_lull"), is(nullValue()));
+		assertThat("Wind speed populated",
+				d.asSampleOperations().getSampleFloat(Instantaneous, "wspeed"), is(nullValue()));
+		assertThat("Wind speed (gust) populated",
+				d.asSampleOperations().getSampleFloat(Instantaneous, "wspeed_gust"), is(nullValue()));
+		assertThat("Wind direction populated",
+				d.asSampleOperations().getSampleInteger(Instantaneous, "wdir"), is(nullValue()));
+		assertThat("Wind sample interval populated",
+				d.asSampleOperations().getSampleInteger(Instantaneous, "windDuration"), is(equalTo(3)));
+
+		assertThat("Air pressure populated as pascals",
+				d.asSampleOperations().getSampleInteger(Instantaneous, "atm"), is(nullValue()));
+		assertThat("Temperature populated", d.asSampleOperations().getSampleFloat(Instantaneous, "temp"),
+				is(equalTo(-44.99f)));
+		assertThat("Humidity populated",
+				d.asSampleOperations().getSampleInteger(Instantaneous, "humidity"), is(equalTo(0)));
+
+		assertThat("Lux populated as pascals",
+				d.asSampleOperations().getSampleInteger(Instantaneous, "lux"), is(nullValue()));
+		assertThat("UV index populated", d.asSampleOperations().getSampleFloat(Instantaneous, "uvIndex"),
+				is(nullValue()));
+		assertThat("Irradiance populated",
+				d.asSampleOperations().getSampleInteger(Instantaneous, "irradiance"), is(nullValue()));
+		assertThat("Rain populated", d.asSampleOperations().getSampleInteger(Instantaneous, "rain"),
+				is(equalTo(0)));
+		assertThat("Precip type populated",
+				d.asSampleOperations().getSampleInteger(Status, "precipType"), is(equalTo(0)));
+
+		assertThat("Avg strike distance populated as meters",
+				d.asSampleOperations().getSampleInteger(Instantaneous, "avgStrikeDistance"),
+				is(nullValue()));
+		assertThat("Strike count populated",
+				d.asSampleOperations().getSampleInteger(Instantaneous, "strikes"), is(nullValue()));
+
+		assertThat("Battery populated",
+				d.asSampleOperations().getSampleFloat(Instantaneous, "batteryVoltage"),
+				is(equalTo(2.457f)));
+		assertThat("Interval populated as seconds",
+				d.asSampleOperations().getSampleInteger(Instantaneous, "duration"), is(equalTo(60)));
+		assertThat("Expected properties populated", d.asSimpleMap().keySet(),
+				containsInAnyOrder("_DatumType", "_DatumTypes", "created", "sourceId", "temp",
+						"humidity", "rain", "batteryVoltage", "windDuration", "precipType", "duration"));
 	}
 
 }
