@@ -101,7 +101,7 @@ import net.solarnetwork.util.ArrayUtils;
  * Service to listen to datum events and upload datum to SolarFlux.
  * 
  * @author matt
- * @version 2.5
+ * @version 2.6
  */
 public class FluxUploadService extends BaseMqttConnectionService implements EventHandler,
 		Consumer<NodeDatum>, SettingSpecifierProvider, SettingsChangeObserver, MqttConnectionObserver {
@@ -152,7 +152,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	 * 
 	 * @since 1.14
 	 */
-	public static final boolean DEFAULT_PUBLISH_RETAINED = true;
+	public static final boolean DEFAULT_PUBLISH_RETAINED = false;
 
 	/**
 	 * A source ID for log messages posted as datum.
