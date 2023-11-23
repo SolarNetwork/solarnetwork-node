@@ -1,0 +1,5 @@
+solar ALL = (root) NOPASSWD: /usr/bin/dpkg, \
+	/usr/bin/apt-get
+
+Defaults!/usr/bin/apt-get env_keep+=DEBIAN_FRONTEND
+Defaults!/usr/bin/dpkg env_keep+=DEBIAN_FRONTEND

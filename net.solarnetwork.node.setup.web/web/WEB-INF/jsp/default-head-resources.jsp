@@ -39,6 +39,7 @@
 	/js/backups.js
 	/js/datum.js
 	/js/certs.js
+	/js/hosts.js
 	/js/login.js
 	/js/settings.js
 	/js/new-node.js

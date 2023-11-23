@@ -50,6 +50,8 @@
 						<li ${navloc == 'plugins' ? 'class="active"' : ''}><a id="link-plugins" href="<setup:url value='/a/plugins'/>"><fmt:message key='link.plugins'/></a></li>
 						<c:if test="${not empty systemService}">
 							<li role="separator" class="divider"></li>
+							<li ${navloc == 'hosts' ? 'class="active"' : ''}><a href="<setup:url value='/a/hosts'/>"><fmt:message key='link.hosts'/></a></li>
+							<li role="separator" class="divider"></li>
 							<li><a class="restart" href="#"><fmt:message key='link.restart'/></a></li>
 							<li role="separator" class="divider"></li>
 							<li><a class="reset" href="#"><fmt:message key='link.reset'/></a></li>

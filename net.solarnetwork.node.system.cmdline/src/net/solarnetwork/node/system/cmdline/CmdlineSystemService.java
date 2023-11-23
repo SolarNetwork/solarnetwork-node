@@ -25,6 +25,8 @@ package net.solarnetwork.node.system.cmdline;
 import static net.solarnetwork.util.StringUtils.delimitedStringFromCollection;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -36,7 +38,10 @@ import org.osgi.framework.BundleContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
+import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
@@ -52,7 +57,7 @@ import net.solarnetwork.util.StringUtils;
  * functions.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class CmdlineSystemService
 		implements SystemService, SettingSpecifierProvider, InstructionHandler {
@@ -70,6 +75,13 @@ public class CmdlineSystemService
 	public static final String DEFAULT_RESET_APP_COMMAND = "sudo systemctl start sn-reset-app";
 
 	/**
+	 * The default value for the {@code hostCtlCommand} property.
+	 * 
+	 * @since 2.2
+	 */
+	public static final String DEFAULT_HOSTCTL_COMMAND = Constants.solarNodeHome() + "/bin/hostctl";
+
+	/**
 	 * The {@code successExitCodes} property default value.
 	 * 
 	 * @since 2.1
@@ -81,6 +93,7 @@ public class CmdlineSystemService
 	private String resetCommand = DEFAULT_RESET_COMMAND;
 	private String resetAppCommand = DEFAULT_RESET_APP_COMMAND;
 	private Set<Integer> successExitCodes = DEFAULT_SUCCESS_EXIT_CODES;
+	private String hostCtlCommand = DEFAULT_HOSTCTL_COMMAND;
 
 	private final BundleContext bundleContext;
 	private MessageSource messageSource;
@@ -227,6 +240,40 @@ public class CmdlineSystemService
 		shutdownThread.start();
 	}
 
+	@Override
+	public MultiValueMap<InetAddress, String> hostAliases() {
+		List<String> lines = executeOSCommand(Arrays.asList(getHostCtlCommand(), "list"));
+		MultiValueMap<InetAddress, String> result = new LinkedMultiValueMap<>(lines.size());
+		for ( String line : lines ) {
+			final String[] components = line.split("\\s+");
+			final int len = components.length;
+			if ( len < 2 || components[0].contains("#") ) {
+				continue;
+			}
+			try {
+				InetAddress addr = InetAddress.getByName(components[0]);
+				List<String> aliases = new ArrayList<>(components.length - 1);
+				for ( int i = 1; i < len; i++ ) {
+					aliases.add(components[i]);
+				}
+				result.addAll(addr, aliases);
+			} catch ( UnknownHostException e ) {
+				// ignore, continue
+			}
+		}
+		return result;
+	}
+
+	@Override
+	public void addHostAlias(String alias, InetAddress address) {
+		handleOSCommand(Arrays.asList(getHostCtlCommand(), "add", alias, address.getHostAddress()));
+	}
+
+	@Override
+	public void removeHostAlias(String alias) {
+		handleOSCommand(Arrays.asList(getHostCtlCommand(), "remove", alias));
+	}
+
 	private void handleOSCommand(String command) {
 		if ( command == null ) {
 			return;
@@ -258,6 +305,48 @@ public class CmdlineSystemService
 	private boolean isExitValueSuccess(Process pr) {
 		int status = pr.exitValue();
 		return (status == 0 || (successExitCodes != null && successExitCodes.contains(status)));
+	}
+
+	private List<String> executeOSCommand(List<String> arguments) {
+		ProcessBuilder pb = new ProcessBuilder(arguments);
+		List<String> result = new ArrayList<>(16);
+		try {
+			Process pr = pb.start();
+			Thread in = captureInputStream(pr.getInputStream(), result);
+			pr.waitFor();
+			in.join();
+			if ( isExitValueSuccess(pr) ) {
+				log.debug("Command [{}] executed: [{}]", delimitedStringFromCollection(arguments, " "),
+						result);
+			} else {
+				log.error("Error executing [{}], exit status: {}",
+						delimitedStringFromCollection(arguments, " "), pr.exitValue());
+			}
+		} catch ( IOException e ) {
+			throw new RuntimeException(e);
+		} catch ( InterruptedException e ) {
+			throw new RuntimeException(e);
+		}
+		return result;
+	}
+
+	private Thread captureInputStream(final InputStream src, final List<String> lines) {
+		Thread t = new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				Scanner sc = new Scanner(src);
+				try {
+					while ( sc.hasNextLine() ) {
+						lines.add(sc.nextLine().trim());
+					}
+				} finally {
+					sc.close();
+				}
+			}
+		});
+		t.start();
+		return t;
 	}
 
 	private void logInputStream(final InputStream src, final boolean errorStream) {
@@ -458,6 +547,27 @@ public class CmdlineSystemService
 			}
 		}
 		setSuccessExitCodes(codes.isEmpty() ? null : codes);
+	}
+
+	/**
+	 * Get the {@code hostctl} command.
+	 * 
+	 * @return the command
+	 * @since 2.2
+	 */
+	public String getHostCtlCommand() {
+		return hostCtlCommand;
+	}
+
+	/**
+	 * Set the {@code hostctl} command.
+	 * 
+	 * @param hostCtlCommand
+	 *        the command to set
+	 * @since 2.2
+	 */
+	public void setHostCtlCommand(String hostCtlCommand) {
+		this.hostCtlCommand = hostCtlCommand;
 	}
 
 }

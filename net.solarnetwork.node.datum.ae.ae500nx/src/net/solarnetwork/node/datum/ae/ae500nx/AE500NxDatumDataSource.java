@@ -49,15 +49,12 @@ import net.solarnetwork.util.StringUtils;
  * {@link DatumDataSource} for the AE 500NX series inverter.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class AE500NxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE500NxData>
 		implements DatumDataSource, MultiDatumDataSource, SettingSpecifierProvider {
 
-	/** The {@code sourceId} property default value. */
-	public static final String DEFAULT_SOURCE_ID = "AE 500NX";
-
-	private String sourceId = DEFAULT_SOURCE_ID;
+	private String sourceId;
 
 	/**
 	 * Default constructor.
@@ -102,6 +99,9 @@ public class AE500NxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE5
 	@Override
 	public AcDcEnergyDatum readCurrentDatum() {
 		final String sourceId = resolvePlaceholders(this.sourceId);
+		if ( sourceId == null || sourceId.isEmpty() ) {
+			return null;
+		}
 		try {
 			final AE500NxData currSample = getCurrentSample();
 			if ( currSample == null ) {
@@ -143,7 +143,7 @@ public class AE500NxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE5
 		results.add(new BasicTitleSettingSpecifier("sample", getSampleMessage(getSample()), true));
 
 		results.addAll(getIdentifiableSettingSpecifiers());
-		results.add(new BasicTextFieldSettingSpecifier("sourceId", DEFAULT_SOURCE_ID));
+		results.add(new BasicTextFieldSettingSpecifier("sourceId", null));
 		results.addAll(getModbusNetworkSettingSpecifiers());
 
 		AE500NxDatumDataSource defaults = new AE500NxDatumDataSource();
@@ -188,10 +188,20 @@ public class AE500NxDatumDataSource extends ModbusDataDatumDataSourceSupport<AE5
 	}
 
 	/**
+	 * Get the source ID to use for returned datum.
+	 * 
+	 * @return the source ID
+	 * @since 2.1
+	 */
+	public String getSourceId() {
+		return sourceId;
+	}
+
+	/**
 	 * Set the source ID to use for returned datum.
 	 * 
 	 * @param sourceId
-	 *        the source ID to use; defaults to {@literal modbus}
+	 *        the source ID to use
 	 */
 	public void setSourceId(String sourceId) {
 		this.sourceId = sourceId;

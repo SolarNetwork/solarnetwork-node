@@ -1,0 +1,7 @@
+{
+  "serial_number": "AR-00004049",
+  "type":"obs_air",
+  "hub_sn": "HB-00000001",
+  "obs":[[1493164835,835.0,10.0,45,3,4,3.46,1]],
+  "firmware_revision": 17
+}
