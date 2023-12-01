@@ -82,7 +82,7 @@ import net.solarnetwork.util.StringUtils;
  * implementation.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class OBRPluginService implements PluginService, SettingSpecifierProvider {
 
@@ -256,6 +256,9 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 		final List<Plugin> plugins = new ArrayList<Plugin>(resources.length);
 		RLOOP: for ( Resource r : resources ) {
 			final String uid = r.getSymbolicName();
+			if ( uid == null || uid.isEmpty() ) {
+				continue;
+			}
 			if ( exclusionSymbolicNameFilters != null && exclusionSymbolicNameFilters.length > 0 ) {
 				for ( String exclude : exclusionSymbolicNameFilters ) {
 					if ( uid.contains(exclude) ) {
@@ -298,7 +301,7 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 		Map<String, Bundle> installedBundles = new HashMap<String, Bundle>(bundles.length);
 		for ( Bundle b : bundles ) {
 			String uid = b.getSymbolicName();
-			if ( uid != null && restrictingSymbolicNameFilters != null
+			if ( uid != null && !uid.isEmpty() && restrictingSymbolicNameFilters != null
 					&& restrictingSymbolicNameFilters.length > 0 ) {
 				boolean allowed = false;
 				for ( String filter : restrictingSymbolicNameFilters ) {
