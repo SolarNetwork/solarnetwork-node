@@ -4,7 +4,7 @@ Bundle-Name: Plugin Repository
 Bundle-SymbolicName: net.solarnetwork.node.setup.obr
 Automatic-Module-Name: net.solarnetwork.node.setup.obr
 Bundle-Description: Manage SolarNode plugins via an online OSGi Bundle Repository.
-Bundle-Version: 3.0.0
+Bundle-Version: 3.0.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 

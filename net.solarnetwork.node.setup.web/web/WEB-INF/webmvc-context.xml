@@ -45,6 +45,13 @@
 			max-age="86400"/>
 	</mvc:cors>
 
+	<mvc:resources mapping="/css/**" location="/css/" cache-period="2592000"/>
+	<mvc:resources mapping="/fonts/**" location="/fonts/" cache-period="2592000"/>
+	<mvc:resources mapping="/img/**" location="/img/" cache-period="2592000"/>
+	<mvc:resources mapping="/js/**" location="/js/" cache-period="2592000"/>
+	<mvc:resources mapping="/js-lib/**" location="/js-lib/" cache-period="2592000"/>
+	<mvc:resources mapping="/webfonts/**" location="/webfonts/" cache-period="2592000"/>
+	
 	<bean id="loginKeyHelper" class="net.solarnetwork.node.setup.web.support.LoginKeyHelper"/>
 	
 	<bean id="webObjectMapperService" class="net.solarnetwork.node.setup.web.support.ObjectMapperCustomizer">

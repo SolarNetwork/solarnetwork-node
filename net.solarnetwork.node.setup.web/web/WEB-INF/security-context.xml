@@ -8,8 +8,13 @@
 		http://www.springframework.org/schema/security
 		http://www.springframework.org/schema/security/spring-security-5.8.xsd">
 
-	<http security="none" pattern="/hello"/>
+	<http security="none" pattern="/hello" />
 	
+	<http security="none" pattern="/img/**"/>
+	<http security="none" pattern="/css/**"/>
+	<http security="none" pattern="/fonts/**"/>
+	<http security="none" pattern="/webfonts/**"/>
+
 	<!-- Support OCPP namespace explicitly. -->
 	<http security="none" pattern="/ocpp/**"/>
 
