@@ -301,8 +301,10 @@ public class OBRPluginService implements PluginService, SettingSpecifierProvider
 		Map<String, Bundle> installedBundles = new HashMap<String, Bundle>(bundles.length);
 		for ( Bundle b : bundles ) {
 			String uid = b.getSymbolicName();
-			if ( uid != null && !uid.isEmpty() && restrictingSymbolicNameFilters != null
-					&& restrictingSymbolicNameFilters.length > 0 ) {
+			if ( uid == null || uid.isEmpty() ) {
+				continue;
+			}
+			if ( restrictingSymbolicNameFilters != null && restrictingSymbolicNameFilters.length > 0 ) {
 				boolean allowed = false;
 				for ( String filter : restrictingSymbolicNameFilters ) {
 					if ( uid.startsWith(filter) ) {
