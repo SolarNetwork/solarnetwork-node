@@ -403,7 +403,7 @@ SolarNode.tryGotoURL = function(destURL) {
 				// successfully got HEAD of destURL; redirect there now
 				window.location = destURL;
 			}, function(xhr, status) {
-				if ( stats == '302' ) {
+				if ( status == '302' ) {
 					// redirect, that's OK
 					window.location = destURL;
 				} else {
