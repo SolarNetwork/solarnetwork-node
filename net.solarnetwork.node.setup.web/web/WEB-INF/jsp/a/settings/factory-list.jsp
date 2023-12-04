@@ -171,7 +171,7 @@ $(function() {
 	<input type="hidden" name="uid" value="${factory.factoryUid}"/>
 </form>
 <form class="modal dynamic hide fade lookup-modal sn-loc-lookup-modal price-lookup-modal"
-		action="<setup:url value='/api/v1/sec/location'/>" method="get">
+		action="<setup:url value='/a/location'/>" method="get">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal">&times;</button>
 		<h3><fmt:message key='lookup.price.title'/></h3>
@@ -220,7 +220,7 @@ $(function() {
 	</div>
 </form>
 <form class="modal dynamic hide fade lookup-modal sn-loc-lookup-modal weather-lookup-modal day-lookup-modal"
-		action="<setup:url value='/api/v1/sec/location'/>" method="get">
+		action="<setup:url value='/a/location'/>" method="get">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal">&times;</button>
 		<h3><fmt:message key='lookup.weather.title'/></h3>
@@ -270,7 +270,7 @@ $(function() {
 	</div>
 </form>
 <form class="modal dynamic hide fade lookup-modal sn-loc-lookup-modal co2-lookup-modal"
-		action="<setup:url value='/api/v1/sec/location'/>" method="get">
+		action="<setup:url value='/a/location'/>" method="get">
 	<div class="modal-header">
 		<button type="button" class="close" data-dismiss="modal">&times;</button>
 		<h3><fmt:message key='lookup.co2.title'/></h3>
