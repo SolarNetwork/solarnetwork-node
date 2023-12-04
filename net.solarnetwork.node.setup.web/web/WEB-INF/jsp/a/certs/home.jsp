@@ -27,10 +27,10 @@
 			</td>
 			<td>
 				<c:if test="${not empty nodeCert}">
-					${nodeCert.subjectDN.name}<br/>
+					${nodeCert.subjectDN}<br/>
 					<small class="muted span6">
 						<fmt:message key='certs.subject.issuedby'/>
-						<em> ${nodeCert.issuerDN.name}</em>
+						<em> ${nodeCert.issuerDN}</em>
 					</small>
 				</c:if>
 			</td>
