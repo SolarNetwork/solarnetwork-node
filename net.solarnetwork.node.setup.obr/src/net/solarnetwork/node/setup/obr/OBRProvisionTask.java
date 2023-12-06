@@ -67,7 +67,7 @@ import net.solarnetwork.node.setup.Plugin;
  * Task to install plugins.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 
@@ -165,7 +165,8 @@ public class OBRProvisionTask implements Callable<OBRPluginProvisionStatus> {
 		List<Bundle> olderBundles = null;
 		Bundle[] bundles = bundleContext.getBundles();
 		for ( Bundle b : bundles ) {
-			if ( b.getSymbolicName().equals(symbolicName) && b.getVersion().compareTo(maxVersion) < 1 ) {
+			if ( b.getSymbolicName() != null && b.getSymbolicName().equals(symbolicName)
+					&& b.getVersion().compareTo(maxVersion) < 1 ) {
 				if ( olderBundles == null ) {
 					olderBundles = new ArrayList<Bundle>(2);
 				}

@@ -47,13 +47,67 @@ import net.solarnetwork.node.setup.web.support.ServiceAwareController;
  * Controller for node certificate management.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 @ServiceAwareController
 @RequestMapping("/a/certs")
 public class NodeCertificatesController extends BaseSetupController {
 
 	private final PKIService pkiService;
+
+	/**
+	 * Certificate information.
+	 */
+	public static final class CertificateInfo {
+
+		private final X509Certificate cert;
+
+		private CertificateInfo(X509Certificate cert) {
+			super();
+			this.cert = cert;
+		}
+
+		/**
+		 * Get the issuer DN.
+		 * 
+		 * @return the issuer DN
+		 * @see java.security.cert.X509Certificate#getIssuerDN()
+		 */
+		public String getIssuerDN() {
+			return cert.getIssuerDN().getName();
+		}
+
+		/**
+		 * Get the subject DN.
+		 * 
+		 * @return the subject DN
+		 * @see java.security.cert.X509Certificate#getSubjectDN()
+		 */
+		public String getSubjectDN() {
+			return cert.getSubjectDN().getName();
+		}
+
+		/**
+		 * Get the valid start date.
+		 * 
+		 * @return the start date
+		 * @see java.security.cert.X509Certificate#getNotBefore()
+		 */
+		public Date getNotBefore() {
+			return cert.getNotBefore();
+		}
+
+		/**
+		 * Get the valid end date.
+		 * 
+		 * @return the end date
+		 * @see java.security.cert.X509Certificate#getNotAfter()
+		 */
+		public Date getNotAfter() {
+			return cert.getNotAfter();
+		}
+
+	}
 
 	/**
 	 * Constructor.
@@ -81,7 +135,7 @@ public class NodeCertificatesController extends BaseSetupController {
 		final boolean valid = (nodeCert != null
 				&& (!nodeCert.getIssuerDN().equals(nodeCert.getSubjectDN())
 						&& !now.before(nodeCert.getNotBefore()) && !expired));
-		model.addAttribute("nodeCert", nodeCert);
+		model.addAttribute("nodeCert", new CertificateInfo(nodeCert));
 		if ( nodeCert != null ) {
 			model.addAttribute("nodeCertSerialNumber", "0x" + nodeCert.getSerialNumber().toString(16));
 		}

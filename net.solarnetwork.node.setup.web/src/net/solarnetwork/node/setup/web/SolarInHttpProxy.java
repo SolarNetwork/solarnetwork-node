@@ -91,14 +91,16 @@ public class SolarInHttpProxy extends HttpClientSupport {
 	 * @throws IOException
 	 *         if an IO error occurs
 	 */
-	@RequestMapping(value = { "/api/v1/sec/location", "/api/v1/sec/location/price",
-			"/api/v1/sec/location/weather" }, method = RequestMethod.GET)
+	@RequestMapping(value = { "/a/location", "/a/location/price",
+			"/a/location/weather" }, method = RequestMethod.GET)
 	public void proxy(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		String context = request.getContextPath();
 		String path = request.getRequestURI();
 		if ( path.startsWith(context) ) {
 			path = path.substring(context.length());
 		}
+		// map "/a" to "/api/v1/sec"
+		path = "/api/v1/sec" + path.substring(2);
 		String query = request.getQueryString();
 		String url = getIdentityService().getSolarInBaseUrl() + path;
 		if ( query != null ) {

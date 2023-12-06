@@ -46,7 +46,7 @@ import net.solarnetwork.node.reactor.Instruction;
  * </p>
  * 
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 3.3
  */
 public class BasicInstructionSerializer extends StdSerializer<BasicInstruction> {
@@ -90,7 +90,7 @@ public class BasicInstructionSerializer extends StdSerializer<BasicInstruction> 
 		for ( List<String> l : value.values() ) {
 			size += l.size();
 		}
-		generator.writeStartArray(size);
+		generator.writeStartArray(value, size);
 		for ( Entry<String, List<String>> me : value.entrySet() ) {
 			for ( String v : me.getValue() ) {
 				generator.writeStartObject();
