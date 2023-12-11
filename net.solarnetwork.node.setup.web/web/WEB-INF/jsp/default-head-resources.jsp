@@ -6,7 +6,6 @@
 <link rel="icon" type="image/png" href="<setup:url value='/img/favicon.png'/>">
 <pack:style context="${basePath}">
 	/css/bootstrap.css
-	/css/bootstrap-responsive.css
 	/css/ladda.css
 	/css/solarnode.css
 	/css/fonts.css
@@ -26,7 +25,7 @@
 </pack:script>
 <pack:script context="${basePath}"> 
 	/js-lib/jquery-2.2.4.js
-	/js-lib/bootstrap.js
+	/js-lib/bootstrap.bundle.js
 	/js-lib/ladda.js
 	/js-lib/moment.js
 	/js-lib/jquery.form.js
