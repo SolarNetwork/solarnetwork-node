@@ -75,7 +75,7 @@ $(document).ready(function() {
 			var form = $('#associate-restore-backup-form');
 			SolarNode.info(json.message, $('#associate-restore-list-container').empty());
 			form.find('button, p').remove();
-			form.find('.progress.hide').removeClass('hide');
+			form.find('.progress.hide').removeClass('hidden');
 			setTimeout(function() {
 				SolarNode.tryGotoURL(SolarNode.context.path('/a/settings'));
 			}, 10000);

@@ -226,10 +226,10 @@ function populateUI() {
 		}
 		if ( iMax > 0 ) {
 			upgradeContainer.html(html);
-			upgradeSection.removeClass('hide');
+			upgradeSection.removeClass('hidden');
 		} else {
 			upgradeContainer.empty();
-			upgradeSection.addClass('hide');
+			upgradeSection.addClass('hidden');
 		}
 
 		// construct "up to date" section
@@ -240,10 +240,10 @@ function populateUI() {
 		}
 		if ( iMax > 0 ) {
 			installedContainer.html(html);
-			installedSection.removeClass('hide');
+			installedSection.removeClass('hidden');
 		} else {
 			installedContainer.empty();
-			installedSection.addClass('hide');
+			installedSection.addClass('hidden');
 		}
 
 		// construct "available" section
@@ -277,10 +277,10 @@ function populateUI() {
 		}
 		if ( html.children().length > 0 ) {
 			availableContainer.html(html);
-			pluginsSection.removeClass('hide');
+			pluginsSection.removeClass('hidden');
 		} else {
 			availableContainer.empty();
-			pluginsSection.addClass('hide');
+			pluginsSection.addClass('hidden');
 		}
 	});
 }
@@ -307,7 +307,7 @@ function renderInstallPreview(data) {
 				+'</b> <span class="label">' +version +'</span>').appendTo(list);
 	}
 	container.append(list);
-	form.find('.restart-required').toggleClass('hide', !data.data.restartRequired);
+	form.find('.restart-required').toggleClass('hidden', !data.data.restartRequired);
 	installBtn.removeAttr('disabled');
 }
 
@@ -342,7 +342,7 @@ function previewRemove(plugin) {
 	var title = form.find('h3');
 	title.text(title.data('msg-remove') +' ' +plugin.info.name);
 	form.find('input[name=uid]').val(plugin.uid);
-	form.find('.restart-required').toggleClass('hide', false);
+	form.find('.restart-required').toggleClass('hidden', false);
 	form.modal('show');
 	var list = $('<ul/>');
 	var	version = versionLabel(plugin);
@@ -361,14 +361,14 @@ function handleInstall(form) {
 
 	var showAlert = function(msg) {
 		SolarNode.hideLoading(installBtn);
-		progressBar.addClass('hide');
+		progressBar.addClass('hidden');
 		SolarNode.error(SolarNode.i18n(installBtn.data('msg-error'), [msg]), errorContainer);
 	};
 	form.on('hidden.bs.modal', function() {
 		// tidy up in case closed before completed
 		SolarNode.hideLoading(installBtn);
-		progressBar.addClass('hide');
-		installBtn.removeClass('hide');
+		progressBar.addClass('hidden');
+		installBtn.removeClass('hidden');
 
 		// refresh the plugin list, if we've installed/removed anything
 		if ( refreshPluginListOnModalClose === true ) {
@@ -380,13 +380,13 @@ function handleInstall(form) {
 		keepPollingForStatus = false;
 
 		// clear out any error/message
-		errorContainer.addClass('hide').empty();
+		errorContainer.addClass('hidden').empty();
 	});
 	form.ajaxForm({
 		dataType: 'json',
 		beforeSubmit: function(dataArray, form, options) {
 			// start a progress bar on the install button so we know a install is happening
-			progressBar.removeClass('hide');
+			progressBar.removeClass('hidden');
 			progressFill.css('width', '0%');
 			keepPollingForStatus = true;
 			errorContainer.empty();
@@ -405,14 +405,14 @@ function handleInstall(form) {
 			var restartRequired = json.data.restartRequired;
 
 			if ( restartRequired ) {
-				form.find('.without-restart').addClass('hide');
+				form.find('.without-restart').addClass('hidden');
 			}
 
 			function handleRestart() {
 				SolarNode.hideLoading(installBtn);
     				progressFill.css('width', '100%');
-				form.find('.restarting').removeClass('hide');
-				form.find('.hide-while-restarting').addClass('hide');
+				form.find('.restarting').removeClass('hidden');
+				form.find('.hide-while-restarting').addClass('hidden');
 				setTimeout(function() {
 					SolarNode.tryGotoURL(SolarNode.context.path('/a/home'));
 				}, 10000);
@@ -443,13 +443,13 @@ function handleInstall(form) {
 				    			}
 				    		} else if ( !(progress < 100) ) {
 							SolarNode.hideLoading(installBtn);
-				    			installBtn.addClass('hide');
+				    			installBtn.addClass('hidden');
 				    			if ( restartRequired ) {
 				    				handleRestart();
 				    			} else {
 					    			SolarNode.info(SolarNode.i18n(installBtn.data('msg-success')), errorContainer);
-					    			errorContainer.removeClass('hide');
-				    				progressBar.addClass('hide');
+					    			errorContainer.removeClass('hidden');
+				    				progressBar.addClass('hidden');
 					    			refreshPluginListOnModalClose = true;
 				    			}
 				    		} else if ( keepPollingForStatus ) {

@@ -340,6 +340,10 @@ div.plugin .desc {
 	display: inline;
 }
 
+.datum-activity dl.datum-props dd {
+	margin-left: 0.5rem;
+}
+
 .datum-activity dl.datum-props dd + dt:before {
 	content: ', ';
 	font-weight: normal;

@@ -44,7 +44,7 @@
 	</c:if>
 </section>
 
-<form id="create-security-token-modal" class="modal hide fade" action="<setup:url value='/a/security-tokens'/>" method="post">
+<form id="create-security-token-modal" class="modal" action="<setup:url value='/a/security-tokens'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -101,7 +101,7 @@
 	<sec:csrfInput/>
 </form>
 
-<form id="edit-security-token-modal" class="modal hide fade" action="<setup:url value='/a/security-tokens'/>" method="post">
+<form id="edit-security-token-modal" class="modal" action="<setup:url value='/a/security-tokens'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">

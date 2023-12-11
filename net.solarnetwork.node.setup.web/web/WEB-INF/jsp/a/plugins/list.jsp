@@ -12,7 +12,7 @@
 <fmt:message key="plugin.upgrade.button" var="msgUpgrade"/>
 <fmt:message key="plugin.remove.button" var="msgRemove"/>
 <fmt:message key="plugin.unremovable.message" var="msgUnremovable"/>
-<section id="plugin-upgrades" class="hide" data-msg-upgrade="${msgUpgrade}">
+<section id="plugin-upgrades" class="hidden" data-msg-upgrade="${msgUpgrade}">
 	<h2><fmt:message key="plugins.upgradable.title"/></h2>
 	<div class="row">
 		<p class="col-md-10"><fmt:message key="plugins.upgradable.intro"/></p>
@@ -23,19 +23,19 @@
 	</div>
 	<div class="list-content"></div>
 </section>
-<section id="plugin-installed" class="hide" data-msg-remove="${msgRemove}" data-msg-unremovable="${msgUnremovable}">
+<section id="plugin-installed" class="hidden" data-msg-remove="${msgRemove}" data-msg-unremovable="${msgUnremovable}">
 	<h2><fmt:message key="plugins.installed.title"/></h2>
 	<p><fmt:message key="plugins.installed.intro"/></p>
 	<div class="list-content"></div>
 </section>
-<section id="plugins" class="hide" data-msg-install="${msgInstall}" data-msg-upgrade="${msgUpgrade}" data-msg-remove="${msgRemove}">
+<section id="plugins" class="hidden" data-msg-install="${msgInstall}" data-msg-upgrade="${msgUpgrade}" data-msg-remove="${msgRemove}">
 	<h2><fmt:message key="plugins.available.title"/></h2>
 	<p><fmt:message key="plugins.available.intro"/></p>
 	<div class="list-content"></div>
 </section>
 
 <setup:url value="/a/plugins/install" var="urlPluginInstall"/>
-<form id="plugin-preview-install-modal" class="modal dynamic hide fade" action="${urlPluginInstall}" method="post">
+<form id="plugin-preview-install-modal" class="modal dynamic" action="${urlPluginInstall}" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -48,11 +48,11 @@
 				<div class="restart-required hide-while-restarting hide alert">
 					<fmt:message key='plugin.install.restartRequired.warning'/>
 				</div>
-				<div class="restarting hide alert alert-info">
+				<div class="restarting hidden alert alert-info">
 					<fmt:message key="plugin.install.success"/><span> </span><fmt:message key="restart.underway"/>
 				</div>
-				<div class="progress progress-striped active hide">
-					<div class="progress-bar"></div>
+				<div class="progress hidden" role="progressbar">
+					<div class="progress-bar progress-bar-striped progress-bar-animated"></div>
 			    </div>
 			    <div class="message-container hide-while-restarting"></div>
 			</div>
@@ -73,7 +73,7 @@
 </form>
 
 <setup:url value="/a/plugins/remove" var="urlPluginRemove"/>
-<form id="plugin-preview-remove-modal" class="modal dynamic hide fade" action="${urlPluginRemove}" method="post">
+<form id="plugin-preview-remove-modal" class="modal dynamic" action="${urlPluginRemove}" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -86,11 +86,11 @@
 				<div class="restart-required hide-while-restarting hide alert">
 					<fmt:message key='plugin.install.restartRequired.warning'/>
 				</div>
-				<div class="restarting hide alert alert-info">
+				<div class="restarting hidden alert alert-info">
 					<fmt:message key="plugin.remove.success"/><span> </span><fmt:message key="restart.underway"/>
 				</div>
-				<div class="progress progress-striped active hide">
-					<div class="progress-bar"></div>
+				<div class="progress hidden" role="progressbar">
+					<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
 			    </div>
 			    <div class="message-container hide-while-restarting"></div>
 			</div>

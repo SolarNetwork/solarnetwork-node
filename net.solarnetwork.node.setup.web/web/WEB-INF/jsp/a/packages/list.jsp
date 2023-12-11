@@ -12,8 +12,8 @@
 	<p><fmt:message key="packages.intro"/></p>
 </section>
 <div class="init">
-	<div class="progress progress-striped active">
-		<div class="progress-bar" style="width: 100%;"></div>
+	<div class="progress" role="progressbar">
+		<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%;"></div>
     </div>
 </div>
 <div class="ready hidden">
@@ -42,7 +42,7 @@
 		</div>
 	</section>
 
-	<div class="hide">
+	<div class="hidden">
 		<div id="more-packages"><div class="row">
 			<div class="col-md-12"><p class="test-muted"><fmt:message key="packages.more.message"/></p></div>
 		</div></div>
@@ -99,7 +99,7 @@
 
 </div>
 
-<form id="packages-upgrade-modal" class="packages modal hide fade" action="<setup:url value='/a/packages/upgrade'/>" method="post">
+<form id="packages-upgrade-modal" class="packages modal" action="<setup:url value='/a/packages/upgrade'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -128,7 +128,7 @@
 	<sec:csrfInput/>
 </form>
 
-<form id="package-install-modal" class="packages modal hide fade" action="<setup:url value='/a/packages/install'/>" method="post">
+<form id="package-install-modal" class="packages modal" action="<setup:url value='/a/packages/install'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -158,7 +158,7 @@
 	<input type="hidden" name="name">
 </form>
 
-<form id="package-remove-modal" class="packages modal hide fade" action="<setup:url value='/a/packages/remove'/>" method="post">
+<form id="package-remove-modal" class="packages modal" action="<setup:url value='/a/packages/remove'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">

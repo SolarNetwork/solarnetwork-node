@@ -2,8 +2,8 @@
 	<p><fmt:message key="hosts.intro"/></p>
 </section>
 <div class="init">
-	<div class="progress progress-striped active">
-		<div class="progress-bar" style="width: 100%;"></div>
+	<div class="progress" role="progressbar">
+		<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%;"></div>
     </div>
 </div>
 <div class="ready hidden">
@@ -26,7 +26,7 @@
 
 </div>
 
-<form id="host-add-modal" class="modal hide fade" action="<setup:url value='/a/hosts/add'/>" method="post">
+<form id="host-add-modal" class="modal" action="<setup:url value='/a/hosts/add'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">		
 			<div class="modal-header">
@@ -55,7 +55,7 @@
 	<sec:csrfInput/>
 </form>
 
-<form id="host-remove-modal" class="modal hide fade" action="<setup:url value='/a/hosts/remove'/>" method="post">
+<form id="host-remove-modal" class="modal" action="<setup:url value='/a/hosts/remove'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">

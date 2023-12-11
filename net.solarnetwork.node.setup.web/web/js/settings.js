@@ -707,7 +707,7 @@ function setupBackups() {
 			var form = $('#backup-restore-modal');
 			SolarNode.info(json.message, $('#backup-restore-list-container').empty());
 			form.find('button, .modal-body p').remove();
-			form.find('.progress.hide').removeClass('hide');
+			form.find('.progress.hide').removeClass('hidden');
 			setTimeout(function() {
 				SolarNode.tryGotoURL(SolarNode.context.path('/a/settings'));
 			}, 10000);

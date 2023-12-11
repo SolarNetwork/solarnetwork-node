@@ -292,7 +292,7 @@
 	</div>
 </section>
 
-<form id="backup-restore-modal" class="modal dynamic hide fade" data-backdrop="static" action="<setup:url value='/a/backups/restore'/>" method="post">
+<form id="backup-restore-modal" class="modal dynamic" data-bs-backdrop="static" data-bs-keyboard="false" action="<setup:url value='/a/backups/restore'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -303,8 +303,8 @@
 				<p><fmt:message key='backup.restore.intro'/></p>
 				<div id="backup-restore-list-container" class="menu-list noselect" 
 					data-msg-items="<fmt:message key='items'/>" data-msg-item="<fmt:message key='item'/>"></div>
-				<div class="progress progress-striped active hide">
-		      		<div class="progress-bar" style="width: 100%;"></div>
+				<div class="progress hidden" role="progressbar">
+					<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
 		    	</div>		
 			</div>
 			<div class="modal-footer">

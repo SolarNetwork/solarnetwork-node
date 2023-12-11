@@ -47,7 +47,7 @@ SolarNode.DatumCharts = (function(){
 
 		//check that the datum has a reading
 		if (datum[datumPropName] !== undefined) {
-			$('#datum-activity-charts').removeClass('hide');
+			$('#datum-activity-charts').removeClass('hidden');
 
 			//if we have not seen this sourceId before we need to graph it
 			if (datamap[datum.sourceId] === undefined) {

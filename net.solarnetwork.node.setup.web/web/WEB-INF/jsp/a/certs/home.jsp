@@ -65,7 +65,7 @@
 	</div>
 </div>
 
-<form id="import-cert-modal" class="modal hide fade" action="<setup:url value='/a/certs/import'/>" method="post" enctype="multipart/form-data">
+<form id="import-cert-modal" class="modal" action="<setup:url value='/a/certs/import'/>" method="post" enctype="multipart/form-data">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -100,7 +100,7 @@
 	<sec:csrfInput/>
 </form>
 
-<div id="view-csr-modal" class="modal dynamic hide fade">
+<div id="view-csr-modal" class="modal dynamic">
 	<div class="modal-dialog">
 		<div class="modal-content">
 		 	<div class="modal-header">
@@ -118,7 +118,7 @@
 	</div>
 </div>
 
-<form id="export-cert-modal" class="modal dynamic hide fade" action="<setup:url value='/a/certs/nodeCert'/>" method="get">
+<form id="export-cert-modal" class="modal dynamic" action="<setup:url value='/a/certs/nodeCert'/>" method="get">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -144,7 +144,7 @@
 	<input type="hidden" name="download" value="true"/>
 </form>
 
-<form id="renew-cert-modal" class="modal dynamic hide fade" action="<setup:url value='/a/certs/renew'/>" method="post">
+<form id="renew-cert-modal" class="modal dynamic" action="<setup:url value='/a/certs/renew'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">

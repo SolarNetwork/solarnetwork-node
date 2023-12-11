@@ -98,7 +98,7 @@
 	<form id="logout-form" method="post" action="<setup:url value='/logout'/>">
 		<sec:csrfInput/>
 	</form>
-	<form id="restart-modal" class="modal hide fade" action="<setup:url value='/a/home/restart'/>" method="post">
+	<form id="restart-modal" class="modal" data-bs-backdrop="static" data-bs-keyboard="false" action="<setup:url value='/a/home/restart'/>" method="post">
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
@@ -109,10 +109,10 @@
 					<p><fmt:message key='restart.intro'/></p>
 				</div>
 				<div class="modal-body success" style="display: none;">
-					<div class="progress progress-info progress-striped active">
-						<div class="progress-bar" style="width:100%"></div>
+					<div class="progress hidden" role="progressbar">
+						<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
 					</div>
-					<p><fmt:message key='restart.underway'/></p>
+					<p class="my-3"><fmt:message key='restart.underway'/></p>
 				</div>
 				<div class="modal-footer start">
 					<a href="#" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>
@@ -124,7 +124,7 @@
 		</div>
 		<sec:csrfInput/>
 	</form>
-	<form id="reset-modal" class="modal hide fade" action="<setup:url value='/a/home/reset'/>" method="post">
+	<form id="reset-modal" class="modal" data-bs-backdrop="static" data-bs-keyboard="false" action="<setup:url value='/a/home/reset'/>" method="post">
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
@@ -139,10 +139,10 @@
 					</div>
 				</div>
 				<div class="modal-body success" style="display: none;">
-					<div class="progress progress-info progress-striped active">
-						<div class="progress-bar" style="width:100%"></div>
+					<div class="progress" role="progressbar">
+						<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
 					</div>
-					<p><fmt:message key='reset.underway'/></p>
+					<p class="my-3"><fmt:message key='reset.underway'/></p>
 				</div>
 				<div class="modal-footer start">
 					<a href="#" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>

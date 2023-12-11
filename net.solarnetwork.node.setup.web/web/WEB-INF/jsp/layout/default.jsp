@@ -45,8 +45,7 @@
 
 		<%-- System lock overlay --%>
 		<setup:url value="/pub/platform/state" var="urlPlatformState"/>
-		<form id="platform-lock-modal" class="modal dynamic hide fade" action="${urlPlatformState}" method="get"
-				data-backdrop="static" data-keyboard="false">
+		<form id="platform-lock-modal" class="modal dynamic" action="${urlPlatformState}" method="get" data-bs-backdrop="static" data-bs-keyboard="false">
 			<div class="modal-dialog">
 				<div class="modal-content">
 					<div class="modal-header">
@@ -57,11 +56,11 @@
 						<div class="restart-required hide-while-restarting hide alert">
 							<fmt:message key='platform.lock.restartRequired.warning'/>
 						</div>
-						<div class="restarting hide alert alert-info">
+						<div class="restarting hidden alert alert-info">
 							<fmt:message key="platform.lock.taskComplete.msg"/><span> </span><fmt:message key="restart.underway"/>
 						</div>
-						<div class="progress progress-striped active">
-							<div class="progress-bar"></div>
+						<div class="progress" role="progressbar">
+							<div class="progress-bar progress-bar-striped progress-bar-animated"></div>
 					    </div>
 					</div>
 				</div>
@@ -69,7 +68,7 @@
 		</form>
 
 		<%-- Generic progress overlay --%>
-		<div id="generic-progress-modal" class="modal dynamic hide fade" data-backdrop="static" data-keyboard="false">
+		<div id="generic-progress-modal" class="modal dynamic" data-bs-backdrop="static" data-bs-keyboard="false">
 			<div class="modal-dialog">
 				<div class="modal-content">
 					<div class="modal-header">
@@ -77,8 +76,8 @@
 					</div>
 					<div class="modal-body">
 						<p class="info-message" data-default-message="<fmt:message key='generic.progress.message'/>"></p>
-						<div class="progress progress-striped active">
-							<div class="progress-bar"></div>
+						<div class="progress" role="progressbar">
+							<div class="progress-bar progress-bar-striped progress-bar-animated"></div>
 					    </div>
 					</div>
 				</div>

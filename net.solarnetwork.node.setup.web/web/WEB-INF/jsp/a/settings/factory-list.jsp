@@ -79,8 +79,8 @@
 							data-bs-target="<setup:url value='/a/settings/manage'/>"
 							data-factory-uid="${factory.factoryUid}"
 							data-instance-key="${instance.key}">
-					    <div class="progress progress-striped active">
-					      <div class="progress-bar" style="width: 100%;"></div>
+					    <div class="progress" role="progressbar">
+							<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
 					    </div>
 					</div>
 					<div class="form-group">
@@ -146,7 +146,7 @@ $(function() {
 		<fmt:message key="reset.label"/>
 	</button>
 </div>
-<form id="remove-all-component-instance-modal" class="modal dynamic hide fade"
+<form id="remove-all-component-instance-modal" class="modal dynamic"
 		action="<setup:url value='/a/settings/manage/removeall'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
@@ -174,7 +174,7 @@ $(function() {
 	<sec:csrfInput/>
 	<input type="hidden" name="uid" value="${factory.factoryUid}"/>
 </form>
-<form class="modal dynamic hide fade lookup-modal sn-loc-lookup-modal price-lookup-modal"
+<form class="modal dynamic lookup-modal sn-loc-lookup-modal price-lookup-modal"
 		action="<setup:url value='/a/location'/>" method="get">
 	<div class="modal-dialog">
 		<div class="modal-content">
@@ -227,7 +227,7 @@ $(function() {
 		</div>
 	</div>
 </form>
-<form class="modal dynamic hide fade lookup-modal sn-loc-lookup-modal weather-lookup-modal day-lookup-modal"
+<form class="modal dynamic lookup-modal sn-loc-lookup-modal weather-lookup-modal day-lookup-modal"
 		action="<setup:url value='/a/location'/>" method="get">
 	<div class="modal-dialog">
 		<div class="modal-content">
@@ -281,7 +281,7 @@ $(function() {
 		</div>
 	</div>
 </form>
-<form class="modal dynamic hide fade lookup-modal sn-loc-lookup-modal co2-lookup-modal"
+<form class="modal dynamic lookup-modal sn-loc-lookup-modal co2-lookup-modal"
 		action="<setup:url value='/a/location'/>" method="get">
 	<div class="modal-dialog">
 		<div class="modal-content">
@@ -332,7 +332,7 @@ $(function() {
 		</div>
 	</div>
 </form>
-<form id="add-component-instance-modal" class="modal dynamic hide fade" data-backdrop="static" action="<setup:url value='/a/settings/manage/add'/>" method="post">
+<form id="add-component-instance-modal" class="modal dynamic" data-bs-backdrop="static" data-bs-keyboard="false" action="<setup:url value='/a/settings/manage/add'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
