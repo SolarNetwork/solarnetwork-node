@@ -96,7 +96,7 @@ SolarNode.Settings.addSlider = function(params) {
 SolarNode.Settings.addToggle = function(params) {
 	var toggle = $('#'+params.key);
 	toggle.button();
-	toggle.click(function() {
+	toggle.on('click', function() {
 		toggle.button('toggle');
 		var active = toggle.hasClass('active');
 		var value = (active ? params.on : params.off);
@@ -413,7 +413,7 @@ SolarNode.Settings.addLocationFinder = function(params) {
 			}
 		});
 	}
-	btn.click(function() {
+	btn.on('click', function() {
 		// common lookup
 		modal.find('input[name=sourceName]').val(params.sourceName);
 		modal.find('input[name=locationName]').val(params.locationName);
@@ -440,14 +440,14 @@ SolarNode.Settings.addGroupedSetting = function(params) {
 		url = $(groupCount.get(0).form).attr('action');
 
 	// wire up the Add button to add dynamic elements
-	container.find('button.group-item-add').click(function() {
+	container.find('button.group-item-add').on('click', function() {
 		var newCount = count + 1;
 		container.find('button').attr('disabled', 'disabled');
 		SolarNode.Settings.updateSetting(params, newCount);
 		SolarNode.Settings.saveUpdates(url, undefined, delayedReload);
 	});
 	// dynamic grouped items remove support
-	container.find('.group-item-remove').click(function() {
+	container.find('.group-item-remove').on('click', function() {
 		if ( count < 1 ) {
 			return;
 		}
@@ -585,7 +585,7 @@ SolarNode.Settings.showConfirmation = function(params) {
 	var alert = $(params.alert).clone();
 
 	var confirmationButton = alert.find('button.submit');
-	confirmationButton.click(function() {
+	confirmationButton.on('click', function() {
 		$(this).attr('disabled', 'disabled');
 		$.ajax({
 			type : 'POST',
@@ -681,7 +681,7 @@ function setupBackups() {
 			selectedCount = 0,
 			submit = $('#backup-restore-modal button[type=submit]');
 		row.toggleClass('selected');
-		selectedCount = row.parent().children('.selected').size();
+		selectedCount = row.parent().children('.selected').length;
 		if ( selectedCount < 1 ) {
 			submit.attr('disabled', 'disabled');
 		} else {
@@ -784,7 +784,7 @@ function setupComponentSettings(container) {
 			provider = me.data('provider'),
 			instance = me.data('instance'),
 			setting = me.data('setting');
-		if ( field.size() < 1 ) {
+		if ( field.length < 1 ) {
 			return;
 		}
 		var el = field.get(0),
@@ -824,7 +824,7 @@ function loadComponentInstanceContainer(container) {
 	if ( !(container) ) {
 		return;
 	}
-	if ( container && container.size() > 0 && !container.hasClass('loaded') ) {
+	if ( container && container.length > 0 && !container.hasClass('loaded') ) {
 		var url = container.data('target')
 			+'?uid=' + encodeURIComponent(container.data('factoryUid'))
 			+'&key=' + encodeURIComponent(container.data('instanceKey'));
@@ -849,16 +849,16 @@ function selectInitialComponentInstance() {
 	var selected = false;
 	var componentContent = $('.instance-content');
 	
-	if ( componentContent.size() > 1 && document.location.hash ) {
+	if ( componentContent.length > 1 && document.location.hash ) {
 		var instanceKey = decodeURIComponent(document.location.hash.substring(1));
 		var instanceTab = $('#settings.carousel .carousel-indicators li[data-instance-key="'
 			+ instanceKey + '"]');
-		if ( instanceTab.size() > 0 ) {
-			instanceTab.first().click();
+		if ( instanceTab.length > 0 ) {
+			instanceTab.first().trigger('click');
 			selected = true;
 		}
 	}
-	if ( !selected && componentContent.size() > 0 ) {
+	if ( !selected && componentContent.length > 0 ) {
 		loadComponentInstanceContainer(componentContent.first());
 	}
 }

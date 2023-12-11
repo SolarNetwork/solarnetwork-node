@@ -1,7 +1,7 @@
 $(document).ready(function() {
 	var newUsername;
 	
-	$('#login-username').select().focus();
+	$('#login-username').trigger('select').trigger('focus');
 
 	$('#change-password-form').ajaxForm({
 		dataType: 'json',
@@ -51,9 +51,9 @@ $(document).ready(function() {
 	// focus on the change password form's old password, unless that has a pre-filled value
 	var oldPasswordField = $('#old-password');
 	if ( oldPasswordField.val() ) {
-		$('#login-password').focus();
+		$('#login-password').trigger('focus');
 	} else {
-		oldPasswordField.focus();
+		oldPasswordField.trigger('focus');
 	}
 	
 });

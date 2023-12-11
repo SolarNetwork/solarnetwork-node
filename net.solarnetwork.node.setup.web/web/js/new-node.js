@@ -50,7 +50,7 @@ $(document).ready(function() {
 			selectedCount = 0,
 			submit = $('#associate-restore-backup-form button[type=submit]');
 		row.toggleClass('selected');
-		selectedCount = row.parent().children('.selected').size();
+		selectedCount = row.parent().children('.selected').length;
 		if ( selectedCount < 1 ) {
 			submit.attr('disabled', 'disabled');
 		} else {

@@ -186,7 +186,7 @@ function createPluginUI(plugin, installed, showVersions) {
 		$('<span class="label"/>').text(installedSection.data('msg-unremovable')).appendTo(actionContainer);
 	}
 	if ( button !== undefined ) {
-		button.click(function() { action(plugin); });
+		button.on('click', function() { action(plugin); });
 	}
 	return row;
 }
@@ -275,7 +275,7 @@ function populateUI() {
 				groupBody.append(createPluginUI(plugin, groupedPlugins.installed));
 			}
 		}
-		if ( html.children().size() > 0 ) {
+		if ( html.children().length > 0 ) {
 			availableContainer.html(html);
 			pluginsSection.removeClass('hide');
 		} else {
@@ -467,14 +467,14 @@ function handleInstall(form) {
 	});
 }
 
-	if ( pluginsSection.size() === 1 && upgradeSection.size() === 1 ) {
+	if ( pluginsSection.length === 1 && upgradeSection.length === 1 ) {
 		populateUI();
 	};
-	$('#plugins-refresh').click(function(event) {
+	$('#plugins-refresh').on('click', function(event) {
 		event.preventDefault();
 		refreshPluginList($(this).attr('href'));
 	});
-	$('#plugins-upgrade-all').click(function(event) {
+	$('#plugins-upgrade-all').on('click', function(event) {
 		event.preventDefault();
 		previewUpgradeAll($(this).attr('href'));
 	});
