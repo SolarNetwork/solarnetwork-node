@@ -38,6 +38,7 @@ $(document).ready(function() {
 				form = jqForm.get(0);
 				$('#change-username-success').removeClass('hidden');
 				$('.active-user-display').text(form.elements['username'].value);
+				form.reset();
 			} else {
 				SolarNode.error(json.message);
 			}
