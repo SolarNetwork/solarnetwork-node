@@ -30,43 +30,45 @@
 </section>
 
 <form id="edit-logger-level-modal" class="modal dynamic hide fade" data-backdrop="static" action="<setup:url value='/a/logging/levels'/>" method="post">
-	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal">&times;</button>
-		<h3>
-			<fmt:message key="logging.levels.edit.title"/>
-		</h3>
-	</div>
-	<div class="modal-body">
-		<p><fmt:message key="logging.levels.edit.intro"/></p>
-		<label for="logging-logger-levels-logger"><fmt:message key="logging.levels.logger.label"/></label>
-		<input type="text" class="form-control" maxlength="256" name="logger" id="logging-logger-levels-logger">
-		<span class="help-block"><fmt:message key="logging.levels.logger.caption"/></span>
-
-		<label for="logging-logger-levels-level"><fmt:message key="logging.levels.level.label"/></label>
-		<select class="form-control" name="level" id="logging-logger-levels-level">
-			<option value="trace"><fmt:message key="logging.levels.TRACE.label"/></option>
-			<option value="debug"><fmt:message key="logging.levels.DEBUG.label"/></option>
-			<option value="info" selected><fmt:message key="logging.levels.INFO.label"/></option>
-			<option value="warn"><fmt:message key="logging.levels.WARN.label"/></option>
-			<option value="error"><fmt:message key="logging.levels.ERROR.label"/></option>
-			<option value="off"><fmt:message key="logging.levels.OFF.label"/></option>
-			<option value="inherit"><fmt:message key="logging.levels.INHERIT.label"/></option>
-		</select>
-		<span class="help-block"><fmt:message key="logging.levels.level.caption"/></span>
-
-		<p class="create"><fmt:message key="logging.levels.edit.loggers.intro"/></p>
-		<select class="create form-control" name="loggers" readonly size="10" id="logging-loggers">
-			<option value="trace"><fmt:message key="logging.levels.TRACE.label"/></option>
-			<option value="debug"><fmt:message key="logging.levels.DEBUG.label"/></option>
-			<option value="info" selected><fmt:message key="logging.levels.INFO.label"/></option>
-			<option value="warn"><fmt:message key="logging.levels.WARN.label"/></option>
-			<option value="error"><fmt:message key="logging.levels.ERROR.label"/></option>
-			<option value="off"><fmt:message key="logging.levels.OFF.label"/></option>
-		</select>
-	</div>
-	<div class="modal-footer">
-		<sec:csrfInput/>
-		<button type="button" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></button>
-		<button type="submit" class="btn btn-primary"><fmt:message key="logging.levels.edit.save.label"/></button>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title"><fmt:message key="logging.levels.edit.title"/></h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<fmt:message key='close.label'/>"></button>
+			</div>
+			<div class="modal-body">
+				<p><fmt:message key="logging.levels.edit.intro"/></p>
+				<label for="logging-logger-levels-logger"><fmt:message key="logging.levels.logger.label"/></label>
+				<input type="text" class="form-control" maxlength="256" name="logger" id="logging-logger-levels-logger">
+				<span class="help-block"><fmt:message key="logging.levels.logger.caption"/></span>
+		
+				<label for="logging-logger-levels-level"><fmt:message key="logging.levels.level.label"/></label>
+				<select class="form-control" name="level" id="logging-logger-levels-level">
+					<option value="trace"><fmt:message key="logging.levels.TRACE.label"/></option>
+					<option value="debug"><fmt:message key="logging.levels.DEBUG.label"/></option>
+					<option value="info" selected><fmt:message key="logging.levels.INFO.label"/></option>
+					<option value="warn"><fmt:message key="logging.levels.WARN.label"/></option>
+					<option value="error"><fmt:message key="logging.levels.ERROR.label"/></option>
+					<option value="off"><fmt:message key="logging.levels.OFF.label"/></option>
+					<option value="inherit"><fmt:message key="logging.levels.INHERIT.label"/></option>
+				</select>
+				<span class="help-block"><fmt:message key="logging.levels.level.caption"/></span>
+		
+				<p class="create"><fmt:message key="logging.levels.edit.loggers.intro"/></p>
+				<select class="create form-control" name="loggers" readonly size="10" id="logging-loggers">
+					<option value="trace"><fmt:message key="logging.levels.TRACE.label"/></option>
+					<option value="debug"><fmt:message key="logging.levels.DEBUG.label"/></option>
+					<option value="info" selected><fmt:message key="logging.levels.INFO.label"/></option>
+					<option value="warn"><fmt:message key="logging.levels.WARN.label"/></option>
+					<option value="error"><fmt:message key="logging.levels.ERROR.label"/></option>
+					<option value="off"><fmt:message key="logging.levels.OFF.label"/></option>
+				</select>
+			</div>
+			<div class="modal-footer">
+				<sec:csrfInput/>
+				<button type="button" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key='close.label'/></button>
+				<button type="submit" class="btn btn-primary"><fmt:message key="logging.levels.edit.save.label"/></button>
+			</div>
+		</div>
 	</div>
 </form>

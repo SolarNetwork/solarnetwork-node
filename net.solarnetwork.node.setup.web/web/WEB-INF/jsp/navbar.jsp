@@ -54,11 +54,11 @@
 							<li ${navloc == 'plugins' ? 'class="active"' : ''}><a class="dropdown-item" id="link-plugins" href="<setup:url value='/a/plugins'/>"><fmt:message key='link.plugins'/></a></li>
 							<c:if test="${not empty systemService}">
 								<li role="separator"><hr class="dropdown-divider"></li>
-								<li ${navloc == 'hosts' ? 'class="active"' : ''}><a class="nav-link" href="<setup:url value='/a/hosts'/>"><fmt:message key='link.hosts'/></a></li>
+								<li ${navloc == 'hosts' ? 'class="active"' : ''}><a class="dropdown-item" href="<setup:url value='/a/hosts'/>"><fmt:message key='link.hosts'/></a></li>
 								<li role="separator"><hr class="dropdown-divider"></li>
-								<li><a class="dropdown-item restart" href="#"><fmt:message key='link.restart'/></a></li>
+								<li><button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#restart-modal"><fmt:message key='link.restart'/></button></li>
 								<li role="separator"><hr class="dropdown-divider"></li>
-								<li><a class="dropdown-item reset" href="#"><fmt:message key='link.reset'/></a></li>
+								<li><button class="dropdown-item" data-bs-toggle="modal" data-bs-target="#reset-modal"><fmt:message key='link.reset'/></button></li>
 							</c:if>
 						</ul>
 					</li>
@@ -99,50 +99,58 @@
 		<sec:csrfInput/>
 	</form>
 	<form id="restart-modal" class="modal hide fade" action="<setup:url value='/a/home/restart'/>" method="post">
-		<div class="modal-header">
-			<button type="button" class="close start" data-dismiss="modal">&times;</button>
-			<h3><fmt:message key='restart.title'/></h3>
-		</div>
-		<div class="modal-body start">
-			<p><fmt:message key='restart.intro'/></p>
-		</div>
-		<div class="modal-body success" style="display: none;">
-			<div class="progress progress-info progress-striped active">
-				<div class="progress-bar" style="width:100%"></div>
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3 class="modal-title"><fmt:message key='restart.title'/></h3>
+					<button type="button" class="btn-close start" data-bs-dismiss="modal" aria-label="<fmt:message key='close.label'/>"></button>
+				</div>
+				<div class="modal-body start">
+					<p><fmt:message key='restart.intro'/></p>
+				</div>
+				<div class="modal-body success" style="display: none;">
+					<div class="progress progress-info progress-striped active">
+						<div class="progress-bar" style="width:100%"></div>
+					</div>
+					<p><fmt:message key='restart.underway'/></p>
+				</div>
+				<div class="modal-footer start">
+					<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>
+					<button type="submit" class="btn btn-danger reboot"><fmt:message key="restart.action.reboot"/></button>
+					<button type="submit" class="btn btn-primary"><fmt:message key="restart.action.restart"/></button>
+				</div>
+				<input type="hidden" name="reboot" value="false"/>
 			</div>
-			<p><fmt:message key='restart.underway'/></p>
 		</div>
-		<div class="modal-footer start">
-			<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></a>
-			<button type="submit" class="btn btn-danger reboot"><fmt:message key="restart.action.reboot"/></button>
-			<button type="submit" class="btn btn-primary"><fmt:message key="restart.action.restart"/></button>
-		</div>
-		<input type="hidden" name="reboot" value="false"/>
 		<sec:csrfInput/>
 	</form>
 	<form id="reset-modal" class="modal hide fade" action="<setup:url value='/a/home/reset'/>" method="post">
-		<div class="modal-header">
-			<button type="button" class="close start" data-dismiss="modal">&times;</button>
-			<h3><fmt:message key='reset.title'/></h3>
-		</div>
-		<div class="modal-body start">
-			<p><fmt:message key='reset.intro'/></p>
-			<label class="checkbox">
-				<input type="checkbox" name="applicationOnly" value="true"/>
-				<fmt:message key='reset.applicationOnly.label'/>
-			</label>
-		</div>
-		<div class="modal-body success" style="display: none;">
-			<div class="progress progress-info progress-striped active">
-				<div class="progress-bar" style="width:100%"></div>
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h3 class="modal-title"><fmt:message key='reset.title'/></h3>
+					<button type="button" class="btn-close start" data-bs-dismiss="modal" aria-label="<fmt:message key='close.label'/>"></button>
+				</div>
+				<div class="modal-body start">
+					<p><fmt:message key='reset.intro'/></p>
+					<div class="form-check">
+						<input class="form-check-input" type="checkbox" name="applicationOnly" value="true" id="reset-application-only">
+						<label class="form-check-label" for="reset-application-only"><fmt:message key='reset.applicationOnly.label'/></label>
+					</div>
+				</div>
+				<div class="modal-body success" style="display: none;">
+					<div class="progress progress-info progress-striped active">
+						<div class="progress-bar" style="width:100%"></div>
+					</div>
+					<p><fmt:message key='reset.underway'/></p>
+				</div>
+				<div class="modal-footer start">
+					<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>
+					<button type="submit" class="btn btn-danger reboot"><fmt:message key="reset.action.reset"/></button>
+				</div>
+				<input type="hidden" name="reboot" value="false"/>
 			</div>
-			<p><fmt:message key='reset.underway'/></p>
 		</div>
-		<div class="modal-footer start">
-			<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></a>
-			<button type="submit" class="btn btn-danger reboot"><fmt:message key="reset.action.reset"/></button>
-		</div>
-		<input type="hidden" name="reboot" value="false"/>
 		<sec:csrfInput/>
 	</form>
 </sec:authorize>

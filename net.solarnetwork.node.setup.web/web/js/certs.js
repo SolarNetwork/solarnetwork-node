@@ -40,7 +40,7 @@ $(document).ready(function() {
 			var json = $.parseJSON(xhr.responseText);
 			SolarNode.error(json.message, $('#renew-cert-modal .modal-body.start'));
 		}
-	}).on('shown', function() {
+	}).on('shown.bs.modal', function() {
 		$('#renew-cert-password').focus();
 	});
 	$('#btn-export-node-cert').on('click', function(event) {

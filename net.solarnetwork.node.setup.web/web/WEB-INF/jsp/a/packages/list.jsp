@@ -100,77 +100,89 @@
 </div>
 
 <form id="packages-upgrade-modal" class="packages modal hide fade" action="<setup:url value='/a/packages/upgrade'/>" method="post">
-	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal">&times;</button>
-		<h3><fmt:message key="packages.upgrade.title"/></h3>
-	</div>
-	<div class="modal-body before">
-		<p><fmt:message key="packages.upgrade.intro"/></p>
-	</div>
-	<div class="modal-body after hidden">
-		<p class="success"><fmt:message key="packages.upgrade.success"/></p>
-		<p class="error hidden"><fmt:message key="packages.upgrade.error"/></p>
-	</div>
-	<div class="modal-footer">
-		<c:if test="${not empty systemService}">
-			<button type="button" class="btn pull-left hidden after success restart" title="<fmt:message key='link.restart'/>">
-				<fmt:message key="link.restart"/>
-			</button>
-		</c:if>
-		<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key="close.label"/></a>
-		<button type="submit" class="btn btn-primary ladda-button expand-right before"
-				data-loading-text="<fmt:message key='packages.upgrading.message'/>">${msgUpgradeAll}</button>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title"><fmt:message key="packages.upgrade.title"/></h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<fmt:message key='close.label'/>"></button>
+			</div>
+			<div class="modal-body before">
+				<p><fmt:message key="packages.upgrade.intro"/></p>
+			</div>
+			<div class="modal-body after hidden">
+				<p class="success"><fmt:message key="packages.upgrade.success"/></p>
+				<p class="error hidden"><fmt:message key="packages.upgrade.error"/></p>
+			</div>
+			<div class="modal-footer">
+				<c:if test="${not empty systemService}">
+					<button type="button" class="btn pull-left hidden after success restart" title="<fmt:message key='link.restart'/>">
+						<fmt:message key="link.restart"/>
+					</button>
+				</c:if>
+				<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
+				<button type="submit" class="btn btn-primary ladda-button expand-right before"
+						data-loading-text="<fmt:message key='packages.upgrading.message'/>">${msgUpgradeAll}</button>
+			</div>
+		</div>
 	</div>
 	<sec:csrfInput/>
 </form>
 
 <form id="package-install-modal" class="packages modal hide fade" action="<setup:url value='/a/packages/install'/>" method="post">
-	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal">&times;</button>
-		<h3><fmt:message key="package.install.title"/></h3>
-	</div>
-	<div class="modal-body before">
-		<p><fmt:message key="package.install.intro"/></p>
-	</div>
-	<div class="modal-body after hidden">
-		<p class="success"><fmt:message key="package.install.success"/></p>
-		<p class="error hidden"><fmt:message key="package.install.error"/></p>
-	</div>
-	<div class="modal-footer">
-		<c:if test="${not empty systemService}">
-			<button type="button" class="btn pull-left hidden after success restart" title="<fmt:message key='link.restart'/>">
-				<fmt:message key="link.restart"/>
-			</button>
-		</c:if>
-		<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key="close.label"/></a>
-		<button type="submit" class="btn btn-primary ladda-button expand-right before"
-				data-loading-text="<fmt:message key='package.installing.message'/>">${msgInstall}</button>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title"><fmt:message key="package.install.title"/></h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<fmt:message key='close.label'/>"></button>
+			</div>
+			<div class="modal-body before">
+				<p><fmt:message key="package.install.intro"/></p>
+			</div>
+			<div class="modal-body after hidden">
+				<p class="success"><fmt:message key="package.install.success"/></p>
+				<p class="error hidden"><fmt:message key="package.install.error"/></p>
+			</div>
+			<div class="modal-footer">
+				<c:if test="${not empty systemService}">
+					<button type="button" class="btn pull-left hidden after success restart" title="<fmt:message key='link.restart'/>">
+						<fmt:message key="link.restart"/>
+					</button>
+				</c:if>
+				<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
+				<button type="submit" class="btn btn-primary ladda-button expand-right before"
+						data-loading-text="<fmt:message key='package.installing.message'/>">${msgInstall}</button>
+			</div>
+		</div>
 	</div>
 	<sec:csrfInput/>
 	<input type="hidden" name="name">
 </form>
 
 <form id="package-remove-modal" class="packages modal hide fade" action="<setup:url value='/a/packages/remove'/>" method="post">
-	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal">&times;</button>
-		<h3><fmt:message key="package.remove.title"/></h3>
-	</div>
-	<div class="modal-body before">
-		<p><fmt:message key="package.remove.intro"/></p>
-	</div>
-	<div class="modal-body after hidden">
-		<p class="success"><fmt:message key="package.remove.success"/></p>
-		<p class="error hidden"><fmt:message key="package.remove.error"/></p>
-	</div>
-	<div class="modal-footer">
-		<c:if test="${not empty systemService}">
-			<button type="button" class="btn pull-left hidden after success restart" title="<fmt:message key='link.restart'/>">
-				<fmt:message key="link.restart"/>
-			</button>
-		</c:if>
-		<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key="close.label"/></a>
-		<button type="submit" class="btn btn-danger ladda-button expand-right before"
-				data-loading-text="<fmt:message key='package.removing.message'/>">${msgRemove}</button>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title"><fmt:message key="package.remove.title"/></h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<fmt:message key='close.label'/>"></button>
+			</div>
+			<div class="modal-body before">
+				<p><fmt:message key="package.remove.intro"/></p>
+			</div>
+			<div class="modal-body after hidden">
+				<p class="success"><fmt:message key="package.remove.success"/></p>
+				<p class="error hidden"><fmt:message key="package.remove.error"/></p>
+			</div>
+			<div class="modal-footer">
+				<c:if test="${not empty systemService}">
+					<button type="button" class="btn pull-left hidden after success restart" title="<fmt:message key='link.restart'/>">
+						<fmt:message key="link.restart"/>
+					</button>
+				</c:if>
+				<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
+				<button type="submit" class="btn btn-danger ladda-button expand-right before"
+						data-loading-text="<fmt:message key='package.removing.message'/>">${msgRemove}</button>
+			</div>
+		</div>
 	</div>
 	<sec:csrfInput/>
 	<input type="hidden" name="name">

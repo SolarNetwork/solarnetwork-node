@@ -481,16 +481,12 @@ SolarNode.copyElementValue = function(copyable) {
 }
 
 $(document).ready(function() {
-	$('body').on('hidden', '.modal.dynamic', function () {
+	$('body').on('hidden.bs.modal', '.modal.dynamic', function () {
 		$(this).removeData('modal');
 	});
 	$('a.logout').on('click', function(event) {
 		event.preventDefault();
 		$('#logout-form').get(0).submit();
-	});
-	$('a.restart').on('click', function(event) {
-		event.preventDefault();
-		$('#restart-modal').modal('show');
 	});
 	$('#restart-modal').ajaxForm({
 		dataType: 'json',
@@ -521,10 +517,6 @@ $(document).ready(function() {
 		if ( input ) {
 			input.value = 'true';
 		}
-	});
-	$('a.reset').on('click', function(event) {
-		event.preventDefault();
-		$('#reset-modal').modal('show');
 	});
 	$('#reset-modal').ajaxForm({
 		dataType: 'json',

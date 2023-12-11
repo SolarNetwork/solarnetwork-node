@@ -127,7 +127,7 @@ $(function() {
 });
 </script>
 <div id="alert-delete" class="alert alert-danger alert-block hidden">
-	<button type="button" class="close" data-dismiss="alert alert-warning">&times;</button>
+	<button type="button" class="btn-close" data-bs-dismiss="alert alert-warning" aria-label="<fmt:message key='close.label'/>"></button>
 	<h4><fmt:message key="settings.factory.delete.alert.title"/></h4>
 	<p>
 		<fmt:message key="settings.factory.delete.alert.msg"/>
@@ -137,7 +137,7 @@ $(function() {
 	</button>
 </div>
 <div id="alert-reset" class="alert alert-danger alert-block hidden">
-	<button type="button" class="close" data-dismiss="alert alert-warning">&times;</button>
+	<button type="button" class="btn-close" data-bs-dismiss="alert alert-warning" aria-label="<fmt:message key='close.label'/>"></button>
 	<h4><fmt:message key="settings.factory.reset.alert.title"/></h4>
 	<p>
 		<fmt:message key="settings.factory.reset.alert.msg"/>
@@ -148,194 +148,214 @@ $(function() {
 </div>
 <form id="remove-all-component-instance-modal" class="modal dynamic hide fade"
 		action="<setup:url value='/a/settings/manage/removeall'/>" method="post">
-	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal">&times;</button>
-		<h3><fmt:message key='settings.factory.removeall.title'/></h3>
-	</div>
-	<div class="modal-body">
-		<p>
-			<fmt:message key='settings.factory.removeall.intro'>
-				<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
-			</fmt:message>
-		</p>
-	</div>
-	<div class="modal-footer">
-		<button type="button" class="btn btn-default" data-dismiss="modal">
-			<fmt:message key="cancel.label"/>
-		</button>
-		<button type="submit" class="btn btn-danger">
-			<fmt:message key="settings.factory.removeall.remove.label"/>
-		</button>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title"><fmt:message key='settings.factory.removeall.title'/></h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<fmt:message key='close.label'/>"></button>
+			</div>
+			<div class="modal-body">
+				<p>
+					<fmt:message key='settings.factory.removeall.intro'>
+						<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
+					</fmt:message>
+				</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-default" data-bs-dismiss="modal">
+					<fmt:message key="cancel.label"/>
+				</button>
+				<button type="submit" class="btn btn-danger">
+					<fmt:message key="settings.factory.removeall.remove.label"/>
+				</button>
+			</div>
+		</div>
 	</div>
 	<sec:csrfInput/>
 	<input type="hidden" name="uid" value="${factory.factoryUid}"/>
 </form>
 <form class="modal dynamic hide fade lookup-modal sn-loc-lookup-modal price-lookup-modal"
 		action="<setup:url value='/a/location'/>" method="get">
-	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal">&times;</button>
-		<h3><fmt:message key='lookup.price.title'/></h3>
-	</div>
-	<div class="modal-body">
-		<p><fmt:message key='lookup.price.intro'/></p>
-		<div class="form-inline">
-			<input type="hidden" name="tags" value="price"/>
-			<input type="text" class="col-md-4" maxlength="64" name="query" placeholder="<fmt:message key='lookup.price.search.placeholder'/>"/>
-			<button type="submit" class="btn btn-primary ladda-button expand-right" data-loading-text="<fmt:message key='lookup.searching.label'/>">
-				<fmt:message key='lookup.action.search'/>
-			</button>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title"><fmt:message key='lookup.price.title'/></h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<fmt:message key='close.label'/>"></button>
+			</div>
+			<div class="modal-body">
+				<p><fmt:message key='lookup.price.intro'/></p>
+				<div class="form-inline">
+					<input type="hidden" name="tags" value="price"/>
+					<input type="text" class="col-md-4" maxlength="64" name="query" placeholder="<fmt:message key='lookup.price.search.placeholder'/>"/>
+					<button type="submit" class="btn btn-primary ladda-button expand-right" data-loading-text="<fmt:message key='lookup.searching.label'/>">
+						<fmt:message key='lookup.action.search'/>
+					</button>
+				</div>
+		
+				<table class="table table-striped table-hover hidden search-results">
+					<thead>
+						<tr>
+							<th><fmt:message key='lookup.price.sourceName'/></th>
+							<th><fmt:message key='lookup.price.locationName'/></th>
+							<th><fmt:message key='lookup.price.country'/></th>
+							<th><fmt:message key='lookup.price.region'/></th>
+							<th><fmt:message key='lookup.price.currency'/></th>
+						</tr>
+						<tr class="template">
+							<td data-tprop="sourceId"></td>
+							<td data-tprop="m.name"></td>
+							<td data-tprop="location.country"></td>
+							<td data-tprop="location.region"></td>
+							<td data-tprop="m.currency"></td>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+		
+				<label id="price-lookup-selected-label" class="hidden">
+					<fmt:message key='lookup.selected.label'/>
+					<span id="price-lookup-selected-container"></span>
+				</label>
+			</div>
+			<div class="modal-footer">
+				<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>
+				<button type="button" class="btn btn-primary choose" disabled="disabled">
+					<fmt:message key="lookup.action.choose"/>
+				</button>
+			</div>
 		</div>
-
-		<table class="table table-striped table-hover hidden search-results">
-			<thead>
-				<tr>
-					<th><fmt:message key='lookup.price.sourceName'/></th>
-					<th><fmt:message key='lookup.price.locationName'/></th>
-					<th><fmt:message key='lookup.price.country'/></th>
-					<th><fmt:message key='lookup.price.region'/></th>
-					<th><fmt:message key='lookup.price.currency'/></th>
-				</tr>
-				<tr class="template">
-					<td data-tprop="sourceId"></td>
-					<td data-tprop="m.name"></td>
-					<td data-tprop="location.country"></td>
-					<td data-tprop="location.region"></td>
-					<td data-tprop="m.currency"></td>
-				</tr>
-			</thead>
-			<tbody>
-			</tbody>
-		</table>
-
-		<label id="price-lookup-selected-label" class="hidden">
-			<fmt:message key='lookup.selected.label'/>
-			<span id="price-lookup-selected-container"></span>
-		</label>
-	</div>
-	<div class="modal-footer">
-		<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></a>
-		<button type="button" class="btn btn-primary choose" disabled="disabled">
-			<fmt:message key="lookup.action.choose"/>
-		</button>
 	</div>
 </form>
 <form class="modal dynamic hide fade lookup-modal sn-loc-lookup-modal weather-lookup-modal day-lookup-modal"
 		action="<setup:url value='/a/location'/>" method="get">
-	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal">&times;</button>
-		<h3><fmt:message key='lookup.weather.title'/></h3>
-	</div>
-	<div class="modal-body">
-		<p><fmt:message key='lookup.weather.intro'/></p>
-		<div class="form-inline">
-			<input type="hidden" name="tags" value="weather"/>
-			<input type="text" class="col-md-4" maxlength="64" name="query" placeholder="<fmt:message key='lookup.weather.search.placeholder'/>"/>
-			<button type="submit" class="btn btn-primary ladda-button expand-right"
-				data-loading-text="<fmt:message key='lookup.searching.label'/>">
-				<fmt:message key='lookup.action.search'/>
-			</button>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title"><fmt:message key='lookup.weather.title'/></h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<fmt:message key='close.label'/>"></button>
+			</div>
+			<div class="modal-body">
+				<p><fmt:message key='lookup.weather.intro'/></p>
+				<div class="form-inline">
+					<input type="hidden" name="tags" value="weather"/>
+					<input type="text" class="col-md-4" maxlength="64" name="query" placeholder="<fmt:message key='lookup.weather.search.placeholder'/>"/>
+					<button type="submit" class="btn btn-primary ladda-button expand-right"
+						data-loading-text="<fmt:message key='lookup.searching.label'/>">
+						<fmt:message key='lookup.action.search'/>
+					</button>
+				</div>
+		
+				<table class="table table-striped table-hover hidden search-results">
+					<thead>
+						<tr>
+							<th><fmt:message key='lookup.weather.sourceName'/></th>
+							<th><fmt:message key='lookup.weather.country'/></th>
+							<th><fmt:message key='lookup.weather.region'/></th>
+							<th><fmt:message key='lookup.weather.locality'/></th>
+							<th><fmt:message key='lookup.weather.postalCode'/></th>
+						</tr>
+						<tr class="template">
+							<td data-tprop="sourceId"></td>
+							<td data-tprop="location.country"></td>
+							<td data-tprop="location.region"></td>
+							<td data-tprop="location.locality"></td>
+							<td data-tprop="location.postalCode"></td>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+		
+				<label id="weather-lookup-selected-label" class="hidden">
+					<fmt:message key='lookup.selected.label'/>
+					<span id="weather-lookup-selected-container"></span>
+				</label>
+			</div>
+			<div class="modal-footer">
+				<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>
+				<button type="button" class="btn btn-primary choose" disabled="disabled">
+					<fmt:message key="lookup.action.choose"/>
+				</button>
+			</div>
 		</div>
-
-		<table class="table table-striped table-hover hidden search-results">
-			<thead>
-				<tr>
-					<th><fmt:message key='lookup.weather.sourceName'/></th>
-					<th><fmt:message key='lookup.weather.country'/></th>
-					<th><fmt:message key='lookup.weather.region'/></th>
-					<th><fmt:message key='lookup.weather.locality'/></th>
-					<th><fmt:message key='lookup.weather.postalCode'/></th>
-				</tr>
-				<tr class="template">
-					<td data-tprop="sourceId"></td>
-					<td data-tprop="location.country"></td>
-					<td data-tprop="location.region"></td>
-					<td data-tprop="location.locality"></td>
-					<td data-tprop="location.postalCode"></td>
-				</tr>
-			</thead>
-			<tbody>
-			</tbody>
-		</table>
-
-		<label id="weather-lookup-selected-label" class="hidden">
-			<fmt:message key='lookup.selected.label'/>
-			<span id="weather-lookup-selected-container"></span>
-		</label>
-	</div>
-	<div class="modal-footer">
-		<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></a>
-		<button type="button" class="btn btn-primary choose" disabled="disabled">
-			<fmt:message key="lookup.action.choose"/>
-		</button>
 	</div>
 </form>
 <form class="modal dynamic hide fade lookup-modal sn-loc-lookup-modal co2-lookup-modal"
 		action="<setup:url value='/a/location'/>" method="get">
-	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal">&times;</button>
-		<h3><fmt:message key='lookup.co2.title'/></h3>
-	</div>
-	<div class="modal-body">
-		<p><fmt:message key='lookup.co2.intro'/></p>
-		<div class="form-inline">
-			<input type="hidden" name="tags" value="co2"/>
-			<input type="text" class="col-md-4" maxlength="64" name="query" placeholder="<fmt:message key='lookup.co2.search.placeholder'/>"/>
-			<button type="submit" class="btn btn-primary ladda-button expand-right" data-loading-text="<fmt:message key='lookup.searching.label'/>">
-				<fmt:message key='lookup.action.search'/>
-			</button>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title"><fmt:message key='lookup.co2.title'/></h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<fmt:message key='close.label'/>"></button>
+			</div>
+			<div class="modal-body">
+				<p><fmt:message key='lookup.co2.intro'/></p>
+				<div class="form-inline">
+					<input type="hidden" name="tags" value="co2"/>
+					<input type="text" class="col-md-4" maxlength="64" name="query" placeholder="<fmt:message key='lookup.co2.search.placeholder'/>"/>
+					<button type="submit" class="btn btn-primary ladda-button expand-right" data-loading-text="<fmt:message key='lookup.searching.label'/>">
+						<fmt:message key='lookup.action.search'/>
+					</button>
+				</div>
+		
+				<table class="table table-striped table-hover hidden search-results">
+					<thead>
+						<tr>
+							<th><fmt:message key='lookup.co2.sourceName'/></th>
+							<th><fmt:message key='lookup.co2.locationName'/></th>
+							<th><fmt:message key='lookup.co2.country'/></th>
+							<th><fmt:message key='lookup.co2.region'/></th>
+						</tr>
+						<tr class="template">
+							<td data-tprop="sourceId"></td>
+							<td data-tprop="m.name"></td>
+							<td data-tprop="location.country"></td>
+							<td data-tprop="location.region"></td>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+		
+				<label id="co2-lookup-selected-label" class="hidden">
+					<fmt:message key='lookup.selected.label'/>
+					<span id="co2-lookup-selected-container"></span>
+				</label>
+			</div>
+			<div class="modal-footer">
+				<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>
+				<button type="button" class="btn btn-primary choose" disabled="disabled">
+					<fmt:message key="lookup.action.choose"/>
+				</button>
+			</div>
 		</div>
-
-		<table class="table table-striped table-hover hidden search-results">
-			<thead>
-				<tr>
-					<th><fmt:message key='lookup.co2.sourceName'/></th>
-					<th><fmt:message key='lookup.co2.locationName'/></th>
-					<th><fmt:message key='lookup.co2.country'/></th>
-					<th><fmt:message key='lookup.co2.region'/></th>
-				</tr>
-				<tr class="template">
-					<td data-tprop="sourceId"></td>
-					<td data-tprop="m.name"></td>
-					<td data-tprop="location.country"></td>
-					<td data-tprop="location.region"></td>
-				</tr>
-			</thead>
-			<tbody>
-			</tbody>
-		</table>
-
-		<label id="co2-lookup-selected-label" class="hidden">
-			<fmt:message key='lookup.selected.label'/>
-			<span id="co2-lookup-selected-container"></span>
-		</label>
-	</div>
-	<div class="modal-footer">
-		<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></a>
-		<button type="button" class="btn btn-primary choose" disabled="disabled">
-			<fmt:message key="lookup.action.choose"/>
-		</button>
 	</div>
 </form>
 <form id="add-component-instance-modal" class="modal dynamic hide fade" data-backdrop="static" action="<setup:url value='/a/settings/manage/add'/>" method="post">
-	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal">&times;</button>
-		<h3>
-			<fmt:message key='settings.factory.add'>
-				<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
-			</fmt:message>
-		</h3>
-	</div>
-	<div class="modal-body">
-		<p><fmt:message key='settings.factory.add.intro'/></p>
-		<div class="form-inline">
-			<input type="text" class="col-md-5" maxlength="32" name="name" id="add-component-instance-name"
-				placeholder="<fmt:message key='settings.factory.add.placeholder'/>"/>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title">
+					<fmt:message key='settings.factory.add'>
+						<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
+					</fmt:message>
+				</h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<fmt:message key='close.label'/>"></button>
+			</div>
+			<div class="modal-body">
+				<p><fmt:message key='settings.factory.add.intro'/></p>
+				<div class="form-inline">
+					<input type="text" class="col-md-5" maxlength="32" name="name" id="add-component-instance-name"
+						placeholder="<fmt:message key='settings.factory.add.placeholder'/>"/>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<sec:csrfInput/>
+				<input type="hidden" name="uid" value="${factory.factoryUid}"/>
+				<button type="button" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key='close.label'/></button>
+				<button type="submit" class="btn btn-primary"><fmt:message key="settings.factory.add.label"/></button>
+			</div>
 		</div>
-	</div>
-	<div class="modal-footer">
-		<sec:csrfInput/>
-		<input type="hidden" name="uid" value="${factory.factoryUid}"/>
-		<button type="button" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></button>
-		<button type="submit" class="btn btn-primary"><fmt:message key="settings.factory.add.label"/></button>
 	</div>
 </form>

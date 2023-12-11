@@ -2,7 +2,7 @@
 	<h2><fmt:message key="cli-console.title"/></h2>
 	<p><fmt:message key="cli-console.intro"/></p>
 	<div class="alert alert-warning">
-		<button type="button" class="close" data-dismiss="alert alert-warning">&times;</button>
+		<button type="button" class="btn-close" data-bs-dismiss="alert alert-warning" aria-label="<fmt:message key='close.label'/>"></button>
 		<fmt:message key="cli-console.warn"/>
 	</div>
 </section>
@@ -42,7 +42,7 @@
 <hr>
 <section id="cli-console">
 	<div class="item template well well-small brief-showcase-gray">
-		<button type="button" class="close" data-dismiss="alert alert-warning">&times;</button>
+		<button type="button" class="btn-close" data-bs-dismiss="alert alert-warning" aria-label="<fmt:message key='close.label'/>"></button>
 		<button type="button" class="copy"><i class="far fa-clipboard"></i></button>
 		<span class="cmd" data-tprop="command"></span>
 	</div>

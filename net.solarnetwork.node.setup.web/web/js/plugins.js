@@ -364,7 +364,7 @@ function handleInstall(form) {
 		progressBar.addClass('hide');
 		SolarNode.error(SolarNode.i18n(installBtn.data('msg-error'), [msg]), errorContainer);
 	};
-	form.on('hidden', function() {
+	form.on('hidden.bs.modal', function() {
 		// tidy up in case closed before completed
 		SolarNode.hideLoading(installBtn);
 		progressBar.addClass('hide');

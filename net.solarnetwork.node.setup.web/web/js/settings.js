@@ -719,7 +719,7 @@ function setupBackups() {
 			createBackupSubmitButton.removeAttr('disabled');
 			SolarNode.hideSpinner(createBackupSubmitButton);
 		}
-	}).on('show', function() {
+	}).on('show.bs.modal', function() {
 		$(this).find('button[type=submit]').removeAttr('disabled');
 	});
 }
@@ -878,7 +878,7 @@ $(document).ready(function() {
 		chooseBtn.removeAttr('disabled');
 	});
 
-	$('.lookup-modal').on('hidden', function() {
+	$('.lookup-modal').on('hidden.bs.modal', function() {
 		var form = $(this);
 		var chooseBtn = form.find('button.choose');
 		chooseBtn.attr('disabled', 'disabled');
@@ -886,7 +886,7 @@ $(document).ready(function() {
 		chooseBtn.removeData('label');
 		form.find('table.search-results tr.success').removeClass('success');
 	});
-	$('.lookup-modal').on('shown', function() {
+	$('.lookup-modal').on('shown.bs.modal', function() {
 		var firstInput = $(this).find('input').first();
 		firstInput.focus().select();
 	});
@@ -925,7 +925,7 @@ $(document).ready(function() {
 			var json = $.parseJSON(xhr.responseText);
 			SolarNode.error(json.message, $('#add-component-instance-modal .modal-body.start'));
 		}
-	}).on('shown', function() {
+	}).on('shown.bs.modal', function() {
 		$('#add-component-instance-name').val('').focus();
 	});
 	$('#remove-all-component-instance-modal').ajaxForm({

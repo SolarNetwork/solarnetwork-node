@@ -34,20 +34,22 @@
 </section>
 
 <form id="add-opmodes-modal" class="modal dynamic hide fade" data-backdrop="static" action="<setup:url value='/a/opmodes/active'/>" method="post">
-	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal">&times;</button>
-		<h3>
-			<fmt:message key="opmodes.add.title"/>
-		</h3>
-	</div>
-	<div class="modal-body">
-		<p><fmt:message key="opmodes.add.intro"/></p>
-		<label for="opmodes-modes"><fmt:message key="opmodes.modes.label"/></label>
-		<input type="text" class="form-control" maxlength="512" name="modes">
-	</div>
-	<div class="modal-footer">
-		<sec:csrfInput/>
-		<button type="button" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></button>
-		<button type="submit" class="btn btn-primary"><fmt:message key="opmodes.add.label"/></button>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title"><fmt:message key="opmodes.add.title"/></h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<fmt:message key='close.label'/>"></button>
+			</div>
+			<div class="modal-body">
+				<p><fmt:message key="opmodes.add.intro"/></p>
+				<label for="opmodes-modes"><fmt:message key="opmodes.modes.label"/></label>
+				<input type="text" class="form-control" maxlength="512" name="modes">
+			</div>
+			<div class="modal-footer">
+				<sec:csrfInput/>
+				<button type="button" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key='close.label'/></button>
+				<button type="submit" class="btn btn-primary"><fmt:message key="opmodes.add.label"/></button>
+			</div>
+		</div>
 	</div>
 </form>

@@ -293,22 +293,26 @@
 </section>
 
 <form id="backup-restore-modal" class="modal dynamic hide fade" data-backdrop="static" action="<setup:url value='/a/backups/restore'/>" method="post">
-	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal">&times;</button>
-		<h3><fmt:message key='backup.restore.title'/></h3>
-	</div>
-	<div class="modal-body">
-		<p><fmt:message key='backup.restore.intro'/></p>
-		<div id="backup-restore-list-container" class="menu-list noselect" 
-			data-msg-items="<fmt:message key='items'/>" data-msg-item="<fmt:message key='item'/>"></div>
-		<div class="progress progress-striped active hide">
-      		<div class="progress-bar" style="width: 100%;"></div>
-    	</div>		
-	</div>
-	<div class="modal-footer">
-		<sec:csrfInput/>
-		<input type="hidden" name="key" value=""/>
-		<button type="button" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></button>
-		<button type="submit" class="btn btn-danger ladda-button expand-right"><fmt:message key="backup.restore.button"/></button>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title"><fmt:message key='backup.restore.title'/></h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<fmt:message key='close.label'/>"></button>
+			</div>
+			<div class="modal-body">
+				<p><fmt:message key='backup.restore.intro'/></p>
+				<div id="backup-restore-list-container" class="menu-list noselect" 
+					data-msg-items="<fmt:message key='items'/>" data-msg-item="<fmt:message key='item'/>"></div>
+				<div class="progress progress-striped active hide">
+		      		<div class="progress-bar" style="width: 100%;"></div>
+		    	</div>		
+			</div>
+			<div class="modal-footer">
+				<sec:csrfInput/>
+				<input type="hidden" name="key" value=""/>
+				<button type="button" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key='close.label'/></button>
+				<button type="submit" class="btn btn-danger ladda-button expand-right"><fmt:message key="backup.restore.button"/></button>
+			</div>
+		</div>
 	</div>
 </form>

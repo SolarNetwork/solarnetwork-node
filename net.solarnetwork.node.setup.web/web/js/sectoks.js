@@ -33,10 +33,10 @@ $(document).ready(function securityTokenManagement() {
 			SolarNode.error(json.message, createSecurityTokenModal.find('.modal-body.start'));
 		}
 	})
-	.on('shown', function() {
+	.on('shown.bs.modal', function() {
 		createSecurityTokenModal.find('input[name=name]').focus();
 	})
-	.on('hidden', function() {
+	.on('hidden.bs.modal', function() {
 		if ( createSecurityTokenModal[0].elements['tokenSecret'].value ) {
 			// created new token; refresh page
 			window.location.reload();
@@ -115,14 +115,14 @@ $(document).ready(function securityTokenManagement() {
 			SolarNode.error(json.message, editSecurityTokenModal.find('.modal-body.start'));
 		}
 	})
-	.on('show', function(event) {
+	.on('show.bs.modal', function(event) {
 		var target = event.target;
 		console.log("target = %o", target);
 	})
-	.on('shown', function() {
+	.on('shown.bs.modal', function() {
 		editSecurityTokenModal.find('input[name=name]').focus();
 	})
-	.on('hidden', function() {
+	.on('hidden.bs.modal', function() {
 		this.reset();
 		editSecurityTokenModal.find('button[type=submit],button[name=delete]').prop('disabled', false);
 	});

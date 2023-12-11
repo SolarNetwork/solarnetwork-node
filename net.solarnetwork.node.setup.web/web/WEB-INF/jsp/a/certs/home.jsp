@@ -66,93 +66,109 @@
 </div>
 
 <form id="import-cert-modal" class="modal hide fade" action="<setup:url value='/a/certs/import'/>" method="post" enctype="multipart/form-data">
-	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal">&times;</button>
-		<h3><fmt:message key='certs.import.title'/></h3>
-	</div>
-	<div class="modal-body">
-		<p><fmt:message key='certs.import.intro'/></p>
-		<label class="control-label" for="import-cert-file">
-			<fmt:message key='certs.import.file.label'/>
-		</label>
-		<input class="col-md-3" id="import-cert-file" type="file" name="file"/>
-		<br/><br/>
-		<div class="alert alert-info"><fmt:message key='certs.import.xor'/></div>
-
-		<label class="control-label" for="import-cert-text">
-			<fmt:message key='certs.import.text.label'/>
-		</label>
-		<textarea name="text" id="import-cert-text" rows="6" class="col-md-6 cert"
-				placeholder="<fmt:message key='certs.import.text.placeholder'/>"></textarea>
-	</div>
-	<div class="modal-footer">
-		<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></a>
-		<button type="submit" class="btn btn-primary"><fmt:message key="certs.action.import"/></button>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title"><fmt:message key='certs.import.title'/></h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<fmt:message key='close.label'/>"></button>
+			</div>
+			<div class="modal-body">
+				<p><fmt:message key='certs.import.intro'/></p>
+				<label class="control-label" for="import-cert-file">
+					<fmt:message key='certs.import.file.label'/>
+				</label>
+				<input class="col-md-3" id="import-cert-file" type="file" name="file"/>
+				<br/><br/>
+				<div class="alert alert-info"><fmt:message key='certs.import.xor'/></div>
+		
+				<label class="control-label" for="import-cert-text">
+					<fmt:message key='certs.import.text.label'/>
+				</label>
+				<textarea name="text" id="import-cert-text" rows="6" class="col-md-6 cert"
+						placeholder="<fmt:message key='certs.import.text.placeholder'/>"></textarea>
+			</div>
+			<div class="modal-footer">
+				<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>
+				<button type="submit" class="btn btn-primary"><fmt:message key="certs.action.import"/></button>
+			</div>
+		</div>
 	</div>
 	<sec:csrfInput/>
 </form>
 
 <div id="view-csr-modal" class="modal dynamic hide fade">
- 	<div class="modal-header">
- 		<button type="button" class="close" data-dismiss="modal">&times;</button>
- 		<h3><fmt:message key='certs.csr.title'/></h3>
- 	</div>
- 	<div class="modal-body">
- 		<p><fmt:message key='certs.csr.intro'/></p>
- 		<pre class="cert" id="modal-csr-container"></pre>
- 	</div>
- 	<div class="modal-footer">
- 		<a href="#" class="btn btn-primary" data-dismiss="modal"><fmt:message key='close.label'/></a>
- 	</div>
+	<div class="modal-dialog">
+		<div class="modal-content">
+		 	<div class="modal-header">
+		 		<h3 class="modal-title"><fmt:message key='certs.csr.title'/></h3>
+		 		<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<fmt:message key='close.label'/>"></button>
+		 	</div>
+		 	<div class="modal-body">
+		 		<p><fmt:message key='certs.csr.intro'/></p>
+		 		<pre class="cert" id="modal-csr-container"></pre>
+		 	</div>
+		 	<div class="modal-footer">
+		 		<a href="#" class="btn btn-primary" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>
+		 	</div>
+		</div>
+	</div>
 </div>
 
 <form id="export-cert-modal" class="modal dynamic hide fade" action="<setup:url value='/a/certs/nodeCert'/>" method="get">
-	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal">&times;</button>
-		<h3><fmt:message key='certs.export.title'/></h3>
-	</div>
-	<div class="modal-body">
-		<p><fmt:message key='certs.export.intro'/></p>
-
-		<pre class="cert" id="modal-cert-container"></pre>
-
-		<label class="checkbox">
-			<input type="checkbox" name="chain" value="true"/>
-			<fmt:message key='certs.export.chain.label'/>
-		</label>
-	</div>
-	<div class="modal-footer">
-		<input type="hidden" name="download" value="true"/>
-		<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></a>
-		<button type="submit" class="btn btn-primary"><fmt:message key="certs.action.export"/></button>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title"><fmt:message key='certs.export.title'/></h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<fmt:message key='close.label'/>"></button>
+			</div>
+			<div class="modal-body">
+				<p><fmt:message key='certs.export.intro'/></p>
+		
+				<pre class="cert" id="modal-cert-container"></pre>
+		
+				<label class="checkbox">
+					<input type="checkbox" name="chain" value="true"/>
+					<fmt:message key='certs.export.chain.label'/>
+				</label>
+			</div>
+			<div class="modal-footer">
+				<input type="hidden" name="download" value="true"/>
+				<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>
+				<button type="submit" class="btn btn-primary"><fmt:message key="certs.action.export"/></button>
+			</div>
+		</div>
 	</div>
 </form>
 
 <form id="renew-cert-modal" class="modal dynamic hide fade" action="<setup:url value='/a/certs/renew'/>" method="post">
-	<div class="modal-header">
-		<button type="button" class="close" data-dismiss="modal">&times;</button>
-		<h3><fmt:message key='certs.renew.title'/></h3>
-	</div>
-	<div class="modal-body start">
-		<p><fmt:message key='certs.renew.intro'/></p>
-
-		<label class="control-label" for="renew-cert-password">
-			<fmt:message key='certs.renew.password.label'/>
-		</label>
-		<input class="col-md-3" id="renew-cert-password" type="password" name="password" required="required"/>
-
-		<label class="control-label" for="renew-cert-password-again">
-			<fmt:message key='certs.renew.password-again.label'/>
-		</label>
-		<input class="col-md-3" id="renew-cert-password-again" type="password" name="passwordAgain" required="required"/>
-		<div class="alert alert-danger" id="renew-cert-error-password-again" style="display: none;"><fmt:message key='certs.renew.password.mismatch'/></div>
-	</div>
-	<div class="modal-body success" style="display: none;">
-		<p><fmt:message key='certs.renew.success'/></p>
-	</div>
-	<div class="modal-footer">
-		<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></a>
-		<button type="submit" class="btn btn-primary start"><fmt:message key="certs.action.renew"/></button>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h3 class="modal-title"><fmt:message key='certs.renew.title'/></h3>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<fmt:message key='close.label'/>"></button>
+			</div>
+			<div class="modal-body start">
+				<p><fmt:message key='certs.renew.intro'/></p>
+		
+				<label class="control-label" for="renew-cert-password">
+					<fmt:message key='certs.renew.password.label'/>
+				</label>
+				<input class="col-md-3" id="renew-cert-password" type="password" name="password" required="required"/>
+		
+				<label class="control-label" for="renew-cert-password-again">
+					<fmt:message key='certs.renew.password-again.label'/>
+				</label>
+				<input class="col-md-3" id="renew-cert-password-again" type="password" name="passwordAgain" required="required"/>
+				<div class="alert alert-danger" id="renew-cert-error-password-again" style="display: none;"><fmt:message key='certs.renew.password.mismatch'/></div>
+			</div>
+			<div class="modal-body success" style="display: none;">
+				<p><fmt:message key='certs.renew.success'/></p>
+			</div>
+			<div class="modal-footer">
+				<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>
+				<button type="submit" class="btn btn-primary start"><fmt:message key="certs.action.renew"/></button>
+			</div>
+		</div>
 	</div>
 	<sec:csrfInput/>
 </form>

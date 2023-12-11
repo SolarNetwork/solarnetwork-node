@@ -151,10 +151,10 @@ $(document).ready(function hostManagement() {
 			SolarNode.hideLoading(addModal.find('button[type=submit]'));
 		}
 	})
-	.on('shown', function() {
+	.on('shown.bs.modal', function() {
 		addModal.find('input[name=name]').focus();
 	})
-	.on('hidden', function() {
+	.on('hidden.bs.modal', function() {
 		toggleBeforeAfter(addModal, true);
 		this.reset();
 	});
@@ -189,12 +189,12 @@ $(document).ready(function hostManagement() {
 			SolarNode.hideLoading(removeModal.find('button[type=submit]'));
 		}
 	})
-	.on('show', function() {
+	.on('show.bs.modal', function() {
 		const host = removeModal.data('item');
 		populateHostTemplateProperties(removeModal.find('.modal-body'), host);
 		removeModal.find('input[name=name]').val(host.key);
 	})
-	.on('hidden', function() {
+	.on('hidden.bs.modal', function() {
 		toggleBeforeAfter(removeModal, true);
 		this.reset();
 	});
