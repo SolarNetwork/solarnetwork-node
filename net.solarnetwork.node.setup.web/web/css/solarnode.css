@@ -530,3 +530,7 @@ button.close + button.copy {
 .text-right > button + button {
 	margin-left: 0.5rem;
 }
+
+input[readonly].form-control {
+	color: #666;
+}
