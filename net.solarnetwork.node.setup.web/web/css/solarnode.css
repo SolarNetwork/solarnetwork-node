@@ -162,6 +162,7 @@ form .control-group.grouped + fieldset > fieldset:not(:first-child) {
 	line-height: 13px;
 }
 
+.hidden,
 .template {
 	display: none;
 }
