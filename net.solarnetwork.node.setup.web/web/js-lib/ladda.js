@@ -1,16 +1,35 @@
 /*!
- * Ladda 0.3.0
+ * Ladda
  * http://lab.hakim.se/ladda
  * MIT licensed
  *
- * Copyright (C) 2013 Hakim El Hattab, http://hakim.se
+ * Copyright (C) 2016 Hakim El Hattab, http://hakim.se
  */
-window.Ladda = (function() {
+(function( root, factory ) {
+	'use strict';
 
+	// CommonJS
+	if( typeof exports === 'object' )  {
+		module.exports = factory(require('spin.js'));
+	}
+	// AMD module
+	else if( typeof define === 'function' && define.amd ) {
+		define( [ 'spin' ], factory );
+	}
+	// Browser global
+	else {
+		root.Ladda = factory( root.Spinner );
+	}
+
+}
+(this, function( Spinner ) {
+	'use strict';
+
+	// All currently instantiated instances of Ladda
 	var ALL_INSTANCES = [];
 
 	/**
-	 * Creates a new instance of Ladda which wraps the 
+	 * Creates a new instance of Ladda which wraps the
 	 * target button element.
 	 *
 	 * @return An API object that can be used to control
@@ -19,38 +38,59 @@ window.Ladda = (function() {
 	function create( button ) {
 
 		if( typeof button === 'undefined' ) {
-			throw "Button target must be defined.";
+			console.warn( "Ladda button target must be defined." );
+			return;
 		}
 
-		// Create the spinner
-		var spinner = new Spinner( {
-			color: '#fff',
-			lines: 10,
-			radius: 4,
-			length: 3,
-			width: 2,
-			zIndex: 'initial',
-			top: 'auto',
-			left: 'auto',
-			className: ''
-		} );
+		// The button must have the class "ladda-button"
+		if( !/ladda-button/i.test( button.className ) ) {
+			button.className += ' ladda-button';
+		}
+
+		// Style is required, default to "expand-right"
+		if( !button.hasAttribute( 'data-style' ) ) {
+			button.setAttribute( 'data-style', 'expand-right' );
+		}
+
+		// The text contents must be wrapped in a ladda-label
+		// element, create one if it doesn't already exist
+		if( !button.querySelector( '.ladda-label' ) ) {
+			var laddaLabel = document.createElement( 'span' );
+			laddaLabel.className = 'ladda-label';
+			wrapContent( button, laddaLabel );
+		}
+
+		// The spinner component
+		var spinner,
+			spinnerWrapper = button.querySelector( '.ladda-spinner' );
 
 		// Wrapper element for the spinner
-		var spinnerWrapper = document.createElement( 'span' );
-		spinnerWrapper.className = 'ladda-spinner';
+		if( !spinnerWrapper ) {
+			spinnerWrapper = document.createElement( 'span' );
+			spinnerWrapper.className = 'ladda-spinner';
+		}
+
 		button.appendChild( spinnerWrapper );
 
-		// Timeout used to delay stopping of the spin animation
-		var spinnerTimeout;
+		// Timer used to delay starting/stopping
+		var timer;
 
 		var instance = {
 
+			/**
+			 * Enter the loading state.
+			 */
 			start: function() {
 
-				button.setAttribute( 'disabled', '' );
+				// Create the spinner if it doesn't already exist
+				if( !spinner ) {
+					spinner = createSpinner( button );
+				}
+
+				button.disabled = true;
 				button.setAttribute( 'data-loading', '' );
 
-				clearTimeout( spinnerTimeout );
+				clearTimeout( timer );
 				spinner.spin( spinnerWrapper );
 
 				this.setProgress( 0 );
@@ -59,34 +99,57 @@ window.Ladda = (function() {
 
 			},
 
+			/**
+			 * Enter the loading state, after a delay.
+			 */
+			startAfter: function( delay ) {
+
+				clearTimeout( timer );
+				timer = setTimeout( function() { instance.start(); }, delay );
+
+				return this; // chain
+
+			},
+
+			/**
+			 * Exit the loading state.
+			 */
 			stop: function() {
 
-				button.removeAttribute( 'disabled', '' );
-				button.removeAttribute( 'data-loading' );
+				if (instance.isLoading()) {
+					button.disabled = false;
+					button.removeAttribute( 'data-loading' );	
+				}
 
 				// Kill the animation after a delay to make sure it
 				// runs for the duration of the button transition
-				clearTimeout( spinnerTimeout );
-				spinnerTimeout = setTimeout( function() { spinner.stop(); }, 1000 );
+				clearTimeout( timer );
+
+				if( spinner ) {
+					timer = setTimeout( function() { spinner.stop(); }, 1000 );
+				}
 
 				return this; // chain
 
 			},
 
+			/**
+			 * Toggle the loading state on/off.
+			 */
 			toggle: function() {
-
-				if( this.isLoading() ) {
-					this.stop();
-				}
-				else {
-					this.start();
-				}
-
-				return this; // chain
-
+				return this.isLoading() ? this.stop() : this.start();
 			},
 
+			/**
+			 * Sets the width of the visual progress bar inside of
+			 * this Ladda button
+			 *
+			 * @param {Number} progress in the range of 0-1
+			 */
 			setProgress: function( progress ) {
+
+				// Cap it
+				progress = Math.max( Math.min( progress, 1 ), 0 );
 
 				var progressElement = button.querySelector( '.ladda-progress' );
 
@@ -106,25 +169,47 @@ window.Ladda = (function() {
 
 			},
 
+			/**
+			 * @deprecated
+			 */
+			enable: function() {
+
+				return this.stop();
+
+			},
+
+			/**
+			 * @deprecated
+			 */
+			disable: function () {
+
+				this.stop();
+				button.disabled = true;
+
+				return this; // chain
+
+			},
+
 			isLoading: function() {
 
 				return button.hasAttribute( 'data-loading' );
 
 			},
 
-			enable: function() {
-				// Stop loading and set button up to be clicked:
-				this.stop();
+			remove: function() {
 
-				return this; // chain
-			},
+				clearTimeout( timer );
 
-			disable: function () {
-				// Stop loading and prevent button from clicked:
-				this.stop();
-				button.setAttribute( 'disabled', '' );
+				button.disabled = false;
+				button.removeAttribute( 'data-loading' );
 
-				return this; // chain
+				if( spinner ) {
+					spinner.stop();
+					spinner = null;
+				}
+
+				ALL_INSTANCES.splice( ALL_INSTANCES.indexOf(instance), 1 );
+
 			}
 
 		};
@@ -136,56 +221,79 @@ window.Ladda = (function() {
 	}
 
 	/**
-	 * Binds the target buttons to automatically enter the 
+	* Get the first ancestor node from an element, having a
+	* certain type.
+	*
+	* @param elem An HTML element
+	* @param type an HTML tag type (uppercased)
+	*
+	* @return An HTML element
+	*/
+	function getAncestorOfTagType( elem, type ) {
+
+		while ( elem.parentNode && elem.tagName !== type ) {
+			elem = elem.parentNode;
+		}
+
+		return ( type === elem.tagName ) ? elem : undefined;
+
+	}
+
+	/**
+	 * Returns a list of all inputs in the given form that
+	 * have their `required` attribute set.
+	 *
+	 * @param form The from HTML element to look in
+	 *
+	 * @return A list of elements
+	 */
+	function getRequiredFields( form ) {
+
+		var requirables = [ 'input', 'textarea', 'select' ];
+		var inputs = [];
+
+		requirables.forEach(function (r) {
+			var candidates = form.getElementsByTagName( r );
+
+			for( var j = 0; j < candidates.length; j++ ) {
+				// legacy browsers don't support required property
+				if ( candidates[j].hasAttribute('required') ) {
+					inputs.push( candidates[j] );
+				}
+			}
+		});
+
+		return inputs;
+
+	}
+
+
+	/**
+	 * Binds the target buttons to automatically enter the
 	 * loading state when clicked.
 	 *
 	 * @param target Either an HTML element or a CSS selector.
-	 * @param options 
+	 * @param options
 	 *          - timeout Number of milliseconds to wait before
 	 *            automatically cancelling the animation.
 	 */
 	function bind( target, options ) {
 
-		options = options || {};
-
-		var targets = [];
+		var targets;
 
 		if( typeof target === 'string' ) {
-			targets = [].slice.call( document.querySelectorAll( target ) );
+			targets = document.querySelectorAll( target );
 		}
-		else if( typeof target === 'object' && typeof target.nodeName === 'string' ) {
-			targets = [ targets ];
+		else if( typeof target === 'object' ) {
+			targets = [ target ];
+		} else {
+			throw new Error('target must be string or object');
 		}
 
-		for( var i = 0, len = targets.length; i < len; i++ ) {
+		options = options || {};
 
-			(function() {
-				var element = targets[i];
-
-				// Make sure we're working with a DOM element
-				if( typeof element.addEventListener === 'function' ) {
-					var instance = Ladda.create( element );
-					var timeout = -1;
-
-					element.addEventListener( 'click', function() {
-						
-						instance.start();
-
-						// Set a loading timeout if one is specified
-						if( typeof options.timeout === 'number' ) {
-							clearTimeout( timeout );
-							timeout = setTimeout( instance.stop, options.timeout );
-						}
-
-						// Invoke callbacks
-						if( typeof options.callback === 'function' ) {
-							options.callback.apply( null, [ instance ] );
-						}
-
-					}, false );
-				}
-			})();
-
+		for( var i = 0; i < targets.length; i++ ) {
+			bindElement(targets[i], options);
 		}
 
 	}
@@ -201,6 +309,145 @@ window.Ladda = (function() {
 
 	}
 
+	function createSpinner( button ) {
+
+		var height = button.offsetHeight,
+			spinnerColor,
+			spinnerLines;
+
+		if( height === 0 ) {
+			// We may have an element that is not visible so
+			// we attempt to get the height in a different way
+			height = parseFloat( window.getComputedStyle( button ).height );
+		}
+
+		// If the button is tall we can afford some padding
+		if( height > 32 ) {
+			height *= 0.8;
+		}
+
+		// Prefer an explicit height if one is defined
+		if( button.hasAttribute( 'data-spinner-size' ) ) {
+			height = parseInt( button.getAttribute( 'data-spinner-size' ), 10 );
+		}
+
+		// Allow buttons to specify the color of the spinner element
+		if( button.hasAttribute( 'data-spinner-color' ) ) {
+			spinnerColor = button.getAttribute( 'data-spinner-color' );
+		}
+
+		// Allow buttons to specify the number of lines of the spinner
+		if( button.hasAttribute( 'data-spinner-lines' ) ) {
+			spinnerLines = parseInt( button.getAttribute( 'data-spinner-lines' ), 10 );
+		}
+
+		var radius = height * 0.2,
+			length = radius * 0.6,
+			width = radius < 7 ? 2 : 3;
+
+		return new Spinner( {
+			color: spinnerColor || '#fff',
+			lines: spinnerLines || 12,
+			radius: radius,
+			length: length,
+			width: width,
+			zIndex: 'auto',
+			top: 'auto',
+			left: 'auto',
+			className: ''
+		} );
+
+	}
+
+	function wrapContent( node, wrapper ) {
+
+		var r = document.createRange();
+		r.selectNodeContents( node );
+		r.surroundContents( wrapper );
+		node.appendChild( wrapper );
+
+	}
+
+	function bindElement( element, options ) {
+		if( typeof element.addEventListener !== 'function' ) {
+			return;
+		}
+
+		var instance = create( element );
+		var timeout = -1;
+
+		element.addEventListener( 'click', function() {
+
+			// If the button belongs to a form, make sure all the
+			// fields in that form are filled out
+			var valid = true;
+			var form = getAncestorOfTagType( element, 'FORM' );
+
+			if( typeof form !== 'undefined' && !form.hasAttribute('novalidate') ) {
+				// Modern form validation
+				if( typeof form.checkValidity === 'function' ) {
+					valid = form.checkValidity();
+				}
+				// Fallback to manual validation for old browsers
+				else {
+					var requireds = getRequiredFields( form );
+					for( var i = 0; i < requireds.length; i++ ) {
+						var field = requireds[i];
+
+						// The input type property will always return "text" for email and url fields in IE 9.
+						// Note that emulating IE 9 in IE 11 will also return "text" for the type attribute,
+						// but the actual IE 9 browser will return the correct attribute.
+						var fieldType = field.getAttribute('type');
+
+						if( field.value.replace( /^\s+|\s+$/g, '' ) === '' ) {
+							valid = false;
+						}
+
+						// Radiobuttons and Checkboxes need to be checked for the "checked" attribute
+						if( (fieldType === 'checkbox' || fieldType === 'radio' ) && !field.checked ) {
+							valid = false;
+						}
+
+						// Email field validation
+						if( fieldType === 'email' ) {
+							// regex from https://stackoverflow.com/a/7786283/1170489
+							valid = /^[a-z0-9!#$%&'*+/=?^_`{|}~.-]+@[a-z0-9-]+(\.[a-z0-9-]+)*$/i.test( field.value );
+						}
+
+						// URL field validation
+						if (fieldType === 'url') {
+							// regex from https://stackoverflow.com/a/10637803/1170489
+							valid = /^([a-z]([a-z]|\d|\+|-|\.)*):(\/\/(((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:)*@)?((\[(|(v[\da-f]{1,}\.(([a-z]|\d|-|\.|_|~)|[!\$&'\(\)\*\+,;=]|:)+))\])|((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|(([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=])*)(:\d*)?)(\/(([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)*)*|(\/((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)+(\/(([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)*)*)?)|((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)+(\/(([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)*)*)|((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)){0})(\?((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|[\uE000-\uF8FF]|\/|\?)*)?(\#((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|\/|\?)*)?$/i.test( field.value );
+						}
+
+						if (!valid) {
+							break;
+						}
+					}
+				}
+			}
+
+			if( valid ) {
+				// This is asynchronous to avoid an issue where disabling
+				// the button prevents forms from submitting
+				instance.startAfter( 1 );
+
+				// Set a loading timeout if one is specified
+				if( typeof options.timeout === 'number' ) {
+					clearTimeout( timeout );
+					timeout = setTimeout( instance.stop, options.timeout );
+				}
+
+				// Invoke callbacks
+				if( typeof options.callback === 'function' ) {
+					options.callback.apply( null, [ instance ] );
+				}
+			}
+
+		}, false );
+
+	}
+
 	// Public API
 	return {
 
@@ -208,15 +455,6 @@ window.Ladda = (function() {
 		create: create,
 		stopAll: stopAll
 
-	}
+	};
 
-})();
-
-
-/**
- * spin.js
- * Copyright (c) 2011-2013 Felix Gnass
- * Licensed under the MIT license
- */
-(function(t,e){if(typeof exports=="object")module.exports=e();else if(typeof define=="function"&&define.amd)define(e);else t.Spinner=e()})(this,function(){"use strict";var t=["webkit","Moz","ms","O"],e={},i;function o(t,e){var i=document.createElement(t||"div"),o;for(o in e)i[o]=e[o];return i}function n(t){for(var e=1,i=arguments.length;e<i;e++)t.appendChild(arguments[e]);return t}var r=function(){var t=o("style",{type:"text/css"});n(document.getElementsByTagName("head")[0],t);return t.sheet||t.styleSheet}();function s(t,o,n,s){var a=["opacity",o,~~(t*100),n,s].join("-"),f=.01+n/s*100,l=Math.max(1-(1-t)/o*(100-f),t),d=i.substring(0,i.indexOf("Animation")).toLowerCase(),u=d&&"-"+d+"-"||"";if(!e[a]){r.insertRule("@"+u+"keyframes "+a+"{"+"0%{opacity:"+l+"}"+f+"%{opacity:"+t+"}"+(f+.01)+"%{opacity:1}"+(f+o)%100+"%{opacity:"+t+"}"+"100%{opacity:"+l+"}"+"}",r.cssRules.length);e[a]=1}return a}function a(e,i){var o=e.style,n,r;if(o[i]!==undefined)return i;i=i.charAt(0).toUpperCase()+i.slice(1);for(r=0;r<t.length;r++){n=t[r]+i;if(o[n]!==undefined)return n}}function f(t,e){for(var i in e)t.style[a(t,i)||i]=e[i];return t}function l(t){for(var e=1;e<arguments.length;e++){var i=arguments[e];for(var o in i)if(t[o]===undefined)t[o]=i[o]}return t}function d(t){var e={x:t.offsetLeft,y:t.offsetTop};while(t=t.offsetParent)e.x+=t.offsetLeft,e.y+=t.offsetTop;return e}var u={lines:12,length:7,width:5,radius:10,rotate:0,corners:1,color:"#000",direction:1,speed:1,trail:100,opacity:1/4,fps:20,zIndex:2e9,className:"spinner",top:"auto",left:"auto",position:"relative"};function p(t){if(typeof this=="undefined")return new p(t);this.opts=l(t||{},p.defaults,u)}p.defaults={};l(p.prototype,{spin:function(t){this.stop();var e=this,n=e.opts,r=e.el=f(o(0,{className:n.className}),{position:n.position,width:0,zIndex:n.zIndex}),s=n.radius+n.length+n.width,a,l;if(t){t.insertBefore(r,t.firstChild||null);l=d(t);a=d(r);f(r,{left:(n.left=="auto"?l.x-a.x+(t.offsetWidth>>1):parseInt(n.left,10)+s)+"px",top:(n.top=="auto"?l.y-a.y+(t.offsetHeight>>1):parseInt(n.top,10)+s)+"px"})}r.setAttribute("role","progressbar");e.lines(r,e.opts);if(!i){var u=0,p=(n.lines-1)*(1-n.direction)/2,c,h=n.fps,m=h/n.speed,y=(1-n.opacity)/(m*n.trail/100),g=m/n.lines;(function v(){u++;for(var t=0;t<n.lines;t++){c=Math.max(1-(u+(n.lines-t)*g)%m*y,n.opacity);e.opacity(r,t*n.direction+p,c,n)}e.timeout=e.el&&setTimeout(v,~~(1e3/h))})()}return e},stop:function(){var t=this.el;if(t){clearTimeout(this.timeout);if(t.parentNode)t.parentNode.removeChild(t);this.el=undefined}return this},lines:function(t,e){var r=0,a=(e.lines-1)*(1-e.direction)/2,l;function d(t,i){return f(o(),{position:"absolute",width:e.length+e.width+"px",height:e.width+"px",background:t,boxShadow:i,transformOrigin:"left",transform:"rotate("+~~(360/e.lines*r+e.rotate)+"deg) translate("+e.radius+"px"+",0)",borderRadius:(e.corners*e.width>>1)+"px"})}for(;r<e.lines;r++){l=f(o(),{position:"absolute",top:1+~(e.width/2)+"px",transform:e.hwaccel?"translate3d(0,0,0)":"",opacity:e.opacity,animation:i&&s(e.opacity,e.trail,a+r*e.direction,e.lines)+" "+1/e.speed+"s linear infinite"});if(e.shadow)n(l,f(d("#000","0 0 4px "+"#000"),{top:2+"px"}));n(t,n(l,d(e.color,"0 0 1px rgba(0,0,0,.1)")))}return t},opacity:function(t,e,i){if(e<t.childNodes.length)t.childNodes[e].style.opacity=i}});function c(){function t(t,e){return o("<"+t+' xmlns="urn:schemas-microsoft.com:vml" class="spin-vml">',e)}r.addRule(".spin-vml","behavior:url(#default#VML)");p.prototype.lines=function(e,i){var o=i.length+i.width,r=2*o;function s(){return f(t("group",{coordsize:r+" "+r,coordorigin:-o+" "+-o}),{width:r,height:r})}var a=-(i.width+i.length)*2+"px",l=f(s(),{position:"absolute",top:a,left:a}),d;function u(e,r,a){n(l,n(f(s(),{rotation:360/i.lines*e+"deg",left:~~r}),n(f(t("roundrect",{arcsize:i.corners}),{width:o,height:i.width,left:i.radius,top:-i.width>>1,filter:a}),t("fill",{color:i.color,opacity:i.opacity}),t("stroke",{opacity:0}))))}if(i.shadow)for(d=1;d<=i.lines;d++)u(d,-2,"progid:DXImageTransform.Microsoft.Blur(pixelradius=2,makeshadow=1,shadowopacity=.3)");for(d=1;d<=i.lines;d++)u(d);return n(e,l)};p.prototype.opacity=function(t,e,i,o){var n=t.firstChild;o=o.shadow&&o.lines||0;if(n&&e+o<n.childNodes.length){n=n.childNodes[e+o];n=n&&n.firstChild;n=n&&n.firstChild;if(n)n.opacity=i}}}var h=f(o("group"),{behavior:"url(#default#VML)"});if(!a(h,"transform")&&h.adj)c();else i=a(h,"animation");return p});
-
+}));
