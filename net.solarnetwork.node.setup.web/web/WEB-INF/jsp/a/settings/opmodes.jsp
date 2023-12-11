@@ -43,11 +43,11 @@
 	<div class="modal-body">
 		<p><fmt:message key="opmodes.add.intro"/></p>
 		<label for="opmodes-modes"><fmt:message key="opmodes.modes.label"/></label>
-		<input type="text" class="input-block-level" maxlength="512" name="modes">
+		<input type="text" class="form-control" maxlength="512" name="modes">
 	</div>
 	<div class="modal-footer">
 		<sec:csrfInput/>
-		<button type="button" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></button>
+		<button type="button" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></button>
 		<button type="submit" class="btn btn-primary"><fmt:message key="opmodes.add.label"/></button>
 	</div>
 </form>

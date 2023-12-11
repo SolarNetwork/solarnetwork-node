@@ -17,7 +17,7 @@
 			<c:forEach items="${factories}" var="factory" varStatus="factoryStatus">
 				<!--  ${factory.factoryUid} -->
 				<tr>
-					<td class="span1">
+					<td class="col-md-1">
 						<c:if test="${fn:length(factory.settingSpecifierProviderInstanceIds) > 0}">
 							<span class="badge badge-info" title="<fmt:message key='settings.factories.instanceCount.caption'/>">
 								${fn:length(factory.settingSpecifierProviderInstanceIds)}
@@ -26,7 +26,7 @@
 					</td>
 					<td><strong><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></strong></td>
 					<td>
-						<a class="btn" href="<setup:url value='/a/settings/manage?uid=${factory.factoryUid}'/>">
+						<a class="btn btn-default" href="<setup:url value='/a/settings/manage?uid=${factory.factoryUid}'/>">
 							<i class="far fa-pen-to-square"></i> 
 							<fmt:message key="settings.factory.manage.label"/>
 						</a>
@@ -80,7 +80,7 @@
 						</div>
 					</c:if>
 					<c:if test="${not empty settingResources[provider.settingUid]}">
-					<div class="control-group">
+					<div class="form-group">
 						<label class="control-label" for="settings-resource-ident">
 							<fmt:message key="settings.io.exportResource.label"/>
 						</label>
@@ -144,7 +144,7 @@
 		</fieldset>
 
 		<fieldset style="margin-top: 24px;">
-			<div class="control-group">
+			<div class="form-group">
 				<label class="control-label" for="backup-backups">
 					<fmt:message key="backup.now.label"/>
 				</label>
@@ -160,12 +160,12 @@
 				</form>
 			</div>
 
-			<div class="control-group">
+			<div class="form-group">
 				<label class="control-label" for="backup-backups">
 					<fmt:message key="backup.backups.label"/>
 				</label>
 				<form class="controls form-inline" id="backup-list-form" action="<setup:url value='/a/settings/exportBackup'/>">
-					<select name="backup" class="span3" id="backup-backups">
+					<select name="backup" class="col-md-3" id="backup-backups">
 						<c:forEach items="${backups}" var="backup" varStatus="backupStatus">
 							<option value="${backup.key}">
 								<fmt:message key="backup.backups.backup.label">
@@ -195,12 +195,12 @@
 				</form>
 			</div>
 
-			<div class="control-group">
+			<div class="form-group">
 				<label class="control-label" for="backup-import-field">
 					<fmt:message key="backup.import.label"/>
 				</label>
 				<form class="controls form-inline" action="<setup:url value='/a/settings/importBackup'/>" method="post" enctype="multipart/form-data">
-  					<input class="span3" id="backup-import-field" type="file" name="file"/>
+  					<input class="col-md-3" id="backup-import-field" type="file" name="file"/>
   					<button class="btn btn-primary" type="submit"><fmt:message key="backup.import.button"/></button>
 					<button type="button" class="help-popover help-icon" tabindex="-1"
 							data-content="<fmt:message key='backup.import.info'/>"
@@ -224,7 +224,7 @@
 	<p><fmt:message key="settings.io.intro"/></p>
 	<div class="form-horizontal">
 		<fieldset>
-			<div class="control-group">
+			<div class="form-group">
 				<label class="control-label" for="export.btn">
 					<fmt:message key="settings.io.export.label"/>
 				</label>
@@ -234,18 +234,18 @@
 					</a>
 				</div>
 			</div>
-			<div class="control-group">
+			<div class="form-group">
 				<label class="control-label" for="import.field">
 					<fmt:message key="settings.io.import.label"/>
 				</label>
 				<form class="controls form-inline" action="<setup:url value='/a/settings/import'/>" method="post" enctype="multipart/form-data">
-  					<input class="span3" id="import.field" type="file" name="file"/>
+  					<input class="col-md-3" id="import.field" type="file" name="file"/>
   					<button class="btn btn-primary" type="submit"><fmt:message key="settings.io.import.button"/></button>
 					<sec:csrfInput/>
 				</form>
 			</div>
 			<c:if test="${not empty settingResources}">
-			<div class="control-group">
+			<div class="form-group">
 				<label class="control-label" for="settings-resource-ident">
 					<fmt:message key="settings.io.exportResource.label"/>
 				</label>
@@ -262,7 +262,7 @@
 			</div>
 			</c:if>
 			<c:if test="${fn:length(settingsBackups) > 0}">
-				<div class="control-group">
+				<div class="form-group">
 					<label class="control-label" for="auto-backups">
 						<fmt:message key="settings.autobackup.label"/>
 					</label>
@@ -270,7 +270,7 @@
 						<ul id="auto-backups">
 							<c:forEach items="${settingsBackups}" var="backup" varStatus="backupStatus">
 								<li>
-				  					<a class="btn btn-small" id="export.btn" href="<setup:url value='/a/settings/export'/>?backup=${backup.backupKey}">
+				  					<a class="btn btn-sm" id="export.btn" href="<setup:url value='/a/settings/export'/>?backup=${backup.backupKey}">
 										<fmt:message key="settings.autobackup.download.button">
 											<fmt:param value="${backup.standardDateString}"/>
 										</fmt:message>
@@ -302,13 +302,13 @@
 		<div id="backup-restore-list-container" class="menu-list noselect" 
 			data-msg-items="<fmt:message key='items'/>" data-msg-item="<fmt:message key='item'/>"></div>
 		<div class="progress progress-striped active hide">
-      		<div class="bar" style="width: 100%;"></div>
+      		<div class="progress-bar" style="width: 100%;"></div>
     	</div>		
 	</div>
 	<div class="modal-footer">
 		<sec:csrfInput/>
 		<input type="hidden" name="key" value=""/>
-		<button type="button" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></button>
+		<button type="button" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></button>
 		<button type="submit" class="btn btn-danger ladda-button expand-right"><fmt:message key="backup.restore.button"/></button>
 	</div>
 </form>

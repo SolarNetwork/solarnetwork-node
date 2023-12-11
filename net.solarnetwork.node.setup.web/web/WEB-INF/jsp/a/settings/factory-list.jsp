@@ -16,14 +16,14 @@
 			<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
 		</fmt:message>
 	</p>
-	<div class="row action-bar">
-		<div class="span2">
-			<a href="<setup:url value='${navloc == "filters-component" ? "/a/settings/filters" : "/a/settings"}'/>" class="btn">
+	<div class="row action-progress-bar">
+		<div class="col-md-2">
+			<a href="<setup:url value='${navloc == "filters-component" ? "/a/settings/filters" : "/a/settings"}'/>" class="btn btn-default">
 				<i class="fas fa-arrow-left"></i>
 				<fmt:message key="back.label"/>
 			</a>
 		</div>
-		<div class="span10 text-right">
+		<div class="col-md-10 text-right">
 			<c:if test="${fn:length(providers) > 0}">
 				<button type="button" class="btn btn-default" data-toggle="modal" data-target="#remove-all-component-instance-modal">
 					<i class="far fa-trash-can"></i>
@@ -80,10 +80,10 @@
 							data-factory-uid="${factory.factoryUid}"
 							data-instance-key="${instance.key}">
 					    <div class="progress progress-striped active">
-					      <div class="bar" style="width: 100%;"></div>
+					      <div class="progress-bar" style="width: 100%;"></div>
 					    </div>
 					</div>
-					<div class="control-group">
+					<div class="form-group">
 						<div class="controls">
 							<button type="button" class="btn btn-danger delete-factory-instance"
 									data-target="<setup:url value='/a/settings/manage/delete'/>"
@@ -127,7 +127,7 @@ $(function() {
 });
 </script>
 <div id="alert-delete" class="alert alert-danger alert-block hidden">
-	<button type="button" class="close" data-dismiss="alert">&times;</button>
+	<button type="button" class="close" data-dismiss="alert alert-warning">&times;</button>
 	<h4><fmt:message key="settings.factory.delete.alert.title"/></h4>
 	<p>
 		<fmt:message key="settings.factory.delete.alert.msg"/>
@@ -137,7 +137,7 @@ $(function() {
 	</button>
 </div>
 <div id="alert-reset" class="alert alert-danger alert-block hidden">
-	<button type="button" class="close" data-dismiss="alert">&times;</button>
+	<button type="button" class="close" data-dismiss="alert alert-warning">&times;</button>
 	<h4><fmt:message key="settings.factory.reset.alert.title"/></h4>
 	<p>
 		<fmt:message key="settings.factory.reset.alert.msg"/>
@@ -180,7 +180,7 @@ $(function() {
 		<p><fmt:message key='lookup.price.intro'/></p>
 		<div class="form-inline">
 			<input type="hidden" name="tags" value="price"/>
-			<input type="text" class="span4" maxlength="64" name="query" placeholder="<fmt:message key='lookup.price.search.placeholder'/>"/>
+			<input type="text" class="col-md-4" maxlength="64" name="query" placeholder="<fmt:message key='lookup.price.search.placeholder'/>"/>
 			<button type="submit" class="btn btn-primary ladda-button expand-right" data-loading-text="<fmt:message key='lookup.searching.label'/>">
 				<fmt:message key='lookup.action.search'/>
 			</button>
@@ -213,7 +213,7 @@ $(function() {
 		</label>
 	</div>
 	<div class="modal-footer">
-		<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
+		<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></a>
 		<button type="button" class="btn btn-primary choose" disabled="disabled">
 			<fmt:message key="lookup.action.choose"/>
 		</button>
@@ -229,7 +229,7 @@ $(function() {
 		<p><fmt:message key='lookup.weather.intro'/></p>
 		<div class="form-inline">
 			<input type="hidden" name="tags" value="weather"/>
-			<input type="text" class="span4" maxlength="64" name="query" placeholder="<fmt:message key='lookup.weather.search.placeholder'/>"/>
+			<input type="text" class="col-md-4" maxlength="64" name="query" placeholder="<fmt:message key='lookup.weather.search.placeholder'/>"/>
 			<button type="submit" class="btn btn-primary ladda-button expand-right"
 				data-loading-text="<fmt:message key='lookup.searching.label'/>">
 				<fmt:message key='lookup.action.search'/>
@@ -263,7 +263,7 @@ $(function() {
 		</label>
 	</div>
 	<div class="modal-footer">
-		<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
+		<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></a>
 		<button type="button" class="btn btn-primary choose" disabled="disabled">
 			<fmt:message key="lookup.action.choose"/>
 		</button>
@@ -279,7 +279,7 @@ $(function() {
 		<p><fmt:message key='lookup.co2.intro'/></p>
 		<div class="form-inline">
 			<input type="hidden" name="tags" value="co2"/>
-			<input type="text" class="span4" maxlength="64" name="query" placeholder="<fmt:message key='lookup.co2.search.placeholder'/>"/>
+			<input type="text" class="col-md-4" maxlength="64" name="query" placeholder="<fmt:message key='lookup.co2.search.placeholder'/>"/>
 			<button type="submit" class="btn btn-primary ladda-button expand-right" data-loading-text="<fmt:message key='lookup.searching.label'/>">
 				<fmt:message key='lookup.action.search'/>
 			</button>
@@ -310,7 +310,7 @@ $(function() {
 		</label>
 	</div>
 	<div class="modal-footer">
-		<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
+		<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></a>
 		<button type="button" class="btn btn-primary choose" disabled="disabled">
 			<fmt:message key="lookup.action.choose"/>
 		</button>
@@ -328,14 +328,14 @@ $(function() {
 	<div class="modal-body">
 		<p><fmt:message key='settings.factory.add.intro'/></p>
 		<div class="form-inline">
-			<input type="text" class="span5" maxlength="32" name="name" id="add-component-instance-name"
+			<input type="text" class="col-md-5" maxlength="32" name="name" id="add-component-instance-name"
 				placeholder="<fmt:message key='settings.factory.add.placeholder'/>"/>
 		</div>
 	</div>
 	<div class="modal-footer">
 		<sec:csrfInput/>
 		<input type="hidden" name="uid" value="${factory.factoryUid}"/>
-		<button type="button" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></button>
+		<button type="button" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></button>
 		<button type="submit" class="btn btn-primary"><fmt:message key="settings.factory.add.label"/></button>
 	</div>
 </form>

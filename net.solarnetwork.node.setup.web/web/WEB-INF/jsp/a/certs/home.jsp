@@ -15,7 +15,7 @@
 			<td>
 				<c:choose>
 					<c:when test="${nodeCertExpired}">
-						<span class="label label-important"><fmt:message key='certs.status.expired'/></span>
+						<span class="label label-danger"><fmt:message key='certs.status.expired'/></span>
 					</c:when>
 					<c:when test="${nodeCertValid}">
 						<span class="label label-success"><fmt:message key='certs.status.valid'/></span>
@@ -28,7 +28,7 @@
 			<td>
 				<c:if test="${not empty nodeCert}">
 					${nodeCert.subjectDN}<br/>
-					<small class="muted span6">
+					<small class="test-muted col-md-6">
 						<fmt:message key='certs.subject.issuedby'/>
 						<em> ${nodeCert.issuerDN}</em>
 					</small>
@@ -47,19 +47,19 @@
 </table>
 
 <div class="row">
-	<div class="span12">
-		<a class="btn" id="btn-view-node-csr" href="<setup:url value='/a/certs/nodeCSR'/>">
+	<div class="col-md-12">
+		<a class="btn btn-default" id="btn-view-node-csr" href="<setup:url value='/a/certs/nodeCSR'/>">
 			<fmt:message key='certs.action.csr'/>
 		</a>
-		<a class="btn${nodeCertValid ? '' : ' btn-primary'}" id="btn-view-node-csr" href="#import-cert-modal" data-toggle="modal">
+		<a class="btn ${nodeCertValid ? 'btn-default' : 'btn-primary'}" id="btn-view-node-csr" href="#import-cert-modal" data-toggle="modal">
 			<fmt:message key='certs.action.import'/>
 		</a>
 		<c:if test="${not empty nodeCert}">
-			<a class="btn" id="btn-renew-node-cert" href="<setup:url value='/a/certs/renew'/>">
+			<a class="btn btn-default" id="btn-renew-node-cert" href="<setup:url value='/a/certs/renew'/>">
 				<fmt:message key='certs.action.renew'/>
 			</a>
 		</c:if>
-		<a class="btn${nodeCertValid ? ' btn-primary' : ''}" id="btn-export-node-cert" href="<setup:url value='/a/certs/nodeCert'/>">
+		<a class="btn ${nodeCertValid ? 'btn-primary' : 'btn-default'}" id="btn-export-node-cert" href="<setup:url value='/a/certs/nodeCert'/>">
 			<fmt:message key='certs.action.view'/>
 		</a>
 	</div>
@@ -75,18 +75,18 @@
 		<label class="control-label" for="import-cert-file">
 			<fmt:message key='certs.import.file.label'/>
 		</label>
-		<input class="span3" id="import-cert-file" type="file" name="file"/>
+		<input class="col-md-3" id="import-cert-file" type="file" name="file"/>
 		<br/><br/>
 		<div class="alert alert-info"><fmt:message key='certs.import.xor'/></div>
 
 		<label class="control-label" for="import-cert-text">
 			<fmt:message key='certs.import.text.label'/>
-		</label>		
-		<textarea name="text" id="import-cert-text" rows="6" class="span6 cert" 
+		</label>
+		<textarea name="text" id="import-cert-text" rows="6" class="col-md-6 cert"
 				placeholder="<fmt:message key='certs.import.text.placeholder'/>"></textarea>
 	</div>
 	<div class="modal-footer">
-		<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
+		<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></a>
 		<button type="submit" class="btn btn-primary"><fmt:message key="certs.action.import"/></button>
 	</div>
 	<sec:csrfInput/>
@@ -115,7 +115,7 @@
 		<p><fmt:message key='certs.export.intro'/></p>
 
 		<pre class="cert" id="modal-cert-container"></pre>
-		
+
 		<label class="checkbox">
 			<input type="checkbox" name="chain" value="true"/>
 			<fmt:message key='certs.export.chain.label'/>
@@ -123,7 +123,7 @@
 	</div>
 	<div class="modal-footer">
 		<input type="hidden" name="download" value="true"/>
-		<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
+		<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></a>
 		<button type="submit" class="btn btn-primary"><fmt:message key="certs.action.export"/></button>
 	</div>
 </form>
@@ -139,19 +139,19 @@
 		<label class="control-label" for="renew-cert-password">
 			<fmt:message key='certs.renew.password.label'/>
 		</label>
-		<input class="span3" id="renew-cert-password" type="password" name="password" required="required"/>
+		<input class="col-md-3" id="renew-cert-password" type="password" name="password" required="required"/>
 
 		<label class="control-label" for="renew-cert-password-again">
 			<fmt:message key='certs.renew.password-again.label'/>
 		</label>
-		<input class="span3" id="renew-cert-password-again" type="password" name="passwordAgain" required="required"/>
-		<div class="alert alert-error" id="renew-cert-error-password-again" style="display: none;"><fmt:message key='certs.renew.password.mismatch'/></div>
+		<input class="col-md-3" id="renew-cert-password-again" type="password" name="passwordAgain" required="required"/>
+		<div class="alert alert-danger" id="renew-cert-error-password-again" style="display: none;"><fmt:message key='certs.renew.password.mismatch'/></div>
 	</div>
 	<div class="modal-body success" style="display: none;">
 		<p><fmt:message key='certs.renew.success'/></p>
 	</div>
 	<div class="modal-footer">
-		<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
+		<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></a>
 		<button type="submit" class="btn btn-primary start"><fmt:message key="certs.action.renew"/></button>
 	</div>
 	<sec:csrfInput/>

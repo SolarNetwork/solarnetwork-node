@@ -9,7 +9,7 @@
 			<fmt:param>${controlId}</fmt:param>
 		</fmt:message>
 	</p>
-	<a href="<setup:url value='/a/controls'/>" class="btn">
+	<a href="<setup:url value='/a/controls'/>" class="btn btn-default">
 		<i class="fas fa-arrow-left"></i>
 		<fmt:message key="back.label"/>
 	</a>
@@ -67,13 +67,13 @@
 	</p>
 	<form class="form-horizontal" action="<setup:url value='/a/controls/setControlParameter'/>" method="post">
 		<fieldset>
-			<div class="control-group">
+			<div class="form-group">
 				<label class="control-label" for="SetControlParameter-parameterValue">
 					<fmt:message key="controls.manage.SetControlParameter.parameterValue"/>
 				</label>
 				<div class="controls">
 					<input type="text" name="parameterValue" id="SetControlParameter-parameterValue" 
-						class="span5" maxLength="255" value="" />
+						class="col-md-5" maxLength="255" value="" />
 				</div>
 			</div>
 		</fieldset>

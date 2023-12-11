@@ -14,9 +14,9 @@
 <fmt:message key="plugin.unremovable.message" var="msgUnremovable"/>
 <section id="plugin-upgrades" class="hide" data-msg-upgrade="${msgUpgrade}">
 	<h2><fmt:message key="plugins.upgradable.title"/></h2>
-	<div class="row-fluid">
-		<p class="span10"><fmt:message key="plugins.upgradable.intro"/></p>
-		<div class="span2 action">
+	<div class="row">
+		<p class="col-md-10"><fmt:message key="plugins.upgradable.intro"/></p>
+		<div class="col-md-2 action">
 			<setup:url value="/a/plugins/upgradeAll" var="urlPluginUpgradeAll"/>
 			<a id="plugins-upgrade-all" class="btn btn-info" href="${urlPluginUpgradeAll}"><fmt:message key="plugins.upgradeAll.button"/></a>
 		</div>
@@ -50,7 +50,7 @@
 			<fmt:message key="plugin.install.success"/><span> </span><fmt:message key="restart.underway"/>
 		</div>
 		<div class="progress progress-striped active hide">
-			<div class="bar"></div>
+			<div class="progress-bar"></div>
 	    </div>
 	    <div class="message-container hide-while-restarting"></div>
 	</div>
@@ -84,7 +84,7 @@
 			<fmt:message key="plugin.remove.success"/><span> </span><fmt:message key="restart.underway"/>
 		</div>
 		<div class="progress progress-striped active hide">
-			<div class="bar"></div>
+			<div class="progress-bar"></div>
 	    </div>
 	    <div class="message-container hide-while-restarting"></div>
 	</div>

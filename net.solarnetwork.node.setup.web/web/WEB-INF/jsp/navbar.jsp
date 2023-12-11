@@ -2,10 +2,10 @@
 <sec:authorize access="isAuthenticated()" var="isLoggedIn"/>
 <div class="navbar">
 	<div class="navbar-inner">
-		<a class="brand" href="<setup:url value='${isLoggedIn ? "/a/home" : "/"}'/>">
-			<img src="<setup:url value='/img/logo-node.svg'/>" alt="<fmt:message key='app.name'/>" width="143" height="28"/>	
+		<a class="navbar-brand" href="<setup:url value='${isLoggedIn ? "/a/home" : "/"}'/>">
+			<img src="<setup:url value='/img/logo-node.svg'/>" alt="<fmt:message key='app.name'/>" width="143" height="28"/>
 		</a>
-		<ul class="nav pull-right">
+		<ul class="navbar-nav pull-right">
 			<li ${navloc == 'home' and isLoggedIn ? 'class="active"' : ''}>
 				<a href="<setup:url value='/a/home'/>">
 					<c:choose>
@@ -18,7 +18,7 @@
 					</c:choose>
 				</a>
 			</li>
-			
+
 			<sec:authorize access="hasRole('ROLE_USER')">
 				<li class="dropdown${navloc == 'settings'
 						or navloc == 'settings-component'
@@ -36,7 +36,7 @@
 						<li ${navloc == 'opmodes' ? 'class="active"' : ''}><a href="<setup:url value='/a/opmodes'/>"><fmt:message key='link.opmodes'/></a></li>
 					</ul>
 				</li>
-				
+
 				<li class="dropdown${navloc == 'cert' or navloc == 'plugins' or navloc == 'packages' ? ' active' : ''}">
 					<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
 						<fmt:message key='link.system'/>
@@ -58,7 +58,7 @@
 						</c:if>
 					</ul>
 				</li>
-				
+
 				<li class="dropdown${navloc == 'cli-console' or navloc == 'controls' ? ' active' : ''}">
 					<a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
 						<fmt:message key='link.tools'/>
@@ -101,12 +101,12 @@
 				</div>
 				<div class="modal-body success" style="display: none;">
 					<div class="progress progress-info progress-striped active">
-						<div class="bar" style="width:100%"></div>
+						<div class="progress-bar" style="width:100%"></div>
 					</div>
 					<p><fmt:message key='restart.underway'/></p>
 				</div>
 				<div class="modal-footer start">
-					<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
+					<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></a>
 					<button type="submit" class="btn btn-danger reboot"><fmt:message key="restart.action.reboot"/></button>
 					<button type="submit" class="btn btn-primary"><fmt:message key="restart.action.restart"/></button>
 				</div>
@@ -127,12 +127,12 @@
 				</div>
 				<div class="modal-body success" style="display: none;">
 					<div class="progress progress-info progress-striped active">
-						<div class="bar" style="width:100%"></div>
+						<div class="progress-bar" style="width:100%"></div>
 					</div>
 					<p><fmt:message key='reset.underway'/></p>
 				</div>
 				<div class="modal-footer start">
-					<a href="#" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></a>
+					<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></a>
 					<button type="submit" class="btn btn-danger reboot"><fmt:message key="reset.action.reset"/></button>
 				</div>
 				<input type="hidden" name="reboot" value="false"/>

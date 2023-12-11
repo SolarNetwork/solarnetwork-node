@@ -9,7 +9,7 @@
 <section id="logging">
 	<h2>
 		<fmt:message key="logging.levels.title"/>
-		<button type="button" class="btn btn-small btn-primary pull-right" data-toggle="modal" data-target="#edit-logger-level-modal">
+		<button type="button" class="btn btn-sm btn-primary pull-right" data-toggle="modal" data-target="#edit-logger-level-modal">
 			<i class="fas fa-plus"></i>
 		</button>
 	</h2>
@@ -39,11 +39,11 @@
 	<div class="modal-body">
 		<p><fmt:message key="logging.levels.edit.intro"/></p>
 		<label for="logging-logger-levels-logger"><fmt:message key="logging.levels.logger.label"/></label>
-		<input type="text" class="input-block-level" maxlength="256" name="logger" id="logging-logger-levels-logger">
+		<input type="text" class="form-control" maxlength="256" name="logger" id="logging-logger-levels-logger">
 		<span class="help-block"><fmt:message key="logging.levels.logger.caption"/></span>
 
 		<label for="logging-logger-levels-level"><fmt:message key="logging.levels.level.label"/></label>
-		<select class="input-block-level" name="level" id="logging-logger-levels-level">
+		<select class="form-control" name="level" id="logging-logger-levels-level">
 			<option value="trace"><fmt:message key="logging.levels.TRACE.label"/></option>
 			<option value="debug"><fmt:message key="logging.levels.DEBUG.label"/></option>
 			<option value="info" selected><fmt:message key="logging.levels.INFO.label"/></option>
@@ -55,7 +55,7 @@
 		<span class="help-block"><fmt:message key="logging.levels.level.caption"/></span>
 
 		<p class="create"><fmt:message key="logging.levels.edit.loggers.intro"/></p>
-		<select class="create input-block-level" name="loggers" readonly size="10" id="logging-loggers">
+		<select class="create form-control" name="loggers" readonly size="10" id="logging-loggers">
 			<option value="trace"><fmt:message key="logging.levels.TRACE.label"/></option>
 			<option value="debug"><fmt:message key="logging.levels.DEBUG.label"/></option>
 			<option value="info" selected><fmt:message key="logging.levels.INFO.label"/></option>
@@ -66,7 +66,7 @@
 	</div>
 	<div class="modal-footer">
 		<sec:csrfInput/>
-		<button type="button" class="btn" data-dismiss="modal"><fmt:message key='close.label'/></button>
+		<button type="button" class="btn btn-default" data-dismiss="modal"><fmt:message key='close.label'/></button>
 		<button type="submit" class="btn btn-primary"><fmt:message key="logging.levels.edit.save.label"/></button>
 	</div>
 </form>

@@ -3,7 +3,7 @@
 </section>
 <div class="init">
 	<div class="progress progress-striped active">
-		<div class="bar" style="width: 100%;"></div>
+		<div class="progress-bar" style="width: 100%;"></div>
     </div>
 </div>
 <div class="ready hidden">
@@ -14,10 +14,10 @@
 	</div>
 	<section id="hosts">
 		<div class="row template hbox" style="align-items: center;">
-			<div class="span8">
+			<div class="col-md-8">
 				<button class="btn btn-link edit-item" data-tprop="name">myhost</button>
 			</div>
-			<div class="span4">
+			<div class="col-md-4">
 				<span data-tprop="address">192.168.1.2</span>
 			</div>
 		</div>
@@ -34,17 +34,17 @@
 	<div class="modal-body before">
 		<p><fmt:message key="host.add.intro"/></p>
 		<label for="hosts-add-name"><fmt:message key="host.name.label"/></label>
-		<input type="text" class="input-block-level" maxlength="256" name="name" id="hosts-add-name"
+		<input type="text" class="form-control" maxlength="256" name="name" id="hosts-add-name"
 			required placeholder="<fmt:message key='host.name.placeholder'/>">
 		<label for="hosts-add-address"><fmt:message key="host.address.label"/></label>
-		<input type="text" class="input-block-level" maxlength="256" name="address" id="hosts-add-address"
+		<input type="text" class="form-control" maxlength="256" name="address" id="hosts-add-address"
 			required placeholder="<fmt:message key='host.address.placeholder'/>">
 	</div>
 	<div class="modal-body after hidden">
 		<p class="error hidden"><fmt:message key="host.add.error"/></p>
 	</div>
 	<div class="modal-footer">
-		<a href="#" class="btn" data-dismiss="modal"><fmt:message key="close.label"/></a>
+		<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key="close.label"/></a>
 		<button type="submit" class="btn btn-primary ladda-button expand-right before"
 				data-loading-text="<fmt:message key='host.adding.message'/>"><fmt:message key="host.add.button"/></button>
 	</div>
@@ -63,7 +63,7 @@
 		<p class="error hidden"><fmt:message key="host.remove.error"/></p>
 	</div>
 	<div class="modal-footer">
-		<a href="#" class="btn" data-dismiss="modal"><fmt:message key="close.label"/></a>
+		<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key="close.label"/></a>
 		<button type="submit" class="btn btn-danger ladda-button expand-right before"
 				data-loading-text="<fmt:message key='host.removing.message'/>"><fmt:message key="host.remove.button"/></button>
 	</div>

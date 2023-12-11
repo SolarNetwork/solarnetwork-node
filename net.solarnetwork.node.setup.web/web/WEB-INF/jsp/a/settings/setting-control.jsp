@@ -21,7 +21,7 @@
 			provider="${setting.setupResourceProvider}"
 			properties="${setting.setupResourceProperties}"
 			wrapperElement="div"
-			wrapperClass="control-group setup-resource-container"
+			wrapperClass="form-group setup-resource-container"
 			id="cg-${settingId}"
 			data-provider-id="${provider.settingUid}"
 			data-setting-id="${settingId}"
@@ -30,14 +30,14 @@
 			/>
 	</c:when>
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.KeyedSettingSpecifier')}">
-		<div class="control-group" id="cg-${settingId}">
+		<div class="form-group" id="cg-${settingId}">
 			<label class="control-label" for="${settingId}">
 				<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}" index="${groupIndex}"/>
 			</label>
 			<div class="controls ${setup:instanceOf(setting, 'net.solarnetwork.settings.TitleSettingSpecifier') and !setup:instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier') ? 'static' : ''}">
 				<c:choose>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.SliderSettingSpecifier')}">
-						<div id="${settingId}" class="setting slider span5"></div>
+						<div id="${settingId}" class="setting slider col-md-5"></div>
 						<script>
 						$(function() {
 							SolarNode.Settings.addSlider({
@@ -85,7 +85,7 @@
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.RadioGroupSettingSpecifier')}">
 						<c:forEach items="${setting.valueTitles}" var="entry">
-							<label class="radio inline">
+							<label class="radio-inline">
 								<input type="radio" name="${settingId}" id="${settingId}" value="${entry.key}"
 									<c:if test='${settingValue eq  entry.key}'>checked="checked"</c:if>
 									/>
@@ -139,7 +139,7 @@
 						</script>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.TextAreaSettingSpecifier')}">
-						<textarea  name="${settingId}" id="${settingId}" class="span5" rows="${setting.direct ? 1 : 2}">${settingValue}</textarea>
+						<textarea  name="${settingId}" id="${settingId}" class="col-md-5" rows="${setting.direct ? 1 : 2}">${settingValue}</textarea>
 						<c:choose>
 							<c:when test="${setting.direct}">
 								<script>
@@ -170,7 +170,7 @@
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier')}">
 						<c:if test="${setup:js(setting.key) == 'schedule'}">
-							<select class="span2">
+							<select class="col-md-2">
 								<option value="cron"><fmt:message key='settings.schedulePeriod.cron.label'/></option>
 								<option value="ms"><fmt:message key='settings.schedulePeriod.milliseconds.label'/></option>
 								<option value="s"><fmt:message key='settings.schedulePeriod.seconds.label'/></option>
@@ -228,7 +228,7 @@
 									</fmt:message>
 								</c:if>
 							</span>
-							<button type="button" class="btn">
+							<button type="button" class="btn btn-default">
 								<fmt:message key="settings.change"/>
 							</button>
 						</span>
@@ -255,7 +255,7 @@
 								<c:if test="${!fileTypeStatus.first}">,</c:if><c:out value="${fileType}" />
 							</c:forEach>
 						</c:set>
-						<input type="file" name="${settingId}" id="${settingId}" class="span5"
+						<input type="file" name="${settingId}" id="${settingId}" class="col-md-5"
 							<c:if test="${fn:length(acceptFileTypes) gt 0}">
 								accept="${acceptFileTypes}"
 							</c:if>
@@ -322,17 +322,17 @@
 		</div>
 	</c:when>
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.GroupSettingSpecifier') and not empty setting.key}">
-		<div class="control-group grouped">
+		<div class="form-group grouped">
 			<label class="control-label">
 				<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}"/>
 			</label>
 			<div class="controls">
 				<c:if test="${setting.dynamic}">
 					<div class="btn-group btn-group-sm" role="group">
-						<button type="button" class="btn btn-small btn-default group-item-remove">
+						<button type="button" class="btn btn-sm btn-default group-item-remove">
 							<i class="fas fa-minus"></i>
 						</button>
-						<button type="button" class="btn btn-small btn-default group-item-add">
+						<button type="button" class="btn btn-sm btn-default group-item-add">
 							<i class="fas fa-plus"></i>
 						</button>
 					</div>

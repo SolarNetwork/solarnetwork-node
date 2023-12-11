@@ -13,7 +13,7 @@
 </section>
 <div class="init">
 	<div class="progress progress-striped active">
-		<div class="bar" style="width: 100%;"></div>
+		<div class="progress-bar" style="width: 100%;"></div>
     </div>
 </div>
 <div class="ready hidden">
@@ -21,20 +21,20 @@
 	<section id="packages-upgradable" class="hidden">
 		<h2><fmt:message key="packages.upgradable.title"/></h2>
 		<div class="row">
-			<div class="span9">
+			<div class="col-md-9">
 				<p><fmt:message key="packages.upgradable.intro"/></p>
 			</div>
-			<form class="span3 text-right form-inline">
+			<form class="col-md-3 text-right form-inline">
 				<button class="btn btn-info" 
 						data-target="#packages-upgrade-modal"
 						data-toggle="modal"><fmt:message key="packages.upgrade.button"/></button>
 			</form>
 		</div>
 		<div class="row template hbox" style="align-items: center;">
-			<div class="span8">
+			<div class="col-md-8">
 				<button class="btn btn-link edit-item" data-tprop="name">My package</button>
 			</div>
-			<div class="span4">
+			<div class="col-md-4">
 				<span data-tprop="version">1.2.3</span>
 			</div>
 		</div>
@@ -44,17 +44,17 @@
 
 	<div class="hide">
 		<div id="more-packages"><div class="row">
-			<div class="span12"><p class="muted"><fmt:message key="packages.more.message"/></p></div>
+			<div class="col-md-12"><p class="test-muted"><fmt:message key="packages.more.message"/></p></div>
 		</div></div>
 	</div>
 
 	<section id="packages-installed" data-msg-remove="${msgRemove}">
 		<h2 id="installed-packages"><fmt:message key="packages.installed.title"/></h2>
 		<div class="row">
-			<div class="span9">
+			<div class="col-md-9">
 				<p><fmt:message key="packages.installed.intro"/></p>
 			</div>
-			<form class="span3 text-right form-inline">
+			<form class="col-md-3 text-right form-inline">
 				<input type="search" id="installedSearchFilter" 
 						class="input-medium search-query"
 						placeholder="<fmt:message key='packages.filter.label'/>"
@@ -63,10 +63,10 @@
 		</div>
 		
 		<div class="row template hbox" style="align-items: center;">
-			<div class="span8">
+			<div class="col-md-8">
 				<button class="btn btn-link edit-item" data-tprop="name">My package</button>
 			</div>
-			<div class="span4">
+			<div class="col-md-4">
 				<span data-tprop="version">1.2.3</span>
 			</div>
 		</div>
@@ -76,10 +76,10 @@
 	<section id="packages">
 		<h2 id="available-packages"><fmt:message key="packages.available.title"/></h2>
 		<div class="row">
-			<div class="span9">
+			<div class="col-md-9">
 				<p><fmt:message key="packages.available.intro"/></p>
 			</div>
-			<form class="span3 text-right form-inline">
+			<form class="col-md-3 text-right form-inline">
 				<input type="search" id="availableSearchFilter" 
 						class="input-medium search-query"
 						placeholder="<fmt:message key='packages.filter.label'/>"
@@ -87,10 +87,10 @@
 			</form>
 		</div>
 		<div class="row template hbox" style="align-items: center;">
-			<div class="span8">
+			<div class="col-md-8">
 				<button class="btn btn-link edit-item" data-tprop="name">My package</button>
 			</div>
-			<div class="span4">
+			<div class="col-md-4">
 				<span data-tprop="version">1.2.3</span>
 			</div>
 		</div>
@@ -117,7 +117,7 @@
 				<fmt:message key="link.restart"/>
 			</button>
 		</c:if>
-		<a href="#" class="btn" data-dismiss="modal"><fmt:message key="close.label"/></a>
+		<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key="close.label"/></a>
 		<button type="submit" class="btn btn-primary ladda-button expand-right before"
 				data-loading-text="<fmt:message key='packages.upgrading.message'/>">${msgUpgradeAll}</button>
 	</div>
@@ -142,7 +142,7 @@
 				<fmt:message key="link.restart"/>
 			</button>
 		</c:if>
-		<a href="#" class="btn" data-dismiss="modal"><fmt:message key="close.label"/></a>
+		<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key="close.label"/></a>
 		<button type="submit" class="btn btn-primary ladda-button expand-right before"
 				data-loading-text="<fmt:message key='package.installing.message'/>">${msgInstall}</button>
 	</div>
@@ -168,7 +168,7 @@
 				<fmt:message key="link.restart"/>
 			</button>
 		</c:if>
-		<a href="#" class="btn" data-dismiss="modal"><fmt:message key="close.label"/></a>
+		<a href="#" class="btn btn-default" data-dismiss="modal"><fmt:message key="close.label"/></a>
 		<button type="submit" class="btn btn-danger ladda-button expand-right before"
 				data-loading-text="<fmt:message key='package.removing.message'/>">${msgRemove}</button>
 	</div>

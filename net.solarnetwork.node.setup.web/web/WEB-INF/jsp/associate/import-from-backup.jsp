@@ -9,12 +9,12 @@
 <setup:url value="/associate/importBackup" var="action"/>
 <form:form action="${action}" method="post" cssClass="form-horizontal" enctype="multipart/form-data" id="associate-import-backup-form">
 	<fieldset>
-		<div class="control-group">
+		<div class="form-group">
 			<label class="control-label" for="restore-file">
 				<fmt:message key="node.setup.restore.file"/>
 			</label>
 			<div class="controls">
-				<input class="span3" type="file" name="file" id="restore-file"/>
+				<input class="col-md-3" type="file" name="file" id="restore-file"/>
 			</div>
 		</div>
 	</fieldset>
@@ -46,12 +46,12 @@
 	</fieldset>
 
 	<fieldset style="margin-top: 24px;">
-		<div class="control-group">
+		<div class="form-group">
 			<label class="control-label" for="backup-backups">
 				<fmt:message key="backup.backups.label"/>
 			</label>
 			<div class="controls">
-				<select name="backup" class="span3" id="backup-backups">
+				<select name="backup" class="col-md-3" id="backup-backups">
 					<c:forEach items="${backups}" var="backup" varStatus="backupStatus">
 						<option value="${backup.key}">
 							<fmt:message key="backup.backups.backup.label">

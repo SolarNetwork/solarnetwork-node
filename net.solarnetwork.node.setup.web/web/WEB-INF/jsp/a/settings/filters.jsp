@@ -19,7 +19,7 @@
 				<c:forEach items="${globalFactories}" var="factory" varStatus="factoryStatus">
 					<!--  ${factory.factoryUid} -->
 					<tr>
-						<td class="span1">
+						<td class="col-md-1">
 							<c:if test="${fn:length(factory.settingSpecifierProviderInstanceIds) > 0}">
 								<span class="badge badge-info" title="<fmt:message key='settings.factories.instanceCount.caption'/>">
 									${fn:length(factory.settingSpecifierProviderInstanceIds)}
@@ -28,7 +28,7 @@
 						</td>
 						<td><strong><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></strong></td>
 						<td>
-							<a class="btn" href="<setup:url value='/a/settings/filters/manage?uid=${factory.factoryUid}'/>">
+							<a class="btn btn-default" href="<setup:url value='/a/settings/filters/manage?uid=${factory.factoryUid}'/>">
 								<i class="far fa-pen-to-square"></i> 
 								<fmt:message key="settings.factory.manage.label"/>
 							</a>
@@ -109,7 +109,7 @@
 			<c:forEach items="${userFactories}" var="factory" varStatus="factoryStatus">
 				<!--  ${factory.factoryUid} -->
 				<tr>
-					<td class="span1">
+					<td class="col-md-1">
 						<c:if test="${fn:length(factory.settingSpecifierProviderInstanceIds) > 0}">
 							<span class="badge badge-info" title="<fmt:message key='settings.factories.instanceCount.caption'/>">
 								${fn:length(factory.settingSpecifierProviderInstanceIds)}
@@ -118,7 +118,7 @@
 					</td>
 					<td><strong><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></strong></td>
 					<td>
-						<a class="btn" href="<setup:url value='/a/settings/filters/manage?uid=${factory.factoryUid}'/>">
+						<a class="btn btn-default" href="<setup:url value='/a/settings/filters/manage?uid=${factory.factoryUid}'/>">
 							<i class="far fa-pen-to-square"></i> 
 							<fmt:message key="settings.factory.manage.label"/>
 						</a>

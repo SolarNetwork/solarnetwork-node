@@ -9,8 +9,8 @@
 		<tr>
 			<th><fmt:message key="node.setup.success.user.password"/></th>
 			<td>
-				<p class="text-error"><code>${user.password}</code></p>
-				<div class="alert">
+				<p class="text-danger"><code>${user.password}</code></p>
+				<div class="alert alert-warning">
 					<fmt:message key='node.setup.success.user.intro'>
 						<fmt:param><setup:url value="/a/user/change-password">
 							<spring:param name="old" value="${user.password}"/>

@@ -11,16 +11,16 @@
 
 <setup:url value="/associate/preview" var="action"/>
 <form:form action="${action}" method="post" cssClass="form-horizontal">
-	<form:errors cssClass="alert alert-error" element="div" htmlEscape="false"/>
+	<form:errors cssClass="alert alert-danger" element="div" htmlEscape="false"/>
 	<fieldset>
 		<c:set var="err"><form:errors path="verificationCode" cssClass="help-inline" element="span"/></c:set>
-		<div class="control-group<c:if test='${not empty err}'> error</c:if>">
+		<div class="form-group<c:if test='${not empty err}'> error</c:if>">
 			<label class="control-label" for="${settingId}">
 				<fmt:message key="node.setup.code.verificationCode"/>
 			</label>
 			<div class="controls">
 				<fmt:message key='node.setup.code.verificationCode.placeholder' var="placeholder"/>
-				<form:textarea path="verificationCode" placeholder="${placeholder}" rows="10" cssClass="span9" required="required"/>
+				<form:textarea path="verificationCode" placeholder="${placeholder}" rows="10" cssClass="col-md-9" required="required"/>
 				<c:out value="${err}" escapeXml="false"/>
 			</div>
 		</div>

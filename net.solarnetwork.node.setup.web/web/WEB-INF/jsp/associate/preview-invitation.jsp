@@ -4,26 +4,26 @@
 <setup:url value="/associate/verify" var="action"/>
 <form:form modelAttribute="details" action="${action}" cssClass="form-horizontal" method="post">
 	<fieldset>
-		<div class="control-group">
+		<div class="form-group">
 			<label class="control-label" for="invitation-host"><fmt:message key="node.setup.identity.service"/></label>
 			<div class="controls" id="invitation-host">
-				<span class="uneditable-input span6">${details.host}</span>
+				<span class="uneditable-input col-md-6">${details.host}</span>
 			</div>
 		</div>
-		<div class="control-group">
+		<div class="form-group">
 			<label class="control-label" for="invitation-username"><fmt:message key="node.setup.identity.username"/></label>
 			<div class="controls" id="invitation-username">
-				<span class="uneditable-input span6">${details.username}</span>
+				<span class="uneditable-input col-md-6">${details.username}</span>
 			</div>
 		</div>
-		<div class="control-group">
+		<div class="form-group">
 			<label class="control-label" for="invitation-identity"><fmt:message key="node.setup.identity.identity"/></label>
 			<div class="controls" id="invitation-identity">
-				<span class="uneditable-input span6">${details.identityKey}</span>
+				<span class="uneditable-input col-md-6">${details.identityKey}</span>
 			</div>
 		</div>
 		<div class="form-actions">
-			<a href="<setup:url value='/associate'/>" class="btn"><fmt:message key='cancel.label'/></a>
+			<a href="<setup:url value='/associate'/>" class="btn btn-default"><fmt:message key='cancel.label'/></a>
 			<button type="submit" class="btn btn-primary"><fmt:message key='continue.label'/></button>
 		</div>
 	</fieldset>
