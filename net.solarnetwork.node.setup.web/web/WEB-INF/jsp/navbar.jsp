@@ -115,7 +115,7 @@
 					<p><fmt:message key='restart.underway'/></p>
 				</div>
 				<div class="modal-footer start">
-					<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>
+					<a href="#" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>
 					<button type="submit" class="btn btn-danger reboot"><fmt:message key="restart.action.reboot"/></button>
 					<button type="submit" class="btn btn-primary"><fmt:message key="restart.action.restart"/></button>
 				</div>
@@ -145,7 +145,7 @@
 					<p><fmt:message key='reset.underway'/></p>
 				</div>
 				<div class="modal-footer start">
-					<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>
+					<a href="#" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>
 					<button type="submit" class="btn btn-danger reboot"><fmt:message key="reset.action.reset"/></button>
 				</div>
 				<input type="hidden" name="reboot" value="false"/>

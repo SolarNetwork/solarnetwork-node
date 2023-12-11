@@ -22,7 +22,7 @@
 	</div>
 	<div class="row">
 		<div class="col-md-12 text-right">
-			<button type="button" id="cli-console-clear-logging" class="btn btn-default" disabled
+			<button type="button" id="cli-console-clear-logging" class="btn btn-secondary" disabled
 				title="<fmt:message key='cli-console.commands.clear.label'/>">
 				<i class="far fa-trash-can"></i>
 			</button>

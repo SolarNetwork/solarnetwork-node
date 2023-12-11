@@ -23,7 +23,7 @@
 			</div>
 		</div>
 		<div class="form-actions">
-			<a href="<setup:url value='/associate'/>" class="btn btn-default"><fmt:message key='cancel.label'/></a>
+			<a href="<setup:url value='/associate'/>" class="btn btn-secondary"><fmt:message key='cancel.label'/></a>
 			<button type="submit" class="btn btn-primary"><fmt:message key='continue.label'/></button>
 		</div>
 	</fieldset>

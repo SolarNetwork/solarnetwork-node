@@ -119,7 +119,7 @@
 						<fmt:message key="link.restart"/>
 					</button>
 				</c:if>
-				<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
+				<a href="#" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
 				<button type="submit" class="btn btn-primary ladda-button expand-right before"
 						data-loading-text="<fmt:message key='packages.upgrading.message'/>">${msgUpgradeAll}</button>
 			</div>
@@ -148,7 +148,7 @@
 						<fmt:message key="link.restart"/>
 					</button>
 				</c:if>
-				<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
+				<a href="#" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
 				<button type="submit" class="btn btn-primary ladda-button expand-right before"
 						data-loading-text="<fmt:message key='package.installing.message'/>">${msgInstall}</button>
 			</div>
@@ -178,7 +178,7 @@
 						<fmt:message key="link.restart"/>
 					</button>
 				</c:if>
-				<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
+				<a href="#" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
 				<button type="submit" class="btn btn-danger ladda-button expand-right before"
 						data-loading-text="<fmt:message key='package.removing.message'/>">${msgRemove}</button>
 			</div>

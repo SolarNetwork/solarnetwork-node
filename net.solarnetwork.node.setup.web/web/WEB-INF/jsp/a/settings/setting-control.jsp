@@ -228,7 +228,7 @@
 									</fmt:message>
 								</c:if>
 							</span>
-							<button type="button" class="btn btn-default">
+							<button type="button" class="btn btn-secondary">
 								<fmt:message key="settings.change"/>
 							</button>
 						</span>
@@ -329,10 +329,10 @@
 			<div class="controls">
 				<c:if test="${setting.dynamic}">
 					<div class="btn-group btn-group-sm" role="group">
-						<button type="button" class="btn btn-sm btn-default group-item-remove">
+						<button type="button" class="btn btn-sm btn-secondary group-item-remove">
 							<i class="fas fa-minus"></i>
 						</button>
-						<button type="button" class="btn btn-sm btn-default group-item-add">
+						<button type="button" class="btn btn-sm btn-secondary group-item-add">
 							<i class="fas fa-plus"></i>
 						</button>
 					</div>

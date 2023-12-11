@@ -18,14 +18,14 @@
 	</p>
 	<div class="row action-progress-bar">
 		<div class="col-md-2">
-			<a href="<setup:url value='${navloc == "filters-component" ? "/a/settings/filters" : "/a/settings"}'/>" class="btn btn-default">
+			<a href="<setup:url value='${navloc == "filters-component" ? "/a/settings/filters" : "/a/settings"}'/>" class="btn btn-secondary">
 				<i class="fas fa-arrow-left"></i>
 				<fmt:message key="back.label"/>
 			</a>
 		</div>
 		<div class="col-md-10 text-right">
 			<c:if test="${fn:length(providers) > 0}">
-				<button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#remove-all-component-instance-modal">
+				<button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#remove-all-component-instance-modal">
 					<i class="far fa-trash-can"></i>
 					<fmt:message key='settings.factory.removeall.label'>
 						<fmt:param>${fn:length(providers)}</fmt:param>
@@ -162,7 +162,7 @@ $(function() {
 				</p>
 			</div>
 			<div class="modal-footer">
-				<button type="button" class="btn btn-default" data-bs-dismiss="modal">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
 					<fmt:message key="cancel.label"/>
 				</button>
 				<button type="submit" class="btn btn-danger">
@@ -219,7 +219,7 @@ $(function() {
 				</label>
 			</div>
 			<div class="modal-footer">
-				<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>
+				<a href="#" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>
 				<button type="button" class="btn btn-primary choose" disabled="disabled">
 					<fmt:message key="lookup.action.choose"/>
 				</button>
@@ -273,7 +273,7 @@ $(function() {
 				</label>
 			</div>
 			<div class="modal-footer">
-				<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>
+				<a href="#" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>
 				<button type="button" class="btn btn-primary choose" disabled="disabled">
 					<fmt:message key="lookup.action.choose"/>
 				</button>
@@ -324,7 +324,7 @@ $(function() {
 				</label>
 			</div>
 			<div class="modal-footer">
-				<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>
+				<a href="#" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key='close.label'/></a>
 				<button type="button" class="btn btn-primary choose" disabled="disabled">
 					<fmt:message key="lookup.action.choose"/>
 				</button>
@@ -353,7 +353,7 @@ $(function() {
 			<div class="modal-footer">
 				<sec:csrfInput/>
 				<input type="hidden" name="uid" value="${factory.factoryUid}"/>
-				<button type="button" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key='close.label'/></button>
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key='close.label'/></button>
 				<button type="submit" class="btn btn-primary"><fmt:message key="settings.factory.add.label"/></button>
 			</div>
 		</div>

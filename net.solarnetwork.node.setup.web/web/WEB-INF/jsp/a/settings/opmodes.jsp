@@ -47,7 +47,7 @@
 			</div>
 			<div class="modal-footer">
 				<sec:csrfInput/>
-				<button type="button" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key='close.label'/></button>
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key='close.label'/></button>
 				<button type="submit" class="btn btn-primary"><fmt:message key="opmodes.add.label"/></button>
 			</div>
 		</div>

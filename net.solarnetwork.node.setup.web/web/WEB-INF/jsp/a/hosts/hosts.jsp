@@ -46,7 +46,7 @@
 				<p class="error hidden"><fmt:message key="host.add.error"/></p>
 			</div>
 			<div class="modal-footer">
-				<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
+				<a href="#" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
 				<button type="submit" class="btn btn-primary ladda-button expand-right before"
 						data-loading-text="<fmt:message key='host.adding.message'/>"><fmt:message key="host.add.button"/></button>
 			</div>
@@ -69,7 +69,7 @@
 				<p class="error hidden"><fmt:message key="host.remove.error"/></p>
 			</div>
 			<div class="modal-footer">
-				<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
+				<a href="#" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
 				<button type="submit" class="btn btn-danger ladda-button expand-right before"
 						data-loading-text="<fmt:message key='host.removing.message'/>"><fmt:message key="host.remove.button"/></button>
 			</div>

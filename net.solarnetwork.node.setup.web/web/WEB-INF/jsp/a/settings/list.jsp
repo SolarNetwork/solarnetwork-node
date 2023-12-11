@@ -26,7 +26,7 @@
 					</td>
 					<td><strong><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></strong></td>
 					<td>
-						<a class="btn btn-default" href="<setup:url value='/a/settings/manage?uid=${factory.factoryUid}'/>">
+						<a class="btn btn-secondary" href="<setup:url value='/a/settings/manage?uid=${factory.factoryUid}'/>">
 							<i class="far fa-pen-to-square"></i> 
 							<fmt:message key="settings.factory.manage.label"/>
 						</a>
@@ -310,7 +310,7 @@
 			<div class="modal-footer">
 				<sec:csrfInput/>
 				<input type="hidden" name="key" value=""/>
-				<button type="button" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key='close.label'/></button>
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key='close.label'/></button>
 				<button type="submit" class="btn btn-danger ladda-button expand-right"><fmt:message key="backup.restore.button"/></button>
 			</div>
 		</div>

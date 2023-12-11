@@ -53,44 +53,36 @@
 			</div>
 			<div class="modal-body before">
 				<p><fmt:message key='sectoks.create.intro'/></p>
-				<div class="form-group">
-					<label class="control-label" for="create-security-token-modal-name">
+				<div class="col-12 mb-3">
+					<label class="form-label" for="create-security-token-modal-name">
 						<fmt:message key="sectoks.token.name.label"/>
 					</label>
-					<div class="controls">
-						<input type="text" name="name" id="create-security-token-modal-name"
-							class="col-md-5" maxLength="128" value="" />
-					</div>
+					<input type="text" name="name" id="create-security-token-modal-name"
+						class="form-control" maxLength="128" value="" />
 				</div>
-				<div class="form-group">
-					<label class="control-label" for="create-security-token-modal-description">
+				<div class="col-12 mb-3">
+					<label class="form-label" for="create-security-token-modal-description">
 						<fmt:message key="sectoks.token.description.label"/>
 					</label>
-					<div class="controls">
-						<input type="text" name="description" id="create-security-token-modal-description"
-							class="col-md-5" maxLength="256" value="" />
-					</div>
+					<input type="text" name="description" id="create-security-token-modal-description"
+						class="form-control" maxLength="256" value="" />
 				</div>
 			</div>
 			<div class="modal-body after hidden">
 				<p class="alert alert-success"><fmt:message key='sectoks.created.intro'/></p>
-				<div class="form-group">
-					<label class="control-label" for="create-security-token-modal-id">
+				<div class="col-12 mb-3">
+					<label class="form-label" for="create-security-token-modal-id">
 						<fmt:message key="sectoks.token.id.label"/>
 					</label>
-					<div class="controls">
-						<input type="text" name="tokenId" id="create-security-token-modal-id"
-							class="col-md-5" value="" readonly />
-					</div>
+					<input type="text" name="tokenId" id="create-security-token-modal-id"
+						class="form-control" value="" readonly />
 				</div>
-				<div class="form-group">
-					<label class="control-label" for="create-security-token-modal-secret">
+				<div class="col-12 mb-3">
+					<label class="form-label" for="create-security-token-modal-secret">
 						<fmt:message key="sectoks.token.secret.label"/>
 					</label>
-					<div class="controls">
-						<input type="text" name="tokenSecret" id="create-security-token-modal-secret"
-							class="col-md-5" value="" readonly />
-					</div>
+					<input type="text" name="tokenSecret" id="create-security-token-modal-secret"
+						class="form-control" value="" readonly />
 				</div>
 				<p class="text-center">
 					<a class="btn btn-success btn-lg" href="#" id="create-token-download-csv" download="node-token-credentials.csv">
@@ -101,7 +93,7 @@
 				<p class="alert alert-warning"><fmt:message key='sectoks.created.warning'/></p>
 			</div>
 			<div class="modal-footer">
-				<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key="close.label"/></button>
 				<button type="submit" class="btn btn-primary"><fmt:message key="sectoks.action.create"/></button>
 			</div>
 		</div>
@@ -115,44 +107,40 @@
 			<div class="modal-header">
 				<h3 class="modal-title"><fmt:message key='sectoks.edit.title'/></h3>
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<fmt:message key='close.label'/>"></button>
-				<p><fmt:message key='sectoks.edit.intro'/></p>
 			</div>
 			<div class="modal-body">
-				<div class="form-group">
-					<label class="control-label" for="create-security-token-modal-id">
+				<p><fmt:message key='sectoks.edit.intro'/></p>
+				<div class="col-12 mb-3">
+					<label class="form-label" for="create-security-token-modal-id">
 						<fmt:message key="sectoks.token.id.label"/>
 					</label>
-					<div class="controls">
-						<input type="text" name="id" id="create-security-token-modal-id"
-							class="col-md-5" value="" readonly />
-					</div>
+					<input type="text" name="id" id="create-security-token-modal-id"
+						class="form-control" value="" readonly />
 				</div>
-				<div class="form-group">
-					<label class="control-label" for="create-security-token-modal-name">
+				<div class="col-12 mb-3">
+					<label class="form-label" for="create-security-token-modal-name">
 						<fmt:message key="sectoks.token.name.label"/>
 					</label>
-					<div class="controls">
-						<input type="text" name="name" id="create-security-token-modal-name"
-							class="col-md-5" maxLength="128" value="" />
-					</div>
+					<input type="text" name="name" id="create-security-token-modal-name"
+						class="form-control" maxLength="128" value="" />
 				</div>
-				<div class="form-group">
-					<label class="control-label" for="create-security-token-modal-description">
+				<div class="col-12 mb-3">
+					<label class="form-label" for="create-security-token-modal-description">
 						<fmt:message key="sectoks.token.description.label"/>
 					</label>
-					<div class="controls">
-						<input type="text" name="description" id="create-security-token-modal-description"
-							class="col-md-5" maxLength="256" value="" />
-					</div>
+					<input type="text" name="description" id="create-security-token-modal-description"
+						class="form-control" maxLength="256" value="" />
 				</div>
 			</div>
-			<div class="modal-footer">
+			<div class="modal-footer justify-content-between">
 				<button type="button" class="btn btn-danger pull-left" name="delete" title="<fmt:message key='sectoks.action.delete'/>">
 					<i class="far fa-trash-can"></i>
 					<fmt:message key="sectoks.action.delete"/>
 				</button>
-				<a href="#" class="btn btn-default" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
-				<button type="submit" class="btn btn-primary"><fmt:message key="sectoks.action.update"/></button>
+				<div>
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key="close.label"/></button>
+					<button type="submit" class="btn btn-primary"><fmt:message key="sectoks.action.update"/></button>
+				</div>
 			</div>
 		</div>
 	</div>

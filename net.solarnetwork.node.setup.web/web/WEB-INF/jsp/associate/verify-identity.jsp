@@ -48,7 +48,7 @@
 		</div>
 	</fieldset>
 	<div class="form-actions">
-		<a class="btn btn-default" href="<setup:url value='/associate'/>"><fmt:message key='cancel.label'/></a>
+		<a class="btn btn-secondary" href="<setup:url value='/associate'/>"><fmt:message key='cancel.label'/></a>
 		<button type="submit" class="btn btn-primary" name="confirm"><fmt:message key='node.setup.identity.confirm'/></button>
 		<div class="alert alert-danger hidden" id="invitation-certpass-reiterate">
 	 		<strong><fmt:message key='node.setup.associate.certpass.reiterate.title'/></strong>
