@@ -8,7 +8,7 @@
 </section>
 <section id="opmodes">
 	<div>
-		<button type="button" class="btn btn-primary pull-right" data-toggle="modal" data-target="#add-opmodes-modal">
+		<button type="button" class="btn btn-primary pull-right" data-bs-toggle="modal" data-bs-target="#add-opmodes-modal">
 			<i class="fas fa-plus"></i>
 		</button>
 	</div>

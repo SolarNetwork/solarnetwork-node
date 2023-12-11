@@ -51,7 +51,7 @@
 		<a class="btn btn-default" id="btn-view-node-csr" href="<setup:url value='/a/certs/nodeCSR'/>">
 			<fmt:message key='certs.action.csr'/>
 		</a>
-		<a class="btn ${nodeCertValid ? 'btn-default' : 'btn-primary'}" id="btn-view-node-csr" href="#import-cert-modal" data-toggle="modal">
+		<a class="btn ${nodeCertValid ? 'btn-default' : 'btn-primary'}" id="btn-view-node-csr" href="#import-cert-modal" data-bs-toggle="modal">
 			<fmt:message key='certs.action.import'/>
 		</a>
 		<c:if test="${not empty nodeCert}">

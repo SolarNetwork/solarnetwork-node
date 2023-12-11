@@ -25,7 +25,7 @@
 		</div>
 		<div class="col-md-10 text-right">
 			<c:if test="${fn:length(providers) > 0}">
-				<button type="button" class="btn btn-default" data-toggle="modal" data-target="#remove-all-component-instance-modal">
+				<button type="button" class="btn btn-default" data-bs-toggle="modal" data-bs-target="#remove-all-component-instance-modal">
 					<i class="far fa-trash-can"></i>
 					<fmt:message key='settings.factory.removeall.label'>
 						<fmt:param>${fn:length(providers)}</fmt:param>
@@ -33,7 +33,7 @@
 					</fmt:message>
 				</button>
 			</c:if>
-			<button type="button" class="btn btn-primary" id="add" data-toggle="modal" data-target="#add-component-instance-modal">
+			<button type="button" class="btn btn-primary" id="add" data-bs-toggle="modal" data-bs-target="#add-component-instance-modal">
 				<i class="fas fa-plus"></i>
 				<fmt:message key='settings.factory.add'>
 					<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
@@ -47,7 +47,7 @@
 	<c:if test="${fn:length(providers) > 1}">
 		<ol class="carousel-indicators numbered">
 			<c:forEach items="${providers}" var="instance" varStatus="instanceStatus">
-				<li data-target="#settings" data-slide-to="${instanceStatus.index}" data-instance-key="${instance.key}"
+				<li data-bs-target="#settings" data-slide-to="${instanceStatus.index}" data-instance-key="${instance.key}"
 					class="${instanceStatus.index == 0 ? 'active' : ''}">${instance.key}</li>
 			</c:forEach>
 		</ol>
@@ -76,7 +76,7 @@
 						${instance.key}
 					</legend>
 					<div class="instance-content"
-							data-target="<setup:url value='/a/settings/manage'/>"
+							data-bs-target="<setup:url value='/a/settings/manage'/>"
 							data-factory-uid="${factory.factoryUid}"
 							data-instance-key="${instance.key}">
 					    <div class="progress progress-striped active">
@@ -86,7 +86,7 @@
 					<div class="form-group">
 						<div class="controls">
 							<button type="button" class="btn btn-danger delete-factory-instance"
-									data-target="<setup:url value='/a/settings/manage/delete'/>"
+									data-bs-target="<setup:url value='/a/settings/manage/delete'/>"
 									data-factory-uid="${factory.factoryUid}"
 									data-instance-key="${instance.key}"
 									>
@@ -96,7 +96,7 @@
 								</fmt:message>
 							</button>
 							<button type="button" class="btn btn-primary reset-factory-instance"
-									data-target="<setup:url value='/a/settings/manage/reset'/>"
+									data-bs-target="<setup:url value='/a/settings/manage/reset'/>"
 									data-factory-uid="${factory.factoryUid}"
 									data-instance-key="${instance.key}"
 									>

@@ -9,7 +9,7 @@
 <section id="logging">
 	<h2>
 		<fmt:message key="logging.levels.title"/>
-		<button type="button" class="btn btn-sm btn-primary pull-right" data-toggle="modal" data-target="#edit-logger-level-modal">
+		<button type="button" class="btn btn-sm btn-primary pull-right" data-bs-toggle="modal" data-bs-target="#edit-logger-level-modal">
 			<i class="fas fa-plus"></i>
 		</button>
 	</h2>

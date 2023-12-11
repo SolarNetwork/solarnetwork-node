@@ -26,8 +26,8 @@
 			</div>
 			<form class="col-md-3 text-right form-inline">
 				<button class="btn btn-info" 
-						data-target="#packages-upgrade-modal"
-						data-toggle="modal"><fmt:message key="packages.upgrade.button"/></button>
+						data-bs-target="#packages-upgrade-modal"
+						data-bs-toggle="modal"><fmt:message key="packages.upgrade.button"/></button>
 			</form>
 		</div>
 		<div class="row template hbox" style="align-items: center;">

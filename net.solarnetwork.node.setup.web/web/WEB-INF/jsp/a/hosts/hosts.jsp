@@ -8,7 +8,7 @@
 </div>
 <div class="ready hidden">
 	<div class="row">
-		<button type="button" class="btn btn-primary pull-right" data-toggle="modal" data-target="#host-add-modal">
+		<button type="button" class="btn btn-primary pull-right" data-bs-toggle="modal" data-bs-target="#host-add-modal">
 			<i class="fas fa-plus"></i> <fmt:message key="host.add.action"/>
 		</button>
 	</div>

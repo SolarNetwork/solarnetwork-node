@@ -10,7 +10,7 @@
 			<fmt:param value="${fn:length(tokens)}"></fmt:param>
 		</fmt:message>
 	</p>
-	<button class="btn btn-primary pull-right" data-target="#create-security-token-modal" data-toggle="modal">
+	<button class="btn btn-primary pull-right" data-bs-target="#create-security-token-modal" data-bs-toggle="modal">
 		<i class="fas fa-plus"></i>
 		<fmt:message key="sectoks.action.create"/>
 	</button>
