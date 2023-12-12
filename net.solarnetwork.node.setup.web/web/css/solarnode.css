@@ -566,3 +566,18 @@ input[readonly].form-control {
 	transform: translateY(-0.15rem);
 }
 */
+
+.content-absolute {
+	position: absolute;
+	top: 3.5rem;
+	left: 0;
+	right: 0;
+	bottom: 0;
+}
+
+.content-vertical-center {
+	display: flex;
+	min-height: 100%;
+	align-items: center;
+	padding: 1rem 0;
+}
