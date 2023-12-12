@@ -851,7 +851,7 @@ function selectInitialComponentInstance() {
 	
 	if ( componentContent.length > 1 && document.location.hash ) {
 		var instanceKey = decodeURIComponent(document.location.hash.substring(1));
-		var instanceTab = $('#settings.carousel .carousel-indicators li[data-instance-key="'
+		var instanceTab = $('#settings.carousel .page-indicators button[data-instance-key="'
 			+ instanceKey + '"]');
 		if ( instanceTab.length > 0 ) {
 			instanceTab.first().trigger('click');
@@ -965,12 +965,17 @@ $(document).ready(function() {
 		});
 	});
 	
-	$('#settings.carousel .carousel-indicators li').on('click', function(event) {
+	$('#settings.carousel .page-indicators button').on('click', function(event) {
 		var instanceKey = this.dataset.instanceKey;
 		if ( !instanceKey ) {
 			return;
 		}
 		console.log('Carousel click to instance: ' +instanceKey);
+		if ( !this.classList.contains('btn-warning') ) {
+			$('#settings.carousel .page-indicators button.btn-warning').removeClass('btn-warning').addClass('btn-secondary');
+			this.classList.add('btn-warning');
+			this.classList.remove('btn-secondary');
+		}
 		document.location.hash = encodeURIComponent(instanceKey);
 		loadComponentInstance(instanceKey);
 	});

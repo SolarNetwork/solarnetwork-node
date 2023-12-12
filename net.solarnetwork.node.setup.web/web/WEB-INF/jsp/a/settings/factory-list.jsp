@@ -55,7 +55,7 @@
 						<div class="page-indicators gap-2 d-flex flex-wrap justify-content-end">
 							<c:forEach items="${providers}" var="instance" varStatus="instanceStatus">
 								<button type="button" data-bs-target="#settings" data-bs-slide-to="${instanceStatus.index}" data-instance-key="${instance.key}"
-									class="btn ${instanceStatus.index == 0 ? 'btn-warning active' : 'btn-secondary'}">${instance.key}</button>
+									class="btn ${instanceStatus.index == 0 ? 'btn-warning' : 'btn-secondary'}">${instance.key}</button>
 							</c:forEach>
 						</div>
 					</c:if>
