@@ -60,6 +60,10 @@ section.intro {
 	margin-bottom: 1rem;
 }
 
+section + section {
+	margin-top: 2rem;	
+}
+
 span.active-value.clean {
 	display: none !important;
 }
@@ -348,6 +352,10 @@ div.plugin .desc {
 	content: ', ';
 	font-weight: normal;
 	margin-left: 0;
+}
+
+.datum-activity-seenprops dd {
+	margin-bottom: 0;
 }
 
 @-webkit-keyframes yellow-fade {   

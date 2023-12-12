@@ -52,27 +52,24 @@
 		<fmt:message key="datum.activity.seenprops.title"/>
 	</h2>	
 	<p><fmt:message key="datum.activity.seenprops.intro"/></p>
-	<table class="table datum-activity-seenprops">
-		<thead>
-			<tr>
-				<th><fmt:message key='datum.sourceId.label'/></th>
-				<th><fmt:message key='datum.created.label'/></th>
-				<th><fmt:message key='datum.properties.label'/></th>
-			</tr>
-			<tr class="template brief-showcase">
-				<td data-tprop="sourceId"></td>
-				<td data-tprop="date"></td>
-				<td>
-					<dl class="row datum-props hidden">
-						<dt class="col-sm-3 datum-prop template" data-tprop="propName"></dt>
-						<dd class="col-sm-9 datum-prop template" data-tprop="propValue"></dd>
-					</dl>
-				</td>
-			</tr>
-		</thead>
-		<tbody>
-		</tbody>
-	</table>
+	<div class="container datum-activity-seenprops">
+		<div class="row fw-bold border-bottom">
+			<div class="col-4"><fmt:message key='datum.sourceId.label'/></div>
+			<div class="col-3"><fmt:message key='datum.created.label'/></div>
+			<div class="col-6"><fmt:message key='datum.properties.label'/></div>
+		</div>
+		<div class="row activity template brief-showcase border-bottom">
+			<div class="col-4 py-2" data-tprop="sourceId"></div>
+			<div class="col-3 py-2" data-tprop="date"></div>
+			<div class="col-6 py-2">
+				<dl class="row datum-props hidden">
+					<dt class="col-sm-5 datum-prop template" data-tprop="propName"></dt>
+					<dd class="col-sm-7 datum-prop template" data-tprop="propValue"></dd>
+				</dl>
+			</div>
+		</div>
+		<div class="activity-container"></div>
+	</div>
 </section>
 
 <section id="datum-activity" class="hidden">
@@ -81,31 +78,30 @@
 			class="anchor" aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>			
 		<fmt:message key="datum.activity.title"/>
 	</h2>	
+	
 	<p><fmt:message key="datum.activity.intro"/></p>
-	<table class="table datum-activity">
-		<thead>
-			<tr>
-				<th><fmt:message key='datum.created.label'/></th>
-				<th><fmt:message key='datum.activity.eventAndType.label'/></th>
-				<th><fmt:message key='datum.sourceId.label'/></th>
-				<th><fmt:message key='datum.properties.label'/></th>
-			</tr>
-			<tr class="template brief-showcase">
-				<td data-tprop="date"></td>
-				<td>
-					<i class="event-icon hidden"></i>
-					<span data-tprop="type"></span>
-				</td>
-				<td data-tprop="sourceId"></td>
-				<td>
-					<dl class="datum-props hidden">
-						<dt class="datum-prop template" data-tprop="propName"></dt>
-						<dd class="datum-prop template" data-tprop="propValue"></dd>
-					</dl>
-				</td>
-			</tr>
-		</thead>
-		<tbody>
-		</tbody>
-	</table>
+	
+	<div class="container datum-activity">
+		<div class="row fw-bold border-bottom">
+			<div class="col-2"><fmt:message key='datum.created.label'/></div>
+			<div class="col-2"><fmt:message key='datum.activity.eventAndType.label'/></div>
+			<div class="col-3"><fmt:message key='datum.sourceId.label'/></div>
+			<div class="col-5"><fmt:message key='datum.properties.label'/></div>
+		</div>
+		<div class="row activity template brief-showcase border-bottom">
+			<div class="col-2 py-2" data-tprop="date"></div>
+			<div class="col-2 py-2">
+				<i class="event-icon hidden"></i>
+				<span data-tprop="type"></span>
+			</div>
+			<div class="col-3 py-2" data-tprop="sourceId"></div>
+			<div class="col-5 py-2">
+				<dl class="datum-props hidden">
+					<dt class="datum-prop template" data-tprop="propName"></dt>
+					<dd class="datum-prop template" data-tprop="propValue"></dd>
+				</dl>
+			</div>
+		</div>
+		<div class="activity-container"></div>
+	</div>
 </section>

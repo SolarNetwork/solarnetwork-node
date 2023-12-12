@@ -21,7 +21,7 @@
 					<tr>
 						<td class="col-md-1">
 							<c:if test="${fn:length(factory.settingSpecifierProviderInstanceIds) > 0}">
-								<span class="badge badge-info" title="<fmt:message key='settings.factories.instanceCount.caption'/>">
+								<span class="badge rounded-pill text-bg-primary" title="<fmt:message key='settings.factories.instanceCount.caption'/>">
 									${fn:length(factory.settingSpecifierProviderInstanceIds)}
 								</span>
 							</c:if>
@@ -111,7 +111,7 @@
 				<tr>
 					<td class="col-md-1">
 						<c:if test="${fn:length(factory.settingSpecifierProviderInstanceIds) > 0}">
-							<span class="badge badge-info" title="<fmt:message key='settings.factories.instanceCount.caption'/>">
+							<span class="badge rounded-pill text-bg-primary" title="<fmt:message key='settings.factories.instanceCount.caption'/>">
 								${fn:length(factory.settingSpecifierProviderInstanceIds)}
 							</span>
 						</c:if>

@@ -109,7 +109,7 @@
 					<p><fmt:message key='restart.intro'/></p>
 				</div>
 				<div class="modal-body success" style="display: none;">
-					<div class="progress hidden" role="progressbar">
+					<div class="progress" role="progressbar">
 						<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
 					</div>
 					<p class="my-3"><fmt:message key='restart.underway'/></p>
