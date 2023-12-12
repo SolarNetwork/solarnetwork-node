@@ -44,8 +44,9 @@
 </section>
 
 <section id="settings" class="carousel slide" data-interval="0">
-	<form class="form-horizontal" action="<setup:url value='/a/settings/save'/>" method="post">
+	<form action="<setup:url value='/a/settings/save'/>" method="post">
 		<c:if test="${fn:length(providers) > 0}">
+			<hr>
 			<div class="form-actions row justify-content-between align-items-baseline">
 				<div class="col-3">
 					<button type="button" class="btn btn-primary" id="submit"><fmt:message key='settings.save'/></button>
@@ -61,6 +62,7 @@
 					</c:if>
 				</div>
 			</div>
+			<hr>
 		</c:if>
 		<div class="carousel-inner">
 			<c:forEach items="${providers}" var="instance" varStatus="instanceStatus">
