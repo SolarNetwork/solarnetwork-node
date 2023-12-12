@@ -30,11 +30,11 @@
 			/>
 	</c:when>
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.KeyedSettingSpecifier')}">
-		<div class="form-group" id="cg-${settingId}">
-			<label class="control-label" for="${settingId}">
+		<div class="row mb-3" id="cg-${settingId}">
+			<label class="col-sm-3 col-form-label" for="${settingId}">
 				<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}" index="${groupIndex}"/>
 			</label>
-			<div class="controls ${setup:instanceOf(setting, 'net.solarnetwork.settings.TitleSettingSpecifier') and !setup:instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier') ? 'static' : ''}">
+			<div class="col-sm-9 ${setup:instanceOf(setting, 'net.solarnetwork.settings.TitleSettingSpecifier') and !setup:instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier') ? 'static' : ''}">
 				<c:choose>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.SliderSettingSpecifier')}">
 						<div id="${settingId}" class="setting slider col-md-5"></div>
@@ -85,24 +85,25 @@
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.RadioGroupSettingSpecifier')}">
 						<c:forEach items="${setting.valueTitles}" var="entry">
-							<label class="radio-inline">
-								<input type="radio" name="${settingId}" id="${settingId}" value="${entry.key}"
-									<c:if test='${settingValue eq  entry.key}'>checked="checked"</c:if>
-									/>
-								${entry.value}
-							</label>
-							<c:set var="help">
-								<setup:message key='${entry.key}.desc' messageSource='${provider.messageSource}'/>
-							</c:set>
-
-							<c:if test="${fn:length(help) > 0}">
-								<button type="button" class=" help-popover help-icon" tabindex="-1"
-										data-content="${fn:escapeXml(help)}"
-										data-html="true">
-									<i class="far fa-question-circle" aria-hidden="true"></i>
-								</button>
-							</c:if>
-							<br/>
+							<div class="d-flex justify-content-start align-items-center gap-3">
+								<div class="form-check">
+									<input class="form-check-input" type="radio" name="${settingId}" id="${settingId}" value="${entry.key}"
+										<c:if test='${settingValue eq  entry.key}'>checked="checked"</c:if>
+										>
+									<label class="form-check-label" for="${settingId}">${entry.value}</label>
+								</div>
+								
+								<c:set var="help">
+									<setup:message key='${entry.key}.desc' messageSource='${provider.messageSource}'/>
+								</c:set>
+								<c:if test="${fn:length(help) > 0}">
+									<button type="button" class="help-popover help-icon" tabindex="-1"
+											data-content="${fn:escapeXml(help)}"
+											data-html="true">
+										<i class="far fa-question-circle" aria-hidden="true"></i>
+									</button>
+								</c:if>
+							</div>
 						</c:forEach>
 						<script>
 						$(function() {
@@ -322,11 +323,11 @@
 		</div>
 	</c:when>
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.GroupSettingSpecifier') and not empty setting.key}">
-		<div class="form-group grouped">
-			<label class="control-label">
+		<div class="row grouped">
+			<label class="col-sm-3 col-form-label">
 				<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}"/>
 			</label>
-			<div class="controls">
+			<div class="col-sm-9">
 				<c:if test="${setting.dynamic}">
 					<div class="btn-group btn-group-sm" role="group">
 						<button type="button" class="btn btn-sm btn-secondary group-item-remove">
