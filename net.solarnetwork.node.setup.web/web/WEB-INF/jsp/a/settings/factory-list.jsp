@@ -89,8 +89,8 @@
 							<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
 					    </div>
 					</div>
-					<div class="form-group">
-						<div class="controls">
+					<div class="row my-3">
+						<div class="col-sm-9 offset-sm-3">
 							<button type="button" class="btn btn-danger delete-factory-instance"
 									data-bs-target="<setup:url value='/a/settings/manage/delete'/>"
 									data-factory-uid="${factory.factoryUid}"
