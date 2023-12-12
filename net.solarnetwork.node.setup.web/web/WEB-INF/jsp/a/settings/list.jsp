@@ -28,7 +28,7 @@
 					</div>
 				</div>
 				<div class="col-auto">
-					<a class="btn btn-secondary" href="<setup:url value='/a/settings/manage?uid=${factory.factoryUid}'/>">
+					<a class="btn btn-light" href="<setup:url value='/a/settings/manage?uid=${factory.factoryUid}'/>">
 						<i class="far fa-pen-to-square"></i> 
 						<fmt:message key="settings.factory.manage.label"/>
 					</a>
