@@ -33,7 +33,7 @@
 	</table>
 </section>
 
-<form id="add-opmodes-modal" class="modal dynamic" data-bs-backdrop="static" data-bs-keyboard="false" action="<setup:url value='/a/opmodes/active'/>" method="post">
+<form id="add-opmodes-modal" class="modal fade dynamic" data-bs-backdrop="static" data-bs-keyboard="false" action="<setup:url value='/a/opmodes/active'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">

@@ -82,7 +82,7 @@
 	</section>
 	<script>
 	$(function() {
-		$('#submit').click(function() {
+		$('#submit').on('click', function() {
 			SolarNode.Settings.saveUpdates($(this.form).attr('action'), {
 				success: '<fmt:message key="settings.save.success.msg"/>',
 				error: '<fmt:message key="settings.save.error.msg"/>',

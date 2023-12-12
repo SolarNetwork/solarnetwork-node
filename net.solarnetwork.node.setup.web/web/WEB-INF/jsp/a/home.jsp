@@ -56,12 +56,12 @@
 		<div class="row fw-bold border-bottom">
 			<div class="col-4"><fmt:message key='datum.sourceId.label'/></div>
 			<div class="col-3"><fmt:message key='datum.created.label'/></div>
-			<div class="col-6"><fmt:message key='datum.properties.label'/></div>
+			<div class="col-5"><fmt:message key='datum.properties.label'/></div>
 		</div>
 		<div class="row activity template brief-showcase border-bottom">
 			<div class="col-4 py-2" data-tprop="sourceId"></div>
 			<div class="col-3 py-2" data-tprop="date"></div>
-			<div class="col-6 py-2">
+			<div class="col-5 py-2">
 				<dl class="row datum-props hidden">
 					<dt class="col-sm-5 datum-prop template" data-tprop="propName"></dt>
 					<dd class="col-sm-7 datum-prop template" data-tprop="propValue"></dd>
@@ -83,18 +83,23 @@
 	
 	<div class="container datum-activity">
 		<div class="row fw-bold border-bottom">
-			<div class="col-2"><fmt:message key='datum.created.label'/></div>
-			<div class="col-2"><fmt:message key='datum.activity.eventAndType.label'/></div>
-			<div class="col-3"><fmt:message key='datum.sourceId.label'/></div>
+			<div class="col-3">
+				<fmt:message key='datum.created.label'/>
+				<span> / </span>
+				<fmt:message key='datum.activity.eventAndType.label'/>
+			</div>
+			<div class="col-4"><fmt:message key='datum.sourceId.label'/></div>
 			<div class="col-5"><fmt:message key='datum.properties.label'/></div>
 		</div>
 		<div class="row activity template brief-showcase border-bottom">
-			<div class="col-2 py-2" data-tprop="date"></div>
-			<div class="col-2 py-2">
-				<i class="event-icon hidden"></i>
-				<span data-tprop="type"></span>
+			<div class="col-3 py-2">
+				<div data-tprop="date"></div>
+				<div class="text-nowrap mt-3">
+					<i class="event-icon hidden"></i>
+					<span data-tprop="type"></span>
+				</div>
 			</div>
-			<div class="col-3 py-2" data-tprop="sourceId"></div>
+			<div class="col-4 py-2" data-tprop="sourceId"></div>
 			<div class="col-5 py-2">
 				<dl class="datum-props hidden">
 					<dt class="datum-prop template" data-tprop="propName"></dt>

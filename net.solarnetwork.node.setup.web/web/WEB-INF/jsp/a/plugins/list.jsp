@@ -35,7 +35,7 @@
 </section>
 
 <setup:url value="/a/plugins/install" var="urlPluginInstall"/>
-<form id="plugin-preview-install-modal" class="modal dynamic" action="${urlPluginInstall}" method="post">
+<form id="plugin-preview-install-modal" class="modal fade dynamic" action="${urlPluginInstall}" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -73,7 +73,7 @@
 </form>
 
 <setup:url value="/a/plugins/remove" var="urlPluginRemove"/>
-<form id="plugin-preview-remove-modal" class="modal dynamic" action="${urlPluginRemove}" method="post">
+<form id="plugin-preview-remove-modal" class="modal fade dynamic" action="${urlPluginRemove}" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">

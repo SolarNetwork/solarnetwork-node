@@ -26,7 +26,7 @@
 
 </div>
 
-<form id="host-add-modal" class="modal" action="<setup:url value='/a/hosts/add'/>" method="post">
+<form id="host-add-modal" class="modal fade" action="<setup:url value='/a/hosts/add'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">		
 			<div class="modal-header">
@@ -55,7 +55,7 @@
 	<sec:csrfInput/>
 </form>
 
-<form id="host-remove-modal" class="modal" action="<setup:url value='/a/hosts/remove'/>" method="post">
+<form id="host-remove-modal" class="modal fade" action="<setup:url value='/a/hosts/remove'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">

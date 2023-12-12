@@ -115,7 +115,7 @@
 </section>
 <script>
 $(function() {
-	$('#submit').click(function() {
+	$('#submit').on('click', function() {
 		SolarNode.Settings.saveUpdates($(this.form).attr('action'), {
 			success: '<fmt:message key="settings.save.success.msg"/>',
 			error: '<fmt:message key="settings.save.error.msg"/>',
@@ -146,7 +146,7 @@ $(function() {
 		<fmt:message key="reset.label"/>
 	</button>
 </div>
-<form id="remove-all-component-instance-modal" class="modal dynamic"
+<form id="remove-all-component-instance-modal" class="modal fade dynamic"
 		action="<setup:url value='/a/settings/manage/removeall'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
@@ -174,7 +174,7 @@ $(function() {
 	<sec:csrfInput/>
 	<input type="hidden" name="uid" value="${factory.factoryUid}"/>
 </form>
-<form class="modal dynamic lookup-modal sn-loc-lookup-modal price-lookup-modal"
+<form class="modal fade dynamic lookup-modal sn-loc-lookup-modal price-lookup-modal"
 		action="<setup:url value='/a/location'/>" method="get">
 	<div class="modal-dialog">
 		<div class="modal-content">
@@ -227,7 +227,7 @@ $(function() {
 		</div>
 	</div>
 </form>
-<form class="modal dynamic lookup-modal sn-loc-lookup-modal weather-lookup-modal day-lookup-modal"
+<form class="modal fade dynamic lookup-modal sn-loc-lookup-modal weather-lookup-modal day-lookup-modal"
 		action="<setup:url value='/a/location'/>" method="get">
 	<div class="modal-dialog">
 		<div class="modal-content">
@@ -281,7 +281,7 @@ $(function() {
 		</div>
 	</div>
 </form>
-<form class="modal dynamic lookup-modal sn-loc-lookup-modal co2-lookup-modal"
+<form class="modal fade dynamic lookup-modal sn-loc-lookup-modal co2-lookup-modal"
 		action="<setup:url value='/a/location'/>" method="get">
 	<div class="modal-dialog">
 		<div class="modal-content">
@@ -332,7 +332,7 @@ $(function() {
 		</div>
 	</div>
 </form>
-<form id="add-component-instance-modal" class="modal dynamic" data-bs-backdrop="static" data-bs-keyboard="false" action="<setup:url value='/a/settings/manage/add'/>" method="post">
+<form id="add-component-instance-modal" class="modal fade dynamic" data-bs-backdrop="static" data-bs-keyboard="false" action="<setup:url value='/a/settings/manage/add'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -345,8 +345,8 @@ $(function() {
 			</div>
 			<div class="modal-body">
 				<p><fmt:message key='settings.factory.add.intro'/></p>
-				<div class="form-inline">
-					<input type="text" class="col-md-5" maxlength="32" name="name" id="add-component-instance-name"
+				<div class="col-12">
+					<input type="text" class="form-control" maxlength="32" name="name" id="add-component-instance-name"
 						placeholder="<fmt:message key='settings.factory.add.placeholder'/>"/>
 				</div>
 			</div>

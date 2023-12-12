@@ -120,7 +120,7 @@ SolarNode.Settings.addToggle = function(params) {
 SolarNode.Settings.addRadio = function(params) {
 	var radios = $('input:radio[name='+params.key+']');
 	//radios.filter('[value='+params.value+']').attr('checked', 'checked');
-	radios.change(function() {
+	radios.on('change', function() {
 			var value = radios.filter(':checked').val();
 			SolarNode.Settings.updateSetting(params, value);
 		});
@@ -135,7 +135,7 @@ SolarNode.Settings.addRadio = function(params) {
  */
 SolarNode.Settings.addSelect = function(params) {
 	var select = $('select[name='+params.key+']');
-	select.change(function() {
+	select.on('change', function() {
 			var value = select.val();
 			SolarNode.Settings.updateSetting(params, value);
 		});
@@ -150,7 +150,7 @@ SolarNode.Settings.addSelect = function(params) {
  */
 SolarNode.Settings.addTextField = function(params) {
 	var field = $('#'+params.key);
-	field.change(function() {
+	field.on('change', function() {
 			var value = field.val();
 			SolarNode.Settings.updateSetting(params, value);
 		});
@@ -211,7 +211,7 @@ SolarNode.Settings.addScheduleField = function(params) {
 		return String(value);
 	}
 
-	field.change(function() {
+	field.on('change', function() {
 		var value = valueForSetting(prevOption, field.val());
 		var cronMatch = value.match(SolarNode.Settings.CRON_REGEX);
 		if ( cronMatch && prevOption !== 'cron' ) {
@@ -229,7 +229,7 @@ SolarNode.Settings.addScheduleField = function(params) {
 	select.on('change', function() {
 		var option = select.val();
 		var expr = field.val();
-		var cronMatch = expr.match(SolarNode.Settings.CRON_REGEX);
+		//var cronMatch = expr.match(SolarNode.Settings.CRON_REGEX);
 		var exprNum = Number(expr);
 		var resultExpr = expr;
 		var fieldMatch;
@@ -597,7 +597,7 @@ SolarNode.Settings.showConfirmation = function(params) {
 			success: delayedReload
 		});
 	});
-	alert.bind('close', function(e) {
+	alert.on('close.bs.alert', function(e) {
 		origButton.removeAttr('disabled');
 		origButton.removeClass('hidden');
 		confirmationButton.unbind();
@@ -825,7 +825,7 @@ function loadComponentInstanceContainer(container) {
 		return;
 	}
 	if ( container && container.length > 0 && !container.hasClass('loaded') ) {
-		var url = container.data('target')
+		var url = container.data('bsTarget')
 			+'?uid=' + encodeURIComponent(container.data('factoryUid'))
 			+'&key=' + encodeURIComponent(container.data('instanceKey'));
 		console.log('Loading component instance: ' +url);

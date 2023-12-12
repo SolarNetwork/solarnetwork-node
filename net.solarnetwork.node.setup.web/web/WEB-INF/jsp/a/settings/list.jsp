@@ -12,16 +12,15 @@
 			<fmt:message key="settings.factories.title"/>
 		</h2>
 		<p><fmt:message key="settings.factories.intro"/></p>
-		<div class="row gap-3">
+		<div class="row gap-3 setting-components">
 		<c:forEach items="${factories}" var="factory" varStatus="factoryStatus">
-			<div class="row setting-components justify-content-between">
+			<div class="row justify-content-between align-items-center">
 				<!--  ${factory.factoryUid} -->
 				<div class="col">
 					<div class="row">
 						<div class="col-2 col-sm-1">
-							<span class="badge rounded-pill text-bg-primary${fn:length(factory.settingSpecifierProviderInstanceIds) lt 1 ? ' invisible' : ''}" title="<fmt:message key='settings.factories.instanceCount.caption'/>">
-								${fn:length(factory.settingSpecifierProviderInstanceIds)}
-							</span>
+							<span class="badge rounded-pill text-bg-primary${fn:length(factory.settingSpecifierProviderInstanceIds) lt 1 ? ' invisible' : ''}"
+								title="<fmt:message key='settings.factories.instanceCount.caption'/>">${fn:length(factory.settingSpecifierProviderInstanceIds)}</span>
 							<c:if test="${fn:length(factory.settingSpecifierProviderInstanceIds) > 0}">
 							</c:if>
 						</div>
@@ -106,7 +105,7 @@
 	</section>
 	<script>
 	$(function() {
-		$('#submit').click(function() {
+		$('#submit').on('click', function() {
 			SolarNode.Settings.saveUpdates($(this.form).attr('action'), {
 				success: '<fmt:message key="settings.save.success.msg"/>',
 				error: '<fmt:message key="settings.save.error.msg"/>',
@@ -294,7 +293,7 @@
 	</div>
 </section>
 
-<form id="backup-restore-modal" class="modal dynamic" data-bs-backdrop="static" data-bs-keyboard="false" action="<setup:url value='/a/backups/restore'/>" method="post">
+<form id="backup-restore-modal" class="modal fade dynamic" data-bs-backdrop="static" data-bs-keyboard="false" action="<setup:url value='/a/backups/restore'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">

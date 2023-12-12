@@ -251,13 +251,13 @@ SolarNode.Class.Slider = function(el, config) {
 	};
 	
 	// bind events
-	ui.bind(SolarNode.touchEventNames.start, function() {
+	ui.on(SolarNode.touchEventNames.start, function() {
 		setTracking(true);
-	}).bind(SolarNode.touchEventNames.cancel, function() {
+	}).on(SolarNode.touchEventNames.cancel, function() {
 		setTracking(false);
-	}).bind(SolarNode.touchEventNames.end, function() {
+	}).on(SolarNode.touchEventNames.end, function() {
 		setTracking(false);
-	}).bind(SolarNode.touchEventNames.move, handleEventMove);
+	}).on(SolarNode.touchEventNames.move, handleEventMove);
 	
 	// initial layout
 	layoutSubviews();

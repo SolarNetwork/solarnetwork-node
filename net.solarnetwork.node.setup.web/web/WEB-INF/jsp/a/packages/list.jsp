@@ -99,7 +99,7 @@
 
 </div>
 
-<form id="packages-upgrade-modal" class="packages modal" action="<setup:url value='/a/packages/upgrade'/>" method="post">
+<form id="packages-upgrade-modal" class="packages modal fade" action="<setup:url value='/a/packages/upgrade'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -128,7 +128,7 @@
 	<sec:csrfInput/>
 </form>
 
-<form id="package-install-modal" class="packages modal" action="<setup:url value='/a/packages/install'/>" method="post">
+<form id="package-install-modal" class="packages modal fade" action="<setup:url value='/a/packages/install'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -158,7 +158,7 @@
 	<input type="hidden" name="name">
 </form>
 
-<form id="package-remove-modal" class="packages modal" action="<setup:url value='/a/packages/remove'/>" method="post">
+<form id="package-remove-modal" class="packages modal fade" action="<setup:url value='/a/packages/remove'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">

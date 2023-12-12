@@ -98,7 +98,7 @@
 	<form id="logout-form" method="post" action="<setup:url value='/logout'/>">
 		<sec:csrfInput/>
 	</form>
-	<form id="restart-modal" class="modal" data-bs-backdrop="static" data-bs-keyboard="false" action="<setup:url value='/a/home/restart'/>" method="post">
+	<form id="restart-modal" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" action="<setup:url value='/a/home/restart'/>" method="post">
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
@@ -124,7 +124,7 @@
 		</div>
 		<sec:csrfInput/>
 	</form>
-	<form id="reset-modal" class="modal" data-bs-backdrop="static" data-bs-keyboard="false" action="<setup:url value='/a/home/reset'/>" method="post">
+	<form id="reset-modal" class="modal fade" data-bs-backdrop="static" data-bs-keyboard="false" action="<setup:url value='/a/home/reset'/>" method="post">
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">

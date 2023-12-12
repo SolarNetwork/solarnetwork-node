@@ -45,7 +45,7 @@
 
 		<%-- System lock overlay --%>
 		<setup:url value="/pub/platform/state" var="urlPlatformState"/>
-		<form id="platform-lock-modal" class="modal dynamic" action="${urlPlatformState}" method="get" data-bs-backdrop="static" data-bs-keyboard="false">
+		<form id="platform-lock-modal" class="modal fade dynamic" action="${urlPlatformState}" method="get" data-bs-backdrop="static" data-bs-keyboard="false">
 			<div class="modal-dialog">
 				<div class="modal-content">
 					<div class="modal-header">
@@ -68,7 +68,7 @@
 		</form>
 
 		<%-- Generic progress overlay --%>
-		<div id="generic-progress-modal" class="modal dynamic" data-bs-backdrop="static" data-bs-keyboard="false">
+		<div id="generic-progress-modal" class="modal fade dynamic" data-bs-backdrop="static" data-bs-keyboard="false">
 			<div class="modal-dialog">
 				<div class="modal-content">
 					<div class="modal-header">
