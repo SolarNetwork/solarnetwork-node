@@ -11,30 +11,32 @@
 				class="anchor" aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>			
 			<fmt:message key="settings.factories.title"/>
 		</h2>
-		<p><fmt:message key="settings.factories.intro"/></p>	
-		<table class="table setting-components">
-			<tbody>
-			<c:forEach items="${factories}" var="factory" varStatus="factoryStatus">
+		<p><fmt:message key="settings.factories.intro"/></p>
+		<div class="row gap-3">
+		<c:forEach items="${factories}" var="factory" varStatus="factoryStatus">
+			<div class="row setting-components justify-content-between">
 				<!--  ${factory.factoryUid} -->
-				<tr>
-					<td class="col-md-1">
-						<c:if test="${fn:length(factory.settingSpecifierProviderInstanceIds) > 0}">
-							<span class="badge rounded-pill text-bg-primary" title="<fmt:message key='settings.factories.instanceCount.caption'/>">
+				<div class="col">
+					<div class="row">
+						<div class="col-2 col-sm-1">
+							<span class="badge rounded-pill text-bg-primary${fn:length(factory.settingSpecifierProviderInstanceIds) lt 1 ? ' invisible' : ''}" title="<fmt:message key='settings.factories.instanceCount.caption'/>">
 								${fn:length(factory.settingSpecifierProviderInstanceIds)}
 							</span>
-						</c:if>
-					</td>
-					<td><strong><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></strong></td>
-					<td>
-						<a class="btn btn-secondary" href="<setup:url value='/a/settings/manage?uid=${factory.factoryUid}'/>">
-							<i class="far fa-pen-to-square"></i> 
-							<fmt:message key="settings.factory.manage.label"/>
-						</a>
-					</td>
-				</tr>
-			</c:forEach>
-			</tbody>
-		</table>
+							<c:if test="${fn:length(factory.settingSpecifierProviderInstanceIds) > 0}">
+							</c:if>
+						</div>
+						<div class="col"><strong><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></strong></div>
+					</div>
+				</div>
+				<div class="col-auto">
+					<a class="btn btn-secondary" href="<setup:url value='/a/settings/manage?uid=${factory.factoryUid}'/>">
+						<i class="far fa-pen-to-square"></i> 
+						<fmt:message key="settings.factory.manage.label"/>
+					</a>
+				</div>
+			</div>
+		</c:forEach>
+		</div>
 	</section>
 </c:if>
 
