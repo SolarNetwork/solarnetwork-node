@@ -16,14 +16,14 @@
 			<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
 		</fmt:message>
 	</p>
-	<div class="row action-progress-bar">
-		<div class="col-md-2">
+	<div class="row action-progress-bar justify-content-between">
+		<div class="col-auto">
 			<a href="<setup:url value='${navloc == "filters-component" ? "/a/settings/filters" : "/a/settings"}'/>" class="btn btn-secondary">
 				<i class="fas fa-arrow-left"></i>
 				<fmt:message key="back.label"/>
 			</a>
 		</div>
-		<div class="col-md-10 text-right">
+		<div class="col-auto">
 			<c:if test="${fn:length(providers) > 0}">
 				<button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#remove-all-component-instance-modal">
 					<i class="far fa-trash-can"></i>
@@ -44,18 +44,22 @@
 </section>
 
 <section id="settings" class="carousel slide" data-interval="0">
-	<c:if test="${fn:length(providers) > 1}">
-		<ol class="carousel-indicators numbered">
-			<c:forEach items="${providers}" var="instance" varStatus="instanceStatus">
-				<li data-bs-target="#settings" data-slide-to="${instanceStatus.index}" data-instance-key="${instance.key}"
-					class="${instanceStatus.index == 0 ? 'active' : ''}">${instance.key}</li>
-			</c:forEach>
-		</ol>
-	</c:if>
 	<form class="form-horizontal" action="<setup:url value='/a/settings/save'/>" method="post">
 		<c:if test="${fn:length(providers) > 0}">
-			<div class="form-actions top">
-				<button type="button" class="btn btn-primary" id="submit"><fmt:message key='settings.save'/></button>
+			<div class="form-actions row justify-content-between align-items-baseline">
+				<div class="col-3">
+					<button type="button" class="btn btn-primary" id="submit"><fmt:message key='settings.save'/></button>
+				</div>
+				<div class="col-9">
+					<c:if test="${fn:length(providers) > 1}">
+						<div class="page-indicators gap-2 d-flex flex-wrap justify-content-end">
+							<c:forEach items="${providers}" var="instance" varStatus="instanceStatus">
+								<button type="button" data-bs-target="#settings" data-bs-slide-to="${instanceStatus.index}" data-instance-key="${instance.key}"
+									class="btn ${instanceStatus.index == 0 ? 'btn-warning active' : 'btn-secondary'}">${instance.key}</button>
+							</c:forEach>
+						</div>
+					</c:if>
+				</div>
 			</div>
 		</c:if>
 		<div class="carousel-inner">
@@ -65,7 +69,7 @@
 				<c:set var="instanceId" value="${provider.factoryInstanceUID}" scope="request"/>
 				<!--  ${provider.settingUid} -->
 
-				<fieldset class="item ${instanceStatus.index == 0 ? 'active' : ''}">
+				<fieldset class="carousel-item ${instanceStatus.index == 0 ? 'active' : ''}">
 					<legend>
 						<a id="${instance.key}"
 							class="anchor"

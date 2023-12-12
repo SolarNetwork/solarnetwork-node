@@ -581,3 +581,9 @@ input[readonly].form-control {
 	align-items: center;
 	padding: 1rem 0;
 }
+
+.carousel .page-indicators button {
+	--bs-btn-padding-y: .25rem;
+	--bs-btn-padding-x: .5rem;
+	--bs-btn-font-size: .75rem;
+}
