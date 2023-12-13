@@ -4,12 +4,17 @@
 <fmt:message key="package.remove.button" var="msgRemove"/>
 <fmt:message key="package.unremovable.message" var="msgUnremovable"/>
 
-<section class="intro clearfix">
-	<button id="packages-refresh" class="btn btn-primary ladda-button expand-right pull-right"
-		data-loading-text="<fmt:message key='packages.refreshing.message'/>">
-		<fmt:message key="packages.refresh.link"/>
-	</button>
+<section class="intro">
 	<p><fmt:message key="packages.intro"/></p>
+	<div class="row justify-content-end">
+		<div class="col-auto">
+			<button id="packages-refresh" class="btn btn-primary"
+				data-loading-text="<fmt:message key='packages.refreshing.message'/>">
+				<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+				<span role="status"><fmt:message key="packages.refresh.link"/></span>
+			</button>
+		</div>
+	</div>
 </section>
 <div class="init">
 	<div class="progress" role="progressbar">
@@ -20,12 +25,12 @@
 
 	<section id="packages-upgradable" class="hidden">
 		<h2><fmt:message key="packages.upgradable.title"/></h2>
-		<div class="row">
-			<div class="col-md-9">
+		<div class="row justify-content-between">
+			<div class="col-auto">
 				<p><fmt:message key="packages.upgradable.intro"/></p>
 			</div>
-			<form class="col-md-3 text-right form-inline">
-				<button class="btn btn-info" 
+			<form class="col-auto">
+				<button type="button" class="btn btn-info" 
 						data-bs-target="#packages-upgrade-modal"
 						data-bs-toggle="modal"><fmt:message key="packages.upgrade.button"/></button>
 			</form>
@@ -42,21 +47,15 @@
 		</div>
 	</section>
 
-	<div class="hidden">
-		<div id="more-packages"><div class="row">
-			<div class="col-md-12"><p class="test-muted"><fmt:message key="packages.more.message"/></p></div>
-		</div></div>
-	</div>
-
 	<section id="packages-installed" data-msg-remove="${msgRemove}">
 		<h2 id="installed-packages"><fmt:message key="packages.installed.title"/></h2>
-		<div class="row">
+		<div class="row justify-content-between">
 			<div class="col-md-9">
 				<p><fmt:message key="packages.installed.intro"/></p>
 			</div>
 			<form class="col-md-3 text-right form-inline">
 				<input type="search" id="installedSearchFilter" 
-						class="input-medium search-query"
+						class="form-control search-query"
 						placeholder="<fmt:message key='packages.filter.label'/>"
 						value="solarnode">
 			</form>
@@ -81,7 +80,7 @@
 			</div>
 			<form class="col-md-3 text-right form-inline">
 				<input type="search" id="availableSearchFilter" 
-						class="input-medium search-query"
+						class="form-control search-query"
 						placeholder="<fmt:message key='packages.filter.label'/>"
 						value="solarnode">
 			</form>
@@ -96,8 +95,14 @@
 		</div>
 		<div class="list-content"></div>
 	</section>
-
 </div>
+
+<div class="hidden">
+	<div id="more-packages"><div class="row">
+		<div class="col-md-12"><p class="test-muted"><fmt:message key="packages.more.message"/></p></div>
+	</div></div>
+</div>
+
 
 <form id="packages-upgrade-modal" class="packages modal fade" action="<setup:url value='/a/packages/upgrade'/>" method="post">
 	<div class="modal-dialog">
@@ -115,13 +120,16 @@
 			</div>
 			<div class="modal-footer">
 				<c:if test="${not empty systemService}">
-					<button type="button" class="btn pull-left hidden after success restart" title="<fmt:message key='link.restart'/>">
+					<button type="button" class="btn btn-warning hidden after success restart" title="<fmt:message key='link.restart'/>">
 						<fmt:message key="link.restart"/>
 					</button>
 				</c:if>
-				<a href="#" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
-				<button type="submit" class="btn btn-primary ladda-button expand-right before"
-						data-loading-text="<fmt:message key='packages.upgrading.message'/>">${msgUpgradeAll}</button>
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key="close.label"/></button>
+				<button type="submit" class="btn btn-primary before"
+						data-loading-text="<fmt:message key='packages.upgrading.message'/>">					
+					<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+					<span role="status">${msgUpgradeAll}</span>
+				</button>
 			</div>
 		</div>
 	</div>
@@ -144,13 +152,16 @@
 			</div>
 			<div class="modal-footer">
 				<c:if test="${not empty systemService}">
-					<button type="button" class="btn pull-left hidden after success restart" title="<fmt:message key='link.restart'/>">
+					<button type="button" class="btn btn-warning hidden after success restart" title="<fmt:message key='link.restart'/>">
 						<fmt:message key="link.restart"/>
 					</button>
 				</c:if>
-				<a href="#" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
-				<button type="submit" class="btn btn-primary ladda-button expand-right before"
-						data-loading-text="<fmt:message key='package.installing.message'/>">${msgInstall}</button>
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key="close.label"/></button>
+				<button type="submit" class="btn btn-primary before"
+						data-loading-text="<fmt:message key='package.installing.message'/>">
+					<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+					<span role="status">${msgInstall}</span>
+				</button>
 			</div>
 		</div>
 	</div>
@@ -174,13 +185,16 @@
 			</div>
 			<div class="modal-footer">
 				<c:if test="${not empty systemService}">
-					<button type="button" class="btn pull-left hidden after success restart" title="<fmt:message key='link.restart'/>">
+					<button type="button" class="btn btn-warning hidden after success restart" title="<fmt:message key='link.restart'/>">
 						<fmt:message key="link.restart"/>
 					</button>
 				</c:if>
-				<a href="#" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key="close.label"/></button>
 				<button type="submit" class="btn btn-danger ladda-button expand-right before"
-						data-loading-text="<fmt:message key='package.removing.message'/>">${msgRemove}</button>
+						data-loading-text="<fmt:message key='package.removing.message'/>">						
+					<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+					<span role="status">${msgRemove}</span>
+				</button>
 			</div>
 		</div>
 	</div>

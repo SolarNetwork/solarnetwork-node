@@ -85,7 +85,7 @@ const SolarNode = {
 	 alert : function(title, message, style, container) {
 		 container = container || $('#body-container');
 		 if ( container ) {
-			 var alert = $('<div class="alert"><button type="button" class="close" data-dismiss="alert">&times;</button></div>');
+			 var alert = $('<div class="alert alert-warning alert-dismissible fade show" role="alert"><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" /></div>');
 			 if ( title ) {
 				 $('<strong/>').append(title).appendTo(alert);
 				 if ( message ) {

@@ -53,8 +53,11 @@
 			</div>
 			<div class="modal-footer">
 				<a href="#" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
-				<button type="submit" class="btn btn-primary ladda-button expand-right before"
-						data-loading-text="<fmt:message key='host.adding.message'/>"><fmt:message key="host.add.button"/></button>
+				<button type="submit" class="btn btn-primary before"
+						data-loading-text="<fmt:message key='host.adding.message'/>">
+					<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+					<span role="status"><fmt:message key="host.add.button"/></span>
+				</button>
 			</div>
 		</div>
 	</div>
@@ -76,8 +79,11 @@
 			</div>
 			<div class="modal-footer">
 				<a href="#" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
-				<button type="submit" class="btn btn-danger ladda-button expand-right before"
-						data-loading-text="<fmt:message key='host.removing.message'/>"><fmt:message key="host.remove.button"/></button>
+				<button type="submit" class="btn btn-danger before"
+						data-loading-text="<fmt:message key='host.removing.message'/>">					
+					<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+					<span role="status"><fmt:message key="host.remove.button"/></span>
+				</button>
 			</div>
 		</div>
 	</div>
