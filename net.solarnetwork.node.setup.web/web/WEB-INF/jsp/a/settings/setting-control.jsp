@@ -37,7 +37,7 @@
 			<div class="col-sm-9 ${setup:instanceOf(setting, 'net.solarnetwork.settings.TitleSettingSpecifier') and !setup:instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier') ? 'static' : ''}">
 				<c:choose>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.SliderSettingSpecifier')}">
-						<div id="${settingId}" class="setting slider col-md-5"></div>
+						<div id="${settingId}" class="setting slider col-sm-9"></div>
 						<script>
 						$(function() {
 							SolarNode.Settings.addSlider({

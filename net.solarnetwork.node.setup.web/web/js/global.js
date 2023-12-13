@@ -186,10 +186,9 @@ SolarNode.Class.Slider = function(el, config) {
 	
 	var ui = $(el);
 	ui.addClass('ui-slider ui-slider-horizontal');
-	ui.append('<div class="progress"><div class="ui-slider-range bar" /></div><button type="button" class="ui-slider-handle btn"/>')
-		.append('<div class="slider-min label pull-left">'+min+'</div>')
-		.append('<div class="slider-max label pull-right">'+max+'</div>');
-	//ui.find('.progress').css('margin-right', (handleWidth/2)+'px');
+	ui.append('<div class="progress"><div class="ui-slider-range progress-bar" /></div><button type="button" class="ui-slider-handle btn btn-outline-primary"/>');
+	ui.append('<div class="d-flex mt-2 justify-content-between"><div class="badge text-bg-secondary">'
+			+min+'</div><div class="badge text-bg-secondary">'+max+'</div></div>');
 	var uiRange = $(ui).find('.ui-slider-range');
 	var uiHandle = $(ui).find('.ui-slider-handle').css({
 			'width' : handleWidth + 'px',

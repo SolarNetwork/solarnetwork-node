@@ -180,36 +180,24 @@ form .control-group.grouped + fieldset > fieldset:not(:first-child) {
 }
 .ui-slider .progress {
 	margin-bottom: 4px;
+	--bs-progress-bar-transition: none;
 }
 
 .ui-slider .ui-slider-handle {
-    cursor: default;
+    cursor: pointer;
     height: 26px;
     position: absolute;
     min-width: 26px;
     z-index: 2;
+    background-color: white;
+    --bs-btn-hover-color: var(--bs-btn-border-color);
 }
-.ui-slider .ui-slider-range {
-    z-index: 1;
-  -webkit-transition: width 0s linear;
-     -moz-transition: width 0s linear;
-       -o-transition: width 0s linear;
-          transition: width 0s linear;
-}
-/*
-.ui-slider-horizontal .ui-slider-range {
-    height: 100%;
-    top: 0;
-}
-*/
-.ui-slider-horizontal {
-    height: 0.8em;
-}
+
 .ui-slider-horizontal .ui-slider-handle {
-    margin-left: -13px;
-    top: -3px;
-    font-size: 11px;
-	line-height: 11px;
+    margin-left: -0.75rem;
+    top:-0.25rem;
+    font-size: 0.75rem;
+	line-height: 0.75rem;
 	font-weight: 700;
 }
 
