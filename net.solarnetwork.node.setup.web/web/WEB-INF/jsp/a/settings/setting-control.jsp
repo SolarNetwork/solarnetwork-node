@@ -85,7 +85,7 @@
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.RadioGroupSettingSpecifier')}">
 						<c:forEach items="${setting.valueTitles}" var="entry">
-							<div class="d-flex justify-content-start align-items-center">
+							<div class="d-flex justify-content-start align-items-center mt-1">
 								<div class="form-check">
 									<input class="form-check-input" type="radio" name="${settingId}" id="${settingId}" value="${entry.key}"
 										<c:if test='${settingValue eq  entry.key}'>checked="checked"</c:if>
