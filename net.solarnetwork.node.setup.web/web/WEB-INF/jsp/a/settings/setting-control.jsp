@@ -328,26 +328,16 @@
 			<label class="col-sm-3 col-form-label">
 				<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}"/>
 			</label>
-			<div class="col-sm-9">
+			<div class="col-sm-8 col-md-6">
 				<c:if test="${setting.dynamic}">
-					<div class="btn-group btn-group-sm" role="group">
-						<button type="button" class="btn btn-sm btn-secondary group-item-remove">
+					<div class="btn-group" role="group">
+						<button type="button" class="btn btn-secondary group-item-remove">
 							<i class="fas fa-minus"></i>
 						</button>
-						<button type="button" class="btn btn-sm btn-secondary group-item-add">
+						<button type="button" class="btn btn-secondary group-item-add">
 							<i class="fas fa-plus"></i>
 						</button>
 					</div>
-					<c:set var="help">
-						<setup:message key='${setting.key}.desc' messageSource='${provider.messageSource}'/>
-					</c:set>
-					<c:if test="${fn:length(help) > 0}">
-						<button type="button" class=" help-popover help-icon" tabindex="-1"
-								data-bs-content="${fn:escapeXml(help)}"
-								data-bs-html="true">
-							<i class="far fa-question-circle" aria-hidden="true"></i>
-						</button>
-					</c:if>
 					<input type="hidden" name="${settingId}Count" id="${settingId}" value="${fn:length(setting.groupSettings)}" />
 					<script>
 					$(function() {
@@ -362,8 +352,20 @@
 					</script>
 				</c:if>
 			</div>
+			<div class="col-sm-1 mt-1">
+				<c:set var="help">
+					<setup:message key='${setting.key}.desc' messageSource='${provider.messageSource}'/>
+				</c:set>
+				<c:if test="${fn:length(help) > 0}">
+					<button type="button" class=" help-popover help-icon" tabindex="-1"
+							data-bs-content="${fn:escapeXml(help)}"
+							data-bs-html="true">
+						<i class="far fa-question-circle" aria-hidden="true"></i>
+					</button>
+				</c:if>
+			</div>
 		</div>
-		<fieldset id="${settingId}g">
+		<fieldset id="${settingId}g" class="pt-3">
 			<c:if test="${not empty setting.groupSettings}">
 				<c:set var="origSetting" value="${setting}"/>
 				<c:set var="origSettingId" value="${settingId}"/>

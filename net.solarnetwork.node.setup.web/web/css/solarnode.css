@@ -129,32 +129,32 @@ table.counts th:last-child {
 }
 
 form > fieldset > fieldset:last-of-type {
-    border-bottom: 1px dotted #e5e5e5;
-    margin-bottom: 20px;
+    border-bottom: 1px dotted #aaa;
+    margin-bottom: 1.5rem;
 }
 
 form fieldset fieldset fieldset {
 	border-bottom: none;
 	margin-bottom: 0;
 	margin-top: 0;
-	padding-top: 20px;
+	padding-top: 1.5rem;
 }
 
-form .control-group.grouped + fieldset {
-	margin-left: 1em;
-	border-left: 1px dotted #e5e5e5;
+form .row.grouped + fieldset {
+	border-left: 1px dotted #aaa;
 }
 
-form .control-group.grouped + fieldset > fieldset:not(:first-child) {
-    border-top: 1px dotted #e5e5e5;
+form .row.grouped + fieldset .row > .col-form-label {
+	margin-left: 1rem;
+	margin-right: -1rem;
+}
+
+form .row.grouped + fieldset > fieldset:not(:first-child) {
+    border-top: 1px dotted #aaa;
 }
 
 .form-horizontal .controls.static {
 	padding-top: 3px;
-}
-
-.form-horizontal .controls.static .title > * {
-	margin-top: 2px;
 }
 
 .controls.static .title {
@@ -232,6 +232,10 @@ pre.pre-scrollable {
 
 #settings .popover {
 	min-width: 240px;
+}
+
+#settings .carousel-inner {
+	overflow: inherit; /* Override BS: was causing 4px margin glitch when navigating l-to-r */
 }
 
 .table.setting-components td:last-of-type {
