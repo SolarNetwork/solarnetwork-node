@@ -118,7 +118,7 @@
 						</script>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.MultiValueSettingSpecifier')}">
-						<select name="${settingId}" id="${settingId}">
+						<select class="form-select" name="${settingId}" id="${settingId}">
 							<c:forEach items="${setting.valueTitles}" var="entry">
 								<option value="${entry.key}"
 										<c:if test='${settingValue eq  entry.key}'>selected="selected"</c:if>
