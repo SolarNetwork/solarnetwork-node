@@ -255,25 +255,25 @@
 								<c:if test="${!fileTypeStatus.first}">,</c:if><c:out value="${fileType}" />
 							</c:forEach>
 						</c:set>
-						<input type="file" name="${settingId}" id="${settingId}" class="col-md-5"
-							<c:if test="${fn:length(acceptFileTypes) gt 0}">
-								accept="${acceptFileTypes}"
-							</c:if>
-							<c:if test="${setting.multiple}">
-								multiple="multiple"
-							</c:if>
-							/>
-						<button type="button" class="btn setting-resource-upload"
-							data-action="<setup:url value='/a/settings/importResource'/>"
-							data-key="${settingId}"
-							data-xint="${setting['transient']}"
-							data-provider="${provider.settingUid}"
-							data-setting="${setup:js(setting.key)}"
-							data-instance="${instanceId}"
-							data-multiple="${!!setting.multiple}"
-							>
-							<fmt:message key="settings.resource.upload.action"/>
-						</button>
+						<div class="input-group">
+							<input type="file" name="${settingId}" id="${settingId}" class="form-control"
+								<c:if test="${fn:length(acceptFileTypes) gt 0}">
+									accept="${acceptFileTypes}"
+								</c:if>
+								<c:if test="${setting.multiple}">
+									multiple="multiple"
+								</c:if>
+								/>
+							<button type="button" class="btn btn-secondary setting-resource-upload"
+								data-action="<setup:url value='/a/settings/importResource'/>"
+								data-key="${settingId}"
+								data-xint="${setting['transient']}"
+								data-provider="${provider.settingUid}"
+								data-setting="${setup:js(setting.key)}"
+								data-instance="${instanceId}"
+								data-multiple="${!!setting.multiple}"
+								><fmt:message key="settings.resource.upload.action"/></button>
+						</div>
 					</c:when>
 				</c:choose>
 
