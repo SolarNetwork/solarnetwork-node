@@ -97,7 +97,7 @@
 									<setup:message key='${entry.key}.desc' messageSource='${provider.messageSource}'/>
 								</c:set>
 								<c:if test="${fn:length(help) > 0}">
-									<button type="button" class="help-popover help-icon" tabindex="-1"
+									<button type="button" class="help-popover help-icon ms-2" tabindex="-1"
 											data-bs-content="${fn:escapeXml(help)}"
 											data-bs-html="true">
 										<i class="far fa-question-circle" aria-hidden="true"></i>
