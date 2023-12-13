@@ -309,26 +309,28 @@ SolarNode.hideLoading = function(button) {
 };
 
 SolarNode.showSpinner = function(button, showLoading) {
-	var ladda = button.data('ladda');
-	if ( ladda === undefined ) {
-		if ( showLoading ) {
-			button.button('loading');
-		}
-		ladda = Ladda.create(button.get(0));
-		button.data('ladda', ladda);
-		ladda.start();
+	const spinner = button.find('.spinner');
+	const status = button.find('[role=status]');
+	const loadingText = button.data('loadingText');
+	
+	button.prop('disabled', true);
+	spinner.removeClass('hidden');
+	if ( showLoading && loadingText ) {
+		status.data('normalText', status.text());
+		status.text(loadingText);
 	}
 	return button;
 };
 
 SolarNode.hideSpinner = function(button, hideLoading) {
-	var ladda = button.data('ladda');
-	if ( ladda !== undefined ) {
-		if ( hideLoading ) {
-			button.button('reset');
-		}
-		ladda.stop();
-		button.removeData('ladda');
+	const spinner = button.find('.spinner');
+	const status = button.find('[role=status]');
+	const normalText = status.data('normalText');
+	
+	button.prop('disabled', false);
+	spinner.addClass('hidden');
+	if ( hideLoading && normalText ) {
+		status.text(normalText);
 	}
 	return button;
 };

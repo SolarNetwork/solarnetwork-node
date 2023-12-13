@@ -186,9 +186,9 @@ $(function() {
 	<sec:csrfInput/>
 	<input type="hidden" name="uid" value="${factory.factoryUid}"/>
 </form>
-<form class="modal fade dynamic lookup-modal sn-loc-lookup-modal price-lookup-modal"
+<form class="modal modal-lg fade dynamic lookup-modal sn-loc-lookup-modal price-lookup-modal"
 		action="<setup:url value='/a/location'/>" method="get">
-	<div class="modal-dialog">
+	<div class="modal-dialog modal-dialog-scrollable">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h3 class="modal-title"><fmt:message key='lookup.price.title'/></h3>
@@ -196,11 +196,11 @@ $(function() {
 			</div>
 			<div class="modal-body">
 				<p><fmt:message key='lookup.price.intro'/></p>
-				<div class="form-inline">
-					<input type="hidden" name="tags" value="price"/>
-					<input type="text" class="col-md-4" maxlength="64" name="query" placeholder="<fmt:message key='lookup.price.search.placeholder'/>"/>
-					<button type="submit" class="btn btn-primary ladda-button expand-right" data-loading-text="<fmt:message key='lookup.searching.label'/>">
-						<fmt:message key='lookup.action.search'/>
+				<div class="input-group my-3">
+					<input type="text" class="form-control" maxlength="64" name="query" placeholder="<fmt:message key='lookup.price.search.placeholder'/>"/>
+					<button type="submit" class="btn btn-primary" data-loading-text="<fmt:message key='lookup.searching.label'/>">
+						<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+						<span role="status"><fmt:message key='lookup.action.search'/></span>
 					</button>
 				</div>
 		
@@ -238,10 +238,11 @@ $(function() {
 			</div>
 		</div>
 	</div>
+	<input type="hidden" name="tags" value="price"/>
 </form>
-<form class="modal fade dynamic lookup-modal sn-loc-lookup-modal weather-lookup-modal day-lookup-modal"
+<form class="modal modal-lg fade dynamic lookup-modal sn-loc-lookup-modal weather-lookup-modal day-lookup-modal"
 		action="<setup:url value='/a/location'/>" method="get">
-	<div class="modal-dialog">
+	<div class="modal-dialog modal-dialog-scrollable">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h3 class="modal-title"><fmt:message key='lookup.weather.title'/></h3>
@@ -249,12 +250,11 @@ $(function() {
 			</div>
 			<div class="modal-body">
 				<p><fmt:message key='lookup.weather.intro'/></p>
-				<div class="form-inline">
-					<input type="hidden" name="tags" value="weather"/>
-					<input type="text" class="col-md-4" maxlength="64" name="query" placeholder="<fmt:message key='lookup.weather.search.placeholder'/>"/>
-					<button type="submit" class="btn btn-primary ladda-button expand-right"
-						data-loading-text="<fmt:message key='lookup.searching.label'/>">
-						<fmt:message key='lookup.action.search'/>
+				<div class="input-group my-3">
+					<input type="text" class="form-control" maxlength="64" name="query" placeholder="<fmt:message key='lookup.weather.search.placeholder'/>"/>
+					<button type="submit" class="btn btn-primary" data-loading-text="<fmt:message key='lookup.searching.label'/>">
+						<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+						<span role="status"><fmt:message key='lookup.action.search'/></span>
 					</button>
 				</div>
 		
@@ -292,10 +292,11 @@ $(function() {
 			</div>
 		</div>
 	</div>
+	<input type="hidden" name="tags" value="weather"/>
 </form>
-<form class="modal fade dynamic lookup-modal sn-loc-lookup-modal co2-lookup-modal"
+<form class="modal modal-lg fade dynamic lookup-modal sn-loc-lookup-modal co2-lookup-modal"
 		action="<setup:url value='/a/location'/>" method="get">
-	<div class="modal-dialog">
+	<div class="modal-dialog modal-dialog-scrollable">
 		<div class="modal-content">
 			<div class="modal-header">
 				<h3 class="modal-title"><fmt:message key='lookup.co2.title'/></h3>
@@ -303,11 +304,11 @@ $(function() {
 			</div>
 			<div class="modal-body">
 				<p><fmt:message key='lookup.co2.intro'/></p>
-				<div class="form-inline">
-					<input type="hidden" name="tags" value="co2"/>
-					<input type="text" class="col-md-4" maxlength="64" name="query" placeholder="<fmt:message key='lookup.co2.search.placeholder'/>"/>
-					<button type="submit" class="btn btn-primary ladda-button expand-right" data-loading-text="<fmt:message key='lookup.searching.label'/>">
-						<fmt:message key='lookup.action.search'/>
+				<div class="input-group my-3">
+					<input type="text" class="form-control" maxlength="64" name="query" placeholder="<fmt:message key='lookup.co2.search.placeholder'/>"/>
+					<button type="submit" class="btn btn-primary" data-loading-text="<fmt:message key='lookup.searching.label'/>">
+						<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+						<span role="status"><fmt:message key='lookup.action.search'/></span>
 					</button>
 				</div>
 		
@@ -343,6 +344,7 @@ $(function() {
 			</div>
 		</div>
 	</div>
+	<input type="hidden" name="tags" value="co2"/>
 </form>
 <form id="add-component-instance-modal" class="modal fade dynamic" data-bs-backdrop="static" data-bs-keyboard="false" action="<setup:url value='/a/settings/manage/add'/>" method="post">
 	<div class="modal-dialog">

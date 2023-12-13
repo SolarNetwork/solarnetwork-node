@@ -360,6 +360,7 @@ SolarNode.Settings.addLocationFinder = function(params) {
 			beforeSubmit: function(dataArray, form, options) {
 				// start a spinner on the search button so we know a search is happening
 				SolarNode.showLoading(searchBtn);
+				chooseBtn.prop('disabled', true);
 				chooseBtn.removeData('locationMeta'); // clear any previous selection
 				//searchBtn.attr('disabled', 'disabled');
 			},
@@ -414,21 +415,9 @@ SolarNode.Settings.addLocationFinder = function(params) {
 		});
 	}
 	btn.on('click', function() {
-		// common lookup
-		modal.find('input[name=sourceName]').val(params.sourceName);
-		modal.find('input[name=locationName]').val(params.locationName);
-
-		// price lookup
-		modal.find('input[name=currency]').val(params.currency);
-
-		// weather lookup
-		modal.find('input[name="location.country"]').val(params.country);
-		modal.find('input[name="location.postalCode"]').val(params.postalCode);
-
 		// associate data with singleton modal
 		chooseBtn.data('params', params);
 		chooseBtn.data('label', labelSpan);
-		modal.find('input[name=tags]').val(params.locationType);
 		modal.modal('show');
 	});
 };
@@ -868,13 +857,13 @@ function selectInitialComponentInstance() {
 $(document).ready(function() {
 	setupComponentSettings($('body'));
 	
-	$('.lookup-modal table.search-results').on('click', 'tr', function() {
+	$('.lookup-modal table.search-results tbody').on('click', 'tr', function() {
 		var me = $(this);
 		var form = me.closest('form');
 		var chooseBtn = form.find('button.choose');
-		if ( me.hasClass('success') === false ) {
-			me.parent().find('tr.success').removeClass('success');
-			me.addClass('success');
+		if ( me.hasClass('table-success') === false ) {
+			me.parent().find('tr.table-success').removeClass('table-success');
+			me.addClass('table-success');
 		}
 		chooseBtn.data('locationMeta', me.data('locationMeta'));
 		chooseBtn.removeAttr('disabled');
@@ -886,7 +875,7 @@ $(document).ready(function() {
 		chooseBtn.attr('disabled', 'disabled');
 		chooseBtn.removeData('params');
 		chooseBtn.removeData('label');
-		form.find('table.search-results tr.success').removeClass('success');
+		form.find('table.search-results tr.table-success').removeClass('table-success');
 	});
 	$('.lookup-modal').on('shown.bs.modal', function() {
 		var firstInput = $(this).find('input').first();
