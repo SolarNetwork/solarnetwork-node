@@ -55,7 +55,7 @@
 						</script>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.ToggleSettingSpecifier')}">
-					    <button type="button" class="toggle btn<c:if test='${settingValue eq  setting.trueValue}'> btn-success active</c:if>"
+					    <button type="button" class="toggle col-sm-3 btn ${settingValue eq  setting.trueValue ? 'btn-success active' : 'btn-light'}"
 					    	id="${settingId}">
 					    	<c:choose>
 					    		<c:when test="${settingValue eq  setting.trueValue}">

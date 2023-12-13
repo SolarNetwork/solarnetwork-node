@@ -88,23 +88,23 @@ SolarNode.Settings.addSlider = function(params) {
  *
  * @param params.provider {String} the provider key
  * @param params.setting {String} the setting key
- * @param params.key {String} the DOM element ID for the slider
+ * @param params.key {String} the DOM element ID for the button
  * @param params.on {String} the "on" value
  * @param params.off {String} the "off" value
  * @param params.value {Number} the initial value
  */
 SolarNode.Settings.addToggle = function(params) {
-	var toggle = $('#'+params.key);
+	const toggle = $('#'+params.key);
 	toggle.button();
 	toggle.on('click', function() {
 		toggle.button('toggle');
-		var active = toggle.hasClass('active');
-		var value = (active ? params.on : params.off);
-		$(this).text(active ? params.onLabel : params.offLabel);
+		const active = toggle.hasClass('active');
+		const value = (active ? params.on : params.off);
+		toggle.text(active ? params.onLabel : params.offLabel);
 		if ( active ) {
-			$(this).addClass('btn-success');
+			toggle.addClass('btn-success').removeClass('btn-light')
 		} else {
-			$(this).removeClass('btn-success');
+			toggle.removeClass('btn-success').addClass('btn-light');
 		}
 		SolarNode.Settings.updateSetting(params, value);
 	});
