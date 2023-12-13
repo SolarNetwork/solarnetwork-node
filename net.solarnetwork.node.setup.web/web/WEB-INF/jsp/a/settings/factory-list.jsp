@@ -16,29 +16,35 @@
 			<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
 		</fmt:message>
 	</p>
-	<div class="row action-progress-bar justify-content-between">
+	<div class="row action-progress-bar justify-content-between g-2">
 		<div class="col-auto">
-			<a href="<setup:url value='${navloc == "filters-component" ? "/a/settings/filters" : "/a/settings"}'/>" class="btn btn-secondary">
+			<a href="<setup:url value='${navloc == "filters-component" ? "/a/settings/filters" : "/a/settings"}'/>" class="btn btn-secondary text-nowrap">
 				<i class="fas fa-arrow-left"></i>
 				<fmt:message key="back.label"/>
 			</a>
 		</div>
 		<div class="col-auto">
-			<c:if test="${fn:length(providers) > 0}">
-				<button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#remove-all-component-instance-modal">
-					<i class="far fa-trash-can"></i>
-					<fmt:message key='settings.factory.removeall.label'>
-						<fmt:param>${fn:length(providers)}</fmt:param>
-						<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
-					</fmt:message>
-				</button>
-			</c:if>
-			<button type="button" class="btn btn-primary" id="add" data-bs-toggle="modal" data-bs-target="#add-component-instance-modal">
-				<i class="fas fa-plus"></i>
-				<fmt:message key='settings.factory.add'>
-					<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
-				</fmt:message>
-			</button>
+			<div class="row g-2">
+				<c:if test="${fn:length(providers) > 0}">
+					<div class="col-auto">
+						<button type="button" class="btn btn-secondary text-nowrap" data-bs-toggle="modal" data-bs-target="#remove-all-component-instance-modal">
+							<i class="far fa-trash-can"></i>
+							<fmt:message key='settings.factory.removeall.label'>
+								<fmt:param>${fn:length(providers)}</fmt:param>
+								<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
+							</fmt:message>
+						</button>
+					</div>
+				</c:if>
+				<div class="col-auto">
+					<button type="button" class="btn btn-primary text-nowrap" id="add" data-bs-toggle="modal" data-bs-target="#add-component-instance-modal">
+						<i class="fas fa-plus"></i>
+						<fmt:message key='settings.factory.add'>
+							<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
+						</fmt:message>
+					</button>
+				</div>
+			</div>
 		</div>
 	</div>
 </section>
@@ -48,10 +54,10 @@
 		<c:if test="${fn:length(providers) > 0}">
 			<hr>
 			<div class="form-actions row justify-content-between align-items-baseline">
-				<div class="col-3">
-					<button type="button" class="btn btn-primary" id="submit"><fmt:message key='settings.save'/></button>
+				<div class="col-auto">
+					<button type="button" class="btn btn-primary text-nowrap" id="submit"><fmt:message key='settings.save'/></button>
 				</div>
-				<div class="col-9">
+				<div class="col">
 					<c:if test="${fn:length(providers) > 1}">
 						<div class="page-indicators gap-2 d-flex flex-wrap justify-content-end">
 							<c:forEach items="${providers}" var="instance" varStatus="instanceStatus">

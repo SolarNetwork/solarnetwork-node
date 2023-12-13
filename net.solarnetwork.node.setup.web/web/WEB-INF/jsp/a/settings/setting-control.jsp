@@ -34,10 +34,10 @@
 			<label class="col-sm-3 col-form-label" for="${settingId}">
 				<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}" index="${groupIndex}"/>
 			</label>
-			<div class="col-sm-9 ${setup:instanceOf(setting, 'net.solarnetwork.settings.TitleSettingSpecifier') and !setup:instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier') ? 'static' : ''}">
+			<div class="col-sm-8 col-md-6 ${setup:instanceOf(setting, 'net.solarnetwork.settings.TitleSettingSpecifier') and !setup:instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier') ? 'static' : ''}">
 				<c:choose>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.SliderSettingSpecifier')}">
-						<div id="${settingId}" class="setting slider col-sm-9"></div>
+						<div id="${settingId}" class="setting slider mt-2"></div>
 						<script>
 						$(function() {
 							SolarNode.Settings.addSlider({
@@ -170,26 +170,32 @@
 						</c:choose>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier')}">
-						<c:if test="${setup:js(setting.key) == 'schedule'}">
-							<select class="col-md-2">
-								<option value="cron"><fmt:message key='settings.schedulePeriod.cron.label'/></option>
-								<option value="ms"><fmt:message key='settings.schedulePeriod.milliseconds.label'/></option>
-								<option value="s"><fmt:message key='settings.schedulePeriod.seconds.label'/></option>
-								<option value="m"><fmt:message key='settings.schedulePeriod.minutes.label'/></option>
-								<option value="h"><fmt:message key='settings.schedulePeriod.hours.label'/></option>
-							</select>
-						</c:if>
-						<input type="${setting.secureTextEntry == true ? 'password' : 'text' }" name="${settingId}" id="${settingId}"
-							class="span${setup:js(setting.key) == 'schedule' ? '3' : '5'}" maxLength="4096"
-							<c:choose>
-								<c:when test='${setting.secureTextEntry == true}'>
-									placeholder="<fmt:message key='settings.secureTextEntry.placeholder'/>"
-								</c:when>
-								<c:otherwise>
-									value="${settingValue}"
-								</c:otherwise>
-							</c:choose>
-							/>
+						<div class="row">
+							<c:if test="${setup:js(setting.key) == 'schedule'}">
+								<div class="col-sm-2">
+									<select class="form-control">
+										<option value="cron"><fmt:message key='settings.schedulePeriod.cron.label'/></option>
+										<option value="ms"><fmt:message key='settings.schedulePeriod.milliseconds.label'/></option>
+										<option value="s"><fmt:message key='settings.schedulePeriod.seconds.label'/></option>
+										<option value="m"><fmt:message key='settings.schedulePeriod.minutes.label'/></option>
+										<option value="h"><fmt:message key='settings.schedulePeriod.hours.label'/></option>
+									</select>
+								</div>
+							</c:if>
+							<div class="col">
+								<input type="${setting.secureTextEntry == true ? 'password' : 'text' }" name="${settingId}" id="${settingId}"
+									class="form-control" maxLength="4096"
+									<c:choose>
+										<c:when test='${setting.secureTextEntry == true}'>
+											placeholder="<fmt:message key='settings.secureTextEntry.placeholder'/>"
+										</c:when>
+										<c:otherwise>
+											value="${settingValue}"
+										</c:otherwise>
+									</c:choose>
+									/>
+							</div>
+						</div>
 						<script>
 						$(function() {
 						<c:choose>
@@ -278,17 +284,6 @@
 					</c:when>
 				</c:choose>
 
-				<c:set var="help">
-					<setup:message key='${setting.key}.desc' messageSource='${provider.messageSource}' arguments='${setting.descriptionArguments}'/>
-				</c:set>
-
-				<c:if test="${fn:length(help) gt 0}">
-					<button type="button" class="help-popover help-icon" tabindex="-1"
-							data-bs-content="${fn:escapeXml(help)}"
-							data-bs-html="true">
-						<i class="far fa-question-circle" aria-hidden="true"></i>
-					</button>
-				</c:if>
 
 				<span class="help-inline active-value clean"><span class="text-info">
 					<c:choose>
@@ -320,6 +315,19 @@
 					</c:choose>
 				</span></span>
 			</div>
+			<div class="col-sm-1 mt-1">
+				<c:set var="help">
+					<setup:message key='${setting.key}.desc' messageSource='${provider.messageSource}' arguments='${setting.descriptionArguments}'/>
+				</c:set>
+
+				<c:if test="${fn:length(help) gt 0}">
+					<button type="button" class="help-popover help-icon" tabindex="-1"
+							data-bs-content="${fn:escapeXml(help)}"
+							data-bs-html="true">
+						<i class="far fa-question-circle" aria-hidden="true"></i>
+					</button>
+				</c:if>
+			</div>			
 		</div>
 	</c:when>
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.GroupSettingSpecifier') and not empty setting.key}">
