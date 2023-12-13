@@ -4,7 +4,7 @@
 SolarNode.Settings = {
 
 	/** A regular expression that matches a cron expression. */
-	CRON_REGEX : /([0-9*\/,-]+)\s+([0-9*\/,-]+)\s+([0-9*\/,-]+)\s+([0-9*\/,-]+)\s+([0-9*\/,-]+)\s+([0-9*\/,-]+)(.*)/,
+	CRON_REGEX : /([0-9*?\/,-]+)\s+([0-9*?\/,-]+)\s+([0-9*?\/,-]+)\s+([0-9*?\/,-]+)\s+([0-9*?\/,-]+)\s+([0-9*?\/,-]+)(.*)/,
 
 	/** A regular expression that matches a cron slash-based period. */
 	CRON_FIELD_PERIOD_REGEX : /^([0-9]+|\*)\/([0-9]+|\*)$/,
@@ -165,7 +165,7 @@ SolarNode.Settings.addTextField = function(params) {
  */
 SolarNode.Settings.addScheduleField = function(params) {
 	var field = $('#'+params.key);
-	var select = field.parent().children('select');
+	var select = $('#cg-'+params.key).find('select');
 	var prevOption = select.val();
 	var prevCronMatch = field.val().match(SolarNode.Settings.CRON_REGEX);
 
@@ -214,11 +214,13 @@ SolarNode.Settings.addScheduleField = function(params) {
 	field.on('change', function() {
 		var value = valueForSetting(prevOption, field.val());
 		var cronMatch = value.match(SolarNode.Settings.CRON_REGEX);
-		if ( cronMatch && prevOption !== 'cron' ) {
-			select.val('cron');
-			prevOption = 'cron';
+		if ( cronMatch ) {
+			if ( prevOption !== 'cron' ) {
+				select.val('cron');
+				prevOption = 'cron';
+			}
 			prevCronMatch = cronMatch;
-		} else if ( !cronMatch && prevOption === 'cron' ) {
+		} else if ( prevOption === 'cron' ) {
 			select.val('ms');
 			prevOption = 'ms';
 			prevCronMatch = null;
@@ -229,19 +231,17 @@ SolarNode.Settings.addScheduleField = function(params) {
 	select.on('change', function() {
 		var option = select.val();
 		var expr = field.val();
-		//var cronMatch = expr.match(SolarNode.Settings.CRON_REGEX);
 		var exprNum = Number(expr);
 		var resultExpr = expr;
-		var fieldMatch;
 		var settingValue;
 
-		function updateResultForCronFieldPeriod(cronMatch, cronFieldIndex, multiplier) {
+		function updateResultForCronFieldPeriod(cronMatch, cronFieldIndex, multiplier, base) {
 			if ( cronMatch ) {
-				fieldMatch = cronMatch[cronFieldIndex].match(SolarNode.Settings.CRON_FIELD_PERIOD_REGEX);
+				const fieldMatch = cronMatch[cronFieldIndex].match(SolarNode.Settings.CRON_FIELD_PERIOD_REGEX);
 				if ( fieldMatch ) {
 					resultExpr = fieldMatch[2] === '*' ? multiplier : Number(fieldMatch[2]) * multiplier;
 				} else {
-					resultExpr = multiplier;
+					resultExpr = (multiplier > 1 ? base : multiplier);
 				}
 			} else {
 				resultExpr = multiplier;
@@ -252,7 +252,7 @@ SolarNode.Settings.addScheduleField = function(params) {
 			if ( !isNaN(exprNum) ) {
 				if ( prevOption === 'ms' && exprNum <= 60000 ) {
 					resultExpr = '0/' + Math.ceil(exprNum / 1000) + ' * * * * *';
-				} else if ( prevOption === 's' && exprNum <= 60 ) {
+				} else if ( prevOption === 's' && exprNum <= 6000 ) {
 					resultExpr = '0/' + Math.ceil(exprNum) + ' * * * * *';
 				} else if ( prevOption === 'm' && exprNum <= 60 ) {
 					resultExpr = '0 0/' + Math.ceil(exprNum) + ' * * * *';
@@ -266,13 +266,13 @@ SolarNode.Settings.addScheduleField = function(params) {
 			}
 		} else if ( prevOption === 'cron' ) {
 			if ( option === 'ms' ) {
-				updateResultForCronFieldPeriod(prevCronMatch, 1, 1000);
+				updateResultForCronFieldPeriod(prevCronMatch, 1, 1000, 60000);
 			} else if ( option === 's' ) {
-				updateResultForCronFieldPeriod(prevCronMatch, 1, 1);
+				updateResultForCronFieldPeriod(prevCronMatch, 1, 1, 60);
 			} else if ( option === 'm' ) {
-				updateResultForCronFieldPeriod(prevCronMatch, 2, 1);
+				updateResultForCronFieldPeriod(prevCronMatch, 2, 1, 60);
 			} else if ( option === 'h' ) {
-				updateResultForCronFieldPeriod(prevCronMatch, 3, 1);
+				updateResultForCronFieldPeriod(prevCronMatch, 3, 1, 24);
 			} else {
 				resultExpr = 1;
 			}

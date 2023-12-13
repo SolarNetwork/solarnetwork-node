@@ -172,7 +172,7 @@
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier')}">
 						<div class="row">
 							<c:if test="${setup:js(setting.key) == 'schedule'}">
-								<div class="col-sm-2">
+								<div class="col-sm-3">
 									<select class="form-control">
 										<option value="cron"><fmt:message key='settings.schedulePeriod.cron.label'/></option>
 										<option value="ms"><fmt:message key='settings.schedulePeriod.milliseconds.label'/></option>
