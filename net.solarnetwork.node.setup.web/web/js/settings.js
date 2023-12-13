@@ -774,7 +774,9 @@ function uploadSettingResource(url, provider, instance, setting, dataKey, dataVa
 }
 
 function setupComponentSettings(container) {
-	container.find('.help-popover').popover();
+	container.find('.help-popover').each(function(i, el) {
+		new bootstrap.Popover(el);
+	});
 
 	container.find('.setting-resource-upload').on('click', function() {
 		var me = $(this);

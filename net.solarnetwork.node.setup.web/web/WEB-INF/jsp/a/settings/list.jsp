@@ -153,8 +153,8 @@
 	 				<button class="btn btn-primary ladda-button expand-right" type="submit" id="backup-now-btn"
 	 					data-loading-text=" "><fmt:message key="backup.now.button"/></button>
  					<button type="button" class="help-popover help-icon" tabindex="-1"
-							data-content="<fmt:message key='backup.now.caption'/>"
-							data-html="true">
+							data-bs-content="<fmt:message key='backup.now.caption'/>"
+							data-bs-html="true">
 						<i class="far fa-question-circle" aria-hidden="true"></i>
 					</button>
 					<sec:csrfInput/>
@@ -188,8 +188,8 @@
 						<fmt:message key="backup.restore.button"/>
 					</button>
 					<button type="button" class="help-popover help-icon" tabindex="-1"
-							data-content="<fmt:message key='backup.backups.info'/>"
-							data-html="true">
+							data-bs-content="<fmt:message key='backup.backups.info'/>"
+							data-bs-html="true">
 						<i class="far fa-question-circle" aria-hidden="true"></i>
 					</button>
 					<sec:csrfInput/>
@@ -204,8 +204,8 @@
   					<input class="col-md-3" id="backup-import-field" type="file" name="file"/>
   					<button class="btn btn-primary" type="submit"><fmt:message key="backup.import.button"/></button>
 					<button type="button" class="help-popover help-icon" tabindex="-1"
-							data-content="<fmt:message key='backup.import.info'/>"
-							data-html="true">
+							data-bs-content="<fmt:message key='backup.import.info'/>"
+							data-bs-html="true">
 						<i class="far fa-question-circle" aria-hidden="true"></i>
 					</button>
 					<sec:csrfInput/>
@@ -278,8 +278,8 @@
 									</a>
 									<c:if test="${backupStatus.first}">
 										<button type="button" class="help-popover help-icon" tabindex="-1"
-												data-content="<fmt:message key='settings.autobackup.info'/>"
-												data-html="true">
+												data-bs-content="<fmt:message key='settings.autobackup.info'/>"
+												data-bs-html="true">
 											<i class="far fa-question-circle" aria-hidden="true"></i>
 										</button>
 									</c:if>

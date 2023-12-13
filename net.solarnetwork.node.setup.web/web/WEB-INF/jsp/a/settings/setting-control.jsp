@@ -85,7 +85,7 @@
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.RadioGroupSettingSpecifier')}">
 						<c:forEach items="${setting.valueTitles}" var="entry">
-							<div class="d-flex justify-content-start align-items-center gap-3">
+							<div class="d-flex justify-content-start align-items-center">
 								<div class="form-check">
 									<input class="form-check-input" type="radio" name="${settingId}" id="${settingId}" value="${entry.key}"
 										<c:if test='${settingValue eq  entry.key}'>checked="checked"</c:if>
@@ -98,8 +98,8 @@
 								</c:set>
 								<c:if test="${fn:length(help) > 0}">
 									<button type="button" class="help-popover help-icon" tabindex="-1"
-											data-content="${fn:escapeXml(help)}"
-											data-html="true">
+											data-bs-content="${fn:escapeXml(help)}"
+											data-bs-html="true">
 										<i class="far fa-question-circle" aria-hidden="true"></i>
 									</button>
 								</c:if>
@@ -283,9 +283,9 @@
 				</c:set>
 
 				<c:if test="${fn:length(help) gt 0}">
-					<button type="button" class=" help-popover help-icon" tabindex="-1"
-							data-content="${fn:escapeXml(help)}"
-							data-html="true">
+					<button type="button" class="help-popover help-icon" tabindex="-1"
+							data-bs-content="${fn:escapeXml(help)}"
+							data-bs-html="true">
 						<i class="far fa-question-circle" aria-hidden="true"></i>
 					</button>
 				</c:if>
@@ -342,8 +342,8 @@
 					</c:set>
 					<c:if test="${fn:length(help) > 0}">
 						<button type="button" class=" help-popover help-icon" tabindex="-1"
-								data-content="${fn:escapeXml(help)}"
-								data-html="true">
+								data-bs-content="${fn:escapeXml(help)}"
+								data-bs-html="true">
 							<i class="far fa-question-circle" aria-hidden="true"></i>
 						</button>
 					</c:if>
