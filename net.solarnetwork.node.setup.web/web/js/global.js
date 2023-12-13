@@ -418,28 +418,49 @@ SolarNode.tryGotoURL = function(destURL) {
 };
 
 SolarNode.GlobalProgress = (function() {
-	var self = {};
+	const self = {};
 
-	function getModal() {
-		return $('#generic-progress-modal');
+	function modal() {
+		const node = document.getElementById('generic-progress-modal');
+		if ( !node ) {
+			return undefined;
+		}
+		return {
+			modal: bootstrap.Modal.getOrCreateInstance(node),
+			jq: $(node),
+		};
 	}
-	
+
 	function show(percentComplete, title, message) {
-		var modal = getModal(),
-			titleEl = modal.find('.info-title'),
-			messageEl = modal.find('.info-message');
+		const m = modal();
+		if ( !m ) {
+			return;
+		}
+		const titleEl = m.jq.find('.info-title'),
+			messageEl = m.jq.find('.info-message');
 		titleEl.text(title || titleEl.data('default-message'));
 		messageEl.text(message || messageEl.data('default-message'));
-		modal.find('.bar').css('width', Math.round((+percentComplete || 0) * 100) + '%');
-		modal.modal('show');
+		m.jq.find('.bar').css('width', Math.round((+percentComplete || 0) * 100) + '%');
+		m.modal.show();
 	}
 	
 	function update(percentComplete) {
-		getModal().find('.progress-bar').css('width', Math.round((+percentComplete || 0) * 100) + '%');
+		const m = modal();
+		if ( !m ) {
+			return;
+		}
+		m.jq.find('.progress-bar').css('width', Math.round((+percentComplete || 0) * 100) + '%');
 	}
 	
 	function hide() {
-		getModal().modal('hide');
+		const m = modal();
+		if ( !m ) {
+			return;
+		}
+		// close after delay, so that Very Fast open/close still works with CSS animations
+		setTimeout(() => {
+			m.modal.hide();
+		}, 500);
 	}
 		
 	return Object.defineProperties(self, {
