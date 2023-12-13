@@ -1,12 +1,15 @@
-<section class="intro clearfix">
+<section class="intro">
 	<p><fmt:message key="plugins.intro"/></p>
 	<fmt:message key="plugins.loading.message" var="msgLoading"/>
 	<fmt:message key="plugins.refresh.button" var="msgRefresh"/>
 	<setup:url value="/a/plugins/refresh" var="urlPluginRefresh"/>
-	<a id="plugins-refresh" class="btn btn-primary ladda-button expand-right pull-right" href="${urlPluginRefresh}"
+	<div class="text-end">
+	<button type="button" id="plugins-refresh" class="btn btn-primary" data-action="${urlPluginRefresh}"
 		data-loading-text="${msgLoading}">
-		${msgRefresh}
-	</a>
+		<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
+		<span role="status">${msgRefresh}</span>
+	</button>
+	</div>
 </section>
 <fmt:message key="plugin.install.button" var="msgInstall"/>
 <fmt:message key="plugin.upgrade.button" var="msgUpgrade"/>
@@ -18,7 +21,7 @@
 		<p class="col-md-10"><fmt:message key="plugins.upgradable.intro"/></p>
 		<div class="col-md-2 action">
 			<setup:url value="/a/plugins/upgradeAll" var="urlPluginUpgradeAll"/>
-			<a id="plugins-upgrade-all" class="btn btn-info" href="${urlPluginUpgradeAll}"><fmt:message key="plugins.upgradeAll.button"/></a>
+			<button type="button" id="plugins-upgrade-all" class="btn btn-info" data-action="${urlPluginUpgradeAll}"><fmt:message key="plugins.upgradeAll.button"/></button>
 		</div>
 	</div>
 	<div class="list-content"></div>
@@ -45,7 +48,7 @@
 			<div class="modal-body">
 				<p class="hide-while-restarting"><fmt:message key="plugin.install.intro"/></p>
 				<div class="hide-while-restarting" id="plugin-preview-install-list"></div>
-				<div class="restart-required hide-while-restarting hide alert">
+				<div class="restart-required hide-while-restarting hide alert alert-warning">
 					<fmt:message key='plugin.install.restartRequired.warning'/>
 				</div>
 				<div class="restarting hidden alert alert-info">
@@ -58,7 +61,7 @@
 			</div>
 			<div class="modal-footer">
 				<input type="hidden" name="uid" value=""/>
-				<a href="#" class="btn without-restart" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
+				<button type="button" class="btn btn-secondary without-restart" data-bs-dismiss="modal"><fmt:message key="close.label"/></button>
 				<fmt:message key="plugin.installing.message" var="msgInstalling"/>
 				<fmt:message key="plugin.install.error" var="msgInstallError"/>
 				<fmt:message key="plugin.install.success" var="msgInstallSuccess"/>
@@ -83,7 +86,7 @@
 			<div class="modal-body">
 				<p class="hide-while-restarting"><fmt:message key="plugin.remove.intro"/></p>
 				<div class="hide-while-restarting" id="plugin-preview-remove-list"></div>
-				<div class="restart-required hide-while-restarting hide alert">
+				<div class="restart-required hide-while-restarting hide alert alert-warning">
 					<fmt:message key='plugin.install.restartRequired.warning'/>
 				</div>
 				<div class="restarting hidden alert alert-info">
@@ -96,7 +99,7 @@
 			</div>
 			<div class="modal-footer">
 				<input type="hidden" name="uid" value=""/>
-				<a href="#" class="btn without-restart" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
+				<button type="button" class="btn btn-secondary without-restart" data-bs-dismiss="modal"><fmt:message key="close.label"/></button>
 				<fmt:message key="plugin.removing.message" var="msgRemoving"/>
 				<fmt:message key="plugin.remove.error" var="msgRemoveError"/>
 				<fmt:message key="plugin.remove.success" var="msgRemoveSuccess"/>

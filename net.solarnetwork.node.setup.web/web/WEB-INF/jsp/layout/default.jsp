@@ -53,7 +53,7 @@
 					</div>
 					<div class="modal-body">
 						<p class="info-message hide-while-restarting"></p>
-						<div class="restart-required hide-while-restarting hide alert">
+						<div class="restart-required hide-while-restarting hide alert alert-warning">
 							<fmt:message key='platform.lock.restartRequired.warning'/>
 						</div>
 						<div class="restarting hidden alert alert-info">

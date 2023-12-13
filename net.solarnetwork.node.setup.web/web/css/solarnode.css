@@ -248,17 +248,8 @@ pre.pre-scrollable {
 	margin-left: -350px;
 }
 
-#plugins {
-	margin-top: 1em;
-}
-
 #plugins-upgrade-all {
 	width: auto;
-}
-
-#plugin-upgrades button,
-#plugins button {
-	width: 7em;
 }
 
 #plugin-preview-install-modal .progress {
@@ -270,23 +261,17 @@ pre.pre-scrollable {
 	margin-bottom: 0;
 }
 
-div.plugin {
-	padding: 8px;
-}
-
 div.plugin .name {
 	font-weight: bold;
-	margin-bottom: 10px;
 }
 
-div.plugin .desc {
-	margin-bottom: 10px;
-	font-size: 0.9em;
-	font-style: italic;
+div.plugin > div {
+	padding-top: 1rem;
+	padding-bottom: 1rem;
 }
 
 .form-actions .alert {
-	margin-top: 12px;
+	margin-top: 1rem;
 	margin-bottom: 0;
 }
 
@@ -365,33 +350,20 @@ div.plugin .desc {
    animation: yellow-fade 2s ease-in 1;
 }
 
-@media (max-width: 767px) {
-	div.plugin {
-		border-top: 1px solid #ccc;
-		padding: 0 8px 8px 8px;
-	}
-	div.plugin:first-child {
-		border-top: none !important;
-	}
-	div.plugin:nth-child(even) {
-		background-color: #fafafa;
-	}
-	div.plugin > div {
-		min-height: 0 !important;
-	}
-	div.plugin .name {
-		margin-top: 5px;
-		margin-bottom: 0;
-	}
-	div.plugin .version {
-		float: left;
-		width: auto;
-	}
-	div.plugin .action {
-		float: right;
-		width: auto;
-	}
-	
+div.plugin {
+	border-top: 1px solid #ccc;
+}
+
+div.plugin:first-child {
+	border-top: none !important;
+}
+
+div.plugin:nth-child(even) {
+	background-color: #fafafa;
+}
+
+div.plugin > div {
+	min-height: 0 !important;
 }
 
 /* charting styling */
