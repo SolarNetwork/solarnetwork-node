@@ -138,8 +138,8 @@ $(function() {
 	SolarNode.Settings.reset();
 });
 </script>
-<div id="alert-delete" class="alert alert-danger alert-block hidden">
-	<button type="button" class="btn-close" data-bs-dismiss="alert alert-warning" aria-label="<fmt:message key='close.label'/>"></button>
+<div id="alert-delete" class="alert alert-danger alert-dismissible my-3 hidden">
+	<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="<fmt:message key='close.label'/>"></button>
 	<h4><fmt:message key="settings.factory.delete.alert.title"/></h4>
 	<p>
 		<fmt:message key="settings.factory.delete.alert.msg"/>
@@ -148,8 +148,8 @@ $(function() {
 		<fmt:message key="delete.label"/>
 	</button>
 </div>
-<div id="alert-reset" class="alert alert-danger alert-block hidden">
-	<button type="button" class="btn-close" data-bs-dismiss="alert alert-warning" aria-label="<fmt:message key='close.label'/>"></button>
+<div id="alert-reset" class="alert alert-danger alert-dismissible my-3 hidden">
+	<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="<fmt:message key='close.label'/>"></button>
 	<h4><fmt:message key="settings.factory.reset.alert.title"/></h4>
 	<p>
 		<fmt:message key="settings.factory.reset.alert.msg"/>

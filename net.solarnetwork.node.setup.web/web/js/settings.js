@@ -941,7 +941,7 @@ $(document).ready(function() {
 		var button = this;
 		SolarNode.Settings.deleteFactoryConfiguration({
 			button: button,
-			url: button.dataset.target,
+			url: button.dataset.bsTarget,
 			factoryUid: button.dataset.factoryUid,
 			instanceUid: button.dataset.instanceKey
 		});
@@ -950,7 +950,7 @@ $(document).ready(function() {
 		var button = this;
 		SolarNode.Settings.resetFactoryConfiguration({
 			button: button,
-			url: button.dataset.target,
+			url: button.dataset.bsTarget,
 			factoryUid: button.dataset.factoryUid,
 			instanceUid: button.dataset.instanceKey
 		});
