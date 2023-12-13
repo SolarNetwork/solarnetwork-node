@@ -34,7 +34,7 @@
 			<label class="col-sm-3 col-form-label" for="${settingId}">
 				<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}" index="${groupIndex}"/>
 			</label>
-			<div class="col-sm-8 col-md-6${setup:instanceOf(setting, 'net.solarnetwork.settings.TitleSettingSpecifier') and !setup:instanceOf(setting, 'net.solarnetwork.settings.TextFieldSettingSpecifier') ? ' static' : ''}">
+			<div class="col-sm-8 col-md-6">
 				<c:choose>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.SliderSettingSpecifier')}">
 						<div id="${settingId}" class="setting slider mt-2"></div>
@@ -216,14 +216,7 @@
 						</script>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.TitleSettingSpecifier')}">
-						<c:choose>
-							<c:when test="${setting.markup}">
-								<div class="title">${settingValue}</div>
-							</c:when>
-							<c:otherwise>
-								<span class="title">${settingValue}</span>
-							</c:otherwise>
-						</c:choose>
+						<div style="margin-top: calc(0.375rem + 1px);">${settingValue}</div>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.node.settings.LocationLookupSettingSpecifier')}">
 						<span id="${settingId}">
