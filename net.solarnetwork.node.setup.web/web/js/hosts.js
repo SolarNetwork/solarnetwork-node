@@ -204,7 +204,6 @@ $(document).ready(function hostManagement() {
 	
 	// Initialize package list
 	$.getJSON(SolarNode.context.path('/a/hosts/list'), (data) => {
-		$('.init').addClass('hidden');
 		handleHostListResponse(data);
 	}).always(() => {
 		toggleLoading(false);

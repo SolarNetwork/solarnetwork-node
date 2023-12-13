@@ -7,10 +7,12 @@
     </div>
 </div>
 <div class="ready hidden">
-	<div class="row">
-		<button type="button" class="btn btn-primary pull-right" data-bs-toggle="modal" data-bs-target="#host-add-modal">
-			<i class="fas fa-plus"></i> <fmt:message key="host.add.action"/>
-		</button>
+	<div class="row justify-content-end">
+		<div class="col-auto">
+			<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#host-add-modal">
+				<i class="fas fa-plus"></i> <fmt:message key="host.add.action"/>
+			</button>
+		</div>
 	</div>
 	<section id="hosts">
 		<div class="row template hbox" style="align-items: center;">
@@ -35,12 +37,16 @@
 			</div>
 			<div class="modal-body before">
 				<p><fmt:message key="host.add.intro"/></p>
-				<label for="hosts-add-name"><fmt:message key="host.name.label"/></label>
-				<input type="text" class="form-control" maxlength="256" name="name" id="hosts-add-name"
-					required placeholder="<fmt:message key='host.name.placeholder'/>">
-				<label for="hosts-add-address"><fmt:message key="host.address.label"/></label>
-				<input type="text" class="form-control" maxlength="256" name="address" id="hosts-add-address"
-					required placeholder="<fmt:message key='host.address.placeholder'/>">
+				<div class="mb-3">
+					<label class="form-label" for="hosts-add-name"><fmt:message key="host.name.label"/></label>
+					<input class="form-control" type="text" maxlength="256" name="name" id="hosts-add-name"
+						required placeholder="<fmt:message key='host.name.placeholder'/>">
+				</div>
+				<div class="mb-3">
+					<label class="form-label" for="hosts-add-address"><fmt:message key="host.address.label"/></label>
+					<input class="form-control" type="text" maxlength="256" name="address" id="hosts-add-address"
+						required placeholder="<fmt:message key='host.address.placeholder'/>">
+				</div>
 			</div>
 			<div class="modal-body after hidden">
 				<p class="error hidden"><fmt:message key="host.add.error"/></p>
