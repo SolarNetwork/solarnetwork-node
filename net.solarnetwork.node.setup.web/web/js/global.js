@@ -433,7 +433,7 @@ SolarNode.GlobalProgress = (function() {
 	}
 	
 	function update(percentComplete) {
-		getModal().find('.bar').css('width', Math.round((+percentComplete || 0) * 100) + '%');
+		getModal().find('.progress-bar').css('width', Math.round((+percentComplete || 0) * 100) + '%');
 	}
 	
 	function hide() {

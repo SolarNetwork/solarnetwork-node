@@ -890,7 +890,7 @@ $(document).ready(function() {
 	});
 	$('.lookup-modal').on('shown.bs.modal', function() {
 		var firstInput = $(this).find('input').first();
-		firstInput.focus().select();
+		firstInput.trigger('focus').trigger('select');
 	});
 	$('.sn-loc-lookup-modal button.choose').on('click', function() {
 		var me = $(this);
