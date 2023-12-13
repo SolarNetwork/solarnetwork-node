@@ -140,7 +140,7 @@
 						</script>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.TextAreaSettingSpecifier')}">
-						<textarea  name="${settingId}" id="${settingId}" class="col-md-5" rows="${setting.direct ? 1 : 2}">${settingValue}</textarea>
+						<textarea name="${settingId}" id="${settingId}" class="form-control">${settingValue}</textarea>
 						<c:choose>
 							<c:when test="${setting.direct}">
 								<script>
@@ -156,7 +156,7 @@
 								</script>
 							</c:when>
 							<c:otherwise>
-								<button type="button" class="btn setting-resource-upload"
+								<button type="button" class="btn btn-secondary mt-2 setting-resource-upload"
 									data-action="<setup:url value='/a/settings/importResource'/>"
 									data-key="${settingId}"
 									data-xint="${setting['transient']}"
