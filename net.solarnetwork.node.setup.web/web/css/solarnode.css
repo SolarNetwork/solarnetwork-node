@@ -44,10 +44,6 @@ td dl {
 	margin-bottom: 0;
 }
 
-.row.form-horizontal label {
-	text-align: right;
-}
-
 .row-list > .row {
 	cursor: pointer;
 }
@@ -68,21 +64,12 @@ span.active-value.clean {
 	display: none !important;
 }
 
-legend {
-	line-height: 21px;
-	margin: 20px 0;
-}
-
 .anchor {
 	font-size: 14px;
 	float: left;
-	padding-right: 6px;
-	margin-left: -20px;
+	margin-left: -28px;
 	color: #999;
 	opacity: 0;
-	-webkit-transition: opacity 0.2s ease-in-out 0.1s;
-	-moz-transition: opacity 0.2s ease-in-out 0.1s;
-	-ms-transition: opacity 0.2s ease-in-out 0.1s;
 	transition: opacity 0.2s ease-in-out 0.1s;
 }
 
@@ -91,16 +78,25 @@ legend {
 	flex-direction: row;
 }
 
+legend {
+	border-bottom: 1px solid var(--bs-border-color);
+	margin-bottom: 1rem;
+}
+
 legend .anchor {
-	line-height: 21px;
+	margin-top: 0.5rem;
 }
 
 legend:hover .anchor {
 	opacity: 1;
 }
 
+fieldset + fieldset > legend {
+	margin-top: 2rem;
+}
+
 h2 .anchor {
-	line-height: 28px;
+	margin-top: 0.1rem;
 }
 
 h2:hover .anchor {
@@ -151,10 +147,6 @@ form .row.grouped + fieldset .row > .col-form-label {
 
 form .row.grouped + fieldset > fieldset:not(:first-child) {
     border-top: 1px dotted #aaa;
-}
-
-.form-horizontal .controls.static {
-	padding-top: 3px;
 }
 
 .controls.static .title {

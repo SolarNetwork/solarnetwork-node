@@ -10,7 +10,7 @@
 </fmt:message></p>
 
 <setup:url value="/associate/preview" var="action"/>
-<form:form action="${action}" method="post" cssClass="form-horizontal">
+<form:form action="${action}" method="post">
 	<form:errors cssClass="alert alert-danger" element="div" htmlEscape="false"/>
 	<fieldset>
 		<c:set var="err"><form:errors path="verificationCode" cssClass="help-inline" element="span"/></c:set>

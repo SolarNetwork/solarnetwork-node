@@ -31,10 +31,10 @@
 	</c:when>
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.KeyedSettingSpecifier')}">
 		<div class="row mb-3" id="cg-${settingId}">
-			<label class="col-sm-3 col-form-label" for="${settingId}">
+			<label class="col-sm-4 col-md-3 col-form-label" for="${settingId}">
 				<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}" index="${groupIndex}"/>
 			</label>
-			<div class="col-sm-8 col-md-6">
+			<div class="col-sm-7 col-md-8">
 				<c:choose>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.SliderSettingSpecifier')}">
 						<div id="${settingId}" class="setting slider mt-2"></div>
@@ -173,7 +173,7 @@
 						<div class="row">
 							<c:if test="${setup:js(setting.key) == 'schedule'}">
 								<div class="col-sm-3">
-									<select class="form-control">
+									<select class="form-select">
 										<option value="cron"><fmt:message key='settings.schedulePeriod.cron.label'/></option>
 										<option value="ms"><fmt:message key='settings.schedulePeriod.milliseconds.label'/></option>
 										<option value="s"><fmt:message key='settings.schedulePeriod.seconds.label'/></option>
@@ -324,11 +324,11 @@
 		</div>
 	</c:when>
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.GroupSettingSpecifier') and not empty setting.key}">
-		<div class="row grouped">
-			<label class="col-sm-3 col-form-label">
+		<div class="row grouped mb-3">
+			<label class="col-sm-4 col-md-3 col-form-label">
 				<setup:message key="${setting.key}.key" messageSource="${provider.messageSource}" text="${setting.key}"/>
 			</label>
-			<div class="col-sm-8 col-md-6">
+			<div class="col-sm-7 col-md-8">
 				<c:if test="${setting.dynamic}">
 					<div class="btn-group" role="group">
 						<button type="button" class="btn btn-secondary group-item-remove">
@@ -365,8 +365,8 @@
 				</c:if>
 			</div>
 		</div>
-		<fieldset id="${settingId}g" class="pt-3">
-			<c:if test="${not empty setting.groupSettings}">
+		<c:if test="${not empty setting.groupSettings}">
+			<fieldset id="${settingId}g" class="pt-3">
 				<c:set var="origSetting" value="${setting}"/>
 				<c:set var="origSettingId" value="${settingId}"/>
 				<c:forEach items="${setting.groupSettings}" var="groupedSetting" varStatus="groupedSettingStatus">
@@ -382,8 +382,8 @@
 				<c:remove var="groupIndex" scope="request"/>
 				<c:set var="setting" value="${origSetting}" scope="request"/>
 				<c:set var="settingId" value="${origSettingId}" scope="request"/>
-			</c:if>
-		</fieldset>
+			</fieldset>
+		</c:if>
 	</c:when>
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.GroupSettingSpecifier')}">
 		<c:if test="${not empty setting.groupSettings}">

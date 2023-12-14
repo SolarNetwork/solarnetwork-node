@@ -43,7 +43,7 @@
 				<span class="help-block"><fmt:message key="logging.levels.logger.caption"/></span>
 		
 				<label for="logging-logger-levels-level"><fmt:message key="logging.levels.level.label"/></label>
-				<select class="form-control" name="level" id="logging-logger-levels-level">
+				<select class="form-select" name="level" id="logging-logger-levels-level">
 					<option value="trace"><fmt:message key="logging.levels.TRACE.label"/></option>
 					<option value="debug"><fmt:message key="logging.levels.DEBUG.label"/></option>
 					<option value="info" selected><fmt:message key="logging.levels.INFO.label"/></option>
@@ -55,7 +55,7 @@
 				<span class="help-block"><fmt:message key="logging.levels.level.caption"/></span>
 		
 				<p class="create"><fmt:message key="logging.levels.edit.loggers.intro"/></p>
-				<select class="create form-control" name="loggers" readonly size="10" id="logging-loggers">
+				<select class="create form-select" name="loggers" readonly size="10" id="logging-loggers">
 					<option value="trace"><fmt:message key="logging.levels.TRACE.label"/></option>
 					<option value="debug"><fmt:message key="logging.levels.DEBUG.label"/></option>
 					<option value="info" selected><fmt:message key="logging.levels.INFO.label"/></option>

@@ -28,7 +28,7 @@
 	<fmt:message key="node.setup.identity.end"/>
 </p>
 <setup:url value="/associate/confirm" var="action"/>
-<form:form action="${action}" method="post" class="form-horizontal" id="associate-confirm-form">
+<form:form action="${action}" method="post" id="associate-confirm-form">
 	<fieldset>
 		<form:errors cssClass="alert alert-danger" element="div"/>
 		<div class="form-group">

@@ -2,7 +2,7 @@
 <p><fmt:message key="preview-invitation.intro"/></p>
 
 <setup:url value="/associate/verify" var="action"/>
-<form:form modelAttribute="details" action="${action}" cssClass="form-horizontal" method="post">
+<form:form modelAttribute="details" action="${action}" method="post">
 	<fieldset>
 		<div class="form-group">
 			<label class="control-label" for="invitation-host"><fmt:message key="node.setup.identity.service"/></label>

@@ -7,7 +7,7 @@
 <p><fmt:message key="node.setup.restore.intro"/></p>
 
 <setup:url value="/associate/importBackup" var="action"/>
-<form:form action="${action}" method="post" cssClass="form-horizontal" enctype="multipart/form-data" id="associate-import-backup-form">
+<form:form action="${action}" method="post" enctype="multipart/form-data" id="associate-import-backup-form">
 	<fieldset>
 		<div class="form-group">
 			<label class="control-label" for="restore-file">
@@ -27,7 +27,7 @@
 <c:if test="${not empty backupManager}">
 <p><fmt:message key="node.setup.restore.backup.intro"/></p>
 <setup:url value="/associate/chooseBackup" var="action"/>
-<form:form action="${action}" method="post" cssClass="form-horizontal" id="associate-choose-backup-form">
+<form:form action="${action}" method="post" id="associate-choose-backup-form">
 	<fieldset>
 		<c:set var="provider" value="${backupManager}" scope="request"/>
 		<c:forEach items="${provider.settingSpecifiers}" var="setting" varStatus="settingStatus">
@@ -51,7 +51,7 @@
 				<fmt:message key="backup.backups.label"/>
 			</label>
 			<div class="controls">
-				<select name="backup" class="col-md-3" id="backup-backups">
+				<select name="backup" class="form-select" id="backup-backups">
 					<c:forEach items="${backups}" var="backup" varStatus="backupStatus">
 						<option value="${backup.key}">
 							<fmt:message key="backup.backups.backup.label">

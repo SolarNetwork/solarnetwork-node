@@ -65,7 +65,7 @@
 	<p>
 		<fmt:message key="controls.manage.SetControlParameter.intro"/>
 	</p>
-	<form class="form-horizontal" action="<setup:url value='/a/controls/setControlParameter'/>" method="post">
+	<form action="<setup:url value='/a/controls/setControlParameter'/>" method="post">
 		<fieldset>
 			<div class="form-group">
 				<label class="control-label" for="SetControlParameter-parameterValue">

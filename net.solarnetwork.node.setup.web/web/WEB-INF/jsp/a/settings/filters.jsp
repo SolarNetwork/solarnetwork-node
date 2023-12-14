@@ -5,7 +5,7 @@
 </section>
 
 <c:if test="${fn:length(globalFactories) > 0 or fn:length(providers) > 0}">
-	<section id="global">
+	<section id="global mb-3">
 		<h2>
 			<a id="global-section" href="#global-section"
 				class="anchor" aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>			
@@ -14,44 +14,43 @@
 		<p><fmt:message key="filters.global.intro"/></p>
 
 		<c:if test="${fn:length(globalFactories) > 0}">
-			<table class="table setting-components">
-				<tbody>
+			<div class="row gap-3 setting-components">
 				<c:forEach items="${globalFactories}" var="factory" varStatus="factoryStatus">
 					<!--  ${factory.factoryUid} -->
-					<tr>
-						<td class="col-md-1">
-							<c:if test="${fn:length(factory.settingSpecifierProviderInstanceIds) > 0}">
-								<span class="badge rounded-pill text-bg-primary" title="<fmt:message key='settings.factories.instanceCount.caption'/>">
-									${fn:length(factory.settingSpecifierProviderInstanceIds)}
-								</span>
-							</c:if>
-						</td>
-						<td><strong><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></strong></td>
-						<td>
-							<a class="btn btn-secondary" href="<setup:url value='/a/settings/filters/manage?uid=${factory.factoryUid}'/>">
+					<div class="row justify-content-between align-items-center">
+						<div class="col">
+							<div class="row">
+								<div class="col-2 col-sm-1">
+									<span class="badge rounded-pill text-bg-primary${fn:length(factory.settingSpecifierProviderInstanceIds) lt 1 ? ' invisible' : ''}"
+										title="<fmt:message key='settings.factories.instanceCount.caption'/>">${fn:length(factory.settingSpecifierProviderInstanceIds)}</span>
+								</div>
+								<div class="col"><strong><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></strong></div>
+							</div>
+						</div>
+						<div class="col-auto">
+							<a class="btn btn-light" href="<setup:url value='/a/settings/filters/manage?uid=${factory.factoryUid}'/>">
 								<i class="far fa-pen-to-square"></i> 
 								<fmt:message key="settings.factory.manage.label"/>
 							</a>
-						</td>
-					</tr>
+						</div>
+					</div>
 				</c:forEach>
-				</tbody>
-			</table>
+			</div>
 		</c:if>
 		
-		<c:if test="${fn:length(providers) > 0}">	
-			<form class="form-horizontal" action="<setup:url value='/a/settings/save'/>" method="post">
+		<c:if test="${fn:length(providers) > 0}">
+			<form action="<setup:url value='/a/settings/save'/>" class="mt-5" method="post">
 				<c:forEach items="${providers}" var="provider" varStatus="providerStatus">
 					<!--  ${provider.settingUid} -->
 					<c:set var="provider" value="${provider}" scope="request"/>
-					<fieldset>
-						<legend>
+					<fieldset class="mt-5">
+						<h2>
 							<a id="${provider.settingUid}" 
 								class="anchor" 
 								href="#${provider.settingUid}"
 								aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>
 							<setup:message key="title" messageSource="${provider.messageSource}" text="${provider.displayName}"/>
-						</legend>
+						</h2>
 						<c:set var="providerDescription">
 							<setup:message key="desc" messageSource="${provider.messageSource}" text=""/>
 						</c:set>
@@ -91,7 +90,7 @@
 				});
 				SolarNode.Settings.reset();
 			});
-			</script>
+			</script>			
 		</c:if>
 	</section>
 </c:if>

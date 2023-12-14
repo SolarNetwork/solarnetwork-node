@@ -9,7 +9,7 @@
 		</section>
 		
 		<setup:url value="/a/user/change-username" var="action"/>
-		<form:form modelAttribute="user" cssClass="form-horizontal" id="change-username-form" action="${action}" method="post" >
+		<form:form modelAttribute="user" id="change-username-form" action="${action}" method="post" >
 			<fieldset class="row gy-3">
 				<div class="col-12">
 					<label class="form-label" for="old-username"><fmt:message key="user.username.label"/></label>

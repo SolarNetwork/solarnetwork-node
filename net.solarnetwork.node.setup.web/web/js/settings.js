@@ -795,14 +795,15 @@ function setupComponentSettings(container) {
 	});
 	container.find('a.settings-resource-export').on('click', function(event) {
 		event.preventDefault();
-		var identSel = $(this).prevAll('select.settings-resource-ident').get(0);
-		if ( identSel ) {
-			var identOpt = identSel.selectedOptions[0];
+		const target = this.dataset.target;
+		const action = this.dataset.action;
+		const select = document.querySelector(target);
+		if ( select ) {
+			const identOpt = select.selectedOptions[0];
 			if ( identOpt ) {
-				var href = this.href;
 				var query = 'handlerKey='+ encodeURIComponent(identOpt.dataset['handler'])
 					+ '&key=' + encodeURIComponent(identOpt.dataset['key']);
-				document.location = href+'?'+query;
+				document.location = action +'?'+query;
 			}
 		}
 		return false;
