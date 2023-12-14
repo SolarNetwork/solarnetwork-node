@@ -366,7 +366,7 @@
 			</div>
 		</div>
 		<c:if test="${not empty setting.groupSettings}">
-			<fieldset id="${settingId}g" class="pt-3">
+			<fieldset id="${settingId}g" class="pt-3 grouped">
 				<c:set var="origSetting" value="${setting}"/>
 				<c:set var="origSettingId" value="${settingId}"/>
 				<c:forEach items="${setting.groupSettings}" var="groupedSetting" varStatus="groupedSettingStatus">
@@ -387,7 +387,7 @@
 	</c:when>
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.GroupSettingSpecifier')}">
 		<c:if test="${not empty setting.groupSettings}">
-			<fieldset>
+			<fieldset class="group">
 				<c:set var="origSetting" value="${setting}"/>
 				<c:set var="origSettingId" value="${settingId}"/>
 				<c:forEach items="${setting.groupSettings}" var="groupedSetting" varStatus="groupedSettingStatus">

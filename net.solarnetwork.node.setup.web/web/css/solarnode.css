@@ -103,27 +103,12 @@ h2:hover .anchor {
 	opacity: 1;
 }
 
-.control-group.grouped {
-	border-top: 1px dotted #e5e5e5;
-	padding-top: 20px;
-}
-
-.control-group.grouped label {
-	font-size: 17px;
-	line-height: 17px;
-	font-weight: 400;
-}
-
-.control-group div.title table th {
-	text-align: left;
-	padding-right: 10px;
-}
-
 table.counts td:last-child,
 table.counts th:last-child {
 	text-align: right !important;
 }
 
+/*
 form > fieldset > fieldset:last-of-type {
     border-bottom: 1px dotted #aaa;
     margin-bottom: 1.5rem;
@@ -135,22 +120,25 @@ form fieldset fieldset fieldset {
 	margin-top: 0;
 	padding-top: 1.5rem;
 }
+*/
 
-form .row.grouped + fieldset {
+form fieldset.grouped {
 	border-left: 1px dotted #aaa;
 }
 
-form .row.grouped + fieldset .row > .col-form-label {
+form fieldset.grouped fieldset.grouped {
+	margin-left: 0.5rem;
+}
+
+form fieldset.grouped > .row > .col-form-label,
+form fieldset.grouped fieldset.group > .row > .col-form-label {
 	margin-left: 1rem;
 	margin-right: -1rem;
 }
 
-form .row.grouped + fieldset > fieldset:not(:first-child) {
+form fieldset.grouped > fieldset:not(:first-child) {
     border-top: 1px dotted #aaa;
-}
-
-.controls.static .title {
-	white-space: pre-line;
+    padding-top: 1rem;
 }
 
 .cert {
@@ -532,6 +520,7 @@ input[readonly].form-control {
 	min-height: 100%;
 	align-items: center;
 	padding: 1rem 0;
+	transform: translateY(-1.75rem);
 }
 
 .carousel .page-indicators button {
