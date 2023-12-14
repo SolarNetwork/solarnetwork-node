@@ -7,9 +7,10 @@
 	</p>
 </section>
 <section id="opmodes">
-	<div>
-		<button type="button" class="btn btn-primary pull-right" data-bs-toggle="modal" data-bs-target="#add-opmodes-modal">
+	<div class="d-grid justify-content-end">
+		<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#add-opmodes-modal">
 			<i class="fas fa-plus"></i>
+			<span><fmt:message key='opmodes.action.add'/></span>
 		</button>
 	</div>
 	<p class="opmodes-none"><fmt:message key="opmodes.noActive.intro"/></p>
@@ -20,7 +21,7 @@
 				<th></th>
 			</tr>
 			<tr class="template item">
-				<td data-tprop="mode"></td>
+				<td data-tprop="mode" class="align-middle"></td>
 				<td>
 					<button type="button" class="btn btn-danger" name="delete" title="<fmt:message key='opmodes.action.delete'/>">
 						<i class="far fa-trash-can"></i>
@@ -42,8 +43,8 @@
 			</div>
 			<div class="modal-body">
 				<p><fmt:message key="opmodes.add.intro"/></p>
-				<label for="opmodes-modes"><fmt:message key="opmodes.modes.label"/></label>
-				<input type="text" class="form-control" maxlength="512" name="modes">
+				<label class="form-label" for="opmodes-modes"><fmt:message key="opmodes.modes.label"/></label>
+				<input class="form-control" id="opmodes-modes" type="text" maxlength="512" name="modes">
 			</div>
 			<div class="modal-footer">
 				<sec:csrfInput/>

@@ -27,7 +27,7 @@
 						<label class="control-label" for="login-password"><fmt:message key="user.password.label"/></label>
 						<input class="form-control" type="password" name="password" id="login-password" maxlength="255" />
 					</div>
-					<div class="d-grid">
+					<div class="d-grid mt-4">
 						<button type="submit" class="btn btn-primary"><fmt:message key='login.label'/></button>
 					</div>		
 				</fieldset>
