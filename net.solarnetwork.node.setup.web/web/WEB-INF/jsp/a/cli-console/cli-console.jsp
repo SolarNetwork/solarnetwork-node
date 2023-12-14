@@ -1,9 +1,9 @@
 <section class="intro">
 	<h2><fmt:message key="cli-console.title"/></h2>
 	<p><fmt:message key="cli-console.intro"/></p>
-	<div class="alert alert-warning">
-		<button type="button" class="btn-close" data-bs-dismiss="alert alert-warning" aria-label="<fmt:message key='close.label'/>"></button>
+	<div class="alert alert-warning alert-dismissible">
 		<fmt:message key="cli-console.warn"/>
+		<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="<fmt:message key='close.label'/>"></button>
 	</div>
 </section>
 <section id="cli-console-types">
@@ -13,7 +13,7 @@
 			<span data-tprop="name"></span>
 		</div>
 		<div class="col-md-1 text-right">
-		    <button type="button" class="toggle btn btn-sm"
+		    <button type="button" class="toggle btn btn-sm btn-secondary"
 		    	data-label-on="<fmt:message key='settings.toggle.on'/>"
 		    	data-label-off="<fmt:message key='settings.toggle.off'/>">
 		    	<fmt:message key='settings.toggle.off'/>
@@ -41,10 +41,12 @@
 </section>
 <hr>
 <section id="cli-console">
-	<div class="item template well well-small brief-showcase-gray">
-		<button type="button" class="btn-close" data-bs-dismiss="alert alert-warning" aria-label="<fmt:message key='close.label'/>"></button>
-		<button type="button" class="copy"><i class="far fa-clipboard"></i></button>
+	<div class="item template alert alert-light d-flex align-items-center brief-showcase-gray">
 		<span class="cmd" data-tprop="command"></span>
+		<div class="d-flex ms-auto align-items-center">
+			<button type="button" class="btn btn-close" data-bs-dismiss="alert" aria-label="<fmt:message key='close.label'/>"></button>
+			<button type="button" class="btn copy"><i class="far fa-clipboard"></i></button>
+		</div>
 	</div>
 	<div class="row">
 		<div class="col-md-12 list-container"></div>
