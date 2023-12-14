@@ -49,7 +49,7 @@
 	</div>
 </section>
 
-<section id="settings" class="carousel slide" data-interval="0">
+<section id="settings" class="carousel slide mb-5" data-interval="0">
 	<form action="<setup:url value='/a/settings/save'/>" method="post">
 		<c:if test="${fn:length(providers) > 0}">
 			<hr>
