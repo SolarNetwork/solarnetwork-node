@@ -2,17 +2,16 @@
 	<h2>
 		<fmt:message key="logging.title"/>
 	</h2>
-	<p>
-		<fmt:message key="logging.intro"/>
-	</p>
+	<p><fmt:message key="logging.intro"/></p>
+	<div class="d-flex justify-content-end">
+		<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#edit-logger-level-modal">
+			<i class="fas fa-plus"></i>
+			<span><fmt:message key="logging.level.add"/></span>
+		</button>
+	</div>
 </section>
 <section id="logging">
-	<h2>
-		<fmt:message key="logging.levels.title"/>
-		<button type="button" class="btn btn-sm btn-primary pull-right" data-bs-toggle="modal" data-bs-target="#edit-logger-level-modal">
-			<i class="fas fa-plus"></i>
-		</button>
-	</h2>
+	<h2><fmt:message key="logging.levels.title"/></h2>
 	<table class="table table-condensed table-hover" id="logging-levels">
 		<thead>
 			<tr>
@@ -29,7 +28,7 @@
 	</table>
 </section>
 
-<form id="edit-logger-level-modal" class="modal fade dynamic" data-bs-backdrop="static" data-bs-keyboard="false" action="<setup:url value='/a/logging/levels'/>" method="post">
+<form id="edit-logger-level-modal" class="modal modal-lg fade dynamic" data-bs-backdrop="static" data-bs-keyboard="false" action="<setup:url value='/a/logging/levels'/>" method="post">
 	<div class="modal-dialog">
 		<div class="modal-content">
 			<div class="modal-header">
@@ -38,12 +37,12 @@
 			</div>
 			<div class="modal-body">
 				<p><fmt:message key="logging.levels.edit.intro"/></p>
-				<label for="logging-logger-levels-logger"><fmt:message key="logging.levels.logger.label"/></label>
-				<input type="text" class="form-control" maxlength="256" name="logger" id="logging-logger-levels-logger">
-				<span class="help-block"><fmt:message key="logging.levels.logger.caption"/></span>
+				<label class="form-label" for="logging-logger-levels-logger"><fmt:message key="logging.levels.logger.label"/></label>
+				<input class="form-control" type="text" maxlength="256" name="logger" id="logging-logger-levels-logger" aria-describedby="logging-logger-levels-logger-help">
+				<div class="form-text" id="logging-logger-levels-logger-help"><fmt:message key="logging.levels.logger.caption"/></div>
 		
-				<label for="logging-logger-levels-level"><fmt:message key="logging.levels.level.label"/></label>
-				<select class="form-select" name="level" id="logging-logger-levels-level">
+				<label class="form-label mt-3" for="logging-logger-levels-level"><fmt:message key="logging.levels.level.label"/></label>
+				<select class="form-select" name="level" id="logging-logger-levels-level" aria-describedby="logging-logger-levels-level-help">
 					<option value="trace"><fmt:message key="logging.levels.TRACE.label"/></option>
 					<option value="debug"><fmt:message key="logging.levels.DEBUG.label"/></option>
 					<option value="info" selected><fmt:message key="logging.levels.INFO.label"/></option>
@@ -52,9 +51,9 @@
 					<option value="off"><fmt:message key="logging.levels.OFF.label"/></option>
 					<option value="inherit"><fmt:message key="logging.levels.INHERIT.label"/></option>
 				</select>
-				<span class="help-block"><fmt:message key="logging.levels.level.caption"/></span>
+				<span class="form-text" id="logging-logger-levels-level-help"><fmt:message key="logging.levels.level.caption"/></span>
 		
-				<p class="create"><fmt:message key="logging.levels.edit.loggers.intro"/></p>
+				<p class="create mt-3"><fmt:message key="logging.levels.edit.loggers.intro"/></p>
 				<select class="create form-select" name="loggers" readonly size="10" id="logging-loggers">
 					<option value="trace"><fmt:message key="logging.levels.TRACE.label"/></option>
 					<option value="debug"><fmt:message key="logging.levels.DEBUG.label"/></option>
