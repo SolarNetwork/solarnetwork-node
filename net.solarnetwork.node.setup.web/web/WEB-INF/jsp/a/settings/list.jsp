@@ -83,20 +83,22 @@
 						</div>
 					</c:if>
 					<c:if test="${not empty settingResources[provider.settingUid]}">
-					<div class="form-group">
-						<label class="control-label" for="settings-resource-ident">
+					<div class="row mb-3">
+						<label class="col-sm-4 col-md-3 col-form-label" for="settings-resource-ident-${providerStatus.index}">
 							<fmt:message key="settings.io.exportResource.label"/>
 						</label>
-						<div class="controls">
-							<select class="form-select settings-resource-ident" id="settings-resource-ident-${providerStatus.index}">
-								<c:forEach items="${settingResources[provider.settingUid]}" var="resource">
-									<option data-handler="${resource.handlerKey}" data-key="${resource.key}">${resource.name}</option>
-								</c:forEach>
-							</select> 
-  							<button type="button" class="btn btn-primary settings-resource-export"
-  									data-action="<setup:url value='/a/settings/exportResources'/>"
-									data-target="#settings-resource-ident-${providerStatus.index}"
-  								><fmt:message key="settings.io.export.button"/></button>
+						<div class="col-sm-7 col-md-8">
+							<div class="input-group">
+								<select class="form-select settings-resource-ident" id="settings-resource-ident-${providerStatus.index}">
+									<c:forEach items="${settingResources[provider.settingUid]}" var="resource">
+										<option data-handler="${resource.handlerKey}" data-key="${resource.key}">${resource.name}</option>
+									</c:forEach>
+								</select> 
+	  							<button type="button" class="btn btn-primary settings-resource-export"
+	  									data-action="<setup:url value='/a/settings/exportResources'/>"
+										data-target="#settings-resource-ident-${providerStatus.index}"
+	  								><fmt:message key="settings.io.export.button"/></button>
+  							</div>
 						</div>
 					</div>
 					</c:if>
@@ -289,7 +291,7 @@
 		</form>
 	</c:if>
 	<c:if test="${fn:length(settingsBackups) > 0}">
-		<div class="row">
+		<div class="row mt-3">
 			<label class="col-sm-4 col-md-3 col-form-label" for="auto-backups">
 				<fmt:message key="settings.autobackup.label"/>
 			</label>

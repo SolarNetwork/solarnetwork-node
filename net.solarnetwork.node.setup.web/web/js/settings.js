@@ -793,7 +793,7 @@ function setupComponentSettings(container) {
 			}
 		}
 	});
-	container.find('a.settings-resource-export').on('click', function(event) {
+	container.find('.settings-resource-export').on('click', function(event) {
 		event.preventDefault();
 		const target = this.dataset.target;
 		const action = this.dataset.action;

@@ -159,7 +159,7 @@
 								</script>
 							</c:when>
 							<c:otherwise>
-								<button type="button" class="btn btn-secondary mt-2 setting-resource-upload"
+								<button type="button" class="btn btn-primary mt-2 setting-resource-upload"
 									data-action="<setup:url value='/a/settings/importResource'/>"
 									data-key="${settingId}"
 									data-xint="${setting['transient']}"
@@ -236,7 +236,7 @@
 									</fmt:message>
 								</c:if>
 							</span>
-							<button type="button" class="btn btn-secondary">
+							<button type="button" class="btn btn-primary">
 								<fmt:message key="settings.change"/>
 							</button>
 						</span>
@@ -272,7 +272,7 @@
 									multiple="multiple"
 								</c:if>
 								/>
-							<button type="button" class="btn btn-secondary setting-resource-upload"
+							<button type="button" class="btn btn-primary setting-resource-upload"
 								data-action="<setup:url value='/a/settings/importResource'/>"
 								data-key="${settingId}"
 								data-xint="${setting['transient']}"
@@ -339,10 +339,10 @@
 			<div class="col-sm-7 col-md-8">
 				<c:if test="${setting.dynamic}">
 					<div class="btn-group" role="group">
-						<button type="button" class="btn btn-secondary group-item-remove">
+						<button type="button" class="btn btn-primary group-item-remove">
 							<i class="fas fa-minus"></i>
 						</button>
-						<button type="button" class="btn btn-secondary group-item-add">
+						<button type="button" class="btn btn-primary group-item-add">
 							<i class="fas fa-plus"></i>
 						</button>
 					</div>
