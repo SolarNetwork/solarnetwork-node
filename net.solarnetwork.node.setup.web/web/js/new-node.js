@@ -27,12 +27,11 @@ $(document).ready(function() {
 			} else if ( pass.val().length < 8 ) {
 				return fail(passAgain.data('tooshort'));
 			}
-		}
-		
-		if ( reiterate.hasClass('hidden') ) {
-			event.preventDefault();
-			reiterate.removeClass('hidden');
-			return false;
+			if ( reiterate.hasClass('hidden') ) {
+				event.preventDefault();
+				reiterate.removeClass('hidden');
+				return false;
+			}
 		}
 		
 		return true;
@@ -75,7 +74,7 @@ $(document).ready(function() {
 			var form = $('#associate-restore-backup-form');
 			SolarNode.info(json.message, $('#associate-restore-list-container').empty());
 			form.find('button, p').remove();
-			form.find('.progress.hide').removeClass('hidden');
+			form.find('.progress.hidden').removeClass('hidden');
 			setTimeout(function() {
 				SolarNode.tryGotoURL(SolarNode.context.path('/a/settings'));
 			}, 10000);

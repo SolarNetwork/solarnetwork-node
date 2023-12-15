@@ -22,35 +22,41 @@
 	</c:if>
 </table>
 
-<c:set var="myNodesURL" value="${association.solarUserServiceURL}/u/sec/my-nodes"/>
-<c:choose>
-	<c:when test="${empty details.networkCertificateStatus}">
-		<p>
-			<fmt:message key="node.setup.success.visit">
-				<fmt:param value="${myNodesURL}"/>
-				<fmt:param><setup:url value='/a/certs'/></fmt:param>
-			</fmt:message>
-		</p>
-	</c:when>
-	<c:when test="${details.networkCertificateStatus == 'Active'}">
-		<p>
-			<fmt:message key="node.setup.success.active">
-				<fmt:param value="${myNodesURL}"/>
-			</fmt:message>
-		</p>
-	</c:when>
-	<c:when test="${details.networkCertificateStatus == 'Requested'}">
-		<p>
-			<fmt:message key="node.setup.success.requested">
-				<fmt:param value="${myNodesURL}"/>
-				<fmt:param><setup:url value='/a/certs'/></fmt:param>
-			</fmt:message>
-		</p>
-	</c:when>
-	<c:when test="${not empty csr}">
-		<h2><fmt:message key='certs.csr.title'/></h2>
-		<p><fmt:message key='certs.csr.intro'/></p>
-		<pre class="cert well">${csr}</pre>
-	</c:when>
-</c:choose>
-
+<section class="my-3">
+	<c:set var="myNodesURL" value="${association.solarUserServiceURL}/u/sec/my-nodes"/>
+	<c:choose>
+		<c:when test="${empty details.networkCertificateStatus}">
+			<p>
+				<fmt:message key="node.setup.success.visit">
+					<fmt:param value="${myNodesURL}"/>
+					<fmt:param><setup:url value='/a/certs'/></fmt:param>
+				</fmt:message>
+			</p>
+		</c:when>
+		<c:when test="${details.networkCertificateStatus == 'Active'}">
+			<p>
+				<fmt:message key="node.setup.success.active">
+					<fmt:param value="${myNodesURL}"/>
+				</fmt:message>
+			</p>
+			<div class="d-grid">
+				<a class="btn btn-primary" href="<setup:url value='/a/home'/>">
+					<fmt:message key="node.setup.success.gohome"/>
+				</a>
+			</div>
+		</c:when>
+		<c:when test="${details.networkCertificateStatus == 'Requested'}">
+			<p>
+				<fmt:message key="node.setup.success.requested">
+					<fmt:param value="${myNodesURL}"/>
+					<fmt:param><setup:url value='/a/certs'/></fmt:param>
+				</fmt:message>
+			</p>
+		</c:when>
+		<c:when test="${not empty csr}">
+			<h2><fmt:message key='certs.csr.title'/></h2>
+			<p><fmt:message key='certs.csr.intro'/></p>
+			<pre class="cert alert alert-info">${csr}</pre>
+		</c:when>
+	</c:choose>
+</section>
