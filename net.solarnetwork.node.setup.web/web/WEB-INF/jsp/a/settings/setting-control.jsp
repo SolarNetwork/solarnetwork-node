@@ -140,7 +140,10 @@
 						</script>
 					</c:when>
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.TextAreaSettingSpecifier')}">
-						<textarea name="${settingId}" id="${settingId}" class="form-control">${settingValue}</textarea>
+						<div class="input-group">
+							<textarea name="${settingId}" id="${settingId}" class="form-control">${settingValue}</textarea>
+							<button type="button" class="btn btn-outline-secondary copy" title="<fmt:message key='copy.label'/>"><i class="far fa-clipboard"></i></button>
+						</div>
 						<c:choose>
 							<c:when test="${setting.direct}">
 								<script>
@@ -183,17 +186,22 @@
 								</div>
 							</c:if>
 							<div class="col">
-								<input type="${setting.secureTextEntry == true ? 'password' : 'text' }" name="${settingId}" id="${settingId}"
-									class="form-control" maxLength="4096"
-									<c:choose>
-										<c:when test='${setting.secureTextEntry == true}'>
-											placeholder="<fmt:message key='settings.secureTextEntry.placeholder'/>"
-										</c:when>
-										<c:otherwise>
-											value="${settingValue}"
-										</c:otherwise>
-									</c:choose>
-									/>
+								<div class="input-group">
+									<input type="${setting.secureTextEntry == true ? 'password' : 'text' }" name="${settingId}" id="${settingId}"
+										class="form-control" maxLength="4096"
+										<c:choose>
+											<c:when test='${setting.secureTextEntry == true}'>
+												placeholder="<fmt:message key='settings.secureTextEntry.placeholder'/>"
+											</c:when>
+											<c:otherwise>
+												value="${settingValue}"
+											</c:otherwise>
+										</c:choose>
+										/>
+									<c:if test="${setting.secureTextEntry != true}">
+										<button type="button" class="btn btn-outline-secondary copy" title="<fmt:message key='copy.label'/>"><i class="far fa-clipboard"></i></button>
+									</c:if>
+								</div>								
 							</div>
 						</div>
 						<script>

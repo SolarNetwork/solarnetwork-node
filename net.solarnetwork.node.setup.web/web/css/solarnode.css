@@ -449,6 +449,14 @@ button.close + button.copy {
 	margin-right: 1rem;
 }
 
+.input-group input + button.copy,
+.input-group textarea + button.copy {
+	--bs-btn-hover-bg: inherit;
+	--bs-btn-hover-color: inherit;
+	border-left-style: none;
+	border-color: var(--bs-border-color);
+}
+
 .cmd {
 	font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
 	font-size: 12px;

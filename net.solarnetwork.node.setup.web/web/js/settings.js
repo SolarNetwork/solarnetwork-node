@@ -808,6 +808,29 @@ function setupComponentSettings(container) {
 		}
 		return false;
 	});
+	
+	// copy buttons
+	container.find('button.copy').on('click', function(event) {
+		event.preventDefault();
+		let copySrc = this.previousElementSibling;
+		let copyEl = undefined;
+		if ( copySrc.tagName === 'INPUT' ) {
+			if ( copySrc.getAttribute('type') != 'password') {
+				copyEl = $(copySrc);
+			}
+		} else {
+			copyEl = $(copySrc);
+		}
+		if ( copyEl ) {
+			if ( SolarNode.copyElementValue(copyEl) ) {
+				const icon = $(this).find('i');
+				icon.addClass('fas fa-clipboard-check').removeClass('far fa-clipboard');
+				setTimeout(() => {
+					icon.addClass('far fa-clipboard').removeClass('fas fa-clipboard-check');
+				}, 1200);
+			}
+		}
+	});
 }
 
 // instance carousel support

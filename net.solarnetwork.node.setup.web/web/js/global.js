@@ -477,6 +477,7 @@ SolarNode.GlobalProgress = (function() {
  */
 SolarNode.copyElementValue = function(copyable) {
 	if ( copyable.length ) {
+        let tmpDiv = undefined;
 		if ( document.body.createTextRange ) {
 	        const range = document.body.createTextRange();
 	        range.moveToElementText(copyable[0]);
@@ -484,7 +485,13 @@ SolarNode.copyElementValue = function(copyable) {
 	    } else if ( window.getSelection ) {
 	        const selection = window.getSelection();
 	        const range = document.createRange();
-	        range.selectNodeContents(copyable[0]);
+	        
+	        if ( copyable[0].tagName === 'INPUT' && copyable[0].getAttribute('type') !== 'password' ) {
+				tmpDiv = $('<div class="visually-hidden">').text(copyable[0].value).appendTo(document.body);
+				range.selectNodeContents(tmpDiv[0]);
+			} else {	        
+	        	range.selectNodeContents(copyable[0]);
+	        }
 	        selection.removeAllRanges();
 	        selection.addRange(range);
 	    } else {
@@ -498,6 +505,10 @@ SolarNode.copyElementValue = function(copyable) {
 			return result;
 		} catch ( err ) {
 			return false;
+		} finally {
+			if ( tmpDiv ) {
+				tmpDiv.remove();
+			}
 		}
 	}
 }
