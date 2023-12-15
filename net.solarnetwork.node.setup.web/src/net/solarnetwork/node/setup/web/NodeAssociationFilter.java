@@ -39,17 +39,18 @@ import net.solarnetwork.node.service.IdentityService;
  * associated.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class NodeAssociationFilter extends GenericFilterBean implements Filter {
 
 	private static final String NODE_ASSOCIATE_PATH = "/associate";
 	private static final String CSRF_PATH = "/csrf";
 	private static final String WEBSOCKET_PATH = "/ws";
-	private static final String PUB_PATH = "/pub/";
 
 	@Autowired
 	private IdentityService identityService;
+
+	private String[] pubPaths = new String[0];
 
 	/**
 	 * Default constructor.
@@ -68,12 +69,21 @@ public class NodeAssociationFilter extends GenericFilterBean implements Filter {
 		}
 	}
 
+	private boolean isPublic(String path) {
+		for ( int i = 0; i < pubPaths.length; i++ ) {
+			if ( path.startsWith(pubPaths[i]) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	private void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
 		final String path = request.getPathInfo();
 		final Long nodeId = identityService.getNodeId();
 		if ( !(path.startsWith(NODE_ASSOCIATE_PATH) || path.equals(CSRF_PATH)
-				|| path.equals(WEBSOCKET_PATH) || path.startsWith(PUB_PATH)) && nodeId == null ) {
+				|| path.equals(WEBSOCKET_PATH) || isPublic(path)) && nodeId == null ) {
 			// not associated yet, so redirect to associate start
 			response.sendRedirect(request.getContextPath() + NODE_ASSOCIATE_PATH);
 		} else if ( nodeId != null && path.startsWith(NODE_ASSOCIATE_PATH) ) {
@@ -92,6 +102,16 @@ public class NodeAssociationFilter extends GenericFilterBean implements Filter {
 	 */
 	public void setIdentityService(IdentityService identityService) {
 		this.identityService = identityService;
+	}
+
+	/**
+	 * Set the public paths.
+	 * 
+	 * @param pubPaths
+	 *        the public paths to set
+	 */
+	public void setPubPaths(String[] pubPaths) {
+		this.pubPaths = pubPaths != null ? pubPaths : new String[0];
 	}
 
 }
