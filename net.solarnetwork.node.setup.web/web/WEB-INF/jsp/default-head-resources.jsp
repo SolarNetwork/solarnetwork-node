@@ -46,7 +46,6 @@
 	/js/cli-console.js
 	/js/sectoks.js
 </pack:script>
-<script src="https://code.jquery.com/jquery-migrate-3.4.1.js"></script>
 <sec:authorize access="!hasRole('ROLE_USER')">
 	<setup:resources type="application/javascript"/>
 </sec:authorize>
