@@ -45,6 +45,13 @@ import net.solarnetwork.web.domain.Response;
 public class IdentityController {
 
 	/**
+	 * Constructor.
+	 */
+	public IdentityController() {
+		super();
+	}
+
+	/**
 	 * Check who the caller is.
 	 * 
 	 * <p>

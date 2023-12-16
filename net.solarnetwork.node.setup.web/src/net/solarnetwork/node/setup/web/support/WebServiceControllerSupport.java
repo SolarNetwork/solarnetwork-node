@@ -141,6 +141,13 @@ public final class WebServiceControllerSupport {
 	private Validator validator;
 
 	/**
+	 * Constructor.
+	 */
+	public WebServiceControllerSupport() {
+		super();
+	}
+
+	/**
 	 * Get a standardized string description of a request.
 	 * 
 	 * @param request
