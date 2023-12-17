@@ -18,16 +18,13 @@
 <sec:authorize access="hasRole('ROLE_USER')">
 	<setup:resources type="text/css" role='USER'/>
 </sec:authorize>
-<%-- Some JS does not minimize without errors, so ignore those here. --%>
-<pack:script minify="false" context="${basePath}">
-	/js-lib/d3v4.js
-</pack:script>
 <pack:script context="${basePath}"> 
 	/js-lib/jquery-3.7.1.js
 	/js-lib/bootstrap.bundle.js
 	/js-lib/moment.js
 	/js-lib/jquery.form.js
 	/js-lib/stomp.js
+	/js-lib/d3v4.js
 	/js/global.js
 	/js/global-websocket.js
 	/js/global-platform.js
