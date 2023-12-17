@@ -66,7 +66,19 @@
 		</beans:constructor-arg>
 	</beans:bean>
 	
-	<beans:bean id="associationFilter" class="net.solarnetwork.node.setup.web.NodeAssociationFilter"/>
+	<beans:bean id="associationFilter" class="net.solarnetwork.node.setup.web.NodeAssociationFilter">
+		<beans:property name="pubPaths">
+			<beans:array>
+				<beans:value>/css/</beans:value>
+				<beans:value>/fonts/</beans:value>
+				<beans:value>/img/</beans:value>
+				<beans:value>/js/</beans:value>
+				<beans:value>/js-lib/</beans:value>
+				<beans:value>/pub/</beans:value>
+				<beans:value>/webfonts/</beans:value>
+			</beans:array>
+		</beans:property>
+	</beans:bean>
 	
 	<beans:bean id="exceptionSupportFilter" class="net.solarnetwork.node.setup.web.support.ExceptionSupportFilter"/>
 

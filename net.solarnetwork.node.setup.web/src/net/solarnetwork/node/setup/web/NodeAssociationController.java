@@ -78,7 +78,7 @@ import net.solarnetwork.web.domain.Response;
  * 
  * @author maxieduncan
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 @Controller
 @SessionAttributes({ NodeAssociationController.KEY_DETAILS, NodeAssociationController.KEY_IDENTITY })
@@ -89,6 +89,12 @@ public class NodeAssociationController extends BaseSetupController {
 	private static final String PAGE_ENTER_CODE = "associate/enter-code";
 	private static final String PAGE_IMPORT_FROM_BACKUP = "associate/import-from-backup";
 	private static final String PAGE_RESTORE_FROM_BACKUP = "associate/restore-from-backup";
+
+	/**
+	 * A model key with a {@code Boolean} value to signal to the UI that the
+	 * node is not associated.
+	 */
+	public static final String KEY_NEEDS_ASSOCIATION = "needsAssociation";
 
 	/** The model attribute for the network association details. */
 	public static final String KEY_DETAILS = "details";
@@ -148,6 +154,16 @@ public class NodeAssociationController extends BaseSetupController {
 	 */
 	public NodeAssociationController() {
 		super();
+	}
+
+	/**
+	 * A model attribute to signal to the UI that the node is not associated.
+	 * 
+	 * @return {@code true}
+	 */
+	@ModelAttribute(binding = false, name = KEY_NEEDS_ASSOCIATION)
+	public Boolean needsAssociation() {
+		return Boolean.TRUE;
 	}
 
 	/**

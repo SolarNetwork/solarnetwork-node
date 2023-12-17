@@ -85,7 +85,7 @@ const SolarNode = {
 	 alert : function(title, message, style, container) {
 		 container = container || $('#body-container');
 		 if ( container ) {
-			 var alert = $('<div class="alert"><button type="button" class="close" data-dismiss="alert">&times;</button></div>');
+			 var alert = $('<div class="alert alert-warning alert-dismissible fade show" role="alert"><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" /></div>');
 			 if ( title ) {
 				 $('<strong/>').append(title).appendTo(alert);
 				 if ( message ) {
@@ -186,10 +186,9 @@ SolarNode.Class.Slider = function(el, config) {
 	
 	var ui = $(el);
 	ui.addClass('ui-slider ui-slider-horizontal');
-	ui.append('<div class="progress"><div class="ui-slider-range bar" /></div><button type="button" class="ui-slider-handle btn"/>')
-		.append('<div class="slider-min label pull-left">'+min+'</div>')
-		.append('<div class="slider-max label pull-right">'+max+'</div>');
-	//ui.find('.progress').css('margin-right', (handleWidth/2)+'px');
+	ui.append('<div class="progress"><div class="ui-slider-range progress-bar" /></div><button type="button" class="ui-slider-handle btn btn-outline-primary"/>');
+	ui.append('<div class="d-flex mt-2 justify-content-between"><div class="badge text-bg-secondary">'
+			+min+'</div><div class="badge text-bg-secondary">'+max+'</div></div>');
 	var uiRange = $(ui).find('.ui-slider-range');
 	var uiHandle = $(ui).find('.ui-slider-handle').css({
 			'width' : handleWidth + 'px',
@@ -251,13 +250,13 @@ SolarNode.Class.Slider = function(el, config) {
 	};
 	
 	// bind events
-	ui.bind(SolarNode.touchEventNames.start, function() {
+	ui.on(SolarNode.touchEventNames.start, function() {
 		setTracking(true);
-	}).bind(SolarNode.touchEventNames.cancel, function() {
+	}).on(SolarNode.touchEventNames.cancel, function() {
 		setTracking(false);
-	}).bind(SolarNode.touchEventNames.end, function() {
+	}).on(SolarNode.touchEventNames.end, function() {
 		setTracking(false);
-	}).bind(SolarNode.touchEventNames.move, handleEventMove);
+	}).on(SolarNode.touchEventNames.move, handleEventMove);
 	
 	// initial layout
 	layoutSubviews();
@@ -310,26 +309,28 @@ SolarNode.hideLoading = function(button) {
 };
 
 SolarNode.showSpinner = function(button, showLoading) {
-	var ladda = button.data('ladda');
-	if ( ladda === undefined ) {
-		if ( showLoading ) {
-			button.button('loading');
-		}
-		ladda = Ladda.create(button.get(0));
-		button.data('ladda', ladda);
-		ladda.start();
+	const spinner = button.find('.spinner');
+	const status = button.find('[role=status]');
+	const loadingText = button.data('loadingText');
+	
+	button.prop('disabled', true);
+	spinner.removeClass('hidden');
+	if ( showLoading && loadingText ) {
+		status.data('normalText', status.text());
+		status.text(loadingText);
 	}
 	return button;
 };
 
 SolarNode.hideSpinner = function(button, hideLoading) {
-	var ladda = button.data('ladda');
-	if ( ladda !== undefined ) {
-		if ( hideLoading ) {
-			button.button('reset');
-		}
-		ladda.stop();
-		button.removeData('ladda');
+	const spinner = button.find('.spinner');
+	const status = button.find('[role=status]');
+	const normalText = status.data('normalText');
+	
+	button.prop('disabled', false);
+	spinner.addClass('hidden');
+	if ( hideLoading && normalText ) {
+		status.text(normalText);
 	}
 	return button;
 };
@@ -417,28 +418,49 @@ SolarNode.tryGotoURL = function(destURL) {
 };
 
 SolarNode.GlobalProgress = (function() {
-	var self = {};
+	const self = {};
 
-	function getModal() {
-		return $('#generic-progress-modal');
+	function modal() {
+		const node = document.getElementById('generic-progress-modal');
+		if ( !node ) {
+			return undefined;
+		}
+		return {
+			modal: bootstrap.Modal.getOrCreateInstance(node),
+			jq: $(node),
+		};
 	}
-	
+
 	function show(percentComplete, title, message) {
-		var modal = getModal(),
-			titleEl = modal.find('.info-title'),
-			messageEl = modal.find('.info-message');
+		const m = modal();
+		if ( !m ) {
+			return;
+		}
+		const titleEl = m.jq.find('.info-title'),
+			messageEl = m.jq.find('.info-message');
 		titleEl.text(title || titleEl.data('default-message'));
 		messageEl.text(message || messageEl.data('default-message'));
-		modal.find('.bar').css('width', Math.round((+percentComplete || 0) * 100) + '%');
-		modal.modal('show');
+		m.jq.find('.bar').css('width', Math.round((+percentComplete || 0) * 100) + '%');
+		m.modal.show();
 	}
 	
 	function update(percentComplete) {
-		getModal().find('.bar').css('width', Math.round((+percentComplete || 0) * 100) + '%');
+		const m = modal();
+		if ( !m ) {
+			return;
+		}
+		m.jq.find('.progress-bar').css('width', Math.round((+percentComplete || 0) * 100) + '%');
 	}
 	
 	function hide() {
-		getModal().modal('hide');
+		const m = modal();
+		if ( !m ) {
+			return;
+		}
+		// close after delay, so that Very Fast open/close still works with CSS animations
+		setTimeout(() => {
+			m.modal.hide();
+		}, 500);
 	}
 		
 	return Object.defineProperties(self, {
@@ -455,6 +477,7 @@ SolarNode.GlobalProgress = (function() {
  */
 SolarNode.copyElementValue = function(copyable) {
 	if ( copyable.length ) {
+        let tmpDiv = undefined;
 		if ( document.body.createTextRange ) {
 	        const range = document.body.createTextRange();
 	        range.moveToElementText(copyable[0]);
@@ -462,7 +485,13 @@ SolarNode.copyElementValue = function(copyable) {
 	    } else if ( window.getSelection ) {
 	        const selection = window.getSelection();
 	        const range = document.createRange();
-	        range.selectNodeContents(copyable[0]);
+	        
+	        if ( copyable[0].tagName === 'INPUT' && copyable[0].getAttribute('type') !== 'password' ) {
+				tmpDiv = $('<div class="visually-hidden">').text(copyable[0].value).appendTo(document.body);
+				range.selectNodeContents(tmpDiv[0]);
+			} else {	        
+	        	range.selectNodeContents(copyable[0]);
+	        }
 	        selection.removeAllRanges();
 	        selection.addRange(range);
 	    } else {
@@ -476,21 +505,21 @@ SolarNode.copyElementValue = function(copyable) {
 			return result;
 		} catch ( err ) {
 			return false;
+		} finally {
+			if ( tmpDiv ) {
+				tmpDiv.remove();
+			}
 		}
 	}
 }
 
 $(document).ready(function() {
-	$('body').on('hidden', '.modal.dynamic', function () {
+	$('body').on('hidden.bs.modal', '.modal.dynamic', function () {
 		$(this).removeData('modal');
 	});
 	$('a.logout').on('click', function(event) {
 		event.preventDefault();
 		$('#logout-form').get(0).submit();
-	});
-	$('a.restart').on('click', function(event) {
-		event.preventDefault();
-		$('#restart-modal').modal('show');
 	});
 	$('#restart-modal').ajaxForm({
 		dataType: 'json',
@@ -521,10 +550,6 @@ $(document).ready(function() {
 		if ( input ) {
 			input.value = 'true';
 		}
-	});
-	$('a.reset').on('click', function(event) {
-		event.preventDefault();
-		$('#reset-modal').modal('show');
 	});
 	$('#reset-modal').ajaxForm({
 		dataType: 'json',

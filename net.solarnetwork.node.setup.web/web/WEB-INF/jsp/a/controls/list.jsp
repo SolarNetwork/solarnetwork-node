@@ -8,20 +8,21 @@
 		</p>
 	</section>
 	<section id="providers">
-		<table class="table">
-			<tbody>
+		<div class="row setting-components gap-3">
 			<c:forEach items="${controlIds}" var="controlId">
-				<tr>
-					<td><strong>${controlId}</strong></td>
-					<td>
-						<a class="btn" href="<setup:url value='/a/controls/manage?id=${controlId}'/>">
+				<!--  ${controlId} -->
+				<div class="row justify-content-between align-items-center">
+					<div class="col">
+						<strong>${controlId}</strong>
+					</div>
+					<div class="col-auto">
+						<a class="btn btn-light" href="<setup:url value='/a/controls/manage?id=${controlId}'/>">
 							<i class="far fa-pen-to-square"></i> 
-							<fmt:message key="controls.manage.label"/>
+							<span><fmt:message key="controls.manage.label"/></span>
 						</a>
-					</td>
-				</tr>
+					</div>
+				</div>
 			</c:forEach>
-			</tbody>
-		</table>
+		</div>
 	</section>
 </c:if>

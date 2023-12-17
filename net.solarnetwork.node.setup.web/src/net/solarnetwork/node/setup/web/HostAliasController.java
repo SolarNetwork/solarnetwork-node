@@ -62,6 +62,13 @@ public class HostAliasController {
 	private MessageSource messageSource;
 
 	/**
+	 * Constructor.
+	 */
+	public HostAliasController() {
+		super();
+	}
+
+	/**
 	 * Show host aliases home.
 	 * 
 	 * @return the view name

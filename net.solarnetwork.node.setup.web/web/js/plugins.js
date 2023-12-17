@@ -30,8 +30,8 @@ function compareVersions(v1, v2) {
 function refreshPluginList(url) {
 	SolarNode.showLoading($('#plugins-refresh'));
 	$.getJSON(url, function(data) {
+		SolarNode.hideLoading($('#plugins-refresh'));
 		if ( data === undefined || data.success !== true || data.data === undefined ) {
-			SolarNode.hideLoading($('#plugins-refresh'));
 			// TODO: l10n
 			SolarNode.warn('Error!', 'An error occured refreshing plugin information.', list);
 			return;
@@ -118,17 +118,22 @@ function groupPlugins(data) {
 }
 	
 function createGroup(groupName, container) {
-	var group = $('<div class="accordion-group"/>');
-	var heading = $('<div class="accordion-heading"/>');
-	var id = "Group-" +groupName.replace(/\W/g, '');
-	$('<a class="accordion-toggle" data-toggle="collapse" data-parent="#plugin-list"/>').attr('href', '#'+id).text(groupName).appendTo(heading);
+	const group = $('<div class="accordion-item">');
+	const heading = $('<h3 class="accordion-header">');
+	const id = "Group-" +groupName.replace(/\W/g, '');
+	const first = container.children().length === 0;
+	const btn = $('<button type="button" class="accordion-button" data-bs-toggle="collapse" data-bs-target="#' +id+'">').text(groupName);
+	if ( !first ) {
+		btn.addClass('collapsed');
+	}
+	btn.appendTo(heading);
 	heading.appendTo(group);
-	var body = $('<div class="accordion-body collapse"/>').attr('id', id);
-	if ( container.children().length === 0 ) {
-		body.addClass('in');
+	var body = $('<div class="accordion-collapse collapse" data-bs-parent="#plugin-list">').attr('id', id);
+	if ( first ) {
+		body.addClass('show');
 	}
 	body.appendTo(group);
-	var innerBody = $('<div class="accordion-inner"/>');
+	var innerBody = $('<div class="accordion-body">');
 	innerBody.appendTo(body);
 	container.append(group);
 	return innerBody;
@@ -139,54 +144,46 @@ function createPluginUI(plugin, installed, showVersions) {
 		return $(null);
 	}
 	var id = "Plugin-" +plugin.uid.replace(/\W/g, '-');
-	var row = $('<div class="plugin row-fluid"/>').attr('id', id);
+	var row = $('<div class="plugin row"/>').attr('id', id);
 	var installedPlugin = installed[plugin.uid];
-	var titleContainer = $('<div class="name span4"/>').text(plugin.info.name);
+	var titleContainer = $('<div class="name col-sm-4"/>').text(plugin.info.name);
 	titleContainer.appendTo(row);
-	var descContainer = $('<div class="desc"/>').addClass(showVersions ? 'span5' : 'span6');
+	var descContainer = $('<div class="desc"/>').addClass(showVersions ? 'col-sm-5' : 'col-sm-6');
 	if ( plugin.info.description ) {
 		descContainer.text(plugin.info.description);
 	}
 	descContainer.appendTo(row);
 	if ( showVersions === true ) {
-		let versionContainer = $('<div class="version span1"/>').appendTo(row);
-		let vLabel = $('<span class="label">' +versionLabel(plugin) +'</span>');
-		if ( installedPlugin === undefined ) {
-			// not installed... leave default style
-		} else if ( compareVersions(plugin.version, installedPlugin.version) > 0 ) {
-			// update available
-			//versionLabel.addClass('label-info');
-
-			// also add existing version to title
-			$('<span class="label suffix">' +versionLabel(installedPlugin) +'</span>').appendTo(titleContainer);
-		} else {
-			// installed
-			//versionLabel.addClass('label-important');
+		let versionContainer = $('<div class="version col-sm-1"/>').appendTo(row);
+		let vLabel = $('<span class="badge text-bg-secondary">' +versionLabel(plugin) +'</span>');
+		if ( compareVersions(plugin.version, installedPlugin.version) > 0 ) {
+			// update available, add existing version to title
+			$('<span class="badge text-bg-info suffix">' +versionLabel(installedPlugin) +'</span>').appendTo(titleContainer);
 		}
 		vLabel.appendTo(versionContainer);
 	}
-	var actionContainer = $('<div class="action span2"/>').appendTo(row);
+	var actionContainer = $('<div class="action col-sm-2 text-end"/>').appendTo(row);
 	var button = undefined;
 	var action = previewInstall;
 	if ( installedPlugin === undefined ) {
 		// not installed; offer to install it
-		button = $('<button type="button" class="btn btn-small btn-primary">').text(pluginsSection.data('msg-install'));
+		button = $('<button type="button" class="btn btn-sm btn-primary">').text(pluginsSection.data('msg-install'));
 		actionContainer.append(button);
 	} else if ( compareVersions(plugin.version, installedPlugin.version) > 0 ) {
 		// update available
-		button = $('<button type="button" class="btn btn-small btn-info">').text(pluginsSection.data('msg-upgrade'));
+		button = $('<button type="button" class="btn btn-sm btn-info">').text(pluginsSection.data('msg-upgrade'));
 		actionContainer.append(button);
 	} else if ( plugin.coreFeature !== true ) {
 		// installed, and not a core feature
-		button = $('<button type="button" class="btn btn-small btn-danger"/>').text(pluginsSection.data('msg-remove'));
+		button = $('<button type="button" class="btn btn-sm btn-secondary"/>').text(pluginsSection.data('msg-remove'));
 		actionContainer.append(button);
 		action = previewRemove;
 	} else if ( showVersions === true ) {
 		// core, cannot remove
-		$('<span class="label"/>').text(installedSection.data('msg-unremovable')).appendTo(actionContainer);
+		$('<span class="badge text-bg-info"/>').text(installedSection.data('msg-unremovable')).appendTo(actionContainer);
 	}
 	if ( button !== undefined ) {
-		button.click(function() { action(plugin); });
+		button.on('click', function() { action(plugin); });
 	}
 	return row;
 }
@@ -226,10 +223,10 @@ function populateUI() {
 		}
 		if ( iMax > 0 ) {
 			upgradeContainer.html(html);
-			upgradeSection.removeClass('hide');
+			upgradeSection.removeClass('hidden');
 		} else {
 			upgradeContainer.empty();
-			upgradeSection.addClass('hide');
+			upgradeSection.addClass('hidden');
 		}
 
 		// construct "up to date" section
@@ -240,10 +237,10 @@ function populateUI() {
 		}
 		if ( iMax > 0 ) {
 			installedContainer.html(html);
-			installedSection.removeClass('hide');
+			installedSection.removeClass('hidden');
 		} else {
 			installedContainer.empty();
-			installedSection.addClass('hide');
+			installedSection.addClass('hidden');
 		}
 
 		// construct "available" section
@@ -275,12 +272,12 @@ function populateUI() {
 				groupBody.append(createPluginUI(plugin, groupedPlugins.installed));
 			}
 		}
-		if ( html.children().size() > 0 ) {
+		if ( html.children().length > 0 ) {
 			availableContainer.html(html);
-			pluginsSection.removeClass('hide');
+			pluginsSection.removeClass('hidden');
 		} else {
 			availableContainer.empty();
-			pluginsSection.addClass('hide');
+			pluginsSection.addClass('hidden');
 		}
 	});
 }
@@ -307,7 +304,7 @@ function renderInstallPreview(data) {
 				+'</b> <span class="label">' +version +'</span>').appendTo(list);
 	}
 	container.append(list);
-	form.find('.restart-required').toggleClass('hide', !data.data.restartRequired);
+	form.find('.restart-required').toggleClass('hidden', !data.data.restartRequired);
 	installBtn.removeAttr('disabled');
 }
 
@@ -342,7 +339,7 @@ function previewRemove(plugin) {
 	var title = form.find('h3');
 	title.text(title.data('msg-remove') +' ' +plugin.info.name);
 	form.find('input[name=uid]').val(plugin.uid);
-	form.find('.restart-required').toggleClass('hide', false);
+	form.find('.restart-required').toggleClass('hidden', false);
 	form.modal('show');
 	var list = $('<ul/>');
 	var	version = versionLabel(plugin);
@@ -361,14 +358,14 @@ function handleInstall(form) {
 
 	var showAlert = function(msg) {
 		SolarNode.hideLoading(installBtn);
-		progressBar.addClass('hide');
+		progressBar.addClass('hidden');
 		SolarNode.error(SolarNode.i18n(installBtn.data('msg-error'), [msg]), errorContainer);
 	};
-	form.on('hidden', function() {
+	form.on('hidden.bs.modal', function() {
 		// tidy up in case closed before completed
 		SolarNode.hideLoading(installBtn);
-		progressBar.addClass('hide');
-		installBtn.removeClass('hide');
+		progressBar.addClass('hidden');
+		installBtn.removeClass('hidden');
 
 		// refresh the plugin list, if we've installed/removed anything
 		if ( refreshPluginListOnModalClose === true ) {
@@ -380,13 +377,13 @@ function handleInstall(form) {
 		keepPollingForStatus = false;
 
 		// clear out any error/message
-		errorContainer.addClass('hide').empty();
+		errorContainer.addClass('hidden').empty();
 	});
 	form.ajaxForm({
 		dataType: 'json',
 		beforeSubmit: function(dataArray, form, options) {
 			// start a progress bar on the install button so we know a install is happening
-			progressBar.removeClass('hide');
+			progressBar.removeClass('hidden');
 			progressFill.css('width', '0%');
 			keepPollingForStatus = true;
 			errorContainer.empty();
@@ -405,14 +402,14 @@ function handleInstall(form) {
 			var restartRequired = json.data.restartRequired;
 
 			if ( restartRequired ) {
-				form.find('.without-restart').addClass('hide');
+				form.find('.without-restart').addClass('hidden');
 			}
 
 			function handleRestart() {
 				SolarNode.hideLoading(installBtn);
     				progressFill.css('width', '100%');
-				form.find('.restarting').removeClass('hide');
-				form.find('.hide-while-restarting').addClass('hide');
+				form.find('.restarting').removeClass('hidden');
+				form.find('.hide-while-restarting').addClass('hidden');
 				setTimeout(function() {
 					SolarNode.tryGotoURL(SolarNode.context.path('/a/home'));
 				}, 10000);
@@ -443,13 +440,13 @@ function handleInstall(form) {
 				    			}
 				    		} else if ( !(progress < 100) ) {
 							SolarNode.hideLoading(installBtn);
-				    			installBtn.addClass('hide');
+				    			installBtn.addClass('hidden');
 				    			if ( restartRequired ) {
 				    				handleRestart();
 				    			} else {
 					    			SolarNode.info(SolarNode.i18n(installBtn.data('msg-success')), errorContainer);
-					    			errorContainer.removeClass('hide');
-				    				progressBar.addClass('hide');
+					    			errorContainer.removeClass('hidden');
+				    				progressBar.addClass('hidden');
 					    			refreshPluginListOnModalClose = true;
 				    			}
 				    		} else if ( keepPollingForStatus ) {
@@ -467,16 +464,16 @@ function handleInstall(form) {
 	});
 }
 
-	if ( pluginsSection.size() === 1 && upgradeSection.size() === 1 ) {
+	if ( pluginsSection.length === 1 && upgradeSection.length === 1 ) {
 		populateUI();
 	};
-	$('#plugins-refresh').click(function(event) {
+	$('#plugins-refresh').on('click', function(event) {
 		event.preventDefault();
-		refreshPluginList($(this).attr('href'));
+		refreshPluginList(this.dataset.action);
 	});
-	$('#plugins-upgrade-all').click(function(event) {
+	$('#plugins-upgrade-all').on('click', function(event) {
 		event.preventDefault();
-		previewUpgradeAll($(this).attr('href'));
+		previewUpgradeAll(this.dataset.action);
 	});
 	$('#plugin-preview-install-modal').first().each(function() {
 		handleInstall($(this));

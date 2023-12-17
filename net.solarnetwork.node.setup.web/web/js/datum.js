@@ -84,13 +84,13 @@ SolarNode.Datum = (function() {
 	function iconNameForActivity(activity) {
 		var eventName = activity.event;
 		if ( eventName === 'DATUM_STORED' ) {
-			return 'icon-hdd';
+			return 'fa-regular fa-hard-drive';
 		} else if ( eventName === 'DATUM_CAPTURED' 
 				|| eventName === 'CONTROL_INFO_CAPTURED' 
 				|| eventName === 'CONTROL_INFO_CHANGED' ) {
-			return 'icon-plus';
+			return 'fa-solid fa-plus';
 		} else if ( eventName === 'DATUM_UPLOADED' ) {
-			return 'icon-upload';
+			return 'fa-solid fa-arrow-up';
 		}
 		return null;
 	}
@@ -105,7 +105,7 @@ SolarNode.Datum = (function() {
 		tr.data('activity', activity);
 		replaceTemplateProperties(tr, activity);
 		if ( iconName ) {
-			tr.find('.event-icon').addClass(iconName).removeClass('hide').attr('title', activity.event);
+			tr.find('.event-icon').addClass(iconName).removeClass('hidden').attr('title', activity.event);
 		}
 		if ( activity.props.length > 0 ) {
 			propList = tr.find('.datum-props');
@@ -117,7 +117,7 @@ SolarNode.Datum = (function() {
 				propList.append(propLi);
 			});
 			propListTemplateRow.remove();
-			propList.removeClass('hide');
+			propList.removeClass('hidden');
 		}
 		tbody.prepend(tr);
 	}
@@ -157,7 +157,7 @@ SolarNode.Datum = (function() {
 					propList.append(propLi);
 				}
 			});
-			propList.removeClass('hide');
+			propList.removeClass('hidden');
 		}
 		if ( !$.contains(document.documentElement, tr.get(0)) ) {
 			tbody.append(tr);
@@ -179,13 +179,13 @@ SolarNode.Datum = (function() {
 					var els = container.find('.'+name);
 					if ( els.length > 0 ) {
 						els.find('a.external-link').attr('href', url);
-						els.removeClass('hide');
+						els.removeClass('hidden');
 						replaced = true;
 					}
 				});
 			}
 			if ( replaced ) {
-				container.removeClass('hide');
+				container.removeClass('hidden');
 			}
 		});
 	}
@@ -212,28 +212,32 @@ $(document).ready(function() {
 	
 	$('#datum-activity').first().each(function() {
 		var activityContainer = $(this),
-			activityTableBody = activityContainer.find('table.datum-activity tbody'),
-			activityTableTemplateRow = activityContainer.find('table.datum-activity tr.template');
+			activityTableBody = activityContainer.find('.activity-container'),
+			activityTableTemplateRow = activityContainer.find('.activity.template');
 		var seenPropsContainer = $('#datum-activity-seenprops'),
-			seenPropsTableBody = seenPropsContainer.find('table.datum-activity-seenprops tbody'),
-			seenPropsTableTemplateRow = seenPropsContainer.find('table.datum-activity-seenprops tr.template');
+			seenPropsTableBody = seenPropsContainer.find('.activity-container'),
+			seenPropsTableTemplateRow = seenPropsContainer.find('.activity.template');
+		var revealed = false;
 		
 		var handler = function handleMessage(msg) {
 			var datum = JSON.parse(msg.body).data,
 				activity = SolarNode.Datum.datumActivityForDatum(datum);
 			console.info('Got %o message: %o', activity.event, activity);
+			
 			SolarNode.Datum.addDatumActivityTableRow(activityTableBody, activityTableTemplateRow, activity);
-			activityTableBody.find('tr:gt(9)').remove();
+			activityTableBody.find('>*:gt(9)').remove();
 			if ( activity.event !== 'DATUM_UPLOADED' ) {
 				SolarNode.Datum.updateDatumActivitySeenPropsTableRow(seenPropsTableBody, seenPropsTableTemplateRow, activity);
+			}
+			if ( !revealed ) {
+				activityContainer.removeClass('hidden');
+				seenPropsContainer.removeClass('hidden');
 			}
 		};
 		
 		SolarNode.Datum.subscribeDatum(null, handler);
 		SolarNode.Datum.subscribeControl(null, handler);
 
-		activityContainer.removeClass('hide');
-		seenPropsContainer.removeClass('hide');
 	});
 	
 	$('#external-node-links').first().each(function() {

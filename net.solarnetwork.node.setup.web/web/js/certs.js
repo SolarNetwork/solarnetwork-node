@@ -1,5 +1,5 @@
 $(document).ready(function() {
-	$('#btn-view-node-csr').click(function(event) {
+	$('#btn-view-node-csr').on('click', function(event) {
 		var a = this;
 		event.preventDefault();
 		$.getJSON(a.href, function(data) {
@@ -7,7 +7,7 @@ $(document).ready(function() {
 			$('#view-csr-modal').modal('show');
 		});
 	});
-	$('#btn-renew-node-cert').click(function(event) {
+	$('#btn-renew-node-cert').on('click', function(event) {
 		event.preventDefault();
 		$('#renew-cert-modal').modal('show');
 	});
@@ -40,10 +40,10 @@ $(document).ready(function() {
 			var json = $.parseJSON(xhr.responseText);
 			SolarNode.error(json.message, $('#renew-cert-modal .modal-body.start'));
 		}
-	}).on('shown', function() {
+	}).on('shown.bs.modal', function() {
 		$('#renew-cert-password').focus();
 	});
-	$('#btn-export-node-cert').click(function(event) {
+	$('#btn-export-node-cert').on('click', function(event) {
 		var a = this;
 		event.preventDefault();
 		$.getJSON(a.href, function(data) {
@@ -51,7 +51,7 @@ $(document).ready(function() {
 			$('#export-cert-modal').modal('show');
 		});
 	});
-	$('#export-cert-modal').submit(function() {
+	$('#export-cert-modal').on('submit', function() {
 		$('#export-cert-modal').modal('hide');
 	});
 	/*

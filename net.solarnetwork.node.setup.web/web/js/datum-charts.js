@@ -47,7 +47,7 @@ SolarNode.DatumCharts = (function(){
 
 		//check that the datum has a reading
 		if (datum[datumPropName] !== undefined) {
-			$('#datum-activity-charts').removeClass('hide');
+			$('#datum-activity-charts').removeClass('hidden');
 
 			//if we have not seen this sourceId before we need to graph it
 			if (datamap[datum.sourceId] === undefined) {
@@ -62,8 +62,58 @@ SolarNode.DatumCharts = (function(){
 			//map the sourceId to the current reading
 			datamap[datum.sourceId] = datum[datumPropName];
 		}
-	};
+	}
 
+	/**
+	 * Get an appropriate display unit for a given base unit and scale factor.
+	 * 
+	 * Use this method to render scaled data value units. Typically you would first call
+	 * {@link displayScaleForValue}, passing in the largest expected value
+	 * in a set of data, and then pass the result to this method to generate a display unit
+	 * for the base unit for that data.
+	 * 
+	 * For example, given a base unit of `W` (watts) and a maximum data value of `10000`:
+	 * 
+	 * ```
+	 * const fmt = import { * } from 'format/scale';
+	 * const displayScale = fmt.displayScaleForValue(10000);
+	 * const displayUnit = fmt.displayUnitForScale('W', displayScale);
+	 * ```
+	 * 
+	 * The `displayUnit` result in that example would be `kW`.
+	 *
+	 * @param {string} baseUnit the base unit, for example `W` or `Wh`
+	 * @param {number} scale the unit scale, which must be a recognized SI scale, such 
+	 *                       as `1000` for `k`
+	 * @return {string} the display unit value
+	 */
+	function displayUnitsForScale(baseUnit, scale) {
+	  return (scale === 1000000000 ? 'G' : scale === 1000000 ? 'M' : scale === 1000 ? 'k' : '') + baseUnit;
+	}
+
+	/**
+	 * Get an appropriate multiplier value for scaling a given value to a more display-friendly form.
+	 * 
+	 * This will return values suitable for passing to {@link displayUnitsForScale}.
+	 * 
+	 * @param {number} value the value to get a display scale factor for, for example the maximum value
+	 *                       in a range of values
+	 * @return {number} the display scale factor
+	 */
+	function displayScaleForValue(value) {
+	  var result = 1,
+	      num = Math.abs(Number(value));
+	  if (isNaN(num) === false) {
+	    if (num >= 1000000000) {
+	      result = 1000000000;
+	    } else if (num >= 1000000) {
+	      result = 1000000;
+	    } else if (num >= 1000) {
+	      result = 1000;
+	    }
+	  }
+	  return result;
+	}
 	//creates a new graph looking that plots wattage data from datums coming from source
 	//this code is heavily based on the last graph from https://bost.ocks.org/mike/path/
 	//apologies for the magic numbers
@@ -125,7 +175,7 @@ SolarNode.DatumCharts = (function(){
 		var dataAxisFormat = d3.format(',.0f');
 
 		var yAxis = d3.axisLeft().scale(y).ticks(5).tickFormat(function(d) {
-			return dataAxisFormat(d/displayScale) +' ' +sn.displayUnitsForScale(units, displayScale);
+			return dataAxisFormat(d/displayScale) +' ' +displayUnitsForScale(units, displayScale);
 		});
 
 		var axisY = svg.append('g')
@@ -144,7 +194,7 @@ SolarNode.DatumCharts = (function(){
 			var ydomain = [d3.min(data), d3.max(data)];
 
 			// calculate a display scale for the units, e.g. kilo, mega, giga
-			displayScale = d3.max([sn.displayScaleForValue(ydomain[0]), sn.displayScaleForValue(ydomain[1])]);
+			displayScale = d3.max([displayScaleForValue(ydomain[0]), displayScaleForValue(ydomain[1])]);
 
 			if ( ydomain[0] === ydomain[1] ) {
 				// expand the domain so the single value is in the middle vertically

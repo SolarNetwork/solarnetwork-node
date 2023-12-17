@@ -26,13 +26,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import net.solarnetwork.domain.Result;
 import net.solarnetwork.node.service.LoggingService;
+import net.solarnetwork.node.setup.web.support.ServiceAwareController;
 import net.solarnetwork.service.OptionalService;
 import net.solarnetwork.util.ObjectUtils;
 
@@ -43,7 +43,7 @@ import net.solarnetwork.util.ObjectUtils;
  * @version 1.0
  * @since 2.7
  */
-@Controller
+@ServiceAwareController
 @RequestMapping("/a/logging")
 public class LoggingController {
 

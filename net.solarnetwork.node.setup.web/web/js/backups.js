@@ -27,13 +27,13 @@ SolarNode.Backups.generateBackupList = function(backupInfo, container) {
 	});
 
 	backupInfo.providerInfos.forEach(function(provider) {
-		var row = $('<div class="row-fluid menu-item selected" data-provider="'+provider.providerKey+'"></div>'),
+		var row = $('<div class="row menu-item selected py-2" data-provider="'+provider.providerKey+'"></div>'),
 			resources = resourcesForProvider(provider.providerKey);
-		row.append('<div class="span1"><i class="far fa-circle-check fa-2xl checkmark" aria-hidden="true"></i></div>');
-		row.append($('<div class="span9"></div>')
+		row.append('<div class="col-sm-3 col-md-2 text-sm-center"><i class="far fa-circle-check fa-2xl checkmark" aria-hidden="true"></i></div>');
+		row.append($('<div class="col-sm-6 col-md-7"></div>')
 				.append($('<h4>').text(provider.name))
 				.append($('<p>').text(provider.description)));
-		row.append($('<div class="span2">').append($('<h4>').append($('<small>').text(resources.length + ' ' 
+		row.append($('<div class="col-3">').append($('<h4>').append($('<small>').text(resources.length + ' ' 
 				+ container.data(resources.length == 1 ? 'msg-item' : 'msg-items')))));
 		container.append(row);
 	});

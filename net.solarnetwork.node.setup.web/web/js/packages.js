@@ -225,12 +225,12 @@ $(document).ready(function packageManagement() {
 			SolarNode.hideLoading(installModal.find('button[type=submit]'));
 		}
 	})
-	.on('show', function() {
+	.on('show.bs.modal', function() {
 		const p = installModal.data('item');
 		populatePackageTemplateProperties(installModal.find('.modal-body'), p);
 		installModal.find('input[name=name]').val(p.name);
 	})
-	.on('hidden', function() {
+	.on('hidden.bs.modal', function() {
 		toggleBeforeAfter(installModal, true);
 		this.reset();
 	});
@@ -272,12 +272,12 @@ $(document).ready(function packageManagement() {
 			SolarNode.hideLoading(removeModal.find('button[type=submit]'));
 		}
 	})
-	.on('show', function() {
+	.on('show.bs.modal', function() {
 		const p = removeModal.data('item');
 		populatePackageTemplateProperties(removeModal.find('.modal-body'), p);
 		removeModal.find('input[name=name]').val(p.name);
 	})
-	.on('hidden', function() {
+	.on('hidden.bs.modal', function() {
 		toggleBeforeAfter(removeModal, true);
 		this.reset();
 	});
@@ -312,7 +312,7 @@ $(document).ready(function packageManagement() {
 			SolarNode.hideLoading(upgradeModal.find('button[type=submit]'));
 		}
 	})
-	.on('hidden', function() {
+	.on('hidden.bs.modal', function() {
 		toggleBeforeAfter(upgradeModal, true);
 		this.reset();
 	});

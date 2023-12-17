@@ -1,38 +1,32 @@
 <p class="lead"><fmt:message key="new-node.intro"/></p>
 
-<c:set var="myNodesURL" value='${networkLinks["solaruser"]}/u/sec/my-nodes'/>
-<p><fmt:message key="node.setup.code.intro">
-	<fmt:param value="${myNodesURL}"/>
-</fmt:message></p>
-
-<p><fmt:message key="node.setup.restore.option">
-	<fmt:param><setup:url value="/associate/restore"/></fmt:param>
-</fmt:message></p>
-
-<setup:url value="/associate/preview" var="action"/>
-<form:form action="${action}" method="post" cssClass="form-horizontal">
-	<form:errors cssClass="alert alert-error" element="div" htmlEscape="false"/>
-	<fieldset>
-		<c:set var="err"><form:errors path="verificationCode" cssClass="help-inline" element="span"/></c:set>
-		<div class="control-group<c:if test='${not empty err}'> error</c:if>">
-			<label class="control-label" for="${settingId}">
-				<fmt:message key="node.setup.code.verificationCode"/>
-			</label>
-			<div class="controls">
-				<fmt:message key='node.setup.code.verificationCode.placeholder' var="placeholder"/>
-				<form:textarea path="verificationCode" placeholder="${placeholder}" rows="10" cssClass="span9" required="required"/>
-				<c:out value="${err}" escapeXml="false"/>
-			</div>
-		</div>
-	</fieldset>
-	<div class="form-actions">
-		<button type="submit" class="btn btn-primary"><fmt:message key='node.setup.code.verify'/></button>
-	</div>
-	<sec:csrfInput/>
-</form:form>
+<section>
+	<c:set var="myNodesURL" value='${networkLinks["solaruser"]}/u/sec/my-nodes'/>
+	<p><fmt:message key="node.setup.code.intro">
+		<fmt:param value="${myNodesURL}"/>
+	</fmt:message></p>
+	
+	<p><fmt:message key="node.setup.restore.option">
+		<fmt:param><setup:url value="/associate/restore"/></fmt:param>
+	</fmt:message></p>
+	
+	<setup:url value="/associate/preview" var="action"/>
+	<form:form action="${action}" method="post">
+		<form:errors cssClass="alert alert-danger" element="div" htmlEscape="false"/>
+		<c:set var="err"><form:errors path="verificationCode" cssClass="form-text text-danger" element="div"/></c:set>
+		<fieldset class="row g-3<c:if test='${not empty err}'> error</c:if>">
+			<fmt:message key='node.setup.code.verificationCode.placeholder' var="placeholder"/>
+			<form:textarea path="verificationCode" placeholder="${placeholder}" cssClass="form-control font-monospace"
+				cssStyle="min-height: 10rem;" required="required" id="invitation-code"/>
+			<c:out value="${err}" escapeXml="false"/>
+			<button type="submit" class="btn btn-primary"><fmt:message key='node.setup.code.verify'/></button>
+		</fieldset>
+		<sec:csrfInput/>
+	</form:form>
+</section>
 
 <c:if test="${fn:length(providers) > 0}">
-	<section id="settings">
+	<section id="settings" style="margin-top: 4rem;">
 		<h2>
 			<a id="settings-section" href="#settings-section"
 				class="anchor" aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>			
@@ -40,7 +34,7 @@
 		</h2>
 		<p><fmt:message key="node.setup.settings.providers.intro"/></p>	
 
-		<form class="form-horizontal" action="<setup:url value='/associate/configure'/>" method="post">
+		<form action="<setup:url value='/associate/configure'/>" method="post">
 			<c:forEach items="${providers}" var="provider" varStatus="providerStatus">
 				<!--  ${provider.settingUid} -->
 				<c:set var="provider" value="${provider}" scope="request"/>
@@ -74,15 +68,17 @@
 					</c:if>
 				</fieldset>
 			</c:forEach>
-			<div class="form-actions">
-				<button type="button" class="btn btn-primary" id="submit"><fmt:message key='settings.save'/></button>
+			<div class="row my-3">
+				<div class="col-sm-9 offset-sm-3">
+					<button type="button" class="btn btn-primary" id="submit"><fmt:message key='settings.save'/></button>
+				</div>
 			</div>
 			<sec:csrfInput/>
 		</form>
 	</section>
 	<script>
 	$(function() {
-		$('#submit').click(function() {
+		$('#submit').on('click', function() {
 			SolarNode.Settings.saveUpdates($(this.form).attr('action'), {
 				success: '<fmt:message key="settings.save.success.msg"/>',
 				error: '<fmt:message key="settings.save.error.msg"/>',

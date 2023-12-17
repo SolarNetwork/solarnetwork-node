@@ -100,6 +100,7 @@ $(document).ready(function cliConsoleManagement() {
 			const active = toggle.hasClass('active');
 			toggle.text(active ? toggle.data('labelOn') : toggle.data('labelOff'));
 			toggle.toggleClass('btn-success', active);
+			toggle.toggleClass('btn-secondary', !active);
 			toggleType(type, active);
 		});
 	}
@@ -138,6 +139,7 @@ $(document).ready(function cliConsoleManagement() {
 			? loggingActiveToggle.data('labelOn') 
 			: loggingActiveToggle.data('labelOff'));
 		loggingActiveToggle.toggleClass('btn-success', loggingActive);
+		loggingActiveToggle.toggleClass('btn-info', !loggingActive);
 		loggingActiveToggle.find('i')
 			.addClass(loggingActive
 				? loggingActiveToggle.data('classOn')

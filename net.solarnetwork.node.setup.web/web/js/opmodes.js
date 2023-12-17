@@ -76,10 +76,10 @@ $(document).ready(function opModesManagement() {
 			SolarNode.error(json.message, $('#add-opmodes .modal-body.start'));
 		}
 	})
-	.on('shown', function() {
+	.on('shown.bs.modal', function() {
 		$('#add-opmodes-modal input[name=modes]').focus();
 	})
-	.on('hidden', function() {
+	.on('hidden.bs.modal', function() {
 		this.reset();
 		$(this).find('button[type=submit]').prop('disabled', false);
 	});

@@ -37,7 +37,7 @@ $(document).ready(function loggingManagement() {
 			SolarNode.error(json.message, $('#edit-logger-level-modal .modal-body.start'));
 		}
 	})
-	.on('show', function() {
+	.on('show.bs.modal', function() {
 		if ( editItemEl ) {
 			let logger = editItemEl.data('logger');
 			let level = editItemEl.data('level');
@@ -46,10 +46,10 @@ $(document).ready(function loggingManagement() {
 		}
 		$(this).find('.create').toggleClass('hidden', !!editItemEl);
 	})
-	.on('shown', function() {
+	.on('shown.bs.modal', function() {
 		$('#logging-logger-levels-logger').focus();
 	})
-	.on('hidden', function() {
+	.on('hidden.bs.modal', function() {
 		this.reset();
 		$(this.elements['logger']).prop('readonly', false);
 		$(this).find('button[type=submit]').prop('disabled', false);
