@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Stabiliti 30C Power Control
 Bundle-SymbolicName: net.solarnetwork.node.control.stabiliti30c
 Bundle-Description: Manage an Ideal Power Stabiliti 30C series power control system.
-Bundle-Version: 4.0.0
+Bundle-Version: 4.0.1
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.control.stabiliti30c
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8

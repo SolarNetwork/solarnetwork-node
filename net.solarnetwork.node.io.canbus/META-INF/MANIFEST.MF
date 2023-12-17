@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: CAN Bus Communication Support
 Bundle-Description: Communication support for the CAN bus protocol.
 Bundle-SymbolicName: net.solarnetwork.node.io.canbus
-Bundle-Version: 3.0.0
+Bundle-Version: 3.0.1
 Automatic-Module-Name: net.solarnetwork.node.io.canbus
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: 
