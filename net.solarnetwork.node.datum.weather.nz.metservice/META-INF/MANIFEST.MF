@@ -4,7 +4,7 @@ Bundle-Name: New Zealand MetService Weather
 Bundle-SymbolicName: net.solarnetwork.node.datum.weather.nz.metservice
 Automatic-Module-Name: net.solarnetwork.node.weather.nz.metservice
 Bundle-Description: Collect weather data from the New Zealand MetService.
-Bundle-Version: 5.0.0
+Bundle-Version: 5.0.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 

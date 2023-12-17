@@ -5,7 +5,7 @@
 	<p><fmt:message key="logging.intro"/></p>
 	<div class="d-flex justify-content-end">
 		<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#edit-logger-level-modal">
-			<i class="fas fa-plus"></i>
+			<i class="bi bi-plus-lg"></i>
 			<span><fmt:message key="logging.level.add"/></span>
 		</button>
 	</div>
@@ -40,7 +40,7 @@
 				<label class="form-label" for="logging-logger-levels-logger"><fmt:message key="logging.levels.logger.label"/></label>
 				<input class="form-control" type="text" maxlength="256" name="logger" id="logging-logger-levels-logger" aria-describedby="logging-logger-levels-logger-help">
 				<div class="form-text" id="logging-logger-levels-logger-help"><fmt:message key="logging.levels.logger.caption"/></div>
-		
+
 				<label class="form-label mt-3" for="logging-logger-levels-level"><fmt:message key="logging.levels.level.label"/></label>
 				<select class="form-select" name="level" id="logging-logger-levels-level" aria-describedby="logging-logger-levels-level-help">
 					<option value="trace"><fmt:message key="logging.levels.TRACE.label"/></option>
@@ -52,7 +52,7 @@
 					<option value="inherit"><fmt:message key="logging.levels.INHERIT.label"/></option>
 				</select>
 				<span class="form-text" id="logging-logger-levels-level-help"><fmt:message key="logging.levels.level.caption"/></span>
-		
+
 				<p class="create mt-3"><fmt:message key="logging.levels.edit.loggers.intro"/></p>
 				<select class="create form-select" name="loggers" readonly size="10" id="logging-loggers">
 					<option value="trace"><fmt:message key="logging.levels.TRACE.label"/></option>

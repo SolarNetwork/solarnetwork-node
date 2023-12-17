@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Mock SolarNet Upload
 Bundle-SymbolicName: net.solarnetwork.node.upload.mock
 Bundle-Description: Mock upload service for SolarNode developers.
-Bundle-Version: 3.0.0
+Bundle-Version: 3.0.1
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Automatic-Module-Name: net.solarnetwork.node.upload.mock

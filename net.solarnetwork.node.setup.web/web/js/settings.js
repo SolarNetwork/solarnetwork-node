@@ -824,9 +824,9 @@ function setupComponentSettings(container) {
 		if ( copyEl ) {
 			if ( SolarNode.copyElementValue(copyEl) ) {
 				const icon = $(this).find('i');
-				icon.addClass('fas fa-clipboard-check').removeClass('far fa-clipboard');
+				icon.addClass('bi bi-clipboard2-check').removeClass('bi bi-clipboard2');
 				setTimeout(() => {
-					icon.addClass('far fa-clipboard').removeClass('fas fa-clipboard-check');
+					icon.addClass('bi bi-clipboard2').removeClass('bi bi-clipboard2-check');
 				}, 1200);
 			}
 		}

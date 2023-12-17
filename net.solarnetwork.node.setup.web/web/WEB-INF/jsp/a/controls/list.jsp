@@ -17,7 +17,7 @@
 					</div>
 					<div class="col-auto">
 						<a class="btn btn-light" href="<setup:url value='/a/controls/manage?id=${controlId}'/>">
-							<i class="far fa-pen-to-square"></i> 
+							<i class="bi bi-pencil-square"></i> 
 							<span><fmt:message key="controls.manage.label"/></span>
 						</a>
 					</div>

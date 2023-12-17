@@ -9,7 +9,7 @@
 <section id="opmodes">
 	<div class="d-grid justify-content-end">
 		<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#add-opmodes-modal">
-			<i class="fas fa-plus"></i>
+			<i class="bi bi-plus-lg"></i>
 			<span><fmt:message key='opmodes.action.add'/></span>
 		</button>
 	</div>
@@ -24,7 +24,7 @@
 				<td data-tprop="mode" class="align-middle"></td>
 				<td>
 					<button type="button" class="btn btn-danger" name="delete" title="<fmt:message key='opmodes.action.delete'/>">
-						<i class="far fa-trash-can"></i>
+						<i class="bi bi-trash3"></i>
 					</button>
 				</td>
 			</tr>
