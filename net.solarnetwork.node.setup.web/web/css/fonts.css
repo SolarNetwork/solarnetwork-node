@@ -1,28 +1,4 @@
 @font-face {
-    font-family: "Source Sans Pro";
-    font-style: normal;
-    font-weight: 400;
-    src: url('../fonts/SourceSansPro-Regular.ttf') format('truetype');
-}
-@font-face {
-    font-family: "Source Sans Pro";
-    font-style: italic;
-    font-weight: 400;
-    src: url('../fonts/SourceSansPro-Italic.ttf') format('truetype');
-}
-@font-face {
-    font-family: "Source Sans Pro";
-    font-style: normal;
-    font-weight: 600;
-    src: url('../fonts/SourceSansPro-Semibold.ttf') format('truetype');
-}
-@font-face {
-    font-family: "Source Sans Pro";
-    font-style: italic;
-    font-weight: 600;
-    src: url('../fonts/SourceSansPro-SemiboldItalic.ttf') format('truetype');
-}
-@font-face {
 	font-family: 'Suisse Screen';
 	font-weight: 100 599;
 	src: url('../webfonts/SuisseScreen-Monitor-WebXL.woff2') format('woff2');
