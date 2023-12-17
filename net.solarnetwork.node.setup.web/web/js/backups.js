@@ -29,7 +29,7 @@ SolarNode.Backups.generateBackupList = function(backupInfo, container) {
 	backupInfo.providerInfos.forEach(function(provider) {
 		var row = $('<div class="row menu-item selected py-2" data-provider="'+provider.providerKey+'"></div>'),
 			resources = resourcesForProvider(provider.providerKey);
-		row.append('<div class="col-sm-3 col-md-2 text-sm-center"><i class="far fa-circle-check fa-2xl checkmark" aria-hidden="true"></i></div>');
+		row.append('<div class="col-sm-3 col-md-2 text-sm-center"><i class="bi bi-check-circle fs-3 checkmark" aria-hidden="true"></i></div>');
 		row.append($('<div class="col-sm-6 col-md-7"></div>')
 				.append($('<h4>').text(provider.name))
 				.append($('<p>').text(provider.description)));

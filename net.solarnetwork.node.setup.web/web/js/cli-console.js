@@ -51,9 +51,9 @@ $(document).ready(function cliConsoleManagement() {
 			const cmd = btn.closest('.item').find('.cmd');
 			if ( SolarNode.copyElementValue(cmd) ) {
 				const icon = btn.find('i');
-				icon.addClass('fas fa-clipboard-check').removeClass('far fa-clipboard');
+				icon.addClass('bi bi-clipboard2-check').removeClass('bi bi-clipboard2');
 				setTimeout(() => {
-					icon.addClass('far fa-clipboard').removeClass('fas fa-clipboard-check');
+					icon.addClass('bi bi-clipboard2').removeClass('bi bi-clipboard2-check');
 				}, 3000);
 			}
 		}

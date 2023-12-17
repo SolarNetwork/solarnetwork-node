@@ -11,7 +11,7 @@
 		</fmt:message>
 	</p>
 	<button class="btn btn-primary pull-right" data-bs-target="#create-security-token-modal" data-bs-toggle="modal">
-		<i class="fas fa-plus"></i>
+		<i class="bi bi-plus-lg"></i>
 		<fmt:message key="sectoks.action.create"/>
 	</button>
 </section>
@@ -86,7 +86,7 @@
 				</div>
 				<p class="text-center">
 					<a class="btn btn-success btn-lg" href="#" id="create-token-download-csv" download="node-token-credentials.csv">
-						<i class="fas fa-download"></i>
+						<i class="bi bi-download"></i>
 						<fmt:message key="sectoks.action.csvdownload"/>
 					</a>
 				</p>
@@ -134,7 +134,7 @@
 			</div>
 			<div class="modal-footer justify-content-between">
 				<button type="button" class="btn btn-danger pull-left" name="delete" title="<fmt:message key='sectoks.action.delete'/>">
-					<i class="far fa-trash-can"></i>
+					<i class="bi bi-trash3"></i>
 					<fmt:message key="sectoks.action.delete"/>
 				</button>
 				<div>

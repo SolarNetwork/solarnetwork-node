@@ -10,7 +10,7 @@
 		</fmt:message>
 	</p>
 	<a href="<setup:url value='/a/controls'/>" class="btn btn-secondary">
-		<i class="fas fa-arrow-left"></i>
+		<i class="bi bi-arrow-left"></i>
 		<fmt:message key="back.label"/>
 	</a>
 </section>

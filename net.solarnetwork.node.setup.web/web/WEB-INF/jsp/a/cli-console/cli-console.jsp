@@ -24,15 +24,15 @@
 		<div class="col-md-12 text-right">
 			<button type="button" id="cli-console-clear-logging" class="btn btn-secondary" disabled
 				title="<fmt:message key='cli-console.commands.clear.label'/>">
-				<i class="far fa-trash-can"></i>
+				<i class="bi bi-trash3"></i>
 			</button>
 			<button type="button" id="cli-console-logging-toggle" class="toggle btn btn-success"
 				data-label-on="<fmt:message key='cli-console.commands.pause.label'/>"
 				data-label-off="<fmt:message key='cli-console.commands.play.label'/>"
-				data-class-on="fa-circle-pause"
-				data-class-off="fa-circle-play"
+				data-class-on="bi-pause-circle"
+				data-class-off="bi-play-circle"
 				title="<fmt:message key='cli-console.commands.pause.label'/>">
-				<i class="far fa-circle-pause"></i>
+				<i class="bi bi-pause-circle"></i>
 			</button>
 		</div>
 	</div>
@@ -45,7 +45,7 @@
 		<span class="cmd" data-tprop="command"></span>
 		<div class="d-flex ms-auto align-items-center">
 			<button type="button" class="btn btn-close" data-bs-dismiss="alert" aria-label="<fmt:message key='close.label'/>"></button>
-			<button type="button" class="btn copy" aria-label="<fmt:message key='copy.label'/>"><i class="far fa-clipboard"></i></button>
+			<button type="button" class="btn copy" aria-label="<fmt:message key='copy.label'/>"><i class="bi bi-clipboard2"></i></button>
 		</div>
 	</div>
 	<div class="row">

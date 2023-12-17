@@ -92,15 +92,15 @@
 										>
 									<label class="form-check-label" for="${settingId}">${entry.value}</label>
 								</div>
-								
+
 								<c:set var="help">
 									<setup:message key='${entry.key}.desc' messageSource='${provider.messageSource}'/>
 								</c:set>
 								<c:if test="${fn:length(help) > 0}">
-									<button type="button" class="help-popover help-icon ms-2" tabindex="-1"
+									<button type="button" class="help-popover help-icon ms-2" title="<fmt:message key='help.label'/>" tabindex="-1"
 											data-bs-content="${fn:escapeXml(help)}"
 											data-bs-html="true">
-										<i class="far fa-question-circle" aria-hidden="true"></i>
+										<i class="bi bi-question-circle" aria-hidden="true"></i>
 									</button>
 								</c:if>
 							</div>
@@ -142,7 +142,7 @@
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.TextAreaSettingSpecifier')}">
 						<div class="input-group">
 							<textarea name="${settingId}" id="${settingId}" class="form-control">${settingValue}</textarea>
-							<button type="button" class="btn btn-outline-secondary copy" title="<fmt:message key='copy.label'/>"><i class="far fa-clipboard"></i></button>
+							<button type="button" class="btn btn-outline-secondary copy" title="<fmt:message key='copy.label'/>"><i class="bi bi-clipboard2"></i></button>
 						</div>
 						<c:choose>
 							<c:when test="${setting.direct}">
@@ -199,9 +199,9 @@
 										</c:choose>
 										/>
 									<c:if test="${setting.secureTextEntry != true}">
-										<button type="button" class="btn btn-outline-secondary copy" title="<fmt:message key='copy.label'/>"><i class="far fa-clipboard"></i></button>
+										<button type="button" class="btn btn-outline-secondary copy" title="<fmt:message key='copy.label'/>"><i class="bi bi-clipboard2"></i></button>
 									</c:if>
-								</div>								
+								</div>
 							</div>
 						</div>
 						<script>
@@ -322,13 +322,13 @@
 				</c:set>
 
 				<c:if test="${fn:length(help) gt 0}">
-					<button type="button" class="help-popover help-icon" tabindex="-1"
+					<button type="button" class="help-popover help-icon" title="<fmt:message key='help.label'/>" tabindex="-1"
 							data-bs-content="${fn:escapeXml(help)}"
 							data-bs-html="true">
-						<i class="far fa-question-circle" aria-hidden="true"></i>
+						<i class="bi bi-question-circle" aria-hidden="true"></i>
 					</button>
 				</c:if>
-			</div>			
+			</div>
 		</div>
 	</c:when>
 	<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.GroupSettingSpecifier') and not empty setting.key}">
@@ -340,10 +340,10 @@
 				<c:if test="${setting.dynamic}">
 					<div class="btn-group" role="group">
 						<button type="button" class="btn btn-primary group-item-remove">
-							<i class="fas fa-minus"></i>
+							<i class="bi bi-dash-lg"></i>
 						</button>
 						<button type="button" class="btn btn-primary group-item-add">
-							<i class="fas fa-plus"></i>
+							<i class="bi bi-plus-lg"></i>
 						</button>
 					</div>
 					<input type="hidden" name="${settingId}Count" id="${settingId}" value="${fn:length(setting.groupSettings)}" />
@@ -365,10 +365,10 @@
 					<setup:message key='${setting.key}.desc' messageSource='${provider.messageSource}'/>
 				</c:set>
 				<c:if test="${fn:length(help) > 0}">
-					<button type="button" class=" help-popover help-icon" tabindex="-1"
+					<button type="button" class=" help-popover help-icon" title="<fmt:message key='help.label'/>" tabindex="-1"
 							data-bs-content="${fn:escapeXml(help)}"
 							data-bs-html="true">
-						<i class="far fa-question-circle" aria-hidden="true"></i>
+						<i class="bi bi-question-circle" aria-hidden="true"></i>
 					</button>
 				</c:if>
 			</div>

@@ -29,7 +29,7 @@
 	<section id="settings" style="margin-top: 4rem;">
 		<h2>
 			<a id="settings-section" href="#settings-section"
-				class="anchor" aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>			
+				class="anchor" aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>			
 			<fmt:message key="node.setup.settings.providers.title"/>
 		</h2>
 		<p><fmt:message key="node.setup.settings.providers.intro"/></p>	
@@ -43,7 +43,7 @@
 						<a id="${provider.settingUid}" 
 							class="anchor" 
 							href="#${provider.settingUid}"
-							aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>
+							aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>
 						<setup:message key="title" messageSource="${provider.messageSource}" text="${provider.displayName}"/>
 					</legend>
 					<c:set var="providerDescription">

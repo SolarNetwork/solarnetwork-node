@@ -7,12 +7,12 @@ SolarNode.Datum = (function() {
 		'event.topics' : true,
 		'sourceId' : true,
 	});
-		
+
 	var self = {};
-	
+
 	/**
 	 * Subscribe to the "datum created" topic.
-	 * 
+	 *
 	 * @param {string} [sourceId] an optional source ID to subscribe to; if not provided all sources are subscribed
 	 * @param {function} msgHandler the callback function that accepts error and message arguments
 	 */
@@ -20,10 +20,10 @@ SolarNode.Datum = (function() {
 		var topic = SolarNode.WebSocket.topicNameWithWildcardSuffix('/topic/datum/created', sourceId);
 		SolarNode.WebSocket.subscribeToTopic(topic, msgHandler);
 	}
-	
+
 	/**
 	 * Subscribe to the "datum stored" topic.
-	 * 
+	 *
 	 * @param {string} [sourceId] an optional source ID to subscribe to; if not provided all sources are subscribed
 	 * @param {function} msgHandler the callback function that accepts error and message arguments
 	 */
@@ -34,7 +34,7 @@ SolarNode.Datum = (function() {
 
 	/**
 	 * Subscribe to all "datum" topics.
-	 * 
+	 *
 	 * @param {string} [sourceId] an optional source ID to subscribe to; if not provided all sources are subscribed
 	 * @param {function} msgHandler the callback function that accepts error and message arguments
 	 */
@@ -45,7 +45,7 @@ SolarNode.Datum = (function() {
 
 	/**
 	 * Subscribe to all "control" topics.
-	 * 
+	 *
 	 * @param {string} [controlId] an optional source ID to subscribe to; if not provided all controls are subscribed
 	 * @param {function} msgHandler the callback function that accepts error and message arguments
 	 */
@@ -63,7 +63,7 @@ SolarNode.Datum = (function() {
 			}
 		}
 	}
-	
+
 	function datumActivityForDatum(datum) {
 		var activity = {
 			date: moment(datum.created).format('D MMM YYYY HH:mm:ss'),
@@ -80,21 +80,21 @@ SolarNode.Datum = (function() {
 		}
 		return activity;
 	}
-	
+
 	function iconNameForActivity(activity) {
 		var eventName = activity.event;
 		if ( eventName === 'DATUM_STORED' ) {
-			return 'fa-regular fa-hard-drive';
-		} else if ( eventName === 'DATUM_CAPTURED' 
-				|| eventName === 'CONTROL_INFO_CAPTURED' 
+			return 'bi bi-hdd';
+		} else if ( eventName === 'DATUM_CAPTURED'
+				|| eventName === 'CONTROL_INFO_CAPTURED'
 				|| eventName === 'CONTROL_INFO_CHANGED' ) {
-			return 'fa-solid fa-plus';
+			return 'bi bi-plus-lg';
 		} else if ( eventName === 'DATUM_UPLOADED' ) {
-			return 'fa-solid fa-arrow-up';
+			return 'bi bi-cloud-arrow-up';
 		}
 		return null;
 	}
-	
+
 	function addDatumActivityTableRow(tbody, templateRow, activity) {
 		var tr = templateRow.clone(true),
 			propList,
@@ -121,7 +121,7 @@ SolarNode.Datum = (function() {
 		}
 		tbody.prepend(tr);
 	}
-	
+
 	function updateDatumActivitySeenPropsTableRow(tbody, templateRow, activity) {
 		var tr = tbody.find('tr').filter(function() {
 				var d = $(this).data('activity');
@@ -168,10 +168,10 @@ SolarNode.Datum = (function() {
 			}, 100);
 		}
 	}
-	
+
 	function updateExternalNodeLinks(container) {
 		$.getJSON(SolarNode.context.path('/a/config')).then(function(json) {
-			var replaced = false; 
+			var replaced = false;
 			if ( json && json.data && json.data.networkServiceUrls ) {
 				var urls = json.data.networkServiceUrls;
 				Object.keys(urls).forEach(function(name) {
@@ -189,18 +189,18 @@ SolarNode.Datum = (function() {
 			}
 		});
 	}
-	
+
 	return Object.defineProperties(self, {
 		subscribeControl : { value : subscribeControl },
 
 		subscribeDatum : { value : subscribeDatum },
 		subscribeDatumCreated : { value : subscribeDatumCreated },
 		subscribeDatumStored : { value : subscribeDatumStored },
-		
+
 		datumActivityForDatum : { value : datumActivityForDatum },
 		addDatumActivityTableRow : { value : addDatumActivityTableRow },
 		updateDatumActivitySeenPropsTableRow : { value : updateDatumActivitySeenPropsTableRow },
-		
+
 		updateExternalNodeLinks : { value : updateExternalNodeLinks },
 	});
 }());
@@ -209,7 +209,7 @@ $(document).ready(function() {
 	if ( !SolarNode.isAuthenticated() ) {
 		return;
 	}
-	
+
 	$('#datum-activity').first().each(function() {
 		var activityContainer = $(this),
 			activityTableBody = activityContainer.find('.activity-container'),
@@ -218,12 +218,12 @@ $(document).ready(function() {
 			seenPropsTableBody = seenPropsContainer.find('.activity-container'),
 			seenPropsTableTemplateRow = seenPropsContainer.find('.activity.template');
 		var revealed = false;
-		
+
 		var handler = function handleMessage(msg) {
 			var datum = JSON.parse(msg.body).data,
 				activity = SolarNode.Datum.datumActivityForDatum(datum);
 			console.info('Got %o message: %o', activity.event, activity);
-			
+
 			SolarNode.Datum.addDatumActivityTableRow(activityTableBody, activityTableTemplateRow, activity);
 			activityTableBody.find('>*:gt(9)').remove();
 			if ( activity.event !== 'DATUM_UPLOADED' ) {
@@ -234,12 +234,12 @@ $(document).ready(function() {
 				seenPropsContainer.removeClass('hidden');
 			}
 		};
-		
+
 		SolarNode.Datum.subscribeDatum(null, handler);
 		SolarNode.Datum.subscribeControl(null, handler);
 
 	});
-	
+
 	$('#external-node-links').first().each(function() {
 		var container = $(this);
 		SolarNode.Datum.updateExternalNodeLinks(container);

@@ -33,6 +33,10 @@ button.help-icon {
 	color: #999;
 }
 
+button.help-icon:hover {
+	color: #000;
+}
+
 td dl {
 	margin-top: 0;
 	margin-bottom: 0;

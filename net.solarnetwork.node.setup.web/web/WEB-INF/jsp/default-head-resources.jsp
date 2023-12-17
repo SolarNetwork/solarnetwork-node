@@ -1,16 +1,14 @@
 <%@ taglib prefix="pack" uri="http://packtag.sf.net" %>
 <setup:url value='/' var="basePath"/>
-<meta name="base-path" content="${fn:endsWith(basePath, '/') 
-	? fn:substring(basePath, 0, fn:length(basePath) - 1) 
+<meta name="base-path" content="${fn:endsWith(basePath, '/')
+	? fn:substring(basePath, 0, fn:length(basePath) - 1)
 	: basePath}">
 <link rel="icon" type="image/png" href="<setup:url value='/img/favicon.png'/>">
 <pack:style context="${basePath}">
 	/css/bootstrap.css
 	/css/solarnode.css
 	/css/fonts.css
-	/css/fontawesome.css
-	/css/regular.css
-	/css/solid.css
+	/css/bootstrap-icons.css
 </pack:style>
 <sec:authorize access="!hasRole('ROLE_USER')">
 	<setup:resources type="text/css"/>
@@ -18,7 +16,7 @@
 <sec:authorize access="hasRole('ROLE_USER')">
 	<setup:resources type="text/css" role='USER'/>
 </sec:authorize>
-<pack:script context="${basePath}"> 
+<pack:script context="${basePath}">
 	/js-lib/jquery-3.7.1.js
 	/js-lib/bootstrap.bundle.js
 	/js-lib/moment.js

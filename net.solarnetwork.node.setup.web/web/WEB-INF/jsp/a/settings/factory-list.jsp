@@ -19,7 +19,7 @@
 	<div class="row action-progress-bar justify-content-between g-2">
 		<div class="col-auto">
 			<a href="<setup:url value='${navloc == "filters-component" ? "/a/settings/filters" : "/a/settings"}'/>" class="btn btn-secondary text-nowrap">
-				<i class="fas fa-arrow-left"></i>
+				<i class="bi bi-arrow-left"></i>
 				<fmt:message key="back.label"/>
 			</a>
 		</div>
@@ -28,7 +28,7 @@
 				<c:if test="${fn:length(providers) > 0}">
 					<div class="col-auto">
 						<button type="button" class="btn btn-secondary text-nowrap" data-bs-toggle="modal" data-bs-target="#remove-all-component-instance-modal">
-							<i class="far fa-trash-can"></i>
+							<i class="bi bi-trash3"></i>
 							<fmt:message key='settings.factory.removeall.label'>
 								<fmt:param>${fn:length(providers)}</fmt:param>
 								<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
@@ -38,7 +38,7 @@
 				</c:if>
 				<div class="col-auto">
 					<button type="button" class="btn btn-primary text-nowrap" id="add" data-bs-toggle="modal" data-bs-target="#add-component-instance-modal">
-						<i class="fas fa-plus"></i>
+						<i class="bi bi-plus-lg"></i>
 						<fmt:message key='settings.factory.add'>
 							<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
 						</fmt:message>
@@ -80,7 +80,7 @@
 						<a id="${instance.key}"
 							class="anchor"
 							href="#${instance.key}"
-							aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>
+							aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>
 						<setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/>
 						${' '}
 						${instance.key}
@@ -201,7 +201,7 @@ $(function() {
 						<span role="status"><fmt:message key='lookup.action.search'/></span>
 					</button>
 				</div>
-		
+
 				<table class="table table-striped table-hover hidden search-results">
 					<thead>
 						<tr>
@@ -222,7 +222,7 @@ $(function() {
 					<tbody>
 					</tbody>
 				</table>
-		
+
 				<label id="price-lookup-selected-label" class="hidden">
 					<fmt:message key='lookup.selected.label'/>
 					<span id="price-lookup-selected-container"></span>
@@ -255,7 +255,7 @@ $(function() {
 						<span role="status"><fmt:message key='lookup.action.search'/></span>
 					</button>
 				</div>
-		
+
 				<table class="table table-striped table-hover hidden search-results">
 					<thead>
 						<tr>
@@ -276,7 +276,7 @@ $(function() {
 					<tbody>
 					</tbody>
 				</table>
-		
+
 				<label id="weather-lookup-selected-label" class="hidden">
 					<fmt:message key='lookup.selected.label'/>
 					<span id="weather-lookup-selected-container"></span>
@@ -309,7 +309,7 @@ $(function() {
 						<span role="status"><fmt:message key='lookup.action.search'/></span>
 					</button>
 				</div>
-		
+
 				<table class="table table-striped table-hover hidden search-results">
 					<thead>
 						<tr>
@@ -328,7 +328,7 @@ $(function() {
 					<tbody>
 					</tbody>
 				</table>
-		
+
 				<label id="co2-lookup-selected-label" class="hidden">
 					<fmt:message key='lookup.selected.label'/>
 					<span id="co2-lookup-selected-container"></span>

@@ -8,7 +8,7 @@
 	<section id="factories">
 		<h2>
 			<a id="components-section" href="#components-section"
-				class="anchor" aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>			
+				class="anchor" aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>
 			<fmt:message key="settings.factories.title"/>
 		</h2>
 		<p><fmt:message key="settings.factories.intro"/></p>
@@ -27,7 +27,7 @@
 					</div>
 					<div class="col-auto">
 						<a class="btn btn-light" href="<setup:url value='/a/settings/manage?uid=${factory.factoryUid}'/>">
-							<i class="far fa-pen-to-square"></i> 
+							<i class="bi bi-pencil-square"></i>
 							<fmt:message key="settings.factory.manage.label"/>
 						</a>
 					</div>
@@ -41,25 +41,25 @@
 	<section id="settings">
 		<h2>
 			<a id="settings-section" href="#settings-section"
-				class="anchor" aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>			
+				class="anchor" aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>
 			<fmt:message key="settings.providers.title"/>
 		</h2>
-		<p><fmt:message key="settings.providers.intro"/></p>	
+		<p><fmt:message key="settings.providers.intro"/></p>
 
 		<form action="<setup:url value='/a/settings/save'/>" method="post">
 			<div class="form-actions d-grid my-5">
 				<button type="button" class="btn btn-primary" id="submit"><fmt:message key='settings.save'/></button>
 			</div>
-	
+
 			<c:forEach items="${providers}" var="provider" varStatus="providerStatus">
 				<!--  ${provider.settingUid} -->
 				<c:set var="provider" value="${provider}" scope="request"/>
 				<fieldset>
 					<legend>
-						<a id="${provider.settingUid}" 
-							class="anchor" 
+						<a id="${provider.settingUid}"
+							class="anchor"
 							href="#${provider.settingUid}"
-							aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>
+							aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>
 						<setup:message key="title" messageSource="${provider.messageSource}" text="${provider.displayName}"/>
 					</legend>
 					<c:set var="providerDescription">
@@ -93,7 +93,7 @@
 									<c:forEach items="${settingResources[provider.settingUid]}" var="resource">
 										<option data-handler="${resource.handlerKey}" data-key="${resource.key}">${resource.name}</option>
 									</c:forEach>
-								</select> 
+								</select>
 	  							<button type="button" class="btn btn-primary settings-resource-export"
 	  									data-action="<setup:url value='/a/settings/exportResources'/>"
 										data-target="#settings-resource-ident-${providerStatus.index}"
@@ -102,7 +102,7 @@
 						</div>
 					</div>
 					</c:if>
-				</fieldset>				
+				</fieldset>
 			</c:forEach>
 			<sec:csrfInput/>
 		</form>
@@ -126,7 +126,7 @@
 <section>
 	<h2>
 		<a id="backup-section" href="#backup-section"
-			class="anchor" aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>			
+			class="anchor" aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>
 		<fmt:message key="backup.title"/>
 	</h2>
 	<p><fmt:message key="backup.intro"/></p>
@@ -152,16 +152,16 @@
 			<fmt:message key="backup.now.label"/>
 		</label>
 		<div class="col-sm-7 col-md-8">
-			<button class="btn btn-primary" type="submit" id="backup-now-btn" data-loading-text=" ">					
+			<button class="btn btn-primary" type="submit" id="backup-now-btn" data-loading-text=" ">
 				<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
-				<span role="status"><fmt:message key="backup.now.button"/></span>				
+				<span role="status"><fmt:message key="backup.now.button"/></span>
 			</button>
 		</div>
 		<div class="col-sm-1 mt-1">
-			<button type="button" class="help-popover help-icon" tabindex="-1"
+			<button type="button" class="help-popover help-icon" title="<fmt:message key='help.label'/>" tabindex="-1"
 				data-bs-content="<fmt:message key='backup.now.caption'/>"
 				data-bs-html="true">
-				<i class="far fa-question-circle" aria-hidden="true"></i>
+				<i class="bi bi-question-circle" aria-hidden="true"></i>
 			</button>
 		</div>
 		<sec:csrfInput/>
@@ -203,10 +203,10 @@
 			</div>
 		</div>
 		<div class="col-sm-1 mt-1">
-			<button type="button" class="help-popover help-icon" tabindex="-1"
+			<button type="button" class="help-popover help-icon" title="<fmt:message key='help.label'/>" tabindex="-1"
 					data-bs-content="<fmt:message key='backup.backups.info'/>"
 					data-bs-html="true">
-				<i class="far fa-question-circle" aria-hidden="true"></i>
+				<i class="bi bi-question-circle" aria-hidden="true"></i>
 			</button>
 		</div>
 		<sec:csrfInput/>
@@ -220,13 +220,13 @@
 			<div class="input-group">
 				<input class="form-control" id="backup-import-field" type="file" name="file" aria-describedby="backup-import-button" required>
 				<button class="btn btn-primary" id="backup-import-button" type="submit"><fmt:message key="backup.import.button"/></button>
-			</div>			
+			</div>
 		</div>
 		<div class="col-sm-1 mt-1">
-			<button type="button" class="help-popover help-icon" tabindex="-1"
+			<button type="button" class="help-popover help-icon" title="<fmt:message key='help.label'/>" tabindex="-1"
 					data-bs-content="<fmt:message key='backup.import.info'/>"
 					data-bs-html="true">
-				<i class="far fa-question-circle" aria-hidden="true"></i>
+				<i class="bi bi-question-circle" aria-hidden="true"></i>
 			</button>
 		</div>
 		<sec:csrfInput/>
@@ -237,7 +237,7 @@
 <section>
 	<h2>
 		<a id="settings-backup-section" href="#settings-backup-section"
-			class="anchor" aria-hidden="true"><i class="fas fa-link" aria-hidden="true"></i></a>			
+			class="anchor" aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>
 		<fmt:message key="settings.io.title"/>
 	</h2>
 	<p><fmt:message key="settings.io.intro"/></p>
@@ -278,7 +278,7 @@
 							</c:forEach>
 						</c:forEach>
 					</select>
-					<button type="button" class="btn btn-primary settings-resource-export" 
+					<button type="button" class="btn btn-primary settings-resource-export"
 						data-action="<setup:url value='/a/settings/exportResources'/>"
 						data-target="#settings-io-export-ident"
 						><fmt:message key="settings.io.export.button"/></button>
@@ -303,10 +303,10 @@
 				</c:forEach>
 			</div>
 			<div class="col-sm-1 mt-1">
-				<button type="button" class="help-popover help-icon" tabindex="-1"
+				<button type="button" class="help-popover help-icon" title="<fmt:message key='help.label'/>" tabindex="-1"
 						data-bs-content="<fmt:message key='settings.autobackup.info'/>"
 						data-bs-html="true">
-					<i class="far fa-question-circle" aria-hidden="true"></i>
+					<i class="bi bi-question-circle" aria-hidden="true"></i>
 				</button>
 			</div>
 		</div>
@@ -322,11 +322,11 @@
 			</div>
 			<div class="modal-body">
 				<p><fmt:message key='backup.restore.intro'/></p>
-				<div id="backup-restore-list-container" class="menu-list noselect" 
+				<div id="backup-restore-list-container" class="menu-list noselect"
 					data-msg-items="<fmt:message key='items'/>" data-msg-item="<fmt:message key='item'/>"></div>
 				<div class="progress hidden" role="progressbar">
 					<div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
-		    	</div>		
+		    	</div>
 			</div>
 			<div class="modal-footer">
 				<sec:csrfInput/>

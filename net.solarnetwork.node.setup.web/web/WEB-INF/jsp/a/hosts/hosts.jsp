@@ -10,7 +10,7 @@
 	<div class="row justify-content-end">
 		<div class="col-auto">
 			<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#host-add-modal">
-				<i class="fas fa-plus"></i> <fmt:message key="host.add.action"/>
+				<i class="bi bi-plus-lg"></i> <fmt:message key="host.add.action"/>
 			</button>
 		</div>
 	</div>
@@ -30,7 +30,7 @@
 
 <form id="host-add-modal" class="modal fade" action="<setup:url value='/a/hosts/add'/>" method="post">
 	<div class="modal-dialog">
-		<div class="modal-content">		
+		<div class="modal-content">
 			<div class="modal-header">
 				<h3 class="modal-title"><fmt:message key="host.add.title"/></h3>
 				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<fmt:message key='close.label'/>"></button>
@@ -80,7 +80,7 @@
 			<div class="modal-footer">
 				<a href="#" class="btn btn-secondary" data-bs-dismiss="modal"><fmt:message key="close.label"/></a>
 				<button type="submit" class="btn btn-danger before"
-						data-loading-text="<fmt:message key='host.removing.message'/>">					
+						data-loading-text="<fmt:message key='host.removing.message'/>">
 					<span class="spinner spinner-border spinner-border-sm hidden" aria-hidden="true"></span>
 					<span role="status"><fmt:message key="host.remove.button"/></span>
 				</button>
