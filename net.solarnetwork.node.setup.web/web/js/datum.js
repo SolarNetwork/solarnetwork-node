@@ -123,7 +123,7 @@ SolarNode.Datum = (function() {
 	}
 
 	function updateDatumActivitySeenPropsTableRow(tbody, templateRow, activity) {
-		var tr = tbody.find('tr').filter(function() {
+		var tr = tbody.find('.row.activity').filter(function() {
 				var d = $(this).data('activity');
 				return (d && d.sourceId === activity.sourceId);
 			}),
