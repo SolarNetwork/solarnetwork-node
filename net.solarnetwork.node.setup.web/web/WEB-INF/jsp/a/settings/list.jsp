@@ -270,22 +270,18 @@
 				<fmt:message key="settings.io.exportResource.label"/>
 			</label>
 			<div class="col-sm-7 col-md-8">
-				<div class="row g-3">
-					<div class="col-sm-6">
-						<select class="form-select settings-resource-ident" id="settings-io-export-ident">
-							<c:forEach items="${settingResources}" var="e">
-								<c:forEach items="${e.value}" var="resource">
-									<option data-handler="${resource.handlerKey}" data-key="${resource.key}">${resource.name}</option>
-								</c:forEach>
+				<div class="input-group">
+					<select class="form-select settings-resource-ident" id="settings-io-export-ident">
+						<c:forEach items="${settingResources}" var="e">
+							<c:forEach items="${e.value}" var="resource">
+								<option data-handler="${resource.handlerKey}" data-key="${resource.key}">${resource.name}</option>
 							</c:forEach>
-						</select>
-					</div>
-					<div class="col-auto">
-						<button type="button" class="btn btn-primary settings-resource-export" 
-							data-action="<setup:url value='/a/settings/exportResources'/>"
-							data-target="#settings-io-export-ident"
-							><fmt:message key="settings.io.export.button"/></button>
-					</div>
+						</c:forEach>
+					</select>
+					<button type="button" class="btn btn-primary settings-resource-export" 
+						data-action="<setup:url value='/a/settings/exportResources'/>"
+						data-target="#settings-io-export-ident"
+						><fmt:message key="settings.io.export.button"/></button>
 				</div>
 			</div>
 		</form>
