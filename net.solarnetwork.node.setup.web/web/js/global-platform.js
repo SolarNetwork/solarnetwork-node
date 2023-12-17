@@ -16,7 +16,7 @@ SolarNode.Platform = (function() {
 		modal.find('.info-title').text(info.title || '');
 		modal.find('.info-message').text(info.message || '');
 		modal.find('.bar').css('width', Math.round((+info.percentComplete || 0) * 100) + '%');
-		modal.find('.restart-required').toggleClass('hide', !info.restartRequired);
+		modal.find('.restart-required').toggleClass('hidden', !info.restartRequired);
 	}
 	
 	function setPlatformLockModalVisible(modal, visible) {
@@ -29,8 +29,8 @@ SolarNode.Platform = (function() {
 		}
 		waitingForRestart = true;
 		modal.find('.bar').css('width', '100%');
-		modal.find('.restarting').removeClass('hide');
-		modal.find('.hide-while-restarting').addClass('hide');
+		modal.find('.restarting').removeClass('hidden');
+		modal.find('.hide-while-restarting').addClass('hidden');
 		setTimeout(function() {
 			SolarNode.tryGotoURL(SolarNode.context.path('/a/home'));
 		}, 10000);

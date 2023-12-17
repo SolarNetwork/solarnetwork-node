@@ -2,12 +2,10 @@
 <setup:url value='/' var="basePath"/>
 <meta name="base-path" content="${fn:endsWith(basePath, '/') 
 	? fn:substring(basePath, 0, fn:length(basePath) - 1) 
-	: basePath}" />
+	: basePath}">
 <link rel="icon" type="image/png" href="<setup:url value='/img/favicon.png'/>">
 <pack:style context="${basePath}">
 	/css/bootstrap.css
-	/css/bootstrap-responsive.css
-	/css/ladda.css
 	/css/solarnode.css
 	/css/fonts.css
 	/css/fontawesome.css
@@ -20,17 +18,13 @@
 <sec:authorize access="hasRole('ROLE_USER')">
 	<setup:resources type="text/css" role='USER'/>
 </sec:authorize>
-<%-- Some JS does not minimize without errors, so ignore those here. --%>
-<pack:script minify="false" context="${basePath}">
-	/js-lib/d3v4.js
-</pack:script>
 <pack:script context="${basePath}"> 
-	/js-lib/jquery-2.2.4.js
-	/js-lib/bootstrap.js
-	/js-lib/ladda.js
+	/js-lib/jquery-3.7.1.js
+	/js-lib/bootstrap.bundle.js
 	/js-lib/moment.js
 	/js-lib/jquery.form.js
 	/js-lib/stomp.js
+	/js-lib/d3v4.js
 	/js/global.js
 	/js/global-websocket.js
 	/js/global-platform.js

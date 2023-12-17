@@ -4,7 +4,7 @@
 SolarNode.Settings = {
 
 	/** A regular expression that matches a cron expression. */
-	CRON_REGEX : /([0-9*\/,-]+)\s+([0-9*\/,-]+)\s+([0-9*\/,-]+)\s+([0-9*\/,-]+)\s+([0-9*\/,-]+)\s+([0-9*\/,-]+)(.*)/,
+	CRON_REGEX : /([0-9*?\/,-]+)\s+([0-9*?\/,-]+)\s+([0-9*?\/,-]+)\s+([0-9*?\/,-]+)\s+([0-9*?\/,-]+)\s+([0-9*?\/,-]+)(.*)/,
 
 	/** A regular expression that matches a cron slash-based period. */
 	CRON_FIELD_PERIOD_REGEX : /^([0-9]+|\*)\/([0-9]+|\*)$/,
@@ -88,23 +88,23 @@ SolarNode.Settings.addSlider = function(params) {
  *
  * @param params.provider {String} the provider key
  * @param params.setting {String} the setting key
- * @param params.key {String} the DOM element ID for the slider
+ * @param params.key {String} the DOM element ID for the button
  * @param params.on {String} the "on" value
  * @param params.off {String} the "off" value
  * @param params.value {Number} the initial value
  */
 SolarNode.Settings.addToggle = function(params) {
-	var toggle = $('#'+params.key);
+	const toggle = $('#'+params.key);
 	toggle.button();
-	toggle.click(function() {
+	toggle.on('click', function() {
 		toggle.button('toggle');
-		var active = toggle.hasClass('active');
-		var value = (active ? params.on : params.off);
-		$(this).text(active ? params.onLabel : params.offLabel);
+		const active = toggle.hasClass('active');
+		const value = (active ? params.on : params.off);
+		toggle.text(active ? params.onLabel : params.offLabel);
 		if ( active ) {
-			$(this).addClass('btn-success');
+			toggle.addClass('btn-success').removeClass('btn-light')
 		} else {
-			$(this).removeClass('btn-success');
+			toggle.removeClass('btn-success').addClass('btn-light');
 		}
 		SolarNode.Settings.updateSetting(params, value);
 	});
@@ -120,7 +120,7 @@ SolarNode.Settings.addToggle = function(params) {
 SolarNode.Settings.addRadio = function(params) {
 	var radios = $('input:radio[name='+params.key+']');
 	//radios.filter('[value='+params.value+']').attr('checked', 'checked');
-	radios.change(function() {
+	radios.on('change', function() {
 			var value = radios.filter(':checked').val();
 			SolarNode.Settings.updateSetting(params, value);
 		});
@@ -135,7 +135,7 @@ SolarNode.Settings.addRadio = function(params) {
  */
 SolarNode.Settings.addSelect = function(params) {
 	var select = $('select[name='+params.key+']');
-	select.change(function() {
+	select.on('change', function() {
 			var value = select.val();
 			SolarNode.Settings.updateSetting(params, value);
 		});
@@ -150,7 +150,7 @@ SolarNode.Settings.addSelect = function(params) {
  */
 SolarNode.Settings.addTextField = function(params) {
 	var field = $('#'+params.key);
-	field.change(function() {
+	field.on('change', function() {
 			var value = field.val();
 			SolarNode.Settings.updateSetting(params, value);
 		});
@@ -165,7 +165,7 @@ SolarNode.Settings.addTextField = function(params) {
  */
 SolarNode.Settings.addScheduleField = function(params) {
 	var field = $('#'+params.key);
-	var select = field.parent().children('select');
+	var select = $('#cg-'+params.key).find('select');
 	var prevOption = select.val();
 	var prevCronMatch = field.val().match(SolarNode.Settings.CRON_REGEX);
 
@@ -211,14 +211,16 @@ SolarNode.Settings.addScheduleField = function(params) {
 		return String(value);
 	}
 
-	field.change(function() {
+	field.on('change', function() {
 		var value = valueForSetting(prevOption, field.val());
 		var cronMatch = value.match(SolarNode.Settings.CRON_REGEX);
-		if ( cronMatch && prevOption !== 'cron' ) {
-			select.val('cron');
-			prevOption = 'cron';
+		if ( cronMatch ) {
+			if ( prevOption !== 'cron' ) {
+				select.val('cron');
+				prevOption = 'cron';
+			}
 			prevCronMatch = cronMatch;
-		} else if ( !cronMatch && prevOption === 'cron' ) {
+		} else if ( prevOption === 'cron' ) {
 			select.val('ms');
 			prevOption = 'ms';
 			prevCronMatch = null;
@@ -229,19 +231,17 @@ SolarNode.Settings.addScheduleField = function(params) {
 	select.on('change', function() {
 		var option = select.val();
 		var expr = field.val();
-		var cronMatch = expr.match(SolarNode.Settings.CRON_REGEX);
 		var exprNum = Number(expr);
 		var resultExpr = expr;
-		var fieldMatch;
 		var settingValue;
 
-		function updateResultForCronFieldPeriod(cronMatch, cronFieldIndex, multiplier) {
+		function updateResultForCronFieldPeriod(cronMatch, cronFieldIndex, multiplier, base) {
 			if ( cronMatch ) {
-				fieldMatch = cronMatch[cronFieldIndex].match(SolarNode.Settings.CRON_FIELD_PERIOD_REGEX);
+				const fieldMatch = cronMatch[cronFieldIndex].match(SolarNode.Settings.CRON_FIELD_PERIOD_REGEX);
 				if ( fieldMatch ) {
 					resultExpr = fieldMatch[2] === '*' ? multiplier : Number(fieldMatch[2]) * multiplier;
 				} else {
-					resultExpr = multiplier;
+					resultExpr = (multiplier > 1 ? base : multiplier);
 				}
 			} else {
 				resultExpr = multiplier;
@@ -252,7 +252,7 @@ SolarNode.Settings.addScheduleField = function(params) {
 			if ( !isNaN(exprNum) ) {
 				if ( prevOption === 'ms' && exprNum <= 60000 ) {
 					resultExpr = '0/' + Math.ceil(exprNum / 1000) + ' * * * * *';
-				} else if ( prevOption === 's' && exprNum <= 60 ) {
+				} else if ( prevOption === 's' && exprNum <= 6000 ) {
 					resultExpr = '0/' + Math.ceil(exprNum) + ' * * * * *';
 				} else if ( prevOption === 'm' && exprNum <= 60 ) {
 					resultExpr = '0 0/' + Math.ceil(exprNum) + ' * * * *';
@@ -266,13 +266,13 @@ SolarNode.Settings.addScheduleField = function(params) {
 			}
 		} else if ( prevOption === 'cron' ) {
 			if ( option === 'ms' ) {
-				updateResultForCronFieldPeriod(prevCronMatch, 1, 1000);
+				updateResultForCronFieldPeriod(prevCronMatch, 1, 1000, 60000);
 			} else if ( option === 's' ) {
-				updateResultForCronFieldPeriod(prevCronMatch, 1, 1);
+				updateResultForCronFieldPeriod(prevCronMatch, 1, 1, 60);
 			} else if ( option === 'm' ) {
-				updateResultForCronFieldPeriod(prevCronMatch, 2, 1);
+				updateResultForCronFieldPeriod(prevCronMatch, 2, 1, 60);
 			} else if ( option === 'h' ) {
-				updateResultForCronFieldPeriod(prevCronMatch, 3, 1);
+				updateResultForCronFieldPeriod(prevCronMatch, 3, 1, 24);
 			} else {
 				resultExpr = 1;
 			}
@@ -360,6 +360,7 @@ SolarNode.Settings.addLocationFinder = function(params) {
 			beforeSubmit: function(dataArray, form, options) {
 				// start a spinner on the search button so we know a search is happening
 				SolarNode.showLoading(searchBtn);
+				chooseBtn.prop('disabled', true);
 				chooseBtn.removeData('locationMeta'); // clear any previous selection
 				//searchBtn.attr('disabled', 'disabled');
 			},
@@ -413,22 +414,10 @@ SolarNode.Settings.addLocationFinder = function(params) {
 			}
 		});
 	}
-	btn.click(function() {
-		// common lookup
-		modal.find('input[name=sourceName]').val(params.sourceName);
-		modal.find('input[name=locationName]').val(params.locationName);
-
-		// price lookup
-		modal.find('input[name=currency]').val(params.currency);
-
-		// weather lookup
-		modal.find('input[name="location.country"]').val(params.country);
-		modal.find('input[name="location.postalCode"]').val(params.postalCode);
-
+	btn.on('click', function() {
 		// associate data with singleton modal
 		chooseBtn.data('params', params);
 		chooseBtn.data('label', labelSpan);
-		modal.find('input[name=tags]').val(params.locationType);
 		modal.modal('show');
 	});
 };
@@ -440,14 +429,14 @@ SolarNode.Settings.addGroupedSetting = function(params) {
 		url = $(groupCount.get(0).form).attr('action');
 
 	// wire up the Add button to add dynamic elements
-	container.find('button.group-item-add').click(function() {
+	container.find('button.group-item-add').on('click', function() {
 		var newCount = count + 1;
 		container.find('button').attr('disabled', 'disabled');
 		SolarNode.Settings.updateSetting(params, newCount);
 		SolarNode.Settings.saveUpdates(url, undefined, delayedReload);
 	});
 	// dynamic grouped items remove support
-	container.find('.group-item-remove').click(function() {
+	container.find('.group-item-remove').on('click', function() {
 		if ( count < 1 ) {
 			return;
 		}
@@ -585,7 +574,7 @@ SolarNode.Settings.showConfirmation = function(params) {
 	var alert = $(params.alert).clone();
 
 	var confirmationButton = alert.find('button.submit');
-	confirmationButton.click(function() {
+	confirmationButton.on('click', function() {
 		$(this).attr('disabled', 'disabled');
 		$.ajax({
 			type : 'POST',
@@ -597,7 +586,7 @@ SolarNode.Settings.showConfirmation = function(params) {
 			success: delayedReload
 		});
 	});
-	alert.bind('close', function(e) {
+	alert.on('close.bs.alert', function(e) {
 		origButton.removeAttr('disabled');
 		origButton.removeClass('hidden');
 		confirmationButton.unbind();
@@ -681,7 +670,7 @@ function setupBackups() {
 			selectedCount = 0,
 			submit = $('#backup-restore-modal button[type=submit]');
 		row.toggleClass('selected');
-		selectedCount = row.parent().children('.selected').size();
+		selectedCount = row.parent().children('.selected').length;
 		if ( selectedCount < 1 ) {
 			submit.attr('disabled', 'disabled');
 		} else {
@@ -707,7 +696,7 @@ function setupBackups() {
 			var form = $('#backup-restore-modal');
 			SolarNode.info(json.message, $('#backup-restore-list-container').empty());
 			form.find('button, .modal-body p').remove();
-			form.find('.progress.hide').removeClass('hide');
+			form.find('.progress.hidden').removeClass('hidden');
 			setTimeout(function() {
 				SolarNode.tryGotoURL(SolarNode.context.path('/a/settings'));
 			}, 10000);
@@ -719,7 +708,7 @@ function setupBackups() {
 			createBackupSubmitButton.removeAttr('disabled');
 			SolarNode.hideSpinner(createBackupSubmitButton);
 		}
-	}).on('show', function() {
+	}).on('show.bs.modal', function() {
 		$(this).find('button[type=submit]').removeAttr('disabled');
 	});
 }
@@ -774,7 +763,9 @@ function uploadSettingResource(url, provider, instance, setting, dataKey, dataVa
 }
 
 function setupComponentSettings(container) {
-	container.find('.help-popover').popover();
+	container.find('.help-popover').each(function(i, el) {
+		new bootstrap.Popover(el);
+	});
 
 	container.find('.setting-resource-upload').on('click', function() {
 		var me = $(this);
@@ -784,7 +775,7 @@ function setupComponentSettings(container) {
 			provider = me.data('provider'),
 			instance = me.data('instance'),
 			setting = me.data('setting');
-		if ( field.size() < 1 ) {
+		if ( field.length < 1 ) {
 			return;
 		}
 		var el = field.get(0),
@@ -802,19 +793,43 @@ function setupComponentSettings(container) {
 			}
 		}
 	});
-	container.find('a.settings-resource-export').on('click', function(event) {
+	container.find('.settings-resource-export').on('click', function(event) {
 		event.preventDefault();
-		var identSel = $(this).prevAll('select.settings-resource-ident').get(0);
-		if ( identSel ) {
-			var identOpt = identSel.selectedOptions[0];
+		const target = this.dataset.target;
+		const action = this.dataset.action;
+		const select = document.querySelector(target);
+		if ( select ) {
+			const identOpt = select.selectedOptions[0];
 			if ( identOpt ) {
-				var href = this.href;
 				var query = 'handlerKey='+ encodeURIComponent(identOpt.dataset['handler'])
 					+ '&key=' + encodeURIComponent(identOpt.dataset['key']);
-				document.location = href+'?'+query;
+				document.location = action +'?'+query;
 			}
 		}
 		return false;
+	});
+	
+	// copy buttons
+	container.find('button.copy').on('click', function(event) {
+		event.preventDefault();
+		let copySrc = this.previousElementSibling;
+		let copyEl = undefined;
+		if ( copySrc.tagName === 'INPUT' ) {
+			if ( copySrc.getAttribute('type') != 'password') {
+				copyEl = $(copySrc);
+			}
+		} else {
+			copyEl = $(copySrc);
+		}
+		if ( copyEl ) {
+			if ( SolarNode.copyElementValue(copyEl) ) {
+				const icon = $(this).find('i');
+				icon.addClass('fas fa-clipboard-check').removeClass('far fa-clipboard');
+				setTimeout(() => {
+					icon.addClass('far fa-clipboard').removeClass('fas fa-clipboard-check');
+				}, 1200);
+			}
+		}
 	});
 }
 
@@ -824,8 +839,8 @@ function loadComponentInstanceContainer(container) {
 	if ( !(container) ) {
 		return;
 	}
-	if ( container && container.size() > 0 && !container.hasClass('loaded') ) {
-		var url = container.data('target')
+	if ( container && container.length > 0 && !container.hasClass('loaded') ) {
+		var url = container.data('bsTarget')
 			+'?uid=' + encodeURIComponent(container.data('factoryUid'))
 			+'&key=' + encodeURIComponent(container.data('instanceKey'));
 		console.log('Loading component instance: ' +url);
@@ -849,16 +864,16 @@ function selectInitialComponentInstance() {
 	var selected = false;
 	var componentContent = $('.instance-content');
 	
-	if ( componentContent.size() > 1 && document.location.hash ) {
+	if ( componentContent.length > 1 && document.location.hash ) {
 		var instanceKey = decodeURIComponent(document.location.hash.substring(1));
-		var instanceTab = $('#settings.carousel .carousel-indicators li[data-instance-key="'
+		var instanceTab = $('#settings.carousel .page-indicators button[data-instance-key="'
 			+ instanceKey + '"]');
-		if ( instanceTab.size() > 0 ) {
-			instanceTab.first().click();
+		if ( instanceTab.length > 0 ) {
+			instanceTab.first().trigger('click');
 			selected = true;
 		}
 	}
-	if ( !selected && componentContent.size() > 0 ) {
+	if ( !selected && componentContent.length > 0 ) {
 		loadComponentInstanceContainer(componentContent.first());
 	}
 }
@@ -866,29 +881,29 @@ function selectInitialComponentInstance() {
 $(document).ready(function() {
 	setupComponentSettings($('body'));
 	
-	$('.lookup-modal table.search-results').on('click', 'tr', function() {
+	$('.lookup-modal table.search-results tbody').on('click', 'tr', function() {
 		var me = $(this);
 		var form = me.closest('form');
 		var chooseBtn = form.find('button.choose');
-		if ( me.hasClass('success') === false ) {
-			me.parent().find('tr.success').removeClass('success');
-			me.addClass('success');
+		if ( me.hasClass('table-success') === false ) {
+			me.parent().find('tr.table-success').removeClass('table-success');
+			me.addClass('table-success');
 		}
 		chooseBtn.data('locationMeta', me.data('locationMeta'));
 		chooseBtn.removeAttr('disabled');
 	});
 
-	$('.lookup-modal').on('hidden', function() {
+	$('.lookup-modal').on('hidden.bs.modal', function() {
 		var form = $(this);
 		var chooseBtn = form.find('button.choose');
 		chooseBtn.attr('disabled', 'disabled');
 		chooseBtn.removeData('params');
 		chooseBtn.removeData('label');
-		form.find('table.search-results tr.success').removeClass('success');
+		form.find('table.search-results tr.table-success').removeClass('table-success');
 	});
-	$('.lookup-modal').on('shown', function() {
+	$('.lookup-modal').on('shown.bs.modal', function() {
 		var firstInput = $(this).find('input').first();
-		firstInput.focus().select();
+		firstInput.trigger('focus').trigger('select');
 	});
 	$('.sn-loc-lookup-modal button.choose').on('click', function() {
 		var me = $(this);
@@ -925,7 +940,7 @@ $(document).ready(function() {
 			var json = $.parseJSON(xhr.responseText);
 			SolarNode.error(json.message, $('#add-component-instance-modal .modal-body.start'));
 		}
-	}).on('shown', function() {
+	}).on('shown.bs.modal', function() {
 		$('#add-component-instance-name').val('').focus();
 	});
 	$('#remove-all-component-instance-modal').ajaxForm({
@@ -950,7 +965,7 @@ $(document).ready(function() {
 		var button = this;
 		SolarNode.Settings.deleteFactoryConfiguration({
 			button: button,
-			url: button.dataset.target,
+			url: button.dataset.bsTarget,
 			factoryUid: button.dataset.factoryUid,
 			instanceUid: button.dataset.instanceKey
 		});
@@ -959,18 +974,23 @@ $(document).ready(function() {
 		var button = this;
 		SolarNode.Settings.resetFactoryConfiguration({
 			button: button,
-			url: button.dataset.target,
+			url: button.dataset.bsTarget,
 			factoryUid: button.dataset.factoryUid,
 			instanceUid: button.dataset.instanceKey
 		});
 	});
 	
-	$('#settings.carousel .carousel-indicators li').on('click', function(event) {
+	$('#settings.carousel .page-indicators button').on('click', function(event) {
 		var instanceKey = this.dataset.instanceKey;
 		if ( !instanceKey ) {
 			return;
 		}
 		console.log('Carousel click to instance: ' +instanceKey);
+		if ( !this.classList.contains('btn-warning') ) {
+			$('#settings.carousel .page-indicators button.btn-warning').removeClass('btn-warning').addClass('btn-secondary');
+			this.classList.add('btn-warning');
+			this.classList.remove('btn-secondary');
+		}
 		document.location.hash = encodeURIComponent(instanceKey);
 		loadComponentInstance(instanceKey);
 	});

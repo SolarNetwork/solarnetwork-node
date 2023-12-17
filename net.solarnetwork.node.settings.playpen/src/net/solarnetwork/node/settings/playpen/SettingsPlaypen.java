@@ -72,7 +72,7 @@ import net.solarnetwork.settings.support.SettingUtils;
  * A test bed experiment for the settings framework.
  * 
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourceHandler {
 
@@ -111,6 +111,10 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 	private Long weatherLocationId;
 	private String weatherSourceId;
 	private DatumLocation weatherLocation;
+
+	private Long co2LocationId;
+	private String co2SourceId;
+	private DatumLocation co2Location;
 
 	private MessageSource messageSource;
 
@@ -173,6 +177,7 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 
 		results.add(getLocationSettingSpecifier());
 		results.add(getWeatherLocationSettingSpecifier());
+		results.add(getCo2LocationSettingSpecifier());
 
 		// text area (direct)
 		results.add(new BasicTextAreaSettingSpecifier("textAreaDirect", "", true));
@@ -251,8 +256,8 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 					GeneralLocationSourceMetadata meta = service.getLocationMetadata(weatherLocationId,
 							weatherSourceId);
 					SimpleDatumLocation loc = new SimpleDatumLocation();
-					loc.setLocationId(locationId);
-					loc.setSourceId(sourceId);
+					loc.setLocationId(weatherLocationId);
+					loc.setSourceId(weatherSourceId);
 					loc.setSourceMetadata(meta);
 					weatherLocation = loc;
 				} catch ( RuntimeException e ) {
@@ -263,6 +268,28 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 		}
 		return new BasicLocationLookupSettingSpecifier("weatherLocationKey", DatumLocation.WEATHER_TYPE,
 				weatherLocation);
+	}
+
+	private LocationLookupSettingSpecifier getCo2LocationSettingSpecifier() {
+		if ( co2Location == null && locationService != null && co2LocationId != null
+				&& co2SourceId != null ) {
+			LocationService service = locationService.service();
+			if ( service != null ) {
+				try {
+					GeneralLocationSourceMetadata meta = service.getLocationMetadata(co2LocationId,
+							co2SourceId);
+					SimpleDatumLocation loc = new SimpleDatumLocation();
+					loc.setLocationId(co2LocationId);
+					loc.setSourceId(co2SourceId);
+					loc.setSourceMetadata(meta);
+					co2Location = loc;
+				} catch ( RuntimeException e ) {
+					log.error("Error getting co2 location metadata for location {} source {}",
+							co2LocationId, co2SourceId, e);
+				}
+			}
+		}
+		return new BasicLocationLookupSettingSpecifier("co2LocationKey", "co2", co2Location);
 	}
 
 	public void setMessageSource(MessageSource messageSource) {
@@ -309,6 +336,27 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 		}
 		setWeatherLocationId(newLocationId);
 		setWeatherSourceId(newSourceId);
+	}
+
+	/**
+	 * Set the CO2 location ID and source ID as a single string value. The
+	 * format of the key is {@code locationId:sourceId}.
+	 * 
+	 * @param key
+	 *        the location and source ID key
+	 */
+	public void setCo2LocationKey(String key) {
+		Long newLocationId = null;
+		String newSourceId = null;
+		if ( key != null ) {
+			int idx = key.indexOf(':');
+			if ( idx > 0 && idx + 1 < key.length() ) {
+				newLocationId = Long.valueOf(key.substring(0, idx));
+				newSourceId = key.substring(idx + 1);
+			}
+		}
+		setCo2LocationId(newLocationId);
+		setCo2SourceId(newSourceId);
 	}
 
 	// SettingResourceHandler -----
@@ -457,6 +505,18 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 		this.weatherLocationId = weatherLocationId;
 	}
 
+	public Long getCo2LocationId() {
+		return co2LocationId;
+	}
+
+	public void setCo2LocationId(Long co2LocationId) {
+		if ( this.co2Location != null && co2LocationId != null
+				&& !co2LocationId.equals(this.co2Location.getLocationId()) ) {
+			this.co2Location = null; // set to null so we re-fetch from server
+		}
+		this.co2LocationId = co2LocationId;
+	}
+
 	public String getSourceId() {
 		return sourceId;
 	}
@@ -479,6 +539,18 @@ public class SettingsPlaypen implements SettingSpecifierProvider, SettingResourc
 			this.weatherLocation = null;
 		}
 		this.weatherSourceId = weatherSourceId;
+	}
+
+	public String getCo2SourceId() {
+		return co2SourceId;
+	}
+
+	public void setCo2SourceId(String co2SourceId) {
+		if ( this.co2SourceId != null && co2SourceId != null
+				&& !co2SourceId.equals(this.co2Location.getSourceId()) ) {
+			this.co2Location = null;
+		}
+		this.co2SourceId = co2SourceId;
 	}
 
 	public List<String> getListString() {

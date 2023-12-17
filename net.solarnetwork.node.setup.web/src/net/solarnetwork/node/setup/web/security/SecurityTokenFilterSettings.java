@@ -64,6 +64,13 @@ public class SecurityTokenFilterSettings {
 	private Path spoolDirectory = DEFAULT_SPOOL_DIRECTORY;
 
 	/**
+	 * Constructor.
+	 */
+	public SecurityTokenFilterSettings() {
+		super();
+	}
+
+	/**
 	 * Get the maximum date skew.
 	 * 
 	 * @return the maximum date skew, in milliseconds; defaults to
