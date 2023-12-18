@@ -45,7 +45,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * command.
  * 
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class ProcessActionCommandRunner implements ActionCommandRunner, SettingSpecifierProvider {
 
@@ -56,6 +56,13 @@ public class ProcessActionCommandRunner implements ActionCommandRunner, SettingS
 	private MessageSource messageSource;
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
+
+	/**
+	 * Constructor.
+	 */
+	public ProcessActionCommandRunner() {
+		super();
+	}
 
 	@Override
 	public String getSettingUid() {
