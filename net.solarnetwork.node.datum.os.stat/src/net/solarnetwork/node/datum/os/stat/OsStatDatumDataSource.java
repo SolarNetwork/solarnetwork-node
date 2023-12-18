@@ -27,6 +27,7 @@ import static net.solarnetwork.domain.datum.DatumSamplesType.Accumulating;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Instantaneous;
 import static net.solarnetwork.domain.datum.DatumSamplesType.Status;
 import static net.solarnetwork.util.DateUtils.formatForLocalDisplay;
+import static net.solarnetwork.util.StringUtils.commaDelimitedStringFromCollection;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
@@ -128,7 +129,7 @@ import net.solarnetwork.util.StringUtils;
  * </pre>
  * 
  * @author matt
- * @version 1.3
+ * @version 1.4
  */
 public class OsStatDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider, PingTest {
@@ -136,16 +137,32 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 	/** The {@code fsUseWarningThreshold} property default value. */
 	public static final float DEFAULT_FS_USE_WARNING = 0.92f;
 
+	/** The {@code sampleCacheMs} property default value. */
+	public static final long DEFAULT_SAMPLE_CACHE_MS = 20_000L;
+
+	/** The {@code fsUseMounts} property default value. */
+	public static final List<String> DEFAULT_FS_USE_MOUNTS = Arrays.asList("/", "/run");
+
+	/** The {@code netDevices} property default value. */
+	public static final List<String> DEFAULT_NET_DEVICES = Arrays.asList("eth0");
+
 	private final AtomicReference<CachedResult<NodeDatum>> sampleCache = new AtomicReference<>();
 
 	private Set<String> actions = StatAction.ALL_ACTIONS;
 	private ActionCommandRunner commandRunner = new ProcessActionCommandRunner();
-	private Set<String> fsUseMounts = new LinkedHashSet<>(Arrays.asList("/", "/run"));
-	private Set<String> netDevices = new LinkedHashSet<>(Arrays.asList("eth0"));
-	private long sampleCacheMs = 20000;
-	private String sourceId = "OS Stats";
+	private Set<String> fsUseMounts = new LinkedHashSet<>(DEFAULT_FS_USE_MOUNTS);
+	private Set<String> netDevices = new LinkedHashSet<>(DEFAULT_NET_DEVICES);
+	private long sampleCacheMs = DEFAULT_SAMPLE_CACHE_MS;
+	private String sourceId;
 	private OptionalService<NodeMetadataService> nodeMetadataService;
 	private float fsUseWarningThreshold = DEFAULT_FS_USE_WARNING;
+
+	/**
+	 * Constructor.
+	 */
+	public OsStatDatumDataSource() {
+		super();
+	}
 
 	@Override
 	public Class<? extends NodeDatum> getDatumType() {
@@ -169,7 +186,11 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 		}
 
 		// Cache has expired so initiate new instance and cache
-		SimpleDatum result = SimpleDatum.nodeDatum(resolvePlaceholders(sourceId));
+		final String sourceId = resolvePlaceholders(this.sourceId);
+		if ( sourceId == null || sourceId.isEmpty() ) {
+			return null;
+		}
+		SimpleDatum result = SimpleDatum.nodeDatum(sourceId);
 
 		for ( String action : actions ) {
 			List<Map<String, String>> data = commandRunner.executeAction(action);
@@ -420,16 +441,17 @@ public class OsStatDatumDataSource extends DatumDataSourceSupport
 			// ignore this
 		}
 
-		OsStatDatumDataSource defaults = new OsStatDatumDataSource();
 		result.add(new BasicTextFieldSettingSpecifier("sampleCacheMs",
-				String.valueOf(defaults.sampleCacheMs)));
-		result.add(new BasicTextFieldSettingSpecifier("sourceId", defaults.sourceId));
-		result.add(new BasicTextFieldSettingSpecifier("actionsValue", defaults.getActionsValue()));
-		result.add(
-				new BasicTextFieldSettingSpecifier("fsUseMountsValue", defaults.getFsUseMountsValue()));
+				String.valueOf(DEFAULT_SAMPLE_CACHE_MS)));
+		result.add(new BasicTextFieldSettingSpecifier("sourceId", null));
+		result.add(new BasicTextFieldSettingSpecifier("actionsValue",
+				commaDelimitedStringFromCollection(StatAction.ALL_ACTIONS)));
+		result.add(new BasicTextFieldSettingSpecifier("fsUseMountsValue",
+				commaDelimitedStringFromCollection(DEFAULT_FS_USE_MOUNTS)));
 		result.add(new BasicTextFieldSettingSpecifier("fsUseWarningThreshold",
 				String.valueOf(DEFAULT_FS_USE_WARNING)));
-		result.add(new BasicTextFieldSettingSpecifier("netDevicesValue", defaults.getNetDevicesValue()));
+		result.add(new BasicTextFieldSettingSpecifier("netDevicesValue",
+				commaDelimitedStringFromCollection(DEFAULT_NET_DEVICES)));
 
 		if ( commandRunner instanceof SettingSpecifierProvider ) {
 			SettingSpecifierProvider runProvider = (SettingSpecifierProvider) commandRunner;
