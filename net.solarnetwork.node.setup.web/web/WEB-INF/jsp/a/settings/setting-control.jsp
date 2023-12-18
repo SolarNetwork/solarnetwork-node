@@ -142,7 +142,7 @@
 					<c:when test="${setup:instanceOf(setting, 'net.solarnetwork.settings.TextAreaSettingSpecifier')}">
 						<div class="input-group">
 							<textarea name="${settingId}" id="${settingId}" class="form-control">${settingValue}</textarea>
-							<button type="button" class="btn btn-outline-secondary copy" title="<fmt:message key='copy.label'/>"><i class="bi bi-clipboard2"></i></button>
+							<button type="button" class="btn btn-outline-secondary copy" tabindex="-1" title="<fmt:message key='copy.label'/>"><i class="bi bi-clipboard2"></i></button>
 						</div>
 						<c:choose>
 							<c:when test="${setting.direct}">
@@ -199,7 +199,7 @@
 										</c:choose>
 										/>
 									<c:if test="${setting.secureTextEntry != true}">
-										<button type="button" class="btn btn-outline-secondary copy" title="<fmt:message key='copy.label'/>"><i class="bi bi-clipboard2"></i></button>
+										<button type="button" class="btn btn-outline-secondary copy" tabindex="-1" title="<fmt:message key='copy.label'/>"><i class="bi bi-clipboard2"></i></button>
 									</c:if>
 								</div>
 							</div>
