@@ -45,7 +45,7 @@
 		<span class="cmd" data-tprop="command"></span>
 		<div class="d-flex ms-auto align-items-center">
 			<button type="button" class="btn btn-close" data-bs-dismiss="alert" aria-label="<fmt:message key='close.label'/>"></button>
-			<button type="button" class="btn copy" aria-label="<fmt:message key='copy.label'/>"><i class="bi bi-clipboard2"></i></button>
+			<button type="button" class="btn copy" tabindex="-1" aria-label="<fmt:message key='copy.label'/>"><i class="bi bi-clipboard2"></i></button>
 		</div>
 	</div>
 	<div class="row">
