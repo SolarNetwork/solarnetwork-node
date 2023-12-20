@@ -36,16 +36,22 @@ import java.util.stream.Collectors;
  */
 public enum StatAction {
 
+	/** Percentage CPU use. */
 	CpuUse("cpu-use"),
 
+	/** Percentage file system use. */
 	FilesystemUse("fs-use"),
 
+	/** Percentage memory use. */
 	MemoryUse("mem-use"),
 
+	/** Network use. */
 	NetworkTraffic("net-traffic"),
 
+	/** System load. */
 	SystemLoad("sys-load"),
 
+	/** System up time. */
 	SystemUptime("sys-up");
 
 	/**

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<blueprint xmlns="http://www.osgi.org/xmlns/blueprint/v1.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:osgix="http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="
+		http://www.osgi.org/xmlns/blueprint/v1.0.0
+		http://www.osgi.org/xmlns/blueprint/v1.0.0/blueprint.xsd
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium
+		http://www.eclipse.org/gemini/blueprint/schema/blueprint-compendium/gemini-blueprint-compendium.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans-4.2.xsd">
+	
+	<bean id="opModesService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.OperationalModesService"/>
+		<property name="sticky" value="true"/>
+	</bean>
+	
+	
+	<bean id="messageSendingOps" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="org.springframework.messaging.simp.SimpMessageSendingOperations"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
+	<!-- TCP Modbus Network -->
+	
+	<bean id="messageSourcePjcSerial" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.io.modbus.nifty.pjc.NiftyPjcSerialModbusNetwork</value>
+				<value>net.solarnetwork.node.io.modbus.nifty.AbstractNiftyModbusNetwork</value>
+				<value>net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</list>
+		</property>
+	</bean>
+	
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="Modbus serial connection"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.modbus"/>
+			<property name="messageSource" ref="messageSourcePjcSerial"/>
+		</bean>
+	</service>
+	
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.modbus" 
+			autowire-on-update="true" update-method="configurationChanged">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.io.modbus.ModbusNetwork</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+			<beans:value>org.osgi.service.event.EventHandler</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.io.modbus"/>
+			<beans:entry key="#{T(org.osgi.service.event.EventConstants).EVENT_TOPIC}">
+				<beans:array value-type="java.lang.String">
+					<beans:value>#{T(net.solarnetwork.node.service.OperationalModesService).EVENT_TOPIC_OPERATIONAL_MODES_CHANGED}</beans:value>
+				</beans:array>
+			</beans:entry>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.io.modbus.nifty.pjc.NiftyPjcSerialModbusNetwork"
+				init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
+			<property name="messageSource" ref="messageSourcePjcSerial"/>
+			<property name="opModesService" ref="opModesService"/>
+			<property name="messageSendingOps" ref="messageSendingOps"/>
+		</bean>
+	</osgix:managed-service-factory>
+	
+</blueprint>
