@@ -1,7 +1,7 @@
-# SolarNode Modbus I/O - Nifty Modbus serial (JSC)
+# SolarNode Modbus I/O - Nifty Modbus serial (PureJavaComm)
 
 This plugin provides configurable Modbus serial network connections for other SolarNode components.
-It uses the jSerialComm library for serial port access.
+It uses the PureJavaComm library for serial port access.
 
 Serial Modbus connections work via device-specific serial ports made available on the
 host operating system. The name of each port is operating-system specific. Some
@@ -35,7 +35,7 @@ In case the configured serial port is not found, the plugin will log the name of
 it has discovered. For example:
 
 ```
-12:45:00 WARN  JscSerialPort - Invalid serial port [/dev/tty.usbserial-FTYS9FWO]; known ports are: [
+12:45:00 WARN  PjcSerialPort - Invalid serial port [/dev/tty.usbserial-FTYS9FWO]; known ports are: [
 	cu.BLTH,
 	tty.BLTH,
 	cu.Bluetooth-Incoming-Port,
