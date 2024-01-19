@@ -30,12 +30,19 @@ import org.openmuc.jmbus.wireless.WMBusMode;
  * Java bean for JMBus common WMBus parameters
  * 
  * @author alex
- * @version 1.0
+ * @version 1.1
  */
 public class JMBusWirelessParameters {
 
 	private WMBusManufacturer manufacturer = WMBusManufacturer.AMBER;
 	private WMBusMode mode = WMBusMode.C;
+
+	/**
+	 * Constructor.
+	 */
+	public JMBusWirelessParameters() {
+		super();
+	}
 
 	/**
 	 * Set the manufacturer

@@ -38,9 +38,15 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
  * Serial jMBus implementation of {@link WMBusNetwork}.
  * 
  * @author alex
- * @version 2.0
+ * @version 2.1
  */
 public class JMBusSerialMBusNetwork extends JMBusMBusNetwork implements SettingSpecifierProvider {
+
+	/** The {@code uid} property default value. */
+	public static final String DEFAULT_UID = "M-Bus Port";
+
+	/** The {@code portName} property default value. */
+	public static final String DEFAULT_PORT_NAME = "/dev/ttyS0";
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -52,12 +58,12 @@ public class JMBusSerialMBusNetwork extends JMBusMBusNetwork implements SettingS
 	 */
 	public JMBusSerialMBusNetwork() {
 		super();
-		setUid("M-Bus Port");
+		setUid(DEFAULT_UID);
 	}
 
 	private static JMBusSerialParameters getDefaultSerialParametersInstance() {
 		final JMBusSerialParameters params = new JMBusSerialParameters();
-		params.setPortName("/dev/ttyS0");
+		params.setPortName(DEFAULT_PORT_NAME);
 		return params;
 	}
 
@@ -97,11 +103,10 @@ public class JMBusSerialMBusNetwork extends JMBusMBusNetwork implements SettingS
 
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
-		JMBusSerialMBusNetwork defaults = new JMBusSerialMBusNetwork();
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
-		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
-		results.add(new BasicTextFieldSettingSpecifier("serialParams.portName",
-				defaults.serialParams.getPortName()));
+		List<SettingSpecifier> results = new ArrayList<>(8);
+		results.add(new BasicTextFieldSettingSpecifier("uid", DEFAULT_UID));
+		results.add(new BasicTextFieldSettingSpecifier("serialParams.portName", DEFAULT_PORT_NAME));
+		results.addAll(super.getSettingSpecifiers());
 		return results;
 	}
 

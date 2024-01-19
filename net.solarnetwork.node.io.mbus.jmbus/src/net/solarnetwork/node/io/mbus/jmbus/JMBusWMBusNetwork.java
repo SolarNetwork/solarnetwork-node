@@ -42,7 +42,7 @@ import net.solarnetwork.service.support.BasicIdentifiable;
  * Abstract jMBus implementation of {@link WMBusNetwork}.
  * 
  * @author alex
- * @version 2.0
+ * @version 2.1
  */
 public abstract class JMBusWMBusNetwork extends BasicIdentifiable
 		implements WMBusNetwork, WMBusListener {
@@ -52,6 +52,13 @@ public abstract class JMBusWMBusNetwork extends BasicIdentifiable
 
 	private org.openmuc.jmbus.wireless.WMBusConnection connection;
 	private final ConcurrentMap<org.openmuc.jmbus.SecondaryAddress, Set<MBusMessageHandler>> listeners = new ConcurrentHashMap<org.openmuc.jmbus.SecondaryAddress, Set<MBusMessageHandler>>();
+
+	/**
+	 * Constructor.
+	 */
+	public JMBusWMBusNetwork() {
+		super();
+	}
 
 	/**
 	 * Create a jMBus wireless connection instance.

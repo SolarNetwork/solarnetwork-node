@@ -27,12 +27,19 @@ package net.solarnetwork.node.io.mbus.jmbus;
  * Java bean for JMBus serial WMBus parameters
  * 
  * @author alex
- * @version 1.0
+ * @version 1.1
  */
 public class JMBusSerialParameters {
 
 	private String portName = "/dev/ttyS0";
 	private int baudRate = 9600;
+
+	/**
+	 * Constructor.
+	 */
+	public JMBusSerialParameters() {
+		super();
+	}
 
 	/**
 	 * Set port name

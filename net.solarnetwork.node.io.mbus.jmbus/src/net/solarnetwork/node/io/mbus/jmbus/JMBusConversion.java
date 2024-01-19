@@ -43,12 +43,16 @@ import net.solarnetwork.node.io.mbus.MBusSecondaryAddress;
  * Helper functions for converting objects to and from JMBus.
  * 
  * @author alex
- * @version 2.0
+ * @version 2.1
  */
-public class JMBusConversion {
+public final class JMBusConversion {
 
 	/** A class-level logger. */
 	private static final Logger log = LoggerFactory.getLogger(JMBusConversion.class);
+
+	private JMBusConversion() {
+		// not available
+	}
 
 	/**
 	 * Convert a secondary address to JMBus
