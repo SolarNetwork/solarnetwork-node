@@ -23,6 +23,10 @@
 package net.solarnetwork.node.io.mbus.jmbus;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
 import org.openmuc.jmbus.VariableDataStructure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,21 +34,36 @@ import net.solarnetwork.node.io.mbus.MBusConnection;
 import net.solarnetwork.node.io.mbus.MBusData;
 import net.solarnetwork.node.io.mbus.MBusNetwork;
 import net.solarnetwork.service.support.BasicIdentifiable;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Abstract jMBus implementation of {@link MBusNetwork}.
  * 
  * @author alex
- * @version 2.0
+ * @version 2.1
  */
 public abstract class JMBusMBusNetwork extends BasicIdentifiable implements MBusNetwork {
+
+	/**
+	 * A default value for the {@code timeout} property.
+	 * 
+	 * @since 2.1
+	 */
+	public static final long DEFAULT_TIMEOUT_SECS = 10L;
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
+	private final ReentrantLock lock = new ReentrantLock(true); // use fair lock to prevent starvation
+
+	private long timeout = DEFAULT_TIMEOUT_SECS;
+	private TimeUnit timeoutUnit = TimeUnit.SECONDS;
+
 	@Override
 	public MBusConnection createConnection(int address) {
-		return new JMBusMBusConnection(address);
+		return new LockingMBusConnection(new JMBusMBusConnection(address), lock, timeout, timeoutUnit,
+				connectionString(address), log);
 	}
 
 	/**
@@ -75,6 +94,16 @@ public abstract class JMBusMBusNetwork extends BasicIdentifiable implements MBus
 		}
 	}
 
+	public String connectionString(int address) {
+		StringBuilder builder = new StringBuilder();
+		builder.append("JMBusMBusConnection{");
+		builder.append(address);
+		builder.append("@");
+		builder.append(getNetworkDescription());
+		builder.append("}");
+		return builder.toString();
+	}
+
 	/**
 	 * 
 	 * Connection class
@@ -90,13 +119,7 @@ public abstract class JMBusMBusNetwork extends BasicIdentifiable implements MBus
 
 		@Override
 		public String toString() {
-			StringBuilder builder = new StringBuilder();
-			builder.append("JMBusMBusConnection{");
-			builder.append(address);
-			builder.append("@");
-			builder.append(getNetworkDescription());
-			builder.append("}");
-			return builder.toString();
+			return connectionString(address);
 		}
 
 		@Override
@@ -128,4 +151,54 @@ public abstract class JMBusMBusNetwork extends BasicIdentifiable implements MBus
 			}
 		}
 	}
+
+	/**
+	 * Get setting specifiers for the configurable properties of this class.
+	 * 
+	 * @return the setting specifiers
+	 */
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		List<SettingSpecifier> results = new ArrayList<>(8);
+		results.add(new BasicTextFieldSettingSpecifier("timeout", String.valueOf(DEFAULT_TIMEOUT_SECS)));
+		return results;
+	}
+
+	/**
+	 * Get the timeout value.
+	 * 
+	 * @return the timeout value, defaults to {@literal 10}
+	 */
+	public long getTimeout() {
+		return timeout;
+	}
+
+	/**
+	 * Set a timeout value.
+	 * 
+	 * @param timeout
+	 *        the timeout
+	 */
+	public void setTimeout(long timeout) {
+		this.timeout = timeout;
+	}
+
+	/**
+	 * Get the timeout unit.
+	 * 
+	 * @return the timeout unit; defaults to seconds
+	 */
+	public TimeUnit getTimeoutUnit() {
+		return timeoutUnit;
+	}
+
+	/**
+	 * Set the timeout unit.
+	 * 
+	 * @param unit
+	 *        the unit
+	 */
+	public void setTimeoutUnit(TimeUnit unit) {
+		this.timeoutUnit = unit;
+	}
+
 }
