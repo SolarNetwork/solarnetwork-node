@@ -15,7 +15,7 @@ SolarNode.Platform = (function() {
 	function updatePlatformTaskInfo(modal, info) {
 		modal.find('.info-title').text(info.title || '');
 		modal.find('.info-message').text(info.message || '');
-		modal.find('.bar').css('width', Math.round((+info.percentComplete || 0) * 100) + '%');
+		modal.find('.progress-bar').css('width', Math.round((+info.percentComplete || 0) * 100) + '%');
 		modal.find('.restart-required').toggleClass('hidden', !info.restartRequired);
 	}
 	
@@ -28,7 +28,7 @@ SolarNode.Platform = (function() {
 			return;
 		}
 		waitingForRestart = true;
-		modal.find('.bar').css('width', '100%');
+		modal.find('.progress-bar').css('width', '100%');
 		modal.find('.restarting').removeClass('hidden');
 		modal.find('.hide-while-restarting').addClass('hidden');
 		setTimeout(function() {

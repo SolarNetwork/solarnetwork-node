@@ -350,7 +350,7 @@ function previewRemove(plugin) {
 
 function handleInstall(form) {
 	var progressBar = form.find('.progress');
-	var progressFill = progressBar.find('.bar');
+	var progressFill = progressBar.find('.progress-bar');
 	var installBtn = form.find('button[type=submit]');
 	var errorContainer = form.find('.message-container');
 	var refreshPluginListOnModalClose = false;

@@ -440,7 +440,7 @@ SolarNode.GlobalProgress = (function() {
 			messageEl = m.jq.find('.info-message');
 		titleEl.text(title || titleEl.data('default-message'));
 		messageEl.text(message || messageEl.data('default-message'));
-		m.jq.find('.bar').css('width', Math.round((+percentComplete || 0) * 100) + '%');
+		m.jq.find('.progress-bar').css('width', Math.round((+percentComplete || 0) * 100) + '%');
 		m.modal.show();
 	}
 	
