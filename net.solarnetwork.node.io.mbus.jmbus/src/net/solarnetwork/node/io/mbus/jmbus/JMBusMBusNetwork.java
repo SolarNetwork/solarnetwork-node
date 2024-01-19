@@ -60,6 +60,13 @@ public abstract class JMBusMBusNetwork extends BasicIdentifiable implements MBus
 	private long timeout = DEFAULT_TIMEOUT_SECS;
 	private TimeUnit timeoutUnit = TimeUnit.SECONDS;
 
+	/**
+	 * Constructor.
+	 */
+	public JMBusMBusNetwork() {
+		super();
+	}
+
 	@Override
 	public MBusConnection createConnection(int address) {
 		return new LockingMBusConnection(new JMBusMBusConnection(address), lock, timeout, timeoutUnit,
@@ -94,7 +101,15 @@ public abstract class JMBusMBusNetwork extends BasicIdentifiable implements MBus
 		}
 	}
 
-	public String connectionString(int address) {
+	/**
+	 * Get a description for a connection with a given address.
+	 * 
+	 * @param address
+	 *        the address
+	 * @return the description
+	 * @since 2.1
+	 */
+	protected String connectionString(int address) {
 		StringBuilder builder = new StringBuilder();
 		builder.append("JMBusMBusConnection{");
 		builder.append(address);
