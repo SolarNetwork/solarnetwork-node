@@ -59,7 +59,7 @@ import net.solarnetwork.util.ObjectUtils;
  * @param <C>
  *        the configuration type
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 		extends AbstractModbusNetwork implements SettingSpecifierProvider, SettingsChangeObserver,
@@ -314,6 +314,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 	 */
 	public static List<SettingSpecifier> baseNiftyModbusNetworkSettings(int keepOpenSeconds) {
 		List<SettingSpecifier> results = new ArrayList<>(1);
+		results.add(new BasicTextFieldSettingSpecifier("timeout", String.valueOf(DEFAULT_TIMEOUT_SECS)));
 		results.add(
 				new BasicTextFieldSettingSpecifier("keepOpenSeconds", String.valueOf(keepOpenSeconds)));
 		results.add(new BasicTextFieldSettingSpecifier("replyTimeout",
