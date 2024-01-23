@@ -11,6 +11,25 @@ the status messages broadcast by the station via UDP on the local network.
 Once installed, a new **WeatherFlow Tempest** component will appear on the **Settings** page on your
 SolarNode. Click on the **Manage** button to configure individual components.
 
+## SolarNodeOS IP port considerations
+
+By default SolarNodeOS has a built-in firewall enabled that will not allow access to arbitrary IP
+ports. WeatherFlow Tempest broadcasts its data over UDP on port `50222`, so that port must be opened
+in the SolarNodeOS firewall, which by default is `nftables` and configured via the
+`/etc/nftables.conf` file. To open port 50222, you'd add the following lines, after the existing
+ones that open ports 80 and 8080:
+
+```
+# Allow WeatherFlow Tempest messages
+add rule ip filter INPUT udp dport 50222 counter accept
+```
+
+You will need to reload the firewall rules after making this change:
+
+```sh
+sudo systemctl reload nftables
+```
+
 ## Settings
 
 Each device configuration contains the following overall settings:
