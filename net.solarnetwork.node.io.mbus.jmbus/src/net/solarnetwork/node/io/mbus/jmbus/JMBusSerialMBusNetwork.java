@@ -94,7 +94,6 @@ public class JMBusSerialMBusNetwork extends JMBusMBusNetwork implements SettingS
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = basicIdentifiableSettings();
-		results.add(new BasicTextFieldSettingSpecifier("uid", null));
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.portName", DEFAULT_PORT_NAME));
 		results.addAll(super.getSettingSpecifiers());
 		return results;
