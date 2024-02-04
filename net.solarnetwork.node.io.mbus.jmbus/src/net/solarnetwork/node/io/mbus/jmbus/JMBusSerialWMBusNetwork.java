@@ -23,7 +23,6 @@
 package net.solarnetwork.node.io.mbus.jmbus;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import org.openmuc.jmbus.wireless.WMBusConnection.WMBusManufacturer;
 import org.openmuc.jmbus.wireless.WMBusConnection.WMBusSerialBuilder;
@@ -104,8 +103,7 @@ public class JMBusSerialWMBusNetwork extends JMBusWMBusNetwork implements Settin
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		JMBusSerialWMBusNetwork defaults = new JMBusSerialWMBusNetwork();
-		List<SettingSpecifier> results = new ArrayList<SettingSpecifier>(20);
-		results.add(new BasicTextFieldSettingSpecifier("uid", defaults.getUid()));
+		List<SettingSpecifier> results = basicIdentifiableSettings();
 		results.add(new BasicTextFieldSettingSpecifier("serialParams.portName",
 				defaults.serialParams.getPortName()));
 		results.add(new BasicTextFieldSettingSpecifier("wirelessParams.manufacturerString",
