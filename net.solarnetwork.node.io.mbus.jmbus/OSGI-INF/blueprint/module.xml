@@ -17,6 +17,8 @@
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.io.mbus.jmbus.JMBusSerialMBusNetwork</value>
+				<value>net.solarnetwork.node.io.mbus.jmbus.JMBusMBusNetwork</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>
@@ -42,12 +44,46 @@
 		</bean>
 	</osgix:managed-service-factory>
 	
+	<!-- TCP Wired M-Bus Network -->
+	
+	<bean id="messageSourceTcp" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>net.solarnetwork.node.io.mbus.jmbus.JMBusTcpMBusNetwork</value>
+				<value>net.solarnetwork.node.io.mbus.jmbus.JMBusMBusNetwork</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
+			</list>
+		</property>
+	</bean>
+	
+	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
+		<bean class="net.solarnetwork.settings.support.BasicSettingSpecifierProviderFactory">
+			<property name="displayName" value="M-Bus TCP Connection"/>
+			<property name="factoryUid" value="net.solarnetwork.node.io.mbus.tcp"/>
+			<property name="messageSource" ref="messageSourceTcp"/>
+		</bean>
+	</service>
+
+	<osgix:managed-service-factory factory-pid="net.solarnetwork.node.io.mbus.tcp" autowire-on-update="true">
+		<osgix:interfaces>
+			<beans:value>net.solarnetwork.node.io.mbus.MBusNetwork</beans:value>
+			<beans:value>net.solarnetwork.settings.SettingSpecifierProvider</beans:value>
+		</osgix:interfaces>
+		<osgix:service-properties>
+			<beans:entry key="settingPid" value="net.solarnetwork.node.io.mbus.tcp"/>
+		</osgix:service-properties>
+		<bean class="net.solarnetwork.node.io.mbus.jmbus.JMBusTcpMBusNetwork">
+			<property name="messageSource" ref="messageSourceTcp"/>
+		</bean>
+	</osgix:managed-service-factory>
+	
 	<!-- Serial Wireless M-Bus Network -->
 	
 	<bean id="messageSourceWirelessSerial" class="org.springframework.context.support.ResourceBundleMessageSource">
 		<property name="basenames">
 			<list>
 				<value>net.solarnetwork.node.io.mbus.jmbus.JMBusSerialWMBusNetwork</value>
+				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
 	</bean>

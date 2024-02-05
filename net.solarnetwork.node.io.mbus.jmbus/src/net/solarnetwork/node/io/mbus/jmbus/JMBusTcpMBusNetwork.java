@@ -1,7 +1,7 @@
 /* ==================================================================
- * JMBusSerialMBusNetwork.java - 13/08/2020 10:52:48 am
+ * JMBusTcpMBusNetwork.java - 5/02/2024 9:03:56 am
  * 
- * Copyright 2020 SolarNetwork.net Dev Team
+ * Copyright 2024 SolarNetwork.net Dev Team
  * 
  * This program is free software; you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as 
@@ -25,58 +25,56 @@ package net.solarnetwork.node.io.mbus.jmbus;
 import java.io.IOException;
 import java.util.List;
 import org.openmuc.jmbus.MBusConnection;
-import org.openmuc.jmbus.MBusConnection.MBusSerialBuilder;
-import net.solarnetwork.node.io.mbus.WMBusNetwork;
+import org.openmuc.jmbus.MBusConnection.MBusTcpBuilder;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
- * Serial jMBus implementation of {@link WMBusNetwork}.
+ * FIXME
  * 
- * @author alex
- * @version 2.2
+ * <p>
+ * TODO
+ * </p>
+ * 
+ * @author matt
+ * @version 1.0
  */
-public class JMBusSerialMBusNetwork extends JMBusMBusNetwork implements SettingSpecifierProvider {
+public class JMBusTcpMBusNetwork extends JMBusMBusNetwork implements SettingSpecifierProvider {
 
-	/** The {@code portName} property default value. */
-	public static final String DEFAULT_PORT_NAME = "/dev/ttyS0";
-
-	private JMBusSerialParameters serialParams = getDefaultSerialParametersInstance();
+	private String host;
+	private Integer port;
 
 	/**
 	 * Constructor.
 	 */
-	public JMBusSerialMBusNetwork() {
+	public JMBusTcpMBusNetwork() {
 		super();
-	}
-
-	private static JMBusSerialParameters getDefaultSerialParametersInstance() {
-		final JMBusSerialParameters params = new JMBusSerialParameters();
-		params.setPortName(DEFAULT_PORT_NAME);
-		return params;
 	}
 
 	@Override
 	protected org.openmuc.jmbus.MBusConnection createJMBusConnection() throws IOException {
-		final MBusSerialBuilder builder = MBusConnection.newSerialBuilder(serialParams.getPortName());
+		final Integer port = this.port;
+		final MBusTcpBuilder builder = MBusConnection.newTcpBuilder(host, port != null ? port : 0);
 		return builder.build();
 	}
 
 	@Override
 	public String getSettingUid() {
-		return "net.solarnetwork.node.io.mbus.serial";
+		return "net.solarnetwork.node.io.mbus.tcp";
 	}
 
 	@Override
 	public String getDisplayName() {
-		return "M-Bus Serial Connection";
+		return "M-Bus TCP Connection";
 	}
 
 	@Override
 	protected String getNetworkDescription() {
-		if ( serialParams != null && serialParams.getPortName() != null ) {
-			return serialParams.getPortName();
+		final String host = this.host;
+		final Integer port = this.port;
+		if ( host != null && !host.isEmpty() ) {
+			return host + (port != null && port.intValue() > 0 ? ":" + port : "");
 		} else if ( getUid() != null ) {
 			return getUid();
 		}
@@ -85,7 +83,7 @@ public class JMBusSerialMBusNetwork extends JMBusMBusNetwork implements SettingS
 
 	@Override
 	public String toString() {
-		StringBuilder buf = new StringBuilder("JMBusSerialMBusNetwork{");
+		StringBuilder buf = new StringBuilder("JMBusTcpMBusNetwork{");
 		buf.append(getNetworkDescription());
 		buf.append("}");
 		return buf.toString();
@@ -94,30 +92,48 @@ public class JMBusSerialMBusNetwork extends JMBusMBusNetwork implements SettingS
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = basicIdentifiableSettings();
-		results.add(new BasicTextFieldSettingSpecifier("serialParams.portName", DEFAULT_PORT_NAME));
+		results.add(new BasicTextFieldSettingSpecifier("host", null));
+		results.add(new BasicTextFieldSettingSpecifier("port", null));
 		results.addAll(super.getSettingSpecifiers());
 		return results;
 	}
 
-	// Accessors
-
 	/**
-	 * Get the serial parameters.
+	 * Get the host to connect to.
 	 * 
-	 * @return the parameters
+	 * @return the host name or IP address
 	 */
-	public JMBusSerialParameters getSerialParams() {
-		return serialParams;
+	public String getHost() {
+		return host;
 	}
 
 	/**
-	 * Set the serial parameters.
+	 * Set the host to connect to.
 	 * 
-	 * @param serialParams
-	 *        the parameters to set
+	 * @param host
+	 *        the host name or IP address to set
 	 */
-	public void setSerialParams(JMBusSerialParameters serialParams) {
-		this.serialParams = serialParams;
+	public void setHost(String host) {
+		this.host = host;
+	}
+
+	/**
+	 * Get the IP port to connect on.
+	 * 
+	 * @return the port
+	 */
+	public Integer getPort() {
+		return port;
+	}
+
+	/**
+	 * Set the IP port to connect on.
+	 * 
+	 * @param port
+	 *        the port to set
+	 */
+	public void setPort(Integer port) {
+		this.port = port;
 	}
 
 }
