@@ -28,6 +28,7 @@
 						<li class="nav-item dropdown">
 							<a href="#" class="nav-link dropdown-toggle${navloc == 'settings'
 								or navloc == 'settings-component'
+								or navloc == 'backups'
 								or navloc == 'filters'
 								or navloc == 'filters-component'
 								or navloc == 'opmodes' ? ' active' : ''}" data-bs-toggle="dropdown" role="button" aria-expanded="false">
@@ -39,6 +40,7 @@
 								<li><a class="dropdown-item${navloc == 'filters' ? ' active' : ''}" href="<setup:url value='/a/settings/filters'/>"><fmt:message key='link.filters'/></a></li>
 								<li><a class="dropdown-item${navloc == 'logging' ? ' active' : ''}" href="<setup:url value='/a/logging'/>"><fmt:message key='link.logging'/></a></li>
 								<li><a class="dropdown-item${navloc == 'opmodes' ? ' active' : ''}" href="<setup:url value='/a/opmodes'/>"><fmt:message key='link.opmodes'/></a></li>
+								<li><a class="dropdown-item${navloc == 'backups' ? ' active' : ''}" href="<setup:url value='/a/settings/backups'/>"><fmt:message key='link.backups'/></a></li>
 							</ul>
 						</li>
 		

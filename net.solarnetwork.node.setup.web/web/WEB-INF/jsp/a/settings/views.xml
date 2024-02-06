@@ -41,4 +41,9 @@
 		<put-attribute name="body" value="/WEB-INF/jsp/a/settings/opmodes.jsp" />
 	</definition>
 		
+	<definition name="backups" extends="settings">
+		<put-attribute name="navloc" value="backups" type="string"/>
+		<put-attribute name="body" value="/WEB-INF/jsp/a/settings/backups.jsp" />
+	</definition>
+		
 </tiles-definitions>

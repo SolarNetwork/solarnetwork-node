@@ -160,6 +160,24 @@ public class SettingsController {
 	 */
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String settingsList(ModelMap model, Locale locale) {
+		return settingView(model, locale, "settings-list");
+	}
+
+	/**
+	 * Manage backups.
+	 * 
+	 * @param model
+	 *        the model
+	 * @param locale
+	 *        the locale
+	 * @return the settings list view name
+	 */
+	@RequestMapping(value = "/backups", method = RequestMethod.GET)
+	public String backups(ModelMap model, Locale locale) {
+		return settingView(model, locale, "backups");
+	}
+
+	private String settingView(ModelMap model, Locale locale, String viewName) {
 		final SettingsService settingsService = service(settingsServiceTracker);
 		if ( locale == null ) {
 			locale = Locale.US;
@@ -191,7 +209,7 @@ public class SettingsController {
 				model.put(KEY_BACKUPS, backups);
 			}
 		}
-		return "settings-list";
+		return viewName;
 	}
 
 	private Map<String, List<SettingResourceInfo>> settingResources(SettingsService settingsService,
