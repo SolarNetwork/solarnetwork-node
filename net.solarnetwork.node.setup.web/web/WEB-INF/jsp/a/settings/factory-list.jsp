@@ -357,9 +357,11 @@ $(function() {
 			</div>
 			<div class="modal-body">
 				<p><fmt:message key='settings.factory.add.intro'/></p>
+				<p class="text-secondary name-error"><small><fmt:message key='settings.factory.add.caption'/></small></p>
 				<div class="col-12">
-					<input type="text" class="form-control" maxlength="32" name="name" id="add-component-instance-name"
+					<input type="text" class="form-control name-error" maxlength="32" name="name" id="add-component-instance-name"
 						placeholder="<fmt:message key='settings.factory.add.placeholder'/>"/>
+					
 				</div>
 			</div>
 			<div class="modal-footer">

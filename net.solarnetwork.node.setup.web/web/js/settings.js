@@ -22,7 +22,7 @@ function delayedReload() {
 
 SolarNode.Settings.reset = function() {
 	SolarNode.Settings.updates = {};
-	$('#submit').attr('disabled', 'disabled');
+	$('button.settings-save').attr('disabled', 'disabled');
 };
 
 /**
@@ -50,7 +50,7 @@ SolarNode.Settings.updateSetting = function(params, value) {
 	// show the "active value" element
 	$('#cg-'+params.key+' span.active-value').removeClass('clean');
 
-	$('#submit').removeAttr('disabled');
+	$('button.settings-save').removeAttr('disabled');
 };
 
 /**
@@ -627,14 +627,28 @@ function refreshBackupList() {
 function setupBackups() {
 	var createBackupSubmitButton = $('#backup-now-btn');
 
+	// auto-save the preferred backup service when changing that option,
+	// and then auto-reload the screen to show the updated settings form
+	$('#backups-choose-backup-form #cg-bmi0 input[type=radio]').on('change', function(event) {
+		var btn = this;
+		
+		// delay for settings logic to get applied
+		setTimeout(function() {
+			SolarNode.Settings.saveUpdates(btn.form.action, undefined, delayedReload);
+		}, 100);
+
+		event.preventDefault();
+		return false;
+	});
+
 	$('#create-backup-form').ajaxForm({
 		dataType : 'json',
 
-		beforeSubmit : function(dataArray, form, options) {
+		beforeSubmit : function() {
 			SolarNode.showSpinner(createBackupSubmitButton);
 			createBackupSubmitButton.attr('disabled', 'disabled');
 		},
-		success : function(json, status, xhr, form) {
+		success : function(json) {
 			if ( json.success !== true || json.data === undefined || json.data.key === undefined ) {
 				SolarNode.errorAlert("Error creating backup: " +json.message);
 				return;
@@ -920,9 +934,20 @@ $(document).ready(function() {
 		modal.modal('hide');
 	});
 	
+	// regex to match allowable component identifier values
+	const COMPONENT_IDENT_ALLOWED_REGEX = /^[\p{Letter}\p{Number}_/ -]{1,32}$/u;
+	
 	$('#add-component-instance-modal').ajaxForm({
 		dataType: 'json',
 		beforeSubmit: function(formData, jqForm, options) {
+			const nameField = $('#add-component-instance-name');
+			const ident = nameField.val();
+			if (ident && !ident.match(COMPONENT_IDENT_ALLOWED_REGEX)) {
+				$('#add-component-instance-modal .name-error').addClass('text-danger');
+				nameField.select().focus()
+				return false;
+			}
+			$('#add-component-instance-modal .name-error').removeClass('text-danger');
 			$('#add-component-instance-modal').find('button[type=submit]').attr('disabled', 'disabled');
 			return true;
 		},
@@ -942,6 +967,8 @@ $(document).ready(function() {
 		}
 	}).on('shown.bs.modal', function() {
 		$('#add-component-instance-name').val('').focus();
+	}).on('hide.bs.modal', function() {
+		$('#add-component-instance-modal .name-error').removeClass('text-danger');
 	});
 	$('#remove-all-component-instance-modal').ajaxForm({
 		dataType: 'json',

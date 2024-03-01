@@ -1,21 +1,21 @@
 /* ==================================================================
  * CASettingsServiceTests.java - 17/09/2019 10:15:11 am
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -96,9 +96,9 @@ import net.solarnetwork.util.CollectionUtils;
 
 /**
  * Test cases for the {@link CASettingsService} class.
- * 
+ *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class CASettingsServiceTests {
 
@@ -711,6 +711,53 @@ public class CASettingsServiceTests {
 
 		// THEN
 		assertThat("Result provided", result, is(notNullValue()));
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void addFactoryInstance_illegalUid() {
+		// WHEN
+		replayAll();
+		service.addProviderFactoryInstance("foo", "! this is not allowed");
+	}
+
+	@Test
+	public void addFactoryIntance() throws Exception {
+		// GIVEN
+		final String factoryUid = "fac.tory";
+		final String instanceUid = "in/stance";
+
+		// store factory instance setting
+		dao.storeSetting(factoryUid + ".FACTORY", instanceUid, instanceUid);
+
+		// look up configuration (not found)
+		expect(ca.listConfigurations(
+				String.format("(&(service.factoryPid=%s)(%s.FACTORY_INSTANCE_KEY=%s))", factoryUid,
+						CASettingsService.class.getName(), instanceUid)))
+								.andReturn(new Configuration[0]);
+
+		// create new configuration
+		final Configuration config = EasyMock.createMock(Configuration.class);
+		mocks.add(config);
+		expect(ca.createFactoryConfiguration(factoryUid, null)).andReturn(config);
+
+		Hashtable<String, Object> configProps = new Hashtable<>();
+		expect(config.getProperties()).andReturn(configProps);
+
+		// update configuration
+		Capture<Hashtable<String, Object>> configCaptor = Capture.newInstance();
+		config.update(capture(configCaptor));
+
+		// WHEN
+		replayAll();
+		String result = service.addProviderFactoryInstance(factoryUid, instanceUid);
+
+		// THEN
+		assertThat("Result is given instance ID", result, is(equalTo(instanceUid)));
+		assertThat("Config updated", configCaptor.getValue(), is(notNullValue()));
+		assertThat("Config update with one value", configCaptor.getValue().keySet(), hasSize(1));
+		assertThat("Config update contains entry for instance key", configCaptor.getValue(),
+				hasEntry(String.format("%s.FACTORY_INSTANCE_KEY", CASettingsService.class.getName()),
+						instanceUid));
 	}
 
 }

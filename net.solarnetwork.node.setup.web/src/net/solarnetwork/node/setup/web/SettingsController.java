@@ -160,6 +160,25 @@ public class SettingsController {
 	 */
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String settingsList(ModelMap model, Locale locale) {
+		return settingView(model, locale, "settings-list", null);
+	}
+
+	/**
+	 * Manage backups.
+	 * 
+	 * @param model
+	 *        the model
+	 * @param locale
+	 *        the locale
+	 * @return the settings list view name
+	 */
+	@RequestMapping(value = "/backups", method = RequestMethod.GET)
+	public String backups(ModelMap model, Locale locale) {
+		return settingView(model, locale, "backups", backupManagerTracker.service());
+	}
+
+	private String settingView(ModelMap model, Locale locale, String viewName,
+			final BackupManager backupManager) {
 		final SettingsService settingsService = service(settingsServiceTracker);
 		if ( locale == null ) {
 			locale = Locale.US;
@@ -180,7 +199,6 @@ public class SettingsController {
 			model.put(KEY_SETTINGS_BACKUPS, settingsService.getAvailableBackups());
 			model.put(KEY_SETTING_RESOURCES, settingResources(settingsService, providers));
 		}
-		final BackupManager backupManager = backupManagerTracker.service();
 		if ( backupManager != null ) {
 			model.put(KEY_BACKUP_MANAGER, backupManager);
 			BackupService service = backupManager.activeBackupService();
@@ -191,7 +209,7 @@ public class SettingsController {
 				model.put(KEY_BACKUPS, backups);
 			}
 		}
-		return "settings-list";
+		return viewName;
 	}
 
 	private Map<String, List<SettingResourceInfo>> settingResources(SettingsService settingsService,
@@ -706,12 +724,12 @@ public class SettingsController {
 	public String importBackup(@RequestParam("file") MultipartFile file) throws IOException {
 		final BackupManager manager = service(backupManagerTracker);
 		if ( manager == null ) {
-			return "redirect:/a/settings";
+			return "redirect:/a/settings/backups";
 		}
 		Map<String, String> props = new HashMap<String, String>();
 		props.put(BackupManager.BACKUP_KEY, file.getName());
 		manager.importBackupArchive(file.getInputStream(), props);
-		return "redirect:/a/settings";
+		return "redirect:/a/settings/backups";
 	}
 
 	/**
