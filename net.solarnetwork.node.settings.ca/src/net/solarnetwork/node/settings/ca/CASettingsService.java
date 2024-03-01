@@ -1,21 +1,21 @@
 /* ==================================================================
  * CASettingsService.java - Mar 12, 2012 1:11:29 PM
- * 
+ *
  * Copyright 2007-2012 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -131,14 +131,22 @@ import net.solarnetwork.util.SearchFilter;
  * Implementation of {@link SettingsService} that uses
  * {@link ConfigurationAdmin} to change settings at runtime, and
  * {@link SettingDao} to persist changes between application restarts.
- * 
+ *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class CASettingsService implements SettingsService, BackupResourceProvider, InstructionHandler {
 
 	/** The OSGi service property key for the setting PID. */
 	public static final String OSGI_PROPERTY_KEY_SETTING_PID = net.solarnetwork.node.Constants.SETTING_PID;
+
+	/**
+	 * Pattern of allowable factory instance UID values.
+	 *
+	 * @since 2.3
+	 */
+	public static final Pattern INSTANCE_UID_ALLOWED = Pattern
+			.compile("[\\p{IsAlphabetic}\\p{IsDigit}_/ -]{1,32}");
 
 	private static final String OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY = CASettingsService.class
 			.getName() + ".FACTORY_INSTANCE_KEY";
@@ -172,6 +180,13 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
+	/**
+	 * Constructor.
+	 */
+	public CASettingsService() {
+		super();
+	}
+
 	private String getFactorySettingKey(String factoryPid) {
 		return factoryPid + FACTORY_SETTING_KEY_SUFFIX;
 	}
@@ -183,7 +198,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	/**
 	 * Callback when a {@link SettingSpecifierProviderFactory} has been
 	 * registered.
-	 * 
+	 *
 	 * @param provider
 	 *        the provider object
 	 * @param properties
@@ -249,7 +264,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	/**
 	 * Callback when a {@link SettingSpecifierProviderFactory} has been
 	 * un-registered.
-	 * 
+	 *
 	 * @param provider
 	 *        the provider object
 	 * @param properties
@@ -269,7 +284,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	/**
 	 * Callback when a {@link SettingSpecifierProvider} has been registered.
-	 * 
+	 *
 	 * @param provider
 	 *        the provider object
 	 * @param properties
@@ -340,7 +355,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	/**
 	 * Callback when a {@link SettingSpecifierProvider} has been un-registered.
-	 * 
+	 *
 	 * @param provider
 	 *        the provider object
 	 * @param properties
@@ -465,7 +480,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	/**
 	 * Create a list of setting updates grouped by provider and instance out of
 	 * a single updates instance.
-	 * 
+	 *
 	 * <p>
 	 * The returned list of updates are grouped such that each of them can be
 	 * passed to
@@ -473,7 +488,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 	 * using the {@link SettingsCommand#getProviderKey()} and
 	 * {@link SettingsCommand#getInstanceKey()}.
 	 * </p>
-	 * 
+	 *
 	 * @param updates
 	 *        the updates to break into groups
 	 * @param defaultProviderKey
@@ -520,7 +535,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	/**
 	 * Apply a set of settings updates.
-	 * 
+	 *
 	 * @param updates
 	 *        the updates to apply
 	 * @param providerKey
@@ -667,6 +682,8 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 					}
 				}
 				newInstanceKey = String.valueOf(next);
+			} else if ( !INSTANCE_UID_ALLOWED.matcher(instanceUid).matches() ) {
+				throw new IllegalArgumentException("Factory instance UID not allowed.");
 			}
 			enableProviderFactoryInstance(factoryUid, newInstanceKey);
 			log.info("Registered component [{}] instance {}", factoryUid, newInstanceKey);
@@ -815,7 +832,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 		/**
 		 * Test if a specific should be imported at all.
-		 * 
+		 *
 		 * @param key
 		 *        the setting key
 		 * @param type
@@ -894,7 +911,6 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 						}
 						if ( s.getValue() == null ) {
 							settingDao.deleteSetting(s.getKey(), s.getType());
-
 						} else {
 							settingDao.storeSetting(s);
 						}
@@ -931,28 +947,6 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 					s.getKey().length() - FACTORY_SETTING_KEY_SUFFIX.length());
 			log.debug("Discovered imported factory setting {}", factoryPID);
 			factorySettings.put(factoryPID, s);
-
-			// Now create the CA configuration for all defined factories, to handle situation where we don't actually
-			// configure any custom settings on the factory. In that case we don't have any settings, but we need
-			// to instantiate the factory so we create a default instance.
-			try {
-				int instanceCount = Integer.valueOf(s.getValue());
-				for ( int i = 1; i <= instanceCount; i++ ) {
-					String instanceKey = String.valueOf(i);
-					Configuration conf = getConfiguration(factoryPID, instanceKey);
-					Dictionary<String, Object> props = conf.getProperties();
-					if ( props == null ) {
-						props = new Hashtable<String, Object>();
-						props.put(OSGI_PROPERTY_KEY_FACTORY_INSTANCE_KEY, instanceKey);
-						conf.update(props);
-					}
-				}
-			} catch ( NumberFormatException e ) {
-				log.warn("Factory {} setting does not have instance count value: {}", factoryPID,
-						e.getMessage());
-			} catch ( InvalidSyntaxException e ) {
-				log.warn("Factory {} setting has invalid syntax: {}", factoryPID, e.getMessage());
-			}
 		}
 
 		// now convert imported settings into a SettingsCommand, so values are applied to Configuration Admin
@@ -1010,7 +1004,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	/**
 	 * Callback when a {@link SettingResourceHandler} has been registered.
-	 * 
+	 *
 	 * @param handler
 	 *        the handler object
 	 * @param properties
@@ -1053,7 +1047,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	/**
 	 * Callback when a {@link SettingResourceHandler} has been un-registered.
-	 * 
+	 *
 	 * @param handler
 	 *        the handler object
 	 * @param properties
@@ -1256,7 +1250,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 		// clean out older backups
 		File[] files = dir.listFiles(new RegexFileFilter(BACKUP_FILENAME_PATTERN));
 		if ( files != null && files.length > backupMaxCount ) {
-			// sort array 
+			// sort array
 			Arrays.sort(files, new FilenameReverseComparator());
 			for ( int i = backupMaxCount; i < files.length; i++ ) {
 				if ( !files[i].delete() ) {
@@ -1521,7 +1515,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	/**
 	 * Set the configuration admin service.
-	 * 
+	 *
 	 * @param configurationAdmin
 	 *        the service to set
 	 */
@@ -1531,7 +1525,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	/**
 	 * Set the setting DAO.
-	 * 
+	 *
 	 * @param settingDao
 	 *        the DAO to set
 	 */
@@ -1541,7 +1535,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	/**
 	 * Set the transaction template.
-	 * 
+	 *
 	 * @param transactionTemplate
 	 *        the template to set
 	 */
@@ -1551,7 +1545,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	/**
 	 * Set the backup destination path.
-	 * 
+	 *
 	 * @param backupDestinationPath
 	 *        the path to set
 	 */
@@ -1561,7 +1555,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	/**
 	 * Set the backup maximum count.
-	 * 
+	 *
 	 * @param backupMaxCount
 	 *        the count
 	 */
@@ -1571,7 +1565,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	/**
 	 * Set the message source.
-	 * 
+	 *
 	 * @param messageSource
 	 *        the message source
 	 */
@@ -1581,7 +1575,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	/**
 	 * Get an executor to handle asynchronous tasks with.
-	 * 
+	 *
 	 * @return the executor, or {@literal null}
 	 */
 	public TaskExecutor getTaskExecutor() {
@@ -1590,7 +1584,7 @@ public class CASettingsService implements SettingsService, BackupResourceProvide
 
 	/**
 	 * Set an executor to handle asynchronous tasks with.
-	 * 
+	 *
 	 * @param taskExecutor
 	 *        the executor to use
 	 * @since 1.9
