@@ -934,9 +934,20 @@ $(document).ready(function() {
 		modal.modal('hide');
 	});
 	
+	// regex to match allowable component identifier values
+	const COMPONENT_IDENT_ALLOWED_REGEX = /^[\p{Letter}\p{Number}_/ -]{1,32}$/u;
+	
 	$('#add-component-instance-modal').ajaxForm({
 		dataType: 'json',
 		beforeSubmit: function(formData, jqForm, options) {
+			const nameField = $('#add-component-instance-name');
+			const ident = nameField.val();
+			if (ident && !ident.match(COMPONENT_IDENT_ALLOWED_REGEX)) {
+				$('#add-component-instance-modal .name-error').addClass('text-danger');
+				nameField.select().focus()
+				return false;
+			}
+			$('#add-component-instance-modal .name-error').removeClass('text-danger');
 			$('#add-component-instance-modal').find('button[type=submit]').attr('disabled', 'disabled');
 			return true;
 		},
@@ -956,6 +967,8 @@ $(document).ready(function() {
 		}
 	}).on('shown.bs.modal', function() {
 		$('#add-component-instance-name').val('').focus();
+	}).on('hide.bs.modal', function() {
+		$('#add-component-instance-modal .name-error').removeClass('text-danger');
 	});
 	$('#remove-all-component-instance-modal').ajaxForm({
 		dataType: 'json',
