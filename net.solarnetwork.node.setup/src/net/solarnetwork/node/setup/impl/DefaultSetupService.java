@@ -1,21 +1,21 @@
 /* ==================================================================
  * DefaultSetupService.java - Jun 1, 2010 2:19:02 PM
- * 
+ *
  * Copyright 2007-2010 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -78,43 +78,43 @@ import net.solarnetwork.util.DateUtils;
 
 /**
  * Implementation of {@link SetupService}.
- * 
+ *
  * <p>
  * The configurable properties of this class are:
  * </p>
- * 
+ *
  * <dl class="class-properties">
  * <dt>backupManager</dt>
  * <dd>An optional {@link BackupManager} to trigger an immediate backup after
  * associating.</dd>
- * 
+ *
  * <dt>settingDao</dt>
  * <dd>The {@link SettingDao} to use for querying/storing application state
  * information.</dd>
- * 
+ *
  * <dt>hostName</dt>
  * <dd>The host name to use for the SolarNet remote service. Defaults to
  * {@link #DEFAULT_HOST_NAME}. This will be overridden by the application
  * setting value for the key
  * {@link SetupSettings#KEY_SOLARNETWORK_HOST_NAME}.</dd>
- * 
+ *
  * <dt>hostPort</dt>
  * <dd>The host port to use for the SolarNet remote service. Defaults to
  * {@link #DEFAULT_HOST_PORT}. This will be overridden by the application
  * setting value for the key
  * {@link SetupSettings#KEY_SOLARNETWORK_HOST_PORT}.</dd>
- * 
+ *
  * <dt>forceTLS</dt>
  * <dd>If {@literal true} then use TLS (SSL) even on a port other than
  * {@code 443} (the default TLS port). Defaults to {@literal false}.</dd>
- * 
+ *
  * <dt>solarInUrlPrefix</dt>
  * <dd>The URL prefix for the SolarIn service. Defaults to
  * {@link DEFAULT_SOLARIN_URL_PREFIX}.</dd>
  * </dl>
- * 
+ *
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 public class DefaultSetupService extends XmlServiceSupport
 		implements SetupService, IdentityService, InstructionHandler, PingTest {
@@ -130,14 +130,14 @@ public class DefaultSetupService extends XmlServiceSupport
 
 	/**
 	 * The default value for the {@code solarUserUrlPrefix} property.
-	 * 
+	 *
 	 * @since 1.11
 	 */
 	public static final String DEFAULT_SOLARUSER_URL_PREFIX = "/solaruser";
 
 	/**
 	 * Instruction topic for sending a renewed certificate to a node.
-	 * 
+	 *
 	 * @since 1.5
 	 */
 	public static final String INSTRUCTION_TOPIC_RENEW_CERTIFICATE = "RenewCertificate";
@@ -146,14 +146,14 @@ public class DefaultSetupService extends XmlServiceSupport
 	 * Instruction parameter for certificate data. Since instruction parameters
 	 * are limited in length, there can be more than one parameter of the same
 	 * key, with the full data being the concatenation of all parameter values.
-	 * 
+	 *
 	 * @since 1.5
 	 */
 	public static final String INSTRUCTION_PARAM_CERTIFICATE = "Certificate";
 
 	/**
 	 * Get the URL path for the app configuration endpoint.
-	 * 
+	 *
 	 * @since 1.8
 	 */
 	public static final String NETWORK_APP_CONFIGURATION_URL_PATH = "/api/v1/pub/config";
@@ -161,7 +161,7 @@ public class DefaultSetupService extends XmlServiceSupport
 	/**
 	 * The {@literal service} instruction parameter value for identity
 	 * information configuration.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public static final String IDENTITY_SERVICE_NAME = "/setup/identity";
@@ -221,7 +221,7 @@ public class DefaultSetupService extends XmlServiceSupport
 
 	/**
 	 * Default constructor.
-	 * 
+	 *
 	 * @param setupIdentityDao
 	 *        the identity DAO to use
 	 */
@@ -670,7 +670,7 @@ public class DefaultSetupService extends XmlServiceSupport
 							association.getSolarQueryServiceURL());
 					networkServiceUrls.putAll(urls);
 				} catch ( IOException e ) {
-					log.warn("Network error fetching SolarUser app configuration: " + e.getMessage());
+					log.warn("Network error fetching SolarQuery app configuration: " + e.getMessage());
 				}
 			}
 			if ( association.getSolarUserServiceURL() != null ) {
@@ -744,7 +744,7 @@ public class DefaultSetupService extends XmlServiceSupport
 
 	/**
 	 * Set the URL path prefix to use for the SolarIn application.
-	 * 
+	 *
 	 * @param solarInUrlPrefix
 	 *        the prefix to use; defaults to {@link #DEFAULT_SOLARIN_URL_PREFIX}
 	 */
@@ -754,7 +754,7 @@ public class DefaultSetupService extends XmlServiceSupport
 
 	/**
 	 * Set the URL path prefix to use for the SolarUser application.
-	 * 
+	 *
 	 * @param solarUserUrlPrefix
 	 *        the prefix to use; defaults to
 	 *        {@link #DEFAULT_SOLARUSER_URL_PREFIX}
@@ -764,10 +764,22 @@ public class DefaultSetupService extends XmlServiceSupport
 		this.solarUserUrlPrefix = solarUserUrlPrefix;
 	}
 
+	/**
+	 * Set the PKI service to use.
+	 *
+	 * @param pkiService
+	 *        the service to use
+	 */
 	public void setPkiService(PKIService pkiService) {
 		this.pkiService = pkiService;
 	}
 
+	/**
+	 * Set the backup manager service to use.
+	 *
+	 * @param backupManager
+	 *        the service to use
+	 */
 	public void setBackupManager(OptionalService<BackupManager> backupManager) {
 		this.backupManager = backupManager;
 	}
@@ -775,7 +787,7 @@ public class DefaultSetupService extends XmlServiceSupport
 	/**
 	 * Get the number of days before treating an expiring node certificate as a
 	 * {@link PingTest} failure.
-	 * 
+	 *
 	 * @return the nodeCertificateExpireWarningDays the number of days; defaults
 	 *         to {@link DefaultSetupService#DEFAULT_CERT_EXPIRE_WARNING_DAYS}
 	 * @since 2.2
@@ -787,7 +799,7 @@ public class DefaultSetupService extends XmlServiceSupport
 	/**
 	 * Set the number of days before treating an expiring node certificate as a
 	 * {@link PingTest} failure.
-	 * 
+	 *
 	 * @param nodeCertificateExpireWarningDays
 	 *        the nodeCertificateExpireWarningDays the number of days, or
 	 *        {@literal 0} to disable the warning
@@ -799,7 +811,7 @@ public class DefaultSetupService extends XmlServiceSupport
 
 	/**
 	 * Get an optional system service.
-	 * 
+	 *
 	 * @return the service
 	 * @since 2.3
 	 */
@@ -809,7 +821,7 @@ public class DefaultSetupService extends XmlServiceSupport
 
 	/**
 	 * Set the optional system service.
-	 * 
+	 *
 	 * @param systemService
 	 *        the service to set
 	 * @since 2.3

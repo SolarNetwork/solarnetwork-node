@@ -1,21 +1,21 @@
 /* ==================================================================
  * DefaultKeystoreService.java - Dec 5, 2012 9:10:53 AM
- * 
+ *
  * Copyright 2007-2012 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -68,7 +68,7 @@ import net.solarnetwork.service.support.ConfigurableSSLService;
 
 /**
  * Service for managing a {@link KeyStore}.
- * 
+ *
  * <p>
  * This implementation maintains a key store with two primary aliases:
  * {@code ca} and {@code node}. The key store is created as needed, and a random
@@ -78,7 +78,7 @@ import net.solarnetwork.service.support.ConfigurableSSLService;
  * {@link net.solarnetwork.service.SSLService} and is used as both the key and
  * trust store for SSL connections returned by that API.
  * </p>
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -103,7 +103,7 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param setupIdentityDao
 	 *        the DAO to use for persisting the node identity details
 	 * @param certificateService
@@ -182,7 +182,7 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 
 	/**
 	 * Get the keystore password.
-	 * 
+	 *
 	 * <p>
 	 * If a password has been configured via
 	 * {@link #setKeyStorePassword(String)} this method will return that.
@@ -608,18 +608,42 @@ public class DefaultKeystoreService extends ConfigurableSSLService
 		}
 	}
 
+	/**
+	 * Set the node certificate alias.
+	 *
+	 * @param nodeAlias
+	 *        the alias to set
+	 */
 	public void setNodeAlias(String nodeAlias) {
 		this.nodeAlias = nodeAlias;
 	}
 
+	/**
+	 * Set the CA certificate alias.
+	 *
+	 * @param caAlias
+	 *        the alias to set
+	 */
 	public void setCaAlias(String caAlias) {
 		this.caAlias = caAlias;
 	}
 
+	/**
+	 * Set the key size.
+	 *
+	 * @param keySize
+	 *        the key size
+	 */
 	public void setKeySize(int keySize) {
 		this.keySize = keySize;
 	}
 
+	/**
+	 * Set the message source.
+	 *
+	 * @param messageSource
+	 *        the message source to set
+	 */
 	public void setMessageSource(MessageSource messageSource) {
 		this.messageSource = messageSource;
 	}
