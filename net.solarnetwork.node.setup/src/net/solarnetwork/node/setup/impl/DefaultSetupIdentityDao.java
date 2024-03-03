@@ -1,21 +1,21 @@
 /* ==================================================================
  * DefaultSetupIdentityDao.java - 3/11/2017 7:01:03 AM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -54,7 +54,7 @@ import net.solarnetwork.service.OptionalService;
 /**
  * Default implementation of {@link SetupIdentityDao} that saves data to a JSON
  * file.
- * 
+ *
  * @author matt
  * @version 2.0
  * @since 1.18
@@ -66,11 +66,22 @@ public class DefaultSetupIdentityDao implements SetupIdentityDao, BackupResource
 
 	private static final String BACKUP_RESOURCE_NAME_DATA_FILE = "identity.json";
 
+	/** The node ID key. */
 	public static final String KEY_NODE_ID = "solarnode.id";
+
+	/** The host name key. */
 	public static final String KEY_SOLARNETWORK_HOST_NAME = "solarnode.solarnet.host";
+
+	/** The host port key. */
 	public static final String KEY_SOLARNETWORK_HOST_PORT = "solarnode.solarnet.port";
+
+	/** The "force TLS" flag key key. */
 	public static final String KEY_SOLARNETWORK_FORCE_TLS = "solarnode.solarnet.forceTLS";
+
+	/** The confirmation code key. */
 	public static final String KEY_CONFIRMATION_CODE = "solarnode.solarnet.confirmation";
+
+	/** The keystore password key. */
 	public static final String KEY_KEY_STORE_PASSWORD = "solarnode.keystore.pw";
 
 	private final ObjectMapper objectMapper;
@@ -82,6 +93,12 @@ public class DefaultSetupIdentityDao implements SetupIdentityDao, BackupResource
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
+	/**
+	 * Constructor.
+	 *
+	 * @param objectMapper
+	 *        the object mapper to use
+	 */
 	public DefaultSetupIdentityDao(ObjectMapper objectMapper) {
 		super();
 		this.objectMapper = objectMapper;
@@ -246,7 +263,7 @@ public class DefaultSetupIdentityDao implements SetupIdentityDao, BackupResource
 
 	/**
 	 * The path to store the identity data in.
-	 * 
+	 *
 	 * @param dataFilePath
 	 *        the data file path; defaults to {@link #DEFAULT_DATA_FILE_PATH}
 	 */
@@ -256,12 +273,12 @@ public class DefaultSetupIdentityDao implements SetupIdentityDao, BackupResource
 
 	/**
 	 * Set an optional {@link SettingDao}.
-	 * 
+	 *
 	 * <p>
 	 * This is only used for backwards compatibility, to load legacy settings
 	 * from {@link SettingDao} when the native identity data is not available.
 	 * </p>
-	 * 
+	 *
 	 * @param settingDao
 	 *        the DAO to use
 	 */
@@ -271,7 +288,7 @@ public class DefaultSetupIdentityDao implements SetupIdentityDao, BackupResource
 
 	/**
 	 * Set a message source for backup localized messages.
-	 * 
+	 *
 	 * @param messageSource
 	 *        the message source
 	 */

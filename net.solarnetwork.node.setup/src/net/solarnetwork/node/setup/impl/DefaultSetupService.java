@@ -764,10 +764,22 @@ public class DefaultSetupService extends XmlServiceSupport
 		this.solarUserUrlPrefix = solarUserUrlPrefix;
 	}
 
+	/**
+	 * Set the PKI service to use.
+	 *
+	 * @param pkiService
+	 *        the service to use
+	 */
 	public void setPkiService(PKIService pkiService) {
 		this.pkiService = pkiService;
 	}
 
+	/**
+	 * Set the backup manager service to use.
+	 *
+	 * @param backupManager
+	 *        the service to use
+	 */
 	public void setBackupManager(OptionalService<BackupManager> backupManager) {
 		this.backupManager = backupManager;
 	}

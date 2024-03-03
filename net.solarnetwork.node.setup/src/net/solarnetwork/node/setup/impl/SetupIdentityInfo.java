@@ -1,21 +1,21 @@
 /* ==================================================================
  * SetupIdentityInfo.java - 3/11/2017 6:36:05 AM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Information about a SolarNode setup identity.
- * 
+ *
  * @author matt
  * @version 1.0
  */
@@ -48,7 +48,7 @@ public class SetupIdentityInfo {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param nodeId
 	 *        the node ID
 	 * @param confirmationCode
@@ -81,7 +81,7 @@ public class SetupIdentityInfo {
 
 	/**
 	 * Instantiate a new info instance with a specific key store password.
-	 * 
+	 *
 	 * @param newPassword
 	 *        the new password
 	 * @return the new instance
@@ -162,26 +162,56 @@ public class SetupIdentityInfo {
 		return true;
 	}
 
+	/**
+	 * Get the node ID.
+	 *
+	 * @return the node ID
+	 */
 	public Long getNodeId() {
 		return nodeId;
 	}
 
+	/**
+	 * Get the confirmation code.
+	 *
+	 * @return the code
+	 */
 	public String getConfirmationCode() {
 		return confirmationCode;
 	}
 
+	/**
+	 * Get the host name.
+	 *
+	 * @return the name
+	 */
 	public String getSolarNetHostName() {
 		return solarNetHostName;
 	}
 
+	/**
+	 * Get the host port.
+	 *
+	 * @return the port
+	 */
 	public Integer getSolarNetHostPort() {
 		return solarNetHostPort;
 	}
 
+	/**
+	 * Get the "force TLS" flag.
+	 *
+	 * @return the flag
+	 */
 	public boolean isSolarNetForceTls() {
 		return solarNetForceTls;
 	}
 
+	/**
+	 * Get the keystore password.
+	 *
+	 * @return the password
+	 */
 	public String getKeyStorePassword() {
 		return keyStorePassword;
 	}
