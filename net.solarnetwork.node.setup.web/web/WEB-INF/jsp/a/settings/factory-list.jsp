@@ -54,7 +54,7 @@
 		<c:if test="${fn:length(providers) > 0}">
 			<div class="form-actions row justify-content-between align-items-baseline bg-light border-top border-bottom my-3 py-3">
 				<div class="col-auto">
-					<button type="button" class="btn btn-primary text-nowrap" id="submit"><fmt:message key='settings.save'/></button>
+					<button type="button" class="btn btn-primary text-nowrap settings-save" id="submit" disabled><fmt:message key='settings.save'/></button>
 				</div>
 				<div class="col">
 					<c:if test="${fn:length(providers) > 1}">

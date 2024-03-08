@@ -8,6 +8,7 @@
 		<put-attribute name="navloc" value="settings" type="string"/>
 		<put-attribute name="head" value="/WEB-INF/jsp/a/settings/settings-head.jsp"/>
 		<put-attribute name="header" value="/WEB-INF/jsp/header.jsp"/>
+		<put-attribute name="footer" value="/WEB-INF/jsp/footer-top.jsp"/>
 	</definition>
 	
 	<definition name="settings-list" extends="settings">
@@ -44,6 +45,11 @@
 	<definition name="backups" extends="settings">
 		<put-attribute name="navloc" value="backups" type="string"/>
 		<put-attribute name="body" value="/WEB-INF/jsp/a/settings/backups.jsp" />
+	</definition>
+		
+	<definition name="services" extends="settings">
+		<put-attribute name="navloc" value="services" type="string"/>
+		<put-attribute name="body" value="/WEB-INF/jsp/a/settings/services.jsp" />
 	</definition>
 		
 </tiles-definitions>

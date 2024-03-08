@@ -150,7 +150,7 @@ public class SettingsController {
 	}
 
 	/**
-	 * List settings.
+	 * List factory settings.
 	 *
 	 * @param model
 	 *        the model
@@ -177,9 +177,34 @@ public class SettingsController {
 			model.put(KEY_PROVIDERS, providers);
 			model.put(KEY_PROVIDER_FACTORIES, factories);
 			model.put(KEY_SETTINGS_SERVICE, settingsService);
-			//model.put(KEY_SETTING_RESOURCES, settingResources(settingsService, providers));
 		}
 		return "settings-list";
+	}
+
+	/**
+	 * List service settings.
+	 *
+	 * @param model
+	 *        the model
+	 * @param locale
+	 *        the locale
+	 * @return the settings list view name
+	 */
+	@RequestMapping(value = "/services", method = RequestMethod.GET)
+	public String serviceSettingsList(ModelMap model, Locale locale) {
+		final SettingsService settingsService = service(settingsServiceTracker);
+		if ( locale == null ) {
+			locale = Locale.US;
+		}
+		if ( settingsService != null ) {
+			List<SettingSpecifierProvider> providers = settingsService.getProviders(NOT_DATUM_FILTER);
+			if ( providers != null ) {
+				sort(providers, new SettingSpecifierProviderMessageComparator(locale));
+			}
+			model.put(KEY_PROVIDERS, providers);
+			model.put(KEY_SETTINGS_SERVICE, settingsService);
+		}
+		return "services";
 	}
 
 	/**

@@ -6,6 +6,7 @@
 	<tilesx:useAttribute name="navloc" scope="request"/>
 	<tiles:insertAttribute name="head" />
 	<body>
+		<a id="top" aria-hidden="true"></a>
 		<c:import url="/WEB-INF/jsp/navbar.jsp"/>
 		<tiles:insertAttribute name="header" />
 		<div class="container" id="body-container">
@@ -41,6 +42,7 @@
 				<c:remove var="errorMessageParam0" scope="session"/>
 			</c:if>
 			<tiles:insertAttribute name="body" />
+			<tiles:insertAttribute name="footer" />
 		</div>
 
 		<%-- System lock overlay --%>
