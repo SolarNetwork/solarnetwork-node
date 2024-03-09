@@ -41,7 +41,7 @@
 		<c:if test="${fn:length(providers) > 0}">
 			<form action="<setup:url value='/a/settings/save'/>" class="mt-5" method="post">
 				<div class="form-actions d-grid my-5">
-					<button type="button" class="btn btn-primary" id="submit"><fmt:message key='settings.save'/></button>
+					<button type="button" class="btn btn-primary settings-save" id="submit" disabled><fmt:message key='settings.save'/></button>
 				</div>
 				<c:forEach items="${providers}" var="provider" varStatus="providerStatus">
 					<!--  ${provider.settingUid} -->

@@ -27,6 +27,7 @@
 					<sec:authorize access="hasRole('ROLE_USER')">
 						<li class="nav-item dropdown">
 							<a href="#" class="nav-link dropdown-toggle${navloc == 'settings'
+								or navloc == 'services'
 								or navloc == 'settings-component'
 								or navloc == 'backups'
 								or navloc == 'filters'
@@ -36,7 +37,8 @@
 								<b class="caret"></b>
 							</a>
 							<ul class="dropdown-menu">
-								<li><a class="dropdown-item${navloc == 'settings' ? ' active' : ''}" href="<setup:url value='/a/settings'/>"><fmt:message key='link.settings'/></a></li>
+								<li><a class="dropdown-item${navloc == 'settings' ? ' active' : ''}" href="<setup:url value='/a/settings'/>"><fmt:message key='link.factories'/></a></li>
+								<li><a class="dropdown-item${navloc == 'services' ? ' active' : ''}" href="<setup:url value='/a/settings/services'/>"><fmt:message key='link.services'/></a></li>
 								<li><a class="dropdown-item${navloc == 'filters' ? ' active' : ''}" href="<setup:url value='/a/settings/filters'/>"><fmt:message key='link.filters'/></a></li>
 								<li><a class="dropdown-item${navloc == 'logging' ? ' active' : ''}" href="<setup:url value='/a/logging'/>"><fmt:message key='link.logging'/></a></li>
 								<li><a class="dropdown-item${navloc == 'opmodes' ? ' active' : ''}" href="<setup:url value='/a/opmodes'/>"><fmt:message key='link.opmodes'/></a></li>

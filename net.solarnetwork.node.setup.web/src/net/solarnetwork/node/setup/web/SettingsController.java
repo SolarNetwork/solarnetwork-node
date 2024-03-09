@@ -1,21 +1,21 @@
 /* ==================================================================
  * SettingsController.java - Mar 12, 2012 1:31:40 PM
- * 
+ *
  * Copyright 2007-2012 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -97,7 +97,7 @@ import net.solarnetwork.web.support.MultipartFileResource;
 
 /**
  * Web controller for the settings UI.
- * 
+ *
  * @author matt
  * @version 2.3
  */
@@ -150,8 +150,8 @@ public class SettingsController {
 	}
 
 	/**
-	 * List settings.
-	 * 
+	 * List factory settings.
+	 *
 	 * @param model
 	 *        the model
 	 * @param locale
@@ -160,25 +160,6 @@ public class SettingsController {
 	 */
 	@RequestMapping(value = "", method = RequestMethod.GET)
 	public String settingsList(ModelMap model, Locale locale) {
-		return settingView(model, locale, "settings-list", null);
-	}
-
-	/**
-	 * Manage backups.
-	 * 
-	 * @param model
-	 *        the model
-	 * @param locale
-	 *        the locale
-	 * @return the settings list view name
-	 */
-	@RequestMapping(value = "/backups", method = RequestMethod.GET)
-	public String backups(ModelMap model, Locale locale) {
-		return settingView(model, locale, "backups", backupManagerTracker.service());
-	}
-
-	private String settingView(ModelMap model, Locale locale, String viewName,
-			final BackupManager backupManager) {
 		final SettingsService settingsService = service(settingsServiceTracker);
 		if ( locale == null ) {
 			locale = Locale.US;
@@ -196,9 +177,59 @@ public class SettingsController {
 			model.put(KEY_PROVIDERS, providers);
 			model.put(KEY_PROVIDER_FACTORIES, factories);
 			model.put(KEY_SETTINGS_SERVICE, settingsService);
+		}
+		return "settings-list";
+	}
+
+	/**
+	 * List service settings.
+	 *
+	 * @param model
+	 *        the model
+	 * @param locale
+	 *        the locale
+	 * @return the settings list view name
+	 */
+	@RequestMapping(value = "/services", method = RequestMethod.GET)
+	public String serviceSettingsList(ModelMap model, Locale locale) {
+		final SettingsService settingsService = service(settingsServiceTracker);
+		if ( locale == null ) {
+			locale = Locale.US;
+		}
+		if ( settingsService != null ) {
+			List<SettingSpecifierProvider> providers = settingsService.getProviders(NOT_DATUM_FILTER);
+			if ( providers != null ) {
+				sort(providers, new SettingSpecifierProviderMessageComparator(locale));
+			}
+			model.put(KEY_PROVIDERS, providers);
+			model.put(KEY_SETTINGS_SERVICE, settingsService);
+		}
+		return "services";
+	}
+
+	/**
+	 * Manage backups.
+	 *
+	 * @param model
+	 *        the model
+	 * @param locale
+	 *        the locale
+	 * @return the settings list view name
+	 */
+	@RequestMapping(value = "/backups", method = RequestMethod.GET)
+	public String backups(ModelMap model, Locale locale) {
+		final SettingsService settingsService = service(settingsServiceTracker);
+		if ( settingsService != null ) {
+			List<SettingSpecifierProvider> providers = settingsService.getProviders(NOT_DATUM_FILTER);
+			if ( providers != null ) {
+				sort(providers, new SettingSpecifierProviderMessageComparator(locale));
+			}
+			model.put(KEY_PROVIDERS, providers);
+			model.put(KEY_SETTINGS_SERVICE, settingsService);
 			model.put(KEY_SETTINGS_BACKUPS, settingsService.getAvailableBackups());
 			model.put(KEY_SETTING_RESOURCES, settingResources(settingsService, providers));
 		}
+		final BackupManager backupManager = backupManagerTracker.service();
 		if ( backupManager != null ) {
 			model.put(KEY_BACKUP_MANAGER, backupManager);
 			BackupService service = backupManager.activeBackupService();
@@ -209,7 +240,7 @@ public class SettingsController {
 				model.put(KEY_BACKUPS, backups);
 			}
 		}
-		return viewName;
+		return "backups";
 	}
 
 	private Map<String, List<SettingResourceInfo>> settingResources(SettingsService settingsService,
@@ -263,7 +294,7 @@ public class SettingsController {
 
 	/**
 	 * List filters.
-	 * 
+	 *
 	 * @param model
 	 *        the model
 	 * @param locale
@@ -301,7 +332,7 @@ public class SettingsController {
 
 	/**
 	 * Manage a specific settings factory.
-	 * 
+	 *
 	 * @param factoryUid
 	 *        the UID of the factory to manage
 	 * @param model
@@ -339,7 +370,7 @@ public class SettingsController {
 
 	/**
 	 * Manage a specific settings factory.
-	 * 
+	 *
 	 * @param factoryUid
 	 *        the UID of the factory to manage
 	 * @param instanceKey
@@ -387,7 +418,7 @@ public class SettingsController {
 
 	/**
 	 * Add a new factory instance.
-	 * 
+	 *
 	 * @param factoryUid
 	 *        the factory to create a new instance for
 	 * @param instanceUid
@@ -409,7 +440,7 @@ public class SettingsController {
 
 	/**
 	 * Delete a setting.
-	 * 
+	 *
 	 * @param factoryUid
 	 *        the factory UID
 	 * @param instanceUid
@@ -430,7 +461,7 @@ public class SettingsController {
 
 	/**
 	 * Reset settings to default values.
-	 * 
+	 *
 	 * @param factoryUid
 	 *        the factory UID
 	 * @param instanceUid
@@ -451,7 +482,7 @@ public class SettingsController {
 
 	/**
 	 * Remove all settings for a factory.
-	 * 
+	 *
 	 * @param factoryUid
 	 *        the factory UID
 	 * @return the result
@@ -471,7 +502,7 @@ public class SettingsController {
 
 	/**
 	 * Save settings.
-	 * 
+	 *
 	 * @param command
 	 *        the settings to save
 	 * @param model
@@ -501,7 +532,7 @@ public class SettingsController {
 
 	/**
 	 * Export settings to CSV.
-	 * 
+	 *
 	 * @param backupKey
 	 *        the backup key
 	 * @param response
@@ -538,7 +569,7 @@ public class SettingsController {
 
 	/**
 	 * Export settings resources.
-	 * 
+	 *
 	 * @param handlerKey
 	 *        the {@link SettingResourceHandler} ID to import with
 	 * @param instanceKey
@@ -631,7 +662,7 @@ public class SettingsController {
 
 	/**
 	 * Import settings.
-	 * 
+	 *
 	 * @param file
 	 *        the CSV settings resource to import
 	 * @return the result view name
@@ -650,7 +681,7 @@ public class SettingsController {
 
 	/**
 	 * Initiate a backup.
-	 * 
+	 *
 	 * @param model
 	 *        the model
 	 * @return the result
@@ -686,7 +717,7 @@ public class SettingsController {
 
 	/**
 	 * Export a backup.
-	 * 
+	 *
 	 * @param backupKey
 	 *        the backup to export
 	 * @param response
@@ -713,7 +744,7 @@ public class SettingsController {
 
 	/**
 	 * Import a backup.
-	 * 
+	 *
 	 * @param file
 	 *        the backup to import
 	 * @return the settings view name
@@ -734,7 +765,7 @@ public class SettingsController {
 
 	/**
 	 * Import a setting resource.
-	 * 
+	 *
 	 * @param handlerKey
 	 *        the {@link SettingResourceHandler} ID to import with
 	 * @param instanceKey
@@ -776,7 +807,7 @@ public class SettingsController {
 
 	/**
 	 * Import a setting resource from direct text.
-	 * 
+	 *
 	 * @param handlerKey
 	 *        the {@link SettingResourceHandler} ID to import with
 	 * @param instanceKey
@@ -820,7 +851,7 @@ public class SettingsController {
 
 	/**
 	 * Internal settings command to support path clean prefix.
-	 * 
+	 *
 	 * @since 1.10
 	 */
 	public static final class CleanSupportSettingsCommand extends SettingsCommand {
@@ -836,7 +867,7 @@ public class SettingsController {
 
 		/**
 		 * Get a prefix path to clean during the settings update.
-		 * 
+		 *
 		 * @return the prefix path, or {@literal null}
 		 */
 		public String getSettingKeyPrefixToClean() {
@@ -845,7 +876,7 @@ public class SettingsController {
 
 		/**
 		 * Set a prefix path to clean during the settings update.
-		 * 
+		 *
 		 * @param settingKeyPrefixToClean
 		 *        the prefix to clean
 		 */
