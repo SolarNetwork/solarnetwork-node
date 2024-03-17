@@ -76,15 +76,6 @@
 				<!--  ${provider.settingUid} -->
 
 				<fieldset class="carousel-item ${instanceStatus.index == 0 ? 'active' : ''}">
-					<legend>
-						<a id="${instance.key}"
-							class="anchor"
-							href="#${instance.key}"
-							aria-hidden="true"><i class="bi bi-link-45deg" aria-hidden="true"></i></a>
-						<setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/>
-						${' '}
-						${instance.key}
-					</legend>
 					<div class="instance-content"
 							data-bs-target="<setup:url value='/a/settings/manage'/>"
 							data-factory-uid="${factory.factoryUid}"
@@ -95,25 +86,44 @@
 					</div>
 					<div class="row my-3">
 						<div class="col-sm-9 offset-sm-3">
+							<c:set var="instanceKeyIsNumber" scope="page" value="${instance.key.matches('[0-9]+')}"/>
 							<button type="button" class="btn btn-danger delete-factory-instance"
 									data-bs-target="<setup:url value='/a/settings/manage/delete'/>"
 									data-factory-uid="${factory.factoryUid}"
 									data-instance-key="${instance.key}"
 									>
-								<fmt:message key='settings.factory.delete'>
-									<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
-									<fmt:param value="${instance.key}"/>
-								</fmt:message>
+								<c:choose>
+									<c:when test="${instanceKeyIsNumber}">
+										<fmt:message key='settings.factory.delete'>
+											<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
+											<fmt:param value="${instance.key}"/>
+										</fmt:message>
+									</c:when>
+									<c:otherwise>
+										<fmt:message key='settings.factory.delete.simple'>
+											<fmt:param value="${instance.key}"/>
+										</fmt:message>
+									</c:otherwise>
+								</c:choose>
 							</button>
 							<button type="button" class="btn btn-primary reset-factory-instance"
 									data-bs-target="<setup:url value='/a/settings/manage/reset'/>"
 									data-factory-uid="${factory.factoryUid}"
 									data-instance-key="${instance.key}"
 									>
-								<fmt:message key='settings.factory.reset'>
-									<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
-									<fmt:param value="${instance.key}"/>
-								</fmt:message>
+								<c:choose>
+									<c:when test="${instanceKeyIsNumber}">
+										<fmt:message key='settings.factory.reset'>
+											<fmt:param><setup:message key="title" messageSource="${factory.messageSource}" text="${factory.displayName}"/></fmt:param>
+											<fmt:param value="${instance.key}"/>
+										</fmt:message>
+									</c:when>
+									<c:otherwise>
+										<fmt:message key='settings.factory.reset.simple'>
+											<fmt:param value="${instance.key}"/>
+										</fmt:message>
+									</c:otherwise>
+								</c:choose>
 							</button>
 						</div>
 					</div>
