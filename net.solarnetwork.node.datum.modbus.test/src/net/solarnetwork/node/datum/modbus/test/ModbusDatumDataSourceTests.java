@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusDatumDataSourceTests.java - 20/12/2017 4:33:10 PM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -73,7 +73,7 @@ import net.solarnetwork.util.ByteUtils;
 
 /**
  * Test cases for the {@link ModbusDatumDataSource} class.
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -667,6 +667,54 @@ public class ModbusDatumDataSourceTests {
 		final BitSet rawBits = new BitSet();
 		rawBits.set(1);
 		expect(modbusConnection.readDiscreetValues(100, 2)).andReturn(rawBits);
+
+		replayAll();
+
+		// WHEN
+		NodeDatum datum = dataSource.readCurrentDatum();
+
+		// THEN
+		assertThat("Datum returned", datum, notNullValue());
+		assertThat("Created", datum.getTimestamp(), notNullValue());
+		assertThat("Source ID", datum.getSourceId(), equalTo(TEST_SOURCE_ID));
+		assertThat("Coil value", datum.asSampleOperations().getSampleString(Status, TEST_BIT_PROP_NAME),
+				equalTo(Boolean.FALSE.toString()));
+		assertThat("Coil value 2",
+				datum.asSampleOperations().getSampleString(Status, TEST_BIT2_PROP_NAME),
+				equalTo(Boolean.TRUE.toString()));
+	}
+
+	@Test
+	public void readDatumWithDiscreteInputs() throws IOException {
+		// GIVEN
+		ModbusPropertyConfig propConfig = new ModbusPropertyConfig();
+		propConfig.setPropertyKey(TEST_BIT_PROP_NAME);
+		propConfig.setAddress(100);
+		propConfig.setFunction(ModbusReadFunction.ReadDiscreteInput);
+		propConfig.setDataType(ModbusDataType.Boolean);
+		propConfig.setPropertyType(Status);
+		ModbusPropertyConfig propConfig2 = new ModbusPropertyConfig();
+		propConfig2.setPropertyKey(TEST_BIT2_PROP_NAME);
+		propConfig2.setAddress(101);
+		propConfig2.setFunction(ModbusReadFunction.ReadDiscreteInput);
+		propConfig2.setDataType(ModbusDataType.Boolean);
+		propConfig2.setPropertyType(Status);
+		dataSource.setPropConfigs(new ModbusPropertyConfig[] { propConfig, propConfig2 });
+
+		Capture<ModbusConnectionAction<ModbusData>> connActionCapture = Capture.newInstance();
+		expect(modbusNetwork.performAction(eq(1), capture(connActionCapture)))
+				.andAnswer(new IAnswer<ModbusData>() {
+
+					@Override
+					public ModbusData answer() throws Throwable {
+						ModbusConnectionAction<ModbusData> action = connActionCapture.getValue();
+						return action.doWithConnection(modbusConnection);
+					}
+				});
+
+		final BitSet rawBits = new BitSet();
+		rawBits.set(1);
+		expect(modbusConnection.readInputDiscreteValues(100, 2)).andReturn(rawBits);
 
 		replayAll();
 

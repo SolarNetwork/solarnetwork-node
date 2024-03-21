@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusDatumDataSource.java - 20/12/2017 7:04:42 AM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -71,7 +71,7 @@ import net.solarnetwork.util.StringUtils;
 
 /**
  * Generic Modbus device datum data source.
- * 
+ *
  * @author matt
  * @version 3.6
  */
@@ -81,7 +81,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * The setting UID used by this service.
-	 * 
+	 *
 	 * @since 3.1
 	 */
 	public static final String SETTING_UID = "net.solarnetwork.node.datum.modbus";
@@ -412,7 +412,9 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 							int len = Math.min(range.length(), maxReadLen);
 							int max = start + len;
 							@SuppressWarnings("deprecation")
-							BitSet updates = conn.readDiscreetValues(start, len);
+							BitSet updates = (blockType == ModbusRegisterBlockType.Coil
+									? conn.readDiscreetValues(start, len)
+									: conn.readInputDiscreteValues(start, len));
 							for ( int i = start, u = 0; i < max; i++, u++ ) {
 								bits.set(i, updates.get(u));
 							}
@@ -522,7 +524,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Get the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @return the cache milliseconds
 	 */
 	public long getSampleCacheMs() {
@@ -531,7 +533,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
@@ -541,7 +543,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Get the property configurations.
-	 * 
+	 *
 	 * @return the property configurations
 	 */
 	public ModbusPropertyConfig[] getPropConfigs() {
@@ -550,7 +552,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Set the property configurations to use.
-	 * 
+	 *
 	 * @param propConfigs
 	 *        the configs to use
 	 */
@@ -560,7 +562,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Get the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code propConfigs} elements
 	 */
 	public int getPropConfigsCount() {
@@ -570,12 +572,12 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Adjust the number of configured {@code propConfigs} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link ModbusPropertyConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code propConfigs} elements.
 	 */
@@ -587,7 +589,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	/**
 	 * Get the maximum number of Modbus registers to read in any single read
 	 * operation.
-	 * 
+	 *
 	 * @return the max read word count; defaults to
 	 *         {@link #DEFAULT_MAX_READ_WORD_COUNT}
 	 */
@@ -598,12 +600,12 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 	/**
 	 * Set the maximum number of Modbus registers to read in any single read
 	 * operation.
-	 * 
+	 *
 	 * <p>
 	 * Some modbus devices do not handle large read ranges. This setting can be
 	 * used to limit the number of registers read at one time.
 	 * </p>
-	 * 
+	 *
 	 * @param maxReadWordCount
 	 *        the maximum word count
 	 */
@@ -616,7 +618,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Get the source ID to use for returned datum.
-	 * 
+	 *
 	 * @return the source ID to use
 	 */
 	public String getSourceId() {
@@ -625,7 +627,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Set the source ID to use for returned datum.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to use
 	 */
@@ -635,7 +637,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Get the word order.
-	 * 
+	 *
 	 * @return the word order
 	 * @since 1.2
 	 */
@@ -645,7 +647,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Set the word order.
-	 * 
+	 *
 	 * @param wordOrder
 	 *        the order to set; {@literal null} will be ignored
 	 * @since 1.2
@@ -659,7 +661,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Get the word order as a key value.
-	 * 
+	 *
 	 * @return the word order as a key; if {@link #getWordOrder()} is
 	 *         {@literal null} then
 	 *         {@link ModbusWordOrder#MostToLeastSignificant} will be returned
@@ -675,7 +677,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Set the word order as a key value.
-	 * 
+	 *
 	 * @param key
 	 *        the word order key to set; if {@code key} is not valid then
 	 *        {@link ModbusWordOrder#MostToLeastSignificant} will be set
@@ -693,7 +695,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Get the expression configurations.
-	 * 
+	 *
 	 * @return the expression configurations
 	 * @since 1.5
 	 */
@@ -704,7 +706,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Set the expression configurations to use.
-	 * 
+	 *
 	 * @param expressionConfigs
 	 *        the configs to use
 	 * @since 1.5
@@ -715,7 +717,7 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Get the number of configured {@code expressionConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code expressionConfigs} elements
 	 * @since 1.5
 	 */
@@ -727,12 +729,12 @@ public class ModbusDatumDataSource extends ModbusDeviceDatumDataSourceSupport
 
 	/**
 	 * Adjust the number of configured {@code ExpressionConfig} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link ExpressionConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code expressionConfigs} elements.
 	 * @since 1.5
