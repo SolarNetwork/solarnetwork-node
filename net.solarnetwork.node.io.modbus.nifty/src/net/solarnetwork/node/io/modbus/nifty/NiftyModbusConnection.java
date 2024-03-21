@@ -1,21 +1,21 @@
 /* ==================================================================
  * NiftyModbusConnection.java - 19/12/2022 10:18:38 am
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -72,7 +72,7 @@ import net.solarnetwork.util.StringUtils;
 
 /**
  * Nifty Modbus implementation of {@link ModbusConnection}.
- * 
+ *
  * <p>
  * This class has support for generating {@code mbpoll} commands from Modbus
  * messages. The {@code publishCliCommandMessages} property must be enabled for
@@ -82,7 +82,7 @@ import net.solarnetwork.util.StringUtils;
  * commands will be published to the
  * {@link AbstractNiftyModbusNetwork#PUBLISH_MODBUS_CLI_COMMANDS_TOPIC} topic.
  * </p>
- * 
+ *
  * @author matt
  * @version 1.1
  */
@@ -115,7 +115,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param unitId
 	 *        the unit ID
 	 * @param headless
@@ -169,7 +169,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 			ModbusMessage res = controller.send(req);
 			if ( res.isException() ) {
 				throw new IOException(
-						String.format("Modbus exception %d reading %d coil values from %d @ %s",
+						String.format("Modbus exception %s reading %d coil values from %d @ %s",
 								res.getError(), count, address, describer.get()));
 			}
 			BitsModbusMessage r = res.unwrap(BitsModbusMessage.class);
@@ -280,7 +280,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 	/**
 	 * Create a new {@link ModbusMessage} instance appropriate for a given
 	 * function, unit ID, address, and count.
-	 * 
+	 *
 	 * @param function
 	 *        the function to use
 	 * @param unitId
@@ -326,7 +326,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 	/**
 	 * Create a new {@link ModbusMessage} suitable for writing to non-discrete
 	 * registers.
-	 * 
+	 *
 	 * @param function
 	 *        the function to use
 	 * @param unitId
@@ -468,7 +468,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 
 	/**
 	 * Generate a CLI command for a {@link ModbusMessage} using {@code mbpoll}.
-	 * 
+	 *
 	 * @param req
 	 *        the Modbus message to translate into a {@code mbpoll} command
 	 * @return the command, or {@literal null} if one cannot be generated
@@ -642,7 +642,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 
 	/**
 	 * Get the connect timeout.
-	 * 
+	 *
 	 * @return the timeout, in milliseconds
 	 */
 	public long getConnectTimeout() {
@@ -651,7 +651,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 
 	/**
 	 * Set the connect timeout.
-	 * 
+	 *
 	 * @param connectTimeout
 	 *        the timeout to set, in milliseconds
 	 */
@@ -661,7 +661,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 
 	/**
 	 * Get the "publish CLI command messages" setting.
-	 * 
+	 *
 	 * @return {@literal true} to publish CLI command messages
 	 * @since 1.1
 	 */
@@ -671,7 +671,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 
 	/**
 	 * Set the "publish CLI command messages" setting.
-	 * 
+	 *
 	 * @param publishCliCommandMessages
 	 *        {@literal true} to publish CLI command messages; requires the
 	 *        {@link #setMessageSendingOps(OptionalService)} property also be
@@ -684,7 +684,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 
 	/**
 	 * Get the message sending operations.
-	 * 
+	 *
 	 * @return the message sending operations
 	 * @since 1.1
 	 */
@@ -694,7 +694,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 
 	/**
 	 * Set the message sending operations.
-	 * 
+	 *
 	 * @param messageSendingOps
 	 *        the message sending operations to set; required by the
 	 *        {@link #setPublishCliCommandMessages(boolean)} setting
