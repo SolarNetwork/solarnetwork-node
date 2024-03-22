@@ -3,12 +3,12 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Modbus Communication Support (Nifty Modbus)
 Bundle-Description: SolarNode Modbus API implementation using the Nifty Modbus framework.
 Bundle-SymbolicName: net.solarnetwork.node.io.modbus.nifty
-Bundle-Version: 2.1.2
+Bundle-Version: 2.1.3
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.io.modbus.nifty
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Export-Package: 
- net.solarnetwork.node.io.modbus.nifty;version="0.5.1",
+ net.solarnetwork.node.io.modbus.nifty;version="0.5.2",
  net.solarnetwork.node.io.modbus.nifty.tcp;version="0.5.0"
 Import-Package: 
  io.netty.channel;version="[4.1,5.0)",
