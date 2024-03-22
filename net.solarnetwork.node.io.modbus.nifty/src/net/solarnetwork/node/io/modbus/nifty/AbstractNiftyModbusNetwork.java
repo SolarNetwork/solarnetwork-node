@@ -1,21 +1,21 @@
 /* ==================================================================
  * AbstractNiftyModbusNetwork.java - 19/12/2022 10:11:26 am
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -38,7 +38,7 @@ import org.osgi.service.event.EventHandler;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
 import io.netty.channel.EventLoopGroup;
 import net.solarnetwork.io.modbus.ModbusClient;
-import net.solarnetwork.io.modbus.ModbusClientConfig;
+import net.solarnetwork.io.modbus.netty.handler.NettyModbusClientConfig;
 import net.solarnetwork.node.io.modbus.ModbusConnection;
 import net.solarnetwork.node.io.modbus.ModbusNetwork;
 import net.solarnetwork.node.io.modbus.support.AbstractModbusNetwork;
@@ -55,13 +55,13 @@ import net.solarnetwork.util.ObjectUtils;
 
 /**
  * Base class for Nifty Modbus implementations of {@link ModbusNetwork}.
- * 
+ *
  * @param <C>
  *        the configuration type
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
-public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
+public abstract class AbstractNiftyModbusNetwork<C extends NettyModbusClientConfig>
 		extends AbstractModbusNetwork implements SettingSpecifierProvider, SettingsChangeObserver,
 		ServiceLifecycleObserver, ThreadFactory, EventHandler {
 
@@ -76,26 +76,26 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	/**
 	 * An operational mode to enable publishing Modbus CLI commands.
-	 * 
+	 *
 	 * <p>
 	 * If this mode is enabled, it overrides whatever value the
 	 * {@code publishCliCommandMessages} setting has.
 	 * </p>
-	 * 
+	 *
 	 * @since 1.1
 	 */
 	public static final String PUBLISH_MODBUS_CLI_COMMANDS_MODE = "cli-commands/modbus";
 
 	/**
 	 * An operational mode tag for Modbus CLI commands.
-	 * 
+	 *
 	 * @since 1.1
 	 */
 	public static final String CLI_COMMANDS_MODE_MODBUS_TAG = "modbus";
 
 	/**
 	 * A message topic for Modbus CLI commands to be published to.
-	 * 
+	 *
 	 * @since 1.1
 	 */
 	public static final String PUBLISH_MODBUS_CLI_COMMANDS_TOPIC = "/topic/cli/modbus";
@@ -124,7 +124,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param config
 	 *        the configuration
 	 * @throws IllegalArgumentException
@@ -220,7 +220,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	/**
 	 * Get the event loop group.
-	 * 
+	 *
 	 * @return the event loop group, or {@literal null}
 	 */
 	protected EventLoopGroup eventLoopGroup() {
@@ -229,7 +229,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	/**
 	 * Get the event loop group, creating it if it does not already exist.
-	 * 
+	 *
 	 * @param factory
 	 *        the factory for creating a new event loop group
 	 * @return the event loop group, never {@literal null}
@@ -246,7 +246,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	/**
 	 * Test if the network is fully configured.
-	 * 
+	 *
 	 * @return {@literal true} if the configuration of the network is complete,
 	 *         and can be used
 	 */
@@ -254,14 +254,14 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	/**
 	 * Create a new controller instance.
-	 * 
+	 *
 	 * @return the new controller instance
 	 */
 	protected abstract ModbusClient createController();
 
 	/**
 	 * Configure a new controller instance.
-	 * 
+	 *
 	 * @param controller
 	 *        the instance to configure
 	 */
@@ -307,7 +307,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	/**
 	 * Get basic network settings.
-	 * 
+	 *
 	 * @param keepOpenSeconds
 	 *        the default keep open seconds value
 	 * @return the settings
@@ -319,6 +319,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 				new BasicTextFieldSettingSpecifier("keepOpenSeconds", String.valueOf(keepOpenSeconds)));
 		results.add(new BasicTextFieldSettingSpecifier("replyTimeout",
 				String.valueOf(DEFAULT_REPLY_TIMEOUT)));
+		results.add(new BasicTextFieldSettingSpecifier("sendMinimumDelayMs", String.valueOf(0)));
 		results.add(new BasicTextFieldSettingSpecifier("eventLoopGroupMaxThreadCount",
 				String.valueOf(DEFAULT_EVENT_LOOP_MAX_THREAD_COUNT)));
 		results.add(new BasicToggleSettingSpecifier("wireLogging", Boolean.FALSE));
@@ -329,7 +330,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 	/**
 	 * Get the number of seconds to keep the TCP connection open, for repeated
 	 * transaction use.
-	 * 
+	 *
 	 * @return the number of seconds; defaults to
 	 *         {@link #DEFAULT_KEEP_OPEN_SECONDS}
 	 */
@@ -340,7 +341,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 	/**
 	 * Set the number of seconds to keep the TCP connection open, for repeated
 	 * transaction use.
-	 * 
+	 *
 	 * @param keepOpenSeconds
 	 *        the number of seconds, or anything less than {@literal 1} to not
 	 *        keep connections open
@@ -351,7 +352,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	/**
 	 * Get the wire logging setting.
-	 * 
+	 *
 	 * @return {@literal true} if wire-level logging is supported
 	 */
 	public boolean isWireLogging() {
@@ -360,7 +361,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	/**
 	 * Set the wire logging setting.
-	 * 
+	 *
 	 * <p>
 	 * Wire-level logging causes raw Modbus frames to be logged using a logger
 	 * name starting with <code>net.solarnetwork.io.modbus.</code> followed by
@@ -369,7 +370,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 	 * <b>Note</b> there is a small performance penalty for generating the
 	 * wire-level log messages.
 	 * </p>
-	 * 
+	 *
 	 * @param wireLogging
 	 *        {@literal true} if wire-level logging is supported
 	 */
@@ -379,7 +380,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	/**
 	 * Get the event loop group maximum thread count.
-	 * 
+	 *
 	 * @return the maximum thread count; defaults to
 	 *         {@link #DEFAULT_EVENT_LOOP_MAX_THREAD_COUNT}
 	 */
@@ -389,7 +390,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	/**
 	 * Set the event loop group maximum thread count.
-	 * 
+	 *
 	 * @param eventLoopGroupMaxThreadCount
 	 *        the maximum thread count to set
 	 */
@@ -399,7 +400,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	/**
 	 * Get the message reply timeout.
-	 * 
+	 *
 	 * @return the reply timeout, in milliseconds; defaults to
 	 */
 	public long getReplyTimeout() {
@@ -408,7 +409,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	/**
 	 * Set the message reply timeout.
-	 * 
+	 *
 	 * @param replyTimeout
 	 *        the reply timeout to set, in milliseconds
 	 */
@@ -418,7 +419,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	/**
 	 * Get the operational modes service.
-	 * 
+	 *
 	 * @return the opModesService
 	 */
 	public OptionalService<OperationalModesService> getOpModesService() {
@@ -427,7 +428,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	/**
 	 * Set the operational modes service.
-	 * 
+	 *
 	 * @param opModesService
 	 *        the opModesService to set
 	 */
@@ -437,7 +438,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	/**
 	 * Get the "publish CLI command messages" setting.
-	 * 
+	 *
 	 * @return {@literal true} to publish CLI command messages
 	 * @since 1.1
 	 */
@@ -447,7 +448,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	/**
 	 * Set the "publish CLI command messages" setting.
-	 * 
+	 *
 	 * @param publishCliCommandMessages
 	 *        {@literal true} to publish CLI command messages; requires the
 	 *        {@link #setMessageSendingOps(OptionalService)} property also be
@@ -460,7 +461,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	/**
 	 * Get the message sending operations.
-	 * 
+	 *
 	 * @return the message sending operations
 	 * @since 1.1
 	 */
@@ -470,7 +471,7 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 
 	/**
 	 * Set the message sending operations.
-	 * 
+	 *
 	 * @param messageSendingOps
 	 *        the message sending operations to set; required by the
 	 *        {@link #setPublishCliCommandMessages(boolean)} setting
@@ -478,6 +479,29 @@ public abstract class AbstractNiftyModbusNetwork<C extends ModbusClientConfig>
 	 */
 	public void setMessageSendingOps(OptionalService<SimpMessageSendingOperations> messageSendingOps) {
 		this.messageSendingOps = messageSendingOps;
+	}
+
+	/**
+	 * Get a minimum delay between sending messages, in milliseconds.
+	 *
+	 * @return the minimum delay between sending messages, or anything less than
+	 *         {@literal 1} for no delay
+	 * @since 1.3
+	 */
+	public long getSendMinimumDelayMs() {
+		return config.getSendMinimumDelayMs();
+	}
+
+	/**
+	 * Set a minimum delay between sending messages, in milliseconds.
+	 *
+	 * @param sendMinimumDelayMs
+	 *        the minimum delay between sending messages, or anything less than
+	 *        {@literal 1} for no delay
+	 * @since 1.3
+	 */
+	public void setSendMinimumDelayMs(long sendMinimumDelayMs) {
+		config.setSendMinimumDelayMs(sendMinimumDelayMs);
 	}
 
 }
