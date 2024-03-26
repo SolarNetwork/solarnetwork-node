@@ -16,7 +16,7 @@
 		<dependency org="com.fazecast" name="jSerialComm" rev="2.9.2"/>
 		<dependency org="org.osgi" name="org.osgi.enterprise" rev="5.0.0"/>
  		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.32"/>
-		<dependency org="net.solarnetwork.common" name="nifty-modbus-rtu-jsc" rev="0.5.0"/>
+		<dependency org="net.solarnetwork.common" name="nifty-modbus-rtu-jsc" rev="0.8.0"/>
        	<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[3.0,)"/>
        	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[3.0,)"/>
        	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.modbus" rev="[5.0,)"/>
