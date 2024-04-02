@@ -619,6 +619,28 @@
 	</service>
 	
 	<!-- 
+		Datum Expression Service
+	 -->
+	<service interface="net.solarnetwork.node.reactor.InstructionHandler">
+		<service-properties>
+			<entry key="instruction">
+				<list>
+					<value>DatumExpression</value>
+				</list>
+			</entry>
+		</service-properties>
+		<bean class="net.solarnetwork.node.runtime.SimpleDatumExpressionService">
+			<argument ref="datumService"/>
+			<property name="expressionServices">
+					<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+						<argument ref="bundleContext"/>
+						<property name="serviceClassName" value="net.solarnetwork.service.ExpressionService"/>
+					</bean>			
+			</property>
+		</bean>
+	</service>
+	
+	<!-- 
 		Security Token Service
 	 -->
 	<service interface="net.solarnetwork.node.service.SecurityTokenService">
