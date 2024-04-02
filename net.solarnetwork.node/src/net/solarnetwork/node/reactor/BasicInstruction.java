@@ -1,21 +1,21 @@
 /* ==================================================================
  * BasicInstruction.java - Feb 28, 2011 10:36:05 AM
- * 
+ *
  * Copyright 2007-2011 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -25,15 +25,17 @@ package net.solarnetwork.node.reactor;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Basic implementation of {@link Instruction}.
- * 
+ *
  * @author matt
- * @version 2.1
+ * @version 2.3
  */
 public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 		implements Instruction, Serializable {
@@ -45,7 +47,7 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 
 	/**
 	 * Create a new {@code BasicInstruction} from a common instruction.
-	 * 
+	 *
 	 * @param instr
 	 *        the common instruction
 	 * @param instructorId
@@ -65,7 +67,7 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 
 	/**
 	 * Copy the parameters from one instruction to another.
-	 * 
+	 *
 	 * @param instr
 	 *        the input instruction to copy from
 	 * @param dest
@@ -86,7 +88,7 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param topic
 	 *        the instruction topic
 	 * @param instructionDate
@@ -103,7 +105,7 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param id
 	 *        the local instruction ID
 	 * @param topic
@@ -123,7 +125,7 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 
 	/**
 	 * Copy constructor.
-	 * 
+	 *
 	 * @param other
 	 *        the instruction to copy
 	 * @param id
@@ -145,7 +147,7 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 
 	/**
 	 * Copy constructor.
-	 * 
+	 *
 	 * @param other
 	 *        the instruction to copy
 	 * @param status
@@ -154,6 +156,37 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 	 */
 	public BasicInstruction(Instruction other, InstructionStatus status) {
 		this(other, null, status);
+	}
+
+	/**
+	 * Get the instruction parameters as a single-valued map.
+	 *
+	 * <p>
+	 * All multi-value parameters will be concatenated into a single final
+	 * value.
+	 * </p>
+	 *
+	 * @return the parameters as a map, or {@literal null} if
+	 *         {@link #getParameters()} is {@literal null}
+	 * @since 2.3
+	 */
+	@JsonIgnore
+	public Map<String, String> params() {
+		Map<String, List<String>> mm = getParameterMultiMap();
+		if ( mm == null ) {
+			return null;
+		}
+		Map<String, String> params = new LinkedHashMap<>(mm.size());
+		for ( Entry<String, List<String>> e : mm.entrySet() ) {
+			if ( e.getKey() != null && e.getValue() != null ) {
+				for ( String val : e.getValue() ) {
+					if ( val != null ) {
+						params.merge(e.getKey(), val, String::concat);
+					}
+				}
+			}
+		}
+		return params;
 	}
 
 	@Override
