@@ -25,17 +25,15 @@ package net.solarnetwork.node.reactor;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * Basic implementation of {@link Instruction}.
  *
  * @author matt
- * @version 2.3
+ * @version 2.2
  */
 public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 		implements Instruction, Serializable {
@@ -156,37 +154,6 @@ public class BasicInstruction extends net.solarnetwork.domain.BasicInstruction
 	 */
 	public BasicInstruction(Instruction other, InstructionStatus status) {
 		this(other, null, status);
-	}
-
-	/**
-	 * Get the instruction parameters as a single-valued map.
-	 *
-	 * <p>
-	 * All multi-value parameters will be concatenated into a single final
-	 * value.
-	 * </p>
-	 *
-	 * @return the parameters as a map, or {@literal null} if
-	 *         {@link #getParameters()} is {@literal null}
-	 * @since 2.3
-	 */
-	@JsonIgnore
-	public Map<String, String> params() {
-		Map<String, List<String>> mm = getParameterMultiMap();
-		if ( mm == null ) {
-			return null;
-		}
-		Map<String, String> params = new LinkedHashMap<>(mm.size());
-		for ( Entry<String, List<String>> e : mm.entrySet() ) {
-			if ( e.getKey() != null && e.getValue() != null ) {
-				for ( String val : e.getValue() ) {
-					if ( val != null ) {
-						params.merge(e.getKey(), val, String::concat);
-					}
-				}
-			}
-		}
-		return params;
 	}
 
 	@Override
