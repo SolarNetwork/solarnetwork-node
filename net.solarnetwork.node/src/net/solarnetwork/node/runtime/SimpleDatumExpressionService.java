@@ -73,8 +73,6 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 	 *
 	 * @param datumService
 	 *        the datum service
-	 * @param objectMapper
-	 *        the object mapper to use
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
