@@ -29,8 +29,7 @@ import static net.solarnetwork.node.reactor.InstructionUtils.createErrorResultPa
 import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import org.springframework.expression.ExpressionException;
 import net.solarnetwork.domain.datum.DatumSamplesType;
@@ -48,6 +47,11 @@ import net.solarnetwork.service.support.ExpressionServiceExpression;
 /**
  * {@link InstructionHandler} for executing datum-related expressions.
  *
+ * <p>
+ * If no {@link #PARAM_EXPRESSION_LANGUAGE} instruction parameter is provided,
+ * the first-available {@link ExpressionService} will be used.
+ * </p>
+ *
  * @author matt
  * @version 1.0
  */
@@ -58,9 +62,6 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 
 	/** The instruction parameter for a datum expression to evaluate. */
 	public static final String PARAM_EXPRESSION = "expression";
-
-	///** The instruction parameter for a source ID to assign. */
-	//public static final String PARAM_SOURCE_ID = "sourceId";
 
 	/** The instruction parameter for the expression language to use. */
 	public static final String PARAM_EXPRESSION_LANGUAGE = "lang";
@@ -93,10 +94,11 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 			return null;
 		}
 
-		final String[] expressions = instruction.getAllParameterValues(PARAM_EXPRESSION);
-		if ( expressions == null || expressions.length < 1 ) {
+		final Map<String, String> params = instruction.params();
+		final String expression = params.get(PARAM_EXPRESSION);
+		if ( expression == null || expression.isEmpty() ) {
 			return createStatus(instruction, Declined,
-					createErrorResultParameters("No expression parameters provided.", "SDE.00001"));
+					createErrorResultParameters("No expression parameter provided.", "SDE.00001"));
 		}
 
 		final String expressionServiceId = instruction.getParameterValue(PARAM_EXPRESSION_LANGUAGE);
@@ -122,56 +124,48 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 
 		ExpressionRoot root = new ExpressionRoot(d, null, null, datumService);
 
-		List<Object> results = new ArrayList<>(expressions.length);
+		ExpressionConfig config = new ExpressionConfig("result", DatumSamplesType.Status, expression,
+				expressionService.getUid());
 
-		for ( int i = 0; i < expressions.length; i++ ) {
-			ExpressionConfig config = new ExpressionConfig("e" + i, DatumSamplesType.Status,
-					expressions[i], expressionService.getUid());
+		final ExpressionServiceExpression expr;
+		try {
+			expr = config.getExpression(services);
+		} catch ( ExpressionException e ) {
+			return createStatus(instruction, Declined,
+					createErrorResultParameters(String.format("Error parsing expression [%s]: %s",
+							config.getExpression(), e.getMessage()), "SDE.00003"));
+		}
 
-			final ExpressionServiceExpression expr;
+		Object exprResult = null;
+		if ( expr != null ) {
 			try {
-				expr = config.getExpression(services);
-			} catch ( ExpressionException e ) {
-				return createStatus(instruction, Declined,
-						createErrorResultParameters(String.format("Error parsing expression [%s]: %s",
-								config.getExpression(), e.getMessage()), "SDE.00003"));
-			}
-
-			Object exprResult = null;
-			if ( expr != null ) {
-				try {
-					exprResult = expr.getService().evaluateExpression(expr.getExpression(), null, root,
-							null, Object.class);
-					if ( log.isTraceEnabled() ) {
-						log.trace(
-								"Instruction [{}] evaluated datum property [{}] expression `{}` \u2192 {}\n\nExpression root: {}",
-								instruction.getIdentifier(), config.getName(), config.getExpression(),
-								exprResult, root);
-					} else if ( log.isDebugEnabled() ) {
-						log.debug(
-								"Instruction [{}] evaluated datum property [{}] expression `{}` \u2192 {}",
-								instruction.getIdentifier(), config.getName(), config.getExpression(),
-								exprResult);
-					}
-				} catch ( ExpressionException e ) {
-					log.warn(
-							"Error evaluating instruction [{}] datum property [{}] expression `{}`: {}\n\nExpression root: {}",
+				exprResult = expr.getService().evaluateExpression(expr.getExpression(), null, root, null,
+						Object.class);
+				if ( log.isTraceEnabled() ) {
+					log.trace(
+							"Instruction [{}] evaluated datum property [{}] expression `{}` \u2192 {}\n\nExpression root: {}",
 							instruction.getIdentifier(), config.getName(), config.getExpression(),
-							e.getMessage(), root);
-					return createStatus(instruction, Declined,
-							createErrorResultParameters(
-									String.format("Error evaluating expression [%s]: %s",
-											config.getExpression(), e.getMessage()),
-									"SDE.00005"));
+							exprResult, root);
+				} else if ( log.isDebugEnabled() ) {
+					log.debug("Instruction [{}] evaluated datum property [{}] expression `{}` \u2192 {}",
+							instruction.getIdentifier(), config.getName(), config.getExpression(),
+							exprResult);
 				}
-			}
-			if ( exprResult != null ) {
-				results.add(exprResult);
-				d.putSampleValue(config.getDatumPropertyType(), config.getName(), exprResult);
+			} catch ( ExpressionException e ) {
+				log.warn(
+						"Error evaluating instruction [{}] datum property [{}] expression `{}`: {}\n\nExpression root: {}",
+						instruction.getIdentifier(), config.getName(), config.getExpression(),
+						e.getMessage(), root);
+				return createStatus(instruction, Declined,
+						createErrorResultParameters(String.format("Error evaluating expression [%s]: %s",
+								config.getExpression(), e.getMessage()), "SDE.00005"));
 			}
 		}
 
-		return createStatus(instruction, Completed, singletonMap(PARAM_SERVICE_RESULT, results));
+		Map<String, Object> resultParams = (exprResult != null
+				? singletonMap(PARAM_SERVICE_RESULT, exprResult)
+				: null);
+		return createStatus(instruction, Completed, resultParams);
 	}
 
 }

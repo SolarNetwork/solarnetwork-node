@@ -24,12 +24,15 @@ package net.solarnetwork.node.runtime.test;
 
 import static java.util.Collections.singleton;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasKey;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.junit.Before;
@@ -39,6 +42,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.common.expr.spel.SpelExpressionService;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
+import net.solarnetwork.domain.datum.DatumExpressionRoot;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.domain.datum.SimpleEnergyDatum;
@@ -106,8 +110,8 @@ public class SimpleDatumExpressionServiceTests {
 				is(equalTo(InstructionState.Completed)));
 
 		Map<String, ?> resultParams = result.getResultParameters();
-		assertThat("Expression result provided as JSON array on 'result' result parameter", resultParams,
-				hasEntry("result", Arrays.asList(1234)));
+		assertThat("Expression result provided as 'result' result parameter", resultParams,
+				hasEntry("result", 1234));
 	}
 
 	@Test
@@ -133,8 +137,45 @@ public class SimpleDatumExpressionServiceTests {
 				is(equalTo(InstructionState.Completed)));
 
 		Map<String, ?> resultParams = result.getResultParameters();
-		assertThat("Expression result provided as JSON array on 'result' result parameter", resultParams,
-				hasEntry("result", Arrays.asList(1234)));
+		assertThat("Expression result provided as 'result' result parameter", resultParams,
+				hasEntry("result", 1234));
+	}
+
+	@Test
+	public void executeExpression_complexResult() {
+		// GIVEN
+		final SimpleEnergyDatum d = new SimpleEnergyDatum("/power/1", Instant.now(), new DatumSamples());
+		d.putSampleValue(DatumSamplesType.Instantaneous, "watts", 1234);
+		d.putSampleValue(DatumSamplesType.Status, "foo", "bar");
+		datumService.accept(d);
+
+		final Map<String, String> instrParams = new LinkedHashMap<>(4);
+		instrParams.put(SimpleDatumExpressionService.PARAM_EXPRESSION, "latest('/power/1')");
+		final Instruction instr = InstructionUtils.createLocalInstruction(
+				SimpleDatumExpressionService.TOPIC_DATUM_EXPRESSION, instrParams);
+
+		// WHEN
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		assertThat("Result returned", result, is(notNullValue()));
+		assertThat("Result is completed", result.getInstructionState(),
+				is(equalTo(InstructionState.Completed)));
+
+		Map<String, ?> resultParams = result.getResultParameters();
+		assertThat("Expression result provided as 'result' result parameter", resultParams,
+				hasKey("result"));
+
+		Object exprResult = result.getResultParameters().get("result");
+		assertThat("Expression result is a DatumExpressionRoot", exprResult,
+				instanceOf(DatumExpressionRoot.class));
+		DatumExpressionRoot exprResultRoot = (DatumExpressionRoot) result.getResultParameters()
+				.get("result");
+		assertThat("Result datum properties", exprResultRoot.keySet(),
+				containsInAnyOrder("watts", "foo"));
+		assertThat("Result watts from datum", exprResultRoot, hasEntry("watts", 1234));
+		assertThat("Result foo from datum", exprResultRoot, hasEntry("foo", "bar"));
+		assertThat("Result datum from input", exprResultRoot.getDatum(), is(sameInstance(d)));
 	}
 
 }
