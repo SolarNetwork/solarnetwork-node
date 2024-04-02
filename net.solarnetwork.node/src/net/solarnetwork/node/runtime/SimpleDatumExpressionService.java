@@ -100,16 +100,14 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 		}
 
 		final String expressionServiceId = instruction.getParameterValue(PARAM_EXPRESSION_LANGUAGE);
-		if ( expressionServiceId == null || expressionServiceId.isEmpty() ) {
-			return createStatus(instruction, Declined, createErrorResultParameters(
-					"No expression language parameter provided.", "SDE.00002"));
-		}
 
 		ExpressionService expressionService = null;
 		Iterable<ExpressionService> services = services(getExpressionServices());
 		if ( services != null ) {
 			for ( ExpressionService s : services ) {
-				if ( expressionServiceId.equals(s.getUid()) ) {
+				// if expressionServiceId not provided, just take first available service
+				if ( expressionServiceId == null || expressionServiceId.isEmpty()
+						|| expressionServiceId.equals(s.getUid()) ) {
 					expressionService = s;
 					break;
 				}
@@ -117,7 +115,7 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 		}
 		if ( expressionService == null ) {
 			return createStatus(instruction, Declined, createErrorResultParameters(
-					"Requested expression language service not available.", "SDE.00003"));
+					"Requested expression language service not available.", "SDE.00002"));
 		}
 
 		GeneralDatum d = new GeneralDatum(UUID.randomUUID().toString());
@@ -128,7 +126,7 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 
 		for ( int i = 0; i < expressions.length; i++ ) {
 			ExpressionConfig config = new ExpressionConfig("e" + i, DatumSamplesType.Status,
-					expressions[i], expressionServiceId);
+					expressions[i], expressionService.getUid());
 
 			final ExpressionServiceExpression expr;
 			try {
@@ -136,7 +134,7 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 			} catch ( ExpressionException e ) {
 				return createStatus(instruction, Declined,
 						createErrorResultParameters(String.format("Error parsing expression [%s]: %s",
-								config.getExpression(), e.getMessage()), "SDE.00004"));
+								config.getExpression(), e.getMessage()), "SDE.00003"));
 			}
 
 			Object exprResult = null;

@@ -110,4 +110,31 @@ public class SimpleDatumExpressionServiceTests {
 				hasEntry("result", Arrays.asList(1234)));
 	}
 
+	@Test
+	public void executeExpression_defaultServiceId() {
+		// GIVEN
+		final Integer watts = 1234;
+
+		final SimpleEnergyDatum d = new SimpleEnergyDatum("/power/1", Instant.now(), new DatumSamples());
+		d.putSampleValue(DatumSamplesType.Instantaneous, "watts", watts);
+		datumService.accept(d);
+
+		final Map<String, String> instrParams = new LinkedHashMap<>(4);
+		instrParams.put(SimpleDatumExpressionService.PARAM_EXPRESSION, "latest('/power/1').watts");
+		final Instruction instr = InstructionUtils.createLocalInstruction(
+				SimpleDatumExpressionService.TOPIC_DATUM_EXPRESSION, instrParams);
+
+		// WHEN
+		InstructionStatus result = service.processInstruction(instr);
+
+		// THEN
+		assertThat("Result returned, using default expression service", result, is(notNullValue()));
+		assertThat("Result is completed", result.getInstructionState(),
+				is(equalTo(InstructionState.Completed)));
+
+		Map<String, ?> resultParams = result.getResultParameters();
+		assertThat("Expression result provided as JSON array on 'result' result parameter", resultParams,
+				hasEntry("result", Arrays.asList(1234)));
+	}
+
 }
