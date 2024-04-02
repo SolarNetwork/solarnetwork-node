@@ -1,0 +1,12 @@
+Instance ID,Connection,Unit ID,Sample Cache,Word Order,Control ID,Property Type,Register,Register Type,Data Type,Data Length,Multiplier,Decimal Scale
+1,Modbus Port,1,5000,Most to least,msg/1,String,1000,Holding,String ASCII,16,1,0
+,,,,,control/1,Float,0,Holding,32-bit float,,1,-1
+,,,,,control/2,Float,2,Holding,32-bit float,,1,0
+,,,,,control/3,Integer,70,Holding,64-bit unsigned int,,1,0
+,,,,,switch/1,Boolean,100,Coil,Boolean,,1,0
+,,,,,switch/2,Boolean,100,Coil,Boolean,,1,0
+,,,,,switch/3,Boolean,100,Coil,Boolean,,1,0
+,,,,,switch/4,Boolean,100,Coil,Boolean,,1,0
+,,,,,switch/5,Boolean,100,Coil,Boolean,,1,0
+,,,,,switch/6,Boolean,100,Coil,Boolean,,1,0
+,,,,,control/4,Float,0,Holding,32-bit float,,1,-1

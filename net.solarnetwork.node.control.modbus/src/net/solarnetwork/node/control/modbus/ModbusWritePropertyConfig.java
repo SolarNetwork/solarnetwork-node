@@ -310,7 +310,7 @@ public class ModbusWritePropertyConfig {
 		int idx = Integer.parseInt(m.group(1));
 		String name = m.group(2);
 		List<ModbusWritePropertyConfig> propConfigs = config.getPropertyConfigs();
-		if ( !(idx < propConfigs.size()) ) {
+		while ( idx >= propConfigs.size() ) {
 			propConfigs.add(new ModbusWritePropertyConfig());
 		}
 		ModbusWritePropertyConfig propConfig = propConfigs.get(idx);

@@ -3,9 +3,9 @@ Bundle-ManifestVersion: 2
 Bundle-Name: Modbus Datum Data Source Tests
 Bundle-SymbolicName: net.solarnetwork.node.datum.modbus.test
 Automatic-Module-Name: net.solarnetwork.node.datum.modbus.test
-Bundle-Version: 4.0.2
+Bundle-Version: 4.1.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.datum.modbus;bundle-version="[4.0.2,5.0)"
+Fragment-Host: net.solarnetwork.node.datum.modbus;bundle-version="[4.0.4,5.0)"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
  net.solarnetwork.common.expr.spel;version="1.0.0",
