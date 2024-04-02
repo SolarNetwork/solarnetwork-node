@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusControlConfigCsvWriterTests.java - 20/09/2022 2:35:52 pm
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -42,9 +42,9 @@ import net.solarnetwork.util.ByteUtils;
 
 /**
  * Test cases for the {@link ModbusControlConfigCsvWriter} class. *
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ModbusControlConfigCsvWriterTests {
 
@@ -89,6 +89,31 @@ public class ModbusControlConfigCsvWriterTests {
 
 		// THEN
 		String[] expected = resourceLines("test-settings-01-output.csv");
+		try (BufferedReader r = new BufferedReader(new StringReader(out.toString()))) {
+			int i = 0;
+			String line = null;
+			while ( (line = r.readLine()) != null ) {
+				assertThat(String.format("Wrote CSV line %d", (i + 1)), line.trim(), is(expected[i]));
+				i++;
+			}
+			assertThat("Generated expected line count", i, is(expected.length));
+		}
+	}
+
+	@Test
+	public void writeCsv_large() throws IOException {
+		// GIVEN
+		List<Setting> settings = loadSettingsCsv("test-settings-02.csv");
+
+		// WHEN
+		final StringWriter out = new StringWriter(4096);
+		try (ICsvListWriter writer = new CsvListWriter(out, CsvPreference.STANDARD_PREFERENCE)) {
+			ModbusControlConfigCsvWriter gen = new ModbusControlConfigCsvWriter(writer);
+			gen.generateCsv(ModbusControl.SETTING_UID, "1", settings);
+		}
+
+		// THEN
+		String[] expected = resourceLines("test-settings-02-output.csv");
 		try (BufferedReader r = new BufferedReader(new StringReader(out.toString()))) {
 			int i = 0;
 			String line = null;

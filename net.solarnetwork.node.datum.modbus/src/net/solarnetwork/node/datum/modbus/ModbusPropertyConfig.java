@@ -298,7 +298,7 @@ public class ModbusPropertyConfig extends DatumSamplePropertyConfig<Integer> {
 		int idx = Integer.parseInt(m.group(1));
 		String name = m.group(2);
 		List<ModbusPropertyConfig> propConfigs = config.getPropertyConfigs();
-		if ( !(idx < propConfigs.size()) ) {
+		while ( idx >= propConfigs.size() ) {
 			propConfigs.add(new ModbusPropertyConfig());
 		}
 		ModbusPropertyConfig propConfig = propConfigs.get(idx);
