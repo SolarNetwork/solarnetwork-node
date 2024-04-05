@@ -66,12 +66,17 @@
 		</bean>
 	</service>
 	
-	<service interface="net.solarnetwork.node.service.NodeMetadataService">
+	<service>
+		<interfaces>
+			<value>net.solarnetwork.node.service.NodeMetadataService</value>
+			<value>net.solarnetwork.node.service.MetadataService</value>
+		</interfaces>
 		<bean class="net.solarnetwork.node.metadata.json.JsonNodeMetadataService">
 			<property name="objectMapper" ref="objectMapper"/>
 			<property name="identityService" ref="identityService"/>
 			<property name="sslService" ref="sslService"/>
 			<property name="baseUrl" value="/api/v1/sec/nodes/meta"/>
+			<property name="uid" value="Node Metadata Service"/>
 		</bean>
 	</service>
 	

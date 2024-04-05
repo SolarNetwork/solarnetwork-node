@@ -39,5 +39,12 @@ a lot of network traffic. **Note** this sync time _also_ persists any unsaved ch
 local disk, in case the **Persist Seconds** setting is active any repeated updates prevent
 that timeout from occurring.
 
+# Metadata Service component
+
+The node-specific metadata service provided by this plugin also implements the generic 
+`net.solarnetwork.node.service.MetadataService` API, using the Service ID `Node Metadata Service`.
+That means other plugins that use that API can access node metadata by configuring that Service ID
+value in its settings.
+
 [datum-meta-view]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarIn-API#node-datum-metadata-view
 [datum-meta-post]: https://github.com/SolarNetwork/solarnetwork/wiki/SolarIn-API#node-datum-metadata-add
