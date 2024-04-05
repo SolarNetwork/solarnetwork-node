@@ -1,21 +1,21 @@
 /* ==================================================================
  * JsonNodeMetadataService.java - 21/06/2017 1:57:46 PM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -25,21 +25,35 @@ package net.solarnetwork.node.metadata.json;
 import java.io.IOException;
 import java.io.InputStream;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
+import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.node.service.NodeMetadataService;
 import net.solarnetwork.node.service.support.JsonHttpClientSupport;
 
 /**
  * JSON based web service implementation of {@link NodeMetadataService}.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 1.7
  */
-public class JsonNodeMetadataService extends JsonHttpClientSupport implements NodeMetadataService {
+public class JsonNodeMetadataService extends JsonHttpClientSupport
+		implements NodeMetadataService, MetadataService {
 
 	private String baseUrl = "/api/v1/sec/nodes/meta";
 
 	private GeneralDatumMetadata cachedMetadata;
+
+	/**
+	 * Constructor.
+	 */
+	public JsonNodeMetadataService() {
+		super();
+	}
+
+	@Override
+	public GeneralDatumMetadata getAllMetadata() {
+		return getNodeMetadata();
+	}
 
 	private String nodeMetadataUrl() {
 		return (getIdentityService().getSolarInBaseUrl() + baseUrl);
@@ -103,7 +117,7 @@ public class JsonNodeMetadataService extends JsonHttpClientSupport implements No
 
 	/**
 	 * Get the base URL.
-	 * 
+	 *
 	 * @return the baseUrl
 	 */
 	public String getBaseUrl() {
@@ -112,7 +126,7 @@ public class JsonNodeMetadataService extends JsonHttpClientSupport implements No
 
 	/**
 	 * Set the base URL.
-	 * 
+	 *
 	 * @param baseUrl
 	 *        the baseUrl to set
 	 */
