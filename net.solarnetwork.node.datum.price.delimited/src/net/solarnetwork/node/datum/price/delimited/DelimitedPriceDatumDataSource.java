@@ -131,6 +131,13 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 	private String timeZoneId = DEFAULT_TIME_ZONE_ID;
 	private String stationId = DEFAULT_STATION_ID;
 
+	/**
+	 * Constructor.
+	 */
+	public DelimitedPriceDatumDataSource() {
+		super();
+	}
+
 	@Override
 	public Class<? extends NodeDatum> getDatumType() {
 		return PriceDatum.class;
