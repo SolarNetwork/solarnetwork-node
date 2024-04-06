@@ -24,24 +24,44 @@ package net.solarnetwork.node.metadata.json;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import org.springframework.context.MessageSource;
 import net.solarnetwork.domain.datum.GeneralDatumMetadata;
 import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.node.service.NodeMetadataService;
 import net.solarnetwork.node.service.support.JsonHttpClientSupport;
+import net.solarnetwork.settings.SettingSpecifier;
+import net.solarnetwork.settings.SettingSpecifierProvider;
+import net.solarnetwork.settings.SettingsChangeObserver;
+import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
+import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.util.CachedResult;
 
 /**
  * JSON based web service implementation of {@link NodeMetadataService}.
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  * @since 1.7
  */
-public class JsonNodeMetadataService extends JsonHttpClientSupport
-		implements NodeMetadataService, MetadataService {
+public class JsonNodeMetadataService extends JsonHttpClientSupport implements NodeMetadataService,
+		MetadataService, SettingSpecifierProvider, SettingsChangeObserver {
+
+	/** The {@code cacheSeconds} property default value. */
+	public static final int DEFAULT_CACHE_SECONDS = 3600;
+
+	private int cacheSeconds = DEFAULT_CACHE_SECONDS;
 
 	private String baseUrl = "/api/v1/sec/nodes/meta";
 
-	private GeneralDatumMetadata cachedMetadata;
+	private CachedResult<GeneralDatumMetadata> cachedMetadata;
+
+	private GeneralDatumMetadata localMetadata;
 
 	/**
 	 * Constructor.
@@ -51,7 +71,27 @@ public class JsonNodeMetadataService extends JsonHttpClientSupport
 	}
 
 	@Override
-	public GeneralDatumMetadata getAllMetadata() {
+	public synchronized void configurationChanged(Map<String, Object> properties) {
+		cachedMetadata = null;
+	}
+
+	@Override
+	public String getSettingUid() {
+		return "net.solarnetwork.node.metadata.json";
+	}
+
+	@Override
+	public List<SettingSpecifier> getSettingSpecifiers() {
+		getAllMetadata();
+		List<SettingSpecifier> result = new ArrayList<>(2);
+		result.add(0, new BasicTitleSettingSpecifier("status", getStatusMessage(), true));
+		result.add(new BasicTextFieldSettingSpecifier("cacheSeconds",
+				String.valueOf(DEFAULT_CACHE_SECONDS)));
+		return result;
+	}
+
+	@Override
+	public synchronized GeneralDatumMetadata getAllMetadata() {
 		return getNodeMetadata();
 	}
 
@@ -60,7 +100,7 @@ public class JsonNodeMetadataService extends JsonHttpClientSupport
 	}
 
 	private synchronized void cacheMetadata(final GeneralDatumMetadata meta) {
-		GeneralDatumMetadata currMeta = cachedMetadata;
+		GeneralDatumMetadata currMeta = localMetadata;
 		GeneralDatumMetadata newMeta;
 		if ( currMeta == null ) {
 			newMeta = meta;
@@ -69,20 +109,24 @@ public class JsonNodeMetadataService extends JsonHttpClientSupport
 			newMeta.merge(meta, true);
 		}
 		if ( newMeta != null && newMeta.equals(currMeta) == false ) {
-			cachedMetadata = newMeta;
+			localMetadata = newMeta;
+		}
+
+		CachedResult<GeneralDatumMetadata> cached = this.cachedMetadata;
+		if ( cached != null && cached.isValid() ) {
+			cached.getResult().merge(localMetadata, true);
 		}
 	}
 
 	@Override
 	public synchronized void addNodeMetadata(GeneralDatumMetadata meta) {
-		GeneralDatumMetadata currMeta = cachedMetadata;
+		GeneralDatumMetadata currMeta = localMetadata != null ? localMetadata : getNodeMetadata();
 		if ( currMeta != null ) {
 			currMeta.merge(meta, true);
 			if ( currMeta.equals(meta) ) {
 				log.debug("Node metadta has not changed");
 				return;
 			}
-			meta = currMeta;
 		}
 		final String url = nodeMetadataUrl();
 		try {
@@ -101,10 +145,18 @@ public class JsonNodeMetadataService extends JsonHttpClientSupport
 
 	@Override
 	public GeneralDatumMetadata getNodeMetadata() {
+		if ( cachedMetadata != null && cachedMetadata.isValid() ) {
+			return cachedMetadata.getResult();
+		}
 		final String url = nodeMetadataUrl();
 		try {
 			final InputStream in = jsonGET(url);
-			return extractResponseData(in, GeneralDatumMetadata.class);
+			GeneralDatumMetadata meta = extractResponseData(in, GeneralDatumMetadata.class);
+			if ( cacheSeconds > 0 ) {
+				this.cachedMetadata = new CachedResult<GeneralDatumMetadata>(meta, cacheSeconds,
+						TimeUnit.SECONDS);
+			}
+			return meta;
 		} catch ( IOException e ) {
 			if ( log.isTraceEnabled() ) {
 				log.trace("IOException querying for node metadata at " + url, e);
@@ -113,6 +165,37 @@ public class JsonNodeMetadataService extends JsonHttpClientSupport
 			}
 			throw new RuntimeException(e);
 		}
+	}
+
+	private String getStatusMessage() {
+		final CachedResult<GeneralDatumMetadata> cached = this.cachedMetadata;
+		final MessageSource msgSource = getMessageSource();
+		if ( cached == null ) {
+			return msgSource.getMessage("status.noneCached", null, Locale.getDefault());
+		}
+		GeneralDatumMetadata meta = cached.getResult();
+		if ( meta == null ) {
+			return msgSource.getMessage("status.none",
+					new Object[] { new Date(cached.getCreated()), new Date(cached.getExpires()) },
+					Locale.getDefault());
+		}
+		Map<String, Object> info = meta.getInfo();
+		Map<String, Map<String, Object>> propInfo = meta.getPropertyInfo();
+		return msgSource.getMessage("status.msg",
+				new Object[] { new Date(cached.getCreated()), new Date(cached.getExpires()),
+						info != null ? info.size() : 0, propInfo != null ? propInfo.size() : 0 },
+				Locale.getDefault());
+	}
+
+	/**
+	 * Set the number of seconds to cache metadata.
+	 *
+	 * @param cacheSeconds
+	 *        the maximum number of seconds to cache metadata for, or anything
+	 *        less than {@literal 1} to disable
+	 */
+	public void setCacheSeconds(int cacheSeconds) {
+		this.cacheSeconds = cacheSeconds;
 	}
 
 	/**
