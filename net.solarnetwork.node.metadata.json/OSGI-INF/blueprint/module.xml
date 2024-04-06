@@ -70,13 +70,21 @@
 		<interfaces>
 			<value>net.solarnetwork.node.service.NodeMetadataService</value>
 			<value>net.solarnetwork.node.service.MetadataService</value>
+			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 		</interfaces>
 		<bean class="net.solarnetwork.node.metadata.json.JsonNodeMetadataService">
+			<osgix:managed-properties persistent-id="net.solarnetwork.node.metadata.json" 
+					autowire-on-update="true" update-method="configurationChanged"/>
 			<property name="objectMapper" ref="objectMapper"/>
 			<property name="identityService" ref="identityService"/>
 			<property name="sslService" ref="sslService"/>
 			<property name="baseUrl" value="/api/v1/sec/nodes/meta"/>
 			<property name="uid" value="Node Metadata Service"/>
+			<property name="messageSource">
+				<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+					<property name="basenames" value="net.solarnetwork.node.metadata.json.JsonNodeMetadataService"/>
+				</bean>
+			</property>
 		</bean>
 	</service>
 	

@@ -1,21 +1,21 @@
 /* ==================================================================
  * TariffDatumFilterService.java - 12/05/2021 6:58:01 AM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -71,9 +71,9 @@ import net.solarnetwork.util.CachedResult;
 /**
  * Transform service that can resolve a time-of-use based tarrif from
  * spreadsheet style tariff metadata.
- * 
+ *
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.0
  */
 public class TariffDatumFilterService extends BaseDatumFilterSupport
@@ -96,7 +96,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param metadataService
 	 *        the metadata service
 	 * @param evaluator
@@ -286,7 +286,8 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 	private Tariff resolveTariff(LocalDateTime date, Map<String, ?> parameters) {
 		TariffSchedule schedule = schedule();
 		if ( schedule == null ) {
-			log.debug("No TariffSchedule available for filter {}, unable to resolve tariffs.", getUid());
+			log.debug("No TariffSchedule available for filter [{}], unable to resolve tariffs.",
+					getUid());
 			return null;
 		}
 		return schedule.resolveTariff(date, parameters);
@@ -300,14 +301,14 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 			MetadataService service = service(metadataService);
 			if ( service == null ) {
 				log.debug(
-						"No MetadataService available in tariff filter {}, unable to resolve tariff schedule.",
+						"No MetadataService available in tariff filter [{}], unable to resolve tariff schedule.",
 						getUid());
 				return null;
 			}
 			Object o = service.metadataAtPath(tariffMetadataPath);
 			if ( o == null ) {
 				log.warn(
-						"No tariff schedule found in tariff filter {} at metadata, path [{}], unable to resolve tariff schedule.",
+						"No tariff schedule found in tariff filter [{}] at metadata, path [{}], unable to resolve tariff schedule.",
 						getUid(), tariffMetadataPath);
 				return null;
 			}
@@ -319,8 +320,8 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 				return new CachedResult<>(s, scheduleCacheSeconds, TimeUnit.SECONDS);
 			} catch ( Exception e ) {
 				log.warn(
-						"Error parsing tariff filter {} from metadata at path [{}], unable to resolve tariff schedule.",
-						getUid(), tariffMetadataPath);
+						"Error parsing tariff filter [{}] from metadata at path [{}], unable to resolve tariff schedule: {}",
+						getUid(), tariffMetadataPath, e.getMessage());
 				return null;
 			}
 		});
@@ -370,7 +371,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the tariff metadata path.
-	 * 
+	 *
 	 * @return the path; defaults to {@link #DEFAULT_TARIFF_METADATA_PATH}
 	 */
 	public String getTariffMetadataPath() {
@@ -379,13 +380,13 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the tariff metadata path.
-	 * 
+	 *
 	 * <p>
 	 * The path must resolve to either a string value or a two-dimensional array
 	 * of strings. If a string, it will be assumed to be a CSV formatted
 	 * two-dimensional array of strings.
 	 * </p>
-	 * 
+	 *
 	 * @param tariffMetadataPath
 	 *        the path to set
 	 */
@@ -395,7 +396,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the tariff schedule cache seconds.
-	 * 
+	 *
 	 * @return the maximum number of seconds to cache the resolved tariff
 	 *         schedule; defaults to {@link #DEFAULT_SCHEDULE_CACHE_SECONDS}
 	 */
@@ -405,7 +406,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the tariff schedule cache seconds.
-	 * 
+	 *
 	 * @param scheduleCacheSeconds
 	 *        the seconds to set
 	 */
@@ -415,7 +416,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the locale to use for parsing/formatting schedule data.
-	 * 
+	 *
 	 * @return the locale
 	 */
 	public Locale getLocale() {
@@ -424,7 +425,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the locale to use for parsing/formatting schedule data.
-	 * 
+	 *
 	 * @param locale
 	 *        the locale to set
 	 */
@@ -437,7 +438,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the locale IETF BCP 47 language tag.
-	 * 
+	 *
 	 * @return the language
 	 */
 	public String getLanguage() {
@@ -446,7 +447,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the locale as a IETF BCP 47 language tag.
-	 * 
+	 *
 	 * @param lang
 	 *        the language tag to set
 	 */
@@ -456,7 +457,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the first-match-only flag.
-	 * 
+	 *
 	 * @return {@literal true} if only the first tariff rule that matches should
 	 *         be returned, {@literal false} to return a composite rule of all
 	 *         matches; defaults to
@@ -468,7 +469,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the first-match-only flag.
-	 * 
+	 *
 	 * @param firstMatchOnly
 	 *        {@literal true} if only the first tariff rule that matches should
 	 *        be returned
@@ -479,7 +480,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the {@link MetadataService} service filter UID.
-	 * 
+	 *
 	 * @return the service UID
 	 */
 	public String getMetadataServiceUid() {
@@ -488,7 +489,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the {@link MetadataService} service filter UID.
-	 * 
+	 *
 	 * @param uid
 	 *        the service UID
 	 */
@@ -498,7 +499,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the {@link TemporalRangesTariffEvaluator} service filter UID.
-	 * 
+	 *
 	 * @return the service UID
 	 */
 	public String getEvaluatorUid() {
@@ -507,7 +508,7 @@ public class TariffDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the {@link TemporalRangesTariffEvaluator} service filter UID.
-	 * 
+	 *
 	 * @param uid
 	 *        the service UID
 	 */

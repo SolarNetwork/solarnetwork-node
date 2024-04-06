@@ -1,23 +1,23 @@
 /* ===================================================================
  * DelimitedPriceDatumDataSource.java
- * 
+ *
  * Created Aug 8, 2009 2:09:30 PM
- * 
+ *
  * Copyright (c) 2009 Solarnetwork.net Dev Team.
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ===================================================================
  */
@@ -35,7 +35,9 @@ import java.net.URLConnection;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
@@ -59,16 +61,16 @@ import net.solarnetwork.util.StringUtils;
 /**
  * Implementation of {@link DatumDataSource} that parses a delimited text
  * resource from a URL.
- * 
+ *
  * <p>
  * This class will make a URL request and parse the returned text as delimited
  * lines of data. The references to <em>columns</em> in the class properties
  * refer to zero-based column numbers created after splitting the line of data
  * into an array using the configured delimiter.
  * </p>
- * 
+ *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 		implements DatumDataSource, SettingSpecifierProvider {
@@ -93,21 +95,21 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * The default value for the {@code stationId} property.
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	public static final String DEFAULT_STATION_ID = "HAY2201";
 
 	/**
 	 * The default value for the {@link timeZoneId} property.
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	public static final String DEFAULT_TIME_ZONE_ID = TimeZone.getDefault().getID();
 
 	/**
 	 * The default value for the {@code urlDateFormat} property.
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	public static final String DEFAULT_URL_DATE_FORMAT = "yyyy-MM-dd";
@@ -128,6 +130,13 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 	private String urlDateFormat = DEFAULT_URL_DATE_FORMAT;
 	private String timeZoneId = DEFAULT_TIME_ZONE_ID;
 	private String stationId = DEFAULT_STATION_ID;
+
+	/**
+	 * Constructor.
+	 */
+	public DelimitedPriceDatumDataSource() {
+		super();
+	}
 
 	@Override
 	public Class<? extends NodeDatum> getDatumType() {
@@ -173,9 +182,16 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 		if ( log.isTraceEnabled() ) {
 			log.trace("Parsing price date [" + dateTimeStr + ']');
 		}
-		DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateFormat)
-				.withZone(ZoneId.of(timeZoneId));
-		Instant created = formatter.parse(dateTimeStr, Instant::from);
+		Instant created;
+		try {
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern(dateFormat)
+					.withZone(ZoneId.of(timeZoneId));
+			created = formatter.parse(dateTimeStr, Instant::from);
+		} catch ( DateTimeParseException e ) {
+			log.error("Error parsing price date from columns {} value [{}]: {}",
+					Arrays.toString(dateTimeColumns), dateTimeStr, e.getMessage());
+			return null;
+		}
 
 		BigDecimal price = new BigDecimal(data[priceColumn]);
 
@@ -300,7 +316,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the URL template.
-	 * 
+	 *
 	 * @return the template
 	 */
 	public String getUrl() {
@@ -309,7 +325,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the URL template to retrieve price data from.
-	 * 
+	 *
 	 * <p>
 	 * This template is for accessing the delimited price data from. This will
 	 * be passed through {@link StringUtils#expandTemplateString(String, Map)}
@@ -320,7 +336,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 	 * <code>http://some.place/prices?date={date}</code> might resolve to
 	 * something like {@code http://some.place/prices?date=2009-08-08}.
 	 * </p>
-	 * 
+	 *
 	 * @param url
 	 *        the URL template
 	 */
@@ -330,7 +346,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the field delimiter regular expression.
-	 * 
+	 *
 	 * @return the field delimiter; defaults to {@link #DEFAULT_DELIMITER}
 	 */
 	public String getDelimiter() {
@@ -343,7 +359,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 	 * A regular expression delimiter that will be used to split the lines of
 	 * text into fields.
 	 * </p>
-	 * 
+	 *
 	 * @param delimiter
 	 *        the field delimiter
 	 */
@@ -353,7 +369,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the URL connection timeout to apply when requesting the data.
-	 * 
+	 *
 	 * @return the connection timeout, in milliseconds; defaults to
 	 *         {@link #DEFAULT_CONNECTION_TIMEOUT}
 	 */
@@ -363,7 +379,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the URL connection timeout to apply when requesting the data.
-	 * 
+	 *
 	 * @param connectionTimeout
 	 *        the timeout, in milliseconds
 	 */
@@ -373,14 +389,14 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the number of lines of text to skip.
-	 * 
+	 *
 	 * <p>
 	 * When greater than {@literal 0} this will skip "header" rows. When
 	 * {@literal 0} the first line will be used. When less than {@literal 0}
 	 * then this line starting from the last available will be used, for example
 	 * {@literal -1} will cause the last line to be used.
 	 * </p>
-	 * 
+	 *
 	 * @return the number of lines to skip; defaults to
 	 *         {@link #DEFAULT_SKIP_LINES}
 	 */
@@ -390,7 +406,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the number of lines of text to skip.
-	 * 
+	 *
 	 * @param skipLines
 	 *        the number of lines, or {@literal 0} to not skip any lines
 	 */
@@ -401,14 +417,14 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Get an array of {@literal 0}-based column indices to use as the time
 	 * stamp value for datum.
-	 * 
+	 *
 	 * <p>
 	 * This is provided as an array in case the date and time of the price is
 	 * split across multiple columns. If multiple columns are configured, they
 	 * will be joined with a space character before parsing the result into a
 	 * time stamp value
 	 * </p>
-	 * 
+	 *
 	 * @return the date time columns; defaults to
 	 *         {@link #DEFAULT_DATE_TIME_COLUMNS}
 	 */
@@ -419,7 +435,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Set an array of {@literal 0}-based column indices to use as the time
 	 * stamp value for datum.
-	 * 
+	 *
 	 * @param dateTimeColumns
 	 *        the column indexes to use for time stamps
 	 */
@@ -429,11 +445,11 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the {@literal 0}-based result column index for the price.
-	 * 
+	 *
 	 * <p>
 	 * This is assumed to be parsable as a double value.
 	 * </p>
-	 * 
+	 *
 	 * @return the price column index
 	 */
 	public int getPriceColumn() {
@@ -442,7 +458,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the {@literal 0}-based result column index for the price.
-	 * 
+	 *
 	 * @param priceColumn
 	 *        the price column index
 	 */
@@ -453,7 +469,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Get the {@link DateTimeFormatter} pattern to use for parsing the price
 	 * date value into a time stamp.
-	 * 
+	 *
 	 * @return the date pattern; defaults to {@link #DEFAULT_DATE_FORMAT}.
 	 */
 	public String getDateFormat() {
@@ -463,7 +479,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 	/**
 	 * Set the {@link DateTimeFormatter} pattern to use for parsing the price
 	 * date value into a time stamp.
-	 * 
+	 *
 	 * @param dateFormat
 	 *        the date pattern
 	 */
@@ -473,7 +489,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the electricity market station ID.
-	 * 
+	 *
 	 * @return the stationId; defaults to {@link #DEFAULT_STATION_ID}
 	 * @since 1.3
 	 */
@@ -483,7 +499,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the electricity market station ID to download data for.
-	 * 
+	 *
 	 * @param stationId
 	 *        the stationId to set
 	 * @since 1.3
@@ -494,7 +510,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the time zone to use for dates.
-	 * 
+	 *
 	 * @return the time zone; defaults to the system default time zone
 	 * @since 1.3
 	 */
@@ -504,7 +520,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the time zone to use for dates.
-	 * 
+	 *
 	 * @param timeZoneId
 	 *        the time zone to set
 	 * @since 1.3
@@ -515,7 +531,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Get the date format to use for URL parameters.
-	 * 
+	 *
 	 * @return the date format; defaults to {@link #DEFAULT_URL_DATE_FORMAT}
 	 */
 	public String getUrlDateFormat() {
@@ -524,7 +540,7 @@ public class DelimitedPriceDatumDataSource extends DatumDataSourceSupport
 
 	/**
 	 * Set the date format to use for URL parameters.
-	 * 
+	 *
 	 * @param urlDateFormat
 	 *        the urlDateFormat to set
 	 */
