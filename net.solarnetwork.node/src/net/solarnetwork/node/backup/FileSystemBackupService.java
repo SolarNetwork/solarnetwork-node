@@ -67,7 +67,7 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
  * the file system.
  *
  * @author matt
- * @version 2.1
+ * @version 2.2
  */
 public class FileSystemBackupService extends BackupServiceSupport implements SettingSpecifierProvider {
 
@@ -332,7 +332,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	 * Delete any existing backups.
 	 */
 	public void removeAllBackups() {
-		File[] archives = backupDir.listFiles(new ArchiveFilter(nodeIdForArchiveFileName()));
+		File[] archives = backupDir.listFiles(new ArchiveFilter());
 		if ( archives == null ) {
 			return;
 		}
@@ -345,19 +345,33 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	}
 
 	/**
-	 * Get all available backup files, ordered in desending backup order (newest
-	 * to oldest).
+	 * Get all available backup files, ordered in descending backup order
+	 * (newest to oldest).
 	 *
 	 * @return ordered array of backup files, or {@literal null} if directory
 	 *         does not exist
 	 */
 	private File[] getAvailableBackupFiles() {
-		File[] archives = backupDir.listFiles(new ArchiveFilter(nodeIdForArchiveFileName()));
+		File[] archives = backupDir.listFiles(new ArchiveFilter());
 		if ( archives != null ) {
 			Arrays.sort(archives, new Comparator<File>() {
 
 				@Override
 				public int compare(File o1, File o2) {
+					Matcher m1 = NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(o1.getName());
+					Matcher m2 = NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(o2.getName());
+					if ( m1.find() && m2.find() ) {
+						// sort in reverse date order, ascending node order
+						String s1 = m1.group(2);
+						String s2 = m2.group(2);
+						int result = s2.compareTo(s1);
+						if ( result == 0 ) {
+							long n1 = Long.parseLong(m1.group(1));
+							long n2 = Long.parseLong(m2.group(1));
+							result = Long.compare(n1, n2);
+						}
+						return result;
+					}
 					// sort in reverse order, so most recent backup first
 					return o2.getName().compareTo(o1.getName());
 				}
@@ -437,10 +451,6 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	}
 
 	private static class ArchiveFilter implements FilenameFilter {
-
-		private ArchiveFilter(long nodeId) {
-			super();
-		}
 
 		@Override
 		public boolean accept(File dir, String name) {
