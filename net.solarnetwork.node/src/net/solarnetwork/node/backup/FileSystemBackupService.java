@@ -438,18 +438,14 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 
 	private static class ArchiveFilter implements FilenameFilter {
 
-		final long nodeId;
-
 		private ArchiveFilter(long nodeId) {
 			super();
-			this.nodeId = nodeId;
 		}
 
 		@Override
 		public boolean accept(File dir, String name) {
 			Matcher m = NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(name);
-			return (m.find() && (nodeId == 0 || nodeId == Long.parseLong(m.group(1)))
-					&& name.endsWith(".zip"));
+			return (m.find() && name.endsWith(".zip"));
 		}
 
 	}
