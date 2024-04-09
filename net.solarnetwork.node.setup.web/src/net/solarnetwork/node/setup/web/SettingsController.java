@@ -99,7 +99,7 @@ import net.solarnetwork.web.support.MultipartFileResource;
  * Web controller for the settings UI.
  *
  * @author matt
- * @version 2.3
+ * @version 2.4
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -758,7 +758,7 @@ public class SettingsController {
 			return "redirect:/a/settings/backups";
 		}
 		Map<String, String> props = new HashMap<String, String>();
-		props.put(BackupManager.BACKUP_KEY, file.getName());
+		props.put(BackupManager.BACKUP_KEY, file.getOriginalFilename());
 		manager.importBackupArchive(file.getInputStream(), props);
 		return "redirect:/a/settings/backups";
 	}
