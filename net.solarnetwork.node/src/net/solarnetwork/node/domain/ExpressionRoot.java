@@ -1,21 +1,21 @@
 /* ==================================================================
  * ExpressionRoot.java - 20/02/2019 10:21:55 am
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -40,32 +40,40 @@ import net.solarnetwork.domain.datum.DatumSamplesExpressionRoot;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.service.DatumService;
+import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.node.service.OperationalModesService;
 
 /**
  * An object to use as the "root" for
  * {@link net.solarnetwork.service.ExpressionService} evaluation.
- * 
+ *
  * <p>
  * This object extends {@link DatumSamplesExpressionRoot} to allow all datum
  * sample properties to be exposed as top-level expression properties (via the
  * {@code Map} API).
  * </p>
- * 
+ *
+ * <p>
+ * This class also implements the {@link DatumMetadataOperations} API,
+ * delegating to the metadata provided by the configured
+ * {@link MetadataService#getAllMetadata()}.
+ * </p>
+ *
  * @author matt
- * @version 2.2
+ * @version 2.3
  * @since 1.79
  */
-public class ExpressionRoot extends DatumSamplesExpressionRoot {
+public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumMetadataOperations {
 
 	private static final Logger log = LoggerFactory.getLogger(ExpressionRoot.class);
 
 	private final DatumService datumService;
 	private final OperationalModesService opModesService;
+	private final MetadataService metadataService;
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param datum
 	 *        the datum currently being populated
 	 */
@@ -75,7 +83,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param datum
 	 *        the datum currently being populated
 	 * @param samples
@@ -87,7 +95,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param data
 	 *        the map data
 	 * @param datum
@@ -100,7 +108,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param datum
 	 *        the datum currently being populated
 	 * @param samples
@@ -117,7 +125,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param datum
 	 *        the datum currently being populated
 	 * @param samples
@@ -132,9 +140,33 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	 */
 	public ExpressionRoot(Datum datum, DatumSamplesOperations samples, Map<String, ?> parameters,
 			DatumService datumService, OperationalModesService opModesService) {
+		this(datum, samples, parameters, datumService, opModesService, null);
+	}
+
+	/**
+	 * Constructor.
+	 *
+	 * @param datum
+	 *        the datum currently being populated
+	 * @param samples
+	 *        the samples
+	 * @param parameters
+	 *        the parameters
+	 * @param datumService
+	 *        the optional datum service
+	 * @param opModesService
+	 *        the optional operational modes service
+	 * @param metadataService
+	 *        the metadata service
+	 * @since 2.3
+	 */
+	public ExpressionRoot(Datum datum, DatumSamplesOperations samples, Map<String, ?> parameters,
+			DatumService datumService, OperationalModesService opModesService,
+			MetadataService metadataService) {
 		super(datum, samples, parameters);
 		this.datumService = datumService;
 		this.opModesService = opModesService;
+		this.metadataService = metadataService;
 	}
 
 	@Override
@@ -180,12 +212,12 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 
 	/**
 	 * Test if a "latest" datum is available for a given source ID.
-	 * 
+	 *
 	 * <p>
 	 * This can be used to test if {@link #latest(String)} will return a
 	 * non-null value.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID of the datum to look for
 	 * @return {@literal true} if {@link #latest(String)} for the given
@@ -198,12 +230,12 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	/**
 	 * Get the latest available datum for a given source ID, as an
 	 * {@link DatumExpressionRoot}.
-	 * 
+	 *
 	 * <p>
 	 * Note a non-null {@link DatumService} instance must have been provided to
 	 * the constructor of this instance for this method to work.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID of the datum to look for
 	 * @return the latest datum, or {@literal null} if {@code sourceId} is
@@ -218,12 +250,12 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 
 	/**
 	 * Test if a "latest" datum is available for a given source ID.
-	 * 
+	 *
 	 * <p>
 	 * This can be used to test if {@link #latestMatching(String)} will return a
 	 * non-null value.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceIdPattern
 	 *        the Ant-style source ID pattern of the datum to look for
 	 * @return {@literal true} if {@link #latestMatching(String)} for the given
@@ -236,12 +268,12 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	/**
 	 * Get the latest available datum matching a given source ID pattern, as
 	 * {@link DatumExpressionRoot} instances.
-	 * 
+	 *
 	 * <p>
 	 * Note a non-null {@link DatumService} instance must have been provided to
 	 * the constructor of this instance for this method to work.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceIdPattern
 	 *        the Ant-style source ID pattern of the datum to look for
 	 * @return the matching datum, never {@literal null}
@@ -257,7 +289,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 		}
 		List<DatumExpressionRoot> result = new ArrayList<>(found.size());
 		for ( Datum d : found ) {
-			result.add(new ExpressionRoot(d, null, null, datumService, opModesService));
+			result.add(new ExpressionRoot(d, null, null, datumService, opModesService, metadataService));
 		}
 		return result;
 	}
@@ -265,12 +297,12 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	/**
 	 * Test if a "latest" datum is available for a given source ID, excluding
 	 * the {@link #getSourceId()} source ID.
-	 * 
+	 *
 	 * <p>
 	 * This can be used to test if {@link #latestOthersMatching(String)} will
 	 * return a non-null value.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceIdPattern
 	 *        the Ant-style source ID pattern of the datum to look for
 	 * @return {@literal true} if {@link #latestMatching(String)} for the given
@@ -284,12 +316,12 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	 * Get the latest available datum matching a given source ID pattern,
 	 * excluding the {@link #getSourceId()} source ID, as
 	 * {@link DatumExpressionRoot} instances.
-	 * 
+	 *
 	 * <p>
 	 * Note a non-null {@link DatumService} instance must have been provided to
 	 * the constructor of this instance for this method to work.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceIdPattern
 	 *        the Ant-style source ID pattern of the datum to look for
 	 * @return the matching datum, never {@literal null}
@@ -309,7 +341,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 			if ( sourceId != null && sourceId.equals(d.getSourceId()) ) {
 				continue;
 			}
-			result.add(new ExpressionRoot(d, null, null, datumService, opModesService));
+			result.add(new ExpressionRoot(d, null, null, datumService, opModesService, metadataService));
 		}
 		return result;
 	}
@@ -317,12 +349,12 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	/**
 	 * Get the latest available datum matching a given source ID pattern,
 	 * including this instance, as {@link DatumExpressionRoot} instances.
-	 * 
+	 *
 	 * <p>
 	 * Note a non-null {@link DatumService} instance must have been provided to
 	 * the constructor of this instance for this method to work.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceIdPattern
 	 *        the Ant-style source ID pattern of the datum to look for
 	 * @return the matching datum, never {@literal null} and always having at
@@ -344,7 +376,8 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 			if ( sourceId != null && sourceId.equals(d.getSourceId()) ) {
 				continue;
 			} else {
-				result.add(new ExpressionRoot(d, null, null, datumService, opModesService));
+				result.add(new ExpressionRoot(d, null, null, datumService, opModesService,
+						metadataService));
 			}
 		}
 		return result;
@@ -352,7 +385,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 
 	/**
 	 * Get the datum's source ID.
-	 * 
+	 *
 	 * @return the source ID, or {@literal null}
 	 * @since 2.1
 	 */
@@ -363,7 +396,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 
 	/**
 	 * Get the datum's timestamp.
-	 * 
+	 *
 	 * @return the timestamp, or {@literal null}
 	 * @since 2.1
 	 */
@@ -375,12 +408,12 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	/**
 	 * Test if an offset from a "latest" datum is available for the
 	 * {@link #getDatum()} source ID and timestamp.
-	 * 
+	 *
 	 * <p>
 	 * This can be used to test if {@link #offset(int)} will return a non-null
 	 * value.
 	 * </p>
-	 * 
+	 *
 	 * @param offset
 	 *        the offset from the latest, {@literal 0} being the latest and
 	 *        {@literal 1} the next later, and so on
@@ -403,12 +436,12 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	/**
 	 * Get an offset from latest available datum for the {@link #getDatum()}
 	 * source ID and timestamp, as an {@link DatumExpressionRoot}.
-	 * 
+	 *
 	 * <p>
 	 * Note a non-null {@link DatumService} instance must have been provided to
 	 * the constructor of this instance for this method to work.
 	 * </p>
-	 * 
+	 *
 	 * @param offset
 	 *        the offset from the latest, {@literal 0} being the latest and
 	 *        {@literal 1} the next later, and so on
@@ -435,12 +468,12 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	/**
 	 * Test if an offset from a "latest" datum is available for a given source
 	 * ID.
-	 * 
+	 *
 	 * <p>
 	 * This can be used to test if {@link #offset(String,int)} will return a
 	 * non-null value.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID of the datum to look for
 	 * @param offset
@@ -461,12 +494,12 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	/**
 	 * Get an offset from latest available datum for a given source ID, as an
 	 * {@link DatumExpressionRoot}.
-	 * 
+	 *
 	 * <p>
 	 * Note a non-null {@link DatumService} instance must have been provided to
 	 * the constructor of this instance for this method to work.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID of the datum to look for
 	 * @param offset
@@ -487,18 +520,18 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 		if ( d == null ) {
 			return null;
 		}
-		return new ExpressionRoot(d, null, null, datumService, opModesService);
+		return new ExpressionRoot(d, null, null, datumService, opModesService, metadataService);
 	}
 
 	/**
 	 * Test if a datum offset from a given timestamp is available for a given
 	 * source ID.
-	 * 
+	 *
 	 * <p>
 	 * This can be used to test if {@link #offset(String,Instant,int)} will
 	 * return a non-null value.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID of the datum to look for
 	 * @param timestamp
@@ -521,12 +554,12 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	/**
 	 * Get a datum offset from a given timestamp for a given source ID, as an
 	 * {@link DatumExpressionRoot}.
-	 * 
+	 *
 	 * <p>
 	 * Note a non-null {@link DatumService} instance must have been provided to
 	 * the constructor of this instance for this method to work.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID of the datum to look for
 	 * @param timestamp
@@ -549,18 +582,18 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 		if ( d == null ) {
 			return null;
 		}
-		return new ExpressionRoot(d, null, null, datumService, opModesService);
+		return new ExpressionRoot(d, null, null, datumService, opModesService, metadataService);
 	}
 
 	/**
 	 * Get a set of available datum for a given source ID, as
 	 * {@link DatumExpressionRoot} instances.
-	 * 
+	 *
 	 * <p>
 	 * Note a non-null {@link DatumService} instance must have been provided to
 	 * the constructor of this instance for this method to work.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to extract a slice from
 	 * @param offset
@@ -583,7 +616,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 		List<DatumExpressionRoot> result = new ArrayList<>(found.size());
 		result.add(this);
 		for ( NodeDatum d : found ) {
-			result.add(new ExpressionRoot(d, null, null, datumService, opModesService));
+			result.add(new ExpressionRoot(d, null, null, datumService, opModesService, metadataService));
 		}
 		return result;
 	}
@@ -591,12 +624,12 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	/**
 	 * Get a set of available datum offset from a given timestamp, for a given
 	 * source ID, as {@link DatumExpressionRoot} instances.
-	 * 
+	 *
 	 * <p>
 	 * Note a non-null {@link DatumService} instance must have been provided to
 	 * the constructor of this instance for this method to work.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to extract a slice from
 	 * @param timestamp
@@ -622,14 +655,14 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 		List<DatumExpressionRoot> result = new ArrayList<>(found.size());
 		result.add(this);
 		for ( NodeDatum d : found ) {
-			result.add(new ExpressionRoot(d, null, null, datumService, opModesService));
+			result.add(new ExpressionRoot(d, null, null, datumService, opModesService, metadataService));
 		}
 		return result;
 	}
 
 	/**
 	 * Test if an operational mode is active.
-	 * 
+	 *
 	 * @param mode
 	 *        the mode to test
 	 * @return {@literal true} if the {@link OperationalModesService} provided
@@ -649,7 +682,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	/**
 	 * Test if metadata for the {@link #getSourceId()} datum stream is
 	 * available.
-	 * 
+	 *
 	 * @return {@literal true} if metadata for {@link #getSourceId()} is
 	 *         available
 	 * @since 2.1
@@ -660,7 +693,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 
 	/**
 	 * Get the metadata for the {@link #getSourceId()} datum stream.
-	 * 
+	 *
 	 * @return the metadata, or {@literal null} if no such metadata is available
 	 * @since 2.1
 	 */
@@ -670,7 +703,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 
 	/**
 	 * Test if metadata for a given datum stream is available.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID of the datum metadata to get
 	 * @return {@literal true} if metadata for {@code sourceId} is available
@@ -682,7 +715,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 
 	/**
 	 * Get the metadata for a given datum stream.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID of the datum metadata to get
 	 * @return the metadata, or {@literal null} if no such metadata is available
@@ -694,7 +727,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 
 	/**
 	 * Get the metadata for a set of datum streams matching a filter.
-	 * 
+	 *
 	 * @param sourceIdFilter
 	 *        an optional Ant-style source ID pattern to filter by; use
 	 *        {@literal null} to return metadata for all available sources
@@ -704,6 +737,52 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot {
 	public Collection<DatumMetadataOperations> metaMatching(String sourceIdFilter) {
 		return (datumService != null ? datumService.datumMetadata(singleton(sourceIdFilter))
 				: Collections.emptyList());
+	}
+
+	/**
+	 * Get the general metadata.
+	 *
+	 * @return the general metadata, or {@litearl null} if none available
+	 * @since 2.3
+	 */
+	public DatumMetadataOperations metadata() {
+		return (metadataService != null ? metadataService.getAllMetadata() : null);
+	}
+
+	@Override
+	public Map<String, ?> getInfo() {
+		final DatumMetadataOperations delegate = metadata();
+		return (delegate != null ? delegate.getInfo() : Collections.emptyMap());
+	}
+
+	@Override
+	public Set<String> getPropertyInfoKeys() {
+		final DatumMetadataOperations delegate = metadata();
+		return (delegate != null ? delegate.getPropertyInfoKeys() : Collections.emptySet());
+	}
+
+	@Override
+	public Map<String, ?> getPropertyInfo(String key) {
+		final DatumMetadataOperations delegate = metadata();
+		return (delegate != null ? delegate.getPropertyInfo(key) : Collections.emptyMap());
+	}
+
+	@Override
+	public Set<String> getTags() {
+		final DatumMetadataOperations delegate = metadata();
+		return (delegate != null ? delegate.getTags() : Collections.emptySet());
+	}
+
+	@Override
+	public Object metadataAtPath(String path) {
+		final DatumMetadataOperations delegate = metadata();
+		return (delegate != null ? delegate.metadataAtPath(path) : null);
+	}
+
+	@Override
+	public <T> T metadataAtPath(String path, Class<T> clazz) {
+		final DatumMetadataOperations delegate = metadata();
+		return (delegate != null ? delegate.metadataAtPath(path, clazz) : null);
 	}
 
 }

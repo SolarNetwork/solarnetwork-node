@@ -1,21 +1,21 @@
 /* ==================================================================
  * ExpressionRootTests.java - 2/11/2021 9:27:47 AM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -45,42 +45,45 @@ import net.solarnetwork.node.domain.ExpressionRoot;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.service.DatumService;
+import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.service.ExpressionService;
 
 /**
  * Test cases for the {@link ExpressionRoot} class.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class ExpressionRootTests {
 
 	private DatumService datumService;
 	private OperationalModesService opModesService;
+	private MetadataService metadataService;
 	private ExpressionService expressionService = new SpelExpressionService();
 
 	@Before
 	public void setup() {
 		datumService = EasyMock.createMock(DatumService.class);
 		opModesService = EasyMock.createMock(OperationalModesService.class);
+		metadataService = EasyMock.createMock(MetadataService.class);
 	}
 
 	@After
 	public void teardown() {
-		EasyMock.verify(datumService, opModesService);
+		EasyMock.verify(datumService, opModesService, metadataService);
 	}
 
 	private void replayAll() {
-		EasyMock.replay(datumService, opModesService);
+		EasyMock.replay(datumService, opModesService, metadataService);
 	}
 
 	private ExpressionRoot createTestRoot() {
-		return createTestRoot(datumService, opModesService);
+		return createTestRoot(datumService, opModesService, metadataService);
 	}
 
-	private ExpressionRoot createTestRoot(DatumService datumService,
-			OperationalModesService opModesService) {
+	private static ExpressionRoot createTestRoot(DatumService datumService,
+			OperationalModesService opModesService, MetadataService metadataService) {
 		SimpleDatum d = SimpleDatum.nodeDatum("foo");
 		d.putSampleValue(Instantaneous, "a", 3);
 		d.putSampleValue(Instantaneous, "b", 5);
@@ -99,7 +102,7 @@ public class ExpressionRootTests {
 		p.put("f", 35);
 		p.put("g", 35);
 
-		return new ExpressionRoot(d, s, p, datumService, opModesService);
+		return new ExpressionRoot(d, s, p, datumService, opModesService, metadataService);
 	}
 
 	@Test
@@ -216,7 +219,7 @@ public class ExpressionRootTests {
 
 		// WHEN
 		replayAll();
-		ExpressionRoot root = createTestRoot(datumService, null);
+		ExpressionRoot root = createTestRoot(datumService, null, null);
 		Boolean result = expressionService.evaluateExpression("isOpMode('foo')", null, root, null,
 				Boolean.class);
 

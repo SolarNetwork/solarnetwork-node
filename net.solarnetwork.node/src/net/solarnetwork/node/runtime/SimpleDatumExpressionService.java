@@ -27,6 +27,7 @@ import static net.solarnetwork.domain.InstructionStatus.InstructionState.Complet
 import static net.solarnetwork.domain.InstructionStatus.InstructionState.Declined;
 import static net.solarnetwork.node.reactor.InstructionUtils.createErrorResultParameters;
 import static net.solarnetwork.node.reactor.InstructionUtils.createStatus;
+import static net.solarnetwork.service.OptionalService.service;
 import static net.solarnetwork.service.OptionalServiceCollection.services;
 import static net.solarnetwork.util.ObjectUtils.requireNonNullArgument;
 import java.util.Map;
@@ -39,6 +40,7 @@ import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionHandler;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.service.DatumService;
+import net.solarnetwork.node.service.OperationalModesService;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
 import net.solarnetwork.node.service.support.ExpressionConfig;
 import net.solarnetwork.service.ExpressionService;
@@ -53,7 +55,7 @@ import net.solarnetwork.service.support.ExpressionServiceExpression;
  * </p>
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  */
 public class SimpleDatumExpressionService extends BaseIdentifiable implements InstructionHandler {
 
@@ -67,18 +69,23 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 	public static final String PARAM_EXPRESSION_LANGUAGE = "lang";
 
 	private final DatumService datumService;
+	private final OperationalModesService opModesService;
 
 	/**
 	 * Constructor.
 	 *
 	 * @param datumService
 	 *        the datum service
+	 * @param opModesService
+	 *        the operational modes service
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public SimpleDatumExpressionService(DatumService datumService) {
+	public SimpleDatumExpressionService(DatumService datumService,
+			OperationalModesService opModesService) {
 		super();
 		this.datumService = requireNonNullArgument(datumService, "datumService");
+		this.opModesService = requireNonNullArgument(opModesService, "opModesService");
 	}
 
 	@Override
@@ -120,7 +127,8 @@ public class SimpleDatumExpressionService extends BaseIdentifiable implements In
 
 		GeneralDatum d = new GeneralDatum(UUID.randomUUID().toString());
 
-		ExpressionRoot root = new ExpressionRoot(d, null, null, datumService);
+		ExpressionRoot root = new ExpressionRoot(d, null, null, datumService, opModesService,
+				service(getMetadataService()));
 
 		ExpressionConfig config = new ExpressionConfig("result", DatumSamplesType.Status, expression,
 				expressionService.getUid());
