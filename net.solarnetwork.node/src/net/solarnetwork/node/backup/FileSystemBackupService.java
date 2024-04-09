@@ -1,21 +1,21 @@
 /* ==================================================================
  * FileSystemBackupService.java - Mar 27, 2013 11:38:08 AM
- * 
+ *
  * Copyright 2007-2013 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -65,9 +65,9 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 /**
  * {@link BackupService} implementation that copies files to another location in
  * the file system.
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  */
 public class FileSystemBackupService extends BackupServiceSupport implements SettingSpecifierProvider {
 
@@ -114,7 +114,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 
 	/**
 	 * Set the message source.
-	 * 
+	 *
 	 * @param messageSource
 	 *        the message source to set
 	 */
@@ -347,7 +347,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 	/**
 	 * Get all available backup files, ordered in desending backup order (newest
 	 * to oldest).
-	 * 
+	 *
 	 * @return ordered array of backup files, or {@literal null} if directory
 	 *         does not exist
 	 */
@@ -438,9 +438,9 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 
 	private static class ArchiveFilter implements FilenameFilter {
 
-		final Long nodeId;
+		final long nodeId;
 
-		private ArchiveFilter(Long nodeId) {
+		private ArchiveFilter(long nodeId) {
 			super();
 			this.nodeId = nodeId;
 		}
@@ -448,7 +448,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 		@Override
 		public boolean accept(File dir, String name) {
 			Matcher m = NODE_AND_DATE_BACKUP_KEY_PATTERN.matcher(name);
-			return (m.find() && (nodeId == null || nodeId.equals(Long.valueOf(m.group(1))))
+			return (m.find() && (nodeId == 0 || nodeId == Long.parseLong(m.group(1)))
 					&& name.endsWith(".zip"));
 		}
 
@@ -491,7 +491,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 
 	/**
 	 * Get the directory to backup to.
-	 * 
+	 *
 	 * @return the backup directory
 	 */
 	public File getBackupDir() {
@@ -500,7 +500,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 
 	/**
 	 * Set the directory to backup to.
-	 * 
+	 *
 	 * @param backupDir
 	 *        the directory to use
 	 */
@@ -510,7 +510,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 
 	/**
 	 * Get the number of additional backups to maintain.
-	 * 
+	 *
 	 * @return the additional backup count
 	 */
 	public int getAdditionalBackupCount() {
@@ -519,12 +519,12 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 
 	/**
 	 * Set the number of additional backups to maintain.
-	 * 
+	 *
 	 * <p>
 	 * If greater than zero, then this service will maintain this many copies of
 	 * past backups.
 	 * </p>
-	 * 
+	 *
 	 * @param additionalBackupCount
 	 *        the additional backup count to use
 	 */
@@ -534,7 +534,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 
 	/**
 	 * Get the identity service.
-	 * 
+	 *
 	 * @return the service
 	 */
 	public OptionalService<IdentityService> getIdentityService() {
@@ -543,7 +543,7 @@ public class FileSystemBackupService extends BackupServiceSupport implements Set
 
 	/**
 	 * Set the identity service.
-	 * 
+	 *
 	 * @param identityService
 	 *        the service to use
 	 */
