@@ -1,21 +1,21 @@
 /* ==================================================================
  * VirtualMeterDatumFilterService.java - 16/09/2020 9:14:27 AM
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -61,9 +61,9 @@ import net.solarnetwork.util.ArrayUtils;
 /**
  * Samples transform service that simulates an accumulating meter property,
  * derived from another property.
- * 
+ *
  * @author matt
- * @version 2.2
+ * @version 2.3
  * @since 1.4
  */
 public class VirtualMeterDatumFilterService extends DatumFilterSupport
@@ -80,7 +80,7 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * The input and reading "diff" parameter name template.
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	public static final String DIFF_PARAMETER_TEMPLATE = "%s_diff";
@@ -99,7 +99,7 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param datumMetadataService
 	 *        the metadata service to use
 	 * @throws IllegalArgumentException
@@ -357,8 +357,8 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 					if ( exprConfig != null ) {
 						Map<String, Object> params = smartPlaceholders(parameters);
 						VirtualMeterExpressionRoot root = new VirtualMeterExpressionRootImpl(d, samples,
-								params, service(getDatumService()), config, prevDate, date, prevVal,
-								currVal, prevReading);
+								params, service(getDatumService()), service(getMetadataService()),
+								config, prevDate, date, prevVal, currVal, prevReading);
 						populateExpressionDatumProperties(samples,
 								new VirtualMeterExpressionConfig[] { exprConfig }, root);
 						newReading = samples.getAccumulatingSampleBigDecimal(meterPropName);
@@ -464,7 +464,7 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * Find an expression config whose name matches the given property name.
-	 * 
+	 *
 	 * @param propName
 	 *        the property name to match the expression config name
 	 * @return the first match, or {@literal null}
@@ -529,7 +529,7 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * Get the virtual meter configurations.
-	 * 
+	 *
 	 * @return the virtual meter configurations
 	 */
 	public VirtualMeterConfig[] getVirtualMeterConfigs() {
@@ -538,7 +538,7 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * Set the virtual meter configurations to use.
-	 * 
+	 *
 	 * @param virtualMeterConfigs
 	 *        the configs to use
 	 */
@@ -548,7 +548,7 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * Get the number of configured {@code virtualMeterConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code virtualMeterConfigs} elements
 	 */
 	public int getVirtualMeterConfigsCount() {
@@ -558,12 +558,12 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * Adjust the number of configured {@code virtualMeterConfigs} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link VirtualMeterConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code virtualMeterConfigs} elements.
 	 */
@@ -574,7 +574,7 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * Get the expression configurations.
-	 * 
+	 *
 	 * @return the expression configurations
 	 * @since 1.4
 	 */
@@ -584,7 +584,7 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * Set the expression configurations to use.
-	 * 
+	 *
 	 * @param expressionConfigs
 	 *        the configs to use
 	 * @since 1.4
@@ -595,7 +595,7 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 
 	/**
 	 * Get the number of configured {@code expressionConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code expressionConfigs} elements
 	 * @since 1.4
 	 */
@@ -607,12 +607,12 @@ public class VirtualMeterDatumFilterService extends DatumFilterSupport
 	/**
 	 * Adjust the number of configured {@code VirtualMeterExpressionConfig}
 	 * elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link VirtualMeterExpressionConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code expressionConfigs} elements.
 	 * @since 1.4

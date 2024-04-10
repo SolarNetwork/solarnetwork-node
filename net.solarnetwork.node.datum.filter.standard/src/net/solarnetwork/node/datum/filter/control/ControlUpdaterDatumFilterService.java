@@ -1,21 +1,21 @@
 /* ==================================================================
  * ControlUpdaterDatumFilterService.java - 13/06/2023 6:31:35 am
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -56,9 +56,9 @@ import net.solarnetwork.util.ObjectUtils;
 
 /**
  * Transform service that sets a control value based on an expression result.
- * 
+ *
  * @author matt
- * @version 1.1
+ * @version 1.2
  */
 public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 		implements DatumFilterService, SettingSpecifierProvider {
@@ -68,7 +68,7 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param instructionExecutionService
 	 *        the instruction execution service
 	 * @throws IllegalArgumentException
@@ -95,7 +95,7 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 			Map<String, Object> params = smartPlaceholders(parameters);
 			DatumSamples mutableSamples = new DatumSamples(samples);
 			ExpressionRoot root = new ExpressionRoot(datum, mutableSamples, params,
-					service(getDatumService()), getOpModesService());
+					service(getDatumService()), getOpModesService(), service(getMetadataService()));
 			updateControlValues(mutableSamples, configs, root);
 			s = mutableSamples;
 		}
@@ -223,7 +223,7 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the control configurations.
-	 * 
+	 *
 	 * @return the control configurations
 	 */
 	public ControlConfig[] getControlConfigs() {
@@ -232,7 +232,7 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the control configurations to use.
-	 * 
+	 *
 	 * @param controlConfigs
 	 *        the configs to use
 	 */
@@ -242,7 +242,7 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the number of configured {@code controlConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code controlConfigs} elements
 	 */
 	public int getControlConfigsCount() {
@@ -252,12 +252,12 @@ public class ControlUpdaterDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Adjust the number of configured {@code ControlConfig} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new {@link ControlConfig}
 	 * instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code controlConfigs} elements.
 	 */
