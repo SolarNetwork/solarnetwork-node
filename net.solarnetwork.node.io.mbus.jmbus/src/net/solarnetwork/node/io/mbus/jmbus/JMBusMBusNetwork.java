@@ -1,21 +1,21 @@
 /* ==================================================================
  * JMBusMBusNetwork.java - 13/08/2020 10:36:38 am
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -39,18 +39,25 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Abstract jMBus implementation of {@link MBusNetwork}.
- * 
+ *
  * @author alex
- * @version 2.1
+ * @version 2.2
  */
 public abstract class JMBusMBusNetwork extends BasicIdentifiable implements MBusNetwork {
 
 	/**
 	 * A default value for the {@code timeout} property.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public static final long DEFAULT_TIMEOUT_SECS = 10L;
+
+	/**
+	 * The {@code transportTimeout} property default value.
+	 *
+	 * @since 2.2
+	 */
+	public static final int DEFAULT_TRANSPORT_TIMEOUT_MS = 500;
 
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
@@ -59,6 +66,7 @@ public abstract class JMBusMBusNetwork extends BasicIdentifiable implements MBus
 
 	private long timeout = DEFAULT_TIMEOUT_SECS;
 	private TimeUnit timeoutUnit = TimeUnit.SECONDS;
+	private int transportTimeout = DEFAULT_TRANSPORT_TIMEOUT_MS;
 
 	/**
 	 * Constructor.
@@ -75,7 +83,7 @@ public abstract class JMBusMBusNetwork extends BasicIdentifiable implements MBus
 
 	/**
 	 * Create a jMBus connection instance.
-	 * 
+	 *
 	 * @return the connection instance
 	 * @throws IOException
 	 *         if the connection cannot be created
@@ -84,11 +92,11 @@ public abstract class JMBusMBusNetwork extends BasicIdentifiable implements MBus
 
 	/**
 	 * Get a description of the network for display purposes.
-	 * 
+	 *
 	 * <p>
 	 * A good description might be the serial port device name, for example.
 	 * </p>
-	 * 
+	 *
 	 * @return a description, never {@literal null}
 	 */
 	protected abstract String getNetworkDescription();
@@ -103,7 +111,7 @@ public abstract class JMBusMBusNetwork extends BasicIdentifiable implements MBus
 
 	/**
 	 * Get a description for a connection with a given address.
-	 * 
+	 *
 	 * @param address
 	 *        the address
 	 * @return the description
@@ -120,7 +128,7 @@ public abstract class JMBusMBusNetwork extends BasicIdentifiable implements MBus
 	}
 
 	/**
-	 * 
+	 *
 	 * Connection class
 	 */
 	private class JMBusMBusConnection implements MBusConnection {
@@ -156,12 +164,14 @@ public abstract class JMBusMBusNetwork extends BasicIdentifiable implements MBus
 		public MBusData read() {
 			try {
 				final VariableDataStructure data = conn.read(address);
-				log.debug("JMBus data read from primary address {}: {}", address, data);
+				log.debug("JMBus [{}] data read from primary address {}: {}", getNetworkDescription(),
+						address, data);
 				if ( data == null )
 					return null;
 				return JMBusConversion.from(data);
 			} catch ( IOException e ) {
-				log.error("Could not read from JMBus connection: {}", e.getMessage());
+				log.error("Could not read from JMBus connection [{}]: {}", getNetworkDescription(),
+						e.getMessage());
 				return null;
 			}
 		}
@@ -169,18 +179,20 @@ public abstract class JMBusMBusNetwork extends BasicIdentifiable implements MBus
 
 	/**
 	 * Get setting specifiers for the configurable properties of this class.
-	 * 
+	 *
 	 * @return the setting specifiers
 	 */
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = new ArrayList<>(8);
 		results.add(new BasicTextFieldSettingSpecifier("timeout", String.valueOf(DEFAULT_TIMEOUT_SECS)));
+		results.add(new BasicTextFieldSettingSpecifier("transportTimeout",
+				String.valueOf(DEFAULT_TRANSPORT_TIMEOUT_MS)));
 		return results;
 	}
 
 	/**
 	 * Get the timeout value.
-	 * 
+	 *
 	 * @return the timeout value, defaults to {@literal 10}
 	 */
 	public long getTimeout() {
@@ -189,7 +201,7 @@ public abstract class JMBusMBusNetwork extends BasicIdentifiable implements MBus
 
 	/**
 	 * Set a timeout value.
-	 * 
+	 *
 	 * @param timeout
 	 *        the timeout
 	 */
@@ -199,7 +211,7 @@ public abstract class JMBusMBusNetwork extends BasicIdentifiable implements MBus
 
 	/**
 	 * Get the timeout unit.
-	 * 
+	 *
 	 * @return the timeout unit; defaults to seconds
 	 */
 	public TimeUnit getTimeoutUnit() {
@@ -208,12 +220,34 @@ public abstract class JMBusMBusNetwork extends BasicIdentifiable implements MBus
 
 	/**
 	 * Set the timeout unit.
-	 * 
+	 *
 	 * @param unit
 	 *        the unit
 	 */
 	public void setTimeoutUnit(TimeUnit unit) {
 		this.timeoutUnit = unit;
+	}
+
+	/**
+	 * Get the transport timeout.
+	 *
+	 * @return the timeout, in milliseconds, or {@literal 0} for no timeout;
+	 *         defaults to {@link #DEFAULT_TRANSPORT_TIMEOUT_MS}
+	 * @since 2.2
+	 */
+	public int getTransportTimeout() {
+		return transportTimeout;
+	}
+
+	/**
+	 * Set the transport timeout.
+	 *
+	 * @param transportTimeout
+	 *        the timeout to set, in milliseconds
+	 * @since 2.2
+	 */
+	public void setTransportTimeout(int transportTimeout) {
+		this.transportTimeout = transportTimeout;
 	}
 
 }
