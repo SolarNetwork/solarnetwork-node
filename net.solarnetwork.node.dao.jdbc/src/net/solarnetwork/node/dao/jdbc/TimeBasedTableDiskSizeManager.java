@@ -1,21 +1,21 @@
 /* ==================================================================
  * TimeBasedTableDiskSizeManager.java - Jul 30, 2017 7:59:53 AM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -53,7 +53,7 @@ import net.solarnetwork.util.ObjectUtils;
 /**
  * Service that deletes rows from a database table when disk space is running
  * low.
- * 
+ *
  * <p>
  * This service is designed so that {@link #executeJobService()} can be called
  * periodically to check if rows need to be deleted, based on the thresholds
@@ -65,14 +65,14 @@ import net.solarnetwork.util.ObjectUtils;
  * that the database can attempt to release file system space back to the
  * operating system.
  * </p>
- * 
+ *
  * <p>
  * <b>Note</b> that the {@code dateColumnName} time stamp column is assumed to
  * store dates in the {@literal UTC} time zone.
  * </p>
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 1.19
  */
 public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements JobService {
@@ -91,7 +91,7 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param jdbcOperations
 	 *        the JDBC operations
 	 * @throws IllegalArgumentException
@@ -104,7 +104,9 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 
 	@Override
 	public String getSettingUid() {
-		return "net.solarnetwork.node.dao.jdbc.derby";
+		String uid = getUid();
+		return (uid != null && !uid.isEmpty() ? uid
+				: "net.solarnetwork.node.dao.jdbc.TimeBasedTableDiskSizeManager");
 	}
 
 	@Override
@@ -219,13 +221,13 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 
 	/**
 	 * Find the oldest available date in the configured table.
-	 * 
+	 *
 	 * <p>
 	 * This method will execute the {@link #OLDEST_DATE_QUERY_TEMPLATE} SQL
 	 * template, after substituting {@code dateColumnName} and
 	 * {@code fullTableName}.
 	 * </p>
-	 * 
+	 *
 	 * @param conn
 	 * @param fullTableName
 	 * @return
@@ -258,13 +260,13 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 
 	/**
 	 * Delete rows in the configured database table older than a specific date.
-	 * 
+	 *
 	 * <p>
 	 * This method will execute the {@link #DELETE_BY_DATE_QUERY_TEMPLATE} SQL
 	 * template, after substituting {@code fullTableName} and
 	 * {@code dateColumnName}, setting the given {@code date} parameter.
 	 * </p>
-	 * 
+	 *
 	 * @param conn
 	 *        the database connection
 	 * @param fullTableName
@@ -297,12 +299,12 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 
 	/**
 	 * Set the database system service to use.
-	 * 
+	 *
 	 * <p>
 	 * This service is assumed to be configured to manage the same database as
 	 * provided by the {@link JdbcOperations} passed to the constructor.
 	 * </p>
-	 * 
+	 *
 	 * @param dbSystemService
 	 *        the database system service
 	 */
@@ -312,11 +314,11 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 
 	/**
 	 * Set the name of the schema of the database table to manage.
-	 * 
+	 *
 	 * <p>
 	 * This defaults to {@literal SOLARNODE}.
 	 * </p>
-	 * 
+	 *
 	 * @param schemaName
 	 *        the database schema name of the table to manage
 	 */
@@ -326,11 +328,11 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 
 	/**
 	 * Set the name of the database table to manage.
-	 * 
+	 *
 	 * <p>
 	 * This defaults to {@literal SN_GENERAL_NODE_DATUM}.
 	 * </p>
-	 * 
+	 *
 	 * @param tableName
 	 *        the name of the database table to manage
 	 */
@@ -340,13 +342,13 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 
 	/**
 	 * Set the name of the date column to manage.
-	 * 
+	 *
 	 * <p>
 	 * This column is referenced when executing time-based queries on the
 	 * managed database table, and should contain a timestamp data type. It
 	 * defaults to {@literal CREATED}.
 	 * </p>
-	 * 
+	 *
 	 * @param dateColumnName
 	 *        the name of the date column on the database table to manage
 	 */
@@ -357,12 +359,12 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 	/**
 	 * Set the maximum file system use percentage allowed before trimming data
 	 * is permitted.
-	 * 
+	 *
 	 * <p>
 	 * This value should be expressed as a percentage, for example
 	 * {@literal 92.5}. Defaults to {@literal 90}.
 	 * </p>
-	 * 
+	 *
 	 * @param maxFileSystemUseThreshold
 	 *        the max file system use percentage
 	 */
@@ -373,11 +375,11 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 	/**
 	 * Set a minimum size, in bytes, for a table to consume before allowing the
 	 * oldest data to be trimmed.
-	 * 
+	 *
 	 * <p>
 	 * This defaults to {@literal 1048576} (1MB).
 	 * </p>
-	 * 
+	 *
 	 * @param minTableSizeThreshold
 	 *        the minimum table size threshold
 	 */
@@ -387,12 +389,12 @@ public class TimeBasedTableDiskSizeManager extends BaseIdentifiable implements J
 
 	/**
 	 * Set the number of minutes of oldest data to trim.
-	 * 
+	 *
 	 * <p>
 	 * When trimming data, the oldest available date plus this many minutes will
 	 * be deleted. Defaults to {@literal 90}.
 	 * </p>
-	 * 
+	 *
 	 * @param trimMinutes
 	 *        the number of minutes to to trim
 	 */
