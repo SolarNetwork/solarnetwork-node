@@ -58,6 +58,13 @@
 		<property name="sticky" value="true"/>
 	</bean>
 
+	<bean id="nodeMetadataService" class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
+		<argument ref="bundleContext"/>
+		<property name="serviceClassName" value="net.solarnetwork.node.service.MetadataService"/>
+		<property name="serviceFilter" value="(function=node)"/>
+		<property name="sticky" value="true"/>
+	</bean>
+
 	<reference-list id="managedJobs" interface="net.solarnetwork.node.job.ManagedJob" availability="optional">
 		<reference-listener bind-method="registerJob" unbind-method="unregisterJob" ref="managedJobsListener"/>
 	</reference-list>
@@ -631,12 +638,14 @@
 		</service-properties>
 		<bean class="net.solarnetwork.node.runtime.SimpleDatumExpressionService">
 			<argument ref="datumService"/>
+			<argument ref="opModesService"/>
 			<property name="expressionServices">
 					<bean class="net.solarnetwork.common.osgi.service.DynamicServiceTracker">
 						<argument ref="bundleContext"/>
 						<property name="serviceClassName" value="net.solarnetwork.service.ExpressionService"/>
 					</bean>			
 			</property>
+			<property name="metadataService" ref="nodeMetadataService"/>
 		</bean>
 	</service>
 	

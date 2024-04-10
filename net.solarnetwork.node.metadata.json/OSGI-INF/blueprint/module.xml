@@ -72,6 +72,10 @@
 			<value>net.solarnetwork.node.service.MetadataService</value>
 			<value>net.solarnetwork.settings.SettingSpecifierProvider</value>
 		</interfaces>
+		<service-properties>
+			<entry key="function" value="node"/>
+			<entry key="encoding" value="json"/>
+		</service-properties>
 		<bean class="net.solarnetwork.node.metadata.json.JsonNodeMetadataService">
 			<osgix:managed-properties persistent-id="net.solarnetwork.node.metadata.json" 
 					autowire-on-update="true" update-method="configurationChanged"/>

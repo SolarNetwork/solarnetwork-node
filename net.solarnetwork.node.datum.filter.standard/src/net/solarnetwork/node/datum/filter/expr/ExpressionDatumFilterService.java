@@ -1,21 +1,21 @@
 /* ==================================================================
  * ExpressionDatumFilterService.java - 13/05/2021 8:27:17 PM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -47,9 +47,9 @@ import net.solarnetwork.util.ArrayUtils;
 /**
  * Transform service that executes a list of expressions, populating the results
  * on the output samples.
- * 
+ *
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 2.0
  */
 public class ExpressionDatumFilterService extends BaseDatumFilterSupport
@@ -68,7 +68,7 @@ public class ExpressionDatumFilterService extends BaseDatumFilterSupport
 		Map<String, Object> params = smartPlaceholders(parameters);
 		DatumSamples s = new DatumSamples(samples);
 		ExpressionRoot root = new ExpressionRoot(datum, s, params, service(getDatumService()),
-				getOpModesService());
+				getOpModesService(), service(getMetadataService()));
 		populateExpressionDatumProperties(s, getExpressionConfigs(), root);
 		incrementStats(start, samples, s);
 		return s;
@@ -118,7 +118,7 @@ public class ExpressionDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the expression configurations.
-	 * 
+	 *
 	 * @return the expression configurations
 	 */
 	public ExpressionTransformConfig[] getExpressionConfigs() {
@@ -127,7 +127,7 @@ public class ExpressionDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the expression configurations to use.
-	 * 
+	 *
 	 * @param expressionConfigs
 	 *        the configs to use
 	 */
@@ -137,7 +137,7 @@ public class ExpressionDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the number of configured {@code expressionConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code expressionConfigs} elements
 	 */
 	public int getExpressionConfigsCount() {
@@ -148,12 +148,12 @@ public class ExpressionDatumFilterService extends BaseDatumFilterSupport
 	/**
 	 * Adjust the number of configured {@code ExpressionTransformConfig}
 	 * elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link ExpressionTransformConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code expressionConfigs} elements.
 	 */

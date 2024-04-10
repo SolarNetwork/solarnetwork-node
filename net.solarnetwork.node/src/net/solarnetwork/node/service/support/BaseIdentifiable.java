@@ -1,21 +1,21 @@
 /* ==================================================================
  * BasicIdentifiable.java - 15/05/2019 3:42:21 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.expression.ExpressionException;
 import net.solarnetwork.domain.datum.MutableDatumSamplesOperations;
+import net.solarnetwork.node.service.MetadataService;
 import net.solarnetwork.node.service.PlaceholderService;
 import net.solarnetwork.service.ExpressionService;
 import net.solarnetwork.service.Identifiable;
@@ -42,25 +43,26 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Extension of {@link BasicIdentifiable} with node-specific helpers.
- * 
+ *
  * <p>
  * This class is meant to be extended by more useful services.
  * </p>
- * 
+ *
  * @author matt
- * @version 2.0
+ * @version 2.1
  * @since 1.67
  */
 public abstract class BaseIdentifiable extends BasicIdentifiable implements Identifiable {
 
 	/**
 	 * A class-level logger.
-	 * 
+	 *
 	 * @since 1.4
 	 */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
 	private OptionalService<PlaceholderService> placeholderService;
+	private OptionalService<MetadataService> metadataService;
 	private OptionalServiceCollection<ExpressionService> expressionServices;
 
 	/**
@@ -73,12 +75,12 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	/**
 	 * Get settings for the configurable properties of
 	 * {@link BasicIdentifiable}.
-	 * 
+	 *
 	 * <p>
 	 * Empty strings are used for the default {@code uid} and {@code groupUid}
 	 * setting values.
 	 * </p>
-	 * 
+	 *
 	 * @param prefix
 	 *        an optional prefix to include in all setting keys
 	 * @return the settings
@@ -91,7 +93,7 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	/**
 	 * Get settings for the configurable properties of
 	 * {@link BasicIdentifiable}.
-	 * 
+	 *
 	 * @param prefix
 	 *        an optional prefix to include in all setting keys
 	 * @param defaultUid
@@ -114,7 +116,7 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 
 	/**
 	 * Resolve placeholders using the configured {@link PlaceholderService}.
-	 * 
+	 *
 	 * @param s
 	 *        the string to resolve placeholder values on
 	 * @return the resolved string, or {@literal null} if {@code s} is
@@ -127,7 +129,7 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 
 	/**
 	 * Resolve placeholders using the configured {@link PlaceholderService}.
-	 * 
+	 *
 	 * @param s
 	 *        the string to resolve placeholder values on
 	 * @param parameters
@@ -143,7 +145,7 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 	/**
 	 * Evaluate a set of expression configurations and store the results as
 	 * properties on a datum.
-	 * 
+	 *
 	 * @param d
 	 *        the datum to store the results of expression evaluations on
 	 * @param expressionConfs
@@ -200,7 +202,7 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 
 	/**
 	 * Get the placeholder service to use.
-	 * 
+	 *
 	 * @return the service
 	 * @since 1.3
 	 */
@@ -210,7 +212,7 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 
 	/**
 	 * Set the placeholder service to use.
-	 * 
+	 *
 	 * @param placeholderService
 	 *        the service to set
 	 * @since 1.3
@@ -221,7 +223,7 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 
 	/**
 	 * Get an optional collection of {@link ExpressionService}.
-	 * 
+	 *
 	 * @return the optional {@link ExpressionService} collection to use
 	 * @since 1.4
 	 */
@@ -231,13 +233,34 @@ public abstract class BaseIdentifiable extends BasicIdentifiable implements Iden
 
 	/**
 	 * Configure an optional collection of {@link ExpressionService}.
-	 * 
+	 *
 	 * @param expressionServices
 	 *        the optional {@link ExpressionService} collection to use
 	 * @since 1.4
 	 */
 	public void setExpressionServices(OptionalServiceCollection<ExpressionService> expressionServices) {
 		this.expressionServices = expressionServices;
+	}
+
+	/**
+	 * Get an optional {@link MetadataService}.
+	 *
+	 * @return the metadataService
+	 * @since 2.1
+	 */
+	public OptionalService<MetadataService> getMetadataService() {
+		return metadataService;
+	}
+
+	/**
+	 * Configure an optional {@link MetadataService}.
+	 *
+	 * @param metadataService
+	 *        the metadataService to set
+	 * @since 2.1
+	 */
+	public void setMetadataService(OptionalService<MetadataService> metadataService) {
+		this.metadataService = metadataService;
 	}
 
 }

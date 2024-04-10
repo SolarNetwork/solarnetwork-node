@@ -1,21 +1,21 @@
 /* ==================================================================
  * OperationalModeDatumFilterService.java - 4/07/2021 1:26:27 PM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -54,9 +54,9 @@ import net.solarnetwork.util.ArrayUtils;
 /**
  * Transform service that can toggle operational modes, optionally populating
  * the mode as a datum property.
- * 
+ *
  * @author matt
- * @version 1.2
+ * @version 1.3
  * @since 2.0
  */
 public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
@@ -80,7 +80,8 @@ public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
 			return samples;
 		}
 		Map<String, Object> params = smartPlaceholders(parameters);
-		ExpressionRoot root = new ExpressionRoot(datum, samples, params, service(getDatumService()));
+		ExpressionRoot root = new ExpressionRoot(datum, samples, params, service(getDatumService()),
+				getOpModesService(), service(getMetadataService()));
 		DatumSamplesOperations s = samplesForEvaluation(samples, configs);
 		if ( s instanceof MutableDatumSamplesOperations ) {
 			evaluateExpressions((MutableDatumSamplesOperations) s, configs, root, services,
@@ -92,13 +93,13 @@ public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the appropriate samples instance to use for evaluation.
-	 * 
+	 *
 	 * <p>
 	 * This method exists to avoid creating a copy of the samples unless we
 	 * actually have to. We only have to if the operational mode is populated as
 	 * a property. If we're just toggling operational modes there is no need.
 	 * </p>
-	 * 
+	 *
 	 * @param s
 	 *        the samples
 	 * @param configs
@@ -231,7 +232,7 @@ public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the expression configurations.
-	 * 
+	 *
 	 * @return the expression configurations
 	 */
 	public OperationalModeTransformConfig[] getExpressionConfigs() {
@@ -240,7 +241,7 @@ public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the expression configurations to use.
-	 * 
+	 *
 	 * @param expressionConfigs
 	 *        the configs to use
 	 */
@@ -250,7 +251,7 @@ public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the number of configured {@code expressionConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code expressionConfigs} elements
 	 */
 	public int getExpressionConfigsCount() {
@@ -261,12 +262,12 @@ public class OperationalModeDatumFilterService extends BaseDatumFilterSupport
 	/**
 	 * Adjust the number of configured {@code OperationalModeTransformConfig}
 	 * elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link OperationalModeTransformConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code expressionConfigs} elements.
 	 */

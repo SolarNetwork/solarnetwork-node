@@ -1,21 +1,21 @@
 /* ==================================================================
  * ParameterDatumFilterService.java - 5/03/2022 12:24:06 PM
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -52,9 +52,9 @@ import net.solarnetwork.util.ArrayUtils;
 /**
  * Transform service that executes a list of expressions, populating the results
  * on the active transform parameters.
- * 
+ *
  * @author matt
- * @version 1.1
+ * @version 1.2
  * @since 2.1
  */
 public class ParameterDatumFilterService extends BaseDatumFilterSupport
@@ -73,7 +73,7 @@ public class ParameterDatumFilterService extends BaseDatumFilterSupport
 		Map<String, Object> params = smartPlaceholders(parameters);
 		MapSampleOperations s = new MapSampleOperations(new CopyingMap<>(parameters, params), samples);
 		ExpressionRoot root = new ExpressionRoot(datum, s, params, service(getDatumService()),
-				getOpModesService());
+				getOpModesService(), service(getMetadataService()));
 		populateExpressionDatumProperties(s, getExpressionConfigs(), root);
 		incrementStats(start, samples, samples);
 		return samples;
@@ -178,7 +178,7 @@ public class ParameterDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the expression configurations.
-	 * 
+	 *
 	 * @return the expression configurations
 	 */
 	public ExpressionConfig[] getExpressionConfigs() {
@@ -187,7 +187,7 @@ public class ParameterDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Set the expression configurations to use.
-	 * 
+	 *
 	 * @param expressionConfigs
 	 *        the configs to use
 	 */
@@ -197,7 +197,7 @@ public class ParameterDatumFilterService extends BaseDatumFilterSupport
 
 	/**
 	 * Get the number of configured {@code expressionConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code expressionConfigs} elements
 	 */
 	public int getExpressionConfigsCount() {
@@ -208,12 +208,12 @@ public class ParameterDatumFilterService extends BaseDatumFilterSupport
 	/**
 	 * Adjust the number of configured {@code ExpressionTransformConfig}
 	 * elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link ExpressionTransformConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code expressionConfigs} elements.
 	 */

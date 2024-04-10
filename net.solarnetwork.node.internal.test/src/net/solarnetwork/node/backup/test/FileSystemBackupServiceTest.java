@@ -1,31 +1,34 @@
 /* ==================================================================
  * FileSystemBackupServiceTest.java - Mar 27, 2013 3:36:28 PM
- * 
+ *
  * Copyright 2007-2013 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.backup.test;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.arrayContaining;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
@@ -35,7 +38,6 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.GregorianCalendar;
 import java.util.List;
-import org.hamcrest.Matchers;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -56,7 +58,7 @@ import net.solarnetwork.service.StaticOptionalService;
 
 /**
  * Test case for the {@link FileSystemBackupService}.
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -258,8 +260,39 @@ public class FileSystemBackupServiceTest {
 
 		List<Backup> result = new ArrayList<Backup>(service.getAvailableBackups());
 
-		assertThat(result, Matchers.hasSize(2));
-		assertThat(result.get(0).getKey(), Matchers.equalTo("20070101T010000"));
-		assertThat(result.get(1).getKey(), Matchers.equalTo("20070101T000000"));
+		assertThat("All backups returned, regardless of node ID", result, hasSize(3));
+		assertThat("Backup keys in descending order",
+				result.stream().map(Backup::getKey).toArray(String[]::new),
+				is(arrayContaining("20170101T000000", "20070101T010000", "20070101T000000")));
+	}
+
+	@Test
+	public void availableBackupsNoIdentityOrderedByDateDescendingThenNodeAscending() throws IOException {
+		// change the node ID to null (not associated yet, i.e. simulate a restore)
+		// see NODE-123
+		identityNodeId = null;
+
+		File backupFromOtherNode = new File(service.getBackupDir(),
+				"node-" + TEST_NODE_ID + "-backup-20070101T000000.zip");
+		backupFromOtherNode.createNewFile();
+		backupFromOtherNode.deleteOnExit();
+
+		File backupFromThisNode = new File(service.getBackupDir(), "node-0-backup-20070101T000000.zip");
+		backupFromThisNode.createNewFile();
+		backupFromThisNode.deleteOnExit();
+
+		File backupFromThisNode2 = new File(service.getBackupDir(), "node-0-backup-20070101T010000.zip");
+		backupFromThisNode2.createNewFile();
+		backupFromThisNode2.deleteOnExit();
+
+		List<Backup> result = new ArrayList<Backup>(service.getAvailableBackups());
+
+		assertThat("All backups returned, regardless of node ID", result, hasSize(3));
+		assertThat("Backup keys in descending order",
+				result.stream().map(Backup::getKey).toArray(String[]::new),
+				is(arrayContaining("20070101T010000", "20070101T000000", "20070101T000000")));
+		assertThat("Backup node IDs in descending order",
+				result.stream().map(Backup::getNodeId).toArray(Long[]::new),
+				is(arrayContaining(0L, 0L, TEST_NODE_ID)));
 	}
 }

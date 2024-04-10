@@ -1,21 +1,21 @@
 /* ==================================================================
  * InstructionUtilsTests.java - 5/04/2023 6:14:40 am
- * 
+ *
  * Copyright 2023 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -31,9 +31,11 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import org.junit.Before;
 import org.junit.Test;
 import net.solarnetwork.node.reactor.BasicInstruction;
 import net.solarnetwork.node.reactor.Instruction;
@@ -42,13 +44,23 @@ import net.solarnetwork.node.reactor.InstructionUtils;
 
 /**
  * Test cases for the {@link InstructionUtils} class.
- * 
+ *
  * @author matt
  * @version 1.0
  */
 public class InstructionUtilsTests {
 
-	private static final Long START = System.currentTimeMillis();
+	static {
+		// force load of lazy-loaded local instruction ID to current date
+	}
+
+	private Long startingLocalInstructionId;
+
+	@Before
+	public void setup() {
+		startingLocalInstructionId = InstructionUtils
+				.createLocalInstruction("foo", Collections.emptyMap()).getId();
+	}
 
 	@Test
 	public void createLocalInstruction() {
@@ -67,7 +79,8 @@ public class InstructionUtilsTests {
 		assertThat("BasicInstruction created", result, is(instanceOf(BasicInstruction.class)));
 		assertThat("Instructor ID is LOCAL", result.getInstructorId(),
 				is(equalTo(Instruction.LOCAL_INSTRUCTION_ID)));
-		assertThat("Instruction ID generated", result.getId(), is(greaterThanOrEqualTo(START)));
+		assertThat("Instruction ID generated", result.getId(),
+				is(greaterThanOrEqualTo(startingLocalInstructionId)));
 		assertThat("Creation date populated", result.getInstructionDate(), is(notNullValue()));
 		assertThat("Craetion date set to now", result.getInstructionDate().isBefore(start), is(false));
 		assertThat("Topic set", result.getTopic(), is(equalTo(topic)));
@@ -92,7 +105,7 @@ public class InstructionUtilsTests {
 			Instruction instr = instructions[i];
 			if ( prevId == null ) {
 				assertThat(format("Instruction %d ID generated with seed", i), instr.getId(),
-						is(greaterThanOrEqualTo(START)));
+						is(greaterThanOrEqualTo(startingLocalInstructionId)));
 			} else {
 				assertThat(format("Instruction %d ID generated sequentially", i), instr.getId(),
 						is(equalTo(prevId + 1L)));
@@ -117,7 +130,8 @@ public class InstructionUtilsTests {
 		assertThat("BasicInstruction created", result, is(instanceOf(BasicInstruction.class)));
 		assertThat("Instructor ID is LOCAL", result.getInstructorId(),
 				is(equalTo(Instruction.LOCAL_INSTRUCTION_ID)));
-		assertThat("Instruction ID generated", result.getId(), is(greaterThanOrEqualTo(START)));
+		assertThat("Instruction ID generated", result.getId(),
+				is(greaterThanOrEqualTo(startingLocalInstructionId)));
 		assertThat("Creation date populated", result.getInstructionDate(), is(notNullValue()));
 		assertThat("Craetion date set to now", result.getInstructionDate().isBefore(start), is(false));
 		assertThat("Topic set", result.getTopic(), is(equalTo(topic)));
@@ -140,7 +154,8 @@ public class InstructionUtilsTests {
 		assertThat("BasicInstruction created", result, is(instanceOf(BasicInstruction.class)));
 		assertThat("Instructor ID is LOCAL", result.getInstructorId(),
 				is(equalTo(Instruction.LOCAL_INSTRUCTION_ID)));
-		assertThat("Instruction ID generated", result.getId(), is(greaterThanOrEqualTo(START)));
+		assertThat("Instruction ID generated", result.getId(),
+				is(greaterThanOrEqualTo(startingLocalInstructionId)));
 		assertThat("Creation date populated", result.getInstructionDate(), is(notNullValue()));
 		assertThat("Craetion date set to now", result.getInstructionDate().isBefore(start), is(false));
 		assertThat("Topic set", result.getTopic(),

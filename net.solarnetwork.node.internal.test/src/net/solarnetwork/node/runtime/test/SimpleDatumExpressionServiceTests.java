@@ -37,6 +37,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
+import org.osgi.service.event.EventAdmin;
 import org.springframework.util.AntPathMatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.codec.JsonUtils;
@@ -45,11 +46,13 @@ import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.datum.DatumExpressionRoot;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesType;
+import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.datum.SimpleEnergyDatum;
 import net.solarnetwork.node.reactor.Instruction;
 import net.solarnetwork.node.reactor.InstructionStatus;
 import net.solarnetwork.node.reactor.InstructionUtils;
 import net.solarnetwork.node.runtime.DefaultDatumService;
+import net.solarnetwork.node.runtime.DefaultOperationalModesService;
 import net.solarnetwork.node.runtime.SimpleDatumExpressionService;
 import net.solarnetwork.node.service.DatumMetadataService;
 import net.solarnetwork.service.ExpressionService;
@@ -66,6 +69,7 @@ public class SimpleDatumExpressionServiceTests {
 
 	private SpelExpressionService spel;
 	private DefaultDatumService datumService;
+	private DefaultOperationalModesService opModesService;
 	private SimpleDatumExpressionService service;
 
 	@Before
@@ -79,9 +83,12 @@ public class SimpleDatumExpressionServiceTests {
 		datumService = new DefaultDatumService(pathMatcher, mapper,
 				new StaticOptionalService<DatumMetadataService>(null));
 
+		opModesService = new DefaultOperationalModesService(new StaticOptionalService<SettingDao>(null),
+				new StaticOptionalService<EventAdmin>(null));
+
 		spel = new SpelExpressionService();
 
-		service = new SimpleDatumExpressionService(datumService);
+		service = new SimpleDatumExpressionService(datumService, opModesService);
 		service.setExpressionServices(
 				new StaticOptionalServiceCollection<ExpressionService>(singleton(spel)));
 	}
