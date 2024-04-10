@@ -742,7 +742,7 @@ public class ExpressionRoot extends DatumSamplesExpressionRoot implements DatumM
 	/**
 	 * Get the general metadata.
 	 *
-	 * @return the general metadata, or {@litearl null} if none available
+	 * @return the general metadata, or {@literal null} if none available
 	 * @since 2.3
 	 */
 	public DatumMetadataOperations metadata() {
