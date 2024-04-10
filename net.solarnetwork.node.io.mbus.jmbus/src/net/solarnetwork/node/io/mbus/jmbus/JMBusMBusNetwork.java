@@ -164,12 +164,14 @@ public abstract class JMBusMBusNetwork extends BasicIdentifiable implements MBus
 		public MBusData read() {
 			try {
 				final VariableDataStructure data = conn.read(address);
-				log.debug("JMBus data read from primary address {}: {}", address, data);
+				log.debug("JMBus [{}] data read from primary address {}: {}", getNetworkDescription(),
+						address, data);
 				if ( data == null )
 					return null;
 				return JMBusConversion.from(data);
 			} catch ( IOException e ) {
-				log.error("Could not read from JMBus connection: {}", e.getMessage());
+				log.error("Could not read from JMBus connection [{}]: {}", getNetworkDescription(),
+						e.getMessage());
 				return null;
 			}
 		}
