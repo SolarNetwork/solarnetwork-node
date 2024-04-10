@@ -285,4 +285,38 @@ public class ExpressionRootTests {
 		assertThat("Metadata match property info traversal", result4, is(4000));
 	}
 
+	@Test
+	public void nodeMeta() {
+		// GIVEN
+		GeneralDatumMetadata meta = new GeneralDatumMetadata();
+		meta.putInfoValue("a", 1);
+		meta.putInfoValue("b", "two");
+		meta.putInfoValue("deviceInfo", "Version", "1.23.4");
+		meta.putInfoValue("deviceInfo", "Name", "Thingy");
+		meta.putInfoValue("deviceInfo", "Capacity", 3000);
+
+		expect(metadataService.getAllMetadata()).andReturn(meta).anyTimes();
+
+		// WHEN
+		replayAll();
+		ExpressionRoot root = createTestRoot();
+		String result1 = expressionService.evaluateExpression("metadata()?.info?.b", null, root, null,
+				String.class);
+		Integer result2 = expressionService.evaluateExpression("getInfoNumber('a')", null, root, null,
+				Integer.class);
+		Integer result3 = expressionService.evaluateExpression("getInfoNumber('deviceInfo', 'Capacity')",
+				null, root, null, Integer.class);
+		String result4 = expressionService.evaluateExpression("getInfoString('deviceInfo', 'Name')",
+				null, root, null, String.class);
+		String result5 = expressionService.evaluateExpression(
+				"metadata()?.propertyInfo?.deviceInfo?.Version')", null, root, null, String.class);
+
+		// THEN
+		assertThat("Metadata info traversal", result1, is("two"));
+		assertThat("Metadata info number accessor", result2, is(1));
+		assertThat("Metadata property info number accessor", result3, is(3000));
+		assertThat("Metadata property info string accessor", result4, is("Thingy"));
+		assertThat("Metadata property info string direct traversal", result5, is("1.23.4"));
+	}
+
 }
