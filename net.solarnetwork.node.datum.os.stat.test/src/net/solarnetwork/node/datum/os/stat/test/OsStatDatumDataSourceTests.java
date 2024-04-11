@@ -1,21 +1,21 @@
 /* ==================================================================
  * OsStatDatumDataSourceTests.java - 13/08/2018 10:54:40 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -39,6 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import org.easymock.EasyMock;
 import org.junit.After;
@@ -53,7 +54,7 @@ import net.solarnetwork.node.service.NodeMetadataService;
 
 /**
  * Test cases for the {@link OsStatDatumDataSource} class.
- * 
+ *
  * @author matt
  * @version 2.0
  */
@@ -79,6 +80,7 @@ public class OsStatDatumDataSourceTests {
 
 	private OsStatDatumDataSource dataSourceInstance(Set<StatAction> actions) {
 		OsStatDatumDataSource ds = new OsStatDatumDataSource();
+		ds.setSourceId(UUID.randomUUID().toString());
 		ds.setCommandRunner(runner);
 		ds.setActions(actions);
 		return ds;
@@ -86,6 +88,7 @@ public class OsStatDatumDataSourceTests {
 
 	private OsStatDatumDataSource dataSourceInstanceCustom(Set<String> actions) {
 		OsStatDatumDataSource ds = new OsStatDatumDataSource();
+		ds.setSourceId(UUID.randomUUID().toString());
 		ds.setCommandRunner(runner);
 		ds.setActionSet(actions);
 		return ds;
