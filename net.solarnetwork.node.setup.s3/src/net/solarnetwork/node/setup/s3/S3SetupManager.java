@@ -1,21 +1,21 @@
 /* ==================================================================
  * S3SetupManager.java - 13/10/2017 10:29:06 AM
- * 
+ *
  * Copyright 2017 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -90,9 +90,9 @@ import net.solarnetwork.util.StringUtils;
 
 /**
  * Service for provisioning node resources based on versioned resource sets.
- * 
+ *
  * @author matt
- * @version 2.1
+ * @version 2.3
  */
 public class S3SetupManager implements InstructionHandler {
 
@@ -105,7 +105,7 @@ public class S3SetupManager implements InstructionHandler {
 
 	/**
 	 * Instruction parameter for a specific version to update to.
-	 * 
+	 *
 	 * <p>
 	 * If not provided, the latest version is assumed.
 	 * </p>
@@ -135,14 +135,21 @@ public class S3SetupManager implements InstructionHandler {
 	private static final Pattern LEADING_ZEROS_PAT = Pattern.compile("^0+");
 
 	/**
+	 * Constructor.
+	 */
+	public S3SetupManager() {
+		super();
+	}
+
+	/**
 	 * Get the default destination path.
-	 * 
+	 *
 	 * <p>
 	 * This returns the system property {@link Constants#SYSTEM_PROP_NODE_HOME}
 	 * if available, and falls back to the working directory of the process
 	 * otherwise.
 	 * </p>
-	 * 
+	 *
 	 * @return the default destination path value
 	 */
 	public static final String defaultDestinationPath() {
@@ -228,7 +235,7 @@ public class S3SetupManager implements InstructionHandler {
 			log.warn("Communication error applying S3 setup: {}", e.getMessage());
 			return statusWithError(instruction, "S3SM002", e.getMessage());
 		} catch ( RuntimeException e ) {
-			log.error("Error applying S3 setup: {}", e.getMessage());
+			log.error("Error applying S3 setup: {}", e.getMessage(), e.getCause());
 			return statusWithError(instruction, "S3SM003", e.getMessage());
 		}
 	}
@@ -261,7 +268,8 @@ public class S3SetupManager implements InstructionHandler {
 				if ( e.getCause() instanceof IOException ) {
 					throw (IOException) e.getCause();
 				}
-				throw new RuntimeException("Exception applying setup version " + config.getVersion(), e);
+				throw new RuntimeException("Exception applying setup version " + config.getVersion(),
+						e.getCause());
 			}
 		} else {
 			try {
@@ -468,7 +476,7 @@ public class S3SetupManager implements InstructionHandler {
 
 		/**
 		 * Download and install all setup objects in a given configuration.
-		 * 
+		 *
 		 * @param config
 		 *        the configuration to apply
 		 * @return the set of absolute paths of all installed files (or an empty
@@ -703,12 +711,12 @@ public class S3SetupManager implements InstructionHandler {
 
 		/**
 		 * Apply sync rules to a specific directory.
-		 * 
+		 *
 		 * <p>
 		 * This method will delete any file found in {@code dir} that is
 		 * <b>not</b> also in {@code installedFiles}.
 		 * </p>
-		 * 
+		 *
 		 * @param dir
 		 *        the directory to delete files from
 		 * @param installedFiles
@@ -837,12 +845,12 @@ public class S3SetupManager implements InstructionHandler {
 
 	/**
 	 * Get a {@link S3SetupConfiguration} for a specific S3 object key.
-	 * 
+	 *
 	 * <p>
 	 * This method will populate the {@code objectKey} and {@code version}
 	 * properties based on the passed on {@code objectKey}.
 	 * </p>
-	 * 
+	 *
 	 * @param objectKey
 	 *        the S3 key of the object to load
 	 * @return the parsed S3 setup metadata object
@@ -867,12 +875,12 @@ public class S3SetupManager implements InstructionHandler {
 	/**
 	 * Get the S3 object for the {@link S3SetupConfiguration} to perform an
 	 * update to the highest available package version.
-	 * 
+	 *
 	 * <p>
 	 * If a {@code maxVersion} is configured, this method will find the highest
 	 * available package version less than or equal to {@code maxVersion}.
 	 * </p>
-	 * 
+	 *
 	 * @return the S3 object that holds the setup metadata to update to, or
 	 *         {@literal null} if not available
 	 */
@@ -927,13 +935,13 @@ public class S3SetupManager implements InstructionHandler {
 
 	/**
 	 * This method returns the first-available package service.
-	 * 
+	 *
 	 * <p>
 	 * To ensure the desired package service is used, the
 	 * {@link OptionalServiceCollection} is assumed to return the services in a
 	 * ranked order, from highest to lowest rank.
 	 * </p>
-	 * 
+	 *
 	 * @return the "main" package service, or {@literal null} if none available
 	 */
 	private PlatformPackageService mainPackageService() {
@@ -950,7 +958,7 @@ public class S3SetupManager implements InstructionHandler {
 	/**
 	 * Construct a full S3 object key that includes the configured
 	 * {@code objectKeyPrefix} from a relative path value.
-	 * 
+	 *
 	 * @param path
 	 *        the relative object key path to get a full object key for
 	 * @return the S3 object key
@@ -965,7 +973,7 @@ public class S3SetupManager implements InstructionHandler {
 
 	/**
 	 * Set the {@link S3Client} to use for accessing S3.
-	 * 
+	 *
 	 * @param s3Client
 	 *        the client to use
 	 */
@@ -975,7 +983,7 @@ public class S3SetupManager implements InstructionHandler {
 
 	/**
 	 * Set the maximum version to update to.
-	 * 
+	 *
 	 * @param maxVersion
 	 *        the max version, or {@literal null} or {@literal 0} for no maximum
 	 */
@@ -985,7 +993,7 @@ public class S3SetupManager implements InstructionHandler {
 
 	/**
 	 * Set the {@link SettingDao} to use for maintaining persistent settings.
-	 * 
+	 *
 	 * @param settingDao
 	 *        the DAO to use for settings
 	 */
@@ -996,7 +1004,7 @@ public class S3SetupManager implements InstructionHandler {
 	/**
 	 * Set a flag controlling if an update is attempted when the service starts
 	 * up and no update has ever been performed before.
-	 * 
+	 *
 	 * @param performFirstTimeUpdate
 	 *        {@literal true} to perform an update after the first time starting
 	 *        up
@@ -1007,11 +1015,11 @@ public class S3SetupManager implements InstructionHandler {
 
 	/**
 	 * Set a S3 object key prefix to use.
-	 * 
+	 *
 	 * <p>
 	 * This can essentially be a folder path to prefix all data with.
 	 * </p>
-	 * 
+	 *
 	 * @param objectKeyPrefix
 	 *        the object key prefix to set
 	 */
@@ -1021,7 +1029,7 @@ public class S3SetupManager implements InstructionHandler {
 
 	/**
 	 * Set the path to a "work" directory for temporary files to be stored.
-	 * 
+	 *
 	 * @param workDirectory
 	 *        the work directory; defaults to {@link #DEFAULT_WORK_DIRECTORY}
 	 */
@@ -1031,7 +1039,7 @@ public class S3SetupManager implements InstructionHandler {
 
 	/**
 	 * Set the path from which to extract setup resources.
-	 * 
+	 *
 	 * @param destinationPath
 	 *        the destination path; defaults to
 	 *        {@link #defaultDestinationPath()}
@@ -1042,7 +1050,7 @@ public class S3SetupManager implements InstructionHandler {
 
 	/**
 	 * Set a metadata service to publish setup status information to.
-	 * 
+	 *
 	 * @param nodeMetadataService
 	 *        the metadata service to use
 	 */
@@ -1052,7 +1060,7 @@ public class S3SetupManager implements InstructionHandler {
 
 	/**
 	 * Set a task executor to handle background work in.
-	 * 
+	 *
 	 * @param taskExecutor
 	 *        a task executor
 	 */
@@ -1063,7 +1071,7 @@ public class S3SetupManager implements InstructionHandler {
 	/**
 	 * Set the {@link SystemService} to use for restarting after updates are
 	 * applied.
-	 * 
+	 *
 	 * @param systemService
 	 *        the system service
 	 */
@@ -1073,7 +1081,7 @@ public class S3SetupManager implements InstructionHandler {
 
 	/**
 	 * Set the {@link PlatformService} to use for executing setup tasks with.
-	 * 
+	 *
 	 * @param platformService
 	 *        the service to use
 	 */
@@ -1083,7 +1091,7 @@ public class S3SetupManager implements InstructionHandler {
 
 	/**
 	 * Set a {@link MessageSource} for resolving messages with.
-	 * 
+	 *
 	 * @param messageSource
 	 *        the message source
 	 */
@@ -1094,7 +1102,7 @@ public class S3SetupManager implements InstructionHandler {
 	/**
 	 * Set the collection of {@link PlatformPackageService} implementations to
 	 * use.
-	 * 
+	 *
 	 * @param packageServices
 	 *        the services
 	 * @since 1.2
@@ -1105,7 +1113,7 @@ public class S3SetupManager implements InstructionHandler {
 
 	/**
 	 * Set a timeout, in seconds, to use for package actions.
-	 * 
+	 *
 	 * @param packageActionTimeoutSecs
 	 *        the timeout to use; defaults to
 	 *        {@link #DEFAULT_PACKAGE_ACTION_TIMEOUT_SECS}

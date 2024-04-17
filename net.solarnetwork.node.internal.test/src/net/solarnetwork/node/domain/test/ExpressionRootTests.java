@@ -309,7 +309,7 @@ public class ExpressionRootTests {
 		String result4 = expressionService.evaluateExpression("getInfoString('deviceInfo', 'Name')",
 				null, root, null, String.class);
 		String result5 = expressionService.evaluateExpression(
-				"metadata()?.propertyInfo?.deviceInfo?.Version')", null, root, null, String.class);
+				"metadata()?.propertyInfo?.deviceInfo?.Version", null, root, null, String.class);
 
 		// THEN
 		assertThat("Metadata info traversal", result1, is("two"));
