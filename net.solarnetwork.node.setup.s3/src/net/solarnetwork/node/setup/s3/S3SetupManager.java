@@ -92,7 +92,7 @@ import net.solarnetwork.util.StringUtils;
  * Service for provisioning node resources based on versioned resource sets.
  *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class S3SetupManager implements InstructionHandler {
 
@@ -133,6 +133,13 @@ public class S3SetupManager implements InstructionHandler {
 			.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
 	private static final Pattern LEADING_ZEROS_PAT = Pattern.compile("^0+");
+
+	/**
+	 * Constructor.
+	 */
+	public S3SetupManager() {
+		super();
+	}
 
 	/**
 	 * Get the default destination path.
