@@ -29,7 +29,6 @@ import org.openmuc.jmbus.MBusConnection.MBusSerialBuilder;
 import net.solarnetwork.node.io.mbus.WMBusNetwork;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
-import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Serial jMBus implementation of {@link WMBusNetwork}.
@@ -60,6 +59,7 @@ public class JMBusSerialMBusNetwork extends JMBusMBusNetwork implements SettingS
 	@Override
 	protected org.openmuc.jmbus.MBusConnection createJMBusConnection() throws IOException {
 		final MBusSerialBuilder builder = MBusConnection.newSerialBuilder(serialParams.getPortName());
+		serialParams.populateSerialSettings(builder);
 		builder.setTimeout(getTransportTimeout());
 		return builder.build();
 	}
@@ -95,7 +95,7 @@ public class JMBusSerialMBusNetwork extends JMBusMBusNetwork implements SettingS
 	@Override
 	public List<SettingSpecifier> getSettingSpecifiers() {
 		List<SettingSpecifier> results = basicIdentifiableSettings();
-		results.add(new BasicTextFieldSettingSpecifier("serialParams.portName", DEFAULT_PORT_NAME));
+		results.addAll(JMBusSerialParameters.settingSpecifiers("serialParams."));
 		results.addAll(super.getSettingSpecifiers());
 		return results;
 	}

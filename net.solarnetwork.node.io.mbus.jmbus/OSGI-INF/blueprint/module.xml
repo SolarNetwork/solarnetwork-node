@@ -21,6 +21,20 @@
 				<value>net.solarnetwork.service.support.BasicIdentifiable</value>
 			</list>
 		</property>
+		<property name="parentMessageSource">
+			<bean class="net.solarnetwork.support.PrefixedMessageSource">
+				<property name="prefix" value="serialParams."/>
+				<property name="delegate">
+					<bean class="org.springframework.context.support.ResourceBundleMessageSource">
+						<property name="basenames">
+							<list>
+								<value>net.solarnetwork.node.service.support.SerialPortBeanParameters</value>
+							</list>
+						</property>
+					</bean>
+				</property>
+			</bean>
+		</property>
 	</bean>
 	
 	<service interface="net.solarnetwork.settings.SettingSpecifierProviderFactory">
