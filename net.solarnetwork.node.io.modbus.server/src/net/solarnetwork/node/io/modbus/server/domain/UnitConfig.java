@@ -1,21 +1,21 @@
 /* ==================================================================
  * UnitConfig.java - 17/09/2020 3:59:10 PM
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -41,20 +41,20 @@ import net.solarnetwork.util.ArrayUtils;
 
 /**
  * Configuration for a single Modbus unit.
- * 
+ *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class UnitConfig {
 
 	/**
 	 * A setting type pattern for a unit configuration element.
-	 * 
+	 *
 	 * <p>
 	 * The pattern has two capture groups: the unit configuration index and the
 	 * property setting name.
 	 * </p>
-	 * 
+	 *
 	 * @since 2.2
 	 */
 	public static final Pattern UNIT_SETTING_PATTERN = Pattern
@@ -64,8 +64,15 @@ public class UnitConfig {
 	private RegisterBlockConfig[] registerBlockConfigs;
 
 	/**
+	 * Constructor.
+	 */
+	public UnitConfig() {
+		super();
+	}
+
+	/**
 	 * Get settings suitable for configuring an instance of this class.
-	 * 
+	 *
 	 * @param prefix
 	 *        a setting key prefix to use
 	 * @return the settings, never {@literal null}
@@ -76,7 +83,7 @@ public class UnitConfig {
 
 	/**
 	 * Get settings suitable for configuring an instance of this class.
-	 * 
+	 *
 	 * @param prefix
 	 *        a setting key prefix to use
 	 * @param messageSource
@@ -109,7 +116,7 @@ public class UnitConfig {
 
 	/**
 	 * Populate a setting as a property configuration value, if possible.
-	 * 
+	 *
 	 * @param config
 	 *        the overall configuration
 	 * @param setting
@@ -150,7 +157,7 @@ public class UnitConfig {
 
 	/**
 	 * Generate a list of setting values.
-	 * 
+	 *
 	 * @param providerId
 	 *        the setting provider ID
 	 * @param instanceId
@@ -199,7 +206,7 @@ public class UnitConfig {
 
 	/**
 	 * Get the unit ID.
-	 * 
+	 *
 	 * @return the unit ID
 	 */
 	public int getUnitId() {
@@ -208,7 +215,7 @@ public class UnitConfig {
 
 	/**
 	 * Set the unit ID.
-	 * 
+	 *
 	 * @param unitId
 	 *        the unit ID to set
 	 */
@@ -218,7 +225,7 @@ public class UnitConfig {
 
 	/**
 	 * Get the register block configurations.
-	 * 
+	 *
 	 * @return the register block configurations
 	 */
 	public RegisterBlockConfig[] getRegisterBlockConfigs() {
@@ -227,7 +234,7 @@ public class UnitConfig {
 
 	/**
 	 * Set the register block configurations to use.
-	 * 
+	 *
 	 * @param registerBlockConfigs
 	 *        the configurations to use
 	 */
@@ -237,7 +244,7 @@ public class UnitConfig {
 
 	/**
 	 * Get the number of configured {@code registerBlockConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code registerBlockConfigs} elements
 	 */
 	public int getRegisterBlockConfigsCount() {
@@ -247,12 +254,12 @@ public class UnitConfig {
 
 	/**
 	 * Adjust the number of configured {@code RegisterBlockConfig} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link RegisterBlockConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code registerBlockConfigs} elements.
 	 */

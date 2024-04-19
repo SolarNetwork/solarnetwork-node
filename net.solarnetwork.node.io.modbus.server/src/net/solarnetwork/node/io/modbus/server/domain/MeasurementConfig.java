@@ -1,21 +1,21 @@
 /* ==================================================================
  * MeasurementConfig.java - 17/09/2020 4:05:43 PM
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -42,9 +42,9 @@ import net.solarnetwork.util.NumberUtils;
 
 /**
  * Configuration for a Modbus measurement captured from a datum source property.
- * 
+ *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class MeasurementConfig {
 
@@ -62,12 +62,12 @@ public class MeasurementConfig {
 
 	/**
 	 * A setting type pattern for a unit configuration element.
-	 * 
+	 *
 	 * <p>
 	 * The pattern has two capture groups: the unit configuration index and the
 	 * property setting name.
 	 * </p>
-	 * 
+	 *
 	 * @since 2.2
 	 */
 	public static final Pattern MEASUREMENT_SETTING_PATTERN = Pattern
@@ -81,8 +81,15 @@ public class MeasurementConfig {
 	private Integer decimalScale = DEFAULT_DECIMAL_SCALE;
 
 	/**
+	 * Constructor.
+	 */
+	public MeasurementConfig() {
+		super();
+	}
+
+	/**
 	 * Populate a setting as a property configuration value, if possible.
-	 * 
+	 *
 	 * @param config
 	 *        the overall configuration
 	 * @param setting
@@ -133,7 +140,7 @@ public class MeasurementConfig {
 
 	/**
 	 * Get settings suitable for configuring an instance of this class.
-	 * 
+	 *
 	 * @param prefix
 	 *        a setting key prefix to use
 	 * @return the settings, never {@literal null}
@@ -166,7 +173,7 @@ public class MeasurementConfig {
 
 	/**
 	 * Generate a list of setting values.
-	 * 
+	 *
 	 * @param providerId
 	 *        the setting provider ID
 	 * @param instanceId
@@ -211,7 +218,7 @@ public class MeasurementConfig {
 
 	/**
 	 * Test if this configuration is empty.
-	 * 
+	 *
 	 * @return {@literal true} if all properties are null
 	 * @since 2.2
 	 */
@@ -222,7 +229,7 @@ public class MeasurementConfig {
 
 	/**
 	 * Test if this configuration appears to be valid.
-	 * 
+	 *
 	 * @return {@literal true} if the configuration has all necessary properties
 	 *         configured
 	 * @since 2.2
@@ -236,7 +243,7 @@ public class MeasurementConfig {
 
 	/**
 	 * Apply the configured unit multiplier and decimal scale, if appropriate.
-	 * 
+	 *
 	 * @param propVal
 	 *        the property value to transform; only {@link Number} values will
 	 *        be transformed
@@ -280,7 +287,7 @@ public class MeasurementConfig {
 
 	/**
 	 * Get the number of registers used by this measurement.
-	 * 
+	 *
 	 * @return the register count
 	 */
 	public int getSize() {
@@ -330,7 +337,7 @@ public class MeasurementConfig {
 
 	/**
 	 * Get the datum source ID.
-	 * 
+	 *
 	 * @return the source ID
 	 */
 	public String getSourceId() {
@@ -339,7 +346,7 @@ public class MeasurementConfig {
 
 	/**
 	 * Set the datum source ID.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to set
 	 */
@@ -349,11 +356,11 @@ public class MeasurementConfig {
 
 	/**
 	 * Get the sample property name.
-	 * 
+	 *
 	 * <p>
 	 * This value represents a key in a datum property map.
 	 * </p>
-	 * 
+	 *
 	 * @return the sample property name
 	 */
 	public String getPropertyName() {
@@ -362,11 +369,11 @@ public class MeasurementConfig {
 
 	/**
 	 * Set the sample property key.
-	 * 
+	 *
 	 * <p>
 	 * This value represents a key in a datum map.
 	 * </p>
-	 * 
+	 *
 	 * @param name
 	 *        the sample property name
 	 */
@@ -376,7 +383,7 @@ public class MeasurementConfig {
 
 	/**
 	 * Get the data type.
-	 * 
+	 *
 	 * @return the type
 	 */
 	public ModbusDataType getDataType() {
@@ -385,7 +392,7 @@ public class MeasurementConfig {
 
 	/**
 	 * Set the data type.
-	 * 
+	 *
 	 * @param dataType
 	 *        the type to set
 	 */
@@ -398,7 +405,7 @@ public class MeasurementConfig {
 
 	/**
 	 * Get the data type as a key value.
-	 * 
+	 *
 	 * @return the type as a key
 	 */
 	public String getDataTypeKey() {
@@ -408,7 +415,7 @@ public class MeasurementConfig {
 
 	/**
 	 * Set the data type as a string value.
-	 * 
+	 *
 	 * @param key
 	 *        the type key to set
 	 */
@@ -418,11 +425,11 @@ public class MeasurementConfig {
 
 	/**
 	 * Get the number of Modbus registers to read.
-	 * 
+	 *
 	 * <p>
 	 * This is only used for data types of unknown length, like strings.
 	 * </p>
-	 * 
+	 *
 	 * @return the register count to read
 	 */
 	public Integer getWordLength() {
@@ -431,11 +438,11 @@ public class MeasurementConfig {
 
 	/**
 	 * Set the number of Modbus registers to read.
-	 * 
+	 *
 	 * <p>
 	 * This is only used for data types of unknown length, like strings.
 	 * </p>
-	 * 
+	 *
 	 * @param wordLength
 	 *        the register count to read
 	 */
@@ -448,7 +455,7 @@ public class MeasurementConfig {
 
 	/**
 	 * Get the unit multiplier.
-	 * 
+	 *
 	 * @return the multiplier
 	 */
 	public BigDecimal getUnitMultiplier() {
@@ -457,7 +464,7 @@ public class MeasurementConfig {
 
 	/**
 	 * Set the unit multiplier.
-	 * 
+	 *
 	 * <p>
 	 * This value represents a multiplication factor to apply to values
 	 * collected for this property so that a standardized unit is captured. For
@@ -465,7 +472,7 @@ public class MeasurementConfig {
 	 * case {@code multiplier} can be configured as {@literal .001} to convert
 	 * the value to <i>watts</i>.
 	 * </p>
-	 * 
+	 *
 	 * @param unitMultiplier
 	 *        the mutliplier to set
 	 */
@@ -475,7 +482,7 @@ public class MeasurementConfig {
 
 	/**
 	 * Get the decimal scale to round decimal numbers to.
-	 * 
+	 *
 	 * @return the decimal scale
 	 */
 	public Integer getDecimalScale() {
@@ -484,14 +491,14 @@ public class MeasurementConfig {
 
 	/**
 	 * Set the decimal scale to round decimal numbers to.
-	 * 
+	 *
 	 * <p>
 	 * This is a <i>maximum</i> scale value that decimal values should be
 	 * rounded to. This is applied <i>after</i> any {@code unitMultiplier} is
 	 * applied. A scale of {@literal 0} would round all decimals to integer
 	 * values.
 	 * </p>
-	 * 
+	 *
 	 * @param decimalScale
 	 *        the scale to set, or {@literal -1} to disable rounding completely
 	 */
