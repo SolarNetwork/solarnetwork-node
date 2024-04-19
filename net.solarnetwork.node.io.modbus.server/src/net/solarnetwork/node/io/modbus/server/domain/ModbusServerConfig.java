@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusServerConfig.java - 9/03/2022 1:48:03 PM
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -29,9 +29,9 @@ import net.solarnetwork.node.settings.SettingValueBean;
 
 /**
  * Overall configuration for a Modbus data source.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 2.2
  */
 public class ModbusServerConfig {
@@ -43,8 +43,15 @@ public class ModbusServerConfig {
 	private final List<UnitConfig> unitConfigs = new ArrayList<>(8);
 
 	/**
+	 * Constructor.
+	 */
+	public ModbusServerConfig() {
+		super();
+	}
+
+	/**
 	 * Get the unit configuration for a given unit ID.
-	 * 
+	 *
 	 * @param unitId
 	 *        the ID to look for
 	 * @return the unit configuration, or {@literal null} if not found
@@ -56,7 +63,7 @@ public class ModbusServerConfig {
 
 	/**
 	 * Generate a list of setting values from this instance.
-	 * 
+	 *
 	 * @param providerId
 	 *        the setting provider key to use
 	 * @return the list of setting values, never {@literal null}
@@ -77,7 +84,7 @@ public class ModbusServerConfig {
 
 	/**
 	 * Populate a setting as a configuration value, if possible.
-	 * 
+	 *
 	 * @param setting
 	 *        the setting to try to handle
 	 * @return {@literal true} if the setting was handled as a configuration
@@ -150,7 +157,7 @@ public class ModbusServerConfig {
 
 	/**
 	 * Get the instance key.
-	 * 
+	 *
 	 * @return the key
 	 */
 	public String getKey() {
@@ -159,7 +166,7 @@ public class ModbusServerConfig {
 
 	/**
 	 * Set the instance ID.
-	 * 
+	 *
 	 * @param key
 	 *        the key to set
 	 */
@@ -169,7 +176,7 @@ public class ModbusServerConfig {
 
 	/**
 	 * Get the bind address.
-	 * 
+	 *
 	 * @return the bind address
 	 */
 	public String getBindAddress() {
@@ -178,7 +185,7 @@ public class ModbusServerConfig {
 
 	/**
 	 * Set the bind address.
-	 * 
+	 *
 	 * @param bindAddress
 	 *        the bind address to set
 	 */
@@ -188,7 +195,7 @@ public class ModbusServerConfig {
 
 	/**
 	 * Get the listen port.
-	 * 
+	 *
 	 * @return the port
 	 */
 	public Integer getPort() {
@@ -197,7 +204,7 @@ public class ModbusServerConfig {
 
 	/**
 	 * Set the listen port.
-	 * 
+	 *
 	 * @param port
 	 *        the port to set
 	 */
@@ -207,7 +214,7 @@ public class ModbusServerConfig {
 
 	/**
 	 * Get the request throttle.
-	 * 
+	 *
 	 * @return the throttle, in milliseconds
 	 */
 	public Long getRequestThrottle() {
@@ -216,7 +223,7 @@ public class ModbusServerConfig {
 
 	/**
 	 * Set the request throttle.
-	 * 
+	 *
 	 * @param requestThrottle
 	 *        the throttle to set, in milliseconds
 	 */
@@ -226,7 +233,7 @@ public class ModbusServerConfig {
 
 	/**
 	 * Get the unit configurations.
-	 * 
+	 *
 	 * @return the configurations, never {@literal null}
 	 */
 	public List<UnitConfig> getUnitConfigs() {
@@ -235,7 +242,7 @@ public class ModbusServerConfig {
 
 	/**
 	 * Get the number of configured {@code unitConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code unitConfigs} elements
 	 */
 	public int getUnitConfigsCount() {

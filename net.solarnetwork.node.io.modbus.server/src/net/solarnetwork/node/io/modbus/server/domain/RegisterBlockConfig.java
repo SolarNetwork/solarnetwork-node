@@ -1,21 +1,21 @@
 /* ==================================================================
  * RegisterBlockConfig.java - 17/09/2020 3:58:34 PM
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -47,21 +47,21 @@ import net.solarnetwork.util.ArrayUtils;
 /**
  * Configuration for a block of Modbus registers of a certain type (coil,
  * holding, etc.).
- * 
+ *
  * <p>
  * The block starts at address {@link #getStartAddress()}, and then occupies as
  * many registers as specified by all the configured
  * {@link #getMeasurementConfigs()}.
  * </p>
- * 
+ *
  * <p>
  * <b>Note</b> that the {@link RegisterBlockType#Coil} and
  * {@link RegisterBlockType#Discrete} imply each configured measurement uses one
  * on/off register.
  * </p>
- * 
+ *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class RegisterBlockConfig {
 
@@ -70,12 +70,12 @@ public class RegisterBlockConfig {
 
 	/**
 	 * A setting type pattern for a register block configuration element.
-	 * 
+	 *
 	 * <p>
 	 * The pattern has two capture groups: the block configuration index and the
 	 * property setting name.
 	 * </p>
-	 * 
+	 *
 	 * @since 2.2
 	 */
 	public static final Pattern BLOCK_SETTING_PATTERN = Pattern
@@ -86,8 +86,15 @@ public class RegisterBlockConfig {
 	private MeasurementConfig[] measurementConfigs;
 
 	/**
+	 * Constructor.
+	 */
+	public RegisterBlockConfig() {
+		super();
+	}
+
+	/**
 	 * Populate a setting as a configuration value, if possible.
-	 * 
+	 *
 	 * @param config
 	 *        the overall configuration
 	 * @param setting
@@ -130,7 +137,7 @@ public class RegisterBlockConfig {
 
 	/**
 	 * Get settings suitable for configuring an instance of this class.
-	 * 
+	 *
 	 * @param prefix
 	 *        a setting key prefix to use
 	 * @return the settings, never {@literal null}
@@ -141,7 +148,7 @@ public class RegisterBlockConfig {
 
 	/**
 	 * Get settings suitable for configuring an instance of this class.
-	 * 
+	 *
 	 * @param prefix
 	 *        a setting key prefix to use
 	 * @param messageSource
@@ -189,7 +196,7 @@ public class RegisterBlockConfig {
 
 	/**
 	 * Generate a list of setting values.
-	 * 
+	 *
 	 * @param providerId
 	 *        the setting provider ID
 	 * @param instanceId
@@ -264,7 +271,7 @@ public class RegisterBlockConfig {
 
 	/**
 	 * Get the count of registers this block represents.
-	 * 
+	 *
 	 * @return the count of registers
 	 */
 	public int getBlockLength() {
@@ -304,7 +311,7 @@ public class RegisterBlockConfig {
 
 	/**
 	 * Get the register block starting address.
-	 * 
+	 *
 	 * @return the starting address
 	 */
 	public int getStartAddress() {
@@ -313,7 +320,7 @@ public class RegisterBlockConfig {
 
 	/**
 	 * Set the register block starting address.
-	 * 
+	 *
 	 * @param startAddress
 	 *        the address to set; if &lt; {@literal 0} will be forced to
 	 *        {@literal 0}
@@ -327,7 +334,7 @@ public class RegisterBlockConfig {
 
 	/**
 	 * Get the block type.
-	 * 
+	 *
 	 * @return the block type, never {@literal null}
 	 */
 	public RegisterBlockType getBlockType() {
@@ -336,7 +343,7 @@ public class RegisterBlockConfig {
 
 	/**
 	 * Set the block type.
-	 * 
+	 *
 	 * @param blockType
 	 *        the type to set; if {@literal null} then will be forced to
 	 *        {@link #DEFAULT_BLOCK_TYPE}
@@ -350,7 +357,7 @@ public class RegisterBlockConfig {
 
 	/**
 	 * Get the block type, as a key value.
-	 * 
+	 *
 	 * @return the block type key
 	 */
 	public String getBlockTypeKey() {
@@ -359,7 +366,7 @@ public class RegisterBlockConfig {
 
 	/**
 	 * Set the block type, as a key value.
-	 * 
+	 *
 	 * @param key
 	 *        the block type to set
 	 */
@@ -373,7 +380,7 @@ public class RegisterBlockConfig {
 
 	/**
 	 * Get the measurement configurations.
-	 * 
+	 *
 	 * @return the measurement configurations
 	 */
 	public MeasurementConfig[] getMeasurementConfigs() {
@@ -382,7 +389,7 @@ public class RegisterBlockConfig {
 
 	/**
 	 * Set the measurement configurations to use.
-	 * 
+	 *
 	 * @param measurementConfigs
 	 *        the configurations to use
 	 */
@@ -392,7 +399,7 @@ public class RegisterBlockConfig {
 
 	/**
 	 * Get the number of configured {@code measurementConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code measurementConfigs} elements
 	 */
 	public int getMeasurementConfigsCount() {
@@ -402,12 +409,12 @@ public class RegisterBlockConfig {
 
 	/**
 	 * Adjust the number of configured {@code MeasurementConfig} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link MeasurementConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code measurementConfigs} elements.
 	 */
