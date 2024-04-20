@@ -179,6 +179,9 @@ public class ModbusServer extends BaseIdentifiable
 	 * Upon return the server will be bound and ready to accept connections on
 	 * the configured port.
 	 * </p>
+	 *
+	 * @throws IOException
+	 *         if an IO error occurs
 	 */
 	public synchronized void start() throws IOException {
 		if ( server != null ) {
