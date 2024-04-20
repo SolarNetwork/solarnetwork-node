@@ -1,35 +1,28 @@
 /* ==================================================================
  * ModbusServer.java - 17/09/2020 4:54:54 PM
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.io.modbus.server.impl;
 
-import static java.lang.String.format;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
-import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -38,15 +31,11 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
@@ -54,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.TaskScheduler;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.io.modbus.tcp.netty.NettyTcpModbusServer;
 import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.io.modbus.ModbusData;
 import net.solarnetwork.node.io.modbus.ModbusDataType;
@@ -75,17 +65,17 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.ObjectUtils;
 import net.solarnetwork.util.StringUtils;
-import net.wimpi.modbus.io.ModbusTCPTransport;
 
 /**
  * Modbus TCP server service.
- * 
+ *
  * @author matt
- * @version 2.4
+ * @version 3.0
  */
 public class ModbusServer extends BaseIdentifiable
-		implements SettingSpecifierProvider, SettingsChangeObserver, EventHandler, ThreadFactory {
+		implements SettingSpecifierProvider, SettingsChangeObserver, EventHandler {
 
 	/** The default listen port. */
 	public static final int DEFAULT_PORT = 502;
@@ -93,43 +83,46 @@ public class ModbusServer extends BaseIdentifiable
 	/** The default startup delay, in seconds. */
 	public static final int DEFAULT_STARTUP_DELAY_SECS = 15;
 
-	/** The default {@code maxBacklog} property value. */
+	/**
+	 * The default {@code maxBacklog} property value.
+	 *
+	 * @deprecated no longer used
+	 */
+	@Deprecated
 	public static final int DEFAULT_BACKLOG = 5;
 
 	/** The default {@code bindAddress} property value. */
 	public static final String DEFAULT_BIND_ADDRESS = "0.0.0.0";
 
-	/** The default {@code requestThrottle} property value. */
-	public static final long DEFAULT_REQUEST_THROTTLE = 100;
-
 	/**
 	 * The setting UID used by this service.
-	 * 
+	 *
 	 * @since 2.3
 	 */
 	public static final String SETTING_UID = "net.solarnetwork.node.io.modbus.server";
 
+	/** The {@code pendingMessageTtl} property default value. */
+	public static final long DEFAULT_PENDING_MESSAGE_TTL = TimeUnit.MINUTES.toMillis(2);
+
 	private static final Logger log = LoggerFactory.getLogger(ModbusServer.class);
 
 	private final Executor executor;
-	private final Executor serverExecutor;
 	private final ConcurrentMap<Integer, ModbusRegisterData> registers;
-	private final AtomicInteger clientThreadCount = new AtomicInteger(0);
+	private final ModbusConnectionHandler handler;
 	private int port = DEFAULT_PORT;
 	private String bindAddress = DEFAULT_BIND_ADDRESS;
-	private int backlog = DEFAULT_BACKLOG;
 	private int startupDelay = DEFAULT_STARTUP_DELAY_SECS;
-	private long requestThrottle = DEFAULT_REQUEST_THROTTLE;
 	private TaskScheduler taskScheduler;
 	private UnitConfig[] unitConfigs;
-	private boolean allowWrites;
+	private long pendingMessageTtl = DEFAULT_PENDING_MESSAGE_TTL;
+	private boolean wireLogging;
 
+	private NettyTcpModbusServer server;
 	private ScheduledFuture<?> startupFuture;
-	private ServerThread serverThread;
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param executor
 	 *        the executor to handle client connections with
 	 * @throws IllegalArgumentException
@@ -141,7 +134,7 @@ public class ModbusServer extends BaseIdentifiable
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param executor
 	 *        the executor to handle client connections with
 	 * @param registers
@@ -151,27 +144,24 @@ public class ModbusServer extends BaseIdentifiable
 	 */
 	public ModbusServer(Executor executor, ConcurrentMap<Integer, ModbusRegisterData> registers) {
 		super();
-		if ( executor == null ) {
-			throw new IllegalArgumentException("The executor argument must not be null.");
-		}
-		this.executor = executor;
-		this.serverExecutor = Executors.newCachedThreadPool(this);
-		if ( registers == null ) {
-			throw new IllegalArgumentException("The registers argument must not be null.");
-		}
-		this.registers = registers;
+		this.executor = ObjectUtils.requireNonNullArgument(executor, "executor");
+		this.registers = ObjectUtils.requireNonNullArgument(registers, "registers");
+		this.handler = new ModbusConnectionHandler(registers, this::description);
 	}
 
-	@Override
-	public Thread newThread(Runnable r) {
-		Thread thread = new Thread(null, r,
-				format("ModbusServer-%d-Client-%d", getPort(), clientThreadCount.incrementAndGet()));
-		thread.setDaemon(true);
-		return thread;
+	private String description() {
+		String uid = getUid();
+		if ( uid != null && !uid.isEmpty() ) {
+			return uid + " (port " + port + ")";
+		}
+		return "port " + port;
 	}
 
 	@Override
 	public void configurationChanged(Map<String, Object> properties) {
+		if ( server != null ) {
+			log.info("Restarting Modbus server [{}] from configuration change", description());
+		}
 		restartServer();
 	}
 
@@ -183,46 +173,66 @@ public class ModbusServer extends BaseIdentifiable
 	}
 
 	/**
+	 * Start the server.
+	 *
+	 * <p>
+	 * Upon return the server will be bound and ready to accept connections on
+	 * the configured port.
+	 * </p>
+	 */
+	public synchronized void start() throws IOException {
+		if ( server != null ) {
+			return;
+		}
+		try {
+			server = new NettyTcpModbusServer(bindAddress, port);
+			server.setMessageHandler(handler);
+			server.setWireLogging(wireLogging);
+			server.setPendingMessageTtl(pendingMessageTtl);
+			server.start();
+		} catch ( Exception e ) {
+			String msg = String.format("Error starting Modbus server [%s]", description());
+			if ( e instanceof IOException ) {
+				log.warn("{}: {}", msg, e.getMessage());
+				throw (IOException) e;
+			} else {
+				log.error(msg, e);
+			}
+			throw new RuntimeException(msg, e);
+		}
+	}
+
+	/**
 	 * Shut down the server.
 	 */
-	public void shutdown() {
+	public synchronized void stop() {
 		if ( startupFuture != null && !startupFuture.isDone() ) {
 			startupFuture.cancel(true);
 			startupFuture = null;
 		}
-		if ( serverThread != null ) {
-			serverThread.finish();
-			serverThread = null;
+		if ( server != null ) {
+			server.stop();
+			server = null;
 		}
 	}
 
 	private synchronized void restartServer() {
-		shutdown();
+		stop();
 		Runnable startupTask = new Runnable() {
 
 			@Override
 			public void run() {
 				synchronized ( ModbusServer.this ) {
 					startupFuture = null;
-					if ( serverThread != null ) {
-						try {
-							serverThread.finish();
-						} finally {
-							serverThread = null;
-						}
-					}
 					try {
-						serverThread = new ServerThread(bindAddress, port, backlog);
-						serverThread.start();
-					} catch ( IOException e ) {
-						if ( serverThread != null ) {
-							serverThread.finish();
-							serverThread = null;
-						}
-						log.error("Error binding Modbus server {} to {}:{}: {}", ModbusServer.this, port,
-								bindAddress, e.toString());
+						start();
+						log.info("Started Modbus server [{}]", description());
+					} catch ( Exception e ) {
+						stop();
+						log.error("Error binding Modbus server [{}] to {}:{}: {}", ModbusServer.this,
+								bindAddress, port, e.toString());
 						if ( taskScheduler != null ) {
-							log.info("Will start Modbus server on port {} in {} seconds", port,
+							log.info("Will start Modbus server [{}] in {} seconds", description(),
 									startupDelay);
 							startupFuture = taskScheduler.schedule(this,
 									new Date(System.currentTimeMillis() + startupDelay * 1000L));
@@ -232,106 +242,11 @@ public class ModbusServer extends BaseIdentifiable
 			}
 		};
 		if ( taskScheduler != null ) {
-			log.info("Will start Modbus server on port {} in {} seconds", port, startupDelay);
+			log.info("Will start Modbus server [{}] in {} seconds", description(), startupDelay);
 			startupFuture = taskScheduler.schedule(startupTask,
 					new Date(System.currentTimeMillis() + startupDelay * 1000L));
 		} else {
 			startupTask.run();
-		}
-	}
-
-	private final class ServerThread extends Thread {
-
-		private final InetAddress addr;
-		private final int port;
-		private final int backlog;
-		private ServerSocket socket;
-		private boolean listening;
-
-		private final Set<ModbusConnectionHandler> clients = new CopyOnWriteArraySet<>();
-
-		private ServerThread(String bindAddress, int port, int backlog) throws IOException {
-			super();
-			this.addr = InetAddress.getByName(bindAddress);
-			this.port = port;
-			this.backlog = backlog;
-			bind();
-		}
-
-		private synchronized void bind() throws IOException {
-			socket = new ServerSocket();
-			socket.setReuseAddress(true);
-			socket.setSoTimeout(60000);
-			socket.bind(new InetSocketAddress(this.addr, port), backlog);
-			this.listening = true;
-			log.info("Modbus server listening on {}:{}", addr, port);
-		}
-
-		private synchronized void finish() {
-			this.listening = false;
-			close();
-		}
-
-		private synchronized void close() {
-			try {
-				if ( socket != null && !socket.isClosed() ) {
-					for ( ModbusConnectionHandler handler : clients ) {
-						try {
-							handler.close();
-						} catch ( IOException e ) {
-							log.debug("Error closing Modbus TCP client connection: " + e.toString());
-						}
-					}
-					clients.clear();
-					try {
-						socket.close();
-					} catch ( IOException e ) {
-						log.warn("Error closing Modbus server {}:{}: {}", addr, port, e.toString());
-					}
-				}
-			} finally {
-				socket = null;
-			}
-		}
-
-		@Override
-		public void run() {
-			try {
-				while ( true ) {
-					synchronized ( this ) {
-						if ( !listening ) {
-							return;
-						}
-					}
-					try {
-						if ( socket == null ) {
-							bind();
-						}
-						Socket in = socket.accept();
-						log.debug("Modbus server {}:{} connection created: {}", addr, port, in);
-						ModbusConnectionHandler handler = new ModbusConnectionHandler(
-								new ModbusTCPTransport(in), registers,
-								String.format("TCP %s:%d %d", addr, port, in.getLocalPort()), in,
-								requestThrottle, allowWrites);
-						clients.add(handler);
-						serverExecutor.execute(handler);
-					} catch ( SocketTimeoutException e ) {
-						//  just try to accept again
-						log.debug("Socket timeout exception in Modbus server {}:{}: {}", addr, port,
-								e.toString());
-					} catch ( SocketException e ) {
-						// just try to accept again
-						log.debug("Socket exception in Modbus server {}:{}: {}", addr, port,
-								e.toString());
-					} catch ( IOException e ) {
-						// close and try again
-						close();
-					}
-				}
-			} finally {
-				close();
-				log.info("Modbus server {}:{} finished.", addr, port);
-			}
 		}
 	}
 
@@ -511,7 +426,7 @@ public class ModbusServer extends BaseIdentifiable
 		result.add(new BasicTextFieldSettingSpecifier("bindAddress", DEFAULT_BIND_ADDRESS));
 		result.add(new BasicTextFieldSettingSpecifier("port", String.valueOf(DEFAULT_PORT)));
 		result.add(new BasicTextFieldSettingSpecifier("requestThrottle",
-				String.valueOf(DEFAULT_REQUEST_THROTTLE)));
+				String.valueOf(ModbusConnectionHandler.DEFAULT_REQUEST_THROTTLE)));
 		result.add(new BasicToggleSettingSpecifier("allowWrites", false));
 
 		UnitConfig[] blockConfs = getUnitConfigs();
@@ -595,7 +510,7 @@ public class ModbusServer extends BaseIdentifiable
 
 	/**
 	 * Get the task scheduler.
-	 * 
+	 *
 	 * @return the task scheduler
 	 */
 	public TaskScheduler getTaskScheduler() {
@@ -604,7 +519,7 @@ public class ModbusServer extends BaseIdentifiable
 
 	/**
 	 * Set the task scheduler.
-	 * 
+	 *
 	 * @param taskScheduler
 	 *        the task scheduler to set
 	 */
@@ -614,7 +529,7 @@ public class ModbusServer extends BaseIdentifiable
 
 	/**
 	 * Get the startup delay.
-	 * 
+	 *
 	 * @return the startup delay, in seconds
 	 */
 	public int getStartupDelay() {
@@ -623,7 +538,7 @@ public class ModbusServer extends BaseIdentifiable
 
 	/**
 	 * Get the address to bind to.
-	 * 
+	 *
 	 * @return the address; defaults to {@link #DEFAULT_BIND_ADDRESS}
 	 */
 	public String getBindAddress() {
@@ -632,7 +547,7 @@ public class ModbusServer extends BaseIdentifiable
 
 	/**
 	 * Set the address to bind to.
-	 * 
+	 *
 	 * @param bindAddress
 	 *        the address to set
 	 */
@@ -642,7 +557,7 @@ public class ModbusServer extends BaseIdentifiable
 
 	/**
 	 * Set the startup delay.
-	 * 
+	 *
 	 * @param startupDelay
 	 *        the delay to set, in seconds
 	 */
@@ -652,26 +567,30 @@ public class ModbusServer extends BaseIdentifiable
 
 	/**
 	 * Get the server socket backlog setting.
-	 * 
+	 *
 	 * @return the backlog; defaults to {@link #DEFAULT_BACKLOG}
+	 * @deprecated only returns 0 now
 	 */
+	@Deprecated
 	public int getBacklog() {
-		return backlog;
+		return 0;
 	}
 
 	/**
 	 * Set the server socket backlog setting.
-	 * 
+	 *
 	 * @param backlog
 	 *        the backlog to set
+	 * @deprecated does not do anything anymore
 	 */
+	@Deprecated
 	public void setBacklog(int backlog) {
-		this.backlog = backlog;
+		// nothing
 	}
 
 	/**
 	 * Get the server listen port.
-	 * 
+	 *
 	 * @return the port; defaults to {@link #DEFAULT_PORT}
 	 */
 	public int getPort() {
@@ -680,7 +599,7 @@ public class ModbusServer extends BaseIdentifiable
 
 	/**
 	 * Set the server listen port.
-	 * 
+	 *
 	 * @param port
 	 *        the port to set
 	 */
@@ -690,7 +609,7 @@ public class ModbusServer extends BaseIdentifiable
 
 	/**
 	 * Get the block configurations.
-	 * 
+	 *
 	 * @return the block configurations
 	 */
 	public UnitConfig[] getUnitConfigs() {
@@ -699,7 +618,7 @@ public class ModbusServer extends BaseIdentifiable
 
 	/**
 	 * Set the block configurations to use.
-	 * 
+	 *
 	 * @param unitConfigs
 	 *        the configurations to use
 	 */
@@ -709,7 +628,7 @@ public class ModbusServer extends BaseIdentifiable
 
 	/**
 	 * Get the number of configured {@code unitConfigs} elements.
-	 * 
+	 *
 	 * @return the number of {@code unitConfigs} elements
 	 */
 	public int getUnitConfigsCount() {
@@ -719,12 +638,12 @@ public class ModbusServer extends BaseIdentifiable
 
 	/**
 	 * Adjust the number of configured {@code UnitConfig} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new {@link UnitConfig}
 	 * instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code unitConfigs} elements.
 	 */
@@ -734,48 +653,97 @@ public class ModbusServer extends BaseIdentifiable
 
 	/**
 	 * Get the request throttle.
-	 * 
+	 *
 	 * @return the minimum time in milliseconds allowed between client requests,
 	 *         or {@code 0} for no minimum
 	 * @since 2.2
 	 */
 	public long getRequestThrottle() {
-		return requestThrottle;
+		return handler.getRequestThrottle();
 	}
 
 	/**
 	 * Set the request throttle.
-	 * 
+	 *
 	 * @param requestThrottle
 	 *        the minimum time in milliseconds allowed between client requests,
 	 *        or {@code 0} to disable
 	 * @since 2.2
 	 */
 	public void setRequestThrottle(long requestThrottle) {
-		this.requestThrottle = requestThrottle;
+		handler.setRequestThrottle(requestThrottle);
 	}
 
 	/**
 	 * Get the toggle value to allow Modbus writes.
-	 * 
+	 *
 	 * @return {@literal true} to allow Modbus clients to write to holding/coil
 	 *         registers
 	 * @since 2.4
 	 */
 	public boolean isAllowWrites() {
-		return allowWrites;
+		return handler.isAllowWrites();
 	}
 
 	/**
 	 * Toggle allowing Modbus writes.
-	 * 
+	 *
 	 * @param allowWrites
 	 *        {@literal true} to allow Modbus clients to write to holding/coil
 	 *        registers
 	 * @since 2.4
 	 */
 	public void setAllowWrites(boolean allowWrites) {
-		this.allowWrites = allowWrites;
+		handler.setAllowWrites(allowWrites);
+	}
+
+	/**
+	 * Get the "wire logging" setting.
+	 *
+	 * @return {@literal true} to enable wire-level logging of all messages
+	 * @since 4.0
+	 */
+	public boolean isWireLogging() {
+		return wireLogging;
+	}
+
+	/**
+	 * Set the "wire logging" setting.
+	 *
+	 * @param wireLogging
+	 *        {@literal true} to enable wire-level logging of all messages
+	 * @since 4.0
+	 */
+	public void setWireLogging(boolean wireLogging) {
+		this.wireLogging = wireLogging;
+	}
+
+	/**
+	 * Get the pending Modbus message time-to-live expiration time.
+	 *
+	 * @return the pendingMessageTtl the pending Modbus message time-to-live, in
+	 *         milliseconds; defaults to {@link #DEFAULT_PENDING_MESSAGE_TTL}
+	 * @since 4.0
+	 */
+	public long getPendingMessageTtl() {
+		return pendingMessageTtl;
+	}
+
+	/**
+	 * Set the pending Modbus message time-to-live expiration time.
+	 *
+	 * <p>
+	 * This timeout represents the minimum amount of time the client will wait
+	 * for a Modbus message response, before it qualifies for removal from the
+	 * pending message queue.
+	 * </p>
+	 *
+	 * @param pendingMessageTtl
+	 *        the pending Modbus message time-to-live, in milliseconds
+	 * @since 4.0
+	 */
+	public void setPendingMessageTtl(long pendingMessageTtl) {
+		this.pendingMessageTtl = pendingMessageTtl;
 	}
 
 }
