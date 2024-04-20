@@ -106,7 +106,7 @@
 				</beans:array>
 			</beans:entry>
 		</osgix:service-properties>
-		<bean class="net.solarnetwork.node.io.modbus.server.impl.ModbusServer" init-method="startup" destroy-method="shutdown">
+		<bean class="net.solarnetwork.node.io.modbus.server.impl.ModbusServer" init-method="serviceDidStartup" destroy-method="serviceDidShutdown">
 			<argument ref="taskExecutor"/>
 			<property name="messageSource" ref="messageSource"/>
 			<property name="taskScheduler" ref="taskScheduler"/>

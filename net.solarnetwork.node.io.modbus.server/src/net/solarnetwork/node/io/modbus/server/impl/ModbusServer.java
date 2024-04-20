@@ -56,6 +56,7 @@ import net.solarnetwork.node.service.DatumEvents;
 import net.solarnetwork.node.service.DatumQueue;
 import net.solarnetwork.node.service.NodeControlProvider;
 import net.solarnetwork.node.service.support.BaseIdentifiable;
+import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.SettingsChangeObserver;
@@ -74,8 +75,8 @@ import net.solarnetwork.util.StringUtils;
  * @author matt
  * @version 3.0
  */
-public class ModbusServer extends BaseIdentifiable
-		implements SettingSpecifierProvider, SettingsChangeObserver, EventHandler {
+public class ModbusServer extends BaseIdentifiable implements SettingSpecifierProvider,
+		SettingsChangeObserver, ServiceLifecycleObserver, EventHandler {
 
 	/** The default listen port. */
 	public static final int DEFAULT_PORT = 502;
@@ -165,11 +166,15 @@ public class ModbusServer extends BaseIdentifiable
 		restartServer();
 	}
 
-	/**
-	 * Start up the server.
-	 */
-	public void startup() {
+	@Override
+	public void serviceDidStartup() {
 		restartServer();
+
+	}
+
+	@Override
+	public void serviceDidShutdown() {
+		stop();
 	}
 
 	/**
@@ -193,6 +198,7 @@ public class ModbusServer extends BaseIdentifiable
 			server.setWireLogging(wireLogging);
 			server.setPendingMessageTtl(pendingMessageTtl);
 			server.start();
+			log.info("Started Modbus server [{}]", description());
 		} catch ( Exception e ) {
 			String msg = String.format("Error starting Modbus server [%s]", description());
 			if ( e instanceof IOException ) {
@@ -215,6 +221,7 @@ public class ModbusServer extends BaseIdentifiable
 		}
 		if ( server != null ) {
 			server.stop();
+			log.info("Stopped Modbus server [{}]", description());
 			server = null;
 		}
 	}
@@ -229,7 +236,6 @@ public class ModbusServer extends BaseIdentifiable
 					startupFuture = null;
 					try {
 						start();
-						log.info("Started Modbus server [{}]", description());
 					} catch ( Exception e ) {
 						stop();
 						log.error("Error binding Modbus server [{}] to {}:{}: {}", ModbusServer.this,
