@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModbusRegisterData.java - 18/09/2020 7:27:27 AM
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -36,9 +36,9 @@ import net.solarnetwork.node.io.modbus.ModbusDataUtils;
 
 /**
  * Data for a Modbus register set.
- * 
+ *
  * @author matt
- * @version 1.1
+ * @version 2.0
  */
 public class ModbusRegisterData {
 
@@ -58,12 +58,12 @@ public class ModbusRegisterData {
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * <p>
 	 * If any argument is {@literal null} a new instance will be created and
 	 * used for that value.
 	 * </p>
-	 * 
+	 *
 	 * @param coils
 	 *        the coil register data
 	 * @param discretes
@@ -83,7 +83,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write a bit to a coil or discrete block type.
-	 * 
+	 *
 	 * @param blockType
 	 *        the block type, must be either {@literal Coil} or
 	 *        {@literal Discrete}
@@ -111,7 +111,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write a non-bit register value.
-	 * 
+	 *
 	 * @param blockType
 	 *        the block type, must be either {@literal Holding} or
 	 *        {@literal Input}
@@ -194,12 +194,12 @@ public class ModbusRegisterData {
 
 	/**
 	 * Read a set of coil values.
-	 * 
+	 *
 	 * <p>
 	 * The returned set starts at index {@code 0}, meaning the indexes are
 	 * shifted down by {@code address} positions.
 	 * </p>
-	 * 
+	 *
 	 * @param address
 	 *        the starting register address
 	 * @param count
@@ -212,7 +212,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write a single coil register value.
-	 * 
+	 *
 	 * @param address
 	 *        the register address
 	 * @param value
@@ -224,7 +224,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write a set of coil register values.
-	 * 
+	 *
 	 * @param address
 	 *        the register address to start at
 	 * @param count
@@ -238,7 +238,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write a single discrete register value.
-	 * 
+	 *
 	 * @param address
 	 *        the register address
 	 * @param value
@@ -250,7 +250,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write a set of discrete register values.
-	 * 
+	 *
 	 * @param address
 	 *        the register address to start at
 	 * @param count
@@ -278,12 +278,12 @@ public class ModbusRegisterData {
 
 	/**
 	 * Read a set of discrete values.
-	 * 
+	 *
 	 * <p>
 	 * The returned set starts at index {@code 0}, meaning the indexes are
 	 * shifted down by {@code address} positions.
 	 * </p>
-	 * 
+	 *
 	 * @param address
 	 *        the starting register address
 	 * @param count
@@ -296,33 +296,33 @@ public class ModbusRegisterData {
 
 	/**
 	 * Read holding register data into a byte array.
-	 * 
+	 *
 	 * @param address
 	 *        the starting address
 	 * @param count
 	 *        the number of registers
-	 * @return the register data, of length {@code count * 2}
+	 * @return the register data
 	 */
-	public byte[] readHoldings(int address, int count) {
-		return readBytes(address, count, holdings);
+	public short[] readHoldings(int address, int count) {
+		return readShorts(address, count, holdings);
 	}
 
 	/**
 	 * Read holding register data into a byte array.
-	 * 
+	 *
 	 * @param address
 	 *        the starting address
 	 * @param count
 	 *        the number of registers
-	 * @return the register data, of length {@code count * 2}
+	 * @return the register data
 	 */
-	public byte[] readInputs(int address, int count) {
-		return readBytes(address, count, inputs);
+	public short[] readInputs(int address, int count) {
+		return readShorts(address, count, inputs);
 	}
 
 	/**
 	 * Write a holding register value.
-	 * 
+	 *
 	 * @param address
 	 *        the register address to save
 	 * @param value
@@ -334,7 +334,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write holding register values.
-	 * 
+	 *
 	 * @param address
 	 *        the starting register address to save
 	 * @param values
@@ -361,7 +361,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write an input register value.
-	 * 
+	 *
 	 * @param address
 	 *        the register address to save
 	 * @param value
@@ -373,7 +373,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Write input register values.
-	 * 
+	 *
 	 * @param address
 	 *        the starting register address to save
 	 * @param values
@@ -413,8 +413,8 @@ public class ModbusRegisterData {
 		return result;
 	}
 
-	private byte[] readBytes(int address, int count, ModbusData data) {
-		byte[] result = new byte[count * 2];
+	private short[] readShorts(int address, int count, ModbusData data) {
+		short[] result = new short[count];
 		try {
 			// use performUpdates for synchronization
 			data.performUpdates(new ModbusDataUpdateAction() {
@@ -422,7 +422,7 @@ public class ModbusRegisterData {
 				@Override
 				public boolean updateModbusData(MutableModbusData m) {
 					for ( int i = 0, len = count; i < len; i++ ) {
-						System.arraycopy(data.getBytes(i + address, 2), 0, result, i * 2, 2);
+						result[i] = data.dataRegisters().getValue(i + address);
 					}
 					return true;
 				}
@@ -435,7 +435,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Get the coil register data.
-	 * 
+	 *
 	 * @return the coil registers, never {@literal null}
 	 */
 	public BitSet getCoils() {
@@ -444,7 +444,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Get the discrete register data.
-	 * 
+	 *
 	 * @return the discrete registers, never {@literal null}
 	 */
 	public BitSet getDiscretes() {
@@ -453,7 +453,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Get the input register data.
-	 * 
+	 *
 	 * @return the input registers, never {@literal null}
 	 */
 	public ModbusData getInputs() {
@@ -462,7 +462,7 @@ public class ModbusRegisterData {
 
 	/**
 	 * Get the holding register data.
-	 * 
+	 *
 	 * @return the holding registers, never {@literal null}
 	 */
 	public ModbusData getHoldings() {

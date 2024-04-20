@@ -1,131 +1,120 @@
 /* ==================================================================
  * ModbusConnectionHandlerTests.java - 18/09/2020 9:44:25 AM
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.io.modbus.server.impl.test;
 
-import static org.easymock.EasyMock.capture;
-import static org.easymock.EasyMock.expect;
+import static net.solarnetwork.io.modbus.ModbusByteUtils.encodeHexString;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
+import static org.hamcrest.Matchers.notNullValue;
+import java.math.BigInteger;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.easymock.Capture;
-import org.easymock.CaptureType;
-import org.easymock.EasyMock;
-import org.junit.After;
+import java.util.function.Consumer;
 import org.junit.Before;
 import org.junit.Test;
+import net.solarnetwork.io.modbus.ModbusFunctionCode;
+import net.solarnetwork.io.modbus.ModbusMessage;
+import net.solarnetwork.io.modbus.netty.msg.BitsModbusMessage;
+import net.solarnetwork.io.modbus.netty.msg.RegistersModbusMessage;
 import net.solarnetwork.node.io.modbus.server.domain.ModbusRegisterData;
 import net.solarnetwork.node.io.modbus.server.impl.ModbusConnectionHandler;
-import net.wimpi.modbus.Modbus;
-import net.wimpi.modbus.ModbusIOException;
-import net.wimpi.modbus.io.ModbusTransport;
-import net.wimpi.modbus.msg.ModbusMessage;
-import net.wimpi.modbus.msg.ModbusRequest;
-import net.wimpi.modbus.msg.ReadCoilsRequest;
-import net.wimpi.modbus.msg.ReadInputDiscretesRequest;
-import net.wimpi.modbus.msg.ReadInputRegistersRequest;
-import net.wimpi.modbus.msg.ReadMultipleRegistersRequest;
 
 /**
  * Test cases for the {@link ModbusConnectionHandler} class.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 2.0
  */
-public class ModbusConnectionHandlerTests {
+public class ModbusConnectionHandlerTests implements Consumer<net.solarnetwork.io.modbus.ModbusMessage> {
 
-	private ModbusTransport transport;
+	private static final int DEFAULT_UNIT_ID = 2;
+
 	private ConcurrentMap<Integer, ModbusRegisterData> units;
 	private ModbusRegisterData registers;
 	private ModbusConnectionHandler handler;
 
+	private net.solarnetwork.io.modbus.ModbusMessage msg;
+
 	@Before
 	public void setup() {
-		transport = EasyMock.createMock(ModbusTransport.class);
 		units = new ConcurrentHashMap<>(1, 0.9f, 1);
 		registers = new ModbusRegisterData();
-		units.put(2, registers);
-		handler = new ModbusConnectionHandler(transport, units, "Test");
+		units.put(DEFAULT_UNIT_ID, registers);
+		handler = new ModbusConnectionHandler(units, () -> "Test");
+		msg = null;
 	}
 
-	private void replayAll() {
-		EasyMock.replay(transport);
-	}
-
-	@After
-	public void teardown() {
-		EasyMock.verify(transport);
-	}
-
-	private void expectReadMessages(Capture<ModbusMessage> captor, ModbusRequest... reqs)
-			throws Exception {
-		for ( ModbusRequest req : reqs ) {
-			expect(transport.readRequest()).andReturn(req);
-			transport.writeMessage(capture(captor));
-		}
-		expect(transport.readRequest()).andThrow(new ModbusIOException(true));
-		transport.close();
+	@Override
+	public void accept(net.solarnetwork.io.modbus.ModbusMessage t) {
+		msg = t;
 	}
 
 	@Test
 	public void readCoil() throws Exception {
 		// GIVEN
-		ReadCoilsRequest req = new ReadCoilsRequest(0, 1);
-		req.setTransactionID(1);
-		req.setUnitID(2);
-		Capture<ModbusMessage> msgCaptor = Capture.newInstance();
-		expectReadMessages(msgCaptor, req);
+		final int address = 3;
+		final int count = 1;
+		BitsModbusMessage req = BitsModbusMessage.readCoilsRequest(DEFAULT_UNIT_ID, address, count);
 
 		// WHEN
-		replayAll();
-		handler.run();
+		handler.accept(req, this);
 
 		// THEN
-		ModbusMessage msg = msgCaptor.getValue();
-		assertThat("Response function code", msg.getFunctionCode(), equalTo(Modbus.READ_COILS));
-		assertThat("Response frame", msg.getHexMessage().trim().toUpperCase(),
-				equalTo("00 01 00 00 00 04 02 01 01 00"));
+		net.solarnetwork.io.modbus.BitsModbusMessage res = msg
+				.unwrap(net.solarnetwork.io.modbus.BitsModbusMessage.class);
+		assertThat("Response is bits", res, is(notNullValue()));
+
+		assertThat("Response function code", res.getFunction().functionCode(),
+				is(equalTo(ModbusFunctionCode.ReadCoils)));
+		assertThat("Response unit ID", res.getUnitId(), is(equalTo(DEFAULT_UNIT_ID)));
+		assertThat("Response address", res.getAddress(), is(equalTo(address)));
+		assertThat("Response data", res.getBits(), is(equalTo(BigInteger.ZERO)));
 	}
 
 	@Test
 	public void readCoil_on() throws Exception {
 		// GIVEN
-		registers.writeCoil(22, true);
-		ReadCoilsRequest req = new ReadCoilsRequest(22, 1);
-		req.setTransactionID(1);
-		req.setUnitID(2);
-		Capture<ModbusMessage> msgCaptor = Capture.newInstance();
-		expectReadMessages(msgCaptor, req);
+		final int address = 22;
+		final int count = 1;
+		BitsModbusMessage req = BitsModbusMessage.readCoilsRequest(DEFAULT_UNIT_ID, address, count);
+
+		registers.writeCoil(address, true);
 
 		// WHEN
-		replayAll();
-		handler.run();
+		handler.accept(req, this);
 
 		// THEN
-		ModbusMessage msg = msgCaptor.getValue();
-		assertThat("Response function code", msg.getFunctionCode(), equalTo(Modbus.READ_COILS));
-		assertThat("Response frame", msg.getHexMessage().trim().toUpperCase(),
-				equalTo("00 01 00 00 00 04 02 01 01 01"));
+		net.solarnetwork.io.modbus.BitsModbusMessage res = msg
+				.unwrap(net.solarnetwork.io.modbus.BitsModbusMessage.class);
+		assertThat("Response is bits", res, is(notNullValue()));
+
+		assertThat("Response function code", res.getFunction().functionCode(),
+				is(equalTo(ModbusFunctionCode.ReadCoils)));
+		assertThat("Response unit ID", res.getUnitId(), is(equalTo(DEFAULT_UNIT_ID)));
+		assertThat("Response address", res.getAddress(), is(equalTo(address)));
+		assertThat("Response data", res.getBits(), is(equalTo(BigInteger.ONE)));
 	}
 
 	@Test
@@ -138,69 +127,79 @@ public class ModbusConnectionHandlerTests {
 		registers.writeCoil(7, true);
 		registers.writeCoil(9, true);
 		registers.writeCoil(10, true);
-		ReadCoilsRequest req = new ReadCoilsRequest(0, 11);
-		req.setTransactionID(1);
-		req.setUnitID(2);
-		Capture<ModbusMessage> msgCaptor = Capture.newInstance();
-		expectReadMessages(msgCaptor, req);
+
+		final int address = 0;
+		final int count = 11;
+		BitsModbusMessage req = BitsModbusMessage.readCoilsRequest(DEFAULT_UNIT_ID, address, count);
 
 		// WHEN
-		replayAll();
-		handler.run();
+		handler.accept(req, this);
 
 		// THEN
-		ModbusMessage msg = msgCaptor.getValue();
-		assertThat("Response function code", msg.getFunctionCode(), equalTo(Modbus.READ_COILS));
-		assertThat("Response frame", msg.getHexMessage().trim().toUpperCase(),
-				equalTo("00 01 00 00 00 05 02 01 02 E5 06"));
+		net.solarnetwork.io.modbus.BitsModbusMessage res = msg
+				.unwrap(net.solarnetwork.io.modbus.BitsModbusMessage.class);
+		assertThat("Response is bits", res, is(notNullValue()));
+
+		assertThat("Response function code", res.getFunction().functionCode(),
+				is(equalTo(ModbusFunctionCode.ReadCoils)));
+		assertThat("Response unit ID", res.getUnitId(), is(equalTo(DEFAULT_UNIT_ID)));
+		assertThat("Response address", res.getAddress(), is(equalTo(address)));
+		assertThat("Response data", res.getBits(), is(equalTo(BigInteger.valueOf(0x6E5L))));
 	}
 
 	@Test
 	public void readDiscrete() throws Exception {
 		// GIVEN
-		ReadInputDiscretesRequest req = new ReadInputDiscretesRequest(0, 1);
-		req.setTransactionID(1);
-		req.setUnitID(2);
-		Capture<ModbusMessage> msgCaptor = Capture.newInstance();
-		expectReadMessages(msgCaptor, req);
+		final int address = 0;
+		final int count = 1;
+		BitsModbusMessage req = BitsModbusMessage.readDiscretesRequest(DEFAULT_UNIT_ID, address, count);
 
 		// WHEN
-		replayAll();
-		handler.run();
+		handler.accept(req, this);
 
 		// THEN
-		ModbusMessage msg = msgCaptor.getValue();
-		assertThat("Response function code", msg.getFunctionCode(),
-				equalTo(Modbus.READ_INPUT_DISCRETES));
-		assertThat("Response frame", msg.getHexMessage().trim().toUpperCase(),
-				equalTo("00 01 00 00 00 04 02 02 01 00"));
+		net.solarnetwork.io.modbus.BitsModbusMessage res = msg
+				.unwrap(net.solarnetwork.io.modbus.BitsModbusMessage.class);
+		assertThat("Response is bits", res, is(notNullValue()));
+
+		assertThat("Response function code", res.getFunction().functionCode(),
+				is(equalTo(ModbusFunctionCode.ReadDiscreteInputs)));
+		assertThat("Response unit ID", res.getUnitId(), is(equalTo(DEFAULT_UNIT_ID)));
+		assertThat("Response address", res.getAddress(), is(equalTo(address)));
+		assertThat("Response data", res.getBits(), is(equalTo(BigInteger.ZERO)));
 	}
 
 	@Test
 	public void readDiscrete_on() throws Exception {
 		// GIVEN
-		registers.writeDiscrete(22, true);
-		ReadInputDiscretesRequest req = new ReadInputDiscretesRequest(22, 1);
-		req.setTransactionID(1);
-		req.setUnitID(2);
-		Capture<ModbusMessage> msgCaptor = Capture.newInstance();
-		expectReadMessages(msgCaptor, req);
+		final int address = 22;
+		final int count = 1;
+		BitsModbusMessage req = BitsModbusMessage.readDiscretesRequest(DEFAULT_UNIT_ID, address, count);
+
+		registers.writeDiscrete(address, true);
 
 		// WHEN
-		replayAll();
-		handler.run();
+		handler.accept(req, this);
 
 		// THEN
-		ModbusMessage msg = msgCaptor.getValue();
-		assertThat("Response function code", msg.getFunctionCode(),
-				equalTo(Modbus.READ_INPUT_DISCRETES));
-		assertThat("Response frame", msg.getHexMessage().trim().toUpperCase(),
-				equalTo("00 01 00 00 00 04 02 02 01 01"));
+		net.solarnetwork.io.modbus.BitsModbusMessage res = msg
+				.unwrap(net.solarnetwork.io.modbus.BitsModbusMessage.class);
+		assertThat("Response is bits", res, is(notNullValue()));
+
+		assertThat("Response function code", res.getFunction().functionCode(),
+				is(equalTo(ModbusFunctionCode.ReadDiscreteInputs)));
+		assertThat("Response unit ID", res.getUnitId(), is(equalTo(DEFAULT_UNIT_ID)));
+		assertThat("Response address", res.getAddress(), is(equalTo(address)));
+		assertThat("Response data", res.getBits(), is(equalTo(BigInteger.ONE)));
 	}
 
 	@Test
 	public void readDiscretes() throws Exception {
 		// GIVEN
+		final int address = 0;
+		final int count = 11;
+		BitsModbusMessage req = BitsModbusMessage.readDiscretesRequest(DEFAULT_UNIT_ID, address, count);
+
 		registers.writeDiscrete(0, true);
 		registers.writeDiscrete(2, true);
 		registers.writeDiscrete(5, true);
@@ -208,147 +207,172 @@ public class ModbusConnectionHandlerTests {
 		registers.writeDiscrete(7, true);
 		registers.writeDiscrete(9, true);
 		registers.writeDiscrete(10, true);
-		ReadInputDiscretesRequest req = new ReadInputDiscretesRequest(0, 11);
-		req.setTransactionID(1);
-		req.setUnitID(2);
-		Capture<ModbusMessage> msgCaptor = Capture.newInstance();
-		expectReadMessages(msgCaptor, req);
 
 		// WHEN
-		replayAll();
-		handler.run();
+		handler.accept(req, this);
 
 		// THEN
-		ModbusMessage msg = msgCaptor.getValue();
-		assertThat("Response function code", msg.getFunctionCode(),
-				equalTo(Modbus.READ_INPUT_DISCRETES));
-		assertThat("Response frame", msg.getHexMessage().trim().toUpperCase(),
-				equalTo("00 01 00 00 00 05 02 02 02 E5 06"));
+		net.solarnetwork.io.modbus.BitsModbusMessage res = msg
+				.unwrap(net.solarnetwork.io.modbus.BitsModbusMessage.class);
+		assertThat("Response is bits", res, is(notNullValue()));
+
+		assertThat("Response function code", res.getFunction().functionCode(),
+				is(equalTo(ModbusFunctionCode.ReadDiscreteInputs)));
+		assertThat("Response unit ID", res.getUnitId(), is(equalTo(DEFAULT_UNIT_ID)));
+		assertThat("Response address", res.getAddress(), is(equalTo(address)));
+		assertThat("Response data", res.getBits(), is(equalTo(BigInteger.valueOf(0x6E5L))));
 	}
 
 	@Test
 	public void readHolding() throws Exception {
 		// GIVEN
-		registers.writeHolding(17, (short) 123);
-		ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(17, 1);
-		req.setTransactionID(1);
-		req.setUnitID(2);
-		Capture<ModbusMessage> msgCaptor = Capture.newInstance();
-		expectReadMessages(msgCaptor, req);
+		final int address = 17;
+		final int count = 1;
+		RegistersModbusMessage req = RegistersModbusMessage.readHoldingsRequest(DEFAULT_UNIT_ID, address,
+				count);
+
+		registers.writeHolding(address, (short) 123);
 
 		// WHEN
-		replayAll();
-		handler.run();
+		handler.accept(req, this);
 
 		// THEN
-		ModbusMessage msg = msgCaptor.getValue();
-		assertThat("Response function code", msg.getFunctionCode(),
-				equalTo(Modbus.READ_MULTIPLE_REGISTERS));
-		assertThat("Response frame", msg.getHexMessage().trim().toUpperCase(),
-				equalTo("00 01 00 00 00 05 02 03 02 00 7B"));
+		net.solarnetwork.io.modbus.RegistersModbusMessage res = msg
+				.unwrap(net.solarnetwork.io.modbus.RegistersModbusMessage.class);
+		assertThat("Response is registers", res, is(notNullValue()));
+
+		assertThat("Response function code", res.getFunction().functionCode(),
+				is(equalTo(ModbusFunctionCode.ReadHoldingRegisters)));
+		assertThat("Response unit ID", res.getUnitId(), is(equalTo(DEFAULT_UNIT_ID)));
+		assertThat("Response address", res.getAddress(), is(equalTo(address)));
+		assertThat("Response data", encodeHexString(res.dataCopy(), 0, 2), is(equalTo("007B")));
 	}
 
 	@Test
 	public void readHoldings() throws Exception {
 		// GIVEN
+		final int address = 17;
+		final int count = 3;
+		RegistersModbusMessage req = RegistersModbusMessage.readHoldingsRequest(DEFAULT_UNIT_ID, address,
+				count);
+
 		registers.writeHolding(17, (short) 123);
 		registers.writeHolding(19, (short) 0xFEDC);
-		ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(17, 3);
-		req.setTransactionID(1);
-		req.setUnitID(2);
-		Capture<ModbusMessage> msgCaptor = Capture.newInstance();
-		expectReadMessages(msgCaptor, req);
 
 		// WHEN
-		replayAll();
-		handler.run();
+		handler.accept(req, this);
 
 		// THEN
-		ModbusMessage msg = msgCaptor.getValue();
-		assertThat("Response function code", msg.getFunctionCode(),
-				equalTo(Modbus.READ_MULTIPLE_REGISTERS));
-		assertThat("Response frame", msg.getHexMessage().trim().toUpperCase(),
-				equalTo("00 01 00 00 00 09 02 03 06 00 7B 00 00 FE DC"));
+		net.solarnetwork.io.modbus.RegistersModbusMessage res = msg
+				.unwrap(net.solarnetwork.io.modbus.RegistersModbusMessage.class);
+		assertThat("Response is registers", res, is(notNullValue()));
+
+		assertThat("Response function code", res.getFunction().functionCode(),
+				is(equalTo(ModbusFunctionCode.ReadHoldingRegisters)));
+		assertThat("Response unit ID", res.getUnitId(), is(equalTo(DEFAULT_UNIT_ID)));
+		assertThat("Response address", res.getAddress(), is(equalTo(address)));
+		assertThat("Response data", encodeHexString(res.dataCopy(), 0, 6), is(equalTo("007B0000FEDC")));
 	}
 
 	@Test
 	public void readHoldings_throttled() throws Exception {
 		// GIVEN
-		handler = new ModbusConnectionHandler(transport, units, "Test", null, 1000);
-		registers.writeHolding(17, (short) 0x007B);
-		registers.writeHolding(19, (short) 0xFEDC);
-		Capture<ModbusMessage> msgCaptor = Capture.newInstance(CaptureType.ALL);
+		final int address = 17;
+		final int count = 1;
+		RegistersModbusMessage req1 = RegistersModbusMessage.readHoldingsRequest(DEFAULT_UNIT_ID,
+				address, count);
+		RegistersModbusMessage req2 = RegistersModbusMessage.readHoldingsRequest(DEFAULT_UNIT_ID,
+				address + 2, count);
 
-		ReadMultipleRegistersRequest req = new ReadMultipleRegistersRequest(17, 1);
-		req.setTransactionID(1);
-		req.setUnitID(2);
-
-		ReadMultipleRegistersRequest req2 = new ReadMultipleRegistersRequest(19, 1);
-		req.setTransactionID(2);
-		req.setUnitID(2);
-
-		expectReadMessages(msgCaptor, req, req2);
+		handler.setRequestThrottle(1000);
+		registers.writeHolding(address, (short) 0x007B);
+		registers.writeHolding(address + 2, (short) 0xFEDC);
 
 		// WHEN
-		replayAll();
-		handler.run();
+		handler.accept(req1, this);
+
+		final long start = System.currentTimeMillis();
+		ModbusMessage msg1 = this.msg;
+		this.msg = null;
+
+		handler.accept(req2, this);
+
+		final long end = System.currentTimeMillis();
+		ModbusMessage msg2 = this.msg;
 
 		// THEN
-		ModbusMessage msg = msgCaptor.getValues().get(0);
-		assertThat("Response function code", msg.getFunctionCode(),
-				equalTo(Modbus.READ_MULTIPLE_REGISTERS));
-		assertThat("Response frame", msg.getHexMessage().trim().toUpperCase(),
-				equalTo("00 02 00 00 00 05 02 03 02 00 7B"));
+		net.solarnetwork.io.modbus.RegistersModbusMessage res = msg1
+				.unwrap(net.solarnetwork.io.modbus.RegistersModbusMessage.class);
+		assertThat("Response is registers", res, is(notNullValue()));
 
-		msg = msgCaptor.getValues().get(1);
-		assertThat("Response 2 function code", msg.getFunctionCode(),
-				equalTo(Modbus.READ_MULTIPLE_REGISTERS));
-		assertThat("Response 2 frame", msg.getHexMessage().trim().toUpperCase(),
-				equalTo("00 00 00 00 00 05 00 03 02 00 00"));
+		assertThat("Response function code", res.getFunction().functionCode(),
+				is(equalTo(ModbusFunctionCode.ReadHoldingRegisters)));
+		assertThat("Response unit ID", res.getUnitId(), is(equalTo(DEFAULT_UNIT_ID)));
+		assertThat("Response address", res.getAddress(), is(equalTo(address)));
+		assertThat("Response data", encodeHexString(res.dataCopy(), 0, 2), is(equalTo("007B")));
+
+		res = msg2.unwrap(net.solarnetwork.io.modbus.RegistersModbusMessage.class);
+		assertThat("Response 2 is registers", res, is(notNullValue()));
+
+		assertThat("Response 2 function code", res.getFunction().functionCode(),
+				is(equalTo(ModbusFunctionCode.ReadHoldingRegisters)));
+		assertThat("Response 2 unit ID", res.getUnitId(), is(equalTo(DEFAULT_UNIT_ID)));
+		assertThat("Response 2 address", res.getAddress(), is(equalTo(address + 2)));
+		assertThat("Response 2 data", encodeHexString(res.dataCopy(), 0, 2), is(equalTo("FEDC")));
+
+		assertThat("Response 2 throttled", Math.abs(end - start - handler.getRequestThrottle()),
+				is(lessThanOrEqualTo(100L)));
 	}
 
 	@Test
 	public void readInput() throws Exception {
 		// GIVEN
-		registers.writeInput(17, (short) 123);
-		ReadInputRegistersRequest req = new ReadInputRegistersRequest(17, 1);
-		req.setTransactionID(1);
-		req.setUnitID(2);
-		Capture<ModbusMessage> msgCaptor = Capture.newInstance();
-		expectReadMessages(msgCaptor, req);
+		// GIVEN
+		final int address = 17;
+		final int count = 1;
+		RegistersModbusMessage req = RegistersModbusMessage.readInputsRequest(DEFAULT_UNIT_ID, address,
+				count);
+
+		registers.writeInput(address, (short) 123);
 
 		// WHEN
-		replayAll();
-		handler.run();
+		handler.accept(req, this);
 
 		// THEN
-		ModbusMessage msg = msgCaptor.getValue();
-		assertThat("Response function code", msg.getFunctionCode(),
-				equalTo(Modbus.READ_INPUT_REGISTERS));
-		assertThat("Response frame", msg.getHexMessage().trim().toUpperCase(),
-				equalTo("00 01 00 00 00 05 02 04 02 00 7B"));
+		net.solarnetwork.io.modbus.RegistersModbusMessage res = msg
+				.unwrap(net.solarnetwork.io.modbus.RegistersModbusMessage.class);
+		assertThat("Response is registers", res, is(notNullValue()));
+
+		assertThat("Response function code", res.getFunction().functionCode(),
+				is(equalTo(ModbusFunctionCode.ReadInputRegisters)));
+		assertThat("Response unit ID", res.getUnitId(), is(equalTo(DEFAULT_UNIT_ID)));
+		assertThat("Response address", res.getAddress(), is(equalTo(address)));
+		assertThat("Response data", encodeHexString(res.dataCopy(), 0, 2), is(equalTo("007B")));
 	}
 
 	@Test
 	public void readInputs() throws Exception {
 		// GIVEN
+		final int address = 17;
+		final int count = 3;
+		RegistersModbusMessage req = RegistersModbusMessage.readInputsRequest(DEFAULT_UNIT_ID, address,
+				count);
+
 		registers.writeInput(17, (short) 123);
 		registers.writeInput(19, (short) 0xFEDC);
-		ReadInputRegistersRequest req = new ReadInputRegistersRequest(17, 3);
-		req.setTransactionID(1);
-		req.setUnitID(2);
-		Capture<ModbusMessage> msgCaptor = Capture.newInstance();
-		expectReadMessages(msgCaptor, req);
 
 		// WHEN
-		replayAll();
-		handler.run();
+		handler.accept(req, this);
 
 		// THEN
-		ModbusMessage msg = msgCaptor.getValue();
-		assertThat("Response function code", msg.getFunctionCode(),
-				equalTo(Modbus.READ_INPUT_REGISTERS));
-		assertThat("Response frame", msg.getHexMessage().trim().toUpperCase(),
-				equalTo("00 01 00 00 00 09 02 04 06 00 7B 00 00 FE DC"));
+		net.solarnetwork.io.modbus.RegistersModbusMessage res = msg
+				.unwrap(net.solarnetwork.io.modbus.RegistersModbusMessage.class);
+		assertThat("Response is registers", res, is(notNullValue()));
+
+		assertThat("Response function code", res.getFunction().functionCode(),
+				is(equalTo(ModbusFunctionCode.ReadInputRegisters)));
+		assertThat("Response unit ID", res.getUnitId(), is(equalTo(DEFAULT_UNIT_ID)));
+		assertThat("Response address", res.getAddress(), is(equalTo(address)));
+		assertThat("Response data", encodeHexString(res.dataCopy(), 0, 6), is(equalTo("007B0000FEDC")));
 	}
 }

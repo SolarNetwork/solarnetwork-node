@@ -1,119 +1,113 @@
 /* ==================================================================
  * ModbusConnectionHandler.java - 18/09/2020 6:55:36 AM
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
 
 package net.solarnetwork.node.io.modbus.server.impl;
 
-import java.io.Closeable;
-import java.io.IOException;
+import static net.solarnetwork.io.modbus.netty.msg.BitsModbusMessage.readCoilsResponse;
+import static net.solarnetwork.io.modbus.netty.msg.BitsModbusMessage.readDiscretesResponse;
+import static net.solarnetwork.io.modbus.netty.msg.BitsModbusMessage.writeCoilResponse;
+import static net.solarnetwork.io.modbus.netty.msg.BitsModbusMessage.writeCoilsResponse;
+import static net.solarnetwork.io.modbus.netty.msg.RegistersModbusMessage.readHoldingsResponse;
+import static net.solarnetwork.io.modbus.netty.msg.RegistersModbusMessage.readInputsResponse;
+import static net.solarnetwork.io.modbus.netty.msg.RegistersModbusMessage.writeHoldingResponse;
+import static net.solarnetwork.io.modbus.netty.msg.RegistersModbusMessage.writeHoldingsResponse;
+import java.math.BigInteger;
 import java.util.BitSet;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.solarnetwork.io.modbus.BitsModbusMessage;
+import net.solarnetwork.io.modbus.ModbusErrorCode;
+import net.solarnetwork.io.modbus.ModbusFunctionCode;
+import net.solarnetwork.io.modbus.ModbusMessage;
+import net.solarnetwork.io.modbus.RegistersModbusMessage;
+import net.solarnetwork.io.modbus.netty.msg.BaseModbusMessage;
 import net.solarnetwork.node.io.modbus.server.domain.ModbusRegisterData;
-import net.wimpi.modbus.Modbus;
-import net.wimpi.modbus.ModbusIOException;
-import net.wimpi.modbus.io.ModbusTransport;
-import net.wimpi.modbus.msg.ModbusRequest;
-import net.wimpi.modbus.msg.ModbusResponse;
-import net.wimpi.modbus.msg.ReadCoilsRequest;
-import net.wimpi.modbus.msg.ReadInputDiscretesRequest;
-import net.wimpi.modbus.msg.ReadInputRegistersRequest;
-import net.wimpi.modbus.msg.ReadMultipleRegistersRequest;
-import net.wimpi.modbus.msg.WriteCoilRequest;
-import net.wimpi.modbus.msg.WriteMultipleCoilsRequest;
-import net.wimpi.modbus.msg.WriteMultipleRegistersRequest;
-import net.wimpi.modbus.msg.WriteSingleRegisterRequest;
-import net.wimpi.modbus.procimg.InputRegister;
-import net.wimpi.modbus.procimg.Register;
-import net.wimpi.modbus.procimg.SimpleRegister;
+import net.solarnetwork.util.NumberUtils;
+import net.solarnetwork.util.ObjectUtils;
 
 /**
  * Handler for a Modbus server connection.
- * 
+ *
  * @author matt
- * @version 1.2
+ * @version 2.0
  */
-public class ModbusConnectionHandler implements Runnable, Closeable {
+public class ModbusConnectionHandler implements BiConsumer<ModbusMessage, Consumer<ModbusMessage>> {
+
+	/** The default {@code requestThrottle} property value. */
+	public static final long DEFAULT_REQUEST_THROTTLE = 100;
 
 	private static final Logger log = LoggerFactory.getLogger(ModbusConnectionHandler.class);
 
-	private final String description;
+	private final Supplier<String> descriptor;
 	private final ConcurrentMap<Integer, ModbusRegisterData> registers;
-	private final ModbusTransport transport;
-	private final Closeable closeable;
-	private final long requestThrottle;
-	private final boolean allowWrites;
+	private long requestThrottle = DEFAULT_REQUEST_THROTTLE;
+	private boolean allowWrites;
+
+	private long lastRequestTime;
 
 	/**
 	 * Constructor.
-	 * 
-	 * @param transport
-	 *        the transport to use
+	 *
 	 * @param registers
 	 *        the register data
-	 * @param description
-	 *        a description for the connection
+	 * @param descriptor
+	 *        a descriptor.get() for the connection
 	 * @throws IllegalArgumentException
 	 *         if any argument is {@literal null}
 	 */
-	public ModbusConnectionHandler(ModbusTransport transport,
-			ConcurrentMap<Integer, ModbusRegisterData> registers, String description) {
-		this(transport, registers, description, null, 0);
+	public ModbusConnectionHandler(ConcurrentMap<Integer, ModbusRegisterData> registers,
+			Supplier<String> descriptor) {
+		this(registers, descriptor, 0);
 	}
 
 	/**
 	 * Constructor.
-	 * 
-	 * @param transport
-	 *        the transport to use
+	 *
 	 * @param registers
 	 *        the register data
-	 * @param description
-	 *        a description for the connection
-	 * @param closeable
-	 *        if provided, something to close when the handler is finished
+	 * @param descriptor
+	 *        a descriptor.get() for the connection
 	 * @param requestThrottle
 	 *        if greater than {@literal 0} then a throttle in milliseconds to
 	 *        handling requests
 	 * @throws IllegalArgumentException
 	 *         if any argument other than {@code closeable} is {@literal null}
 	 */
-	public ModbusConnectionHandler(ModbusTransport transport,
-			ConcurrentMap<Integer, ModbusRegisterData> registers, String description,
-			Closeable closeable, long requestThrottle) {
-		this(transport, registers, description, closeable, requestThrottle, false);
+	public ModbusConnectionHandler(ConcurrentMap<Integer, ModbusRegisterData> registers,
+			Supplier<String> descriptor, long requestThrottle) {
+		this(registers, descriptor, requestThrottle, false);
 	}
 
 	/**
 	 * Constructor.
-	 * 
-	 * @param transport
-	 *        the transport to use
+	 *
 	 * @param registers
 	 *        the register data
-	 * @param description
-	 *        a description for the connection
-	 * @param closeable
-	 *        if provided, something to close when the handler is finished
+	 * @param descriptor
+	 *        a descriptor.get() for the connection
 	 * @param requestThrottle
 	 *        if greater than {@literal 0} then a throttle in milliseconds to
 	 *        handling requests
@@ -121,25 +115,13 @@ public class ModbusConnectionHandler implements Runnable, Closeable {
 	 *        {@literal true} to allow Modbus write operations
 	 * @throws IllegalArgumentException
 	 *         if any argument other than {@code closeable} is {@literal null}
-	 * @since 1.2
+	 * @since 2.0
 	 */
-	public ModbusConnectionHandler(ModbusTransport transport,
-			ConcurrentMap<Integer, ModbusRegisterData> registers, String description,
-			Closeable closeable, long requestThrottle, boolean allowWrites) {
+	public ModbusConnectionHandler(ConcurrentMap<Integer, ModbusRegisterData> registers,
+			Supplier<String> descriptor, long requestThrottle, boolean allowWrites) {
 		super();
-		if ( transport == null ) {
-			throw new IllegalArgumentException("The transport argument must not be null.");
-		}
-		this.transport = transport;
-		if ( registers == null ) {
-			throw new IllegalArgumentException("The registers argument must not be null.");
-		}
-		this.registers = registers;
-		if ( description == null ) {
-			throw new IllegalArgumentException("The description argument must not be null.");
-		}
-		this.description = description;
-		this.closeable = closeable;
+		this.registers = ObjectUtils.requireNonNullArgument(registers, "registers");
+		this.descriptor = ObjectUtils.requireNonNullArgument(descriptor, "descriptor");
 		this.requestThrottle = requestThrottle;
 		this.allowWrites = allowWrites;
 	}
@@ -148,163 +130,215 @@ public class ModbusConnectionHandler implements Runnable, Closeable {
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
 		builder.append("ModbusConnectionHandler{");
-		builder.append(description);
+		builder.append(descriptor.get());
 		builder.append("}");
 		return builder.toString();
 	}
 
 	@Override
-	public void close() throws IOException {
-		transport.close();
-	}
-
-	@Override
-	public void run() {
-		long lastRequestTime = 0;
-		try {
-			do {
-				ModbusRequest req = transport.readRequest();
-				if ( requestThrottle > 0 ) {
-					long now = System.currentTimeMillis();
-					long elapsed = now - lastRequestTime;
-					if ( elapsed < requestThrottle ) {
-						try {
-							long diff = requestThrottle - elapsed;
-							log.trace("Request sooner than configured {}ms throttle: sleeping for {}ms",
-									requestThrottle, diff);
-							Thread.sleep(diff);
-						} catch ( InterruptedException e ) {
-							// ignore and continue
-						} finally {
-							lastRequestTime = System.currentTimeMillis();
-						}
-					} else {
-						lastRequestTime = now;
-					}
+	public void accept(ModbusMessage req, Consumer<ModbusMessage> dest) {
+		if ( requestThrottle > 0 ) {
+			long now = System.currentTimeMillis();
+			long elapsed = now - lastRequestTime;
+			if ( elapsed < requestThrottle ) {
+				try {
+					long diff = requestThrottle - elapsed;
+					log.trace("Request sooner than configured {}ms throttle: sleeping for {}ms",
+							requestThrottle, diff);
+					Thread.sleep(diff);
+				} catch ( InterruptedException e ) {
+					// ignore and continue
+				} finally {
+					lastRequestTime = System.currentTimeMillis();
 				}
-				if ( log.isTraceEnabled() ) {
-					log.trace("Modbus [{}] request: {}", description, req.getHexMessage());
-				}
-				ModbusResponse res = null;
-				if ( req instanceof ReadCoilsRequest ) {
-					res = readCoils((ReadCoilsRequest) req);
-				} else if ( req instanceof ReadInputDiscretesRequest ) {
-					res = readDiscretes((ReadInputDiscretesRequest) req);
-				} else if ( req instanceof ReadMultipleRegistersRequest ) {
-					res = readHoldings((ReadMultipleRegistersRequest) req);
-				} else if ( req instanceof ReadInputRegistersRequest ) {
-					res = readInputs((ReadInputRegistersRequest) req);
-				} else if ( allowWrites ) {
-					if ( req instanceof WriteMultipleRegistersRequest ) {
-						res = writeRegisters((WriteMultipleRegistersRequest) req);
-					} else if ( req instanceof WriteSingleRegisterRequest ) {
-						res = writeRegister((WriteSingleRegisterRequest) req);
-					} else if ( req instanceof WriteMultipleCoilsRequest ) {
-						res = writeCoils((WriteMultipleCoilsRequest) req);
-					} else if ( req instanceof WriteCoilRequest ) {
-						res = writeCoil((WriteCoilRequest) req);
-					}
-				}
-				if ( res == null ) {
-					res = req.createExceptionResponse(Modbus.ILLEGAL_FUNCTION_EXCEPTION);
-				}
-				if ( log.isTraceEnabled() ) {
-					log.trace("Modbus [{}] request {} response: {}", description, req.getHexMessage(),
-							res.getHexMessage());
-				}
-				transport.writeMessage(res);
-			} while ( true );
-		} catch ( ModbusIOException e ) {
-			if ( !e.isEOF() ) {
-				log.warn("Modbus [{}] communication error: {}", description, e.toString());
-			}
-		} finally {
-			try {
-				transport.close();
-			} catch ( IOException e ) {
-				//ignore
-			} finally {
-				if ( closeable != null ) {
-					try {
-						closeable.close();
-					} catch ( IOException e ) {
-						// ignore
-					}
-				}
+			} else {
+				lastRequestTime = now;
 			}
 		}
+		if ( log.isTraceEnabled() ) {
+			log.trace("Modbus [{}] request: {}", descriptor.get(), req);
+		}
+
+		ModbusMessage res = null;
+
+		final BitsModbusMessage bitReq = req.unwrap(BitsModbusMessage.class);
+		if ( bitReq != null ) {
+			res = handleBitsMessage(bitReq);
+		} else {
+
+			final RegistersModbusMessage regReq = req.unwrap(RegistersModbusMessage.class);
+			if ( regReq != null ) {
+				res = handleRegistersMessage(regReq);
+			}
+		}
+		if ( res == null ) {
+			res = new BaseModbusMessage(req.getUnitId(), req.getFunction(),
+					ModbusErrorCode.IllegalFunction);
+		}
+		if ( log.isTraceEnabled() ) {
+			log.trace("Modbus [{}] request {} response: {}", descriptor.get(), req, res);
+		}
+		dest.accept(res);
 	}
 
-	private ModbusRegisterData registerData(ModbusRequest req) {
-		final Integer unitId = req.getUnitID();
+	private ModbusMessage handleBitsMessage(BitsModbusMessage req) {
+		ModbusFunctionCode fn = req.getFunction().functionCode();
+		if ( fn == null ) {
+			return null;
+		}
+		if ( fn.isReadFunction() ) {
+			switch (fn) {
+				case ReadCoils:
+					return readCoils(req);
+
+				case ReadDiscreteInputs:
+					return readDiscretes(req);
+
+				default:
+					// not supported
+			}
+		} else if ( allowWrites ) {
+			switch (fn) {
+				case WriteCoil:
+					return writeCoil(req);
+
+				case WriteCoils:
+					return writeCoils(req);
+
+				default:
+					// not supported
+			}
+		}
+		return null;
+	}
+
+	private ModbusMessage handleRegistersMessage(RegistersModbusMessage req) {
+		ModbusFunctionCode fn = req.getFunction().functionCode();
+		if ( fn == null ) {
+			return null;
+		}
+		if ( fn.isReadFunction() ) {
+			switch (fn) {
+				case ReadHoldingRegisters:
+					return readHoldings(req);
+
+				case ReadInputRegisters:
+					return readInputs(req);
+
+				default:
+					// not supported
+			}
+		} else if ( allowWrites ) {
+			switch (fn) {
+				case WriteHoldingRegister:
+					return writeRegister(req);
+
+				case ReadWriteHoldingRegisters:
+					return writeRegisters(req);
+
+				default:
+					// not supported
+			}
+		}
+		return null;
+	}
+
+	private ModbusRegisterData registerData(ModbusMessage req) {
+		final Integer unitId = req.getUnitId();
 		return registers.computeIfAbsent(unitId, k -> {
 			return new ModbusRegisterData();
 		});
 	}
 
-	private ReadCoilsResponse readCoils(ReadCoilsRequest req) {
-		BitSet bits = registerData(req).readCoils(req.getReference(), req.getBitCount());
-		ReadCoilsResponse res = new ReadCoilsResponse(req);
-		for ( int i = 0, len = req.getBitCount(); i < len; i++ ) {
-			res.setCoilStatus(i, bits.get(i));
+	private ModbusMessage readCoils(BitsModbusMessage req) {
+		BitSet bits = registerData(req).readCoils(req.getAddress(), req.getCount());
+		BigInteger data = NumberUtils.bigIntegerForBitSet(bits);
+		return readCoilsResponse(req.getUnitId(), req.getAddress(), req.getCount(), data);
+	}
+
+	private ModbusMessage readDiscretes(BitsModbusMessage req) {
+		BitSet bits = registerData(req).readDiscretes(req.getAddress(), req.getCount());
+		BigInteger data = NumberUtils.bigIntegerForBitSet(bits);
+		return readDiscretesResponse(req.getUnitId(), req.getAddress(), req.getCount(), data);
+	}
+
+	private ModbusMessage readHoldings(RegistersModbusMessage req) {
+		short[] data = registerData(req).readHoldings(req.getAddress(), req.getCount());
+		return readHoldingsResponse(req.getUnitId(), req.getAddress(), data);
+	}
+
+	private ModbusMessage readInputs(RegistersModbusMessage req) {
+		short[] data = registerData(req).readInputs(req.getAddress(), req.getCount());
+		return readInputsResponse(req.getUnitId(), req.getAddress(), data);
+	}
+
+	private ModbusMessage writeCoil(BitsModbusMessage req) {
+		boolean data = req.isBitEnabled(0);
+		registerData(req).writeCoil(req.getAddress(), data);
+		return writeCoilResponse(req.getUnitId(), req.getAddress(), data);
+	}
+
+	private ModbusMessage writeCoils(BitsModbusMessage req) {
+		BitSet data = req.toBitSet();
+		registerData(req).writeCoils(req.getAddress(), req.getCount(), data);
+		return writeCoilsResponse(req.getUnitId(), req.getAddress(), req.getCount());
+	}
+
+	private ModbusMessage writeRegister(RegistersModbusMessage req) {
+		short[] data = req.dataDecode();
+		if ( data != null && data.length > 0 ) {
+			registerData(req).writeHolding(req.getAddress(), data[0]);
 		}
-		return res;
+		return writeHoldingResponse(req.getUnitId(), req.getAddress(),
+				data != null && data.length > 0 ? Short.toUnsignedInt(data[0]) : 0);
 	}
 
-	private ReadInputDiscretesResponse readDiscretes(ReadInputDiscretesRequest req) {
-		BitSet bits = registerData(req).readDiscretes(req.getReference(), req.getBitCount());
-		ReadInputDiscretesResponse res = new ReadInputDiscretesResponse(req);
-		for ( int i = 0, len = req.getBitCount(); i < len; i++ ) {
-			res.setDiscreteStatus(i, bits.get(i));
-		}
-		return res;
+	private ModbusMessage writeRegisters(RegistersModbusMessage req) {
+		short[] data = req.dataDecode();
+		registerData(req).writeHoldings(req.getAddress(), data);
+		return writeHoldingsResponse(req.getUnitId(), req.getAddress(), req.getCount());
 	}
 
-	private ReadMultipleRegistersResponse readHoldings(ReadMultipleRegistersRequest req) {
-		byte[] data = registerData(req).readHoldings(req.getReference(), req.getWordCount());
-		Register[] regs = new Register[req.getWordCount()];
-		for ( int i = 0, a = 0, len = req.getWordCount(); i < len; i++, a += 2 ) {
-			regs[i] = new SimpleRegister(data[a], data[a + 1]);
-		}
-		return new ReadMultipleRegistersResponse(req, regs);
+	/**
+	 * Get the request throttle, in milliseconds.
+	 *
+	 * @return the throttle time
+	 * @since 2.0
+	 */
+	public long getRequestThrottle() {
+		return requestThrottle;
 	}
 
-	private ReadInputRegistersResponse readInputs(ReadInputRegistersRequest req) {
-		byte[] data = registerData(req).readInputs(req.getReference(), req.getWordCount());
-		InputRegister[] regs = new InputRegister[req.getWordCount()];
-		for ( int i = 0, a = 0, len = req.getWordCount(); i < len; i++, a += 2 ) {
-			regs[i] = new SimpleRegister(data[a], data[a + 1]);
-		}
-		return new ReadInputRegistersResponse(req, regs);
+	/**
+	 * Set the request throttle (minimum time between requests).
+	 *
+	 * @param requestThrottle
+	 *        the throttle, in milliseconds
+	 * @since 2.0
+	 */
+	public void setRequestThrottle(long requestThrottle) {
+		this.requestThrottle = requestThrottle;
 	}
 
-	private ModbusResponse writeCoil(WriteCoilRequest req) {
-		registerData(req).writeCoil(req.getReference(), req.getCoil());
-		return new WriteCoilResponse(req);
+	/**
+	 * Get the read-write mode.
+	 *
+	 * @return {@literal true} if writing is allowed
+	 * @since 2.0
+	 */
+	public boolean isAllowWrites() {
+		return allowWrites;
 	}
 
-	private ModbusResponse writeCoils(WriteMultipleCoilsRequest req) {
-		BitSet set = new BitSet();
-		int count = req.getBitCount();
-		for ( int i = 0; i < count; i++ ) {
-			set.set(i, req.getCoilStatus(i));
-		}
-		registerData(req).writeCoils(req.getReference(), count, set);
-		return new WriteMultipleCoilsResponse(req);
-	}
-
-	private ModbusResponse writeRegister(WriteSingleRegisterRequest req) {
-		registerData(req).writeHolding(req.getReference(), req.getRegister().toShort());
-		return new WriteSingleRegisterResponse(req);
-	}
-
-	private ModbusResponse writeRegisters(WriteMultipleRegistersRequest req) {
-		short[] values = new short[req.getWordCount()];
-		for ( int i = 0; i < values.length; i++ ) {
-			values[i] = req.getRegister(i).toShort();
-		}
-		registerData(req).writeHoldings(req.getReference(), values);
-		return new WriteMultipleRegistersResponse(req);
+	/**
+	 * Set the read-write mode.
+	 *
+	 * @param allowWrites
+	 *        {@literal true} if writing is allowed
+	 * @since 2.0
+	 */
+	public void setAllowWrites(boolean allowWrites) {
+		this.allowWrites = allowWrites;
 	}
 
 }

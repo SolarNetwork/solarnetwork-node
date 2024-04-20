@@ -14,7 +14,7 @@
 	</publications>
 	<dependencies defaultconfmapping="runtime->default(runtime);compile->default(compile)">
  		<dependency org="org.slf4j" name="slf4j-api" rev="1.7.32"/>
-		<dependency org="net.solarnetwork.external" name="net.solarnetwork.external.jamod.pjc" rev="1.2.0.rc1-SN20220708A"/>
+		<dependency org="net.solarnetwork.common" name="nifty-modbus-tcp" rev="0.10.0"/>
        	<dependency org="net.solarnetwork.common" name="net.solarnetwork.common" rev="[3.0,)"/>
        	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node" rev="[3.0,)"/>
        	<dependency org="net.solarnetwork.node" name="net.solarnetwork.node.io.modbus" rev="[5.0,)"/>
