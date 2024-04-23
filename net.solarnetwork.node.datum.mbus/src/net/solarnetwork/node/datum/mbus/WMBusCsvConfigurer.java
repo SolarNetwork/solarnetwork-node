@@ -1,21 +1,21 @@
 /* ==================================================================
  * WMBusCsvConfigurer.java - 30/09/2022 1:37:32 pm
- * 
+ *
  * Copyright 2022 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -61,14 +61,15 @@ import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.util.ByteUtils;
+import net.solarnetwork.util.StringNaturalSortComparator;
 import net.solarnetwork.util.StringUtils;
 
 /**
  * Service that can configure {@link WMBusDatumDataSource} instances via CSV
  * resources.
- * 
+ *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.1
  */
 public class WMBusCsvConfigurer extends BasicIdentifiable
@@ -89,7 +90,7 @@ public class WMBusCsvConfigurer extends BasicIdentifiable
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param settingsService
 	 *        the settings service
 	 * @param identityService
@@ -147,9 +148,11 @@ public class WMBusCsvConfigurer extends BasicIdentifiable
 				ICsvListWriter writer = new CsvListWriter(out, CsvPreference.STANDARD_PREFERENCE)) {
 			WMBusDatumDataSourceConfigCsvWriter gen = new WMBusDatumDataSourceConfigCsvWriter(writer);
 
-			// iterate over each instance
-			for ( String instanceId : settingsService.getProvidersForFactory(settingProviderId)
-					.keySet() ) {
+			// iterate over each instance in natural sort order
+			List<String> instanceIds = new ArrayList<>(
+					settingsService.getProvidersForFactory(settingProviderId).keySet());
+			instanceIds.sort(StringNaturalSortComparator.CASE_INSENSITIVE_NATURAL_SORT);
+			for ( String instanceId : instanceIds ) {
 				List<Setting> settings = settingsService.getSettings(settingProviderId, instanceId);
 				gen.generateCsv(settingProviderId, instanceId, settings);
 			}

@@ -4,7 +4,7 @@ Bundle-Name: Modbus Datum Source
 Bundle-Description: Collect data from arbitrary Modbus devices.
 Bundle-SymbolicName: net.solarnetwork.node.datum.modbus
 Automatic-Module-Name: net.solarnetwork.node.datum.modbus
-Bundle-Version: 4.0.4
+Bundle-Version: 4.0.5
 Bundle-Vendor: SolarNetwork
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
