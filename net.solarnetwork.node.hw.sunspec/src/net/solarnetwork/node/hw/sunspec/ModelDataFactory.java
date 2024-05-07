@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModelDataFactory.java - 22/05/2018 9:40:11 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -36,7 +36,7 @@ import net.solarnetwork.util.ByteUtils;
 /**
  * A factory for creating concrete {@link ModelData} instances based on
  * discovery of SunSpec properties on a device.
- * 
+ *
  * <p>
  * This factory looks for a
  * {@literal net/solarnetwork/node/hw/sunspec/model-accessors.properties}
@@ -44,29 +44,29 @@ import net.solarnetwork.util.ByteUtils;
  * {@link ModelAccessor} classes. The classes are expected to provide a public
  * constructor that accepts the following arguments:
  * </p>
- * 
+ *
  * <ol>
  * <li>a {@link ModelData} instance</li>
  * <li>an {@code int} base Modbus address for the associated model data</li>
  * <li>an {@code int} model ID value</li>
  * </ol>
- * 
+ *
  * <p>
  * If no {@literal model-accessors.properties} resource is available, the
  * factory falls back to using the
  * {@literal net/solarnetwork/node/hw/sunspec/model-accessors-default.properties}
  * resource provided by this bundle.
  * </p>
- * 
+ *
  * @author matt
- * @version 1.9
+ * @version 1.10
  */
 public class ModelDataFactory {
 
 	/**
 	 * The default value for the maximum number of Modbus words to read at one
 	 * time.
-	 * 
+	 *
 	 * @since 1.1
 	 */
 	public static final int DEFAULT_MAX_READ_WORDS_COUNT = 100;
@@ -74,7 +74,7 @@ public class ModelDataFactory {
 	/**
 	 * The name of the class-path resource with the {@code ModelAccessor}
 	 * properties mapping.
-	 * 
+	 *
 	 * @since 1.2
 	 */
 	public static final String MODEL_ACCESSOR_PROPERTIES_RESOURCE_NAME = "net/solarnetwork/node/hw/sunspec/model-accessors.properties";
@@ -82,7 +82,7 @@ public class ModelDataFactory {
 	/**
 	 * The name of the class-path resource with the built-in default
 	 * {@code ModelAccessor} properties mapping.
-	 * 
+	 *
 	 * @since 1.2
 	 */
 	public static final String DEFAULT_MODEL_ACCESSOR_PROPERTIES_RESOURCE_NAME = "net/solarnetwork/node/hw/sunspec/model-accessors-default.properties";
@@ -93,12 +93,12 @@ public class ModelDataFactory {
 
 	/**
 	 * Get a factory instance.
-	 * 
+	 *
 	 * <p>
 	 * This will trigger the loading of the model accessor properties resource,
 	 * as described in {@link #getModelAccessorProperties()}.
 	 * </p>
-	 * 
+	 *
 	 * @return the factory
 	 */
 	public static ModelDataFactory getInstance() {
@@ -116,14 +116,8 @@ public class ModelDataFactory {
 
 	private int findSunSpecBaseAddress(ModbusConnection conn) throws IOException {
 		for ( ModelRegister r : ModelRegister.BASE_ADDRESSES ) {
-			try {
-				if ( isSunSpecBaseAddress(conn, r.getAddress()) ) {
-					return r.getAddress();
-				}
-			} catch ( RuntimeException e ) {
-				// in case device throws error reading from address that is not base address, keep looking
-				log.warn("Error looking for SunSpec ID at base address {}: {}", r.getAddress(),
-						e.toString());
+			if ( isSunSpecBaseAddress(conn, r.getAddress()) ) {
+				return r.getAddress();
 			}
 		}
 		throw new IOException("SunSpec ID 'SunS' not found at any known base address.");
@@ -146,12 +140,12 @@ public class ModelDataFactory {
 	/**
 	 * Create a new model data instance by discovering the model from a device
 	 * via a Modbus connection.
-	 * 
+	 *
 	 * <p>
 	 * This method calls {@link #getModelData(ModbusConnection, int)} with a
 	 * {@link #DEFAULT_MAX_READ_WORDS_COUNT} maximum read word count.
 	 * </p>
-	 * 
+	 *
 	 * @param conn
 	 *        the modbus connection
 	 * @return the data, with all model properties loaded
@@ -166,13 +160,13 @@ public class ModelDataFactory {
 	/**
 	 * Create a new model data instance by discovering the model from a device
 	 * via a Modbus connection.
-	 * 
+	 *
 	 * <p>
 	 * This method will look for the Modbus base address at any of the SunSpec
 	 * defined base addresses, as defined in
 	 * {@link ModelRegister#BASE_ADDRESSES}.
 	 * </p>
-	 * 
+	 *
 	 * @param conn
 	 *        the modbus connection
 	 * @param maxReadWordsCount
@@ -191,7 +185,7 @@ public class ModelDataFactory {
 	/**
 	 * Create a new model data instance by discovering the model from a device
 	 * via a Modbus connection.
-	 * 
+	 *
 	 * @param conn
 	 *        the modbus connection
 	 * @param maxReadWordsCount
@@ -217,7 +211,7 @@ public class ModelDataFactory {
 	/**
 	 * Create a new model data instance by discovering the model from a device
 	 * via a Modbus connection.
-	 * 
+	 *
 	 * @param conn
 	 *        the modbus connection
 	 * @param maxReadWordsCount
@@ -248,12 +242,12 @@ public class ModelDataFactory {
 	/**
 	 * Create a new model data instance by discovering the model from a device
 	 * via a Modbus connection.
-	 * 
+	 *
 	 * <p>
 	 * This method calls {@link #discoverModels(ModbusConnection, int)} with a
 	 * {@link #DEFAULT_MAX_READ_WORDS_COUNT} maximum read word count.
 	 * </p>
-	 * 
+	 *
 	 * @param conn
 	 *        the modbus connection
 	 * @return the data, without loading any model properties
@@ -268,13 +262,13 @@ public class ModelDataFactory {
 	/**
 	 * Create a new model data instance by discovering the model from a device
 	 * via a Modbus connection.
-	 * 
+	 *
 	 * <p>
 	 * This method will look for the Modbus base address at any of the SunSpec
 	 * defined base addresses, as defined in
 	 * {@link ModelRegister#BASE_ADDRESSES}.
 	 * </p>
-	 * 
+	 *
 	 * @param conn
 	 *        the modbus connection
 	 * @param maxReadWordsCount
@@ -294,7 +288,7 @@ public class ModelDataFactory {
 	/**
 	 * Create a new model data instance by discovering the model from a device
 	 * via a Modbus connection.
-	 * 
+	 *
 	 * @param conn
 	 *        the modbus connection
 	 * @param maxReadWordsCount
@@ -348,7 +342,7 @@ public class ModelDataFactory {
 
 	/**
 	 * Load the {@link ModelAccessor} properties.
-	 * 
+	 *
 	 * <p>
 	 * This factory looks for a
 	 * {@literal net/solarnetwork/node/hw/sunspec/model-accessors.properties}
@@ -359,12 +353,12 @@ public class ModelDataFactory {
 	 * resource provided by this bundle will be used. Here's an example of the
 	 * format of this resource:
 	 * </p>
-	 * 
+	 *
 	 * <pre>
 	 * 101 = net.solarnetwork.node.hw.sunspec.inverter.IntegerInverterModelAccessor
 	 * 201 = net.solarnetwork.node.hw.sunspec.meter.IntegerMeterModelAccessor
 	 * </pre>
-	 * 
+	 *
 	 * @return the model accessor properties
 	 */
 	protected Properties getModelAccessorProperties() {
