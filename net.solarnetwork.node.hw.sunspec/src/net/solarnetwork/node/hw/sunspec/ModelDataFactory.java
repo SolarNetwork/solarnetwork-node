@@ -130,9 +130,18 @@ public class ModelDataFactory {
 			if ( ModelRegister.BASE_ADDRESS_MAGIC_STRING.equals(s) ) {
 				return true;
 			}
+			if ( log.isDebugEnabled() ) {
+				String hex = null;
+				if ( s != null ) {
+					byte[] data = s.getBytes(ByteUtils.ASCII);
+					hex = ByteUtils.encodeHexString(data, 0, data.length, false);
+				}
+				log.debug("SunSpec ID 'SunS' not found at base address {}; found [{}]", address, hex);
+			}
 		} catch ( Exception e ) {
 			// in case device throws error reading from address that is not base address, fail
-			log.warn("Error looking for SunSpec ID at base address {}: {}", address, e.toString());
+			log.warn("Error looking for SunSpec ID 'SunS' at base address {}: {}", address,
+					e.toString());
 		}
 		return false;
 	}
