@@ -233,7 +233,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 				ModbusMessage res = controller.send(req);
 				if ( res.isException() ) {
 					throw new IOException(
-							String.format("Modbus exception %d writing %d coil value to %d @ %s",
+							String.format("Modbus exception %s writing %d coil value to %d @ %s",
 									res.getError(), 1, addresses[i], describer.get()));
 				}
 			} catch ( Exception e ) {
@@ -378,7 +378,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 			ModbusMessage res = controller.send(req);
 			if ( res.isException() ) {
 				throw new IOException(
-						String.format("Modbus exception %d reading %d %s values from %d @ %s",
+						String.format("Modbus exception %s reading %d %s values from %d @ %s",
 								res.getError(), count, function.blockType(), address, describer.get()));
 			}
 			BitsModbusMessage bits = res.unwrap(BitsModbusMessage.class);
@@ -590,7 +590,7 @@ public class NiftyModbusConnection extends AbstractModbusConnection implements M
 			ModbusMessage res = controller.send(req);
 			if ( res.isException() ) {
 				throw new IOException(
-						String.format("Modbus exception %d reading %d %s values from %d @ %s",
+						String.format("Modbus exception %s reading %d %s values from %d @ %s",
 								res.getError(), count, function.blockType(), address, describer.get()));
 			}
 			RegistersModbusMessage r = res.unwrap(RegistersModbusMessage.class);
