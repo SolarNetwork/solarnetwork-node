@@ -1,21 +1,21 @@
 /* ==================================================================
  * ModelDataFactoryTests.java - 22/05/2018 5:19:37 PM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -53,7 +53,7 @@ import net.solarnetwork.util.IntShortMap;
 
 /**
  * Test cases for the {@link ModelDataFactory} class.
- * 
+ *
  * @author matt
  * @version 1.1
  */
@@ -148,6 +148,21 @@ public class ModelDataFactoryTests {
 	public void findBaseAddress_noMagicBytes() throws IOException {
 		// GIVEN
 		IntShortMap map = new IntShortMap(8);
+		ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(map);
+
+		// WHEN
+		ModelDataFactory.getInstance().getModelData(conn, ModelDataFactory.DEFAULT_MAX_READ_WORDS_COUNT);
+	}
+
+	@Test(expected = IOException.class)
+	public void findBaseAddress_nonMagicBytes() throws IOException {
+		// GIVEN
+		IntShortMap map = new IntShortMap(8);
+		int i = 'a';
+		for ( ModelRegister r : ModelRegister.BASE_ADDRESSES ) {
+			map.putValue(r.getAddress(), (i++) << 8 | (i++));
+			map.putValue(r.getAddress() + 1, (i++) << 8 | (i++));
+		}
 		ModbusConnection conn = new StaticDataMapReadonlyModbusConnection(map);
 
 		// WHEN
