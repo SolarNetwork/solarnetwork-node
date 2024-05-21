@@ -1,21 +1,21 @@
 /* ==================================================================
  * FluxFilterConfig.java - 13/12/2019 1:57:45 pm
- * 
+ *
  * Copyright 2019 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -47,7 +47,7 @@ import net.solarnetwork.util.ArrayUtils;
 
 /**
  * Configuration for filtering options used by SolarFlux.
- * 
+ *
  * @author matt
  * @version 2.0
  * @since 1.4
@@ -74,6 +74,13 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 
 	private Pattern[] propIncludes;
 	private Pattern[] propExcludes;
+
+	/**
+	 * Constructor.
+	 */
+	public FluxFilterConfig() {
+		super();
+	}
 
 	private static Pattern[] patterns(String[] expr) {
 		if ( expr == null ) {
@@ -112,7 +119,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	/**
 	 * Test if a source ID matches the source ID pattern configured on this
 	 * instance.
-	 * 
+	 *
 	 * @param sourceId
 	 *        the source ID to test
 	 * @return {@literal true} if {@code sourceId} matches the configured source
@@ -129,7 +136,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	/**
 	 * Apply the rules defined in this filter configuration to see if a datum
 	 * can be published.
-	 * 
+	 *
 	 * @param previousSourceIdPublishDate
 	 *        the last known publish date for the given {@code sourceId} value,
 	 *        or {@literal null} if not known
@@ -216,7 +223,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 
 	/**
 	 * Get setting specifiers for this configuration.
-	 * 
+	 *
 	 * @param prefix
 	 *        a prefix to add to each setting property key
 	 * @return the settings
@@ -279,7 +286,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 
 	/**
 	 * Get the source ID regular expression.
-	 * 
+	 *
 	 * @return the source ID expression, or {@literal null} for including all
 	 *         source IDs
 	 */
@@ -289,7 +296,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 
 	/**
 	 * Set the source ID regular expression.
-	 * 
+	 *
 	 * @param sourceIdRegex
 	 *        a pattern to match against source IDs; if defined then this filter
 	 *        will only apply to datum with matching source ID values; if
@@ -301,7 +308,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 
 	/**
 	 * Get the source ID regular expression as a string.
-	 * 
+	 *
 	 * @return the source ID expression string, or {@literal null} for including
 	 *         all source IDs
 	 */
@@ -312,13 +319,13 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 
 	/**
 	 * Set the source ID regular expression as a string.
-	 * 
+	 *
 	 * <p>
 	 * Errors compiling {@code sourceIdRegex} into a {@link Pattern} will be
 	 * silently ignored, causing the regular expression to be set to
 	 * {@literal null}.
 	 * </p>
-	 * 
+	 *
 	 * @param sourceIdRegex
 	 *        a pattern to match against source IDs; if defined then this filter
 	 *        will only apply to datum with matching source ID values; if
@@ -338,7 +345,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 
 	/**
 	 * Get the minimum number of seconds to limit datum to.
-	 * 
+	 *
 	 * @return a frequency in seconds, or {@literal null}
 	 */
 	public Integer getFrequencySeconds() {
@@ -347,7 +354,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 
 	/**
 	 * Get the minimum number of seconds to limit datum to.
-	 * 
+	 *
 	 * @param frequencySeconds
 	 *        a frequency in seconds, or {@literal null} or anything less than
 	 *        {@literal 1} for no limit
@@ -358,7 +365,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 
 	/**
 	 * Get a list of property name regular expression values to limit data to.
-	 * 
+	 *
 	 * @return a list of expressions, or {@literal null}
 	 * @see #getPropIncludeValues()
 	 */
@@ -368,7 +375,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 
 	/**
 	 * Set a list of property name regular expression values to limit datum to.
-	 * 
+	 *
 	 * @param propIncludes
 	 *        a list of expressions, or {@literal null}
 	 * @see #setPropIncludeValues(String[])
@@ -379,7 +386,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 
 	/**
 	 * Get the number of configured {@code excludes} elements.
-	 * 
+	 *
 	 * @return The number of {@code excludes} elements.
 	 */
 	public int getPropIncludeValuesCount() {
@@ -390,7 +397,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	/**
 	 * Adjust the number of configured {@code excludes} elements. Any newly
 	 * added element values will be {@literal null}.
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code excludes} elements.
 	 */
@@ -402,7 +409,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	/**
 	 * Get a list of property name regular expression values to exclude from
 	 * datum.
-	 * 
+	 *
 	 * @return a list of patterns, or {@literal null}
 	 * @see #getPropExcludeValues()
 	 */
@@ -413,7 +420,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	/**
 	 * Set a list of property name regular expression values to exclude from
 	 * datum.
-	 * 
+	 *
 	 * @param propExcludes
 	 *        a lit of expressions, or {@literal null}
 	 * @see #setPropExcludeValues(String[])
@@ -424,7 +431,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 
 	/**
 	 * Get the number of configured {@code excludes} elements.
-	 * 
+	 *
 	 * @return The number of {@code excludes} elements.
 	 */
 	public int getPropExcludeValuesCount() {
@@ -435,7 +442,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	/**
 	 * Adjust the number of configured {@code excludes} elements. Any newly
 	 * added element values will be {@literal null}.
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code excludes} elements.
 	 */
@@ -447,7 +454,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	/**
 	 * Get the UID of a {@code ObjectEncoder} service to encode the message
 	 * with.
-	 * 
+	 *
 	 * @return the datumEncoderUid the UID of the encoder service to use
 	 * @since 1.1
 	 */
@@ -458,7 +465,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	/**
 	 * Set the UID of a {@code ObjectEncoder} service to encode the message
 	 * with.
-	 * 
+	 *
 	 * @param datumEncoderUid
 	 *        the datumEncoderUid to set
 	 * @since 1.1
@@ -470,7 +477,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	/**
 	 * Get the UID of a {code GeneralDatumSamplesTransformService} to transform
 	 * the datum with.
-	 * 
+	 *
 	 * @return the UID, or {@literal null}
 	 * @since 1.2
 	 */
@@ -481,7 +488,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 	/**
 	 * Set the UID of a {code GeneralDatumSamplesTransformService} to transform
 	 * the datum with.
-	 * 
+	 *
 	 * @param transformServiceUid
 	 *        the UID to set
 	 * @since 1.2
@@ -492,7 +499,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 
 	/**
 	 * Get the required operational mode.
-	 * 
+	 *
 	 * @return the operational mode that must be active for this configuration
 	 *         to be applicable
 	 * @since 1.3
@@ -503,7 +510,7 @@ public class FluxFilterConfig implements SettingsChangeObserver {
 
 	/**
 	 * Set the required operational mode.
-	 * 
+	 *
 	 * @param requiredOperationalMode
 	 *        the operational mode that must be active for this configuration to
 	 *        be applicable, or {@literal null} for no requirement
