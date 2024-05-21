@@ -2,9 +2,9 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: MQTT upload tests
 Bundle-SymbolicName: net.solarnetwork.node.upload.mqtt.test
-Bundle-Version: 2.1.0
+Bundle-Version: 2.2.0
 Bundle-Vendor: SolarNetwork
-Fragment-Host: net.solarnetwork.node.upload.mqtt;bundle-version="[3.1,4.0)"
+Fragment-Host: net.solarnetwork.node.upload.mqtt;bundle-version="[3.2,4.0)"
 Automatic-Module-Name: net.solarnetwork.node.upload.mqtt.test
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
@@ -16,7 +16,7 @@ Import-Package:
  io.moquette.interception.messages;version="[0.12,1.0)",
  io.netty.buffer;version="[4.1,5.0)",
  io.netty.handler.codec.mqtt;version="[4.1,5.0)",
- net.solarnetwork.common.mqtt.netty;version="[2.0,3.0)",
+ net.solarnetwork.common.mqtt.netty;version="[3.0,4.0)",
  net.solarnetwork.node.test;version="[1.7,2.0)",
  net.solarnetwork.test.mqtt;version="[1.0,2.0)",
  net.solarnetwork.util;version="[2.0,3.0)",
