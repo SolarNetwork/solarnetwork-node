@@ -26,13 +26,15 @@ package net.solarnetwork.node.dao.mqtt.jdbc;
  * Stats for MQTT message persistence.
  *
  * @author matt
- * @version 1.0
+ * @version 1.1
  * @since 1.1
  */
 public enum MqttMessageDaoStat {
 
+	/** Messages stored. */
 	MessagesStored("messages stored"),
 
+	/** Messages deleted. */
 	MessagesDeleted("messages deleted"),
 
 	;

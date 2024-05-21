@@ -110,7 +110,7 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 		}
 	}
 
-	public final StatTracker stats;
+	private final StatTracker stats;
 	private int maxCountPingFail = DEFAULT_MAX_COUNT_PING_FAIL;
 
 	/**
@@ -192,7 +192,7 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 		ps.setObject(6, obj.getId());
 	}
 
-	protected void setUpdateStatementValues(MqttMessageEntity obj, PreparedStatement ps, int offset)
+	private void setUpdateStatementValues(MqttMessageEntity obj, PreparedStatement ps, int offset)
 			throws SQLException {
 		ps.setString(1 + offset, obj.getDestination());
 		ps.setString(2 + offset, obj.getTopic());
@@ -207,7 +207,15 @@ public class JdbcMqttMessageDao extends BaseJdbcBatchableDao<MqttMessageEntity, 
 	 */
 	public static final class MqttMessageEntityRowMapper implements RowMapper<MqttMessageEntity> {
 
+		/** A default instance. */
 		public static final RowMapper<MqttMessageEntity> INSTANCE = new MqttMessageEntityRowMapper();
+
+		/**
+		 * Constructor.
+		 */
+		public MqttMessageEntityRowMapper() {
+			super();
+		}
 
 		@Override
 		public MqttMessageEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
