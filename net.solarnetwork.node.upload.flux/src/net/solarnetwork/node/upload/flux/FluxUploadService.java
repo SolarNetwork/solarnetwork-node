@@ -1,21 +1,21 @@
 /* ==================================================================
  * FluxUploadService.java - 16/12/2018 9:18:57 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -55,17 +55,18 @@ import java.util.stream.Collectors;
 import org.apache.commons.codec.binary.Hex;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventHandler;
+import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.solarnetwork.codec.ObjectEncoder;
 import net.solarnetwork.common.mqtt.BaseMqttConnectionService;
 import net.solarnetwork.common.mqtt.BasicMqttMessage;
+import net.solarnetwork.common.mqtt.MqttBasicCount;
 import net.solarnetwork.common.mqtt.MqttConnection;
 import net.solarnetwork.common.mqtt.MqttConnectionFactory;
 import net.solarnetwork.common.mqtt.MqttConnectionObserver;
 import net.solarnetwork.common.mqtt.MqttMessage;
 import net.solarnetwork.common.mqtt.MqttQos;
-import net.solarnetwork.common.mqtt.MqttStats;
 import net.solarnetwork.common.mqtt.MqttVersion;
 import net.solarnetwork.common.mqtt.ReconfigurableMqttConnection;
 import net.solarnetwork.common.mqtt.dao.BasicMqttMessageEntity;
@@ -96,12 +97,13 @@ import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
 import net.solarnetwork.settings.support.BasicToggleSettingSpecifier;
 import net.solarnetwork.settings.support.SettingUtils;
 import net.solarnetwork.util.ArrayUtils;
+import net.solarnetwork.util.StatTracker;
 
 /**
  * Service to listen to datum events and upload datum to SolarFlux.
- * 
+ *
  * @author matt
- * @version 2.6
+ * @version 2.7
  */
 public class FluxUploadService extends BaseMqttConnectionService implements EventHandler,
 		Consumer<NodeDatum>, SettingSpecifierProvider, SettingsChangeObserver, MqttConnectionObserver {
@@ -128,49 +130,49 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * The default MQTT version to use.
-	 * 
+	 *
 	 * @since 1.8
 	 */
 	public static final MqttVersion DEFAULT_MQTT_VERSION = MqttVersion.Mqtt5;
 
 	/**
 	 * The default MQTT QoS to use.
-	 * 
+	 *
 	 * @since 1.10
 	 */
 	public static final MqttQos DEFAULT_MQTT_QOS = MqttQos.AtMostOnce;
 
 	/**
 	 * The default value for the {@code cachedMessagePublishMaximum} property.
-	 * 
+	 *
 	 * @since 1.10
 	 */
 	public static final int DEFAULT_CACHED_MESSAGE_PUBLISH_MAXIMUM = 200;
 
 	/**
 	 * The default value for the {@code publishRetained} property.
-	 * 
+	 *
 	 * @since 1.14
 	 */
 	public static final boolean DEFAULT_PUBLISH_RETAINED = false;
 
 	/**
 	 * A source ID for log messages posted as datum.
-	 * 
+	 *
 	 * @since 2.4
 	 */
 	public static final String LOG_SOURCE_ID = "log";
 
 	/**
 	 * A source ID prefix for log messages posted as datum.
-	 * 
+	 *
 	 * @since 2.4
 	 */
 	public static final String LOG_SOURCE_ID_PREFIX = LOG_SOURCE_ID + "/";
 
 	/**
 	 * The EventAdmin topic for log events.
-	 * 
+	 *
 	 * @since 2.4
 	 */
 	public static final String EVENT_ADMIN_LOG_TOPIC = "net/solarnetwork/Log";
@@ -198,7 +200,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param connectionFactory
 	 *        the factory to use for {@link MqttConnection} instances
 	 * @param objectMapper
@@ -210,7 +212,8 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	 */
 	public FluxUploadService(MqttConnectionFactory connectionFactory, ObjectMapper objectMapper,
 			IdentityService identityService, DatumQueue datumQueue) {
-		super(connectionFactory, new MqttStats(100));
+		super(connectionFactory, new StatTracker("SolarFlux", null,
+				LoggerFactory.getLogger(FluxUploadService.class), 100));
 		this.objectMapper = objectMapper;
 		this.identityService = identityService;
 		this.datumQueue = datumQueue;
@@ -780,13 +783,13 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		String connMsg = getMessageSource().getMessage(
 				format("status.%s", connected ? "connected" : "disconnected"), null,
 				Locale.getDefault());
-		final MqttStats s = getMqttStats();
+		final StatTracker s = getMqttStats();
 		// @formatter:off
 		return getMessageSource().getMessage("status.msg",
-				new Object[] { 
-						connMsg, 
-						s.get(MqttStats.BasicCounts.MessagesDelivered),
-						s.get(MqttStats.BasicCounts.PayloadBytesDelivered) },
+				new Object[] {
+						connMsg,
+						s.get(MqttBasicCount.MessagesDelivered),
+						s.get(MqttBasicCount.PayloadBytesDelivered) },
 				Locale.getDefault());
 		// @formatter:on
 	}
@@ -850,12 +853,12 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 		if ( r.getProperties() != null ) {
 			props.putAll(r.getProperties());
 		}
-		final MqttStats stats = getMqttStats();
-		for ( MqttStats.BasicCounts stat : Arrays.asList(MqttStats.BasicCounts.ConnectionAttempts,
-				MqttStats.BasicCounts.ConnectionFail, MqttStats.BasicCounts.ConnectionLost,
-				MqttStats.BasicCounts.MessagesDelivered, MqttStats.BasicCounts.MessagesDeliveredFail,
-				MqttStats.BasicCounts.PayloadBytesDelivered) ) {
-			props.put(stat.name(), stats.get(stat));
+		final Map<String, Long> stats = getMqttStats().allCounts();
+		for ( MqttBasicCount stat : Arrays.asList(MqttBasicCount.ConnectionAttempts,
+				MqttBasicCount.ConnectionFail, MqttBasicCount.ConnectionLost,
+				MqttBasicCount.MessagesDelivered, MqttBasicCount.MessagesDeliveredFail,
+				MqttBasicCount.PayloadBytesDelivered) ) {
+			props.put(stat.name(), stats.get(stat.name()));
 		}
 		boolean success = r.isSuccess();
 		String msg = r.getMessage();
@@ -875,11 +878,11 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Set the MQTT host to use.
-	 * 
+	 *
 	 * <p>
 	 * This accepts a URI syntax, e.g. {@literal mqtts://host:port}.
 	 * </p>
-	 * 
+	 *
 	 * @param mqttHost
 	 *        the MQTT host to use
 	 */
@@ -889,7 +892,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Set the MQTT username to use.
-	 * 
+	 *
 	 * @param mqttUsername
 	 *        the username
 	 */
@@ -899,7 +902,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Set the MQTT password to use.
-	 * 
+	 *
 	 * @param mqttPassword
 	 *        the password, or {@literal null} for no password
 	 */
@@ -909,7 +912,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Set the MQTT version to use.
-	 * 
+	 *
 	 * @param mqttVersion
 	 *        the version, or {@literal null} for a default version
 	 * @since 1.8
@@ -921,7 +924,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	/**
 	 * Set an operational mode that must be active for a connection to SolarFlux
 	 * to be established.
-	 * 
+	 *
 	 * @param requiredOperationalMode
 	 *        the mode to require, or {@literal null} to enable by default
 	 */
@@ -961,7 +964,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Set an executor to use for internal tasks.
-	 * 
+	 *
 	 * @param executor
 	 *        the executor
 	 * @since 1.3
@@ -972,7 +975,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Set the operational modes service to use.
-	 * 
+	 *
 	 * @param opModesService
 	 *        the service to use
 	 * @since 1.1
@@ -984,13 +987,13 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	/**
 	 * Set a regular expression of pattern names to exclude from posting to
 	 * SolarFlux.
-	 * 
+	 *
 	 * <p>
 	 * You can use this to exclude internal properties with a regular expression
 	 * like <code>_.*</code>. The pattern will automatically use
 	 * case-insensitive matching.
 	 * </p>
-	 * 
+	 *
 	 * @param regex
 	 *        the regular expression or {@literal null} for no filter; pattern
 	 *        syntax errors are ignored and result in no regular expression
@@ -1011,7 +1014,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Get a list of filter configurations to apply to datum.
-	 * 
+	 *
 	 * @return the filters to apply, or {@literal null}
 	 * @since 1.4
 	 */
@@ -1021,11 +1024,11 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Set a list of filter configurations to apply to datum.
-	 * 
+	 *
 	 * <p>
 	 * These filters are applied in array order.
 	 * </p>
-	 * 
+	 *
 	 * @param filters
 	 *        the filters to apply, or {@literal null}
 	 * @since 1.4
@@ -1036,7 +1039,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Get the number of configured {@code filters} elements.
-	 * 
+	 *
 	 * @return The number of {@code filters} elements.
 	 * @since 1.4
 	 */
@@ -1047,12 +1050,12 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Adjust the number of configured {@code filters} elements.
-	 * 
+	 *
 	 * <p>
 	 * Any newly added element values will be set to new
 	 * {@link FluxFilterConfig} instances.
 	 * </p>
-	 * 
+	 *
 	 * @param count
 	 *        The desired number of {@code filters} elements.
 	 * @since 1.4
@@ -1063,7 +1066,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Get the "include version tag" toggle.
-	 * 
+	 *
 	 * @return {@literal true} to include the {@literal _v} version tag with
 	 *         each datum; defaults to {@link #DEFAULT_INCLUDE_VERSION_TAG}
 	 * @since 1.5
@@ -1074,7 +1077,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Set the "inclue version tag" toggle.
-	 * 
+	 *
 	 * @param includeVersionTag
 	 *        {@literal true} to include the {@link #TAG_VERSION} property with
 	 *        each datum; only disable if you can be sure that all receivers of
@@ -1087,7 +1090,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Get the encoder services to use for MQTT messages.
-	 * 
+	 *
 	 * @return the encoder services
 	 * @since 1.7
 	 */
@@ -1097,7 +1100,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Set the available encoder services to use for MQTT messages.
-	 * 
+	 *
 	 * @param datumEncoders
 	 *        the encoders to set
 	 * @since 1.7
@@ -1108,7 +1111,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Toggle the wire logging mode.
-	 * 
+	 *
 	 * @param wireLogging
 	 *        {@literal true} to enable wire logging
 	 * @since 1.8
@@ -1119,7 +1122,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Get the transform services to use for MQTT messages.
-	 * 
+	 *
 	 * @return the transform services
 	 * @since 1.9
 	 */
@@ -1129,7 +1132,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Set the available transform services to use for MQTT messages.
-	 * 
+	 *
 	 * @param transformServices
 	 *        the services to set
 	 * @since 1.9
@@ -1140,7 +1143,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Get the DAO to use for offline MQTT message persistence.
-	 * 
+	 *
 	 * @return the DAO to use for offline MQTT messages
 	 * @since 1.10
 	 */
@@ -1150,7 +1153,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Set the DAO to use for offline MQTT message persistence.
-	 * 
+	 *
 	 * @param mqttMessageDao
 	 *        the DAO to use for offline MQTT messages
 	 * @since 1.10
@@ -1162,7 +1165,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 	/**
 	 * Get the maximum number of cached messages to publish at one time, or
 	 * {@code 0} for no limit.
-	 * 
+	 *
 	 * @return the maximum count; defaults to
 	 *         {@link #DEFAULT_CACHED_MESSAGE_PUBLISH_MAXIMUM}
 	 * @since 1.10
@@ -1173,7 +1176,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Set the maximum number of cached messages to publish at one time.
-	 * 
+	 *
 	 * @param cachedMessagePublishMaximum
 	 *        the maximum count
 	 * @since 1.10
@@ -1184,7 +1187,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Get the "publish retained" message flag setting.
-	 * 
+	 *
 	 * @return {@literal true} to publish messages with the MQTT retained flag;
 	 *         defaults to {@code #DEFAULT_PUBLISH_RETAINED}
 	 */
@@ -1194,7 +1197,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Set the "publish retained" message flag setting.
-	 * 
+	 *
 	 * @param publishRetained
 	 *        {@literal true} to publish messages with the MQTT retained flag
 	 */
@@ -1204,7 +1207,7 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Get the "MQTT message DAO required" flag.
-	 * 
+	 *
 	 * @return {@literal true} to treat the lack of a
 	 *         {@link #getMqttMessageDao()} service as an error state
 	 * @since 2.2
@@ -1215,11 +1218,11 @@ public class FluxUploadService extends BaseMqttConnectionService implements Even
 
 	/**
 	 * Set the "MQTT message DAO required" flag.
-	 * 
+	 *
 	 * <p>
 	 * This setting affects the {@link #performPingTest()} method.
 	 * </p>
-	 * 
+	 *
 	 * @param mqttMessageDaoRequired
 	 *        {@literal true} to treat the lack of a
 	 *        {@link #getMqttMessageDao()} service as an error state
