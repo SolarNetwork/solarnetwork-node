@@ -8,12 +8,12 @@ Fragment-Host: net.solarnetwork.node.upload.mqtt;bundle-version="[3.2,4.0)"
 Automatic-Module-Name: net.solarnetwork.node.upload.mqtt.test
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Import-Package: 
- io.moquette;version="[0.12,1.0)",
- io.moquette.broker;version="[0.12,1.0)",
- io.moquette.broker.config;version="[0.12,1.0)",
- io.moquette.broker.security;version="[0.12,1.0)",
- io.moquette.interception;version="[0.12,1.0)",
- io.moquette.interception.messages;version="[0.12,1.0)",
+ io.moquette;version="[0.16,1.0)",
+ io.moquette.broker;version="[0.16,1.0)",
+ io.moquette.broker.config;version="[0.16,1.0)",
+ io.moquette.broker.security;version="[0.16,1.0)",
+ io.moquette.interception;version="[0.16,1.0)",
+ io.moquette.interception.messages;version="[0.16,1.0)",
  io.netty.buffer;version="[4.1,5.0)",
  io.netty.handler.codec.mqtt;version="[4.1,5.0)",
  net.solarnetwork.common.mqtt.netty;version="[3.0,4.0)",
