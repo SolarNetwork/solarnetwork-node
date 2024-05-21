@@ -4,7 +4,7 @@ Bundle-Name: SolarIn/MQTT integration
 Bundle-Description: Integrate with the SolarIn/MQTT service to publish data
  and receive instructions in real time.
 Bundle-SymbolicName: net.solarnetwork.node.upload.mqtt
-Bundle-Version: 3.1.0
+Bundle-Version: 3.2.0
 Bundle-Vendor: SolarNetwork
 Automatic-Module-Name: net.solarnetwork.node.upload.mqtt
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
@@ -19,7 +19,7 @@ Import-Package:
  javax.net,
  javax.net.ssl,
  net.solarnetwork.codec;version="[2.0,3.0)",
- net.solarnetwork.common.mqtt;version="[2.0,3.0)",
+ net.solarnetwork.common.mqtt;version="[3.0,4.0)",
  net.solarnetwork.common.osgi.service;version="[1.0,2.0)",
  net.solarnetwork.domain;version="[2.0,3.0)",
  net.solarnetwork.domain.datum;version="[2.0,3.0)",
@@ -32,6 +32,7 @@ Import-Package:
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.0,3.0)",
  net.solarnetwork.settings.support;version="[2.0,3.0)",
+ net.solarnetwork.util;version="[2.10,3.0)",
  org.osgi.service.event;version="[1.2,2.0)",
  org.slf4j;version="[1.7,2.0)",
  org.springframework.beans;version="[5.3,6.0)",

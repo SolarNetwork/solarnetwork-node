@@ -1,21 +1,21 @@
 /* ==================================================================
  * MqttUploadService.java - 7/06/2018 7:34:41 AM
- * 
+ *
  * Copyright 2018 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -29,7 +29,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -42,6 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import org.osgi.service.event.Event;
 import org.osgi.service.event.EventAdmin;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.DigestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,6 +52,7 @@ import net.solarnetwork.codec.JsonUtils;
 import net.solarnetwork.common.mqtt.BaseMqttConnectionService;
 import net.solarnetwork.common.mqtt.BasicMqttMessage;
 import net.solarnetwork.common.mqtt.BasicMqttProperty;
+import net.solarnetwork.common.mqtt.MqttBasicCount;
 import net.solarnetwork.common.mqtt.MqttConnection;
 import net.solarnetwork.common.mqtt.MqttConnectionFactory;
 import net.solarnetwork.common.mqtt.MqttConnectionObserver;
@@ -59,7 +60,6 @@ import net.solarnetwork.common.mqtt.MqttMessage;
 import net.solarnetwork.common.mqtt.MqttMessageHandler;
 import net.solarnetwork.common.mqtt.MqttPropertyType;
 import net.solarnetwork.common.mqtt.MqttQos;
-import net.solarnetwork.common.mqtt.MqttStats;
 import net.solarnetwork.common.mqtt.MqttVersion;
 import net.solarnetwork.domain.InstructionStatus.InstructionState;
 import net.solarnetwork.domain.datum.BasicStreamDatum;
@@ -82,12 +82,13 @@ import net.solarnetwork.service.PingTestResult;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
 import net.solarnetwork.settings.support.BasicTitleSettingSpecifier;
+import net.solarnetwork.util.StatTracker;
 
 /**
  * {@link UploadService} using MQTT.
- * 
+ *
  * @author matt
- * @version 2.2
+ * @version 2.3
  */
 public class MqttUploadService extends BaseMqttConnectionService
 		implements UploadService, MqttMessageHandler, MqttConnectionObserver, SettingSpecifierProvider {
@@ -109,21 +110,21 @@ public class MqttUploadService extends BaseMqttConnectionService
 
 	/**
 	 * The default MQTT version to use.
-	 * 
+	 *
 	 * @since 1.4
 	 */
 	public static final MqttVersion DEFAULT_MQTT_VERSION = MqttVersion.Mqtt5;
 
 	/**
 	 * A source ID for log messages posted as datum.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public static final String LOG_SOURCE_ID = "log";
 
 	/**
 	 * A source ID prefix for log messages posted as datum.
-	 * 
+	 *
 	 * @since 2.1
 	 */
 	public static final String LOG_SOURCE_ID_PREFIX = LOG_SOURCE_ID + "/";
@@ -141,7 +142,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param connectionFactory
 	 *        the MQTT connection factory
 	 * @param objectMapper
@@ -162,7 +163,8 @@ public class MqttUploadService extends BaseMqttConnectionService
 			OptionalService<InstructionExecutionService> instructionExecutionService,
 			OptionalService<EventAdmin> eventAdmin,
 			OptionalService<DatumMetadataService> datumMetadataService) {
-		super(connectionFactory, new MqttStats("SolarIn/MQTT", 100, SolarInCountStat.values()));
+		super(connectionFactory, new StatTracker("SolarIn/MQTT", null,
+				LoggerFactory.getLogger(MqttUploadService.class), 100));
 		this.objectMapper = objectMapper;
 		this.identityService = identityService;
 		this.reactorServiceOpt = reactorService;
@@ -344,7 +346,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 					if ( messageData != null && messageData.length > 0 ) {
 						conn.publish(new BasicMqttMessage(topic, false, getPublishQos(), messageData))
 								.get(getMqttConfig().getConnectTimeoutSeconds(), TimeUnit.SECONDS);
-						getMqttStats().incrementAndGet(
+						getMqttStats().increment(
 								kind == ObjectDatumKind.Location ? SolarInCountStat.LocationDatumPosted
 										: SolarInCountStat.NodeDatumPosted);
 						postDatumUploadedEvent(datum, jsonData);
@@ -407,7 +409,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 				conn.publish(new BasicMqttMessage(topic, false, getPublishQos(),
 						objectMapper.writeValueAsBytes(status)))
 						.get(getMqttConfig().getConnectTimeoutSeconds(), TimeUnit.SECONDS);
-				getMqttStats().incrementAndGet(SolarInCountStat.InstructionStatusPosted);
+				getMqttStats().increment(SolarInCountStat.InstructionStatusPosted);
 				log.info("Posted Instruction {} [{}] acknowledgement status: {}",
 						status.getInstructionId(), instr.getTopic(), instr.getInstructionState());
 				return true;
@@ -497,7 +499,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 						log.info("Instruction {} {} received with parameters: {}", instr.getId(),
 								instr.getTopic(), instr.getParameterMap());
 					}
-					getMqttStats().incrementAndGet(SolarInCountStat.InstructionsReceived);
+					getMqttStats().increment(SolarInCountStat.InstructionsReceived);
 
 					// check for future execution date
 					final Instant executeAt = instr.getExecutionDate();
@@ -562,10 +564,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 		if ( r.getProperties() != null ) {
 			props.putAll(r.getProperties());
 		}
-		final MqttStats stats = getMqttStats();
-		for ( MqttStats.BasicCounts stat : EnumSet.allOf(MqttStats.BasicCounts.class) ) {
-			props.put(stat.name(), stats.get(stat));
-		}
+		props.putAll(getMqttStats().allCounts());
 		return new PingTestResult(r.isSuccess(), r.getMessage(), props);
 	}
 
@@ -615,25 +614,25 @@ public class MqttUploadService extends BaseMqttConnectionService
 				format("status.%s", connected ? "connected" : "disconnected"), null,
 				Locale.getDefault());
 		final URI uri = getMqttUri();
-		final MqttStats s = getMqttStats();
+		final StatTracker s = getMqttStats();
 		// @formatter:off
 		return getMessageSource().getMessage("status.msg",
-				new Object[] { 
-						connMsg, 
+				new Object[] {
+						connMsg,
 						uri != null ? uri : "N/A",
 						s.get(SolarInCountStat.NodeDatumPosted),
 						s.get(SolarInCountStat.LocationDatumPosted),
-						s.get(MqttStats.BasicCounts.PayloadBytesDelivered),
+						s.get(MqttBasicCount.PayloadBytesDelivered),
 						s.get(SolarInCountStat.InstructionsReceived),
 						s.get(SolarInCountStat.InstructionStatusPosted),
-						s.get(MqttStats.BasicCounts.PayloadBytesReceived) },
+						s.get(MqttBasicCount.PayloadBytesReceived) },
 				Locale.getDefault());
 		// @formatter:on
 	}
 
 	/**
 	 * Set an executor to use for internal tasks.
-	 * 
+	 *
 	 * @param executor
 	 *        the executor
 	 * @since 1.2
@@ -644,7 +643,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 
 	/**
 	 * Get the "include version tag" toggle.
-	 * 
+	 *
 	 * @return {@literal true} to include the {@literal _v} version tag with
 	 *         each datum; defaults to {@link #DEFAULT_INCLUDE_VERSION_TAG}
 	 * @since 1.3
@@ -655,7 +654,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 
 	/**
 	 * Set the "include version tag" toggle.
-	 * 
+	 *
 	 * @param includeVersionTag
 	 *        {@literal true} to include the {@literal _v} version tag with each
 	 *        datum; only disable if you can be sure that all receivers of
@@ -668,7 +667,7 @@ public class MqttUploadService extends BaseMqttConnectionService
 
 	/**
 	 * Set the MQTT version to use.
-	 * 
+	 *
 	 * @param mqttVersion
 	 *        the version, or {@literal null} for a default version
 	 * @since 1.4
