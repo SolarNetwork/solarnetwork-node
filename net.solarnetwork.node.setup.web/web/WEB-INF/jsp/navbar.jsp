@@ -56,7 +56,9 @@
 								<c:if test="${not empty platformPackageService}">
 									<li><a class="dropdown-item${navloc == 'packages' ? ' active' : ''}" id="link-packages" href="<setup:url value='/a/packages'/>"><fmt:message key='link.packages'/></a></li>
 								</c:if>
-								<li><a class="dropdown-item${navloc == 'plugins' ? ' active' : ''}" id="link-plugins" href="<setup:url value='/a/plugins'/>"><fmt:message key='link.plugins'/></a></li>
+								<c:if test="${not empty pluginService}">
+									<li><a class="dropdown-item${navloc == 'plugins' ? ' active' : ''}" id="link-plugins" href="<setup:url value='/a/plugins'/>"><fmt:message key='link.plugins'/></a></li>
+								</c:if>
 								<c:if test="${not empty systemService}">
 									<li role="separator"><hr class="dropdown-divider"></li>
 									<li><a class="dropdown-item${navloc == 'hosts' ? ' active' : ''}" href="<setup:url value='/a/hosts'/>"><fmt:message key='link.hosts'/></a></li>
