@@ -1,21 +1,21 @@
 /* ==================================================================
  * WMBusDatumDataSource.java - 06/07/2020 15:17:51 pm
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -39,17 +39,18 @@ import net.solarnetwork.node.io.mbus.WMBusConnection;
 import net.solarnetwork.node.io.mbus.WMBusNetwork;
 import net.solarnetwork.node.service.support.DatumDataSourceSupport;
 import net.solarnetwork.service.OptionalService;
+import net.solarnetwork.service.ServiceLifecycleObserver;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Supporting abstract class for WMBus datum data sources.
- * 
+ *
  * @author alex
- * @version 1.2
+ * @version 1.3
  */
 public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceSupport
-		implements MBusMessageHandler {
+		implements MBusMessageHandler, ServiceLifecycleObserver {
 
 	private OptionalService<WMBusNetwork> wmbusNetwork;
 	private MBusSecondaryAddress address;
@@ -62,6 +63,7 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 	private MBusData latestData = null;
 	private final Object dataLock = new Object();
 
+	private boolean active;
 	private ScheduledFuture<?> connectFuture;
 
 	@Override
@@ -80,9 +82,26 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 		return builder.toString();
 	}
 
+	@Override
+	public void serviceDidStartup() {
+		active = true;
+	}
+
+	@Override
+	public synchronized void serviceDidShutdown() {
+		active = false;
+		if ( connectFuture != null ) {
+			try {
+				connectFuture.cancel(true);
+			} catch ( Exception e ) {
+				// ignore
+			}
+		}
+	}
+
 	/**
 	 * Get the configured {@link WMBusNetwork}.
-	 * 
+	 *
 	 * @return the WMBus network
 	 */
 	public OptionalService<WMBusNetwork> getWMBusNetwork() {
@@ -91,7 +110,7 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 
 	/**
 	 * Set the {@link WMBusNetwork} to use.
-	 * 
+	 *
 	 * @param wmbusNetwork
 	 *        the WMBus network
 	 */
@@ -101,7 +120,7 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 
 	/**
 	 * Get the configured {@link MBusSecondaryAddress}.
-	 * 
+	 *
 	 * @return the MBus secondary address
 	 */
 	public MBusSecondaryAddress getMBusSecondaryAddress() {
@@ -110,7 +129,7 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 
 	/**
 	 * Set the {@link MBusSecondaryAddress} to use.
-	 * 
+	 *
 	 * @param address
 	 *        the MBus secondary address
 	 */
@@ -121,7 +140,7 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 
 	/**
 	 * Get the configured {@link MBusSecondaryAddress} as a hex-encoded string.
-	 * 
+	 *
 	 * @return the MBus secondary address as a hex-encoded string
 	 * @since 1.1
 	 */
@@ -132,7 +151,7 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 
 	/**
 	 * Set the hex-encoded {@link MBusSecondaryAddress} to use.
-	 * 
+	 *
 	 * @param address
 	 *        the MBus secondary address as a hex-encoded string
 	 * @since 1.1
@@ -145,7 +164,7 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 
 	/**
 	 * Get the configured key.
-	 * 
+	 *
 	 * @return the key
 	 */
 	public String getKey() {
@@ -154,7 +173,7 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 
 	/**
 	 * Set the {@link MBusSecondaryAddress} to use.
-	 * 
+	 *
 	 * @param key
 	 *        the encryption key, encoded in hex
 	 */
@@ -174,7 +193,7 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 		if ( connectFuture != null && !connectFuture.isDone() ) {
 			return;
 		}
-		if ( address == null || key == null ) {
+		if ( !active || address == null || key == null ) {
 			return;
 		}
 		ConnectTask task = new ConnectTask();
@@ -194,6 +213,9 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 			} catch ( IOException e ) {
 				// ignore
 			}
+		}
+		if ( !active ) {
+			return;
 		}
 		WMBusNetwork device = service(wmbusNetwork);
 		if ( device != null && address != null && key != null ) {
@@ -221,7 +243,7 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 				synchronized ( WMBusDeviceDatumDataSourceSupport.this ) {
 					if ( connection == null ) {
 						// try again
-						if ( getTaskScheduler() != null ) {
+						if ( active && getTaskScheduler() != null ) {
 							log.info("Will try opening wireless M-Bus connection for {} in 10s",
 									address);
 							connectFuture = getTaskScheduler().schedule(this,
@@ -259,7 +281,7 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 
 	/**
 	 * Get the current sample.
-	 * 
+	 *
 	 * @return the current sample, or {@literal null} if no data is available
 	 */
 	protected MBusData getCurrentSample() {
@@ -274,7 +296,7 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 	/**
 	 * Get setting specifiers for the {@literal unitId} and
 	 * {@literal wMBusNetwork.propertyFilters['uid']} properties.
-	 * 
+	 *
 	 * @return list of setting specifiers
 	 * @since 1.1
 	 */
