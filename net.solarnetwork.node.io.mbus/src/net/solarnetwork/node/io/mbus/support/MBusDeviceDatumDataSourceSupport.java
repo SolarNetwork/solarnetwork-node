@@ -1,21 +1,21 @@
 /* ==================================================================
  * MBusDatumDataSource.java - 13/08/2020 12:49:12 pm
- * 
+ *
  * Copyright 2020 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -39,7 +39,7 @@ import net.solarnetwork.settings.support.BasicTextFieldSettingSpecifier;
 
 /**
  * Abstract base class for MBus based datum data sources.
- * 
+ *
  * @author alex
  * @version 2.1
  */
@@ -58,6 +58,13 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 	/** A class-level logger. */
 	protected final Logger log = LoggerFactory.getLogger(getClass());
 
+	/**
+	 * Constructor.
+	 */
+	public MBusDeviceDatumDataSourceSupport() {
+		super();
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder(getClass().getSimpleName());
@@ -74,7 +81,7 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 
 	/**
 	 * Get the configured {@link MBusNetwork}.
-	 * 
+	 *
 	 * @return the MBus network
 	 */
 	public OptionalService<MBusNetwork> getMBusNetwork() {
@@ -83,7 +90,7 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 
 	/**
 	 * Set the {@link MBusNetwork} to use.
-	 * 
+	 *
 	 * @param mbusNetwork
 	 *        the MBus network
 	 */
@@ -93,7 +100,7 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 
 	/**
 	 * Get the configured address.
-	 * 
+	 *
 	 * @return the MBus primary address
 	 */
 	public int getAddress() {
@@ -102,7 +109,7 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 
 	/**
 	 * Set the primary address to use.
-	 * 
+	 *
 	 * @param address
 	 *        the MBus primary address
 	 */
@@ -113,7 +120,7 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 	/**
 	 * Get the {@link MBusNetwork} from the configured {@code mbusNetwork}
 	 * service, or {@literal null} if not available or not configured.
-	 * 
+	 *
 	 * @return MBusNetwork
 	 */
 	protected final MBusNetwork mbusNetwork() {
@@ -122,7 +129,7 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 
 	/**
 	 * Get the configured M-Bus device name.
-	 * 
+	 *
 	 * @return the mbus device name
 	 */
 	public String mBusDeviceName() {
@@ -131,19 +138,19 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 
 	/**
 	 * Get the data source ID.
-	 * 
+	 *
 	 * @return the source ID
 	 */
 	public abstract String getSourceId();
 
 	/**
 	 * Perform a read from M-Bus {@link MBusNetwork}.
-	 * 
+	 *
 	 * <p>
 	 * This method attempts to obtain a {@link MBusNetwork} from the configured
 	 * service, calling {@link MBusNetwork#read(int)} if one can be obtained.
 	 * </p>
-	 * 
+	 *
 	 * @return the result of the read, or {@literal null} if the read is never
 	 *         invoked
 	 * @throws IOException
@@ -160,11 +167,11 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 
 	/**
 	 * Get the latest available sample.
-	 * 
+	 *
 	 * <p>
 	 * This method will <b>not</b> refresh the data.
 	 * </p>
-	 * 
+	 *
 	 * @return the latest sample, or {@literal null}
 	 */
 	protected final MBusData getLatestSample() {
@@ -179,7 +186,7 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 
 	/**
 	 * Get the current sample, reading from the device if necessary.
-	 * 
+	 *
 	 * @return the current sample, or {@literal null} if unable to read from
 	 *         device
 	 */
@@ -213,7 +220,7 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 	/**
 	 * Get setting specifiers for the {@literal unitId} and
 	 * {@literal mBusNetwork.propertyFilters['uid']} properties.
-	 * 
+	 *
 	 * @return list of setting specifiers
 	 * @since 1.1
 	 */
@@ -229,7 +236,7 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 
 	/**
 	 * Get the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @return the cache milliseconds
 	 */
 	public long getSampleCacheMs() {
@@ -238,7 +245,7 @@ public abstract class MBusDeviceDatumDataSourceSupport extends DatumDataSourceSu
 
 	/**
 	 * Set the sample cache maximum age, in milliseconds.
-	 * 
+	 *
 	 * @param sampleCacheMs
 	 *        the cache milliseconds
 	 */
