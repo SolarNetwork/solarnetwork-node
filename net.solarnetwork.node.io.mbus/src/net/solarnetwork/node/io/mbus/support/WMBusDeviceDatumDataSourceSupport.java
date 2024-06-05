@@ -66,6 +66,13 @@ public abstract class WMBusDeviceDatumDataSourceSupport extends DatumDataSourceS
 	private boolean active;
 	private ScheduledFuture<?> connectFuture;
 
+	/**
+	 * Constructor.
+	 */
+	public WMBusDeviceDatumDataSourceSupport() {
+		super();
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder(getClass().getSimpleName());
