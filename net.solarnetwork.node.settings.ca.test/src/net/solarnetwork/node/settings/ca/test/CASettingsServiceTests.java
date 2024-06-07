@@ -25,11 +25,13 @@ package net.solarnetwork.node.settings.ca.test;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonMap;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.StreamSupport.stream;
 import static net.solarnetwork.node.reactor.InstructionUtils.createLocalInstruction;
+import static net.solarnetwork.test.EasyMockUtils.assertWith;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.capture;
 import static org.easymock.EasyMock.eq;
@@ -47,6 +49,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -77,10 +81,12 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.FileCopyUtils;
 import net.solarnetwork.domain.KeyValuePair;
 import net.solarnetwork.node.Constants;
 import net.solarnetwork.node.backup.BackupResource;
 import net.solarnetwork.node.dao.BasicBatchResult;
+import net.solarnetwork.node.dao.BatchableDao;
 import net.solarnetwork.node.dao.BatchableDao.BatchCallback;
 import net.solarnetwork.node.dao.SettingDao;
 import net.solarnetwork.node.domain.Setting;
@@ -98,7 +104,7 @@ import net.solarnetwork.util.CollectionUtils;
  * Test cases for the {@link CASettingsService} class.
  *
  * @author matt
- * @version 1.2
+ * @version 1.3
  */
 public class CASettingsServiceTests {
 
@@ -758,6 +764,122 @@ public class CASettingsServiceTests {
 		assertThat("Config update contains entry for instance key", configCaptor.getValue(),
 				hasEntry(String.format("%s.FACTORY_INSTANCE_KEY", CASettingsService.class.getName()),
 						instanceUid));
+	}
+
+	@Test
+	public void export() throws Exception {
+		// GIVEN
+		final String i1 = "com.example.foo";
+		final String i2 = "com.example.bar";
+		final String key1 = i1 + ".1";
+		final String key2 = i2 + ".1";
+		final String key3 = i2 + ".2";
+		// @formatter:off
+		final Setting[] data = {
+				new Setting(key1, "a", "aa", emptySet()),
+				new Setting(key1, "b", "bb", emptySet()),
+				new Setting(i1+".FACTORY", "1", "1", emptySet()),
+				new Setting(key2, "c", "cc", emptySet()),
+				new Setting(key3, "d", "dd", emptySet()),
+				new Setting(i2+".FACTORY", "1", "1", emptySet()),
+				new Setting(i2+".FACTORY", "2", "2", emptySet()),
+		};
+		// @formatter:on
+		expect(dao.batchProcess(assertWith((BatchableDao.BatchCallback<Setting> cb) -> {
+			for ( int i = 0; i < data.length; i++ ) {
+				assertThat("Continue processing", cb.handle(data[i]),
+						is(equalTo(BatchableDao.BatchCallbackResult.CONTINUE)));
+			}
+		}), anyObject())).andReturn(null);
+
+		// WHEN
+		replayAll();
+		StringWriter out = new StringWriter();
+		service.exportSettingsCSV(out);
+
+		String result = out.toString();
+		String expected = FileCopyUtils.copyToString(new InputStreamReader(
+				getClass().getResourceAsStream("test-export-01.csv"), StandardCharsets.UTF_8));
+		assertThat("All results exported", result, is(equalTo(expected)));
+	}
+
+	@Test
+	public void export_filterByProvider() throws Exception {
+		// GIVEN
+		final String i1 = "com.example.foo";
+		final String i2 = "com.example.bar";
+		final String key1 = i1 + ".1";
+		final String key2 = i2 + ".1";
+		final String key3 = i2 + ".2";
+		// @formatter:off
+		final Setting[] data = {
+				new Setting(key1, "a", "aa", emptySet()),
+				new Setting(key1, "b", "bb", emptySet()),
+				new Setting(i1+".FACTORY", "1", "1", emptySet()),
+				new Setting(key2, "c", "cc", emptySet()),
+				new Setting(key3, "d", "dd", emptySet()),
+				new Setting(i2+".FACTORY", "1", "1", emptySet()),
+				new Setting(i2+".FACTORY", "2", "2", emptySet()),
+		};
+		// @formatter:on
+		expect(dao.batchProcess(assertWith((BatchableDao.BatchCallback<Setting> cb) -> {
+			for ( int i = 0; i < data.length; i++ ) {
+				assertThat("Continue processing", cb.handle(data[i]),
+						is(equalTo(BatchableDao.BatchCallbackResult.CONTINUE)));
+			}
+		}), anyObject())).andReturn(null);
+
+		// WHEN
+		replayAll();
+		StringWriter out = new StringWriter();
+		SettingsCommand filter = new SettingsCommand();
+		filter.setProviderKey(i2);
+		service.exportSettingsCSV(filter, out);
+
+		String result = out.toString();
+		String expected = FileCopyUtils.copyToString(new InputStreamReader(
+				getClass().getResourceAsStream("test-export-02.csv"), StandardCharsets.UTF_8));
+		assertThat("All results exported", result, is(equalTo(expected)));
+	}
+
+	@Test
+	public void export_filterByInstance() throws Exception {
+		// GIVEN
+		final String i1 = "com.example.foo";
+		final String i2 = "com.example.bar";
+		final String key1 = i1 + ".1";
+		final String key2 = i2 + ".1";
+		final String key3 = i2 + ".2";
+		// @formatter:off
+		final Setting[] data = {
+				new Setting(key1, "a", "aa", emptySet()),
+				new Setting(key1, "b", "bb", emptySet()),
+				new Setting(i1+".FACTORY", "1", "1", emptySet()),
+				new Setting(key2, "c", "cc", emptySet()),
+				new Setting(key3, "d", "dd", emptySet()),
+				new Setting(i2+".FACTORY", "1", "1", emptySet()),
+				new Setting(i2+".FACTORY", "2", "2", emptySet()),
+		};
+		// @formatter:on
+		expect(dao.batchProcess(assertWith((BatchableDao.BatchCallback<Setting> cb) -> {
+			for ( int i = 0; i < data.length; i++ ) {
+				assertThat("Continue processing", cb.handle(data[i]),
+						is(equalTo(BatchableDao.BatchCallbackResult.CONTINUE)));
+			}
+		}), anyObject())).andReturn(null);
+
+		// WHEN
+		replayAll();
+		StringWriter out = new StringWriter();
+		SettingsCommand filter = new SettingsCommand();
+		filter.setProviderKey(i2);
+		filter.setInstanceKey("1");
+		service.exportSettingsCSV(filter, out);
+
+		String result = out.toString();
+		String expected = FileCopyUtils.copyToString(new InputStreamReader(
+				getClass().getResourceAsStream("test-export-03.csv"), StandardCharsets.UTF_8));
+		assertThat("All results exported", result, is(equalTo(expected)));
 	}
 
 }

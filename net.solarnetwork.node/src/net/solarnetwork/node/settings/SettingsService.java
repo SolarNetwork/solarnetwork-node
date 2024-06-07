@@ -1,21 +1,21 @@
 /* ==================================================================
  * SettingsService.java - Mar 12, 2012 4:58:14 PM
- * 
+ *
  * Copyright 2007-2012 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -42,16 +42,16 @@ import net.solarnetwork.util.SearchFilter;
 
 /**
  * Service API for settings.
- * 
+ *
  * @author matt
- * @version 2.3
+ * @version 2.4
  * @since 2.0
  */
 public interface SettingsService {
 
 	/**
 	 * The system property for the setting resource directory.
-	 * 
+	 *
 	 * @since 1.4
 	 */
 	String SYSTEM_PROP_SETTING_RESOURCE_DIR = "sn.rsrc";
@@ -59,14 +59,14 @@ public interface SettingsService {
 	/**
 	 * The default setting resource directory, if
 	 * {@link #SYSTEM_PROP_SETTING_RESOURCE_DIR} is not defined.
-	 * 
+	 *
 	 * @since 1.4
 	 */
 	String DEFAULT_SETTING_RESOURCE_DIR = "conf/rsrc";
 
 	/**
 	 * Get the path to the setting resource directory.
-	 * 
+	 *
 	 * <p>
 	 * This is the directory where external setting resources can be persisted.
 	 * If the system property {@link #SYSTEM_PROP_SETTING_RESOURCE_DIR} is
@@ -75,7 +75,7 @@ public interface SettingsService {
 	 * to {@link Constants#solarNodeHome()}, defaulting to
 	 * {@link #DEFAULT_SETTING_RESOURCE_DIR} if not defined.
 	 * </p>
-	 * 
+	 *
 	 * @return the setting resource directory, never {@literal null}
 	 * @since 1.4
 	 */
@@ -92,49 +92,49 @@ public interface SettingsService {
 	/**
 	 * The instruction topic for a request to update (create or change) a
 	 * setting value.
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	String TOPIC_UPDATE_SETTING = "UpdateSetting";
 
 	/**
 	 * The instruction parameter for setting key.
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	String PARAM_UPDATE_SETTING_KEY = "key";
 
 	/**
 	 * The instruction parameter for setting type.
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	String PARAM_UPDATE_SETTING_TYPE = "type";
 
 	/**
 	 * The instruction parameter for setting value.
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	String PARAM_UPDATE_SETTING_VALUE = "value";
 
 	/**
 	 * The instruction parameter for setting flags.
-	 * 
+	 *
 	 * @since 1.3
 	 */
 	String PARAM_UPDATE_SETTING_FLAGS = "flags";
 
 	/**
 	 * Get a list of all possible non-factory setting providers.
-	 * 
+	 *
 	 * @return list of setting providers (never {@literal null})
 	 */
 	List<SettingSpecifierProvider> getProviders();
 
 	/**
 	 * Get a list of all possible non-factory setting providers.
-	 * 
+	 *
 	 * @param filter
 	 *        the search filter; the filter is applied to the factory service
 	 *        properties
@@ -145,14 +145,14 @@ public interface SettingsService {
 
 	/**
 	 * Get a list of all possible setting provider factories.
-	 * 
+	 *
 	 * @return list of setting provider factories (never {@literal null})
 	 */
 	List<SettingSpecifierProviderFactory> getProviderFactories();
 
 	/**
 	 * Get a filtered list of all possible setting provider factories.
-	 * 
+	 *
 	 * @param filter
 	 *        the search filter; the filter is applied to the factory service
 	 *        properties
@@ -163,17 +163,17 @@ public interface SettingsService {
 
 	/**
 	 * Get a specific factory for a given UID.
-	 * 
+	 *
 	 * @param factoryUid
 	 *        the factory UID to get the providers for
-	 * 
+	 *
 	 * @return the factory, or {@literal null} if not available
 	 */
 	SettingSpecifierProviderFactory getProviderFactory(String factoryUid);
 
 	/**
 	 * Enable a provider factory instance.
-	 * 
+	 *
 	 * @param factoryUid
 	 *        the factory UID to enable
 	 * @param instanceUid
@@ -184,7 +184,7 @@ public interface SettingsService {
 
 	/**
 	 * Disable a provider factory instance.
-	 * 
+	 *
 	 * @param factoryUid
 	 *        the factory UID to disable
 	 * @param instanceUid
@@ -195,7 +195,7 @@ public interface SettingsService {
 
 	/**
 	 * Add a new factory instance, and return the new instance ID.
-	 * 
+	 *
 	 * @param factoryUid
 	 *        the factory UID to create the new instance for
 	 * @return the new instance ID
@@ -204,13 +204,13 @@ public interface SettingsService {
 
 	/**
 	 * Add a new factory instance, and return the new instance ID.
-	 * 
+	 *
 	 * <p>
 	 * If {@code instanceUid} is provided and an instance already exists for
 	 * that ID, this will have the same effect as if
 	 * {@link #enableProviderFactoryInstance(String, String)} was called.
 	 * </p>
-	 * 
+	 *
 	 * @param factoryUid
 	 *        the factory UID to create the new instance for
 	 * @param instanceUid
@@ -225,7 +225,7 @@ public interface SettingsService {
 
 	/**
 	 * Delete an existing factory instance.
-	 * 
+	 *
 	 * @param factoryUid
 	 *        the factory UID to create the new instance for
 	 * @param instanceUid
@@ -235,7 +235,7 @@ public interface SettingsService {
 
 	/**
 	 * Reset an existing factory instance to its default values.
-	 * 
+	 *
 	 * @param factoryUid
 	 *        the factory UID to reset
 	 * @param instanceUid
@@ -245,7 +245,7 @@ public interface SettingsService {
 
 	/**
 	 * Reset and delete factory instances.
-	 * 
+	 *
 	 * @param factoryUid
 	 *        the factory UID of the instances to remove
 	 * @param instanceUids
@@ -262,10 +262,10 @@ public interface SettingsService {
 	/**
 	 * Get all possible setting providers for a specific factory UID, grouped by
 	 * instance ID.
-	 * 
+	 *
 	 * @param factoryUid
 	 *        the factory UID to get the providers for
-	 * 
+	 *
 	 * @return mapping of instance IDs to associated setting providers (never
 	 *         {@literal null})
 	 */
@@ -273,7 +273,7 @@ public interface SettingsService {
 
 	/**
 	 * Get the current value of a setting.
-	 * 
+	 *
 	 * @param provider
 	 *        the provider of the setting
 	 * @param setting
@@ -284,7 +284,7 @@ public interface SettingsService {
 
 	/**
 	 * Update setting values.
-	 * 
+	 *
 	 * @param command
 	 *        the update command
 	 */
@@ -292,7 +292,7 @@ public interface SettingsService {
 
 	/**
 	 * Get a list of all available setting resource handlers.
-	 * 
+	 *
 	 * @return the handlers, never {@literal null}
 	 * @since 2.1
 	 */
@@ -300,7 +300,7 @@ public interface SettingsService {
 
 	/**
 	 * Get a setting resource handler.
-	 * 
+	 *
 	 * @param handlerKey
 	 *        the ID if the {@link SettingResourceHandler} to get
 	 * @param instanceKey
@@ -313,7 +313,7 @@ public interface SettingsService {
 
 	/**
 	 * Get current setting resources.
-	 * 
+	 *
 	 * @param handlerKey
 	 *        the ID if the {@link SettingResourceHandler} to get the resources
 	 *        from
@@ -332,7 +332,7 @@ public interface SettingsService {
 
 	/**
 	 * Import setting resources.
-	 * 
+	 *
 	 * <p>
 	 * The setting resources will be persisted by this service, and should then
 	 * also be passed to the appropriate {@link SettingResourceHandler} for the
@@ -340,7 +340,7 @@ public interface SettingsService {
 	 * {@link SettingResourceHandler#applySettingResources(String, Iterable)}
 	 * with {@code settingKey} and the persisted resources.
 	 * </p>
-	 * 
+	 *
 	 * @param handlerKey
 	 *        the ID if the {@link SettingResourceHandler} to import to
 	 * @param instanceKey
@@ -359,11 +359,11 @@ public interface SettingsService {
 
 	/**
 	 * Remove setting resources.
-	 * 
+	 *
 	 * <p>
 	 * The persisted setting resources will be removed by this service.
 	 * </p>
-	 * 
+	 *
 	 * @param handlerKey
 	 *        the ID if the {@link SettingResourceHandler} to remove from
 	 * @param instanceKey
@@ -382,7 +382,7 @@ public interface SettingsService {
 
 	/**
 	 * Export all settings as CSV formatted text.
-	 * 
+	 *
 	 * @param out
 	 *        the output stream
 	 * @throws IOException
@@ -391,9 +391,24 @@ public interface SettingsService {
 	void exportSettingsCSV(Writer out) throws IOException;
 
 	/**
+	 * Export all settings matching a filter as CSV formatted text.
+	 *
+	 * @param filter
+	 *        the filter, or {@literal null} for all available settings
+	 * @param out
+	 *        the output stream
+	 * @throws IOException
+	 *         if any IO error occurs
+	 * @since 2.4
+	 */
+	default void exportSettingsCSV(SettingsFilter filter, Writer out) throws IOException {
+		exportSettingsCSV(out);
+	}
+
+	/**
 	 * Get a list of all available settings for a given factory and/or instance
 	 * ID.
-	 * 
+	 *
 	 * @param factoryUid
 	 *        the UID of the factory to get, or {@literal null} for a
 	 *        non-factory component
@@ -408,7 +423,7 @@ public interface SettingsService {
 
 	/**
 	 * Import all settings from a CSV formatted text stream.
-	 * 
+	 *
 	 * @param in
 	 *        the input stream
 	 * @throws IOException
@@ -418,7 +433,7 @@ public interface SettingsService {
 
 	/**
 	 * Import all settings from a CSV formatted text stream, with options.
-	 * 
+	 *
 	 * @param in
 	 *        The input stream to import.
 	 * @param options
@@ -432,20 +447,20 @@ public interface SettingsService {
 	/**
 	 * Create a backup of all settings, and return a backup object if the backup
 	 * was performed.
-	 * 
+	 *
 	 * <p>
 	 * A new backup need not be created if the settings are unchanged. In that
 	 * case, or if this method does not create a backup for any reason, this
 	 * method should return {@literal null}.
 	 * </p>
-	 * 
+	 *
 	 * @return the backup object, or {@literal null} if no backup created
 	 */
 	SettingsBackup backupSettings();
 
 	/**
 	 * Get a collection of all known settings backups.
-	 * 
+	 *
 	 * @return the backups, never {@literal null}
 	 */
 	Collection<SettingsBackup> getAvailableBackups();
@@ -453,7 +468,7 @@ public interface SettingsService {
 	/**
 	 * Get a {@link Reader} to the backup data for a given SettingsBackup
 	 * object.
-	 * 
+	 *
 	 * @param backup
 	 *        the backup to get the Reader for
 	 * @return the Reader, or {@literal null} if the backup cannot be found
