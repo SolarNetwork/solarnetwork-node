@@ -76,7 +76,7 @@ SolarNode.Settings.addSlider = function(params) {
 		value: params.value,
 		handleWidth: 42,
 		showValue: true,
-		change: function(event, ui) {
+		change: function(_event, ui) {
 				SolarNode.Settings.updateSetting(params, ui.value);
 			}
 	});
@@ -357,14 +357,14 @@ SolarNode.Settings.addLocationFinder = function(params) {
 		SolarNode.Settings.runtime[modalRuntimeKey] = modal.modal({show:false});
 		modal.ajaxForm({
 			dataType: 'json',
-			beforeSubmit: function(dataArray, form, options) {
+			beforeSubmit: function() {
 				// start a spinner on the search button so we know a search is happening
 				SolarNode.showLoading(searchBtn);
 				chooseBtn.prop('disabled', true);
 				chooseBtn.removeData('locationMeta'); // clear any previous selection
 				//searchBtn.attr('disabled', 'disabled');
 			},
-			success: function(json, status, xhr, form) {
+			success: function(json) {
 				//searchBtn.removeAttr('disabled');
 				if ( json.success !== true ) {
 					SolarNode.errorAlert("Error querying SolarNetwork for locations: " +json.message);
@@ -381,7 +381,7 @@ SolarNode.Settings.addLocationFinder = function(params) {
 					meta = results[i];
 					tr.data('locationMeta', meta);
 
-					tr.children('td').each(function(idx, el) {
+					tr.children('td').each(function(_idx, el) {
 						var td = $(el);
 						var prop = td.data('tprop');
 						var val = SolarNode.extractJSONPath(meta, prop);
@@ -405,7 +405,7 @@ SolarNode.Settings.addLocationFinder = function(params) {
 				}
 				tbody.parent().removeClass('hidden');
 			},
-			error: function(xhr, status, statusText) {
+			error: function(_xhr, _status, statusText) {
 				SolarNode.errorAlert("Error querying SolarNetwork for locations: " +statusText);
 			},
 			complete: function() {
@@ -451,14 +451,6 @@ SolarNode.Settings.addGroupedSetting = function(params) {
 			$(this).attr('disabled', 'disabled');
 		}
 	});
-};
-
-SolarNode.Settings.addTextArea = function(params) {
-	// TODO
-};
-
-SolarNode.Settings.addFile = function(params) {
-	// TODO
 };
 
 /**
@@ -513,7 +505,7 @@ SolarNode.Settings.saveUpdates = function(url, msg, resultCallback, extraFormDat
 	    	beforeSend: function(xhr) {
 	    		SolarNode.csrf(xhr);
 	    	},
-			success: function(data, textStatus, xhr) {
+			success: function(data) {
 				var providerKey = undefined, key = undefined, domID = undefined;
 				if ( resultCallback ) {
 					resultCallback();
@@ -530,7 +522,7 @@ SolarNode.Settings.saveUpdates = function(url, msg, resultCallback, extraFormDat
 							+'<strong>'+msg.title+':</strong> ' +msg.success +'</div>').insertBefore('#settings form div.actions');
 				}
 			},
-			error: function(jqXHR, textStatus, errorThrown) {
+			error: function(_jqXHR, textStatus) {
 				if ( resultCallback ) {
 					resultCallback(textStatus);
 				} else if ( msg !== undefined && msg.error !== undefined ) {
@@ -586,7 +578,7 @@ SolarNode.Settings.showConfirmation = function(params) {
 			success: delayedReload
 		});
 	});
-	alert.on('close.bs.alert', function(e) {
+	alert.on('close.bs.alert', function() {
 		origButton.removeAttr('disabled');
 		origButton.removeClass('hidden');
 		confirmationButton.unbind();
@@ -655,7 +647,7 @@ function setupBackups() {
 			}
 			refreshBackupList();
 		},
-		error : function(xhr, status, statusText) {
+		error : function(_xhr, _status, statusText) {
 			SolarNode.errorAlert("Error creating new backup: " +statusText);
 		},
 		complete : function() {
@@ -679,7 +671,7 @@ function setupBackups() {
 		});
 	});
 
-	$('#backup-restore-list-container').on('click', 'div.menu-item', function(event) {
+	$('#backup-restore-list-container').on('click', 'div.menu-item', function() {
 		var row = $(this),
 			selectedCount = 0,
 			submit = $('#backup-restore-modal button[type=submit]');
@@ -694,7 +686,7 @@ function setupBackups() {
 
 	$('#backup-restore-modal').ajaxForm({
 		dataType : 'json',
-		beforeSubmit : function(dataArray, form, options) {
+		beforeSubmit : function(dataArray, form) {
 			var providers = SolarNode.Backups.selectedProviders($('#backup-restore-list-container')),
 				form = $('#backup-restore-modal'),
 				submitBtn = form.find('button[type=submit]');
@@ -702,7 +694,7 @@ function setupBackups() {
 			submitBtn.attr('disabled', 'disabled');
 			SolarNode.showSpinner(submitBtn);
 		},
-		success : function(json, status, xhr, form) {
+		success : function(json, _status, _xhr, form) {
 			if ( json.success !== true ) {
 				SolarNode.error(json.message, $('#backup-restore-modal div.modal-body'));
 				return;
@@ -715,7 +707,7 @@ function setupBackups() {
 				SolarNode.tryGotoURL(SolarNode.context.path('/a/settings'));
 			}, 10000);
 		},
-		error : function(xhr, status, statusText) {
+		error : function(_xhr, _status, statusText) {
 			SolarNode.error("Error restoring backup: " +statusText, $('#backup-restore-modal div.modal-body'));
 		},
 		complete : function() {
@@ -735,7 +727,7 @@ function uploadSettingResourceProgress(event) {
 	}
 }
 
-function uploadSettingResourceDone(event) {
+function uploadSettingResourceDone() {
 	var xhr = this;
 	if ( xhr.status >= 200 && xhr.status < 300 ) {
 		SolarNode.GlobalProgress.hide();
@@ -744,7 +736,7 @@ function uploadSettingResourceDone(event) {
 	}
 }
 
-function uploadSettingResourceError(event) {
+function uploadSettingResourceError() {
 	var xhr = this;
 	SolarNode.GlobalProgress.hide();
 	console.error( "Error submitting image (%s), got response: %s", xhr.statusText, xhr.responseText);
@@ -777,7 +769,7 @@ function uploadSettingResource(url, provider, instance, setting, dataKey, dataVa
 }
 
 function setupComponentSettings(container) {
-	container.find('.help-popover').each(function(i, el) {
+	container.find('.help-popover').each(function(_i, el) {
 		new bootstrap.Popover(el);
 	});
 
@@ -952,7 +944,7 @@ $(document).ready(function() {
 			$('#add-component-instance-modal').find('button[type=submit]').attr('disabled', 'disabled');
 			return true;
 		},
-		success: function(json, status, xhr, form) {
+		success: function(json) {
 			if ( json && json.success === true ) {
 				if ( json.data ) {
 					document.location.hash = encodeURIComponent(json.data);
@@ -962,7 +954,7 @@ $(document).ready(function() {
 				SolarNode.error(json.message, $('#add-component-instance-modal .modal-body.start'));
 			}
 		},
-		error: function(xhr, status, statusText) {
+		error: function(xhr) {
 			var json = $.parseJSON(xhr.responseText);
 			SolarNode.error(json.message, $('#add-component-instance-modal .modal-body.start'));
 		}
@@ -973,18 +965,18 @@ $(document).ready(function() {
 	});
 	$('#remove-all-component-instance-modal').ajaxForm({
 		dataType: 'json',
-		beforeSubmit: function(formData, jqForm, options) {
+		beforeSubmit: function() {
 			$('#remove-all-component-instance-modal').find('button[type=submit]').attr('disabled', 'disabled');
 			return true;
 		},
-		success: function(json, status, xhr, form) {
+		success: function(json) {
 			if ( json && json.success === true ) {
 				delayedReload();
 			} else {
 				SolarNode.error(json.message, $('#remove-all-component-instance-modal .modal-body.start'));
 			}
 		},
-		error: function(xhr, status, statusText) {
+		error: function(xhr) {
 			var json = $.parseJSON(xhr.responseText);
 			SolarNode.error(json.message, $('#remove-all-component-instance-modal .modal-body.start'));
 		}
@@ -1008,7 +1000,7 @@ $(document).ready(function() {
 		});
 	});
 	
-	$('#settings.carousel .page-indicators button').on('click', function(event) {
+	$('#settings.carousel .page-indicators button').on('click', function() {
 		var instanceKey = this.dataset.instanceKey;
 		if ( !instanceKey ) {
 			return;
