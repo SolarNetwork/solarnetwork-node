@@ -936,13 +936,14 @@ $(document).ready(function() {
 	
 	// regex to match allowable component identifier values
 	const COMPONENT_IDENT_ALLOWED_REGEX = /^[\p{Letter}\p{Number}_/ -]{1,32}$/u;
+	const COMPONENT_IDENT_FORBIDDEN_SET = new Set(['FACTORY']);
 	
 	$('#add-component-instance-modal').ajaxForm({
 		dataType: 'json',
-		beforeSubmit: function(formData, jqForm, options) {
+		beforeSubmit: function() {
 			const nameField = $('#add-component-instance-name');
 			const ident = nameField.val();
-			if (ident && !ident.match(COMPONENT_IDENT_ALLOWED_REGEX)) {
+			if (ident && (!ident.match(COMPONENT_IDENT_ALLOWED_REGEX) || COMPONENT_IDENT_FORBIDDEN_SET.has(ident))) {
 				$('#add-component-instance-modal .name-error').addClass('text-danger');
 				nameField.select().focus()
 				return false;
