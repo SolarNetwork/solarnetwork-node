@@ -99,7 +99,7 @@ import net.solarnetwork.web.support.MultipartFileResource;
  * Web controller for the settings UI.
  *
  * @author matt
- * @version 2.4
+ * @version 2.5
  */
 @ServiceAwareController
 @RequestMapping("/a/settings")
@@ -564,6 +564,49 @@ public class SettingsController {
 			} else {
 				service.exportSettingsCSV(response.getWriter());
 			}
+		}
+	}
+
+	/**
+	 * Export settings to CSV.
+	 *
+	 * @param factoryUid
+	 *        the UID of the factory to export the settings of
+	 * @param response
+	 *        the response
+	 * @param locale
+	 *        the desired locale
+	 * @throws IOException
+	 *         if an IO error occurs
+	 */
+	@RequestMapping(value = "/exportFactory", method = RequestMethod.GET)
+	@ResponseBody
+	public void exportFactorySettings(@RequestParam("uid") String factoryUid,
+			HttpServletResponse response, Locale locale) throws IOException {
+		final SettingsService service = service(settingsServiceTracker);
+		final Long nodeId = identityService.getNodeId();
+		if ( service != null ) {
+			SettingSpecifierProviderFactory factory = service.getProviderFactory(factoryUid);
+			String name = factoryUid;
+			if ( factory != null ) {
+				String desc = null;
+				if ( factory.getMessageSource() != null ) {
+					desc = factory.getMessageSource().getMessage("title", null, null, locale);
+				}
+				if ( desc == null ) {
+					desc = factory.getDisplayName();
+				}
+				if ( desc != null ) {
+					name = desc;
+				}
+			}
+			response.setContentType("text/csv;charset=UTF-8");
+			response.setHeader("Content-Disposition", "attachment; filename=solarnode-settings"
+					+ (nodeId == null ? "" : "-" + nodeId) + "_" + name + ".csv");
+
+			SettingsCommand filter = new SettingsCommand();
+			filter.setProviderKey(factoryUid);
+			service.exportSettingsCSV(filter, response.getWriter());
 		}
 	}
 
