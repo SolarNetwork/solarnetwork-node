@@ -44,11 +44,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.easymock.EasyMock;
+import org.hamcrest.Matchers;
 import org.junit.Test;
 import net.solarnetwork.domain.datum.AggregateDatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
 import net.solarnetwork.domain.datum.DatumSamplesType;
 import net.solarnetwork.node.datum.filter.std.DownsampleDatumFilterService;
+import net.solarnetwork.node.domain.datum.NodeDatum;
 import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.node.service.OperationalModesService;
 
@@ -248,7 +250,7 @@ public class DownsampleDatumFilterServiceTests {
 			SimpleDatum d = SimpleDatum.nodeDatum(TEST_SOURCE);
 			d.getSamples().putInstantaneousSampleValue(TEST_PROP, ++i);
 			DatumSamplesOperations out = xs.filter(d, d.getSamples(), emptyMap());
-			input.computeIfAbsent(tick.instant(), k -> new ArrayList<>(256)).add(d);
+			input.computeIfAbsent(tick.instant().plusSeconds(1), k -> new ArrayList<>(256)).add(d);
 			if ( out != null ) {
 				output.add(out);
 			}
@@ -271,7 +273,12 @@ public class DownsampleDatumFilterServiceTests {
 			DatumSamplesOperations expected = expectedAgg.average(xs.getDecimalScale(),
 					xs.getMinPropertyFormat(), xs.getMaxPropertyFormat());
 			DatumSamplesOperations out = output.get(outIdx++);
-			assertThat("Averaged by duration " + (outIdx + 1), out, is(equalTo(expected)));
+			assertThat("Output is NodeDatum", out, Matchers.instanceOf(NodeDatum.class));
+			NodeDatum outDatum = (NodeDatum) out;
+			assertThat("Output date is time slot end" + (outIdx + 1), outDatum.getTimestamp(),
+					is(equalTo(e.getKey())));
+			assertThat("Output samples averaged by duration " + (outIdx + 1),
+					outDatum.asSampleOperations(), is(equalTo(expected)));
 			if ( outIdx >= output.size() ) {
 				break;
 			}

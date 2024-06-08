@@ -32,8 +32,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import net.solarnetwork.domain.datum.AggregateDatumSamples;
 import net.solarnetwork.domain.datum.Datum;
+import net.solarnetwork.domain.datum.DatumId;
 import net.solarnetwork.domain.datum.DatumSamples;
 import net.solarnetwork.domain.datum.DatumSamplesOperations;
+import net.solarnetwork.node.domain.datum.SimpleDatum;
 import net.solarnetwork.service.DatumFilterService;
 import net.solarnetwork.settings.SettingSpecifier;
 import net.solarnetwork.settings.SettingSpecifierProvider;
@@ -145,7 +147,12 @@ public class DownsampleDatumFilterService extends DatumFilterSupport
 	}
 
 	private AggregateDatumSamples newAggregate(String key) {
-		return new AggregateDatumSamples(sampleClock.instant());
+		final Duration dur = this.sampleDuration;
+		Instant ts = sampleClock.instant();
+		if ( dur != null ) {
+			ts = ts.plusNanos(dur.toNanos());
+		}
+		return new AggregateDatumSamples(ts);
 	}
 
 	@Override
@@ -169,13 +176,13 @@ public class DownsampleDatumFilterService extends DatumFilterSupport
 		synchronized ( agg ) {
 			if ( dur != null ) {
 				Instant datumTs = (datum.getTimestamp() != null ? datum.getTimestamp() : Instant.now());
-				Instant nextTimeSlotStart = agg.getTimestamp().plusNanos(dur.toNanos());
+				Instant nextTimeSlotStart = agg.getTimestamp();
 				if ( datumTs.isAfter(nextTimeSlotStart) ) {
 					if ( agg.addedSampleCount() > 0 ) {
-						out = generateAggregateSample(datum, samples, start, agg);
+						out = generateAggregateSample(datum, samples, start, agg, agg.getTimestamp());
 					} else {
 						// just move to next time slot, then add sample
-						agg.setTimestamp(sampleClock.instant());
+						agg.setTimestamp(sampleClock.instant().plusNanos(dur.toNanos()));
 					}
 				}
 			}
@@ -184,7 +191,7 @@ public class DownsampleDatumFilterService extends DatumFilterSupport
 			}
 			if ( dur == null
 					&& ((count < 1 && !sub) || (count > 1 && agg.addedSampleCount() >= count)) ) {
-				return generateAggregateSample(datum, samples, start, agg);
+				return generateAggregateSample(datum, samples, start, agg, null);
 			}
 		}
 		if ( out != null ) {
@@ -200,10 +207,15 @@ public class DownsampleDatumFilterService extends DatumFilterSupport
 	}
 
 	private DatumSamplesOperations generateAggregateSample(Datum datum, DatumSamplesOperations samples,
-			final long start, AggregateDatumSamples agg) {
+			final long start, AggregateDatumSamples agg, Instant ts) {
 		subSamplesBySource.remove(datum.getSourceId(), agg);
 		DatumSamples out = agg.average(decimalScale, minPropertyFormat, maxPropertyFormat);
 		incrementStats(start, samples, out);
+		if ( ts != null ) {
+			// return a complete NodeDatum, so the sample timestamp can be picked up by the
+			DatumId newId = new DatumId(datum.getKind(), datum.getObjectId(), datum.getSourceId(), ts);
+			return new SimpleDatum(newId, out);
+		}
 		return out;
 	}
 

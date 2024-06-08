@@ -1,21 +1,21 @@
 /* ==================================================================
  * DefaultDatumQueue.java - 21/08/2021 3:59:35 PM
- * 
+ *
  * Copyright 2021 SolarNetwork.net Dev Team
- * 
- * This program is free software; you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as 
- * published by the Free Software Foundation; either version 2 of 
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as
+ * published by the Free Software Foundation; either version 2 of
  * the License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful, 
- * but WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License 
- * along with this program; if not, write to the Free Software 
- * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
  * 02111-1307 USA
  * ==================================================================
  */
@@ -61,7 +61,7 @@ import net.solarnetwork.util.StatCounter;
 
 /**
  * Default implementation of {@link DatumQueue}.
- * 
+ *
  * <p>
  * Datum passed to {@link #offer(NodeDatum)} will be persisted via one of the
  * configured {@link DatumDao} services, while Datum received via
@@ -69,20 +69,20 @@ import net.solarnetwork.util.StatCounter;
  * {@literal false} will not be persisted. All datum will then be passed to all
  * registered consumers.
  * </p>
- * 
+ *
  * <p>
  * The {@code directConsumer} passed to the constructor will receive datum after
  * filters have been applied, sequentially in queue order directly on the queue
  * processing thread.
  * </p>
- * 
+ *
  * <p>
  * Each registered {@link Consumer} will receive datum sequentially in queue
  * order via a single thread.
  * </p>
- * 
+ *
  * @author matt
- * @version 2.1
+ * @version 2.2
  * @since 1.89
  */
 public class DefaultDatumQueue extends BaseIdentifiable
@@ -117,7 +117,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param nodeDatumDao
 	 *        the node datum DAO to use
 	 * @param eventAdmin
@@ -131,7 +131,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	/**
 	 * Constructor.
-	 * 
+	 *
 	 * @param nodeDatumDao
 	 *        the node datum DAO to use
 	 * @param eventAdmin
@@ -363,24 +363,24 @@ public class DefaultDatumQueue extends BaseIdentifiable
 				/*-
 				 We are assuming there will be many pairs of identical datum received by the queue,
 				 because most DatumDataSource services, when polled for a Datum, will both return
-				 the Datum which is passed to offer() and ALSO emit a DATUM_CAPTURED event which 
-				 gets passed to handleEvent(). Datum passed to offer() have persist == true and 
+				 the Datum which is passed to offer() and ALSO emit a DATUM_CAPTURED event which
+				 gets passed to handleEvent(). Datum passed to offer() have persist == true and
 				 Datum passed to handleEvent() have persist == false; hence we are expecting pairs
 				 of events where one should be persisted and the other not (just passed to consumers).
 				 Since all events are passed to consumers, we can discard (persist == false) events
 				 from a matching pair event with (persist == true).
-				 
-				 The approach taken relies on the ordering of our queue, which is ordered by 
+				
+				 The approach taken relies on the ordering of our queue, which is ordered by
 				 date, source ID, persist. Potential pairs will differ only by the persist flag,
 				 and will have identical datum objects. The algorithm thus does:
-				 
+				
 				 1. Poll for the next available event.
 				 2. Peek/take all next available events with a matching date.
 				 3. Sort the collected events (by date, source, persist)
 				 4. For each collected event where persist == false, search previous collected
 				    events for an identical datum with persist == true. If found, discard.
-				    
-				 The approach holds up in highly-concurrent environments where even a single 
+				
+				 The approach holds up in highly-concurrent environments where even a single
 				 source ID has events at the same date (i.e. >1 event within 1ms on a JVM with
 				 millisecond precision dates).
 				 */
@@ -502,6 +502,8 @@ public class DefaultDatumQueue extends BaseIdentifiable
 		}
 		if ( out == in ) {
 			return event.datum;
+		} else if ( out instanceof NodeDatum ) {
+			return (NodeDatum) out;
 		}
 		return event.datum.copyWithSamples(out);
 	}
@@ -613,7 +615,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	/**
 	 * Get the processing startup delay, in milliseconds.
-	 * 
+	 *
 	 * @return the startup delay; defaults to {@link #DEFAULT_STARTUP_DELAY_MS}
 	 */
 	public long getStartupDelayMs() {
@@ -622,7 +624,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	/**
 	 * Set the processing startup delay, in milliseconds.
-	 * 
+	 *
 	 * @param startupDelayMs
 	 *        the delay to set
 	 */
@@ -632,7 +634,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	/**
 	 * Get the queue delay, in milliseconds.
-	 * 
+	 *
 	 * @return the delay; defaults to {@link #DEFAULT_QUEUE_DELAY_MS}
 	 */
 	public long getQueueDelayMs() {
@@ -641,7 +643,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	/**
 	 * Set the queue delay, in milliseconds.
-	 * 
+	 *
 	 * @param queueDelayMs
 	 *        the delay to set; setting to anything less than {@code 1}
 	 *        essentially disables the delay
@@ -652,7 +654,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	/**
 	 * Set the configured transform service.
-	 * 
+	 *
 	 * @return the transform service, or {@literal null}
 	 */
 	public OptionalFilterableService<DatumFilterService> getDatumFilterService() {
@@ -661,7 +663,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	/**
 	 * Set the configured transform service.
-	 * 
+	 *
 	 * @param transformService
 	 *        the transform service to set
 	 */
@@ -671,7 +673,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	/**
 	 * Get the transform service filter UID.
-	 * 
+	 *
 	 * @return the service UID
 	 */
 	public String getTransformServiceUid() {
@@ -680,7 +682,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	/**
 	 * Set the transform service filter UID.
-	 * 
+	 *
 	 * @param uid
 	 *        the service UID
 	 */
@@ -690,7 +692,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	/**
 	 * Get the DAO to persist node datum with.
-	 * 
+	 *
 	 * @return the DAO
 	 */
 	public DatumDao getNodeDatumDao() {
@@ -699,7 +701,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	/**
 	 * Get the statistics log frequency.
-	 * 
+	 *
 	 * @return the frequency
 	 */
 	public int getStatisticLogFrequency() {
@@ -708,7 +710,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	/**
 	 * Set the statistics log frequency.
-	 * 
+	 *
 	 * @param logFrequency
 	 *        the frequency to set
 	 */
@@ -718,7 +720,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	/**
 	 * Get an exception handler for the datum processor.
-	 * 
+	 *
 	 * @return the exception handler, or {@literal null}
 	 */
 	public UncaughtExceptionHandler getDatumProcessorExceptionHandler() {
@@ -727,7 +729,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	/**
 	 * Set an exception handler for the datum processor.
-	 * 
+	 *
 	 * @param datumProcessorExceptionHandler
 	 *        the handler to set
 	 */
@@ -738,7 +740,7 @@ public class DefaultDatumQueue extends BaseIdentifiable
 
 	/**
 	 * Get the internal statistics.
-	 * 
+	 *
 	 * @return the stats
 	 * @see QueueStats
 	 */

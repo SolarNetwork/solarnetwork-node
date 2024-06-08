@@ -16,7 +16,7 @@ Import-Package:
  net.solarnetwork.node.domain.datum;version="[1.0,2.0)",
  net.solarnetwork.node.reactor;version="[2.2,3.0)",
  net.solarnetwork.node.service;version="[1.2,2.0)",
- net.solarnetwork.node.service.support;version="[1.5,2.0)",
+ net.solarnetwork.node.service.support;version="[1.6,2.0)",
  net.solarnetwork.service;version="[1.0,2.0)",
  net.solarnetwork.service.support;version="[1.0,2.0)",
  net.solarnetwork.settings;version="[2.2,3.0)",
